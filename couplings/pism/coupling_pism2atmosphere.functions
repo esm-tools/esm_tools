@@ -4,11 +4,15 @@ function pism2atmosphere {
         echo "                =================================================================="
         echo "                 *** S T A R T I N G    pism2atmosphere *** "; echo
 
-        :> ${COUPLE_DIR}/cdo_stderr_echam2ice
+        :> ${COUPLE_DIR}/cdo_stderr_pism2atm
+    
+        . ${FUNCTION_PATH}/../general/general_lists.functions
+        . ${FUNCTION_PATH}/../general/coupling_general.functions
+
 
         echo "PISM_TO_ATMOSPHERE=${PISM_TO_ATMOSPHERE}"
 
-        if [[ $PISM_TO_ATMOSPHERE -eq 0 ]]; then
+        if [[ $PISM_TO_ATMOSPHERE -eq 1 ]]; then
                 iterative_coupling_pism_atmosphere_write_grid
                 iterative_coupling_pism_atmosphere_write_names
                 iterative_coupling_pism_atmosphere_make_forcing
@@ -19,7 +23,6 @@ function pism2atmosphere {
         echo "                 *** F I N I S H E D    pism2atmosphere *** "
         echo "                =================================================================="
 }
-
 function iterative_coupling_pism_atmosphere_make_forcing {
         pism_atmosphere_get_newest_output
         pism_atmosphere_update_domain_mask
@@ -42,32 +45,113 @@ function iterative_coupling_pism_atmosphere_write_names {
 
 function iterative_coupling_pism_atmosphere_write_grid {
         if [ ! -f ${COUPLE_DIR}/ice.griddes ]; then
-                add_to ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
-                        ice.griddes couple
+                #add_to ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
+                #        ice.griddes couple
+                cp ${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes \
+                        ${COUPLE_DIR}/ice.griddes
         fi
 }
 
 function pism_atmosphere_get_newest_output { 
         echo; echo "                 *   defining the newest PISM file "
         # PG: Modification to ensure that we only use SUMMER values (July for Northern Hemisphere):
-        case $DOMAIN_pism in
-                "nhem" | "laurentide" | "greenland") 
-                        month_to_select=6
-                        ;;
-                "shem" | "antarctica" | "Antarctica")
-                        month_to_select=12
-                        ;;
-                *)
-                        echo "UNKNOWN PISM domain"
-                        exit 42
-        esac
-        echo "                 -   selecting summer values only! Month=$month_to_select "
-        cdo -s \
-                -selmon,${month_to_select} \
-                ${DATA_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}-${END_YEAR_pism}.nc \
-                ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 
-        newest_pism_file=${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc
+        # LA: Not sure why. Now taking yearly mean.
+        # LA: Summer value for mask only. Now: Summer value for mask, yearmean for runoff
+
+        # Define list of variables selected from PISM output depending on whether icebergs are used or not
+        if [ "x${fesom_use_iceberg}" == "x1" ]; then
+            echo "LA DEBUG: 1"
+            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow"
+        else 
+            echo "LA DEBUG: 2"
+            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount"
+        fi 
+        
+        LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+        echo; echo "                 *   OUTPUT_DIR_pism = ${OUTPUT_DIR_pism} "
+        if [ -f ${LATEST_PISM_FILE_SINGLE} ]; then
+            echo; echo "                 *   file1 = ${LATEST_PISM_FILE_SINGLE} found ***"
+
+            # Remove old files
+            if [ -f ${OUTPUT_DIR_pism}/tmp.nc ];                        then rm ${OUTPUT_DIR_pism}/tmp.nc; fi
+            if [ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ];        then rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc; fi
+            if [ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ];  then rm ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc; fi
+            unset PISM_OFILE_LIST
+            unset PISM_cleanup_list
+
+            # Aggregate PISM output to multi-year monthly mean
+            echo " *** These fields are selected ${CDO_SELECT_VAR_LIST} *** "
+            for i in $(seq ${CHUNK_START_YEAR_pism} ${NYEAR} ${CHUNK_END_YEAR_pism}); do
+                j=$(( $i + ${NYEAR} -1 ))
+                if [ ${i} -lt 10 ]; then i=0${i}; fi
+                IFILE="${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}0101-${j}1231.nc"
+                if [[ -f ${IFILE}.ymonmean ]]; then 
+                        IFILE=${IFILE}.ymonmean
+                        PISM_cleanup_list="${PISM_cleanup_list} ${IFILE}"
+                fi
+                OFILE="${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc"
+                cdo -ymonmean \
+                    -select,name="${CDO_SELECT_VAR_LIST}" \
+                    ${IFILE} \
+                    ${OFILE} 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+                echo; echo " * i = ${i} "; PISM_OFILE_LIST="${PISM_OFILE_LIST} ${OFILE}"; 
+            done
+
+            echo; echo "                *   Concatenating these files: ${PISM_OFILE_LIST} "
+            cdo cat ${PISM_OFILE_LIST} ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            cdo timmean ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+
+            rm ${PISM_OFILE_LIST} ${PISM_cleanup_list}
+        else
+            echo "*** ${LATEST_PISM_FILE_SINGLE} not found ***"
+            exit 42
+        fi
+
+        newest_pism_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
         newest_pism_filename=$(basename $newest_pism_file)
+        newest_pism_file_chunk=${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc
+        
+        if [[ ${EX_INT} == "monthly" ]]; then
+            case $DOMAIN_pism in
+                    "nhem" | "laurentide" | "greenland") 
+                            month_to_select=6
+                            ;;
+                    "shem" | "antarctica" | "Antarctica")
+                            month_to_select=12
+                            ;;
+                    *)
+                            echo "UNKNOWN PISM domain"
+                            exit 42
+            esac
+            echo "                 -   selecting summer values only! Month=$month_to_select "
+            echo "                 -   ifile = ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc; ofile = ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc "
+            
+        
+            # Select mask either by minimum ice thickness over year (MIN_MON_SELECT==1) or by summer value (Jun for NH, Dec for SH)
+            if [[ "x${MIN_MON_SELECT}" == "x1" ]]; then
+                cdo -s \
+                        -timmin \
+                        -selname,thk \
+                        ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
+                        ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
+            else
+                cdo -s \
+                        -selmon,${month_to_select} \
+                        -ymonmean \
+                        ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
+                        ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
+            fi
+            # LA: get SMB as another criterion for glacial mask; glacial cell if positive SMB
+            cdo -s \
+                    -timmean \
+                    -selname,climatic_mass_balance \
+                    ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
+                    ${COUPLE_DIR}/${EXP_ID}_pism_extra_smb_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            newest_pism_mask_file=${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc
+        else
+            newest_pism_mask_file=${newest_pism_file}
+        fi    
+        newest_pism_mask_filename=$(basename $newest_pism_mask_file)
 
 }
 
@@ -76,7 +160,10 @@ function pism_atmosphere_update_domain_mask {
               echo "                 (This is the area where changes to ECHAM6 files are allowed to be made)"
 
         update_domain_mask_select_mask
-        update_domain_mask_constrain_minimum_ice_thickness
+        if [[ "x${MIN_MON_SELECT}" != "x1" ]]; then
+            update_domain_mask_constrain_minimum_ice_thickness
+        fi
+        update_domain_mask_merge_masks
         update_domain_mask_set_mask_values_to_binary
         echo; echo "                  ...done."
 }
@@ -100,7 +187,7 @@ function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
         files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_orog_difference.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
         cdo -s -O merge $files_needed ${COUPLE_DIR}/ice_file_for_atmosphere.nc
-	ncwa -a time ${COUPLE_DIR}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/ice_file_for_atmosphere.nc
+	    ncwa -a time ${COUPLE_DIR}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/ice_file_for_atmosphere.nc
         rm $files_needed $rmlist
         echo; echo "                  ...done"
         unset files_needed
@@ -108,10 +195,22 @@ function pism_atmosphere_assemble_final_file {
                
 function update_domain_mask_select_mask { 
         echo ""; echo "                 *   selecting the mask variable"
-        ifile=${newest_pism_file}
-        ofile=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}.nc 
-        cdo -s -selvar,${GLACIAL_MASK_VARNAME_pism} $ifile $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-        unset ifile ofile
+        ifile1=${newest_pism_mask_file}
+        ifile2=${COUPLE_DIR}/${EXP_ID}_pism_extra_smb_${YR0_pism}-${END_YEAR_pism}.nc
+        if [[ "x${MIN_MON_SELECT}" == "x1" ]]; then
+            CRITICAL_THK_FOR_MASK_pism=${CRITICAL_THK_FOR_MASK_pism:-5}
+            echo ""; echo "                 *   constraining the mask to have at least ${CRITICAL_THK_FOR_MASK_pism} (meters)"
+            ofile1=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_min_thk.nc
+            ofile2=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_pos_smb.nc
+            cdo -s chname,thk,${GLACIAL_MASK_VARNAME_pism} -setmisstoc,0 -ifthenc,1 -gec,${CRITICAL_THK_FOR_MASK_pism} $ifile1 $ofile1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+            cdo -s chname,climatic_mass_balance,${GLACIAL_MASK_VARNAME_pism} -setmisstoc,0 -ifthenc,1 -gtc,0 $ifile2 $ofile2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        else
+            ofile1=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}.nc 
+            ofile2=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_pos_smb.nc
+            cdo -s -selvar,${GLACIAL_MASK_VARNAME_pism} $ifile1 $ofile1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+            cdo -s chname,climatic_mass_balance,${GLACIAL_MASK_VARNAME_pism} -setmisstoc,0 -ifthenc,1 -gtc,0 $ifile2 $ofile2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        fi
+        unset ifile1 ifile2 ofile1 ofile2
 }
 
 function update_domain_mask_constrain_minimum_ice_thickness {
@@ -123,16 +222,28 @@ function update_domain_mask_constrain_minimum_ice_thickness {
                 -ifthen \
                 -gec,${CRITICAL_THK_FOR_MASK_pism} \
                 -selvar,thk \
-                ${newest_pism_file} \
+                ${newest_pism_mask_file} \
                 ${ifile} \
                 ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm 
         rm $ifile
         unset ifile ofile
 } 
 
+function update_domain_mask_merge_masks {
+        echo ""; echo "                 *   merging masks from thicknes and surface mass balance criterions"
+        ifile1=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_min_thk.nc
+        ifile2=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_pos_smb.nc
+        ofile=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_merged_mask.nc
+        #LA: merge both masks: glacial cell if thickness above threshold OR surface mass balance > 0
+        cdo -s max $ifile1 $ifile2 $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        #rm $ifile1 $ifile2
+        unset ifile1 ifile2 ofile
+}
+
+
 function update_domain_mask_set_mask_values_to_binary { 
         echo ""; echo "                 *   setting binary values for mask: 1=ice, 0=non-ice"
-        ifile=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_min_thk.nc
+        ifile=${COUPLE_DIR}/${newest_pism_filename%.*}_${GLACIAL_MASK_VARNAME_pism}_merged_mask.nc
         ofile=${COUPLE_DIR}/ice_mask_min_thk_binary.nc
         cdo -s \
                -setvals,2,1 \
@@ -140,13 +251,13 @@ function update_domain_mask_set_mask_values_to_binary {
                -setvals,4,0 \
         $ifile $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         mv $ofile ${COUPLE_DIR}/ice_mask_current.nc
-        rm $ifile
+        #rm $ifile
         unset ifile ofile
 }
 
 function generate_orography_anomaly_over_pism_run { 
         echo ""; echo "                 *   calculating surface height change over the last pism chunk"
-        ifile=${newest_pism_file}
+        ifile=${newest_pism_file_chunk}
         rfile=${IFILE_pism}
         ofile=${COUPLE_DIR}/ice_orog_difference.nc
         # FIXME: If the very first year, then we need to construct usurf from topg+thk
@@ -160,6 +271,9 @@ function generate_orography_anomaly_over_pism_run {
                 -selvar,${OROG_VARNAME_pism} \
                 $ifile \
                 $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+
+        ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        mv tmp.nc $ofile
 }
 
 function generate_runoff_select_variables {
@@ -171,15 +285,24 @@ function generate_runoff_select_variables {
 	"0.7")
 	    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"discharge_flux_cumulative,floating_basal_flux_cumulative,grounded_basal_flux_cumulative"}
 	    ;;
-	"1.0"|"1.1")
+	"1.0"|"1.1"|"1.2")
 	    # basal_mass_flux_floating                = basal kg/m2/s of floating ice
             # basal_mass_flux_grounded                = basal kg/m2/s of grounded ice
             # srunoff                                 = surface runoff (kg/m2/s)
             # tendency_of_ice_amount_due_to_discharge = calving + frontal melting (kg/m2/s)
 	    #PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"basal_melt_rate_grounded,tendency_of_ice_amount_due_to_discharge"}
 		# Only use "tendency_of_ice_amount"; Unit: kg m-2 year-1; for both v1.0 and v1.1 
-        	PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount"}
-	    ;;
+        	
+                #***************************************************************************
+                #LA include iceberg model
+                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_flow"}
+                    PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_surface_mass_flux" "tendency_of_ice_amount_due_to_basal_mass_flux" "tendency_of_ice_amount_due_to_conservation_error" "tendency_of_ice_amount_due_to_flow")
+                #***************************************************************************
+                else
+                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount"}
+	        fi
+            ;;
 	*)
 		echo "Unknown PISM version=${VERSION_pism} specified, exiting..."
                 exit 42
@@ -202,7 +325,7 @@ function generate_runoff_transform_units {
                 # We need to go from cummulative to delta T
                 # FIXME: What if a user wants to run more than one run in a pism chunk?
                 # Then, we need to find the TOTAL delta T over all the files in this chunk.
-                mecho "cdo -mulc,${Gt_to_kg_mult_factor} -mulc,${years_to_seconds_mult_factor} -divc,$CHUNK_SIZE_pism_standalone -sub -seltimestep,-1 $ifile -seltimestep,1 $ifile $ofile"
+                echo "cdo -mulc,${Gt_to_kg_mult_factor} -mulc,${years_to_seconds_mult_factor} -divc,$CHUNK_SIZE_pism_standalone -sub -seltimestep,-1 $ifile -seltimestep,1 $ifile $ofile"
                 cdo -s \
                         -mulc,${Gt_to_kg_mulc_factor} \
                         -divc,${years_to_seconds_divc_factor} \
@@ -220,16 +343,24 @@ function generate_runoff_transform_units {
                 cdo -s delvar,discharge_flux_cumulative $ofile tmp; mv tmp $ofile
                 PISM_MASS_LOSS_VARS="discharge_flux_cumulative_per_area,floating_basal_flux_cumulative,grounded_basal_flux_cumulative"
 		;;
-	"1.0" | "1.1")
-		#mecho "unit transform not needed in pism 1.0, skipping step silently"
+	"1.0" | "1.1" | "1.2")
+		#echo "unit transform not needed in pism 1.0, skipping step silently"
                 #cp $ifile $ofile
 		echo ""; echo "			* Transforming mass flux per year to mass flux per second for PISM 1.1   ${years_to_seconds_divc_factor}"
-		mecho "cdo -divc,${years_to_seconds_divc_factor} $ifile $ofile"
+		echo "cdo -divc,${years_to_seconds_divc_factor} $ifile $ofile"
 		cdo -s  -divc,${years_to_seconds_divc_factor}  $ifile    $ofile
-		ncatted -a units,tendency_of_ice_amount,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
-		;;
+                #***************************************************************************
+                #LA include iceberg model
+                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+		    ncatted -a units,tendency_of_ice_amount_due_to_surface_mass_flux,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+		    ncatted -a units,tendency_of_ice_amount_due_to_basal_mass_flux,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+                #***************************************************************************
+		else
+                    ncatted -a units,tendency_of_ice_amount,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+		fi
+                ;;
 	*)
-		echo "Unknown PISM version=${VERSION_pism} specified, exiting..."
+                echo "Unknown PISM version=${VERSION_pism} specified, exiting..."
                 exit 42
 	    ;;
     	esac
@@ -259,10 +390,31 @@ function generate_runoff_combine_fields {
                 cdo_command="$cdo_command_head $cdo_command_middle $cdo_command_tail"
                 $cdo_command
 		;;
-	"1.0"|"1.1")
-		# Only need tendency of ice amount, do not need to combine fields.
-		cp $ifile $ofile
-		;;
+	"1.0"|"1.1"|"1.2")
+                #***************************************************************************
+                #LA include iceberg model
+                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+                    cdo -s -splitname $ifile ${COUPLE_DIR}/ice_runoff_flux_
+                    #PISM_MASS_LOSS_ARRAY=$(echo $PISM_MASS_LOSS_VARS | sed s/,/\ /g )
+                    echo " * assign these variables to an array: ${PISM_MASS_LOSS_ARRAY}"
+                    first_varname=${PISM_MASS_LOSS_ARRAY[0]}; unset PISM_MASS_LOSS_ARRAY[0]
+                    echo " * assign these variables to an array: ${PISM_MASS_LOSS_ARRAY}"
+                    #rmlist="$rmlist ${COUPLE_DIR}/ice_runoff_flux_${first_varname}.nc"
+                    cdo_command_head="cdo -s "
+                    cdo_command_tail=" ${COUPLE_DIR}/ice_runoff_flux_${first_varname}.nc $ofile"
+                    for element in ${PISM_MASS_LOSS_ARRAY[@]}; do
+                            echo; echo "        * adding variable ${element} to cdo command"
+                            cdo_command_middle="$cdo_command_middle -add ${COUPLE_DIR}/ice_runoff_flux_${element}.nc"
+                            #rmlist="$rmlist ${COUPLE_DIR}/ice_runoff_flux_${element}.nc"
+                    done
+                    cdo_command="$cdo_command_head $cdo_command_middle $cdo_command_tail"
+                    $cdo_command 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                #***************************************************************************
+                else
+		    # Only need tendency of ice amount, do not need to combine fields.
+                    cp $ifile $ofile
+		fi
+                ;;
 	*)
 		echo "Unknown PISM version=${VERSION_pism} specified, exiting..."
                 exit 42
@@ -274,9 +426,15 @@ function generate_runoff_combine_fields {
 	"0.7")
 		ncrename -v floating_basal_flux_cumulative,total_ice_mass_loss_flux $ofile
 		;;
-	"1.0"|"1.1")
-		ncrename -v tendency_of_ice_amount,total_ice_mass_loss_flux $ofile
-		;;
+	"1.0"|"1.1"|"1.2")
+                #***************************************************************************
+                #LA include iceberg model
+                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+                    ncrename -v tendency_of_ice_amount_due_to_basal_mass_flux,total_ice_mass_loss_flux $ofile
+                else
+                    ncrename -v tendency_of_ice_amount,total_ice_mass_loss_flux $ofile
+		fi
+                ;;
     	esac
 }
 

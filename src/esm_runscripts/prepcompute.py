@@ -3,6 +3,14 @@ import time
 import subprocess
 import copy
 
+######################################
+# LA for icebergs
+from cdo import Cdo
+import glob
+import pandas as pd
+from .icb_apply_distribution_functions import *
+######################################
+
 import f90nml
 import yaml
 import stat
@@ -182,7 +190,7 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom":
+        if model == "fesom" and config["general"].get("with_icb", False):
             config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
@@ -202,7 +210,6 @@ def copy_files_to_thisrun(config):
         print("- Note that you can see your file lists in the config folder")
         print("- You will be informed about missing files")
 
-    counter = 0
     count_max = 90
     if (
         config["general"].get("iterative_coupling", False)
@@ -210,6 +217,7 @@ def copy_files_to_thisrun(config):
     ):
         if "files_to_wait_for" in config["general"]:
             for file_base in config['general'].get('files_to_wait_for'):
+                counter = 0
                 file = os.path.join(config['general']['experiment_couple_dir'], file_base)
                 while counter < count_max:
                     counter = counter + 1
@@ -223,7 +231,9 @@ def copy_files_to_thisrun(config):
 
     # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
     if "fesom" in config["general"]["valid_model_names"]:
-        if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
+        if config["general"].get("with_icb", False) and config["fesom"].get("use_icesheet_coupling", False):
+            #if not config["general"].get("iterative_coupling", False):
+            config = update_icebergs(config)
             if config["general"].get("run_number", 0) == 1:
                 if not os.path.isfile(
                     config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
@@ -231,7 +241,7 @@ def copy_files_to_thisrun(config):
                     with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
                         f.write("0")
             else:
-                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["experiment_restart_in_dir"], "iceberg.restart.ISM")))
+                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["restart_in_sources"]["icb_restart_ISM"])))
                 with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
                     f.write(str(num_lines))
 
@@ -243,12 +253,39 @@ def copy_files_to_thisrun(config):
     return config
 
 
+def update_icebergs(config):
+    if (
+        config["general"].get("with_icb", False)
+        and config["fesom"].get("update_icebergs", False)
+        and config["general"]["run_number"] > 1
+    ):
+       
+        print("* starting update icebergs")
+        icb_script  = config["fesom"].get("icb_script", "")
+        disch_file  = config["fesom"].get("disch_file", "")
+        iceberg_dir = config["fesom"].get("iceberg_dir", config['general']['experiment_couple_dir'])
+        mesh_dir    = config["fesom"]["mesh_dir"] #["namelist_changes"]["namelist.config"]["paths"]["meshpath"]
+        basin_file  = config["fesom"].get("basin_file", "")
+        icb_restart_file  = config["fesom"]["restart_in_sources"].get("icb_restart", "")
+        scaling_factor    = config["fesom"].get("scaling_factor", [1, 1, 1, 1, 1, 1])
+
+        print(" * use scaling factors ", scaling_factor)
+        ib = IcebergCalving(disch_file, mesh_dir, iceberg_dir, basin_file, icb_restart_file, scaling_factor=scaling_factor)
+        ib.create_dataframe()
+        ib._icb_generator()
+    return config
+
+
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
         print("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
+    #config = scale_icebergs(config)
+    #if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get("use_icebergs", False):
+    #    if not config["general"].get("iterative_coupling", False):
+    #        config = update_icebergs(config)
     return config
 
 

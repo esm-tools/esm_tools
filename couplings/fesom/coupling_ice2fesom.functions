@@ -3,11 +3,19 @@
 function ice2fesom {
     echo " *** S T A R T I N G    ice2fesom ***)"
 
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+    . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
+
     echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
-    if [[ $ICE_TO_FESOM -le 0 ]]; then
+    if [[ "x$ICE_TO_FESOM" == "x0" ]]; then
         echo " NOT generating ice forcing for ocean model"
 	echo "   since ICE_TO_FESOM=${ICE_TO_FESOM}"
 	return
+    else
+        echo " Only generating iceberg forcing so far ..."
+        iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+        return
     fi
 
     #
@@ -35,7 +43,7 @@ function ice2fesom {
     NOCOLOR='\033[0m'
     GREEN='\033[32m'
 
-    mecho "Grid method (ocean) : ${iter_coup_regrid_method_ice2oce}"
+    echo "Grid method (ocean) : ${iter_coup_regrid_method_ice2oce}"
     echo -e "   --> Grid method >>> ${GREEN}${iter_coup_regrid_method_ice2oce}${NOCOLOR} <<< ocean"
     case $iter_coup_regrid_method_ice2oce in
         "INTERPOLATE"|"REMAP")
@@ -184,4 +192,81 @@ function iterative_coupling_ice_fesom_rename_vars {
 
     cleanup_list="${cleanup_list} $(pwd)/ice_file_for_ocean.${INTERPOL_TYPE_OCE}.nc"
 }
+
+########################################################################
+########################################################################
+# Lars Ackermann 07.09.2020
+########################################################################
+function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
+    # iceberg coupling LA
+    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+
+    counter=0
+    COUNT_MAX=12
+    while [ ${counter} -lt ${COUNT_MAX} ]
+    do
+        echo "          * inside while loop "
+        if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
+            break
+        fi
+
+        echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
+        sleep 10
+        counter=$((counter+1))
+    done
+
+    latest_pism_output=${COUPLE_DIR}/../outdata/pism//latest_ex_file_pism.nc
+    if [[ -f ${latest_pism_output} ]]; then
+        pism_discharge_file=${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc
+        #pism_discharge_file=${latest_pism_output}
+    elif [[ -f ${SPINUP_FILE_pism} ]]; then
+        pism_discharge_file=${SPINUP_FILE_pism}
+    fi
+
+    echo "CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
+    echo "COUPLE_DIR: ${COUPLE_DIR}"
+    echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
+
+    cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+    
+    #module unload python
+    #if [ "$MACHINE" == "ollie" ]; then
+    #    module load python3/3.7.7_intel2020u2
+    #elif [ "$MACHINE" == "mistral" ]; then
+    #    module load anaconda3/bleeding_edge
+    #fi
+    #if [ -f ${COUPLE_DIR}/num_non_melted_icb_file ]; then
+    #    rm ${COUPLE_DIR}/num_non_melted_icb_file
+    #fi
+
+    #if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
+    #    if [[ ! -f ${COUPLE_DIR}/nod2d.out.rot ]]; then
+    #        python ${FUNCTION_PATH}/../utils/rotate_mesh.py ${MESH_DIR_fesom} ${COUPLE_DIR}
+    #        cp ${MESH_DIR_fesom}/elem2d.out ${COUPLE_DIR}/elem2d.out
+    #    fi
+    #    python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${COUPLE_DIR} ${COUPLE_DIR} ${BASIN_FILE}
+    #else
+    #    python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${COUPLE_DIR} ${BASIN_FILE}
+    #fi
+
+    #echo; echo "    * Finished iceberg generation"
+    #if [ -f ${COUPLE_DIR}/../restart/fesom/iceberg.restart.ISM ]; then
+    #    wc -l ${COUPLE_DIR}/../restart/fesom/iceberg.restart.ISM | awk '{ print $1 }' > ${COUPLE_DIR}/num_non_melted_icb_file
+    #fi
+    use_icesheet_coupling=1
+}
+
+#function get_ib_num_after_ice_sheet_coupling {
+#    _a="$( wc -l icb/LON.dat | awk '{ print $1 }' )"
+#    _b="$( cat ../icb/num_non_melted_icb_file )"
+#
+#    ib_num=$(( $_a + $_b ))
+#    general_replace_namelist_value namelist.config icebergs ib_num $ib_num
+#    general_replace_namelist_value namelist.config icebergs use_icesheet_coupling ".true."
+#}
+############################################################################
+############################################################################
+
+
 # -- last line

@@ -17,11 +17,27 @@ choose_computer.name:
             add_export_vars:
                 - "I_MPI_FABRICS=shm:tmi"
                 - "HDF5_ROOT=$HDF5ROOT"
-    mistral:
+    levante:
         environment_changes:
             add_export_vars:
-                - "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-                - "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-                - "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-                - "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+                #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+                #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+                #- "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+                #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+                #- "HDF5_ROOT=$HDF5ROOT"
+                - "UDUNITS2_ROOT=/home/a/a270124/model_codes/dependencies/udunits-2.2.28-6havf7"
+                - "FFTW_ROOT=/home/a/a270124/model_codes/dependencies/fftw-3.3.10-bnen2q"
+                - "PROJ5_ROOT=/home/a/a270124/model_codes/dependencies/proj-5.2.0-w7auht"
+                - "PETSC_DIR=/home/a/a270124/model_codes/pism/petsc-v3.17.4"
                 - "HDF5_ROOT=$HDF5ROOT"
+                - "LD_LIBRARY_PATH=/home/a/a270124/model_codes/dependencies/gsl-2.7-5ou4yk/lib:$LD_LIBRARY_PATH"
+    albedo:
+        environment_changes:
+            add_export_vars:
+                - "UDUNITS2_ROOT=/albedo/soft/sw/spack-sw/udunits/2.2.28-nzwb4bf/"
+                - "FFTW_ROOT=/albedo/soft/sw/spack-sw/fftw/3.3.10-pj3kzd2/"
+                #- "PROJ4_ROOT=/albedo/home/lackerma/.spack/sw/proj/4.9.2-lcmxjw5"
+                - "PROJ_ROOT=/albedo/soft/sw/spack-sw/proj/8.2.1-pq74r7k/"
+                - "PETSC_DIR=/albedo/home/lackerma/.spack/sw/petsc/3.17.1-s5b6i2f"
+                - "HDF5_ROOT=/albedo/soft/sw/spack-sw/hdf5/1.12.2-xwuyi5j/"
+                - "GSL_ROOT=/albedo/soft/sw/spack-sw/gsl/2.7.1-r4x7ty2/" #/albedo/home/lackerma/.spack/sw/gsl/2.7.1-lrzlyrm"

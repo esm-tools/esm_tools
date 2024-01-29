@@ -116,6 +116,7 @@ DEFAULTS_DIR = CONFIG_PATH + "/defaults"
 COMPONENT_PATH = CONFIG_PATH + "/components"
 NAMELIST_DIR = esm_tools.get_namelist_filepath()
 RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
+COUPLINGS_DIR = RUNSCRIPT_DIR + "../couplings"
 
 # global variables
 list_counter = 0
@@ -1898,8 +1899,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         for key in keys:
             # Avoid doing this for ``prev_run`` chapters, this is not needed as the
             # previous config is already resolved
-            if key == "prev_run":  # PrevRunInfo
-                continue  # PrevRunInfo
+            #if key == "prev_run":  # PrevRunInfo
+            if isinstance(key, str):
+                if ("prev_run" in key) or ("prev_chunk" in key):  # PrevRunInfo
+                    continue  # PrevRunInfo
             value = right[key]
             right[key] = recursive_run_function(
                 tree + [key], value, level, func, *args, **kwargs
@@ -3002,6 +3005,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 "esm_function_dir": CONFIG_PATH,
                 "esm_namelist_dir": NAMELIST_DIR,
                 "esm_runscript_dir": RUNSCRIPT_DIR,
+                "esm_couplings_dir": COUPLINGS_DIR,
                 "expid": "test",
             }
         )
@@ -3196,3 +3200,4 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         )
         recursive_run_function([], config, "atomic", purify_booleans, config)
         recursive_run_function([], config, "atomic", perform_actions, config)
+

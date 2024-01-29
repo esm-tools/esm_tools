@@ -9,28 +9,36 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
-# LA these are both iceberg related
-use_icebergs: False                 # turns on icebergs
-use_icesheet_coupling: False        # initializes new icebergs every restart
-# MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
-# below) whose source code contains the icebergs implementation
-icb_code: False
-
-with_wiso: false
-wiso_code: false
-
 required_plugins:
 - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+# MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
+# below) whose source code contains the icebergs implementation
+icb_code: false
+with_icb: false
+
+wiso_code: false
+with_wiso: false
+
+with_recom: false
 
 choose_version:
-  '2.5':
-    branch: "2.5"
+  "2.5":
+    branch: "icb_into_v2.5" #LA: we need a correct name for it once everything is merged
+    destination: "fesom-2.5"
+    wiso_code: true
+    icb_code: true
+    add_namelists:
+        - namelist.dyn
+    add_config_files:
+        tra:     tra
+        dyn:     dyn
+    namelist_dir: "${model_dir}/config/"
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x
 git-repository:
-- https://github.com/FESOM/fesom2.git
-contact: "jan.streffing(at)awi.de, dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
+- https://github.com/ackerlar/fesom2.git # LA: only temporarily until everything paleo related is merged into a specific "paleo" branch!!
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 restart_rate: "12"
@@ -137,6 +145,7 @@ choose_resolution:
                 nx: 11087062
 
 
+
 restart_in_files:
         par_oce_restart: par_oce_restart
         par_ice_restart: par_ice_restart
@@ -200,8 +209,24 @@ outdata_sources:
 outdata_targets:
         fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
-choose_use_icebergs:
+choose_icb_code:
         True:
+            use_icebergs: "${with_icb}"
+            use_icesheet_coupling: "${with_icb}"
+            add_namelist_changes:
+                namelist.config:
+                    icebergs:
+                        use_icebergs: "${use_icebergs}"
+                        use_icesheet_coupling: "${use_icesheet_coupling}"
+                        steps_per_ib_step: 8
+       
+choose_with_icb:
+        True:
+            use_icebergs: True                 # turns on icebergs
+            use_icesheet_coupling: True        # initializes new icebergs every restart
+            update_icebegs: True
+
+            icb_inputs: [longitude,latitude,length,height,scaling,felem]
 
             add_restart_in_files:
                     icb_restart: icb_restart
@@ -217,57 +242,56 @@ choose_use_icebergs:
             add_outdata_sources:
                     buoys_track: "buoys_track.nc"
 
-            add_namelist_changes:
-                    namelist.io:
-                            nml_list:
-                                    io_list(:): ["icb", "1", "m", 4]
+            choose_general.iterative_coupling:
+                    True:
+                            choose_general.chunk_number:
+                                    1:
+                                            disch_file: "${ini_disch_file}"
+                                    "*":
+                                            disch_file: "${general.experiment_couple_dir}/latest_discharge.nc" 
 
             choose_use_icesheet_coupling:
                     true:
-                            choose_general.chunk_number:
+                            choose_general.run_number:
                                     1:
                                             iceberg_dir: "${ini_iceberg_dir}"
                                     "*":
                                             iceberg_dir: "${general.experiment_couple_dir}"
 
-                            choose_general.run_number:
-                                    1:
-                                            input_sources:
-                                                    num_non_melted_icb_file: "${ini_iceberg_dir}/num_non_melted_icb_file"
-                                    "*":
-                                            input_sources:
-                                                    num_non_melted_icb_file: "${general.experiment_couple_dir}/num_non_melted_icb_file"
-
-                            input_files:
-                                    num_non_melted_icb_file: "num_non_melted_icb_file"
-
-                            input_in_work:
+                            add_input_files:
                                     num_non_melted_icb_file: "num_non_melted_icb_file"
 
                     "*":
                             iceberg_dir: "${ini_iceberg_dir}"
 
-
-            input_in_work:
-                    longitude: "icb_longitude.dat"
+            choose_update_icebergs:
+                    true:
+                            add_input_sources:
+                                    "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
+                   
+                    false:
+                            add_input_sources:
+                                    "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat_@YEAR@0101-@YEAR@1231
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file_@YEAR@0101-@YEAR@1231"
+                            
+            add_input_in_work:
                     latitude: "icb_latitude.dat"
+                    longitude: "icb_longitude.dat"
                     length: "icb_length.dat"
                     height: "icb_height.dat"
                     scaling: "icb_scaling.dat"
+                    felem: "icb_felem.dat"
+                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
-            input_sources:
-                    longitude: "${iceberg_dir}/LON.dat"
-                    latitude: "${iceberg_dir}/LAT.dat"
-                    length: "${iceberg_dir}/LENGTH.dat"
-                    height: "${iceberg_dir}/HEIGHT.dat"
-                    scaling: "${iceberg_dir}/SCALING.dat"
-
-            input_files:
-                    longitude: "longitude"
+            add_input_files:
                     latitude: "latitude"
+                    longitude: "longitude"
                     length: "length"
                     height: "height"
                     scaling: "scaling"
+                    felem: "felem"
+                    #num_non_melted_icb_file: "num_non_melted_icb_file"
 
 log_files:
         clock: clock
@@ -411,14 +435,34 @@ namelist_changes:
 
                         runoff_data_source: ${runoff_data_source}
                         sss_data_source: ${sss_data_source}
-choose_icb_code:
-    True:
-        add_namelist_changes:
-            namelist.config:
-                icebergs:
-                    use_icebergs: "${use_icebergs}"
-                    use_icesheet_coupling: "${use_icesheet_coupling}"
-                    steps_per_ib_step: 8
+
+use_landice_water: False
+choose_general.iterative_coupling:
+        true:
+                add_output_targets:
+                        fesom: "*.fesom.*.nc"
+                        
+                choose_general.chunk_number:
+                        1:
+                                use_landice_water: False
+                        "*":
+                                use_landice_water: True
+                
+                fwf_path: "${general.experiment_couple_dir}" 
+                
+                add_namelist_changes:
+                            namelist.forcing:
+                                    land_ice:
+                                            use_landice_water: "${use_landice_water}"
+                                            landice_start_mon: 1
+                                            landice_end_mon: 12
+                                            fwf_path: "${fwf_path}" 
+                outdata_targets:
+                        fesom: "*.fesom.*.nc"
+        '*':
+                use_landice_water: False
+                outdata_targets:
+                        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

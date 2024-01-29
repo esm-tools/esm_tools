@@ -5,11 +5,30 @@ ice2echam() {
         echo "                =================================================================="
         echo "                 *** S T A R T I N G    ice2echam *** "; echo
 
+        . ${FUNCTION_PATH}/../general/general_lists.functions
+        . ${FUNCTION_PATH}/../general/coupling_general.functions
+
         ISM_TO_ECHAM_update_orography=${ISM_TO_ECHAM_update_orography:-1}
         ISM_TO_ECHAM_update_glacial_mask=${ISM_TO_ECHAM_update_glacial_mask:-1}
         ISM_TO_ECHAM_update_land_runoff=${ISM_TO_ECHAM_update_land_runoff:-1}
+        HOSING_CORRECTION=${HOSING_CORRECTION:-0}
 
         :> nco_stderr_ice2echam; :> cdo_stderr_ice2echam
+        
+        counter=0
+        COUNT_MAX=60
+        while [ ${counter} -lt ${COUNT_MAX} ]
+        do
+            echo "          * inside while loop "
+            if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
+                break
+            fi
+
+            echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not foung. Waiting for 10 seconds ..."
+            sleep 10
+            counter=$((counter+1))
+        done
+        
         read_names ice atmosphere
         define_echam_names
         if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
@@ -40,7 +59,7 @@ iterative_coupling_ice_echam6_update_orography() {
         update_orography_prepare_calnoro
         update_orography_run_calnoro
         update_orography_generate_target_orography_file
-        set_in_jsbach_restart_file elevation ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc OROMEA unpack
+        #set_in_jsbach_restart_file elevation ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc OROMEA unpack
         update_orography_set_namelist_modifications_next_echam_run
         echo; echo "                 ...done."; echo
 }
@@ -60,11 +79,8 @@ iterative_coupling_ice_echam6_update_glacial_mask() {
         set_glacial_mask_jsbach_update_init_file
         cd $here
         rm -rf ${COUPLE_DIR}/jsbach_init_file_modifications
-        set_glacial_mask_jsbach_update_cover_fract
-        set_glacial_mask_jsbach_update_vegetation_ratios
-        # PG: Next step skipped, removed directly in ECHAM
-        # WARNING: Since we have no budget of removed soil moisture, this model effectively does NOT conserve mass!
-        # set_glacial_mask_jsbach_update_soil_moisture
+        set_glacial_mask_jsbach_update_restart_jsbach
+        set_glacial_mask_jsbach_update_restart_veg
         echo; echo "                 ...done."; echo
 }
 
@@ -74,6 +90,12 @@ iterative_coupling_ice_echam6_update_land_runoff() {
         update_land_runoff_select_glacial_discharge
         regrid_to_echam ${COUPLE_DIR}/ice_discharge.nc
         update_land_runoff_fill_missing
+        if [ "x${HOSING_CORRECTION}" == "x1" ]; then
+            echo; echo "            * Correcting freshwater input by hosing "
+            distribute_total_discharge_over_ocean
+        else
+            echo; echo "            * NOT correcting freshwater input by hosing "
+        fi
         update_land_runoff_prepare_for_oasis
         update_land_runoff_set_namcouple_override
         update_land_runoff_set_namelist_modifications_next_echam_run
@@ -126,21 +148,44 @@ update_orography_run_calnoro() {
         echo; echo "                *   running CALNORO"
         ofile=${COUPLE_DIR}/calnoro_output.nc
         if [ ! -f calnoro ]; then
-                if [ ! -f ${FUNCTION_PATH}/calnoro ]; then
-                        echo "                   !!!   FATAL ERROR: Compiled external utility CALNORO not found"
-                        echo "                   !!!   Looking in: ${FUNCTION_PATH}/iterative_coupling/utils/_build"
-                        echo "                   !!!   FATAL ERROR: Please compile this program using the install_calnoro.sh script!"
-                        exit 42
+                if [ ! -f ${FUNCTION_PATH}/../utils/calnoro ]; then
+                        if [ -f ${FUNCTION_PATH}/../utils/install_calnoro.sh ]; then
+                                echo "                   install_calnoro.sh found. Running installation ..."
+                                currentdir=$(pwd)
+                                cd ${FUNCTION_PATH}/../utils/
+                                ./install_calnoro.sh ${MACHINE}
+                                cd ${currentdir}
+                                cp ${FUNCTION_PATH}/../utils/calnoro .
+                        else
+                                echo "                   !!!   FATAL ERROR: Compiled external utility CALNORO not found"
+                                echo "                   !!!   Looking in: ${FUNCTION_PATH}/../utils/"
+                                echo "                   !!!   FATAL ERROR: Please compile this program using the install_calnoro.sh script!"
+                                exit 42
+                        fi
                 else
-                        cp ${FUNCTION_PATH}/calnoro .
+                        cp ${FUNCTION_PATH}/../utils/calnoro .
                 fi
         fi
         # Make sure dimension order is correct:
         change_lonlat topodata.nc OROMEA
         
-	echo ${RES_echam/T/} | ./calnoro > ${COUPLE_DIR}/calnoro_stdout_stderr 2>&1 
+        module list
+        if [ "$MACHINE" == "levante" ]; then
+            export LD_LIBRARY_PATH=/sw/spack-levante/netcdf-fortran-4.5.3-jlxcfz/lib/:$LD_LIBRARY_PATH
+        elif [ "$MACHINE" == "albedo" ]; then
+            export LD_LIBRARY_PATH=/albedo/soft/sw/spack-sw/netcdf-fortran/4.5.4-yb7woqz/lib/:$LD_LIBRARY_PATH
+	        tmp_mods=$( module list -t | tail -n +2 )
+            module purge
+        fi
+        
+        echo ${RES_echam/T/} | ./calnoro > ${COUPLE_DIR}/calnoro_stdout_stderr 2>&1 
+        
+        if [ "$MACHINE" == "albedo" ]; then
+            module load $tmp_mods
+        fi
+        
         cdo -s -f nc -setgrid,$RES_echam -invertlat sso_par_fil.srv $ofile 2>>cdo_stderr_ice2echam
-        rm sso_par_fil.srv topodata.nc
+        #rm sso_par_fil.srv topodata.nc
 }
 
 ## @fn update_orography_generate_target_orography_file() 
@@ -185,6 +230,8 @@ update_orography_generate_target_orography_file() {
                 ${ifile} \
                 ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
                 ${ofile} 2>>cdo_stderr_ice2echam
+        
+        ln -sf ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_target_orography.nc
         # Destroy the time dimension; just in case
 	#if ncdump -h $ofile | grep -q "time"; then
 	#	ncwa -a time $ofile tmp; mv tmp $ofile
@@ -245,7 +292,7 @@ set_glacial_mask_echam_restart_file() {
         dfile=${dfile%.*}_${RES_echam}grid.nc
 
         cdo -s -setmisstoc,0 $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile 
-        cdo -s -gec,0.5 $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile   # PG: Ensure the mask is binary after regridding.
+        cdo -s -gec,${ECHAM_GLACIAL_THRESHOLD} $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile   # PG: Ensure the mask is binary after regridding.
 
         change_lonlat $ifile ice_mask
         change_lonlat $dfile ice_domain
@@ -261,11 +308,20 @@ set_glacial_mask_echam_restart_file() {
         cdo -s -selvar,glac ${ECHAM_RESTART_FILE} just_glac.nc 2>> cdo_stderr_ice2echam
         cdo -s -ifthenelse -setmisstoc,0 $dfile -chname,ice_mask,glac $ifile just_glac.nc just_glac_new.nc 2>> cdo_stderr_ice2echam
 
-        ncdump just_glac_new.nc | sed s/float/double/g | ncgen -o tmp; mv tmp just_glac_new.nc
-        ncks -A just_glac_new.nc echam_with_ice_mask.nc
+        ncdump just_glac_new.nc | sed s/int/double/g | ncgen -o tmp; mv tmp just_glac_new.nc
+        # This multipliation transforms "float" into "double"
+        ncap=${ncap:-ncap2} 
+        $ncap -s "glac=glac*1.0000000000000;" \
+        just_glac_new.nc \
+        just_glac_new.tmp.nc
+        ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc 
 
-        mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
+        #mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
+        ncatted -O -a history_of_appended_files,global,d,, echam_with_ice_mask.nc tmp.restart
+        ncatted -O -a history,global,d,, tmp.restart ${ECHAM_RESTART_FILE}
         ncrename -v ice_mask,glac $ifile
+        rm just_glac_new.nc
+        rm just_glac_new.tmp.nc
 }
 
 ## @fn set_glacial_mask_echam_make_dummy_jan_surf() 
@@ -275,12 +331,21 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
         # The echam restart file has already been modified with the "correct"
         # glacial mask", construct a dummy one from the restart
 	#CLEANUP cp ${BASE_DIR}/${EXP_ID}/awicm/input/echam/unit.24 dummy_jan_surf.nc
-	cp ${INIT_DIR_echam}/unit.24 dummy_jan_surf.nc
+        cp ${INIT_DIR_echam}/unit.24 dummy_jan_surf.nc
+        # Fix Lu: ---------------------------
+        if [[ ${DOMAIN_pism} == "nhem" ]]; then
+                cdo setclonlatbox,0,0,360,0,90 -selvar,GLAC dummy_jan_surf.nc tmp
+                cdo -replace dummy_jan_surf.nc tmp dummy_jan_surf.nc2
+                mv dummy_jan_surf.nc2 dummy_jan_surf.nc
+                rm tmp
+        fi
+        # Fix Lu: ---------------------------
         cdo -s replace dummy_jan_surf.nc \
                 ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
                 tmp && mv tmp dummy_jan_surf.nc
         # Fix Albedo where there are glaciers:
-        echam_albedo_on_glaciers=0.7
+        #echam_albedo_on_glaciers=0.7
+        echam_albedo_on_glaciers=${ECHAM_ALBEDO_ON_GLACIERS}
         cdo -s \
                 -setmisstoc,${echam_albedo_on_glaciers} -setrtomiss,-1,2 \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
@@ -309,8 +374,8 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 dummy_jan_surf_ALAKE.nc
         cdo -s replace \
                 dummy_jan_surf.nc \
-                -chname,${echam_glacial_mask_name},ALAKE dummy_jan_surf_ALAKE.nc \
-                tmp; mv tmp dummy_jan_surf.nc
+                dummy_jan_surf_ALAKE.nc tmp #-chname,${echam_glacial_mask_name},ALAKE dummy_jan_surf_ALAKE.nc \
+        mv tmp dummy_jan_surf.nc
 
         cdo -s \
                 -setmisstoc,1 -setrtomiss,-1,2 \
@@ -335,9 +400,21 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
 set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
-        cp ${FUNCTION_PATH}/jsbach_init_file .
-        cp ${FUNCTION_PATH}/../iterative_coupling/utils/_build/mo_kinds.mod .
-        cp ${FUNCTION_PATH}/../iterative_coupling/utils/_build/mo_vegparams.mod .
+        if [ -f jsbach_init_file ]; then
+                cp ${FUNCTION_PATH}/../utils/jsbach_init_file .
+        elif [ -f ${FUNCTION_PATH}/../utils/install_jsbach_init_file.sh ]; then
+                echo "                   install_jsbach_init_file.sh found. Running installation ..."
+                currentdir=$(pwd)
+                cd ${FUNCTION_PATH}/../utils/
+                ./install_jsbach_init_file.sh ${MACHINE}
+                cd ${currentdir}
+                cp -v ${FUNCTION_PATH}/../utils/jsbach_init_file .
+        else
+                echo -e "\t\t E R O R R --- binary missing, don't know how to proceed"
+                exit
+        fi
+        cp ${FUNCTION_PATH}/../utils/_build/mo_kinds.mod .
+        cp ${FUNCTION_PATH}/../utils/_build/mo_vegparams.mod .
         cleanup_list="$cleanup_list jsbach_init_file mo_kinds.mod mo_vegparams.mod"
         # Here we place a slimmed-down version of the Veronika Gayler script:
         res_atm=${RES_echam}
@@ -463,9 +540,10 @@ EOF
             cp ${pool_land}/${LUH_states}.gz .
             gunzip ${LUH_states}.gz
           fi
-          typeset -Z 4 yr=${year_cf}
+          #typeset -Z4 yr=${year_cf}
+          yr=${year_cf}
           while [[ ${yr} -le ${year_cf2} ]]; do
-            cdo selyear,${yr} ${LUH_states} LUH_states_${yr}_${res_atm}.nc
+            cdo -s selyear,${yr} ${LUH_states} LUH_states_${yr}_${res_atm}.nc
             (( yr = yr + 1 ))
           done
         fi
@@ -474,118 +552,493 @@ EOF
         ln -sf ${pool_land}/soil_parameters_${res_atm}.nc .
         echo "                -   Running jsbach_init_file (working dir: `pwd`)"
         chmod 755 jsbach_init_file
-        ./jsbach_init_file
+        ./jsbach_init_file > ${COUPLE_DIR}/jsbach_init_file_stdout_stderr 2>&1
         if [[ $? -eq 0 ]]; then
                 echo -e "\t\t -   ...finished with external program jsbach_init_file!"
         else
                 echo "error in jsbach_init_file"
                 exit 1
         fi
-        mv jsbach_${res_atm}_11tiles_5layers_1850.nc ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc  
+        # BUG: How do we know what the output file is called?
+        mv jsbach_T63GENERIC_11tiles_5layers_1850_dynveg.nc \
+                ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc  
         echo :> ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat
+        
+        ############################################################################
+        # LA UPDATE
+        ln -sf ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_jsbach_init_file.nc
+        #cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${WORK_DIR}/jsbach.nc
+        ############################################################################
+        
         echo "LAND_BOUNDARY_CONDITIONS_jsbach=${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc" > ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat
         add_to ${COUPLE_DIR}/jsbach_init_override_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.dat jsbach_init_override.dat config jsbach
 }
 
-## @fn set_glacial_mask_jsbach_update_cover_fract() 
-set_glacial_mask_jsbach_update_cover_fract() {
-        echo; echo "                *   updating land cover fractions in jsbach restart file"
+set_glacial_mask_jsbach_update_restart_jsbach() {
+        echo; echo "                *   updating land cover fractions in jsbach restart file >>jsbach<<"
         echo -e "\t\t-   Making a temporary directory to work in"
+        startdir=$(pwd)
+        if [ -d ${COUPLE_DIR}/update_land_cover_fractions ]; then
+                # Throw away the temporary working directory from last time to
+                # avoid merge problems in the next coupling iteration:
+                rm -rf ${COUPLE_DIR}/update_land_cover_fractions
+        fi
         mkdir -p ${COUPLE_DIR}/update_land_cover_fractions; cd ${COUPLE_DIR}/update_land_cover_fractions
         echo -e "\t\t-   determining where the glacial mask has advanced and retreated"
         echo -e "\t\t-   New JSBACH Init File: ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
-        echo -e "\t\t-   Old JSBACH Init File: $(readlink ${FORCING_DIR_jsbach}/jsbach.nc)"
-        cdo -selvar,glac -sub \
+        echo -e "\t\t-   Old JSBACH Init File: ${FORCING_DIR_jsbach}/jsbach.nc"
+        cdo -s -selvar,glac -sub \
             ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
             ${FORCING_DIR_jsbach}/jsbach.nc \
             ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_land_cover_fractions/cdo_stderr_ice2echam
-        echo ""; echo -e "\t\t-   Running Python routine to modify restart cover fractions for jsbach.nc ${RESTART_DIR_jsbach}!"
-        echo -e "\t\t-    Arguments:"
-        echo -e "\t\t     ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
-        echo -e "\t\t     $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)"
-        echo -e "\t\t     ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc"
-        python ${FUNCTION_PATH}/modify_restart_cover_fract.py \
-            ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
-            $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) \
-            ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc \
-            $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
-        cp -v $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
-        cp -v $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${COUPLE_DIR}/update_land_cover_fractions/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
-        echo -e "\t\t    Replacing in restart file"
-        for cover_fract_variable in cover_fract cover_fract_pot; do
-                cdo replace \
-                        $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) \
-                        ${COUPLE_DIR}/update_land_cover_fractions/${cover_fract_variable}_new_packed.nc \
-                        tmp 2>> ${COUPLE_DIR}/cdo_stderr_ice2echam;
-                mv tmp $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
+        
+        # Make two masks: one for glacial retreat, and one for glacial advance
+        cdo -s gtc,0 ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc
+        cdo -s gtc,0 -mulc,-1 ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc
+        sum_new_glaciers=$(cdo -s -output -fldsum -gtc,0 ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc | tr -d "[:blank:]")
+        sum_new_land=$(cdo -s -output -fldsum -gtc,0 -mulc,-1 ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc | tr -d "[:blank:]")
+        echo -e "\t\t- Total number of new glacial cells: >>>$sum_new_glaciers<<<"
+        echo -e "\t\t- Total number of new deglacial cells: >>>$sum_new_land<<<"
+
+        if [[ $sum_new_glaciers -eq 0 ]] && [[ $sum_new_land -eq 0 ]]; then
+                echo -e "\t\t- >>>INFO<<< No new land or new glaciers, this routine will be skipped..."
+                newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
+                ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_jsbach_restart_file.nc
+                return
+        fi
+
+        newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
+        # Make a backup copy
+        #cp $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
+        cp ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
+        echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
+        # Ensure that the unpack binary is here:
+        if [ ! -f unpack ]; then
+                if [ -f ${FUNCTION_PATH}/../utils/unpack ]; then
+                        #cp -v ${FUNCTION_PATH}/../utils/unpack ${COUPLE_DIR}/
+                        cp -v ${FUNCTION_PATH}/../utils/unpack .
+                elif [ -f ${FUNCTION_PATH}/../utils/install_jsbach_pack_unpack.sh ]; then
+                        echo "                   install_jsbach_pack_unpack.sh found. Running installation ..."
+                        currentdir=$(pwd)
+                        cd ${FUNCTION_PATH}/../utils/
+                        ./install_jsbach_pack_unpack.sh ${MACHINE}
+                        cd ${currentdir}
+                        #cp -v ${FUNCTION_PATH}/../utils/unpack ${COUPLE_DIR}/
+                        cp -v ${FUNCTION_PATH}/../utils/unpack .
+                else
+                        echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
+                        exit
+                fi
+        fi
+        
+        echo " *** unpack binary found here: $(pwd) " 2>&1 > ${COUPLE_DIR}/unpack_script_stdout_stderr
+        
+        # Copy the files here:
+        cp ${newest_jsbach_restart_file} ./
+        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ./
+        echo -e "\t\t- Running unpack binary with arguments:"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/unpack_file.ksh"
+        echo -e "\t\t- Restart File: $(basename ${newest_jsbach_restart_file})"
+        echo -e "\t\t- Mask file: $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
+        echo "$(module list)"
+        ${FUNCTION_PATH}/../utils/unpack_file.ksh \
+                $(basename $newest_jsbach_restart_file) \
+                $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc) \
+                2>&1 > ${COUPLE_DIR}/unpack_script_stdout_stderr
+
+        echo -e "\t\t- Listing files after program execution:"
+        ls -ratl
+        restartfile=2d_$(basename ${newest_jsbach_restart_file})
+        # 'cdo showvar' does not work for variables with more than three dimensiones
+        echo "ncdump -h ${restartfile} | grep 'double ' | cut -f 2 -d ' ' | cut -f1 -d '('"
+        variables=$(ncdump -h ${restartfile} | grep 'double ' | cut -f 2 -d ' ' | cut -f1 -d '(')
+        echo $variables
+
+        # Rename the "tiles" dimension to "time", since cdo can only handle 4D
+        # variables if one is called time. This will be corrected again below
+        ncrename -O -d tiles,time 2d_$(basename ${newest_jsbach_restart_file}) 
+        for var in ${variables}; do
+                ncks -O --no_abc \
+                        -v ${var} \
+                        2d_$(basename ${newest_jsbach_restart_file}) \
+                        2d_restart_${EXP_ID}_jsbach_${var}.nc
+
+                if [ ! -f 2d_restart_${EXP_ID}_jsbach_${var}.nc ]; then
+                        echo -e "\t\t !!! WARNING !!! -- no file for ${var}"
+                        echo -e "\t\t                    continue loop"
+                        continue
+                fi
+
+                # Keep the directory clean: make one directory for each variable:
+                here=$(pwd); mkdir -p ${var}; mv 2d_restart_${EXP_ID}_jsbach_${var}.nc ${var}; cd ${var}
+                echo -e "\t\t- Updating JSBACH restart file -- ${var}\n"
+                case ${var} in
+                        cover_fract | cover_fract_pot | veg_ratio)
+                                echo -e "\t\t- Need to set correct cover fractions for retreating and advancing glaciers for $var"
+                                # Split to all the land tiles
+                                #
+                                # NOTE: We use splitrec because we need to
+                                # split fake "timesteps" and not "layers" since
+                                # cdo can't handle 4D without time...remember
+                                # that tiles was renamed to time above.
+                                cdo -s splitrec 2d_restart_${EXP_ID}_jsbach_${var}.nc 2d_restart_${EXP_ID}_jsbach_${var}_tile
+                                mergelist=""
+                                for tile in $(ls 2d_restart_${EXP_ID}_jsbach_${var}_tile0000??.nc); do
+                                        case ${tile} in
+                                                2d_restart_${EXP_ID}_jsbach_${var}_tile000001.nc )
+                                                        echo -e "\t\t Glacier landpoints for ${var} on ${tile}"
+                                                        # New glaciers must have exactly 1 or keep the old value
+                                                        cdo -s ifthenelse \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
+                                                                ${tile} \
+                                                                ${tile}.tmp
+                                                        # New land must get 1e-10 or keep the old value
+                                                        cdo -s ifthenelse \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                                                -mulc,1e-10 ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                                                ${tile}.tmp \
+                                                                ${tile}
+
+                                                        ;;
+                                                2d_restart_${EXP_ID}_jsbach_${var}_tile000007.nc )
+                                                        echo -e "\t\t Tundra for ${var} on ${tile}"
+                                                        # New Glaciers need to be exactly 0 everywhere except on tile 1
+                                                        cdo -s ifthenelse \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
+                                                                -mulc,0 ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
+                                                                ${tile} \
+                                                                ${tile}.tmp
+                                                        # New land gets the maximum allowed value
+                                                        # NOTE: This is only valid for 11 tiles!!
+                                                        # BUG(?): What about the negative values that appear here?
+                                                        cdo -s -subc,1e-9 \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                                                ${tile}_maxveg.nc
+                                                        cdo -s ifthenelse \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                                                ${tile}_maxveg.nc \
+                                                                ${tile}.tmp \
+                                                                ${tile}
+                                                        ;;
+                                                *)
+                                                        echo -e "\t\t Nothing special for ${var} on ${tile}"
+                                                        # New glacial tiles get exactly 0
+                                                        cdo -s ifthenelse \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
+                                                                -mulc,0 ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
+                                                                ${tile} ${tile}.tmp
+                                                        # New land cells get 1e-10: smallest allowed minium
+                                                        cdo -s -ifthenelse \
+                                                                ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                                                -mulc,1e-10 ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                                                ${tile}.tmp \
+                                                                ${tile}
+                                                        ;;
+                                        esac
+                                        # Add the fake time axis after the case
+                                        # statement, since the ifthenelse
+                                        # clause might do strange things with
+                                        # the time axis otherwise:
+                                        tile_number=$(echo $tile | rev | cut -d_ -f1 | rev | sed s/tile// | sed s/\.nc//)
+                                        cdo -settaxis,${tile_number}-01-01,00:00:00 $tile ${tile}.time; mv ${tile}.time ${tile}
+                                        mergelist="$mergelist $tile"
+                                done
+                                cdo -s -O mergetime $mergelist ${var}.tmp
+                                # Ensure the name is correct
+                                cdo -s setvar,$var ${var}.tmp 2d_restart_${EXP_ID}_jsbach_${var}.nc
+                                ;;
+                        soil_moisture)
+                                echo -e "\t\t- Need to change soil moisture for $var"
+                                ;;
+                        layer_moisture)
+                                echo -e "\t\t- Need to change layer moisture for $var"
+                                # NOTE: The layer moisture can't exceed the
+                                # holding capacity, which changes under (new)
+                                # glacier cells. Since the glacial mask was
+                                # used to construct the jsbach.nc forcing file,
+                                # we use those values for new glacial cells:
+                                #
+                                # NOTE 2: the layer moisture variable is called
+                                # layer_moist in jsbach init file, not layer
+                                # moisture. Therefore, the setvar command needs
+                                # to rename it
+                                cdo -s -setvar,${var} -ifthenelse \
+                                        ${COUPLE_DIR}/update_land_cover_fractions/new_non_glaciers.nc \
+                                        -selvar,layer_moist ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                                        2d_restart_${EXP_ID}_jsbach_${var}.nc 2d_restart_${EXP_ID}_jsbach_${var}.tmp
+                                cdo -s -setvar,${var} -ifthenelse \
+                                        ${COUPLE_DIR}/update_land_cover_fractions/new_glaciers.nc \
+                                        -selvar,layer_moist ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+                                       2d_restart_${EXP_ID}_jsbach_${var}.tmp 2d_restart_${EXP_ID}_jsbach_${var}.nc
+                                ;;
+                esac
+                cd $here
         done
+        mergelist=""
+        for var in ${variables}; do
+                ncrename -d .time,tiles ${var}/2d_restart_${EXP_ID}_jsbach_${var}.nc 2>&1 >> ${COUPLE_DIR}/nco_stderr_ice2echam
+                mergelist="$mergelist ${var}/2d_restart_${EXP_ID}_jsbach_${var}.nc"
+        done
+        echo -e "\t\t- Creating merge list"
+        # For debugging:
+        #echo "Done constructing merge list and renaming time to tiles, these files will be merged"
+        #for f in $mergelist; do
+        #        ls -l $f
+        #done
+        # Merge with ncks, since cdo has issues:
+        echo -e "\t\t- Merging with ncks, as cdo has problems"
+        ofile=2d_restart_${EXP_ID}_jsbach_merged.nc
+        for f in $mergelist; do
+                ncks -A -h $f $ofile
+        done
+        echo -e "\t\t- Done merging, now we need to fix the tiles dimension to be limited again rather than unlimited"
+        # Turn "tiles" back to a limited dimension:
+        ncks --fix_rec_dmn tiles $ofile -o tmp; mv tmp $ofile
+        echo -e "\t\t- Finished with modification of variables, now we need to repack"
+        
+        # Ensure that the pack binary is here:
+        if [ ! -f pack ]; then
+                #if [ -f ${FUNCTION_PATH}..//utils/_build/pack ]; then
+                #        cp -v ${FUNCTION_PATH}..//utils/_build/pack .
+                if [ -f ${FUNCTION_PATH}/../utils/pack ]; then
+                        cp -v ${FUNCTION_PATH}/../utils/pack .
+                else
+                        echo -e "\t\t E R O R R --- pack binary missing, don't know how to proceed"
+                        exit
+                fi
+        fi
+        # Copy the files here:
+        cp ${newest_jsbach_restart_file} .
+        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc .
+        echo -e "\t\t- Running pack binary with arguments:"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/pack_file.ksh"
+        echo -e "\t\t- Restart File: $(readlink -f ${ofile})"
+        echo -e "\t\t- Mask file: $(readlink -f ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
+        echo -e "\n\t\t - NOTE: Errors with >VARDIMIDS (value 2) is out of range (1:1)< can be ignored (maybe?)"
+        ${FUNCTION_PATH}/../utils/pack_file.ksh \
+                $(basename $ofile) \
+                $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)
+
+        echo -e "\t\t- Listing files after program execution:"
+        ls -ratl
+
+        mv 1d_$(basename $ofile) ${newest_jsbach_restart_file}
+        ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_jsbach_restart_file.nc
         # Go back to the previous directory
-        cd -
+        cd ${startdir}
 }
 
-## @fn set_glacial_mask_jsbach_update_vegetation_ratios
-set_glacial_mask_jsbach_update_vegetation_ratios() {
-        echo; echo -e "\t\t*    updating vegetation ratios in jsbach restart file"
+set_glacial_mask_jsbach_update_restart_veg() {
+        echo; echo "                *   updating active and bare plant fractions in jsbach restart file >>veg<<"
         echo -e "\t\t-   Making a temporary directory to work in"
-        mkdir -p ${COUPLE_DIR}/update_veg_ratios; cd ${COUPLE_DIR}/update_veg_ratios
+        startdir=$(pwd)
+        if [ -d ${COUPLE_DIR}/update_veg ]; then
+                # Throw away the temporary working directory from last time to
+                # avoid merge problems in the next coupling iteration:
+                rm -rf ${COUPLE_DIR}/update_veg
+        fi
+        mkdir -p ${COUPLE_DIR}/update_veg; cd ${COUPLE_DIR}/update_veg
 
+        # TODO: This next block is repeated code, it should be made it's own function
         echo -e "\t\t-   determining where the glacial mask has advanced and retreated"
         echo -e "\t\t-   New JSBACH Init File: ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
         echo -e "\t\t-   Old JSBACH Init File: $(readlink ${FORCING_DIR_jsbach}/jsbach.nc)"
-        cdo -selvar,glac -sub \
+        cdo -s -selvar,glac -sub \
             ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
             ${FORCING_DIR_jsbach}/jsbach.nc \
-            ${COUPLE_DIR}/update_veg_ratios/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_veg_ratios/cdo_stderr_ice2echam
+            ${COUPLE_DIR}/update_veg/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_veg/cdo_stderr_ice2echam
+        # Make two masks: one for glacial retreat, and one for glacial advance
+        cdo -s gtc,0 ${COUPLE_DIR}/update_veg/jsbach_glac_diff.nc ${COUPLE_DIR}/update_veg/new_glaciers.nc
+        cdo -s gtc,0 -mulc,-1 ${COUPLE_DIR}/update_veg/jsbach_glac_diff.nc ${COUPLE_DIR}/update_veg/new_non_glaciers.nc
+        sum_new_glaciers=$(cdo -s -output -fldsum -gtc,0 ${COUPLE_DIR}/update_veg/jsbach_glac_diff.nc | tr -d "[:blank:]")
+        sum_new_land=$(cdo -s -output -fldsum -gtc,0 -mulc,-1 ${COUPLE_DIR}/update_veg/jsbach_glac_diff.nc | tr -d "[:blank:]")
+        echo -e "\t\t- Total number of new glacial cells: >>>$sum_new_glaciers<<<"
+        echo -e "\t\t- Total number of new deglacial cells: >>>$sum_new_land<<<"
 
-        if cdo pardes $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) | grep -s 'veg_ratio'; then
-                echo ""; echo -e "\t\t-   Running Python routine to modify vegetation ratios for:"
-                echo -e "\t\t-    $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)!"
-                echo -e "\t\t-    python ${FUNCTION_PATH}/modify_restart_veg_ratios.py"
-                echo -e "\t\t-    Arguments:"
-                echo -e "\t\t     $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)"
-                echo -e "\t\t     ${COUPLE_DIR}/update_veg_ratios/jsbach_glac_diff.nc"
-                python ${FUNCTION_PATH}/modify_restart_veg_ratios.py \
-                    $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) \
-                    ${COUPLE_DIR}/update_veg_ratios/jsbach_glac_diff.nc
-
-                cp -v $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
-                cp -v $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${COUPLE_DIR}/update_veg_ratios/restart_${EXP_ID}_jsbach_backup_$(date +%Y%m%d%H%M%S).nc
-
-                cp -v test_output.nc $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
-        else
-                echo -e "\t\t-   No veg ratio in the restart file (DYNVEG might be off); skipping"
+        if [[ $sum_new_glaciers -eq 0 ]] && [[ $sum_new_land -eq 0 ]]; then
+                echo -e "\t\t- >>>INFO<<< No new land or new glaciers, this routine will be skipped..."
+                newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc)
+                ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_veg_restart_file.nc
+                return
         fi
-        # Go back
-        cd -
-        echo; echo -e "\t\t    ...done!"
+
+        newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc)
+        # Make a backup copy
+        cp ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg_backup_$(date +%Y%m%d%H%M%S).nc
+        echo -e "\t\t- Unpacking JSBACH restart file: $newest_jsbach_restart_file"
+        # Ensure that the unpack binary is here:
+        if [ ! -f unpack ]; then
+                #if [ -f ${FUNCTION_PATH}..//utils/_build/unpack ]; then
+                #        cp -v ${FUNCTION_PATH}..//utils/_build/unpack ./
+                if [ -f ${FUNCTION_PATH}/../utils/unpack ]; then
+                        cp -v ${FUNCTION_PATH}/../utils/unpack ./
+                else
+                        echo -e "\t\t E R O R R --- unpack binary missing, don't know how to proceed"
+                        exit
+                fi
+        fi
+        # Copy the files here:
+        cp ${newest_jsbach_restart_file} ./
+        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ./
+        echo -e "\t\t- Running unpack binary with arguments:"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/unpack_file.ksh"
+        echo -e "\t\t- Restart File: $(basename ${newest_jsbach_restart_file})"
+        echo -e "\t\t- Mask file: $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
+        ${FUNCTION_PATH}/../utils/unpack_file.ksh \
+                $(basename $newest_jsbach_restart_file) \
+                $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc) \
+                2>&1 > ${COUPLE_DIR}/unpack_veg_script_stdout_stderr
+
+        echo -e "\t\t- Listing files after program execution:"
+        ls -ratl
+        restartfile=2d_$(basename ${newest_jsbach_restart_file})
+        # 'cdo showvar' does not work for variables with more than three dimensiones
+        echo "ncdump -h ${restartfile} | grep 'double ' | cut -f 2 -d ' ' | cut -f1 -d '('"
+        variables=$(ncdump -h ${restartfile} | grep 'double ' | cut -f 2 -d ' ' | cut -f1 -d '(')
+        echo $variables
+
+        for var in ${variables}; do
+                ncks -O --no_abc \
+                        -v ${var} \
+                        2d_$(basename ${newest_jsbach_restart_file}) \
+                        2d_restart_${EXP_ID}_veg_${var}.nc
+
+                # The following can be turned into an exit if needed:
+                if [ ! -f 2d_restart_${EXP_ID}_veg_${var}.nc ]; then
+                        echo -e "\t\t !!! WARNING !!! -- no file for ${var}"
+                        echo -e "\t\t                    continue loop"
+                        continue
+                fi
+
+                # Keep the directory clean: make one directory for each variable:
+                here=$(pwd); mkdir -p ${var}; mv 2d_restart_${EXP_ID}_veg_${var}.nc ${var}; cd ${var}
+                echo -e "\t\t- Updating JSBACH restart file -- ${var}\n"
+                case ${var} in
+                        bare_fpc )
+                                # For bare fpc, we need the fraction of "bare" under glaciers to be 1
+                                cdo -s ifthenelse \
+                                        ${COUPLE_DIR}/update_veg/new_glaciers.nc \
+                                        ${COUPLE_DIR}/update_veg/new_glaciers.nc \
+                                        2d_restart_${EXP_ID}_veg_${var}.nc \
+                                        2d_restart_${EXP_ID}_veg_${var}.tmp
+                                # Over newly deglaciated tiles, we put 95% bare soil
+                                cdo -s ifthenelse \
+                                        ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
+                                        -mulc,0.95 ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
+                                        2d_restart_${EXP_ID}_veg_${var}.tmp \
+                                        2d_restart_${EXP_ID}_veg_${var}.nc
+                                cdo -s -setvar,$var 2d_restart_${EXP_ID}_veg_${var}.nc ${var}.tmp
+                                mv ${var}.tmp 2d_restart_${EXP_ID}_veg_${var}.nc
+                                ;;
+                        act_fpc )
+                                # NOTE: No correction is applied under
+                                # new_glaciers, this is automatically taken
+                                # care of by JSBACH internally.
+                                #
+                                # For active plant cover fraction, we put 0 on
+                                # all tiles except tundra (tile 7) which gets
+                                # 5%.
+                                #
+                                # Split up the levels
+                                cdo -s splitlevel 2d_restart_${EXP_ID}_veg_${var}.nc 2d_restart_${EXP_ID}_veg_${var}_tile
+                                mergelist=""
+                                for tile in $(ls 2d_restart_${EXP_ID}_veg_${var}_tile0000??.nc); do
+                                        # NOTE: The period before the old
+                                        # dimension name, sfc, indicates
+                                        # optional presence of the dimension
+                                        # (ncrename -d renames dimensions). It
+                                        # seems as if the variable sometimes
+                                        # has the correct dimension name tiles
+                                        # (or maybe my test case was incorrect
+                                        # and had the dimension name sfc). To
+                                        # overcome this, we simply ensure that
+                                        # if sfc is the dimension name, it
+                                        # should be renamed to tiles, and if
+                                        # this is already the case, do nothing:
+                                        ncrename -d .sfc,tiles $tile
+                                        case ${tile} in
+                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.nc )
+                                                        echo -e "\t\t- Setting 5% initial cover of tundra for new deglacial cells"
+                                                        # For the tundra tile
+                                                        cdo -v -setvar,$var -ifthenelse \
+                                                                ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
+                                                                -mulc,0.05 ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
+                                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.nc \
+                                                                2d_restart_${EXP_ID}_veg_${var}_tile000007.tmp
+                                                        mv 2d_restart_${EXP_ID}_veg_${var}_tile000007.tmp 2d_restart_${EXP_ID}_veg_${var}_tile000007.nc
+                                                        ;;
+                                                * )
+                                                        # For all other tiles:
+                                                        cdo -s -setvar,$var -ifthenelse \
+                                                                ${COUPLE_DIR}/update_veg/new_non_glaciers.nc \
+                                                                -mulc,0.0 ${COUPLE_DIR}/update_veg/new_glaciers.nc \
+                                                                ${tile} ${tile}.tmp
+                                                        mv ${tile}.tmp ${tile}
+                                                        ;;
+                                        esac
+                                        mergelist="$mergelist $tile"
+                                done
+                                mkdir pre_merge
+                                cp $mergelist pre_merge
+                                echo -e "\t\t >>> PG DEBUG: Command for merging will be: cdo -v -O merge $mergelist ${var}.tmp"
+                                echo -e "\t\t >>> PG DEBUG: The files in merglist ($mergelist) have been copied here:"
+                                echo -e "\t\t >>> PG DEBUG: pre_merge -- directory contents:"
+                                ls -ratlh pre_merge
+                                cdo -v -O merge $mergelist ${var}.tmp
+                                mv -v ${var}.tmp 2d_restart_${EXP_ID}_veg_${var}.nc
+                                # NOTE: Same as above...not sure why this is needed twice??
+                                ncrename -d .sfc,tiles 2d_restart_${EXP_ID}_veg_${var}.nc
+                                ;;
+                esac
+                cd $here
+        done
+        mergelist=""
+        for var in ${variables}; do
+                mergelist="$mergelist ${var}/2d_restart_${EXP_ID}_veg_${var}.nc"
+        done
+        echo -e "\t\t- Creating merge list"
+        # For debugging:
+        #echo "Done constructing merge list and renaming time to tiles, these files will be merged"
+        #for f in $mergelist; do
+        #        ls -l $f
+        #done
+        # Merge with ncks, since cdo has issues:
+        echo -e "\t\t- Merging with ncks, as cdo has problems"
+        ofile=2d_restart_${EXP_ID}_veg_merged.nc
+        for f in $mergelist; do
+                ncks -A -h $f $ofile
+        done
+        echo -e "\t\t- Finished with modification of variables, now we need to repack"
+        # Ensure that the pack binary is here:
+        if [ ! -f pack ]; then
+                if [ -f ${FUNCTION_PATH}/../utils/pack ]; then
+                        cp -v ${FUNCTION_PATH}/../utils/pack .
+                else
+                        echo -e "\t\t E R O R R --- pack binary missing, don't know how to proceed"
+                        exit
+                fi
+        fi
+        # Copy the files here:
+        cp ${newest_jsbach_restart_file} .
+        cp ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc .
+        echo -e "\t\t- Running pack binary with arguments:"
+        echo -e "\t\t- Script: ${FUNCTION_PATH}/../utils/pack_file.ksh"
+        echo -e "\t\t- Restart File: $(readlink -f ${ofile})"
+        echo -e "\t\t- Mask file: $(readlink -f ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)"
+        echo -e "\n\t\t - NOTE: Errors with >VARDIMIDS (value 2) is out of range (1:1)< can be ignored (maybe?)"
+        ${FUNCTION_PATH}/../utils/pack_file.ksh \
+                $(basename $ofile) \
+                $(basename ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc)
+
+        echo -e "\t\t- Listing files after program execution:"
+        ls -ratl
+
+        mv 1d_$(basename $ofile) ${newest_jsbach_restart_file}
+        ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_veg_restart_file.nc
+        # Go back to the previous directory
+        cd ${startdir}
 }
-## @fn set_glacial_mask_jsbach_update_soil_moisture() 
-set_glacial_mask_jsbach_update_soil_moisture() {
-        echo; echo "                *   freezing soil moisture under the glacial mask"
-        if [ -f ${COUPLE_DIR}/soil_budget_jsbach.nc ]; then
-                budget_flag_jsbach="--soil_moisture_budget_file ${COUPLE_DIR}/soil_budget_jsbach.nc"
-        fi
-        if [ -f ${COUPLE_DIR}/soil_budget_jsbachm.nc ]; then
-                budget_flag_jsbachm="--soil_moisture_budget_file ${COUPLE_DIR}/soil_budget_jsbachm.nc"
-        fi
-        python ${FUNCTION_PATH}/modify_soil_moisture.py \
-                $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) \
-                $(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc) \
-                ${budget_flag_jsbach}
-        mv soil_budget.nc ${COUPLE_DIR}/soil_budget_jsbach.nc
-        cp $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc) ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach_before_soil_moisture_modification.nc
-        mv new_jsbach_restart.nc $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
-
-        python ${FUNCTION_PATH}/modify_soil_moisture.py --layer_moisture \
-                $(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_jsbachm.nc) \
-                $(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc) \
-                ${budget_flag_jsbachm} \
-                --lsm_file $(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
-        mv soil_budget.nc ${COUPLE_DIR}/soil_budget_jsbachm.nc
-        cp -v $(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_jsbachm.nc) ${RESTART_DIR_echam}/restart_${EXP_ID}_jsbachm_before_soil_moisture_modification.nc
-        cp -v new_jsbach_restart.nc $(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_jsbachm.nc)
-}
-
 ## @fn update_land_runoff_select_glacial_discharge() 
 update_land_runoff_select_glacial_discharge() {
         echo; echo "                *   selecting glacial discharge from ice_file_for_atmosphere.nc"
@@ -606,6 +1059,37 @@ update_land_runoff_fill_missing() {
         cdo -s mulc,-1 -divc,1000 -setmisstoc,0 $ifile $ofile
 }
 
+distribute_total_discharge_over_ocean() {
+#        echo; echo "                *   integrate discharge over echam grid"
+        ifile1=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.nc
+        ifile2=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.gridarea.nc
+#        ofile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.nc
+        cdo -s gridarea ${ifile1} ${ifile2}
+#        cdo -s fldsum -mul ${ifile1} ${ifile2} ${ofile}
+        CELL_AREA_FESOM_FILE=${CELL_AREA_FESOM_FILE:-"fesom.mesh.diag.nc"}
+        echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE} ${HOSING_FILE_LANDICE_LOSS} "
+        module load python3
+        echo " * HOSING_FILE_LANDICE_LOSS = ${HOSING_FILE_LANDICE_LOSS}"
+        if [ -f "${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out" ]; then
+            rm ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
+        fi
+
+        python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE}" "${HOSING_FILE_LANDICE_LOSS}"
+        module unload python3
+        echo; echo "            * Finished apply_hosing_correction.py "
+#
+#        
+#        ifile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.nc
+#        ofile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.fldsum.flux.nc
+#        echo; echo "                *   evenly spread discharge over ocean with total node area = ${TOTAL_NODE_AREA}"
+#        cdo -f divc,${TOTAL_NODE_AREA} ${ifile} ${ofile} 
+#        TOTAL_DISCHARGE=$( ncdump ${ofile} | awk '/total_ice_mass_loss_flux =/{getline; print}' | tr -d ";" | xargs )
+#        
+#        echo; echo "                *   write to ${HOSING_FILE_LANDICE_LOSS}"i
+#        echo 1 > ${HOSING_FILE_LANDICE_LOSS}
+#        echo ${TOTAL_DISCHARGE} >> ${HOSING_FILE_LANDICE_LOSS}
+}
+
 ## @fn update_land_runoff_prepare_for_oasis() 
 update_land_runoff_prepare_for_oasis() {
         echo; echo "                *   preparing file for oasis"
@@ -614,9 +1098,11 @@ update_land_runoff_prepare_for_oasis() {
         ncrename -v total_ice_mass_loss_flux,gfw_atmo $ifile tmp; mv tmp $ifile
         ncrename -d lon,nx $ifile tmp; mv tmp $ifile
         ncrename -d lat,ny $ifile tmp; mv tmp $ifile
-        ncks -A ${FUNCTION_PATH}/utils/axis_366.nc $ifile
+        ncks -A ${FUNCTION_PATH}/../utils/axis_366.nc $ifile
         ncpdq -a time,ny,nx $ifile tmp; mv tmp $ifile
         mv $ifile $ofile
+        cp ${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${WORK_DIR}/gfw_atmo.nc 
+        ln -sf ${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_gfw_atmo.nc 
 } 
 
 ## @fn update_land_runoff_set_namcouple_override() 
@@ -685,7 +1171,7 @@ set_in_jsbach_restart_file() {
         echo "                           in: $SOURCE_FILENAME"
         if [ ! -z $unpack ]; then
                 echo "                -   with unpacking from landpoint grid to latlon grid"
-                python ${FUNCTION_PATH}/unpack_jsbach.py $TARGET_VARNAME $RESTART_FILE 
+                python ${FUNCTION_PATH}/../utils/unpack_jsbach.py $TARGET_VARNAME $RESTART_FILE 
                 ################################################################################ 
                 # $ cdo -h replace
                 # NAME
@@ -705,7 +1191,7 @@ set_in_jsbach_restart_file() {
                         ${TARGET_VARNAME}_lonlat_grid_replaced.nc
                 echo "                -   and repacking from latlon grid to landpoint grid"
                 # FIXME: The next line is probably wrong, or incomplete.
-                python ${FUNCTION_PATH}/pack_jsbach.py ${TARGET_VARNAME} ${TARGET_VARNAME}_lonlat_grid_replaced.nc ${RESTART_FILE}
+                python ${FUNCTION_PATH}/../utils/pack_jsbach.py ${TARGET_VARNAME} ${TARGET_VARNAME}_lonlat_grid_replaced.nc ${RESTART_FILE}
         else
                cdo -s replace \
                         ${RESTART_FILE} \

@@ -734,19 +734,6 @@ class batch_system:
                 command = config[model]["executable"]
             # Prepare the MPMD commands
 
-# kh 24.06.22 observed behavior was:
-#model:  oasis3mct
-#command:  None
-
-#model:  recom
-#command:  None
-
-#model:  jsbach
-#command:  None
-
-#model:  hdmodel
-#command:  NONE
-
 # kh 24.06.22 workaround: filter hdmodel
             if command and (command != "NONE"):
                 launcher = config["computer"].get("launcher")

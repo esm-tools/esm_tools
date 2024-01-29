@@ -66,8 +66,14 @@ general:
         - '2.1'
         - '2.1-wiso'
         - '2.1-recom'
+        - '2.1-paleodyn-2.5'
 
         choose_version:
+          '2.1-paleodyn-2.5':
+            couplings:
+            - fesom-2.5+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
           '2.1':
             couplings:
             - fesom-2.1-awiesm-2.1+echam-6.3.05p2-awiesm-2.1
@@ -88,7 +94,7 @@ general:
 
         with_wiso: false
         with_pico: false
-        with_icebergs: false
+        with_icb: false
         with_bootstrap: false
 
         scenario: "PI-CTRL"
@@ -131,6 +137,9 @@ echam:
                 - sst
                 - sic
         with_wiso: ${general.with_wiso}
+        # --- icebergs ---
+        with_icb: ${general.with_icb}
+        # --- icebergs ---
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
@@ -151,7 +160,20 @@ echam:
                 "2.1-recom":
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
+                "2.1-paleodyn-2.5":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
 
+        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        icb_fields: [u10_atmo, v10_atmo]
+                        add_coupling_fields:
+                                "[[icb_fields-->FIELD]]":
+                                        grid: atmo
+        # --- icebergs ---
+        
         # Resolution switch
         # -----------------
         # kh 20.03.20 values may be superseded by section
@@ -234,7 +256,7 @@ jsbach:
                                 gethd: "remove_from_namelist"
                                 puthd: "remove_from_namelist"
                         jsbach_ctl:
-                            use_dynveg: true
+                            use_dynveg: "${dynamic_vegetations}"
         version: "3.20"
 
         choose_computer.name:
@@ -257,10 +279,17 @@ fesom:
 
         with_wiso: ${general.with_wiso}
         with_pico: ${general.with_pico}
+        # --- icebergs ---
+        with_icb: ${general.with_icb}
+        # --- icebergs ---
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
         choose_general.version:
+                "2.1-paleodyn-2.5":
+                        version: "2.5"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
                 "2.1":
                         version: "2.1-awiesm-2.1"
                         ALE_scheme: 'zstar'
@@ -272,7 +301,16 @@ fesom:
                         version: "2.1-recom"
                         ALE_scheme: 'zstar'
                         namelist_dir: ${fesom.model_dir}/config/
-
+        
+                        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        icb_fields: [u10w_oce, v10w_oce]
+                        add_coupling_fields:
+                                "[[icb_fields-->FIELD]]":
+                                        grid: feom
+        # --- icebergs ---
+        
         # General namelist_changes for coupled FESOM
         # ------------------------------------------
         opbnd_dir: "remove_from_namelist"
@@ -402,10 +440,12 @@ oasis3mct:
 
         coupling_time_step: 3600
         # Example for input fields:
-        #coupling_input_fields:
-        #    gfw_atmo:
-        #        freq: 86400
-        #        field_filepath: "foo/bar.nc"
+        choose_echam.lgfw:
+                True:
+                        coupling_input_fields:
+                                gfw_atmo:
+                                        freq: 86400
+                                        field_filepath: "gfw_atmo.nc"
         coupling_target_fields:
                 o2a_flux:
                         - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
@@ -421,6 +461,7 @@ oasis3mct:
                         - 'heat_ico <--distwgt-- heat_ica'
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
+        
         choose_general.with_wiso:
                 True:
         # choose_general.wiso_code: # MA: after merging FESOM, from Martin B. this can be unified
@@ -440,6 +481,13 @@ oasis3mct:
                                         - 'i1_oce <--distwgt-- i1_atm'
                                         - 'i2_oce <--distwgt-- i2_atm'
                                         - 'i3_oce <--distwgt-- i3_atm'
+        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        add_coupling_target_fields:
+                                add_a2o_flux:
+                                        - 'u10w_oce <--distwgt-- u10_atmo'
+                                        - 'v10w_oce <--distwgt-- v10_atmo'
         choose_general.with_recom:
                 True: # MA: after merging in FESOM by Martin B. this can be removed
                         add_coupling_target_fields:

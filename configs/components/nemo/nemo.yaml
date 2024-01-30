@@ -593,7 +593,7 @@ choose_version:
     # are set in components/setups/focioifs.yaml
 
     requires:
-    - nemobasemodel-4.2.0
+        - nemobasemodel-4.2.2
 
     branch: master
     reference_expid: 'FOCIOIFS'

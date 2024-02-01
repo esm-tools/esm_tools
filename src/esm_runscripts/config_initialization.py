@@ -8,10 +8,7 @@ import esm_tools
 from . import chunky_parts
 
 
-def init_first_user_config(command_line_config, user_config):
-
-    if not user_config:
-        user_config = get_user_config_from_command_line(command_line_config)
+def init_iterative_coupling(command_line_config, user_config):
 
     # maybe switch to another runscript, if iterative coupling
     user_config["general"]["iterative_coupled_model"] = ""
@@ -84,13 +81,40 @@ def save_command_line_config(config, command_line_config):
 
 
 def get_user_config_from_command_line(command_line_config):
+    """
+    Reads the runscript provided in ``command_line_config`` and overwirtes the
+    information of the runscript with that of the command line (command line wins
+    over the runscript.
+
+    Input
+    -----
+    command_line_config : dict
+        Dictionary containing the information coming from the command line
+
+    Returns
+    -------
+    user_config : dict, DictWithProvenance
+        Dictionary containing the information from the command line on top of the
+        runscript's
+
+    Raises
+    ------
+    Syntaxerror : esm_parser.user_error
+        If there is a problem with the parsing of the runscript
+    """
+
+    # Default user_config
+    user_config = {
+        "general": {
+            "additional_files": [],
+        },
+    }
+
+    # Read the content of the runscrip
     try:
-        # use the full absolute path instead of CWD
-        user_config = esm_parser.initialize_from_yaml(
-            command_line_config["runscript_abspath"]
+        user_config.update(
+            esm_parser.initialize_from_yaml(command_line_config["runscript_abspath"])
         )
-        if "additional_files" not in user_config["general"]:
-            user_config["general"]["additional_files"] = []
     # If sys.exit is triggered through esm_parser.user_error (i.e. from
     # ``check_for_empty_components`` in ``yaml_to_dict.py``) catch the sys.exit.
     except SystemExit as sysexit:
@@ -101,23 +125,45 @@ def get_user_config_from_command_line(command_line_config):
             f"An error occurred while reading the config file "
             f"``{command_line_config['runscript_abspath']}`` from the command line.")
 
-    # NOTE(PG): I really really don't like this. But I also don't want to
-    # re-introduce black/white lists
-    #
-    # User config wins over command line:
-    # -----------------------------------
-    # Update all **except** for use_venv if it was supplied in the
-    # runscript:
-    deupdate_use_venv = False
-    if "use_venv" in user_config["general"]:
-        user_use_venv = user_config["general"]["use_venv"]
-        deupdate_use_venv = True
     user_config["general"].update(command_line_config)
-    if deupdate_use_venv:
-        user_config["general"]["use_venv"] = user_use_venv
-    user_config["general"]["isinteractive"] = command_line_config.get(
-        "last_jobtype", ""
-    )=="command_line"
+
+    return user_config
+
+
+def init_interactive_info(command_line_config, user_config):
+    """
+    Initialize key-values to evaluate at any point whether interactive functions are to
+    be run (e.g. questionaries, warnings, etc.). The following key-values are set within
+    ``user_config["general"]``:
+    - ``isinteractive``: ``True`` if this function is trigger by a command line
+            execution
+    - ``isresubmitted``: ``True`` if the ``last_jobtype`` is the same as the current
+            ``jobtype`` (after the user triggers ``esm_runscripts`` there is a first
+            step of preparing the experiment folder and then it resubmit it itself from
+            the experiment folder; most questionaries need to be run in this second step
+            ``isresubmitted`` because only then the updated information via the
+            questionaries plays a role in the simulation).
+
+    Input
+    -----
+    command_line_config : dict
+        Dictionary containing the information coming from the command line
+    user_config : dict
+        Dictionary containing the information from the command line on top of the
+        runscript's
+
+    Returns
+    -------
+    user_config : Dict
+        Same as the input ``user_config`` but with the interactive variables
+    """
+    last_jobtype = command_line_config.get("last_jobtype", "")
+    isinteractive = last_jobtype == "command_line"
+    isresubmitted = last_jobtype == user_config["general"]["jobtype"]
+
+    user_config["general"]["isinteractive"] = isinteractive
+    user_config["general"]["isresubmitted"] = isresubmitted
+
     return user_config
 
 

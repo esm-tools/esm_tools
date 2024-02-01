@@ -24,7 +24,17 @@ class SimulationSetup(object):
                 "SimulationSetup needs to be initialized with either command_line_config or user_config."
             )
 
-        user_config = config_initialization.init_first_user_config(
+        # Initialize user_config using the command line arguments and the given runscript
+        if not user_config:
+            user_config = config_initialization.get_user_config_from_command_line(
+                command_line_config
+            )
+
+        # Initialize information about interactive sessions
+        user_config = config_initialization.init_interactive_info(command_line_config, user_config)
+
+        # Initialize iterative coupling information
+        user_config = config_initialization.init_iterative_coupling(
             command_line_config, user_config
         )
 

@@ -118,11 +118,11 @@ def get_user_config_from_command_line(command_line_config):
     return user_config
 
 
-def init_interactive_info(command_line_config, user_config):
+def init_interactive_info(config, command_line_config):
     """
     Initialize key-values to evaluate at any point whether interactive functions are to
     be run (e.g. questionaries, warnings, etc.). The following key-values are set within
-    ``user_config["general"]``:
+    ``config["general"]``:
     - ``isinteractive``: ``True`` if this function is trigger by a command line
             execution
     - ``isresubmitted``: ``True`` if the ``last_jobtype`` is the same as the current
@@ -136,23 +136,25 @@ def init_interactive_info(command_line_config, user_config):
     -----
     command_line_config : dict
         Dictionary containing the information coming from the command line
-    user_config : dict
-        Dictionary containing the information from the command line on top of the
-        runscript's
+    config : dict
+        Dictionary containing the simulation configuration
 
     Returns
     -------
-    user_config : Dict
-        Same as the input ``user_config`` but with the interactive variables
+    config : dict
+        Same as the input ``config`` but with the interactive variables
     """
-    last_jobtype = command_line_config.get("last_jobtype", "")
+    if command_line_config:
+        last_jobtype = command_line_config.get("last_jobtype", "")
+    else:
+        last_jobtype = ""
     isinteractive = last_jobtype == "command_line"
-    isresubmitted = last_jobtype == user_config["general"]["jobtype"]
+    isresubmitted = last_jobtype == config["general"]["jobtype"]
 
-    user_config["general"]["isinteractive"] = isinteractive
-    user_config["general"]["isresubmitted"] = isresubmitted
+    config["general"]["isinteractive"] = isinteractive
+    config["general"]["isresubmitted"] = isresubmitted
 
-    return user_config
+    return config
 
 
 def get_total_config_from_user_config(user_config):

@@ -31,7 +31,7 @@ class SimulationSetup(object):
             )
 
         # Initialize information about interactive sessions
-        user_config = config_initialization.init_interactive_info(command_line_config, user_config)
+        user_config = config_initialization.init_interactive_info(user_config, command_line_config)
 
         # Initialize iterative coupling information
         user_config = config_initialization.init_iterative_coupling(

@@ -38,17 +38,34 @@ class SimulationSetup(object):
             command_line_config, user_config
         )
 
-        self.config = config_initialization.complete_config_from_user_config(
+        # Load total config from all the configuration files involved in this simulation
+        self.config = config_initialization.get_total_config_from_user_config(
             user_config
         )
 
+        # Complete missing key-values with the defaults defined in
+        # ``configs/esm_software/esm_runscripts/defaults.yaml``
+        self.config = config_initialization.add_esm_runscripts_defaults_to_config(
+            self.config
+        )
+
+        # Check if the ``account`` is missing in ``general``
+        self.config = config_initialization.check_account(self.config)
+
+        # Complete information for inspect
+        self.config = config_initialization.complete_config_with_inspect(
+            self.config
+        )
+
+        # Save the ``command_line_config`` in ``general``
         self.config = config_initialization.save_command_line_config(
             self.config, command_line_config
         )
 
-        # self.config = workflow.assemble(self.config)
-
+        # Initialize the ``prev_run`` object
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
+
+        # Run ``prepare`` recipe
         self.config = prepare.run_job(self.config)
 
         # esm_parser.pprint_config(self.config)

@@ -11,7 +11,6 @@ from . import chunky_parts
 def init_iterative_coupling(command_line_config, user_config):
 
     # maybe switch to another runscript, if iterative coupling
-    user_config["general"]["iterative_coupled_model"] = ""
     if user_config["general"].get("iterative_coupling", False):
         user_config = chunky_parts.setup_correct_chunk_config(user_config)
 
@@ -50,23 +49,19 @@ def init_iterative_coupling(command_line_config, user_config):
     return user_config
 
 
-def complete_config_from_user_config(user_config):
-    config = get_total_config_from_user_config(user_config)
+def complete_config_with_inspect(config):
 
-    if "verbose" not in config["general"]:
-        config["general"]["verbose"] = False
+    general = config["general"]
 
-    config["general"]["reset_calendar_to_last"] = False
+    if general.get("inspect"):
+        general["jobtype"] = "inspect"
 
-    if config["general"].get("inspect"):
-        config["general"]["jobtype"] = "inspect"
-
-        if config["general"].get("inspect") not in [
+        if general.get("inspect") not in [
             "workflow",
             "overview",
             "config",
         ]:
-            config["general"]["reset_calendar_to_last"] = True
+            general["reset_calendar_to_last"] = True
 
     return config
 
@@ -103,17 +98,10 @@ def get_user_config_from_command_line(command_line_config):
         If there is a problem with the parsing of the runscript
     """
 
-    # Default user_config
-    user_config = {
-        "general": {
-            "additional_files": [],
-        },
-    }
-
     # Read the content of the runscrip
     try:
-        user_config.update(
-            esm_parser.initialize_from_yaml(command_line_config["runscript_abspath"])
+        user_config = esm_parser.initialize_from_yaml(
+            command_line_config["runscript_abspath"]
         )
     # If sys.exit is triggered through esm_parser.user_error (i.e. from
     # ``check_for_empty_components`` in ``yaml_to_dict.py``) catch the sys.exit.
@@ -185,12 +173,15 @@ def get_total_config_from_user_config(user_config):
         user_config,
     )
 
-    config = add_esm_runscripts_defaults_to_config(config)
-
     config["computer"]["jobtype"] = config["general"]["jobtype"]
     config["general"]["experiment_dir"] = (
         config["general"]["base_dir"] + "/" + config["general"]["expid"]
     )
+
+    return config
+
+
+def check_account(config):
 
     # Check if the 'account' variable is needed and missing
     if config["computer"].get("accounting", False):
@@ -211,12 +202,7 @@ def add_esm_runscripts_defaults_to_config(config):
     path_to_file = esm_tools.get_config_filepath() + "/esm_software/esm_runscripts/defaults.yaml"
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
     config["general"]["defaults.yaml"] = default_config
-    config = distribute_per_model_defaults(config)
-    return config
 
-
-def distribute_per_model_defaults(config):
-    default_config = config["general"]["defaults.yaml"]
     if "general" in default_config:
         config["general"] = esm_parser.new_deep_update(
             config["general"], default_config["general"]

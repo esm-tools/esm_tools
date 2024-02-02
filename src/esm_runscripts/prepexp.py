@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import pathlib
+import subprocess
 
 import questionary
 from colorama import Fore
@@ -12,6 +13,10 @@ import esm_parser
 from .batch_system import batch_system
 from .helpers import end_it_all, evaluate, write_to_log
 from loguru import logger
+
+from . import prepcompute
+
+import pdb
 
 
 def run_job(config):
@@ -36,6 +41,7 @@ def copy_tools_to_thisrun(config):
     Copies the tools, namelists and runscripts to the experiment directory,
     making sure that they don't overwrite previously existing files unless
     the ``-U`` flag is used.
+
     Parameters
     ----------
     config : dict
@@ -101,20 +107,11 @@ def copy_tools_to_thisrun(config):
         # `killall esm_runscripts` might be required
         esm_parser.user_error(error_type, error_text)
 
-    # If ``fromdir`` and ``scriptsdir`` are the same, this is already a computing
-    # simulation which means we want to use the script in the experiment folder,
-    # so no copying is needed
-    if (fromdir == scriptsdir) and not gconfig["update"]:
-        if config["general"]["verbose"]:
-            print("Started from the experiment folder, continuing...")
-        return config
-    # Not computing but initialisation
-    else:
-        if not fromdir == scriptsdir:
-            if config["general"]["verbose"]:
-                print("Not started from experiment folder, restarting...")
-        else:
-            print("Tools were updated, restarting...")
+    # If ``fromdir`` and ``scriptsdir`` are the same (the same as ``isresubmitted=True``),
+    # this is already a computing simulation which means we want to use the script
+    # in the experiment folder, so no copying is needed.
+
+    if not gconfig["isresubmitted"]:
 
         # At this point, ``fromdir`` and ``scriptsdir`` are different. Update the
         # runscript if necessary
@@ -138,6 +135,34 @@ def copy_tools_to_thisrun(config):
         for tfile in gconfig["additional_files"]:
             update_runscript(fromdir, scriptsdir, tfile, gconfig, "additional file")
 
+    return config
+
+def call_esm_runscripts_internally(config):
+    """
+    Calls esm_runscripts in a subprocess call.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+
+    """
+
+    gconfig = config["general"]
+
+    # Return if called from the experiment
+    if gconfig["isresubmitted"] and not gconfig["update"]:
+        if config["general"]["verbose"]:
+            print("Started from the experiment folder, continuing...")
+        return config
+    # Not computing but initialisation
+    else:
+        if not gconfig["isresubmitted"]:
+            if config["general"]["verbose"]:
+                print("Not started from experiment folder, restarting...")
+        else:
+            print("Tools were updated, restarting...")
+        scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
         # remove the update option otherwise it will enter an infinite loop
         original_command = gconfig["original_command"]
         options_to_remove = [" -U ", " --update "]
@@ -159,26 +184,29 @@ def copy_tools_to_thisrun(config):
             new_command_list.append(command)
 
         new_command = " ".join(new_command_list)
-        restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
+        restart_command = f"esm_runscripts {new_command}"
 
         # Add non-interaction flags
-        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
+        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}", f"-t {config['general']['jobtype']}"]
         for ni_flag in non_interaction_flags:
             # prevent continuous addition of ``ni_flag``
             if ni_flag not in restart_command:
                 restart_command += f" {ni_flag} "
 
+        #prepcompute._write_finalized_config(config, '/albedo/work/user/nwieters/myrunscripts/config_after_prepexp.txt')
+
         if config["general"]["verbose"]:
             print(restart_command)
-        os.system(restart_command)
+
+        if os.path.exists(scriptsdir):
+            subprocess.check_call(restart_command.split(), cwd=scriptsdir)
 
         gconfig["profile"] = False
         end_it_all(config)
 
-
 def _create_folders(config, filetypes):
     """
-    Generates the experiment file tree. Foldres are created for every filetype
+    Generates the experiment file tree. Folders are created for every filetype
     except for "ignore".
     """
     for filetype in filetypes:

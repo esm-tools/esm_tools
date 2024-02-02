@@ -112,9 +112,8 @@ def copy_tools_to_thisrun(config):
     # in the experiment folder, so no copying is needed.
 
     if not gconfig["isresubmitted"]:
-
-        # At this point, ``fromdir`` and ``scriptsdir`` are different. Update the
-        # runscript if necessary
+        # At this point, ``fromdir`` and ``scriptsdir`` are different (same as gconfig["isresubmitted"]=False).
+        # Update the runscript if necessary
         update_runscript(
             fromdir, scriptsdir, gconfig["scriptname"], gconfig, "runscript"
         )
@@ -157,12 +156,11 @@ def call_esm_runscripts_internally(config):
         return config
     # Not computing but initialisation
     else:
-        if not gconfig["isresubmitted"]:
-            if config["general"]["verbose"]:
-                print("Not started from experiment folder, restarting...")
-        else:
-            print("Tools were updated, restarting...")
+        if config["general"]["verbose"]:
+            print("Not started from experiment folder, restarting...")
+        
         scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
+
         # remove the update option otherwise it will enter an infinite loop
         original_command = gconfig["original_command"]
         options_to_remove = [" -U ", " --update "]
@@ -193,13 +191,12 @@ def call_esm_runscripts_internally(config):
             if ni_flag not in restart_command:
                 restart_command += f" {ni_flag} "
 
-        #prepcompute._write_finalized_config(config, '/albedo/work/user/nwieters/myrunscripts/config_after_prepexp.txt')
-
         if config["general"]["verbose"]:
             print(restart_command)
 
         if os.path.exists(scriptsdir):
             subprocess.check_call(restart_command.split(), cwd=scriptsdir)
+        # Todo: include exception if scriptsdir not found
 
         gconfig["profile"] = False
         end_it_all(config)

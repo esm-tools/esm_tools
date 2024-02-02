@@ -54,9 +54,9 @@ def init_iterative_coupling(command_line_config, user_config):
         # Set the ``iterative_coupled_model`` string, to add the model name to the
         # run_ folder, finished_config.yaml, etc., to avoid overwritting with the
         # files of other offline coupled models
-        user_config["general"]["iterative_coupled_model"] = (
-            f"{user_config['general']['setup_name']}_"
-        )
+        user_config["general"][
+            "iterative_coupled_model"
+        ] = f"{user_config['general']['setup_name']}_"
         # Extract information about the models run in the previous chunk
         chunky_parts.prev_chunk_info(user_config)
 
@@ -158,7 +158,8 @@ def get_user_config_from_command_line(command_line_config):
         esm_parser.user_error(
             "Syntax error",
             f"An error occurred while reading the config file "
-            f"``{command_line_config['runscript_abspath']}`` from the command line.")
+            f"``{command_line_config['runscript_abspath']}`` from the command line.",
+        )
 
     user_config["general"].update(command_line_config)
 
@@ -237,9 +238,9 @@ def get_total_config_from_user_config(user_config):
     )
 
     config["computer"]["jobtype"] = config["general"]["jobtype"]
-    config["general"]["experiment_dir"] = (
-        config["general"]["base_dir"] + "/" + config["general"]["expid"]
-    )
+    config["general"][
+        "experiment_dir"
+    ] = f"{config['general']['base_dir']}/{config['general']['expid']}"
 
     return config
 
@@ -301,7 +302,9 @@ def add_esm_runscripts_defaults_to_config(config):
         ConfigSetup object containing the information of the current simulation and the
         defaults
     """
-    path_to_file = esm_tools.get_config_filepath() + "/esm_software/esm_runscripts/defaults.yaml"
+    path_to_file = (
+        f"{esm_tools.get_config_filepath()}/esm_software/esm_runscripts/defaults.yaml"
+    )
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
     config["general"]["defaults.yaml"] = default_config
 

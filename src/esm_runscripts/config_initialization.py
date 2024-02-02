@@ -9,6 +9,23 @@ from . import chunky_parts
 
 
 def init_iterative_coupling(command_line_config, user_config):
+    """
+    Completes information for the interactive coupling (offline coupling) in the
+    ``user_config`` if this simulation is indeed a interactive coupling.
+
+    Input
+    -----
+    command_line_config : dict
+        Dictionary containing the information coming from the command line
+    user_config : dict, esm_parser.ConfigSetup
+        Dictionary containing the basic user information
+
+    Returns
+    -------
+    user_config : dict, esm_parser.ConfigSetup
+        Dictionary containing the basic user information and the additional processed
+        information needed for offline coupling simulations
+    """
 
     # maybe switch to another runscript, if iterative coupling
     if user_config["general"].get("iterative_coupling", False):
@@ -37,9 +54,9 @@ def init_iterative_coupling(command_line_config, user_config):
         # Set the ``iterative_coupled_model`` string, to add the model name to the
         # run_ folder, finished_config.yaml, etc., to avoid overwritting with the
         # files of other offline coupled models
-        user_config["general"]["iterative_coupled_model"] = (
-            f"{user_config['general']['setup_name']}_"
-        )
+        user_config["general"][
+            "iterative_coupled_model"
+        ] = f"{user_config['general']['setup_name']}_"
         # Extract information about the models run in the previous chunk
         chunky_parts.prev_chunk_info(user_config)
 
@@ -50,6 +67,20 @@ def init_iterative_coupling(command_line_config, user_config):
 
 
 def complete_config_with_inspect(config):
+    """
+    Completes information for ``inspect`` jobs.
+
+    Input
+    -----
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation
+
+    Returns
+    -------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation and the
+        ``inspect`` information
+    """
 
     general = config["general"]
 
@@ -67,6 +98,22 @@ def complete_config_with_inspect(config):
 
 
 def save_command_line_config(config, command_line_config):
+    """
+    Store the config coming from the command line in the ``config``.
+
+    Input
+    -----
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation
+    command_line_config : dict
+        Dictionary containing the information coming from the command line
+
+    Returns
+    -------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation and the
+        ``command_line_config`` stored in the ``general`` section
+    """
     if command_line_config:
         config["general"]["command_line_config"] = command_line_config
     else:
@@ -79,7 +126,7 @@ def get_user_config_from_command_line(command_line_config):
     """
     Reads the runscript provided in ``command_line_config`` and overwirtes the
     information of the runscript with that of the command line (command line wins
-    over the runscript.
+    over the runscript).
 
     Input
     -----
@@ -88,7 +135,7 @@ def get_user_config_from_command_line(command_line_config):
 
     Returns
     -------
-    user_config : dict, DictWithProvenance
+    user_config : dict, esm_parser.ConfigSetup
         Dictionary containing the information from the command line on top of the
         runscript's
 
@@ -111,7 +158,8 @@ def get_user_config_from_command_line(command_line_config):
         esm_parser.user_error(
             "Syntax error",
             f"An error occurred while reading the config file "
-            f"``{command_line_config['runscript_abspath']}`` from the command line.")
+            f"``{command_line_config['runscript_abspath']}`` from the command line.",
+        )
 
     user_config["general"].update(command_line_config)
 
@@ -136,12 +184,12 @@ def init_interactive_info(config, command_line_config):
     -----
     command_line_config : dict
         Dictionary containing the information coming from the command line
-    config : dict
+    config : dict, esm_parser.ConfigSetup
         Dictionary containing the simulation configuration
 
     Returns
     -------
-    config : dict
+    config : dict, esm_parser.ConfigSetup
         Same as the input ``config`` but with the interactive variables
     """
     if command_line_config:
@@ -158,7 +206,21 @@ def init_interactive_info(config, command_line_config):
 
 
 def get_total_config_from_user_config(user_config):
+    """
+    Finds the version of the setup in ``user_config`` instanciates the ``config`` with
+    ``esm_parser.ConfigSetup`` which appends all the information from the config files
+    required for this simulation and stores it in ``config``.
 
+    Input
+    -----
+    user_config : dict, esm_parser.ConfigSetup
+        Dictionary containing the basic user information
+
+    Returns
+    -------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation
+    """
     if "version" in user_config["general"]:
         version = str(user_config["general"]["version"])
     else:
@@ -176,14 +238,34 @@ def get_total_config_from_user_config(user_config):
     )
 
     config["computer"]["jobtype"] = config["general"]["jobtype"]
-    config["general"]["experiment_dir"] = (
-        config["general"]["base_dir"] + "/" + config["general"]["expid"]
-    )
+    config["general"][
+        "experiment_dir"
+    ] = f"{config['general']['base_dir']}/{config['general']['expid']}"
 
     return config
 
 
 def check_account(config):
+    """
+    Checks whether the user has **not** defined a job scheduling account (e.g. slurm)
+    ``config["general"]["account"]`` while the machine requires it for running jobs, and
+    in that case reports an error.
+
+    Input
+    -----
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation
+
+    Returns
+    -------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation
+
+    Raises
+    ------
+    Missing account info : esm_parser.user_error
+        If the system requires a job scheduler account but none was provided by the user
+    """
 
     # Check if the 'account' variable is needed and missing
     if config["computer"].get("accounting", False):
@@ -201,7 +283,28 @@ def check_account(config):
 
 
 def add_esm_runscripts_defaults_to_config(config):
-    path_to_file = esm_tools.get_config_filepath() + "/esm_software/esm_runscripts/defaults.yaml"
+    """
+    Add the defaults defined in ``configs/esm_software/esm_runscripts/defaults.yaml`` to
+    the ``config``, if those key-values do not exist yet. The ``keys`` supported in that
+    file are:
+    - ``general``: to be assigned to the ``general`` section of the ``config``
+    - ``per_model_defaults``: to be added to each component/model section of the
+      ``config``
+
+    Input
+    -----
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation
+
+    Returns
+    -------
+    config : dict, esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation and the
+        defaults
+    """
+    path_to_file = (
+        f"{esm_tools.get_config_filepath()}/esm_software/esm_runscripts/defaults.yaml"
+    )
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
     config["general"]["defaults.yaml"] = default_config
 
@@ -222,4 +325,5 @@ def add_esm_runscripts_defaults_to_config(config):
             config[model] = esm_parser.new_deep_update(
                 config[model], per_model_defaults
             )
+
     return config

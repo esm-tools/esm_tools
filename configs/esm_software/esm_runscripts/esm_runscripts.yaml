@@ -1,3 +1,8 @@
+# Default recipies
+# ESM-Tools uses config/esm_software/esm_runscripts/esm_plugins.yaml to understand
+# where to look for each of this function/methods (the steps within each recipy, e.g.
+# "_read_date_file").
+
 choose_job_type:
 
         #postprocess:
@@ -7,21 +12,17 @@ choose_job_type:
         prepare:
                 recipe:
                         - "_read_date_file"
-                        #- "setup_correct_chunk_config"
                         - "_update_run_in_chunk"
                         - "check_model_lresume"
-
-# kh 01.12.20 this must be done before resolve_some_choose_blocks, because potentially also choosable
-# entries can be overridden via usermods.yaml (e.g. computer.useMPI: intel18_bullxmpi)
+                        # This must be done before resolve_some_choose_blocks, because
+                        # potentially also choosable entries can be overridden via
+                        # usermods.yaml (e.g. computer.useMPI: intel18_bullxmpi)
                         - "apply_last_minute_changes"
                         - "find_openmp"
                         - "resolve_some_choose_blocks"
                         - "_initialize_calendar"
                         - "set_chunk_calendar"
                         - "resolve_some_choose_blocks"
-
-# kh 01.12.20 moved up a few positions
-#                       - "apply_last_minute_changes"
                         - "_add_all_folders"
                         - "set_prev_date"
                         - "set_parent_info"
@@ -48,14 +49,11 @@ choose_job_type:
                         - "copy_tools_to_thisrun"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
 
-
         observe:
                 recipe:
                         - "init_monitor_file"
-                          #- "get_last_jobid"
                         - "wait_and_observe"
                         - "wake_up_call"
-
 
         tidy:
                 recipe:
@@ -66,14 +64,7 @@ choose_job_type:
                         - "throw_away_some_infiles"
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
-                          #- "_update_chunk_date_file"
                         - "clean_run_dir"
-                          #- "start_post_job"
-                          #- "signal_tidy_completion"
-                          #- "_increment_date_and_run_number"
-                          #- "_write_date_file"
-                          #- "maybe_resubmit"
-
 
         prepcompute:
                 recipe:
@@ -82,21 +73,17 @@ choose_job_type:
                         - "create_new_files"
                         - "create_empty_folders"
                         - "prepare_coupler_files"
-                          #- "calculate_requirements"
-                          #- "add_batch_hostfile"
                         - "assemble"
                         - "log_used_files"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"
                         - "copy_files_to_work"
-                          #- "write_simple_runscript"
                         - "report_missing_files"
                         #- "add_vcs_info"
                         #- "check_vcs_info_against_last_run"
                         - "_write_finalized_config"
                         - "database_entry"
-                          #- "submit"
 
         inspect:
                 recipe:
@@ -108,3 +95,4 @@ choose_job_type:
                         - "inspect_config"
                         - "inspect_folder"
                         - "inspect_file"
+

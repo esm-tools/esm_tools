@@ -253,11 +253,24 @@ def copy_files_to_work(config):
 
 
 def _write_finalized_config(config, config_file_path=None):
-    """Writes <expid>_finished_config.yaml file
-    Parameters
-    ----------
-    config : esm-tools config object
     """
+    Writes <expid>_finished_config.yaml file
+
+    Input
+    -----
+    config : dict
+        esm-tools config object
+    config_file_path : string
+        Optional file path and name where the content of config is to be stored.
+        Default is None. If not given (default) the path will be set depending on
+        settings in config and the file name is <expid>_finished_config.yaml.
+
+    Returns
+    -------
+    config : dict
+
+    """
+
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
     def date_representer(dumper, date):

@@ -7,9 +7,9 @@ general:
    resolution: "TCO95_ORCA05"
    version: "3.0_busan"
    
-   compute_time: "02:00:00"
+   compute_time: "01:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
    
    nyear: 1
    nmonth: 0
@@ -45,13 +45,14 @@ computer:
    #additional_flags: '--qos=preempt'
 
 focioifs:
-   model_dir: /scratch/usr/shkjocke/models/focioifs-3.0_busan/
+   model_dir: /scratch/usr/shkjocke/models3/focioifs-3.0_busan/
    
 oifs:
    runtime_environment_changes:
       choose_computer.name:
          "glogin":
-             compiler_mpi: intel2019_impi2019_nemo4
+             #compiler_mpi: intel2019_impi2019_nemo4
+             compiler_mpi: intel2022_impi2021
    
    lresume: ${general.lresume}
    # This would be for a traditional restart
@@ -96,19 +97,24 @@ oifs:
    
    ini_pseudo_initial_date: "1859-01-01"
     
-   #add_namelist_changes:
-   #    fort.4:
-   #        NAMFOCICFG:
-   #           FOCI_CPL_NEMO_LIM: false
-   #           FOCI_CPL_NEMO_SI3: true
-   #        # To do: Cherry-pick Tidos aerosol scaling into foci30 branch
-   #        #NAERAD:
-   #        #   NAERANT_SCALE: 1
-   #        NAMCLDP:
-   #           # diffusion coeff for cloud edges
-   #           RCLDIFF: 5.e-6 # default 3e-6
-   #        NAMMCC:
-   #            RALBSEAD_NML: 0.045
+   add_namelist_changes:
+       fort.4:
+           # These are set in focioifs.yaml
+           #NAMFOCICFG:
+           #   FOCI_CPL_NEMO_LIM: false
+           #   FOCI_CPL_NEMO_SI3: true
+           #NAERAD:
+           #   NAERANT_SCALE: 1
+           
+           # Increase diffusion for cloud edges
+           # to reduce cloud cover and warm surface
+           NAMCLDP:
+               # diffusion coeff for cloud edges
+               # see eq 7.47 in IFS 43r3 documentation, part IV
+               RCLDIFF: 5.e-6 # default 3e-6
+           # Lower ocean albedo to warm ocean surface and reduce cold bias
+           NAMMCC:
+               RALBSEAD_NML: 0.045
 
 oasis3mct:
    lresume: True
@@ -152,9 +158,9 @@ nemo:
    _ny: 510 
    jpni: 24
    jpnj: 24
-   nproca: ${nemo.jpni}
-   nprocb: ${nemo.jpnj}
-   nproc: 576 #862 
+   #nproca: ${nemo.jpni}
+   #nprocb: ${nemo.jpnj}
+   nproc: 576 
    add_namelist_changes:
        namelist_cfg:
           namctl:
@@ -174,4 +180,5 @@ rnfmap:
 xios: 
    with_model: focioifs 
    xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_diag/"
-   nproc: 48
+   nproc: 4
+   omp_num_threads: 48

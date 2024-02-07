@@ -1,0 +1,119 @@
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   resolution: "TCO95_ORCA05"
+   version: "2.2"
+   
+   compute_time: "04:00:00"
+   initial_date: "1950-01-01T00:00:00"       # Initial exp. date
+   final_date: "2050-01-01T00:00:00"         # Final date of the experiment
+   
+   nyear: 1
+   nmonth: 0
+   nday: 0
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+   account: shk00018
+   base_dir: /scratch/usr/shkjocke/esm-experiments/
+   
+   # This activates post processing for OpenIFS and NEMO
+   postprocessing: 1
+
+   lresume: False
+
+computer:
+   partition: "standard96" 
+   #additional_flags: '--qos=preempt'
+
+focioifs:
+   # locally modified model version
+   # normally, v2.2. uses Smagorinsky, but we turn this off for AGRIF
+   # so for comparison, we should turn it off here as well
+   # Its an easy fix. Simply go to the cpp file for NEMO, remove key_dynldf_smag
+   # and replace key_dynldf_c3d by key_dynldf_c2d. Then clean and recompile 
+   model_dir: /scratch/usr/shkjocke/models/focioifs-2.2/
+   
+oifs:
+   resume: ${general.lresume}  
+   version: "43r3"
+   with_xios: True
+   scenario: "historical"
+   mip: "cmip6"
+   pool_dir: /scratch/projects/shk00018/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy43_tco95/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco95/95_4/"
+   ifsdata_dir: "${pool_dir}/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   nproc: 288  # 360x4 / 96 = 15 nodes
+   time_step: 1800 
+   omp_num_threads: 1
+   use_ocean_currents: 1
+   sclct_switch: 2
+   o3_scheme: cmip6 # Use CMIP6 prescibed ozone
+   solarspectrum: True # Use new Coddington spectrum
+
+   add_namelist_changes:
+       fort.4:
+           NAERAD:
+               # Solar rad as HighResMIP
+               LSOLAR1950: ".true."
+               # Fix GHG at 1950
+               NCMIPFIXYR: 1950
+               # Aerosol scaling
+               NAERANT_SCALE: 1
+           NAMCLDP:
+               # diffusion coeff for cloud edges
+               RCLDIFF: 5.e-6 # default 3e-6
+               # for convection, RCLDIFF=RCLDIFF*RCLDIFF_CONVI
+               #RCLDIFF_CONVI: 7.0 # default 7.0
+           NAMMCC:
+               RALBSEAD_NML: 0.045
+               RALBSCALE_AR: 0.8
+
+oasis3mct:
+   lresume: True
+   coupling_time_step: 3600 
+   pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   mct_version: "5.0"
+   norestart: F
+   use_lucia: True
+   #export_mode: EXPORTED
+   debug_level: 0
+   
+nemo:
+   lresume: ${general.lresume} 
+   resolution: "ORCA05"
+   jpni: 24
+   jpnj: 24
+   nproc: 576
+   add_namelist_changes:
+       namelist_cfg:
+           #namrun:
+           #    ln_single_prec_send: ".true." 
+           namtra_ldf:
+               rn_aht_0: 600
+           namsbc_rnf:
+               rn_rfact: 0.984 
+
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_prod/"
+   nproc: 20
+   #omp_num_threads: 48

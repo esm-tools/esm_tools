@@ -593,7 +593,7 @@ choose_version:
     # are set in components/setups/focioifs.yaml
 
     requires:
-    - nemobasemodel-4.2.0
+        - nemobasemodel-4.2.2
 
     branch: master
     reference_expid: 'FOCIOIFS'
@@ -1947,7 +1947,8 @@ input_sources:
         subbasins_orca05_nemo4: ${input_dir}/subbasins__4.2.0_ORCA05.nc
         # File from Joakim. Use same settings as ORCA05 in 3.6
         # (zps, no isf, Caspian included)
-        domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noclo.nc
+        #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noclo.nc
+        domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noCaspian.nc
         #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg_ORCA05_v1.1.nc
        
         reshape_jra_orca05_nemo4_bicub: ${input_dir}/reshape_jra_bicub__4.2.0_ORCA05_v1.0.0.nc

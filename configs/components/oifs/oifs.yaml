@@ -928,7 +928,12 @@ choose_version:
                                         LRSACC: ".true." # reset accumulation of fluxes
 
                 add_outdata_files:
+                        # output is handled by XIOS
+                        # but we write the full model state at the last time step
+                        # in case we want to create restart files 
                         ICMUA: ICMUA
+                        ICMSH: ICMSH
+                        ICMGG: ICMGG 
 
 
 # If 1, use Coddington spectrum which reduced stratospheric warm bias

@@ -21,7 +21,11 @@ module load nco || module load NCO
 OCEAN_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
 OCEAN_CONVERT_NETCDF4=true
-OCEAN_FILE_TAGS="grid_T grid_U grid_V icemod ptrc_T"
+# In NEMO 3.6 we had grid_T, grid_U etc
+# In NEMO 4 we also use diaptr2D, diaptr3D and grid_U_vsum 
+# It should be fine to add them here. The script will search for them
+# if they exist they will be used, if not they will be skipped
+OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T diaptr2D diaptr3D grid_U_vsum"
 
 # Other settings
 max_jobs=20

@@ -15,16 +15,31 @@ from .helpers import end_it_all, evaluate, write_to_log
 from loguru import logger
 
 from . import prepcompute
+from . import filelists
 
 import pdb
 
 
 def run_job(config):
+    """
+    Run prepexp job.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    """
     evaluate(config, "prepexp", "prepexp_recipe")
     return config
 
 
 def color_diff(diff):
+    """
+
+    Parameters
+    ----------
+    diff : 
+    """
     for line in diff:
         if line.startswith("+"):
             yield Fore.GREEN + line + Fore.RESET
@@ -205,6 +220,13 @@ def _create_folders(config, filetypes):
     """
     Generates the experiment file tree. Folders are created for every filetype
     except for "ignore".
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    filetypes: list
+
     """
     for filetype in filetypes:
         if not filetype == "ignore":
@@ -222,6 +244,11 @@ def _create_setup_folders(config):
 
     This also creates a small marker file at the top of
     the experiment so that the "root" can be found from inside.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
     """
     _create_folders(config["general"], config["general"]["all_filetypes"])
     with open(
@@ -232,6 +259,13 @@ def _create_setup_folders(config):
 
 
 def _create_component_folders(config):
+    """
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    """
+
     for component in config["general"]["valid_model_names"]:
         _create_folders(config[component], config["general"]["all_model_filetypes"])
     return config
@@ -254,12 +288,12 @@ def initialize_experiment_logfile(config):
 
     Parameters
     ----------
-    dict :
+    config : dict
         The experiment configuration
 
     Return
     ------
-    dict :
+    config : dict
         As per convention for the plug-in system; this gives back the
         entire config.
 
@@ -312,6 +346,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     ``esm_runscripts``. If that flag is not used and the source and target are different
     then raises a user-friendly error recommending to use the ``-U`` flag with the warning
     that the files will be overwritten.
+
     Parameters
     ----------
     cls : obj
@@ -327,6 +362,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     file_type : str
         String specifying the nature of the file, only necessary for printing information
         and for the error description.
+
     Exceptions
     ----------
     UserError
@@ -399,27 +435,46 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
 
 
 def _copy_preliminary_files_from_experiment_to_thisrun(config):
-    # I don't like this one bit. DB
+    """
+    - Copies the setup *.date file from <experiment>/scripts/ folder
+      to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
+    - Copies the runscript yaml file from current folder (<experiment>/scripts) 
+      to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/<runscript>
+    - Copies 'additional_files' (if any, e.g. fesom_output.yaml, that are called
+      via 'further_reading' in the runscript or other config file) from ...
+      to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
+
+    Why here???
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    """
+
     filelist = [
         (
             "scripts",
             f"{config['general']['expid']}_{config['general']['setup_name']}.date",
             "copy",
+        ),
+        (
+            "scripts",
+            f"{config['general']['scriptname']}",
+            "copy",
         )
     ]
 
+    for additional_file in config["general"].get("additional_files",[]):
+        filelist.append(("scripts", additional_file, "copy"))
+
     for filetype, filename, copy_or_link in filelist:
-        source = config["general"]["experiment_" + filetype + "_dir"]
-        dest = config["general"]["thisrun_" + filetype + "_dir"]
-        if copy_or_link == "copy":
-            method = shutil.copy2
-        elif copy_or_link == "link":
-            method = os.symlink
+        source = config["general"].get("experiment_" + filetype + "_dir", "")
+        dest = config["general"].get("thisrun_" + filetype + "_dir", "")
+
+        method = filelists.get_method(copy_or_link)
+
         if os.path.isfile(source + "/" + filename):
             method(source + "/" + filename, dest + "/" + filename)
-    this_script = config["general"]["scriptname"]
-    shutil.copy2("./" + this_script, config["general"]["thisrun_scripts_dir"])
 
-    for additional_file in config["general"]["additional_files"]:
-        shutil.copy2(additional_file, config["general"]["thisrun_scripts_dir"])
     return config

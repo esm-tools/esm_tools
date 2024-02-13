@@ -47,7 +47,7 @@ choose_job_type:
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
                         - "copy_tools_to_thisrun"
-                        - "call_esm_runscripts_internally"
+                        - "call_esm_runscripts_from_prepexp"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
 
         observe:

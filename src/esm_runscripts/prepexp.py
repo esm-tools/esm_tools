@@ -151,9 +151,57 @@ def copy_tools_to_thisrun(config):
 
     return config
 
-def call_esm_runscripts_internally(config):
+def _call_esm_runscripts_internally(config, command, exedir):
     """
-    Calls esm_runscripts in a subprocess call.
+    - Removes update flags from command input.
+    - Adds additional flags to command input.
+    - Addes esm_runscripts command if necessary.
+    - Calls esm_runscipts internally in a subprocess call.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    command : str
+        Command or esm_runscripts arguments
+    exedir : str
+        Path from which the command is to be executed.
+
+    """
+
+    # Remove the update option otherwise it will enter an infinite loop.
+    options_to_remove = [" -U ", " --update "]
+    for option in options_to_remove:
+        command = command.replace(option, " ")
+
+    # Check if 'esm_runscripts' command is given in 'command' argument.
+    if not command.startswith("esm_runscripts"):
+        command = f"esm_runscripts {command}"
+
+    # Add non-interaction flags, current jobtype, and current task (phase) [-t] if not already in 'command'
+    non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}", f"-t {config['general']['jobtype']}"]
+    for ni_flag in non_interaction_flags:
+        # prevent continuous addition of ``ni_flag``
+        if ni_flag not in command:
+            command += f" {ni_flag} "
+
+    # Check if the path exists, in which 'commend' should be executed
+    if os.path.exists(exedir):
+        subprocess.check_call(command.split(), cwd=exedir)
+    else:
+        error_type = "runtime error in function ``_call_esm_runscripts_internally``"
+        error_text = f"{exedir} does not exists. Aborting."
+        esm_parser.user_error(error_type, error_text)
+
+    if config["general"]["verbose"]:
+        print(command)
+
+    end_it_all(config)
+
+def call_esm_runscripts_from_prepexp(config):
+    """
+    Recipe step that creates a esm_runscripts command and submits this
+    to the functions that executes this command in a subprocess call.
 
     Parameters
     ----------
@@ -164,11 +212,12 @@ def call_esm_runscripts_internally(config):
 
     gconfig = config["general"]
 
-    # Return if called from the experiment
+    # Return if already called from the experiment folder
     if gconfig["isresubmitted"] and not gconfig["update"]:
         if config["general"]["verbose"]:
             print("Started from the experiment folder, continuing...")
         return config
+
     # Not computing but initialisation
     else:
         if config["general"]["verbose"]:
@@ -178,15 +227,13 @@ def call_esm_runscripts_internally(config):
 
         # remove the update option otherwise it will enter an infinite loop
         original_command = gconfig["original_command"]
-        options_to_remove = [" -U ", " --update "]
-        for option in options_to_remove:
-            original_command = original_command.replace(option, " ")
 
         # Before resubmitting the esm_runscripts, the path of the runscript
         # needs to be modified. Remove the absolute/relative path
         runscript_absdir, runscript = os.path.split(gconfig["runscript_abspath"])
         original_command_list = original_command.split()
         new_command_list = []
+
         for command in original_command_list:
             # current command will contain the full path, so replace it with
             # the YAML file only since we are going to execute it from the
@@ -197,24 +244,10 @@ def call_esm_runscripts_internally(config):
             new_command_list.append(command)
 
         new_command = " ".join(new_command_list)
-        restart_command = f"esm_runscripts {new_command}"
 
-        # Add non-interaction flags
-        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}", f"-t {config['general']['jobtype']}"]
-        for ni_flag in non_interaction_flags:
-            # prevent continuous addition of ``ni_flag``
-            if ni_flag not in restart_command:
-                restart_command += f" {ni_flag} "
+        _call_esm_runscripts_internally(config, new_command, scriptsdir)
 
-        if config["general"]["verbose"]:
-            print(restart_command)
-
-        if os.path.exists(scriptsdir):
-            subprocess.check_call(restart_command.split(), cwd=scriptsdir)
-        # Todo: include exception if scriptsdir not found
-
-        gconfig["profile"] = False
-        end_it_all(config)
+        return config
 
 def _create_folders(config, filetypes):
     """

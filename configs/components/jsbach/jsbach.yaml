@@ -283,7 +283,7 @@ choose_scenario_type:
                         a_nd_file: a_nd_file
                         lightning: lightning
                         popdens: ${popdens_cmip6}
-                        cover_fract: ${cover_fract_cmip6}
+                        cover_fract: cover_fract_hist_scenario
 
 
 # For ssp scenarios find the pathway first 4 characters

@@ -615,6 +615,11 @@ oasis3mct:
                               - 'OIceEvap <--conserv2-- AIceEvap' 
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
+                        add_input_files:
+                           rmp_a2n_B: rmp_a2n_B
+                           rmp_a2n_C: rmp_a2n_C
+                           rmp_n2a_C: rmp_n2a_C
+
                 default_autotools:
                         version: "foci"
                         export_mode_a2o: EXPORTED
@@ -641,6 +646,11 @@ oasis3mct:
                               - 'OTotSnow <--conserv2-- ATotSnow'
                               - 'OIceEvap <--conserv2-- AIceEvap' 
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_a2n_B: rmp_a2n_B
+                           rmp_a2n_C: rmp_a2n_C
+                           rmp_n2a_C: rmp_n2a_C
 
                 fs:
                         version: "foci"
@@ -669,6 +679,11 @@ oasis3mct:
                               - 'OIceEvap <--conserv2-- AIceEvap' 
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
+                        add_input_files:
+                           rmp_a2n_B: rmp_a2n_B
+                           rmp_a2n_C: rmp_a2n_C
+                           rmp_n2a_C: rmp_n2a_C
+
                 agrif:
                         version: "foci"
                         export_mode_a2o: EXPNEST     
@@ -696,6 +711,11 @@ oasis3mct:
                               - 'OIceEvap <--conserv2-- AIceEvap' 
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
+                        add_input_files:
+                           rmp_a2n_B: rmp_a2n_B
+                           rmp_a2n_C: rmp_a2n_C
+                           rmp_n2a_C: rmp_n2a_C
+
                 default_oasismct4:
 
                         norestart: "T"
@@ -714,26 +734,24 @@ oasis3mct:
                               - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
                               - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
                               - 'A_OCury1 <--gauswgt_average-- O_OCury1'
-                              #- 'AIceFrac <--bilinear_average-- OIceFrac'
-                              #- 'A_SSTSST <--bilinear_average-- O_SSTSST'
-                              #- 'A_TepIce <--bilinear_average-- O_TepIce'
-                              #- 'A_IceTck <--bilinear_average-- O_IceTck'
-                              #- 'A_SnwTck <--bilinear_average-- O_SnwTck'
-                              #- 'A_OCurx1 <--bilinear_average-- O_OCurx1'
-                              #- 'A_OCury1 <--bilinear_average-- O_OCury1'
                            flxatmos:
-                              - 'O_OTaux1 <--gauswgt-- A_OTaux1'
-                              - 'O_OTauy1 <--gauswgt-- A_OTauy1'
-                              - 'O_ITaux1 <--gauswgt-- A_ITaux1'
-                              - 'O_ITauy1 <--gauswgt-- A_ITauy1'
-                              - 'O_QsrIce <--gauswgt-- A_QsrIce'
-                              - 'O_QsrMix <--gauswgt_glbpos-- A_QsrMix'
-                              - 'O_QnsIce <--gauswgt-- A_QnsIce'
-                              - 'O_QnsMix <--gauswgt_glbpos-- A_QnsMix'
-                              - 'OTotRain <--gauswgt_global-- ATotRain'
-                              - 'OTotSnow <--gauswgt-- ATotSnow'
-                              - 'OIceEvap <--gauswgt-- AIceEvap'
-                              - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
 
                 agrif_oasismct4:
 
@@ -758,26 +776,20 @@ oasis3mct:
                               - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
                               - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
                               - 'A_OCury1 <--gauswgt_average-- O_OCury1'
-                              #- 'AIceFrac <--bilinear_average-- OIceFrac'
-                              #- 'A_SSTSST <--bilinear_average-- O_SSTSST'
-                              #- 'A_TepIce <--bilinear_average-- O_TepIce'
-                              #- 'A_IceTck <--bilinear_average-- O_IceTck'
-                              #- 'A_SnwTck <--bilinear_average-- O_SnwTck'
-                              #- 'A_OCurx1 <--bilinear_average-- O_OCurx1'
-                              #- 'A_OCury1 <--bilinear_average-- O_OCury1'
                            flxatmos:
-                              - 'O_OTaux1 <--gauswgt-- A_OTaux1'
-                              - 'O_OTauy1 <--gauswgt-- A_OTauy1'
-                              - 'O_ITaux1 <--gauswgt-- A_ITaux1'
-                              - 'O_ITauy1 <--gauswgt-- A_ITauy1'
-                              - 'O_QsrIce <--gauswgt-- A_QsrIce'
-                              - 'O_QsrMix <--gauswgt_glbpos-- A_QsrMix'
-                              - 'O_QnsIce <--gauswgt-- A_QnsIce'
-                              - 'O_QnsMix <--gauswgt_glbpos-- A_QnsMix'
-                              - 'OTotRain <--gauswgt_global-- ATotRain'
-                              - 'OTotSnow <--gauswgt-- ATotSnow'
-                              - 'OIceEvap <--gauswgt-- AIceEvap'
-                              - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+                           # TODO: test if the naming of the remapping file works 
                            flxatmos_1:
                               - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
                               - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
@@ -791,6 +803,12 @@ oasis3mct:
                               - '1_OTotSnow <--gauswgt-- ATotSnow'
                               - '1_OIceEvap <--gauswgt-- AIceEvap'
                               - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
+                           
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+                           rmp_a2agr1: rmp_a2agr1
 
                 fs_oasismct4:
 
@@ -823,6 +841,11 @@ oasis3mct:
                               - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
                               - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
 
         coupling_directions:
                 'opat->atmo':
@@ -940,8 +963,8 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: 2.0
                                 - mapping:
-                                        mapname: rmp_opat_to_atmo_GAUSWGT_${nemo.resolution}.nc
-                                        map_regrid_on: dest
+                                        mapname: rmp_opat_to_atmo_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                                        map_regrid_on: dst
 
                 # TODO: implement the remapping in a clean way
                 # 1. make remapping weights restart again
@@ -953,9 +976,9 @@ oasis3mct:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                         weight: 2.0
-                                #- mapping:
-                                #        mapname: rmp_atmo_to_opat_GAUSWGT_${nemo.resolution}.nc
-                                #        map_regrid_on: src
+                                - mapping:
+                                        mapname: rmp_atmo_to_opat_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                                        map_regrid_on: src
 
                 a2ot_gauswgt:
                         time_transformation: instant
@@ -965,7 +988,7 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: 2.0
                                 - mapping:
-                                        mapname: rmp_atmo_to_opat_GAUSWGT_${nemo.resolution}.nc
+                                        mapname: rmp_atmo_to_opat_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
                                         map_regrid_on: src
 
                 a2oc_gauswgt:
@@ -976,7 +999,7 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: 2.0
                                 - mapping:
-                                        mapname: rmp_atmo_to_opac_GAUSWGT_${nemo.resolution}.nc
+                                        mapname: rmp_atmo_to_opac_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
                                         map_regrid_on: src
 
                 a2oc_gauswgt_global:
@@ -987,7 +1010,7 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: 2.0
                                 - mapping:
-                                        #mapname: rmp_atmo_to_opac_GAUSWGT_${nemo.resolution}.nc
+                                        mapname: rmp_atmo_to_opac_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
                                         map_regrid_on: src
                         postprocessing:
                                 conserv:
@@ -1000,22 +1023,24 @@ oasis3mct:
                                         search_bin: latitude
                                         nb_of_neighbours: 9
                                         weight: 2.0
-                                #- mapping:
-                                #        #mapname: rmp_atmo_to_opac_GAUSWGT_${nemo.resolution}.nc
-                                #        map_regrid_on: src
+                                - mapping:
+                                        mapname: rmp_atmo_to_opac_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                                        map_regrid_on: src
                         postprocessing:
                                 conserv:
                                         method: glbpos
 
         input_files:
-                rmp_a2n_B: rmp_a2n_B
-                rmp_a2n_C: rmp_a2n_C
-                rmp_n2a_C: rmp_n2a_C
                 areas: areas
                 masks: masks
                 grids: grids
 
         input_in_work:
+                rmp_ot2a: rmp_opat_to_atmo_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2oc: rmp_atmo_to_opac_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2ot: rmp_atmo_to_opat_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2agr1: rmp_atmo_to_${nemo.nest1}_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+
                 rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
@@ -1023,10 +1048,17 @@ oasis3mct:
                 masks: masks.nc
                 grids: grids.nc
 
+        # GAUSWGT_192 refers to a namcouple setting of GAUSWGT D SCALAR LATITUDE 1 9 2
         input_sources:
+                rmp_ot2a: ${input_dir}/GAUSWGT_192/rmp_opat_to_atmo_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2oc: ${input_dir}/GAUSWGT_192/rmp_atmo_to_opac_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2ot: ${input_dir}/GAUSWGT_192/rmp_atmo_to_opat_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2agr1: ${input_dir}/GAUSWGT_192/rmp_atmo_to_${nemo.nest1}_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+
                 rmp_a2n_B: ${input_dir}/rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_a2n_C: ${input_dir}/rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_n2a_C: ${input_dir}/rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+
                 areas: ${input_dir}/areas_${echam.resolution}_${nemo.resolution}_frac.nc
                 masks: ${input_dir}/masks_${echam.resolution}_${nemo.resolution}_frac.nc
                 grids: ${input_dir}/grids_${echam.resolution}_${nemo.resolution}_frac.nc

@@ -31,7 +31,12 @@ Optional arguments                                     Description
   -o ``ONLY``, --only ``ONLY``                         [o]nly do this step.
   -r ``RESUME_FROM``, --resume-from ``RESUME_FROM``    [r]esume from the specified run/step (i.e. to resume a second run you'll need to use ``-r 2``).
   -U, --update                                         [U]pdate the runscript in the experiment folder and associated files
-  --update-filetypes                                   Updates the requested files from external sources in a currently ongoing simulation. We strongly advise against using this option unless you really know what you are doing.
+  --update-filetypes                                   Updates the requested files from external sources in a currently 
+                                                       ongoing simulation. For example, if you want to update the binaries 
+                                                       and the configs (namelists) in a resubmission of a experiment you can 
+                                                       do this by adding ``--update-filetypes bin config`` to your 
+                                                       ``esm_runscripts`` command. We strongly advise against using this 
+                                                       option unless you really know what you are doing.
   -i, --inspect                                        This option can be used to [i]nspect the results of a previous
                                                        run, for example one prepared with ``-c``. This argument needs an
                                                        additional keyword. Choose among: ``overview`` (gives you the

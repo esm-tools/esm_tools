@@ -63,3 +63,5 @@ choose_general.check:
                     For more info on how to implement a new machine in ESM-Tools check:
                     https://esm-tools.readthedocs.io/en/latest/cookbook.html#implement-a-new-hpc-machine\\
                     "
+    "*":
+        placeholder: null

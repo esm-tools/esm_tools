@@ -14,38 +14,6 @@ import esm_environment
 import esm_plugin_manager
 
 
-# Yes, Type Hints. Python >= 3.5 supports them. Small steps towards stability,
-# until Paul goes crazy and redoes everything in Go. Or Rust. Or Brainfuck
-# (yes, that's not made up: https://en.wikipedia.org/wiki/Brainfuck)
-# Docs for typing: https://docs.python.org/3/library/typing.html
-def install(package: str) -> None:
-    """
-    Checks if a package is already installed in the system and if it's not, then it
-    installs it.
-
-    Parameters
-    ----------
-    package : str
-        Name of the package or get operation. Can be a package name (e.g.
-        ``numpy``) or a full pip address (e.g.
-        ``git@https://github.com/esm-tools/esm_tools.git``)
-
-    Returns
-    -------
-    None
-    """
-    package_name = package.split("/")[-1].replace(".git", "")
-    installed_packages = esm_plugin_manager.find_installed_plugins()
-    arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
-    if os.environ.get("VIRTUAL_ENV"):
-        arg_list.remove("--user")
-    if not package_name in installed_packages:
-        try:
-            subprocess.check_call(arg_list)
-        except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
-            subprocess.check_call(arg_list)
-
-
 ######################################################################################
 ################################# class "task" #######################################
 ######################################################################################
@@ -401,7 +369,7 @@ class Task:
                     if plugin not in self.already_installed_plugins:
                         # Actually only works because Paul put the gfw_creator
                         # required plugin for awiesm onto PyPI...
-                        install(plugin)
+                        esm_plugin_manager.install(plugin)
                         self.already_installed_plugins.append(plugin)
 
         if self.package.kind in ["setups", "couplings"]:

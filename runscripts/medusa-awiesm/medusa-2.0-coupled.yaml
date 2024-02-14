@@ -1,0 +1,48 @@
+general:
+    setup_name: medusa
+    compute_time: "00:30:00"
+    initial_date: '2001-01-01'
+    final_date: '2011-01-01'
+    base_dir: "/work/bm1030/a270105/medusa-output/"
+    nyear: 1 
+    nmonth: 0
+    nday: 0
+    account: bm1030
+
+medusa:
+        version: 2.0
+        model_dir: /work/ab0995/a270105/esm_code/medusa-2.0/
+        nproc: 1
+        lresume: true
+        ini_parent_exp_id: "awiesm-medusa-test1"
+        ini_parent_date: "20001231"
+        ini_parent_dir: "/work/bm1030/a270105/awiesm-output/awiesm-medusa-test1/restart/medusa/"
+        input_dir: /work/bm1030/a270105/medusa-input/ 
+        fesom_resolution: ${general.fesom_resolution}
+
+        workflow:
+                next_run_triggered_by: couple_out
+
+                subjobs:
+                        #MA: I don't think we need this
+                        #couple_in:
+                        #        nproc: 1
+                        #        run_before: prepcompute
+                        #        script: postprocessing_fesom.sh
+                        #        script_dir: /work/ollie/yye/esm_tools/runscripts/medusa
+                        #        call_function: ???
+                        #        enc_preparation: env_medusa.py???
+                        #        run_only: ???
+                        #        skip_chunk_number: 1??
+                        couple_out:
+                                #YY: postprocessing script not needed!
+                                #MA: We probably need a dummy script for keeping the workflow alive
+                                #nproc: 1
+                                batch_or_shell: shell
+                                run_after: tidy
+                                script: dummy_postprocessing.sh
+                                script_dir: ${general.esm_function_dir}/components/medusa/
+                                #MA: I don't think these are needed
+                                #call_function:
+                                #env_preparation:
+                                run_only: last_run_in_chunk

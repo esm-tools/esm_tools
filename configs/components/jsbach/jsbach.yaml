@@ -88,7 +88,23 @@ choose_version:
                                         lightning: lightning
                                         popdens: popdens
 
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
+                        # further options are given under `choose_scenario_type` section
                         cmip6hist:
+                                scenario_type: cmip6
+
+                        ssp370:
+                                scenario_type: cmip6
+
+                        ssp126:
+                                scenario_type: cmip6
+
+                        ssp245:
+                                scenario_type: cmip6
+
+                        ssp534os:
+                                scenario_type: cmip6
+                        ssp585:
                                 scenario_type: cmip6
 
 
@@ -183,7 +199,24 @@ choose_version:
                                         #lightning: lightning
                                         #popdens: popdens
 
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
+                        # further options are given under `choose_scenario_type` section
                         cmip6hist:
+                                scenario_type: cmip6
+
+                        ssp126:
+                                scenario_type: cmip6
+
+                        ssp245:
+                                scenario_type: cmip6
+
+                        ssp370:
+                                scenario_type: cmip6
+
+                        ssp534os:
+                                scenario_type: cmip6
+
+                        ssp585:
                                 scenario_type: cmip6
 
         "3.10":
@@ -283,7 +316,7 @@ choose_scenario_type:
                         a_nd_file: a_nd_file
                         lightning: lightning
                         popdens: ${popdens_cmip6}
-                        cover_fract: cover_fract_hist_scenario
+                        cover_fract: ${cover_fract_cmip6}
 
 
 # For ssp scenarios find the pathway first 4 characters
@@ -302,6 +335,7 @@ choose_scenario_is_ssp:
         False:
                 ssp_num: null
                 Ndepo_sufix: ""
+                cover_fract_cmip6: cover_fract_hist_scenario
 
 choose_echam.with_wiso:
         True:

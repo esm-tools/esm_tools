@@ -331,12 +331,12 @@ This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb
 Setting the file movement method for filetypes in the runscript
 ---------------------------------------------------------------
 
-By default, `esm_runscripts` copies all files initially into the first ``run_``-folder, and from there to ``work``. After the run, outputs, logs, restarts etc. are copied
+By default, ``esm_runscripts`` copies all files initially into the first ``run_``-folder, and from there to ``work``. After the run, outputs, logs, restarts etc. are copied
 from ``work`` to ``run_``, and then moved from there to the overall experiment folder. We chose that as the default setting as it is the safest option, leaving the user
 with everything belonging to the experiment in one folder. It is also the most disk space consuming, and it makes sense to link some files into the experiment rather
 than copy them.
 
-As an example, to configure `esm_runscripts` for an echam-experiment to link the forcing and inputs, one can add the following to the runscript yaml file:
+As an example, to configure ``esm_runscripts`` for an echam-experiment to link the forcing and inputs, one can add the following to the runscript yaml file:
 
 .. code-block:: yaml
 
@@ -352,3 +352,68 @@ As an example, to configure `esm_runscripts` for an echam-experiment to link the
 
 Both ways to set the entries are doing the same thing. It is possible, as in the ``input`` case, to set the file movement method independently for each of the
 directions; the setting ``all_directions`` is just a shortcut if the method is identical for all of them.
+
+Running an experiment with a virtual environment
+-----------------------------------------------
+
+Running jobs can optionally be encapsulated into a virtual environment.
+
+To use a virtual environment run ``esm_runscripts`` with the flag
+``--contained-run`` or set ``use_venv`` within the ``general`` section of your
+runscript to ``True``:
+
+.. code-block:: yaml
+
+   general:
+       use_venv: True
+
+This shields the run from changes made to the remainder of the ESM-Tool installation,
+and it's strongly recommended for production runs.
+
+.. warning::
+   Refrain from using this feature if you have installed ESM-Tools within a conda
+   environment. Conda enviroment installation is still in its testing phase and we
+   cannot evaluate yet which conflicts might arise from combining both the venv of
+   this feature and the environment from conda.
+
+If you choose to use a virtual environment, a local installation will be created in the experiment tree at the begining of the first run into the folder named ``.venv_esmtools``.  **That** installation will be used for the experiment. It will be installed at the root of your experiment and contains all the Python libraries used by ESM-Tools. The installation at the beginning of the experiment will induce a small overhead (~2-3 minutes).
+
+For example, for a user ``miguel`` with a run with `expid` ``test`` ESM-Tools will be installed here::
+
+     /scratch/miguel/test/.venv_esmtools/lib/python3.10/site-packages/esm_tools
+
+instead of::
+
+    /albedo/home/miguel/.local/lib/site-packages/esm_tools
+
+The virtual environment installs by default the ``release`` branch, pulling it directly
+from our GitHub repository. You can choose to override this default by specifying another
+branch, adding to your runscript:
+
+.. code-block:: yaml
+
+  general:
+      install_esm_tools_branch: '<your_branch_name>'
+
+.. warning::
+   The branch **needs to exist on GitHub** as it is cloned form there, and **not from your
+   local folder**. If you made any changes in your local branch make sure they are pushed before
+   running ``esm_runscripts`` with a virtual environment, so that your changes are included in the
+   virtual environment installation.
+
+You may also select to install esm_tools in `editable mode`, in which case
+they will be installed in a folder ``src/esm_tools/`` in the root of
+your experiment. Any changes made to the code in that folder **will** influence how
+ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
+`editable` mode use:
+
+.. code-block:: yaml
+
+   general:
+       install_<esm_package>_editable: true/false
+
+.. note::
+   When using a virtual environment, config files and namelists will come of the
+   folder .venv_esmtools listed above and **not** from your user install directory.
+   You should make **all** changes to the namelists and config files via your user
+   runscript (:ref:`yaml:Changing Namelists`). This is recommended in all cases!!!

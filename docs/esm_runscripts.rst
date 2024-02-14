@@ -31,8 +31,7 @@ Optional arguments                                     Description
   ``-o ONLY``, ``--only ONLY``                         [o]nly do this step.
   ``-r RESUME_FROM``, ``--resume-from RESUME_FROM``    [r]esume from the specified run/step (i.e. to resume a second run you'll need to use ``-r 2``).
   ``-U``, ``--update``                                 [U]pdate the runscript in the experiment folder and associated files
-  ``--update-filetypes UPDATE_FILETYPES [UPDATE_FILETYPES ...]``
-                                                       Updates the requested files from external sources in a currently 
+  ``--update-filetypes UPDATE_FILETYPES [UPDATE_FILETYPES ...]``    Updates the requested files from external sources in a currently 
                                                        ongoing simulation. For example, if you want to update the binaries 
                                                        and the configs (namelists) in a resubmission of a experiment you can 
                                                        do this by adding ``--update-filetypes bin config`` to your 

@@ -482,6 +482,9 @@ class oasis:
                             "Restart file missing",
                             f"No OASIS restart file for ``{restart_file}`` found "
                             f"matching the pattern ``{glob_search_file}``"
+                            f"``{restart_file}``."
+                            f"For FOCI this may require manual linking of restart files "
+                            f"to match the search pattern ``{restart_file_path}``."
                         )
                     else:
                         if not gconfig["isinteractive"]:

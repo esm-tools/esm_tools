@@ -196,6 +196,7 @@ def _call_esm_runscripts_internally(config, command, exedir):
     if config["general"]["verbose"]:
         print(command)
 
+    # Exit after resubmission of esm_runscripts
     end_it_all(config)
 
 def call_esm_runscripts_from_prepexp(config):
@@ -228,7 +229,6 @@ def call_esm_runscripts_from_prepexp(config):
         
         scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
 
-        # remove the update option otherwise it will enter an infinite loop
         original_command = gconfig["original_command"]
 
         # Before resubmitting the esm_runscripts, the path of the runscript

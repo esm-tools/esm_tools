@@ -212,8 +212,11 @@ def call_esm_runscripts_from_prepexp(config):
 
     gconfig = config["general"]
 
+    fromdir = os.path.realpath(gconfig["started_from"])
+    scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
+
     # Return if already called from the experiment folder
-    if gconfig["isresubmitted"] and not gconfig["update"]:
+    if (fromdir == scriptsdir) and not gconfig["update"]:
         if config["general"]["verbose"]:
             print("Started from the experiment folder, continuing...")
         return config

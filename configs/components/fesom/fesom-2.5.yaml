@@ -23,8 +23,24 @@ with_recom: false
 
 choose_version:
   "2.5":
+    branch: "2.5"
+    destination: "fesom-2.5"
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+    wiso_code: true
+    icb_code: true
+    add_namelists:
+        - namelist.dyn
+    add_config_files:
+        tra:     tra
+        dyn:     dyn
+    namelist_dir: "${model_dir}/config/"
+  
+  "2.5-paleodyn":
     branch: "icb_into_v2.5" #LA: we need a correct name for it once everything is merged
     destination: "fesom-2.5"
+    git-repository:
+    - https://github.com/ackerlar/fesom2.git # LA: only temporarily 
     wiso_code: true
     icb_code: true
     add_namelists:
@@ -36,8 +52,6 @@ choose_version:
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x
-git-repository:
-- https://github.com/ackerlar/fesom2.git # LA: only temporarily until everything paleo related is merged into a specific "paleo" branch!!
 contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 

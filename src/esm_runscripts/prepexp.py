@@ -1,23 +1,19 @@
 import os
-import shutil
-import sys
 import pathlib
+import shutil
 import subprocess
+import sys
 
 import questionary
 from colorama import Fore
-
-import esm_tools
-import esm_parser
-
-from .batch_system import batch_system
-from .helpers import end_it_all, evaluate, write_to_log
 from loguru import logger
 
-from . import prepcompute
-from . import filelists
+import esm_parser
+import esm_tools
 
-import pdb
+from . import filelists, prepcompute
+from .batch_system import batch_system
+from .helpers import end_it_all, evaluate, write_to_log
 
 
 def run_job(config):
@@ -418,6 +414,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     # If the target path exists compare the two scripts
     else:
         import difflib
+
         import esm_parser
 
         script_o = open(fromdir + "/" + tfile).readlines()

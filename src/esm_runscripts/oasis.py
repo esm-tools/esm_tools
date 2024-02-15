@@ -466,7 +466,7 @@ class oasis:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
                 glob_search_file = (
-                    f"{config['ini_restart_dir']}{restart_file}*"
+                    f"{config['ini_restart_dir']}{restart_file}_????????-"
                     f"{config['ini_restart_date'].year}"
                     f"{config['ini_restart_date'].month:02}"
                     f"{config['ini_restart_date'].day:02}"
@@ -478,14 +478,19 @@ class oasis:
                     if len(glob_restart_file) == 1:
                         restart_file = os.path.basename(glob_restart_file[0])
                     elif len(glob_restart_file) == 0:
-                        user_error(
-                            "Restart file missing",
-                            f"No OASIS restart file for ``{restart_file}`` found "
-                            f"matching the pattern ``{glob_search_file}``"
-                            f"``{restart_file}``."
-                            f"For FOCI this may require manual linking of restart files "
-                            f"to match the search pattern ``{restart_file_path}``."
-                        )
+                       # in case config["restart_in_sources"] are given explicitely
+                       # and are not absolute paths as e.g in FOCI
+                       # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+                       #    restart_in_sources: sstocean_${parent_expid}_...
+                       # we need to check for the full path as well
+                       # a nightmare to track this down
+                       restart_file = f"{config['ini_restart_dir']}/{restart_file}"
+                       if not os.path.isfile(restart_file):
+                            user_error(
+                                "Restart file missing",
+                                f"No OASIS restart file for ``{restart_file}`` found "
+                                f"matching the pattern ``{glob_search_file}``"
+                            )
                     else:
                         if not gconfig["isinteractive"]:
                             # If more than one restart file found that matches ini_restart_date,

@@ -15,34 +15,39 @@ Usage
 Arguments
 ---------
 
-====================================================== ==========================================================
-Optional arguments                                     Description
-====================================================== ==========================================================
-  -h, --help                                           Show this help message and exit.
-  -d, --debug                                          Print lots of debugging statements.
-  -v, --verbose                                        Be verbose.
-  -e ``EXPID``, --expid ``EXPID``                      The experiment ID to use. Default ``test``.
-  -c, --check                                          Run in check mode (don't submit job to supercomputer).
-  -P, --profile                                        Write profiling information (esm-tools).
-  -j ``LAST_JOBTYPE``, --last_jobtype ``LAST_JOBTYPE`` Write the jobtype this run was called from (esm-tools internal).
-  -t ``TASK``, --task ``TASK``                         The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy_and_resubmit``.
-  -p ``PID``, --pid ``PID``                            The PID of the task to observe.
-  -x ``EXCLUDE``, --exclude ``EXCLUDE``                E[x]clude this step.
-  -o ``ONLY``, --only ``ONLY``                         [o]nly do this step.
-  -r ``RESUME_FROM``, --resume-from ``RESUME_FROM``    [r]esume from the specified run/step (i.e. to resume a second run you'll need to use ``-r 2``).
-  -U, --update                                         [U]pdate the runscript in the experiment folder and associated files
-  --update-filetypes                                   Updates the requested files from external sources in a currently ongoing simulation. We strongly advise against using this option unless you really know what you are doing.
-  -i, --inspect                                        This option can be used to [i]nspect the results of a previous
-                                                       run, for example one prepared with ``-c``. This argument needs an
-                                                       additional keyword. Choose among: ``overview`` (gives you the
-                                                       same litte message you see at the beginning of each run, ``lastlog``
-                                                       (displays the last log file), ``explog`` (the overall experiment
-                                                       logfile), ``datefile`` (the overall experiment logfile), ``config`` 
-                                                       (the Python dict that contains all information), ``size`` (the size
-                                                       of the experiment folder), a filename or a directory name output 
-                                                       the content of the file /directory if found in the last 
-                                                       ``run_`` folder.)
-====================================================== ==========================================================
+=================================================================== ==========================================================
+Optional arguments                                                  Description
+=================================================================== ==========================================================
+  ``-h``, ``--help``                                                Show this help message and exit.
+  ``-d``, ``--debug``                                               Print lots of debugging statements.
+  ``-v``, ``--verbose``                                             Be verbose.
+  ``-e EXPID``, ``--expid EXPID``                                   The experiment ID to use. Default ``test``.
+  ``-c``, ``--check``                                               Run in check mode (don't submit job to supercomputer).
+  ``-P``, ``--profile``                                             Write profiling information (esm-tools).
+  ``-j LAST_JOBTYPE``, ``--last_jobtype LAST_JOBTYPE``              Write the jobtype this run was called from (esm-tools internal).
+  ``-t TASK``, ``--task TASK``                                      The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy_and_resubmit``.
+  ``-p PID``, ``--pid PID``                                         The PID of the task to observe.
+  ``-x EXCLUDE``, ``--exclude EXCLUDE``                             E[x]clude this step.
+  ``-o ONLY``, ``--only ONLY``                                      [o]nly do this step.
+  ``-r RESUME_FROM``, ``--resume-from RESUME_FROM``                 [r]esume from the specified run/step (i.e. to resume a second run you'll need to use ``-r 2``).
+  ``-U``, ``--update``                                              [U]pdate the runscript in the experiment folder and associated files
+  ``--update-filetypes UPDATE_FILETYPES [UPDATE_FILETYPES ...]``    Updates the requested files from external sources in a currently 
+                                                                    ongoing simulation. For example, if you want to update the binaries 
+                                                                    and the configs (namelists) in a resubmission of a experiment you can 
+                                                                    do this by adding ``--update-filetypes bin config`` to your 
+                                                                    ``esm_runscripts`` command. We strongly advise against using this 
+                                                                    option unless you really know what you are doing.
+  ``-i``, ``--inspect``                                             This option can be used to [i]nspect the results of a previous
+                                                                    run, for example one prepared with ``-c``. This argument needs an
+                                                                    additional keyword. Choose among: ``overview`` (gives you the
+                                                                    same litte message you see at the beginning of each run, ``lastlog``
+                                                                    (displays the last log file), ``explog`` (the overall experiment
+                                                                    logfile), ``datefile`` (the overall experiment logfile), ``config`` 
+                                                                    (the Python dict that contains all information), ``size`` (the size
+                                                                    of the experiment folder), a filename or a directory name output 
+                                                                    the content of the file /directory if found in the last 
+                                                                    ``run_`` folder.)
+=================================================================== ==========================================================
 
 
 Running a Model/Setup

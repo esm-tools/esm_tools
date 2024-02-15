@@ -519,7 +519,13 @@ class oasis:
                     restart_file = os.path.basename(glob_restart_file[0])
                 elif len(glob_restart_file) == 0:
                     restart_file = restart_file_path
-                    if not os.path.isfile(restart_file):
+                    # in case config["restart_in_sources"] are given explicitely 
+                    # AND are not absolute paths as e.g in FOCI
+                    # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+                    #    restart_in_sources: sstocean_${parent_expid}_...
+                    # we need to check for the full path as well 
+                    # btw it was a nightmare to track this down
+                    if not os.path.isfile(restart_file) and not os.path.isfile(f"{config['ini_restart_dir']}/{restart_file}"):
                         user_error(
                             "Restart file missing",
                             f"No OASIS restart file for ``{restart_file_label}`` found "

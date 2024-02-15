@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 import pathlib
+import subprocess
 
 import questionary
 from colorama import Fore
@@ -13,13 +14,32 @@ from .batch_system import batch_system
 from .helpers import end_it_all, evaluate, write_to_log
 from loguru import logger
 
+from . import prepcompute
+from . import filelists
+
+import pdb
+
 
 def run_job(config):
+    """
+    Run prepexp job.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    """
     evaluate(config, "prepexp", "prepexp_recipe")
     return config
 
 
 def color_diff(diff):
+    """
+
+    Parameters
+    ----------
+    diff : 
+    """
     for line in diff:
         if line.startswith("+"):
             yield Fore.GREEN + line + Fore.RESET
@@ -36,6 +56,7 @@ def copy_tools_to_thisrun(config):
     Copies the tools, namelists and runscripts to the experiment directory,
     making sure that they don't overwrite previously existing files unless
     the ``-U`` flag is used.
+
     Parameters
     ----------
     config : dict
@@ -101,23 +122,13 @@ def copy_tools_to_thisrun(config):
         # `killall esm_runscripts` might be required
         esm_parser.user_error(error_type, error_text)
 
-    # If ``fromdir`` and ``scriptsdir`` are the same, this is already a computing
-    # simulation which means we want to use the script in the experiment folder,
-    # so no copying is needed
-    if (fromdir == scriptsdir) and not gconfig["update"]:
-        if config["general"]["verbose"]:
-            print("Started from the experiment folder, continuing...")
-        return config
-    # Not computing but initialisation
-    else:
-        if not fromdir == scriptsdir:
-            if config["general"]["verbose"]:
-                print("Not started from experiment folder, restarting...")
-        else:
-            print("Tools were updated, restarting...")
+    # If ``fromdir`` and ``scriptsdir`` are the same (the same as ``isresubmitted=True``),
+    # this is already a computing simulation which means we want to use the script
+    # in the experiment folder, so no copying is needed.
 
-        # At this point, ``fromdir`` and ``scriptsdir`` are different. Update the
-        # runscript if necessary
+    if not gconfig["isresubmitted"]:
+        # At this point, ``fromdir`` and ``scriptsdir`` are different (same as gconfig["isresubmitted"]=False).
+        # Update the runscript if necessary
         update_runscript(
             fromdir, scriptsdir, gconfig["scriptname"], gconfig, "runscript"
         )
@@ -138,17 +149,94 @@ def copy_tools_to_thisrun(config):
         for tfile in gconfig["additional_files"]:
             update_runscript(fromdir, scriptsdir, tfile, gconfig, "additional file")
 
-        # remove the update option otherwise it will enter an infinite loop
+    return config
+
+def _call_esm_runscripts_internally(config, command, exedir):
+    """
+    - Removes update flags from command input.
+    - Adds additional flags to command input.
+    - Addes esm_runscripts command if necessary.
+    - Calls esm_runscipts internally in a subprocess call.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    command : str
+        Command or esm_runscripts arguments
+    exedir : str
+        Path from which the command is to be executed.
+
+    """
+
+    # Remove the update option otherwise it will enter an infinite loop.
+    options_to_remove = [" -U ", " --update "]
+    for option in options_to_remove:
+        command = command.replace(option, " ")
+
+    # Check if 'esm_runscripts' command is given in 'command' argument.
+    if not command.startswith("esm_runscripts"):
+        command = f"esm_runscripts {command}"
+
+    # Add non-interaction flags, current jobtype, and current task (phase) [-t] if not already in 'command'
+    non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}", f"-t {config['general']['jobtype']}"]
+    for ni_flag in non_interaction_flags:
+        # prevent continuous addition of ``ni_flag``
+        if ni_flag not in command:
+            command += f" {ni_flag} "
+
+    # Check if the path exists, in which 'commend' should be executed
+    if os.path.exists(exedir):
+        subprocess.check_call(command.split(), cwd=exedir)
+    else:
+        error_type = "runtime error in function ``_call_esm_runscripts_internally``"
+        error_text = f"{exedir} does not exists. Aborting."
+        esm_parser.user_error(error_type, error_text)
+
+    if config["general"]["verbose"]:
+        print(command)
+
+    # Exit after resubmission of esm_runscripts
+    end_it_all(config)
+
+def call_esm_runscripts_from_prepexp(config):
+    """
+    Recipe step that creates a esm_runscripts command and submits this
+    to the functions that executes this command in a subprocess call.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+
+    """
+
+    gconfig = config["general"]
+
+    fromdir = os.path.realpath(gconfig["started_from"])
+    scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
+
+    # Return if already called from the experiment folder
+    if (fromdir == scriptsdir) and not gconfig["update"]:
+        if config["general"]["verbose"]:
+            print("Started from the experiment folder, continuing...")
+        return config
+
+    # Not computing but initialisation
+    else:
+        if config["general"]["verbose"]:
+            print("Not started from experiment folder, restarting...")
+        
+        scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
+
         original_command = gconfig["original_command"]
-        options_to_remove = [" -U ", " --update "]
-        for option in options_to_remove:
-            original_command = original_command.replace(option, " ")
 
         # Before resubmitting the esm_runscripts, the path of the runscript
         # needs to be modified. Remove the absolute/relative path
         runscript_absdir, runscript = os.path.split(gconfig["runscript_abspath"])
         original_command_list = original_command.split()
         new_command_list = []
+
         for command in original_command_list:
             # current command will contain the full path, so replace it with
             # the YAML file only since we are going to execute it from the
@@ -159,27 +247,22 @@ def copy_tools_to_thisrun(config):
             new_command_list.append(command)
 
         new_command = " ".join(new_command_list)
-        restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
 
-        # Add non-interaction flags
-        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
-        for ni_flag in non_interaction_flags:
-            # prevent continuous addition of ``ni_flag``
-            if ni_flag not in restart_command:
-                restart_command += f" {ni_flag} "
+        _call_esm_runscripts_internally(config, new_command, scriptsdir)
 
-        if config["general"]["verbose"]:
-            print(restart_command)
-        os.system(restart_command)
-
-        gconfig["profile"] = False
-        end_it_all(config)
-
+        return config
 
 def _create_folders(config, filetypes):
     """
-    Generates the experiment file tree. Foldres are created for every filetype
+    Generates the experiment file tree. Folders are created for every filetype
     except for "ignore".
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    filetypes: list
+
     """
     for filetype in filetypes:
         if not filetype == "ignore":
@@ -197,6 +280,11 @@ def _create_setup_folders(config):
 
     This also creates a small marker file at the top of
     the experiment so that the "root" can be found from inside.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
     """
     _create_folders(config["general"], config["general"]["all_filetypes"])
     with open(
@@ -207,6 +295,13 @@ def _create_setup_folders(config):
 
 
 def _create_component_folders(config):
+    """
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    """
+
     for component in config["general"]["valid_model_names"]:
         _create_folders(config[component], config["general"]["all_model_filetypes"])
     return config
@@ -229,12 +324,12 @@ def initialize_experiment_logfile(config):
 
     Parameters
     ----------
-    dict :
+    config : dict
         The experiment configuration
 
     Return
     ------
-    dict :
+    config : dict
         As per convention for the plug-in system; this gives back the
         entire config.
 
@@ -288,6 +383,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     ``esm_runscripts``. If that flag is not used and the source and target are different
     then raises a user-friendly error recommending to use the ``-U`` flag with the warning
     that the files will be overwritten.
+
     Parameters
     ----------
     cls : obj
@@ -303,6 +399,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     file_type : str
         String specifying the nature of the file, only necessary for printing information
         and for the error description.
+
     Exceptions
     ----------
     UserError
@@ -375,27 +472,46 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
 
 
 def _copy_preliminary_files_from_experiment_to_thisrun(config):
-    # I don't like this one bit. DB
+    """
+    - Copies the setup *.date file from <experiment>/scripts/ folder
+      to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
+    - Copies the runscript yaml file from current folder (<experiment>/scripts) 
+      to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/<runscript>
+    - Copies 'additional_files' (if any, e.g. fesom_output.yaml, that are called
+      via 'further_reading' in the runscript or other config file) from ...
+      to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
+
+    Why here???
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration information.
+    """
+
     filelist = [
         (
             "scripts",
             f"{config['general']['expid']}_{config['general']['setup_name']}.date",
             "copy",
+        ),
+        (
+            "scripts",
+            f"{config['general']['scriptname']}",
+            "copy",
         )
     ]
 
+    for additional_file in config["general"].get("additional_files",[]):
+        filelist.append(("scripts", additional_file, "copy"))
+
     for filetype, filename, copy_or_link in filelist:
-        source = config["general"]["experiment_" + filetype + "_dir"]
-        dest = config["general"]["thisrun_" + filetype + "_dir"]
-        if copy_or_link == "copy":
-            method = shutil.copy2
-        elif copy_or_link == "link":
-            method = os.symlink
+        source = config["general"].get("experiment_" + filetype + "_dir", "")
+        dest = config["general"].get("thisrun_" + filetype + "_dir", "")
+
+        method = filelists.get_method(copy_or_link)
+
         if os.path.isfile(source + "/" + filename):
             method(source + "/" + filename, dest + "/" + filename)
-    this_script = config["general"]["scriptname"]
-    shutil.copy2("./" + this_script, config["general"]["thisrun_scripts_dir"])
 
-    for additional_file in config["general"]["additional_files"]:
-        shutil.copy2(additional_file, config["general"]["thisrun_scripts_dir"])
     return config

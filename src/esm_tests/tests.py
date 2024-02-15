@@ -219,7 +219,7 @@ def comp_test(info):
                                     folders.append(found_format[0])
                     if len(folders) == 0:
                         logger.warning(
-                            f'NOT TESTING {model + version}: "cd" command not found'
+                            f'NOT TESTING {model}{version}: "cd" command not found'
                         )
                         continue
 

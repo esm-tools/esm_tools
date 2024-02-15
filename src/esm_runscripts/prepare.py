@@ -41,7 +41,7 @@ def mini_resolve_variable_date_file(date_file, config):
                         )
                         print(f"date_file = {date_file}")
                         sys.exit(1)
-        date_file = pre + answer + post
+        date_file = f"{pre}{answer}{post}"
     return date_file
 
 
@@ -912,7 +912,7 @@ def check_config_for_warnings_errors(config):
 
     # Find conditions to warn (avoid warning more than once)
     last_jobtype = config["general"].get("last_jobtype", "")
-    isresubmitted = last_jobtype == config["general"]["jobtype"]
+    isresubmitted = config["general"].get("isresubmitted", "")
     isinteractive = config["general"].get("isinteractive", "")
 
     # Only warn if it is an interactive session or while submitted

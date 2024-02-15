@@ -30,13 +30,13 @@ computer:
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-agrif-3.0/
-   version: "agrif-3.0"
+   #version: "agrif-3.0"
   
 oifs:
-   runtime_environment_changes:
-      choose_computer.name:
-         "glogin":
-             compiler_mpi: intel2019_impi2019
+   #runtime_environment_changes:
+   #   choose_computer.name:
+   #      "glogin":
+   #          compiler_mpi: intel2019_impi2019
 
    version: "43r3"
    with_xios: True

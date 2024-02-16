@@ -61,8 +61,14 @@ general:
         - '2.2'
         - '3.0'
         - '3.0_busan'
+        - '3.1' 
 
         choose_version:
+          '3.1':
+            runoff_method: "EM21"
+            calving_method: "JS"
+            couplings:
+            - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci30
           '3.0_busan':
             runoff_method: "EM21"
             calving_method: "JS"
@@ -161,8 +167,8 @@ oifs:
                 compiler_mpi: intel2022_impi2022
                 #compiler_mpi: intel2019_impi2019_nemo4
              glogin:
-                #compiler_mpi: intel2019_impi2019_nemo4
-                compiler_mpi: intel2022_impi2021 
+                compiler_mpi: intel2019_impi2019_nemo4
+                #compiler_mpi: intel2022_impi2021 
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -218,8 +224,15 @@ oifs:
         nproc: 287
         
         # By default we turn off ECWAM wave model
-        wam: False
-
+        #wam: False
+        #choose_general.version:
+        #   "3.1":
+        #      # Turn on wave model
+        #      wam: True
+        #   "*":
+        #      # By default we turn off ECWAM wave model
+        #      wam: False
+        
         # For coupled setups we can use ocean currents
         use_ocean_currents: False
         choose_use_ocean_currents:
@@ -280,8 +293,26 @@ oifs:
         
         # add coupling fields for AGRIF                
         choose_general.version: 
-        
+           "3.1":
+              # Turn on wave model
+              wam: True 
+              # Namelist changes
+              # Flags for WAM are controlled by the variable above
+              add_namelist_changes:
+                 fort.4:
+                    NAMFOCICFG:
+                       FOCI_CPL_NEMO_LIM: false
+                       # this will set LNEMOLIMTEMP etc in OpenIFS
+                       FOCI_CPL_NEMO_SI3: true
+                    NAERAD:
+                       NAERANT_SCALE: 1 # turn off aerosol scaling
+                    NAMCLDP:
+                       # diffusion coeff for cloud edges
+                       RCLDIFF: 5.e-6 # default 3e-6
+                    NAMMCC:
+                       RALBSEAD_NML: 0.045
            "3.0":
+              wam: False
               add_namelist_changes:
                  fort.4:
                     NAMFOCICFG:
@@ -295,7 +326,8 @@ oifs:
                     NAMMCC:
                        RALBSEAD_NML: 0.045
                        RALBSCALE_AR: 0.8
-           "3.0_busan":
+           "3.0_busan": 
+              wam: False
               add_namelist_changes:
                  fort.4:
                     NAMFOCICFG:
@@ -310,6 +342,7 @@ oifs:
                        RALBSEAD_NML: 0.045
                        
            "*":
+              wam: False
               add_namelist_changes:
                   fort.4:
                      NAMFOCICFG:
@@ -381,6 +414,9 @@ nemo:
         
         # For 2.1-O12 we choose ORCA12 config for NEMO
         choose_general.version:
+                "3.1": 
+                        version: "ORCA05_Z46_SI3_COUPLED"
+                        resolution: ORCA05
                 "3.0_busan":
                         version: "ORCA05_Z46_SI3_COUPLED"
                         resolution: ORCA05
@@ -531,6 +567,9 @@ rnfmap:
         time_step: ${oasis3mct.coupling_time_step}       
         
         choose_general.version:
+                "3.1":
+                        version: foci211
+                        runoff_method: "JK22"
                 "3.0_busan":
                         version: foci211
                         runoff_method: "JK22"

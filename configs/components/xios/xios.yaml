@@ -175,6 +175,11 @@ choose_general.setup_name:
                                         context_ifs: context_ifs
                                         ifs_xml: ifs_xml
                                         nemo_xml: nemo_xml
+                        "3.1":
+                                add_config_files:
+                                        context_ifs: context_ifs
+                                        ifs_xml: ifs_xml
+                                        nemo_xml: nemo_xml
                         agrif:
                                 add_config_files:
                                         context_ifs: context_ifs

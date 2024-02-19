@@ -122,13 +122,9 @@ def copy_tools_to_thisrun(config):
         # `killall esm_runscripts` might be required
         esm_parser.user_error(error_type, error_text)
 
-    # If ``fromdir`` and ``scriptsdir`` are the same (the same as ``isresubmitted=True``),
-    # this is already a computing simulation which means we want to use the script
-    # in the experiment folder, so no copying is needed.
-
-    if not gconfig["isresubmitted"]:
-        # At this point, ``fromdir`` and ``scriptsdir`` are different (same as gconfig["isresubmitted"]=False).
-        # Update the runscript if necessary
+    # If ``fromdir`` and ``scriptsdir`` are different, we are not in the experiment.
+    # In this case, update the runscript if necessary.
+    if not fromdir == scriptsdir:
         update_runscript(
             fromdir, scriptsdir, gconfig["scriptname"], gconfig, "runscript"
         )

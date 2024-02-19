@@ -31,10 +31,14 @@ def run_job(config):
 
 def color_diff(diff):
     """
+    Adds color to text from a diff:
+    - Green for lines starting with ``+``
+    - Red for lines starting with ``-``
+    - Blue for lines starting with ``^``
 
     Parameters
     ----------
-    diff : 
+    diff : iterable object of strings to be colored
     """
     for line in diff:
         if line.startswith("+"):
@@ -198,13 +202,21 @@ def _call_esm_runscripts_internally(config, command, exedir):
 def call_esm_runscripts_from_prepexp(config):
     """
     Recipe step that creates a esm_runscripts command and submits this
-    to the functions that executes this command in a subprocess call.
+    to the function that modifies (if necessary) and executes this command
+    in a subprocess call, if the current folder is NOT the experiment folder.
+    The function will return and do nothing, if it is called already 
+    from the experiment folder.
+
 
     Parameters
     ----------
     config : dict
         Dictionary containing the configuration information.
 
+    Returns
+    -------
+    config : dict
+        Dictionary containing the configuration information.
     """
 
     gconfig = config["general"]
@@ -212,7 +224,7 @@ def call_esm_runscripts_from_prepexp(config):
     fromdir = os.path.realpath(gconfig["started_from"])
     scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
 
-    # Return if already called from the experiment folder
+    # Return if already called from the experiment folder without update flag
     if (fromdir == scriptsdir) and not gconfig["update"]:
         if config["general"]["verbose"]:
             print("Started from the experiment folder, continuing...")
@@ -477,8 +489,6 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
       via 'further_reading' in the runscript or other config file) from ...
       to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
 
-    Why here???
-
     Parameters
     ----------
     config : dict
@@ -502,8 +512,8 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
         filelist.append(("scripts", additional_file, "copy"))
 
     for filetype, filename, copy_or_link in filelist:
-        source = config["general"].get("experiment_" + filetype + "_dir", "")
-        dest = config["general"].get("thisrun_" + filetype + "_dir", "")
+        source = config["general"].get(f"experiment_{filetype}_dir", "")
+        dest = config["general"].get(f"thisrun_{filetype}_dir", "")
 
         method = filelists.get_method(copy_or_link)
 

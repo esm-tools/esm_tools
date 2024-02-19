@@ -290,6 +290,10 @@ fesom:
                         version: "2.5-paleodyn"
                         ALE_scheme: 'zstar'
                         namelist_dir: ${fesom.model_dir}/config/
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: 0.0
                 "2.1":
                         version: "2.1-awiesm-2.1"
                         ALE_scheme: 'zstar'

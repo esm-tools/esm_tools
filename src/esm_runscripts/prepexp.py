@@ -74,8 +74,8 @@ def copy_tools_to_thisrun(config):
     # Paths inside the experiment directory where esm_tools and namelists
     # are copied to. Those are not functional but a reference to what was
     # the original state when the experiment was firstly started
-    tools_dir = scriptsdir + "/esm_tools/configs"
-    namelists_dir = scriptsdir + "/esm_tools/namelists"
+    tools_dir = f"{scriptsdir}/esm_tools/configs"
+    namelists_dir = f"{scriptsdir}/esm_tools/namelists"
 
     if config["general"]["verbose"]:
         print("Started from :", fromdir)
@@ -271,10 +271,10 @@ def _create_folders(config, filetypes):
     for filetype in filetypes:
         if not filetype == "ignore":
             if not filetype == "work":
-                if not os.path.exists(config["experiment_" + filetype + "_dir"]):
-                    os.makedirs(config["experiment_" + filetype + "_dir"])
-            if not os.path.exists(config["thisrun_" + filetype + "_dir"]):
-                os.makedirs(config["thisrun_" + filetype + "_dir"])
+                if not os.path.exists(config[f"experiment_{filetype}_dir"]):
+                    os.makedirs(config[f"experiment_{filetype}_dir"])
+            if not os.path.exists(config[f"thisrun_{filetype}_dir"]):
+                os.makedirs(config[f"thisrun_{filetype}_dir"])
 
 
 def _create_setup_folders(config):
@@ -292,7 +292,7 @@ def _create_setup_folders(config):
     """
     _create_folders(config["general"], config["general"]["all_filetypes"])
     with open(
-        config["general"]["experiment_dir"] + "/.top_of_exp_tree", "w"
+        f"{config['general']['experiment_dir']}/.top_of_exp_tree", "w"
     ) as top_marker:
         top_marker.write(f"Top of experiment {config['general']['expid']}")
     return config
@@ -415,8 +415,8 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
 
     # If the target file in ``scriptsdir`` does not exist, then copy the file
     # to the target.
-    if not os.path.isfile(scriptsdir + "/" + tfile):
-        oldscript = fromdir + "/" + tfile
+    if not os.path.isfile(f"{scriptsdir}/{tfile}"):
+        oldscript = f"{fromdir}/{tfile}"
         print(oldscript)
         shutil.copy2(oldscript, scriptsdir)
     # If the target path exists compare the two scripts
@@ -425,16 +425,16 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
 
         import esm_parser
 
-        script_o = open(fromdir + "/" + tfile).readlines()
-        script_t = open(scriptsdir + "/" + tfile).readlines()
+        script_o = open(f"{fromdir}/{tfile}").readlines()
+        script_t = open(f"{scriptsdir}/{tfile}").readlines()
 
         diffobj = difflib.SequenceMatcher(a=script_t, b=script_o)
         # If the files are different
         if not diffobj.ratio() == 1:
             # Find differences
             differences = (
-                f"{fromdir + '/' + tfile} differs from "
-                + f"{scriptsdir + '/' + tfile}:\n"
+                f"{fromdir}/{tfile} differs from "
+                + f"{scriptsdir}/'{tfile}:\n"
             )
             for line in color_diff(difflib.unified_diff(script_t, script_o)):
                 differences += line
@@ -444,9 +444,9 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
             if gconfig["update"]:
                 esm_parser.user_note(
                     f"Original {file_type} different from target",
-                    differences + "\n" + f"{scriptsdir + '/' + tfile} will be updated!",
+                    f"{differences}\n{scriptsdir}/{tfile} will be updated!",
                 )
-                oldscript = fromdir + "/" + tfile
+                oldscript = f"{fromdir}/{tfile}"
                 print(oldscript)
                 shutil.copy2(oldscript, scriptsdir)
             # If the --update flag is not called, exit with an error showing the
@@ -466,10 +466,10 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     + "updated with the above changes?"
                 ).ask()
                 if update_choice:
-                    oldscript = fromdir + "/" + tfile
+                    oldscript = f"{fromdir}/{tfile}"
                     print(oldscript)
                     shutil.copy2(oldscript, scriptsdir)
-                    print(f"{scriptsdir + '/' + tfile} updated!")
+                    print(f"{scriptsdir}/{tfile} updated!")
                 else:
                     print("Submission stopped")
                     sys.exit(1)
@@ -513,7 +513,7 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
 
         method = filelists.get_method(copy_or_link)
 
-        if os.path.isfile(source + "/" + filename):
-            method(source + "/" + filename, dest + "/" + filename)
+        if os.path.isfile(f"{source}/{filename}"):
+            method(f"{source}/{filename}", f"{dest}/{filename}")
 
     return config

@@ -11,8 +11,7 @@ from loguru import logger
 import esm_parser
 import esm_tools
 
-from . import filelists, prepcompute
-from .batch_system import batch_system
+from . import filelists
 from .helpers import end_it_all, evaluate, write_to_log
 
 
@@ -96,7 +95,7 @@ def copy_tools_to_thisrun(config):
         print("Copying standard yamls from: ", esm_tools.get_config_filepath())
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
-        print("Copying standard namelists from: ",esm_tools.get_namelist_filepath())
+        print("Copying standard namelists from: ", esm_tools.get_namelist_filepath())
         esm_tools.copy_namelist_folder(namelists_dir)
 
     # check for recursive creation of the file tree. This prevents the risk of
@@ -147,6 +146,7 @@ def copy_tools_to_thisrun(config):
 
     return config
 
+
 def _call_esm_runscripts_internally(config, command, exedir):
     """
     - Removes update flags from command input.
@@ -174,8 +174,13 @@ def _call_esm_runscripts_internally(config, command, exedir):
     if not command.startswith("esm_runscripts"):
         command = f"esm_runscripts {command}"
 
-    # Add non-interaction flags, current jobtype, and current task (phase) [-t] if not already in 'command'
-    non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}", f"-t {config['general']['jobtype']}"]
+    # Add non-interaction flags, current jobtype, and current task (phase) [-t]
+    # if not already in 'command'
+    non_interaction_flags = [
+                                "--no-motd",
+                                f"--last-jobtype {config['general']['jobtype']}",
+                                f"-t {config['general']['jobtype']}"
+                            ]
     for ni_flag in non_interaction_flags:
         # prevent continuous addition of ``ni_flag``
         if ni_flag not in command:
@@ -195,12 +200,13 @@ def _call_esm_runscripts_internally(config, command, exedir):
     # Exit after resubmission of esm_runscripts
     end_it_all(config)
 
+
 def call_esm_runscripts_from_prepexp(config):
     """
     Recipe step that creates a esm_runscripts command and submits this
     to the function that modifies (if necessary) and executes this command
     in a subprocess call, if the current folder is NOT the experiment folder.
-    The function will return and do nothing, if it is called already 
+    The function will return and do nothing, if it is called already
     from the experiment folder.
 
 
@@ -230,7 +236,7 @@ def call_esm_runscripts_from_prepexp(config):
     else:
         if config["general"]["verbose"]:
             print("Not started from experiment folder, restarting...")
-        
+
         scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
 
         original_command = gconfig["original_command"]
@@ -255,6 +261,7 @@ def call_esm_runscripts_from_prepexp(config):
         _call_esm_runscripts_internally(config, new_command, scriptsdir)
 
         return config
+
 
 def _create_folders(config, filetypes):
     """
@@ -479,7 +486,7 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
     """
     - Copies the setup *.date file from <experiment>/scripts/ folder
       to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
-    - Copies the runscript yaml file from current folder (<experiment>/scripts) 
+    - Copies the runscript yaml file from current folder (<experiment>/scripts)
       to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/<runscript>
     - Copies 'additional_files' (if any, e.g. fesom_output.yaml, that are called
       via 'further_reading' in the runscript or other config file) from ...
@@ -504,7 +511,7 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
         )
     ]
 
-    for additional_file in config["general"].get("additional_files",[]):
+    for additional_file in config["general"].get("additional_files", []):
         filelist.append(("scripts", additional_file, "copy"))
 
     for filetype, filename, copy_or_link in filelist:

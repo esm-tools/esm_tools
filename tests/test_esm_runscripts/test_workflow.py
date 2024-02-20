@@ -426,3 +426,11 @@ def test_inf_no_default_workflow(test_config):
     test_config['general']['defaults.yaml'].pop('workflow', None)
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
+
+
+def test_get_workflow_commands_for_run():
+    config = esm_parser.yaml_file_to_dict('config3.yaml')
+    config = workflow.get_workflow_commands_for_run(config)
+    # assert order == assumption
+    assert 1 == 2
+

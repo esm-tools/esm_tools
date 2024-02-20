@@ -34,10 +34,14 @@ core:
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
                         - "copy_tools_to_thisrun"
+                        # The next step will call esm_runscripts again from the experiment folder,
+                        # if the current folder is not the experiment folder already.
+                        # If esm_runscripts will be excuted, the following step will be skipped, since
+                        # there is a sys.exit() after the esm_runscripts call.
                         - "call_esm_runscripts_from_prepexp"
+                        # The following step will be skipped, if not in experiment folder.
+                        # It will only be called if esm_runscripts is called from experiment folder.
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
-
-
 
                 prepcompute:
                         - "compile_model"

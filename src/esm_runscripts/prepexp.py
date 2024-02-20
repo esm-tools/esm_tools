@@ -1,23 +1,18 @@
 import os
-import shutil
-import sys
 import pathlib
+import shutil
 import subprocess
+import sys
 
 import questionary
 from colorama import Fore
-
-import esm_tools
-import esm_parser
-
-from .batch_system import batch_system
-from .helpers import end_it_all, evaluate, write_to_log
 from loguru import logger
 
-from . import prepcompute
-from . import filelists
+import esm_parser
+import esm_tools
 
-import pdb
+from . import filelists
+from .helpers import end_it_all, evaluate, write_to_log
 
 
 def run_job(config):
@@ -35,10 +30,14 @@ def run_job(config):
 
 def color_diff(diff):
     """
+    Adds color to text from a diff:
+    - Green for lines starting with ``+``
+    - Red for lines starting with ``-``
+    - Blue for lines starting with ``^``
 
     Parameters
     ----------
-    diff : 
+    diff : iterable object of strings to be colored
     """
     for line in diff:
         if line.startswith("+"):
@@ -74,8 +73,8 @@ def copy_tools_to_thisrun(config):
     # Paths inside the experiment directory where esm_tools and namelists
     # are copied to. Those are not functional but a reference to what was
     # the original state when the experiment was firstly started
-    tools_dir = scriptsdir + "/esm_tools/configs"
-    namelists_dir = scriptsdir + "/esm_tools/namelists"
+    tools_dir = f"{scriptsdir}/esm_tools/configs"
+    namelists_dir = f"{scriptsdir}/esm_tools/namelists"
 
     if config["general"]["verbose"]:
         print("Started from :", fromdir)
@@ -96,7 +95,7 @@ def copy_tools_to_thisrun(config):
         print("Copying standard yamls from: ", esm_tools.get_config_filepath())
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
-        print("Copying standard namelists from: ",esm_tools.get_namelist_filepath())
+        print("Copying standard namelists from: ", esm_tools.get_namelist_filepath())
         esm_tools.copy_namelist_folder(namelists_dir)
 
     # check for recursive creation of the file tree. This prevents the risk of
@@ -122,13 +121,9 @@ def copy_tools_to_thisrun(config):
         # `killall esm_runscripts` might be required
         esm_parser.user_error(error_type, error_text)
 
-    # If ``fromdir`` and ``scriptsdir`` are the same (the same as ``isresubmitted=True``),
-    # this is already a computing simulation which means we want to use the script
-    # in the experiment folder, so no copying is needed.
-
-    if not gconfig["isresubmitted"]:
-        # At this point, ``fromdir`` and ``scriptsdir`` are different (same as gconfig["isresubmitted"]=False).
-        # Update the runscript if necessary
+    # If ``fromdir`` and ``scriptsdir`` are different, we are not in the experiment.
+    # In this case, update the runscript if necessary.
+    if not fromdir == scriptsdir:
         update_runscript(
             fromdir, scriptsdir, gconfig["scriptname"], gconfig, "runscript"
         )
@@ -150,6 +145,7 @@ def copy_tools_to_thisrun(config):
             update_runscript(fromdir, scriptsdir, tfile, gconfig, "additional file")
 
     return config
+
 
 def _call_esm_runscripts_internally(config, command, exedir):
     """
@@ -178,8 +174,13 @@ def _call_esm_runscripts_internally(config, command, exedir):
     if not command.startswith("esm_runscripts"):
         command = f"esm_runscripts {command}"
 
-    # Add non-interaction flags, current jobtype, and current task (phase) [-t] if not already in 'command'
-    non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}", f"-t {config['general']['jobtype']}"]
+    # Add non-interaction flags, current jobtype, and current task (phase) [-t]
+    # if not already in 'command'
+    non_interaction_flags = [
+                                "--no-motd",
+                                f"--last-jobtype {config['general']['jobtype']}",
+                                f"-t {config['general']['jobtype']}"
+                            ]
     for ni_flag in non_interaction_flags:
         # prevent continuous addition of ``ni_flag``
         if ni_flag not in command:
@@ -199,16 +200,25 @@ def _call_esm_runscripts_internally(config, command, exedir):
     # Exit after resubmission of esm_runscripts
     end_it_all(config)
 
+
 def call_esm_runscripts_from_prepexp(config):
     """
     Recipe step that creates a esm_runscripts command and submits this
-    to the functions that executes this command in a subprocess call.
+    to the function that modifies (if necessary) and executes this command
+    in a subprocess call, if the current folder is NOT the experiment folder.
+    The function will return and do nothing, if it is called already
+    from the experiment folder.
+
 
     Parameters
     ----------
     config : dict
         Dictionary containing the configuration information.
 
+    Returns
+    -------
+    config : dict
+        Dictionary containing the configuration information.
     """
 
     gconfig = config["general"]
@@ -216,7 +226,7 @@ def call_esm_runscripts_from_prepexp(config):
     fromdir = os.path.realpath(gconfig["started_from"])
     scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
 
-    # Return if already called from the experiment folder
+    # Return if already called from the experiment folder without update flag
     if (fromdir == scriptsdir) and not gconfig["update"]:
         if config["general"]["verbose"]:
             print("Started from the experiment folder, continuing...")
@@ -226,7 +236,7 @@ def call_esm_runscripts_from_prepexp(config):
     else:
         if config["general"]["verbose"]:
             print("Not started from experiment folder, restarting...")
-        
+
         scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
 
         original_command = gconfig["original_command"]
@@ -252,6 +262,7 @@ def call_esm_runscripts_from_prepexp(config):
 
         return config
 
+
 def _create_folders(config, filetypes):
     """
     Generates the experiment file tree. Folders are created for every filetype
@@ -267,10 +278,10 @@ def _create_folders(config, filetypes):
     for filetype in filetypes:
         if not filetype == "ignore":
             if not filetype == "work":
-                if not os.path.exists(config["experiment_" + filetype + "_dir"]):
-                    os.makedirs(config["experiment_" + filetype + "_dir"])
-            if not os.path.exists(config["thisrun_" + filetype + "_dir"]):
-                os.makedirs(config["thisrun_" + filetype + "_dir"])
+                if not os.path.exists(config[f"experiment_{filetype}_dir"]):
+                    os.makedirs(config[f"experiment_{filetype}_dir"])
+            if not os.path.exists(config[f"thisrun_{filetype}_dir"]):
+                os.makedirs(config[f"thisrun_{filetype}_dir"])
 
 
 def _create_setup_folders(config):
@@ -288,7 +299,7 @@ def _create_setup_folders(config):
     """
     _create_folders(config["general"], config["general"]["all_filetypes"])
     with open(
-        config["general"]["experiment_dir"] + "/.top_of_exp_tree", "w"
+        f"{config['general']['experiment_dir']}/.top_of_exp_tree", "w"
     ) as top_marker:
         top_marker.write(f"Top of experiment {config['general']['expid']}")
     return config
@@ -412,25 +423,26 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
 
     # If the target file in ``scriptsdir`` does not exist, then copy the file
     # to the target.
-    if not os.path.isfile(scriptsdir + "/" + tfile):
-        oldscript = fromdir + "/" + tfile
+    if not os.path.isfile(f"{scriptsdir}/{tfile}"):
+        oldscript = f"{fromdir}/{tfile}"
         print(oldscript)
         shutil.copy2(oldscript, scriptsdir)
     # If the target path exists compare the two scripts
     else:
         import difflib
+
         import esm_parser
 
-        script_o = open(fromdir + "/" + tfile).readlines()
-        script_t = open(scriptsdir + "/" + tfile).readlines()
+        script_o = open(f"{fromdir}/{tfile}").readlines()
+        script_t = open(f"{scriptsdir}/{tfile}").readlines()
 
         diffobj = difflib.SequenceMatcher(a=script_t, b=script_o)
         # If the files are different
         if not diffobj.ratio() == 1:
             # Find differences
             differences = (
-                f"{fromdir + '/' + tfile} differs from "
-                + f"{scriptsdir + '/' + tfile}:\n"
+                f"{fromdir}/{tfile} differs from "
+                + f"{scriptsdir}/'{tfile}:\n"
             )
             for line in color_diff(difflib.unified_diff(script_t, script_o)):
                 differences += line
@@ -440,9 +452,9 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
             if gconfig["update"]:
                 esm_parser.user_note(
                     f"Original {file_type} different from target",
-                    differences + "\n" + f"{scriptsdir + '/' + tfile} will be updated!",
+                    f"{differences}\n{scriptsdir}/{tfile} will be updated!",
                 )
-                oldscript = fromdir + "/" + tfile
+                oldscript = f"{fromdir}/{tfile}"
                 print(oldscript)
                 shutil.copy2(oldscript, scriptsdir)
             # If the --update flag is not called, exit with an error showing the
@@ -462,10 +474,10 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     + "updated with the above changes?"
                 ).ask()
                 if update_choice:
-                    oldscript = fromdir + "/" + tfile
+                    oldscript = f"{fromdir}/{tfile}"
                     print(oldscript)
                     shutil.copy2(oldscript, scriptsdir)
-                    print(f"{scriptsdir + '/' + tfile} updated!")
+                    print(f"{scriptsdir}/{tfile} updated!")
                 else:
                     print("Submission stopped")
                     sys.exit(1)
@@ -475,13 +487,11 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
     """
     - Copies the setup *.date file from <experiment>/scripts/ folder
       to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
-    - Copies the runscript yaml file from current folder (<experiment>/scripts) 
+    - Copies the runscript yaml file from current folder (<experiment>/scripts)
       to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/<runscript>
     - Copies 'additional_files' (if any, e.g. fesom_output.yaml, that are called
       via 'further_reading' in the runscript or other config file) from ...
       to <experiment>/run_xxxxxxxx-xxxxxxxx/scripts/ folder.
-
-    Why here???
 
     Parameters
     ----------
@@ -502,16 +512,16 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
         )
     ]
 
-    for additional_file in config["general"].get("additional_files",[]):
+    for additional_file in config["general"].get("additional_files", []):
         filelist.append(("scripts", additional_file, "copy"))
 
     for filetype, filename, copy_or_link in filelist:
-        source = config["general"].get("experiment_" + filetype + "_dir", "")
-        dest = config["general"].get("thisrun_" + filetype + "_dir", "")
+        source = config["general"].get(f"experiment_{filetype}_dir", "")
+        dest = config["general"].get(f"thisrun_{filetype}_dir", "")
 
         method = filelists.get_method(copy_or_link)
 
-        if os.path.isfile(source + "/" + filename):
-            method(source + "/" + filename, dest + "/" + filename)
+        if os.path.isfile(f"{source}/{filename}"):
+            method(f"{source}/{filename}", f"{dest}/{filename}")
 
     return config

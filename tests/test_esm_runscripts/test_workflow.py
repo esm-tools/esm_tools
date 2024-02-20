@@ -6,6 +6,7 @@ from esm_runscripts import workflow
 import pytest
 import esm_parser
 
+
 @pytest.fixture()
 def test_config():
     """Setup a test config dictionary."""
@@ -116,6 +117,7 @@ def test_config():
     }
     return config
 
+
 @pytest.fixture()
 def test_default_config_example():
     """Setup a test config dictionary."""
@@ -184,6 +186,7 @@ def test_default_config_example():
     }
     return config
 
+
 # Test scenarios
 # 0. Default workflow
 @pytest.mark.example
@@ -192,6 +195,7 @@ def test_example_0(test_default_config_example):
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assumption = "prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute']"
     assert order == assumption
+
 
 # 1. Add one single phase at the end of the default workflow (Example 1 in documentation)
 @pytest.mark.example
@@ -207,6 +211,7 @@ def test_example_1(test_default_config_example):
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assert order == assumption
+
 
 # 2. Prepend new phase at the beginning of workflow
 @pytest.mark.example
@@ -224,6 +229,7 @@ def test_example_2(test_default_config_example):
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assert order == assumption
 
+
 # 3. Append new phase at the beginning of workflow
 @pytest.mark.example
 def test_example_3(test_default_config_example):
@@ -239,6 +245,7 @@ def test_example_3(test_default_config_example):
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assert order == assumption
+
 
 # 4. Append two new phases in the same cluster
 @pytest.mark.example
@@ -265,6 +272,7 @@ def test_example_4(test_default_config_example):
     test_default_config_example = workflow.assemble_workflow(test_default_config_example)
     order = workflow.display_workflow_sequence(test_default_config_example, display=False)
     assert order == assumption
+
 
 # 5. Append two new phases in the same cluster, one of them triggers the next run
 @pytest.mark.example
@@ -294,8 +302,8 @@ def test_example_5(test_default_config_example):
     assert order == assumption
 
 # 6. Append two new phases in the same cluster at the beginning of run
-#@pytest.mark.example
-#def test_example_6(test_default_config_example):
+# @pytest.mark.example
+# def test_example_6(test_default_config_example):
 #    test_default_config_example["general"]["workflow"] = {
 #        'phases': {
 #            'my_new_last_phase': {
@@ -320,7 +328,6 @@ def test_example_5(test_default_config_example):
 #    assert order == assumption
 
 
-
 # Test exceptions
 # 1. If still a workflow keyword is set by user.
 @pytest.mark.exceptions
@@ -329,6 +336,7 @@ def test_exception_test_workflow_keyword(test_config):
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
 
+
 # 2. If an invalid phase keyword is set.
 @pytest.mark.exceptions
 def test_exception_invalid_phase_keyword(test_config):
@@ -336,12 +344,14 @@ def test_exception_invalid_phase_keyword(test_config):
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
 
+
 # 3. If an unknown phase is called for , e.g. in 'run_after'
 @pytest.mark.exceptions
 def test_exception_unknown_phase(test_config):
     test_config['flow']['workflow']['phases']['my_new_subjob_flow']['run_after'] = 'trudy'
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
+
 
 # 4. If a user phase has the same name as a default phase.
 @pytest.mark.exceptions
@@ -359,6 +369,7 @@ def test_if_user_phase_has_default_phase_name(test_config):
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
 
+
 # 5. If two user phases have the same name and are defined in different models/setups.
 @pytest.mark.exceptions
 def test_if_two_user_phase_have_the_same_name(test_config):
@@ -375,6 +386,7 @@ def test_if_two_user_phase_have_the_same_name(test_config):
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
 
+
 # 6. If no queue is given for a phase that should be run on sbatch system.
 @pytest.mark.exceptions
 def test_if_queue_is_missing(test_config):
@@ -382,7 +394,7 @@ def test_if_queue_is_missing(test_config):
         'batch_or_shell': 'batch',
         'order_in_cluster': 'concurrent',
         'cluster': 'test_cluster',
-        #'run_on_queue': 'compute',
+        # 'run_on_queue': 'compute',
         'nproc': 1,
         'run_after': 'tidy',
         'script_dir': '/work/ab0995/a270089/myrunscripts/',
@@ -391,6 +403,7 @@ def test_if_queue_is_missing(test_config):
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
 
+
 # 7. If more than one phase trigger_next_run.
 @pytest.mark.exceptions
 def test_if_trigger_next_run_unclear(test_config):
@@ -398,12 +411,14 @@ def test_if_trigger_next_run_unclear(test_config):
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
 
+
 # 8. If no default phases are defined in defaults.yaml.
 @pytest.mark.exceptions
 def test_if_no_default_phases(test_config):
     test_config['general']['defaults.yaml']['workflow'].pop('phases', None)
     with pytest.raises(SystemExit):
         test_config = workflow.assemble_workflow(test_config)
+
 
 # 9. If no default workflow is defined in defaults.yaml.
 @pytest.mark.exceptions

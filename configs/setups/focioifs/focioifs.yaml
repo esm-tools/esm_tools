@@ -60,63 +60,116 @@ general:
         - '2.1.1'
         - '2.2'
         - '3.0'
-        - '3.0_busan'
-        - '3.1' 
-
+        - '3.0.1'
+        - '4.0'
+        - '4.1'
+        - '4.1.1' 
+        
+        # Version descriptions:
+        #
+        # 2.0 43r3 + NEMO 3.6
+        # 2.1  - new runoff method
+        # 2.1.1 - split runoff and calving
+        #
+        # 3.0 NEMO visc + diff changes. MCT5. 
+        # 3.0.1 - no Smag
+        #
+        # 4.0 Using NEMO 4
+        # 4.1  - with ECWAM
+        # 4.1.1 - with reduced Charnock in ECWAM
+        #
+        # 2.1 also comes with O12 (ORCA12)
+        # 3.0 comes with AGRIF
+        #
         choose_version:
-          '3.1':
+          # Backport Charnock cap from cy47
+          # From Jean Bidlot
+          '4.1.1':
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
             - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci30
-          '3.0_busan':
+          
+          # Introduce ECWAM wave model
+          '4.1':
+            runoff_method: "EM21"
+            calving_method: "JS"
+            couplings:
+            - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci30
+          
+          # Using NEMO 4.2.2
+          '4.0':
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
             - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci30 
+          
+          # Turn off Smagorinsky
+          # Twin to agrif-3.0
+          '3.0.1':
+            runoff_method: "EM21"
+            calving_method: "JS"
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT5+oifs43r3-foci22
+          
+          # Same as 2.2 but renamed 3.0
+          # Used for CMIP6 DECK runs
           '3.0':
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
-            - nemo-eORCA025_Z75_SI3_COUPLED+oifs43r3-foci30 
-          '2.1':
-            runoff_method: "EM21"
-            calving_method: "old"
-            couplings:
-            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci21
-          '2.1.1':
-            runoff_method: "EM21"
-            calving_method: "JS"
-            couplings:
-            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci211 
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT5+oifs43r3-foci22 
+          
+          # Smagorinsky + more tuning
           '2.2':
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT5+oifs43r3-foci22
+          
+          # Introduce calving similar to AWI-CM3
+          '2.1.1':
+            runoff_method: "EM21"
+            calving_method: "JS"
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci211 
+          
+          # 2.1 with ORCA12
           '2.1-O12':
             runoff_method: "EM21"
             calving_method: "old"
             couplings:
             - nemo-ORCA12_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci21
+          
+          # Introduce new runoff remapping from Eric M
+          '2.1':
+            runoff_method: "EM21"
+            calving_method: "old"
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci21
+          
+          # First version with 43r3
           '2.0':
             runoff_method: "old"
             calving_method: "old"
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+oifs43r3-foci
+            
+          # Older version using AGRIF
           'agrif':
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
             - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+oifs43r3-foci21
+          
+          # using AGRIF and OASIS3-MCT5. Identical to 3.0.1
           'agrif-3.0':
-            # using AGRIF and OASIS3-MCT5 
             runoff_method: "EM21"
             calving_method: "JS"
             couplings: 
             - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT5+oifs43r3-foci22
 
-        version: "2.0"
+        version: "3.0"
         scenario: "PI-CTRL"
         resolution: ${oifs.resolution}_${nemo.resolution}
         postprocessing: false
@@ -187,10 +240,11 @@ oifs:
                 compiler_mpi: intel2022_openmpi 
                 iolibraries: system_libs 
              blogin:
-                compiler_mpi: intel2019_impi2019_nemo4
+                #compiler_mpi: intel2019_impi2019_nemo4
+                compiler_mpi: intel2022_impi2022
              glogin:
-                #compiler_mpi: intel2019_impi2019
-                compiler_mpi: intel2022_impi2021 
+                compiler_mpi: intel2019_impi2019_nemo4
+                #compiler_mpi: intel2022_impi2021 
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -222,16 +276,6 @@ oifs:
         # so that the configuration fills up the compute nodes
         # 575 would also be ok (575 = 23 * 25)
         nproc: 287
-        
-        # By default we turn off ECWAM wave model
-        #wam: False
-        #choose_general.version:
-        #   "3.1":
-        #      # Turn on wave model
-        #      wam: True
-        #   "*":
-        #      # By default we turn off ECWAM wave model
-        #      wam: False
         
         # For coupled setups we can use ocean currents
         use_ocean_currents: False
@@ -293,7 +337,7 @@ oifs:
         
         # add coupling fields for AGRIF                
         choose_general.version: 
-           "3.1":
+           "4.1.1":
               # Turn on wave model
               wam: True 
               # Namelist changes
@@ -311,22 +355,34 @@ oifs:
                        RCLDIFF: 5.e-6 # default 3e-6
                     NAMMCC:
                        RALBSEAD_NML: 0.045
-           "3.0":
-              wam: False
+                 wam_namelist:
+                    NALINE:
+                       # turn on cap on Charnock
+                       LLCAPCHNK: true 
+                       
+           "4.1":
+              # Turn on wave model
+              wam: True 
+              # Namelist changes
+              # Flags for WAM are controlled by the variable above
               add_namelist_changes:
                  fort.4:
                     NAMFOCICFG:
                        FOCI_CPL_NEMO_LIM: false
+                       # this will set LNEMOLIMTEMP etc in OpenIFS
                        FOCI_CPL_NEMO_SI3: true
-                    #NAERAD:
-                    #   NAERANT_SCALE: 1 # turn off aerosol scaling
+                    NAERAD:
+                       NAERANT_SCALE: 1 # turn off aerosol scaling
                     NAMCLDP:
                        # diffusion coeff for cloud edges
                        RCLDIFF: 5.e-6 # default 3e-6
                     NAMMCC:
                        RALBSEAD_NML: 0.045
-                       RALBSCALE_AR: 0.8
-           "3.0_busan": 
+                 wam_namelist:
+                    NALINE:
+                       # turn off cap on Charnock
+                       LLCAPCHNK: false
+           "4.0":
               wam: False
               add_namelist_changes:
                  fort.4:
@@ -340,7 +396,54 @@ oifs:
                        RCLDIFF: 5.e-6 # default 3e-6
                     NAMMCC:
                        RALBSEAD_NML: 0.045
-                       
+           "3.0.1":
+              wam: False
+              add_namelist_changes:
+                 fort.4:
+                    NAMFOCICFG:
+                        # Turn on coupling
+                        # TODO: Add variable for AGRIF coupling
+                        FOCI_CPL_NEMO_LIM: ".true."
+                    NAERAD:
+                       NAERANT_SCALE: 1 # turn off aerosol scaling
+                    NAMCLDP:
+                       # diffusion coeff for cloud edges
+                       RCLDIFF: 5.e-6 # default 3e-6
+                    NAMMCC:
+                       RALBSEAD_NML: 0.045
+                       RALBSCALE_AR: 0.8 
+           "3.0":
+              wam: False
+              add_namelist_changes:
+                 fort.4:
+                    NAMFOCICFG:
+                        # Turn on coupling
+                        # TODO: Add variable for AGRIF coupling
+                        FOCI_CPL_NEMO_LIM: ".true."
+                    NAERAD:
+                       NAERANT_SCALE: 1 # turn off aerosol scaling
+                    NAMCLDP:
+                       # diffusion coeff for cloud edges
+                       RCLDIFF: 5.e-6 # default 3e-6
+                    NAMMCC:
+                       RALBSEAD_NML: 0.045
+                       RALBSCALE_AR: 0.8                                    
+           "3.0-agrif":
+              wam: False
+              add_namelist_changes:
+                  fort.4:
+                     NAMFOCICFG:
+                        # Turn on coupling
+                        # TODO: Add variable for AGRIF coupling
+                        FOCI_CPL_NEMO_LIM: ".true."
+                     NAERAD:
+                        NAERANT_SCALE: 1 # turn off aerosol scaling
+                     NAMCLDP:
+                        # diffusion coeff for cloud edges
+                        RCLDIFF: 5.e-6 # default 3e-6
+                     NAMMCC:
+                        RALBSEAD_NML: 0.045
+                        RALBSCALE_AR: 0.8 
            "*":
               wam: False
               add_namelist_changes:
@@ -414,11 +517,22 @@ nemo:
         
         # For 2.1-O12 we choose ORCA12 config for NEMO
         choose_general.version:
-                "3.1": 
+                "4.1.1":
                         version: "ORCA05_Z46_SI3_COUPLED"
                         resolution: ORCA05
-                "3.0_busan":
+                "4.1": 
                         version: "ORCA05_Z46_SI3_COUPLED"
+                        resolution: ORCA05
+                "4.0":
+                        version: "ORCA05_Z46_SI3_COUPLED"
+                        resolution: ORCA05
+                "3.0.1":
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+                        resolution: ORCA05
+                        branch: foci30
+                        
+                "3.0":
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
                         resolution: ORCA05
                 "2.1-O12":
                         version: "ORCA12_LIM2_KCM_AOW_FS_OASISMCT4"
@@ -567,10 +681,16 @@ rnfmap:
         time_step: ${oasis3mct.coupling_time_step}       
         
         choose_general.version:
-                "3.1":
+                "4.1.1":
                         version: foci211
                         runoff_method: "JK22"
-                "3.0_busan":
+                "4.1":
+                        version: foci211
+                        runoff_method: "JK22"
+                "4.0":
+                        version: foci211
+                        runoff_method: "JK22"
+                "3.0.1":
                         version: foci211
                         runoff_method: "JK22"
                 "3.0":

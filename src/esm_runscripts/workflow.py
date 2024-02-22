@@ -1,6 +1,8 @@
 import copy
 import esm_parser
 
+from . import batch_system
+
 #import pygraphviz as pgv
 import pdb
 
@@ -22,10 +24,12 @@ class Workflow:
         -------
         none
         """
+
         # TODO: check if key is in workflow_yaml dict
         self.phases = []                            # list for default phases (defined in defauls.yaml)
         self.user_phases = []                       # list of user phases (collected by collect_all_user_phases)
         self.clusters = {}                          # dictionary of clusters
+        
 
         error = False
 
@@ -34,6 +38,8 @@ class Workflow:
         if "last_task_in_queue" in workflow_yaml: self.last_task_in_queue = workflow_yaml["last_task_in_queue"]
         else: error = True
         if "next_run_triggered_by" in workflow_yaml: self.next_run_triggered_by =  workflow_yaml["next_run_triggered_by"]
+        else: error = True
+        if "default_cluster" in workflow_yaml: self.default_cluster =  workflow_yaml["default_cluster"]
         else: error = True
 
         if error:
@@ -348,15 +354,16 @@ class Workflow:
         """
         Write to config.
         TODO: Rename ``subjobs`` to ``phases``. But this needs changes also in resubmit.py and other files???
+        TODO: Put workflow object into config.
         """
-        # 1. Delete unnecessary config workflow entries (e.g. in general)
+        # Delete unnecessary config workflow entries (e.g. in general)
         if "workflow" in config["general"]:
             del config["general"]["workflow"]
 
         config["general"]["workflow"] = {}
         config["general"]["workflow"].update(self.__dict__)
 
-        # 3. Write clusters
+        # Write clusters
         config["general"]["workflow"]["subjob_clusters"] = {}
         for cluster in self.clusters:
             config["general"]["workflow"]["subjob_clusters"][cluster] = {}
@@ -366,15 +373,19 @@ class Workflow:
             for att in self.clusters[cluster]:
                 config["general"]["workflow"]["subjob_clusters"][cluster][att] = self.clusters[cluster][att]
 
-        # 2. Write subjobs/phases
+        # Write subjobs/phases
         config["general"]["workflow"]["subjobs"] = {}
         for phase in self.phases + self.user_phases:
-            temp_dict = phase
-            config["general"]["workflow"]["subjobs"][phase["name"]] = temp_dict
+            config["general"]["workflow"]["subjobs"][phase["name"]] = {}
+            for key, val in phase.items():
+                config["general"]["workflow"]["subjobs"][phase["name"]][key] = val
 
-        # delete phases and user_phases
+        # Delete phases and user_phases
         del config["general"]["workflow"]["phases"]
         del config["general"]["workflow"]["user_phases"]
+
+        # Write workflow object
+        config["general"]["workflow"]["object"] = self
 
         return config
 
@@ -547,6 +558,36 @@ class Workflow:
 
         return self
 
+
+    def get_workflow_commands_for_run(self, config):
+        """
+        Gets the command for each workflow phase and writes in into config.
+    
+        Parameters
+        ----------
+            self: workflow object
+            config: dict
+    
+        Returns
+        -------
+            config: dict
+        """
+        phases = self.phases
+        phase_type = ""
+        run_command = ""
+        run_commands = []
+    
+        for phase in phases:
+            phase_type = phase.get("batch_or_shell", None)
+            phase_name = phase.get("name", "")
+            run_command = ' '.join(batch_system.get_run_commands(config, phase_name, phase_type))
+            phase["run_command"] = run_command
+            run_commands.append(run_command)
+
+        setattr(self, 'run_commands', run_commands)
+        return self
+
+
     def prepend_newrun_job(self):
         """
         - Creates a new cluster "newrun" if first_task_in_queue is not of
@@ -668,7 +709,7 @@ class WorkflowPhase(dict):
         self["run_after"] = None
         self["trigger_next_run"] = False               # needed
         self["submit_to_batch_system"] = False         # needed
-#        self["run_on_queue"] = None
+        self["run_on_queue"] = None
         self["cluster"] = None
         self["next_submit"] = []                       # needed
         self["called_from"] = None                     # needed
@@ -679,6 +720,7 @@ class WorkflowPhase(dict):
         self["skip_run_number"] = None
         self["call_function"] = None
         self["env_preparation"] = None
+        self["run_command"] = None
 
         # check if phase keywords are valid
         for key, value in phase.items():
@@ -782,6 +824,8 @@ def assemble_workflow(config):
     #   a user phase (type batch or shell)
     workflow = workflow.prepend_newrun_job()
 
+    workflow = workflow.get_workflow_commands_for_run(config)
+
     # - write the workflow to config
     # - Remove old worklow from config
     config = workflow.write_to_config(config)
@@ -789,13 +833,13 @@ def assemble_workflow(config):
     # Set "jobtype" for the first task???
     # NOTE: This is either first default phase or
     #       newrun??? Can't this not be set in prepend_newrun then?
-#    if config["general"]["jobtype"] == "unknown":
-#        config["general"]["command_line_config"]["jobtype"] = config["general"][
-#            "workflow"
-#        ]["first_task_in_queue"]
-#        config["general"]["jobtype"] = config["general"]["workflow"][
-#            "first_task_in_queue"
-#        ]
+    if config["general"]["jobtype"] == "unknown":
+        config["general"]["command_line_config"]["jobtype"] = config["general"][
+            "workflow"
+        ]["first_task_in_queue"]
+        config["general"]["jobtype"] = config["general"]["workflow"][
+            "first_task_in_queue"
+        ]
 
     return config
 

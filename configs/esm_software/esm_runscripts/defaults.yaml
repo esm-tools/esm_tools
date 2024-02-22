@@ -23,12 +23,13 @@ workflow:
     first_task_in_queue: prepcompute
     last_task_in_queue: tidy
     next_run_triggered_by: tidy
+    default_cluster: sim_cluster
 
     phases:
         prepcompute:
             batch_or_shell: SimulationSetup
             called_from: tidy
-            cluster: prepcompute
+            cluster: sim_cluster
             name: prepcompute
             next_submit:
                 - compute
@@ -39,7 +40,7 @@ workflow:
             submit_to_batch_system: False
         compute:
             called_from: prepcompute
-            cluster: compute
+            cluster: sim_cluster
             name: compute
             next_submit:
                 - tidy
@@ -52,7 +53,7 @@ workflow:
         tidy:
             batch_or_shell: SimulationSetup
             called_from: compute
-            cluster: tidy
+            cluster: sim_cluster
             name: tidy
             next_submit:
                 - prepcompute

@@ -163,7 +163,7 @@ class SimulationSetup(object):
             # Is this dunction call needed here?
             self.assembler()
 
-        #resubmit.maybe_resubmit(self.config)
+        resubmit.maybe_resubmit(self.config)
 
         # if this line is reached, the run is submitted and running or finished
         self.config = logfiles.finalize_logfiles(self.config, org_jobtype)

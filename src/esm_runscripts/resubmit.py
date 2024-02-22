@@ -247,7 +247,22 @@ def maybe_resubmit(config):
     -------
         config : dict
     """
-    jobtype = config["general"]["jobtype"]
+    jobtype = config["general"]["jobtype"]              # current phase
+    workflow = config["general"]["workflow"]["object"]
+    first_phase_in_cluster = workflow.first_task_in_queue
+    if jobtype == first_phase_in_cluster:
+        config = config["general"]["batch"].write_run_batch_script(
+            config, 'sim_cluster', 'batch'
+        )
+        print("Create *.run file")
+    phases = workflow.phases
+
+    resubmit_batch_or_shell(config, "batch", "compute")
+
+    breakpoint()
+
+    # TODO: Check if run from *.run file
+    # TODO: Create *.run file
 
     # check if nextrun starts???
     # this resubmits any following jobtypes/phases until nextrun is true
@@ -262,6 +277,7 @@ def maybe_resubmit(config):
     #           it will start to loop over all remaining clusters to check if it can sumbit something (SimulationSetup, sbatch, shell) and do so,
     #           until first start of next run is reached.
     #        3. nextrun is fals if no entries in next_submit for that particular jobtype/cluster
+
     nextrun = resubmit_recursively(config, jobtype=jobtype)
 
     if nextrun:  # submit list contains stuff from next run

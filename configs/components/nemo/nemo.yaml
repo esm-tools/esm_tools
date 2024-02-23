@@ -1084,10 +1084,6 @@ choose_version:
             grid: agr1
         "[[agr1_c_fields-->FIELD]]":
             grid: agr1
-        "[[agr1_r_fields-->FIELD]]":
-            grid: agr1r
-        "[[agr1_rc_fields-->FIELD]]":
-            grid: agrc
         "[[agr2_t_fields-->FIELD]]":
             grid: agr2
 
@@ -2070,6 +2066,7 @@ choose_runoff_method:
         "*":
                 ornf_fields: [O_Runoff]
                 agr1_r_fields: [1_O_Runoff]
+                agr1_rc_fields: [1_OCalving]
                 add_coupling_fields:
                         "[[ornf_fields-->FIELD]]":
                                 grid: rnfo

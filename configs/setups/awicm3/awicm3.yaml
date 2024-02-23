@@ -821,6 +821,16 @@ oasis3mct:
                                 conserv:
                                         method: global
                                         algorithm: opt
+                oyac_1stcon_nnn_stocha:
+                        oyac: true
+                        time_transformation: stocha
+                        remapping:
+                                conserv:
+                                        order: "first"
+                                        neighbour: fracarea
+                                nnn:
+                                        weighting: "avg"
+                                        nb_of_neighbour: 1
 
         input_files: {}
 

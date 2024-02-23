@@ -184,87 +184,111 @@ class oasis:
                     trafo_details.append(detail_line.strip())
 
         alltrans = transformation.get("remapping", {"bla": "blub"})
-        if not type(alltrans) == list:
-            alltrans = [alltrans]
-        for thistrans in alltrans:
-            (trans, transform) = list(thistrans.items())[0]
-            detail_line = ""
-            if "mapping" == trans.lower():
-                trafo_line += " MAPPING"
-                mapname = transform.get("mapname", None)
-                if not mapname:
-                    print(
-                        "mapname needs to be defined for transformation MAPPING",
-                        flush=True,
-                    )
-                    sys.exit(2)
-                maploc = transform.get("map_regrid_on", "")
-                mapstrat = transform.get("mapstrategy", "")
-                detail_line = mapname + " " + maploc + " " + mapstrat
-                trafo_details.append(detail_line.strip())
-
-            elif trans.lower() in [
-                "distwgt",
-                "bicubic",
-                "bilinear",
-                "gauswgt",
-                "conserv",
-                "loccunif",
-            ]:
-                trafo_line += " SCRIPR"
+        oyac = transformation.get("oyac", {"false"})
+        if oyac: # OASIS with YAC interpolation library
+                trafo_line += " YAC"
+                #TODO: Read new var nb_stack for number of interpolations in stack
                 srcgridtype = str(rgrid["oasis_grid_type"]).upper()
-                search_bin = transform.get("search_bin", None)
-                if not search_bin:
-                    print(
-                        "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF",
-                        flush=True,
-                    )
-                    sys.exit(2)
-                bins = transform.get("nb_of_search_bins", "1")
-                detail_line = (
+                #TODO: We need not only src but also dst grid type
+                dstgridtype = str(rgrid["oasis_grid_type"]).upper()
+                general_oyac_line = (
                     trans.upper()
-                    + " "
                     + srcgridtype.upper()
-                    + " SCALAR "
-                    + search_bin.upper()
                     + " "
-                    + str(bins)
+                    + dstgridtype.upper()
+                    + " "
+                    # + nb_stack
+                    + " YAC_CONSERV "
+                    # + nb_io_per_node
                 )
-                if trans.lower() in ["distwgt", "gauswgt", "loccunif"]:
-                    nb_of_neighbours = transform.get("nb_of_neighbours", None)
-                    if not nb_of_neighbours:
+                trafo_details += [general_oyac_line.strip()]
+                for thistrans in alltrans:
+                    stack_line = (
+                    )
+            
+        else: # OASIS with SCRIP interpolation library
+            if not type(alltrans) == list:
+                alltrans = [alltrans]
+            for thistrans in alltrans:
+                (trans, transform) = list(thistrans.items())[0]
+                detail_line = ""
+                if "mapping" == trans.lower():
+                    trafo_line += " MAPPING"
+                    mapname = transform.get("mapname", None)
+                    if not mapname:
                         print(
-                            "nb_of_neighbours needs to be defined for transformations DISTWGT, GAUSWGT and LOCCUNIF",
+                            "mapname needs to be defined for transformation MAPPING",
                             flush=True,
                         )
                         sys.exit(2)
-                    detail_line += " " + str(nb_of_neighbours)
-                if trans.lower() == "gauswgt":
-                    weight = transform.get("weight", None)
-                    if not weight:
+                    maploc = transform.get("map_regrid_on", "")
+                    mapstrat = transform.get("mapstrategy", "")
+                    detail_line = mapname + " " + maploc + " " + mapstrat
+                    trafo_details.append(detail_line.strip())
+
+                elif trans.lower() in [
+                    "distwgt",
+                    "bicubic",
+                    "bilinear",
+                    "gauswgt",
+                    "conserv",
+                    "loccunif",
+                ]:
+                    trafo_line += " SCRIPR"
+                    srcgridtype = str(rgrid["oasis_grid_type"]).upper()
+                    search_bin = transform.get("search_bin", None)
+                    if not search_bin:
                         print(
-                            "weight needs to be defined for transformation GAUSWGT",
+                            "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF",
                             flush=True,
                         )
                         sys.exit(2)
-                    detail_line += " " + str(weight)
-                if trans.lower() == "conserv":
-                    normalization = transform.get("normalization", None)
-                    if not normalization:
-                        print(
-                            "normalization (FRACAREA, DESTAREA or FRACNNEI) needs to be defined for transformations CONSERV",
-                            flush=True,
-                        )
-                        sys.exit(2)
-                    order = transform.get("order", None)
-                    if not order:
-                        print(
-                            "order (FIRST or SECOND) needs to be defined for transformation CONSERV",
-                            flush=True,
-                        )
-                        sys.exit(2)
-                    detail_line += " " + normalization.upper() + " " + order.upper()
-                trafo_details += [detail_line.strip()]
+                    bins = transform.get("nb_of_search_bins", "1")
+                    detail_line = (
+                        trans.upper()
+                        + " "
+                        + srcgridtype.upper()
+                        + " SCALAR "
+                        + search_bin.upper()
+                        + " "
+                        + str(bins)
+                    )
+                    if trans.lower() in ["distwgt", "gauswgt", "loccunif"]:
+                        nb_of_neighbours = transform.get("nb_of_neighbours", None)
+                        if not nb_of_neighbours:
+                            print(
+                                "nb_of_neighbours needs to be defined for transformations DISTWGT, GAUSWGT and LOCCUNIF",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        detail_line += " " + str(nb_of_neighbours)
+                    if trans.lower() == "gauswgt":
+                        weight = transform.get("weight", None)
+                        if not weight:
+                            print(
+                                "weight needs to be defined for transformation GAUSWGT",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        detail_line += " " + str(weight)
+                    if trans.lower() == "conserv":
+                        normalization = transform.get("normalization", None)
+                        if not normalization:
+                            print(
+                                "normalization (FRACAREA, DESTAREA or FRACNNEI) needs to be defined for transformations CONSERV",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        order = transform.get("order", None)
+                        if not order:
+                            print(
+                                "order (FIRST or SECOND) needs to be defined for transformation CONSERV",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        detail_line += " " + normalization.upper() + " " + order.upper()
+                    trafo_details += [detail_line.strip()]
+
 
         allpost = transformation.get("postprocessing", "bla")
         if not type(allpost) == list:

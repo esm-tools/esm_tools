@@ -37,10 +37,11 @@ choose_version:
     namelist_dir: "${model_dir}/config/"
   
   "2.5-paleodyn":
+    tag: "2.5.1_paleo"
     branch: "icb_into_v2.5" #LA: we need a correct name for it once everything is merged
     destination: "fesom-2.5"
     git-repository:
-    - https://github.com/ackerlar/fesom2.git # LA: only temporarily 
+    - https://github.com/FESOM/fesom2.git # LA: only temporarily 
     wiso_code: true
     icb_code: true
     add_namelists:

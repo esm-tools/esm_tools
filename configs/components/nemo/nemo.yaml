@@ -339,6 +339,9 @@ choose_version:
     leapyear: false  
     free_surface: nonlinear
 
+    # coupling fields differ for NEMO 3.6 and 4.2
+    opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+
     input_dir: ${pool_dir}/NEMO4_${resolution}/input
 
     # override hardcoded path to runoff forcing
@@ -1112,10 +1115,12 @@ choose_version:
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
+       sn_sal_diag: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
 
     input_in_work:
        ice_init: Ice_initialization.nc
+       sn_sal_diag: sali_ref_clim_monthly.nc
        namelist_ice_ref: namelist_ice_ref
 
   ORCA05_LIM2_KCM_AOW_autotools:
@@ -1226,6 +1231,75 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
+
+  ORCA05_LIM2_FOCI_MOPS_OASISMCT4:
+    requires:
+    - nemobasemodel-3.6foci
+    branch: esm-tools-oasismct4
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_FOCI_MOPS.git
+
+    # tracers are used by default
+    free_surface: nonlinear
+    leapyear: true  
+
+    # coupling fields
+    opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT, O_AtmCO2, CO2FLXOC]
+    opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1, CO2OCEAN, CO2TRA, FF_OCE]
+
+    # workaround for bug in f90nml library used by esm_runscripts, see 
+    # https://github.com/esm-tools/esm_tools/issues/633 and 
+    # https://github.com/marshallward/f90nml/issues/110
+    add_namelist_changes:
+      namelist_top_cfg:
+        namtrc:
+          sn_tracer: "remove_from_namelist"
+          sn_tracer(1)%clsname: AGE 
+          sn_tracer(2)%clsname: PO4
+          sn_tracer(3)%clsname: DOP
+          sn_tracer(4)%clsname: O2
+          sn_tracer(5)%clsname: PHY
+          sn_tracer(6)%clsname: ZOO
+          sn_tracer(7)%clsname: DET
+          sn_tracer(8)%clsname: DIN
+          sn_tracer(9)%clsname: DIC
+          sn_tracer(10)%clsname: ALK
+          sn_tracer(11)%clsname: IDEAL
+
+          sn_tracer(1:11)%cllname: "     "
+
+          sn_tracer(1)%clunit: s
+          sn_tracer(2:8)%clunit: mmol/m3
+          sn_tracer(9:10)%clunit: umol/kg
+          sn_tracer(11)%clunit: mmol/m3
+
+          sn_tracer(1)%llinit: false
+          sn_tracer(2)%llinit: true
+          sn_tracer(3)%llinit: false
+          sn_tracer(4)%llinit: true
+          sn_tracer(5:7)%llinit: false
+          sn_tracer(8:11)%llinit: true
+
+          sn_tracer(1:11)%llsave: true
+
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+  
   
   #ORCA05_SI3_FOCI_FS_AOW:
   #  requires:
@@ -1938,6 +2012,7 @@ input_sources:
         # grids and coefficients
         bathy_meter_orca05_nemo4: ${input_dir}/bathy_meter__4.2.0_ORCA05.L46.nc
         coordinates_orca05_nemo4: ${input_dir}/coordinates.nc
+        #coordinates_orca05_nemo4: ${input_dir}/bathy_meter__4.2.0_ORCA05.L46.nc
         bfr_coef_orca05_nemo4: ${input_dir}/bfr_coef__4.2.0_ORCA05.nc
         subbasins_orca05_nemo4: ${input_dir}/subbasins__4.2.0_ORCA05.nc
         # File from Joakim. Use same settings as ORCA05 in 3.6
@@ -2018,6 +2093,7 @@ log_sources:
 ##########################  coupling stuff
 
 sst_grid_name: "opat"
+opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
 
@@ -2025,6 +2101,8 @@ agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_
                 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
 agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OTotEvap, 1_OIceEvap, 1_O_dQnsdT]
 agr2_t_fields: [1_O_AgrSpg]
+# default needs to be set even if not used
+agr1_rc_fields: [1_OCalving]
 
 coupling_fields:
         "[[opat_fields-->FIELD]]":

@@ -11,7 +11,7 @@ general:
    # operational settings: yearly restarts
    compute_time: "06:35:00"
    initial_date: "1850-01-01T00:00:00"   
-   final_date: "1852-01-01T00:00:00"    
+   final_date: "1862-01-01T00:00:00"    
    postprocessing: 0
    nmonth: 12 
    # test settings: 5 daily restarts
@@ -49,9 +49,7 @@ echam:
 nemo:
    # set your own agrif input directory
    #agrif_dir: /path/to/my/input_files/AGRIF/agrif_${nest}
-   nest1: VIKING10
-   #nest1: INALT10x
-   #nest1: NPAC10
+   nest1: WG10 
    resolution: "ORCA05"
    version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
    jpni: 36 

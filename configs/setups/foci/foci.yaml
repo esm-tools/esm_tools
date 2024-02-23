@@ -39,6 +39,7 @@ general:
         - default_autotools
         - fs
         - default_oasismct4
+        - mops_oasismct4
         - agrif 
         - agrif_oasismct4 
         choose_version:
@@ -54,6 +55,9 @@ general:
           default_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct4
+          mops_oasismct4:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_oasismct4
           agrif_noaow:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
@@ -85,7 +89,9 @@ echam:
                 #compiler_mpi: intel2019_impi2019
                 compiler_mpi: intel2022_psmpi2022
              blogin:
-                compiler_mpi: intel2019_impi2019
+                #compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2019_impi2019_nemo4
+                #compiler_mpi: intel2021_impi2021
              glogin:
                 compiler_mpi: intel2019_impi2019
                 #compiler_mpi: intel2019_impi2019_nemo4
@@ -105,9 +111,11 @@ echam:
                 #add_module_actions:
                 #   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
              blogin:
-                compiler_mpi: intel2019_impi2019
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                #compiler_mpi: intel2019_impi2019
+                #add_module_actions:
+                #   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                compiler_mpi: intel2019_impi2019_nemo4
+                #compiler_mpi: intel2021_impi2021
              glogin:
                 compiler_mpi: intel2019_impi2019
                 #compiler_mpi: intel2019_impi2019_nemo4
@@ -121,16 +129,41 @@ echam:
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_autotools:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 fs:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+                mops_oasismct4:
+                        version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              runctl:   
+                                 lcouple_co2: true
+                              submodelctl:
+                                 lco2: true
+                              radctl:
+                                 iaero: 8 # check why not 9
+                                 ico2: 1
+
+                        add_restartstreams:
+                           - tracer
+
+                        add_streams:
+                           - tracer
+
                 agrif:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 agrif_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6"
         greenhouse_dir: "${pool_dir}/input"
@@ -316,9 +349,13 @@ echam:
                      message: "high wind speed was found during your run..."
                      file: "${general.work_dir}/atmout"
                      frequency: 90
-        
-        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
+        # due to a bug in esm_master all POSSIBLE coupling fields have to be listed here
+        # esm_master shouldn't bother about coupling fields but does for some unknown reason
+        # Sebastian Wahl 05/2023
+        #foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+
+        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
         coupling_fields:
             "[[foci_fields-->FIELD]]":
                 grid: atmo
@@ -724,6 +761,44 @@ oasis3mct:
                               - 'OTotSnow <--gauswgt-- ATotSnow'
                               - 'OIceEvap <--gauswgt-- AIceEvap'
                               - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
+
+                mops_oasismct4:
+
+                        norestart: "T"
+                        mct_version: "4.0"
+                        version: "4.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
+                              - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
+                              - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+
+                           flxatmos:
+                              - 'O_OTaux1 <--gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--gauswgt-- ATotSnow'
+                              - 'OIceEvap <--gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - 'O_AtmCO2 <--gauswgt-- CO2CONAT'
+                              - 'CO2FLXOC <--gauswgt_global-- CO2FLXAT'
 
                 agrif_oasismct4:
 

@@ -461,23 +461,43 @@ class oasis:
         # get the basename of that path, otherwise assign the file label also as name
         # of the file (coming from ``coupling_<target/input>_fields``)
         if restart_file_path:
-            restart_file = os.path.basename(restart_file_label)
+            restart_file = os.path.basename(restart_file_path)
         else:
             restart_file = restart_file_label
 
-        config["restart_out_files"][restart_file_label] = restart_file
-        config["restart_out_files"][restart_file_label + "_recv"] = restart_file + "_recv"
+        # Include restart outs in the movements (``restart_out_files``)
+        config["restart_out_files"][restart_file_label] = restart_file_label
+        config["restart_out_files"][restart_file_label + "_recv"] = restart_file_label + "_recv"
 
-        config["restart_out_in_work"][restart_file_label] = restart_file  # + enddate
+        # Names of the files produced by OASIS in the ``work`` folder
+        #   Get name of the file defined by the user for restart_out_in_work. If the
+        #   user has not defined a name, take the simplified name as defined in the
+        #   label
+        restart_out_in_work = config["restart_out_in_work"].get(restart_file_label, restart_file_label)
+        config["restart_out_in_work"][restart_file_label] = restart_out_in_work
         config["restart_out_in_work"][restart_file_label + "_recv"] = (
-            restart_file + "_recv"
-        )  # + enddate
+            restart_out_in_work + "_recv"
+        )
 
-        config["restart_out_sources"][restart_file_label] = restart_file
-        config["restart_out_sources"][restart_file_label + "_recv"] = restart_file + "_recv"
+        # Destination names of the files copied from ``work`` -> ``source`` during
+        # ``tidy``
+        #   Get name of the file defined by the user for restart_out_sources. If the
+        #   user has not defined a name, take the simplified name as defined in the
+        #   label
+        restart_out_sources = config["restart_out_sources"].get(restart_file_label, restart_file_label)
+        config["restart_out_sources"][restart_file_label] = restart_out_sources
+        config["restart_out_sources"][restart_file_label + "_recv"] = restart_out_sources + "_recv"
 
-        config["restart_in_files"][restart_file_label] = restart_file
-        config["restart_in_in_work"][restart_file_label] = restart_file
+        # Include restart ins in the movements (``restart_in_files``)
+        config["restart_in_files"][restart_file_label] = restart_file_label
+
+        # Destination names of the files copied from ``source`` -> ``work`` during
+        # ``prepcompute``
+        #   Get name of the file defined by the user for restart_in_in_work. If the
+        #   user has not defined a name, take the simplified name as defined in the
+        #   label
+        restart_in_in_work = config["restart_in_in_work"].get(restart_file_label, restart_file_label)
+        config["restart_in_in_work"][restart_file_label] = restart_in_in_work
 
         # In case of a branch-off experiment -> use the correct oasis restart files:
         # Not the soft link to the last, but the actual one for the branch-off date

@@ -378,7 +378,7 @@ class oasis:
             trafo_line = trafo_line[1:]
 
         if oyac:
-            nb_of_trafo_lines = len(trafo_details) - nb_stack
+            nb_of_trafo_lines = len(trafo_details) - int(nb_stack)
         else:
             nb_of_trafo_lines = len(trafo_details)
 

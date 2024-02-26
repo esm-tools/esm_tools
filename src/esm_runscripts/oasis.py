@@ -377,7 +377,10 @@ class oasis:
         if trafo_line[0] == " ":
             trafo_line = trafo_line[1:]
 
-        nb_of_trafo_lines = len(trafo_details)
+        if oyac:
+            nb_of_trafo_lines = len(trafo_details) - nb_stack
+        else:
+            nb_of_trafo_lines = len(trafo_details)
 
         self.namcouple += [
             right

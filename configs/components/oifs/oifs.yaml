@@ -1154,16 +1154,22 @@ grids:
                 nx: "${nx}"
                 ny: "${ny}"
                 oasis_grid_type: "D"
+                oyac_grid_type: "LL"
+                oyac_io_per_node: 4
         atml:
                 name: ${oasis_grid_name_l}
                 nx: "${nx}"
                 ny: "${ny}"
                 oasis_grid_type: "D"
+                oyac_grid_type: "LL"
+                oyac_io_per_node: 4
         atmr:
                 name: ${oasis_grid_name_r}
                 nx: "${nx}"
                 ny: "${ny}"
                 oasis_grid_type: "D"
+                oyac_grid_type: "LL"
+                oyac_io_per_node: 4
 
 
 #======================================================================================

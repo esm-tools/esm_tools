@@ -134,7 +134,7 @@ class oasis:
             alltimes = [alltimes]
         for time in alltimes:
             detail_line = ""
-            if time.lower() in ["instant", "accumul", "average", "t_min", "t_max"]:
+            if time.lower() in ["stocha", "instant", "accumul", "average", "t_min", "t_max"]:
                 trafo_line = "LOCTRANS"
                 detail_line = time.upper()
                 trafo_details.append(detail_line.strip())
@@ -184,27 +184,56 @@ class oasis:
                     trafo_details.append(detail_line.strip())
 
         alltrans = transformation.get("remapping", {"bla": "blub"})
-        oyac = transformation.get("oyac", {"false"})
-        if oyac: # OASIS with YAC interpolation library
+        oyac = transformation.get("oyac", False)
+        if oyac: # OASIS with YAC interpolation library (OYAC)
+                nb_stack=str(len(alltrans))
+                oyac_io_per_node=str(rgrid["oyac_io_per_node"]).upper()
+
                 trafo_line += " YAC"
                 #TODO: Read new var nb_stack for number of interpolations in stack
-                srcgridtype = str(rgrid["oasis_grid_type"]).upper()
+                srcgridtype = str(rgrid["oyac_grid_type"]).upper()
                 #TODO: We need not only src but also dst grid type
-                dstgridtype = str(rgrid["oasis_grid_type"]).upper()
+                dstgridtype = str(lgrid["oyac_grid_type"]).upper()
+                translist=[]
+                for trans in alltrans:
+                    translist.append(trans)
+                rmp_name=result = '_'.join(translist)
                 general_oyac_line = (
-                    trans.upper()
-                    + srcgridtype.upper()
+                    srcgridtype.upper()
                     + " "
                     + dstgridtype.upper()
                     + " "
-                    # + nb_stack
-                    + " YAC_CONSERV "
-                    # + nb_io_per_node
+                    + nb_stack
+                    + " YAC_" 
+                    + rmp_name.upper()
+                    + " "
+                    + oyac_io_per_node
                 )
                 trafo_details += [general_oyac_line.strip()]
-                for thistrans in alltrans:
-                    stack_line = (
-                    )
+                for trans in alltrans:
+                    transform = alltrans[trans]
+                    if trans.upper() == 'CONSERV':
+                        order = transform.get("order", None)
+                        intersect_norm = transform.get("intersect_norm", None)
+                        stack_line = (
+                        trans.upper()
+                        + " "
+                        + order.upper()                       
+                        + " "
+                        + intersect_norm.upper()
+                        )
+                        trafo_details += [stack_line.strip()]
+                    elif trans.upper() == 'NNN':
+                        weighting = transform.get("weighting", None)
+                        nb_of_neighbours = str(transform.get("nb_of_neighbours", None))
+                        stack_line = (
+                        trans.upper()
+                        + " "
+                        + weighting.upper()                       
+                        + " "
+                        + nb_of_neighbours.upper()                       
+                        )
+                        trafo_details += [stack_line.strip()]
             
         else: # OASIS with SCRIP interpolation library
             if not type(alltrans) == list:

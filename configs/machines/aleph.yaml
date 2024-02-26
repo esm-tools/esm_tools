@@ -46,53 +46,135 @@ hyper_flag: ""
 #
 #
 
-useMPI: cray_mpich
+useMPI: cray_mpich #intel_mpich #intelopenmpi #cray_mpich
 
-fc: ftn
-f77: ftn
-mpifc: ftn
-mpicc: cc
-cc: cc
-cxx: CC
+choose_useMPI:
+        cray_mpich:
+                fc: ftn
+                f77: ftn
+                mpifc: ftn
+                mpicc: cc
+                cc: cc
+                cxx: CC
+                module_actions:
+                        - "unload craype"
+                        - "load craype/2.6.2"
+                        - "load PrgEnv-cray/6.0.4"
+                        - "load pbs"
+                        - "load cray-mpich/7.7.3"
+                        - "load craype-x86-skylake"
+                        - "load cmake/3.14.0"
+                        - "load cray-hdf5-parallel/1.10.2.0"
+                        - "load cray-netcdf-hdf5parallel/4.6.1.3"
+                        - "load cdo/1.9.5"
+                        - "load fftw/2.1.5.9"
+                        - "load nco/4.9.4"
+                        - "load proj4/5.1.0"
+                        - "load python/3.9.1"
+                        - "list"
+                add_export_vars:
+                        ECCODESROOT: /proj/awiiccp/software/ecmwf/eccodes_cce_mpich
+                        HDF5ROOT: $HDF5_ROOT
 
-module_actions:
-        - "unload craype"
-        - "load craype/2.6.2"
-        - "load PrgEnv-cray/6.0.4"
-        - "load pbs"
-        - "load cray-mpich/7.7.3"
-        - "load craype-x86-skylake"
-        - "load cmake/3.14.0"
-        - "load cray-hdf5-parallel/1.10.2.0"
-        - "load cray-netcdf-hdf5parallel/4.6.1.3"
-        - "load cdo/1.9.5"
-        - "load fftw/2.1.5.9"
-        - "load nco/4.9.4"
-        - "load proj4/5.1.0"
-        - "load python/3.9.1"
-        - "list"
+                        NETCDFFROOT: $NETCDF_DIR
+                        NETCDFROOT: $NETCDF_DIR
+                        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+                        ZLIBROOT: /usr
 
+        intelopenmpi:
+                warning:
+                        "Configuration does not run": 
+                            message: "The intelopenmpi configuration on aleph is experimental. From past experiance it can compile AWI-CM3, but crashes on runtime. Use as your own disgression. Contact jan.streffing@awi.de for further questions"
+                            ask_user_to_continue: True
+                fc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
+                f77: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
+                mpifc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpifort
+                mpicc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicc
+                cc: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicc
+                cxx: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicxx
+                module_actions:
+                        - "unload PrgEnv-cray"
+                        - "load PrgEnv-intel/6.0.5"
+                        - "load craype-x86-skylake"
+                        - "load cray-mpich/7.7.3"
+                        - "load gcc/7.3.0"
+                        - "load pbs"
+                        - "load cmake/3.14.0"
+                        - "load cdo/1.9.5"
+                        - "load fftw/2.1.5.9"
+                        - "load nco/4.9.4"
+                        - "load proj4/5.1.0"
+                        - "load python/3.9.1"
+                        - "list"
+                add_export_vars:
+                        CMAKE_C_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicc
+                        CMAKE_CXX_COMPILER: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717/bin/mpicxx
+                        IO_LIB_ROOT: /home/awiiccp2/software/HPC_libraries/intel-18.0.3.222_ompi_20230717
+                        LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+                        SZIPROOT: $IO_LIB_ROOT
+                        HDF5ROOT: $IO_LIB_ROOT
+                        HDF5_ROOT: $HDF5ROOT
+                        NETCDFROOT: $IO_LIB_ROOT
+                        NETCDFFROOT: $IO_LIB_ROOT
+                        ECCODESROOT: $IO_LIB_ROOT
+
+                        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                        PATH: $IO_LIB_ROOT/bin:$PATH
+                        MPIFC: ftn
+
+        intel_mpich:
+                warning:
+                        Configuration does not run: 
+                        message: "The intel_mpich configuration on aleph is experimental. From past experiance it can compile AWI-CM3, but crashes on runtime. Use as your own disgression. Contact jan.streffing@awi.de for further questions"
+                        ask_user_to_continue: True
+                fc: ftn
+                f77: ftn
+                mpifc: ftn
+                mpicc: cc
+                cc: cc
+                cxx: CC
+                module_actions:
+                        - "unload PrgEnv-cray"
+                        - "load PrgEnv-intel/6.0.5"
+                        - "load craype-x86-skylake"
+                        - "load cray-mpich/7.7.3"
+                        - "load gcc/7.3.0"
+                        - "load pbs"
+                        - "load cmake/3.14.0"
+                        - "load cdo/1.9.5"
+                        - "load fftw/2.1.5.9"
+                        - "load nco/4.9.4"
+                        - "load proj4/5.1.0"
+                        - "load python/3.9.1"
+                        - "load cray-netcdf-hdf5parallel/4.6.1.3"
+                        - "load cray-hdf5-parallel/1.10.2.0"
+                        - "list"
+                add_export_vars:
+                        ECCODESROOT: /home/awiiccp2/software/HPC_libraries/eccodes_intel_mpich/
+
+                        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                        PATH: $IO_LIB_ROOT/bin:$PATH
+                        MPIFC: ftn
 export_vars:
         LC_ALL: en_US.UTF-8
 
-        HDF5ROOT: $HDF5_ROOT
-
-        NETCDFFROOT: $NETCDF_DIR
-        NETCDFROOT: $NETCDF_DIR
-        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-        NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
-
         PERL5LIB: /usr/lib64/perl5
-        #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
-        #LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'
         XML2ROOT: /usr
-        ZLIBROOT: /usr
         TMPDIR: /tmp
         # Prepend labels to the stdout/sterr lines
         PMI_LABEL_ERROUT: 1
 
-        ECCODESROOT: /proj/awiiccp/software/ecmwf/eccodes_cce_mpich
 
         # enable full MPI thread support level (MPI_THREAD_MULTIPLE)
         MPICH_MAX_THREAD_SAFETY: multiple # to also switch to an alternative (probably with faster locking) multi threading implementation of the cray-mpich library, use the compiler flag -craympich-mt
@@ -108,7 +190,7 @@ export_vars:
         # Important for eccodes to work
         CRAYPE_LINK_TYPE: dynamic
 
-label_format: '"[@MODEL@]%l:"'
+label_format: '"[@MODEL@]%r:"'
 launcher_flags_per_component: "-n @nproc@ -N @nproc_per_node@ -d @cpus_per_proc@
         env OMP_NUM_THREADS=@omp_num_threads@
         env PMI_LABEL_ERROUT_FORMAT=${label_format}"

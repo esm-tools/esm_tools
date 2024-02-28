@@ -7,13 +7,35 @@ from esm_calendar import Date
 
 class Provenance(list):
     """
-    A subclass of lists in which each element holds provenance information about the
-    provenance history of a value. To assign the provenance to a value instanciated as
-    an attribute of that value. To be used from the ``WithProvenance`` classes created
-    by ``wrapper_with_provenance_factory``.
+    A subclass of list in which each element represents the provenance of the value
+    at a point in the key-value history. The whole point of this class is to have a
+    list subclass that allows us to include information about which function is
+    changing the list whithin each provenance element.
+
+    To assign the provenance to a value instanciate it as an attribute of that value
+    (i.e. ``self.provenance = Provenance(my_provenance)``). To be used from the
+    ``WithProvenance`` classes created by ``wrapper_with_provenance_factory``.
+
+    The following class methods provide the extended functionality to lists:
+    * ``self.append_last_step_modified_by``: to duplicate the last element of the list
+        and add to it information about the function that is modifying the value
+    * ``self.extend_and_modified_by``: to extend a list while including in the
+        provenance the function which is responsible for extending it
     """
 
     def __init__(self, provenance_data):
+        """
+        Initialize the provenance object with its subclass (``list``) giving
+        ``provenance_data`` as input. If ``provenance_data`` is not a ``list``
+        initialize the object as a list which only element is ``provenance_data``.
+
+        Parameters
+        ----------
+        provenance_data : list
+            List of provenance elements that describe the history of a key-value, or
+            a single provenance element.
+        """
+
         if isinstance(provenance_data, list):
             super().__init__(provenance_data)
         else:
@@ -21,15 +43,14 @@ class Provenance(list):
 
     def append_last_step_modified_by(self, func):
         """
-        Copies the last step in the provenance history and adds the entry ``modify_by``
-        with value ``func``.
+        Copies the last element in the provenance history and adds the entry ``modify_by``
+        with value ``func`` to the copy.
 
         Parameters
         ----------
         func : str
             Function that is modifying the variable
         """
-
         new_provenance_step = copy.deepcopy(self[-1])
         new_provenance_step = self.add_modified_by(new_provenance_step, func)
 
@@ -37,10 +58,11 @@ class Provenance(list):
 
     def extend_and_modified_by(self, additional_provenance, func):
         """
-        Extends the current provenance with an ``additional_provenance``. This happends
-        when for example a variable comes originally from a file, but then is
-        overwritten by a file higher in the hierarchy. This would keep both histories,
-        with the history of the second been on top of the first.
+        Extends the current provenance history with an ``additional_provenance``. This
+        happens when for example a variable comes originally from a file, but then the
+        value is overwritten by another value that comes from a file higher in the
+        hierarchy. This method keeps both histories, with the history of the second been
+        on top of the first.
 
         Parameters
         ----------
@@ -65,7 +87,7 @@ class Provenance(list):
 
     def add_modified_by(self, provenance_step, func, modified_by="modified_by"):
         """
-        Adds an variable of name defined by ``modified_by`` to the given provenance step
+        Adds a variable of name defined by ``modified_by`` to the given provenance step
         with value ``func``. This variable is used to label provenance steps of the
         provenance history with functions that modified it.
 
@@ -152,7 +174,7 @@ def wrapper_with_provenance_factory(value, provenance=None):
     that are not subclassable (``bool`` and ``NoneType``) intanciates an object that
     mimics their behaviour but also contains the ``provenance`` attribute.
 
-    Objects of type ``esm_calendar.esm_calendar.Date`` are not subclass (and the
+    Objects of type ``esm_calendar.esm_calendar.Date`` are not subclassed (and the
     ``provenance`` attribute is simply added to them, because they fail to be subclassed
     with in the ``WrapperWithProvenance`` with the following error::
 

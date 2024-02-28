@@ -191,8 +191,10 @@ def wrapper_with_provenance_factory(value, provenance=None):
             Dynamically create a subclass of the type of the given value
             """
 
-            def __new__(cls, value, *args, **kwargs):
-                return super(WrapperWithProvenance, cls).__new__(cls, value)
+            _value = value
+
+            def __new__(cls, *args, **kwargs):
+                return super(WrapperWithProvenance, cls).__new__(cls, cls._value)
 
             def __init__(self, value, provenance=None):
                 self._provenance = Provenance(provenance)

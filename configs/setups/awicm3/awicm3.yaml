@@ -831,6 +831,16 @@ oasis3mct:
                                 nnn:
                                         weighting: avg
                                         nb_of_neighbours: 1
+                oyac_1stcon_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                conserv:
+                                        order: first
+                                        intersect_norm: fracarea
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
 
         input_files: {}
 

@@ -88,6 +88,12 @@ choose_version:
                     archfile: ESMTOOLS_generic_oasis_gcc
                 "*":
                     archfile: ESMTOOLS_levante_oasis_intel
+        juwels:
+            choose_computer.compiler_mpi:
+                gnu2023_ompi2023:
+                    archfile: ESMTOOLS_generic_oasis_gcc
+                "*":
+                    archfile: ESMTOOLS_levante_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: master
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x

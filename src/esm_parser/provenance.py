@@ -111,6 +111,37 @@ class Provenance(list):
         return provenance_step
 
 
+@classmethod
+def wrapper_with_provenance_new(cls, *args, **kwargs):
+    return super(cls, cls).__new__(cls, args[1])
+
+def wrapper_with_provenance_init(self, value, provenance=None):
+    """
+    Parameters
+    ----------
+    value : bool, None
+        Value of the object
+    provenance : any
+        The provenance information
+    """
+    self._provenance = Provenance(provenance)
+    self.value = value
+
+@property
+def prop_provenance(self):
+    return self._provenance
+
+@prop_provenance.setter
+def prop_provenance(self, new_provenance):
+    # Check if new_provenance is an instance of Provenance
+    if not isinstance(new_provenance, Provenance):
+        raise ValueError(
+            "Provenance must be an instance of the provenance.Provenance "
+            "class!"
+        )
+
+    self._provenance = new_provenance
+
 class ProvenanceClassForTheUnsubclassable:
     """
     A class to reproduce the methods of the unclassable ``bool`` and ``NoneType``
@@ -119,18 +150,6 @@ class ProvenanceClassForTheUnsubclassable:
     This class stores 2 attributes, one is the ``value`` of the target object (a
     ``bool`` or a ``NoneType``) and the other is the ``provenance``.
     """
-
-    def __init__(self, value, provenance):
-        """
-        Parameters
-        ----------
-        value : bool, None
-            Value of the object
-        provenance : any
-            The provenance information
-        """
-        self.value = value
-        self.provenance = Provenance(provenance)
 
     def __repr__(self):
         return f"{self.value}"
@@ -147,6 +166,9 @@ class ProvenanceClassForTheUnsubclassable:
     def __hash__(self):
         return hash(self.value)
 
+ProvenanceClassForTheUnsubclassable.__init__ = wrapper_with_provenance_init
+ProvenanceClassForTheUnsubclassable.provenance = prop_provenance
+ 
 
 class BoolWithProvenance(ProvenanceClassForTheUnsubclassable):
     @property
@@ -158,13 +180,16 @@ class BoolWithProvenance(ProvenanceClassForTheUnsubclassable):
 
 
 class NoneWithProvenance(ProvenanceClassForTheUnsubclassable):
+    def __init__(self, value, provenance):
+        print(provenance)
+        self.value = value
+        self.provenance = Provenance(provenance)
     @property
     def __class__(self):
         """
         This is here for having ``isinstance(<my_bool_with_provenance>, None)`` return ``True``
         """
         return type(None)
-
 
 def wrapper_with_provenance_factory(value, provenance=None):
     """
@@ -205,39 +230,29 @@ def wrapper_with_provenance_factory(value, provenance=None):
         value.provenance = Provenance(provenance)
 
         return value
-
+    elif isinstance(value, PROVENANCE_MAPPINGS):
+        return value
     else:
+        subtype = type(value)
+        class_name = f"{subtype}".split("'")[1]
+        class_name = f"{class_name[0].upper()}{class_name[1:]}WithProvenance"
 
-        class WrapperWithProvenance(type(value)):
-            """
-            Dynamically create a subclass of the type of the given value
-            """
-
-            _value = value
-
-            def __new__(cls, *args, **kwargs):
-                return super(WrapperWithProvenance, cls).__new__(cls, cls._value)
-
-            def __init__(self, value, provenance=None):
-                self._provenance = Provenance(provenance)
-
-            @property
-            def provenance(self):
-                return self._provenance
-
-            @provenance.setter
-            def provenance(self, new_provenance):
-                # Check if new_provenance is an instance of Provenance
-                if not isinstance(new_provenance, Provenance):
-                    raise ValueError(
-                        "Provenance must be an instance of the provenance.Provenance "
-                        "class!"
-                    )
-
-                self._provenance = new_provenance
+        if class_name in globals():
+            pass
+        else:
+            globals()[class_name] = type(
+                class_name,
+                (subtype, ),
+                {
+                    "_class_name": class_name,
+                    "__new__": wrapper_with_provenance_new,
+                    "__init__": wrapper_with_provenance_init,
+                    "provenance": prop_provenance,
+                },
+            )
 
         # Instantiate the subclass with the given value and provenance
-        return WrapperWithProvenance(value, provenance)
+        return globals()[class_name](value, provenance)
 
 
 class DictWithProvenance(dict):

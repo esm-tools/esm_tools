@@ -1063,7 +1063,7 @@ def add_entry_to_chapter(
             mod_list.extend(list(flatten_nested_lists(add_entries)))
 
             # Remove duplicates
-            mod_list_no_dupl = []
+            mod_list_no_dupl = ListWithProvenance([], None)
             for el in mod_list:
                 if not isinstance(el, (dict, tuple, list)):
                     if el not in mod_list_no_dupl:

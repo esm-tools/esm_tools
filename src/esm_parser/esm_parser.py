@@ -140,7 +140,7 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version", "omp_num_threads"]
+early_choose_vars = ["include_models", "version", "omp_num_threads", "further_reading"]
 
 
 def flatten_nested_lists(lst):
@@ -2802,9 +2802,16 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``
         Text clarifying the note.
     """
     reset_s = colorama.Style.RESET_ALL
+
+    if isinstance(note_text, list):
+        new_note_text = ""
+        for item in note_text:
+            new_note_text = f"{new_note_text}- {item}\n"
+        note_text = new_note_text
+
     for dsymbol in dsymbols:
         note_text = re.sub(
-            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
+            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
         )
     print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
     print(f"{note_text}\n")
@@ -2834,6 +2841,8 @@ class GeneralConfig(dict):  # pragma: no cover
     def __init__(self, model, version, user_config):
         super(dict, self).__init__()
 
+        self.check_user_defined_versions(user_config)
+
         if os.path.isfile(model + "-" + version):
             config_path = model + "-" + version
         elif os.path.isfile(model):
@@ -2851,6 +2860,14 @@ class GeneralConfig(dict):  # pragma: no cover
             self.config = yaml_file_to_dict(include_path)
         else:
             self.config = include_path
+
+        resolve_choose_with_var(
+            "further_reading",
+            self.config,
+            model_config={model: self.config},
+            user_config=user_config,
+        )
+
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
@@ -2980,8 +2997,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         del self.config
 
-        self.check_user_defined_versions(user_config, setup_config)
-
         setup_config["general"].update(
             {
                 "esm_function_dir": CONFIG_PATH,
@@ -3099,10 +3114,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # pprint_config(self.config)
         # sys.exit(0)
 
-    def check_user_defined_versions(self, user_config={}, setup_config={}):
+    def check_user_defined_versions(self, user_config):
         """
-        When running a standalone model, checks whether the users has defined the
-        variable ``version`` in more than one section and if that's the case
+        Checks whether the user has defined the variable ``version`` in both the
+        main model/coupled setup section and in ``general`` and if that's the case
         throws and error. If ``version`` is only defined in the ``general`` section
         it creates a ``version`` with the same value in the model section, ensuring
         that the user can arbitrarily define ``version`` in either ``general`` or
@@ -3122,12 +3137,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             If something goes wrong with the user's version choices it exits the code
             with a ``esm_parser.user_error``
         """
-        if "general" in self:
-            user_config = setup_config = self
-        if (
-            setup_config["general"].get("standalone")
-            and user_config["general"].get("run_or_compile", "runtime") == "runtime"
-        ):
+        if user_config["general"].get("run_or_compile", "runtime") == "runtime":
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]
             version_in_runscript_model = user_config.get(model_name, {}).get("version")
@@ -3136,12 +3146,15 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     "Version",
                     "You have defined the ``version`` variable both in the "
                     f"``general`` and ``{model_name}`` sections of your runscript. "
-                    "This is not supported for ``standalone`` simulations. Please "
+                    "This is not supported as it is redundant information. Please "
                     "define ``only one version`` in one of the two sections.",
                 )
             elif version_in_runscript_general and not version_in_runscript_model:
                 if model_name in user_config:
                     user_config[model_name]["version"] = version_in_runscript_general
+            elif version_in_runscript_model and not version_in_runscript_general:
+                if "general" in user_config:
+                    user_config["general"]["version"] = version_in_runscript_model
 
     def finalize(self):
         self.run_recursive_functions(self)

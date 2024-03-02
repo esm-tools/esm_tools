@@ -19,9 +19,14 @@ icb_code: False
 with_wiso: false
 wiso_code: false
 
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+
 choose_version:
   '2.5':
     branch: "2.5"
+  '2.5-awicm-3.2':
+    branch: "AWI-CM3_v3.2"
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x
@@ -34,6 +39,8 @@ restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
+
+tar_binary_restarts: False
 
 time_step: 1800
 resolution: CORE2
@@ -170,8 +177,10 @@ restart_out_in_work:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM
@@ -180,8 +189,10 @@ restart_out_sources:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear}
         icb_restart_ISM: iceberg.restart.ISM
@@ -281,6 +292,8 @@ file_movements:
                 all_directions: move
         fesom_raw_restart_info_out:
                 all_directions: move
+        fesom_raw_restart_tar_out:
+                all_directions: move
         fesom_bin_restart_in:
                 all_directions: move
         fesom_bin_restart_out:
@@ -289,6 +302,13 @@ file_movements:
                 all_directions: move
         fesom_bin_restart_info_out:
                 all_directions: move
+        fesom_bin_restart_tar_out:
+                all_directions: move
+
+choose_tar_binary_restarts:
+    True:
+        add_restart_out_files:
+            fesom_raw_restart_tar: fesom_raw_restart_tar
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -553,4 +573,18 @@ grids:
 
 further_reading:
         - fesom/fesom.forcing.yaml
+
+# ------------------------
+# RECIPE
+# ------------------------
+tidy_recipe:
+- "tidy_coupler"
+- "tar_binary_restarts"
+- "assemble"
+- "check_for_unknown_files"
+- "log_used_files"
+- "throw_away_some_infiles"
+- "copy_stuff_back_from_work"
+- "copy_all_results_to_exp"
+- "clean_run_dir"
 

@@ -1394,7 +1394,7 @@ choose_version:
     # so that we avoid the SMAG at the end.
     # That way, we use the same repo as ORCA05_LIM2_KCM_AOW_FS_OASISMCT4, but different branch
     branch: esm-tools
-    destination: nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4/CONFIG/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4.git
     
     free_surface: nonlinear

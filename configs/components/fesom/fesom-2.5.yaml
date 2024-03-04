@@ -25,20 +25,14 @@ choose_version:
   "2.5":
     branch: "2.5"
     destination: "fesom-2.5"
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    wiso_code: true
-    icb_code: true
     add_namelists:
         - namelist.dyn
     add_config_files:
         tra:     tra
         dyn:     dyn
-    namelist_dir: "${model_dir}/config/"
   
   "2.5-paleodyn":
-    tag: "2.5.1_paleo"
-    branch: "icb_into_v2.5" #LA: we need a correct name for it once everything is merged
+    branch: "2.5.1_paleo"
     destination: "fesom-2.5"
     git-repository:
     - https://github.com/FESOM/fesom2.git # LA: only temporarily 
@@ -50,6 +44,9 @@ choose_version:
         tra:     tra
         dyn:     dyn
     namelist_dir: "${model_dir}/config/"
+  
+  '2.5-awicm-3.2':
+    branch: "AWI-CM3_v3.2"
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x

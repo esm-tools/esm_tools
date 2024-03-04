@@ -70,10 +70,10 @@ available_versions:
 - ORCA05_LIM2_KCM_AOW_FS
 - ORCA05_LIM2_FOCI_AGRIF
 - ORCA05_LIM2_FOCI_AGRIF_AOW
-- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
-- ORCA05_LIM2_KCM_AGRIF_OASISMCT5
+- ORCA05_LIM2_KCM_AGRIF_OASISMCT4 
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
-- ORCA05_LIM2_KCM_AOW_FS_OASISMCT5_FOCI3
+- ORCA05_LIM2_KCM_AOW_OASISMCT5
+- ORCA05_LIM2_KCM_AOW_FS_OASISMCT5
 - ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
 - GYRE_PISCES
@@ -1314,37 +1314,14 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
-
-  ORCA05_LIM2_KCM_AOW_OASISMCT4:
-    requires:
-    #- xios-2.0_r982
-    - nemobasemodel-3.6foci
-    branch: oasismct4 
-    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
-
-    add_input_files:
-       # reference namelists
-       namelist_ref: namelist_ref
-       namelist_ice_ref: namelist_ice_ref
-       # grids and coefficients 
-       cn_batmeter: bathy_meter 
-       coordinates: coordinates
-       subbasins: subbasins
-       coef-G70: coef-G70
-       # init and (if used) damping data
-       sn_tem: sn_tem_levitus
-       sn_sal: sn_sal_levitus
-       ice_init: ice_init_kkg36f13h
-
-    input_in_work:
-       ice_init: Ice_initialization.nc
-       namelist_ice_ref: namelist_ice_ref
-
+  
+  # Use for FOCI-OpenIFS v2.x
+  # No smagorinsky
+  # Add flag to support OASIS3-MCT >= 3.0
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
     requires:
     - nemobasemodel-3.6foci
-    branch: esm-tools
+    branch: mct3_nosmag
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
 
@@ -1368,14 +1345,58 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
-       
-  ORCA05_LIM2_KCM_AOW_FS_OASISMCT5_FOCI3:
+  
+  # As for ORCA05_LIM2_KCM_AOW_FS_OASISMCT4_SMAG
+  # here we use ORCA05_LIM2_KCM_AOW_FS_OASISMCT4 
+  # and set free_surface = linear
+  # and also change branch name. 
+  ORCA05_LIM2_KCM_AOW_OASISMCT4:
     requires:
     - nemobasemodel-3.6foci
-    branch: foci30
+    branch: mct3_nosmag_novvl
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4.git
 
+    free_surface: linear
+    leapyear: true  
+
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+  
+  # Use for FOCI-OpenIFS v3.0 
+  # Note: This version is identical to ORCA05_LIM2_KCM_AOW_FS_OASISMCT4 
+  # and is the same repo, just a different branch.
+  # But for some strange reason we can't just change branch, but have to define
+  # a new version... 
+  # 
+  # In the future we should have one repo for all NEMO 3.6 code
+  # and then just change branches between model versions
+  #
+  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4_SMAG:
+    requires:
+    - nemobasemodel-3.6foci
+    # unlike the other versions, we hard code the name here
+    # so that we avoid the SMAG at the end.
+    # That way, we use the same repo as ORCA05_LIM2_KCM_AOW_FS_OASISMCT4, but different branch
+    branch: esm-tools
+    destination: nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4/CONFIG/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4.git
+    
     free_surface: nonlinear
     leapyear: true  
 
@@ -1396,6 +1417,7 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
+  
   
   #ORCA05_SI3_FOCI_FS_AOW:
   #  requires:

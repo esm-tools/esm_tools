@@ -350,7 +350,12 @@ choose_resolution:
         TCO95:
                 nx: 40320
                 ny: 1
-                time_step: 3600
+                # Joakim: Lower Tco95 time step to 1800s
+                # This has 2x computer cost but reduces
+                # biases by a lot, so it is worth it
+                # Savita et al. (2024) 10.5194/gmd-2023-101 
+                #time_step: 3600
+                time_step: 1800
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
@@ -462,6 +467,11 @@ choose_computer.partitions.compute.cores_per_node:
 #======================================================================================
 
 # Microphysics switch: 0 for off, 1 for light version and 2 for full
+# sclct_switch <= 1 : Transform all cloud water below 600 hPa to liquid phase
+# sclct_switch == 2 : Reduce ice deposition rate by 50% to retain supercooled water
+# sclct_switch should be set to 2 to reduce warm bias in Southern Ocean
+# Note: Only works for 43r3. 
+# See Forbes 2016 10.21957/s41h7q7l 
 sclct_switch: 0
 
 # Namelist modifications for truncation types

@@ -36,9 +36,10 @@ requirements = [
     "xdgenvpy==2.3.5",
     "pydantic==1.10.2",
     "h5netcdf>=0.8.1",
-    "powerlaw",
-    "numexpr",
-    "pyfesom2",
+#MA: Provisionally removing this packages to look at the automatic tests
+#    "powerlaw",
+#    "numexpr",
+#    "pyfesom2",
 ]
 
 setup_requirements = []

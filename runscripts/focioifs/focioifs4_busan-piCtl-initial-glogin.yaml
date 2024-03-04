@@ -7,11 +7,11 @@ general:
    resolution: "TCO95_ORCA05"
    version: "3.0_busan"
    
-   compute_time: "01:00:00"
+   compute_time: "12:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2150-01-01T00:00:00"         # Final date of the experiment
    
-   nyear: 1
+   nyear: 10
    nmonth: 0
    nday: 0
    #restart_rate: 1
@@ -51,8 +51,8 @@ oifs:
    runtime_environment_changes:
       choose_computer.name:
          "glogin":
-             #compiler_mpi: intel2019_impi2019_nemo4
-             compiler_mpi: intel2022_impi2021
+             compiler_mpi: intel2019_impi2019_nemo4
+             #compiler_mpi: intel2022_impi2021
    
    lresume: ${general.lresume}
    # This would be for a traditional restart
@@ -88,7 +88,7 @@ oifs:
    
    resolution: TCO95
    levels: L91
-   nproc: 168
+   nproc: 144
    omp_num_threads: 4
    use_ocean_currents: 0
    sclct_switch: 2
@@ -115,6 +115,13 @@ oifs:
            # Lower ocean albedo to warm ocean surface and reduce cold bias
            NAMMCC:
                RALBSEAD_NML: 0.045
+               # coupling of albedo is true by default
+               # but better be sure
+               LNEMOLIMALB: ".true."
+               # coupling of ice temp is NOT on by default
+               # Also, be warned that this may be hard-coded to .false.
+               # Run grep LNEMOLIMTEMP NODE.001_01 to double-check
+               LNEMOLIMTEMP: ".true." 
 
 oasis3mct:
    lresume: True
@@ -170,7 +177,11 @@ nemo:
           namdyn_ldf:
               # Use time-varying viscosity set by deformation rate
               # (Smagorinsky)
-              nn_ahm_ijk_t: 32 
+              nn_ahm_ijk_t: 32
+          namtra_ldf:
+              # Diffusion set by local baroclinic growth rate 
+              nn_aht_ijk_t: 20
+              rn_aht_scale: 1.5 
           namtra_eiv:
               rn_aeiv_scale: 0.5 
    

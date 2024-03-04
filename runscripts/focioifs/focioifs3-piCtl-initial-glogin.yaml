@@ -62,8 +62,7 @@ oifs:
    levels: L91
    nproc: 288
    omp_num_threads: 1
-   use_ocean_currents: 0
-    
+   use_ocean_currents: 0    
    
 oasis3mct:
    lresume: True

@@ -157,45 +157,10 @@ choose_general.setup_name:
                         ifs_xml: ifs_xml
         focioifs:
                 xml_dir: "${computer.pool_directories.focipool}"
-                choose_general.version:
-                        "*":
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        domain_def: domain_def
-                                        field_def: field_def
-                                        file_def: file_def
-                        "3.0": 
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        nemo_xml: nemo_xml
-                        "3.0_busan":
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        nemo_xml: nemo_xml
-                        "3.1":
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        nemo_xml: nemo_xml
-                        agrif:
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        domain_def: domain_def
-                                        field_def: field_def
-                                        file_def: file_def
-                                        file_def_agrif: file_def_agrif
-                        "agrif-3.0":
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        domain_def: domain_def
-                                        field_def: field_def
-                                        file_def: file_def
-                                        file_def_agrif: file_def_agrif
+                add_config_files:
+                        context_ifs: context_ifs
+                        ifs_xml: ifs_xml
+                        nemo_xml: nemo_xml                        
 
         foci:
            choose_general.version:

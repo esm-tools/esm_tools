@@ -38,7 +38,8 @@ requirements = [
     "h5netcdf>=0.8.1",
     "powerlaw",
     "numexpr",
-    "pyfesom2",
+#MA: Provisionally removing this packages to look at the automatic tests
+#    "pyfesom2",
 ]
 
 setup_requirements = []

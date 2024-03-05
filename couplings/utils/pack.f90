@@ -81,7 +81,7 @@ PROGRAM pack_array
   IF (nnlon /= nlon) PRINT*, 'Dimensions of mask and data files do not match: ', nlon, nnlon 
   stat = nf_inq_dimlen(ncid,vardimids(2),nnlat)
   CALL hdlerr(stat)
-  IF (nnlon /= nlon) PRINT*, 'Dimensions of mask and data files do not match: ', nlat, nnlat 
+  IF (nnlat /= nlat) PRINT*, 'Dimensions of mask and data files do not match: ', nlat, nnlat 
   IF (varndims > 2) THEN
      stat = nf_inq_dimlen(ncid,vardimids(3),ntiles)
      CALL hdlerr(stat)

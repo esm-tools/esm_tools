@@ -10,12 +10,6 @@ input_sources:
         "vgratclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VGRATCLIM.nc"
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
         
-choose_general.iterative_coupling:
-        True:
-                add_input_sources:
-                        "gfw_atmo": "${general.experiment_couple_dir}/latest_gfw_atmo.nc"
-                        "target_oro": "${general.experiment_couple_dir}/latest_target_orography.nc"
-
 # forcings
 # Note: The variable ``ozone_source_file_scenario`` is set to ${scenario} by default.
 ozone_source_file_scenario: ${scenario}

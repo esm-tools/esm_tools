@@ -205,6 +205,8 @@ choose_version:
                                 scenario_type: cmip6
                 choose_general.iterative_coupling:
                         True:
+                                add_input_sources:
+                                        "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
                                 choose_general.chunk_number:
                                         1:
                                                 jsbach: jsbach

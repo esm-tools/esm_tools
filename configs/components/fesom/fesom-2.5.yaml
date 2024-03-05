@@ -236,7 +236,7 @@ choose_with_icb:
         True:
             use_icebergs: True                 # turns on icebergs
             use_icesheet_coupling: True        # initializes new icebergs every restart
-            update_icebegs: True
+            update_icebergs: True
 
             icb_inputs: [longitude,latitude,length,height,scaling,felem]
 

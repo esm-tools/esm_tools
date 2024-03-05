@@ -8,7 +8,6 @@ import copy
 from cdo import Cdo
 import glob
 import pandas as pd
-from .icb_apply_distribution_functions import *
 ######################################
 
 import f90nml
@@ -228,22 +227,6 @@ def copy_files_to_thisrun(config):
                         print("Waiting for file: ", file)
                         print("Sleep for 10 seconds...")
                         time.sleep(10)
-
-    # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
-    if "fesom" in config["general"]["valid_model_names"]:
-        if config["general"].get("with_icb", False) and config["fesom"].get("use_icesheet_coupling", False):
-            #if not config["general"].get("iterative_coupling", False):
-            config = update_icebergs(config)
-            if config["general"].get("run_number", 0) == 1:
-                if not os.path.isfile(
-                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
-                ):
-                    with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
-                        f.write("0")
-            else:
-                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["restart_in_sources"]["icb_restart_ISM"])))
-                with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
-                    f.write(str(num_lines))
 
     log_used_files(config)
 

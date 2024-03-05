@@ -68,10 +68,53 @@ def _read_date_file(config):
         date = config["general"].get("initial_date", "18500101")
         run_number = 1
         write_file = True
+
+    date_c = config["general"].get("current_date", None)
+
+    if date_c is not None:
+        date_fdf = Date(date)
+        date_c = Date(str(config["general"]["current_date"]))
+        run_number_c = int(config["general"]["run_number"])
+        last_jobtype = config["general"].get("last_jobtype", "")
+        isresubmitted = last_jobtype == config["general"]["jobtype"]
+
+        if date_fdf != date_c:
+
+            msg = (
+                f"``Date`` and ``run_number`` are ``not`` taken from date file, "
+                f"but from command_line argument (provided by -s or --start_date). "
+                f"The given start_date ({date_c}) and run_number ({run_number_c}) "
+                f"are different from the values "
+                f"in the current date file of your experiment ({date}, {run_number}). "
+                f"Your experiment may now be in a non consecutive state. "
+                f"Please confirm if you want to continue:"
+            )
+            esm_parser.user_note("Detached experiment:", msg)
+            proceed = ""
+            if isresubmitted:
+                proceed = questionary.select(
+                    "Do you want to continue?",
+                    choices=[
+                        f"Yes, with date from command line argument: {str(config['general']['current_date'])}",
+                        f"Yes, with date from date file: {date}",
+                        "No, cancel."
+                    ]).ask()
+
+                if 'Yes, with date from command line argument' in proceed:
+                    date = str(date_c)
+                    run_number = run_number_c
+                elif 'Yes, with date from date file' in proceed:
+                    date = date
+                    run_number = run_number
+                else:
+                    esm_parser.user_note("The experiment will be cancelled:", f"You cancelled the experiment due to date discrepancies.")
+                    sys.exit(1)
+
     config["general"]["run_number"] = run_number
     config["general"]["current_date"] = date
     logging.info("current_date = %s", date)
     logging.info("run_number = %s", run_number)
+
     return config
 
 
@@ -274,7 +317,7 @@ def _initialize_calendar(config):
     if config["general"]["reset_calendar_to_last"]:
         config = find_last_prepared_run(config)
     config = set_most_dates(config)
-    if not "iterative_coupling" in config["general"]:
+    if "iterative_coupling" not in config["general"]:
         config["general"]["chunk_number"] = 1
 
         if config["general"]["run_number"] == 1:
@@ -346,7 +389,7 @@ def set_leapyear(config):
                 config["general"]["leapyear"] = config[model]["leapyear"]
                 break
 
-    if not "leapyear" in config["general"]:
+    if "leapyear" not in config["general"]:
         for model in config["general"]["valid_model_names"]:
             config[model]["leapyear"] = True
         config["general"]["leapyear"] = True
@@ -634,39 +677,39 @@ def set_parent_info(config):
     # Make sure "ini_parent_dir" and "ini_restart_dir" both work:
     for model in config["general"]["valid_model_names"]:
         # If only ini_restart_* variables are used in runcscript, set ini_parent_* to the same values
-        if not "ini_parent_dir" in config[model]:
+        if "ini_parent_dir" not in config[model]:
             if "ini_restart_dir" in config[model]:
                 config[model]["ini_parent_dir"] = config[model]["ini_restart_dir"]
-        if not "ini_parent_exp_id" in config[model]:
+        if "ini_parent_exp_id" not in config[model]:
             if "ini_restart_exp_id" in config[model]:
                 config[model]["ini_parent_exp_id"] = config[model]["ini_restart_exp_id"]
-        if not "ini_parent_date" in config[model]:
+        if "ini_parent_date" not in config[model]:
             if "ini_restart_date" in config[model]:
                 config[model]["ini_parent_date"] = config[model]["ini_restart_date"]
 
     # check if parent is defined in esm_tools style
     # (only given for setup)
     setup = config["general"]["setup_name"]
-    if not setup in config:
+    if setup not in config:
         setup = "general"
     if "ini_parent_exp_id" in config[setup]:
         for model in config["general"]["valid_model_names"]:
-            if not "ini_parent_exp_id" in config[model]:
+            if "ini_parent_exp_id" not in config[model]:
                 config[model]["ini_parent_exp_id"] = config[setup]["ini_parent_exp_id"]
     if "ini_parent_date" in config[setup]:
         for model in config["general"]["valid_model_names"]:
-            if not "ini_parent_date" in config[model]:
+            if "ini_parent_date" not in config[model]:
                 config[model]["ini_parent_date"] = config[setup]["ini_parent_date"]
     if "ini_parent_dir" in config[setup]:
         for model in config["general"]["valid_model_names"]:
-            if not "ini_parent_dir" in config[model]:
+            if "ini_parent_dir" not in config[model]:
                 config[model]["ini_parent_dir"] = (
                     config[setup]["ini_parent_dir"] + "/" + model
                 )
 
     # Get correct parent info
     for model in config["general"]["valid_model_names"]:
-        if config[model]["lresume"] == True and config["general"]["run_number"] == 1:
+        if config[model]["lresume"] is True and config["general"]["run_number"] == 1:
             config[model]["parent_expid"] = config[model]["ini_parent_exp_id"]
             if "parent_date" not in config[model]:
                 config[model]["parent_date"] = config[model]["ini_parent_date"]
@@ -726,6 +769,7 @@ def add_vcs_info(config):
         yaml.dump(vcs_versions, f)
     return config
 
+
 def check_vcs_info_against_last_run(config):
     """
     Ensures that the version control info for two runs is identical between the
@@ -777,7 +821,6 @@ def check_vcs_info_against_last_run(config):
             If you are **sure** that this is OK, you can set 'general.allow_vcs_differences' to True to avoid this check.
             """)
 
-
     return config
 
 
@@ -811,7 +854,7 @@ def initialize_batch_system(config):
 
 
 def initialize_coupler(config):
-    if config["general"]["standalone"] == False:
+    if config["general"]["standalone"] is False:
         from . import coupler
 
         base_dir = config["general"]["base_dir"]
@@ -869,7 +912,7 @@ def check_config_for_warnings_errors(config):
 
     # Find conditions to warn (avoid warning more than once)
     last_jobtype = config["general"].get("last_jobtype", "")
-    isresubmitted = last_jobtype == config["general"]["jobtype"]
+    isresubmitted = config["general"].get("isresubmitted", "")
     isinteractive = config["general"].get("isinteractive", "")
 
     # Only warn if it is an interactive session or while submitted
@@ -881,6 +924,7 @@ def check_config_for_warnings_errors(config):
         warn_error(config, trigger, trigger_info["note_function"])
 
     return config
+
 
 def warn_error(config, trigger, note_function):
     """
@@ -940,7 +984,7 @@ def warn_error(config, trigger, note_function):
         Method to report the note
     """
     # Sufixes for the warning special case
-    if trigger=="warning":
+    if trigger == "warning":
         sufix_name = f" WARNING"
     else:
         sufix_name = f""
@@ -967,7 +1011,7 @@ def warn_error(config, trigger, note_function):
                     # needs to halt, and the user has not defined the
                     # ``--ignore-config-warnings`` flag in the ``esm_runscripts`` call
                     if (
-                        trigger=="warning"
+                        trigger == "warning"
                         and config["general"].get("isinteractive")
                         and action_info.get("ask_user_to_continue", False)
                         and not config["general"].get("ignore_config_warnings", False)

@@ -1042,7 +1042,7 @@ choose_version:
              nn_msh: ${nn_msh}
              rn_rdt: ${time_step_nest}
           namsbc:
-             nn_fsbc: 3
+             nn_fsbc: 1
              nn_ice: 2
              ln_echam: '.false.'
              ln_cpl: '.true.'
@@ -1051,8 +1051,13 @@ choose_version:
              rn_aht_0: 120.
              rn_aht_m: 120.
           namdyn_ldf:
-             rn_ahm_0_blp: -2.4e10
-             rn_ahm_m_blp: -8.e9
+             # Computed as -1.709e12 / 5^3 = -1.37e10
+             # Note: -1.709e12 is applied at the largest ORCA05 cell, at equator
+             # but coeff is actually -1.267e12 where VIKING10 starts
+             # So ahm should be -1.267e12 / 5^3 = -1.013e10
+             # We should scale this by 0.74.
+             rn_ahm_0_blp: -1.013e10
+             rn_ahm_m_blp: -1.37e11
              rn_ahm_m_lap: 0.
           nammpp:
              jpni: ${jpni}

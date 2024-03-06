@@ -30,12 +30,12 @@ choose_version:
     add_config_files:
         tra:     tra
         dyn:     dyn
-  
+
   "2.5-paleodyn":
     branch: "2.5.1_paleo"
     destination: "fesom-2.5"
     git-repository:
-    - https://github.com/FESOM/fesom2.git # LA: only temporarily 
+    - https://github.com/FESOM/fesom2.git # LA: only temporarily
     wiso_code: true
     icb_code: true
     add_namelists:
@@ -44,7 +44,7 @@ choose_version:
         tra:     tra
         dyn:     dyn
     namelist_dir: "${model_dir}/config/"
-  
+
   '2.5-awicm-3.2':
     branch: "AWI-CM3_v3.2"
 
@@ -231,7 +231,7 @@ choose_icb_code:
                         use_icebergs: "${use_icebergs}"
                         use_icesheet_coupling: "${use_icesheet_coupling}"
                         steps_per_ib_step: 8
-       
+
 choose_with_icb:
         True:
             use_icebergs: True                 # turns on icebergs
@@ -260,7 +260,9 @@ choose_with_icb:
                                     1:
                                             disch_file: "${ini_disch_file}"
                                     "*":
-                                            disch_file: "${general.experiment_couple_dir}/latest_discharge.nc" 
+                                            disch_file: "${general.experiment_couple_dir}/latest_discharge.nc"
+                    '*':
+                            use_landice_water: False
 
             choose_use_icesheet_coupling:
                     true:
@@ -281,12 +283,12 @@ choose_with_icb:
                             add_input_sources:
                                     "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat
                                     num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
-                   
+
                     false:
                             add_input_sources:
                                     "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat_@YEAR@0101-@YEAR@1231
                                     num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file_@YEAR@0101-@YEAR@1231"
-                            
+
             add_input_in_work:
                     latitude: "icb_latitude.dat"
                     longitude: "icb_longitude.dat"
@@ -453,22 +455,22 @@ choose_general.iterative_coupling:
         true:
                 add_output_targets:
                         fesom: "*.fesom.*.nc"
-                        
+
                 choose_general.chunk_number:
                         1:
                                 use_landice_water: False
                         "*":
                                 use_landice_water: True
-                
-                fwf_path: "${general.experiment_couple_dir}" 
-                
+
+                fwf_path: "${general.experiment_couple_dir}"
+
                 add_namelist_changes:
                             namelist.forcing:
                                     land_ice:
                                             use_landice_water: "${use_landice_water}"
                                             landice_start_mon: 1
                                             landice_end_mon: 12
-                                            fwf_path: "${fwf_path}" 
+                                            fwf_path: "${fwf_path}"
                 outdata_targets:
                         fesom: "*.fesom.*.nc"
         '*':
@@ -631,6 +633,7 @@ further_reading:
 # ------------------------
 # RECIPE
 # ------------------------
+#prepcompute_recipe:
 tidy_recipe:
 - "tidy_coupler"
 - "tar_binary_restarts"

@@ -37,7 +37,7 @@ fi
 restartfile=${restart##*/}
 [[ ${restartfile} = ${restart} ]] && restart=./${restart}
 restartdir=${restart%/*}; cd ${restartdir}; restartdir=$(pwd) 
-scriptdir=${0%/*}; cd ${scriptdir}/..; scriptdir=$(pwd)
+scriptdir=${0%/*} #; cd ${scriptdir}/..; scriptdir=$(pwd)
 script=$(basename $0)
 
 if [[ ! -f ./pack ]]; then

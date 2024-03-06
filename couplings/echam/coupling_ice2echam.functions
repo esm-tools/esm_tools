@@ -24,7 +24,7 @@ ice2echam() {
                 break
             fi
 
-            echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not foung. Waiting for 10 seconds ..."
+            echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
             sleep 10
             counter=$((counter+1))
         done

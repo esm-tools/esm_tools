@@ -36,7 +36,7 @@ restartfile=${restart##*/}
 mydir=$(pwd)
 restartdir=${restart%/*}; cd ${restartdir}; restartdir=$(pwd)
 cd ${mydir} 
-scriptdir=${0%/*}; cd ${scriptdir}/..; scriptdir=$(pwd)
+scriptdir=${0%/*} #; cd ${scriptdir}/..; scriptdir=$(pwd)
 script=$(basename $0)
 
 if [[ ! -f ./unpack ]]; then

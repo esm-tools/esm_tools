@@ -133,6 +133,9 @@ lgfw: False
 lupdate_orography: False
 choose_general.iterative_coupling:
         True:
+                add_input_sources:
+                        "gfw_atmo": "${general.experiment_couple_dir}/latest_gfw_atmo.nc"
+                        "target_oro": "${general.experiment_couple_dir}/latest_target_orography.nc"
                 lgfw: True
                 choose_general.chunk_number:
                         1:

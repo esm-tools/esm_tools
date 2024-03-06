@@ -11,8 +11,7 @@ input_sources:
         lctlib: "${echam.model_dir}/lctlib_nlct21.def"
         "jsbach_1850": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1850${jsbachnc_file_ending}.nc"
         "jsbach_1976": "${adj_input_dir}/jsbach_${echam.resolution}${echam.ocean_resolution}_11tiles_5layers_1976${jsbachnc_file_ending}.nc"
-        "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
-
+        
         # FOCI specific input sources
         "cpools_foci": "${adj_input_dir}/cpools_${echam.resolution}${echam.ocean_resolution}_pdv0002_51251231.nc"
         "npools_foci": "${adj_input_dir}/cpools_${echam.resolution}${echam.ocean_resolution}_pdv0002_51251231.nc"

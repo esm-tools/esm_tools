@@ -9,9 +9,7 @@ input_sources:
         "tslclim": "${input_dir}/${resolution}/${resolution}_TSLCLIM.nc"
         "vgratclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VGRATCLIM.nc"
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
-        "gfw_atmo": "${general.experiment_couple_dir}/latest_gfw_atmo.nc"
-        "target_oro": "${general.experiment_couple_dir}/latest_target_orography.nc"
-
+        
 # forcings
 # Note: The variable ``ozone_source_file_scenario`` is set to ${scenario} by default.
 ozone_source_file_scenario: ${scenario}

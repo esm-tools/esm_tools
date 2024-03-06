@@ -30,24 +30,6 @@ echam:
     restart_rate: 1
     restart_unit: "years"
     lresume: False
-    use_transient_forcing: False
-    transient_forcing_table: ""
-    add_config_sources: 
-            echam: "/home/a/a270124/namelists/production/echam/namelist.echam"
-    add_namelist_changes:
-            namelist.echam:
-                radctl:
-                    lrad_async: False
-                    yr_perp: remove_from_namelist
-                runctl:
-                    l_orbvsop87: false
-                    default_output: false
-                wisoctl:
-                    lwiso_rerun: False
-                    lwiso: False
-                    nwiso: 0
-            #    submodelctl:
-            #        lupdate_orog: False
 
     workflow:
             next_run_triggered_by: couple_out
@@ -73,9 +55,11 @@ echam:
 
 jsbach:
     dynamic_vegetations: True
+    input_sources:
+        jsbach_1850: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+    namelist_dir: "/work/ba0989/a270124/direnv1/namelist/"
 
 fesom:
-    version: "2.5"
     nproc: 384
     restart_rate: 1
     restart_unit: "y"

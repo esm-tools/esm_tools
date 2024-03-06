@@ -18,7 +18,6 @@ computer:
         sh_interpreter: "/bin/bash"
 
 pism:
-        #version: "github1.1.4"
         version: "github1.2.1"
         resolution: "10km"
         model_dir: "/home/a/a270124/model_codes/pism/pism-v1.2.1/"
@@ -30,11 +29,6 @@ pism:
         debm_path: "/home/a/a270124/model_codes/dEBM/Fortran/dEBMmain"
         # lapse rate
         ablation_method: "DEBM"
-        reduce_temp: False
-        #reduce_temp_by: "anom"
-        #temp2_bias_file: "/work/ba0989/a270124/PalModII/reanalysis/temp2.bias.bilT63.1948-2010.no_greenland.nc"
-        prec_anom: False
-        #prec_bias_file: "/work/ba0989/a270124/PalModII/reanalysis/prec.bias.conT63.1948-2010.no_greenland.nc"
         ###################
         
         ini_parent_exp_id: "bla"
@@ -68,8 +62,6 @@ pism:
                 atmosphere.elevation_change.smb_lapse_rate: 0.0
 
         flags:
-                #- "bootstrap"
-                #- "allow_extrapolation"
                 - "pik"
                 - "basal_resistance.pseudo_plastic.enabled"
                 - "basal_yield_stress.slippery_grounding_lines"
@@ -87,17 +79,6 @@ pism:
                             ocean_th_file: "latest_ocean_forcing_file.nc"
 
         workflow:
-                #next_run_triggered_by: tidy
-                #subjobs:
-                #        postprocessing:
-                #                batch_or_shell: batch
-                #                order_in_cluster: concurrent
-                #                run_on_queue: ${computer.partitions.pp.name}
-                #                run_after: tidy
-                #                script_dir: /home/a/a270124/scripts/
-                #                submit_to_batch_system: True
-                #                script: post_pism.sh ${pism.experiment_outdata_dir}
-                #                nproc: 1
                 next_run_triggered_by: couple_out
                 subjobs:
                         couple_in:

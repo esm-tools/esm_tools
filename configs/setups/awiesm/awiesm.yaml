@@ -117,7 +117,8 @@ general:
         with_pico: false
         with_icb: false
         with_bootstrap: false
-
+        iterative_coupling: False
+        
         scenario: "PI-CTRL"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false

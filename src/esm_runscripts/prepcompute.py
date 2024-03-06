@@ -192,19 +192,14 @@ def modify_namelists(config):
     return config
 
 
-def copy_files_to_thisrun(config):
-    if config["general"]["verbose"]:
-        print("PREPARING EXPERIMENT")
-        # Copy files:
-        print("\n" "- File lists populated, proceeding with copy...")
-        print("- Note that you can see your file lists in the config folder")
-        print("- You will be informed about missing files")
-
+def wait_for_iterative_coupling(config):
     count_max = 90
     if (
         config["general"].get("iterative_coupling", False)
         and config["general"]["chunk_number"] > 1
     ):
+        if config["general"]["verbose"]:
+            print("Waiting for iterative coupling...")
         if "files_to_wait_for" in config["general"]:
             for file_base in config['general'].get('files_to_wait_for'):
                 counter = 0
@@ -218,6 +213,17 @@ def copy_files_to_thisrun(config):
                         print("Waiting for file: ", file)
                         print("Sleep for 10 seconds...")
                         time.sleep(10)
+
+    return config
+
+
+def copy_files_to_thisrun(config):
+    if config["general"]["verbose"]:
+        print("PREPARING EXPERIMENT")
+        # Copy files:
+        print("\n" "- File lists populated, proceeding with copy...")
+        print("- Note that you can see your file lists in the config folder")
+        print("- You will be informed about missing files")
 
     log_used_files(config)
 

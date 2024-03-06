@@ -86,6 +86,7 @@ choose_job_type:
                           #- "add_batch_hostfile"
                         - "assemble"
                         - "log_used_files"
+                        - "wait_for_iterative_coupling"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"

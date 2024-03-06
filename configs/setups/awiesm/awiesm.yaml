@@ -44,8 +44,9 @@ general:
                 - "prepare_coupler_files"
                 - "assemble"
                 - "log_used_files"
-                - "prep_icebergs"                       # Plugin
+                - "wait_for_iterative_coupling"
                 - "copy_files_to_thisrun"
+                - "prep_icebergs"                       # Plugin
                 - "modify_namelists"
                 - "apply_iceberg_calving_to_namelists"  # Plugin
                 - "modify_files"
@@ -63,6 +64,7 @@ general:
                 - "prepare_coupler_files"
                 - "assemble"
                 - "log_used_files"
+                - "wait_for_iterative_coupling"
                 - "copy_files_to_thisrun"
                 - "modify_namelists"
                 - "modify_files"

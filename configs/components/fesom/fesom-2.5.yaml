@@ -245,6 +245,7 @@ choose_with_icb:
             - "prepare_coupler_files"
             - "assemble"
             - "log_used_files"
+            - "wait_for_iterative_coupling"
             - "prep_icebergs"                       # Plugin
             - "copy_files_to_thisrun"
             - "modify_namelists"

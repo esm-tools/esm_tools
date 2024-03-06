@@ -20,6 +20,7 @@ prepcompute_recipe:
         #- "copy_tools_to_thisrun"
         #- "_copy_preliminary_files_from_experiment_to_thisrun"
         #- "_show_simulation_info"
+        - "wait_for_iterative_coupling"
         - "copy_files_to_thisrun"
         - "modify_namelists"
         - "modify_files"

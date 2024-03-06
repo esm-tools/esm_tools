@@ -234,6 +234,27 @@ choose_icb_code:
 
 choose_with_icb:
         True:
+            required_plugins:
+                - "git+https://github.com/esm-tools-plugins/fesom_icb_pism"
+
+            prepcompute_recipe:
+            - "compile_model"
+            - "_show_simulation_info"
+            - "create_new_files"
+            - "create_empty_folders"
+            - "prepare_coupler_files"
+            - "assemble"
+            - "log_used_files"
+            - "prep_icebergs"                       # Plugin
+            - "copy_files_to_thisrun"
+            - "modify_namelists"
+            - "apply_iceberg_calving_to_namelists"  # Plugin
+            - "modify_files"
+            - "copy_files_to_work"
+            - "report_missing_files"
+            - "_write_finalized_config"
+            - "database_entry"
+
             use_icebergs: True                 # turns on icebergs
             use_icesheet_coupling: True        # initializes new icebergs every restart
             update_icebergs: True
@@ -633,10 +654,9 @@ further_reading:
 # ------------------------
 # RECIPE
 # ------------------------
-#prepcompute_recipe:
 tidy_recipe:
 - "tidy_coupler"
-- "tar_binary_restarts"
+- "tar_binary_restarts"                 # Plugin
 - "assemble"
 - "check_for_unknown_files"
 - "log_used_files"

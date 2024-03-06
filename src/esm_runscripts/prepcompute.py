@@ -3,13 +3,6 @@ import time
 import subprocess
 import copy
 
-######################################
-# LA for icebergs
-from cdo import Cdo
-import glob
-import pandas as pd
-######################################
-
 import f90nml
 import yaml
 import stat
@@ -189,8 +182,6 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom" and config["general"].get("with_icb", False):
-            config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
             config[model], config["general"]["verbose"]

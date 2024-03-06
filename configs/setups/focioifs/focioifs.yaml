@@ -167,7 +167,7 @@ general:
             runoff_method: "EM21"
             calving_method: "JS"
             couplings: 
-            - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT5+oifs43r3-foci22
+            - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT5+oifs43r3-foci30
 
         version: "3.0"
         scenario: "PI-CTRL"

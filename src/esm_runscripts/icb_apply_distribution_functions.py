@@ -9,7 +9,6 @@ import os
 import math
 from tqdm import tqdm
 import pyfesom2 as pf
-#from icb_helper import *
 import time
 
 class IcebergCalving:

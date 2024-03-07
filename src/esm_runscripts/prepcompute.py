@@ -233,39 +233,12 @@ def copy_files_to_thisrun(config):
     return config
 
 
-def update_icebergs(config):
-    if (
-        config["general"].get("with_icb", False)
-        and config["fesom"].get("update_icebergs", False)
-        and config["general"]["run_number"] > 1
-    ):
-       
-        print("* starting update icebergs")
-        icb_script  = config["fesom"].get("icb_script", "")
-        disch_file  = config["fesom"].get("disch_file", "")
-        iceberg_dir = config["fesom"].get("iceberg_dir", config['general']['experiment_couple_dir'])
-        mesh_dir    = config["fesom"]["mesh_dir"] #["namelist_changes"]["namelist.config"]["paths"]["meshpath"]
-        basin_file  = config["fesom"].get("basin_file", "")
-        icb_restart_file  = config["fesom"]["restart_in_sources"].get("icb_restart", "")
-        scaling_factor    = config["fesom"].get("scaling_factor", [1, 1, 1, 1, 1, 1])
-
-        print(" * use scaling factors ", scaling_factor)
-        ib = IcebergCalving(disch_file, mesh_dir, iceberg_dir, basin_file, icb_restart_file, scaling_factor=scaling_factor)
-        ib.create_dataframe()
-        ib._icb_generator()
-    return config
-
-
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
         print("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
-    #config = scale_icebergs(config)
-    #if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get("use_icebergs", False):
-    #    if not config["general"].get("iterative_coupling", False):
-    #        config = update_icebergs(config)
     return config
 
 

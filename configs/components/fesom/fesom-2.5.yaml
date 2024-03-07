@@ -9,8 +9,6 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
-required_plugins:
-- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
 # below) whose source code contains the icebergs implementation
 icb_code: false
@@ -21,15 +19,12 @@ with_wiso: false
 
 with_recom: false
 
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+
 choose_version:
   "2.5":
     branch: "2.5"
-    destination: "fesom-2.5"
-    add_namelists:
-        - namelist.dyn
-    add_config_files:
-        tra:     tra
-        dyn:     dyn
 
   "2.5-paleodyn":
     branch: "2.5.1_paleo"
@@ -38,11 +33,6 @@ choose_version:
     - https://github.com/FESOM/fesom2.git # LA: only temporarily
     wiso_code: true
     icb_code: true
-    add_namelists:
-        - namelist.dyn
-    add_config_files:
-        tra:     tra
-        dyn:     dyn
     namelist_dir: "${model_dir}/config/"
 
   '2.5-awicm-3.2':
@@ -50,7 +40,9 @@ choose_version:
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x
-contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
+git-repository:
+- https://github.com/FESOM/fesom2.git
+contact: "jan.streffing(at)awi.de, dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 restart_rate: "12"
@@ -155,7 +147,6 @@ choose_resolution:
                 nx: 33348172
         SO3:
                 nx: 11087062
-
 
 
 restart_in_files:

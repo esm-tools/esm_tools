@@ -196,8 +196,8 @@ restart_out_in_work:
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart 
-        icb_restart_ISM: iceberg.restart.ISM 
+        icb_restart: iceberg.restart
+        icb_restart_ISM: iceberg.restart.ISM
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
@@ -226,11 +226,11 @@ choose_use_icebergs:
             add_restart_in_files:
                     icb_restart: icb_restart
                     icb_restart_ISM: icb_restart_ISM
-            
+
             add_restart_out_files:
                     icb_restart: icb_restart
                     icb_restart_ISM: icb_restart_ISM
-            
+
             add_outdata_targets:
                     buoys_track: "buoys_track.nc_${run_datestamp}"
 
@@ -256,12 +256,12 @@ choose_use_icebergs:
                             add_input_sources:
                                     "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat
                                     num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
-                   
+
                     false:
                             add_input_sources:
                                     "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat_@YEAR@0101-@YEAR@1231
                                     num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file_@YEAR@0101-@YEAR@1231"
-                            
+
             add_input_in_work:
                     latitude: "icb_latitude.dat"
                     longitude: "icb_longitude.dat"

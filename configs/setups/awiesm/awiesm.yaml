@@ -33,24 +33,47 @@
 # general.with_recom: switches on the REcoM-specific configurations
 
 general:
-        prepcompute_recipe:
-            - "compile_model"
-            - "_show_simulation_info"
-            - "create_new_files"
-            - "create_empty_folders"
-            - "create_hosing_files"
-            - "prepare_coupler_files"
-            - "assemble"
-            - "log_used_files"
-            - "copy_files_to_thisrun"
-            - "modify_namelists"
-            - "modify_files"
-            - "copy_files_to_work"
-            - "report_missing_files"
-            #- "add_vcs_info"
-            #- "check_vcs_info_against_last_run"
-            - "_write_finalized_config"
-            - "database_entry"
+        choose_general.with_icb:
+            True:
+                prepcompute_recipe:
+                - "compile_model"
+                - "_show_simulation_info"
+                - "create_new_files"
+                - "create_empty_folders"
+                - "create_hosing_files"                 # Specific to AWIESM
+                - "prepare_coupler_files"
+                - "assemble"
+                - "log_used_files"
+                - "wait_for_iterative_coupling"
+                - "prep_icebergs"                       # Plugin
+                - "copy_files_to_thisrun"
+                - "modify_namelists"
+                - "apply_iceberg_calving_to_namelists"  # Plugin
+                - "modify_files"
+                - "copy_files_to_work"
+                - "report_missing_files"
+                - "_write_finalized_config"
+                - "database_entry"
+            "*":
+                prepcompute_recipe:
+                - "compile_model"
+                - "_show_simulation_info"
+                - "create_new_files"
+                - "create_empty_folders"
+                - "create_hosing_files"                 # Specific to AWIESM
+                - "prepare_coupler_files"
+                - "assemble"
+                - "log_used_files"
+                - "wait_for_iterative_coupling"
+                - "copy_files_to_thisrun"
+                - "modify_namelists"
+                - "modify_files"
+                - "copy_files_to_work"
+                - "report_missing_files"
+                #- "add_vcs_info"
+                #- "check_vcs_info_against_last_run"
+                - "_write_finalized_config"
+                - "database_entry"
 
         model: awiesm
 

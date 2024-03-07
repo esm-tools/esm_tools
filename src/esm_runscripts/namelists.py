@@ -539,46 +539,6 @@ class Namelist:
             config[model] = nmls_output(config[model], config["general"]["verbose"])
         return config
 
-    @staticmethod
-    def apply_iceberg_calving(config):
-        """
-        Calculates new number of icebergs when icesheet coupling is turned on
-
-        Relevant configuration entries:
-        """
-        if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get(
-            "with_icb", False
-        ):
-            # Get the fesom config namelist:
-            nml = config["fesom"]["namelists"]["namelist.config"]
-            # Get the current icebergs chapter or make a new empty one:
-            icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
-            # Determine if icesheet coupling is enabled:
-            if config["fesom"].get("use_icesheet_coupling", False):
-                icebergs["use_icesheet_coupling"] = True
-                if os.path.isfile(
-                    config["fesom"]["input_sources"]["num_non_melted_icb_file"]
-                ):
-                    print(" * using this file: ", config["fesom"]["input_sources"]["num_non_melted_icb_file"])
-                    with open(
-                        config["fesom"]["input_sources"]["num_non_melted_icb_file"]
-                        #config["fesom"]["iceberg_dir"] + "/num_non_melted_icb_file"
-                    ) as f:
-                        ib_num_old = [
-                            int(line.strip()) for line in f.readlines() if line.strip()
-                        ][0]
-                elif config["general"]["run_number"] == 1:
-                    ib_num_old = 0
-                else:
-                    print("Something went wrong! Continue without old icebergs.")
-                    ib_num_old = 0
-
-                print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
-                ib_num_new = sum(1 for line in open(config["fesom"]["input_sources"].get("length")))
-                icebergs["ib_num"] = ib_num_old + ib_num_new
-                nml["icebergs"] = icebergs
-        return config
-
 
 class namelist(Namelist):
     """Legacy class name. Please use Namelist instead!"""

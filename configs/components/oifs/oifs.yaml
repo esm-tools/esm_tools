@@ -1377,6 +1377,7 @@ prepcompute_recipe:
    - "assemble"
    - "log_used_files"
    - "_write_finalized_config"
+   - "wait_for_iterative_coupling"
    - "copy_files_to_thisrun"
    - "write_env"
    - "preprocess"

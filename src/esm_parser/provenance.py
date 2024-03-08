@@ -115,6 +115,7 @@ class Provenance(list):
 def wrapper_with_provenance_new(cls, *args, **kwargs):
     return super(cls, cls).__new__(cls, args[1])
 
+
 def wrapper_with_provenance_init(self, value, provenance=None):
     """
     Parameters
@@ -127,20 +128,29 @@ def wrapper_with_provenance_init(self, value, provenance=None):
     self._provenance = Provenance(provenance)
     self.value = value
 
+
+# @Paul: maybe we could add a classmethod here for including it in
+# ProvenanceClassForTheUnsubclassable, Date and the dynamic classes from
+# wrapper_with_provenance_factory (but not for ListWithProvenance or
+# DictWithProvenance)? That might be easier than having to add_representer somewhere
+# else, but no clue... you're the yaml expert :)
+
+
 @property
 def prop_provenance(self):
     return self._provenance
+
 
 @prop_provenance.setter
 def prop_provenance(self, new_provenance):
     # Check if new_provenance is an instance of Provenance
     if not isinstance(new_provenance, Provenance):
         raise ValueError(
-            "Provenance must be an instance of the provenance.Provenance "
-            "class!"
+            "Provenance must be an instance of the provenance.Provenance class!"
         )
 
     self._provenance = new_provenance
+
 
 class ProvenanceClassForTheUnsubclassable:
     """
@@ -166,9 +176,10 @@ class ProvenanceClassForTheUnsubclassable:
     def __hash__(self):
         return hash(self.value)
 
+
 ProvenanceClassForTheUnsubclassable.__init__ = wrapper_with_provenance_init
 ProvenanceClassForTheUnsubclassable.provenance = prop_provenance
- 
+
 
 class BoolWithProvenance(ProvenanceClassForTheUnsubclassable):
     @property
@@ -184,12 +195,14 @@ class NoneWithProvenance(ProvenanceClassForTheUnsubclassable):
         print(provenance)
         self.value = value
         self.provenance = Provenance(provenance)
+
     @property
     def __class__(self):
         """
         This is here for having ``isinstance(<my_bool_with_provenance>, None)`` return ``True``
         """
         return type(None)
+
 
 def wrapper_with_provenance_factory(value, provenance=None):
     """
@@ -227,6 +240,7 @@ def wrapper_with_provenance_factory(value, provenance=None):
         return NoneWithProvenance(value, provenance)
 
     elif type(value) == Date:
+        value.provenance = prop_provenance
         value.provenance = Provenance(provenance)
 
         return value
@@ -242,7 +256,7 @@ def wrapper_with_provenance_factory(value, provenance=None):
         else:
             globals()[class_name] = type(
                 class_name,
-                (subtype, ),
+                (subtype,),
                 {
                     "_class_name": class_name,
                     "__new__": wrapper_with_provenance_new,
@@ -258,67 +272,67 @@ def wrapper_with_provenance_factory(value, provenance=None):
 class DictWithProvenance(dict):
     # TODO: this is an incorrect description
     """
-    A dictionary subclass that contains a ``provenance`` attribute. This attribute is
-    a ``dict`` that contains those `keys` of the original dictionary whose `values`
-    **are not a** ``dict`` (leaves of the dictionary tree), and a provenance value
-    defined during the instancing of the object. The ``provenance`` attribute is
-    applied recursively within the nested dictionaries during instancing or when the
-    ``self.set_provenance(<my_provenance>)`` is used.
+        A dictionary subclass that contains a ``provenance`` attribute. This attribute is
+        a ``dict`` that contains those `keys` of the original dictionary whose `values`
+        **are not a** ``dict`` (leaves of the dictionary tree), and a provenance value
+        defined during the instancing of the object. The ``provenance`` attribute is
+        applied recursively within the nested dictionaries during instancing or when the
+        ``self.set_provenance(<my_provenance>)`` is used.
 
-    Example
-    -------
-    After instancing the object:
+        Example
+        -------
+        After instancing the object:
 
-        .. code-block:: python
+            .. code-block:: python
 
-            dict_with_provenance = DictWithProvenance(config_dict, {"file": "echam.yaml"})
+                dict_with_provenance = DictWithProvenance(config_dict, {"file": "echam.yaml"})
 
-    where ``config_dict`` is defined as:
+        where ``config_dict`` is defined as:
 
-        .. code-block:: python
+            .. code-block:: python
 
-            config_dict = {
-                "echam": {
-                    "type": "atmosphere",
-                    "files": {
-                        "greenhouse": {"kind": "input", "path_in_computer": "/my/path/in/computer"}
-                    },
+                config_dict = {
+                    "echam": {
+                        "type": "atmosphere",
+                        "files": {
+                            "greenhouse": {"kind": "input", "path_in_computer": "/my/path/in/computer"}
+                        },
+                    }
                 }
-            }
 
-    then ``config_dict["echam"].provenance`` will take the following values:
+        then ``config_dict["echam"].provenance`` will take the following values:
 
-        .. code-block:: python
+            .. code-block:: python
 
-#            >>> config_dict["echam"].provenance
-            {'type': {'file': 'echam.yaml'}}
+    #            >>> config_dict["echam"].provenance
+                {'type': {'file': 'echam.yaml'}}
 
-    Note that the `key` ``"files"`` does not exist as the value for that key in the
-    ``config_dict`` is a dictionary (**it is not a leaf of the dictionary tree**).
+        Note that the `key` ``"files"`` does not exist as the value for that key in the
+        ``config_dict`` is a dictionary (**it is not a leaf of the dictionary tree**).
 
-    The `provenance value` can be defined to be any python object. The ``provenance``
-    attribute is inherited when merging dictionaries with the ``update`` method
-    when merging two ``DictWithProvenance`` objects, with the same rewriting strategy
-    as for the keys in the dictionary, and ``provenance`` is also inherited when
-    redefining a `value` to contain a ``DictWithProvenance``.
+        The `provenance value` can be defined to be any python object. The ``provenance``
+        attribute is inherited when merging dictionaries with the ``update`` method
+        when merging two ``DictWithProvenance`` objects, with the same rewriting strategy
+        as for the keys in the dictionary, and ``provenance`` is also inherited when
+        redefining a `value` to contain a ``DictWithProvenance``.
 
-    Use
-    ---
-    Instance a new ``DictWithProvenance`` object::
+        Use
+        ---
+        Instance a new ``DictWithProvenance`` object::
 
-        dict_with_provenance = DictWithProvenance(<a_dictionary>, <my_provenance>)
+            dict_with_provenance = DictWithProvenance(<a_dictionary>, <my_provenance>)
 
-    Redefine the provenance of an existing ``key``::
+        Redefine the provenance of an existing ``key``::
 
-        dict_with_provenance["<a_key>"].set_provenance(<new_provenance>)
+            dict_with_provenance["<a_key>"].set_provenance(<new_provenance>)
 
-    Set the provenace of a specific leaf within a nested dictionary::
+        Set the provenace of a specific leaf within a nested dictionary::
 
-        dict_with_provenance["key1"]["key1"].provenance["leaf_key"] = <new_provenance>
+            dict_with_provenance["key1"]["key1"].provenance["leaf_key"] = <new_provenance>
 
-    Get the ``provenance`` representation of the dictionary::
+        Get the ``provenance`` representation of the dictionary::
 
-        provenance_dict = dict_with_provenance.get_provenance()
+            provenance_dict = dict_with_provenance.get_provenance()
     """
 
     def __init__(self, dictionary, provenance):
@@ -489,9 +503,7 @@ class DictWithProvenance(dict):
             ):
                 new_provenance = self[key].provenance
                 if hasattr(val, "provenance"):
-                    new_provenance.extend_and_modified_by(
-                        val.provenance, "dict.update"
-                    )
+                    new_provenance.extend_and_modified_by(val.provenance, "dict.update")
                     new_provs[key] = new_provenance
 
         super().update(dictionary, *args, **kwargs)
@@ -677,6 +689,38 @@ def keep_provenance_in_recursive_function(func):
         return output
 
     return inner
+
+
+def clean_provenance(data):
+    """
+    Returns the values of provenance mappings in their original classes (without the
+    provenance). Recurs through mappings. Make sure you copy.deepcopy the data mapping
+    before running this function if you don't want that your provenance information gets
+    lost on the original ``data`` mapping.
+
+    Parameters
+    ----------
+    data : any
+        Mapping or values with provenance.
+
+    Returns
+    -------
+    value : any
+        Values in their original format, or lists and dictionaries containing provenance
+        values.
+    """
+    if hasattr(data, "value"):
+        assert (
+            data == data.value,
+            "The provenance object's value and the original value do not match!",
+        )
+        return data.value
+    elif isinstance(data, list):
+        return [clean_provenance(item) for item in data]
+    elif isinstance(data, dict):
+        return {key: clean_provenance(value) for key, value in data.items()}
+    else:
+        return data
 
 
 if __name__ == "__main__":

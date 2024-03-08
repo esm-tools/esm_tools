@@ -195,6 +195,7 @@ def test_set_provenance_for_a_new_leaf(config, check_provenance):
     assert config.get_provenance() == check_provenance
 
 
+@pytest.fixture()
 def test_provenance_update(config, check_provenance):
     """
     Test 9: Checks that the method update preserves the provenance history
@@ -219,7 +220,7 @@ def test_provenance_update(config, check_provenance):
         {
             "line": 2,
             "col": 11,
-            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
+            "yaml_file": example_path2,
             "category": "runscript",
         },
         None,
@@ -396,6 +397,7 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
         config["person"]["my_other_list"][2].provenance = new_prov
 
 
+@pytest.fixture()
 def test_keep_provenance_in_recursive_function(config):
     """
     Test 15: Test that provenance is not modified in a method when it has the
@@ -411,7 +413,7 @@ def test_keep_provenance_in_recursive_function(config):
         {
             "line": 2,
             "col": 11,
-            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
+            "yaml_file": example_path2,
             "category": "runscript",
         },
         {
@@ -423,7 +425,7 @@ def test_keep_provenance_in_recursive_function(config):
         {
             "line": 9,
             "col": 19,
-            "yaml_file": "/Users/mandresm/Codes/esm_tools/tests/test_esm_parser/example2.yaml",
+            "yaml_file": example_path2,
             "category": "runscript",
         },
         {

@@ -296,8 +296,8 @@ function generate_runoff_select_variables {
                 #***************************************************************************
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_flow"}
-                    PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_surface_mass_flux" "tendency_of_ice_amount_due_to_basal_mass_flux" "tendency_of_ice_amount_due_to_conservation_error" "tendency_of_ice_amount_due_to_flow")
+                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount"} #,tendency_of_ice_amount_due_to_calving"}
+                    PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_discharge" "tendency_of_ice_amount") # "tendency_of_ice_amount_due_to_calving")
                 #***************************************************************************
                 else
                     PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount"}
@@ -349,14 +349,16 @@ function generate_runoff_transform_units {
 		echo ""; echo "			* Transforming mass flux per year to mass flux per second for PISM 1.1   ${years_to_seconds_divc_factor}"
 		echo "cdo -divc,${years_to_seconds_divc_factor} $ifile $ofile"
 		cdo -s  -divc,${years_to_seconds_divc_factor}  $ifile    $ofile
-                #***************************************************************************
-                #LA include iceberg model
-                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-		    ncatted -a units,tendency_of_ice_amount_due_to_surface_mass_flux,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
-		    ncatted -a units,tendency_of_ice_amount_due_to_basal_mass_flux,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
-                #***************************************************************************
+        #***************************************************************************
+        #LA include iceberg model
+        if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+		    ncatted -a units,tendency_of_ice_amount,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+		    ncatted -a units,tendency_of_ice_amount_due_to_discharge,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+		    #ncatted -a units,tendency_of_ice_amount_due_to_surface_mass_flux,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+		    #ncatted -a units,tendency_of_ice_amount_due_to_basal_mass_flux,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+        #***************************************************************************
 		else
-                    ncatted -a units,tendency_of_ice_amount,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+            ncatted -a units,tendency_of_ice_amount,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
 		fi
                 ;;
 	*)
@@ -404,7 +406,9 @@ function generate_runoff_combine_fields {
                     cdo_command_tail=" ${COUPLE_DIR}/ice_runoff_flux_${first_varname}.nc $ofile"
                     for element in ${PISM_MASS_LOSS_ARRAY[@]}; do
                             echo; echo "        * adding variable ${element} to cdo command"
-                            cdo_command_middle="$cdo_command_middle -add ${COUPLE_DIR}/ice_runoff_flux_${element}.nc"
+                            # LA 2024-01-15: substract "tendency_of_ice_amount_due_to_discharge" from "tendency_of_ice_amount" instead of adding all other fields together
+                            cdo_command_middle="$cdo_command_middle -sub ${COUPLE_DIR}/ice_runoff_flux_${element}.nc"
+                            #cdo_command_middle="$cdo_command_middle -add ${COUPLE_DIR}/ice_runoff_flux_${element}.nc"
                             #rmlist="$rmlist ${COUPLE_DIR}/ice_runoff_flux_${element}.nc"
                     done
                     cdo_command="$cdo_command_head $cdo_command_middle $cdo_command_tail"
@@ -430,7 +434,7 @@ function generate_runoff_combine_fields {
                 #***************************************************************************
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-                    ncrename -v tendency_of_ice_amount_due_to_basal_mass_flux,total_ice_mass_loss_flux $ofile
+                    ncrename -v tendency_of_ice_amount,total_ice_mass_loss_flux $ofile
                 else
                     ncrename -v tendency_of_ice_amount,total_ice_mass_loss_flux $ofile
 		fi

@@ -197,7 +197,7 @@ def test_set_provenance_for_a_new_leaf(config, check_provenance):
 
 def test_provenance_update(config, check_provenance):
     """
-    Checks that the method update preserves the provenance history
+    Test 9: Checks that the method update preserves the provenance history
     """
 
     new_prov = {
@@ -370,8 +370,8 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
 
 def test_check_set_provenance_of_single_list_entry(example_path1):
     """
-    Check get_provenance raises the correct error when the provenance of an item is not
-    of the type provenance.Provenance
+    Test 14: Check get_provenance raises the correct error when the provenance of an
+    item is not of the type provenance.Provenance
     """
 
     os.environ["USER"] = "some_user"
@@ -397,6 +397,10 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
 
 
 def test_keep_provenance_in_recursive_function(config):
+    """
+    Test 15: Test that provenance is not modified in a method when it has the
+    keep_provenance_in_recursive_function decorator
+    """
     @provenance.keep_provenance_in_recursive_function
     def change_elem(tree, rhs):
         return provenance.wrapper_with_provenance_factory("new_val", {"modified": True})

@@ -621,6 +621,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
     """
     # option to overwrite a dict value if merge_dict contains empty value. Default
     # is False
+
     dont_overwrite_with_empty_value = kwargs.get(
         "dont_overwrite_with_empty_value", False
     )
@@ -653,6 +654,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             # An idea...but I have absolutely no clue how to cleanly implement that...
             if k != "debug_info":
                 dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
+            # TODO: check if this can be removed
             else:
                 if "debug_info" in dct:
                     if isinstance(dct["debug_info"]["loaded_from_file"], str):
@@ -1061,7 +1063,7 @@ def add_entry_to_chapter(
             mod_list.extend(list(flatten_nested_lists(add_entries)))
 
             # Remove duplicates
-            mod_list_no_dupl = []
+            mod_list_no_dupl = ListWithProvenance([], None)
             for el in mod_list:
                 if not isinstance(el, (dict, tuple, list)):
                     if el not in mod_list_no_dupl:
@@ -1698,6 +1700,7 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
     return task_list
 
 
+@keep_provenance_in_recursive_function
 def recursive_run_function(tree, right, level, func, *args, **kwargs):
     """Recursively runs func on all nested dicts.
 
@@ -1796,7 +1799,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logger.debug("finished with do_func_for")
 
     if isinstance(right, list):
-        newright = []
+        if isinstance(right, ListWithProvenance):
+            newright = ListWithProvenance([], None)
+        else:
+            newright = []
         for index, item in enumerate(right):
             new_item = recursive_run_function(
                 tree + [None], item, level, func, *args, **kwargs
@@ -1814,10 +1820,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 newright.extend(new_item)
             else:
                 newright.append(new_item)
-        if isinstance(right, ListWithProvenance):
-            right = ListWithProvenance(newright, right.get_provenance())
-        else:
-            right = newright
+        right = newright
     elif isinstance(right, dict):
         keys = list(right)
         for key in keys:
@@ -1885,7 +1888,7 @@ def determine_regex_list_match(test_str, regex_list):
     return any(result)
 
 
-@keep_provenance
+@keep_provenance_in_recursive_function
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
@@ -2248,7 +2251,7 @@ def determine_computer_from_hostname():
     # )
 
 
-@keep_provenance
+@keep_provenance_in_recursive_function
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2353,7 +2356,7 @@ def do_math_in_entry(tree, rhs, config):
     return convert(entry.strip(), tree)
 
 
-@keep_provenance
+@keep_provenance_in_recursive_function
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
@@ -2368,7 +2371,7 @@ def mark_dates(tree, rhs, config):
     return entry
 
 
-@keep_provenance
+@keep_provenance_in_recursive_function
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2399,7 +2402,7 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
-@keep_provenance
+@keep_provenance_in_recursive_function
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2411,7 +2414,7 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
-@keep_provenance
+@keep_provenance_in_recursive_function
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2462,7 +2465,7 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
-@keep_provenance
+@keep_provenance_in_recursive_function
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]

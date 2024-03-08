@@ -497,7 +497,7 @@ class oasis:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
                 glob_search_file = (
-                    f"{restart_file_path}_????????-"
+                    f"{restart_file_path}*"
                     f"{config['ini_restart_date'].year}"
                     f"{config['ini_restart_date'].month:02}"
                     f"{config['ini_restart_date'].day:02}"

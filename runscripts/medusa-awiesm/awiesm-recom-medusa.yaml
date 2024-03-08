@@ -1,0 +1,17 @@
+general:
+        iterative_coupling: True
+        base_dir: "/work/bm1030/a270105/awiesm-output/"
+        use_venv: False
+        fesom_resolution: CORE2
+        fesom_chunk_size: 2
+model1:
+        setup_name: awiesm
+        runscript: awiesm-2.1-recom-coupled.yaml
+        chunk_size: 2
+        chunk_unit: "years"
+model2:
+        setup_name: medusa
+        runscript: medusa-2.0-coupled.yaml
+        chunk_size: 5
+        chunk_unit: "years"
+

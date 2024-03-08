@@ -338,7 +338,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                 changes_no_choose = [x.replace(",", ".") for x in changes_no_choose]
                 esm_parser.user_error(
                     "YAML syntax",
-                    "More than one ``_changes`` out of a ``choose_``in "
+                    "More than one ``_changes`` out of a ``choose_`` in "
                     + fpath
                     + ":\n    - "
                     + "\n    - ".join(changes_no_choose)

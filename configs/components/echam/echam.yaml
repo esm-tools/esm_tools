@@ -167,6 +167,7 @@ choose_switch:
 
 with_wiso: false
 wiso_code: false
+with_lco2_emis: false
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -399,8 +400,23 @@ choose_scenario:
                         volcsw: histvolcsw
                         swflux: histswflux
                         MAC-SP: MAC-SP_hist_scenario
+                # For the last year of the hisotical period echam needs an ozone file
+                # of the next year and the ssp370 is given by default
+                ozone_source_file_scenario: ssp370
 
+        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
+        # under the choose_scenario_type block
         cmip6hist:
+                scenario_type: cmip6
+        ssp126:
+                scenario_type: cmip6
+        ssp245:
+                scenario_type: cmip6
+        ssp370:
+                scenario_type: cmip6
+        ssp534os:
+                scenario_type: cmip6
+        ssp585:
                 scenario_type: cmip6
 
 # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
@@ -523,6 +539,46 @@ choose_yr_perp_off:
                                         yr_perp: "remove_from_namelist"
                                 runctl:
                                         l_orbsvop87: ".false."
+
+choose_with_lco2_emis:
+    True:
+        # Run "emission-driven" echam experiment (in cmip6 context e.g. `esm-piControl` or `esm-hist`) where
+        # atmosheric CO2 concentration is not prescribed but calculated by the model setup.
+        # CO2 emissions need to be provided as forcing file (`carbon_emissions.nc`).
+        add_namelist_changes:
+            namelist.echam:
+                submodelctl:
+                    lco2: true # co2 submodel interacting with jsbach; true for emission-driven; if true, lco2_scenario will be set false during model run
+                radctl:
+                    ico2: 1 # 1 = interactively calculated co2 for emission-driven (lco2=true)
+                co2ctl:
+                    lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
+                    lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
+        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+            HIST:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_hist
+            ssp126:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp126
+            ssp245:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp245
+            ssp370:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp370
+            ssp534os:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp534os
+            ssp585:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp585
+            "*":
+                add_error:
+                    "missing_scenario":
+                        message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
+        add_forcing_in_work:
+            carbon_emissions: "carbon_emissions.nc"
 
 choose_wiso_code:
         True:

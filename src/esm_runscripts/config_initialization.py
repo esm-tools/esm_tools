@@ -44,6 +44,8 @@ def init_first_user_config(command_line_config, user_config):
         user_config["general"]["iterative_coupled_model"] = (
             f"{user_config['general']['setup_name']}_"
         )
+        # Extract information about the models run in the previous chunk
+        chunky_parts.prev_chunk_info(user_config)
 
     if user_config["general"].get("debug_obj_init", False):
         pdb.set_trace()
@@ -94,7 +96,10 @@ def get_user_config_from_command_line(command_line_config):
     except SystemExit as sysexit:
         sys.exit(sysexit)
     except:
-        raise("An error occurred reading the config file from the command line") 
+        esm_parser.user_error(
+            "Syntax error",
+            f"An error occurred while reading the config file "
+            f"``{command_line_config['runscript_abspath']}`` from the command line.")
 
     # NOTE(PG): I really really don't like this. But I also don't want to
     # re-introduce black/white lists

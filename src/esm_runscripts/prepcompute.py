@@ -280,6 +280,17 @@ def _write_finalized_config(config):
     def namelist_representer(dumper, f90nml):
         return dumper.represent_str(f"f90nml.name")
 
+    def listwithprov_representer(dumper, listwithprov):
+        return dumper.represent_sequence("tag:yaml.org,2002:seq", listwithprov)
+
+    def dictwithprov_representer(dumper, dictwithprov):
+        return dumper.represent_mapping("tag:yaml.org,2002:map", dictwithprov)
+
+    # @Paul: this is me just playing around with things, this should be included maybe
+    # somewhere else and generalized for Str, Int, Bool...
+    def strwithprov_representer(dumper, strwithprov):
+        return dumper.represent_str(strwithprov)
+
     # dumper object for the ESM-Tools configuration
     class EsmConfigDumper(yaml.dumper.Dumper):
         pass
@@ -313,6 +324,19 @@ def _write_finalized_config(config):
         f90nml.namelist.Namelist, namelist_representer
     )
 
+    # Provenance representers
+    EsmConfigDumper.add_representer(
+        esm_parser.provenance.ListWithProvenance, listwithprov_representer
+    )
+    EsmConfigDumper.add_representer(
+        esm_parser.provenance.DictWithProvenance, dictwithprov_representer
+    )
+    # @Paul: this is me just playing around with things, this should be included maybe
+    # somewhere else and generalized for Str, Int, Bool...
+    EsmConfigDumper.add_representer(
+        esm_parser.provenance.StrWithProvenance, strwithprov_representer
+    )
+
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
 
@@ -327,6 +351,8 @@ def _write_finalized_config(config):
         # Avoid saving ``prev_run`` information in the config file
         config_final = copy.deepcopy(config)  # PrevRunInfo
         del config_final["prev_run"]  # PrevRunInfo
+
+        config_final = esm_parser.provenance.clean_provenance(config_final)
 
         out = yaml.dump(
             config_final, Dumper=EsmConfigDumper, width=10000, indent=4

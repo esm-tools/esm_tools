@@ -85,6 +85,7 @@ choose_version:
   6.0-YAC:
     # this version is taken directly from the CERFACS gitlab
     # it compiles in the standard way, i.e. not with cmake
+    with_yac: True
     branch: feature/yac_remap_esm-tools
     git-repository: git@gitlab.com:awi-esm/oasis3-mct.git
     # compile with make -f TopMakefileOasis3
@@ -101,6 +102,7 @@ choose_version:
     
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
 comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '
+with_yac: False
 
 destination: oasis
 install_libs:

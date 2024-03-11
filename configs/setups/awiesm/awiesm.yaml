@@ -133,6 +133,9 @@ general:
                 T63_REF:
                         compute_time: "02:00:00"
 
+        required_plugins:
+            - "https://github.com/esm-tools-plugins/esm_pism"
+
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################

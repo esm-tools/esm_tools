@@ -17,28 +17,96 @@ import esm_parser
 
 
 class SimulationSetup(object):
-    def __init__(self, command_line_config=None, user_config=None):
 
+    def __init__(self, command_line_config=None, user_config=None):
+        """
+        Initializes the ``SimulationSetup`` object, and prepares the ``self.config`` by
+        taking the information from the ``command_line_config`` and/or the
+        ``user_config`` and expanding it with the configuration files from `ESM-Tools`
+        (in `esm_tools/configs`), and then running the ``prepare`` recipe. In essence,
+        ``__init__`` takes care of loading and baking all the config information,
+        resolving the ``chooses``, ``add_``, etc. It is used by ``esm_runscripts`` and
+        ``esm_master``. Below, a more detailed description of the steps of the
+        ``__init__``:
+
+        1. Check that at least one input is given
+        2. Initialize user_config (command line arguments + content of the runscript)
+        3. Initialize information about interactive sessions
+        4. Initialize interactive coupling information (offline coupling)
+        5. Load total config from all the configuration files involved in this
+           simulation. Input: user_config -> returns: self.config
+        6. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
+           to missing key-values in self.config
+        7. Check if the ``account`` is missing in ``general``
+        8. Complete information for inspect
+        9. Store the ``command_line_config`` in ``general``
+        10. Initialize the ``prev_run`` object
+        11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
+
+        Input
+        -----
+        command_line_config : dict
+            Dictionary containing the information coming from the command line
+        user_config : dict, DictWithProvenance
+            Dictionary containing the basic user information. Is only an input in
+            ``esm_master``, not in ``esm_runscripts`` (i.e. ``esm_master`` does not need
+            to read a runscript)
+
+        Raises
+        ------
+        ValueError :
+            If neither ``command_line_config`` nor ``user_config`` are defined
+        """
+        # 1. Check that at least one input is given
         if not command_line_config and not user_config:
             raise ValueError(
-                "SimulationSetup needs to be initialized with either command_line_config or user_config."
+                "SimulationSetup needs to be initialized with either "
+                "command_line_config or user_config."
             )
 
-        user_config = config_initialization.init_first_user_config(
+        # 2. Initialize user_config (command line arguments + content of the runscript)
+        if not user_config:
+            user_config = config_initialization.get_user_config_from_command_line(
+                command_line_config
+            )
+
+        # 3. Initialize information about interactive sessions
+        user_config = config_initialization.init_interactive_info(user_config, command_line_config)
+
+        # 4. Initialize iterative coupling information (offline coupling)
+        user_config = config_initialization.init_iterative_coupling(
             command_line_config, user_config
         )
 
-        self.config = config_initialization.complete_config_from_user_config(
+        # 5. Load total config from all the configuration files involved in this
+        # simulation
+        self.config = config_initialization.get_total_config_from_user_config(
             user_config
         )
 
+        # 6. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
+        # to missing key-values in self.config
+        self.config = config_initialization.add_esm_runscripts_defaults_to_config(
+            self.config
+        )
+
+        # 7. Check if the ``account`` is missing in ``general``
+        self.config = config_initialization.check_account(self.config)
+
+        # 8. Complete information for inspect
+        self.config = config_initialization.complete_config_with_inspect(
+            self.config
+        )
+
+        # 9. Store the ``command_line_config`` in ``general``
         self.config = config_initialization.save_command_line_config(
             self.config, command_line_config
         )
 
-        # self.config = workflow.assemble(self.config)
-
+        # 10. Initialize the ``prev_run`` object
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
+
+        # 11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
         self.config = prepare.run_job(self.config)
 
         # esm_parser.pprint_config(self.config)

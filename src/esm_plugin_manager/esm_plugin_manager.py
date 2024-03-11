@@ -66,7 +66,11 @@ def find_installed_plugins():
     import pkg_resources
 
     discovered_plugins = {
-        entry_point.name: {"callable": entry_point.load(), "type": "installed"}
+        entry_point.name: {
+            "plugin_name": entry_point.module_name.split(".")[0],
+            "callable": entry_point.load(),
+            "type": "installed",
+        }
         for entry_point in pkg_resources.iter_entry_points("esm_tools.plugins")
     }
     return discovered_plugins
@@ -178,11 +182,16 @@ def install(package: str) -> None:
     None
     """
     package_name = package.split("/")[-1].replace(".git", "")
-    installed_packages = find_installed_plugins()
+    installed_entry_points = find_installed_plugins()
+    installed_plugins = []
+    for entry_point in installed_entry_points:
+        this_plugin = installed_entry_points[entry_point]["plugin_name"]
+        if this_plugin not in installed_plugins:
+            installed_plugins.append(this_plugin)
     arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
     if os.environ.get("VIRTUAL_ENV"):
         arg_list.remove("--user")
-    if not package_name in installed_packages:
+    if package_name not in installed_entry_points and package_name not in installed_plugins:
         try:
             subprocess.check_call(arg_list)
         except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...

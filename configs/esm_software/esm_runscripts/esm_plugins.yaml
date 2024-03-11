@@ -1,3 +1,14 @@
+# Mappings of functions/methods to parent ESM python libraries:
+# tells ESM-Tools in which library and file/sublibrary can find the functions
+# of the recipies
+# (prescribed in configs/esm_software/esm_runscripts/esm_runscripts.yaml).
+#
+# Core (not an external plugin)
+#       Library Sublibrary/file     Function/method
+#       esm_runscripts
+#               prepare
+#                       - "_read_date_file"
+
 core:
         esm_runscripts:
                 prepare:
@@ -23,9 +34,8 @@ core:
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
                         - "copy_tools_to_thisrun"
+                        - "call_esm_runscripts_from_prepexp"
                         - "_copy_preliminary_files_from_experiment_to_thisrun"
-                        
-
 
                 prepcompute:
                         - "compile_model"
@@ -53,9 +63,8 @@ core:
                         - "throw_away_some_infiles"
 
 
-                observe:          
+                observe:
                         - "init_monitor_file"
-                          #- "get_last_jobid"
                         - "wait_and_observe"
                         - "wake_up_call"
 
@@ -82,7 +91,6 @@ core:
                         - "database_entry"
 
                 batch_system:
-                        #- "calculate_requirements"
                         - "write_simple_runscript"
                         - "write_env"
                         - "find_openmp"
@@ -101,19 +109,3 @@ core:
                 workflow:
                         - "assemble_workflow"
 
-
-
-# To add your custom plugin, see oifs.yaml, section compute_recipe, and compare to the list above.
-# the custom plugin 'preprocess' listed in the compute_recipe in oifs.yaml needs to be installed beforehand with
-#
-# git clone https://github.com/esm-tools-plugins/preprocess
-# cd preprocess
-# if required activate python3 e.g.
-# module load anaconda3/bleeding_edge on
-# pip install --user
-#
-# now check if the plugin is available
-# esm_plugins should print
-# The following plugins are installed and available:
-#  - preprocess
-#

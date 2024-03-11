@@ -869,7 +869,7 @@ def check_config_for_warnings_errors(config):
 
     # Find conditions to warn (avoid warning more than once)
     last_jobtype = config["general"].get("last_jobtype", "")
-    isresubmitted = last_jobtype == config["general"]["jobtype"]
+    isresubmitted = config["general"].get("isresubmitted", "")
     isinteractive = config["general"].get("isinteractive", "")
 
     # Only warn if it is an interactive session or while submitted

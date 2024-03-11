@@ -151,7 +151,7 @@ def _call_esm_runscripts_internally(config, command, exedir):
     """
     - Removes update flags from command input.
     - Adds additional flags to command input.
-    - Addes esm_runscripts command if necessary.
+    - Adds esm_runscripts command if necessary.
     - Calls esm_runscipts internally in a subprocess call.
 
     Parameters
@@ -186,7 +186,7 @@ def _call_esm_runscripts_internally(config, command, exedir):
         if ni_flag not in command:
             command += f" {ni_flag} "
 
-    # Check if the path exists, in which 'commend' should be executed
+    # Check if the path exists, in which 'command' should be executed
     if os.path.exists(exedir):
         subprocess.check_call(command.split(), cwd=exedir)
     else:

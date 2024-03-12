@@ -76,7 +76,8 @@ choose_general.with_wiso:
                     hdrestart_wiso: hdrestart_wiso
             add_restart_out_files:
                     hdrestart_wiso: hdrestart_wiso
-                        
+        "*":
+            from_general_with_wiso_choose: <NOT_SPECIFIED>
 
 log_in_work:
         outflow: hd_outflow_*.log # DIBA muss noch rausfinden was * in diesem Fall ist

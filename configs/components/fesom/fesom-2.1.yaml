@@ -210,8 +210,8 @@ restart_out_sources:
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart.${end_date!syear} 
-        icb_restart_ISM: iceberg.restart.ISM.${end_date!syear} 
+        icb_restart: iceberg.restart.${end_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM.${end_date!syear}
 
 outdata_sources:
         fesom: "*.fesom.*.nc"

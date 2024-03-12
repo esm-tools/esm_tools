@@ -291,6 +291,11 @@ def _copy_runscript_folder_editable_install(dest_path):
     return shutil.copytree(src_path, dest_path)
 
 
+def _copy_coupling_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.couplings", ".")
+    return shutil.copytree(src_path, dest_path)
+
+
 def _copy_coupling_folder_editable_install(dest_path):
     src_path = _get_coupling_filepath_editable_install("")
     return shutil.copytree(src_path, dest_path)

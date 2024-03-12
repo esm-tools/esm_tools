@@ -3200,4 +3200,3 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         )
         recursive_run_function([], config, "atomic", purify_booleans, config)
         recursive_run_function([], config, "atomic", perform_actions, config)
-

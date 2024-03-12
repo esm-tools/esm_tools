@@ -484,12 +484,8 @@ choose_general.iterative_coupling:
                                             landice_start_mon: 1
                                             landice_end_mon: 12
                                             fwf_path: "${fwf_path}"
-        #        outdata_targets:
-        #                fesom: "*.fesom.*.nc"
         '*':
                 use_landice_water: False
-        #        outdata_targets:
-        #                fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"

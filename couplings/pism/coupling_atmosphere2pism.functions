@@ -497,17 +497,18 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
         INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
         if ${cdo} -L -s vardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
                 echo ""; echo "                *  using INPUT_FILE_pism = ${INPUT_FILE_pism}"
-                ${cdo} -s -selvar,usurf ${INPUT_FILE_pism} usurf.tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                ${cdo} -s -seltimestep,-1 usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                #${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
+                ${cdo} -s -selvar,usurf ${INPUT_FILE_pism} usurf.tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                ${cdo} -s -seltimestep,-1 usurf.tmp.nc ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                #${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         else
+                elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
+		echo "UKK1: elev_hi=" ${elev_hi_file}
                 ${cdo} -s -setrtoc,-10000,0,0 \
 			-add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -selvar,topg ${INPUT_FILE_pism} \
-                        "${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
+                        ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 	        ncrename -v thk,usurf ${COUPLE_DIR}/${elev_hi_file} ${COUPLE_DIR}/elev_hi.nc
         fi
         #mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
@@ -669,20 +670,21 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         #INPUT_FILE_NAME_BASE_pism=$(basename ${INPUT_FILE_pism:?Missing variable})
         INPUT_FILE_NAME_BASE_pism=${INPUT_FILE_pism}
         if ${cdo} -s vardes ${INPUT_FILE_pism} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism | grep -q usurf; then
-                ${cdo} -s -seltimestep,-1 ${INPUT_FILE_pism} usurf.tmp.nc
-                ${cdo} -s -selvar,usurf usurf.tmp.nc "${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
+                ${cdo} -s -seltimestep,-1 ${INPUT_FILE_pism} usurf.tmp.nc
+                ${cdo} -s -selvar,usurf usurf.tmp.nc ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         else
+                #elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
+                elev_hi_file=elev_hi.nc
+		echo "UKK2: elev_hi=" ${elev_hi_file}
                 echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 echo " * LA DEBUG: INPUT_FILE_NAME_BASE_pism = ${INPUT_FILE_NAME_BASE_pism%.*}"
                 ${cdo} -s -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -setrtoc,-10000,0,0 \
                         -selvar,topg ${INPUT_FILE_pism} \
-                        "${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
+                        ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         fi
-        mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
         cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
         ${cdo} -s sub ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 	#UKK generate elevation differences for desertification scheme 
@@ -694,7 +696,7 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
 	${cdo} -maxc,2000   ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_lo_2000.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism 
 	${cdo} -s -maxc,0 -sub ${COUPLE_DIR}/elev_hi_2000.nc ${COUPLE_DIR}/elev_lo_2000.nc ${COUPLE_DIR}/elev_hi_minus_lo_2000.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 	
-	cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc usurf.tmp.nc"
+#UKK	cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc usurf.tmp.nc"
 }
 
 ## @fn ic_atm2pism_regrid_downscale_temperature()

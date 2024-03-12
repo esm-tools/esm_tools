@@ -89,10 +89,10 @@ general:
         - '2.1'
         - '2.1-wiso'
         - '2.1-recom'
-        - '2.1.1'
+        - '2.1-paleodyn-2.5'
 
         choose_version:
-          '2.1.1':
+          '2.1-paleodyn-2.5':
             couplings:
             - fesom-2.5+echam-6.3.05p2-awiesm-2.1
             fesom_Dflags: "-DFESOM_COUPLED=ON"
@@ -189,7 +189,7 @@ echam:
                 "2.1-recom":
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
-                "2.1.1":
+                "2.1-paleodyn-2.5":
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
@@ -202,7 +202,7 @@ echam:
                                 "[[icb_fields-->FIELD]]":
                                         grid: atmo
         # --- icebergs ---
-        
+
         # Resolution switch
         # -----------------
         # kh 20.03.20 values may be superseded by section
@@ -315,7 +315,7 @@ fesom:
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
         choose_general.version:
-                "2.1.1":
+                "2.1-paleodyn-2.5":
                         version: "2.5-paleodyn"
                         ALE_scheme: 'zstar'
                         namelist_dir: ${fesom.model_dir}/config/
@@ -345,7 +345,7 @@ fesom:
                                 "[[icb_fields-->FIELD]]":
                                         grid: feom
         # --- icebergs ---
-        
+
         # General namelist_changes for coupled FESOM
         # ------------------------------------------
         opbnd_dir: "remove_from_namelist"

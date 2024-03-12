@@ -209,7 +209,7 @@ choose_version:
                                         "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
                                 choose_general.chunk_number:
                                         1:
-                                                jsbach: jsbach
+                                                from_chunk_number_choose: <NOT_SPECIFIED>
                                         "*":
                                                 add_input_files:
                                                         jsbach: jsbach_ismc

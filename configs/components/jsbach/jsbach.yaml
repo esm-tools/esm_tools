@@ -203,16 +203,6 @@ choose_version:
                         # further options are given under `choose_scenario_type` section
                         cmip6hist:
                                 scenario_type: cmip6
-                choose_general.iterative_coupling:
-                        True:
-                                add_input_sources:
-                                        "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
-                                choose_general.chunk_number:
-                                        1:
-                                                from_chunk_number_choose: <NOT_SPECIFIED>
-                                        "*":
-                                                add_input_files:
-                                                        jsbach: jsbach_ismc
 
                         ssp126:
                                 scenario_type: cmip6
@@ -228,6 +218,19 @@ choose_version:
 
                         ssp585:
                                 scenario_type: cmip6
+
+                choose_general.iterative_coupling:
+                        True:
+                                add_input_sources:
+                                        "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
+                                choose_general.chunk_number:
+                                        1:
+                                                from_chunk_number_choose: <NOT_SPECIFIED>
+                                        "*":
+                                                add_input_files:
+                                                        jsbach: jsbach_ismc
+                        "*":
+                                from_iterative_coupling_choose: <NOT_SPECIFIED>
 
         "3.10":
                 dataset: r0007

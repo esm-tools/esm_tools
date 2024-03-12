@@ -33,7 +33,7 @@ config_sources:
 
 # normally, except awicm on ollie :-(((
 no_dynveg_file_ending: "_no-dynveg"
-dynveg_file_ending: "" #_dynveg"
+dynveg_file_ending: "_dynveg"
 
 choose_version:
         # 3.20p1 is used within FOCI, currently only configured to run WITH
@@ -463,12 +463,6 @@ restart_out_in_work:
 
 namelists:
         - "namelist.jsbach"
-
-namelist_changes:
-        namelist.jsbach:
-                hydrology_ctl:
-                        lgfw: "${echam.lgfw}"
-
 
 further_reading:
         - jsbach/jsbach.inherit.yaml

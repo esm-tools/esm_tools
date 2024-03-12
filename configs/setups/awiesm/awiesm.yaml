@@ -273,6 +273,7 @@ echam:
 
 jsbach:
         dynamic_vegetations: True
+        dynveg_file_ending: "_dynveg"
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         choose_jsbach.dataset:
                 "r0009":
@@ -284,6 +285,7 @@ jsbach:
                         hydrology_ctl:
                                 gethd: "remove_from_namelist"
                                 puthd: "remove_from_namelist"
+                                lgfw: "${echam.lgfw}"
                         jsbach_ctl:
                             use_dynveg: "${dynamic_vegetations}"
         version: "3.20"

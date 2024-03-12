@@ -242,12 +242,25 @@ def copy_files_to_work(config):
     return config
 
 
-def _write_finalized_config(config):
-    """Writes <expid>_finished_config.yaml file
-    Parameters
-    ----------
-    config : esm-tools config object
+def _write_finalized_config(config, config_file_path=None):
     """
+    Writes <expid>_finished_config.yaml file
+
+    Input
+    -----
+    config : dict
+        esm-tools config object
+    config_file_path : string
+        Optional file path and name where the content of config is to be stored.
+        Default is None. If not given (default) the path will be set depending on
+        settings in config and the file name is <expid>_finished_config.yaml.
+
+    Returns
+    -------
+    config : dict
+
+    """
+
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
     def date_representer(dumper, date):
@@ -309,10 +322,11 @@ def _write_finalized_config(config):
     thisrun_config_dir = config["general"]["thisrun_config_dir"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
-    config_file_path = (
-        f"{thisrun_config_dir}/"
-        f"{expid}_{it_coupled_model_name}finished_config.yaml"
-    )
+    if not config_file_path:
+        config_file_path = (
+            f"{thisrun_config_dir}/"
+            f"{expid}_{it_coupled_model_name}finished_config.yaml"
+        )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
         config_final = copy.deepcopy(config)  # PrevRunInfo

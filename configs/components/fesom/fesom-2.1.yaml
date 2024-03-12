@@ -220,6 +220,8 @@ outdata_targets:
 
 choose_use_icebergs:
         True:
+            update_icebergs: True
+
             icb_inputs: [longitude,latitude,length,height,scaling,felem]
 
             add_restart_in_files:

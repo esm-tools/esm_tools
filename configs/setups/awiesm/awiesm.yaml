@@ -120,7 +120,7 @@ general:
         with_icb: false
         with_bootstrap: false
         iterative_coupling: False
-        
+
         scenario: "PI-CTRL"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
@@ -133,8 +133,10 @@ general:
                 T63_REF:
                         compute_time: "02:00:00"
 
-        required_plugins:
-            - "https://github.com/esm-tools-plugins/esm_pism"
+        choose_general.iterative_coupling:
+            True:
+                required_plugins:
+                    - "https://github.com/esm-tools-plugins/esm_pism"
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

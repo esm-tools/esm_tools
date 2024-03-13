@@ -1,0 +1,161 @@
+# Olaf (IBS, Korea) configuration file
+
+name: olaf
+account: None
+
+# hyperthreading false by default
+use_hyperthreading: False
+
+# NEED TO EXPLORE HOW TO DO HETEROGENEOUS PARALLELIZATION IN THE FUTURE
+# for now use taskset
+taskset: true 
+
+# hyperthreading options
+choose_use_hyperthreading:
+        "1":
+                hyperthreading_flag: ""
+        True:
+                hyperthreading_flag: ""
+        "0":
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
+        False:
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
+                                        
+accounting: true
+
+batch_system: "slurm"
+
+# Available: 
+# * intel2021_impi2021
+compiler_mpi: intel2021_impi2021
+
+jobtype: compute
+sh_interpreter: "/bin/bash"
+
+# Olaf compute nodes:
+# 2x Intel Xeon 8360Y (2.6GHz, 36 Cores)
+# Normal: Max 3 days
+# Long: Max 14 days
+
+partition: normal_cpu
+
+choose_partition:
+        "normal_cpu":
+                partition_name: "normal_cpu"
+                partition_cpn: 72
+        "long_cpu":
+                partition_name: "long_cpu"
+                partition_cpn: 72
+
+partitions:
+        compute:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+        pp:
+                name: ${computer.partition_name}
+                cores_per_node: ${computer.partition_cpn}
+                
+logical_cpus_per_core: 2
+
+threads_per_core: 1
+hetjob_flag: packjob
+
+pool_directories:
+        pool: "/scratch/usr/hbkawi"
+        focipool: "/mnt/lustre/ibs/iccp/jkjellsson/foci_input2/"
+        
+# we install our own libraries using 
+# https://git.geomar.de/HPC/libraries
+iolibraries: geomar_libs
+
+# purge all modules first
+# and load git (with lfs) and cmake
+module_actions:
+   - "purge"
+   - "load git-lfs"
+   - "load cmake/3.28.1" 
+   
+# Each user should set these in .bashrc
+export_vars:
+   LC_ALL: en_US.UTF-8
+   LANG: en_US.UTF-8
+   
+# Compiler specific settings
+choose_compiler_mpi:
+
+   intel2021_impi2021:
+      add_module_actions:
+         - "load intel/2021.3.0"
+         - "load impi/2021.3.0"
+         #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+         #- "load gcc/9.3.0"
+      add_export_vars:
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+choose_iolibraries:
+   geomar_libs:
+      add_export_vars:
+         IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+         PATH: $IO_LIB_ROOT/bin:$PATH
+         LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+         SZIPROOT: $IO_LIB_ROOT
+         HDF5ROOT: $IO_LIB_ROOT
+         HDF5_ROOT: $HDF5ROOT
+         NETCDFROOT: $IO_LIB_ROOT
+         NETCDFFROOT: $IO_LIB_ROOT
+         ECCODESROOT: $IO_LIB_ROOT
+
+         HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+         NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'   
+
+      choose_compiler_mpi:
+            intel2021_impi2021:
+               add_export_vars:
+                  IO_LIB_ROOT: /mnt/lustre/ibs/iccp/jkjellsson/sw/HPC_libraries/intel2021.0.3_impi2021.0.3_20240313/
+               
+# some yamls use computer.fc, etc to identify the compiler, so we need to add them
+fc: "$FC"
+cc: "$CC"
+mpifc: "$MPIFC"
+mpicc: "$MPICC"
+cxx: "$CXX"
+
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
+
+further_reading:
+        - batch_system/slurm.yaml

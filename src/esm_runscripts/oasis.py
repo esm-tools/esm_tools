@@ -130,7 +130,7 @@ class oasis:
         trafo_details = []
 
         alltimes = transformation.get("time_transformation", "bla")
-        if not type(alltimes) == list:
+        if not isinstance(alltimes, list):
             alltimes = [alltimes]
         for time in alltimes:
             detail_line = ""
@@ -140,11 +140,11 @@ class oasis:
                 trafo_details.append(detail_line.strip())
 
         allpres = transformation.get("preprocessing", "bla")
-        if not type(allpres) == list:
+        if not isinstance(allpres, list):
             allpres = [allpres]
         for pre in allpres:
             detail_line = ""
-            if type(pre) == dict:
+            if isinstance(pre, dict):
                 pre = list(pre.keys())[0]
             if pre.lower() == "checkin":
                 trafo_line += " CHECKIN"
@@ -184,7 +184,7 @@ class oasis:
                     trafo_details.append(detail_line.strip())
 
         alltrans = transformation.get("remapping", {"bla": "blub"})
-        if not type(alltrans) == list:
+        if not isinstance(alltrans, list):
             alltrans = [alltrans]
         for thistrans in alltrans:
             (trans, transform) = list(thistrans.items())[0]
@@ -267,7 +267,7 @@ class oasis:
                 trafo_details += [detail_line.strip()]
 
         allpost = transformation.get("postprocessing", "bla")
-        if not type(allpost) == list:
+        if not isinstance(allpost, list):
             allpost = list(allpost)
         for post in allpost:
             detail_line = ""

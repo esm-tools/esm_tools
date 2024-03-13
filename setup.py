@@ -105,6 +105,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.28.0",
+    version="6.29.0",
     zip_safe=False,
 )

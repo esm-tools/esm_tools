@@ -23,7 +23,7 @@ module load nco || module load NCO
 ATM_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
 ATM_CONVERT_NETCDF4=true 
-ATM_FILE_TAGS="regular_sfc regular_pv regular_pl regular_ml reduced_sfc reduced_pv reduced_pl reduced_ml"
+ATM_FILE_TAGS="regular_sfc regular_pv regular_pl regular_pl_zoom regular_ml regular_th reduced_sfc reduced_pv reduced_pl reduced_ml regular_th"
 
 # Other settings
 max_jobs=20
@@ -79,8 +79,10 @@ echo
 echo "Doing postprocessing in $basedir for $EXP_ID from $startdate to $enddate"
 echo "Using an environment from $envfile"
 echo
+echo " Start and end given: $startdate $enddate "
 startdate=$(date --date "$startdate" "+%Y%m%d")
 enddate=$(date --date "$enddate" "+%Y%m%d")
+echo " Start and end formatted:  $startdate $enddate "
 if [[ ${#startdate} -ne 8 ]] || [[ ${#enddate} -ne 8 ]]; then
 	echo
 	echo " Please provide start and end date in yyyymmdd format e.g."
@@ -177,17 +179,30 @@ startmonth=$(date --date="$startdate" "+%m")
 endyear=$(date --date="$enddate" "+%Y")
 endmonth=$(date --date="$enddate" "+%m")
 
+echo " Start year,month: $startyear $startmonth "
+echo " End year, month: $endyear $endmonth "
+
 [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] && freq="y"
 
-# calculate increment if not set, set to 1 to postprocess multiple years of
+# calculate increment if not set, set to 1 to postprocess multiple years of 
 # simulation that ran in multiyear intervals.
 if [[ -z $increment ]] ; then
    if [[ $startyear == $endyear ]] ; then
-      increment=$((endmonth - startmonth + 1))
-   else
+           # freq is 'y' for a full single year
+      if [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] ; then
+                        increment=1
+                else
+        # remove leading 0 if it exists. Its fine for 01, 02 etc
+        # but 08 would be interpreted as octal number...
+        increment=$((${endmonth#0} - ${startmonth#0} + 1))
+                fi
+        else
       increment=$((endyear - startyear + 1))
    fi
 fi
+
+echo " Increment: $increment "
+echo " Freq $freq "
 
 # Temporary directory
 id=$$
@@ -195,7 +210,7 @@ post_dir=$DATA_DIR/${id}_$startdate-$enddate
 [[ -d $post_dir ]] &&
     print "Hey: previous job failed or still running; removing temp dir"
 rm -r $post_dir
-mkdir $post_dir
+mkdir -v $post_dir
 
 #
 # Convert OpenIFS/XIOS netcdf3 output to netcdf4 using the chunking algorithm
@@ -231,7 +246,10 @@ if ${ATM_CONVERT_NETCDF4} ; then
 			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
 			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
 		fi
-
+                
+                echo " Looking for files at $currdate1 "
+                echo " covering period $currdate1 $currdate2 "
+                
 		for filetag in $filetags
 		do
    		for s in $steps
@@ -338,16 +356,31 @@ mkdir ym
 # TODO: only works for yearly restart intervals at the moment
 # can be improved, see nemo_postprocessing.sh
 if ${ATM_CONVERT_NETCDF4} ; then
-    for ((year=startyear; year<=endyear; ++year))
-    do
-	for filetag in $filetags
+   
+   nextdate=$startdate 
+   while [[ $nextdate -lt $enddate ]] 
 	do
-		for s in $steps
+	   # treat special case of 18930401, see echam_postprocessing.sh
+		if [[ $freq == "m" ]] ; then
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} month - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} month" "+%Y%m%d")
+		else
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+		fi
+	
+        for filetag in $filetags
+	do
+                # first we try to compute annual means from monthly files
+		for s in 1m 5d 1d 
 		do
 			# !!! output files will have the same name as the old input file !!! 
-			input=${EXP_ID}_${s}_${year}0101_${year}1231_${filetag}.nc
-			output=${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
-
+		    	input=${EXP_ID}_${s}_${currdate1}_${currdate2}_${filetag}.nc
+			output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc
+ 
+                        # if we already compute annual means using 1m, then doing it for 5d or 1d wont happen
 			if [[ "$freq" == "y" ]] && [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
 
 				touch ym/$output 

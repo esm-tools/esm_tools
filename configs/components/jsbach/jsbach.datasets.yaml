@@ -48,8 +48,10 @@ forcing_sources:
         Ndepo_ssp:
                 # These files are 12-monthly; see README.md in Ndepo/ directory
                 # NOTE: ssp370 might be missing in this directory
+                "${input_dir_couple}/${Ndepo_path}1850.nc":
+                    to: 1850
                 "${input_dir_couple}/${Ndepo_path}@YEAR@.nc":
-                    from: 1850
+                    from: 1851
                     to: 2099
                 "${input_dir_couple}/${Ndepo_path}2099.nc":
                     from: 2100

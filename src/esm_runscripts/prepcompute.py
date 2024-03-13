@@ -182,8 +182,6 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom":
-            config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
             config[model], config["general"]["verbose"]
@@ -194,22 +192,17 @@ def modify_namelists(config):
     return config
 
 
-def copy_files_to_thisrun(config):
-    if config["general"]["verbose"]:
-        print("PREPARING EXPERIMENT")
-        # Copy files:
-        print("\n" "- File lists populated, proceeding with copy...")
-        print("- Note that you can see your file lists in the config folder")
-        print("- You will be informed about missing files")
-
-    counter = 0
+def wait_for_iterative_coupling(config):
     count_max = 90
     if (
         config["general"].get("iterative_coupling", False)
         and config["general"]["chunk_number"] > 1
     ):
+        if config["general"]["verbose"]:
+            print("Waiting for iterative coupling...")
         if "files_to_wait_for" in config["general"]:
             for file_base in config['general'].get('files_to_wait_for'):
+                counter = 0
                 file = os.path.join(config['general']['experiment_couple_dir'], file_base)
                 while counter < count_max:
                     counter = counter + 1
@@ -221,19 +214,16 @@ def copy_files_to_thisrun(config):
                         print("Sleep for 10 seconds...")
                         time.sleep(10)
 
-    # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
-    if "fesom" in config["general"]["valid_model_names"]:
-        if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
-            if config["general"].get("run_number", 0) == 1:
-                if not os.path.isfile(
-                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
-                ):
-                    with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
-                        f.write("0")
-            else:
-                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["experiment_restart_in_dir"], "iceberg.restart.ISM")))
-                with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
-                    f.write(str(num_lines))
+    return config
+
+
+def copy_files_to_thisrun(config):
+    if config["general"]["verbose"]:
+        print("PREPARING EXPERIMENT")
+        # Copy files:
+        print("\n" "- File lists populated, proceeding with copy...")
+        print("- Note that you can see your file lists in the config folder")
+        print("- You will be informed about missing files")
 
     log_used_files(config)
 

@@ -31,7 +31,11 @@ def init_iterative_coupling(command_line_config, user_config):
     if user_config["general"].get("iterative_coupling", False):
         user_config = chunky_parts.setup_correct_chunk_config(user_config)
 
-        if len(user_config["general"]["original_config"]["general"]["model_queue"]) > 1:
+        if len(user_config["general"]["original_config"]["general"]["model_queue"]) > 2:
+            next_model = user_config["general"]["original_config"]["general"][
+                "model_queue"
+            ][-1]
+        elif len(user_config["general"]["original_config"]["general"]["model_queue"]) > 1:
             next_model = user_config["general"]["original_config"]["general"][
                 "model_queue"
             ][1]

@@ -5,9 +5,9 @@ general:
    
    setup_name: "focioifs"      
    resolution: "TCO95_ORCA05"
-   version: "3.0_busan"
+   version: "4.0"
    
-   compute_time: "01:00:00"
+   compute_time: "12:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "1851-01-01T00:00:00"         # Final date of the experiment
    
@@ -18,7 +18,7 @@ general:
    #restart_unit: days 
    hours: 0
    account: shk00018
-   base_dir: /scratch/usr/shkjocke/esm-nemo4/
+   base_dir: /scratch/usr/shkjocke/esm-experiments/
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: 1
@@ -45,14 +45,14 @@ computer:
    #additional_flags: '--qos=preempt'
 
 focioifs:
-   model_dir: /scratch/usr/shkjocke/models3/focioifs-3.0_busan/
+   model_dir: /scratch/usr/shkjocke/model_test/focioifs-4.0/
    
 oifs:
    runtime_environment_changes:
       choose_computer.name:
          "glogin":
-             #compiler_mpi: intel2019_impi2019_nemo4
-             compiler_mpi: intel2022_impi2021
+             compiler_mpi: intel2019_impi2019_nemo4
+             #compiler_mpi: intel2022_impi2021
    
    lresume: ${general.lresume}
    # This would be for a traditional restart
@@ -88,44 +88,20 @@ oifs:
    
    resolution: TCO95
    levels: L91
-   nproc: 168
-   omp_num_threads: 4
+   nproc: 288
+   omp_num_threads: 1
    use_ocean_currents: 0
    sclct_switch: 2
    #initial_date_cold: "4000-01-01"
    solarspectrum: True 
    
    ini_pseudo_initial_date: "1859-01-01"
-    
-   add_namelist_changes:
-       fort.4:
-           # These are set in focioifs.yaml
-           #NAMFOCICFG:
-           #   FOCI_CPL_NEMO_LIM: false
-           #   FOCI_CPL_NEMO_SI3: true
-           #NAERAD:
-           #   NAERANT_SCALE: 1
-           
-           # Increase diffusion for cloud edges
-           # to reduce cloud cover and warm surface
-           NAMCLDP:
-               # diffusion coeff for cloud edges
-               # see eq 7.47 in IFS 43r3 documentation, part IV
-               RCLDIFF: 5.e-6 # default 3e-6
-           # Lower ocean albedo to warm ocean surface and reduce cold bias
-           NAMMCC:
-               RALBSEAD_NML: 0.045
 
 oasis3mct:
    lresume: True
-   coupling_time_step: 3600
    pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/"
    # This would be for a cold start (SST = 0C,etc)
    ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/" # "${general.ini_parent_dir}/restart/oasis3mct/"
-   # Use FOCI_GJK006 4000-01-01
-   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
-   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
-   #ini_parent_date: "${prev_date}"
    
    a2o_remap_method: "bilincub"
    o2a_remap_method: "bilinear"
@@ -157,10 +133,10 @@ nemo:
    _nx: 720
    _ny: 510 
    jpni: 24
-   jpnj: 24
+   jpnj: 18
    #nproca: ${nemo.jpni}
    #nprocb: ${nemo.jpnj}
-   nproc: 576 
+   nproc: 432 
    add_namelist_changes:
        namelist_cfg:
           namctl:
@@ -170,7 +146,11 @@ nemo:
           namdyn_ldf:
               # Use time-varying viscosity set by deformation rate
               # (Smagorinsky)
-              nn_ahm_ijk_t: 32 
+              nn_ahm_ijk_t: 32
+          namtra_ldf:
+              # Diffusion set by local baroclinic growth rate 
+              nn_aht_ijk_t: 20
+              rn_aht_scale: 1.5 
           namtra_eiv:
               rn_aeiv_scale: 0.5 
    

@@ -40,6 +40,9 @@ choose_use_hyperthreading:
                                         - "SLURM_NTASKS"
                                         - "SLURM_NPROCS"
                                         - "SLURM_ARBITRARY_NODELIST"
+                                        # After suggestion from Timon (not Pumbaa) at HLRN
+                                        - "SLURM_JOB_NUM_NODES" 
+                                        - "SLURM_NNODES"
 
 accounting: true
 

@@ -238,18 +238,28 @@ choose_version:
   43r3-foci22:
     branch: foci22
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} . ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} . ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    install_bins: make/esm/oifs/bin/oifs
+    requires:
+    - oasis3mct-EM21
+    - xios-2.5_r1910
+    contact: "swahl(at)geomar.de"
+    major_version: 43r3
+  43r3-foci30:
+    branch: foci22
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} . ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
     install_bins: make/esm/oifs/bin/oifs
     requires:
     - oasis3mct-5.0-geomar
     - xios-2.5_r1910
     contact: "swahl(at)geomar.de"
     major_version: 43r3
-  43r3-foci30:
+  43r3-foci40:
     # CSW: new branch once created by Joakim
-    branch: foci30
+    branch: foci40
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
     install_bins: make/esm/oifs/bin/oifs
     requires:
     - oasis3mct-5.0-geomar
@@ -268,7 +278,7 @@ choose_version:
   43r3-v2:
     branch: master
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
     install_bins: make/esm/oifs/bin/oifs
     requires:
     - oasis3mct-4.0
@@ -350,7 +360,12 @@ choose_resolution:
         TCO95:
                 nx: 40320
                 ny: 1
-                time_step: 3600
+                # Joakim: Lower Tco95 time step to 1800s
+                # This has 2x computer cost but reduces
+                # biases by a lot, so it is worth it
+                # Savita et al. (2024) 10.5194/gmd-2023-101 
+                #time_step: 3600
+                time_step: 1800
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
@@ -462,6 +477,11 @@ choose_computer.partitions.compute.cores_per_node:
 #======================================================================================
 
 # Microphysics switch: 0 for off, 1 for light version and 2 for full
+# sclct_switch <= 1 : Transform all cloud water below 600 hPa to liquid phase
+# sclct_switch == 2 : Reduce ice deposition rate by 50% to retain supercooled water
+# sclct_switch should be set to 2 to reduce warm bias in Southern Ocean
+# Note: Only works for 43r3. 
+# See Forbes 2016 10.21957/s41h7q7l 
 sclct_switch: 0
 
 # Namelist modifications for truncation types

@@ -70,9 +70,10 @@ available_versions:
 - ORCA05_LIM2_KCM_AOW_FS
 - ORCA05_LIM2_FOCI_AGRIF
 - ORCA05_LIM2_FOCI_AGRIF_AOW
-- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+- ORCA05_LIM2_KCM_AGRIF_OASISMCT4 
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
-- ORCA12_LIM2_KCM_AOW_FS_OASISMCT4
+- ORCA05_LIM2_KCM_AOW_OASISMCT5
+- ORCA05_LIM2_KCM_AOW_FS_OASISMCT5
 - ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
 - GYRE_PISCES
@@ -1041,6 +1042,152 @@ choose_version:
              nn_msh: ${nn_msh}
              rn_rdt: ${time_step_nest}
           namsbc:
+             nn_fsbc: 1
+             nn_ice: 2
+             ln_echam: '.false.'
+             ln_cpl: '.true.'
+          namtra_ldf: 
+             rn_aeiv_0: 0.
+             rn_aht_0: 120.
+             rn_aht_m: 120.
+          namdyn_ldf:
+             # Computed as -1.709e12 / 5^3 = -1.37e10
+             # Note: -1.709e12 is applied at the largest ORCA05 cell, at equator
+             # but coeff is actually -1.267e12 where VIKING10 starts
+             # So ahm should be -1.267e12 / 5^3 = -1.013e10
+             # We should scale this by 0.74.
+             rn_ahm_0_blp: -1.013e10
+             rn_ahm_m_blp: -1.37e11
+             rn_ahm_m_lap: 0.
+          nammpp:
+             jpni: ${jpni}
+             jpnj: ${jpnj}
+             jpnij: ${nproc}
+          #namnc4:
+          #   ln_nc4zip: '.false.'
+          #   nn_nchunks_i: 4
+          #   nn_nchunks_j: 4
+          #   nn_nchunks_k: 4
+          nambbl:
+             rn_ahtbbl: 1000
+          namctl:
+             ln_ctl: '.false.'
+             nn_timing: 0
+          # with AGRIF always use linear free surface
+          # always set free_surface: linear with AGRIF
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+       namelist_cfg:
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+    
+    add_coupling_fields:
+        "[[agr1_t_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_c_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_r_fields-->FIELD]]":
+            grid: agr1r
+        "[[agr1_rc_fields-->FIELD]]":
+            grid: agrc
+        "[[agr2_t_fields-->FIELD]]":
+            grid: agr2
+            
+  ORCA05_LIM2_KCM_AGRIF_OASISMCT5:
+    requires:
+    - nemobasemodel-3.6foci
+    branch: esm-tools
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+    archfile: ESMTOOLS_generic_oasis_intel_agrif
+    
+    # use tracer in AGRIF?
+    use_tracer_agrif: true
+    # use LIM2 in AGRIF?
+    use_lim2_agrif: true
+    free_surface: linear
+    leapyear: true  
+    
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+       1_sn_tem_levitus: 1_sn_tem_levitus
+       1_sn_sal_levitus: 1_sn_sal_levitus
+       1_ice_init: 1_ice_init
+       # reference namelists
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       # grids and coefficients
+       cn_batmeter: bathy_updated
+       1_cn_batmeter: 1_bathy_meter
+       1_coordinates: 1_coordinates
+       fixed_grids: fixed_grids
+       # reshape files for nest
+       1_reshape_bicub: 1_reshape_bicub
+       1_reshape_bilin: 1_reshape_bilin
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       1_coordinates: 1_coordinates_ORCA05.nc
+    
+    add_config_files:
+       1_namelist_cfg: 1_namelist_cfg
+       1_namelist_ice_cfg: 1_namelist_ice_cfg
+       1_namelist_top_cfg: 1_namelist_top_cfg
+
+    add_namelist_changes:
+       1_namelist_cfg:
+          namrun:
+             cn_exp: ${expid}
+             nn_it000: ${thisstep_nest}
+             nn_itend: ${newstep_nest}
+             nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag}
+             cn_ocerst_indir: '${parent_restart_dir}/'
+             cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+             cn_ocerst_outdir: '${experiment_restart_out_dir}/'
+             nn_stock: ${newstep_nest}
+             nn_leapy: ${nn_leapy}
+             nn_rstctl: ${nn_rstctl}
+             ln_rstart: ${nemo.lresume}
+          #namcfg:
+          #   jpidta: ${_nx_nest1}
+          #   jpjdta: ${_ny_nest1}
+          #   jpiglo: ${_nx_nest1}
+          #   jpjglo: ${_ny_nest1}
+          namlbc: 
+             rn_shlat: 2
+             ln_vorlat: '.false.'
+          namagrif:
+             #nn_cln_update: 3
+             rn_sponge_tra: 600 
+             rn_sponge_dyn: 600 
+          namtsd:
+             ln_tsd_tradmp: ${ln_tsd_tradmp}
+             ln_tsd_init: ${ln_tsd_init}
+          namdom:
+             nn_closea: 1
+             nn_msh: ${nn_msh}
+             rn_rdt: ${time_step_nest}
+          namsbc:
              nn_fsbc: 3
              nn_ice: 2
              ln_echam: '.false.'
@@ -1168,37 +1315,14 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
-
-  ORCA05_LIM2_KCM_AOW_OASISMCT4:
-    requires:
-    #- xios-2.0_r982
-    - nemobasemodel-3.6foci
-    branch: oasismct4 
-    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
-
-    add_input_files:
-       # reference namelists
-       namelist_ref: namelist_ref
-       namelist_ice_ref: namelist_ice_ref
-       # grids and coefficients 
-       cn_batmeter: bathy_meter 
-       coordinates: coordinates
-       subbasins: subbasins
-       coef-G70: coef-G70
-       # init and (if used) damping data
-       sn_tem: sn_tem_levitus
-       sn_sal: sn_sal_levitus
-       ice_init: ice_init_kkg36f13h
-
-    input_in_work:
-       ice_init: Ice_initialization.nc
-       namelist_ice_ref: namelist_ice_ref
-
+  
+  # Use for FOCI-OpenIFS v2.x
+  # No smagorinsky
+  # Add flag to support OASIS3-MCT >= 3.0
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
     requires:
     - nemobasemodel-3.6foci
-    branch: esm-tools
+    branch: mct3_nosmag
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
 
@@ -1222,6 +1346,79 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
+  
+  # As for ORCA05_LIM2_KCM_AOW_FS_OASISMCT4_SMAG
+  # here we use ORCA05_LIM2_KCM_AOW_FS_OASISMCT4 
+  # and set free_surface = linear
+  # and also change branch name. 
+  ORCA05_LIM2_KCM_AOW_OASISMCT4:
+    requires:
+    - nemobasemodel-3.6foci
+    branch: mct3_nosmag_novvl
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4.git
+
+    free_surface: linear
+    leapyear: true  
+
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+  
+  # Use for FOCI-OpenIFS v3.0 
+  # Note: This version is identical to ORCA05_LIM2_KCM_AOW_FS_OASISMCT4 
+  # and is the same repo, just a different branch.
+  # But for some strange reason we can't just change branch, but have to define
+  # a new version... 
+  # 
+  # In the future we should have one repo for all NEMO 3.6 code
+  # and then just change branches between model versions
+  #
+  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4_SMAG:
+    requires:
+    - nemobasemodel-3.6foci
+    # unlike the other versions, we hard code the name here
+    # so that we avoid the SMAG at the end.
+    # That way, we use the same repo as ORCA05_LIM2_KCM_AOW_FS_OASISMCT4, but different branch
+    branch: esm-tools
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4.git
+    
+    free_surface: nonlinear
+    leapyear: true  
+
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+  
   
   #ORCA05_SI3_FOCI_FS_AOW:
   #  requires:

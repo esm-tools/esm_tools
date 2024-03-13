@@ -4,31 +4,31 @@ general:
    homedir: !ENV ${HOME}
    
    setup_name: "focioifs"      
-   resolution: "TCO95_eORCA025"
+   resolution: "TCO95_ORCA05"
    version: "3.0"
    
-   compute_time: "01:00:00"
+   compute_time: "02:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-03-01T00:00:00"         # Final date of the experiment
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
    
-   nyear: 0
-   nmonth: 1
+   nyear: 1
+   nmonth: 0
    nday: 0
    restart_rate: 1
    restart_unit: days 
    hours: 0
    account: shk00018
-   base_dir: /scratch/usr/shkifmsw/esm-experiments/
+   base_dir: /scratch/usr/shkjocke/esm-experiments/
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: 1
 
 computer:
-   partition_name: "standard96:test"
+   partition_name: "standard96"
    #additional_flags: '--qos=preempt'
 
 focioifs:
-   model_dir: ${homedir}/esm/models/focioifs-3.0 
+   model_dir: /scratch/usr/shkjocke/model_test/focioifs-3.0 
    
 oifs:
    lresume: False 
@@ -40,7 +40,6 @@ oifs:
    #ini_parent_date: "${prev_date}"
    
    version: "43r3"
-   time_step: 1800
    with_xios: True
    scenario: "piControl"
    mip: "cmip6"
@@ -59,48 +58,25 @@ oifs:
    prepifs_expid: hagw
    prepifs_startdate: 20080101
    
-   # This uses initial conditions from FOCI_GJK006 4000-01-02
-   #prepifs_expid: ECE3 
-   #prepifs_startdate: 40000101 
-   
    resolution: TCO95
    levels: L91
-   nproc: 192
+   nproc: 288
    omp_num_threads: 1
-   use_ocean_currents: 0
-   sclct_switch: 2
-   #initial_date_cold: "4000-01-01"
-   solarspectrum: True 
+   use_ocean_currents: 0    
    
 oasis3mct:
    lresume: True
-   coupling_time_step: 3600
-   pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_eorca025/"
-   # This would be for a cold start (SST = 0C,etc)
-   ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_eorca025/"
-   # Use FOCI_GJK006 4000-01-01
-   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
-   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
-   #ini_parent_date: "${prev_date}"
-
+   pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
    norestart: F
+   # For a new run, it might be good to set
+   # use_lucia to True to check timing
    use_lucia: False
    #export_mode: EXPOUT
-   debug_level: 20
-   # in FOCIOIFS all oasis input files are treated as restarts.
-   # in FOCI all remapping files are handled as inputs. Both approaches work.
-   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
-   #oasis_date_stamp: "${general.oasis_date_stamp}"
-   #oasis_date_stamp: "" 
-   
+   debug_level: 0
+      
 nemo:
-   #lresume: ${general.lresume}
-   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
-   #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
-   #ini_parent_date: "${prev_date}"
-
-   resolution: "eORCA025"
-   version: "eORCA025_Z75_SI3_COUPLED" 
+   resolution: "ORCA05"
    jpni: 24
    jpnj: 18
    nproc: 432
@@ -110,5 +86,5 @@ rnfmap:
 
 xios:
    with_model: focioifs
-   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_eorca025/output_for_test/"
-   nproc: 48
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_prod/"
+   nproc: 20

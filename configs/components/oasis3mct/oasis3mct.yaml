@@ -62,7 +62,7 @@ choose_version:
   5.0-smhi:
     branch: main_dkrz
     git-repository: https://gitlab.dkrz.de/ec-earth/oasis3mct5-ece
-    comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include; cd ..; mkdir -p arch_ecearth; cd arch_ecearth; pwd ; cp -r ../lib ../include .'
+    comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
   ec-earth:
     branch: ec-earth-version
   foci:

@@ -179,7 +179,7 @@ def _call_esm_runscripts_internally(config, command, exedir):
     non_interaction_flags = [
                                 "--no-motd",
                                 f"--last-jobtype {config['general']['jobtype']}",
-                                f"-t {config['general']['jobtype']}"
+                                f"--phase {config['general']['jobtype']}"
                             ]
     for ni_flag in non_interaction_flags:
         # prevent continuous addition of ``ni_flag``

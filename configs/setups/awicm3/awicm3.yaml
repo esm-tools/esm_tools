@@ -22,6 +22,8 @@ general:
         - 'v3.1.1'
         - 'v3.1.2'
         - 'v3.2'
+        - 'v3.2.1'
+        - 'v3.2.2'
         - 'master'
         - 'frontiers-xios'
         choose_version:
@@ -61,6 +63,24 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+          v3.2.1:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5-yac+oasis3mct6
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: True
+          v3.2.2:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5+oifs-43r3-awicm-3.2.2+xios-2.5-yac+oasis3mct6
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: True
           master:
             major_version: master
             couplings:
@@ -359,8 +379,11 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
-
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
+        choose_general.oasis_with_yac:
+            True:
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DOASIS_WITH_YAC=ON ..;   make install -j `nproc --all`
+            "*":
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -798,6 +821,26 @@ oasis3mct:
                                 conserv:
                                         method: global
                                         algorithm: opt
+                oyac_1stcon_nnn_stocha:
+                        oyac: true
+                        time_transformation: stocha
+                        remapping:
+                                conserv:
+                                        order: first
+                                        intersect_norm: fracarea
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+                oyac_1stcon_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                conserv:
+                                        order: first
+                                        intersect_norm: fracarea
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
 
         input_files: {}
 

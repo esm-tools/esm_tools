@@ -6,6 +6,7 @@ import questionary
 
 from esm_parser import user_error
 
+
 class oasis:
     def __init__(
         self,
@@ -82,14 +83,12 @@ class oasis:
         lresume,
         export_mode="DEFAULT",
     ):
-
         self.namcouple += ["#"]
 
         nb = self.next_coupling
 
         left = sep = ""
         for lefty in lefts:
-
             restart_out_file = lefty + "_"
 
             left += sep + lefty
@@ -134,7 +133,14 @@ class oasis:
             alltimes = [alltimes]
         for time in alltimes:
             detail_line = ""
-            if time.lower() in ["instant", "accumul", "average", "t_min", "t_max"]:
+            if time.lower() in [
+                "stocha",
+                "instant",
+                "accumul",
+                "average",
+                "t_min",
+                "t_max",
+            ]:
                 trafo_line = "LOCTRANS"
                 detail_line = time.upper()
                 trafo_details.append(detail_line.strip())
@@ -184,87 +190,139 @@ class oasis:
                     trafo_details.append(detail_line.strip())
 
         alltrans = transformation.get("remapping", {"bla": "blub"})
-        if not type(alltrans) == list:
-            alltrans = [alltrans]
-        for thistrans in alltrans:
-            (trans, transform) = list(thistrans.items())[0]
-            detail_line = ""
-            if "mapping" == trans.lower():
-                trafo_line += " MAPPING"
-                mapname = transform.get("mapname", None)
-                if not mapname:
-                    print(
-                        "mapname needs to be defined for transformation MAPPING",
-                        flush=True,
-                    )
-                    sys.exit(2)
-                maploc = transform.get("map_regrid_on", "")
-                mapstrat = transform.get("mapstrategy", "")
-                detail_line = mapname + " " + maploc + " " + mapstrat
-                trafo_details.append(detail_line.strip())
+        oyac = transformation.get("oyac", False)
+        if oyac:  # OASIS with YAC interpolation library (OYAC)
+            nb_stack = str(len(alltrans))
+            oyac_io_per_node = str(rgrid["oyac_io_per_node"]).upper()
 
-            elif trans.lower() in [
-                "distwgt",
-                "bicubic",
-                "bilinear",
-                "gauswgt",
-                "conserv",
-                "loccunif",
-            ]:
-                trafo_line += " SCRIPR"
-                srcgridtype = str(rgrid["oasis_grid_type"]).upper()
-                search_bin = transform.get("search_bin", None)
-                if not search_bin:
-                    print(
-                        "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF",
-                        flush=True,
-                    )
-                    sys.exit(2)
-                bins = transform.get("nb_of_search_bins", "1")
-                detail_line = (
-                    trans.upper()
-                    + " "
-                    + srcgridtype.upper()
-                    + " SCALAR "
-                    + search_bin.upper()
-                    + " "
-                    + str(bins)
-                )
-                if trans.lower() in ["distwgt", "gauswgt", "loccunif"]:
-                    nb_of_neighbours = transform.get("nb_of_neighbours", None)
-                    if not nb_of_neighbours:
-                        print(
-                            "nb_of_neighbours needs to be defined for transformations DISTWGT, GAUSWGT and LOCCUNIF",
-                            flush=True,
-                        )
-                        sys.exit(2)
-                    detail_line += " " + str(nb_of_neighbours)
-                if trans.lower() == "gauswgt":
-                    weight = transform.get("weight", None)
-                    if not weight:
-                        print(
-                            "weight needs to be defined for transformation GAUSWGT",
-                            flush=True,
-                        )
-                        sys.exit(2)
-                    detail_line += " " + str(weight)
-                if trans.lower() == "conserv":
-                    normalization = transform.get("normalization", None)
-                    if not normalization:
-                        print(
-                            "normalization (FRACAREA, DESTAREA or FRACNNEI) needs to be defined for transformations CONSERV",
-                            flush=True,
-                        )
-                        sys.exit(2)
+            trafo_line += " YAC"
+            # TODO: Read new var nb_stack for number of interpolations in stack
+            srcgridtype = str(rgrid["oyac_grid_type"]).upper()
+            # TODO: We need not only src but also dst grid type
+            dstgridtype = str(lgrid["oyac_grid_type"]).upper()
+            translist = []
+            for trans in alltrans:
+                translist.append(trans)
+            rmp_name = result = "_".join(translist)
+            general_oyac_line = (
+                srcgridtype.upper()
+                + " "
+                + dstgridtype.upper()
+                + " "
+                + nb_stack
+                + " YAC_"
+                + rmp_name.upper()
+                + " "
+                + oyac_io_per_node
+            )
+            trafo_details += [general_oyac_line.strip()]
+            for trans in alltrans:
+                transform = alltrans[trans]
+                if trans.upper() == "CONSERV":
                     order = transform.get("order", None)
-                    if not order:
+                    intersect_norm = transform.get("intersect_norm", None)
+                    stack_line = (
+                        trans.upper()
+                        + " "
+                        + order.upper()
+                        + " "
+                        + intersect_norm.upper()
+                    )
+                    trafo_details += [stack_line.strip()]
+                elif trans.upper() == "NNN":
+                    weighting = transform.get("weighting", None)
+                    nb_of_neighbours = str(transform.get("nb_of_neighbours", None))
+                    stack_line = (
+                        trans.upper()
+                        + " "
+                        + weighting.upper()
+                        + " "
+                        + nb_of_neighbours.upper()
+                    )
+                    trafo_details += [stack_line.strip()]
+
+        else:  # OASIS with SCRIP interpolation library
+            if not type(alltrans) == list:
+                alltrans = [alltrans]
+            for thistrans in alltrans:
+                (trans, transform) = list(thistrans.items())[0]
+                detail_line = ""
+                if "mapping" == trans.lower():
+                    trafo_line += " MAPPING"
+                    mapname = transform.get("mapname", None)
+                    if not mapname:
                         print(
-                            "order (FIRST or SECOND) needs to be defined for transformation CONSERV",
+                            "mapname needs to be defined for transformation MAPPING",
                             flush=True,
                         )
                         sys.exit(2)
-                    detail_line += " " + normalization.upper() + " " + order.upper()
-                trafo_details += [detail_line.strip()]
+                    maploc = transform.get("map_regrid_on", "")
+                    mapstrat = transform.get("mapstrategy", "")
+                    detail_line = mapname + " " + maploc + " " + mapstrat
+                    trafo_details.append(detail_line.strip())
+
+                elif trans.lower() in [
+                    "distwgt",
+                    "bicubic",
+                    "bilinear",
+                    "gauswgt",
+                    "conserv",
+                    "loccunif",
+                ]:
+                    trafo_line += " SCRIPR"
+                    srcgridtype = str(rgrid["oasis_grid_type"]).upper()
+                    search_bin = transform.get("search_bin", None)
+                    if not search_bin:
+                        print(
+                            "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF",
+                            flush=True,
+                        )
+                        sys.exit(2)
+                    bins = transform.get("nb_of_search_bins", "1")
+                    detail_line = (
+                        trans.upper()
+                        + " "
+                        + srcgridtype.upper()
+                        + " SCALAR "
+                        + search_bin.upper()
+                        + " "
+                        + str(bins)
+                    )
+                    if trans.lower() in ["distwgt", "gauswgt", "loccunif"]:
+                        nb_of_neighbours = transform.get("nb_of_neighbours", None)
+                        if not nb_of_neighbours:
+                            print(
+                                "nb_of_neighbours needs to be defined for transformations DISTWGT, GAUSWGT and LOCCUNIF",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        detail_line += " " + str(nb_of_neighbours)
+                    if trans.lower() == "gauswgt":
+                        weight = transform.get("weight", None)
+                        if not weight:
+                            print(
+                                "weight needs to be defined for transformation GAUSWGT",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        detail_line += " " + str(weight)
+                    if trans.lower() == "conserv":
+                        normalization = transform.get("normalization", None)
+                        if not normalization:
+                            print(
+                                "normalization (FRACAREA, DESTAREA or FRACNNEI) needs to be defined for transformations CONSERV",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        order = transform.get("order", None)
+                        if not order:
+                            print(
+                                "order (FIRST or SECOND) needs to be defined for transformation CONSERV",
+                                flush=True,
+                            )
+                            sys.exit(2)
+                        detail_line += " " + normalization.upper() + " " + order.upper()
+                    trafo_details += [detail_line.strip()]
 
         allpost = transformation.get("postprocessing", "bla")
         if not type(allpost) == list:
@@ -324,7 +382,10 @@ class oasis:
         if trafo_line[0] == " ":
             trafo_line = trafo_line[1:]
 
-        nb_of_trafo_lines = len(trafo_details)
+        if oyac:
+            nb_of_trafo_lines = len(trafo_details) - int(nb_stack)
+        else:
+            nb_of_trafo_lines = len(trafo_details)
 
         self.namcouple += [
             right
@@ -399,7 +460,6 @@ class oasis:
             config["outdata_sources"] = {}
 
         for thisfile in out_file:
-
             config["outdata_files"][thisfile] = thisfile
             config["outdata_in_work"][thisfile] = thisfile
             config["outdata_sources"][thisfile] = thisfile
@@ -466,7 +526,9 @@ class oasis:
             restart_file = restart_file_label
 
         config["restart_out_files"][restart_file_label] = restart_file
-        config["restart_out_files"][restart_file_label + "_recv"] = restart_file + "_recv"
+        config["restart_out_files"][restart_file_label + "_recv"] = (
+            restart_file + "_recv"
+        )
 
         config["restart_out_in_work"][restart_file_label] = restart_file  # + enddate
         config["restart_out_in_work"][restart_file_label + "_recv"] = (
@@ -474,14 +536,20 @@ class oasis:
         )  # + enddate
 
         config["restart_out_sources"][restart_file_label] = restart_file
-        config["restart_out_sources"][restart_file_label + "_recv"] = restart_file + "_recv"
+        config["restart_out_sources"][restart_file_label + "_recv"] = (
+            restart_file + "_recv"
+        )
 
         config["restart_in_files"][restart_file_label] = restart_file
         config["restart_in_in_work"][restart_file_label] = restart_file
 
         # In case of a branch-off experiment -> use the correct oasis restart files:
         # Not the soft link to the last, but the actual one for the branch-off date
-        if gconfig["run_number"] == 1 and config["lresume"] and gconfig["jobtype"] == "prepcompute":
+        if (
+            gconfig["run_number"] == 1
+            and config["lresume"]
+            and gconfig["jobtype"] == "prepcompute"
+        ):
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
             if "ini_parent_date" in config and "ini_restart_date" not in config:
@@ -518,7 +586,7 @@ class oasis:
                             "Restart file missing",
                             f"No OASIS restart file for ``{restart_file_label}`` found "
                             f"matching the pattern ``{glob_search_file}`` nor "
-                            f"``{restart_file}``"
+                            f"``{restart_file}``",
                         )
                 else:
                     if not gconfig["isinteractive"]:
@@ -531,7 +599,9 @@ class oasis:
                             "one of the following OASIS restart files:"
                         )
                         answers = questionary.form(
-                            restarts = questionary.select(message, choices=glob_restart_file)
+                            restarts=questionary.select(
+                                message, choices=glob_restart_file
+                            )
                         ).ask()
                         restart_file = answers["restarts"]
 
@@ -539,7 +609,6 @@ class oasis:
 
         if restart_file_label not in config["restart_in_sources"]:
             config["restart_in_sources"][restart_file_label] = restart_file
-
 
     def prepare_restarts(self, restart_file, all_fields, models, config):
         enddate = "_" + config["general"]["end_date"].format(
@@ -560,10 +629,14 @@ class oasis:
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")
             print(thesefiles, flush=True)
             for thisfile in thesefiles:
-                print("cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w", flush=True)
+                print(
+                    "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w",
+                    flush=True,
+                )
                 lasttimestep = (
                     subprocess.check_output(
-                        "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w", shell=True
+                        "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w",
+                        shell=True,
                     )
                     .decode("utf-8")
                     .rstrip()

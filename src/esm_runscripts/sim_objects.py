@@ -15,6 +15,7 @@ from . import prev_run
 
 import esm_parser
 
+import pdb
 
 class SimulationSetup(object):
 
@@ -127,36 +128,51 @@ class SimulationSetup(object):
         org_jobtype = str(self.config["general"]["jobtype"])
         self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
 
+        # write *.run file
+        # submit batch script
+        resubmit.maybe_resubmit(self.config)
+
+        breakpoint()
+
+        # if not check run???
+        # set stdout and stderr to lofile
         if self.config["general"]["submitted"]:
             old_stdout = sys.stdout
             old_stderr = sys.stderr
             sys.stdout = logfiles.logfile_handle
             sys.stderr = logfiles.logfile_handle
 
-        if self.config["general"]["jobtype"] == "prepcompute":
-            self.prepcompute()
-        elif self.config["general"]["jobtype"] == "tidy":
-            self.tidy()
-        elif self.config["general"]["jobtype"] == "viz":
-            self.viz()
-        elif self.config["general"]["jobtype"].startswith("observe"):
-            pid = self.config["general"]["command_line_config"].get(
-                "launcher_pid", -666
-            )
-            if not pid == -666:
-                self.observe()
+        try:
+            getattr(self, self.config["general"]["jobtype"])()
+        except AttributeError:
+            print('no such method there')
 
-            self.config["general"]["jobtype"] = self.config["general"][
-                "jobtype"
-            ].replace("observe_", "")
-            # that last line is necessary so that maybe_resubmit knows which
-            # cluster to look up in the workflow
+#        if self.config["general"]["jobtype"] == "prepcompute":
+#            self.prepcompute()
+#        elif self.config["general"]["jobtype"] == "tidy":
+#            self.tidy()
+#        elif self.config["general"]["jobtype"] == "viz":
+#            self.viz()
+#        elif self.config["general"]["jobtype"].startswith("observe"):
+#            pid = self.config["general"]["command_line_config"].get(
+#                "launcher_pid", -666
+#            )
+#            if not pid == -666:
+#                self.observe()
+#
+#            self.config["general"]["jobtype"] = self.config["general"][
+#                "jobtype"
+#            ].replace("observe_", "")
+#            # that last line is necessary so that maybe_resubmit knows which
+#            # cluster to look up in the workflow
+#
+#        else:
+#            self.assembler()
 
-        else:
-            self.assembler()
+# maybe submit compute or other phase that needs to be run in sbatch script ???
+#        resubmit.maybe_resubmit(self.config)
 
-        resubmit.maybe_resubmit(self.config)
-
+        # if this line is reached, the run is submitted and running or finished
         self.config = logfiles.finalize_logfiles(self.config, org_jobtype)
 
         if self.config["general"]["submitted"]:

@@ -116,6 +116,7 @@ DEFAULTS_DIR = CONFIG_PATH + "/defaults"
 COMPONENT_PATH = CONFIG_PATH + "/components"
 NAMELIST_DIR = esm_tools.get_namelist_filepath()
 RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
+COUPLINGS_DIR = esm_tools.get_coupling_filepath()
 
 # global variables
 list_counter = 0
@@ -140,7 +141,7 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version", "omp_num_threads"]
+early_choose_vars = ["include_models", "version", "omp_num_threads", "further_reading"]
 
 
 def flatten_nested_lists(lst):
@@ -1898,8 +1899,9 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         for key in keys:
             # Avoid doing this for ``prev_run`` chapters, this is not needed as the
             # previous config is already resolved
-            if key == "prev_run":  # PrevRunInfo
-                continue  # PrevRunInfo
+            if isinstance(key, str):
+                if ("prev_run" in key) or ("prev_chunk" in key):  # PrevRunInfo
+                    continue  # PrevRunInfo
             value = right[key]
             right[key] = recursive_run_function(
                 tree + [key], value, level, func, *args, **kwargs
@@ -2802,6 +2804,13 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``
         Text clarifying the note.
     """
     reset_s = colorama.Style.RESET_ALL
+
+    if isinstance(note_text, list):
+        new_note_text = ""
+        for item in note_text:
+            new_note_text = f"{new_note_text}- {item}\n"
+        note_text = new_note_text
+
     for dsymbol in dsymbols:
         note_text = re.sub(
             f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
@@ -2995,6 +3004,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 "esm_function_dir": CONFIG_PATH,
                 "esm_namelist_dir": NAMELIST_DIR,
                 "esm_runscript_dir": RUNSCRIPT_DIR,
+                "esm_couplings_dir": COUPLINGS_DIR,
                 "expid": "test",
             }
         )

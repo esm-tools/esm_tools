@@ -20,7 +20,7 @@ requirements = [
     "emoji==1.7.0",
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
-    "gitpython==3.1.37",  # Maximum version for Python 3.6 support
+    "gitpython==3.1.41",  # Maximum version for Python 3.6 support
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
@@ -87,22 +87,24 @@ setup(
     keywords="esm_tools",
     name="esm-tools",
     packages=find_packages("src")
-    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
+    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts", "esm_tools.couplings"],
     package_dir={
         "": "src",
         "esm_tools.configs": "configs",
         "esm_tools.namelists": "namelists",
         "esm_tools.runscripts": "runscripts",
+        "esm_tools.couplings": "couplings",
     },
     package_data={
         "esm_tools.configs": ["../configs/*"],
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
+        "esm_tools.couplings": ["../couplings/*"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.25.6",
+    version="6.29.0",
     zip_safe=False,
 )

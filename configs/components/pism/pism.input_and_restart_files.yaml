@@ -15,6 +15,28 @@ input_sources:
 input_in_work:
     input: ${general.expid}_pismr_input_${run_datestamp}.nc
 
+choose_general.iterative_coupling:
+    True:
+        input_files:
+            atmo_forcing: atmo_forcing
+            ocean_forcing: ocean_forcing
+        input_sources:
+            atmo_forcing: "${general.experiment_couple_dir}/latest_atmo_forcing_file.nc"
+            ocean_forcing: "${general.experiment_couple_dir}/latest_ocean_forcing_file.nc"
+        input_in_work:
+            atmo_forcing: "latest_atmo_forcing_file.nc"
+            ocean_forcing: "latest_ocean_forcing_file.nc"
+    "*":
+        input_files:
+            atmo_forcing: atmo_forcing
+            ocean_forcing: ocean_forcing
+        input_sources:
+            atmo_forcing: "latest_atmo_forcing_file.nc"
+            ocean_forcing: "latest_ocean_forcing_file.nc"
+        input_in_work:
+            atmo_forcing: "latest_atmo_forcing_file.nc"
+            ocean_forcing: "latest_ocean_forcing_file.nc"
+
 restart_in_files:
     restart: restart
 restart_in_sources:

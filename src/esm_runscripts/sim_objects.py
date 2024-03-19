@@ -127,8 +127,6 @@ class Simulation:
         # submit batch script
         resubmit.maybe_resubmit(self.config)
 
-        breakpoint()
-
         # if not check run???
         # set stdout and stderr to lofile
         if self.config["general"]["submitted"]:
@@ -137,7 +135,8 @@ class Simulation:
             sys.stdout = logfiles.logfile_handle
             sys.stderr = logfiles.logfile_handle
 
-        if self.config["general"]["jobtype"].startswith("observe"):
+        #        breakpoint()
+        if self.config["general"]["task"].startswith("observe"):
             pid = self.config["general"]["command_line_config"].get(
                 "launcher_pid", -666
             )
@@ -147,32 +146,9 @@ class Simulation:
             try:
                 getattr(self, self.config["general"]["jobtype"])()
             except AttributeError:
-                print("no such method there")
-
-        #        if self.config["general"]["jobtype"] == "prepcompute":
-        #            self.prepcompute()
-        #        elif self.config["general"]["jobtype"] == "tidy":
-        #            self.tidy()
-        #        elif self.config["general"]["jobtype"] == "viz":
-        #            self.viz()
-        #        elif self.config["general"]["jobtype"].startswith("observe"):
-        #            pid = self.config["general"]["command_line_config"].get(
-        #                "launcher_pid", -666
-        #            )
-        #            if not pid == -666:
-        #                self.observe()
-        #
-        #            self.config["general"]["jobtype"] = self.config["general"][
-        #                "jobtype"
-        #            ].replace("observe_", "")
-        #            # that last line is necessary so that maybe_resubmit knows which
-        #            # cluster to look up in the workflow
-        #
-        #        else:
-        #            self.assembler()
-
-        # maybe submit compute or other phase that needs to be run in sbatch script ???
-        #        resubmit.maybe_resubmit(self.config)
+                print(
+                    f"No method for jobtype {self.config['general']['jobtype']} found."
+                )
 
         # if this line is reached, the run is submitted and running or finished
         self.config = logfiles.finalize_logfiles(self.config, org_jobtype)

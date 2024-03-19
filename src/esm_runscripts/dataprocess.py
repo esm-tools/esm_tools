@@ -27,17 +27,20 @@ def subjob_tasks(config, subjob, batch_or_shell):
     task_list = []
     subjob_config = config["general"]["workflow"]["subjobs"][subjob]
 
-    old_logfile = config["general"]["logfile_path"]
-    logfile_dir = os.path.dirname(old_logfile)
-    if config["general"]["setup_name"] in subjob:
-        bare_subjob = subjob.replace("_" + config["general"]["setup_name"], "")
-    else:
-        bare_subjob = subjob
-    logfile_name = os.path.basename(old_logfile).replace(
-        config["general"]["jobtype"], bare_subjob
-    )
+    old_logfile = config["general"].get("logfile_path", None)
+    if old_logfile:
+        logfile_dir = os.path.dirname(old_logfile)
+        if config["general"]["setup_name"] in subjob:
+            bare_subjob = subjob.replace("_" + config["general"]["setup_name"], "")
+        else:
+            bare_subjob = subjob
+        logfile_name = os.path.basename(old_logfile).replace(
+            config["general"]["jobtype"], bare_subjob
+        )
 
-    new_logfile = os.path.join(logfile_dir, logfile_name)
+        new_logfile = os.path.join(logfile_dir, logfile_name)
+    else:
+        new_logfile = "logfile_please_set_name.txt"
 
     scriptdir = subjob_config.get("script_dir", False)
     script = subjob_config.get("script", False)

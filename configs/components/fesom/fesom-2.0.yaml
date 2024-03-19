@@ -42,11 +42,11 @@ choose_version:
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
-  2.0-awicm-3.1-recom3:
-    branch: fesom2_3zoo_ballast
+  2.0-awicm-3.1-recom:
+    branch: awicm-3-recom
     destination: fesom-2.0
     git-repository:
-    - https://github.com/FESOM/fesom2.git
+    - https://github.com/chrisdane/fesom2.git
   2.0-frontiers:
     branch: awicm-3-frontiers_parallel-restart
     destination: fesom-2.0

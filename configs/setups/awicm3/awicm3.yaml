@@ -57,7 +57,7 @@ general:
           v3.1.2_recom:
             major_version: v3.1
             couplings:
-            - fesom-2.0-awicm-3.1-recom3+oifs-43r3-awicm-3.1.2+xios-2.5
+            - fesom-2.0-awicm-3.1-recom+oifs-43r3-awicm-3.1.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
@@ -368,7 +368,8 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
-
+        
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -408,10 +409,15 @@ fesom:
                                 namelist.oce:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
+                        
+                        # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
+                        remove_forcing_files:
+                                - ICMCL_INIT
+                        
                         choose_general.version:
-                                "2.0-recom3":
-                                        subversion: "-recom3"
-                                        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DRECOM_COUPLED=ON..;   make install -j `nproc --all`
+                                "2.0-awicm-3.1-recom":
+                                        subversion: "-recom"
+                                        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DRECOM_COUPLED=ON ..;   make install -j `nproc --all`
                                 "*":
                                         subversion: ""
                 "v3.2":

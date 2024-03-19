@@ -137,10 +137,17 @@ class Simulation:
             sys.stdout = logfiles.logfile_handle
             sys.stderr = logfiles.logfile_handle
 
-        try:
-            getattr(self, self.config["general"]["jobtype"])()
-        except AttributeError:
-            print("no such method there")
+        if self.config["general"]["jobtype"].startswith("observe"):
+            pid = self.config["general"]["command_line_config"].get(
+                "launcher_pid", -666
+            )
+            if not pid == -666:
+                self.observe()
+        else:
+            try:
+                getattr(self, self.config["general"]["jobtype"])()
+            except AttributeError:
+                print("no such method there")
 
         #        if self.config["general"]["jobtype"] == "prepcompute":
         #            self.prepcompute()

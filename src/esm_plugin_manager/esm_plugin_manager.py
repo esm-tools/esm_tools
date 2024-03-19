@@ -127,17 +127,31 @@ def check_plugin_availability(plugins):
 
 
 def work_through_recipe(recipe, plugins, config):
+    """
+    Works through the esm_runscripts recipes and plugin recipes.
+
+    Parameters
+    ----------
+        recipe : dict            # What is in these two dictionaries? Where do the entries are comming from?
+        plugins : dict
+        config : dict
+
+    Returns
+    -------
+        config : dict
+    """
     if config.get("general", {}).get("debug_recipe", False):
         import pdb
 
         pdb.set_trace()
     recipes = recipe["recipe"]
     recipe_name = recipe["job_type"]
+    # Loop over the recipe
     for index, workitem in enumerate(recipes, start=1):
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
             message = (
-                f"::: Executing the step:  {workitem}    "
+                f"::: START Executing the step:  {workitem}    "
                 f"(step [{index}/{len(recipes)}] of the job:  "
                 f'{recipe["job_type"]})'
             )
@@ -187,6 +201,19 @@ def work_through_recipe(recipe, plugins, config):
                     config = timed_workitem_callable(config)
                 else:
                     config = getattr(thismodule, workitem)(config)
+                config = getattr(thismodule, workitem)(config)
+        if config["general"].get("verbose", False):
+            # diagnostic message of which recipe step is being executed
+            message = (
+                f"::: END Executing the step:  {workitem}    "
+                f"(step [{index}/{len(recipes)}] of the job:  "
+                f'{recipe["job_type"]})'
+            )
+
+            logger.info()
+            logger.info("=" * len(message))
+            logger.info(message)
+            logger.info("=" * len(message))
     return config
 
 

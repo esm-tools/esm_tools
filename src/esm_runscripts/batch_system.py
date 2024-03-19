@@ -498,7 +498,7 @@ class batch_system:
 
     @staticmethod
     def write_run_batch_script(config, cluster, batch_or_shell="batch"):
-        
+
         workflow = config["general"]["workflow"]["object"]
         phases = workflow.clusters[cluster]["phases"]
 
@@ -555,12 +555,31 @@ class batch_system:
                 command = phase["run_command"]
                 if phase["phase_type"] == "SimulationSetup":
                     runfile.write(f"{command} --run-from-batch-script\n")
+                elif phase["phase_type"] == "compute":
+                    observe_call = (
+                        "esm_runscripts "
+                        + config["general"]["scriptname"]
+                        + " -e "
+                        + config["general"]["expid"]
+                        + " -t observe"
+                        + " -p ${process}"
+                        + " -s "
+                        + config["general"]["current_date"].format(
+                            form=9, givenph=False, givenpm=False, givenps=False
+                        )
+                        + " -r "
+                        + str(config["general"]["run_number"])
+                        + " -v "
+                        + " --last-jobtype "
+                        + config["general"]["jobtype"]
+                    )
+                    runfile.write(f"{command}\n")
+                    runfile.write(f"{observe_call}\n")
                 else:
                     runfile.write(f"{command}\n")
                 runfile.write(self.append_done_statement(config, phase["name"]) + "\n")
 
             # TODO: Check if end_or_experiment(config) -> can not do from . import resubmit will give error dont know why
-            breakpoint()
             if not config["general"]["next_date"] >= config["general"]["final_date"]:
                 runfile.write("\n")
                 runfile.write("#********** Call esm_runscripts to restart simulation. *************\n")

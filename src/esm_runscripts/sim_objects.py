@@ -132,8 +132,6 @@ class SimulationSetup(object):
         # submit batch script
         resubmit.maybe_resubmit(self.config)
 
-        breakpoint()
-
         # if not check run???
         # set stdout and stderr to lofile
         if self.config["general"]["submitted"]:
@@ -142,7 +140,8 @@ class SimulationSetup(object):
             sys.stdout = logfiles.logfile_handle
             sys.stderr = logfiles.logfile_handle
 
-        if self.config["general"]["jobtype"].startswith("observe"):
+#        breakpoint()
+        if self.config["general"]["task"].startswith("observe"):
             pid = self.config["general"]["command_line_config"].get(
                 "launcher_pid", -666
             )
@@ -152,7 +151,7 @@ class SimulationSetup(object):
             try:
                 getattr(self, self.config["general"]["jobtype"])()
             except AttributeError:
-                print('no such method there')
+                print(f"No method for jobtype {self.config['general']['jobtype']} found.")
 
 #        if self.config["general"]["jobtype"] == "prepcompute":
 #            self.prepcompute()

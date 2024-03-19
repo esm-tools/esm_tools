@@ -558,11 +558,13 @@ class batch_system:
                 elif phase["phase_type"] == "compute":
                     observe_call = (
                         "esm_runscripts "
+                        + config["general"]["started_from"]
                         + config["general"]["scriptname"]
                         + " -e "
                         + config["general"]["expid"]
                         + " -t observe"
-                        + " --phase ${phase}"
+                        + " --phase "
+                        + phase["name"]
                         + " -p ${process}"
                         + " -s "
                         + config["general"]["current_date"].format(
@@ -575,6 +577,9 @@ class batch_system:
                         + config["general"]["jobtype"]
                     )
                     runfile.write(f"{command}\n")
+                    runfile.write("process=$!\n")
+                    runfile.write("\n")
+                    runfile.write("#********** Start to observe " + phase["name"] + " *************\n")
                     runfile.write(f"{observe_call}\n")
                 else:
                     runfile.write(f"{command}\n")

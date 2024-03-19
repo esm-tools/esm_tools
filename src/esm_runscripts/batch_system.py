@@ -566,6 +566,7 @@ class batch_system:
                         + " -e "
                         + config["general"]["expid"]
                         + " -t observe"
+                        + " --phase ${phase}"
                         + " -p ${process}"
                         + " -s "
                         + config["general"]["current_date"].format(

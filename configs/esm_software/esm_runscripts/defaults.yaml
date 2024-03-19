@@ -30,7 +30,6 @@ workflow:
                 - prepcompute
                 - compute
                 - tidy
-                - restart
 
     phases:
         prepcompute:
@@ -63,19 +62,8 @@ workflow:
             cluster: sim_cluster
             name: tidy
             next_submit:
-                - restart
-            nproc: 1
-            order_in_cluster: sequential
-            run_after: compute
-            run_before: restart
-        restart:
-            phase_type: SimulationSetup
-            called_from: tidy
-            cluster: sim_cluster
-            name: restart
-            next_submit:
                 - prepcompute
             nproc: 1
             order_in_cluster: sequential
-            run_after: tidy
+            run_after: compute
             run_before: prepcompute

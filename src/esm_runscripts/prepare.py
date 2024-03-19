@@ -69,10 +69,56 @@ def _read_date_file(config):
         date = config["general"].get("initial_date", "18500101")
         run_number = 1
         write_file = True
+
+    date_c = config["general"].get("current_date", None)
+
+    if date_c is not None:
+        date_fdf = Date(date)
+        date_c = Date(str(config["general"]["current_date"]))
+        run_number_c = int(config["general"]["run_number"])
+        last_jobtype = config["general"].get("last_jobtype", "")
+        isresubmitted = last_jobtype == config["general"]["jobtype"]
+
+        if date_fdf != date_c:
+            msg = (
+                f"``Date`` and ``run_number`` are ``not`` taken from date file, "
+                f"but from command_line argument (provided by -s or --start_date). "
+                f"The given start_date ({date_c}) and run_number ({run_number_c}) "
+                f"are different from the values "
+                f"in the current date file of your experiment ({date}, {run_number}). "
+                f"Your experiment may now be in a non consecutive state. "
+                f"Please confirm if you want to continue:"
+            )
+            esm_parser.user_note("Detached experiment:", msg)
+            proceed = ""
+            if isresubmitted:
+                proceed = questionary.select(
+                    "Do you want to continue?",
+                    choices=[
+                        f"Yes, with date from command line argument: {str(config['general']['current_date'])}",
+                        f"Yes, with date from date file: {date}",
+                        "No, cancel.",
+                    ],
+                ).ask()
+
+                if "Yes, with date from command line argument" in proceed:
+                    date = str(date_c)
+                    run_number = run_number_c
+                elif "Yes, with date from date file" in proceed:
+                    date = date
+                    run_number = run_number
+                else:
+                    esm_parser.user_note(
+                        "The experiment will be cancelled:",
+                        f"You cancelled the experiment due to date discrepancies.",
+                    )
+                    sys.exit(1)
+
     config["general"]["run_number"] = run_number
     config["general"]["current_date"] = date
     logging.info("current_date = %s", date)
     logging.info("run_number = %s", run_number)
+
     return config
 
 
@@ -93,7 +139,6 @@ def check_model_lresume(config):
                     model, user_lresume, config, [], []
                 )
             if isinstance(user_lresume, str):
-
                 if user_lresume == "0" or user_lresume.upper() == "FALSE":
                     user_lresume = False
                 elif user_lresume == "1" or user_lresume.upper() == "TRUE":
@@ -275,7 +320,7 @@ def _initialize_calendar(config):
     if config["general"]["reset_calendar_to_last"]:
         config = find_last_prepared_run(config)
     config = set_most_dates(config)
-    if not "iterative_coupling" in config["general"]:
+    if "iterative_coupling" not in config["general"]:
         config["general"]["chunk_number"] = 1
 
         if config["general"]["run_number"] == 1:
@@ -347,7 +392,7 @@ def set_leapyear(config):
                 config["general"]["leapyear"] = config[model]["leapyear"]
                 break
 
-    if not "leapyear" in config["general"]:
+    if "leapyear" not in config["general"]:
         for model in config["general"]["valid_model_names"]:
             config[model]["leapyear"] = True
         config["general"]["leapyear"] = True
@@ -355,7 +400,6 @@ def set_leapyear(config):
 
 
 def set_overall_calendar(config):
-
     # set the overall calendar
     if config["general"]["leapyear"]:
         config["general"]["calendar"] = Calendar(1)
@@ -365,7 +409,6 @@ def set_overall_calendar(config):
 
 
 def find_last_prepared_run(config):
-
     calendar = config["general"]["calendar"]
     current_date = Date(config["general"]["current_date"], calendar)
     initial_date = Date(config["general"]["initial_date"], calendar)
@@ -409,7 +452,6 @@ def find_last_prepared_run(config):
 
 
 def set_most_dates(config):
-
     calendar = config["general"]["calendar"]
     if isinstance(config["general"]["current_date"], Date):
         current_date = config["general"]["current_date"]
@@ -635,39 +677,39 @@ def set_parent_info(config):
     # Make sure "ini_parent_dir" and "ini_restart_dir" both work:
     for model in config["general"]["valid_model_names"]:
         # If only ini_restart_* variables are used in runcscript, set ini_parent_* to the same values
-        if not "ini_parent_dir" in config[model]:
+        if "ini_parent_dir" not in config[model]:
             if "ini_restart_dir" in config[model]:
                 config[model]["ini_parent_dir"] = config[model]["ini_restart_dir"]
-        if not "ini_parent_exp_id" in config[model]:
+        if "ini_parent_exp_id" not in config[model]:
             if "ini_restart_exp_id" in config[model]:
                 config[model]["ini_parent_exp_id"] = config[model]["ini_restart_exp_id"]
-        if not "ini_parent_date" in config[model]:
+        if "ini_parent_date" not in config[model]:
             if "ini_restart_date" in config[model]:
                 config[model]["ini_parent_date"] = config[model]["ini_restart_date"]
 
     # check if parent is defined in esm_tools style
     # (only given for setup)
     setup = config["general"]["setup_name"]
-    if not setup in config:
+    if setup not in config:
         setup = "general"
     if "ini_parent_exp_id" in config[setup]:
         for model in config["general"]["valid_model_names"]:
-            if not "ini_parent_exp_id" in config[model]:
+            if "ini_parent_exp_id" not in config[model]:
                 config[model]["ini_parent_exp_id"] = config[setup]["ini_parent_exp_id"]
     if "ini_parent_date" in config[setup]:
         for model in config["general"]["valid_model_names"]:
-            if not "ini_parent_date" in config[model]:
+            if "ini_parent_date" not in config[model]:
                 config[model]["ini_parent_date"] = config[setup]["ini_parent_date"]
     if "ini_parent_dir" in config[setup]:
         for model in config["general"]["valid_model_names"]:
-            if not "ini_parent_dir" in config[model]:
+            if "ini_parent_dir" not in config[model]:
                 config[model]["ini_parent_dir"] = (
                     config[setup]["ini_parent_dir"] + "/" + model
                 )
 
     # Get correct parent info
     for model in config["general"]["valid_model_names"]:
-        if config[model]["lresume"] == True and config["general"]["run_number"] == 1:
+        if config[model]["lresume"] is True and config["general"]["run_number"] == 1:
             config[model]["parent_expid"] = config[model]["ini_parent_exp_id"]
             if "parent_date" not in config[model]:
                 config[model]["parent_date"] = config[model]["ini_parent_date"]
@@ -796,7 +838,6 @@ def finalize_config(config):
 
 
 def add_submission_info(config):
-
     bs = batch_system.batch_system(config, config["computer"]["batch_system"])
 
     submitted = bs.check_if_submitted()
@@ -811,7 +852,6 @@ def add_submission_info(config):
 
 
 def initialize_batch_system(config):
-
     config["general"]["batch"] = batch_system.batch_system(
         config, config["computer"]["batch_system"]
     )
@@ -820,7 +860,7 @@ def initialize_batch_system(config):
 
 
 def initialize_coupler(config):
-    if config["general"]["standalone"] == False:
+    if config["general"]["standalone"] is False:
         from . import coupler
 
         base_dir = config["general"]["base_dir"]

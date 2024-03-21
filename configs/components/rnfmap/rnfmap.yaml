@@ -197,7 +197,6 @@ choose_general.setup_name:
 environment_changes:
     choose_computer.name:
         levante:
-            iolibraries: system_gnu_libs
             fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
             cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
         "*":

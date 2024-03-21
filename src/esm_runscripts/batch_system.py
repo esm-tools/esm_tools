@@ -14,6 +14,8 @@ from . import dataprocess, helpers, prepare
 from .pbs import Pbs
 from .slurm import Slurm
 
+import pdb
+
 known_batch_systems = ["slurm", "pbs"]
 reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect"]
 
@@ -549,7 +551,6 @@ class batch_system:
                 )
                 runfile.write(self.append_start_statement(config, phase["name"]) + "\n")
                 runfile.write("\n")
-                runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
 
                 #                if cluster in reserved_jobtypes:
                 config["general"]["batch"].add_pre_launcher_lines(
@@ -558,8 +559,10 @@ class batch_system:
 
                 command = phase["run_command"]
                 if phase["phase_type"] == "SimulationSetup":
+                    runfile.write("cd " + config["general"]["experiment_scripts_dir"] + "\n")
                     runfile.write(f"{command} --run-from-batch-script\n")
                 elif phase["phase_type"] == "compute":
+                    runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
                     observe_call = (
                         "esm_runscripts "
                         + config["general"]["started_from"]
@@ -579,12 +582,19 @@ class batch_system:
                         + " -v "
                         + " --last-jobtype "
                         + config["general"]["jobtype"]
+                        + " --open-run"
                     )
                     runfile.write(f"{command}\n")
                     runfile.write("process=$!\n")
                     runfile.write("\n")
                     runfile.write("#********** Start to observe " + phase["name"] + " *************\n")
+                    runfile.write("echo start observe >> " + config["general"]["experiment_log_file"] + "\n")
+                    runfile.write("cd " + config["general"]["experiment_scripts_dir"] + "\n")
                     runfile.write(f"{observe_call}\n")
+                    runfile.write("\n")
+                    runfile.write("wait\n")
+                    runfile.write("echo end observe >> " + config["general"]["experiment_log_file"] + "\n")
+                    doneline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
                 else:
                     runfile.write(f"{command}\n")
                 runfile.write(self.append_done_statement(config, phase["name"]) + "\n")

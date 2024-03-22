@@ -1,0 +1,116 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.2.1"
+    account: "ab0995"
+    compute_time: "08:00:00"
+    initial_date: "1950-01-01"
+    final_date: "2014-12-31"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    branch: "feat/awicm3-v3.2.1"
+
+computer:
+    taskset: true
+
+awicm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "DART"
+    pool_dir: "/work/ab0246/a270092/input/fesom2/"
+    mesh_dir: "${pool_dir}/dart/"
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: true
+    ini_parent_exp_id: "sp1950_Aleph_albedo"
+    ini_parent_date: "${prev_date}"
+    ini_parent_dir: "/work/ab0995/a270210/runtime/awicm3-v3.1_refactoring/TCO319L137-DART/sp1950_Aleph_albedo/restart/fesom/"
+    namelist_dir: "/home/a/a270092/esm_tools/namelists/fesom2/2.5/awicm3/v3.2_eddy_resolving/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_parent_dir}/fesom.1950.oce.restart/*.nc
+                par_ice_restart: /${ini_parent_dir}/fesom.1950.ice.restart/*.nc
+    add_file_movements:
+        outdata:
+            all_directions: move
+        restart_in:
+            all_directions: link
+    time_step: 240
+    nproc: 5760
+    namelist_changes:
+            namelist.ice:
+                ice_therm:
+                    albsn: 0.77
+                    albsnm: 0.65
+                    albi: 0.65
+                    albim: 0.55
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: a0iw
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 900
+    nproc: 640
+    omp_num_threads: 4
+    namelist_changes:
+        fort.4:
+            NAERAD:
+                NCMIPFIXYR: 0
+                LCMIP6: .true.
+                CMIP6DATADIR: 'PATH_TO_CMIP6_POOL'
+                SSPNAME: 'historical'
+
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+    use_lucia: true
+    coupling_methods:
+        gauswgt_gss:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+            postprocessing:
+                conserv:
+                    method: gsspos
+                    algorithm: opt
+        gauswgt_i:
+            time_transformation: instant
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+    add_coupling_target_fields:
+        rstas.nc:
+            - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+            - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+            - 'heat_ico <--bicubic-- A_Q_ice'
+            - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+            - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+            - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+        rstos.nc:
+            - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--oyac_1stcon_nnn_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+            - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+
+
+xios:
+    with_model: oifs
+    nproc: 8
+    omp_num_threads: 16
+
+

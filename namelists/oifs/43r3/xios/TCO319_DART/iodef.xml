@@ -6,7 +6,7 @@
     <variable_definition>
       <variable_group id="server" > <!-- Tune 2-level servers for performance purposes -->
         <variable id="using_server2"        type="bool"> true </variable>
-        <variable id="ratio_server2"        type="int" > 50    </variable>
+        <variable id="ratio_server2"        type="int" > 75    </variable>
         <variable id="number_pools_server2" type="int" > 1     </variable>
         <variable id="server2_dist_file_memory"       type="bool"  > false </variable>
         <variable id="server2_dist_file_memory_ratio" type="double"> 0.5   </variable>

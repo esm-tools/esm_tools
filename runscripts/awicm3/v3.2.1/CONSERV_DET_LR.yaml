@@ -1,0 +1,65 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.2.1"
+    account: "ab0995"
+    compute_time: "08:00:00"
+    initial_date: "2000-01-01"
+    final_date: "2050-01-01"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 25
+
+computer:
+    taskset: true
+
+awicm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE2"
+    pool_dir: "/work/ab0246/a270092/input/fesom2/"
+    mesh_dir: "${pool_dir}/core2/"
+    restart_rate: 25
+    restart_unit: "y"
+    restart_first: 25
+    lresume: false
+    time_step: 1800
+    nproc: 768
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: aack
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 8
+
+rnfmap:
+    omp_num_threads: 128
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+    add_coupling_target_fields:
+        rstas.nc:
+            - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+            - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+            - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+            - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+            - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+            - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+        rstos.nc:
+            - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--oyac_1stcon_nnn_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+            - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+
+xios:
+    with_model: oifs
+    nproc: 8
+    omp_num_threads: 16
+

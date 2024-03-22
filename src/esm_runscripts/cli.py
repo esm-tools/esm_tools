@@ -236,7 +236,8 @@ def main():
     command_line_config["last_jobtype"] = ARGS.last_jobtype
     command_line_config["verbose"] = verbose
     command_line_config["inspect"] = inspect
-    command_line_config["use_venv"] = use_venv
+    if use_venv is not None:
+        command_line_config["use_venv"] = use_venv
     command_line_config["no_motd"] = no_motd
     command_line_config["ignore_config_warnings"] = ignore_config_warnings
     if modify_config_file:

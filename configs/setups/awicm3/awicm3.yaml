@@ -215,6 +215,7 @@ oifs:
                                                 NSOLARSPECTRUM: "1"
                                                 NAERANT_SCALE: "1"
                 "v3.3":
+                        version: "48r1"
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.3
                         mip: "cmip6"

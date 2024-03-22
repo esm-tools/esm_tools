@@ -10,7 +10,7 @@ general:
     nday: 0
     nmonth: 0
     nyear: 1
-    branch: "feat/awicm3-v3.2.1"
+    branch: "stochastic_coupling_paper"
 
 computer:
     taskset: true

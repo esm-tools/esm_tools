@@ -31,7 +31,7 @@ fesom:
 oifs:
     resolution: "TCO95"
     levels: "L91"
-    prepifs_expid: aack
+    prepifs_expid: ab45
     input_expid: awi3
     wam: true
     lresume: false

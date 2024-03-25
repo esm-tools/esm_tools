@@ -1,0 +1,65 @@
+Traceback (most recent call last):
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_parser/esm_parser.py", line 1944, in recursive_get
+    result = config_to_search[this_config]
+KeyError: 'major_version'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_parser/esm_parser.py", line 1432, in resolve_basic_choose
+    choice = recursive_get(config, path_to_key)
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_parser/esm_parser.py", line 1951, in recursive_get
+    return recursive_get(result, my_config_elements)
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_parser/esm_parser.py", line 1946, in recursive_get
+    raise ValueError(
+ValueError: ("Exactly None! Couldn't find an answer for:", [])
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/bin/esm_runscripts", line 8, in <module>
+    sys.exit(main())
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_runscripts/cli.py", line 281, in main
+    Setup = SimulationSetup(command_line_config=command_line_config)
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_runscripts/sim_objects.py", line 110, in __init__
+    self.config = prepare.run_job(self.config)
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_runscripts/prepare.py", line 18, in run_job
+    helpers.evaluate(config, "prepare", "prepare_recipe")
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_runscripts/helpers.py", line 69, in evaluate
+    config = esm_plugin_manager.work_through_recipe(
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_plugin_manager/esm_plugin_manager.py", line 147, in work_through_recipe
+    config = getattr(submodule, workitem)(config)
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_runscripts/batch_system.py", line 685, in find_openmp
+    config2 = prepare.resolve_some_choose_blocks(config2)
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_runscripts/prepare.py", line 127, in resolve_some_choose_blocks
+    esm_parser.choose_blocks(config, blackdict=config._blackdict)
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_parser/esm_parser.py", line 2681, in choose_blocks
+    resolve_basic_choose(
+  File "/work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/lib/python3.9/site-packages/esm_parser/esm_parser.py", line 1435, in resolve_basic_choose
+    raise KeyError("Key %s was not defined" % ".".join(path_to_key))
+KeyError: 'Key general.major_version was not defined'
+Building virtual env, please be patient (this takes about 3 minutes)...
+...finished 0:06:23.420964, restarting your job in the virtual env
+Traceback (most recent call last):
+  File "/home/a/a270092/.local/bin/esm_runscripts", line 33, in <module>
+    sys.exit(load_entry_point('esm-tools', 'console_scripts', 'esm_runscripts')())
+  File "/home/a/a270092/esm_tools/src/esm_runscripts/cli.py", line 285, in main
+    Setup()
+  File "/home/a/a270092/esm_tools/src/esm_runscripts/sim_objects.py", line 55, in __call__
+    self.config = prepexp.run_job(self.config)
+  File "/home/a/a270092/esm_tools/src/esm_runscripts/prepexp.py", line 18, in run_job
+    evaluate(config, "prepexp", "prepexp_recipe")
+  File "/home/a/a270092/esm_tools/src/esm_runscripts/helpers.py", line 69, in evaluate
+    config = esm_plugin_manager.work_through_recipe(
+  File "/home/a/a270092/esm_tools/src/esm_plugin_manager/esm_plugin_manager.py", line 143, in work_through_recipe
+    config = getattr(submodule, workitem)(config)
+  File "/home/a/a270092/esm_tools/src/esm_runscripts/virtual_env_builder.py", line 273, in venv_bootstrap
+    _source_and_run_bin_in_venv(
+  File "/home/a/a270092/esm_tools/src/esm_runscripts/virtual_env_builder.py", line 68, in _source_and_run_bin_in_venv
+    return subprocess.check_call(command, shell=shell)
+  File "/sw/spack-levante/mambaforge-4.11.0-0-Linux-x86_64-sobz6z/lib/python3.9/subprocess.py", line 373, in check_call
+    raise CalledProcessError(retcode, cmd)
+subprocess.CalledProcessError: Command 'source /work/ab0246/a270092/runtime/awicm3-v3.2.1/test2_CONSERV_DET_HR/.venv_esmtools/bin/activate &&  esm_runscripts PROD_CONSERV_DET_HR.yaml -e test2_CONSERV_DET_HR --contained-run -c --contained-run' returned non-zero exit status 1.
+Command exited with non-zero status 1
+50.08user 33.18system 6:52.84elapsed 20%CPU (0avgtext+0avgdata 218692maxresident)k
+980768inputs+1898712outputs (0major+1078140minor)pagefaults 0swaps

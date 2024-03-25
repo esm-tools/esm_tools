@@ -6,11 +6,12 @@ general:
     compute_time: "08:00:00"
     initial_date: "1950-01-01"
     final_date: "2014-12-31"
-    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    base_dir: "/work/ab0246/${user}/runtime/stochastic_coupling/"
     nday: 0
     nmonth: 0
     nyear: 1
-    branch: "stochastic_coupling_paper"
+    install_esm_tools_branch: "stochastic_coupling_paper"
+    use_venv: True
 
 computer:
     taskset: true
@@ -34,8 +35,8 @@ fesom:
     choose_general.run_number:
         1:
             restart_in_sources:
-                par_oce_restart: /${ini_parent_dir}/fesom.1950.oce.restart/*.nc
-                par_ice_restart: /${ini_parent_dir}/fesom.1950.ice.restart/*.nc
+                par_oce_restart: /${ini_parent_dir}/fesom.1949.oce.restart/*.nc
+                par_ice_restart: /${ini_parent_dir}/fesom.1949.ice.restart/*.nc
     add_file_movements:
         outdata:
             all_directions: move

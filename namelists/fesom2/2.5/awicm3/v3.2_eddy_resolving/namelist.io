@@ -18,7 +18,6 @@
 
 &nml_list
     io_list = 
-'sst       ', 1, 'm', 4, 
 'sst       ', 1, 'd', 4, 
 'sss       ', 1, 'd', 4, 
 'ssh       ', 1, 'd', 4, 

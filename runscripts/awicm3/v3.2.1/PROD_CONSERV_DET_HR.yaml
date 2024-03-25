@@ -22,8 +22,8 @@ awicm3:
 
 fesom:
     resolution: "DART"
-    pool_dir: "/work/ab0246/a270092/input/fesom2/"
-    mesh_dir: "${pool_dir}/dart/"
+    pool_dir: "/work/ba1264/a270210/model/input/fesom2/"
+    mesh_dir: "/work/ba1264/a270210/model/input/fesom2/dart/"
     restart_rate: 1
     restart_unit: "y"
     restart_first: 1

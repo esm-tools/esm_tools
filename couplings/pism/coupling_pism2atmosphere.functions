@@ -60,10 +60,10 @@ function pism_atmosphere_get_newest_output {
 
         # Define list of variables selected from PISM output depending on whether icebergs are used or not
         if [ "x${fesom_use_iceberg}" == "x1" ]; then
-            echo "LA DEBUG: 1"
+            echo " * use iceberg coupling and exclude iceberg discharge from mass balance"
             CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow"
         else 
-            echo "LA DEBUG: 2"
+            echo " * no iceberg coupling"
             CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount"
         fi 
         

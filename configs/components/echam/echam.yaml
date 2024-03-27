@@ -411,20 +411,11 @@ choose_scenario:
                 dataset: r0008
                 greenhouse_dir: "${input_dir}"
                 forcing_files:
-                        # aerocoarse: piaerocoarse
-                        # aerofarir: piaerofarir
-                        # aerofin: histaerofin
+                        aerocoarse: histaerocoarse
+                        aerofarir: histaerofarir
+                        aerofin: histaerofin
                         sst: amipsst
                         sic: amipsic
-                        aerocoarse_1849: piaerocoarse
-                        aerocoarse_1850: piaerocoarse
-                        aerocoarse_1851: piaerocoarse
-                        aerofarir_1849: piaerofarir
-                        aerofarir_1850: piaerofarir
-                        aerofarir_1851: piaerofarir
-                        aerofin_1849: piaerofin
-                        aerofin_1850: piaerofin
-                        aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
                         greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir

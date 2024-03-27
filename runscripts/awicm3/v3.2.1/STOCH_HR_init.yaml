@@ -5,7 +5,7 @@ general:
     account: "ab0995"
     compute_time: "00:30:00"
     initial_date: "2000-01-01"
-    final_date: "2000-01-04"
+    final_date: "2000-01-03"
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 1
     nmonth: 0
@@ -29,7 +29,6 @@ fesom:
     ini_parent_exp_id: "D00"
     ini_parent_date: "2049-12-31"
     ini_parent_dir: "/work/ab0246/a270092/input/fesom2/restart/DART/"
-
     namelist_dir: "/home/a/${user}/esm_tools/namelists/fesom2/2.5/awicm3/v3.2_eddy_resolving"
     time_step: 240
     nproc: 4320
@@ -49,6 +48,17 @@ oasis3mct:
     lresume: false # Set to false to generate the rst files for first leg
     time_step: 3600
     use_lucia: true
+    add_coupling_target_fields:
+        rstas.nc:
+            - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+            - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+            - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+            - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+            - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+            - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+        rstos.nc:
+            - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--oyac_1stcon_nnn_stocha-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+            - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
 
 
 xios:

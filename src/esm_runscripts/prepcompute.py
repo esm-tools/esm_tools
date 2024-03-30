@@ -1,19 +1,20 @@
-import os
-import time
-import subprocess
 import copy
+import os
+import stat
+import subprocess
+import time
 
 import f90nml
 import yaml
-import stat
 
 import esm_calendar
 import esm_parser
 import esm_runscripts
+from loguru import logger
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
-from .helpers import evaluate 
+from .helpers import evaluate
 from .namelists import Namelist
 
 #####################################################################
@@ -40,9 +41,9 @@ def compile_model(config):
     if not version:
         return config
     if config.get("general", {}).get("run_number") == 1:
-        print("First year, checking if we need to compile...")
+        logger.info("First year, checking if we need to compile...")
         if not config.get("general", {}).get("use_compiled_model", True):
-            print(f"Huhu --> compiling {model}-{version}")
+            logger.debug(f"Huhu --> compiling {model}-{version}")
             subprocess.run(
                 f"esm_master install-{model}-{version}",
                 shell=True,
@@ -72,10 +73,6 @@ def all_files_to_copy_append(
         ):
             config[model][filetype + "_in_work"][categ] = file_target
         else:
-            # print (filetype)
-            # print (file_target)
-            # print (categ)
-            # print (config["general"]["out_filetypes"])
             if not filetype + "_targets" in config[model]:
                 config[model][filetype + "_targets"] = {}
             config[model][filetype + "_targets"][categ] = file_target
@@ -171,10 +168,9 @@ def modify_namelists(config):
     # Load and modify namelists:
 
     if config["general"]["verbose"]:
-        print("\n" "- Setting up namelists for this run...")
+        logger.debug("\n" "- Setting up namelists for this run...")
         for index, model in enumerate(config["general"]["valid_model_names"]):
-            print(f'{index+1}) {config[model]["model"]}')
-        print()
+            logger.debug(f'{index+1}) {config[model]["model"]}')
 
     for model in config["general"]["valid_model_names"]:
         config[model] = Namelist.nmls_load(config[model])
@@ -188,7 +184,7 @@ def modify_namelists(config):
         )
 
     if config["general"]["verbose"]:
-        print("::: end of namelist section\n")
+        logger.debug("::: end of namelist section\n")
     return config
 
 
@@ -198,32 +194,32 @@ def wait_for_iterative_coupling(config):
         config["general"].get("iterative_coupling", False)
         and config["general"]["chunk_number"] > 1
     ):
-        if config["general"]["verbose"]:
-            print("Waiting for iterative coupling...")
+        logger.debug("Waiting for iterative coupling...")
         if "files_to_wait_for" in config["general"]:
-            for file_base in config['general'].get('files_to_wait_for'):
+            for file_base in config["general"].get("files_to_wait_for"):
                 counter = 0
-                file = os.path.join(config['general']['experiment_couple_dir'], file_base)
+                file = os.path.join(
+                    config["general"]["experiment_couple_dir"], file_base
+                )
                 while counter < count_max:
                     counter = counter + 1
                     if os.path.isfile(file):
-                        print("File found: ", file)
+                        logger.info("File found: ", file)
                         break
                     else:
-                        print("Waiting for file: ", file)
-                        print("Sleep for 10 seconds...")
+                        logger.info("Waiting for file: ", file)
+                        logger.info("Sleep for 10 seconds...")
                         time.sleep(10)
 
     return config
 
 
 def copy_files_to_thisrun(config):
-    if config["general"]["verbose"]:
-        print("PREPARING EXPERIMENT")
-        # Copy files:
-        print("\n" "- File lists populated, proceeding with copy...")
-        print("- Note that you can see your file lists in the config folder")
-        print("- You will be informed about missing files")
+    logger.debug("PREPARING EXPERIMENT")
+    # Copy files:
+    logger.debug("\n" "- File lists populated, proceeding with copy...")
+    logger.debug("- Note that you can see your file lists in the config folder")
+    logger.debug("- You will be informed about missing files")
 
     log_used_files(config)
 
@@ -234,8 +230,7 @@ def copy_files_to_thisrun(config):
 
 
 def copy_files_to_work(config):
-    if config["general"]["verbose"]:
-        print("PREPARING WORK FOLDER")
+    logger.debug("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
@@ -312,9 +307,7 @@ def _write_finalized_config(config, config_file_path=None):
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
-    EsmConfigDumper.add_representer(
-        f90nml.namelist.Namelist, namelist_representer
-    )
+    EsmConfigDumper.add_representer(f90nml.namelist.Namelist, namelist_representer)
 
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
@@ -340,17 +333,17 @@ def _write_finalized_config(config, config_file_path=None):
 
 
 def _show_simulation_info(config):
-    print()
-    print(80 * "=")
-    print("STARTING SIMULATION JOB!")
-    print(f"Experiment ID = {config['general']['expid']}")
-    print(f"Setup = {config['general']['setup_name']}")
+    logger.info()
+    logger.info(80 * "=")
+    logger.info("STARTING SIMULATION JOB!")
+    logger.info(f"Experiment ID = {config['general']['expid']}")
+    logger.info(f"Setup = {config['general']['setup_name']}")
     if "coupled_setup" in config["general"]:
-        print("This setup consists of:")
+        logger.info("This setup consists of:")
         for model in config["general"]["valid_model_names"]:
-            print(f"- {model}")
-    print("Experiment is installed in:")
-    print(f"       {config['general']['base_dir']}/{config['general']['expid']}")
-    print(80 * "=")
-    print()
+            logger.info(f"- {model}")
+    logger.info("Experiment is installed in:")
+    logger.info(f"       {config['general']['base_dir']}/{config['general']['expid']}")
+    logger.info(80 * "=")
+    logger.info()
     return config

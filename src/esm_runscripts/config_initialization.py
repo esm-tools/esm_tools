@@ -1,5 +1,5 @@
-import os
 import copy
+import os
 import sys
 
 import esm_parser
@@ -35,7 +35,9 @@ def init_iterative_coupling(command_line_config, user_config):
             next_model = user_config["general"]["original_config"]["general"][
                 "model_queue"
             ][-1]
-        elif len(user_config["general"]["original_config"]["general"]["model_queue"]) > 1:
+        elif (
+            len(user_config["general"]["original_config"]["general"]["model_queue"]) > 1
+        ):
             next_model = user_config["general"]["original_config"]["general"][
                 "model_queue"
             ][1]

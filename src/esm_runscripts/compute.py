@@ -1,25 +1,25 @@
+import copy
 import os
+import pathlib
 import shutil
 import subprocess
 import sys
-import copy
-import pathlib
 
 import f90nml
 import questionary
 import yaml
-from colorama import Fore, Back, Style, init
+from colorama import Back, Fore, Style, init
 
-import esm_tools
 import esm_calendar
 import esm_parser
 import esm_runscripts
+import esm_tools
+from loguru import logger
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
 from .helpers import end_it_all, evaluate, write_to_log
 from .namelists import Namelist
-from loguru import logger
 
 #####################################################################
 #                                   compute jobs                    #
@@ -45,9 +45,9 @@ def compile_model(config):
     if not version:
         return config
     if config.get("general", {}).get("run_number") == 1:
-        print("First year, checking if we need to compile...")
+        logger.info("First year, checking if we need to compile...")
         if not config.get("general", {}).get("use_compiled_model", True):
-            print(f"Huhu --> compiling {model}-{version}")
+            logger.debug(f"Huhu --> compiling {model}-{version}")
             subprocess.run(
                 f"esm_master install-{model}-{version}",
                 shell=True,
@@ -142,11 +142,9 @@ def modify_files(config):
 def modify_namelists(config):
     # Load and modify namelists:
 
-    if config["general"]["verbose"]:
-        print("\n" "- Setting up namelists for this run...")
-        for index, model in enumerate(config["general"]["valid_model_names"]):
-            print(f'{index+1}) {config[model]["model"]}')
-        print()
+    logger.debug("\n" "- Setting up namelists for this run...")
+    for index, model in enumerate(config["general"]["valid_model_names"]):
+        logger.debug(f'{index+1}) {config[model]["model"]}')
 
     for model in config["general"]["valid_model_names"]:
         config[model] = Namelist.nmls_load(config[model])
@@ -161,18 +159,16 @@ def modify_namelists(config):
             config[model], config["general"]["verbose"]
         )
 
-    if config["general"]["verbose"]:
-        print("::: end of namelist section\n")
+    logger.debug("::: end of namelist section\n")
     return config
 
 
 def copy_files_to_thisrun(config):
-    if config["general"]["verbose"]:
-        print("PREPARING EXPERIMENT")
-        # Copy files:
-        print("\n" "- File lists populated, proceeding with copy...")
-        print("- Note that you can see your file lists in the config folder")
-        print("- You will be informed about missing files")
+    logger.debug("PREPARING EXPERIMENT")
+    # Copy files:
+    logger.debug("\n" "- File lists populated, proceeding with copy...")
+    logger.debug("- Note that you can see your file lists in the config folder")
+    logger.debug("- You will be informed about missing files")
 
     log_used_files(config)
 
@@ -183,8 +179,7 @@ def copy_files_to_thisrun(config):
 
 
 def copy_files_to_work(config):
-    if config["general"]["verbose"]:
-        print("PREPARING WORK FOLDER")
+    logger.debug("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
@@ -300,6 +295,7 @@ def _write_finalized_config(config):
     ----------
     config : esm-tools config object
     """
+
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
     def date_representer(dumper, date):
@@ -351,9 +347,7 @@ def _write_finalized_config(config):
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
-    EsmConfigDumper.add_representer(
-        f90nml.namelist.Namelist, namelist_representer
-    )
+    EsmConfigDumper.add_representer(f90nml.namelist.Namelist, namelist_representer)
 
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
@@ -362,8 +356,7 @@ def _write_finalized_config(config):
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     config_file_path = (
-        f"{thisrun_config_dir}/"
-        f"{expid}_{it_coupled_model_name}finished_config.yaml"
+        f"{thisrun_config_dir}/" f"{expid}_{it_coupled_model_name}finished_config.yaml"
     )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
@@ -425,11 +418,12 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     # to the target.
     if not os.path.isfile(scriptsdir + "/" + tfile):
         oldscript = fromdir + "/" + tfile
-        print(oldscript)
+        logger.info(oldscript)
         shutil.copy2(oldscript, scriptsdir)
     # If the target path exists compare the two scripts
     else:
         import difflib
+
         import esm_parser
 
         script_o = open(fromdir + "/" + tfile).readlines()
@@ -454,7 +448,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     differences + "\n" + f"{scriptsdir + '/' + tfile} will be updated!",
                 )
                 oldscript = fromdir + "/" + tfile
-                print(oldscript)
+                logger.info(oldscript)
                 shutil.copy2(oldscript, scriptsdir)
             # If the --update flag is not called, exit with an error showing the
             # user how to proceed
@@ -474,11 +468,11 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                 ).ask()
                 if update_choice:
                     oldscript = fromdir + "/" + tfile
-                    print(oldscript)
+                    logger.info(oldscript)
                     shutil.copy2(oldscript, scriptsdir)
-                    print(f"{scriptsdir + '/' + tfile} updated!")
+                    logger.info(f"{scriptsdir + '/' + tfile} updated!")
                 else:
-                    print("Submission stopped")
+                    logger.error("Submission stopped")
                     sys.exit(1)
 
 
@@ -507,9 +501,8 @@ def copy_tools_to_thisrun(config):
     tools_dir = scriptsdir + "/esm_tools/functions"
     namelists_dir = scriptsdir + "/esm_tools/namelists"
 
-    if config["general"]["verbose"]:
-        print("Started from :", fromdir)
-        print("Scripts Dir : ", scriptsdir)
+    logger.debug("Started from :", fromdir)
+    logger.debug("Scripts Dir : ", scriptsdir)
 
     # Update namelists and esm_tools. These have no effect on the final
     # simulation as only the installed esm_tools with their runscripts
@@ -523,10 +516,10 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        print("Copying standard yamls from: ", esm_tools.get_config_filepath())
+        logger.info("Copying standard yamls from: ", esm_tools.get_config_filepath())
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
-        print(
+        logger.info(
             "Copying standard namelists from: ",
             esm_tools.get_namelist_filepath(),
         )
@@ -559,16 +552,14 @@ def copy_tools_to_thisrun(config):
     # simulation which means we want to use the script in the experiment folder,
     # so no copying is needed
     if (fromdir == scriptsdir) and not gconfig["update"]:
-        if config["general"]["verbose"]:
-            print("Started from the experiment folder, continuing...")
+        logger.debug("Started from the experiment folder, continuing...")
         return config
     # Not computing but initialisation
     else:
         if not fromdir == scriptsdir:
-            if config["general"]["verbose"]:
-                print("Not started from experiment folder, restarting...")
+            logger.debug("Not started from experiment folder, restarting...")
         else:
-            print("Tools were updated, restarting...")
+            logger.info("Tools were updated, restarting...")
 
         # At this point, ``fromdir`` and ``scriptsdir`` are different. Update the
         # runscript if necessary
@@ -604,14 +595,16 @@ def copy_tools_to_thisrun(config):
         restart_command = f"cd {scriptsdir}; esm_runscripts {new_command}"
 
         # Add non-interaction flags
-        non_interaction_flags = ["--no-motd", f"--last-jobtype {config['general']['jobtype']}"]
+        non_interaction_flags = [
+            "--no-motd",
+            f"--last-jobtype {config['general']['jobtype']}",
+        ]
         for ni_flag in non_interaction_flags:
             # prevent continuous addition of ``ni_flag``
             if not ni_flag in restart_command:
                 restart_command += f" {ni_flag} "
 
-        if config["general"]["verbose"]:
-            print(restart_command)
+        logger.debug(restart_command)
         os.system(restart_command)
 
         gconfig["profile"] = False
@@ -646,17 +639,17 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
 
 
 def _show_simulation_info(config):
-    print()
-    print(80 * "=")
-    print("STARTING SIMULATION JOB!")
-    print(f"Experiment ID = {config['general']['expid']}")
-    print(f"Setup = {config['general']['setup_name']}")
+    logger.info()
+    logger.info(80 * "=")
+    logger.info("STARTING SIMULATION JOB!")
+    logger.info(f"Experiment ID = {config['general']['expid']}")
+    logger.info(f"Setup = {config['general']['setup_name']}")
     if "coupled_setup" in config["general"]:
-        print("This setup consists of:")
+        logger.info("This setup consists of:")
         for model in config["general"]["valid_model_names"]:
-            print(f"- {model}")
-    print("Experiment is installed in:")
-    print(f"       {config['general']['base_dir']}/{config['general']['expid']}")
-    print(80 * "=")
-    print()
+            logger.info(f"- {model}")
+    logger.info("Experiment is installed in:")
+    logger.info(f"       {config['general']['base_dir']}/{config['general']['expid']}")
+    logger.info(80 * "=")
+    logger.info()
     return config

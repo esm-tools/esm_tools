@@ -12,9 +12,10 @@ import logging
 import os
 import sys
 
+from loguru import logger
+
 from esm_motd import check_all_esm_packages
 from esm_parser import user_error
-from loguru import logger
 
 from .helpers import SmartSink
 from .sim_objects import *
@@ -165,7 +166,6 @@ def parse_shargs():
 
 
 def main():
-
     ARGS = parse_shargs()
 
     check = False
@@ -274,11 +274,13 @@ def main():
     logger.remove()
     logger.add(trace_sink.sink, level="TRACE")
 
-    logger.add(sys.stdout, level="INFO", format="{message}")
     if verbose:
+        logger.add(sys.stdout, level="DEBUG", format="{message}")
         logger.debug(f"Started from: {command_line_config['started_from']}")
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
+    else:
+        logger.add(sys.stdout, level="INFO", format="{message}")
 
     setup = SimulationSetup(command_line_config=command_line_config)
     # if not Setup.config['general']['submitted']:

@@ -7,7 +7,6 @@ import sys
 import time
 
 import psutil
-
 from loguru import logger
 
 from . import coupler, database_actions, helpers, logfiles
@@ -152,7 +151,9 @@ def _clean_run_determine_user_choice(config):
             logger.error("You have set both in your config:")
             logger.error()
             logger.error("general:")
-            logger.error("    clean_this_rundir: ", config["general"]["clean_this_rundir"])
+            logger.error(
+                "    clean_this_rundir: ", config["general"]["clean_this_rundir"]
+            )
             logger.error("    clean_runs: ", user_clean)
             logger.error()
             logger.error("Please only use one of these!")
@@ -207,12 +208,16 @@ def _clean_old_rundirs_except(config):
             assert number_rundirs_keep_every >= 1
         except AssertionError:
             logger.error("Please ensure that you use an integer in your configuration:")
-            logger.error("-------------------------------------------------------------")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
             logger.error()
             logger.error("general:")
             logger.error("   clean_old_rundirs_keep_every: <x>")
             logger.error()
-            logger.error("-------------------------------------------------------------")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
             logger.error("<x> **MUST** be an integer greater or equal than 1!")
             sys.exit(1)
         runs_to_keep_via_keepevery = all_run_folders_in_experiment[
@@ -227,12 +232,16 @@ def _clean_old_rundirs_except(config):
             assert number_rundirs_to_keep > 1
         except AssertionError:
             logger.error("Please ensure that you use an integer in your configuration:")
-            logger.error("-------------------------------------------------------------")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
             logger.error()
             logger.error("general:")
             logger.error("   clean_old_rundirs_except: <x>")
             logger.error()
-            logger.error("-------------------------------------------------------------")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
             logger.error("<x> **MUST** be an integer greater than 1!")
             sys.exit(1)
         runs_to_keep_via_end_select = all_run_folders_in_experiment[
@@ -338,12 +347,14 @@ def copy_all_results_to_exp(config):
                             newdestination = (
                                 destination + "_" + config["general"]["run_datestamp"]
                             )
-                            logger.debug("Moving file " + source + " to " + newdestination)
+                            logger.debug(
+                                "Moving file " + source + " to " + newdestination
+                            )
                             os.rename(source, newdestination)
                             os.symlink(newdestination, destination)
                             continue
                 try:
-                        logger.debug("Moving file " + source + " to " + destination)
+                    logger.debug("Moving file " + source + " to " + destination)
                     try:
                         os.rename(source, destination)
                     except:  # Fill is still open... create a hard (!) link instead

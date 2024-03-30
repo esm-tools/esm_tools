@@ -6,11 +6,11 @@ import time
 
 import f90nml
 import yaml
+from loguru import logger
 
 import esm_calendar
 import esm_parser
 import esm_runscripts
-from loguru import logger
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
@@ -125,7 +125,6 @@ def create_new_files(config):
                 filenames = config[model]["create_" + filetype].keys()
 
                 for filename in filenames:
-
                     full_filename = (
                         config[model]["thisrun_" + filetype + "_dir"] + "/" + filename
                     )
@@ -333,7 +332,6 @@ def _write_finalized_config(config, config_file_path=None):
 
 
 def _show_simulation_info(config):
-    logger.info()
     logger.info(80 * "=")
     logger.info("STARTING SIMULATION JOB!")
     logger.info(f"Experiment ID = {config['general']['expid']}")
@@ -345,5 +343,4 @@ def _show_simulation_info(config):
     logger.info("Experiment is installed in:")
     logger.info(f"       {config['general']['base_dir']}/{config['general']['expid']}")
     logger.info(80 * "=")
-    logger.info()
     return config

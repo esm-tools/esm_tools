@@ -8,7 +8,6 @@ from . import chunky_parts, helpers, logfiles, workflow
 def submit(config):
     logger.debug("\n", 40 * "+ ")
     logger.info("Submitting jobscript to batch system...")
-    logger.info()
     logger.info(f"Output written by {config['computer']['batch_system']}:")
     logger.debug("\n", 40 * "+ ")
     for command in config["general"]["submit_command"]:
@@ -58,7 +57,6 @@ def resubmit_SimulationSetup(config, cluster=None):
         )
 
     if not check_if_check(config):
-
         monitor_file.write(f"Calling {cluster} job:\n")
         config["general"]["experiment_over"] = cluster_obj(kill_after_submit=False)
 
@@ -138,13 +136,11 @@ def check_if_check(config):
 
 
 def maybe_resubmit(config):
-
     jobtype = config["general"]["jobtype"]
 
     nextrun = resubmit_recursively(config, jobtype=jobtype)
 
     if nextrun:  # submit list contains stuff from next run
-
         config = _increment_date_and_run_number(config)
         config = _write_date_file(config)
 

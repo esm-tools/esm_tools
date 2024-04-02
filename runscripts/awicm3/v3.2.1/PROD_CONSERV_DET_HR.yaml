@@ -46,13 +46,30 @@ fesom:
             all_directions: link
     time_step: 240
     nproc: 5760
-    namelist_changes:
-            namelist.ice:
-                ice_therm:
-                    albsn: 0.77
-                    albsnm: 0.65
-                    albi: 0.65
-                    albim: 0.55
+    add_namelist_changes:
+        namelist.ice:
+            ice_therm:
+                albsn: 0.77
+                albsnm: 0.65
+                albi: 0.65
+                albim: 0.55
+    remove_namelist_changes.namelist.config.ale_def:
+        - which_ALE
+    remove_namelist_changes.namelist.oce.oce_dyn:
+        - SPP
+        - k_gm_max
+        - k_gm_rampmax
+        - k_gm_rampmin
+        - scaling_ferreira
+        - scaling_fesom14
+    remove_namelist_changes.namelist.oce.oce_tra:
+        - surf_relax_s
+
+    remove_namelist_changes.namelist.tra.tracer_phys:
+        - surf_relax_s
+        - use_momix
+        - kv0_const
+             
 
 oifs:
     resolution: "TCO319"

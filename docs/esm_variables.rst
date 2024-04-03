@@ -60,7 +60,7 @@ Runtime variables
 -----------------
 .. csv-table::
    :header: Key, Section, Description
-   :widths: 15, 15, 85
+   :widths: 10, 10, 80
 
    account,             general,                User account of the HPC system to be used to run the experiment.
    base_dir,            general,                Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).

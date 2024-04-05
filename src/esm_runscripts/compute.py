@@ -47,7 +47,7 @@ def compile_model(config):
     if config.get("general", {}).get("run_number") == 1:
         logger.info("First year, checking if we need to compile...")
         if not config.get("general", {}).get("use_compiled_model", True):
-            logger.debug(f"Huhu --> compiling {model}-{version}")
+            logger.info(f"Huhu --> compiling {model}-{version}")
             subprocess.run(
                 f"esm_master install-{model}-{version}",
                 shell=True,

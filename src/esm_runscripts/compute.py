@@ -516,7 +516,7 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        logger.info("Copying standard yamls from: ", esm_tools.get_config_filepath())
+        logger.info(f"Copying standard yamls from: {esm_tools.get_config_filepath()}")
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
         logger.info(

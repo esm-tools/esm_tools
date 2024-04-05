@@ -356,7 +356,7 @@ def _write_finalized_config(config):
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     config_file_path = (
-        f"{thisrun_config_dir}/" f"{expid}_{it_coupled_model_name}finished_config.yaml"
+        f"{thisrun_config_dir}/{expid}_{it_coupled_model_name}finished_config.yaml"
     )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file

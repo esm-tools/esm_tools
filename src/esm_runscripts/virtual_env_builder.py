@@ -230,10 +230,10 @@ def _install_required_plugins(venv_context, config):
 
 def venv_bootstrap(config):
     """Bootstraps your run into a virtual environment"""
-    if not config["general"].get("use_venv", None):
+    if not config["general"].get("use_venv"):
         if (
-            config["general"].get("use_venv", None) is None
-            and config["general"]["command_line_config"].get("use_venv", None) is None
+            config["general"].get("use_venv") is None
+            and config["general"]["command_line_config"]["use_venv"] is None
         ):
             config = _integorate_user_venv(config)
             config["general"]["command_line_config"]["use_venv"] = config["general"][

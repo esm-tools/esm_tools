@@ -43,7 +43,6 @@ choose_version:
   '2.8-paleodyn-multi-group-support':
     branch: 'feat/multi-group-support'
     git-repository: https://gitlab.awi.de/paleodyn/Models/oasis3-mct.git
-    
   '2.8':
     branch: 'v2.8'
   '3.0':
@@ -99,7 +98,7 @@ choose_version:
     - INSTALL_OASIS.ESMTOOLS/lib/libscrip.a
     #clean_command: 'rm -rf include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
     clean_command: 'rm -rf yaxt/build yac/build include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
-    
+
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
 comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '
 with_yac: False

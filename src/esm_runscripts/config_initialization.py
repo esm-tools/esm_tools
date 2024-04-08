@@ -165,7 +165,15 @@ def get_user_config_from_command_line(command_line_config):
             f"``{command_line_config['runscript_abspath']}`` from the command line.",
         )
 
+    # Update all **except** for use_venv if it was supplied in the
+    # runscript:
+    deupdate_use_venv = False
+    if "use_venv" in user_config["general"]:
+        user_use_venv = user_config["general"]["use_venv"]
+        deupdate_use_venv = True
     user_config["general"].update(command_line_config)
+    if deupdate_use_venv:
+        user_config["general"]["use_venv"] = user_use_venv
 
     return user_config
 

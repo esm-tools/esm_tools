@@ -52,7 +52,7 @@ class coupler_class:
             )
 
         else:
-            logger.error("Unknown coupler :", name)
+            logger.error(f"Unknown coupler : {name}")
             sys.exit(0)
 
     def prepare(self, full_config, destination_dir):
@@ -96,7 +96,7 @@ class coupler_class:
 
                     if not len(lefts) == len(rights):
                         logger.error(
-                            "Left and right side of coupling don't match: ", coupling
+                            f"Left and right side of coupling don't match: {coupling}"
                         )
                         sys.exit(0)
 
@@ -152,9 +152,9 @@ class coupler_class:
                                 if found_right and found_left:
                                     break
                         if not found_left:
-                            logger.error("Coupling var not found: ", left)
+                            logger.error(f"Coupling var not found: {left}")
                         if not found_right:
-                            logger.error("Coupling var not found: ", right)
+                            logger.error(f"Coupling var not found: {right}")
                         if not found_left or not found_right:
                             sys.exit(0)
 
@@ -243,16 +243,16 @@ class coupler_class:
                             "Coupling fields and their corresponding models do not"
                             + "have the same dimensions:"
                         )
-                        logger.error("all_lefts =", all_lefts)
-                        logger.error("all_leftmodels =", all_leftmodels)
+                        logger.error(f"all_lefts = {all_lefts}")
+                        logger.error(f"all_leftmodels = {all_leftmodels}")
                         dym_issue = True
                     if len(all_rights) != len(all_rightmodels):
                         logger.error(
                             "Coupling fields and their corresponding models do not"
                             + "have the same dimensions:"
                         )
-                        logger.error("all_rights =", all_rights)
-                        logger.error("all_rightmodels =", all_rightmodels)
+                        logger.error(f"all_rights = {all_rights}")
+                        logger.error(f"all_rightmodels = {all_rightmodels}")
                         dym_issue = True
                     if dym_issue:
                         sys.exit(0)
@@ -292,9 +292,7 @@ class coupler_class:
 
                         if not len(lefts) == len(rights):
                             logger.error(
-                                "Left and right side of coupling don't match: ",
-                                coupling,
-                            )
+                                f"Left and right side of coupling don't match: {coupling}")
                             sys.exit(0)
 
                         left_grid = lgrid_info = None
@@ -349,9 +347,9 @@ class coupler_class:
                                     if found_right and found_left:
                                         break
                             if not found_left:
-                                logger.error("Coupling var not found: ", left)
+                                logger.error(f"Coupling var not found: {left}")
                             if not found_right:
-                                logger.error("Coupling var not found: ", right)
+                                logger.error(f"Coupling var not found: {right}")
                             if not found_left or not found_right:
                                 sys.exit(0)
 

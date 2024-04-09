@@ -520,8 +520,7 @@ def copy_tools_to_thisrun(config):
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
         logger.info(
-            "Copying standard namelists from: ",
-            esm_tools.get_namelist_filepath(),
+            f"Copying standard namelists from: {esm_tools.get_namelist_filepath()}"
         )
         esm_tools.copy_namelist_folder(namelists_dir)
 

@@ -152,9 +152,9 @@ def _clean_run_determine_user_choice(config):
             logger.error()
             logger.error("general:")
             logger.error(
-                "    clean_this_rundir: ", config["general"]["clean_this_rundir"]
+                f"    clean_this_rundir: {config['general']['clean_this_rundir']}"
             )
-            logger.error("    clean_runs: ", user_clean)
+            logger.error(f"    clean_runs: {user_clean}")
             logger.error()
             logger.error("Please only use one of these!")
             logger.error("------------------------------------------")
@@ -168,10 +168,9 @@ def _clean_run_determine_user_choice(config):
             logger.error()
             logger.error("general:")
             logger.error(
-                "    clean_old_rundirs_except: ",
-                config["general"]["clean_old_rundirs_except"],
+                f"    clean_old_rundirs_except: {config['general']['clean_old_rundirs_except']}",
             )
-            logger.error("    clean_runs: ", user_clean)
+            logger.error(f"    clean_runs: {user_clean}")
             logger.error()
             logger.error("Please only use one of these!")
             logger.error("------------------------------------------")
@@ -181,9 +180,9 @@ def _clean_run_determine_user_choice(config):
         logger.error("Type Error!")
         logger.error("You have set this in your config:")
         logger.error("general:")
-        logger.error("    clean_runs: ", user_clean)
+        logger.error(f"    clean_runs: {user_clean}")
         logger.error()
-        logger.error("This is of type: ", type(user_clean))
+        logger.error(f"This is of type: {type(user_clean)}")
         logger.error("However, only the following types are valid:")
         logger.error("   * boolean")
         logger.error("   * integer (greater or equal to 0!)")

@@ -203,10 +203,10 @@ def wait_for_iterative_coupling(config):
                 while counter < count_max:
                     counter = counter + 1
                     if os.path.isfile(file):
-                        logger.info("File found: ", file)
+                        logger.info(f"File found: {file}")
                         break
                     else:
-                        logger.info("Waiting for file: ", file)
+                        logger.info(f"Waiting for file: {file}")
                         logger.info("Sleep for 10 seconds...")
                         time.sleep(10)
 

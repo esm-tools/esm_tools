@@ -77,8 +77,8 @@ def copy_tools_to_thisrun(config):
     namelists_dir = f"{scriptsdir}/esm_tools/namelists"
 
     if config["general"]["verbose"]:
-        logger.info("Started from :", fromdir)
-        logger.info("Scripts Dir : ", scriptsdir)
+        logger.info(f"Started from : {fromdir}")
+        logger.info(f"Scripts Dir : {scriptsdir}")
 
     # Update namelists and esm_tools. These have no effect on the final
     # simulation as only the installed esm_tools with their runscripts
@@ -92,11 +92,11 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        logger.info("Copying standard yamls from: ", esm_tools.get_config_filepath())
+        logger.info(f"Copying standard yamls from: {esm_tools.get_config_filepath()}")
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
         logger.info(
-            "Copying standard namelists from: ", esm_tools.get_namelist_filepath()
+            f"Copying standard namelists from: {esm_tools.get_namelist_filepath()}"
         )
         esm_tools.copy_namelist_folder(namelists_dir)
 

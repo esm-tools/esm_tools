@@ -12,7 +12,7 @@ accounting: true
 #compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-compiler_mpi: intel2022_ompi2022
+compiler_mpi: intel2022_psmpi2024
 iolibraries: none
 useMPI: intelmpi
 
@@ -94,6 +94,28 @@ export_vars:
 
 # choose compiler and MPI implementation
 choose_compiler_mpi:
+
+   intel2022_psmpi2024:
+      add_module_actions:
+        - "--force purge"
+        - "load Stages/2024"
+        - "load Intel/2023.2.1"
+        - "load ParaStationMPI/5.9.2-1-mt"
+        - "load CMake/3.26.3"
+        - "load Python/3.11.3"
+        - "load imkl/2023.2.0"
+        - "load Perl/5.36.1"
+        - "load git"
+      add_export_vars:
+        FC: mpifort
+        F77: mpifort
+        MPIFC: mpifort
+        FCFLAGS: -free
+        CC: mpicc
+        CXX: mpic++
+        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
 
    gnu2023_ompi2023:
       add_module_actions:
@@ -308,6 +330,9 @@ choose_iolibraries:
             PATH: $IO_LIB_ROOT/bin:$PATH
 
         choose_compiler_mpi:
+            intel2023_psmpi2024:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2023.2.1_ParaStationMPI-5.9.2-1-mt_20240408
             intel2022_ompi2022:
                 add_export_vars:
                     IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129

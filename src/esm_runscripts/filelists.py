@@ -42,7 +42,6 @@ def rename_sources_to_targets(config):
                             + filetype
                             + "_in_work in model "
                             + model,
-                            flush=True,
                         )
                         helpers.print_datetime(config)
                         sys.exit(-1)
@@ -57,7 +56,6 @@ def rename_sources_to_targets(config):
                         + filetype
                         + " in model "
                         + model,
-                        flush=True,
                     )
                     helpers.print_datetime(config)
                     config[model][filetype + "_targets"] = copy.deepcopy(
@@ -92,7 +90,6 @@ def rename_sources_to_targets(config):
                             + filetype
                             + "_in_work in model "
                             + model,
-                            flush=True,
                         )
                         helpers.print_datetime(config)
                         sys.exit(-1)
@@ -103,7 +100,7 @@ def rename_sources_to_targets(config):
 
                 elif (not sources and in_work) or (not sources and targets):
                     logger.error(
-                        filetype + "_sources missing in model " + model, flush=True
+                        filetype + "_sources missing in model " + model
                     )
                     helpers.print_datetime(config)
                     sys.exit(-1)
@@ -161,7 +158,7 @@ def complete_targets(config):
 
 
 def complete_sources(config):
-    logger.debug("::: Complete sources", flush=True)
+    logger.debug("::: Complete sources")
     helpers.print_datetime(config)
     for filetype in config["general"]["out_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
@@ -239,10 +236,9 @@ def choose_needed_files(config):
                         + filetype
                         + " of model "
                         + model,
-                        flush=True,
                     )
-                    logger.error(config[model][filetype + "_files"], flush=True)
-                    logger.error(config[model][filetype + "_sources"], flush=True)
+                    logger.error(config[model][filetype + "_files"])
+                    logger.error(config[model][filetype + "_sources"])
                     helpers.print_datetime(config)
                     sys.exit(-1)
                 new_sources.update(
@@ -773,7 +769,7 @@ def replace_year_placeholder(config):
 
 
 def log_used_files(config):
-    logger.debug("\n::: Logging used files", flush=True)
+    logger.debug("\n::: Logging used files")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
@@ -984,9 +980,9 @@ def copy_files(config, filetypes, source, target):
             logger.warning("\n\nWARNING: These files were missing:")
             for missing_file in missing_files:
                 logger.warning(
-                    f"- missing source: {missing_files[missing_file]}", flush=True
+                    f"- missing source: {missing_files[missing_file]}"
                 )
-                logger.warning(f"- missing target: {missing_file}", flush=True)
+                logger.warning(f"- missing target: {missing_file}")
                 helpers.print_datetime(config)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
     return config
@@ -1068,7 +1064,7 @@ def report_missing_files(config):
             logger.warning(
                 f'- missing source: {config["general"]["files_missing_when_preparing_run"][missing_file]}',
             )
-            logger.warning(f"- missing target: {missing_file}", flush=True)
+            logger.warning(f"- missing target: {missing_file}")
             helpers.print_datetime(config)
         if not config["general"]["files_missing_when_preparing_run"] == {}:
             logger.info(80 * "=")

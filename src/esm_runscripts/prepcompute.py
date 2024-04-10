@@ -43,7 +43,7 @@ def compile_model(config):
     if config.get("general", {}).get("run_number") == 1:
         logger.info("First year, checking if we need to compile...")
         if not config.get("general", {}).get("use_compiled_model", True):
-            logger.debug(f"Huhu --> compiling {model}-{version}")
+            logger.info(f"Huhu --> compiling {model}-{version}")
             subprocess.run(
                 f"esm_master install-{model}-{version}",
                 shell=True,
@@ -166,10 +166,9 @@ def modify_files(config):
 def modify_namelists(config):
     # Load and modify namelists:
 
-    if config["general"]["verbose"]:
-        logger.debug("\n" "- Setting up namelists for this run...")
-        for index, model in enumerate(config["general"]["valid_model_names"]):
-            logger.debug(f'{index+1}) {config[model]["model"]}')
+    logger.debug("\n" "- Setting up namelists for this run...")
+    for index, model in enumerate(config["general"]["valid_model_names"]):
+        logger.debug(f'{index+1}) {config[model]["model"]}')
 
     for model in config["general"]["valid_model_names"]:
         config[model] = Namelist.nmls_load(config[model])
@@ -182,8 +181,7 @@ def modify_namelists(config):
             config[model], config["general"]["verbose"]
         )
 
-    if config["general"]["verbose"]:
-        logger.debug("::: end of namelist section\n")
+    logger.debug("::: end of namelist section\n")
     return config
 
 

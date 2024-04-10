@@ -449,8 +449,7 @@ class Namelist:
                 logger.warning(
                     "WARNING: "
                     + config["general"]["experiment_scripts_dir"]
-                    + "/disturb_years.dat",
-                    "was not found",
+                    + "/disturb_years.dat was not found",
                 )
             disturbance_years = disturbance_file or config["echam"].get(
                 "disturbance_years", []
@@ -466,12 +465,7 @@ class Namelist:
                 nml["dynctl"] = dynctl
             else:
                 logger.debug("Not applying disturbance in echam namelist.")
-                logger.debug(
-                    "Current year",
-                    current_year,
-                    "disturbance_years",
-                    disturbance_years,
-                )
+                logger.debug(f"Current year: {current_year}, disturbance_years: {disturbance_years}")
         return config
 
     @staticmethod

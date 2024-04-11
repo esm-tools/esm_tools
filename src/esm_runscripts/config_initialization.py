@@ -165,6 +165,12 @@ def get_user_config_from_command_line(command_line_config):
             f"``{command_line_config['runscript_abspath']}`` from the command line.",
         )
 
+    # If the use_env variable defined by the command line is None deleted so that
+    # the definition from the runscript prevails after the user_config.update
+    # If it's not None (True or False) the definition of the command line wins
+    # over the runscript as is the case for all the other variables
+    if command_line_config["use_venv"] is None:
+        del command_line_config["use_venv"]
     user_config["general"].update(command_line_config)
 
     return user_config

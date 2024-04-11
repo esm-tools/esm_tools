@@ -501,8 +501,8 @@ def copy_tools_to_thisrun(config):
     tools_dir = scriptsdir + "/esm_tools/functions"
     namelists_dir = scriptsdir + "/esm_tools/namelists"
 
-    logger.debug("Started from :", fromdir)
-    logger.debug("Scripts Dir : ", scriptsdir)
+    logger.debug(f"Started from : {fromdir}")
+    logger.debug(f"Scripts Dir : {scriptsdir}")
 
     # Update namelists and esm_tools. These have no effect on the final
     # simulation as only the installed esm_tools with their runscripts

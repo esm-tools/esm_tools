@@ -378,7 +378,7 @@ def _find_model_finished_config(config, model, model_date):
         elif len(full_file_path) > 1:
             logger.error(
                 "There is more than one finished_config file matching the criteria: "
-                "{full_file_path}"
+                f"{full_file_path}"
             )
             raise
 

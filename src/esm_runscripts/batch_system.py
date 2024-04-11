@@ -449,7 +449,7 @@ class batch_system:
         runfilename = batch_system.get_run_filename(config, cluster)
 
         logger.debug("still alive")
-        logger.debug(f"jobtype: {config["general"]["jobtype"]}")
+        logger.debug(f"jobtype: {config['general']['jobtype']}")
         logger.debug(f"writing run file for: {cluster}")
 
         with open(runfilename, "w") as runfile:

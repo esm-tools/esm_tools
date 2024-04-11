@@ -15,10 +15,13 @@ def initialize_logfiles(config, org_jobtype):
     log_stuff = False
     if os.path.isdir(os.path.dirname(config["general"]["experiment_log_file"])):
         if not org_jobtype == "inspect":
+            #if not os.path.isfile(config["general"]["experiment_log_file"]):
             log_stuff = True
 
+    # Set name of logfile into config
     config = set_logfile_name(config, "")
 
+    # Writes some line to the logfile defined in config.
     if log_stuff:
 
         helpers.write_to_log(
@@ -28,9 +31,10 @@ def initialize_logfiles(config, org_jobtype):
                 logfile_run_number,
                 str(config["general"]["current_date"]),
                 str(config["general"]["jobid"]),
-                "- start",
+                "- start in initialize_logfiles",
             ],
         )
+        # Creates a logfile object/handle for stdout/phase log file
         logfile = RuntimeLogger(
             config["general"]["logfile_path"],
             "w",
@@ -39,6 +43,7 @@ def initialize_logfiles(config, org_jobtype):
     else:
         logfile = sys.stdout
 
+    # Writes logfile handle into global variable
     logfile_handle = logfile
     return config
 
@@ -56,7 +61,7 @@ def finalize_logfiles(config, org_jobtype):
                 logfile_run_number,
                 str(config["general"]["current_date"]),
                 str(config["general"]["jobid"]),
-                "- done",
+                "- done in finalize_logfiles",
             ],
         )
 

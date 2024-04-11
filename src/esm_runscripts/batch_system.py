@@ -14,8 +14,6 @@ from . import dataprocess, helpers, prepare
 from .pbs import Pbs
 from .slurm import Slurm
 
-import pdb
-
 known_batch_systems = ["slurm", "pbs"]
 reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect"]
 
@@ -348,7 +346,7 @@ class batch_system:
                 config["general"]["run_number"],
                 config["general"]["current_date"],
                 config["general"]["jobid"],
-                "- start",
+                "- start from run script",
             ],
             timestampStr_from_Unix=True,
         )
@@ -364,7 +362,7 @@ class batch_system:
                 config["general"]["run_number"],
                 config["general"]["current_date"],
                 config["general"]["jobid"],
-                "- done",
+                "- done from run script",
             ],
             timestampStr_from_Unix=True,
         )
@@ -559,7 +557,9 @@ class batch_system:
 
                 command = phase["run_command"]
                 if phase["phase_type"] == "SimulationSetup":
-                    runfile.write("cd " + config["general"]["experiment_scripts_dir"] + "\n")
+                    runfile.write(
+                        "cd " + config["general"]["experiment_scripts_dir"] + "\n"
+                    )
                     runfile.write(f"{command} --run-from-batch-script\n")
                 elif phase["phase_type"] == "compute":
                     runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
@@ -587,14 +587,25 @@ class batch_system:
                     runfile.write(f"{command}\n")
                     runfile.write("process=$!\n")
                     runfile.write("\n")
-                    runfile.write("#********** Start to observe " + phase["name"] + " *************\n")
-                    runfile.write("echo start observe >> " + config["general"]["experiment_log_file"] + "\n")
-                    runfile.write("cd " + config["general"]["experiment_scripts_dir"] + "\n")
+                    runfile.write(
+                        "#********** Start to observe "
+                        + phase["name"]
+                        + " *************\n"
+                    )
+                    runfile.write(self.append_start_statement(config, "observe") + "\n")
+                    runfile.write(
+                        "cd " + config["general"]["experiment_scripts_dir"] + "\n"
+                    )
                     runfile.write(f"{observe_call}\n")
                     runfile.write("\n")
                     runfile.write("wait\n")
-                    runfile.write("echo end observe >> " + config["general"]["experiment_log_file"] + "\n")
-                    doneline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
+                    runfile.write(self.append_done_statement(config, "observe") + "\n")
+                    doneline = (
+                        "echo "
+                        + line
+                        + " >> "
+                        + config["general"]["experiment_log_file"]
+                    )
                 else:
                     runfile.write(f"{command}\n")
                 runfile.write(self.append_done_statement(config, phase["name"]) + "\n")
@@ -615,9 +626,12 @@ class batch_system:
 
                 run_number = config["general"].get("run_number", None)
 
+                runfile.write(self.append_start_statement(config, "restart") + "\n")
                 runfile.write(
                     f"esm_runscripts {scriptname} -e {expid} -t restart --open-run -v --no-motd --run-from-batch-script --open-run -s {current_date} -r {run_number}"
                 )
+                runfile.write("\n")
+                runfile.write(self.append_done_statement(config, "restart") + "\n")
                 runfile.write("\n")
 
             runfile.write("\n")

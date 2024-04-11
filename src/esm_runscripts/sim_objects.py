@@ -121,41 +121,43 @@ class Simulation:
         # self.pseudocall(kill_after_submit)
         # call to observe here..
         org_jobtype = str(self.config["general"]["jobtype"])
-        self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
 
         # write *.run file
         # submit batch script
         resubmit.maybe_resubmit(self.config)
 
-        # if not check run???
-        # set stdout and stderr to lofile
-        if self.config["general"]["submitted"]:
-            old_stdout = sys.stdout
-            old_stderr = sys.stderr
-            sys.stdout = logfiles.logfile_handle
-            sys.stderr = logfiles.logfile_handle
+        if self.config["general"]["task"] == "run_phase":
+            # Writes to general log file and creates a (global) logile handle to logfile for current jobtype
+            self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
 
-        #        breakpoint()
-        if self.config["general"]["task"].startswith("observe"):
-            pid = self.config["general"]["command_line_config"].get(
-                "launcher_pid", -666
-            )
-            if not pid == -666:
-                self.observe()
-        else:
-            try:
-                getattr(self, self.config["general"]["jobtype"])()
-            except AttributeError:
-                print(
-                    f"No method for jobtype {self.config['general']['jobtype']} found."
+            # if not check run???
+            # set stdout and stderr to lofile
+            if self.config["general"]["submitted"]:
+                old_stdout = sys.stdout
+                old_stderr = sys.stderr
+                sys.stdout = logfiles.logfile_handle
+                sys.stderr = logfiles.logfile_handle
+
+            if self.config["general"]["task"].startswith("observe"):
+                pid = self.config["general"]["command_line_config"].get(
+                    "launcher_pid", -666
                 )
+                if not pid == -666:
+                    self.observe()
+            else:
+                try:
+                    getattr(self, self.config["general"]["jobtype"])()
+                except AttributeError:
+                    print(
+                        f"No method for jobtype {self.config['general']['jobtype']} found."
+                    )
 
-        # if this line is reached, the run is submitted and running or finished
-        self.config = logfiles.finalize_logfiles(self.config, org_jobtype)
+            # if this line is reached, the run is submitted and running or finished
+            self.config = logfiles.finalize_logfiles(self.config, org_jobtype)
 
-        if self.config["general"]["submitted"]:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+            if self.config["general"]["submitted"]:
+                sys.stdout = old_stdout
+                sys.stderr = old_stderr
 
         if kill_after_submit:
             if self.config["general"].get("experiment_over", False):

@@ -356,9 +356,15 @@ def initialize_experiment_logfile(config):
     it_coupled_model = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
 
-    if config["general"]["run_number"] == 1:
-        if os.path.isfile(config["general"]["experiment_log_file"]):
-            os.remove(config["general"]["experiment_log_file"])
+    fromdir = os.path.realpath(config["general"]["started_from"])
+    scriptsdir = os.path.realpath(config["general"]["experiment_scripts_dir"])
+
+#    if (fromdir == scriptsdir):
+        # TODO: Check the next if statements
+    if not config["general"]["run_from_batch_script"]:
+        #if config["general"]["run_number"] == 1:
+        #if os.path.isfile(config["general"]["experiment_log_file"]):
+        #    os.remove(config["general"]["experiment_log_file"])
 
         log_msg = f"# Beginning of Experiment {expid}"
         write_to_log(config, [log_msg], message_sep="")
@@ -370,7 +376,7 @@ def initialize_experiment_logfile(config):
                 str(config["general"]["run_number"]),
                 str(config["general"]["current_date"]),
                 str(config["general"]["jobid"]),
-                "- start",
+                "- start in prepexp",
             ],
         )
 

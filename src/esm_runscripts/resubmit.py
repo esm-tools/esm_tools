@@ -249,8 +249,8 @@ def maybe_resubmit(config):
     """
     task = config["general"].get("task", None)
     # if task is start, restart, run_workflow -> write new *.run file
-    if end_of_experiment(config):
-        print('test')
+#    if end_of_experiment(config):
+#        print('test')
     if task in ["start", "run_workflow", "restart"]:
         jobtype = config["general"]["jobtype"]              # current phase
         workflow = config["general"]["workflow"]["object"]
@@ -266,7 +266,7 @@ def maybe_resubmit(config):
 
     elif task in ["run_phase"]:
         # check if phase type compute
-        print("execute a compute job")
+        print("execute a phase")
 
     # TODO: Check if run from *.run file
     # TODO: Create *.run file

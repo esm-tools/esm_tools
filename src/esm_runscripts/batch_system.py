@@ -347,7 +347,7 @@ class batch_system:
                 config["general"]["run_number"],
                 config["general"]["current_date"],
                 config["general"]["jobid"],
-                "- start",
+                "- start from run script",
             ],
             timestampStr_from_Unix=True,
         )
@@ -363,7 +363,7 @@ class batch_system:
                 config["general"]["run_number"],
                 config["general"]["current_date"],
                 config["general"]["jobid"],
-                "- done",
+                "- done from run script",
             ],
             timestampStr_from_Unix=True,
         )
@@ -374,7 +374,7 @@ class batch_system:
     def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
         """
         Creates the command of the specific phase to be put in the *.run file.
-        
+
         This function is covering the following phase types:
         - SimulationSetup: phases that are run as 'esm_runscripts' command
         - batch: phases that are run via 'srun' command
@@ -584,12 +584,12 @@ class batch_system:
                     runfile.write("process=$!\n")
                     runfile.write("\n")
                     runfile.write("#********** Start to observe " + phase["name"] + " *************\n")
-                    runfile.write("echo start observe >> " + config["general"]["experiment_log_file"] + "\n")
+                    runfile.write(self.append_start_statement(config, "observe") + "\n")
                     runfile.write("cd " + config["general"]["experiment_scripts_dir"] + "\n")
                     runfile.write(f"{observe_call}\n")
                     runfile.write("\n")
                     runfile.write("wait\n")
-                    runfile.write("echo end observe >> " + config["general"]["experiment_log_file"] + "\n")
+                    runfile.write(self.append_done_statement(config, "observe") + "\n")
                     doneline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
                 else:
                     runfile.write(f"{command}\n")
@@ -607,7 +607,10 @@ class batch_system:
 
                 run_number = config["general"].get("run_number", None)
 
+                runfile.write(self.append_start_statement(config, "restart") + "\n")
                 runfile.write(f"esm_runscripts {scriptname} -e {expid} -t restart --open-run -v --no-motd --run-from-batch-script --open-run -s {current_date} -r {run_number}")
+                runfile.write("\n")
+                runfile.write(self.append_done_statement(config, "restart") + "\n")
                 runfile.write("\n")
 
             runfile.write("\n")

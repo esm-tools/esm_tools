@@ -166,7 +166,6 @@ class oasis:
                 if not add_scalar:
                     logger.error(
                         "add_scalar needs to be defined (0 or 1) for preprocessing BLASOLD",
-                        flush=True,
                     )
                 detail_line = str(coefficient) + " " + str(add_scalar)
                 trafo_details.append(detail_line.strip())
@@ -548,7 +547,7 @@ class oasis:
         logger.info("Preparing oasis restart files from initial run...")
         # Assign an exe per model
         exes = [config[model]["executable"] for model in models]
-        logger.info(restart_file, all_fields, models, exes)
+        logger.info(f"{restart_file}, {all_fields}, {models}, {exes}")
         cwd = os.getcwd()
         os.chdir(config["general"]["thisrun_work_dir"])
         filelist = ""

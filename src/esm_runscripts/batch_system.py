@@ -449,8 +449,8 @@ class batch_system:
         runfilename = batch_system.get_run_filename(config, cluster)
 
         logger.debug("still alive")
-        logger.debug("jobtype: ", config["general"]["jobtype"])
-        logger.debug("writing run file for:", cluster)
+        logger.debug(f"jobtype: {config["general"]["jobtype"]}")
+        logger.debug(f"writing run file for: {cluster}")
 
         with open(runfilename, "w") as runfile:
 
@@ -589,13 +589,13 @@ class batch_system:
             runfilestats = os.stat(runfilename)
             os.chmod(runfilename, runfilestats.st_mode | stat.S_IEXEC)
 
-        logger.debug("\n", 40 * "+ ")
-        logger.debug("Contents of ", runfilename, ":")
+        logger.debug("\n" + 40 * "+ ")
+        logger.debug(f"Contents of {runfilename}:")
         with open(runfilename, "r") as fin:
             logger.debug(fin.read())
         if os.path.isfile(self.bs.filename):
-            logger.debug("\n", 40 * "+ ")
-            logger.debug("Contents of ", self.bs.filename, ":")
+            logger.debug("\n" + 40 * "+ ")
+            logger.debug(f"Contents of {self.bs.filename}:")
             with open(self.bs.filename, "r") as fin:
                 logger.debug(fin.read())
 

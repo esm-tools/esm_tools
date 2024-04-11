@@ -1527,6 +1527,39 @@ def resolve_choose(model_with_choose, choose_key, config):
         logging.debug("key=%s", key)
 
 
+def resolve_early_var(
+    var, config, current_model=None, user_config={}, model_config={}, setup_config={}
+):
+
+    if var in config:
+        this_config = config
+    elif current_model and var in config[current_model]:
+        this_config = config[current_model]
+    else:
+        logger.debug(f"``{var}`` not found in this config (resolve_early_var)")
+        return
+
+    resolve_choose_with_var(
+        var,
+        config,
+        current_model=current_model,
+        user_config=user_config,
+        model_config=model_config,
+        setup_config=setup_config,
+    )
+
+    import ipdb
+    ipdb.set_trace()
+
+    value = this_config.get(var)
+
+    if "${" in value:
+        value_pattern = r'\${(.*?)}'
+        subvars = re.findall(value_pattern, value)
+        for subvar in subvars:
+            print(subvar)
+
+
 def resolve_choose_with_var(
     var, config, current_model=None, user_config={}, model_config={}, setup_config={}
 ):
@@ -3053,7 +3086,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     if model in this_config:
                         # Resolve the target variable
                         for var in early_choose_vars:
-                            resolve_choose_with_var(
+                            resolve_early_var(
                                 var,
                                 this_config.get(model),
                                 user_config=user_config,

@@ -14,11 +14,9 @@ def vprint(message, config):
     logger.debug(message)
 
 
-# TODO: to be replaced by loguru. WIP (deniz)
 def print_datetime(config):
-    """prints the datetime of the operation if `verbose_line_numbers` option is True"""
-    if config["general"].get("verbose_datetime_info", False):
-        logger.info(datetime.now())
+    """prints the datetime of the operation if `verbose` option is True"""
+    logger.debug(datetime.now())
 
 
 def evaluate(config, job_type, recipe_name):

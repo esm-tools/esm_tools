@@ -20,6 +20,8 @@ from .sim_objects import *
 
 from esm_parser import user_error
 
+import pdb
+
 def parse_shargs():
     """The arg parser for interactive use"""
     parser = argparse.ArgumentParser()
@@ -95,8 +97,22 @@ def parse_shargs():
     parser.add_argument(
         "-t",
         "--task",
-        help="The task to run. Choose from: prepcompute, post, couple, tidy",
+        help="The task to run. Choose from: start, restart, continue, ...",
+        default="start",
+    )
+
+    parser.add_argument(
+        "-a",
+        "--phase",
+        help="The workflow phase to run. Choose from: prepcompute, compute, tidy, ...",
         default="unknown",
+    )
+
+    parser.add_argument(
+        "-w",
+        "--workflow",
+        help="The workflow to run. Choose from: default (sim_cluster???), ...",
+        default="sim_cluster",
     )
 
     parser.add_argument(
@@ -109,7 +125,7 @@ def parse_shargs():
     parser.add_argument(
         "-p",
         "--pid",
-        help="The PID of the task to observe.",
+        help="The PID of the phase to observe.",
         default=-666,
     )
 
@@ -161,6 +177,12 @@ def parse_shargs():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--run-from-batch-script",
+        default=False,
+        action="store_true",
+    )
+
     return parser.parse_args()
 
 
@@ -202,8 +224,12 @@ def main():
         update_filetypes = parsed_args["update_filetypes"]
     if "expid" in parsed_args:
         expid = parsed_args["expid"]
+    if "phase" in parsed_args:
+        jobtype = parsed_args["phase"]
+#    if "workflow" in parsed_args:
+#        workflow = parsed_args["workflow"]
     if "task" in parsed_args:
-        jobtype = parsed_args["task"]
+        task = parsed_args["task"]
     if "verbose" in parsed_args:
         verbose = parsed_args["verbose"]
     if "inspect" in parsed_args:
@@ -222,6 +248,8 @@ def main():
         no_motd = parsed_args["no_motd"]
     if "ignore_config_warnings" in parsed_args:
         ignore_config_warnings = parsed_args["ignore_config_warnings"]
+    if "run_from_batch_script" in parsed_args:
+        run_from_batch_script = parsed_args["run_from_batch_script"]
 
     command_line_config = {}
     command_line_config["check"] = check
@@ -233,6 +261,8 @@ def main():
     command_line_config["current_date"] = start_date
     command_line_config["run_number"] = run_number
     command_line_config["jobtype"] = jobtype
+#    command_line_config["workflow"] = workflow
+    command_line_config["task"] = task
     command_line_config["last_jobtype"] = ARGS.last_jobtype
     command_line_config["verbose"] = verbose
     command_line_config["inspect"] = inspect
@@ -241,6 +271,7 @@ def main():
     command_line_config["ignore_config_warnings"] = ignore_config_warnings
     if modify_config_file:
         command_line_config["modify_config_file"] = modify_config_file
+    command_line_config["run_from_batch_script"] = run_from_batch_script
 
     # runscript_from_cmdline = filter(lambda x: x.endswith(".yaml"), sys.argv)
     # runscript_from_cmdline = list(runscript_from_cmdline)[0]
@@ -282,4 +313,5 @@ def main():
     # if not Setup.config['general']['submitted']:
     if not Setup.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
+
     Setup()

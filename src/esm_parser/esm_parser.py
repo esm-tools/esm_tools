@@ -1560,7 +1560,7 @@ def resolve_early_var(
 
     value = this_config[current_model].get(var)
 
-    if value==['xios']:
+    #if value==['xios']:
         #ipdb.set_trace()
 
     if isinstance(value, str) and "${" in value:
@@ -1573,7 +1573,7 @@ def resolve_early_var(
                 subvar = ",".join(path_to_var[1:])
             else:
                 subvar_component = current_model
-            if var == "version" and var in config[current_model] and current_model=="fesom":
+            #if var == "version" and var in config[current_model] and current_model=="fesom":
                 #ipdb.set_trace()
             resolve_early_var(subvar, config, current_model=subvar_component, user_config=user_config, model_config=model_config, setup_config=setup_config)
 

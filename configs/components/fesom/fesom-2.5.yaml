@@ -27,6 +27,8 @@ choose_version:
     branch: "2.5"
   '2.5-awicm-3.2':
     branch: "AWI-CM3_v3.2"
+  '2.5-awicm-3.3':
+    branch: "scalar_geomenry_description"
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x

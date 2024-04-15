@@ -16,17 +16,12 @@ computer:
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/a/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"
     pool_dir: "/work/ab0246/a270092/input/fesom2/"
     mesh_dir: "${pool_dir}/core2/"
-    tide_forcing_dir: "${pool_dir}/fesom/tide_forcing/"
-    add_namelist_changes:
-        namelist.config:
-            paths:
-                tideforcingpath: "${pool_dir}/fesom/tide_forcing/"
     restart_rate: 1
     restart_unit: "m"
     restart_first: 1

@@ -18,7 +18,7 @@ general:
    #restart_unit: days 
    hours: 0
    account: iccp 
-   base_dir: /mnt/lustre/ibs/iccp/jkjellsson/esm-experiments/
+   base_dir: /proj/home/ibs/iccp/jkjellsson/esm-experiments/
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: 1
@@ -40,12 +40,12 @@ general:
    # (should be general enough)
    prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
 
-computer:
-   partition_name: "standard96"
+   #computer:
+   #partition_name: ""
    #additional_flags: '--qos=preempt'
 
 focioifs:
-   model_dir: /mnt/lustre/ibs/iccp/jkjellsson/esm/models/focioifs-4.0/
+   model_dir: /proj/home/ibs/iccp/jkjellsson/esm/models/focioifs-4.0/
    
 oifs:
    
@@ -63,7 +63,7 @@ oifs:
    scenario: "piControl"
    mip: "cmip6"
    o3_scheme: cmip6
-   pool_dir: /mnt/lustre/ibs/iccp/jkjellsson/foci_input2/
+   pool_dir: /proj/internal_group/iccp/jkjellsson/foci_input2/
    input_dir: "${pool_dir}/openifs_cy43_tco95/"
    rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
    vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
@@ -90,9 +90,9 @@ oifs:
 
 oasis3mct:
    lresume: True
-   pool_dir: "/mnt/lustre/ibs/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/"
+   pool_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/"
    # This would be for a cold start (SST = 0C,etc)
-   ini_parent_dir: "/mnt/lustre/ibs/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/" # "${general.ini_parent_dir}/restart/oasis3mct/"
+   ini_parent_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/" # "${general.ini_parent_dir}/restart/oasis3mct/"
    
    a2o_remap_method: "bilincub"
    o2a_remap_method: "bilinear"
@@ -112,7 +112,7 @@ nemo:
    #ini_parent_exp_id: "${general.ini_parent_exp_id}"
    #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
    #ini_parent_date: "${prev_date}"
-   input_dir: "/mnt/lustre/ibs/iccp/jkjellsson/foci_input2/nemo4_orca05/"
+   input_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/nemo4_orca05/"
    
    resolution: "ORCA05"
    version: "ORCA05_Z46_SI3_COUPLED" 
@@ -150,6 +150,6 @@ rnfmap:
 
 xios: 
    with_model: focioifs 
-   xml_dir: "/mnt/lustre/ibs/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_diag/"
+   xml_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_diag/"
    nproc: 20
    omp_num_threads: 1

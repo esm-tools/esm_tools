@@ -841,6 +841,30 @@ oasis3mct:
                                 nnn:
                                         weighting: avg
                                         nb_of_neighbours: 1
+                oyac_gausswgt_c:
+                        oyac: true
+                        time_transformation: conserv
+                        remapping:
+                                nnn:
+                                        weighting: gauss
+                                        nb_of_neighbours: 9
+                oyac_gausswgt_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                nnn:
+                                        weighting: gauss
+                                        nb_of_neighbours: 9
+                oyac_hcsbb_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                hcsbb:
+                                        lorem: ipsum
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+
 
         input_files: {}
 

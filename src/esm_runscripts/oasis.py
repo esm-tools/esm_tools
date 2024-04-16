@@ -240,6 +240,11 @@ class oasis:
                         + nb_of_neighbours.upper()
                     )
                     trafo_details += [stack_line.strip()]
+                elif trans.upper() == "HCSBB":
+                    stack_line = (
+                        'BERNSTEIN_BEZIER'
+                    )
+                    trafo_details += [stack_line.strip()]
 
         else:  # OASIS with SCRIP interpolation library
             if not type(alltrans) == list:

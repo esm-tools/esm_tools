@@ -146,7 +146,7 @@ choose_iolibraries:
       choose_compiler_mpi:
             intel2021_impi2021:
                add_export_vars:
-                  IO_LIB_ROOT: /proj/home/ibs/iccp/jkjellsson/sw/HPC_libraries/intel2021.0.3_impi2021.0.3_20240313/ 
+                  IO_LIB_ROOT: /proj/internal_group/iccp/sw/HPC_libraries/intel2021.0.3_impi2021.0.3_20240313/ 
                
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"

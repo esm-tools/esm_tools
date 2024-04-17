@@ -242,7 +242,7 @@ class oasis:
                     trafo_details += [stack_line.strip()]
                 elif trans.upper() == "HCSBB":
                     stack_line = (
-                        'BERNSTEIN_BEZIER'
+                        trans.upper()
                     )
                     trafo_details += [stack_line.strip()]
 

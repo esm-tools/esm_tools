@@ -530,11 +530,20 @@ oifs:
         # If we run with 1 nest, then add additional coupling fields
         choose_with_nest1:    
            1:
+                        # Coupling fields are different for NEMO 3.6 and 4.2, so we need to put it in a choose block
+                        # In 4.2 we add AlbIce. The OIceFrc changes name...
+                        add_choose_nemo.generation:
+                                "3.6":
+                                          fociagrif_fields_l: [M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
+                                                               M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
+                                                               M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
+                                                               M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
+                                "4.2":
+                                          fociagrif_fields_l: [M01_A_AlbIce, M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
+                                                               M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
+                                                               M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
+                                                               M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
                         fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
-                        fociagrif_fields_l: [M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
-                                             M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
-                                             M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
-                                             M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
                         fociagrif_fields_n: [M01_A_AgrSpg]
                         add_namelist_changes:
                                 fort.4:
@@ -812,6 +821,12 @@ rnfmap:
                 "agrif-4.0":
                         version: foci211
                         runoff_method: "JK22"
+                        with_agrif: True
+                        # Set runoff mapper to send runoff to AGRIF as well
+                        add_namelist_changes:
+                                namelist.runoffmapper:
+                                        namrnfmap:
+                                                AgrifzoomNb: 1
                 "4.0":
                         version: foci211
                         runoff_method: "JK22"
@@ -984,6 +999,9 @@ oasis3mct:
                 atmflx: 
                         - 'O_QsrMix:O_QnsMix:OTotRain:OTotSnow:OIceEvap:OTotEvap <--a2o_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:AIceEvap:ATotEvap'
 
+        # Coupling fields are different between 3.6 and 4.2
+        # In 3.6, we dont have ice albedo. Ice fraction is called OIceFrac
+        # In 4.2, we have ice albedo (O_AlbIce). Ice fraction is called OIceFrc
         choose_nemo.generation:
            "3.6":
               add_coupling_target_fields:
@@ -1069,8 +1087,6 @@ oasis3mct:
                                 rnfatm:
                                         - 'R_Runoff_atm:R_Calving_atm <--a2rgauswgt-- A_Runoff:A_Calving'
                                         #- 'R_Runoff_atm <--a2rgauswgt-- A_Runoff'
-                                sstocean_1:
-                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1 <--agr2a_nc-- 1_OIceFrac:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1'
                                 atmflx_1: 
                                         - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
                                 atmtau_1:
@@ -1083,6 +1099,17 @@ oasis3mct:
                                 agrifspg:
                                         - 'M01_A_AgrSpg <--agr22adistwgt-- 1_O_AgrSpg'
                                         - '1_R_AgrSpg <--agr22rdistwgt-- 1_O_AgrSpg'
+                        
+                        # Coupling fields are different for 3.6 and 4.2, so we need to put this part inside a choose block        
+                        add_choose_nemo.generation:
+                                "3.6":
+                                        add_coupling_target_fields:
+                                                sstocean_1:
+                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1 <--agr2a_nc-- 1_OIceFrac:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1'
+                                "4.2":
+                                        add_coupling_target_fields:
+                                                sstocean_1:
+                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
                 #'*':
                 #        # Couple HTESSEL runoff to river routing
                 #        add_coupling_target_fields:

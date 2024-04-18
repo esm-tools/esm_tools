@@ -32,16 +32,5 @@ def prepare_environment(config):
             "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
             "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
             }
-    
-    #if environment_dict["ADD_UNCHANGED_ICE"] == False:
-    #    environment_dict["ADD_UNCHANGED_ICE"] = 0
-    #elif environment_dict["ADD_UNCHANGED_ICE"] == True:
-    #    environment_dict["ADD_UNCHANGED_ICE"] = 1
-
-
     print(environment_dict)
     return environment_dict
-
-
-
-

@@ -46,7 +46,17 @@ rnfmap:
 oasis3mct:
     lresume: false # Set to false to generate the rst files for first leg
     time_step: 7200
-
+    add_coupling_target_fields:
+        rstas.nc:
+            - 'heat_oce:heat_swo <--oyac_1stcon_nnn_i-- A_Qns_oce:A_Qs_all'
+            - 'prec_oce:snow_oce:evap_oce:subl_oce <--oyac_1stcon_nnn_i-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+            - 'heat_ico <--oyac_1stcon_nnn_i-- A_Q_ice'
+            - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--oyac_hcsbb_nnn_i-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+            - 'R_Runoff_atm:R_Calving_atm <--oyac_1stcon_nnn_i-- A_Runoff:A_Calving'
+            - 'hydr_oce:enth_oce <--oyac_gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+        rstos.nc:
+            - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--oyac_1stcon_nnn_stocha-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+            - 'A_CurX:A_CurY <--oyac_1stcon_nnn_i-- u_feom:v_feom'
 xios:
     with_model: oifs
     nproc: 8

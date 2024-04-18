@@ -585,11 +585,18 @@ rnfmap:
         grids:
                 rnfa:
                         name: RnfA
+                        nx: 512
+                        ny: 256
+                        oasis_grid_type: "LR"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
                 rnfo:
                         name: RnfO
                         nx: 512
                         ny: 256
                         oasis_grid_type: "LR"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
         input_files:
                 runoff_maps: runoff_maps
 
@@ -841,14 +848,14 @@ oasis3mct:
                                 nnn:
                                         weighting: avg
                                         nb_of_neighbours: 1
-                oyac_gausswgt_c:
+                oyac_gauswgt_c:
                         oyac: true
                         time_transformation: conserv
                         remapping:
                                 nnn:
                                         weighting: gauss
                                         nb_of_neighbours: 9
-                oyac_gausswgt_i:
+                oyac_gauswgt_i:
                         oyac: true
                         time_transformation: instant
                         remapping:

@@ -54,6 +54,7 @@ general:
         available_versions:
         - 'agrif'
         - 'agrif-3.0'
+        - 'agrif-4.0'
         - '2.0'
         - '2.1'
         - '2.1-O12'
@@ -77,6 +78,7 @@ general:
         # 4.0 Using NEMO 4
         # 4.1  - with ECWAM
         # 4.1.1 - with reduced Charnock in ECWAM
+        # agrif-4.0
         #
         # 2.1 also comes with O12 (ORCA12)
         # 3.0 comes with AGRIF
@@ -96,6 +98,13 @@ general:
             calving_method: "JS"
             couplings:
             - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci40
+          
+          # NEMO 4.2.2 and AGRIF
+          'agrif-4.0':
+            runoff_method: "EM21"
+            calving_method: "JS"
+            couplings: 
+            - nemo-ORCA05_SI3_COUPLED_AGRIF+oifs43r3-foci40 
           
           # Using NEMO 4.2.2
           '4.0':
@@ -415,6 +424,23 @@ oifs:
                     NALINE:
                        # turn off cap on Charnock
                        LLCAPCHNK: false
+           "agrif-4.0":
+              wam: False
+              add_namelist_changes:
+                 fort.4:
+                    NAMFOCICFG:
+                       FOCI_CPL_NEMO_LIM: false
+                       FOCI_CPL_NEMO_SI3: true
+                    NAERAD:
+                       NAERANT_SCALE: 1 # turn off aerosol scaling
+                    NAMMCC:
+                       # coupling of albedo is true by default
+                       # but better be sure
+                       LNEMOLIMALB: ".true."
+                       # coupling of ice temp is NOT on by default
+                       # Also, be warned that this may be hard-coded to .false.
+                       # Run grep LNEMOLIMTEMP NODE.001_01 to double-check
+                       LNEMOLIMTEMP: ".true."
            "4.0":
               wam: False
               add_namelist_changes:
@@ -571,6 +597,9 @@ nemo:
                 "4.1": 
                         version: "ORCA05_Z46_SI3_COUPLED"
                         resolution: ORCA05
+                "agrif-4.0":
+                        version: "ORCA05_SI3_COUPLED_AGRIF"
+                        resolution: ORCA05
                 "4.0":
                         version: "ORCA05_Z46_SI3_COUPLED"
                         resolution: ORCA05
@@ -618,7 +647,7 @@ nemo:
                 # dont this this does anything, but keep it for safety
                 default:
                         version: "3.6foci"
-                "agrif*":
+                "agrif-3.0":
                         version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
                         resolution: ORCA05 
                         add_namelist_changes:
@@ -627,6 +656,15 @@ nemo:
                                                 rn_ahm_0_blp: -1.709e12
                                         namtra_ldf:
                                                 rn_aeiv_scale: 0.5
+                "agrif":
+                        version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+                        resolution: ORCA05 
+                        add_namelist_changes:
+                                namelist_cfg:
+                                        namdyn_ldf:
+                                                rn_ahm_0_blp: -1.709e12
+                                        namtra_ldf:
+                                                rn_aeiv_scale: 0.5                                
                 "*":
                         version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
                         resolution: ORCA05
@@ -769,6 +807,9 @@ rnfmap:
                         version: foci211
                         runoff_method: "JK22"
                 "4.1":
+                        version: foci211
+                        runoff_method: "JK22"
+                "agrif-4.0":
                         version: foci211
                         runoff_method: "JK22"
                 "4.0":

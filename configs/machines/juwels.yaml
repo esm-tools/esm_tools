@@ -95,7 +95,7 @@ export_vars:
 # choose compiler and MPI implementation
 choose_compiler_mpi:
 
-   intel2022_psmpi2024:
+   intel2023_psmpi2024:
       add_module_actions:
         - "--force purge"
         - "load Stages/2024"

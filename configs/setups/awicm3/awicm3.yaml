@@ -300,7 +300,7 @@ oifs:
                 iolibraries: awi_libs
                 choose_computer.name:
                         juwels:
-                                compiler_mpi: intel2022_ompi2022
+                                compiler_mpi: intel2023_psmpi2024
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:
@@ -318,7 +318,7 @@ oifs:
                 iolibraries: awi_libs
                 choose_computer.name:
                         juwels:
-                                compiler_mpi: intel2022_ompi2022
+                                compiler_mpi: intel2023_psmpi2024
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:

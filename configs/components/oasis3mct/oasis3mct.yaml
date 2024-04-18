@@ -97,7 +97,7 @@ choose_version:
     - INSTALL_OASIS.ESMTOOLS/lib/libmpeu.a
     - INSTALL_OASIS.ESMTOOLS/lib/libscrip.a
     #clean_command: 'rm -rf include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
-    clean_command: 'rm -rf yaxt/build yac/build include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
+    clean_command: 'rm -rf lib/yaxt/build lib/yac/build include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a INSTALL_OASIS.ESMTOOLS build'
 
 clean_command: 'rm -rf build CMakeCache.txt include lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
 comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cp lib/psmile/mod_oasis*mod ../include '

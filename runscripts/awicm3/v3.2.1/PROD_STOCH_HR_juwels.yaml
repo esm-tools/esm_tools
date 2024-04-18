@@ -6,7 +6,7 @@ general:
     compute_time: "08:00:00"
     initial_date: "1950-01-01"
     final_date: "2014-12-31"
-    base_dir: "/work/ab0246/${user}/runtime/stochastic_coupling/"
+    base_dir: "/p/scratch/chhb20/${user}/runtime/stochastic_coupling/"
     nday: 0
     nmonth: 0
     nyear: 1
@@ -14,7 +14,7 @@ general:
     use_venv: True
 
 computer:
-    taskset: true
+    taskset: false
     mail_type: ALL
     mail_user: "jan.streffing@awi.de"
 
@@ -32,7 +32,7 @@ fesom:
     lresume: true
     ini_parent_exp_id: "sp1950_Aleph_albedo"
     ini_parent_date: "${prev_date}"
-    ini_parent_dir: "/p/scratch/chhb20/streffing1/runtime/awicm3-v3.1_refactoring/runtime/awicm3-v3.1_refactoring/TCO319L137-DART/sp1950_Aleph_albedo/restart/fesom/"
+    ini_parent_dir: "/p/scratch/chhb20/streffing1/runtime/awicm3-v3.1_refactoring/TCO319L137-DART/sp1950_Aleph_albedo/restart/fesom/"
     namelist_dir: "/p/project/chhb19/streffing1/namelist_stochastic_paper/"
     choose_general.run_number:
         1:

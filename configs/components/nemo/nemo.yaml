@@ -806,8 +806,11 @@ choose_version:
         namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
 
     add_input_files:
+       # reference namelists
        namelist_ref: namelist_ref
        namelist_ice_ref: namelist_ice_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
        
        # from Sebastian / Markus
        bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
@@ -832,8 +835,14 @@ choose_version:
        
        # inital data
        seaice_orca05_nemo4: seaice_orca05_nemo4
+       
+       # domain cfg for AGRIF
+       1_domain_cfg: 1_domain_cfg 
 
     input_in_work:
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       
        domain_cfg_orca05_nemo4: domain_cfg.nc
        coordinates_orca05_nemo4: coordinates.nc
        bfr_coef_orca05_nemo4: bfr_coef.nc
@@ -845,6 +854,8 @@ choose_version:
        ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
        
        seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc 
+       
+       1_domain_cfg: 1_domain_cfg 
      
     # Add extra coupling fields to couple AGRIF to OpenIFS  
     add_coupling_fields:
@@ -858,6 +869,57 @@ choose_version:
             grid: agr1
         "[[agr2_t_fields-->FIELD]]":
             grid: agr2
+            
+    # Namelist changes for AGRIF coupled 
+    add_namelist_changes:
+       1_namelist_cfg:
+          namrun:
+             cn_exp: ${expid}
+             nn_it000: ${thisstep_nest}
+             nn_itend: ${newstep_nest}
+             nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag} 
+             cn_ocerst_indir: '${parent_restart_dir}/'
+             cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+             cn_ocerst_outdir: '${experiment_restart_out_dir}/'
+             nn_stock: ${newstep_nest}
+             nn_leapy: ${nn_leapy} 
+             nn_rstctl: ${nn_rstctl} 
+             ln_rstart: ${nemo.lresume}
+          namtsd:                                                
+             ln_tsd_tradmp: ${ln_tsd_tradmp} 
+             ln_tsd_init: ${ln_tsd_init} 
+          namdom:
+             nn_closea: 1
+             nn_msh: ${nn_msh} 
+             rn_rdt: ${time_step_nest}
+          namsbc:
+             nn_fsbc: ${nest_refinement} 
+             ln_echam: '.true.'
+          nammpp:
+             jpni: ${jpni}
+             jpnj: ${jpnj}
+             jpnij: ${nproc}
+          namsbc_echam:
+             sn_owndi: ['A_OTaux1_echam6_08', 3, 'A_OTaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
+             sn_owndj: ['A_OTauy1_echam6_09', 3, 'A_OTauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
+             sn_iwndi: ['A_ITaux1_echam6_10', 3, 'A_ITaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
+             sn_iwndj: ['A_ITauy1_echam6_11', 3, 'A_ITauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
+             sn_iqsr: ['A_QsrIce_echam6_12', 3, 'A_QsrIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_qsr: ['A_QsrMix_echam6_13', 3, 'A_QsrMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_iqns: ['A_QnsIce_echam6_14', 3, 'A_QnsIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
+             sn_qns: ['A_QnsMix_echam6_15', 3, 'A_QnsMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
+             sn_prec: ['ATotRain_echam6_16', 3, 'ATotRain', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_snow: ['ATotSnow_echam6_17', 3, 'ATotSnow', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_ievp: ['AIceEvap_echam6_18', 3, 'AIceEvap', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             sn_dqns: ['A_dQnsdT_echam6_19', 3, 'A_dQnsdT', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+         
+          # with AGRIF always use linear free surface
+          # always set free_surface: linear with AGRIF 
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
 
   ORCA05_LIM2_FOCI_AGRIF:
     requires:
@@ -875,8 +937,10 @@ choose_version:
     # use tracer in AGRIF?
     use_tracer: false
     use_tracer_agrif: false 
+    
     # use LIM2 in AGRIF?
     use_lim2_agrif: true
+    
     free_surface: linear
     leapyear: true  
 
@@ -1797,6 +1861,8 @@ ln_tsd_tradmp: false
 nest1: no
 use_tracer_agrif:   false
 use_lim2_agrif:     false
+use_si3_agrif:      false
+
 
 # calendar:
 leapyear: False 
@@ -2085,7 +2151,7 @@ choose_nest1:
         NWPAC10:
                 _nx_nest1: 733
                 _ny_nest1: 838
-                nest_refinement: 3
+                nest_refinement: 4
         WG10:
                 _nx_nest1: 1414
                 _ny_nest1: 944
@@ -2153,6 +2219,20 @@ choose_use_lim2:
 
       choose_use_lim2_agrif:
          true:
+            add_config_files:
+               1_namelist_ice_cfg: 1_namelist_ice_cfg
+            add_namelist_changes:
+               1_namelist_ice_cfg:
+                  namicerun:
+                     cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                     cn_icerst_indir: '${parent_restart_dir}/'
+                     cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                     cn_icerst_outdir: '${experiment_restart_out_dir}/'
+                  namiceini:
+                     ln_limini: ${ln_limini_agrif} 
+      
+      choose_use_si3_agrif:
+         true: 
             add_config_files:
                1_namelist_ice_cfg: 1_namelist_ice_cfg
             add_namelist_changes:
@@ -2299,7 +2379,7 @@ input_sources:
         #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noclo.nc
         domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noCaspian.nc
         #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg_ORCA05_v1.1.nc
-       
+        
         reshape_jra_orca05_nemo4_bicub: ${input_dir}/reshape_jra_bicub__4.2.0_ORCA05_v1.0.0.nc
         reshape_jra_orca05_nemo4_bilin: ${input_dir}/reshape_jra_bilin__4.2.0_ORCA05_v1.0.0.nc
         
@@ -2314,6 +2394,10 @@ input_sources:
         
         # remapped ghflux to orca05
         ghflux_v2.0_orca05_nemo4: ${input_dir}/ghflux_v2.0_ORCA05.nc
+        
+        # NEMO 4.2.x input for AGRIF
+        1_domain_cfg: ${agrif_dir}/1_domain_cfg.nc
+        
         
 #forcing_files:
 

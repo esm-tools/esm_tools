@@ -242,6 +242,15 @@ def copy_files_to_work(config):
     return config
 
 
+def copy_files_init_to_work(config):
+    if config["general"]["verbose"]:
+        print("PREPARING WORK FOLDER")
+    config = copy_files(
+        config, config["general"]["in_filetypes"], source="thisrun", target="work"
+    )
+    return config
+
+
 def _write_finalized_config(config, config_file_path=None):
     """
     Writes <expid>_finished_config.yaml file

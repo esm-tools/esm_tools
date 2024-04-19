@@ -187,6 +187,9 @@ choose_iolibraries:
          LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
          NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
          NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+         # For OASIS3-MCT5 from CERFACS 
+         OASIS_NETCDF: $NETCDF_DIR
+         OASIS_NETCDFF: $NETCDF_DIR       
 
     geomar_libs:
        add_export_vars:
@@ -206,6 +209,10 @@ choose_iolibraries:
           NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
           NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
           OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+          
+          # For OASIS3-MCT5 from CERFACS 
+          OASIS_NETCDF: $NETCDFROOT
+          OASIS_NETCDFF: $NETCDFFROOT
 
        choose_compiler_mpi:
 

@@ -219,6 +219,9 @@ choose_iolibraries:
             MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
             mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
             LD_LIBRARY_PATH: $MPI_HOME/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
+            # For OASIS3-MCT5 from CERFACS
+            OASIS_NETCDF: $NETCDF_PATH
+            OASIS_NETCDFF: $NETCDF_ROOT
 
     system_libs:
         add_module_actions:
@@ -238,6 +241,9 @@ choose_iolibraries:
             NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+            # For OASIS3-MCT5 from CERFACS
+            OASIS_NETCDF: $NETCDFROOT
+            OASIS_NETCDFF: $NETCDFFROOT
             # flags required for ECHAM6 (and possibly other models)
             # compilation with cmake if parastationMPI or openMPI is used
             # contact seb-wahl for details
@@ -301,6 +307,10 @@ choose_iolibraries:
                     OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'           
                     # kh 07.03.22 currently required to use Intel MPI
                     LD_LIBRARY_PATH[(2)]: '$I_MPI_ROOT/libfabric/lib:$LD_LIBRARY_PATH'
+                    
+                    # For OASIS3-MCT5 from CERFACS
+                    OASIS_NETCDF: $NETCDFROOT
+                    OASIS_NETCDFF: $NETCDFFROOT
 
     geomar_libs:
        add_export_vars:
@@ -320,6 +330,11 @@ choose_iolibraries:
           NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
           NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
           OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+          
+          # For OASIS3-MCT5 from CERFACS
+          OASIS_NETCDF: $NETCDFROOT
+          OASIS_NETCDFF: $NETCDFFROOT
+            
        choose_compiler_mpi:
             intel2022_impi2021:
                 add_export_vars:

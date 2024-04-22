@@ -4,7 +4,7 @@ import urllib.request
 from time import sleep
 
 import esm_parser
-import semver
+import esm_utilities
 import yaml
 
 import esm_tools
@@ -29,7 +29,7 @@ class MessageOfTheDayHandler:
         url = "https://raw.githubusercontent.com/esm-tools/esm_tools/release/motd/motd.yaml"
         try:
             self.motdfile = urllib.request.urlopen(url)
-        except urllib.error.HTTPError:
+        except (urllib.error.HTTPError, urllib.error.URLError):
             timeout = 1  # seconds to wait
             # print(f"HTTP Error: Connection to file {url} containing update messages could not be established")
             # print("    Please check the URL by manually...")
@@ -40,62 +40,6 @@ class MessageOfTheDayHandler:
             return
         self.database_connected = True
         self.message_dict = yaml.load(self.motdfile, Loader=yaml.FullLoader)
-
-    def check_valid_version(self, version, versionrange):
-        """
-        Returns ``True`` if the ``version`` provided matches the condition of
-        ``versionrange``.
-
-        Parameters
-        ----------
-        version : str
-            String specifying the version number with the format ``X.Y.Z``.
-        versionrange : str
-            Condition for the version range, expressed as a comparison operator
-            followed by a version number in the format ``X.Y.Z``.
-
-        Returns
-        -------
-        True, False : bool
-            ``True`` if the condition is met, ``False`` if not.
-        """
-        version = semver.VersionInfo.parse(version)
-
-        if versionrange.startswith("<="):
-            operator = version.__le__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("<=", "").strip()
-            )
-        if versionrange.startswith("<"):
-            operator = version.__lt__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("<", "").strip()
-            )
-        elif versionrange.startswith(">="):
-            operator = version.__ge__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace(">=", "").strip()
-            )
-        elif versionrange.startswith(">"):
-            operator = version.__gt__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace(">", "").strip()
-            )
-        elif versionrange.startswith("=="):
-            operator = version.__eq__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("==", "").strip()
-            )
-        elif versionrange.startswith("!="):
-            operator = version.__ne__
-            other_version = semver.VersionInfo.parse(
-                versionrange.replace("!=", "").strip()
-            )
-        else:
-            raise MessageOfTheDayError(
-                f"Unknown version range specified: {versionrange}"
-            )
-        return operator(other_version)
 
     def action_finder(self, action):
         """
@@ -168,10 +112,12 @@ class MessageOfTheDayHandler:
         for message in self.message_dict:
             # If the package for this message is the same as ``mypackage`` and the
             # the version condition is met display the MOTD
+            version_range = self.message_dict[message]["versions"]
+            version = version_range.strip("<>=!")
             if self.message_dict[message][
                 "package"
-            ] == mypackage and self.check_valid_version(
-                myversion, self.message_dict[message]["versions"]
+            ] == mypackage and esm_utilities.check_valid_version(
+                version_range, version=myversion
             ):
                 print(
                     "************************************************************************************"
@@ -180,9 +126,14 @@ class MessageOfTheDayHandler:
                 print()
                 print(self.message_dict[message]["message"])
                 if mypackage == "esm_tools":
-                    print("Upgrade ESM-Tools by:")
-                    print(f"    cd {esm_tools._get_real_dir_from_pth_file('')}")
-                    print("    git pull")
+                    esm_tools_path = esm_tools._get_real_dir_from_pth_file('')
+                    print(
+                        f"Upgrade ESM-Tools to the version contianing this fix (\x1b[96m{version}\x1b[0m) by:\n"
+                        f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"
+                        "\x1b[96m2.\x1b[0m Make sure that your git repo is clean (\x1b[35mgit status\x1b[0m)\n"
+                        "\x1b[96m3.\x1b[0m \x1b[35mgit checkout release\x1b[0m\n"
+                        "\x1b[96m4.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
+                    )
                 # Deprecated after monorepo rework, rewrite if we ever get to have
                 # more than one package again.
                 else:
@@ -218,12 +169,14 @@ def check_all_esm_packages():
 
 if __name__ == "__main__":
     mypackage = "esm_tools"
-    myversion = "1.0"
+    myversion = "1.0.0"
 
     motd = MessageOfTheDayHandler()
     # Uncomment the following lines For testing using the local motd.yaml
-    # local_motd = f"{esm_tools._get_real_dir_from_pth_file('')}/motd/motd.yaml"
-    # with open(local_motd, "r") as motdfile:
+    #import os
+    #local_motd = f"{os.path.dirname(__file__)}/../../esm_tools/motd/motd.yaml"
+    #print(local_motd)
+    #with open(local_motd, "r") as motdfile:
     #    motd.message_dict = yaml.load(motdfile, Loader=yaml.FullLoader)
     motd.motd_handler(mypackage, myversion)
     sys.exit(0)

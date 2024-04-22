@@ -10,7 +10,6 @@ import re
 import sys
 
 import esm_parser
-from esm_rcfile import FUNCTION_PATH
 
 ######################################################################################
 ########################### class "environment_infos" ################################
@@ -88,6 +87,7 @@ class EnvironmentInfos:
 
         # Add the ENVIRONMENT_SET_BY_ESMTOOLS into the exports
         self.add_esm_var()
+
         # Define the environment commands for the script
         self.commands = self.get_shell_commands()
 
@@ -129,12 +129,6 @@ class EnvironmentInfos:
         modelconfig : dict
             Information compiled from the `yaml` files for this specific component.
         """
-
-        if not modelconfig:
-            print("Should not happen anymore...")
-            modelconfig = esm_parser.yaml_file_to_dict(
-                FUNCTION_PATH + "/" + model + "/" + model
-            )
 
         # Merge whatever is relevant to this environment operation (either compile or
         # run) to ``environment_changes``, taking care of solving possible ``choose_``
@@ -475,8 +469,12 @@ class EnvironmentInfos:
         """
 
         environment = []
+        # Fix for seb-wahl's hack via source
+        if self.config.get("general_actions") is not None:
+            for action in self.config["general_actions"]:
+                environment.append(action)
         # Write module actions
-        if "module_actions" in self.config:
+        if self.config.get("module_actions") is not None:
             for action in self.config["module_actions"]:
                 # seb-wahl: workaround to allow source ... to be added to the batch header
                 # until a proper solution is available. Required with FOCI
@@ -484,9 +482,13 @@ class EnvironmentInfos:
                     environment.append(action)
                 else:
                     environment.append(f"module {action}")
+        # Write Spack actions
+        if self.config.get("spack_actions") is not None:
+            for action in self.config["spack_actions"]:
+                environment.append(f"spack {action}")
         # Add an empty string as a newline:
         environment.append("")
-        if "export_vars" in self.config:
+        if self.config.get("export_vars") is not None:
             for var in self.config["export_vars"]:
                 # If export_vars is a dictionary
                 if isinstance(self.config["export_vars"], dict):
@@ -522,7 +524,7 @@ class EnvironmentInfos:
                     environment.append("export {str(var)}")
         environment.append("")
         # Write the unset commands
-        if "unset_vars" in self.config:
+        if self.config.get("unset_vars") is not None:
             for var in self.config["unset_vars"]:
                 environment.append(f"unset {var}")
 

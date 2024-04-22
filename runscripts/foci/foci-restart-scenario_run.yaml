@@ -5,13 +5,19 @@ general:
    version: "default"
    homedir: !ENV ${HOME}
 
-   compute_time: "00:45:00"
+   # operational settings: yearly restarts
+   compute_time: "01:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "2100-01-01T00:00:00"         # Final date of the experiment
-   postprocessing: 0
    nmonth: 12
    clean_runs: 2
+   # test settings, daily restarts
+   #compute_time: "00:15:00"
+   #initial_date: "2021-01-01T00:00:00"       # Initial exp. date
+   #final_date: "2021-01-04T00:00:00"         # Final date of the experiment
+   #nday: 1 
    
+   postprocessing: 0
    # machine specific setup 
    account: shk00018
    base_dir: ${homedir}/esm/esm-experiments/
@@ -34,16 +40,18 @@ echam:
    # seb-wahl, 2021-08-11
    scenario: "ssp585"
    resolution: "T63"
+   # operational settings: yearly restarts
    restart_rate: ${general.nmonth}
    restart_unit: "months"
+   # test settings, daily restarts
+   #restart_rate: ${general.nday}
+   #restart_unit: "days"
    nproca: 24
    nprocb: 24
-
+   
 nemo:
    resolution: "ORCA05"
    version: "ORCA05_LIM2_KCM_AOW"
-   #restart_rate: ${general.nmonth}
-   #restart_unit: "months"
    jpni: 24
    jpnj: 20
    nproc: 480 

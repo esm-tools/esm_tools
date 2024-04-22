@@ -1,7 +1,7 @@
 components:
 - echam-6.3.05p2-concurrent_radiation-paleodyn
 - fesom-2.0-paleodyn
-- oasis3mct-2.8
+- oasis3mct-2.8-paleodyn
 - pism-github1.2
 - scope-dev
 - debm-esm_tools

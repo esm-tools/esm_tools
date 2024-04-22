@@ -1,5 +1,7 @@
 """ ESM Framework for organizing python code in plugins / yaml recipes """
 
+import os
+import subprocess
 import sys
 import esm_parser
 from esm_parser import yaml_file_to_dict
@@ -64,7 +66,11 @@ def find_installed_plugins():
     import pkg_resources
 
     discovered_plugins = {
-        entry_point.name: {"callable": entry_point.load(), "type": "installed"}
+        entry_point.name: {
+            "plugin_name": entry_point.module_name.split(".")[0],
+            "callable": entry_point.load(),
+            "type": "installed",
+        }
         for entry_point in pkg_resources.iter_entry_points("esm_tools.plugins")
     }
     return discovered_plugins
@@ -176,4 +182,60 @@ def work_through_recipe(recipe, plugins, config):
                     config = timed_workitem_callable(config)
                 else:
                     config = getattr(thismodule, workitem)(config)
+    return config
+
+
+def install(package: str) -> None:
+    """
+    Checks if a package is already installed in the system and if it's not, then it
+    installs it.
+
+    Parameters
+    ----------
+    package : str
+        Name of the package or get operation. Can be a package name (e.g.
+        ``numpy``) or a full pip address (e.g.
+        ``git@https://github.com/esm-tools/esm_tools.git``)
+
+    Returns
+    -------
+    None
+    """
+    package_name = package.split("/")[-1].replace(".git", "")
+    installed_entry_points = find_installed_plugins()
+    installed_plugins = []
+    for entry_point in installed_entry_points:
+        this_plugin = installed_entry_points[entry_point]["plugin_name"]
+        if this_plugin not in installed_plugins:
+            installed_plugins.append(this_plugin)
+    arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
+    if os.environ.get("VIRTUAL_ENV"):
+        arg_list.remove("--user")
+    if package_name not in installed_entry_points and package_name not in installed_plugins:
+        try:
+            subprocess.check_call(arg_list)
+        except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
+            subprocess.check_call(arg_list)
+
+
+def install_missing_plugins(config: esm_parser.ConfigSetup) -> esm_parser.ConfigSetup:
+    """
+    Loop through the components and install the missing plugins. This method can be
+    called from a recipe.
+
+    Parameters
+    ----------
+    config : esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation.
+
+    Returns
+    -------
+    config : esm_parser.ConfigSetup
+        ConfigSetup object containing the information of the current simulation.
+    """
+    if config.get("general", {}).get("install_missing_plugins", True):
+        for component in config:
+            for plugin in config[component].get("required_plugins", []):
+                install(plugin)
+
     return config

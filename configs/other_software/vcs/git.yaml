@@ -1,4 +1,3 @@
-# get_command: "git clone ${define_branch} ${define_tag} ${repository}"
 get_command: "git clone ${define_options} ${define_branch} ${define_tag} ${repository}"
 update_command: "git pull"
 status_command: "git status"

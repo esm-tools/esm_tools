@@ -46,7 +46,7 @@ if hash git 2>/dev/null; then
 		echo $git_error_message
 		echo "git version found: ${git_version}"
 	else
-		if test ${minor_git_version} -lt "13"; then
+		if test ${minor_git_version} -lt "10"; then
 			echo $git_error_message
 			echo "git version found: ${git_version}"
 		fi
@@ -60,7 +60,12 @@ fi
 if [ ! -z ${VIRTUAL_ENV+x} ]; then
     echo "Detected virtual environment $VIRTUAL_ENV"
     pip install -e .
-#FIXME(PG): We might still need a case for Conda virtual environments
+elif [ ! -z ${CONDA_PREFIX+x} ]; then
+    echo "======================="
+    echo "Using CONDA environment"
+    echo "======================="
+    echo "WARNING: The use of a conda environment is currently not recommended. Use only for testing purposes!"
+    ${CONDA_PREFIX}/bin/pip install -e .
 else
     echo "Standard install to user directory (likely ${HOME}/.local)"
     pip install --user -e .

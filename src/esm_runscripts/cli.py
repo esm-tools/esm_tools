@@ -18,6 +18,7 @@ from loguru import logger
 from .helpers import SmartSink
 from .sim_objects import *
 
+from esm_parser import user_error
 
 def parse_shargs():
     """The arg parser for interactive use"""
@@ -84,13 +85,13 @@ def parse_shargs():
         default="",  # kh 15.07.20 "usermods.yaml"
     )
 
-    # parser.add_argument(
-    #    "-j",
-    #    "--last_jobtype",
-    #    help="Write the jobtype this run was called from (esm-tools internal)",
-    #    default="command_line",
-    # )
-    #
+    parser.add_argument(
+       "-j",
+       "--last-jobtype",
+       help="Write the jobtype this run was called from (esm-tools internal)",
+       default="command_line",
+    )
+
     parser.add_argument(
         "-t",
         "--task",
@@ -149,6 +150,13 @@ def parse_shargs():
     parser.add_argument(
         "--no-motd",
         help="supress the printing of MOTD",
+        default=False,
+        action="store_true",
+    )
+
+    parser.add_argument(
+        "--ignore-config-warnings",
+        help="do not halt in warnings defined in the config files",
         default=False,
         action="store_true",
     )
@@ -212,6 +220,8 @@ def main():
         modify_config_file = parsed_args["modify"]
     if "no_motd" in parsed_args:
         no_motd = parsed_args["no_motd"]
+    if "ignore_config_warnings" in parsed_args:
+        ignore_config_warnings = parsed_args["ignore_config_warnings"]
 
     command_line_config = {}
     command_line_config["check"] = check
@@ -223,11 +233,12 @@ def main():
     command_line_config["current_date"] = start_date
     command_line_config["run_number"] = run_number
     command_line_config["jobtype"] = jobtype
-    # command_line_config["last_jobtype"] = ARGS.last_jobtype
+    command_line_config["last_jobtype"] = ARGS.last_jobtype
     command_line_config["verbose"] = verbose
     command_line_config["inspect"] = inspect
     command_line_config["use_venv"] = use_venv
     command_line_config["no_motd"] = no_motd
+    command_line_config["ignore_config_warnings"] = ignore_config_warnings
     if modify_config_file:
         command_line_config["modify_config_file"] = modify_config_file
 
@@ -237,6 +248,12 @@ def main():
     runscript_full_path = os.path.realpath(ARGS.runscript)
     runscript_dir, runscript = os.path.split(runscript_full_path)
     runscript_dir += "/"
+    if not os.path.exists(runscript_full_path):
+        user_error(
+            "runscript not found",
+            f"The runscript ``{ARGS.runscript}`` does not exists in folder ``{runscript_dir}``. ",
+            dsymbols=["``", "'"],
+        )
 
     # this might contain the relative path but it will be taken care of later
     command_line_config["original_command"] = original_command.strip()
@@ -261,7 +278,8 @@ def main():
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
 
-    sim_setup = SimulationSetup(command_line_config)
-    if not sim_setup.config["general"]["submitted"] and not no_motd:
+    Setup = SimulationSetup(command_line_config=command_line_config)
+    # if not Setup.config['general']['submitted']:
+    if not Setup.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
     sim_setup()

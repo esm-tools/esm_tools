@@ -20,18 +20,21 @@ def user_config(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info, including the user defined options.
 
     Returns
     -------
-    info : dict
+    info : esm_tests.Info
         Same as input but with a nested ``user`` dictionary.
     """
     # If user info is not needed return None
     if info["ignore_user_info"]:
-        info["user"] = None
-        return info
+        info["user"] = {
+            "account": None,
+            "test_dir": f"{os.getcwd()}/automatic_testing/",
+        }
+        return
 
     # Check for user configuration file
     user_config = f"{info['script_dir']}/user_config.yaml"
@@ -86,8 +89,6 @@ def user_config(info):
 
     info["user"] = user_info
 
-    return info
-
 
 def get_scripts(info):
     """
@@ -108,12 +109,12 @@ def get_scripts(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
 
     Returns
     -------
-    info : dict
+    info : esm_tests.Info
         Same as input but with a nested ``scripts`` dictionary.
     """
     for key, value in info.items():
@@ -154,6 +155,7 @@ def get_scripts(info):
             with open(model_config, "r") as c:
                 config_test = yaml.load(c, Loader=yaml.FullLoader)
             computers = config_test.get("computers", False)
+            ignore_runscripts = config_test.get("ignore_runscripts", {})
             if computers:
                 # If this runscript is not to be evaluated in this computer, move on
                 if info["this_computer"] not in computers:
@@ -171,6 +173,10 @@ def get_scripts(info):
                     or isinstance(test_info.get(model), str)
                     or script in test_info.get(model, [])
                 ) and os.path.isfile(f"{runscripts_dir}/{model}/{script}"):
+                    # Check if the script is an exception for this computer and needs
+                    # to be exited
+                    if script in ignore_runscripts.get(info["this_computer"], []):
+                        continue
                     # Check that it is actually a runscript
                     if (
                         not any(script in s for s in ignore_scripts)
@@ -202,12 +208,12 @@ def read_info_from_rs(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
 
     Returns
     -------
-    info : dict
+    info : esm_tests.Info
         Same as input but but including the new information from the runscripts.
     """
     scripts_info = info["scripts"]
@@ -222,7 +228,7 @@ def read_info_from_rs(info):
             with open(v["path"], "r") as rs:
                 runscript = yaml.load(rs, Loader=yaml.SafeLoader)
             v["version"] = runscript["general"].get(
-                "comp_version", runscript[model]["version"]
+                "comp_version", runscript["general"].get("version", runscript[model].get("version"))
             )
             v["comp_command"] = runscript["general"].get("comp_command", None)
             # Data for iterative coupling
@@ -255,7 +261,7 @@ def del_prev_tests(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
     """
     scripts_info = info["scripts"]

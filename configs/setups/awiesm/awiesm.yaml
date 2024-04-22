@@ -1,10 +1,81 @@
 #########################################################################################
-######################### AWIESM 1 YAML CONFIGURATION FILE ##############################
+######################### AWIESM 2 YAML CONFIGURATION FILE ##############################
 #########################################################################################
+#
+# This file includes the presets for the following versions of AWIESM-2.1:
+# - awiesm-2.1: standard version
+#       + echam branch: 6.3.05p2-awiesm-2.1
+#       + fesom branch: 2.1-awiesm-2.1
+# - awiesm-2.1-wiso: Xiaoxu Shi and Martin Werner's version with WISO
+#       + echam branch: wiso
+#       + fesom branch: wiso
+# - awiesm-2.1-recom: Ying Ye and Martin Butzin's version of the wiso branches with
+#     REcoM integrated inside FESOM. Currently WISO on does not work, because a merge
+#     in FESOM source code is needed
+#       + echam branch: wiso
+#       + fesom branch: awiesm2-recom-wiso (TODO: to be merged into wiso branch
+#           eventually)
+#
+# Relevant variables controlling choose_ blocks
+# ---------------------------------------------
+# fesom.ALE_scheme: controls the ALE scheme for fesom, possible values being ``linfs``
+#       and ``zstar``
+#
+# general.wiso_code: controls choose_ blocks that are needed in case the source
+#       codes of FESOM and ECHAM include WISO, independently of whether the WISO is used
+#       or not. This variable should not be changed from the runscript as it is bound to
+#       the source code and version.
+#
+# general.with_wiso: controls the choose_ blocks that trigger the necessary changes
+#       in the namelists to activate/deactivate WISO, and therefore, it is meant to be
+#       edited in the runscript.
+#
+# general.with_recom: switches on the REcoM-specific configurations
 
 general:
+        choose_general.with_icb:
+            True:
+                prepcompute_recipe:
+                - "compile_model"
+                - "_show_simulation_info"
+                - "create_new_files"
+                - "create_empty_folders"
+                - "create_hosing_files"                 # Specific to AWIESM
+                - "prepare_coupler_files"
+                - "assemble"
+                - "log_used_files"
+                - "wait_for_iterative_coupling"
+                - "prep_icebergs"                       # Plugin
+                - "copy_files_to_thisrun"
+                - "modify_namelists"
+                - "apply_iceberg_calving_to_namelists"  # Plugin
+                - "modify_files"
+                - "copy_files_to_work"
+                - "report_missing_files"
+                - "_write_finalized_config"
+                - "database_entry"
+            "*":
+                prepcompute_recipe:
+                - "compile_model"
+                - "_show_simulation_info"
+                - "create_new_files"
+                - "create_empty_folders"
+                - "create_hosing_files"                 # Specific to AWIESM
+                - "prepare_coupler_files"
+                - "assemble"
+                - "log_used_files"
+                - "wait_for_iterative_coupling"
+                - "copy_files_to_thisrun"
+                - "modify_namelists"
+                - "modify_files"
+                - "copy_files_to_work"
+                - "report_missing_files"
+                #- "add_vcs_info"
+                #- "check_vcs_info_against_last_run"
+                - "_write_finalized_config"
+                - "database_entry"
+
         model: awiesm
-        #model_dir: ${esm_master_dir}/awicm-${version}
 
         coupled_setup: True
 
@@ -12,21 +83,45 @@ general:
                 - echam
                 - fesom
                 - oasis3mct
-                - pism
-                - scope
 
+        version: "2.1"
         available_versions:
-        - '1.1'
-        - '1.2'
+        - '2.1'
+        - '2.1-wiso'
+        - '2.1-recom'
+        - '2.1-paleodyn-2.5'
+
         choose_version:
-          '1.1':
+          '2.1-paleodyn-2.5':
             couplings:
-            - fesom-1.4+echam-6.3.05p2-concurrent_radiation-paleodyn
-          '1.2':
+            - fesom-2.5+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
+          '2.1':
             couplings:
-            - fesom-1.4+echam-6.3.05p2-concurrent_radiation-paleodyn+pism-github1.2+scope-dev+debm-esm_tools
-                  #version: "1.1"
-        scenario: "PALEO"
+            - fesom-2.1-awiesm-2.1+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
+          '2.1-wiso':
+            couplings:
+            - fesom-2.1-wiso+echam-6.3.05p2-wiso
+            fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
+          '2.1-recom':
+            couplings:
+            - fesom-2.1-recom-par_tracers_mpi+echam-6.3.05p2-wiso+recom-2.0
+            add_include_models:
+            - recom
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
+            with_recom: true
+
+        with_wiso: false
+        with_pico: false
+        with_icb: false
+        with_bootstrap: false
+        iterative_coupling: False
+
+        scenario: "PI-CTRL"
         resolution: ${echam.resolution}_${fesom.resolution}
         postprocessing: false
         post_time: "00:05:00"
@@ -38,31 +133,91 @@ general:
                 T63_REF:
                         compute_time: "02:00:00"
 
+        choose_general.iterative_coupling:
+            True:
+                required_plugins:
+                    - "https://github.com/esm-tools-plugins/esm_pism"
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
 
 echam:
+        scenario: ${general.scenario}
         restart_firstlast: "first"
         namelist_changes:
                 namelist.echam:
                         runctl:
                                 lcouple: .true.
+
+        # Default namelist types provided with ESM-Tools. To see a list of supported
+        # ``namelist_type`` options ``ls <PATH>/esm_tools/namelist/echam/<version>/
+        choose_scenario_is_ssp: # Automatically calculated from the scenario variable
+            False:
+                namelist_type: "production"
+            True:
+                namelist_type: ${scenario_type}
+
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/echam6"
-        model_dir: ${general.model_dir}/echam-${echam.version}
+
         setup_dir: ${general.model_dir}
         ocean_resolution: "${fesom.resolution}"
         remove_forcing_files:
                 - sst
                 - sic
-        version: "6.3.05p2-concurrent_radiation-paleodyn"
+        with_wiso: ${general.with_wiso}
+        # --- icebergs ---
+        with_icb: ${general.with_icb}
+        # --- icebergs ---
 
-# kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
+        # Variables depending on the general version of AWIESM
+        # ----------------------------------------------------
+        choose_general.version:
+                "2.1":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        # NOTE(PG): This is needed since we give a different
+                        # "destination" at the echam level. Not pretty, but, it
+                        # works.
+                        # FIXME: Destination not found??
+                        #model_dir: ${general.model_dir}/${echam.destination}
+                        # MA: see https://github.com/esm-tools/esm_tools/issues/627
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
+                "2.1-wiso":
+                        version: "6.3.05p2-wiso"
+                        model_dir: ${general.model_dir}/echam-${echam.version}
+                "2.1-recom":
+                        version: "6.3.05p2-wiso"
+                        model_dir: ${general.model_dir}/echam-${echam.version}
+                "2.1-paleodyn-2.5":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
+
+        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        icb_fields: [u10_atmo, v10_atmo]
+                        add_coupling_fields:
+                                "[[icb_fields-->FIELD]]":
+                                        grid: atmo
+        # --- icebergs ---
+
+        # Resolution switch
+        # -----------------
+        # kh 20.03.20 values may be superseded by section
+        # choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
                 T63_CORE2:
                         nproca: 24
                         nprocb: 24
+                        # NOTE(PG): These should be set to 24/24 once DKRZ
+                        # gives us a working fast-radiation version.
+                        nprocar: 0
+                        nprocbr: 0
+                        npromar: 8
+                        lrad_async: False
+                        lrestart_from_old: false
                 T63_REF87K:
                         nproca: 24
                         nprocb: 24
@@ -70,25 +225,55 @@ echam:
                         nproca: 24
                         nprocb: 24
 
+        # Environment
+        # -----------
+        choose_computer.name:
+            albedo:
+                configure_opts: "'--with-coupler=oasis3-mct --without-regard-for-quality'"
+            "*":
+                configure_opts: '--with-coupler=oasis3-mct'
         add_compiletime_environment_changes:
             add_export_vars:
                 # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
                 OIFS_OASIS_BASE: '$(pwd)/oasis'
                 OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                configure_opts: '--with-coupler=oasis3-mct'
-                paul: "was_here"
+                OASIS3MCT_FC_LIB: "$(pwd)/lib/"
+                OASIS3MCTROOT: "$(pwd)/oasis/"
+                configure_opts: "${echam.configure_opts}"
 
-        #choose_computer.name: # MA: This block is probably not necessary anymore
-        #    ollie:
-        #        add_compiletime_environment_changes:
-        #            add_export_vars:
-        #                configure_opts[(0)]: '--with-coupler=oasis3-mct'
+        # Bootstrap switch
+        # ----------------
+        choose_general.with_bootstrap:
+                True:
+                        add_input_files:
+                                target_orography: target_orography
+                        add_input_in_work:
+                                target_orography: target_orography_echam6.nc
+                        add_namelist_changes:
+                                namelist.echam:
+                                        submodelctl:
+                                            lupdate_orog: True
+
+        # with_recom switch
+        # -----------------
+        # Settings for running with REcoM
+        choose_general.with_recom:
+            True:
+                wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
+                add_coupling_fields:
+                    "[[wiso_fields-->FIELD]]":
+                        grid: atmo
+
+
+
 
 
 #########################################################################################
 
 
 jsbach:
+        dynamic_vegetations: True
+        dynveg_file_ending: "_dynveg"
         adj_input_dir: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach"
         choose_jsbach.dataset:
                 "r0009":
@@ -100,8 +285,9 @@ jsbach:
                         hydrology_ctl:
                                 gethd: "remove_from_namelist"
                                 puthd: "remove_from_namelist"
+                                lgfw: "${echam.lgfw}"
                         jsbach_ctl:
-                            use_dynveg: true
+                            use_dynveg: "${dynamic_vegetations}"
         version: "3.20"
 
         choose_computer.name:
@@ -113,13 +299,81 @@ jsbach:
 
 
 fesom:
+        version: "2.1-awiesm-2.1"
+        comp_command: "
+                mkdir -p build;
+                cd build;
+                cmake ${general.fesom_Dflags} ..;
+                make install -j `nproc --all`"
+
+        leapyear: True
+
+        with_wiso: ${general.with_wiso}
+        with_pico: ${general.with_pico}
+        # --- icebergs ---
+        with_icb: ${general.with_icb}
+        # --- icebergs ---
+
+        # Variables depending on the general version of AWIESM
+        # ----------------------------------------------------
         choose_general.version:
-                1.1:
-                        version: "1.4"
-                CMIP6:
-                        version: "1.4"
-                2.1:
-                        version: "2.0"
+                "2.1-paleodyn-2.5":
+                        version: "2.5-paleodyn"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: 0.0
+                        outdata_targets:
+                                fesom: "*.fesom.*.nc"
+                "2.1":
+                        version: "2.1-awiesm-2.1"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
+                "2.1-wiso":
+                        version: "2.1-wiso"
+                        ALE_scheme: 'zstar'
+                "2.1-recom":
+                        version: "2.1-recom"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
+
+                        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        icb_fields: [u10w_oce, v10w_oce]
+                        add_coupling_fields:
+                                "[[icb_fields-->FIELD]]":
+                                        grid: feom
+        # --- icebergs ---
+
+        # General namelist_changes for coupled FESOM
+        # ------------------------------------------
+        opbnd_dir: "remove_from_namelist"
+        tide_forcing_dir: "remove_from_namelist"
+        forcing_data_dir: "remove_from_namelist"
+        model_dir: ${general.model_dir}/${fesom.destination}
+        setup_dir: ${general.model_dir}
+
+        namelist_changes:
+                namelist.config:
+                        paths:
+                                OpbndPath: "${opbnd_dir}"
+                                TideForcingPath: "${tide_forcing_dir}"
+                                ForcingDataPath: "${forcing_data_dir}"
+                namelist.oce:
+                        oce_tra:
+                                surf_relax_s: 0.0
+                                K_hor: ${K_hor}
+                        oce_dyn:
+                                K_gm: ${K_gm}
+                                K_gm_max: ${K_gm_max}
+                        boundary:
+                                restore_s_surf: 0.0
+
+        # Resolution switch
+        # -----------------
         choose_general.resolution:
                 T63_CORE2:
                         nproc: 288
@@ -128,24 +382,85 @@ fesom:
                 T63_REF:
                         nproc: 128
 
-        opbnd_dir: ""
-        tide_forcing_dir: ""
-        forcing_data_dir: ""
-        model_dir: ${general.model_dir}/fesom-${fesom.version}
-        setup_dir: ${general.model_dir}
+        # with_pico switch
+        # ----------------
+        choose_with_pico:
+          True:
+            add_forcing_files:
+              pico_forcing: temp_salt_default
+            add_forcing_sources:
+              # FIXME(PG): Needs to be in a pool somewhere...
+              temp_salt_default: ${general.project_base}/nonstandard_forcings/pico/test.dat
+            add_namelist_changes:
+              namelist.forcing:
+                pico:
+                  use_pico: True
+          "*":
+            add_namelist_changes:
+              namelist.forcing:
+                pico:
+                  use_pico: False
 
-        add_namelist_changes:
-                namelist.oce:
-                        boundary:
-                                restore_s_surf: 0.0
+        # ALE_scheme switch
+        # -----------------
+        # Settings for Gent/McWilliams based upon the selected ALE scheme.
+        choose_ALE_scheme:
+            linfs:
+                K_gm_max: "remove_from_namelist"
+                K_hor: 5000.0
+                K_gm: 5000.0
+            zstar:
+                K_gm_max: 2000.0
+                K_hor: 3000.0
+                K_gm: remove_from_namelist
+            "*":
+                is: invalid
 
-        leapyear: True
-        asforcing: ECHAM5
+        # with_recom switch
+        # -----------------
+        # Settings for running with REcoM
+        choose_general.with_recom:
+            True:
+                # Set fesom.with_recom: true when general.with_recom: true
+                with_recom: true
+                wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
+                add_coupling_fields:
+                    "[[wiso_fields-->FIELD]]":
+                        grid: feom
+
+#########################################################################################
 
 
+recom:
+        choose_general.with_recom:
+                True:
+                        version: "2.0"
 
+                        #5.7.22 Ying: par-tracers only with ciso
+                        use_ciso: true
 
+                        add_choose_computer.name:
+                            levante:
+                                data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
+                            ollie:
+                                data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
+                        restart_name: "restart."
+
+                        remove_namelist_changes.namelist.recom.pavariables:
+                            - constant_CO2
+                            - firstyearoffesomcycle
+                            - lastyearoffesomcycle
+                            - numofCO2cycles
+                            - currentCO2cycle
+                            - REcoM_PI
+                        remove_namelist_changes.namelist.recom.paco2_flux_param:
+                            - CO2_for_spinup
+
+                        namelist_dir: ${fesom.model_dir}/config/
+
+                "*":
+                        not_used: ""
 
 #########################################################################################
 
@@ -161,6 +476,13 @@ oasis3mct:
         a2o_seq: 2
 
         coupling_time_step: 3600
+        # Example for input fields:
+        choose_echam.lgfw:
+                True:
+                        coupling_input_fields:
+                                gfw_atmo:
+                                        freq: 86400
+                                        field_filepath: "gfw_atmo.nc"
         coupling_target_fields:
                 o2a_flux:
                         - 'sst_atmo:sit_atmo:sie_atmo <--distwgt-- sst_feom:sit_feom:sie_feom'
@@ -176,6 +498,47 @@ oasis3mct:
                         - 'heat_ico <--distwgt-- heat_ica'
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
+        
+        choose_general.with_wiso:
+                True:
+        # choose_general.wiso_code: # MA: after merging FESOM, from Martin B. this can be unified
+        #        true:
+                        add_coupling_target_fields:
+                                add_o2a_flux:
+                                        - 'o18w_atm <--distwgt-- o18w_oce'
+                                        - 'hdow_atm <--distwgt-- hdow_oce'
+                                        - 'o16w_atm <--distwgt-- o16w_oce'
+                                        - 'o18i_atm <--distwgt-- o18i_oce'
+                                        - 'hdoi_atm <--distwgt-- hdoi_oce'
+                                        - 'o16i_atm <--distwgt-- o16i_oce'
+                                add_a2o_flux:
+                                        - 'w1_oce <--distwgt-- w1_atm'
+                                        - 'w2_oce <--distwgt-- w2_atm'
+                                        - 'w3_oce <--distwgt-- w3_atm'
+                                        - 'i1_oce <--distwgt-- i1_atm'
+                                        - 'i2_oce <--distwgt-- i2_atm'
+                                        - 'i3_oce <--distwgt-- i3_atm'
+        # --- icebergs ---
+        choose_general.with_icb:
+                True:
+                        add_coupling_target_fields:
+                                add_a2o_flux:
+                                        - 'u10w_oce <--distwgt-- u10_atmo'
+                                        - 'v10w_oce <--distwgt-- v10_atmo'
+        choose_general.with_recom:
+                True: # MA: after merging in FESOM by Martin B. this can be removed
+                        add_coupling_target_fields:
+                                add_o2a_flux:
+                                        - 'o18_atmo <--distwgt-- o18_feom'
+                                        - 'hdo_atmo <--distwgt-- hdo_feom'
+                                        - 'o16_atmo <--distwgt-- o16_feom'
+                                add_a2o_flux:
+                                        - 'w1_oce <--distwgt-- w1_atm'
+                                        - 'w2_oce <--distwgt-- w2_atm'
+                                        - 'w3_oce <--distwgt-- w3_atm'
+                                        - 'i1_oce <--distwgt-- i1_atm'
+                                        - 'i2_oce <--distwgt-- i2_atm'
+                                        - 'i3_oce <--distwgt-- i3_atm'
 
 
         coupling_directions:

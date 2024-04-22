@@ -197,9 +197,7 @@ class PrevRunInfo(dict):
         )
         # Check for interactive, or submitted from a computing node, to avoid
         # using ``input()`` or ``questionaries`` in the second case
-        self.isinteractive = (
-            self._config["general"].get("last_jobtype", "") == "command_line"
-        )
+        self.isinteractive = self._config["general"].get("isinteractive", False)
 
         # Loop through components
         components = self._components
@@ -315,6 +313,8 @@ class PrevRunInfo(dict):
         config_dir = (
             self._config.get("general", {}).get("experiment_dir", "") + "/config/"
         )
+        expid = self._config["general"]["expid"]
+        it_coupled_model_name = self._config["general"]["iterative_coupled_model"]
         # Find ``lresume`` and ``run_number`` for this component
         lresume = self._config.get(component, {}).get("lresume", False)
         run_number = self._config.get("general", {}).get("run_number", 1)
@@ -408,7 +408,7 @@ class PrevRunInfo(dict):
         # one without timestamp (the case for run 1 in spinup).
         if len(potential_prev_configs) == 0 and run_number > 1:
             prev_run_config_file = (
-                self._config["general"]["expid"] + "_finished_config.yaml"
+                f"{expid}_{it_coupled_model_name}finished_config.yaml"
             )
         # Continuing run, not branched off, and one potential file. That's our file!
         elif len(potential_prev_configs) == 1 and run_number > 1:

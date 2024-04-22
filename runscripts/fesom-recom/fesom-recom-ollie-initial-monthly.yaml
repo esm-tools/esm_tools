@@ -26,4 +26,4 @@ fesom:
 
 recom:
         data_path: /work/ollie/projects/MarESys/forcing/CORE2mesh/
-        scenario: "preindustrial"
+        scenario: "PI-CTRL"

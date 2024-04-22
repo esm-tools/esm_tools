@@ -26,3 +26,10 @@
 /
 !because of the large sensitivity of HD model discharge to the changes in HYDROLOGY_CTL
 !it is recommended not to modify HD parameters via namelist (the default values will be used)
+
+&input_ctl
+	var_name = 'population_density'
+	dt_update = 0
+	init_rec = 1 ! only read first record of population_density file (i.e. year 1850)
+/
+

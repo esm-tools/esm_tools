@@ -43,11 +43,19 @@ submitted: false
 hyper_flag: "" # No hyperthreading on ollie
 choose_heterogeneous_parallelization:
         True:
+                choose_taskset:
+                    False:
+                        add_export_vars:
+                            I_MPI_SLURM_EXT: 0
+                    "*":
+                        taskset_chs: ""
                 add_unset_vars:
                         - "SLURM_DISTRIBUTION"
                         - "SLURM_NTASKS"
                         - "SLURM_NPROCS"
                         - "SLURM_ARBITRARY_NODELIST"
+
+hetjob_flag: packjob
 
 unset_vars:
         - "SLURM_MEM_PER_NODE"
@@ -62,6 +70,7 @@ unset_vars:
 useMPI: intelmpi
 
 module_actions:
+        - "source /etc/profile.d/modules.sh"
         - "purge"
         - "load cmake"
         - "load udunits"

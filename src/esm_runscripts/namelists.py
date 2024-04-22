@@ -12,7 +12,8 @@ import sys
 import warnings
 
 import f90nml
-import six
+
+from esm_parser import user_error
 
 
 class Namelist:
@@ -76,16 +77,84 @@ class Namelist:
                     mconfig["namelists"][nml] = f90nml.read(
                         os.path.join(mconfig["thisrun_config_dir"], nml)
                     )
-                except StopIteration:
-                    print(
-                        f"Sorry, the namelist we were trying to load: {nml} may have a formatting issue!"
+                except (StopIteration, ValueError) as e:
+                    user_error(
+                        "Namelist format",
+                        f"The namelist ``{nml}`` has a formatting issue. Please, "
+                        f"fix it before proceeding.\n\n``Hint:`` {e}",
+                        dsymbols=["``", "'"],
                     )
-                    sys.exit(1)
             else:
                 mconfig["namelists"][nml] = f90nml.namelist.Namelist()
             if mconfig.get("namelist_case") == "uppercase":
                 mconfig["namelists"][nml].uppercase = True
         return mconfig
+
+    @staticmethod
+    def nmls_check_changes(namelist_changes):
+        """
+        Checks if namelist changes are given in correct syntax.
+        If not, a user_error will be raised and stop the execution.
+
+        Programmer Information
+        ----------------------
+
+        Parameters
+        ----------
+        namelist_changes : nested dict
+
+        If the syntax is correct, namelist_changes should be a nested dict of the following form::
+
+        {'namelist1.nml': {'namelist1': {'variable1': 'value1', 'variable2': 'value2', 'variable3': 'value3'}, 'namelist2': {'variable1': value1}}}
+
+        Returns
+        -------
+        None
+
+        """
+
+        error_message = (
+            "There is a syntax error, probably in your runscript (but potentially in other yaml files), "
+            "regarding namelist changes (e.g. in a 'add_namelist_changes' block). "
+            "It seems that either 'namelist_file' or "
+            "'namelist_group' or 'both' are missing.\n"
+            "Please make sure that namelist changes are specified in the correct syntax (see example below)"
+            " and rerun your runscript.\n"
+        )
+        example = (
+            "\nExample of a ``correct syntax`` for [add_]namelist_changes:\n"
+            "\t [add_]namelist_changes:\n"
+            "\t    '<namelist_file>':\n"
+            "\t        '<namelist_group>':\n"
+            "\t            <variable>: <value>"
+        )
+
+        nml_syntax_error = False
+
+        for namelist in list(namelist_changes):
+            changes = namelist_changes[namelist]
+            # Check if namelist_changes are specified in correct syntax (e.g. in runscript)
+            # If correct syntax, changes is always a dict.
+            if not isinstance(changes, dict):
+                nml_syntax_error = True
+                this_is_wrong = (f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}: {changes}'\n...")
+                break
+            else:
+                for change_chapter in list(changes):
+                    change_entries = changes[change_chapter]
+                    # Check if namelist_changes are specified in correct syntax (e.g. in runscript)
+                    # If correct syntax, change_entries is always a dict.
+                    if not isinstance(change_entries, dict):
+                        nml_syntax_error = True
+                        this_is_wrong = (
+                            f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}':\n        '{change_chapter}: {change_entries}'\n...")
+                        break
+        if nml_syntax_error:
+            user_error(
+                "Syntax error in namelist changes",
+                f"{error_message}\n{this_is_wrong}\n{example}",
+                dsymbols=["``", "'"],
+            )
 
     @staticmethod
     def nmls_remove(mconfig):
@@ -119,9 +188,15 @@ class Namelist:
         -------
         mconfig : dict
             The modified configuration.
+
+        Calls to other methods
+        ----------------------
+        nmls_check_changes
         """
 
         namelist_changes = mconfig.get("namelist_changes", {})
+        # Check if namelist_changes have correct syntax
+        Namelist.nmls_check_changes(namelist_changes)
         namelist_removes = []
         for namelist in list(namelist_changes):
             changes = namelist_changes[namelist]
@@ -133,7 +208,6 @@ class Namelist:
                     value = change_entries[key]
                     if value == "remove_from_namelist":
                         namelist_removes.append((namelist, change_chapter, key))
-
                         # the key is probably coming from esm_tools config
                         # files or from a user runscript. It can contain lower
                         # case, but the original Fortran namelist could be in
@@ -142,7 +216,6 @@ class Namelist:
                         # `key` is the processed variable from f90nml module and
                         # is lowercase.
                         remove_original_key = False
-
                         # traverse the namelist chapter and see if a mixed case
                         # variable is also found
                         for key2 in namelist_changes[namelist][change_chapter]:
@@ -153,12 +226,10 @@ class Namelist:
                                 namelist_removes.append(
                                     (namelist, change_chapter, original_key)
                                 )
-
                         # remove both lowercase and mixed case variables
                         del namelist_changes[namelist][change_chapter][key]
                         if remove_original_key:
                             del namelist_changes[namelist][change_chapter][original_key]
-
                         # mconfig instead of config, Grrrrr
                         print(
                             f"- NOTE: removing the variable: {key} from the namelist: {namelist}"
@@ -216,9 +287,16 @@ class Namelist:
         -------
         mconfig : dict
             The modified configuration.
+
+        Calls to other methods:
+        ----------------------
+        nmls_check_changes
         """
         namelist_changes = mconfig.get("namelist_changes", {})
-        for namelist, changes in six.iteritems(namelist_changes):
+        # Check if namelist_changes have correct syntax
+        Namelist.nmls_check_changes(namelist_changes)
+
+        for namelist, changes in namelist_changes.items():
             mconfig["namelists"][namelist].patch(changes)
         return mconfig
 
@@ -268,17 +346,20 @@ class Namelist:
 
                 try:
                     forcing_table = pd.read_csv(
-                        config["echam"]["transient_forcing_table"], sep=";", index_col=0
+                        config["echam"]["transient_forcing_table"], sep=";", index_col=0, header=None, 
                     )
-                    co2, n2o, ch4, cecc, cobl, clonp = forcing_table.loc[
+                    co2, n2o, ch4, cecc, cobld, clonp = forcing_table.loc[
                         config["general"]["current_date"].year
                     ]
                     radctl["co2vmr"] = co2
                     radctl["n2ovmr"] = n2o
                     radctl["ch4vmr"] = ch4
                     radctl["cecc"] = cecc
-                    radctl["cobl"] = cobl
+                    radctl["cobld"] = cobld
                     radctl["clonp"] = clonp
+                    # Line needed for making sure the changes in radctl make it to nml,
+                    # even when ``radctl`` did not exist in ``nml``
+                    nml["radctl"] = radctl
                     print(
                         "-------------------------------------------------------------"
                     )
@@ -295,7 +376,7 @@ class Namelist:
                     print(f"             N2O:  {radctl['n2ovmr']}")
                     print(f"             CH4:  {radctl['ch4vmr']}")
                     print(f"             CECC: {radctl['cecc']}")
-                    print(f"             COBL: {radctl['cobl']}")
+                    print(f"             COBL: {radctl['cobld']}")
                     print(f"             CLONP:{radctl['clonp']}")
                 except Exception as e:
                     # Haha something went wrong. Let's be polite about it though
@@ -423,7 +504,7 @@ class Namelist:
         """
         all_nmls = {}
 
-        for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+        for nml_name, nml_obj in mconfig.get("namelists", {}).items():
             with open(
                 os.path.join(mconfig["thisrun_config_dir"], nml_name), "w"
             ) as nml_file:
@@ -438,12 +519,12 @@ class Namelist:
     def nmls_output(mconfig):
         all_nmls = {}
 
-        for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+        for nml_name, nml_obj in mconfig.get("namelists", {}).items():
             all_nmls[nml_name] = nml_obj  # PG: or a string representation?
         for nml_name, nml in all_nmls.items():
             message = f"\nFinal Contents of {nml_name}:"
-            six.print_(message)
-            six.print_(len(message) * "-")
+            print(message)
+            print(len(message) * "-")
             nml.write(sys.stdout)
             print("-" * 80)
             print(f"::: end of the contents of {nml_name}\n")
@@ -451,48 +532,11 @@ class Namelist:
 
     @staticmethod
     def nmls_output_all(config):
-        six.print_(
+        print(
             "\n" "- Namelists modified according to experiment specifications..."
         )
         for model in config["general"]["valid_model_names"]:
             config[model] = nmls_output(config[model], config["general"]["verbose"])
-        return config
-
-    @staticmethod
-    def apply_iceberg_calving(config):
-        """
-        Calculates new number of icebergs when icesheet coupling is turned on
-
-        Relevant configuration entries:
-        """
-        if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get(
-            "use_icebergs"
-        ):
-            # Get the fesom config namelist:
-            nml = config["fesom"]["namelists"]["namelist.config"]
-            # Get the current icebergs chapter or make a new empty one:
-            icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
-            # Determine if icesheet coupling is enabled:
-            if icebergs.get("use_icesheet_coupling"):
-                if os.path.isfile(
-                    config["general"]["couple_dir"] + "/num_non_melted_icb_file"
-                ):
-                    with open(
-                        config["general"]["couple_dir"] + "/num_non_melted_icb_file"
-                    ) as f:
-                        ib_num_old = [
-                            int(line.strip()) for line in f.readlines() if line.strip()
-                        ][0]
-                        print("ib_num_old = ", ib_num_old)
-
-                    ib_num_new = sum(
-                        1
-                        for line in open(
-                            config["fesom"].get("iceberg_dir") + "/LON.dat"
-                        )
-                    )
-                icebergs["ib_num"] = ib_num_old + ib_num_new
-                nml["icebergs"] = icebergs
         return config
 
 

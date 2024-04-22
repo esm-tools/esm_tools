@@ -1,25 +1,20 @@
 import os
 import time
-import shutil
 import subprocess
 import copy
 
 import f90nml
-import six
 import yaml
 import stat
 
-import esm_tools
 import esm_calendar
 import esm_parser
-import esm_rcfile
 import esm_runscripts
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
-from .helpers import end_it_all, evaluate, write_to_log
+from .helpers import evaluate 
 from .namelists import Namelist
-from loguru import logger
 
 #####################################################################
 #                                   compute jobs                    #
@@ -176,7 +171,7 @@ def modify_namelists(config):
     # Load and modify namelists:
 
     if config["general"]["verbose"]:
-        six.print_("\n" "- Setting up namelists for this run...")
+        print("\n" "- Setting up namelists for this run...")
         for index, model in enumerate(config["general"]["valid_model_names"]):
             print(f'{index+1}) {config[model]["model"]}')
         print()
@@ -187,8 +182,6 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom":
-            config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
             config[model], config["general"]["verbose"]
@@ -199,31 +192,38 @@ def modify_namelists(config):
     return config
 
 
-def copy_files_to_thisrun(config):
-    if config["general"]["verbose"]:
-        six.print_("PREPARING EXPERIMENT")
-        # Copy files:
-        six.print_("\n" "- File lists populated, proceeding with copy...")
-        six.print_("- Note that you can see your file lists in the config folder")
-        six.print_("- You will be informed about missing files")
-
-    counter = 0
-    count_max = 30
+def wait_for_iterative_coupling(config):
+    count_max = 90
     if (
-        config["general"].get("iterative_coupling")
+        config["general"].get("iterative_coupling", False)
         and config["general"]["chunk_number"] > 1
     ):
+        if config["general"]["verbose"]:
+            print("Waiting for iterative coupling...")
         if "files_to_wait_for" in config["general"]:
-            for file in config["general"].get("files_to_wait_for"):
+            for file_base in config['general'].get('files_to_wait_for'):
+                counter = 0
+                file = os.path.join(config['general']['experiment_couple_dir'], file_base)
                 while counter < count_max:
                     counter = counter + 1
                     if os.path.isfile(file):
-                        six.print_("File found: ", file)
+                        print("File found: ", file)
                         break
                     else:
-                        six.print_("Waiting for file: ", file)
-                        six.print_("Sleep for 10 seconds...")
+                        print("Waiting for file: ", file)
+                        print("Sleep for 10 seconds...")
                         time.sleep(10)
+
+    return config
+
+
+def copy_files_to_thisrun(config):
+    if config["general"]["verbose"]:
+        print("PREPARING EXPERIMENT")
+        # Copy files:
+        print("\n" "- File lists populated, proceeding with copy...")
+        print("- Note that you can see your file lists in the config folder")
+        print("- You will be informed about missing files")
 
     log_used_files(config)
 
@@ -235,19 +235,32 @@ def copy_files_to_thisrun(config):
 
 def copy_files_to_work(config):
     if config["general"]["verbose"]:
-        six.print_("PREPARING WORK FOLDER")
+        print("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
     return config
 
 
-def _write_finalized_config(config):
-    """Writes <expid>_finished_config.yaml file
-    Parameters
-    ----------
-    config : esm-tools config object
+def _write_finalized_config(config, config_file_path=None):
     """
+    Writes <expid>_finished_config.yaml file
+
+    Input
+    -----
+    config : dict
+        esm-tools config object
+    config_file_path : string
+        Optional file path and name where the content of config is to be stored.
+        Default is None. If not given (default) the path will be set depending on
+        settings in config and the file name is <expid>_finished_config.yaml.
+
+    Returns
+    -------
+    config : dict
+
+    """
+
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
     def date_representer(dumper, date):
@@ -296,11 +309,6 @@ def _write_finalized_config(config):
 
     # format for the other ESM data structures
     EsmConfigDumper.add_representer(
-        esm_rcfile.esm_rcfile.EsmToolsDir,
-        yaml.representer.SafeRepresenter.represent_str,
-    )
-
-    EsmConfigDumper.add_representer(
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
@@ -311,10 +319,14 @@ def _write_finalized_config(config):
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
 
-    config_file_path = (
-        f"{config['general']['thisrun_config_dir']}"
-        f"/{config['general']['expid']}_finished_config.yaml"
-    )
+    thisrun_config_dir = config["general"]["thisrun_config_dir"]
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    if not config_file_path:
+        config_file_path = (
+            f"{thisrun_config_dir}/"
+            f"{expid}_{it_coupled_model_name}finished_config.yaml"
+        )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
         config_final = copy.deepcopy(config)  # PrevRunInfo
@@ -328,17 +340,17 @@ def _write_finalized_config(config):
 
 
 def _show_simulation_info(config):
-    six.print_()
-    six.print_(80 * "=")
-    six.print_("STARTING SIMULATION JOB!")
-    six.print_(f"Experiment ID = {config['general']['expid']}")
-    six.print_(f"Setup = {config['general']['setup_name']}")
+    print()
+    print(80 * "=")
+    print("STARTING SIMULATION JOB!")
+    print(f"Experiment ID = {config['general']['expid']}")
+    print(f"Setup = {config['general']['setup_name']}")
     if "coupled_setup" in config["general"]:
-        six.print_("This setup consists of:")
+        print("This setup consists of:")
         for model in config["general"]["valid_model_names"]:
-            six.print_(f"- {model}")
-    six.print_("Experiment is installed in:")
-    six.print_(f"       {config['general']['base_dir']}/{config['general']['expid']}")
-    six.print_(80 * "=")
-    six.print_()
+            print(f"- {model}")
+    print("Experiment is installed in:")
+    print(f"       {config['general']['base_dir']}/{config['general']['expid']}")
+    print(80 * "=")
+    print()
     return config

@@ -29,6 +29,6 @@ fesom:
         restart_unit: 'm'
         restart_first: 1
 
-        #        further_reading:
-        #        - "fesom_output_control.yaml"
+        #further_reading:
+        #        - "fesom_output.yaml"
 

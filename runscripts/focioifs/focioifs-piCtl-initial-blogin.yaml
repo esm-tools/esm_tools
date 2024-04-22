@@ -4,62 +4,69 @@ general:
    homedir: !ENV ${HOME}
    
    setup_name: "focioifs"      
+   version: "2.1"
    resolution: "TCO95_ORCA05"
 
-   compute_time: "00:15:00"
+   compute_time: "12:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
+   final_date: "2300-01-01T00:00:00"         # Final date of the experiment
 
-   nyear: 0
-   nmonth: 1
+   nyear: 10
+   nmonth: 0
    nday: 0
    restart_rate: 1
    restart_unit: days 
    hours: 0
+
+   postprocessing: True
   
    # machine specific setup 
    account: shk00018
    base_dir: ${general.homedir}/esm/esm-experiments/
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/focioifs-2.0
+   model_dir: ${general.homedir}/esm/models/focioifs-2.1
   
 oifs:
    version: "43r3"
    with_xios: True
-   scenario: "piControl"
+   scenario: "historical"   
    mip: "cmip6"
-   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
-   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
-   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
-   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
-   ifsdata_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/ifsdata/"
-   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
-   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
-   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   pool_dir: /scratch/projects/shk00018/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy43_tco95/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco95/95_4/"
+   ifsdata_dir: "${pool_dir}/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy43_tco95/2008010100/"
    icmcl_file: "ICMCLhagwINIT"
    prepifs_expid: hagw
    prepifs_startdate: 20080101
    resolution: TCO95
    levels: L91
+   time_step: 1800
    lresume: 0
-   nproc: 287
+   nproc: 288
+   omp_num_threads: 2
    use_ocean_currents: 0
    perturb: 0
    sclct_switch: 2
 
-   #add_namelist_changes:
-   #    fort.4:
-   #        NAMGFL:
-   #            NMFDIAGLEV: 2
+   add_namelist_changes:
+       fort.4:
+           NAERAD:
+               NCMIPFIXYR: 1950
+               LSOLAR1950: ".true."
 
 oasis3mct:
    norestart: F
    use_lucia: True
    #export_mode: EXPOUT
-   #debug_level: 50
-   pool_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/"
-   ini_parent_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/"
+   debug_level: 50
+   pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
    oasis_date_stamp: "" 
    
 nemo:
@@ -71,14 +78,14 @@ nemo:
    add_namelist_changes:
        namelist_cfg:
            namtra_ldf:
-               rn_aht_0: 599
+               rn_aht_0: 600
            namsbc_rnf:
-               rn_rfact: 1.067
+               rn_rfact: 1.058
    
 rnfmap:
    nproc: 1
 
 xios: 
    with_model: focioifs 
-   xml_dir: "/scratch/usr/shkjocke/foci_input2/OASIS3_OPENIFS43R3-TCO95_ORCA05/output_for_spinup/"
-   nproc: 48
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
+   nproc: 47

@@ -1,0 +1,68 @@
+# ESM-Tools pre-merge automation
+# ==============================
+# In a pull-request, if a comment contains #approve-changes, the following steps are triggered:
+#   1. runs esm_tests for each computer with the saving of the laste_tested flag true
+#   2. commits those changes to the esm_tests_info repo
+
+name: approve esm_tests changes
+
+# Triggers the workflow on an issue comment
+on:
+  issue_comment:
+    types: [created]
+    
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+ 
+jobs:
+  # Sequence of tasks that will be executed as part of the job
+  ollie:
+        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+        with:
+          computer: ollie1
+          update_esm_tests_info: true
+          test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
+  levante:
+        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+        with:
+          computer: levante1
+          update_esm_tests_info: true
+          test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
+  juwels:
+        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+        with:
+          computer: jwlogin01.juwels
+          update_esm_tests_info: true
+          test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
+  aleph:
+        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+        with:
+          computer: elogin1
+          update_esm_tests_info: true
+          test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
+  blogin:
+        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+        with:
+          computer: blogin1
+          update_esm_tests_info: true
+          test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}

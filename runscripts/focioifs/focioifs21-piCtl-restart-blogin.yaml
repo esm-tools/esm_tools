@@ -1,0 +1,122 @@
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   resolution: "TCO95_ORCA05"
+   version: "2.1"
+   
+   compute_time: "12:00:00"
+   initial_date: "4000-01-01T00:00:00"       # Initial exp. date
+   final_date: "4100-01-01T00:00:00"         # Final date of the experiment
+   
+   nyear: 10
+   nmonth: 0
+   nday: 0
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+   account: shk00018
+   base_dir: /scratch/usr/shkjocke/esm-slask/
+
+   lresume: True
+   ini_parent_exp_id: "FOCI_GJK006"
+   ini_string_parent_date: "4000-01-01"
+   ini_nemo_restart_steps: 20161344
+   ini_parent_dir: "/scratch/projects/shk00018/focioifs_restarts/${ini_parent_exp_id}/restart/"
+   oasis_date_stamp: "_39900101-39991231"
+   # We will not restart OpenIFS, techinically speaking
+   # with the eternal restart feature, the complete yaml of the previous run needs to be available:
+   #prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"   
+   
+   # This activates post processing for OpenIFS and NEMO
+   postprocessing: 1
+
+focioifs:
+   model_dir: ${general.homedir}/esm/models/focioifs-2.1/
+   
+oifs:
+   lresume: False 
+   # This would be for a traditional restart
+   # but not used here
+   #prev_run_config_file: "${general.prev_run_config_file}"
+   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   #ini_parent_dir: "${general.ini_parent_dir}/oifs/"
+   #ini_parent_date: "${prev_date}"
+   
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   pool_dir: /scratch/projects/shk00018/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy43_tco95/"
+   #input_dir: "/scratch/projects/shk00018/focioifs_restarts/FOCI_GJK006/restart/oifs/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco95/95_4/"
+   ifsdata_dir: "${pool_dir}/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   # This would use initial conditions from ERA-Interim 2008-01-01
+   #prepifs_expid: hagw
+   #prepifs_startdate: 20080101
+   
+   # This uses initial conditions from FOCI_GJK006 4000-01-02
+   prepifs_expid: ECE3 
+   prepifs_startdate: 40000101 
+   
+   resolution: TCO95
+   levels: L91
+   nproc: 288
+   omp_num_threads: 1 
+   use_ocean_currents: 0
+   sclct_switch: 2
+   initial_date_cold: "4000-01-01"
+
+oasis3mct:
+   lresume: ${general.lresume}
+   pool_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   # This would be for a cold start (SST = 0C,etc)
+   #ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
+   # Use FOCI_GJK006 4000-01-01
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+   ini_parent_date: "${prev_date}"
+
+   norestart: F
+   use_lucia: True
+   #export_mode: EXPOUT
+   #debug_level: 50
+   # in FOCIOIFS all oasis input files are treated as restarts.
+   # in FOCI all remapping files are handled as inputs. Both approaches work.
+   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct"
+   oasis_date_stamp: "${general.oasis_date_stamp}"
+   #oasis_date_stamp: "" 
+   
+nemo:
+   lresume: ${general.lresume}
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/nemo/"
+   ini_parent_date: "${prev_date}"
+
+   resolution: "ORCA05"
+   jpni: 24
+   jpnj: 18
+   nproc: 432
+   add_namelist_changes:
+       namelist_cfg:
+           namtra_ldf:
+               rn_aht_0: 600
+           namsbc_rnf:
+               rn_rfact: 1.067
+
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
+   nproc: 47

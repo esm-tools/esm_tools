@@ -113,3 +113,51 @@ release6.0:
             - and many others...\n\n"
         action: DELAY(1)
         announcement: true
+
+release6.7:
+        package: "esm_tools"
+        versions: "<6.7.0"
+        message: "\x1b[1m\x1b[96mSUPPORT FOR LEVANTE\x1b[0m\n
+
+            We are very happy to announce that \x1b[96mLevante HPC\x1b[0m from \x1b[96mDKRZ\x1b[0m is now supported in\n
+            release \x1b[96m6.7\x1b[0m of \x1b[1m\x1b[96mESM-Tools\x1b[0m!\n
+
+            Many models needed changes in the CMake files to work optimally with the\n
+            AMD-processor architecture in this new system. Here you can find a list of\n
+            models and versions supported:\n
+            \t\x1b[35mhttps://github.com/esm-tools/esm_tools/discussions/663\x1b[0m\n
+
+            If the model you are aiming to use is not in that list, please add a comment\n
+            to the discussion in the link, stating the model's name, version, branches...\n
+            and \x1b[35mcontact the model developers\x1b[0m for them to do the necessary\n
+            changes in the CMake files.\n"
+        action: DELAY(1)
+        announcement: true
+
+oasis_branchoff6.21.23:
+        package: "esm_tools"
+        versions: "<6.21.23"
+        message: "\x1b[1m\x1b[96mOASIS BRANCH-OFF RESTARTS FIXED!\x1b[0m\n
+
+            The bug on the copying of the wrong flux files from OASIS \x1b[96mwhen running\n
+            a branch-off simulation that started from the middle of a parent simulation\x1b[0m is now\n
+            \x1b[96mfixed\x1b[0m (no more manual fixing of the \x1b[35mrstas.nc\x1b[0m/\x1b[35mrstos.nc\x1b[0m/\x1b[35ma2o_flux\x1b[0m/\x1b[35mo2a_flux.nc\x1b[0m\n
+            links is needed).\n"
+        action: DELAY(1)
+        announcement: true
+
+#online_workshops:
+#        package: "esm_tools"
+#        versions: "<7.0.0"
+#        message: "\x1b[1m\x1b[96mONLINE WORKSHOPS\x1b[0m\n
+#
+#            The ESM-Tools team has been recently organizing a number of in-person workshops.\n
+#            Did you miss some of those? No problem! the workshops were recorded and you can\n
+#            access their content here: \x1b[35mhttps://github.com/esm-tools/workshops\x1b[0m\n
+#            (scroll down to the Workshops index to find the workshops available and their links).\n
+#            The workshops currently avialable are:\n
+#            - \x1b[96mESM-Tools\x1b[0m\n
+#            - \x1b[96mGit\x1b[0m\n
+#            - \x1b[96mGitHub Projects for Project Management\x1b[0m\n"
+#        action: DELAY(1)
+#        note: delete after a week ot two

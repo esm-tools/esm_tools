@@ -199,8 +199,6 @@ def yaml_file_to_dict(filepath):
                     yaml_load["computer"]["runtime_environment_changes"][
                         "add_export_vars"
                     ] = add_export_vars
-                # Check for empty components/models
-                # check_for_empty_components(yaml_load, filepath + extension)
                 return yaml_load
         except IOError as error:
             logger.debug(
@@ -210,10 +208,10 @@ def yaml_file_to_dict(filepath):
             logger.debug(f"Your file {filepath + extension} has syntax issues!")
             raise EsmConfigFileError(filepath + extension, yaml_error)
         except Exception as error:
-            print("Something else went wrong")
-            print(f"Serious issue with {filepath}, goodbye...")
             logger.exception(error)
-            sys.exit()
+            esm_parser.user_error(
+                "Yaml syntax",
+                f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}")
     raise FileNotFoundError(
         "All file extensions tried and none worked for %s" % filepath
     )
@@ -275,6 +273,8 @@ def check_changes_duplicates(yamldict_all, fpath):
     for yamldict in yamldict_all.values():
         # Check if any <variable>_changes or add_<variable> exists, if not, return
         # Perform the check only for the dictionary objects
+        changes_list = []
+        add_list = []
         if isinstance(yamldict, dict):
             changes_list = esm_parser.find_key(
                 yamldict, "_changes", "add_", paths2finds=[], sep=","
@@ -311,7 +311,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                 changes_no_choose = [x.replace(",", ".") for x in changes_no_choose]
                 esm_parser.user_error(
                     "YAML syntax",
-                    "More than one ``_changes`` out of a ``choose_``in "
+                    "More than one ``_changes`` out of a ``choose_`` in "
                     + fpath
                     + ":\n    - "
                     + "\n    - ".join(changes_no_choose)
@@ -564,7 +564,10 @@ class EsmConfigFileError(Exception):
         # Message to return
         if len(report) == 0:
             # If no tabs are found print the original error message
-            print("\n\n\n" + yaml_error)
+            try:
+                print("\n\n\n" + yaml_error)
+            except:
+                self.message = ("\n\n A syntax error has been found in "+fpath+"\n")
         else:
             # If tabs are found print the report
             self.message = (

@@ -3,6 +3,9 @@
 #########################################################################################
 
 
+# first, import the output fields for FESOM and RECOM. Eg. yearly_outputs,
+# monthly_outputs, daily_outputs, 12_step_outputs
+#further_reading: awicm_recom/awicm_recom_outputs.yaml
 
 general:
         model: awicm
@@ -38,9 +41,12 @@ general:
           '1.0-recom':
             couplings:
             - fesom-1.4+recom-2.0+echam-6.3.04p1
+            add_include_models:
+            - recom
           CMIP6:
             couplings:
             - fesom-1.4+echam-6.3.04p1
+
 
 
 #########################################################################################
@@ -61,6 +67,8 @@ echam:
                 - sst
                 - sic
         version: "6.3.04p1"
+
+        scenario: "${general.scenario}"
 
 # kh 20.03.20 values may be superseded by section choose_computer.cores_per_node: in .../configs/echam/echam.yaml
         choose_general.resolution:
@@ -106,6 +114,12 @@ fesom:
                         version: "1.4"
                 "CMIP6":
                         version: "1.4"
+                "1.0-recom":
+                        version: "1.4-recom-awicm"
+                        add_namelist_changes:
+                            namelist.oce:
+                                viscdiff:
+                                    Kh0: 800.0 # default for setup with recom involved
                 "2.0":
                         version: "2.0"
         choose_general.resolution:
@@ -122,20 +136,31 @@ fesom:
         model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
-        add_namelist_changes:
+        namelist_changes:
                 namelist.oce:
-                        oce_tra:
-                                surf_relax_s: 0.0
                         boundary:
                                 restore_s_surf: 0.0
 
         leapyear: True
         asforcing: ECHAM5
 
+###############################################################################
 
+recom:
+    choose_general.version:
+        1.0-recom:
+            version: "2.0-recom-awicm"
 
+            # NOTE: look at README.md for description of the namelists
+            scenario: "${general.scenario}"
 
-
+            # setup-specific namelist.recom
+            config_sources:
+                recom: "${namelist_dir}/namelist.recom_co2_coupling"
+            add_config_in_work:
+                recom: "namelist.recom"
+        "*":
+            not_used: ""
 
 #########################################################################################
 
@@ -166,7 +191,14 @@ oasis3mct:
                         - 'heat_ico <--distwgt-- heat_ica'
                         - 'heat_swo <--distwgt-- heat_swa'
                         - 'hydr_oce <--distwgt-- hydr_atm'
-
+        choose_general.version:
+            1.0-recom:
+                add_coupling_target_fields:
+                    add_o2a_flux:
+                        - 'co2_atmo <--distwgt-- co2_feom'
+                    add_a2o_flux:
+                        - 'co2c_oce <--distwgt-- co2c_atm'
+                        - 'w10w_oce <--distwgt-- w10w_atm'
 
         coupling_directions:
                 'feom->atmo':

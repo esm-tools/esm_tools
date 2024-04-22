@@ -1,16 +1,14 @@
 import copy
-import difflib
 import glob
 import os
 import re
 import shutil
 import time
-import colorama
 import yaml
 from esm_parser import determine_computer_from_hostname
-from esm_runscripts import color_diff
 from loguru import logger
 
+from .output import *
 from .read_shipped_data import *
 from .test_utilities import *
 
@@ -29,65 +27,65 @@ compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelist
     in each ``resources/runscripts/<model>`` folder.
 """
 
-
-class Comparison:
-    """Compares two ESM Tools files"""
-
-    def __init__(self, test_file, truth_file):
-        """
-        Parameters
-        ----------
-        test_file : str
-            str representation (already opened and read in) of the file (e.g.
-            run file, compilatoin script, namelist) which you want to check
-        truth_file : str
-            str representation of the file which is known to be a valid truth.
-        """
-        self.test_file = test_file
-        self.truth_file = truth_file
-
-    @classmethod
-    def from_filepaths(cls, test_file, truth_file):
-        with open(test_file, "r") as f1:
-            test_file = f1.read()
-        with open(test_file, "r") as f2:
-            truth_file = f2.read()
-        return cls(test_file, truth_file)
-
-    @classmethod
-    def from_test_filepath_and_pkg(cls, test_file, truth_file):
-        """
-        Given a test filepath, and a relative truth path, return a new Comparison.
-
-        For the relative truth path, we are reading from the package. So,
-        assuming you want to use the following as your truth:
-
-        >>> truth_file = "ollie/run/awicm/awicm2-initial-monthly/scripts/awicm2-initial-monthly_compute_20000101 -20000131.run"
-
-        This would check the run file for a run of awicm using a awicm2
-        initialization with monthly restarts which is run on the ollie HPC.
-        """
-        # get last tested (Truth)
-        with open(test_file, "r") as f:
-            test_file = f1.read()
-        truth_file = read_shipped_data.get_last_tested(truth_file)
-        return cls(test_file, truth_file)
-
-
-class CompileFileComparison(Comparison):
-    pass
-
-
-class SadFileComparison(Comparison):
-    pass
-
-
-class FinishedESMConfigComparison(Comparison):
-    pass
-
-
-def NamelistsComparison(Comparison):
-    pass
+# Coded by @pgierz, but not finished, therefore commented.
+# class Comparison:
+#    """Compares two ESM Tools files"""
+#
+#    def __init__(self, test_file, truth_file):
+#        """
+#        Parameters
+#        ----------
+#        test_file : str
+#            str representation (already opened and read in) of the file (e.g.
+#            run file, compilatoin script, namelist) which you want to check
+#        truth_file : str
+#            str representation of the file which is known to be a valid truth.
+#        """
+#        self.test_file = test_file
+#        self.truth_file = truth_file
+#
+#    @classmethod
+#    def from_filepaths(cls, test_file, truth_file):
+#        with open(test_file, "r") as f1:
+#            test_file = f1.read()
+#        with open(test_file, "r") as f2:
+#            truth_file = f2.read()
+#        return cls(test_file, truth_file)
+#
+#    @classmethod
+#    def from_test_filepath_and_pkg(cls, test_file, truth_file):
+#        """
+#        Given a test filepath, and a relative truth path, return a new Comparison.
+#
+#        For the relative truth path, we are reading from the package. So,
+#        assuming you want to use the following as your truth:
+#
+#        >>> truth_file = "ollie/run/awicm/awicm2-initial-monthly/scripts/awicm2-initial-monthly_compute_20000101 -20000131.run"
+#
+#        This would check the run file for a run of awicm using a awicm2
+#        initialization with monthly restarts which is run on the ollie HPC.
+#        """
+#        # get last tested (Truth)
+#        with open(test_file, "r") as f:
+#            test_file = f1.read()
+#        truth_file = read_shipped_data.get_last_tested(truth_file)
+#        return cls(test_file, truth_file)
+#
+#
+# class CompileFileComparison(Comparison):
+#    pass
+#
+#
+# class SadFileComparison(Comparison):
+#    pass
+#
+#
+# class FinishedESMConfigComparison(Comparison):
+#    pass
+#
+#
+# def NamelistsComparison(Comparison):
+#    pass
 
 
 #######################################################################################
@@ -103,7 +101,7 @@ def comp_test(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
     """
     # Load dictionaries from ``info``
@@ -116,6 +114,7 @@ def comp_test(info):
 
     # Set the counter to 0
     c = 0
+    logger.info("")
     # Loop through the models and their scripts
     for model, scripts in scripts_info.items():
         if model == "general":
@@ -137,7 +136,8 @@ def comp_test(info):
                 comp_command = f"esm_master comp-{model}-{version} --no-motd -k"
             general_model_dir = f"{user_info['test_dir']}/comp/{model}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
-            logger.info(f"\tCOMPILING ({progress}%) {model}-{version}:")
+            title = f"COMPILING ({progress}%) {bs}{model}-{version}{be}"
+            logger.info("\t" + info["group_output"]["startg"].format(title))
 
             # Create the folders where this test should run and change directory
             if not os.path.isdir(general_model_dir):
@@ -219,7 +219,7 @@ def comp_test(info):
                                     folders.append(found_format[0])
                     if len(folders) == 0:
                         logger.warning(
-                            f'NOT TESTING {model + version}: "cd" command not found'
+                            f'NOT TESTING {model}{version}: "cd" command not found'
                         )
                         continue
 
@@ -264,6 +264,7 @@ def comp_test(info):
             success = check(info, "comp", model, version, out, script, v)
             if success:
                 logger.info("\t\tSuccess!")
+            logger.info(f'\t\t{info["group_output"]["endg"]}')
 
 
 def run_test(info):
@@ -274,13 +275,14 @@ def run_test(info):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
     """
     # Load dictionaries from ``info``
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
+    run_errors = ["ERROR:", "slurmstepd: error: *** STEP", "PBS: job killed: walltime"]
 
     # Set the counter to 0
     c = 0
@@ -303,7 +305,8 @@ def run_test(info):
             general_run_dir = f"{user_info['test_dir']}/run/{model}/"
             run_dir = f"{general_run_dir}/{script}"
             model_dir = f"{user_info['test_dir']}/comp/{model}/{model}-{version}"
-            logger.info(f"\tSUBMITTING ({progress}%) {model}/{script}:")
+            title = f"SUBMITTING ({progress}%) {bs}{model}/{script}{be}"
+            logger.info(f"\t" + info["group_output"]["startg"].format(title))
 
             # Create the folders where this test should run and change directory
             if not os.path.isdir(general_run_dir):
@@ -361,6 +364,8 @@ def run_test(info):
             # Check submission
             success = check(info, "submission", model, version, out, script, v)
 
+            logger.info(f'\t\t{info["group_output"]["endg"]}')
+
     # Check if simulations are finished
     total_sub = len(submitted)
     subc = 1
@@ -378,10 +383,27 @@ def run_test(info):
         # Loop through models and scripts
         for model, script in submitted:
             v = scripts_info[model][script]
+            version = v["version"]
             progress = round(subc / total_sub * 100, 1)
             exp_dir = f"{user_info['test_dir']}/run/{model}/{script}/"
             exp_dir_log = f"{exp_dir}/log/"
             nmodels_success = 1
+            with open(f"{exp_dir}/run.out", "r") as so:
+                submission_out = so.read()
+            if "ERROR:" in submission_out or not v["state"].get("submission", False):
+                subc, finished_runs, success = experiment_state_action(
+                    info,
+                    "Submission failed!",
+                    False,
+                    v,
+                    finished_runs,
+                    cc,
+                    subc,
+                    model,
+                    script,
+                    version,
+                    progress,
+                )
             # Search through the ``_compute_`` files for a string that indicates that
             # the run has finished
             for f in os.listdir(exp_dir_log):
@@ -393,61 +415,38 @@ def run_test(info):
                         # should have been created
                         if "Reached the end of the simulation, quitting" in observe_out:
                             if nmodels_success == v["nmodels_iterative_coupling"]:
-                                logger.info(
-                                    f"\tRUN FINISHED ({progress}%) {model}/{script}"
-                                )
-                                logger.info(f"\t\tSuccess!")
-                                finished_runs.append(cc)
-                                subc += 1
-                                v["state"]["run_finished"] = True
-                                # Run a check for run finished
-                                success = check(
+                                subc, finished_runs, success = experiment_state_action(
                                     info,
-                                    "run",
-                                    model,
-                                    version,
-                                    "",
-                                    script,
+                                    "Success!",
+                                    True,
                                     v,
+                                    finished_runs,
+                                    cc,
+                                    subc,
+                                    model,
+                                    script,
+                                    version,
+                                    progress,
                                 )
                             else:
                                 nmodels_success += 1
                         # If the run has errors label the state for ``run_finished`` as
                         # ``False`` and run a check for files that should have been
                         # created anyway
-                        elif "ERROR:" in observe_out:
-                            logger.info(
-                                f"\tRUN FINISHED ({progress}%) {model}/{script}"
-                            )
-                            logger.error(f"\t\tSimulation crashed!")
-                            finished_runs.append(cc)
-                            subc += 1
-                            v["state"]["run_finished"] = False
-                            # Run a check for run finished
-                            success = check(
+                        elif any([run_error in observe_out for run_error in run_errors]):
+                            subc, finished_runs, success = experiment_state_action(
                                 info,
-                                "run",
-                                model,
-                                version,
-                                "",
-                                script,
+                                "Simulation crashed!",
+                                False,
                                 v,
+                                finished_runs,
+                                cc,
+                                subc,
+                                model,
+                                script,
+                                version,
+                                progress,
                             )
-            # if not info["keep_run_folders"]:
-            #    folders_to_remove = [
-            #        "run_",
-            #        "restart",
-            #        "outdata",
-            #        "input",
-            #        "forcing",
-            #        "unknown",
-            #    ]
-            #    logger.debug(f"\t\tDeleting {folders_to_remove}")
-            #    for folder in os.listdir(exp_dir):
-            #        for fr in folders_to_remove:
-            #            if fr in folder:
-            #                shutil.rmtree(f"{exp_dir}/{folder}")
-            #                continue
 
             # Update the testing index for the next iteration
             cc += 1
@@ -471,6 +470,8 @@ def run_test(info):
         if len(submitted) > 0:
             time.sleep(30)
 
+    logger.info("")
+
 
 #######################################################################################
 # CHECKS
@@ -488,7 +489,7 @@ def check(info, mode, model, version, out, script, v):
 
     Parameters
     ----------
-    info : dict
+    info : esm_tests.Info
         Dictionary that contains the testing info.
     mode : str
         Mode of the check.
@@ -519,6 +520,13 @@ def check(info, mode, model, version, out, script, v):
     # Load config for this mode
     with open(f"{os.path.dirname(v['path'])}/config.yaml", "r") as c:
         config_test = yaml.load(c, Loader=yaml.FullLoader)
+
+    # Build the ignore_dict based on the general, model and script specific ignores
+    ignore_dict = copy.deepcopy(info["ignore"])
+    model_ignore = config_test.get("ignore_compare", {}).get("all", {})
+    deep_update(ignore_dict, model_ignore, extend_lists=True)
+    script_ignore = config_test.get("ignore_compare", {}).get(script, {})
+    deep_update(ignore_dict, script_ignore, extend_lists=True)
 
     # There are 3 modes: comp, submission and run, and 2 config_modes: comp and run.
     # This is because submission shares a lot of operations with run so they are in the
@@ -564,6 +572,14 @@ def check(info, mode, model, version, out, script, v):
     if actually_do or mode == "submission":
         # Check for errors in the output
         errors = config_test.get(test_type, {}).get("errors", [])
+        # Get exceptions
+        error_exceptions = {}
+        cleaned_errors = []
+        for error in errors:
+            cleaned_error = error.split(" except ")[0]
+            error_exceptions[cleaned_error] = find_exceptions(error)
+            cleaned_errors.append(cleaned_error)
+        errors = cleaned_errors
         # Add specific errors
         if mode == "comp":
             errors.append("errors occurred!")
@@ -571,7 +587,7 @@ def check(info, mode, model, version, out, script, v):
             errors.extend(["Traceback (most recent call last):", "ERROR"])
         # Loop through errors
         for error in errors:
-            if error in out:
+            if error in out and script not in error_exceptions.get(error, []):
                 logger.error(f"\t\tError during {mode_name[mode]}!\n\n{out}")
                 success = False
         if mode != "run":
@@ -587,6 +603,7 @@ def check(info, mode, model, version, out, script, v):
         files_checked = exist_files(
             config_test.get(test_type, {}).get("files", []),
             f"{user_info['test_dir']}/{mode}/{model}/{subfolder}",
+            version,
         )
         v["state"][f"{mode}_files"] = files_checked
         success = success and files_checked
@@ -603,7 +620,7 @@ def check(info, mode, model, version, out, script, v):
     # Loop through the files to be compared
     for cfile in this_compare_files:
         # Load lines to be ignored
-        ignore_lines = info["ignore"].get(cfile, [])
+        ignore_lines = ignore_dict.get(cfile, [])
         # Get relative paths of the files to be compared
         subpaths_source, subpaths_target = get_rel_paths_compare_files(
             info, cfile, v, this_test_dir
@@ -618,6 +635,7 @@ def check(info, mode, model, version, out, script, v):
                 if os.path.isfile(f"{last_tested_dir}/{this_computer}/{sp_t}"):
                     # Check if files are identical
                     identical, differences = print_diff(
+                        info,
                         f"{last_tested_dir}/{this_computer}/{sp_t}",
                         f"{user_info['test_dir']}/{sp}",
                         sp,
@@ -640,344 +658,170 @@ def check(info, mode, model, version, out, script, v):
     return success
 
 
-def exist_files(files, path):
+def experiment_state_action(
+    info, message, no_err, v, finished_runs, cc, subc, model, script, version, progress
+):
+    """
+    Triggers checks for finished runs and reports their state.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary that contains the testing info
+    message : str
+        Message to report about the state
+    no_err : bool
+        Boolean indicating whether errors occur (``False``) or not (``True``)
+    v : dict
+        Dictionary containing script variables such as ``version``, ``comp_command``, ...
+    finished_runs : list
+        List of indexes for runs finished
+    cc : int
+        Run counter
+    subc : int
+        Counter for subruns
+    model : str
+        Model for which the check is run
+    script : str
+        Name of the script to be checked
+    version : str
+        Version of the model for which the check is run
+    progress : float
+        Percentage of the progress
+
+    Returns
+    -------
+    subc : int
+        Counter for subruns
+    finished_runs : list
+        List of indexes for runs finished
+    success : bool
+        Boolean indicating the success of the run
+    """
+    logger.info(f"\tRUN FINISHED ({progress}%) {model}/{script}")
+    if no_err:
+        logger.info(f"\t\t{message}")
+    else:
+        logger.error(f"\t\t{message}")
+    finished_runs.append(cc)
+    subc += 1
+    v["state"]["run_finished"] = no_err
+    # Run a check for run finished
+    success = check(info, "run", model, version, "", script, v)
+
+    return subc, finished_runs, success
+
+
+def check_perfect(info, results):
+    """
+    Exits if something is not perfect in the ``results``, to trigger a failted test
+    in GitHub Actions.
+
+    Parameters
+    ----------
+    info : esm_tests.Info
+        Dictionary with the general info about the tests.
+    results : dict
+        Dictionary containing the results of the testing.
+    """
+    all_tests_passed = True
+    if info["actually_compile"]:
+        comp_perfect = "compiles"
+    else:
+        comp_perfect = "comp files identical"
+    if info["actually_run"]:
+        run_perfect = "runs"
+    else:
+        run_perfect = "run files identical"
+    for model, versions in results.items():
+        for version, scripts in versions.items():
+            for script, computers in scripts.items():
+                for computer, data in computers.items():
+                    if data["compilation"] != comp_perfect:
+                        all_tests_passed = False
+                    if data["run"] != run_perfect:
+                        all_tests_passed = False
+    if not all_tests_passed:
+        sys.exit(
+            "Some of the tests were not successful. Exited to trigger a failed test in GitHub Actions"
+        )
+
+
+def exist_files(files, path, version):
+    """
+    Checks whether the required files defined in
+    ``resources/runscripts/<model>/config.yaml`` are present or not and sets the state
+    if the ``files_check`` ``True`` (exist) or ``False`` (do not exist) depending on
+    that.
+
+    Each element of the list of files in the ``config.yaml`` can contain the following
+    special functionalities:
+    - ``*``: to trigger a wildcard evaluation
+    - ``except [<list of versions>]``: do not check this file for the versions inside
+      the ``[]``
+    - ``in [<list of versions>]``: check this file only for the versions inside the
+      ``[]``
+
+    Parameters
+    ----------
+    files : list
+        List of files to be checked, extracted from the ``config.yaml``
+    path : str
+        Path of the experiment
+    version : str
+        Version of the model
+    """
     files_checked = True
+    # Loop through files
     for f in files:
-        if "*" in f:
-            listing = glob.glob(f"{path}/{f}")
-            if len(listing) == 0:
-                logger.error(f"\t\tNo files following the pattern '{f}' were created!")
-                files_checked = False
+        exception_list = find_exceptions(f)
+
+        # Command's logic
+        if " except " in f and version in exception_list:
+            continue
+        elif " in " in f and not version in exception_list:
+            continue
         else:
-            if not os.path.isfile(f"{path}/{f}"):
-                logger.error(f"\t\t'{f}' does not exist!")
+            f_path = f.split(" ")[0]
+
+        # Check for files with wildcards
+        if "*" in f_path:
+            listing = glob.glob(f"{path}/{f_path}")
+            if len(listing) == 0:
+                logger.error(
+                    f"\t\tNo files following the pattern '{f_path}' were created!"
+                )
                 files_checked = False
+        # Check for files without wildcards
+        else:
+            if not os.path.isfile(f"{path}/{f_path}"):
+                logger.error(f"\t\t'{f_path}' does not exist!")
+                files_checked = False
+
     return files_checked
 
+def find_exceptions(string_to_be_checked):
+    """
+    Finds exceptions on the ``string_to_be_checked`` with the format
+    `` except [<item1>, <item2>, ...]``, and returns the list of the exceptions
+    specified between the square brackets in the string.
 
-def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
-    # Load relevant variables from ``info``
-    user_info = info["user"]
-    # Initialize ``subpaths`` list
-    subpaths = []
-    # If the file type is ``comp-``, append all the files that match that string to
-    # ``subpaths``
-    if cfile == "comp-":
-        for f in os.listdir(f"{user_info['test_dir']}/{this_test_dir}"):
-            if cfile in f:
-                subpaths.append(f"{this_test_dir}/{f}")
-        if len(subpaths) == 0:
-            logger.error("\t\tNo 'comp-*.sh' file found!")
-    # If the file type matches ``.run`` or ``finished_config``, append all the files
-    # that match that string to ``subpaths``. These files are taken always from the
-    # first ``run_`` folder so that a check test and an actual test files are
-    # comparable
-    elif cfile in [".run", "finished_config"]:
-        files_to_folders = {".run": "scripts", "finished_config": "config"}
-        ctype = files_to_folders[cfile]
-        ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
-        ldir.sort()
-        for f in ldir:
-            # Take the first run directory
-            if "run_" in f:
-                cf_path = f"{this_test_dir}/{f}/{ctype}/"
-                cfiles = glob.glob(f"{user_info['test_dir']}/{cf_path}/*{cfile}*")
-                # If not found, try in the general directory
-                if len(cfiles) == 0:
-                    cf_path = f"{this_test_dir}/{ctype}/"
-                    cfiles = glob.glob(f"{user_info['test_dir']}/{cf_path}/*{cfile}*")
-                # Make sure we always take the first run
-                cfiles.sort()
-                num = 0
-                if os.path.islink(
-                    f"{user_info['test_dir']}/{cf_path}/{cfiles[num].split('/')[-1]}"
-                ):
-                    num = 1
-                subpaths.append(f"{cf_path}/{cfiles[num].split('/')[-1]}")
-                break
-    elif cfile == "namelists":
-        # Get path of the finished_config
-        s_config_yaml, _ = get_rel_paths_compare_files(
-            info, "finished_config", v, this_test_dir
-        )
-        namelists = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
-        ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
-        ldir.sort()
-        for f in ldir:
-            # Take the first run directory
-            if "run_" in f:
-                cf_path = f"{this_test_dir}/{f}/work/"
-                for n in namelists:
-                    if not os.path.isfile(f"{user_info['test_dir']}/{cf_path}/{n}"):
-                        logger.debug(f"'{cf_path}/{n}' does not exist!")
-                    subpaths.append(f"{cf_path}/{n}")
-                break
-    else:
-        subpaths = [f"{this_test_dir}/{cfile}"]
+    Parameters
+    ----------
+    string_to_be_checked : str
+        String to be searched for exceptions
 
-    # Remove run directory from the targets
-    subpaths_source = subpaths
-    subpaths_target = []
-    datestamp_format = re.compile(r"_[\d]{8}-[\d]{8}$")
-    for sp in subpaths:
-        sp_t = ""
-        pieces = sp.split("/")
-        for p in pieces:
-            if "run_" not in p:
-                sp_t += f"/{p}"
-        # Remove the datestamp
-        if datestamp_format.findall(sp_t):
-            sp_t = sp_t.replace(datestamp_format.findall(sp_t)[0], "")
-        subpaths_target.append(sp_t)
+    Returns
+    -------
+    exception_list : list
+        List of exceptions found on the string
+    """
+    exception_list = []
+    # Get the commands inside the ``[]``
+    if " [" in string_to_be_checked and string_to_be_checked[-1] == "]":
+        exception_list = re.findall(r"(?<=\[)([^]]+)(?=\])", string_to_be_checked)
+        if len(exception_list) > 1:
+            raise Exception("You should only have one list per file")
+        exception_list = [x.replace(" ", "") for x in exception_list[0].split(",")]
 
-    return subpaths_source, subpaths_target
-
-
-def extract_namelists(s_config_yaml):
-    # Read config file
-    with open(s_config_yaml, "r") as c:
-        config = yaml.load(c, Loader=yaml.FullLoader)
-
-    namelists = []
-    for component in config.keys():
-        namelists_component = config[component].get("namelists", [])
-        for nml in namelists_component:
-            config_sources = config[component].get("config_sources", {})
-            if (
-                nml in config_sources
-                or any([nml in x for x in config_sources.values()])
-            ):
-                namelists.append(nml)
-
-    return namelists
-
-
-#######################################################################################
-# OUTPUT
-#######################################################################################
-def print_diff(sscript, tscript, name, ignore_lines):
-    script_s = open(sscript).readlines()
-    script_t = open(tscript).readlines()
-
-    # Check for ignored lines
-    new_script_s = []
-    for line in script_s:
-        ignore_this = False
-        for iline in ignore_lines:
-            if iline in line:
-                ignore_this = True
-        if not ignore_this:
-            new_script_s.append(line)
-    script_s = new_script_s
-    new_script_t = []
-    for line in script_t:
-        ignore_this = False
-        for iline in ignore_lines:
-            if iline in line:
-                ignore_this = True
-        if not ignore_this:
-            new_script_t.append(line)
-    script_t = new_script_t
-
-    diffobj = difflib.SequenceMatcher(a=script_s, b=script_t)
-    differences = ""
-    if diffobj.ratio() == 1:
-        logger.info(f"\t\t'{name}' files are identical")
-        identical = True
-    else:
-        # Find differences
-        pdifferences = ""
-        for line in color_diff(difflib.unified_diff(script_s, script_t)):
-            differences += line
-            pdifferences += f"\t\t{line}"
-
-        logger.info(f"\n\tDifferences in {name}:\n{pdifferences}\n")
-        # input("Press enter to continue...")
-        identical = False
-
-    return identical, differences
-
-
-def save_files(info, user_choice):
-    # Load relevant variables from ``info``
-    scripts_info = info["scripts"]
-    actually_run = info["actually_run"]
-    user_info = info["user"]
-    last_tested_dir = info["last_tested_dir"]
-    runscripts_dir = get_runscripts_dir()
-    this_computer = info["this_computer"]
-    # ``user_choice`` is set through the ``--save`` flag. If the flag is not used the
-    # main program reaches this point and asks the user about saving files in
-    # ``last_tested``. If the flag is used alone or the value is set to ``True``, then
-    # it does save without asking. If the flag is used and the value is set to ``False``
-    # then it doesn't save and it doesn't ask
-    if not user_choice:
-        not_answered = True
-        while not_answered:
-            # Ask if saving of the compared files is required
-            save = input(
-                f"Would you like to save the files in the '{last_tested_dir}' folder for later "
-                + "comparisson and/or committing to GitHub?[y/n]: "
-            )
-            if save == "y":
-                not_answered = False
-            elif save == "n":
-                logger.info(f"No files will be saved in '{last_tested_dir}'")
-                not_answered = False
-                return
-            else:
-                print(f"'{save}' is not a valid answer!")
-
-    # Select test types
-    if info["actually_compile"]:
-        test_type_c = "actual"
-    else:
-        test_type_c = "check"
-    if actually_run:
-        test_type_r = "actual"
-    else:
-        test_type_r = "check"
-
-    logger.info(f"Saving files to '{last_tested_dir}'...")
-    # Loop through models
-    for model, scripts in scripts_info.items():
-        # Ignore ``general``
-        if model == "general":
-            continue
-        # Load the model's ``config.yaml``
-        model_config = f"{runscripts_dir}/{model}/config.yaml"
-        if not os.path.isfile(model_config):
-            logger.error(f"'{model_config}' not found!")
-        with open(model_config, "r") as c:
-            config_test = yaml.load(c, Loader=yaml.FullLoader)
-        # Get name patters from the files to be compared
-        compare_files_comp = copy.deepcopy(compare_files["comp"])
-        compare_files_comp.extend(
-            config_test.get("comp", {}).get(test_type_c, {}).get("compare", [])
-        )
-        compare_files_run = copy.deepcopy(compare_files["run"])
-        # TODO: The iterative coupling needs a rework. Therefore, no testing for files
-        # is develop. Include the tests after iterative coupling is reworked
-        if next(iter(scripts.values()))["iterative_coupling"]:
-            compare_files_run = []
-        compare_files_run.extend(
-            config_test.get("run", {}).get(test_type_r, {}).get("compare", [])
-        )
-        # Loop through scripts
-        for script, v in scripts.items():
-            version = v["version"]
-            # Loop through comp and run
-            for mode in ["comp", "run"]:
-                if mode == "comp":
-                    this_compare_files = compare_files_comp
-                    subfolder = f"{model}-{version}"
-                elif mode == "run":
-                    this_compare_files = compare_files_run
-                    subfolder = f"{script}"
-                this_test_dir = f"{mode}/{model}/{subfolder}/"
-                # Loop through comparefiles
-                for cfile in this_compare_files:
-                    subpaths_source, subpaths_target = get_rel_paths_compare_files(
-                        info, cfile, v, this_test_dir
-                    )
-                    for sp, sp_t in zip(subpaths_source, subpaths_target):
-                        if os.path.isfile(f"{last_tested_dir}/{sp_t}"):
-                            logger.debug(
-                                f"\t'{sp_t}' file in '{last_tested_dir}' will be overwritten"
-                            )
-                        if not os.path.isdir(
-                            os.path.dirname(f"{last_tested_dir}/{this_computer}/{sp_t}")
-                        ):
-                            os.makedirs(
-                                os.path.dirname(
-                                    f"{last_tested_dir}/{this_computer}/{sp_t}"
-                                )
-                            )
-                        shutil.copy2(
-                            f"{user_info['test_dir']}/{sp}",
-                            f"{last_tested_dir}/{this_computer}/{sp_t}",
-                        )
-    # Load current state
-    with open(get_state_yaml_path(), "r") as st:
-        current_state = yaml.load(st, Loader=yaml.FullLoader)
-    # Update with this results
-    results = format_results(info)
-    current_state = deep_update(current_state, results)
-    current_state = sort_dict(current_state)
-    with open(get_state_yaml_path(), "w") as st:
-        state = yaml.dump(current_state)
-        st.write(state)
-
-
-def print_results(results, info):
-    colorama.init(autoreset=True)
-
-    if info.get("bulletpoints", False):
-        bp = "- "
-    else:
-        bp = ""
-
-    logger.info("")
-    logger.info("")
-    logger.info(f"{bs}RESULTS{be}")
-    logger.info("")
-    for model, versions in results.items():
-        logger.info(f"{bp}{colorama.Fore.CYAN}{model}:")
-        for version, scripts in versions.items():
-            logger.info(f"    {bp}{colorama.Fore.MAGENTA}{version}:")
-            for script, computers in scripts.items():
-                logger.info(f"        {bp}{colorama.Fore.WHITE}{script}:")
-                for computer, data in computers.items():
-                    if data["compilation"]:
-                        compilation = f"{colorama.Fore.GREEN}compiles"
-                    else:
-                        compilation = f"{colorama.Fore.RED}compilation failed"
-                    if data["run"]:
-                        run = f"{colorama.Fore.GREEN}runs"
-                    else:
-                        run = f"{colorama.Fore.RED}run failed"
-                    logger.info(
-                        f"            {bp}{colorama.Fore.WHITE}{computer}:\t{compilation}\t{run}"
-                    )
-    logger.info(f"{colorama.Fore.WHITE}")
-    logger.info("")
-
-
-def format_results(info):
-    scripts_info = info["scripts"]
-    results = {}
-    for model, scripts in scripts_info.items():
-        if model == "general":
-            continue
-        results[model] = {}
-        for script, v in scripts.items():
-            version = v["version"]
-            results[model][version] = results[model].get(version, {})
-            results[model][version][script] = results[model][version].get(script, {})
-            state = v["state"]
-            compilation = (
-                state["comp"]
-                and state.get("comp_files", True)
-                and state.get("comp_files_identical", True)
-            )
-            run = (
-                state.get("run_finished", True)
-                and state.get("run_files", True)
-                and state["submission"]
-                and state.get("submission_files_identical", True)
-            )
-            results[model][version][script][info["this_computer"]] = {
-                "compilation": compilation,
-                "run": run,
-            }
-
-    return results
-
-
-def sort_dict(dict_to_sort):
-    if isinstance(dict_to_sort, dict):
-        dict_to_sort = {key: dict_to_sort[key] for key in sorted(dict_to_sort.keys())}
-        for key, value in dict_to_sort.items():
-            dict_to_sort[key] = sort_dict(value)
-
-    return dict_to_sort
+    return exception_list

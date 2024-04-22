@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import sys
 
+import esm_parser
 
 class Slurm:
     """
@@ -57,17 +58,26 @@ class Slurm:
         return os.environ.get("SLURM_JOB_ID")
 
     def prepare_launcher(self, config, cluster):
+        # MA: not sure how this will play with heterogeneous parallelization
         if "multi_srun" in config["general"]:
             for run_type in list(config["general"]["multi_srun"]):
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
+
+        if (
+            config["computer"].get("heterogeneous_parallelization", False)
+            and not config["computer"].get("taskset", False)
+        ):
+            # Prepare heterogeneous parallelization call
+            config["general"]["batch"].het_par_launcher_lines(config, cluster)
         else:
+            # Standard/old way of running jobs with slurm
             self.write_one_hostfile(self.path, config)
 
-        hostfile_in_work = (
-            config["general"]["work_dir"] + "/" + os.path.basename(self.path)
-        )
-        shutil.copyfile(self.path, hostfile_in_work)
+            hostfile_in_work = (
+                config["general"]["work_dir"] + "/" + os.path.basename(self.path)
+            )
+            shutil.copyfile(self.path, hostfile_in_work)
 
         return config
 
@@ -129,7 +139,7 @@ class Slurm:
 
     ############# HETEROGENOUS PARALLELIZATION STUFF (MPI + OMP) #################
 
-    def add_pre_launcher_lines(self, config, runfile):
+    def add_pre_launcher_lines(self, config, cluster, runfile):
         """
         Adds pre-launcher lines to the ``runfile``.
 
@@ -142,9 +152,75 @@ class Slurm:
             File wrapper object for writing of the lines
             (``runfile.write("<your_line_here>")``).
         """
-        if config["computer"].get("heterogeneous_parallelization", False):
-            self.add_hostlist_file_gen_lines(config, runfile)
 
+        # TODO: remove it once it's not needed anymore (substituted by packjob)
+        if config["computer"].get("heterogeneous_parallelization", False):
+            if config["computer"].get("taskset", False):
+                self.add_hostlist_file_gen_lines(config, runfile)
+
+    @staticmethod
+    def het_par_headers(config, cluster, headers):
+        """
+        Modifies the list of ``headers`` to include the ``packjob``/``hetjob`` logic
+        for heterogeneous parallelization in SLURM.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing information about the experiment and
+            experiment directory.
+        cluster : str
+            Type of job cluster.
+        headers : list
+            List of headers for the ``.run`` file.
+
+        Returns
+        -------
+        headers : list
+            List of headers for the ``.run`` file, with the necessary modifications
+            for heterogeneous parallelization in SLURM.
+        """
+        # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
+        if (
+            config["computer"].get("heterogeneous_parallelization", False)
+            and not config["computer"].get("taskset", False)
+        ):
+            this_batch_system = config["computer"]
+            # Get the variables to be modified for the headers
+            nodes_flag = this_batch_system["nodes_flag"].split("=")[0]
+            partition_flag = this_batch_system["partition_flag"].split("=")[0]
+            # Delete ``nodes_flag`` and ``partition_flag`` from the ``headers``. Those
+            # will be added at the end of the headers for each component
+            headers_new = []
+            for val in headers:
+                 if nodes_flag not in val and partition_flag not in val:
+                    headers_new.append(val)
+            headers = headers_new
+            # Loop through the models to add the respective component headers (nodes
+            # and partitions)
+            for model in config["general"]["valid_model_names"]:
+                nodes = config[model].get("nodes")
+
+# kh 24.06.22 observed behavior was:
+#model:  echam, nodes:  4
+#model:  fesom, nodes:  32
+#model:  oasis3mct, nodes:  None
+#model:  recom, nodes:  None
+#model:  jsbach, nodes:  None
+#model:  hdmodel, nodes:  1
+
+# kh 24.06.22 workaround: filter hdmodel
+                if nodes:
+                    headers.append(f"{nodes_flag}={nodes}")
+                    headers.append(this_batch_system["partition_flag"])
+                    headers.append(this_batch_system["hetjob_flag"])
+            # Remove the last hetjob_flag
+            if headers[-1] == this_batch_system["hetjob_flag"]:
+                headers = headers[:-1]
+
+        return headers
+
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def write_het_par_wrappers(config):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
@@ -154,12 +230,26 @@ class Slurm:
             for model in config["general"]["valid_model_names"]:
                 if "oasis3mct" == model:
                     continue
+                elif (
+                        not config[model].get("execution_command")
+                        and not config[model].get("executable")
+                ):
+                    esm_parser.user_note(
+                        "Execution command",
+                        f"Execution command for ``{model}`` not found. This is okay " \
+                        "if this component has no binary to be called, but if it does" \
+                        " please make sure you specify either an ``executable`` " \
+                        f"or an ``execution_command`` variable in the ``{model}`` " \
+                        "of your configuration file.",
+                    )
+                    continue
+
                 command = "./" + config[model].get(
                     "execution_command", config[model]["executable"]
                 )
-                scriptname = "script_" + model + ".ksh"
+                scriptname = "script_" + model + ".sh"
                 with open(scriptfolder + scriptname, "w") as f:
-                    f.write("#!/bin/ksh" + "\n")
+                    f.write("#!/bin/sh" + "\n")
                     f.write(
                         "export OMP_NUM_THREADS="
                         + str(config[model].get("omp_num_threads", 1))
@@ -175,7 +265,8 @@ class Slurm:
 
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")
-                    f.write("(( init = " + str(start_core) + " + $1 ))" + "\n")
+                    f.write("if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n")
+                    f.write("(( init = $PMI_RANK ))" + "\n")
                     f.write(
                         "(( index = init * "
                         + str(config[model].get("omp_num_threads", 1))
@@ -197,14 +288,15 @@ class Slurm:
                         + str(config[model].get("omp_num_threads", 1))
                         + " - 1)) ./script_"
                         + model
-                        + ".ksh"
+                        + ".sh"
                         + "\n"
                     )
                 os.chmod(scriptfolder + progname, 0o755)
-                execution_command_het_par = f"prog_{model}.sh %o %t"
+                execution_command_het_par = f"prog_{model}.sh"
                 config[model]["execution_command_het_par"] = execution_command_het_par
         return config
 
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def add_hostlist_file_gen_lines(config, runfile):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
@@ -226,9 +318,19 @@ class Slurm:
         runfile.write("current_core=0" + "\n")
         runfile.write("current_core_mpi=0" + "\n")
         for model in config["general"]["valid_model_names"]:
-            if model != "oasis3mct":
+            if (
+                "oasis3mct" != model
+                and (
+                    config[model].get("execution_command")
+                    or config[model].get("executable")
+                )
+            ):
+                if "nproca" in config[model]:
+                    mpi_tasks = config[model]["nproca"] * config[model]["nprocb"]
+                else:
+                    mpi_tasks = config[model]["nproc"]
                 runfile.write(
-                    "mpi_tasks_" + model + "=" + str(config[model]["nproc"]) + "\n"
+                    "mpi_tasks_" + model + "=" + str(mpi_tasks) + "\n"
                 )
                 runfile.write(
                     "omp_threads_"

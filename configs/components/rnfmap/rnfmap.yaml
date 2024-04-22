@@ -18,9 +18,16 @@ description: |
 available_versions:
 - ec-earth
 - awicm-3.0
+- awicm-3.1
 - awicm-frontiers
+- smhi
 - focioifs
 - focioifs1
+- focioifs21
+- foci211
+
+runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
+
 choose_version:
   ec-earth:
     branch: esm-tools
@@ -30,13 +37,25 @@ choose_version:
   awicm-3.0:
     branch: awicm3-frontiers-freeze-candidate-1
     destination: rnfmap
+  awicm-3.1:
+    branch: awicm3-frontiers-freeze-candidate-1
+    destination: rnfmap
+    runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
   focioifs:
     branch: esm-tools-focioifs
   focioifs1:
     branch: esm-tools-focioifs
+  smhi:
+    branch: smhi
+  focioifs21:
+    branch: runoff
+  foci211:
+    branch: foci211
+
 clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
+contact: "jan.streffing(at)awi.de, miguel.andres-martinez(at)awi.de"
 install_bins: bin/rnfma
 ##
 ## Directories
@@ -89,7 +108,7 @@ input_in_work:
         runoff_maps: runoff_maps.nc
 
 input_sources:
-        runoff_maps: ${input_dir}/runoff_maps${runoff_maps_name}.nc
+        runoff_maps: ${runoff_file}
 
 coupling_fields:
         "[[runoff_fields_recv-->FIELD]]":
@@ -98,8 +117,17 @@ coupling_fields:
                 grid: opaf
 
 choose_runoff_method:
-        'new':
+        'EM21':
                 runoff_fields_recv: [R_Runoff_atm]
+                runoff_fields_send: [R_Runoff_oce]
+                calving_fields_send: [R_Calving_oce]
+                add_coupling_fields:
+                        "[[runoff_fields_send-->FIELD]]":
+                                grid: rnfm
+                        "[[calving_fields_send-->FIELD]]":
+                                grid: rnfs
+        'JK22':
+                runoff_fields_recv: [R_Runoff_atm, R_Calving_atm]
                 runoff_fields_send: [R_Runoff_oce]
                 calving_fields_send: [R_Calving_oce]
                 add_coupling_fields:
@@ -113,9 +141,6 @@ choose_runoff_method:
                 add_coupling_fields:
                         "[[runoff_fields_send-->FIELD]]":
                                 grid: rnfo
-        'awicm3-deck':
-                runoff_fields_recv: [R_Runoff_atm]
-                runoff_fields_send: [R_Runoff_oce]
         'awicm3-default':
                 runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
                 runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
@@ -175,10 +200,18 @@ compiletime_environment_changes:
       - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
       # compiler and compiler flags
       - 'OIFS_FC=$FC'
-      - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+      - 'OIFS_FFLAGS="${rnfmap.fflags}"'
       - 'OIFS_FFIXED=""'
       - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
       - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
       - 'OIFS_CC=$CC'
-      - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+      - 'OIFS_CFLAGS="${rnfmap.cflags}"'
       - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+
+choose_computer.name:
+    levante:
+        fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
+        cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+    "*":
+       fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
+       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0

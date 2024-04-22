@@ -9,11 +9,12 @@ namelist_dir: "${esm_namelist_dir}/fesom2/"
 
 branch: 2.0.2
 git-repository:
-- https://gitlab.dkrz.de/FESOM/fesom2.git
 - github.com/FESOM/fesom2.git
+- https://gitlab.dkrz.de/FESOM/fesom2.git
 install_bins: mesh_part/build/fesom_ini
 comp_command: cd mesh_part; mkdir build -p; cd build; cmake ..; make -j `nproc --all`
 clean_command: rm -rf bin/fesom.x.ini mesh_part/build mesh_part/CMakeCache.txt
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 climate_data_dir: "${pool_dir}/hydrography/"

@@ -1,0 +1,33 @@
+# ESM-Tests in check mode for all computers
+# =========================================
+
+name: esm_tests
+
+# Triggers the workflow on a push or a pull
+on: [pull_request]
+
+jobs:
+  ollie:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: ollie1
+  levante:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: levante1
+  juwels:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: jwlogin01.juwels
+  aleph:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: elogin1
+  blogin:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: blogin1
+  albedo:
+    uses: ./.github/workflows/esm_tests_computer_workflow.yml
+    with:
+        computer: albedo1

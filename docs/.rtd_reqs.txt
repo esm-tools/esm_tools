@@ -1,6 +1,7 @@
 click
 colorama
 coloredlogs
+docutils==0.16
 emoji
 numpy
 loguru
@@ -10,7 +11,9 @@ questionary
 sphinxcontrib-napoleon
 sphinx-copybutton
 sphinx-tabs
+sphinx-toolbox
 sqlalchemy
 pyyaml
 xdgenvpy
+sphinx-rtd-theme
 .

@@ -1,0 +1,159 @@
+# ESM-Tools pre-merge automation
+# ==============================
+# In a pull-request, if a comment contains #bump, the following steps are triggered:
+#   1. merges `release` into the PR-branch (updates bumpversion values and makes sure whatever we tag in the next step has everything until that version number)
+#   2. bumps the version according to the PR-branch name (`hotfix/`, `fix/` , `feature/` and `feat/` are understood)
+#   3. merges PR-branch into `develop`
+
+name: pre-merge automation
+
+# Triggers the workflow on an issue comment
+on:
+  issue_comment:
+    types: [created]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  # This workflow contains a single job called "bump_and_merge2dev"
+  bump_and_merge2dev:
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#bump`
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#bump') }}
+
+    # Sequence of tasks that will be executed as part of the job
+    steps:
+      
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it (`release` branch)
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      # Installs Hub
+      - name: Install hub
+        run: |
+          git clone --config transfer.fsckobjects=false --config receive.fsckobjects=false --config fetch.fsckobjects=false https://github.com/github/hub.git;
+          cd hub;
+          make install prefix=~/.local;
+          alias hub=$( realpath ./bin/hub );
+          cd ..;
+          hub --version
+
+      # Set the user to author the git actions of the runner    
+      - name: set user
+        run: |
+          git config --global user.name "${GITHUB_ACTOR}";
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+      # Checkout PR-branch (I could not find an easier way to do this and it seems
+      # many people are struggling with the same problem when your event is triggered
+      # by `issue_comment`)
+      - name: checkout PR origin branch
+        run: |
+          PR_URL="${{ github.event.issue.pull_request.url }}";
+          PR_NUM=${PR_URL##*/}; echo "$PR_URL and $PR_NUM}"; 
+          hub pr checkout $PR_NUM;
+          git status
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Store the branch name under `steps.vars.output.current_branch` variable,
+      # for later use
+      - name: Set current_branch var
+        id: vars
+        run: echo ::set-output name=current_branch::$(git rev-parse --abbrev-ref HEAD)
+          
+      # Merge release into PR-branch    
+      - name: merge release into PR-branch
+        run: |
+          git status
+          git merge release;
+      
+      # Bumping if `hotfix/` or `fix/` is part of the branch's name (patch)
+      - name: bump patch
+        if: ${{
+          (
+            contains(github.event.comment.body, '#patch') ||
+            (
+              contains(steps.vars.outputs.current_branch, 'fix/') &&
+              !contains(steps.vars.outputs.current_branch, 'feat/') &&
+              !contains(steps.vars.outputs.current_branch, 'feature/')
+            )
+          )
+          }}
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: patch
+
+      # Bumping if `feature/` or `feat/` is part of the branch's name (minor)
+      - name: bump feature
+        if: ${{
+          (
+            (
+              contains(github.event.comment.body, '#minor') &&
+              !contains(github.event.comment.body, '#patch')
+            ) ||
+            (
+              (
+                contains(steps.vars.outputs.current_branch, 'feat/') ||
+                contains(steps.vars.outputs.current_branch, 'feature/')
+              ) &&
+              !contains(github.event.comment.body, '#patch')
+            )
+          )
+          }}
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: minor
+          
+      # Bumping if `feature/` or `feat/` is part of the branch's name (major)
+      - name: bump major
+        if: ${{
+          contains(github.event.comment.body, '#major') &&
+          !contains(github.event.comment.body, '#patch') &&
+          !contains(github.event.comment.body, '#minor')
+          }}
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEFAULT_BUMP: major
+      
+      # Default bumping (patch unless #minor or #major is used in a comment of the PR)
+      - name: bump default
+        if: ${{
+          !contains(steps.vars.outputs.current_branch, 'feat/') &&
+          !contains(steps.vars.outputs.current_branch, 'feature/') &&
+          !contains(steps.vars.outputs.current_branch, 'fix/') &&
+          !contains(github.event.comment.body, '#major')
+          }}
+        uses: jasonamyers/github-bumpversion-action@v1.0.4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  
+        
+      # Push
+      - name: push changes
+        run: |
+          git push;
+          git push --tags
+      - name: Call Publish
+        run: |
+          # FIXME: Once this works, we need to change the @ to release, or a
+          # specific commit
+          uses: "esm-tools/esm_tools/.github/workflows/esm_tools_publish@fix/pypi_publish"  
+          secrets:
+            PYPI_API_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+      # Merge PR-branch into `develop`
+      # - name: merge into develop
+      #   run: |
+      #     echo ${{ steps.vars.outputs.current_branch }};
+      #     git checkout develop;
+      #     git merge ${{ steps.vars.outputs.current_branch }};
+      #     git push
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  

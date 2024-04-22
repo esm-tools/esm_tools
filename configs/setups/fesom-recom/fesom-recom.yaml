@@ -49,7 +49,7 @@ general:
 #########################################################################################
 
 fesom:
-        version: "1.4-recom-mocsy-slp"
+        version: "1.4-recom"
         model_dir: "${general.model_dir}/fesom-${fesom.version}/"
         setup_dir: "${general.model_dir}"
 
@@ -57,14 +57,11 @@ fesom:
         output_unit: "${restart_unit}"
         leapyear: false
 
-        yearly_outputs_start: 1     # Year in which the yearly output starts to be saved
-
         opbnd_dir: ""
         tide_forcing_dir: ""
 
         asforcing: CORE2
         asforcing_wind_rad_precip: JRA55
-
 
         namelist_changes:   # Change to add_namelist_changes when the bug is fixed
                 namelist.config:
@@ -83,8 +80,6 @@ fesom:
                                 diag_oce_Kv: "remove_from_namelist"
                                 diag_mesh: "remove_from_namelist"
                 namelist.forcing:
-                        forcing_exchange_coeff:
-                                Cd_atm_ice: 1.3e-3
                         forcing_source:
                                 wind_data_source: "${asforcing_wind_rad_precip}"
                                 rad_data_source: "${asforcing_wind_rad_precip}"
@@ -95,91 +90,11 @@ fesom:
                                 runoff_ttp_ind: 3
                         forcing_reso:
                                 forcing_grid: 'T319'    #'T62','T319', 'other'
-                                forcing_dx: 0.4         #degree; from here required for 'other'
-                                forcing_dy: 0.4
-                                forcing_ni: 900         #number of grid points
-                                forcing_nj: 451
                         forcing_bulk:
                                 AOMIP_drag_coeff: true
-                namelist.ice:
-                        ice_stress:
-                                Pstar: 27500.0          #23000. 27500. 30000.
-                                c_pressure: 15.0        #20.0
-                        ice_fric:
-                                Cd_oce_ice: 1.0e-2      #5.5e-3  3.0e-3  !Qiang ab 1964
-                        ice_rheology:
-                                evp_rheol_steps: 300
-                        ice_scheme:
-                                ice_gamma_fct: 0.05
-                        ice_therm:
-                                Sice: 5.0
-                                h0: 0.6
                 namelist.oce:
                         viscdiff:
-                                Kh0: 800.0
-                                brine_rejection_param: false
-                        oce_scheme:
-                                gamma_fct: 0.4
-                        age_tracer:
-                                use_age_tracer: true
-                                age_tracer_start_year: "${age_tracer_sy}"
-                        tracer_cutoff:
-                                limit_salinity: false
-                                salinity_min: 5.0
-
-
-        yearly_outputs: [evs,fsitherm,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uso,uto,v2o,volo,vso,vto,w2o,wfo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho,tso,lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind,sistrxdtop,sistrxubot,sistrydtop,sistryubot,siu,siv,thdgr,thdgrsn]
-
-        monthly_outputs: [mlotst,omldamax,sic,sithick,sitimefrac,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,hfds,uo,vo,wo]
-
-        daily_outputs: []
-        12_step_outputs: []
-
-
-        runtime_environment_changes:
-                add_export_vars:
-                        AWI_FESOM_YAML:
-                                output_schedules:
-                                        -
-                                                vars: [restart]
-                                                unit: ${restart_unit}
-                                                first: ${restart_first}
-                                                rate: ${restart_rate}
-                                        -
-                                                vars: ${monthly_outputs}
-                                                unit: m
-                                                rate: 1
-                                        -
-                                                vars: ${daily_outputs}
-                                                unit: d
-                                                rate: 1
-                                        -
-                                                vars: ${12_step_outputs}
-                                                unit: s
-                                                rate: 12
-                                        -
-                                                vars: ${yearly_outputs}
-                                                unit: y
-                                                first: ${yearly_outputs_start}
-                                                rate: 1
-                                        -
-                                                vars: ${recom.monthly_outputs}
-                                                unit: m
-                                                rate: 1
-                                        -
-                                                vars: ${recom.daily_outputs}
-                                                unit: d
-                                                rate: 1
-                                        -
-                                                vars: ${recom.12_step_outputs}
-                                                unit: s
-                                                rate: 12
-                                        -
-                                                vars: ${recom.yearly_outputs}
-                                                unit: y
-                                                first: ${recom.yearly_outputs_start}
-                                                rate: 1
-
+                                Kh0: 800.0 # default for setup with recom involved
 
         choose_lresume:
                 true:
@@ -204,9 +119,7 @@ recom:
         model_dir: "${general.model_dir}/recom/"
         setup_dir: "${general.model_dir}"
 
-        yearly_outputs_start: 1             # Year in which the yearly output starts to be saved
         time_step: "${fesom.time_step}"
-
 
         choose_lresume:
                 true:

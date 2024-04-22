@@ -5,15 +5,41 @@ account: None
 
 # set default for hyperthreading_flag
 use_hyperthreading: False
+# seb-wahl: use old heterogeneous parallelization on HLRN4, the new approach does not work yet
+taskset: true
 choose_use_hyperthreading:
         "1":
                 hyperthreading_flag: ""
         True:
                 hyperthreading_flag: ""
         "0":
-                hyperthreading_flag: "--ntasks-per-core=1"
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
         False:
-                hyperthreading_flag: "--ntasks-per-core=1"
+                choose_heterogeneous_parallelization:
+                        False:
+                                hyperthreading_flag: "--ntasks-per-core=1"
+                        True:
+                                hyperthreading_flag: ""
+                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                add_export_vars:
+                                        I_MPI_SLURM_EXT: 0
+                                add_unset_vars:
+                                        - "SLURM_DISTRIBUTION"
+                                        - "SLURM_NTASKS"
+                                        - "SLURM_NPROCS"
+                                        - "SLURM_ARBITRARY_NODELIST"
 
 accounting: true
 
@@ -42,6 +68,7 @@ partitions:
 logical_cpus_per_core: 2
 
 threads_per_core: 1
+hetjob_flag: packjob
 
 pool_directories:
         pool: "/scratch/usr/hbkawi"
@@ -70,6 +97,7 @@ module_actions:
    - "load sw.skl"
    - "load cmake"
    - "load cdo nco"
+   - "load git"
 
 export_vars:
    LC_ALL: en_US.UTF-8
@@ -91,7 +119,23 @@ choose_compiler_mpi:
          CXX: mpiicpc
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-   
+
+   intel2019_impi2019_nemo4:
+      add_module_actions:
+         - "load intel/19.0.5"
+         - "load impi/2019.5"
+         - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+         - "load gcc/9.3.0"
+      add_export_vars:
+         FC: mpiifort
+         F77: mpiifort
+         MPIFC: mpiifort
+         FCFLAGS: -free
+         CC: mpiicc
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
    intel2019_impi2019:
       add_module_actions:
          - "load intel/19.0.5"
@@ -125,70 +169,50 @@ choose_iolibraries:
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
-         - "load netcdf"
+         - "load netcdf/intel/4.7.3"
        # TODO: find the correct libraries and dependencies
        add_export_vars:
          NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
          LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
+         NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
 
     geomar_libs:
+       add_export_vars:
+          IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+          PATH: $IO_LIB_ROOT/bin:$PATH
+          LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
+          SZIPROOT: $IO_LIB_ROOT
+          HDF5ROOT: $IO_LIB_ROOT
+          HDF5_ROOT: $HDF5ROOT
+          NETCDFROOT: $IO_LIB_ROOT
+          NETCDFFROOT: $IO_LIB_ROOT
+          ECCODESROOT: $IO_LIB_ROOT
+
+          HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+          NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+          NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+          NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+          OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
        choose_compiler_mpi:
+
+          intel2019_impi2019_nemo4:
+             add_export_vars:
+                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+
           intel2021_impi2021:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkjocke/sw/HPC_libraries/intel2021.2_impi2021.2_20211007
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
           intel2019_impi2019:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
           intel2019_ompi:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_ompi3.1.6_20201117
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"
@@ -197,7 +221,7 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic --export=ALL"
+launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

@@ -2,7 +2,7 @@
 
 name: mistral
 #hyper_flag: "--cpus-per-task=1"
-additional_flags: "--mem=0"
+additional_flags: ["--mem=0"]
 account: None
 
 use_hyperthreading: False
@@ -17,6 +17,12 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                choose_taskset:
+                                    False:
+                                        add_export_vars:
+                                            I_MPI_SLURM_EXT: 0
+                                    "*":
+                                        taskset_chs: ""
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -28,6 +34,12 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
+                                choose_taskset:
+                                    False:
+                                        add_export_vars:
+                                            I_MPI_SLURM_EXT: 0
+                                    "*":
+                                        taskset_chs: ""
                                 add_unset_vars:
                                         - "SLURM_DISTRIBUTION"
                                         - "SLURM_NTASKS"
@@ -35,6 +47,7 @@ choose_use_hyperthreading:
                                         - "SLURM_ARBITRARY_NODELIST"
 
 accounting: true
+hetjob_flag: packjob
 
 "batch_system": "slurm"
 

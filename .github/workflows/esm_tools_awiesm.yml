@@ -1,6 +1,13 @@
 name: Tests for AWIESM
 
 on:
+    workflow_dispatch:  # Allow manual trigger
+        inputs:
+          verbose:
+            description: Run in verbose mode
+            required: True
+            default: True
+            type: boolean
     push:
         paths:
             - '!docs/**'
@@ -23,11 +30,37 @@ jobs:
         # If @commit_or_branch is ommited, github actions will break!
         # For now, I tie it to release, but there might be better ways of doing
         # that, see for instance here: https://tinyurl.com/4x6h373j
-        uses: "esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@release"
+        uses: "esm-tools/esm_tools/.github/workflows/esm_tools_actions_hpc_awi_ollie.yml@feat/awiesm_final"
         secrets:
           dkrz-token: ${{ secrets.GITLAB_DKRZ_TOKEN }}
           awi-token: ${{ secrets.GITLAB_AWI_TOKEN }}
         with:
           model_name: awiesm
           # versions to test as a space seperated list
-          model_version: "2.1 2.1-wiso 2.1-recom"
+          model_version: "2.1"
+          skip_clean: True
+    test-job: 
+        runs-on: hpc_awi_ollie
+        name: Test Run for AWIESM (Ollie) 
+        needs: compile-ollie
+        env:
+            LC_ALL: en_US.UTF-8
+            LANG: en_US.UTF-8
+            SBATCH_WAIT: 1  
+        strategy:
+          matrix:
+            job_id:
+              - icebergs
+              - pi
+              - pico
+              - wiso-pico
+              - wiso
+        steps: 
+          - name: Run ${{matrix.job_id}} CI Job for AWIESM
+            run: |
+               echo "Starting SLURM mini test for ${{matrix.job_id}}"
+               ls runscripts/CI/awiesm/ollie/${{matrix.job_id}}.yaml
+               esm_runscripts runscripts/CI/awiesm/ollie/${{matrix.job_id}}.yaml -e ${{matrix.job_id}} -c
+               # FIXME: A potential problem with SBATCH_WAIT is that since the
+               # jobs start each other, the "waiting" job hangs until all 3 months are finished.
+               esm_runscripts runscripts/CI/awiesm/ollie/${{matrix.job_id}}.yaml -e ${{matrix.job_id}}

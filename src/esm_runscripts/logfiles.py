@@ -132,18 +132,20 @@ class RuntimeLogger(_io.TextIOWrapper):
         def nmls_output(mconfig):
             all_nmls = {}
 
-            for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+            for nml_name, nml_obj in mconfig.get("namelists", {}).items():
                 all_nmls[nml_name] = nml_obj  # PG: or a string representation?
             for nml_name, nml in all_nmls.items():
                 message = f'\nFinal Contents of {nml_name}:'
-                six.print_(message)
-                six.print_(len(message) * '-')
+                print(message)
+                print(len(message) * '-')
                 nml.write(sys.stdout)  # Problematic line if the sys.stdout is not a file-like object
                 print('-' * 80)
                 print(f'::: end of the contents of {nml_name}\n')
             return mconfig
+
     Hopefully, we are not using any other methods than the ones specified here...
     """
+    # FIXME(PG): This can be better.....
 
     def __init__(self, *args, **kwargs):
         """

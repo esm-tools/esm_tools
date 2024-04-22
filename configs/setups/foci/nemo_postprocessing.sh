@@ -10,20 +10,21 @@
 # 
 basedir=~/esm/esm-experiments/ # change via -p
 EXP_ID="test_experiment"        # change via -r
-startyear=1850                  # change via -s
-endyear=1850                    # change via -e
-envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
+startdate=18500101                  # change via -s
+enddate=18501231                    # change via -e
+envfile=""  # change via -x
+freq="m"
+run_monitoring="no"
 
 module load nco || module load NCO
 
 OCEAN_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
-OCEAN_CONVERT_NETCDF4=true 
-OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T"
+OCEAN_CONVERT_NETCDF4=true
+OCEAN_FILE_TAGS="grid_T grid_U grid_V icemod ptrc_T"
 
 # Other settings
-day="01"
-max_jobs=12
+max_jobs=20
 #
 ###############################################################################
 # END OF USER INTERFACE
@@ -34,17 +35,19 @@ max_jobs=12
 #
 # Read the command line arguments
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "h?d:r:s:e:p:x:" opt; do
+while getopts "h?md:r:s:e:p:x:i:" opt; do
     case "$opt" in
     h|\?)
         echo
         echo " Valid options are -h or -? for this help"
         echo "                   -d for more output (useful for debugging, not used at the moment)"
-        echo "                   -p path to data                     (basedir,  default is $basedir)"
+        echo "                   -p path to data                     (basedir,   default is $basedir)"
         echo "                   -r experiment / run id              (run,       default is $EXP_ID)"
-        echo "                   -s startyear                        (startyear, default is $startyear)"
-        echo "                   -e endyear                          (endyear,   default is $endyear)"
+        echo "                   -s startdate                        (startdate, default is $startdate)"
+        echo "                   -e enddate                          (enddate,   default is $enddate)"
+        echo "                   -i increment                        (increment,  default is calculated automagially, see code for details)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
+        echo "                   -m run nemo_monitoring.sh           "
         echo
         exit 0
         ;;
@@ -52,31 +55,45 @@ while getopts "h?d:r:s:e:p:x:" opt; do
         ;;
     r)  EXP_ID=$OPTARG
         ;;
-    s)  startyear=$OPTARG
+    s)  startdate=$OPTARG
         ;;
-    e)  endyear=$OPTARG
+    e)  enddate=$OPTARG
+        ;;
+    i)  increment=$OPTARG
         ;;
     p)  basedir=$OPTARG
         ;;
     x)  envfile=$OPTARG
         ;;
+    m)  run_monitoring="yes"
+        ;;
     esac
 done
 
+[[ -z $envfile ]] && envfile="$basedir/$EXP_ID/scripts/env.sh"
 shift $((OPTIND-1))
 [ "$1" = "--" ] && shift
-envfile="$basedir/$EXP_ID/scripts/env.sh"
 echo
-echo "Doing postprocessing in $basedir for $EXP_ID from year $startyear to $endyear"
+echo "Doing postprocessing in $basedir for $EXP_ID from $startdate to $enddate"
 echo "Using an environment from $envfile"
 echo
+startdate=$(date --date "$startdate" "+%Y%m%d")
+enddate=$(date --date "$enddate" "+%Y%m%d")
+if [[ ${#startdate} -ne 8 ]] || [[ ${#enddate} -ne 8 ]]; then
+	echo
+	echo " Please provide start and end date in yyyymmdd format e.g."
+	echo " $0 -s 20220101 -e 20220930"
+	echo
+	exit 1
+fi
 if [[ ! -r $envfile ]] ; then
    echo
 	echo $envfile does not exist
 	echo
 	exit 1
 else
-	source $envfile
+  # module purge in envfile writes non-printable chars to log
+   source $envfile > >(tee) 
 fi
 #
 # the ncks option -a is deprecated since version 4.7.1 and replaced by --no-alphabetize
@@ -94,8 +111,8 @@ set -e
 ###############################################################################
 #
 # some derived variables that directly depend on the command line arguments...
-startdate=${startyear}0101              # 
-nextdate=$((endyear + 1))0101
+#startdate=${startyearmonth}01              # 
+#enddate=$((endyear + 1))0101
 DATA_DIR=${basedir}/${EXP_ID}/outdata
 RESTART_DIR=${basedir}/${EXP_ID}/restart
 #inidate=18500101 # not needed anymore
@@ -130,18 +147,12 @@ function time_merge {
     cat "$@" > $tmp && mv $tmp $out
 }
 
-#
-# Job specification
-#
-
-mean_op='-monmean'; avg_op='-monavg'
-
 sleep_time=2
 
 # Definition of some time variables
 #
 # enddate:     last day of this run
-enddate=$(date --date="$nextdate - 1 day" "+%Y%m%d")
+#enddate=$(date --date="$nextdate - 1 day" "+%Y%m%d")
 
 #
 # DATA PROCESSING
@@ -157,27 +168,23 @@ then
     exit 1
 fi
 
-# Computation of expected input time stamps
-startstamp=${startdate%??}
-laststamp=
-stamps=
+# Computation of frequency, currently y for yearly and m for monthly are supported 
+startmonth=$(date --date="$startdate" "+%m")
+endmonth=$(date --date="$enddate" "+%m")
+startyear=$(date --date="$startdate" "+%Y")
+endyear=$(date --date="$enddate" "+%Y")
 
-currdate=$startdate
-while [[ $currdate -le $enddate ]] ; do
-    laststamp=${currdate%??}
-    stamps="$stamps $laststamp"
-    #currdate=$(calc_date plus -M 1 $currdate)
-	 # 18930401 does not exist for the date function and leads to an error
-	 [[ "$currdate" == "18930401" ]] && currdate="18930331"
-	 currdate=$(date --date="$currdate + 1 month" "+%Y%m%d")
-done
+[[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] && freq="y"
 
-# Computation of expected years for concatenated output
-#iniyear=${inidate%????}
-startyear=${startdate%????}
-endyear=${enddate%????}
-#[[ $startyear == $iniyear && $inidate != *0101 ]] && ((++startyear)) 
-[[ $enddate != *1231 ]] && ((--endyear))
+# calculate increment if not set, set to 1 to postprocess multiple years of 
+# simulation that ran in multiyear intervals.
+if [[ -z $increment ]] ; then
+   if [[ $startyear == $endyear ]] ; then
+      increment=$((endmonth - startmonth + 1)) 
+	else
+      increment=$((endyear - startyear + 1)) 
+   fi
+fi
 
 # Temporary directory
 id=$$
@@ -197,27 +204,37 @@ mkdir $post_dir
 print 'NEMO netcdf4 conversion started'
 outmod=${DATA_DIR}/${ocemod}
 
-# reduce number of jobs to avoid memory issues
-max_jobs=4
-
 mkdir ${outmod}
 cd ${outmod}
 mkdir nc3
 
 filetags="${OCEAN_FILE_TAGS}"
-steps="${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
+steps="${EXP_ID}_3h ${EXP_ID}_1d ${EXP_ID}_5d ${EXP_ID}_1m ${EXP_ID}_1y 1_${EXP_ID}_3h 1_${EXP_ID}_1d 1_${EXP_ID}_5d 1_${EXP_ID}_1m 1_${EXP_ID}_1y"
 tchunk=1; zchunk=1; ychunk=100; xchunk=100
 
 echo 0 > $post_dir/status
 if ${OCEAN_CONVERT_NETCDF4} ; then
-	for ((year=startyear; year<=endyear; ++year))
+
+   nextdate=$startdate
+   while [[ $nextdate -lt $enddate ]] 
 	do
+	   # treat special case of 18930401, see echam_postprocessing.sh
+		if [[ $freq == "m" ]] ; then
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} month - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} month" "+%Y%m%d")
+		else
+			currdate1=$nextdate
+			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+		fi
+
 		for filetag in $filetags
 		do
    		for s in $steps
       	do
-				input=${s}_${year}0101_${year}1231_${filetag}.nc3
-		    	output=${s}_${year}0101_${year}1231_${filetag}.nc
+				input=${s}_${currdate1}_${currdate2}_${filetag}.nc3
+		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
       	  	if [[ -f $output ]] ; then
 					mv $output $input
@@ -282,27 +299,40 @@ cd ${outmod}
 echo 0 > $post_dir/status
 mkdir ym
 
-for ((year=startyear; year<=endyear; ++year))
+nextdate=$startdate
+while [[ $nextdate -lt $enddate ]] && [[ $freq="y" ]] 
 do
+   # treat special case of 18930401, see echam_postprocessing.sh
+	if [[ $freq == "m" ]] ; then
+		currdate1=$nextdate
+		currdate2=$(date --date="$currdate1 + ${increment} month - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + ${increment}  month" "+%Y%m%d")
+	else
+		currdate1=$nextdate
+		currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+	fi
+
 	for filetag in $filetags
 	do
 		for s in $steps
 		do
 			# !!! output files will have the same name as the old input file !!! 
-			input=${s}_${year}0101_${year}1231_${filetag}.nc
+			input=${s}_${currdate1}_${currdate2}_${filetag}.nc
 			if [[ "$s" =~ ^1_.*$ ]] ; then
-				output=1_${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
+				output=1_${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc
 			else
-				output=${EXP_ID}_1y_${year}0101_${year}1231_${filetag}.nc
+				output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc
 			fi     
-			if [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
+			# ym calculation currently only available for 1y chunks
+			if [[ "$freq" == "y" ]] && [[ -f $input ]] && [[ ! -f ym/$output ]] && [[ ! -f ym/${output}3 ]]; then
 
 				touch ym/$output 
 				# If too many jobs run at the same time, wait
 				while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 				(	
 					trap 'echo $? > $post_dir/status' ERR
-					cdo yearmean $input ym/$output 
+					cdo -L yearmean $input ym/$output 
 					cd ym
 					mv $output ${output}3
 					ncks -7 $sortoption -L 1 \
@@ -316,7 +346,7 @@ do
 					cd ..
 				) &
 				# file from cdo must be available for [[ ! -f ym/$output ]] in case of e.g. 5d and 1m output
-				sleep 5
+				sleep 3
 			fi
 		done #steps
 	done
@@ -333,18 +363,41 @@ print 'NEMO ym calculation finished'
 print 'NEMO restart postprocessing started'
 cd ${RESTART_DIR}/${ocemod}
 
-for ((year=startyear-1; year<endyear; ++year)) ; do
-	if ls *${EXP_ID}_*_restart*_${year}1231_*.nc > /dev/null 2>&1 ; then
+# treat special case of 18930401, see echam_postprocessing.sh
+if [[ $freq == "m" ]] ; then
+	prevdate=$(date --date="$startdate - 1 month" "+%Y%m%d")
+	prevenddate=$(date --date="$prevdate + 1 month -1 day" "+%Y%m%d")
+else
+	prevdate=$(date --date="$startdate - 1 year" "+%Y%m%d")	
+	prevenddate=$(date --date="$prevdate + 1 year - 1 day" "+%Y%m%d")
+fi
+nextdate=$prevdate
+echo "nextdate=$nextdate / prevenddate=$prevenddate / enddate=$enddate"
+
+while [[ $nextdate -lt $prevenddate ]] 
+do
+   # treat special case of 18930401, see echam_postprocessing.sh
+	if [[ $freq == "m" ]] ; then
+		currdate1=$nextdate
+		currdate2=$(date --date="$currdate1 + 1 month - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + 1 month" "+%Y%m%d")
+	else
+		currdate1=$nextdate
+		currdate2=$(date --date="$currdate1 + 1 year - 1 day" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate2 + 1 year" "+%Y%m%d")	
+	fi
+
+	# output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc
+	if ls *${EXP_ID}_*_restart*_${currdate2}_*.nc > /dev/null 2>&1 ; then
 		# If too many jobs run at the same time, wait
 		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 		(
 			trap 'echo $? > $post_dir/status' ERR
 			print "Processing year $year"
-			tar czf ${EXP_ID}_restart_${year}1231.tar.gz *${EXP_ID}_*_restart*_${year}1231_*.nc 
-			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${year}1231_*.nc 
+			tar czf ${EXP_ID}_restart_${currdate2}.tar.gz *${EXP_ID}_*_restart*_${currdate2}_*.nc 
+			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 		) &
 	fi
-	wait
 done
 wait
 
@@ -368,6 +421,19 @@ else
 	print "mesh_mask.nc already available or"
 	print "mesh_mask_0000.nc missing"
 fi
+if [[ $(type -P nocscombinev2.x) ]] && [[ ! -f 1_mesh_mask.nc ]] && [[ -f 1_mesh_mask_0000.nc ]]; then
+	nocscombinev2.x -f 1_mesh_mask_0000.nc 
+	if [[ $? -eq 0 ]] && [[ -f 1_mesh_mask.nc ]]; then
+		print "nocscombinev2.x finished sucessfully"
+		rm 1_mesh_mask_????.nc
+	   test -d $DATA_DIR/fx || mkdir -p $DATA_DIR/fx
+		mv 1_mesh_mask.nc $DATA_DIR/fx/
+	fi
+else
+	print "nocscombinev2.x is missing or"
+	print "1_mesh_mask.nc already available or"
+	print "1_mesh_mask_0000.nc missing"
+fi
 print 'NEMO storing of static data finished'
 #
 # Epilogue
@@ -381,3 +447,9 @@ print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
 
+if [[ "$endmonth" == "12" ]] && [[ "$run_monitoring" == "yes" ]] ; then
+    print "will now run NEMO monitoring until $enddate"
+   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
+else
+   print "NEMO monitoring switched off, use -m to activate it"
+fi

@@ -118,7 +118,7 @@ runscripts.
 Variable Calls
 ~~~~~~~~~~~~~~
 
-Variables defined in a `YAML` file can be invoked on the same file or in oder files
+Variables defined in a `YAML` file can be invoked on the same file or in other files
 provided that the file where it is defined is read for the given operation.
 The syntax for calling an already defined variable is:
 
@@ -529,10 +529,63 @@ Two types of `yaml` elements can be nested inside an environment changes:
   command ``export`` is not needed here, just define the variable as
   ``VAR_NAME: VAR_VALUE`` or as a nested dictionary.
 
+Syntax
+^^^^^^
+
+``add_export_vars`` can be defined as a dictionary or a list of strings (list of strings will be deprecated from version 7.0 onwards). We are strongly encourage to define the export variables as a dictionary.
+
+As dictionary
+'''''''''''''
+
+.. code-block:: yaml
+
+    [ ... ]
+
+        add_export_vars:
+            NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
+            LD_LIBRARY_PATH: '$NETCDF_DIR/lib/:$LD_LIBRARY_PATH'
+        
+
+    [ ... ]
+
+As list
+'''''''
+
+.. code-block:: yaml
+
+    [ ... ]
+
+        add_export_vars:
+            - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+            - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+            - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+
+    [ ... ]
+
+.. Note:: It is also possible here to use variables that are defined in a yaml file (see also :ref:`yaml:Variable Calls`). If you need to mix enviroment variables and `ESM-Tools` variables (defined in a yaml file), please note the following syntax:
+
+   - put `ESM-Tools` variables in curly braces (see also :ref:`yaml:Variable Calls`)
+   - give the environment variable without curly braces
+
+   **Example**
+
+    .. code-block:: yaml
+           
+        [ ... ]
+       
+            model_dir: "some_path_to_model_dir"
+       
+        [ ... ]
+    
+            add_export_vars:
+                LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/build/lib'
+
+
 For more information about ``esm_environment`` package, please check
 :ref:`esm_environment:ESM Environment`.
 
-**Example**
+Example
+^^^^^^^
 
 .. tabs::
    .. tab:: fesom.yaml
@@ -914,3 +967,77 @@ of a `FESOM` simulation and store it in a variable called `prev_time_step`:
    information needed. Note that, for example, dates of the previous run are
    already available in the current run, under variables such as
    ``last_start_date``, ``parent_start_date``, etc.
+
+Branchoff experiments with ``prev_run``
+---------------------------------------
+
+If you use ``prev_run`` variables in your model configuration files, ``esm_runscripts``
+will require that you define a ``prev_run_config_file`` variable in your runscript
+**when you try to run a branchoff experiment**. As a branchoff is a way of restarting,
+``esm_runscripts`` needs to know which file should use to load the ``prev_run``
+information, but (contrary to the regular restarts within the same experiment) finding
+that file name is a non-trivial task: being a different experiment, the datestamps and
+restart frequency can differ from the parent experiment to the branchoff experiment. To
+overcome this problem the user needs to specify the **full path** to the
+``finished_config.yaml`` to be used on the first run of the branchoff experiment:
+
+.. code-block:: yaml
+
+    prev_run_config_file: "/<basedir>/<expid>/config/<expid>_finished_config.yaml_<DATE>-<DATE>"
+
+Error-handling and warning syntax
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This syntax allows for error-handling and raising of warnings from the configuration
+files (i.e. `yaml` files in ``esm_tools/configs``). For including an error or a warning
+under a given condition (e.g. ``choose_`` block for a given selection) use the key
+words ``error`` or ``warning`` respectively (if more than one error/warning is present
+in the section of your file, use ``add_error/warning`` to combine them).
+
+The syntax in the yaml files for triggering warnings or errors is as follows:
+
+.. code-block:: yaml
+
+   warning/error:
+       <name>: # Name for the specific warning or error
+           message: "the message of the warning/error"
+           esm_tools_version: ">/</=/!=/version_number" # trigger it under certain ESM-Tools version conditions
+           ask_user_to_continue: True/False # Ask user about continuing or stopping the process, only for warnings, errors always kill the process
+
+* ``<name>``: what is displayed on the title of the error/warning
+* ``message``: the detailed message of the error/warning. You can use `ESM-Tools`
+  variables here (``${<variable>}``)
+* ``esm_tools_version``: only trigger this error/warning under given `ESM-Tools`
+  versions
+* ``ask_user_to_continue``: if true, it asks the user whether they want to continue,
+  after displaying the warning. Only works for warnings as errors halt the simulation
+  without asking
+
+**Example**
+
+.. code-block:: yaml
+
+   recom:
+       choose_scenario:
+           HIST:
+               [ ... ]
+           PI-CTRL:
+               [ ... ]
+           "*":
+               add_warning:
+                   "wrong scenario type":
+                       message: "The scenario you specified (``${recom.scenario}``) is not supported!"
+                       ask_user_to_continue: True
+
+If you then define ``recom.scenario: hist`` instead of ``HIST`` then you'll get the
+following:
+
+.. code-block::
+
+   wrong scenario type WARNING
+   ---------------------------
+   Section: recom
+
+   Wrong scenario, scenario hist does not exist
+
+   ? Do you want to continue (set general.ignore_config_warnings: False to avoid quesitoning)?

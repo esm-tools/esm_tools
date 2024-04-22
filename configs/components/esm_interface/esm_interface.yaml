@@ -16,6 +16,7 @@ git-repository: https://gitlab.dkrz.de/modular_esm/esm-interface.git
 namelist_dir: "${esm_namelist_dir}/esm-interface/"
 namelists:
         - namelist.esmcouple
+contact: nadine.wieters(at)awi.de
 
 config_files:
         config: config

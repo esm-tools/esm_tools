@@ -2,9 +2,16 @@
 ESM Tools
 =========
 
+Documentation
+-------------
+
 .. image:: https://readthedocs.org/projects/esm-tools/badge/?version=latest
 
 For our complete documentation, please check https://esm-tools.readthedocs.io/en/latest/index.html.
+
+How to cite this software
+-------------------------
+To cite ESM-Tools, please use the following DOI: https://zenodo.org/doi/10.5281/zenodo.3737927. This DOI represents all versions of the software, and will always pointing to the latest version available on https://zenodo.org.
 
 
 Before you continue
@@ -12,16 +19,15 @@ Before you continue
 
 You will need python 3 (possibly version 3.6 or newer), a version of git that is not ancient (everything newer than 2.10 should be good), and up-to-date pip (``pip install -U pip``) to install the `esm_tools`. That means that on the supported machines, you could for example use the following settings:
 
-ollie.awi.de::
+albedo::
+
+    $ module load git
+    $ module load python
+
+levante.dkrz.de::
 
     $ module load git
     $ module load python3
-
-mistral.dkrz.de::
-
-    $ module load git
-    $ module unload netcdf_c
-    $ module load anaconda3
 
 glogin.hlrn.de / blogin.hlrn.de::
 
@@ -30,8 +36,9 @@ glogin.hlrn.de / blogin.hlrn.de::
 
 juwels.fz-juelich.de::
 
+    $ module load Stages/2022
     $ module load git
-    $ module load Python-3.6.8
+    $ module load Python/3.9.6
 
 aleph::
 
@@ -67,7 +74,3 @@ Installing
         $ ./install.sh
 
 You should now have the command line tools ``esm_master`` and ``esm_runscripts``, which replace the old version.
-
-You may have to add the installation path to your ``PATH`` variable::
-
-    $ export PATH=~/.local/bin:$PATH

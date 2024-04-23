@@ -819,7 +819,7 @@ rnfmap:
                         version: foci211
                         runoff_method: "JK22"
                 "agrif-4.0":
-                        version: foci211
+                        version: agrif
                         runoff_method: "JK22"
                         with_agrif: True
                         # Set runoff mapper to send runoff to AGRIF as well
@@ -1109,7 +1109,7 @@ oasis3mct:
                                 "4.2":
                                         add_coupling_target_fields:
                                                 sstocean_1:
-                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
+                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
                 #'*':
                 #        # Couple HTESSEL runoff to river routing
                 #        add_coupling_target_fields:

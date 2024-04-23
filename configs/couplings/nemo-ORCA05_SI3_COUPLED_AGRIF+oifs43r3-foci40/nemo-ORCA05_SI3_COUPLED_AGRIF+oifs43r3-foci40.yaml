@@ -2,7 +2,7 @@ components:
 - oifs-43r3-foci40
 - nemo-ORCA05_SI3_COUPLED_AGRIF
 - oasis3mct-5.0-geomar
-- rnfmap-foci211
+- rnfmap-agrif
 #- xios-trunk_oasis
 coupling_changes:
 - sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-43r3-foci40/src/ifs/module/yommcc.F90

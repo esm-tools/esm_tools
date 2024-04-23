@@ -1,0 +1,130 @@
+# 
+# Runscript to run FOCI-OpenIFS with NWPAC10
+# on glogin
+#
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   version: "agrif-4.0"
+   resolution: "TCO95_ORCA05"
+
+   # How much walltime to request 
+   compute_time: "01:00:00"
+ 
+   # Time period to simulate
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
+
+   # How often to restart
+   nyear: 0
+   nmonth: 1
+   nday: 0
+   hours: 0
+  
+   # machine specific setup 
+   account: shk00018 
+   base_dir: ${general.homedir}/esm/esm-experiments/ 
+  
+   # Activate NEMO and OpenIFS post processing  
+   postprocessing: 1
+   
+computer: 
+   partition: "standard96" 
+
+focioifs:
+   model_dir: /scratch/usr/shkjocke/model_test/focioifs-agrif-4.0/
+  
+oifs:
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   input_dir: "${pool_dir}/OPENIFS43R3-TCO95/"
+   rtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/rtables/"
+   vtables_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/vtables/"
+   clim_dir: "${pool_dir}/OPENIFS43R3-TCO95/95_4/"
+   ifsdata_dir: "/scratch/projects/shk00018/foci_input2/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/OPENIFS_CY43_GENERAL/cmip6-data/"
+   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   time_step: 1800
+   lresume: 0
+   nproc: 96
+   omp_num_threads: 1
+
+   # tau = rho * Cd (u10m - use_ocean_current * u_current)
+   use_ocean_currents: 1
+   
+   # Tell OpenIFS to expect
+   # coupling fields from nest  
+   with_nest1: true
+
+oasis3mct:
+   coupling_time_step: 3600 
+   mct_version: "5.0" 
+   norestart: F
+   use_lucia: True
+   debug_level: 1 
+   export_mode: EXPOUT
+   pool_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/
+   ini_parent_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/
+   oasis_date_stamp: ""
+      
+nemo:
+   # Note for future runs:
+   # We currently use a 5x grid refinement in VIKING10 and 3x time step
+   # It would make more sense to also refine time step by 5x so that Courant number is reasonable
+   # This can be done by simply changing the 3 to a 5 in the 2nd line of AGRIF_FixedGrids.in 
+   # So far, we stick with 3x to keep consistency with existing runs. 
+   input_dir: "/scratch/projects/shk00018/foci_input2/NEMO4_ORCA05_input/" 
+   agrif_dir: "/scratch/projects/shk00018/foci_input2/agrif_nwpac10/"
+   #nest_refinement: 3
+   resolution: "ORCA05"
+   time_step: 360        
+   version: "ORCA05_SI3_COUPLED_AGRIF"
+   # Remove periodic points from namcouple (720 instead of 722)
+   _nx: 720
+   _ny: 510
+   # This gives subdomains of 15x15 grid cells which is near the limit in NEMO
+   # More nproc should not be used
+   jpni: 36
+   jpnj: 24
+   nproc: 864
+   nest1: NWPAC10
+   
+   add_namelist_changes:
+      1_namelist_cfg:
+         # Viscosity in ORCA05 is -1.709e12
+         # If grid refinement is factor 5, then new visc should be
+         # computed as -1.709e12 / 5^3
+         #
+         # Note: -1.709e12 is applied at the largest ORCA05 cell, at equator
+         # but coeff is actually -1.267e12 where VIKING10 starts
+         # So: If largest cell in ORCA05 (at eq) is dx_max, 
+         # and largest ORCA05 grid cell size in nest region is dx_nest_max
+         # then you need to compute the following:
+         # rn_ahm_0_blp = -1.709e12 * (dx_nest_max / dx_max) / (refinement_factor^3)
+         #
+         # For VIKING10: -1.013e10
+         # 
+         # Similar considerations should be done for other nests
+         namldf_dyn:
+            rn_ahm_0_blp: -1.013e10
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/output_for_diag/
+   # This should make 4 XIOS cores spread over 2 nodes (on HLRN standard96(
+   nproc: 24
+   

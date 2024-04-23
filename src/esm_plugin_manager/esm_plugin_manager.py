@@ -128,6 +128,7 @@ def work_through_recipe(recipe, plugins, config):
 
         pdb.set_trace()
     recipes = recipe["recipe"]
+    recipe_name = recipe["job_type"]
     for index, workitem in enumerate(recipes, start=1):
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
@@ -145,20 +146,20 @@ def work_through_recipe(recipe, plugins, config):
             thismodule = __import__(plugins[workitem]["module"])
             submodule = getattr(thismodule, plugins[workitem]["submodule"])
             # NOTE(PG): This is sloppy, but it gets the job done...
-            if config['general'].get("timing", False):
+            if config['general'].get("profile", False):
                 from esm_profile import timing
 
                 workitem_callable = getattr(submodule, workitem)
-                timed_workitem_callable = timing(workitem_callable)
+                timed_workitem_callable = timing(workitem_callable, recipe_name)
                 config = timed_workitem_callable(config)
             else:
                 config = getattr(submodule, workitem)(config)
         elif plugins[workitem]["type"] == "installed":
             # print("Installed plugin will be run: ", workitem)
-            if config['general'].get("timing", False):
+            if config['general'].get("profile", False):
                 from esm_profile import timing
                 workitem_callable = plugins[workitem]["callable"]
-                timed_workitem_callable = timing(workitem_callable)
+                timed_workitem_callable = timing(workitem_callable, recipe_name)
                 config = timed_workitem_callable(config)
             else:
                 config = plugins[workitem]["callable"](config)
@@ -175,10 +176,10 @@ def work_through_recipe(recipe, plugins, config):
                 )
                 thismodule = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(thismodule)
-                if config['general'].get("timing", False):
+                if config['general'].get("profile", False):
                     from esm_profile import timing
                     workitem_callable = getattr(thismodule, workitem)
-                    timed_workitem_callable = timing(workitem_callable)
+                    timed_workitem_callable = timing(workitem_callable, recipe_name)
                     config = timed_workitem_callable(config)
                 else:
                     config = getattr(thismodule, workitem)(config)

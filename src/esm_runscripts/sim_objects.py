@@ -233,6 +233,11 @@ class SimulationSetup(object):
     def viz(self):
         """
         Starts the Viz job.
+
+        Parameters
+        ----------
+        kill_after_submit: bool
+            Default ``True``. If set, the entire Python instance is killed with ``sys.exit()``.
         """
         # NOTE(PG): Local import, not everyone will have viz yet...
         import esm_viz as viz

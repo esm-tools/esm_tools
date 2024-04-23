@@ -78,7 +78,7 @@ def evaluate(config, job_type, recipe_name):
 #                                  general stuff                                       #
 ########################################################################################
 def end_it_all(config):
-    if config["general"]["profile"]:
+    if config["general"].get("profile", False):
         print_profile_summary()
 
     if config["general"]["verbose"]:

@@ -238,6 +238,12 @@ choose_version:
        data_sal_eORCA025: data_sal.nc
        ghflux_v2.0: geothermal_heating.nc
        
+       # AGRIF files
+       # Note: You can initialise T/S from parent
+       # so no 1_data_tem etc is needed. 
+       1_domain_cfg: 1_domain_cfg.nc 
+       1_subbasins: 1_subbasins.nc 
+       
     # surface forcing for uncoupled NEMO4
     forcing_files:
       # forcing data
@@ -727,17 +733,17 @@ choose_version:
         - nemobasemodel-4.2.2
 
     branch: master
-    reference_expid: 'FOCIOIFS'
-    clone_destination: nemo-${nemo.version}/cfgs/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/orca05_z46_si3_coupled.git
+    reference_expid: 'EXP00'
+    clone_destination: nemo-${nemo.version}/cfgs/ICE_AGRIF_CPL
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ice_agrif_cpl.git
     
     # TODO: include arch repo as separate component
     comp_command: export NEMO_TOPLEVEL=${model_dir} ; export XIOS_TOPLEVEL=${model_dir}/../xios; 
                   test -d arch/GEOMAR || git clone https://git.geomar.de/foci/src/nemo_arch.git arch/GEOMAR;
-                  cp cfgs/${nemo.version}/work_cfgs.inc cfgs/ref_cfgs.txt;
-                  ./makenemo -n ${version} -m ${archfile} -r ${version} -j 24 ; 
+                  cp cfgs/ICE_AGRIF_CPL/work_cfgs.inc cfgs/ref_cfgs.txt;
+                  ./makenemo -n ${version} -m ${archfile} -r ICE_AGRIF_CPL -j 24 ; 
                   cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${version}/BLD/bin/oceanx
-    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${nemo.version} clean
+    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ICE_AGRIF_CPL clean
     archfile: ESMTOOLS_generic_oasis_intel
     destination: nemo-${nemo.version}
     install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
@@ -747,13 +753,96 @@ choose_version:
     generation: "4.2"
     resolution: ORCA05
     use_tracer: false 
+    use_si3_agrif: true 
     leapyear: true  
     free_surface: nonlinear
     
     input_dir: ${pool_dir}/NEMO4_${resolution}/input
+    
+    add_config_files:
+       1_namelist_cfg: 1_namelist_cfg
+       1_namelist_ice_cfg: 1_namelist_ice_cfg
+    
+    add_input_sources:
+        namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+        namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+        # 1_namelist_ref is just a copy of namelist_ref
+        1_namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+        1_namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
 
-    # override hardcoded path to runoff forcing
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       
+       # from Sebastian / Markus
+       bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
+       coordinates_orca05_nemo4: bathy_meter_orca05_nemo4 
+       bfr_coef_orca05_nemo4: bfr_coef_orca05_nemo4
+       subbasins_orca05_nemo4: subbasins_orca05_nemo4
+       domain_cfg_orca05_nemo4: domain_cfg_orca05_nemo4
+       
+       # NEMO ORCA05 4.2.x input files
+       #coordinates_orca05_nemo4: coordinates_orca05_nemo4
+       #bfr_coef_orca05_nemo4: bfr_coef_orca05_nemo4
+       #subbasins_orca05_nemo4: subbasins_orca05_nemo4
+       #domain_cfg_orca05_nemo4: domain_cfg_orca05_nemo4
+       # we probably never need this one
+       #domain_cfg_UKmasks: domain_cfg_UKmasks 
+       # ghflux remapped to ORCA05, no reshape file needed
+       ghflux_v2.0_orca05_nemo4: ghflux_v2.0_orca05_nemo4
+       
+       # inital data
+       data_tem_orca05_nemo4: data_tem_orca05_nemo4
+       data_sal_orca05_nemo4: data_sal_orca05_nemo4
+       
+       # inital data
+       seaice_orca05_nemo4: seaice_orca05_nemo4
+       
+       # domain_cfg and AGRIF_FixedGrids.in for AGRIF
+       1_domain_cfg: 1_domain_cfg 
+       fixed_grids: fixed_grids
+       1_subbasins: 1_subbasins
+
+    input_in_work:
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       
+       domain_cfg_orca05_nemo4: domain_cfg.nc
+       coordinates_orca05_nemo4: coordinates.nc
+       bfr_coef_orca05_nemo4: bfr_coef.nc
+       subbasins_orca05_nemo4: subbasins.nc
+       
+       1_domain_cfg: 1_domain_cfg.nc 
+       1_subbasins: 1_subbasins.nc 
+       
+       # inital data
+       data_tem_orca05_nemo4: data_tem.nc
+       data_sal_orca05_nemo4: data_sal.nc
+       ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
+        
+       seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc 
+       
+     
+    # Add extra coupling fields to couple AGRIF to OpenIFS  
+    add_coupling_fields:
+        "[[agr1_t_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_c_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_r_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_rc_fields-->FIELD]]":
+            grid: agr1
+        "[[agr2_t_fields-->FIELD]]":
+            grid: agr2
+            
+    # Namelist changes for AGRIF coupled 
     add_namelist_changes:
+       
+       # override hardcoded path to runoff forcing
        namelist_cfg:
           namsbc_blk:
              cn_dir: "./"
@@ -791,7 +880,12 @@ choose_version:
              # Unlike default, we use geothermal heating remapped to ORCA05
              # No need for a reshape file
              sn_qgh: ['geothermal_heating.nc', -12.0, 'gh_flux', .false., .true., 'yearly', '', '']
-
+          
+          namdyn_hpg:
+             ln_hpg_zco: '.false.'
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             
           # set diffusion to be 600 m2/s
           # and visc to be -1,709 m4/s
           # A = Ud * Ld / 2. Ud = 0.024 gives approx A=600 m2/s for Ld=50km. 
@@ -800,78 +894,12 @@ choose_version:
              rn_ud: 0.024
           namdyn_ldf:
              rn_uv: 0.164
-   
-    add_input_sources:
-        namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
-        namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
-
-    add_input_files:
-       # reference namelists
-       namelist_ref: namelist_ref
-       namelist_ice_ref: namelist_ice_ref
-       1_namelist_ref: 1_namelist_ref
-       1_namelist_ice_ref: 1_namelist_ice_ref
-       
-       # from Sebastian / Markus
-       bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
-       coordinates_orca05_nemo4: bathy_meter_orca05_nemo4 
-       bfr_coef_orca05_nemo4: bfr_coef_orca05_nemo4
-       subbasins_orca05_nemo4: subbasins_orca05_nemo4
-       domain_cfg_orca05_nemo4: domain_cfg_orca05_nemo4
-       
-       # NEMO ORCA05 4.2.x input files
-       #coordinates_orca05_nemo4: coordinates_orca05_nemo4
-       #bfr_coef_orca05_nemo4: bfr_coef_orca05_nemo4
-       #subbasins_orca05_nemo4: subbasins_orca05_nemo4
-       #domain_cfg_orca05_nemo4: domain_cfg_orca05_nemo4
-       # we probably never need this one
-       #domain_cfg_UKmasks: domain_cfg_UKmasks 
-       # ghflux remapped to ORCA05, no reshape file needed
-       ghflux_v2.0_orca05_nemo4: ghflux_v2.0_orca05_nemo4
-       
-       # inital data
-       data_tem_orca05_nemo4: data_tem_orca05_nemo4
-       data_sal_orca05_nemo4: data_sal_orca05_nemo4
-       
-       # inital data
-       seaice_orca05_nemo4: seaice_orca05_nemo4
-       
-       # domain cfg for AGRIF
-       1_domain_cfg: 1_domain_cfg 
-
-    input_in_work:
-       1_namelist_ref: 1_namelist_ref
-       1_namelist_ice_ref: 1_namelist_ice_ref
-       
-       domain_cfg_orca05_nemo4: domain_cfg.nc
-       coordinates_orca05_nemo4: coordinates.nc
-       bfr_coef_orca05_nemo4: bfr_coef.nc
-       subbasins_orca05_nemo4: subbasins.nc
-      
-       # inital data
-       data_tem_orca05_nemo4: data_tem.nc
-       data_sal_orca05_nemo4: data_sal.nc
-       ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
-       
-       seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc 
-       
-       1_domain_cfg: 1_domain_cfg 
-     
-    # Add extra coupling fields to couple AGRIF to OpenIFS  
-    add_coupling_fields:
-        "[[agr1_t_fields-->FIELD]]":
-            grid: agr1
-        "[[agr1_c_fields-->FIELD]]":
-            grid: agr1
-        "[[agr1_r_fields-->FIELD]]":
-            grid: agr1
-        "[[agr1_rc_fields-->FIELD]]":
-            grid: agr1
-        "[[agr2_t_fields-->FIELD]]":
-            grid: agr2
-            
-    # Namelist changes for AGRIF coupled 
-    add_namelist_changes:
+          
+          namagrif: 
+             ln_spc_dyn: '.true.'
+             rn_sponge_tra: 2000 
+             rn_sponge_dyn: 2000 
+             
        1_namelist_cfg:
           namrun:
              cn_exp: ${expid}
@@ -886,40 +914,72 @@ choose_version:
              nn_leapy: ${nn_leapy} 
              nn_rstctl: ${nn_rstctl} 
              ln_rstart: ${nemo.lresume}
+          namcfg: 
+             ln_read_cfg: ".true. "
+             cn_domcfg: "domain_cfg.nc"
+             ln_closea: '.false.'                           
           namtsd:                                                
-             ln_tsd_tradmp: ${ln_tsd_tradmp} 
-             ln_tsd_init: ${ln_tsd_init} 
+             ln_tsd_dmp: '.false.' 
+             ln_tsd_init: '.false.'
           namdom:
-             nn_closea: 1
-             nn_msh: ${nn_msh} 
-             rn_rdt: ${time_step_nest}
+             rn_dt: ${time_step_nest}
+             ln_meshmask: ${ln_meshmask}
+          namagrif: 
+             ln_agrif_2way: '.true.'
+             ln_init_chfrpar: '.true.'
+             ln_vert_remap: '.false.'
+             ln_chk_bathy: '.false.'
+             rn_sponge_tra: 600
+             rn_sponge_dyn: 600
           namsbc:
-             nn_fsbc: ${nest_refinement} 
-             ln_echam: '.true.'
-          nammpp:
-             jpni: ${jpni}
-             jpnj: ${jpnj}
-             jpnij: ${nproc}
-          namsbc_echam:
-             sn_owndi: ['A_OTaux1_echam6_08', 3, 'A_OTaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
-             sn_owndj: ['A_OTauy1_echam6_09', 3, 'A_OTauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
-             sn_iwndi: ['A_ITaux1_echam6_10', 3, 'A_ITaux1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Uwnd', ' ']
-             sn_iwndj: ['A_ITauy1_echam6_11', 3, 'A_ITauy1', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', 'Vwnd', ' ']
-             sn_iqsr: ['A_QsrIce_echam6_12', 3, 'A_QsrIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
-             sn_qsr: ['A_QsrMix_echam6_13', 3, 'A_QsrMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
-             sn_iqns: ['A_QnsIce_echam6_14', 3, 'A_QnsIce', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
-             sn_qns: ['A_QnsMix_echam6_15', 3, 'A_QnsMix', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bicub.nc', '', ' ']
-             sn_prec: ['ATotRain_echam6_16', 3, 'ATotRain', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
-             sn_snow: ['ATotSnow_echam6_17', 3, 'ATotSnow', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
-             sn_ievp: ['AIceEvap_echam6_18', 3, 'AIceEvap', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
-             sn_dqns: ['A_dQnsdT_echam6_19', 3, 'A_dQnsdT', .false., .false., 'instant', 'reshape_T63invert_${nest1}_bilin.nc', '', ' ']
+             ln_blk: false
+             ln_cpl: true
+             ln_ssr: false
+             ln_rnf: false
+             ln_traqsr: false
+             ln_apr_dyn: false
+             nn_fsbc: 1 #${nest_refinement} 
+          namsbc_cpl:
+             sn_snd_temp: ['oce and ice', 'no', '', '', '']
+             sn_snd_alb: ['ice', 'no', '', '', '']
+             sn_snd_thick: ['ice and snow', 'no', '', '', '']
+             sn_snd_crt: ['oce only', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_snd_co2: ['none', 'no', '', '', '']
+             sn_snd_cond: ['none', 'no', '', '', '']
+             sn_snd_mpnd: ['none', 'no', '', '', '']
+             sn_snd_sstfrz: ['none','no','','','']
+             sn_snd_wlev: ['none','no','','','']
+             sn_snd_ttilyr: ['none','no','','','']
+             sn_rcv_w10m: ['none', 'no', '', '', '']
+             sn_rcv_taumod: ['none', 'no', '', '', '']
+             sn_rcv_tau: ['oce and ice', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_rcv_dqnsdt: ['coupled', 'no', '', '', '']
+             sn_rcv_qsr: ['conservative', 'no', '', '', '']
+             sn_rcv_qns: ['conservative', 'no', '', '', '']
+             sn_rcv_emp: ['conservative', 'no', '', '', '']
+             sn_rcv_rnf: ['coupled', 'no', '', '', '']
+             sn_rcv_cal: ['coupled', 'no', '', '', '']
+             sn_rcv_co2: ['none', 'no', '', '', ''] 
          
-          # with AGRIF always use linear free surface
-          # always set free_surface: linear with AGRIF 
+          # Sang-Yeobs first test was with partial steps
           namdyn_hpg:
+             ln_hpg_zco: '.false.'
              ln_hpg_zps: '.true.'
              ln_hpg_sco: '.false.'
-             ln_dynhpg_imp: '.true.'
+             
+          namtra_ldf:
+             ln_traldf_OFF: '.false.'
+             # aht = 1/2 * rn_Ud * rn_Ld = 1/2 * 0.02 * 10000 = 100 m2/s
+             ln_traldf_lap: '.true.'
+             ln_traldf_iso: '.true.'
+             nn_aht_ijk_t:  20
+             rn_Ud: 0.02  
+             rn_Ld: 10000 
+          namdyn_ldf:
+             ln_dynldf_off: '.false.'
+             ln_dynldf_blp: '.true.'
+             ln_dynldf_hor: '.true.'
+             nn_ahm_ijk_t: 32
 
   ORCA05_LIM2_FOCI_AGRIF:
     requires:
@@ -1848,7 +1908,10 @@ jpni:           0
 jpnj:           0
 nproc:          $(( ${jpni} * ${jpnj} )) 
 
+# use_lim2 is kept default here
+# but for NEMO 4, one should have use_lim2 = false and use_si3 = true
 use_lim2:       true
+use_si3:        false
 use_tracer:     true
 hosing:         false
 lresume:        false
@@ -1964,11 +2027,17 @@ namelist_changes:
 
 choose_generation:
         "4.2": 
+                
+                # Switching from LIM2 (NEMO 3.6) to SI3 (NEMO 4)
+                use_lim2: false
+                use_si3: true
+                
                 # coupling fields are the same as in NEMO 3.6 except for:
                 # 1) OIceFrac is now OIceFrc
                 # 2) O_AlbIce is added 
+                # 3) O_SnwTck, O_IceTck are now OSnwTck, OIceTck 
                 opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
-                agr1_t_fields: [1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
+                agr1_t_fields: [1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_OIceTck, 1_OSnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
 
                 # in NEMO 4, the periodic points, i.e. i=1, i=imax
                 # are not included in the coupling
@@ -2189,6 +2258,7 @@ choose_levels:
 
 
 choose_use_lim2:
+   # NOTE: LIM2 only available for NEMO v3
    true:
       add_config_files:
          namelist_ice_cfg: namelist_ice_cfg
@@ -2204,18 +2274,6 @@ choose_use_lim2:
                      cn_icerst_outdir: '${experiment_restart_out_dir}/'
                   namiceini:
                      ln_limini: ${ln_limini} 
-         "4.2":
-            add_namelist_changes:
-               namelist_ice_cfg:
-                  nampar:
-                     cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
-                     cn_icerst_indir: '${parent_restart_dir}/'
-                     cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
-                     cn_icerst_outdir: '${experiment_restart_out_dir}/'
-                  namini:
-                     ln_iceini: ${ln_iceini} 
-                     # initialize sea ice based on SSTs
-                     nn_iceini_file: 0
 
       choose_use_lim2_agrif:
          true:
@@ -2230,20 +2288,42 @@ choose_use_lim2:
                      cn_icerst_outdir: '${experiment_restart_out_dir}/'
                   namiceini:
                      ln_limini: ${ln_limini_agrif} 
+
+choose_use_si3:
+   # NOTE: SI3 only available for NEMO v4
+   true:
+      add_config_files:
+         namelist_ice_cfg: namelist_ice_cfg
       
-      choose_use_si3_agrif:
-         true: 
-            add_config_files:
-               1_namelist_ice_cfg: 1_namelist_ice_cfg
+      choose_generation:
+         "4.2":
             add_namelist_changes:
-               1_namelist_ice_cfg:
-                  namicerun:
-                     cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+               namelist_ice_cfg:
+                  nampar:
+                     cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
                      cn_icerst_indir: '${parent_restart_dir}/'
                      cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                      cn_icerst_outdir: '${experiment_restart_out_dir}/'
-                  namiceini:
-                     ln_limini: ${ln_limini_agrif} 
+                  namini:
+                     ln_iceini: ${ln_iceini} 
+                     # initialize sea ice based on SSTs
+                     nn_iceini_file: 0
+         
+            choose_use_si3_agrif:
+               true: 
+                  add_config_files:
+                     1_namelist_ice_cfg: 1_namelist_ice_cfg
+                  add_namelist_changes:
+                     1_namelist_ice_cfg:
+                        nampar:
+                           cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                           cn_icerst_indir: '${parent_restart_dir}/'
+                           cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                           cn_icerst_outdir: '${experiment_restart_out_dir}/'
+                        namini:
+                           ln_iceini: ${ln_iceini} 
+                           # initialize sea ice based on SSTs
+                           nn_iceini_file: 0
 
 choose_use_tracer:
    true:
@@ -2397,6 +2477,7 @@ input_sources:
         
         # NEMO 4.2.x input for AGRIF
         1_domain_cfg: ${agrif_dir}/1_domain_cfg.nc
+        1_subbasins: ${agrif_dir}/1_subbasins.nc 
         
         
 #forcing_files:

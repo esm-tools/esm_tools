@@ -49,7 +49,7 @@ echam:
 nemo:
    # set your own agrif input directory
    #agrif_dir: /path/to/my/input_files/AGRIF/agrif_${nest}
-   nest1: WG10 
+   nest1: VIKING10
    resolution: "ORCA05"
    version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
    jpni: 36 

@@ -15,6 +15,7 @@ prepcompute_recipe:
         
         - "assemble"
         - "log_used_files"
+        - "wait_for_iterative_coupling"
         - "_write_finalized_config"
           #- "assemble_filelists"
         #- "copy_tools_to_thisrun"

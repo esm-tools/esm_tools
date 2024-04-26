@@ -151,7 +151,6 @@ echam:
                               submodelctl:
                                  lco2: true
                               radctl:
-                                 iaero: 8 # check why not 9
                                  ico2: 1
 
                         add_restartstreams:
@@ -177,7 +176,6 @@ echam:
                               submodelctl:
                                  lco2: true
                               radctl:
-                                 iaero: 8 # check why not 9
                                  ico2: 1
 
                         add_restartstreams:

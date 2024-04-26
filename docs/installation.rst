@@ -143,21 +143,6 @@ Uninstall ESM-Tools
 
 We are sorry to see you go! You can uninstall your current `ESM-Tools` installation in two different ways depending slightly on how you installed it.
 
-Manually
-^^^^^^^^
-
-If you have installed `ESM-Tools` with the ``install.sh`` script or using ``pip`` with ``user`` mode, please follow the following steps to uninstall the software manually.
-
-- Delete the ``esm_*`` executables::
-
-    $ rm -ri ~/.local/bin/esm*
-
-- Remove the installed Python packages::
-
-  $ rm -ri ~/.local/lib/python3.<version>/site-packages/esm*
-
-Note that you may have a different Python version, so the second command might need to be adapted.
-
 Using pip
 ^^^^^^^^^
 
@@ -175,3 +160,18 @@ The ``--user`` flag may be required when using ``pip`` if you are not uninstalli
 If you are using a version of `ESM-Tools` that is older than 6.0.0 use ``pip`` to uninstall as follows::
 
 $ pip freeze | grep esm | xargs pip uninstall -y
+
+Manually
+^^^^^^^^
+
+If you have installed `ESM-Tools` with the ``install.sh`` script or using ``pip`` with ``user`` mode, please follow the following steps to uninstall the software manually.
+
+- Delete the ``esm_*`` executables::
+
+    $ rm -ri ~/.local/bin/esm*
+
+- Remove the installed Python packages::
+
+  $ rm -ri ~/.local/lib/python3.<version>/site-packages/esm*
+
+Note that you may have a different Python version, so the second command might need to be adapted.

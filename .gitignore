@@ -143,3 +143,12 @@ esm_tools/__init__.py
 
 #Vim temp files
 *.swp
+# backup files
+*.py.*
+
+# binaries
+dEBMmain
+pack
+unpack
+jsbach_init_file
+calnoro

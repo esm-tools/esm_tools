@@ -1,0 +1,17 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/albedo/work/user/lackerma/experiments/"
+        account: "paleodyn.paleo_work"
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm_cpl-albedo-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: pism_cpl-albedo-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"

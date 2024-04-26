@@ -73,7 +73,7 @@ def parse_shargs():
         "-P",
         "--profile",
         help="Write profiling information (esm-tools)",
-        default=False,
+        default=None,
         action="store_true",
     )
 
@@ -169,7 +169,7 @@ def main():
     ARGS = parse_shargs()
 
     check = False
-    profile = False
+    profile = None
     update = False
     expid = "test"
     pid = -666
@@ -278,7 +278,7 @@ def main():
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
 
-    Setup = SimulationSetup(command_line_config)
+    Setup = SimulationSetup(command_line_config=command_line_config)
     # if not Setup.config['general']['submitted']:
     if not Setup.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()

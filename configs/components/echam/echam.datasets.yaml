@@ -139,6 +139,14 @@ forcing_sources:
                  "${input_dir}/MAC-SP_${scenario}.nc":
                          from: 2015
 
+        # carbon emissions for echam6: with_lco2_emis
+        carbon_emissions_hist: "${forcing_dir}/${resolution}_carbon_emissions_ssp126.nc" # for years 1948 to 2014 all the same
+        carbon_emissions_ssp126: "${forcing_dir}/${resolution}_carbon_emissions_ssp126.nc"
+        carbon_emissions_ssp245: "${forcing_dir}/${resolution}_carbon_emissions_ssp245.nc"
+        carbon_emissions_ssp370: "${forcing_dir}/${resolution}_carbon_emissions_ssp370.nc"
+        carbon_emissions_ssp534os: "${forcing_dir}/${resolution}_carbon_emissions_ssp534.nc"
+        carbon_emissions_ssp585: "${forcing_dir}/${resolution}_carbon_emissions_ssp585.nc"
+
 greenhouse_hist_name: "greenhouse_historical"
 MAC-SP_hist_name: "MAC-SP"
 choose_echam.dataset:

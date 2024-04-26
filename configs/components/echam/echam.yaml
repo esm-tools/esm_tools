@@ -22,7 +22,7 @@ compile_infos:
         branch: ${echam.version}
         choose_version:
           6.3.05p2-awiesm-2.1:
-            branch: "6.3.05p2-awiesm-2.1"
+            branch: "6.3.05p2-awiesm-2.1-paleodyn-2.5" #LA: change back to 6.3.05p2-awiesm-2.1 once iceberg feature is merged https://gitlab.awi.de/paleodyn/Models/echam6/-/merge_requests/4
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
             comp_command: ./config/createMakefiles.pl; autoreconf -i --force; mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; ./configure $configure_opts --with-fortran=intel INSTALL='/usr/bin/install -p'; make -j `nproc --all`; make install -j `nproc --all`; mkdir -p src/echam/bin; cp  bin/echam6 src/echam/bin/echam6
             git-repository: "https://gitlab.awi.de/paleodyn/Models/echam6.git"
@@ -129,6 +129,33 @@ disturbance: "1.000001"
 lresume: false
 
 
+lgfw: False
+lupdate_orography: False
+choose_general.iterative_coupling:
+        True:
+                add_input_sources:
+                        "gfw_atmo": "${general.experiment_couple_dir}/latest_gfw_atmo.nc"
+                        "target_oro": "${general.experiment_couple_dir}/latest_target_orography.nc"
+                lgfw: True
+                choose_general.chunk_number:
+                        1:
+                                lgfw: False
+                                lupdate_orography: False
+                        "*":
+                                choose_general.first_run_in_chunk:
+                                        True:
+                                                lupdate_orography: True
+                                        "*":
+                                                lupdate_orography: False
+                add_namelist_changes:
+                        namelist.echam:
+                                submodelctl:
+                                        lgfw: "${lgfw}"
+                                        lupdate_orog: "${lupdate_orography}"
+                hosing_correction: True
+        '*':
+                hosing_correction: False
+
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030
 ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
@@ -165,8 +192,12 @@ choose_switch:
 # choice
 #
 
+with_icb: false
+icb_code: false
+
 with_wiso: false
 wiso_code: false
+with_lco2_emis: false
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -212,6 +243,7 @@ choose_version:
         6.3.05p2-awiesm-2.1:
                 # TODO MA: this problably needs much more stuff from the wiso version
                 wiso_code: true
+                icb_code: true
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0008
@@ -403,7 +435,19 @@ choose_scenario:
                 # of the next year and the ssp370 is given by default
                 ozone_source_file_scenario: ssp370
 
+        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
+        # under the choose_scenario_type block
         cmip6hist:
+                scenario_type: cmip6
+        ssp126:
+                scenario_type: cmip6
+        ssp245:
+                scenario_type: cmip6
+        ssp370:
+                scenario_type: cmip6
+        ssp534os:
+                scenario_type: cmip6
+        ssp585:
                 scenario_type: cmip6
 
 # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
@@ -527,6 +571,54 @@ choose_yr_perp_off:
                                 runctl:
                                         l_orbsvop87: ".false."
 
+choose_with_lco2_emis:
+    True:
+        # Run "emission-driven" echam experiment (in cmip6 context e.g. `esm-piControl` or `esm-hist`) where
+        # atmosheric CO2 concentration is not prescribed but calculated by the model setup.
+        # CO2 emissions need to be provided as forcing file (`carbon_emissions.nc`).
+        add_namelist_changes:
+            namelist.echam:
+                submodelctl:
+                    lco2: true # co2 submodel interacting with jsbach; true for emission-driven; if true, lco2_scenario will be set false during model run
+                radctl:
+                    ico2: 1 # 1 = interactively calculated co2 for emission-driven (lco2=true)
+                co2ctl:
+                    lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
+                    lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
+        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+            HIST:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_hist
+            ssp126:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp126
+            ssp245:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp245
+            ssp370:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp370
+            ssp534os:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp534os
+            ssp585:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_ssp585
+            "*":
+                add_error:
+                    "missing_scenario":
+                        message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
+        add_forcing_in_work:
+            carbon_emissions: "carbon_emissions.nc"
+choose_icb_code:
+        True:
+                licb: "${with_icb}"
+                add_namelist_changes:
+                        namelist.echam:
+                                submodelctl:
+                                        licb: "${licb}"
+                
+
 choose_wiso_code:
         True:
                 lwiso: "${with_wiso}"
@@ -588,6 +680,8 @@ input_in_work:
         "tslclim": "unit.92"
         "vgratclim": "unit.91"
         "vltclim": "unit.90"
+        "gfw_atmo": "gfw_atmo.nc"
+        "target_oro": "target_orography_echam6.nc"
 
 forcing_in_work:
         sic: "unit.96"
@@ -667,6 +761,7 @@ streams:
         - sp6h
         - glim
         - spim
+        - ism
 
 streamsnc:
         - aclcim
@@ -838,6 +933,16 @@ grids:
                 ny: "${_ny}"
                 oasis_grid_type: "D"
                 number_of_overlapping_points: 0 # oasis P-value
+
+choose_lgfw:
+        True:
+                add_input_files:
+                        gfw_atmo: gfw_atmo
+
+choose_lupdate_orography:
+        True:
+                add_input_files:
+                        target_oro: target_oro
 
 # Configuration Files:
 config_sources:

@@ -53,4 +53,12 @@ nesh:
                - 'neshcl*'
                - 'nesh-bigmem*'
         post_nodes: 'neshcl*'
+        
+olaf: 
+        login_nodes: 'olaf*'
+        compute_nodes:
+               - 'normal_cpu'
+               - 'long_cpu'
+        post_nodes: 'olaf*'
+        
 

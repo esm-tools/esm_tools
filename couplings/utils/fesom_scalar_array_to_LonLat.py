@@ -85,7 +85,7 @@ print("*** mesh.zlev = ", mesh.zlev)
 #
 #print('* Read the data file args.FESOM_FILE=' + " ".join(args.FESOM_FILE))
 #FID = MFDataset(args.FESOM_PATH + "".join("/temp.fesom.*.01.nc"))
-FID = xr.open_dataset(str(args.FESOM_PATH[0]) + str(args.FESOM_VARIABLE[0]) + ".fesom." + str(args.FESOM_YEARS[0]) + ".nc")
+FID = xr.open_dataset(str(args.FESOM_PATH[0]) + str(args.FESOM_VARIABLE[0]) + ".fesom." + str(args.FESOM_YEARS[0]) + ".nc", decode_times=False)
 
 # ----------------------------------------------------------------
 #
@@ -164,7 +164,7 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
         #
         # Prepare data for final netcdf output
         #
-        #ilevel = ilevel + 1
+        ilevel = ilevel + 1
 
         flag_verbose=False
 
@@ -173,9 +173,13 @@ for itime in np.arange(0, no_timesteps, 1, dtype=np.int32):
             pf.get_data(args.FESOM_PATH[0], args.FESOM_VARIABLE[0], int(args.FESOM_YEARS[0]), mesh, depth=idepth, how="mean") #, flag_verbose)
         else:
             level_data = \
-            pf.get_data(args.FESOM_PATH[0], args.FESOM_VARIABLE[0], [int(args.FESOM_YEARS[0]), int(args.FESOM_YEARS[1])], mesh, depth=idepth, how="mean") #, flag_verbose)
+            pf.get_data(args.FESOM_PATH[0], args.FESOM_VARIABLE[0], [int(args.FESOM_YEARS[0]), int(args.FESOM_YEARS[1])], mesh, depth=idepth, how="mean", use_cftime=True) #, flag_verbose)
+        
+        print("LA DEBUG: level_data = ", level_data)
         level_data[np.where(np.isnan(level_data))] = NAN_REPLACE
         TempFields_out[itime, ilevel, :] = level_data
+        print("LA DEBUG: level_data = ", level_data)
+        print("LA DEBUG: TempFields_out = ", TempFields_out)
 
 
 # ----------------------------------------------------------------

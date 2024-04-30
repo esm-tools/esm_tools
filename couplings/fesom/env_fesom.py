@@ -15,44 +15,7 @@ def prepare_environment(config):
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "iter_coup_regrid_method_ice2oce": "INTERPOLATE",
             "fesom_use_icebergs": config["fesom"].get("use_icebergs", ""), 
-            "BASIN_FILE": config["fesom"].get("basin_file"),
             "MACHINE": config["computer"]["name"],
             "ICEBERG_DIR": config["fesom"].get("iceberg_dir", ""),
-
-            #"FESOM_GRID_input": config["fesom"]["grid_input"],
-            #"solidearth_ice_thickness_file":(
-            #    config["general"]["experiment_couple_dir"] +
-            #    "/ice_thickness.nc"
-            #    ),
-            #"ADD_UNCHANGED_ICE": config["vilma"].get("add_unchanged_ice", False),
-            #"EISLASTFILE_vilma":  (
-            #    config["vilma"]["experiment_input_dir"] +
-            #    "/" +
-            #    config["vilma"]["eislastfile"]
-            #    ),
-            #"RUN_NUMBER_vilma": config["general"]["run_number"],
-            #"RUN_DATE_STAMP": config["general"]["run_datestamp"],
-            #"LAST_RUN_DATE_STAMP": config["general"]["last_run_datestamp"],
-            #"INITIAL_YEAR_vilma": config["general"]["initial_date"].syear,
-            #"NYEAR_vilma_standalone": config["general"]["nyear"],
-            #"FINAL_YEAR_vilma": config["general"]["final_date"].syear,
-            #"EISLASTCONF_vilma":(
-            #    config["vilma"]["experiment_config_dir"] +
-            #    "/inp/" +
-            #    config["vilma"]["eislastconf"]
-            #    )
-
-            }
-    
-    #if environment_dict["ADD_UNCHANGED_ICE"] == False:
-    #    environment_dict["ADD_UNCHANGED_ICE"] = 0
-    #elif environment_dict["ADD_UNCHANGED_ICE"] == True:
-    #    environment_dict["ADD_UNCHANGED_ICE"] = 1
-
-
     print(environment_dict)
     return environment_dict
-
-
-
-

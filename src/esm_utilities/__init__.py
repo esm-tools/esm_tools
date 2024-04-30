@@ -2,6 +2,6 @@
 
 __author__ = """Paul Gierz"""
 __email__ = "pgierz@awi.de"
-__version__ = "6.29.4"
+__version__ = "6.29.5"
 
 from .utils import *

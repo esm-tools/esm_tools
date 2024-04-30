@@ -1,0 +1,106 @@
+#!/usr/bin/bash
+
+function fesom2ice {
+    echo "                =================================================================="
+    echo "                *** S T A R T I N G    fesom2ice *** "
+
+    source ${COUPLE_CONFIG}
+
+    FESOM_TO_ISM_multiyear_mean=${FESOM_TO_ISM_multiyear_mean:-1}
+    number_of_years_for_forcing=${number_of_years_for_forcing:-1}
+
+    cd  ${COUPLE_DIR}
+    rm -rf fesom2ice; mkdir fesom2ice; cd fesom2ice
+
+
+    fesom_ice_construct_input_list
+    fesom_ice_concatenate_files
+
+    # interpolate fesom output to regular grids (with select depth range)
+    ${python3}  ${FUNCTION_PATH}/fesom_to_regular_grid.py   -meshpath $MESH_DIR_fesom   \
+-datain   ${COUPLE_DIR}/fesom2ice/fesom_temp_salt.nc  \
+-dataout   ${COUPLE_DIR}/fesom2ice/fesom_file_for_ice.nc
+
+
+    # multiyear mean
+    if [ "x${FESOM_TO_ISM_multiyear_mean}" == "x1" ]; then
+        echo "*     Make multiyear mean "
+        ${cdo}  -yearmean  fesom_file_for_ice.nc  tmp.nc
+        mv tmp.nc  fesom_file_for_ice.nc
+    fi
+
+    cp $(pwd)/fesom_file_for_ice.nc  ${COUPLE_DIR}/fesom_file_for_ice.nc
+
+    echo "                 *** F I N I S E D      fesom2ice *** "
+    echo "                =================================================================="
+
+}
+
+function fesom_ice_construct_input_list {
+        echo ""; echo " *   constructing input list"
+
+        export CHUNK_END_YEAR_fesom=$(date -d "${CHUNK_END_DATE_fesom:?'Missing variable'}" +%Y)
+        export CHUNK_END_MONTH_fesom=$(date -d "${CHUNK_END_DATE_fesom:?'Missing variable'}" +%m)
+        export CHUNK_END_DAY_fesom=$(date -d "${CHUNK_END_DATE_fesom:?'Missing variable'}" +%d)
+
+        #### test_if_set CHUNK_END_YEAR_echam
+        if [ -z ${CHUNK_END_YEAR_fesom+x} ];
+          then echo "CHUNK_END_YEAR_fesom is unset";
+          exit
+        fi
+        #----
+
+        start_year_couple=$(( CHUNK_END_YEAR_fesom - number_of_years_for_forcing + 1 ))
+        end_year_couple=${CHUNK_END_YEAR_fesom}
+
+        fesom_raw_file3D_T_list_for_ice=""
+        fesom_raw_file3D_S_list_for_ice=""
+
+        #
+        # Standard (monthly) 3dimensional+time FESOM output
+        #
+
+        for year in $(seq $start_year_couple $end_year_couple ); do
+          month=01
+          #for month in $(seq -f "%02g" 1 12); do
+          day=01
+
+          variable=temp
+          current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}*.nc
+          if [ -f $current_file ] ; then
+              fesom_raw_file3D_T_list_for_ice="$fesom_raw_file3D_T_list_for_ice $current_file"
+          else
+              echo "     - Missing 3D fesom file ${current_file}"
+              echo " S T O P  1  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 1
+          fi
+
+          variable=salt
+          current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}*.nc
+          if [ -f $current_file ] ; then
+            fesom_raw_file3D_S_list_for_ice="$fesom_raw_file3D_S_list_for_ice $current_file"
+          else
+            echo "     - Missing 3D fesom file ${current_file}"
+            echo " S T O P  2  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 2
+          fi
+        #done
+        done
+
+        echo
+        echo  $fesom_raw_file3D_T_list_for_ice
+        echo
+        echo  $fesom_raw_file3D_S_list_for_ice
+
+      }
+
+
+function fesom_ice_concatenate_files {
+        echo ""; echo " *   concatenating files"
+        ${cdo}  cat   $fesom_raw_file3D_T_list_for_ice  fesom_temp.nc
+        ${cdo}  cat   $fesom_raw_file3D_S_list_for_ice  fesom_salt.nc
+        ${cdo}  merge  fesom_temp.nc fesom_salt.nc  fesom_temp_salt.nc
+        rm   fesom_temp.nc  fesom_salt.nc
+
+}
+
+
+# -- last line

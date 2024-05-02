@@ -142,7 +142,7 @@ def work_through_recipe(recipe, plugins, config):
                 f'{recipe["job_type"]})'
             )
 
-            logger.info()
+            logger.info("")
             logger.info("=" * len(message))
             logger.info(message)
             logger.info("=" * len(message))

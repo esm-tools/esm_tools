@@ -920,7 +920,7 @@ def copy_files(config, filetypes, source, target):
 
     intermediate_movements = config["general"].get(
         "intermediate_movements",
-        ["config", "input"], # DEFAULTS
+        [],
     )
 
     if source == "init":

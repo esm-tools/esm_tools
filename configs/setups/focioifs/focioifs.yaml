@@ -15,10 +15,10 @@ general:
            - "wait_for_iterative_coupling"
            - "copy_files_to_thisrun"
            - "write_env"
-           - "preprocess"
            - "modify_namelists"
            - "modify_files"
            - "copy_files_to_work"
+           - "preprocess"
            - "report_missing_files"
            # not working, bug already reported at https://github.com/esm-tools/esm_tools/discussions/774
            # - "add_vcs_info"

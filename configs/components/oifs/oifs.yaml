@@ -1294,7 +1294,7 @@ choose_eternal_run_number:
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "
                     ${general.esm_function_dir}/components/oifs/change_icm_date.sh
-                        ${thisrun_input_dir}/
+                        ${thisrun_work_dir}/
                         ${oifs.input_expid}
                         ${oifs.input_expid}
                         ${initial_date!syear!smonth!sday}
@@ -1318,7 +1318,7 @@ choose_eternal_run_number:
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
                 preprocess_method: "
                     ${general.esm_function_dir}/components/oifs/change_icm_date.sh
-                        ${thisrun_input_dir}/
+                        ${thisrun_work_dir}/
                         ${oifs.input_expid}
                         ${oifs.input_expid}
                         ${pseudo_initial_date!syear!smonth!sday}
@@ -1328,7 +1328,7 @@ choose_eternal_run_number:
                         ${oifs.nx}
                         ${oifs.ensemble_id};
                     ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
-                        ${thisrun_restart_in_dir}/
+                        ${thisrun_work_dir}/
                         ${pseudo_initial_date!syear!smonth!sday}
                         ${oifs.time_step}
                         ${oifs.seconds_since_initial}
@@ -1347,7 +1347,7 @@ choose_general.standalone:
         True:
                 slice_icml: "
                     ${general.esm_function_dir}/components/oifs/slice_icmcl_file.sh
-                        ${thisrun_input_dir}/
+                        ${thisrun_work_dir}/
                         ${icmcl_dir}/${icmcl_file}
                         ${oifs.input_expid}
                         ${start_date!syear!smonth!sday}
@@ -1391,10 +1391,10 @@ prepcompute_recipe:
    - "wait_for_iterative_coupling"
    - "copy_files_to_thisrun"
    - "write_env"
-   - "preprocess"
    - "modify_namelists"
    - "modify_files"
    - "copy_files_to_work"
+   - "preprocess"
    - "report_missing_files"
    # see https://github.com/esm-tools/esm_tools/discussions/774
    # - "add_vcs_info"

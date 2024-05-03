@@ -1,3 +1,4 @@
+import concurrent
 import copy
 import datetime
 import filecmp
@@ -918,6 +919,12 @@ def copy_files(config, filetypes, source, target):
     successful_files = []
     missing_files = {}
 
+    # Initialization for parallelization with futures
+    futures = {}
+    if config["general"].get("parallel_file_movements", False) == "threads":
+        number_of_threads = config["computer"].get("partitions", {}).get("compute", {}).get("cores_per_node", 2)-1
+        client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
+
     intermediate_movements = config["general"].get(
         "intermediate_movements",
         [],
@@ -978,45 +985,56 @@ def copy_files(config, filetypes, source, target):
                     dest_dir = os.path.dirname(file_target)
                     file_source = resolve_symlinks(config, file_source)
                     if not os.path.isdir(file_source):
-                        try:
-                            if not os.path.isdir(dest_dir):
-                                # MA: ``os.makedirs`` creates the specified directory
-                                # and the parent directories if the last don't exist
-                                # (same as with ``mkdir -p <directory>>``)
-                                os.makedirs(dest_dir)
-                            if not os.path.isfile(file_source):
-                                print(
-                                    f"WARNING: File not found: {file_source}",
-                                    flush=True,
-                                )
-                                helpers.print_datetime(config)
-                                missing_files.update({file_target: file_source})
-                                continue
-                            if os.path.isfile(file_target) and filecmp.cmp(
-                                file_source, file_target
-                            ):
-                                if config["general"]["verbose"]:
-                                    print(
-                                        f"Source and target file are identical, skipping {file_source}",
-                                        flush=True,
-                                    )
-                                    helpers.print_datetime(config)
-                                continue
-                            files_to_be_moved.append({
-                                "movement_method": movement_method,
-                                "file_source": file_source,
-                                "file_target": file_target,
-                            })
-                            movement_method(file_source, file_target)
-                            # shutil.copy2(file_source, file_target)
-                            successful_files.append(file_source)
-                        except IOError:
+                        if not os.path.isdir(dest_dir):
+                            # MA: ``os.makedirs`` creates the specified directory
+                            # and the parent directories if the last don't exist
+                            # (same as with ``mkdir -p <directory>>``)
+                            os.makedirs(dest_dir)
+                        if not os.path.isfile(file_source):
                             print(
-                                f"Could not copy {file_source} to {file_target} for unknown reasons.",
+                                f"WARNING: File not found: {file_source}",
                                 flush=True,
                             )
                             helpers.print_datetime(config)
                             missing_files.update({file_target: file_source})
+                            continue
+                        if os.path.isfile(file_target) and filecmp.cmp(
+                            file_source, file_target
+                        ):
+                            if config["general"]["verbose"]:
+                                print(
+                                    f"Source and target file are identical, skipping {file_source}",
+                                    flush=True,
+                                )
+                                helpers.print_datetime(config)
+                            continue
+                        files_to_be_moved.append({
+                            "movement_method": movement_method,
+                            "file_source": file_source,
+                            "file_target": file_target,
+                        })
+
+                        # Execute movement with or without futures (parallelization on/off)
+                        if config["general"].get("parallel_file_movements", False) == "threads":
+                            future = client.submit(
+                                movement_method,
+                                file_source,
+                                file_target,
+                            )
+                            futures[(file_source, file_target)] = future
+                        else:
+                            results[(file_source, file_target)] = movement_method(
+                                file_source, file_target
+                            )
+
+    for (file_source, file_target), result in futures.items():
+        if config["general"].get("parallel_file_movements", False):
+            print("I'm here")
+            result = future.result()
+        if result:
+            successful_files.append(file_source)
+        else:
+            missing_files.update({file_target: file_source})
 
     if missing_files:
         if not "files_missing_when_preparing_run" in config["general"]:
@@ -1171,13 +1189,43 @@ def complete_one_file_movement(config, model, filetype, movement, movetype):
 
 def get_method(movement):
     if movement == "copy":
-        return shutil.copy2
+        return actually_copy
     elif movement == "link":
-        return os.symlink
+        return actually_link
     elif movement == "move":
         return os.rename
     print("Unknown file movement type, using copy (safest option).", flush=True)
     return shutil.copy2
+
+
+def movement(func):
+    def inner(source, target):
+        try:
+            func(source, target)
+            return True
+        except IOError:
+            print(
+                f"Could not copy {file_source} to {file_target} for unknown reasons.",
+                flush=True,
+            )
+            helpers.print_datetime(config)
+            return False
+    return inner
+
+
+@movement
+def actually_copy(source, target):
+    shutil.copy2(source, target)
+
+
+@movement
+def actually_link(source, target):
+    os.symlink(source, target)
+
+
+@movement
+def actually_move(source, target):
+    os.rename(source, target)
 
 
 def complete_all_file_movements(config):

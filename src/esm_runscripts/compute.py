@@ -145,6 +145,7 @@ def modify_namelists(config):
     logger.debug("\n" "- Setting up namelists for this run...")
     for index, model in enumerate(config["general"]["valid_model_names"]):
         logger.debug(f'{index+1}) {config[model]["model"]}')
+    logger.debug("")
 
     for model in config["general"]["valid_model_names"]:
         config[model] = Namelist.nmls_load(config[model])

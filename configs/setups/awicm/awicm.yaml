@@ -149,7 +149,7 @@ fesom:
 recom:
     choose_general.version:
         1.0-recom:
-            version: "2.0-recom-awicm"
+            version: "2.0-awicm"
 
             # NOTE: look at README.md for description of the namelists
             scenario: "${general.scenario}"

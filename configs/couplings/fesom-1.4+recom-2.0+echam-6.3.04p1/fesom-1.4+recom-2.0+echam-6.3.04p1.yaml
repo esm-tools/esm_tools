@@ -1,6 +1,6 @@
 components:
   - echam-6.3.04p1-recom-awicm
-  - recom-2.0-recom-awicm
+  - recom-2.0-awicm
   - fesom-1.4-recom-awicm
   - oasis3mct-2.8
 coupling_changes:

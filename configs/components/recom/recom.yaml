@@ -3,7 +3,6 @@
 # =============================================================================
 
 model: recom
-git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
 metadata:
     Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
     Description:
@@ -14,22 +13,27 @@ metadata:
         - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
     License:
         https://recom.readthedocs.io/en/latest/index.html
+contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
 
-# default branch and version
-branch: master
-destination: recom
+# defaults
 version: '2.0'
+git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
+use_ciso: false
+use_medusa: false
+scenario: "PI-CTRL"
 
 available_versions:
     - '2.0'
-    - 2.0-r
-    - 2.0-recom-awicm
+    - '2.0-awicm'
+    - '3.0'
 
 choose_version:
     '2.0':
+        comp_strategy: "lib"
         branch: oxygen
-        # additional recom output if fesom runs standalone
-        # (see default output at the bottom)
+        destination: recom
+        # additional recom output in ocean-only fesom1+recom2 setup
+        # (see default recom output at the bottom of this file)
         # 1. variable names are case sensitive
         # 2. please keep alphabetic order
         add_yearly_outputs:
@@ -78,42 +82,40 @@ choose_version:
             - diags3d18
             - diags3d19
             - diags3d20
-    2.0-r:
-        # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
-        branch: recom-update
-    2.0-recom-awicm:
+    2.0-awicm:
+        comp_strategy: "lib"
         branch: oxygen
-        use_medusa: "without_medusa"
-
-clean_command: ${defaults.clean_command}
-comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
-install_libs:
-  - build/librecom.a
-contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
+        destination: recom
+    "3.0":
+        comp_strategy: "flag"
+        recom_case: "2p1z1d" # 2p1z1d, 2p3z2d, 3p1z1d, 3p3z2d
+        # todo: output
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 data_path: ""
+time_step: 1800 # todo: recom gets its time step always from fesom. its misleading to define it here. should be removed
+#chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds ))
 
-scenario: "PI-CTRL"
-
-time_step: 1800
-
-use_ciso: false
-use_medusa: false
+choose_comp_strategy:
+    "lib": # recom2 is compiled individually and added as library to fesom (similarly as a binary)
+        clean_command: ${defaults.clean_command}
+        comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
+        install_libs:
+          - build/librecom.a
+    "flag": # recom3 is part of fesom2; compiler flag needs to be added to fesom comp cmd
+        # necessary compiling flag is defined in fesom yaml
 
 choose_use_ciso:
         true:
-                recom_namelist:  "namelist.recom.ciso"
+                recom_namelist: "namelist.recom.ciso"
                 add_namelist_changes:
                         namelist.recom:
                                 pavariables:
                                         ciso: true
         false:
-                recom_namelist:  "namelist.recom"
-
-#chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds )) 
+                recom_namelist: "namelist.recom"
 
 choose_use_medusa:
         true:
@@ -225,10 +227,10 @@ namelist_changes:
 
 
 config_files:
-        recom:  recom
+        recom: recom
 
 config_sources:
-        recom:  "${namelist_dir}/${recom_namelist}${namelist_sce}"
+        recom: "${namelist_dir}/${recom_namelist}${namelist_sce}"
 
 config_in_work:
         recom: "namelist.recom"

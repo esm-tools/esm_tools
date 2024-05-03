@@ -639,7 +639,7 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
 
 
 def _show_simulation_info(config):
-    logger.info()
+    logger.info("")
     logger.info(80 * "=")
     logger.info("STARTING SIMULATION JOB!")
     logger.info(f"Experiment ID = {config['general']['expid']}")
@@ -651,5 +651,5 @@ def _show_simulation_info(config):
     logger.info("Experiment is installed in:")
     logger.info(f"       {config['general']['base_dir']}/{config['general']['expid']}")
     logger.info(80 * "=")
-    logger.info()
+    logger.info("")
     return config

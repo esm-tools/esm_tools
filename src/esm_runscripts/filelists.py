@@ -946,9 +946,11 @@ def copy_files(config, filetypes, source, target):
                 this_intermediate_movements = config[model].get(
                     "intermediate_movements", intermediate_movements
                 )
+                skip_intermediate = False
                 if filetype not in intermediate_movements:
                     if text_target == "intermediate":
                         this_text_target = "targets"
+                        skip_intermediate = True
                     elif text_source == "intermediate":
                         continue
                 sourceblock = config[model][filetype + "_" + text_source]
@@ -1007,8 +1009,16 @@ def copy_files(config, filetypes, source, target):
                                 "file_source": file_source,
                                 "file_target": file_target,
                             })
+
+                            # To avoid overwriting in general experiment folder
+                            if skip_intermediate == True:
+                                file_target = avoid_overwriting(
+                                    config, file_source, file_target
+                                )
+
+                            # Execute movement
                             movement_method(file_source, file_target)
-                            # shutil.copy2(file_source, file_target)
+
                             successful_files.append(file_source)
                         except IOError:
                             print(
@@ -1029,6 +1039,38 @@ def copy_files(config, filetypes, source, target):
                 helpers.print_datetime(config)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
     return config
+
+
+def avoid_overwriting(config, source, target):
+    if os.path.isfile(target):
+        if filecmp.cmp(source, target):
+            return target
+
+        date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
+        if os.path.isfile(date_stamped_target):
+            esm_parser.user_note(
+                "File movement conflict",
+                f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
+                f"{soucer} -> {date_stamped_target}"
+            )
+            return target
+
+        if os.path.islink(target):
+            os.remove(target)
+        else:
+            os.rename(target, f"{target}_{config['general']['last_run_datestamp']}")
+
+        os.symlink(date_stamped_target, target)
+        target = date_stamped_target
+
+    elif os.path.isdir(target):
+        esm_parser.user_error(
+            "File operation not supported",
+            f"The target ``{target}`` is a folder, and this should not be happening "
+            "here. Please, open an issue in www.github.com/esm-tools/esm_tools"
+        )
+
+    return target
 
 
 def filter_allowed_missing_files(config):

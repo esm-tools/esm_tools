@@ -1294,7 +1294,7 @@ choose_eternal_run_number:
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "
                     ${general.esm_function_dir}/components/oifs/change_icm_date.sh
-                        ${thisrun_work_dir}/
+                        ${thisrun_input_dir}/
                         ${oifs.input_expid}
                         ${oifs.input_expid}
                         ${initial_date!syear!smonth!sday}
@@ -1318,7 +1318,7 @@ choose_eternal_run_number:
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
                 preprocess_method: "
                     ${general.esm_function_dir}/components/oifs/change_icm_date.sh
-                        ${thisrun_work_dir}/
+                        ${thisrun_input_dir}/
                         ${oifs.input_expid}
                         ${oifs.input_expid}
                         ${pseudo_initial_date!syear!smonth!sday}

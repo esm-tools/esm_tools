@@ -167,6 +167,7 @@ class oasis:
                     logger.error(
                         "add_scalar needs to be defined (0 or 1) for preprocessing BLASOLD",
                     )
+                    sys.exit(2)
                 detail_line = str(coefficient) + " " + str(add_scalar)
                 trafo_details.append(detail_line.strip())
                 if str(add_scalar) == "1":

@@ -149,13 +149,13 @@ def _clean_run_determine_user_choice(config):
         else:
             logger.error("------------------------------------------")
             logger.error("You have set both in your config:")
-            logger.error()
+            logger.error("")
             logger.error("general:")
             logger.error(
                 f"    clean_this_rundir: {config['general']['clean_this_rundir']}"
             )
             logger.error(f"    clean_runs: {user_clean}")
-            logger.error()
+            logger.error("")
             logger.error("Please only use one of these!")
             logger.error("------------------------------------------")
             sys.exit(1)
@@ -165,13 +165,13 @@ def _clean_run_determine_user_choice(config):
         else:
             logger.error("------------------------------------------")
             logger.error("You have set both in your config:")
-            logger.error()
+            logger.error("")
             logger.error("general:")
             logger.error(
                 f"    clean_old_rundirs_except: {config['general']['clean_old_rundirs_except']}",
             )
             logger.error(f"    clean_runs: {user_clean}")
-            logger.error()
+            logger.error("")
             logger.error("Please only use one of these!")
             logger.error("------------------------------------------")
             sys.exit(1)
@@ -181,7 +181,7 @@ def _clean_run_determine_user_choice(config):
         logger.error("You have set this in your config:")
         logger.error("general:")
         logger.error(f"    clean_runs: {user_clean}")
-        logger.error()
+        logger.error("")
         logger.error(f"This is of type: {type(user_clean)}")
         logger.error("However, only the following types are valid:")
         logger.error("   * boolean")
@@ -210,10 +210,10 @@ def _clean_old_rundirs_except(config):
             logger.error(
                 "-------------------------------------------------------------"
             )
-            logger.error()
+            logger.error("")
             logger.error("general:")
             logger.error("   clean_old_rundirs_keep_every: <x>")
-            logger.error()
+            logger.error("")
             logger.error(
                 "-------------------------------------------------------------"
             )
@@ -234,10 +234,10 @@ def _clean_old_rundirs_except(config):
             logger.error(
                 "-------------------------------------------------------------"
             )
-            logger.error()
+            logger.error("")
             logger.error("general:")
             logger.error("   clean_old_rundirs_except: <x>")
-            logger.error()
+            logger.error("")
             logger.error(
                 "-------------------------------------------------------------"
             )

@@ -36,7 +36,7 @@ class experiment(base):
 
     @staticmethod
     def topline():
-        logger.info()
+        logger.info("")
         logger.info("EXPERIMENTS:")
         logger.info(
             "{0: >4}".format("ID")

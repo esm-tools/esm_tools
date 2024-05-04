@@ -387,9 +387,9 @@ class Namelist:
                     logger.error(
                         "There was a problem with reading in the forcing from the transient forcing table"
                     )
-                    logger.error()
+                    logger.error("")
                     logger.error("Sorry")
-                    logger.error()
+                    logger.error("")
                     logger.error(
                         "Please be sure to use the correct format of your table!"
                     )
@@ -403,7 +403,7 @@ class Namelist:
                     logger.error(
                         "Please note that you need to use a semicolon (;) as a seperator"
                     )
-                    logger.error()
+                    logger.error("")
                     logger.error("Also, make sure that you set a valid filepath")
                     logger.error("We were looking for the following:")
                     try:

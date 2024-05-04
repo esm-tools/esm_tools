@@ -3,7 +3,11 @@
 import os
 import subprocess
 import sys
+
+from loguru import logger
+
 import esm_parser
+import esm_profile
 from esm_parser import yaml_file_to_dict
 
 
@@ -88,7 +92,7 @@ def check_plugin_availability(plugins):
         elif plugins[workitem]["type"] == "installed":
             pass
         else:
-            print(
+            logger.info(
                 "Checking if function "
                 + plugins[workitem]["module"]
                 + "."
@@ -111,7 +115,7 @@ def check_plugin_availability(plugins):
                     thismodule = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(thismodule)
             except:
-                print(
+                logger.error(
                     "Couldn't import "
                     + plugins[workitem]["module"]
                     + " from "
@@ -128,6 +132,7 @@ def work_through_recipe(recipe, plugins, config):
 
         pdb.set_trace()
     recipes = recipe["recipe"]
+    recipe_name = recipe["job_type"]
     for index, workitem in enumerate(recipes, start=1):
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
@@ -137,17 +142,30 @@ def work_through_recipe(recipe, plugins, config):
                 f'{recipe["job_type"]})'
             )
 
-            print()
-            print("=" * len(message))
-            print(message)
-            print("=" * len(message))
+            logger.info("")
+            logger.info("=" * len(message))
+            logger.info(message)
+            logger.info("=" * len(message))
         if plugins[workitem]["type"] == "core":
             thismodule = __import__(plugins[workitem]["module"])
             submodule = getattr(thismodule, plugins[workitem]["submodule"])
-            config = getattr(submodule, workitem)(config)
+            if config["general"].get("profile", False):
+                workitem_callable = getattr(submodule, workitem)
+                timed_workitem_callable = esm_profile.timing(
+                    workitem_callable, recipe_name
+                )
+                config = timed_workitem_callable(config)
+            else:
+                config = getattr(submodule, workitem)(config)
         elif plugins[workitem]["type"] == "installed":
-            # print("Installed plugin will be run: ", workitem)
-            config = plugins[workitem]["callable"](config)
+            if config["general"].get("profile", False):
+                workitem_callable = plugins[workitem]["callable"]
+                timed_workitem_callable = esm_profile.timing(
+                    workitem_callable, recipe_name
+                )
+                config = timed_workitem_callable(config)
+            else:
+                config = plugins[workitem]["callable"](config)
         else:
             if sys.version_info >= (3, 5):
                 import importlib.util
@@ -161,7 +179,14 @@ def work_through_recipe(recipe, plugins, config):
                 )
                 thismodule = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(thismodule)
-                config = getattr(thismodule, workitem)(config)
+                if config["general"].get("profile", False):
+                    workitem_callable = getattr(thismodule, workitem)
+                    timed_workitem_callable = esm_profile.timing(
+                        workitem_callable, recipe_name
+                    )
+                    config = timed_workitem_callable(config)
+                else:
+                    config = getattr(thismodule, workitem)(config)
     return config
 
 
@@ -191,10 +216,16 @@ def install(package: str) -> None:
     arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
     if os.environ.get("VIRTUAL_ENV"):
         arg_list.remove("--user")
-    if package_name not in installed_entry_points and package_name not in installed_plugins:
+    if (
+        package_name not in installed_entry_points
+        and package_name not in installed_plugins
+    ):
         try:
             subprocess.check_call(arg_list)
-        except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
+        except (
+            OSError,
+            subprocess.CalledProcessError,
+        ):  # PermissionDeniedError would be nicer...
             subprocess.check_call(arg_list)
 
 

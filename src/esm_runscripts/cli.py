@@ -74,7 +74,7 @@ def parse_shargs():
         "-P",
         "--profile",
         help="Write profiling information (esm-tools)",
-        default=False,
+        default=None,
         action="store_true",
     )
 
@@ -169,7 +169,7 @@ def main():
     ARGS = parse_shargs()
 
     check = False
-    profile = False
+    profile = None
     update = False
     expid = "test"
     pid = -666

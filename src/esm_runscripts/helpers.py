@@ -3,11 +3,13 @@ from datetime import datetime
 
 import colorama
 import git
+from loguru import logger
 
 import esm_parser
 import esm_plugin_manager
 import esm_tools
 from loguru import logger
+from esm_profile import print_profile_summary
 
 
 def vprint(message, config):
@@ -76,10 +78,11 @@ def evaluate(config, job_type, recipe_name):
 #                                  general stuff                                       #
 ########################################################################################
 def end_it_all(config):
-    if config["general"]["profile"]:
-        for line in timing_info:
-            logger.info(line)
-    logger.debug("Exiting entire Python process!")
+    if config["general"].get("profile", False):
+        print_profile_summary()
+
+    if config["general"]["verbose"]:
+        logger.debug("Exiting entire Python process!")
     sys.exit()
 
 

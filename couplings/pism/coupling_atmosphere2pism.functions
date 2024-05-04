@@ -1556,7 +1556,7 @@ ic_atm2debm_ablation_debm_run_modify_nml() {
         TMP=$( grep cobld $( ls -t ${COUPLE_DIR}/../run_*/work/namelist.echam | head -1 ) | sed 's/^[ \t]*//' )
         prefix="cobld = "
         MY_OBLIQUITY=${TMP#"$prefix"}
-        obliquity_value=${MY_OBLIQUITY:-"23.17"}
+        obliquity_value=${MY_OBLIQUITY:-"23.441"}
 
         echo -e "\t\t- Generating namelist for dEBM Mass Balance Model" 
         echo -e "\t\t- Obliquity = ${obliquity_value}"

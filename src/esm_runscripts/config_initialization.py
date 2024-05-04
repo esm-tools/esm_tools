@@ -167,6 +167,14 @@ def get_user_config_from_command_line(command_line_config):
             f"``{command_line_config['runscript_abspath']}`` from the command line.",
         )
 
+    # If the variables defined by the command line are None, delete them so that
+    # the definition from the runscript prevails after the user_config.update
+    # If it's not None (True or False) the definition of the command line wins
+    # over the runscript as is the case for all the other variables
+    command_line_overwrite_vars = ["use_venv", "profile"]
+    for var in command_line_overwrite_vars:
+        if command_line_config.get(var, "Var does not exist") is None:
+            del command_line_config[var]
     user_config["general"].update(command_line_config)
 
     return user_config

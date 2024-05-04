@@ -911,6 +911,32 @@ def resolve_symlinks(config, file_source):
 
 
 def copy_files(config, filetypes, source, target):
+    """
+    This function has a misleading name. It is not only used for copying, but also
+    for moving or linking, depending on what was specified for the particular file
+    or file type vie the ``file_movements``.
+
+    Note: when the ``target`` is ``thisrun`` (intermediate folders) check whether the
+    type of file is included in ``intermediate_movements``. If it's not, instead of
+    moving the file to the intermediate folder it moves it to ``work``. This is an
+    ugly fix to provide a fast solution to the problem that files are
+    copied/moved/linked twice unnecessarily, and this affects inmensely the performance
+    of high resolution simulations. A better fix is not made because ``filelists`` are
+    being entirely reworked, but the fix cannot wait.
+
+    Parameters
+    ----------
+    config : dict
+        The general configuration
+    filetypes : list
+        List of file types to be copied/linked/moved
+    source : str
+        Specifies the source type, to be chosen between ``init``, ``thisrun``,
+        ``work``.
+    target : str
+        Specifies the target type, to be chosen between ``init``, ``thisrun``,
+        ``work``.
+    """
     if config["general"]["verbose"]:
         print("\n::: Copying files", flush=True)
         helpers.print_datetime(config)
@@ -1042,6 +1068,23 @@ def copy_files(config, filetypes, source, target):
 
 
 def avoid_overwriting(config, source, target):
+    """
+    Function that appends the date stamp to ``target`` if the target already exists.
+    Additionally, if the target exists, it renames it with the previous run time stamp,
+    and creates a link named ``target`` that points at the target with the current time
+    stamp.
+
+    Note: This function does not execute the file movement.
+
+    Parameters
+    ----------
+    config : dict
+        Simulation configuration
+    source : str
+        Path of the source of the file that will be copied/moved/linked
+    target : src
+        Path of the target of the file that will be copied/moved/linked
+    """
     if os.path.isfile(target):
         if filecmp.cmp(source, target):
             return target

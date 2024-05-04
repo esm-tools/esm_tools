@@ -330,6 +330,7 @@ def _write_finalized_config(config, config_file_path=None):
 
 
 def _show_simulation_info(config):
+    logger.info("")
     logger.info(80 * "=")
     logger.info("STARTING SIMULATION JOB!")
     logger.info(f"Experiment ID = {config['general']['expid']}")

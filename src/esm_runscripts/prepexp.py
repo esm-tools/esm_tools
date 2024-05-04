@@ -6,10 +6,10 @@ import sys
 
 import questionary
 from colorama import Fore
-from loguru import logger
 
 import esm_parser
 import esm_tools
+from loguru import logger
 
 from . import filelists
 from .helpers import end_it_all, evaluate, write_to_log
@@ -77,8 +77,8 @@ def copy_tools_to_thisrun(config):
     namelists_dir = f"{scriptsdir}/esm_tools/namelists"
 
     if config["general"]["verbose"]:
-        print("Started from :", fromdir)
-        print("Scripts Dir : ", scriptsdir)
+        logger.info(f"Started from : {fromdir}")
+        logger.info(f"Scripts Dir : {scriptsdir}")
 
     # Update namelists and esm_tools. These have no effect on the final
     # simulation as only the installed esm_tools with their runscripts
@@ -92,10 +92,12 @@ def copy_tools_to_thisrun(config):
     # In case there is no esm_tools or namelists in the experiment folder,
     # copy from the default esm_tools path
     if not os.path.isdir(tools_dir):
-        print("Copying standard yamls from: ", esm_tools.get_config_filepath())
+        logger.info(f"Copying standard yamls from: {esm_tools.get_config_filepath()}")
         esm_tools.copy_config_folder(tools_dir)
     if not os.path.isdir(namelists_dir):
-        print("Copying standard namelists from: ", esm_tools.get_namelist_filepath())
+        logger.info(
+            f"Copying standard namelists from: {esm_tools.get_namelist_filepath()}"
+        )
         esm_tools.copy_namelist_folder(namelists_dir)
 
     # check for recursive creation of the file tree. This prevents the risk of
@@ -177,10 +179,10 @@ def _call_esm_runscripts_internally(config, command, exedir):
     # Add non-interaction flags, current jobtype, and current task (phase) [-t]
     # if not already in 'command'
     non_interaction_flags = [
-                                "--no-motd",
-                                f"--last-jobtype {config['general']['jobtype']}",
-                                f"-t {config['general']['jobtype']}"
-                            ]
+        "--no-motd",
+        f"--last-jobtype {config['general']['jobtype']}",
+        f"-t {config['general']['jobtype']}",
+    ]
     for ni_flag in non_interaction_flags:
         # prevent continuous addition of ``ni_flag``
         if ni_flag not in command:
@@ -194,8 +196,7 @@ def _call_esm_runscripts_internally(config, command, exedir):
         error_text = f"{exedir} does not exists. Aborting."
         esm_parser.user_error(error_type, error_text)
 
-    if config["general"]["verbose"]:
-        print(command)
+    logger.debug(command)
 
     # Exit after resubmission of esm_runscripts
     end_it_all(config)
@@ -228,14 +229,12 @@ def call_esm_runscripts_from_prepexp(config):
 
     # Return if already called from the experiment folder without update flag
     if (fromdir == scriptsdir) and not gconfig["update"]:
-        if config["general"]["verbose"]:
-            print("Started from the experiment folder, continuing...")
+        logger.debug("Started from the experiment folder, continuing...")
         return config
 
     # Not computing but initialisation
     else:
-        if config["general"]["verbose"]:
-            print("Not started from experiment folder, restarting...")
+        logger.debug("Not started from experiment folder, restarting...")
 
         scriptsdir = os.path.realpath(gconfig["experiment_scripts_dir"])
 
@@ -424,7 +423,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
     # to the target.
     if not os.path.isfile(f"{scriptsdir}/{tfile}"):
         oldscript = f"{fromdir}/{tfile}"
-        print(oldscript)
+        logger.info(oldscript)
         shutil.copy2(oldscript, scriptsdir)
     # If the target path exists compare the two scripts
     else:
@@ -440,8 +439,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
         if not diffobj.ratio() == 1:
             # Find differences
             differences = (
-                f"{fromdir}/{tfile} differs from "
-                + f"{scriptsdir}/'{tfile}:\n"
+                f"{fromdir}/{tfile} differs from " + f"{scriptsdir}/'{tfile}:\n"
             )
             for line in color_diff(difflib.unified_diff(script_t, script_o)):
                 differences += line
@@ -454,7 +452,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                     f"{differences}\n{scriptsdir}/{tfile} will be updated!",
                 )
                 oldscript = f"{fromdir}/{tfile}"
-                print(oldscript)
+                logger.info(oldscript)
                 shutil.copy2(oldscript, scriptsdir)
             # If the --update flag is not called, exit with an error showing the
             # user how to proceed
@@ -474,11 +472,11 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
                 ).ask()
                 if update_choice:
                     oldscript = f"{fromdir}/{tfile}"
-                    print(oldscript)
+                    logger.info(oldscript)
                     shutil.copy2(oldscript, scriptsdir)
-                    print(f"{scriptsdir}/{tfile} updated!")
+                    logger.info(f"{scriptsdir}/{tfile} updated!")
                 else:
-                    print("Submission stopped")
+                    logger.info("Submission stopped")
                     sys.exit(1)
 
 
@@ -508,7 +506,7 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
             "scripts",
             f"{config['general']['scriptname']}",
             "copy",
-        )
+        ),
     ]
 
     for additional_file in config["general"].get("additional_files", []):

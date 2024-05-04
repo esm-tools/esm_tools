@@ -12,13 +12,14 @@ import logging
 import os
 import sys
 
-from esm_motd import check_all_esm_packages
 from loguru import logger
+
+from esm_motd import check_all_esm_packages
+from esm_parser import user_error
 
 from .helpers import SmartSink
 from .sim_objects import *
 
-from esm_parser import user_error
 
 def parse_shargs():
     """The arg parser for interactive use"""
@@ -86,10 +87,10 @@ def parse_shargs():
     )
 
     parser.add_argument(
-       "-j",
-       "--last-jobtype",
-       help="Write the jobtype this run was called from (esm-tools internal)",
-       default="command_line",
+        "-j",
+        "--last-jobtype",
+        help="Write the jobtype this run was called from (esm-tools internal)",
+        default="command_line",
     )
 
     parser.add_argument(
@@ -165,7 +166,6 @@ def parse_shargs():
 
 
 def main():
-
     ARGS = parse_shargs()
 
     check = False
@@ -209,8 +209,10 @@ def main():
     if "inspect" in parsed_args:
         inspect = parsed_args["inspect"]
     if parsed_args["contained_run"] and parsed_args["open_run"]:
-        print("You have set both --contained-run and --open-run, this makes no sense.")
-        print(parsed_args)
+        logger.error(
+            "You have set both --contained-run and --open-run, this makes no sense."
+        )
+        logger.error(parsed_args)
         sys.exit(1)
     if parsed_args["contained_run"] is not None:
         use_venv = parsed_args["contained_run"]
@@ -272,14 +274,16 @@ def main():
     logger.remove()
     logger.add(trace_sink.sink, level="TRACE")
 
-    logger.add(sys.stdout, level="INFO", format="{message}")
     if verbose:
+        logger.add(sys.stdout, level="DEBUG", format="{message}")
         logger.debug(f"Started from: {command_line_config['started_from']}")
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
+    else:
+        logger.add(sys.stdout, level="INFO", format="{message}")
 
-    Setup = SimulationSetup(command_line_config=command_line_config)
+    setup = SimulationSetup(command_line_config=command_line_config)
     # if not Setup.config['general']['submitted']:
-    if not Setup.config["general"]["submitted"] and not no_motd:
+    if not setup.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
-    Setup()
+    setup()

@@ -8,19 +8,17 @@ from loguru import logger
 import esm_parser
 import esm_plugin_manager
 import esm_tools
+from loguru import logger
 from esm_profile import print_profile_summary
 
 
 def vprint(message, config):
-    if config["general"]["verbose"]:
-        print(message)
+    logger.debug(message)
 
 
-# TODO: to be replaced by loguru. WIP (deniz)
 def print_datetime(config):
-    """prints the datetime of the operation if `verbose_line_numbers` option is True"""
-    if config["general"].get("verbose_datetime_info", False):
-        print(datetime.now(), flush=True)
+    """prints the datetime of the operation if `verbose` option is True"""
+    logger.debug(datetime.now())
 
 
 def evaluate(config, job_type, recipe_name):
@@ -34,8 +32,10 @@ def evaluate(config, job_type, recipe_name):
             "general"
         ].get(recipe_name)
     except KeyError:
-        print("Your configuration is incorrect.")
-        print("It should include headings for the setup_name as well as general!")
+        logger.error("Your configuration is incorrect.")
+        logger.error(
+            "It should include headings for the setup_name as well as general!"
+        )
         sys.exit(1)
 
     FUNCTION_PATH = esm_tools.get_config_filepath()
@@ -82,7 +82,7 @@ def end_it_all(config):
         print_profile_summary()
 
     if config["general"]["verbose"]:
-        print("Exiting entire Python process!")
+        logger.debug("Exiting entire Python process!")
     sys.exit()
 
 
@@ -119,7 +119,9 @@ def write_to_log(config, message, message_sep=None):
     except KeyError:
         import esm_parser
 
-        print("Sorry; couldn't find 'experiment_log_file' in config['general']...")
+        logger.error(
+            "Sorry; couldn't find 'experiment_log_file' in config['general']..."
+        )
         esm_parser.pprint_config(config["general"])
         raise
 
@@ -191,9 +193,9 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     update_filetypes = (
         config["general"].get("command_line_config", {}).get("update_filetypes", [])
     )
-    if config["general"].get("verbose", False) and update_filetypes:
-        print("User requests that the following filetypes be updated:")
-        [print(f"* {filetype}") for filetype in update_filetypes]
+    if update_filetypes:
+        logger.debug("User requests that the following filetypes be updated:")
+        [logger.debug(f"* {filetype}") for filetype in update_filetypes]
 
     # NOTE(MAM, PG): Originally defined in prepare.py
     # https://tinyurl.com/2p8awzsu
@@ -217,20 +219,18 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
             # Remove duplicates just in case
             reusable_filetypes = list(set(reusable_filetypes))
             # Do the removal
-            if config["general"].get("verbose", False):
-                print(f"Removing {update_filetype}")
+            logger.debug(f"Removing {update_filetype}")
             reusable_filetypes.remove(update_filetype)
-        elif config["general"].get("verbose", False):
-            print(
+        else:
+            logger.debug(
                 f"- The file type ``{update_filetype}`` you are trying to update was"
                 "not reusable across runs in the first place, so it's been always "
                 "updated with the external source, and it will still be."
             )
 
-    if config["general"].get("verbose", False):
-        print("The following filetypes will be re-used from already copied sources:")
-        for reusable_filetype in reusable_filetypes:
-            print(f"* {reusable_filetype}")
+    logger.debug("The following filetypes will be re-used from already copied sources:")
+    for reusable_filetype in reusable_filetypes:
+        logger.debug(f"* {reusable_filetype}")
     config["general"]["reusable_filetypes"] = reusable_filetypes
 
     if return_config:

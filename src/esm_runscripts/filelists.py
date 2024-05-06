@@ -1058,7 +1058,9 @@ def avoid_overwriting(config, source, target):
     and creates a link named ``target`` that points at the target with the current time
     stamp.
 
-    Note: This function does not execute the file movement.
+    Note
+    ---- 
+        This function does not execute the file movement.
 
     Parameters
     ----------

@@ -374,7 +374,7 @@ fesom:
                 TL159_CORE2:
                         nproc: 72
 
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${recom_Dflag}..;   make install -j `nproc --all`
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${recom_Dflag}..; make install -j `nproc --all`
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -486,9 +486,11 @@ fesom:
         
         choose_general.with_recom:
             True:
-                #with_recom: true # set fesom.with_recom: true when general.with_recom: true; todo(cd): this is copied from awiesm.yaml but not needed?
-                namelist_dir: "${general.model_dir}/config/case_${recom.recom_case}"
-                #todo(cd): namelist.io --> namelist.io.recom
+                namelist_dir: "${model_dir}/config/case_${recom.pzd_case}"
+                add_config_sources:
+                    io: "${namelist_dir}/namelist.io.recom"
+                add_config_in_work:
+                    io: "namelist.io.recom"
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (from v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
         remove_forcing_files:
@@ -530,7 +532,7 @@ recom:
     choose_general.with_recom:
         True:
             version: "3.0"
-            namelist_dir: "${fesom.model_dir}/config/case_${recom.case}"
+            namelist_dir: "${fesom.namelist_dir}"
             config_sources:
                 recom: "${namelist_dir}/namelist.recom"
             add_config_in_work:

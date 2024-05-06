@@ -88,7 +88,7 @@ choose_version:
         destination: recom
     "3.0":
         comp_strategy: "flag"
-        case: "2p1z1d" # 2p1z1d, 2p3z2d, 3p1z1d, 3p3z2d
+        pzd_case: "2p1z1d" # 2p1z1d, 2p3z2d, 3p1z1d, 3p3z2d
         # todo(cd): output
 
 model_dir: "NONE"
@@ -98,14 +98,25 @@ data_path: ""
 time_step: 1800 # todo: recom gets its time step always from fesom. its misleading to define it here. should be removed
 #chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds ))
 
-choose_comp_strategy: # todo(cd): leave this block?
+choose_comp_strategy:
     "lib": # recom2 is compiled individually and added as library to fesom (similarly as a binary)
         clean_command: ${defaults.clean_command}
         comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
         install_libs:
           - build/librecom.a
+        namelist_dir: "${general.model_dir}/recom/"
     "flag": # recom3 is part of fesom2; compiler flag needs to be added to fesom comp cmd
         # necessary compiling flag is defined in respective setup yaml
+        namelist_dir: "${fesom.model_dir}/config/"
+# keeping for reference:
+#fesom2_standalone: "$((
+#        '${general.setup_name}' == 'fesom' and
+#        '2.' in '${fesom.version}'
+#    ))"
+
+namelists:
+        - namelist.recom
+namelist_sce: ""
 
 choose_use_ciso:
         true:
@@ -193,21 +204,6 @@ choose_scenario:
                             \n- firstyearoffesomcycle\n- lastyearoffesomcycle
                             \n- numofCO2cycles\n- currentCO2cycle"
                         ask_user_to_continue: True
-
-namelist_sce: ""
-namelist_dir: "${general.model_dir}/recom/"
-
-# FESOM-2 standalone + REcoM options
-fesom2_standalone: "$((
-        '${general.setup_name}' == 'fesom' and
-        '2.' in '${fesom.version}'
-    ))"
-choose_fesom2_standalone:
-    True:
-        namelist_dir: "${fesom.model_dir}/config/"
-
-namelists:
-        - namelist.recom
 
 use_atbox: "remove_from_namelist"
 namelist_changes:

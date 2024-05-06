@@ -914,6 +914,13 @@ def copy_files(config, filetypes, source, target):
     of high resolution simulations. A better fix is not made because ``filelists`` are
     being entirely reworked, but the fix cannot wait.
 
+    Note
+    ----
+    Relevant variables in this function:
+    
+    intermediate_movements : list
+        List of file types that will be considered in the intermediate step (copy         from source to intermediate and then to work, rather than directly to work)
+
     Parameters
     ----------
     config : dict

@@ -88,8 +88,8 @@ choose_version:
         destination: recom
     "3.0":
         comp_strategy: "flag"
-        recom_case: "2p1z1d" # 2p1z1d, 2p3z2d, 3p1z1d, 3p3z2d
-        # todo: output
+        case: "2p1z1d" # 2p1z1d, 2p3z2d, 3p1z1d, 3p3z2d
+        # todo(cd): output
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
@@ -98,14 +98,14 @@ data_path: ""
 time_step: 1800 # todo: recom gets its time step always from fesom. its misleading to define it here. should be removed
 #chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds ))
 
-choose_comp_strategy:
+choose_comp_strategy: # todo(cd): leave this block?
     "lib": # recom2 is compiled individually and added as library to fesom (similarly as a binary)
         clean_command: ${defaults.clean_command}
         comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
         install_libs:
           - build/librecom.a
     "flag": # recom3 is part of fesom2; compiler flag needs to be added to fesom comp cmd
-        # necessary compiling flag is defined in fesom yaml
+        # necessary compiling flag is defined in respective setup yaml
 
 choose_use_ciso:
         true:

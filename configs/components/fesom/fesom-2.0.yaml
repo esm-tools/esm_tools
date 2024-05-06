@@ -20,11 +20,6 @@ comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 comp_executable: fesom.x
 executable: fesom
-with_oifs: false
-with_recom: false
-cmake_flag_coupled: "-DFESOM_COUPLED=ON"
-cmake_flag_oifs: "-DOIFS_COUPLED=ON"
-cmake_flag_recom: "-DRECOM_COUPLED=ON"
 
 choose_version:
   '2.0':
@@ -39,21 +34,17 @@ choose_version:
     branch: AWI-CM3_v3.0
   2.0-awicm-3.1:
     branch: AWI-CM3_v3.1
-  2.0-awicm-3.1-recom: # wip
+  2.0-awicm-3.1-recom:
     branch: awicm-3-recom
     git-repository: https://github.com/chrisdane/fesom2.git
-    with_recom: true
-    recom.version: 3.0
   2.0-frontiers:
     branch: awicm-3-frontiers_parallel-restart
   2.0-esm_interface:
     branch: using_esm-interface_yac
   2.0-paleodyn:
     branch: paleodyn_frozen
-  2.0-recom: # wip
+  2.0-recom:
     branch: fesom2_3zoo_ballast
-    with_recom: true
-    recom.version: 3.0
 
 restart_rate: "12"
 restart_unit: "m"
@@ -339,24 +330,6 @@ config_in_work:
         oce:     "namelist.oce"
         io:      "namelist.io"
         diag:    "namelist.diag"
-
-cmake_flags: "${defaults.cmake_flags}"
-choose_with_oifs:
-    true:
-        cmake_flags: "${cmake_flags} ${cmake_flag_oifs}"
-choose_with_recom:
-    true:
-        choose_recom.comp_strategy:
-            "flag":
-                cmake_flags: "${cmake_flags} ${cmake_flag_recom}"
-        add_namelists:
-            - namelist.recom
-        add_config_files:
-            recom: recom
-        add_config_sources:
-            recom: "${namelist_dir}/namelist.recom"
-        add_config_in_work:
-            recom: "namelist.recom"
 
 coupling_fields:
         sst_feom:

@@ -9,6 +9,8 @@ general:
 
         lresume: False
         coupled_setup: True
+        with_recom: false
+        recom_Dflag: ""
 
         include_models:
                 - fesom
@@ -61,7 +63,8 @@ general:
             add_include_models:
             - recom
             - xios
-              #with_recom: true
+            with_recom: true
+            recom_Dflag: "-DRECOM_COUPLED=ON"
             add_further_reading:
             - xios/xios.env.yaml
           v3.2:
@@ -360,12 +363,9 @@ oifs:
 
 fesom:
         version: "2.0"
-        with_oifs: true
-        with_recom: false
-
-        time_step: 1800
-        resolution: CORE2
         lresume: false
+        resolution: CORE2
+        time_step: 1800
         nproc: 72
         omp_num_threads: 1
         choose_general.resolution:
@@ -374,7 +374,7 @@ fesom:
                 TL159_CORE2:
                         nproc: 72
 
-        #comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${recom_Dflag}..;   make install -j `nproc --all`
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${recom_Dflag}..;   make install -j `nproc --all`
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -408,9 +408,7 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
                 "v3.1":
-                        version: "2.0-awicm-3.1-recom" # tmp
-                        namelist_dir: "${general.model_dir}/config/case_${recom.recom_case}" # tmp
-                        #namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.0/awicm3/v3.1/"
                         add_namelist_changes:
                                 namelist.oce:
                                         oce_tra:
@@ -486,15 +484,11 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
         
-        choose_coupled_setup:
+        choose_general.with_recom:
             True:
-                cmake_flags: "${fesom.cmake_flags} ${fesom.cmake_flag_coupled}"
-
-        # REcoM options
-        #choose_general.version:
-        #    "v3.1.2-recom":
-        #        version: "2.0-awicm-3.1-recom"
-        #        namelist_dir: "${general.model_dir}/config/case_${recom.recom_case}"
+                #with_recom: true # set fesom.with_recom: true when general.with_recom: true; todo(cd): this is copied from awiesm.yaml but not needed?
+                namelist_dir: "${general.model_dir}/config/case_${recom.recom_case}"
+                #todo(cd): namelist.io --> namelist.io.recom
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (from v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
         remove_forcing_files:
@@ -531,6 +525,18 @@ fesom:
 # By default this option is turned off, and thus the follwing two lines are commented out.
 # further_reading:
 #       - fesom/fesom.io.yaml
+
+recom:
+    choose_general.with_recom:
+        True:
+            version: "3.0"
+            namelist_dir: "${fesom.model_dir}/config/case_${recom.case}"
+            config_sources:
+                recom: "${namelist_dir}/namelist.recom"
+            add_config_in_work:
+                recom: "namelist.recom"
+        "*":
+            not_used: ""
 
 xios:
         choose_general.version:

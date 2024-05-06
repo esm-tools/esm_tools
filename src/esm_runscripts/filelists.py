@@ -933,6 +933,7 @@ def copy_files(config, filetypes, source, target):
     successful_files = []
     missing_files = {}
 
+    # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(
         "intermediate_movements",
         [],

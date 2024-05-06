@@ -1080,7 +1080,7 @@ def avoid_overwriting(config, source, target):
             esm_parser.user_note(
                 "File movement conflict",
                 f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
-                f"{soucer} -> {date_stamped_target}"
+                f"{source} -> {date_stamped_target}"
             )
             return target
 

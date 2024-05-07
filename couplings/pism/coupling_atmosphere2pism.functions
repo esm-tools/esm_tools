@@ -505,7 +505,7 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
 		echo "UKK1: elev_hi=" ${elev_hi_file}
                 ${cdo} -s -setrtoc,-10000,0,0 \
-			-add \
+			            -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -selvar,topg ${INPUT_FILE_pism} \
                         ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
@@ -679,8 +679,8 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
 		echo "UKK2: elev_hi=" ${elev_hi_file}
                 echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 echo " * LA DEBUG: INPUT_FILE_NAME_BASE_pism = ${INPUT_FILE_NAME_BASE_pism%.*}"
-                ${cdo} -s -add \
-                        -setrtoc,-10000,0,0 \
+                ${cdo} -s -setrtoc,-10000,0,0 \
+                        -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -selvar,topg ${INPUT_FILE_pism} \
                         ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
@@ -2114,6 +2114,9 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis() {
         ncks -A \
                 ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc \
                 ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
+
+        ${cdo} setyear,${CHUNK_START_DATE_pism} ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc tmp
+        mv tmp ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
 
         #FAILURE: ncks -A ${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ${COUPLE_DIR}/atmo_given_file.nc
         #         Producesses unrealistic x-/y-arrays with a values like: -8.0e+51, 1.7e+161, 1.e-258

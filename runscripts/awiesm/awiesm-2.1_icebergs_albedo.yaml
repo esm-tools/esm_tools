@@ -1,0 +1,83 @@
+general:
+    setup_name: "awiesm"
+    compute_time: "01:20:00"
+    initial_date: "2018-01-01T00:00:00"       # Initial exp. date
+    final_date: "2117-12-31T00:00:00"         # Final date of the experiment
+    base_dir: "/albedo/work/user/lackerma/experiments/"
+    nmonth: 0
+    nyear: 1
+    with_wiso: False
+    with_icb: True
+    use_venv: False
+    clean_old_rundirs_except: 5
+    clean_old_rundirs_keep_every: 25
+    version: "2.1-paleodyn-2.5"
+    account: "paleodyn.paleo_work"
+    description: >
+      Basic AWIESM Test for PI
+
+awiesm:
+    version: "2.1-paleodyn-2.5"
+    postprocessing: false
+    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1-paleodyn-2.5/"
+
+echam:
+    restart_rate: 1
+    restart_unit: "years"
+    lresume: False
+    use_transient_forcing: False
+    add_namelist_changes:
+            namelist.echam:
+                wisoctl:
+                    lwiso_rerun: False
+                    lwiso: False
+                    nwiso: 0
+                submodelctl:
+                    lupdate_orog: False
+                    #licb: True
+
+jsbach:
+    dynamic_vegetations: True
+
+fesom:
+    version: "2.5"
+    nproc: 384
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: false
+    #ini_parent_dir: "/albedo/work/user/lackerma/restarts/pi_from_fernanda/fesom/"
+    #ini_parent_date: "25001231"
+    #ini_parent_exp_id: "<placeholder>"
+    mesh_dir: "/albedo/pool/FESOM/meshes_default/core/"
+    #-----------------------
+    # icebergs
+    #use_icebergs: True
+    #use_icesheet_coupling: True
+    update_icebergs: false
+    ini_iceberg_dir: "/albedo/home/lackerma/icebergs/fesom/"
+    disch_file: "/albedo/home/lackerma/icebergs/sh_refac/latest_discharge.nc"
+    basin_file: "/albedo/work/user/lackerma/pool_pism/basins/antarctica.16km.nc"
+    scaling_factor:
+        - 100
+        - 50
+        - 10
+        - 1
+        - 1
+        - 1
+    #-----------------------
+    add_namelist_changes:
+            namelist.config:
+                    paths:
+                        meshpath: "/albedo/pool/FESOM2/core2/"
+                    geometry:
+                        force_rotation: True
+                    #icebergs:
+                    #    use_icebergs: True
+                    #    steps_per_ib_step: 8
+                    #    ib_async_mode: 0
+                    #    turn_off_hf: False
+                    #    turn_off_fw: False
+                    #    #thread_support_level_required: 2
+                    run_config:
+                        lwiso: "remove_from_namelist"

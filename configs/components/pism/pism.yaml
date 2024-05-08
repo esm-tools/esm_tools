@@ -59,8 +59,8 @@ comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -
   \ \\\n        -DCMAKE_C_COMPILER=$CC  \\\n        -DCMAKE_C_FLAGS=\"-O3 -march=native -fp-model precise\
   \ -no-fast-transcendentals\" \\\n        -DPETSC_EXECUTABLE_RUNS:BOOL=ON \\\n  \
   \      -DMPI_C_DIR=\"$I_MPI_ROOT\" \\\n        -DPism_USE_JANSSON:BOOL=NO \\\n \
-  \       -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \\\n        -DPism_USE_PARALLEL_HDF5:BOOL=OFF\
-  \ \\\n        -DPism_USE_PROJ4:BOOL=YES \\\n        -DPism_BUILD_EXTRA_EXECS:BOOL=ON\
+  \       -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \\\n        -DPism_USE_PARALLEL_HDF5:BOOL=ON\
+  \ \\\n        -DPism_USE_PROJ:BOOL=YES \\\n        -DPism_BUILD_EXTRA_EXECS:BOOL=ON\
   \ \\\n        ..; make -j4; make install;\n"
 contact: "paul.gierz(at)awi.de"
 
@@ -89,6 +89,11 @@ choose_computer.partitions.compute.cores_per_node:
     36:
         nnodes: 2
         nproca: 72
+        nprocb: 1
+     # Settings for DKRZ's Levante
+    128:
+        nnodes: 1
+        nproca: 128
         nprocb: 1
 
 

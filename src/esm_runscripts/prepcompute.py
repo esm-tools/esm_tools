@@ -1,11 +1,12 @@
-import os
-import time
-import subprocess
 import copy
+import os
+import stat
+import subprocess
+import time
 
 import f90nml
 import yaml
-import stat
+from loguru import logger
 
 import esm_calendar
 import esm_parser
@@ -13,7 +14,7 @@ import esm_runscripts
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
-from .helpers import evaluate 
+from .helpers import evaluate
 from .namelists import Namelist
 
 #####################################################################
@@ -40,9 +41,9 @@ def compile_model(config):
     if not version:
         return config
     if config.get("general", {}).get("run_number") == 1:
-        print("First year, checking if we need to compile...")
+        logger.info("First year, checking if we need to compile...")
         if not config.get("general", {}).get("use_compiled_model", True):
-            print(f"Huhu --> compiling {model}-{version}")
+            logger.info(f"Huhu --> compiling {model}-{version}")
             subprocess.run(
                 f"esm_master install-{model}-{version}",
                 shell=True,
@@ -72,10 +73,6 @@ def all_files_to_copy_append(
         ):
             config[model][filetype + "_in_work"][categ] = file_target
         else:
-            # print (filetype)
-            # print (file_target)
-            # print (categ)
-            # print (config["general"]["out_filetypes"])
             if not filetype + "_targets" in config[model]:
                 config[model][filetype + "_targets"] = {}
             config[model][filetype + "_targets"][categ] = file_target
@@ -128,7 +125,6 @@ def create_new_files(config):
                 filenames = config[model]["create_" + filetype].keys()
 
                 for filename in filenames:
-
                     full_filename = (
                         config[model]["thisrun_" + filetype + "_dir"] + "/" + filename
                     )
@@ -170,11 +166,9 @@ def modify_files(config):
 def modify_namelists(config):
     # Load and modify namelists:
 
-    if config["general"]["verbose"]:
-        print("\n" "- Setting up namelists for this run...")
-        for index, model in enumerate(config["general"]["valid_model_names"]):
-            print(f'{index+1}) {config[model]["model"]}')
-        print()
+    logger.debug("\n" "- Setting up namelists for this run...")
+    for index, model in enumerate(config["general"]["valid_model_names"]):
+        logger.debug(f'{index+1}) {config[model]["model"]}')
 
     for model in config["general"]["valid_model_names"]:
         config[model] = Namelist.nmls_load(config[model])
@@ -182,58 +176,47 @@ def modify_namelists(config):
         if model == "echam":
             config = Namelist.apply_echam_disturbance(config)
             config = Namelist.echam_transient_forcing(config)
-        if model == "fesom":
-            config = Namelist.apply_iceberg_calving(config)
         config[model] = Namelist.nmls_modify(config[model])
         config[model] = Namelist.nmls_finalize(
             config[model], config["general"]["verbose"]
         )
 
-    if config["general"]["verbose"]:
-        print("::: end of namelist section\n")
+    logger.debug("::: end of namelist section\n")
     return config
 
 
-def copy_files_to_thisrun(config):
-    if config["general"]["verbose"]:
-        print("PREPARING EXPERIMENT")
-        # Copy files:
-        print("\n" "- File lists populated, proceeding with copy...")
-        print("- Note that you can see your file lists in the config folder")
-        print("- You will be informed about missing files")
-
-    counter = 0
+def wait_for_iterative_coupling(config):
     count_max = 90
     if (
         config["general"].get("iterative_coupling", False)
         and config["general"]["chunk_number"] > 1
     ):
+        logger.debug("Waiting for iterative coupling...")
         if "files_to_wait_for" in config["general"]:
-            for file_base in config['general'].get('files_to_wait_for'):
-                file = os.path.join(config['general']['experiment_couple_dir'], file_base)
+            for file_base in config["general"].get("files_to_wait_for"):
+                counter = 0
+                file = os.path.join(
+                    config["general"]["experiment_couple_dir"], file_base
+                )
                 while counter < count_max:
                     counter = counter + 1
                     if os.path.isfile(file):
-                        print("File found: ", file)
+                        logger.info(f"File found: {file}")
                         break
                     else:
-                        print("Waiting for file: ", file)
-                        print("Sleep for 10 seconds...")
+                        logger.info(f"Waiting for file: {file}")
+                        logger.info("Sleep for 10 seconds...")
                         time.sleep(10)
 
-    # MA: TODO: this should go somewhere else, maybe on its on module and then inserted on a recipe
-    if "fesom" in config["general"]["valid_model_names"]:
-        if config["fesom"].get("use_icebergs", False) and config["fesom"].get("use_icesheet_coupling", False):
-            if config["general"].get("run_number", 0) == 1:
-                if not os.path.isfile(
-                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
-                ):
-                    with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
-                        f.write("0")
-            else:
-                num_lines = sum(1 for line in open(os.path.join(config["fesom"]["experiment_restart_in_dir"], "iceberg.restart.ISM")))
-                with open(config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file", "w") as f:
-                    f.write(str(num_lines))
+    return config
+
+
+def copy_files_to_thisrun(config):
+    logger.debug("PREPARING EXPERIMENT")
+    # Copy files:
+    logger.debug("\n" "- File lists populated, proceeding with copy...")
+    logger.debug("- Note that you can see your file lists in the config folder")
+    logger.debug("- You will be informed about missing files")
 
     log_used_files(config)
 
@@ -244,20 +227,32 @@ def copy_files_to_thisrun(config):
 
 
 def copy_files_to_work(config):
-    if config["general"]["verbose"]:
-        print("PREPARING WORK FOLDER")
+    logger.debug("PREPARING WORK FOLDER")
     config = copy_files(
         config, config["general"]["in_filetypes"], source="thisrun", target="work"
     )
     return config
 
 
-def _write_finalized_config(config):
-    """Writes <expid>_finished_config.yaml file
-    Parameters
-    ----------
-    config : esm-tools config object
+def _write_finalized_config(config, config_file_path=None):
     """
+    Writes <expid>_finished_config.yaml file
+
+    Input
+    -----
+    config : dict
+        esm-tools config object
+    config_file_path : string
+        Optional file path and name where the content of config is to be stored.
+        Default is None. If not given (default) the path will be set depending on
+        settings in config and the file name is <expid>_finished_config.yaml.
+
+    Returns
+    -------
+    config : dict
+
+    """
+
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
     def date_representer(dumper, date):
@@ -309,9 +304,7 @@ def _write_finalized_config(config):
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
-    EsmConfigDumper.add_representer(
-        f90nml.namelist.Namelist, namelist_representer
-    )
+    EsmConfigDumper.add_representer(f90nml.namelist.Namelist, namelist_representer)
 
     if "oasis3mct" in config:
         EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
@@ -319,10 +312,11 @@ def _write_finalized_config(config):
     thisrun_config_dir = config["general"]["thisrun_config_dir"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
-    config_file_path = (
-        f"{thisrun_config_dir}/"
-        f"{expid}_{it_coupled_model_name}finished_config.yaml"
-    )
+    if not config_file_path:
+        config_file_path = (
+            f"{thisrun_config_dir}/"
+            f"{expid}_{it_coupled_model_name}finished_config.yaml"
+        )
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
         config_final = copy.deepcopy(config)  # PrevRunInfo
@@ -336,17 +330,16 @@ def _write_finalized_config(config):
 
 
 def _show_simulation_info(config):
-    print()
-    print(80 * "=")
-    print("STARTING SIMULATION JOB!")
-    print(f"Experiment ID = {config['general']['expid']}")
-    print(f"Setup = {config['general']['setup_name']}")
+    logger.info("")
+    logger.info(80 * "=")
+    logger.info("STARTING SIMULATION JOB!")
+    logger.info(f"Experiment ID = {config['general']['expid']}")
+    logger.info(f"Setup = {config['general']['setup_name']}")
     if "coupled_setup" in config["general"]:
-        print("This setup consists of:")
+        logger.info("This setup consists of:")
         for model in config["general"]["valid_model_names"]:
-            print(f"- {model}")
-    print("Experiment is installed in:")
-    print(f"       {config['general']['base_dir']}/{config['general']['expid']}")
-    print(80 * "=")
-    print()
+            logger.info(f"- {model}")
+    logger.info("Experiment is installed in:")
+    logger.info(f"       {config['general']['base_dir']}/{config['general']['expid']}")
+    logger.info(80 * "=")
     return config

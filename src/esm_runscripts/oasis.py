@@ -1,10 +1,13 @@
-import sys
 import glob
 import os
 import subprocess
+import sys
+
 import questionary
 
 from esm_parser import user_error
+from loguru import logger
+
 
 
 class oasis:
@@ -28,9 +31,8 @@ class oasis:
         elif isinstance(mct_version, str):
             mct_version = tuple(int(x) for x in mct_version.split("."))
         else:
-            print(
+            logger.error(
                 "Init of Oasis needs the argument mct_version to be either a tuple or a string!",
-                flush=True,
             )
             sys.exit(1)
         self.namcouple = [
@@ -160,18 +162,16 @@ class oasis:
                 trafo_line += " BLASOLD"
                 coefficient = transformation["preprocessing"][pre].get("xmult", None)
                 if not coefficient:
-                    print(
+                    logger.error(
                         "xmult needs to be defined for preprocessing BLASOLD",
-                        flush=True,
                     )
                     sys.exit(2)
                 add_scalar = transformation["preprocessing"][pre].get(
                     "add_scalar", None
                 )
                 if not add_scalar:
-                    print(
+                    logger.error(
                         "add_scalar needs to be defined (0 or 1) for preprocessing BLASOLD",
-                        flush=True,
                     )
                     sys.exit(2)
                 detail_line = str(coefficient) + " " + str(add_scalar)
@@ -181,15 +181,15 @@ class oasis:
                         "scalar_to_add", None
                     )
                     if not add_scalar:
-                        print(
+                        logger.error(
                             "scalar_to_add needs to be defined if add_scalar is set to  1 for preprocessing BLASOLD",
-                            flush=True,
                         )
                         sys.exit(2)
                     detail_line = " CONSTANT" + str(add_scalar)
                     trafo_details.append(detail_line.strip())
 
         alltrans = transformation.get("remapping", {"bla": "blub"})
+
         oyac = transformation.get("oyac", False)
         if oyac:  # OASIS with YAC interpolation library (OYAC)
             nb_stack = str(len(alltrans))
@@ -256,9 +256,8 @@ class oasis:
                     trafo_line += " MAPPING"
                     mapname = transform.get("mapname", None)
                     if not mapname:
-                        print(
-                            "mapname needs to be defined for transformation MAPPING",
-                            flush=True,
+                        logger.error(
+                            "mapname needs to be defined for transformation MAPPING"
                         )
                         sys.exit(2)
                     maploc = transform.get("map_regrid_on", "")
@@ -278,9 +277,8 @@ class oasis:
                     srcgridtype = str(rgrid["oasis_grid_type"]).upper()
                     search_bin = transform.get("search_bin", None)
                     if not search_bin:
-                        print(
-                            "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF",
-                            flush=True,
+                        logger.error(
+                            "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF"
                         )
                         sys.exit(2)
                     bins = transform.get("nb_of_search_bins", "1")
@@ -338,9 +336,8 @@ class oasis:
                 trafo_line += " CONSERV"
                 method = transformation["postprocessing"][post].get("method", None)
                 if not method:
-                    print(
+                    logger.error(
                         " a method (GLOBAL, GLBPOS, BASBAL or BASPOS) needs to be defined for postprocessing CONSERV",
-                        flush=True,
                     )
                     sys.exit(2)
                 algorithm = transformation["postprocessing"][post].get("algorithm", "")
@@ -354,18 +351,16 @@ class oasis:
                 trafo_line += " BLASNEW"
                 coefficient = transformation["postprocessing"][post].get("xmult", None)
                 if not coefficient:
-                    print(
+                    logger.error(
                         "xmult needs to be defined for postprocessing BLASNEW",
-                        flush=True,
                     )
                     sys.exit(2)
                 add_scalar = transformation["postprocessing"][post].get(
                     "add_scalar", None
                 )
                 if not add_scalar:
-                    print(
+                    logger.error(
                         "add_scalar needs to be defined (0 or 1) for preprocessing BLASOLD",
-                        flush=True,
                     )
                     sys.exit(2)
                 detail_line = str(coefficient) + " " + str(add_scalar)
@@ -375,9 +370,8 @@ class oasis:
                         "scalar_to_add", None
                     )
                     if not add_scalar:
-                        print(
+                        logger.error(
                             "scalar_to_add needs to be defined if add_scalar is set to  1 for postprocessing BLASNEW",
-                            flush=True,
                         )
                         sys.exit(2)
                     detail_line = " CONSTANT" + str(add_scalar)
@@ -438,7 +432,7 @@ class oasis:
 
     def print_config_files(self):
         for line in self.namcouple:
-            print(line, flush=True)
+            logger.info(line)
 
     def add_output_file(self, lefts, rights, leftmodel, rightmodel, config):
         out_file = []
@@ -621,23 +615,24 @@ class oasis:
         )
         # enddate = "_" + str(config["general"]["end_date"].year) + str(config["general"]["end_date"].month) + str(config["general"]["end_date"].day)
 
-        print("Preparing oasis restart files from initial run...", flush=True)
+        logger.info("Preparing oasis restart files from initial run...")
         # Assign an exe per model
         exes = [config[model]["executable"] for model in models]
-        print(restart_file, all_fields, models, exes, flush=True)
+        logger.info(f"{restart_file}, {all_fields}, {models}, {exes}")
         cwd = os.getcwd()
         os.chdir(config["general"]["thisrun_work_dir"])
         filelist = ""
         # Loop through the fields and their corresponding models and exes
         for field, model, exe in zip(all_fields, models, exes):
-            print(field + "-" + model, flush=True)
+            logger.info(field + "-" + model)
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")
-            print(thesefiles, flush=True)
+            logger.info(thesefiles)
             for thisfile in thesefiles:
-                print(
+
+                logger.info(
                     "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w",
-                    flush=True,
                 )
+                
                 lasttimestep = (
                     subprocess.check_output(
                         "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w",
@@ -646,15 +641,12 @@ class oasis:
                     .decode("utf-8")
                     .rstrip()
                 )
-                # print (lasttimestep)
-
-                print(
+                logger.info(
                     "cdo -O seltimestep,"
                     + str(lasttimestep)
                     + " "
                     + thisfile
                     + " onlyonetimestep.nc",
-                    flush=True,
                 )
                 os.system(
                     "cdo -O seltimestep,"
@@ -663,25 +655,24 @@ class oasis:
                     + thisfile
                     + " onlyonetimestep.nc"
                 )
-                print(
+                logger.info(
                     "ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc",
-                    flush=True,
                 )
                 os.system(
                     "ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc"
                 )
                 filelist += "notimestep_" + field + ".nc "
-                print(filelist)
+                logger.info(filelist)
         # MA: -O flag added to overwrite oasis restart files in case oasis creats them
         # before (i.e. when using LOCTRANS)
-        if os.path.isfile(restart_file) and config["general"]["verbose"]:
-            print(f"{restart_file} already exits, overwriting", flush=True)
-        print("cdo -O merge " + filelist + " " + restart_file, flush=True)  # + enddate)
+        if os.path.isfile(restart_file):
+            logger.debug(f"{restart_file} already exits, overwriting")
+        logger.info("cdo -O merge " + filelist + " " + restart_file)
         os.system("cdo -O merge " + filelist + " " + restart_file)  # + enddate)
         rmlist = glob.glob("notimestep*")
         rmlist.append("onlyonetimestep.nc")
         for rmfile in rmlist:
-            print("rm " + rmfile, flush=True)
+            logger.info("rm " + rmfile)
             os.system("rm " + rmfile)
         os.chdir(cwd)
 

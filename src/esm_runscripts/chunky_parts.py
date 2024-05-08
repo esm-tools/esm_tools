@@ -2,13 +2,13 @@ import copy
 import glob
 import os
 import sys
+
 import yaml
+
 import esm_parser
-
-from loguru import logger
-
 from esm_calendar import Date
 from esm_runscripts import prev_run
+from loguru import logger
 
 
 def setup_correct_chunk_config(config):
@@ -17,7 +17,7 @@ def setup_correct_chunk_config(config):
     if not config["general"].get("iterative_coupling", False):
         return config
 
-    print("Initializing iterative coupling")
+    logger.info("Initializing iterative coupling")
 
     chunk_config = _restore_original_config(config)
     chunk_config = _initialize_chunk_date_file(
@@ -91,6 +91,13 @@ def set_chunk_calendar(config):
 
     number_of_chunks_done = this_chunk_number // number_of_models
 
+    # LA: get right number_of_chunks_done for last year in chunk
+    if "model_queue" in config["general"]:
+        if config["general"]["model_queue"][0] == "model1" and config["general"].get(
+            "last_run_in_chunk"
+        ):
+            number_of_chunks_done = number_of_chunks_done - 1
+
     passed_time = (
         number_of_chunks_done * chunk_delta_date[0],
         number_of_chunks_done * chunk_delta_date[1],
@@ -114,7 +121,9 @@ def set_chunk_calendar(config):
 
     if not start_date == chunk_end_date:
         setup_name = config["general"]["setup_name"]
-        print(f"Chunk_size is not a multiple of run size for model {setup_name}.")
+        logger.error(
+            f"Chunk_size is not a multiple of run size for model {setup_name}."
+        )
         sys.exit(-1)
 
     if runs_per_chunk == 1:
@@ -369,7 +378,7 @@ def _find_model_finished_config(config, model, model_date):
         elif len(full_file_path) > 1:
             logger.error(
                 "There is more than one finished_config file matching the criteria: "
-                "{full_file_path}"
+                f"{full_file_path}"
             )
             raise
 

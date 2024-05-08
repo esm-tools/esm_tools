@@ -129,6 +129,33 @@ disturbance: "1.000001"
 lresume: false
 
 
+lgfw: False
+lupdate_orography: False
+choose_general.iterative_coupling:
+        True:
+                add_input_sources:
+                        "gfw_atmo": "${general.experiment_couple_dir}/latest_gfw_atmo.nc"
+                        "target_oro": "${general.experiment_couple_dir}/latest_target_orography.nc"
+                lgfw: True
+                choose_general.chunk_number:
+                        1:
+                                lgfw: False
+                                lupdate_orography: False
+                        "*":
+                                choose_general.first_run_in_chunk:
+                                        True:
+                                                lupdate_orography: True
+                                        "*":
+                                                lupdate_orography: False
+                add_namelist_changes:
+                        namelist.echam:
+                                submodelctl:
+                                        lgfw: "${lgfw}"
+                                        lupdate_orog: "${lupdate_orography}"
+                hosing_correction: True
+        '*':
+                hosing_correction: False
+
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030
 ini_parent_dir: "${pool_dir}/MPIESM/restart/dev/${parent_expid}/restart/echam6"
@@ -164,6 +191,9 @@ choose_switch:
                 value: "echam switch"
 # choice
 #
+
+with_icb: false
+icb_code: false
 
 with_wiso: false
 wiso_code: false
@@ -213,6 +243,7 @@ choose_version:
         6.3.05p2-awiesm-2.1:
                 # TODO MA: this problably needs much more stuff from the wiso version
                 wiso_code: true
+                icb_code: true
                 concurrent_radiation_code: true
                 repo_tag: not_applicable
                 dataset: r0008
@@ -579,6 +610,14 @@ choose_with_lco2_emis:
                         message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
         add_forcing_in_work:
             carbon_emissions: "carbon_emissions.nc"
+choose_icb_code:
+        True:
+                licb: "${with_icb}"
+                add_namelist_changes:
+                        namelist.echam:
+                                submodelctl:
+                                        licb: "${licb}"
+                
 
 choose_wiso_code:
         True:
@@ -641,6 +680,8 @@ input_in_work:
         "tslclim": "unit.92"
         "vgratclim": "unit.91"
         "vltclim": "unit.90"
+        "gfw_atmo": "gfw_atmo.nc"
+        "target_oro": "target_orography_echam6.nc"
 
 forcing_in_work:
         sic: "unit.96"
@@ -720,6 +761,7 @@ streams:
         - sp6h
         - glim
         - spim
+        - ism
 
 streamsnc:
         - aclcim
@@ -891,6 +933,16 @@ grids:
                 ny: "${_ny}"
                 oasis_grid_type: "D"
                 number_of_overlapping_points: 0 # oasis P-value
+
+choose_lgfw:
+        True:
+                add_input_files:
+                        gfw_atmo: gfw_atmo
+
+choose_lupdate_orography:
+        True:
+                add_input_files:
+                        target_oro: target_oro
 
 # Configuration Files:
 config_sources:

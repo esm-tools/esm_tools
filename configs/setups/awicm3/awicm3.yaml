@@ -22,8 +22,7 @@ general:
         - 'v3.1.1'
         - 'v3.1.2'
         - 'v3.2'
-        - 'v3.2.1'
-        - 'v3.2.2'
+        - 'v3.3'
         - 'master'
         - 'frontiers-xios'
         choose_version:
@@ -63,19 +62,10 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
-          v3.2.1:
-            major_version: v3.2
+          v3.3:
+            major_version: v3.3
             couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5-yac+oasis3mct6
-            add_include_models:
-            - xios
-            add_further_reading:
-            - xios/xios.env.yaml
-            oasis_with_yac: True
-          v3.2.2:
-            major_version: v3.2
-            couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.2.2+xios-2.5-yac+oasis3mct6
+            - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
             add_further_reading:
@@ -188,6 +178,26 @@ oifs:
                 "v3.2":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.2
+                        mip: "cmip6"
+                        wam: true
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMIO_SERV:
+                                                NPROC_IO: 2
+                                                NPROCESS_LEVEL: 5
+                                                NIO_SERV_METHOD: 2
+                                                NMSG_LEVEL_CLIENT: 0
+                                                NMSG_LEVEL_SERVER: 1
+                                        NAEPHY:
+                                                LECURR: true
+                                        NAERAD:
+                                                NSOLARSPECTRUM: "1"
+                                                NAERANT_SCALE: "1"
+                "v3.3":
+                        with_xios: True
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.3
                         mip: "cmip6"
                         wam: true
                         add_namelist_changes:
@@ -451,6 +461,13 @@ fesom:
                                                 albsnm: 0.77
                                                 albi: 0.6
                                                 albim: 0.43
+                "v3.3":
+                        version: "2.5"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.3/"
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: "${surf_relax_s}"
                 "master":
                         namelist_dir: "${model_dir}/config/"
                         add_namelists:
@@ -705,6 +722,24 @@ oasis3mct:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                'v3.3':
+                        mct_version: 6.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
+                        add_process_ordering:
+                                - xios
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--oyac_1stcon_nnn_i-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--oyac_1stcon_nnn_i-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--oyac_1stcon_nnn_i-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--oyac_hcsbb_nnn_i-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--oyac_1stcon_nnn_stocha-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                                        - 'A_CurX:A_CurY <--oyac_1stcon_nnn_i-- u_feom:v_feom'
                 'master':
                         mct_version: 5.0
                         input_dir: ${pool_dir}/cy${oifs.version}-master/${oifs.resolution}-${fesom.resolution}/

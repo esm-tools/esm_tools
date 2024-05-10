@@ -326,9 +326,7 @@ def _write_finalized_config(config, config_file_path=None):
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
-    my_yaml.representer.add_representer(
-        f90nml.namelist.Namelist, namelist_representer
-    )
+    my_yaml.representer.add_representer(f90nml.namelist.Namelist, namelist_representer)
 
     # Provenance representers
     my_yaml.representer.add_representer(
@@ -344,12 +342,13 @@ def _write_finalized_config(config, config_file_path=None):
     )
 
     if "oasis3mct" in config:
-        my_yaml.representer.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
+        my_yaml.representer.add_representer(
+            esm_runscripts.oasis.oasis, oasis_representer
+        )
 
     thisrun_config_dir = config["general"]["thisrun_config_dir"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
-
 
     if not config_file_path:
         config_file_path = (
@@ -374,7 +373,7 @@ def _write_finalized_config(config, config_file_path=None):
         add_eol_comments_with_provenance(config_with_comments, config)
 
         # Write the finished_config.yaml file
-        out = my_yaml.dump(config_with_comments, config_file) #, width=10000, indent=4
+        out = my_yaml.dump(config_with_comments, config_file)  # , width=10000, indent=4
 
     return config
 

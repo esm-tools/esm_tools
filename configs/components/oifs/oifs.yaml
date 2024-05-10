@@ -110,17 +110,17 @@ choose_version:
   "40r1-agcm":
     compile_command: export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f
       oifs-agcm.cfg;  chmod -R ${source_code_permissions} .
-    major_version: 40r1
     requires:
     - oasis3mct-4.0
+    major_version: 40r1
   40r1-foci:
     branch: foci_conserv
     comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg ; chmod -R ${source_code_permissions} .
     destination: 40r1
     contact: "swahl(at)geomar.de"
-    major_version: 40r1
     requires:
     - oasis3mct-4.0
+    major_version: 40r1
   43r3-master:
     requires:
     - oasis3mct-5.0-smhi

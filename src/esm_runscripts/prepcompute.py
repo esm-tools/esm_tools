@@ -212,6 +212,17 @@ def wait_for_iterative_coupling(config):
 
 
 def copy_files_to_thisrun(config):
+    """
+    This function was used to copy to intermediate folders in the past. Now the
+    ``copy_files`` function used within, in all file movements, might escape moving
+    files to the intermediate folders, and move them directly to ``work`` if the file
+    type of the file is not included in the variable ``general.intermediate_movements``.
+
+    This is a fast fix, pretty ugly, but works. The reason for not making it better is
+    that we are reworking the whole file movement logic, so it is not worth the time to
+    do a partial rework here.
+    """
+
     logger.debug("PREPARING EXPERIMENT")
     # Copy files:
     logger.debug("\n" "- File lists populated, proceeding with copy...")

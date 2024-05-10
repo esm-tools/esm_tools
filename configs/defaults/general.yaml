@@ -1,2 +1,6 @@
 use_database: false
 profile: False
+intermediate_movements:
+- "config"
+- "bin"
+- "input"

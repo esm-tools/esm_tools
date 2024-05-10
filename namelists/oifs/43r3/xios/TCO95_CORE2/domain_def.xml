@@ -4,7 +4,7 @@
 
   <!-- Definition of regular Gaussian domains -->
   <domain_group id="regular_domains" type="rectilinear" >
-    <domain id="regular" long_name="regular grid" ni_glo="400" nj_glo="192" >
+    <domain id="regular" long_name="regular grid" ni_glo="360" nj_glo="181" >
       <generate_rectilinear_domain />
       <interpolate_domain write_weight="true" />
     </domain>

@@ -4,9 +4,13 @@ lcurt_stress_surf=.false.
 ldiag_curl_vel3  =.false.
 ldiag_energy     =.true.
 ldiag_salt3D     =.false.
-ldiag_dMOC       =.false.
+ldiag_dMOC       =.true.
 ldiag_DVD        =.false.
 ldiag_forc       =.true.
+/
+
+&nml_output_settings
+    keep_nth_level = 1
 /
 
 &nml_listsize
@@ -38,14 +42,12 @@ io_list =  'sst       ',90,'s', 4,
            'u         ',1, 'm', 4,
            'v         ',1, 'm', 4,
            'w         ',1, 'm', 4,
+           'sigma0    ',1, 'm', 4,
            'temp1-31  ',1, 'd', 4,
            'salt1-31  ',1, 'd', 4,
            'u1-31     ',1, 'd', 4,
            'v1-31     ',1, 'd', 4,
            'w1-31     ',1, 'd', 4,
-           'bolus_u   ',1, 'y', 4,
-           'bolus_v   ',1, 'y', 4,
-           'bolus_w   ',1, 'y', 4,
            'snow      ',1, 'm', 4,
            'subli     ',1, 'm', 4,
            'thdgrsn   ',1, 'm', 4,

@@ -27,6 +27,8 @@ general:
         - 'v3.2.2'
         - 'master'
         - 'frontiers-xios'
+        
+        oasis_with_yac: False #Default is still scrip
         choose_version:
           v3.0:
             major_version: v3.0

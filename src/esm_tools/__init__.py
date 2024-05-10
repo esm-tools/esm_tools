@@ -23,7 +23,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.28.0"
+__version__ = "6.31.0"
 
 import functools
 import inspect
@@ -178,6 +178,14 @@ def _get_runscript_filepath_editable_install(runscript):
     return f"{_get_real_dir_from_pth_file('runscripts')}/{runscript}"
 
 
+def _get_coupling_filepath_standard_install(coupling):
+    return pkg_resources.resource_filename("esm_tools.couplings", coupling)
+
+
+def _get_coupling_filepath_editable_install(coupling):
+    return f"{_get_real_dir_from_pth_file('couplings')}/{coupling}"
+
+
 def get_config_as_str(config):
     return pkg_resources.resource_string("esm_tools.configs", config)
 
@@ -280,6 +288,16 @@ def _copy_runscript_folder_standard_install(dest_path):
 
 def _copy_runscript_folder_editable_install(dest_path):
     src_path = _get_runscript_filepath_editable_install("")
+    return shutil.copytree(src_path, dest_path)
+
+
+def _copy_coupling_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.couplings", ".")
+    return shutil.copytree(src_path, dest_path)
+
+
+def _copy_coupling_folder_editable_install(dest_path):
+    src_path = _get_coupling_filepath_editable_install("")
     return shutil.copytree(src_path, dest_path)
 
 
@@ -395,6 +413,13 @@ def get_runscript_filepath(runscript=""):
     if EDITABLE_INSTALL:
         return _get_runscript_filepath_editable_install(runscript)
     return _get_runscript_filepath_standard_install(runscript)
+
+
+@caller_wrapper
+def get_coupling_filepath(coupling=""):
+    if EDITABLE_INSTALL:
+        return _get_coupling_filepath_editable_install(coupling)
+    return _get_coupling_filepath_standard_install(coupling)
 
 
 @caller_wrapper

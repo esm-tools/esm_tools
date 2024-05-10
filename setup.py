@@ -89,22 +89,24 @@ setup(
     keywords="esm_tools",
     name="esm-tools",
     packages=find_packages("src")
-    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
+    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts", "esm_tools.couplings"],
     package_dir={
         "": "src",
         "esm_tools.configs": "configs",
         "esm_tools.namelists": "namelists",
         "esm_tools.runscripts": "runscripts",
+        "esm_tools.couplings": "couplings",
     },
     package_data={
         "esm_tools.configs": ["../configs/*"],
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
+        "esm_tools.couplings": ["../couplings/*"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.28.0",
+    version="6.31.0",
     zip_safe=False,
 )

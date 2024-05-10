@@ -42,6 +42,7 @@ core:
                         - "_write_finalized_config"
                         - "_show_simulation_info"
                         - "assemble_filelists"
+                        - "wait_for_iterative_coupling"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
                         - "modify_files"

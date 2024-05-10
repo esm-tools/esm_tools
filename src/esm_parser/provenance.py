@@ -836,7 +836,7 @@ def clean_provenance(data):
     elif isinstance(data, list):
         return [clean_provenance(item) for item in data]
     elif isinstance(data, dict):
-        return {key: clean_provenance(value) for key, value in data.items()}
+        return {clean_provenance(key): clean_provenance(value) for key, value in data.items()}
     else:
         return data
 

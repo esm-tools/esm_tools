@@ -1,11 +1,14 @@
-import os
-import time
-import subprocess
 import copy
+import os
+import stat
+import subprocess
+import time
+from io import StringIO
 
 import f90nml
 import yaml
-import stat
+from ruamel.yaml import YAML
+from ruamel.yaml.dumper import Dumper
 
 import esm_calendar
 import esm_parser
@@ -13,7 +16,7 @@ import esm_runscripts
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
-from .helpers import evaluate 
+from .helpers import evaluate
 from .namelists import Namelist
 
 #####################################################################
@@ -270,6 +273,7 @@ def _write_finalized_config(config, config_file_path=None):
     config : dict
 
     """
+    my_yaml = YAML()
 
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation
@@ -304,58 +308,56 @@ def _write_finalized_config(config, config_file_path=None):
     def strwithprov_representer(dumper, strwithprov):
         return dumper.represent_str(strwithprov)
 
-    # dumper object for the ESM-Tools configuration
-    class EsmConfigDumper(yaml.dumper.Dumper):
-        pass
-
     # pyyaml does not support tuple and prints !!python/tuple
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         tuple, yaml.representer.SafeRepresenter.represent_list
     )
 
     # Determine how non-built-in types will be printed be the YAML dumper
-    EsmConfigDumper.add_representer(esm_calendar.Date, date_representer)
+    my_yaml.representer.add_representer(esm_calendar.Date, date_representer)
 
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         esm_calendar.esm_calendar.Calendar, calendar_representer
     )
     # yaml.representer.SafeRepresenter.represent_str)
 
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         esm_parser.esm_parser.ConfigSetup,
         yaml.representer.SafeRepresenter.represent_dict,
     )
 
-    EsmConfigDumper.add_representer(batch_system, batch_system_representer)
+    my_yaml.representer.add_representer(batch_system, batch_system_representer)
 
     # format for the other ESM data structures
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         esm_runscripts.coupler.coupler_class, coupler_representer
     )
 
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         f90nml.namelist.Namelist, namelist_representer
     )
 
     # Provenance representers
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         esm_parser.provenance.ListWithProvenance, listwithprov_representer
     )
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         esm_parser.provenance.DictWithProvenance, dictwithprov_representer
     )
     # @Paul: this is me just playing around with things, this should be included maybe
     # somewhere else and generalized for Str, Int, Bool...
-    EsmConfigDumper.add_representer(
+    my_yaml.representer.add_representer(
         esm_parser.provenance.StrWithProvenance, strwithprov_representer
     )
 
     if "oasis3mct" in config:
-        EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
+        my_yaml.representer.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
 
     thisrun_config_dir = config["general"]["thisrun_config_dir"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
+
+
     if not config_file_path:
         config_file_path = (
             f"{thisrun_config_dir}/"
@@ -366,13 +368,47 @@ def _write_finalized_config(config, config_file_path=None):
         config_final = copy.deepcopy(config)  # PrevRunInfo
         del config_final["prev_run"]  # PrevRunInfo
 
+        # Get the original values without provenance
         config_final = esm_parser.provenance.clean_provenance(config_final)
 
-        out = yaml.dump(
-            config_final, Dumper=EsmConfigDumper, width=10000, indent=4
-        )  # PrevRunInfo
-        config_file.write(out)
+        # Attach provenance comments to the values:
+        stream = StringIO()
+        my_yaml.dump(config_final, stream)
+        # Make a ruamel load of the config
+        stream.seek(0)
+        config_with_comments = my_yaml.load(stream)
+        # Add comments to the ruamel.yaml dict instance
+        add_eol_comments_with_provenance(config_with_comments, config)
+
+        # Write the finished_config.yaml file
+        out = my_yaml.dump(config_with_comments, config_file) #, width=10000, indent=4
+
     return config
+
+
+def add_eol_comments_with_provenance(commented_config, config):
+    if isinstance(commented_config, dict):
+        for key, value in commented_config.items():
+            if isinstance(value, (list, dict)):
+                add_eol_comments_with_provenance(value, config[key])
+            else:
+                provenance = getattr(config[key], "provenance", [None])[-1]
+                if provenance:
+                    provenance_comment = f"{provenance['yaml_file']},line:{provenance['line']},col:{provenance['col']}"
+                else:
+                    provenance_comment = f"no provenance info"
+                commented_config.yaml_add_eol_comment(provenance_comment, key)
+    elif isinstance(commented_config, list):
+        for indx, value in enumerate(commented_config):
+            if isinstance(value, (list, dict)):
+                add_eol_comments_with_provenance(value, config[indx])
+            else:
+                provenance = getattr(config[indx], "provenance", [None])[-1]
+                if provenance:
+                    provenance_comment = f"{provenance['yaml_file']},line:{provenance['line']},col:{provenance['col']}"
+                else:
+                    provenance_comment = f"no provenance info"
+                commented_config.yaml_add_eol_comment(provenance_comment, indx)
 
 
 def _show_simulation_info(config):

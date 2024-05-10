@@ -1084,7 +1084,7 @@ def avoid_overwriting(config, source, target):
 
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
-            esm_parser.user_note(
+            esm_parser.user_error(
                 "File movement conflict",
                 f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
                 f"{source} -> {date_stamped_target}"

@@ -1,9 +1,0 @@
-person:
-  name: Paul Gierz
-  username: pgierz
-  my_var: '1'
-  my_other_var: -
-    a
-  - b
-  - c
-

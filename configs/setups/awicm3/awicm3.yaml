@@ -76,7 +76,7 @@ general:
           v3.2.1:
             major_version: v3.2
             couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5-yac+oasis3mct6
+            - fesom-2.5+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
             add_further_reading:

@@ -27,12 +27,12 @@ general:
         - 'master'
         - 'frontiers-xios'
         
-        oasis_with_yac: False #Default is still scrip
         choose_version:
           v3.0:
             major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
+            oasis_with_yac: False
           v3.1:
             major_version: v3.1
             couplings:
@@ -41,6 +41,7 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.1.1:
             major_version: v3.1
             couplings:
@@ -49,6 +50,7 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.1.2:
             major_version: v3.1
             couplings:
@@ -57,6 +59,7 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.1.3:
             major_version: v3.1
             couplings:
@@ -65,18 +68,20 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.2:
             major_version: v3.2
             couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5
+            - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.2.1:
             major_version: v3.2
             couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
+            - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
             add_further_reading:
@@ -90,6 +95,7 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
           frontiers-xios:
             major_version: frontiers-xios
             couplings:
@@ -98,6 +104,7 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
 
         version: "v3.2"
         scenario: "piControl"
@@ -383,8 +390,10 @@ fesom:
         choose_general.oasis_with_yac:
             True:
                 comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
-            "*":
+            False:
                 comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+            "*":
+                comp_command: echo "please define oasis_with_yac boolean in awicm3.yaml"
 
         opbnd_dir: ""
         tide_forcing_dir: ""

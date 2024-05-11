@@ -288,7 +288,10 @@ def _write_finalized_config(config, config_file_path=None):
         return dumper.represent_str(f"{oasis.name}")
 
     def namelist_representer(dumper, f90nml):
-        return dumper.represent_str(f"f90nml.name")
+        return dumper.represent_str(f"{f90nml.name}")
+
+    def namelist_key_representer(dumper, f90nml):
+        return dumper.represent_str(f"{f90nml._key}")
 
     def listwithprov_representer(dumper, listwithprov):
         return dumper.represent_sequence("tag:yaml.org,2002:seq", listwithprov)
@@ -327,6 +330,7 @@ def _write_finalized_config(config, config_file_path=None):
     )
 
     my_yaml.representer.add_representer(f90nml.namelist.Namelist, namelist_representer)
+    my_yaml.representer.add_representer(f90nml.namelist.NmlKey, namelist_key_representer)
 
     # Provenance representers
     my_yaml.representer.add_representer(
@@ -334,11 +338,6 @@ def _write_finalized_config(config, config_file_path=None):
     )
     my_yaml.representer.add_representer(
         esm_parser.provenance.DictWithProvenance, dictwithprov_representer
-    )
-    # @Paul: this is me just playing around with things, this should be included maybe
-    # somewhere else and generalized for Str, Int, Bool...
-    my_yaml.representer.add_representer(
-        esm_parser.provenance.StrWithProvenance, strwithprov_representer
     )
 
     if "oasis3mct" in config:

@@ -331,13 +331,18 @@ def _write_finalized_config(config, config_file_path=None):
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
         config_final = copy.deepcopy(config)  # PrevRunInfo
-        del config_final["prev_run"]  # PrevRunInfo
+        delete_prev_objects(config_final)  # PrevRunInfo
 
         out = yaml.dump(
             config_final, Dumper=EsmConfigDumper, width=10000, indent=4
         )  # PrevRunInfo
         config_file.write(out)
     return config
+
+
+def delete_prev_objects(config):
+    for prev_object in getattr(config, "prev_objects", []):
+        del config[prev_object]
 
 
 def _show_simulation_info(config):

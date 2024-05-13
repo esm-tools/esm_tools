@@ -225,6 +225,8 @@ def prev_chunk_info(config):
         return
 
     prev_chunk_models = []
+    if not hasattr(config, "prev_objects"):
+        config.prev_objects = []
     for model in model_named_queue:
         if model == setup_name:
             continue
@@ -238,6 +240,7 @@ def prev_chunk_info(config):
         # generalized
         if finished_config:
             with open(finished_config, "r") as fc:
+                config.prev_objects.append(f"prev_chunk_{model}")
                 config[f"prev_chunk_{model}"] = yaml.load(fc, Loader=yaml.FullLoader)
 
 

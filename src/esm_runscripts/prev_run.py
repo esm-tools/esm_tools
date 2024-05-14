@@ -64,6 +64,7 @@ class PrevRunInfo(dict):
         # Counter for debuggin
         self._prev_config_count = 0
 
+
     def components_with_prev_run(self):
         """
         Lists components containning variables using the ``prev_run`` feature. Reading

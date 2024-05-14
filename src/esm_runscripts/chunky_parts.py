@@ -225,6 +225,7 @@ def prev_chunk_info(config):
         return
 
     prev_chunk_models = []
+    config["general"]["prev_chunk_objs"] = []
     for model in model_named_queue:
         if model == setup_name:
             continue
@@ -239,6 +240,7 @@ def prev_chunk_info(config):
         if finished_config:
             with open(finished_config, "r") as fc:
                 config[f"prev_chunk_{model}"] = yaml.load(fc, Loader=yaml.FullLoader)
+            config["general"]["prev_chunk_objs"].append(f"prev_chunk_{model}")
 
 
 ########################################   END OF API ###############################################

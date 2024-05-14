@@ -341,6 +341,19 @@ def _write_finalized_config(config, config_file_path=None):
 
 
 def delete_prev_objects(config):
+    """
+    Delete key-values in the ``config`` which values correspond to ``prev_`` objects,
+    for example, ``prev_run`` (contains values of the config of the previous run) and
+    ``prev_chunk_<model>`` (that contains values of the config of a previous chunk
+    in a offline coupled simulation). This deletion is necessary because otherwise
+    the ``finished_config.yaml`` gets a lot of nested information from the previous
+    runs that keeps growing each new run/chunk.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the simulation/compilation information
+    """
     for prev_object in getattr(config, "prev_objects", []):
         del config[prev_object]
 

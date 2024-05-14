@@ -99,7 +99,7 @@ class SimulationSetup(object):
 
         # 10. Initialize the ``prev_run`` object
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
-        self.config.prev_objects = ["prev_run"]
+        self.store_prev_objects()
 
         # 11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
         self.config = prepare.run_job(self.config)
@@ -234,3 +234,13 @@ class SimulationSetup(object):
         import esm_viz as viz
 
         self.config = viz.run_job(self.config)
+
+    #########################     HELPERS      #############################################################
+
+    def store_prev_objects(self):
+        self.config.prev_objects = ["prev_run"]
+        self.config.prev_objects.extend(self.config["general"].get(
+            "prev_chunk_objs", [])
+        )
+        if "prev_chunk_objs" in self.config["general"]:
+            del self.config["general"]["prev_chunk_objs"]

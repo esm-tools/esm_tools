@@ -901,10 +901,50 @@ def resolve_symlinks(config, file_source):
 
 
 def copy_files(config, filetypes, source, target):
+    """
+    This function has a misleading name. It is not only used for copying, but also
+    for moving or linking, depending on what was specified for the particular file
+    or file type vie the ``file_movements``.
+
+    Note: when the ``target`` is ``thisrun`` (intermediate folders) check whether the
+    type of file is included in ``intermediate_movements``. If it's not, instead of
+    moving the file to the intermediate folder it moves it to ``work``. This is an
+    ugly fix to provide a fast solution to the problem that files are
+    copied/moved/linked twice unnecessarily, and this affects inmensely the performance
+    of high resolution simulations. A better fix is not made because ``filelists`` are
+    being entirely reworked, but the fix cannot wait.
+
+    Note
+    ----
+    Relevant variables in this function:
+    
+    intermediate_movements : list
+        List of file types that will be considered in the intermediate step (copy         from source to intermediate and then to work, rather than directly to work)
+
+    Parameters
+    ----------
+    config : dict
+        The general configuration
+    filetypes : list
+        List of file types to be copied/linked/moved
+    source : str
+        Specifies the source type, to be chosen between ``init``, ``thisrun``,
+        ``work``.
+    target : str
+        Specifies the target type, to be chosen between ``init``, ``thisrun``,
+        ``work``.
+    """
     logger.debug("\n::: Copying files")
     helpers.print_datetime(config)
+
     successful_files = []
     missing_files = {}
+
+    # See the default intermediate movements list in `configs/defaults/general.yaml`
+    intermediate_movements = config["general"].get(
+        "intermediate_movements",
+        [],
+    )
 
     if source == "init":
         text_source = "sources"
@@ -918,11 +958,27 @@ def copy_files(config, filetypes, source, target):
     elif target == "work":
         text_target = "targets"
 
+    # Loop through the different filetypes (input, forcing, restart_in/out, ...)
+    files_to_be_moved = []
     for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
+        # Loop through the components
         for model in config["general"]["valid_model_names"] + ["general"]:
+            # If there is a source of this file type in the model
             if filetype + "_" + text_source in config[model]:
+                this_text_target = text_target
+                this_intermediate_movements = config[model].get(
+                    "intermediate_movements", intermediate_movements
+                )
+                skip_intermediate = False
+                if filetype not in intermediate_movements:
+                    if text_target == "intermediate":
+                        this_text_target = "targets"
+                        skip_intermediate = True
+                    elif text_source == "intermediate":
+                        continue
                 sourceblock = config[model][filetype + "_" + text_source]
-                targetblock = config[model][filetype + "_" + text_target]
+                targetblock = config[model][filetype + "_" + this_text_target]
+                # Loop through categories (file keys)
                 for category in sourceblock:
                     movement_method = get_method(
                         get_movement(config, model, category, filetype, source, target)
@@ -933,6 +989,7 @@ def copy_files(config, filetypes, source, target):
                     logger.debug(f"- source: {file_source}")
                     logger.debug(f"- target: {file_target}")
                     helpers.print_datetime(config)
+                    # Skip movement if file exist
                     if file_source == file_target:
                         logger.debug(
                             f"Source and target paths are identical, skipping {file_source}",
@@ -963,8 +1020,21 @@ def copy_files(config, filetypes, source, target):
                                 )
                                 helpers.print_datetime(config)
                                 continue
+                            files_to_be_moved.append({
+                                "movement_method": movement_method,
+                                "file_source": file_source,
+                                "file_target": file_target,
+                            })
+
+                            # To avoid overwriting in general experiment folder
+                            if skip_intermediate == True:
+                                file_target = avoid_overwriting(
+                                    config, file_source, file_target
+                                )
+
+                            # Execute movement
                             movement_method(file_source, file_target)
-                            # shutil.copy2(file_source, file_target)
+
                             successful_files.append(file_source)
                         except IOError:
                             logger.error(
@@ -986,6 +1056,57 @@ def copy_files(config, filetypes, source, target):
                 helpers.print_datetime(config)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
     return config
+
+
+def avoid_overwriting(config, source, target):
+    """
+    Function that appends the date stamp to ``target`` if the target already exists.
+    Additionally, if the target exists, it renames it with the previous run time stamp,
+    and creates a link named ``target`` that points at the target with the current time
+    stamp.
+
+    Note
+    ---- 
+        This function does not execute the file movement.
+
+    Parameters
+    ----------
+    config : dict
+        Simulation configuration
+    source : str
+        Path of the source of the file that will be copied/moved/linked
+    target : src
+        Path of the target of the file that will be copied/moved/linked
+    """
+    if os.path.isfile(target):
+        if filecmp.cmp(source, target):
+            return target
+
+        date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
+        if os.path.isfile(date_stamped_target):
+            esm_parser.user_error(
+                "File movement conflict",
+                f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
+                f"{source} -> {date_stamped_target}"
+            )
+            return target
+
+        if os.path.islink(target):
+            os.remove(target)
+        else:
+            os.rename(target, f"{target}_{config['general']['last_run_datestamp']}")
+
+        os.symlink(date_stamped_target, target)
+        target = date_stamped_target
+
+    elif os.path.isdir(target):
+        esm_parser.user_error(
+            "File operation not supported",
+            f"The target ``{target}`` is a folder, and this should not be happening "
+            "here. Please, open an issue in www.github.com/esm-tools/esm_tools"
+        )
+
+    return target
 
 
 def filter_allowed_missing_files(config):

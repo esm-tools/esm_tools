@@ -212,6 +212,17 @@ def wait_for_iterative_coupling(config):
 
 
 def copy_files_to_thisrun(config):
+    """
+    This function was used to copy to intermediate folders in the past. Now the
+    ``copy_files`` function used within, in all file movements, might escape moving
+    files to the intermediate folders, and move them directly to ``work`` if the file
+    type of the file is not included in the variable ``general.intermediate_movements``.
+
+    This is a fast fix, pretty ugly, but works. The reason for not making it better is
+    that we are reworking the whole file movement logic, so it is not worth the time to
+    do a partial rework here.
+    """
+
     logger.debug("PREPARING EXPERIMENT")
     # Copy files:
     logger.debug("\n" "- File lists populated, proceeding with copy...")
@@ -320,13 +331,31 @@ def _write_finalized_config(config, config_file_path=None):
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
         config_final = copy.deepcopy(config)  # PrevRunInfo
-        del config_final["prev_run"]  # PrevRunInfo
+        delete_prev_objects(config_final)  # PrevRunInfo
 
         out = yaml.dump(
             config_final, Dumper=EsmConfigDumper, width=10000, indent=4
         )  # PrevRunInfo
         config_file.write(out)
     return config
+
+
+def delete_prev_objects(config):
+    """
+    Delete key-values in the ``config`` which values correspond to ``prev_`` objects,
+    for example, ``prev_run`` (contains values of the config of the previous run) and
+    ``prev_chunk_<model>`` (that contains values of the config of a previous chunk
+    in a offline coupled simulation). This deletion is necessary because otherwise
+    the ``finished_config.yaml`` gets a lot of nested information from the previous
+    runs that keeps growing each new run/chunk.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the simulation/compilation information
+    """
+    for prev_object in getattr(config, "prev_objects", []):
+        del config[prev_object]
 
 
 def _show_simulation_info(config):

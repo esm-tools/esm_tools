@@ -21,10 +21,13 @@ general:
         - 'v3.1'
         - 'v3.1.1'
         - 'v3.1.2'
+        - 'v3.1.3'
         - 'v3.2'
+        - 'v3.2.1'
         - 'v3.3'
         - 'master'
         - 'frontiers-xios'
+        
         choose_version:
           v3.0:
             major_version: v3.0
@@ -32,6 +35,7 @@ general:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
             add_further_reading:
             - oifs/oifs43.env.yaml
+            oasis_with_yac: False
           v3.1:
             major_version: v3.1
             couplings:
@@ -41,6 +45,7 @@ general:
             add_further_reading:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.1.1:
             major_version: v3.1
             couplings:
@@ -50,6 +55,7 @@ general:
             add_further_reading:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.1.2:
             major_version: v3.1
             couplings:
@@ -59,15 +65,34 @@ general:
             add_further_reading:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
+            oasis_with_yac: False
+          v3.1.3:
+            major_version: v3.1
+            couplings:
+            - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.3+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: False
           v3.2:
             major_version: v3.2
             couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5
+            - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
+          v3.2.1:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: True
           v3.3:
             major_version: v3.3
             couplings:
@@ -81,6 +106,7 @@ general:
             add_add_environment_changes:
                 levante:
                     iolibraries: system_gnu_libs
+            oasis_with_yac: False
           master:
             major_version: master
             couplings:
@@ -90,6 +116,7 @@ general:
             add_further_reading:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
+            oasis_with_yac: False
           frontiers-xios:
             major_version: frontiers-xios
             couplings:
@@ -99,6 +126,7 @@ general:
             add_further_reading:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
+            oasis_with_yac: False
 
         version: "v3.2"
         scenario: "piControl"
@@ -378,8 +406,13 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
-
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
+        choose_general.oasis_with_yac:
+            True:
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+            False:
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+            "*":
+                comp_command: echo "please define oasis_with_yac boolean in awicm3.yaml"
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -610,11 +643,18 @@ rnfmap:
         grids:
                 rnfa:
                         name: RnfA
+                        nx: 512
+                        ny: 256
+                        oasis_grid_type: "LR"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
                 rnfo:
                         name: RnfO
                         nx: 512
                         ny: 256
                         oasis_grid_type: "LR"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
         input_files:
                 runoff_maps: runoff_maps
 
@@ -864,6 +904,67 @@ oasis3mct:
                                 conserv:
                                         method: global
                                         algorithm: opt
+                oyac_1stcon_nnn_stocha:
+                        oyac: true
+                        time_transformation: stocha
+                        remapping:
+                                conserv:
+                                        order: first
+                                        intersect_norm: fracarea
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+                oyac_1stcon_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                conserv:
+                                        order: first
+                                        intersect_norm: fracarea
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+                oyac_gauswgt_c:
+                        oyac: true
+                        time_transformation: conserv
+                        remapping:
+                                nnn:
+                                        weighting: gauss
+                                        nb_of_neighbours: 9
+                oyac_avg_c:
+                        oyac: true
+                        time_transformation: conserv
+                        remapping:
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 9
+                oyac_gauswgt_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                nnn:
+                                        weighting: gauss
+                                        nb_of_neighbours: 9
+                oyac_hcsbb_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                hcsbb:
+                                        lorem: ipsum
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+                oyac_spmap_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                spmap:
+                                        weighting: dist
+                                        spread_dist: 3
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+
 
         input_files: {}
 

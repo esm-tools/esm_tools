@@ -4,12 +4,14 @@ from sqlalchemy import (Column, DateTime, Integer, Sequence, String,
                         create_engine)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
+from esm_database import location_database
+from loguru import logger
+
 # database_file = os.path.dirname(os.path.abspath(__file__)) + "/../database/esm_runscripts.db"
 database_file = os.path.expanduser("~") + "/.esm_tools/esm_runscripts.db"
 if not os.path.isdir(os.path.expanduser("~") + "/.esm_tools"):
     os.mkdir(os.path.expanduser("~") + "/.esm_tools")
 
-from esm_database import location_database
 
 engine = create_engine("sqlite:///" + database_file, echo=False)
 base = declarative_base()
@@ -34,9 +36,9 @@ class experiment(base):
 
     @staticmethod
     def topline():
-        print()
-        print("EXPERIMENTS:")
-        print(
+        logger.info("")
+        logger.info("EXPERIMENTS:")
+        logger.info(
             "{0: >4}".format("ID")
             + "   "
             + "{0: >17}".format("timestamp")
@@ -56,20 +58,22 @@ class experiment(base):
             + "{0: >7}".format("GB")
             + "   "
         )
-        print("{0: >126}".format("(this run)   (total)"))
+        logger.info("{0: >126}".format("(this run)   (total)"))
 
     @staticmethod
     def nicer_output(run):
-        print("ID: " + str(run.id) + ", EXPID: " + str(run.expid) + ":")
-        print("     Timestamp: " + run.timestamp.strftime("%x %X"))
-        print("     Runtime: " + run.runtime)
-        print("     Setup: " + run.setup_name)
-        print("     Model Run Time: " + str(run.run_timestamp))
-        print("     Outcome of run: " + run.outcome)
-        print("     Used CPUh of this run: " + str(run.cpuh))
-        print("     Used disk space of the whole experiment: " + str(run.gb) + " GB")
-        print("     Results in folder: " + run.exp_folder)
-        print("     Archived results in folder: " + run.archive_folder)
+        logger.info("ID: " + str(run.id) + ", EXPID: " + str(run.expid) + ":")
+        logger.info("     Timestamp: " + run.timestamp.strftime("%x %X"))
+        logger.info("     Runtime: " + run.runtime)
+        logger.info("     Setup: " + run.setup_name)
+        logger.info("     Model Run Time: " + str(run.run_timestamp))
+        logger.info("     Outcome of run: " + run.outcome)
+        logger.info("     Used CPUh of this run: " + str(run.cpuh))
+        logger.info(
+            "     Used disk space of the whole experiment: " + str(run.gb) + " GB"
+        )
+        logger.info("     Results in folder: " + run.exp_folder)
+        logger.info("     Archived results in folder: " + run.archive_folder)
 
     def __repr__(self):
         setup = (self.setup_name[:10]) if len(self.setup_name) > 10 else self.setup_name

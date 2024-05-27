@@ -26,7 +26,7 @@ general:
         - 'v3.2.1'
         - 'master'
         - 'frontiers-xios'
-        
+
         choose_version:
           v3.0:
             major_version: v3.0
@@ -394,9 +394,13 @@ fesom:
                 comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
                 comp_command: "missing"
+
+        missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
+        choose_missing_owy:
+            True:
                 error:
                     "Missing variable":
-                        message: "Please define ``oasis_with_yac`` boolean in ``awicm3.yaml``"
+                        message: "Please define ``general.oasis_with_yac`` boolean in ``awicm3.yaml``"
                         ask_user_to_continue: False
 
         opbnd_dir: ""

@@ -393,7 +393,11 @@ fesom:
             False:
                 comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
-                comp_command: echo "please define oasis_with_yac boolean in awicm3.yaml"
+                comp_command: "missing"
+                error:
+                    "Missing variable":
+                        message: "Please define ``oasis_with_yac`` boolean in ``awicm3.yaml``"
+                        ask_user_to_continue: False
 
         opbnd_dir: ""
         tide_forcing_dir: ""

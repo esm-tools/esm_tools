@@ -17,7 +17,6 @@ contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
 
 # defaults
 version: '2.0'
-git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
 use_ciso: false
 use_medusa: false
 scenario: "PI-CTRL"
@@ -29,13 +28,16 @@ available_versions:
 
 choose_version:
     '2.0':
-        comp_strategy: "lib"
+        git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
         branch: oxygen
         destination: recom
-        # additional recom output in ocean-only fesom1+recom2 setup
-        # (see default recom output at the bottom of this file)
-        # 1. variable names are case sensitive
-        # 2. please keep alphabetic order
+        comp_strategy: "lib"
+        out_strategy: "fesom1"
+        # - additional recom output in ocean-only fesom1+recom2 setup
+        # - necessary for fesom1 output schedular (env variable `AWI_FESOM_YAML`)
+        # - see default recom output at the bottom of this file
+        # - variable names are case sensitive
+        # - please keep alphabetic order
         add_yearly_outputs:
             - AGGdia3d
             - AGGphy3d
@@ -83,31 +85,32 @@ choose_version:
             - diags3d19
             - diags3d20
     2.0-awicm:
-        comp_strategy: "lib"
+        git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
         branch: oxygen
         destination: recom
+        comp_strategy: "lib"
+        out_strategy: "fesom1"
     "3.0":
         comp_strategy: "flag"
-        pzd_case: "2p1z1d" # 2p1z1d, 2p3z2d, 3p1z1d, 3p3z2d
-        # todo(cd): output
+        pzd_case: "3p3z2d" # 2p1z1d, 3p1z1d, 2p3z2d, 3p3z2d
+        out_strategy: "fesom2" # output is handled via fesom2 namelist.io(.recom); see respective fesom and awicm yamls
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 data_path: ""
-time_step: 1800 # todo: recom gets its time step always from fesom. its misleading to define it here. should be removed
+time_step: 1800 # todo(cd): recom gets its time step always from fesom. its misleading to define it here. should be removed
 #chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds ))
 
 choose_comp_strategy:
     "lib": # recom2 is compiled individually and added as library to fesom (similarly as a binary)
         clean_command: ${defaults.clean_command}
         comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
-        install_libs:
-          - build/librecom.a
+        install_libs: build/librecom.a
         namelist_dir: "${general.model_dir}/recom/"
     "flag": # recom3 is part of fesom2; compiler flag needs to be added to fesom comp cmd
         # necessary compiling flag is defined in respective setup yaml
-        namelist_dir: "${fesom.model_dir}/config/"
+        namelist_dir: "${fesom.model_dir}/config/" # todo(cd): add pzd case
 # keeping for reference:
 #fesom2_standalone: "$((
 #        '${general.setup_name}' == 'fesom' and
@@ -262,87 +265,92 @@ choose_computer.name:
         levante:
                 data_path: "/work/ba1103/a270094/MarESys/forcing/CORE2mesh/"
 
-# default recom output, common to all versions
-# 1. variable names are case sensitive
-# 2. please keep alphabetic order
-yearly_outputs:
-    - alphaCO2
-    - benC
-    - benCalc
-    - benN
-    - benSi
-    - denb
-    - GNAd
-    - GNAn
-    - Hp
-    - Kw
-    - NNAd
-    - NNAn
-    - rDIN
-    - rDOC
-    - rDON
-    - rDSi
-monthly_outputs:
-    - aCO2
-    - aFe
-    - aN
-    - bgc01
-    - bgc02
-    - bgc03
-    - bgc04
-    - bgc05
-    - bgc06
-    - bgc07
-    - bgc08
-    - bgc09
-    - bgc10
-    - bgc11
-    - bgc12
-    - bgc13
-    - bgc14
-    - bgc15
-    - bgc16
-    - bgc17
-    - bgc18
-    - bgc19
-    - bgc20
-    - bgc21
-    - bgc22
-    - CO2f
-    - CO2y
-    - diags3d01
-    - diags3d02
-    - dpCO2s
-    - GPPd
-    - GPPn
-    - NPPd
-    - NPPn
-    - O2f
-    - PAR
-    - pCO2s
-    - slp
-    - virtual_alk
-    - virtual_dfe
-    - virtual_dic
-    - virtual_din
-    - virtual_dsi
-    - virtual_oxy
-    - w10w
-daily_outputs: []
-12_step_outputs: []
-
-outdata_files:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT
-        "[[daily_outputs-->OUTPUT]]": OUTPUT
-outdata_in_work:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-outdata_sources:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+choose_out_strategy:
+    "fesom1":
+        # - default recom output, common to all setups with fesom1
+        # - necessary for fesom1 output schedular (env variable `AWI_FESOM_YAML`)
+        # - variable names are case sensitive
+        # - please keep alphabetic order
+        yearly_outputs:
+            - alphaCO2
+            - benC
+            - benCalc
+            - benN
+            - benSi
+            - denb
+            - GNAd
+            - GNAn
+            - Hp
+            - Kw
+            - NNAd
+            - NNAn
+            - rDIN
+            - rDOC
+            - rDON
+            - rDSi
+        monthly_outputs:
+            - aCO2
+            - aFe
+            - aN
+            - bgc01
+            - bgc02
+            - bgc03
+            - bgc04
+            - bgc05
+            - bgc06
+            - bgc07
+            - bgc08
+            - bgc09
+            - bgc10
+            - bgc11
+            - bgc12
+            - bgc13
+            - bgc14
+            - bgc15
+            - bgc16
+            - bgc17
+            - bgc18
+            - bgc19
+            - bgc20
+            - bgc21
+            - bgc22
+            - CO2f
+            - CO2y
+            - diags3d01
+            - diags3d02
+            - dpCO2s
+            - GPPd
+            - GPPn
+            - NPPd
+            - NPPn
+            - O2f
+            - PAR
+            - pCO2s
+            - slp
+            - virtual_alk
+            - virtual_dfe
+            - virtual_dic
+            - virtual_din
+            - virtual_dsi
+            - virtual_oxy
+            - w10w
+        daily_outputs: []
+        12_step_outputs: []
+        outdata_files:
+                "[[yearly_outputs-->OUTPUT]]": OUTPUT
+                "[[monthly_outputs-->OUTPUT]]": OUTPUT
+                "[[daily_outputs-->OUTPUT]]": OUTPUT
+        outdata_in_work:
+                "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        outdata_sources:
+                "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+    "fesom2":
+        # output is handled via fesom2 namelist.io(.recom); see respective fesom and awicm yamls
+        not_used: ""
 
 check_error:
         "ERROR: CANNOT READ runoff FILE CORRECTLY":

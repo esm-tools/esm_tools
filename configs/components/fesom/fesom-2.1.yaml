@@ -52,7 +52,14 @@ choose_version:
     include_models: ["recom"]
     fesom_Dflags: "-DRECOM_COUPLED=ON"
     mpi_num_groups: 1
-
+  2.1-recom-3.0:
+    git-repository: "https://github.com/mseifert93/fesom2.git"
+    branch: "fesom2_final_4versions"
+    destination: "fesom-2.1-recom-3.0"
+    with_recom: true
+    include_models: ["recom"]
+    #fesom_Dflags: "-DRECOM_COUPLED=ON" # not necessary since fesom2 branch with recom3 already has `RECOM_COUPLED ON`
+    mpi_num_groups: 1
 
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
@@ -624,6 +631,30 @@ choose_fesom.with_recom:
                 False:
                         namelist_ciso_sufix: ""
                         num_tracers: 24
+
+        # compiling options of recom-3.0
+        choose_fesom.version:
+            "2.1-recom-3.0":
+                add_further_reading: recom.yaml
+                recom:
+                    version: "3.0"
+                #sed_command: "sed -i '/RECOM_COUPLED/s/OFF/ON/g' ${destination}/CMakeLists.txt" # not necessary since fesom2 branch with recom3 already has `RECOM_COUPLED ON`
+                sed_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt" # comment out all lines with pattern " PRIVATE __recom "
+                choose_recom.pzd_case:
+                    "2p1z1d":
+                        sed_command: "${sed_command} && sed -i '/ PRIVATE __recom USE_PRECISION=2)/s/^#//g' ${destination}/src/CMakeLists.txt"
+                    "3p1z1d":
+                        sed_command: "${sed_command} && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos)/s/^#//g' ${destination}/src/CMakeLists.txt"
+                    "2p3z2d":
+                        sed_command: "${sed_command} && sed -i '/ PRIVATE __recom USE_PRECISION=2 __3Zoo2Det)/s/^#//g' ${destination}/src/CMakeLists.txt"
+                    "3p3z2d":
+                        sed_command: "${sed_command} && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos __3Zoo2Det)/s/^#//g' ${destination}/src/CMakeLists.txt"
+                        #"*":
+                        #add_error:
+                        #    "`recom.pzd_case` (number of _p_hytoplankton, _z_ooplankton and _d_etritus groups) not defined"
+                        #        message:
+                        #            "`recom.pzd_case` (number of _p_hytoplankton, _z_ooplankton and _d_etritus groups) not defined"
+                comp_command: "${sed_command} && ${comp_command}"
 
 grids:
         feom:

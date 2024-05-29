@@ -340,6 +340,90 @@ oifs:
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_${fesom.resolution}"
 
+        # namelist changes when using with recom
+        choose_general.with_recom:
+            True:
+                add_namelist_changes:
+                    fort.4:
+                        NAMAWICFG:
+                            ECE_AWI_CPL_RECOM: ".true."
+                        NAMGFL:
+                            # todo(cd): mass fixer (MF) choice/parameter is active discussion, see e.g.:
+                            # - https://confluence.ecmwf.int/display/OIFS/How+to+control+mass+conservation+in+OpenIFS
+                            # - https://confluence.ecmwf.int/pages/viewpage.action?pageId=143063497
+                            # - https://confluence.ecmwf.int/pages/viewpage.action?pageId=283545358
+                            LTRCMFBC: ".true." # Activate Bermejo-Conde (BC) MF
+                            LTRCMFMG: ".false." # Deactivate McGregor's (MG) MF; todo(cd): this does not work when set to true in oifs.yaml
+                            #LTRCMFMG: "remove_from_namelist" todo(cd): this does not work when set to true in oifs.yaml
+
+                            # BC fixer type - replaces and enhances NOPTMFIX parameter used in older cycles
+                            # Applies when LTRCMFBC=true
+                            # 1: standard qm BC MF
+                            # 2: non-qm MF
+                            # 3: multiplicative BC MF
+                            # 4: multiplicative non-qm MF
+                            NOPTMFBC: "1"
+
+                            # Specifies BC MF beta parameter to be applied on xx tracer. This parameter is used
+                            # to compute the correction weight defined wij=(cub-lin)**beta, if cub>lin where cub, lin
+                            # interpolated xx field to the departure point using cubic and linear respectively.
+                            # Setting Yxx_NL%BETAMFBC<0 BC switches off BC MF for xx and proportional MF will be
+                            # used instead.
+                            # Applies when LTRCMFBC=true
+                            YS_NL%BETAMFBC: "-1.0" # snow; disable BC MF on cloud fields
+                            YR_NL%BETAMFBC: "-1.0" # rain
+                            YI_NL%BETAMFBC: "-1.0" # ice
+                            YL_NL%BETAMFBC: "-1.0" # liquid water
+
+                            # Enforce global mass conservation on total air mass during SL advection.
+                            # Mostly needed for CO2, CH4 in MACC forecasts
+                            # Applies when any MF=true
+                            # from src/ifs/module/yom_ygfl.F90: Adjust pressure to conserve dry mass in mass fixer calculations
+                            LTRCMFIX_PS: ".true."
+
+                            # Applies when any MF=true or NMFDIAGLEV>0
+                            # 0: Use simple finite difference pressure discretization when computing vertical
+                            #    mass integral for tracer (total column content) consistent with physics
+                            # 1: Use finite element discretization consistent with dynamics
+                            NOPTVFE: "1"
+
+                            # MF output level - diagnostic information printed in output file
+                            # Applies in any case (independently of using MF - useful flag for diagnosing mass
+                            # conservation performance of a forecast)
+                            # 0: no output
+                            # 1: global mass diagnostics (very useful for checking if mass fixer has been working as
+                            #    expected. Tracer global mass printed twice, before and after the advection and should
+                            #    be the same unless ... LTRCMFIX_PS=true - see note in next table for LGPMASCOR)
+                            # 2: global mass diagnostics + MF increment diagnostics
+                            NMFDIAGLEV: "2"
+
+                            # todo(cd): following is wip
+                            NGHG: 1
+                            YGHG_NL(1)%CNAME: "CO2"
+                            YGHG_NL(1)%IGRBCODE: 210061
+                            YGHG_NL(1)%LADV5: ".true."
+                            YGHG_NL(1)%LMASSFIX: ".true."
+                            YGHG_NL(1)%LNEGFIX: ".false."
+                            YGHG_NL(1)%LQM: ".false."
+                            YGHG_NL(1)%LQM3D: ".true."
+                            YGHG_NL(1)%BETAMFBC: "2"
+
+                        NAMCOMPO: # this chapter needs to be added `IF (NCHEM+NGHG+NAERO > 0)`
+                            LCO2SFC: ".true." # co2 surface fluxes: air-sea (YCO2O), biosphere (YCO2B), anthropogene (YCO2A), and fire (YCO2F, if `LFIRE=true`)
+                            LFIRE: ".true."
+                #remove_namelist_changes.fort.4.NAMGFL: todo(cd): this does not work when set to true in oifs.yaml
+                #   - LTRCMFMG
+                add_coupling_fields:
+                    A_psurf:
+                        grid: atma
+                    A_w10:
+                        grid: atma
+                    A_co2atm:
+                        grid: atma
+                    A_fco2_oce:
+                        grid: atma
+            "*":
+                not_used: ""
 
         # Postprocessing
         choose_general.postprocessing:
@@ -374,7 +458,7 @@ fesom:
                 TL159_CORE2:
                         nproc: 72
 
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${recom_Dflag}..; make install -j `nproc --all`
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${recom_Dflag} ..; make install -j `nproc --all`
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -483,14 +567,6 @@ fesom:
                                 namelist.oce:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
-        
-        choose_general.with_recom:
-            True:
-                namelist_dir: "${model_dir}/config/case_${recom.pzd_case}"
-                add_config_sources:
-                    io: "${namelist_dir}/namelist.io.recom"
-                add_config_in_work:
-                    io: "namelist.io.recom"
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (from v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
         remove_forcing_files:
@@ -502,6 +578,7 @@ fesom:
                 - ForcingDataPath
                 - OpbndPath
                 - TideForcingPath
+
         # Remove all namelist changes for namelist.forcing defined in fesom-2.0.yaml
         remove_namelist_changes:
                 - namelist.forcing
@@ -523,6 +600,45 @@ fesom:
                 "[[awicm3_fields-->FIELD]]":
                         grid: feom
 
+        choose_general.with_recom:
+            True:
+                namelist_dir: "${model_dir}/config/case_${recom.pzd_case}"
+                add_config_files:
+                    io_recom: io_recom
+                add_config_sources:
+                    io_recom: "${namelist_dir}/namelist.io.recom"
+                add_config_in_work:
+                    io_recom: "namelist.io.recom"
+                add_restart_in_files:
+                    bio_restart: bio_restart
+                    par_bio_restart: par_bio_restart
+                add_restart_in_in_work:
+                    bio_restart: fesom.${parent_date!syear}.bio.restart.nc
+                    par_bio_restart: fesom.${parent_date!syear}.bio.restart/*.nc
+                add_restart_in_sources:
+                    bio_restart: fesom.${parent_date!syear}.bio.restart.nc
+                    par_bio_restart: fesom.${parent_date!syear}.bio.restart/*.nc
+                add_restart_out_files:
+                    bio_restart: bio_restart
+                    par_bio_restart: par_bio_restart
+                add_restart_out_in_work:
+                    bio_restart: fesom.${end_date!syear}.bio.restart.nc
+                    par_bio_restart: fesom.${end_date!syear}.bio.restart/*.nc
+                add_restart_out_sources:
+                    bio_restart: fesom.${end_date!syear}.bio.restart.nc
+                    par_bio_restart: fesom.${end_date!syear}.bio.restart/*.nc
+                add_coupling_fields:
+                    psurf_oce:
+                        grid: feom
+                    w10_oce:
+                        grid: feom
+                    co2atm_oce:
+                        grid: feom
+                    fco2_feom:
+                        grid: feom
+            "*":
+                not_used: ""
+
 # It is possible for the esm_tools to modify the fesom io namelist, in case you don't want to make your own copy and edit that.
 # By default this option is turned off, and thus the follwing two lines are commented out.
 # further_reading:
@@ -537,6 +653,15 @@ recom:
                 recom: "${namelist_dir}/namelist.recom"
             add_config_in_work:
                 recom: "namelist.recom"
+            remove_namelist_changes.namelist.recom.pavariables:
+                - constant_CO2
+                - firstyearoffesomcycle
+                - lastyearoffesomcycle
+                - numofCO2cycles
+                - currentCO2cycle
+                - REcoM_PI
+            remove_namelist_changes.namelist.recom.paco2_flux_param:
+                - CO2_for_spinup
         "*":
             not_used: ""
 
@@ -693,6 +818,7 @@ oasis3mct:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+
                 'v3.2':
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
@@ -746,6 +872,15 @@ oasis3mct:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
+        choose_general.with_recom:
+            true:
+                add_coupling_target_fields:
+                    add_rstas.nc: # a2o
+                        - 'psurf_oce:w10_oce:co2atm_oce <--gauswgt_gss-- A_psurf:A_w10:A_co2atm'
+                    add_rstos.nc: # o2a
+                        - 'A_fco2_oce <--gauswgt_gss-- fco2_feom'
+            "*":
+                not_used: ""
 
         coupling_directions:
                 'atma->feom':

@@ -43,8 +43,6 @@ choose_version:
     branch: using_esm-interface_yac
   2.0-paleodyn:
     branch: paleodyn_frozen
-  2.0-recom:
-    branch: fesom2_3zoo_ballast
 
 restart_rate: "12"
 restart_unit: "m"

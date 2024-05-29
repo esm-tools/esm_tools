@@ -257,7 +257,7 @@ class oasis:
                     mapname = transform.get("mapname", None)
                     if not mapname:
                         logger.error(
-                            "mapname needs to be defined for transformation MAPPING"
+                            "mapname needs to be defined for transformation MAPPING",
                         )
                         sys.exit(2)
                     maploc = transform.get("map_regrid_on", "")
@@ -278,7 +278,7 @@ class oasis:
                     search_bin = transform.get("search_bin", None)
                     if not search_bin:
                         logger.error(
-                            "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF"
+                            "search_bin (LATITUDE or LATLON) needs to be defined for transformations DISTWGT, GAUSWGT, BILINEAR, BICUBIC, LOCCUNIF",
                         )
                         sys.exit(2)
                     bins = transform.get("nb_of_search_bins", "1")
@@ -294,34 +294,30 @@ class oasis:
                     if trans.lower() in ["distwgt", "gauswgt", "loccunif"]:
                         nb_of_neighbours = transform.get("nb_of_neighbours", None)
                         if not nb_of_neighbours:
-                            print(
+                            logger.error(
                                 "nb_of_neighbours needs to be defined for transformations DISTWGT, GAUSWGT and LOCCUNIF",
-                                flush=True,
                             )
                             sys.exit(2)
                         detail_line += " " + str(nb_of_neighbours)
                     if trans.lower() == "gauswgt":
                         weight = transform.get("weight", None)
                         if not weight:
-                            print(
+                            logger.error(
                                 "weight needs to be defined for transformation GAUSWGT",
-                                flush=True,
                             )
                             sys.exit(2)
                         detail_line += " " + str(weight)
                     if trans.lower() == "conserv":
                         normalization = transform.get("normalization", None)
                         if not normalization:
-                            print(
+                            logger.error(
                                 "normalization (FRACAREA, DESTAREA or FRACNNEI) needs to be defined for transformations CONSERV",
-                                flush=True,
                             )
                             sys.exit(2)
                         order = transform.get("order", None)
                         if not order:
-                            print(
+                            logger.error(
                                 "order (FIRST or SECOND) needs to be defined for transformation CONSERV",
-                                flush=True,
                             )
                             sys.exit(2)
                         detail_line += " " + normalization.upper() + " " + order.upper()
@@ -632,7 +628,7 @@ class oasis:
                 logger.info(
                     "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w",
                 )
-                
+
                 lasttimestep = (
                     subprocess.check_output(
                         "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w",

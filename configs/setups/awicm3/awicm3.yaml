@@ -27,7 +27,7 @@ general:
         - 'v3.2.2'
         - 'master'
         - 'frontiers-xios'
-        
+
         choose_version:
           v3.0:
             major_version: v3.0
@@ -403,7 +403,15 @@ fesom:
             False:
                 comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
-                comp_command: echo "please define oasis_with_yac boolean in awicm3.yaml"
+                comp_command: "missing"
+
+        missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
+        choose_missing_owy:
+            True:
+                error:
+                    "Missing variable":
+                        message: "Please define ``general.oasis_with_yac`` boolean in ``awicm3.yaml``"
+                        ask_user_to_continue: False
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -708,6 +716,7 @@ oasis3mct:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.2':
+                        version: 6.0-YAC
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'

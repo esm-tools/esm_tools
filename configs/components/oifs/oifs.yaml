@@ -45,7 +45,7 @@ input_dir: ${pool_dir}
 rtables_dir: ${input_dir}/../rtables/
 vtables_dir: ${input_dir}/../vtables/
 clim_dir: ${input_dir}/../
-icmcl_dir: ${input_dir}
+icmcl_dir: ${input_dir}/${resolution}${levels}/
 icmcl_file: ICMCL${prepifs_expid}INIT
 forcing_dir: ${input_dir}/../${version}/ifsdata/
 ifsdata_dir: ${input_dir}/../${version}/ifsdata/
@@ -273,7 +273,7 @@ choose_version:
     major_version: 43r3
   48r1:
     branch: 'dev/integrate-with-ece4'
-    comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.DP install/bin/oifs"
+    comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-oifs-xios --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.DP install/bin/oifs"
     clean_command: rm -rf build
     git-repository: https://git.smhi.se/uwe.fladrich/oifs48r1
     install_bins: install/bin/oifs

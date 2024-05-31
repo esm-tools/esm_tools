@@ -34,6 +34,7 @@ general:
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
             oasis_with_yac: False
+            xios_interp_order: 2
           v3.1:
             major_version: v3.1
             couplings:
@@ -43,6 +44,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: False
+            xios_interp_order: 2
           v3.1.1:
             major_version: v3.1
             couplings:
@@ -52,6 +54,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: False
+            xios_interp_order: 2
           v3.1.2:
             major_version: v3.1
             couplings:
@@ -61,6 +64,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: False
+            xios_interp_order: 2
           v3.1.3:
             major_version: v3.1
             couplings:
@@ -70,6 +74,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: False
+            xios_interp_order: 2
           v3.2:
             major_version: v3.2
             couplings:
@@ -79,6 +84,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: False
+            xios_interp_order: 2
           v3.2.1:
             major_version: v3.2
             couplings:
@@ -88,6 +94,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: True
+            xios_interp_order: 2
           v3.2.2:
             major_version: v3.2
             couplings:
@@ -97,6 +104,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: True
+            xios_interp_order: 1
           master:
             major_version: master
             couplings:
@@ -106,6 +114,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: False
+            xios_interp_order: 2
           frontiers-xios:
             major_version: frontiers-xios
             couplings:
@@ -115,6 +124,7 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: False
+            xios_interp_order: 2
 
         version: "v3.2"
         scenario: "piControl"
@@ -589,7 +599,7 @@ xios:
                                 - file_def
                                 - field_def
                 "*":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
+                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/order_${xios_interp_order}/${general.resolution}"
 
 
 

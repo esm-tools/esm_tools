@@ -198,6 +198,7 @@ oifs:
         rtables_dir: ${input_dir}/rtables/
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
+
         choose_general.major_version:
                 "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
@@ -245,6 +246,7 @@ oifs:
                 "v3.3":
                         version: "48r1"
                         with_xios: True
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.DP install/bin/oifs"
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.3
                         mip: "cmip6"
                         wam: true

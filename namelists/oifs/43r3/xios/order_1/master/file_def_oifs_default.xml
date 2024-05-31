@@ -1,144 +1,316 @@
+<?xml version="1.0"?>
+
 <file_definition>
+
+	<!-- names and long_names according to
+             ECMWF Parameter database https://apps.ecmwf.int/codes/grib/param-db -->
+
+    <file_group
+        type="multiple_file"
+        format="netcdf4"
+        par_access="collective"
+        name="atm"
+        compression_level="1"
+        split_freq="1y">
+
+        <file
+            enabled="false"
+	          timeseries="only"
+	          output_freq="6h"
+            name_suffix="_6h"
+            description="ECE4/OIFS 6hourly surface fields">
+
+            <field_group freq_op="6h" operation="instant">
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+                <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+            </field_group>
+        </file>
+
+        <file
+            enabled="false"
+	          timeseries="only"
+	          output_freq="1d"
+            name_suffix="_1d"
+            description="ECE4/OIFS daily surface fields">
+
+            <field_group freq_op="6h" operation="average">
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+                <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+            </field_group>
+        </file>
+
+        <file
+            enabled="false"
+	          timeseries="only"
+	          output_freq="1mo"
+            name_suffix="_1m"
+            description="ECE4/OIFS monthly surface fields">
+
+            <field_group freq_op="6h" operation="average">
+        <!--    <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>  -->
+        <!--    <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>  -->
+        <!--    <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>  -->
+        <!--    <field field_ref="tvh" name="tvh" long_name="Type of high vegetation"/>  -->
+                <field field_ref="ci" name="ci" long_name="Sea ice area fraction"/>
+                <field field_ref="asn" name="asn" long_name="Snow albedo"/>
+                <field field_ref="rsn" name="rsn" long_name="Snow density"/>
+                <field field_ref="sstk" name="sst" long_name="Sea surface temperature"/>
+                <field field_ref="istl1" name="istl1" long_name="Ice temperature layer 1"/>
+                <field field_ref="swvl1" name="swvl1" long_name="Volumetric soil water layer 1"/>
+                <field field_ref="swvl2" name="swvl2" long_name="Volumetric soil water layer 2"/>
+                <field field_ref="swvl3" name="swvl3" long_name="Volumetric soil water layer 3"/>
+                <field field_ref="swvl4" name="swvl4" long_name="Volumetric soil water layer 4"/>
+        <!--    <field field_ref="lai_lv" name="lai_lv" long_name="Leaf area index, low vegetation"/>  -->
+        <!--    <field field_ref="lai_hv" name="lai_hv" long_name="Leaf area index, high vegetation"/>  -->
+                <field field_ref="tclw" name="tclw" long_name="Total column cloud liquid water"/>
+                <field field_ref="tciw" name="tciw" long_name="Total column cloud ice water"/>
+                <field field_ref="tcw" name="tcw" long_name="Total column water"/>
+                <field field_ref="tcwv" name="tcwv" long_name="Total column water vapour"/>
+                <field field_ref="stl1" name="stl1" long_name="Soil temperature level 1"/>
+                <field field_ref="sd" name="sd" long_name="Snow depth"/>
+                <field field_ref="lsp" name="lsp" long_name="Large-scale precipitation"/>
+                <field field_ref="cp" name="cp" long_name="Convective precipitation"/>
+                <field field_ref="sf" name="sf" long_name="Snowfall"/>
+                <field field_ref="sshf" name="sshf" long_name="Surface sensible heat flux"/>
+                <field field_ref="slhf" name="slhf" long_name="Surface latent heat flux"/>
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+                <field field_ref="ssrd" name="ssrd" long_name="Surface solar radiation downwards"/>
+                <field field_ref="stl2" name="stl2" long_name="Soil temperature level 2"/>
+                <field field_ref="strd" name="strd" long_name="Surface thermal radiation downwards"/>
+                <field field_ref="ssr" name="ssr" long_name="Surface net solar radiation"/>
+                <field field_ref="str" name="str" long_name="Surface net thermal radiation"/>
+                <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+                <field field_ref="ttr" name="ttr" long_name="Top net thermal radiation"/>
+                <field field_ref="ewss" name="ewss" long_name="Eastward turbulent surface stress"/>
+                <field field_ref="nsss" name="nsss" long_name="Northward turbulent surface stress"/>
+                <field field_ref="e" name="e" long_name="Evaporation"/>
+                <field field_ref="stl3" name="stl3" long_name="Soil temperature level 3"/>
+                <field field_ref="lcc" name="lcc" long_name="Low cloud cover"/>
+                <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/>
+                <field field_ref="hcc" name="hcc" long_name="High cloud cover"/>
+                <field field_ref="mx2t" name="mx2t" long_name="Maximum temperature at 2 metres since previous post-processing"/>
+                <field field_ref="mn2t" name="mn2t" long_name="Minimum temperature at 2 metres since previous post-processing"/>
+                <field field_ref="ro" name="ro" long_name="Runoff"/>
+                <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+                <field field_ref="ttrc" name="ttrc" long_name="Top net thermal radiation, clear sky"/>
+                <field field_ref="ssrc" name="ssrc" long_name="Surface net solar radiation, clear sky"/>
+                <field field_ref="strc" name="strc" long_name="Surface net thermal radiation, clear sky"/>
+                <field field_ref="tisr" name="tisr" long_name="TOA incident solar radiation"/>
+                <field field_ref="skt" name="skt" long_name="Skin temperature"/>
+                <field field_ref="stl4" name="stl4" long_name="Soil temperature level 4"/>
+                <field field_ref="tsn" name="tsn" long_name="Temperature of snow layer"/>
+                <field field_ref="fal" name="fal" long_name="Forecast albedo"/>
+            </field_group>
+        </file>
+
+        <!-- Example: model level output -->
+        <file
+            enabled="false"
+	          timeseries="only"
+	          output_freq="6h"
+            name_suffix="_6h_ml"
+            description="ECE4/OIFS 6hourly model level fields">
+
+            <field_group freq_op="6h" operation="instant">
+                <field field_ref="pres" name="pres"/>
+                <field field_ref="t" name="t"/>
+                <field field_ref="u" name="u"/>
+                <field field_ref="v" name="v"/>
+                <field field_ref="q" name="q"/>
+                <field field_ref="clwc" name="clwc"/>
+                <field field_ref="ciwc" name="ciwc"/>
+                <field field_ref="cc" name="cc"/>
+            </field_group>
+        </file>
+
+        <!-- Example: pressure level output -->
+        <file
+            enabled="false"
+	          timeseries="only"
+	          output_freq="6h"
+            name_suffix="_6h_pl"
+            description="ECE4/OIFS 6hourly pressure level fields">
+
+            <field_group freq_op="6h" operation="instant">
+                <field field_ref="z_pl" name="z"/>
+                <field field_ref="t_pl" name="t"/>
+                <field field_ref="u_pl" name="u"/>
+                <field field_ref="v_pl" name="v"/>
+                <field field_ref="q_pl" name="q"/>
+                <field field_ref="w_pl" name="w"/>
+                <field field_ref="vo_pl" name="vo"/>
+                <field field_ref="r_pl" name="r"/>
+            </field_group>
+        </file>
+
+    </file_group>
 
     <file_group
         type="multiple_file"
         format="netcdf4"
         par_access="collective"
         name="atm_remapped"
-        split_freq="1y"
         compression_level="1"
-    >
-        <!-- Monthly 2d fields -->
-        <file
-            timeseries="only"
-            enabled="true"
-            output_freq="1mo"
-            name_suffix="_1m"
-            description="OIFS monthly surface fields"
-        >
-            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
-                <!-- CMIP6 compliant output fields -->
-                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
-                <field field_ref="air_temperature__tasmin"/>  <!-- Daily Minimum Near-Surface Air Temperature [K] -->
-                <field field_ref="air_temperature__tasmax"/>  <!-- Daily Maximum Near-Surface Air Temperature [K] -->
-                <field field_ref="dew_point_temperature__tdps"/>  <!-- 2m Dewpoint Temperature [K] -->
-                <field field_ref="surface_temperature__ts"/>  <!-- Surface Temperature [K] -->
-                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- Sea Level Pressure [Pa] -->
-                <field field_ref="surface_air_pressure__ps"/>  <!-- Surface Air Pressure [Pa] -->
-                <field field_ref="toa_incoming_shortwave_flux__rsdt"/>  <!-- TOA Incident Shortwave Radiation [W m-2] -->
-                <field field_ref="toa_outgoing_shortwave_flux__rsut"/>  <!-- TOA Outgoing Shortwave Radiation [W m-2] -->
-                <field field_ref="toa_outgoing_longwave_flux__rlut"/>  <!-- TOA Outgoing Longwave Radiation [W m-2] -->
-                <field field_ref="wind_speed__sfcWind"/>  <!-- Near-Surface Wind Speed [m s-1] -->
-                <field field_ref="wind_speed__sfcWindmax"/>  <!-- Daily Maximum Near-Surface Wind Speed [m s-1] -->
-                <field field_ref="surface_snow_thickness__snd"/>  <!-- Snow Depth [m] -->
-                <field field_ref="surface_albedo__albsn"/>  <!-- Snow Albedo [1] -->
-                <field field_ref="surface_upward_sensible_heat_flux__hfss"/>  <!-- Surface Upward Sensible Heat Flux [W m-2] -->
-                <field field_ref="surface_upward_latent_heat_flux__hfls"/>  <!-- Surface Upward Latent Heat Flux [W m-2] -->
-                <field field_ref="cloud_area_fraction__clt"/>  <!-- Total Cloud Cover Percentage [%] -->
-                <field field_ref="precipitation_flux__pr"/>  <!-- Precipitation [kg m-2 s-1] -->
-                <field field_ref="relative_humidity__hurs"/>  <!-- Near-Surface Relative Humidity [%] -->
-                <field field_ref="atmosphere_mass_content_of_water_vapor__prw"/>  <!-- Water Vapor Path [kg m-2] -->
-                <field field_ref="atmosphere_mass_content_of_cloud_liquid_water__lwp"/>  <!-- Liquid Water Path [kg m-2] -->
-                <field field_ref="water_evapotranspiration_flux__evspsbl"/>  <!-- Evaporation Including Sublimation and Transpiration [kg m-2 s-1] -->
-                <field field_ref="surface_downward_eastward_stress__tauu"/>  <!-- Surface Downward Eastward Wind Stress [Pa] -->
-                <field field_ref="surface_downward_northward_stress__tauv"/>  <!-- Surface Downward Northward Wind Stress [Pa] -->
+        split_freq="1y">
 
-                <!-- additional, non-CMIP6 output fields -->
-                <field field_ref="surface_net_solar_radiation__rsns"/>  <!--  Surface net solar radiation [W m-2] -->
-                <field field_ref="surface_net_thermal_radiation__rlns"/>  <!--  Surface net thermal radiation [W m-2] -->
-                <field field_ref="top_net_solar_radiation__rsnt"/>  <!--  Top net solar radiation [W m-2] -->
-                <field field_ref="top_net_thermal_radiation__rlnt"/>  <!-- Top net thermal radiation [W m-2] -->
-                <field field_ref="top_net_solar_radiation_clearsky__rsntcs"/>  <!-- Top net solar radiation, clear sky [W m-2] -->
-                <field field_ref="top_net_thermal_radiation_clearsky__rlntcs"/>  <!-- Top net thermal radiation, clear sky [W m-2] -->
-                <field field_ref="atmosphere_mass_content_of_cloud_ice_water__iwp"/>  <!-- Ice Water Path [kg m-2] -->
-                <field field_ref="high_cloud_area_fraction__clh"/>  <!-- High Cloud Cover Percentage [%] -->
-                <field field_ref="medium_cloud_area_fraction__clm"/>  <!-- Medium Cloud Cover Percentage [%] -->
-                <field field_ref="low_cloud_area_fraction__cll"/>  <!-- Low Cloud Cover Percentage [%] -->
-                <field field_ref="forecast_albedo__alb"/>  <!-- Forecast Albedo [1] -->
-            </field_group>
-        </file>
-
-        <!-- 6hourly 2d fields (example) -->
         <file
-            timeseries="only"
             enabled="true"
-            output_freq="6h"
+	          timeseries="only"
+	          output_freq="6h"
             name_suffix="_6h"
-            description="OIFS 6hourly surface fields"
-        >
-            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
-                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
-                <field field_ref="wind_speed__sfcWind"/>  <!-- Near-Surface Wind Speed [m s-1] -->
-                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- Sea Level Pressure [Pa] -->
-                <field field_ref="cloud_area_fraction__clt"/>  <!-- Total Cloud Cover Percentage [%] -->
+            description="ECE4/OIFS 6hourly surface fields">
+
+            <field_group grid_ref="regular_sfc" freq_op="6h" operation="instant">
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
                 <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
-
             </field_group>
         </file>
 
-        <!-- daily 2d fields (example) -->
         <file
-            timeseries="only"
-            enabled="false"
-            output_freq="1d"
+            enabled="true"
+	          timeseries="only"
+	          output_freq="1d"
             name_suffix="_1d"
-            description="OIFS daily surface fields"
-        >
-            <field_group grid_ref="regular_sfc" freq_op="6h"  operation="average">
-                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
-                <field field_ref="wind_speed__sfcWind"/>  <!-- Near-Surface Wind Speed [m s-1] -->
-                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- Sea Level Pressure [Pa] -->
-                <field field_ref="cloud_area_fraction__clt"/>  <!-- Total Cloud Cover Percentage [%] -->
+            description="ECE4/OIFS daily surface fields">
+
+            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
                 <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
-                <!-- fields from field_def_oifs_cmip6.xml can be added here -->
+            </field_group>
+        </file>
+
+        <file
+            enabled="true"
+	          timeseries="only"
+	          output_freq="1mo"
+            name_suffix="_1m"
+            description="ECE4/OIFS monthly surface fields">
+
+            <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+        <!--    <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>  -->
+        <!--    <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>  -->
+        <!--    <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>  -->
+        <!--    <field field_ref="tvh" name="tvh" long_name="Type of high vegetation"/>  -->
+                <field field_ref="ci" name="ci" long_name="Sea ice area fraction"/>
+                <field field_ref="asn" name="asn" long_name="Snow albedo"/>
+                <field field_ref="rsn" name="rsn" long_name="Snow density"/>
+                <field field_ref="sstk" name="sst" long_name="Sea surface temperature"/>
+                <field field_ref="istl1" name="istl1" long_name="Ice temperature layer 1"/>
+                <field field_ref="swvl1" name="swvl1" long_name="Volumetric soil water layer 1"/>
+                <field field_ref="swvl2" name="swvl2" long_name="Volumetric soil water layer 2"/>
+                <field field_ref="swvl3" name="swvl3" long_name="Volumetric soil water layer 3"/>
+                <field field_ref="swvl4" name="swvl4" long_name="Volumetric soil water layer 4"/>
+        <!--    <field field_ref="lai_lv" name="lai_lv" long_name="Leaf area index, low vegetation"/>  -->
+        <!--    <field field_ref="lai_hv" name="lai_hv" long_name="Leaf area index, high vegetation"/>  -->
+                <field field_ref="tclw" name="tclw" long_name="Total column cloud liquid water"/>
+                <field field_ref="tciw" name="tciw" long_name="Total column cloud ice water"/>
+                <field field_ref="tcw" name="tcw" long_name="Total column water"/>
+                <field field_ref="tcwv" name="tcwv" long_name="Total column water vapour"/>
+                <field field_ref="stl1" name="stl1" long_name="Soil temperature level 1"/>
+                <field field_ref="sd" name="sd" long_name="Snow depth"/>
+                <field field_ref="lsp" name="lsp" long_name="Large-scale precipitation"/>
+                <field field_ref="cp" name="cp" long_name="Convective precipitation"/>
+                <field field_ref="sf" name="sf" long_name="Snowfall"/>
+                <field field_ref="sshf" name="sshf" long_name="Surface sensible heat flux"/>
+                <field field_ref="slhf" name="slhf" long_name="Surface latent heat flux"/>
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+                <field field_ref="ssrd" name="ssrd" long_name="Surface solar radiation downwards"/>
+                <field field_ref="stl2" name="stl2" long_name="Soil temperature level 2"/>
+                <field field_ref="strd" name="strd" long_name="Surface thermal radiation downwards"/>
+                <field field_ref="ssr" name="ssr" long_name="Surface net solar radiation"/>
+                <field field_ref="str" name="str" long_name="Surface net thermal radiation"/>
+                <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+                <field field_ref="ttr" name="ttr" long_name="Top net thermal radiation"/>
+                <field field_ref="ewss" name="ewss" long_name="Eastward turbulent surface stress"/>
+                <field field_ref="nsss" name="nsss" long_name="Northward turbulent surface stress"/>
+                <field field_ref="e" name="e" long_name="Evaporation"/>
+                <field field_ref="stl3" name="stl3" long_name="Soil temperature level 3"/>
+                <field field_ref="lcc" name="lcc" long_name="Low cloud cover"/>
+                <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/>
+                <field field_ref="hcc" name="hcc" long_name="High cloud cover"/>
+                <field field_ref="mx2t" name="mx2t" long_name="Maximum temperature at 2 metres since previous post-processing"/>
+                <field field_ref="mn2t" name="mn2t" long_name="Minimum temperature at 2 metres since previous post-processing"/>
+                <field field_ref="ro" name="ro" long_name="Runoff"/>
+                <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+                <field field_ref="ttrc" name="ttrc" long_name="Top net thermal radiation, clear sky"/>
+                <field field_ref="ssrc" name="ssrc" long_name="Surface net solar radiation, clear sky"/>
+                <field field_ref="strc" name="strc" long_name="Surface net thermal radiation, clear sky"/>
+                <field field_ref="tisr" name="tisr" long_name="TOA incident solar radiation"/>
+                <field field_ref="skt" name="skt" long_name="Skin temperature"/>
+                <field field_ref="stl4" name="stl4" long_name="Soil temperature level 4"/>
+                <field field_ref="tsn" name="tsn" long_name="Temperature of snow layer"/>
+                <field field_ref="fal" name="fal" long_name="Forecast albedo"/>
+            </field_group>
+        </file>
+
+        <!-- Example: model level output -->
+        <file
+            enabled="false"
+	          timeseries="only"
+	          output_freq="6h"
+            name_suffix="_6h_ml"
+            description="ECE4/OIFS 6hourly model level fields">
+
+            <field_group grid_ref="regular_ml" freq_op="6h" operation="instant">
+                <field field_ref="pres" name="pres"/>
+                <field field_ref="t" name="t"/>
+                <field field_ref="u" name="u"/>
+                <field field_ref="v" name="v"/>
+                <field field_ref="q" name="q"/>
+                <field field_ref="clwc" name="clwc"/>
+                <field field_ref="ciwc" name="ciwc"/>
+                <field field_ref="cc" name="cc"/>
+            </field_group>
+        </file>
+
+        <file
+            enabled="true"
+	          timeseries="only"
+	          output_freq="1mo"
+            name_suffix="_1m_pl"
+            description="ECE4/OIFS 6hourly pressure level fields">
+
+            <field_group grid_ref="regular_pl" freq_op="6h" operation="average">
+                <field field_ref="z_pl" name="z"/>
+                <field field_ref="t_pl" name="t"/>
+                <field field_ref="u_pl" name="u"/>
+                <field field_ref="v_pl" name="v"/>
+                <field field_ref="q_pl" name="q"/>
+                <field field_ref="w_pl" name="w"/>
+                <field field_ref="vo_pl" name="vo"/>
+                <field field_ref="r_pl" name="r"/>
             </field_group>
         </file>
 
     </file_group>
-        <!-- Monthly pressure level fields -->
-        <file
-            timeseries="only"
-            enabled="true"
-            output_freq="1mo"
-            name_suffix="_1m_pl"
-            description="OIFS monthly pressure level fields"
-        >
-            <field_group  grid_ref="regular_pl" freq_op="6h" operation="average">
-                <!-- CMIP6 compliant output fields -->
-                <field field_ref="air_temperature__ta"/>  <!-- Air Temperature [K] -->
-                <field field_ref="specific_humidity__hus"/>  <!-- Specific Humidity [1] -->
-                <field field_ref="relative_humidity__hur"/>  <!-- Relative Humidity [%] -->
-                <field field_ref="eastward_wind__ua"/>  <!-- Eastward Wind [m s-1] -->
-                <field field_ref="northward_wind__va"/>  <!-- Northward Wind [m s-1] -->
-                <field field_ref="geopotential_height__zg"/>  <!-- Geopotential Height [m] -->
-                <field field_ref="vo_pl" name="vo"/>
-            </field_group>
-        </file>
-
-        <!-- 6hourly pressure level fields -->
-        <file
-            timeseries="only"
-            enabled="true"
-            output_freq="6h"
-            name_suffix="_6h_pl"
-            description="OIFS 6hourly pressure level fields"
-        >
-            <field_group  grid_ref="regular_pl" freq_op="6h" operation="instant">
-                <!-- CMIP6 compliant output fields -->
-                <field field_ref="air_temperature__ta"/>  <!-- Air Temperature [K] -->
-                <field field_ref="specific_humidity__hus"/>  <!-- Specific Humidity [1] -->
-                <field field_ref="relative_humidity__hur"/>  <!-- Relative Humidity [%] -->
-                <field field_ref="eastward_wind__ua"/>  <!-- Eastward Wind [m s-1] -->
-                <field field_ref="northward_wind__va"/>  <!-- Northward Wind [m s-1] -->
-                <field field_ref="geopotential_height__zg"/>  <!-- Geopotential Height [m] -->
-                <field field_ref="vo_pl" name="vo"/>
-            </field_group>
-        </file>
-
 </file_definition>

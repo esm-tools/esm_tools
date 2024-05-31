@@ -35,8 +35,11 @@ choose_version:
     icb_code: true
     namelist_dir: "${model_dir}/config/"
 
-  '2.5-awicm-3.2':
+  "2.5-awicm-3.2":
     branch: "AWI-CM3_v3.2"
+
+  "2.5-2":
+    branch: "2.5.2"
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x

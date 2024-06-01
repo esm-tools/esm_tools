@@ -25,6 +25,7 @@ dependencies:
   - emoji
   - f90nml
   - gitpython=3.1.37
+  - jinja2=3.0.2
   - loguru
   - numpy
   - packaging

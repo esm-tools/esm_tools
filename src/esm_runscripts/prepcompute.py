@@ -379,16 +379,16 @@ def _write_finalized_config(config, config_file_path=None):
 
 def add_eol_comments_with_provenance(commented_config, config):
     if isinstance(commented_config, dict):
-        for key, value in commented_config.items():
-            if isinstance(value, (list, dict)):
-                add_eol_comments_with_provenance(value, config[key])
+        for (ckey, cvalue), (pkey, pvalue) in zip(commented_config.items(), config.items()):
+            if isinstance(cvalue, (list, dict)):
+                add_eol_comments_with_provenance(cvalue, pvalue)
             else:
-                provenance = getattr(config[key], "provenance", [None])[-1]
+                provenance = getattr(pvalue, "provenance", [None])[-1]
                 if provenance:
                     provenance_comment = f"{provenance['yaml_file']},line:{provenance['line']},col:{provenance['col']}"
                 else:
                     provenance_comment = f"no provenance info"
-                commented_config.yaml_add_eol_comment(provenance_comment, key)
+                commented_config.yaml_add_eol_comment(provenance_comment, ckey)
     elif isinstance(commented_config, list):
         for indx, value in enumerate(commented_config):
             if isinstance(value, (list, dict)):

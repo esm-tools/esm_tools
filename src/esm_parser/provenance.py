@@ -179,13 +179,6 @@ def wrapper_with_provenance_init(self, value, provenance=None):
     self.value = value
 
 
-# @Paul: maybe we could add a classmethod here for including it in
-# ProvenanceClassForTheUnsubclassable, Date and the dynamic classes from
-# wrapper_with_provenance_factory (but not for ListWithProvenance or
-# DictWithProvenance)? That might be easier than having to add_representer somewhere
-# else, but no clue... you're the yaml expert :)
-
-
 @property
 def prop_provenance(self):
     """
@@ -339,8 +332,10 @@ def wrapper_with_provenance_factory(value, provenance=None):
         value.provenance = Provenance(provenance)
 
         return value
+
     elif isinstance(value, PROVENANCE_MAPPINGS):
         return value
+
     else:
         subtype = type(value)
         class_name = f"{subtype}".split("'")[1]
@@ -841,35 +836,3 @@ def clean_provenance(data):
         }
     else:
         return data
-
-
-if __name__ == "__main__":
-    mydict = {
-        "person": {"name": "Paul Gierz"},
-        "a_string": "hello world",
-        "my_var": "MY_VAR",
-        "my_other_var": ["a", "b", "c"],
-        "my_bolean": True,
-        "my_float": 12.1,
-        "my_int": 42,
-        "list_with_dict_inside": [1, 2, {"my_dict": {"foo": [1, 2, {"foo": "bar"}]}}],
-    }
-
-    myprov = {
-        "person": {"name": 1},
-        "a_string": 2,
-        "my_var": 3,
-        "my_other_var": [4, 5, 6],
-        "my_bolean": 7,
-        "my_float": 8,
-        "my_int": 9,
-        "list_with_dict_inside": [10, 11, {"my_dict": {"foo": [12, 13, {"foo": 14}]}}],
-    }
-
-    asd = DictWithProvenance(mydict, myprov)
-
-    print(asd)
-    print(asd.get_provenance())
-
-    print(asd["a_string"], asd["a_string"].provenance)
-    print(asd["list_with_dict_inside"], asd["list_with_dict_inside"])

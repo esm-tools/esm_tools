@@ -23,13 +23,18 @@ general:
         - 'v3.1.2'
         - 'v3.1.3'
         - 'v3.2'
+        - 'v3.2.1'
+        - 'v3.2.2'
         - 'master'
         - 'frontiers-xios'
+
         choose_version:
           v3.0:
             major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
+            oasis_with_yac: False
+            xios_interp_order: 2
           v3.1:
             major_version: v3.1
             couplings:
@@ -38,6 +43,8 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
+            xios_interp_order: 2
           v3.1.1:
             major_version: v3.1
             couplings:
@@ -46,6 +53,8 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
+            xios_interp_order: 2
           v3.1.2:
             major_version: v3.1
             couplings:
@@ -54,6 +63,8 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
+            xios_interp_order: 2
           v3.1.3:
             major_version: v3.1
             couplings:
@@ -62,14 +73,38 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
+            xios_interp_order: 2
           v3.2:
             major_version: v3.2
             couplings:
-            - fesom-2.5+oifs-43r3-awicm-3.2+xios-2.5
+            - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
+            xios_interp_order: 2
+          v3.2.1:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: True
+            xios_interp_order: 2
+          v3.2.2:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: True
+            xios_interp_order: 1
           master:
             major_version: master
             couplings:
@@ -78,6 +113,8 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
+            xios_interp_order: 2
           frontiers-xios:
             major_version: frontiers-xios
             couplings:
@@ -86,6 +123,8 @@ general:
             - xios
             add_further_reading:
             - xios/xios.env.yaml
+            oasis_with_yac: False
+            xios_interp_order: 2
 
         version: "v3.2"
         scenario: "piControl"
@@ -368,8 +407,21 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
+        choose_general.oasis_with_yac:
+            True:
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+            False:
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+            "*":
+                comp_command: "missing"
 
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ..;   make install -j `nproc --all`
+        missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
+        choose_missing_owy:
+            True:
+                error:
+                    "Missing variable":
+                        message: "Please define ``general.oasis_with_yac`` boolean in ``awicm3.yaml``"
+                        ask_user_to_continue: False
 
         opbnd_dir: ""
         tide_forcing_dir: ""
@@ -547,7 +599,7 @@ xios:
                                 - file_def
                                 - field_def
                 "*":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/${general.resolution}"
+                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/order_${xios_interp_order}/${general.resolution}"
 
 
 
@@ -571,11 +623,18 @@ rnfmap:
         grids:
                 rnfa:
                         name: RnfA
+                        nx: 512
+                        ny: 256
+                        oasis_grid_type: "LR"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
                 rnfo:
                         name: RnfO
                         nx: 512
                         ny: 256
                         oasis_grid_type: "LR"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
         input_files:
                 runoff_maps: runoff_maps
 
@@ -667,6 +726,7 @@ oasis3mct:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.2':
+                        version: 6.0-YAC
                         mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'
@@ -807,6 +867,67 @@ oasis3mct:
                                 conserv:
                                         method: global
                                         algorithm: opt
+                oyac_1stcon_nnn_stocha:
+                        oyac: true
+                        time_transformation: stocha
+                        remapping:
+                                conserv:
+                                        order: first
+                                        intersect_norm: fracarea
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+                oyac_1stcon_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                conserv:
+                                        order: first
+                                        intersect_norm: fracarea
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+                oyac_gauswgt_c:
+                        oyac: true
+                        time_transformation: conserv
+                        remapping:
+                                nnn:
+                                        weighting: gauss
+                                        nb_of_neighbours: 9
+                oyac_avg_c:
+                        oyac: true
+                        time_transformation: conserv
+                        remapping:
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 9
+                oyac_gauswgt_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                nnn:
+                                        weighting: gauss
+                                        nb_of_neighbours: 9
+                oyac_hcsbb_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                hcsbb:
+                                        lorem: ipsum
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+                oyac_spmap_nnn_i:
+                        oyac: true
+                        time_transformation: instant
+                        remapping:
+                                spmap:
+                                        weighting: dist
+                                        spread_dist: 3
+                                nnn:
+                                        weighting: avg
+                                        nb_of_neighbours: 1
+
 
         input_files: {}
 

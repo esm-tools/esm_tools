@@ -330,7 +330,9 @@ def _write_finalized_config(config, config_file_path=None):
     )
 
     my_yaml.representer.add_representer(f90nml.namelist.Namelist, namelist_representer)
-    my_yaml.representer.add_representer(f90nml.namelist.NmlKey, namelist_key_representer)
+    my_yaml.representer.add_representer(
+        f90nml.namelist.NmlKey, namelist_key_representer
+    )
 
     # Provenance representers
     my_yaml.representer.add_representer(
@@ -357,7 +359,7 @@ def _write_finalized_config(config, config_file_path=None):
     with open(config_file_path, "w") as config_file:
         # Avoid saving ``prev_run`` information in the config file
         config_final = copy.deepcopy(config)  # PrevRunInfo
-        del config_final["prev_run"]  # PrevRunInfo
+        delete_prev_objects(config_final)  # PrevRunInfo
 
         # Get the original values without provenance
         config_final = esm_parser.provenance.clean_provenance(config_final)
@@ -379,7 +381,9 @@ def _write_finalized_config(config, config_file_path=None):
 
 def add_eol_comments_with_provenance(commented_config, config):
     if isinstance(commented_config, dict):
-        for (ckey, cvalue), (pkey, pvalue) in zip(commented_config.items(), config.items()):
+        for (ckey, cvalue), (pkey, pvalue) in zip(
+            commented_config.items(), config.items()
+        ):
             if isinstance(cvalue, (list, dict)):
                 add_eol_comments_with_provenance(cvalue, pvalue)
             else:
@@ -400,6 +404,24 @@ def add_eol_comments_with_provenance(commented_config, config):
                 else:
                     provenance_comment = f"no provenance info"
                 commented_config.yaml_add_eol_comment(provenance_comment, indx)
+
+
+def delete_prev_objects(config):
+    """
+    Delete key-values in the ``config`` which values correspond to ``prev_`` objects,
+    for example, ``prev_run`` (contains values of the config of the previous run) and
+    ``prev_chunk_<model>`` (that contains values of the config of a previous chunk
+    in a offline coupled simulation). This deletion is necessary because otherwise
+    the ``finished_config.yaml`` gets a lot of nested information from the previous
+    runs that keeps growing each new run/chunk.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the simulation/compilation information
+    """
+    for prev_object in getattr(config, "prev_objects", []):
+        del config[prev_object]
 
 
 def _show_simulation_info(config):

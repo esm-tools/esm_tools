@@ -250,7 +250,10 @@ def copy_files_to_work(config):
 
 def _write_finalized_config(config, config_file_path=None):
     """
-    Writes <expid>_finished_config.yaml file
+    Writes <expid>_finished_config.yaml file.
+
+    This function also adds provenance information to the config values and writes
+    them to the file as comments.
 
     Input
     -----
@@ -264,7 +267,6 @@ def _write_finalized_config(config, config_file_path=None):
     Returns
     -------
     config : dict
-
     """
     my_yaml = YAML()
 
@@ -298,11 +300,6 @@ def _write_finalized_config(config, config_file_path=None):
 
     def dictwithprov_representer(dumper, dictwithprov):
         return dumper.represent_mapping("tag:yaml.org,2002:map", dictwithprov)
-
-    # @Paul: this is me just playing around with things, this should be included maybe
-    # somewhere else and generalized for Str, Int, Bool...
-    def strwithprov_representer(dumper, strwithprov):
-        return dumper.represent_str(strwithprov)
 
     # pyyaml does not support tuple and prints !!python/tuple
     my_yaml.representer.add_representer(
@@ -374,7 +371,7 @@ def _write_finalized_config(config, config_file_path=None):
         add_eol_comments_with_provenance(config_with_comments, config)
 
         # Write the finished_config.yaml file
-        out = my_yaml.dump(config_with_comments, config_file)  # , width=10000, indent=4
+        out = my_yaml.dump(config_with_comments, config_file)
 
     return config
 

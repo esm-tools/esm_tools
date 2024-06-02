@@ -18,17 +18,6 @@ YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
 CONFIG_PATH = esm_tools.get_config_filepath()
 
 
-def provenance_representer(dumper, provenance):
-    return dumper.represent_str("provenance")
-
-#class CommentedYamlDumper(ruamel.yaml.SafeDumper):
-class CommentedYamlDumper(yaml.Dumper):
-    pass
-
-CommentedYamlDumper.add_representer(
-    str,provenance_representer
-)
-
 class EsmConfigFileError(Exception):
     """
     Exception for yaml file containing tabs or other syntax issues.
@@ -170,6 +159,15 @@ def yaml_file_to_dict(filepath):
     If you do not give an extension, tries again after appending one.
     It raises an EsmConfigFileError exception if yaml files contain tabs.
 
+    On top of loading the yaml file it also:
+    - Checks for duplicates
+    - Checks for incompatible ``_changes`` (no more than one ``_changes`` type should be
+        accessible simultaneously)
+    - Checks for incompatible ``add_``
+    - Checks for empty components
+    - Adds environment variables to the dictionary
+    - Adds provenance information to the dictionary
+
     Parameters
     ----------
     filepath : str
@@ -187,7 +185,6 @@ def yaml_file_to_dict(filepath):
     FileNotFoundError
         Raised when the YAML file cannot be found and all extensions have been tried.
     """
-    # loader = create_env_loader()
     esm_tools_loader = EsmToolsLoader()
     for extension in YAML_AUTO_EXTENSIONS:
         try:
@@ -694,7 +691,18 @@ class EnvironmentRepresenter(ruamel.yaml.RoundTripRepresenter):
 
 
 class EsmToolsLoader(ruamel.yaml.YAML):
+    """
+    This class is used to load a yaml file and return a dictionary with the values
+    and the provenance of each value. The provenance is stored in a tuple with the
+    line number and column number of the yaml file. The provenance is stored in the
+    dictionary as a tuple with the key being the same as the key of the value in the
+    dictionary.
+    """
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the class with the ``ProvenanceConstructor`` and the
+        ``EnvironmentRepresenter``.
+        """
         super().__init__(*args, **kwargs)
         self.filename = None
         self.add_comments = True
@@ -707,12 +715,22 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         self.Representer = EnvironmentRepresenter
 
     def get_filename(self):
+        """Returns the filename of the yaml file."""
         return self.filename
 
     def set_filename(self, filename):
+        """
+        Sets the filename of the yaml file.
+
+        Parameters
+        ----------
+        filename : str
+            The filename of the yaml file.
+        """
         self.filename = pathlib.Path(str(filename))
 
     def set_file_categorty(self):
+        """Sets the category of the yaml file."""
         if not hasattr(self, "filename"):
             raise AttributeError(
                 "The attribute 'filename' has not been set yet. Set it using "
@@ -732,6 +750,17 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         self.category = category
 
     def load(self, stream):
+        """
+        Loads the yaml file and returns a dictionary with the values and the provenance
+        of each value. The provenance is stored in a tuple with the line number and column
+        number of the yaml file. The provenance is stored in the dictionary as a tuple with
+        the key being the same as the key of the value in the dictionary.
+
+        Parameters
+        ----------
+        stream : file object
+            The file object of the yaml file
+        """
         self.set_filename(stream.name)
         self.set_file_categorty()
         mapping_with_tuple_prov = super().load(stream)[0]
@@ -741,6 +770,14 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         return (config, provenance)
 
     def _extract_dict_and_prov(self, mapping_with_prov):
+        """
+        Extracts the dictionary and provenance from the mapping with provenance.
+
+        Parameters
+        ----------
+        mapping_with_prov : dict
+            The dictionary with the provenance of each value
+        """
         config = {}
         config_prov = {}
         for (key, key_prov), (value, value_prov) in mapping_with_prov.items():
@@ -771,6 +808,18 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         return (config, config_prov)
 
     def _add_origin_comments(self, data, comment=None, key=None):
+        """
+        Adds the provenance information to the yaml file.
+
+        Parameters
+        ----------
+        data : any
+            The data to which the provenance information should be added to
+        comment : dict
+            The provenance information to be added
+        key : str
+            The key of the data
+        """
         if isinstance(data, dict):
             for key, value in data.items():
                 self._add_origin_comments(
@@ -805,6 +854,17 @@ class EsmToolsLoader(ruamel.yaml.YAML):
             # print("nope")
 
     def dump(self, data, stream=None, **kw):
+        """
+        Dumps the dictionary to a yaml file and adds the provenance information to the
+        yaml file.
+
+        Parameters
+        ----------
+        data : dict
+            The dictionary to be dumped to a yaml file
+        stream : file object
+            The file object to write the yaml file to
+        """
         if not self.add_comments:
             return super().dump(data, stream, **kw)
         self._add_origin_comments(data)

@@ -380,6 +380,17 @@ def _write_finalized_config(config, config_file_path=None):
 
 
 def add_eol_comments_with_provenance(commented_config, config):
+    """
+    Add end-of-line comments to the ``commented_config`` with provenance information
+    from the ``config``.
+
+    Parameters
+    ----------
+    commented_config : dict
+        Dictionary with the config values and ruamel.yaml comments.
+    config : dict
+        Dictionary with the config values and provenance information.
+    """
     if isinstance(commented_config, dict):
         for (ckey, cvalue), (pkey, pvalue) in zip(
             commented_config.items(), config.items()

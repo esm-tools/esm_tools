@@ -2022,8 +2022,6 @@ def actually_find_variable(tree, rhs, full_config):
 
     config_elements[-1] = var_name
     original_config_elements = copy.deepcopy(config_elements)
-    if rhs=="oifs.wam_number":
-        var_result = recursive_get(full_config, config_elements)
     try:
         var_result = recursive_get(full_config, config_elements)
         # return var_result

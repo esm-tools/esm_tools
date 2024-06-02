@@ -203,8 +203,6 @@ def yaml_file_to_dict(filepath):
                 # Check for incompatible ``_changes`` (no more than one ``_changes``
                 # type should be accessible simultaneously)
                 check_changes_duplicates(yaml_load, filepath + extension)
-                # Add the file name you loaded from to track it back:
-                yaml_load["debug_info"] = {"loaded_from_file": yaml_file.name}
                 if esm_tools_loader.env_variables:
                     runtime_env_changes = yaml_load.get("computer", {}).get(
                         "runtime_environment_changes", {}

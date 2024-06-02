@@ -645,39 +645,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             and isinstance(v, dict)
             and isinstance(merge_dct[k], Mapping)
         ):
-            # NOTE(PG): this is a very bad hack and doesn't belong here at all.
-            # Maybe instead the yaml_file_to_dict needs to say something like
-            # "add_debug_info", so everything gets put together, but for right
-            # now you are given ifnromation where your config originally came
-            # from...
-            #
-            # IDEA: It would be great if somehow we knew which key came from
-            # which config file: some are in the user, some are in the setup,
-            # some are in the component. However, I have no idea how to do that
-            # correctly...Turn the keys in the config into named tuples with
-            # the original file? Make a custom "class" for config keys?? That
-            # would then be:
-            #
-            # config['echam'].keys()
-            # * (key_name: namelist_changes, came_from: user, overrides: [setup, component])
-            # Above, the overrides list always gets longer depending on where the value actually came from.
-            # * (another key-tuple)
-            # * and so on...
-            #
-            # An idea...but I have absolutely no clue how to cleanly implement that...
-            if k != "debug_info":
-                dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
-            # TODO: check if this can be removed
-            else:
-                if "debug_info" in dct:
-                    if isinstance(dct["debug_info"]["loaded_from_file"], str):
-                        dct["debug_info"]["loaded_from_file"] = [
-                            dct["debug_info"]["loaded_from_file"]
-                        ]
-                    else:
-                        dct["debug_info"]["loaded_from_file"].append(
-                            merge_dct["debug_info"]["loaded_from_file"]
-                        )
+            dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
         # MA: I'm not super happy about the resolve_nested_adds implementation. Nested
         # adds should probably resolved in a different place, after the first level
         # ones are resolved.

@@ -269,6 +269,7 @@ def _write_finalized_config(config, config_file_path=None):
     config : dict
     """
     my_yaml = YAML()
+    my_yaml.width = 10000
 
     # first define the representers for the non-built-in types, as recommended
     # here: https://pyyaml.org/wiki/PyYAMLDocumentation

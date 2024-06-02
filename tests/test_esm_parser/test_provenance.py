@@ -73,7 +73,6 @@ def check_provenance(example_path2):
                 }
             },
         },
-        "debug_info": {"loaded_from_file": None},
     }
 
     return check_provenance
@@ -144,7 +143,7 @@ def test_set_provenance_for_leaf(config, check_provenance):
 
 def test_set_provenance_for_leaf_of_new_branch(config, check_provenance):
     """
-    Test 6: Reset the provenance of leaves for an later added branch ``debug_info``.
+    Test 6: Reset the provenance of leaves for an later added branch ``new_branch``.
     """
 
     new_prov = {
@@ -153,8 +152,9 @@ def test_set_provenance_for_leaf_of_new_branch(config, check_provenance):
         "yaml_file": "someother.yaml",
         "category": "debuginfo",
     }
-    config["debug_info"].set_provenance(new_prov)
-    check_provenance["debug_info"]["loaded_from_file"] = new_prov
+    config["new_branch"] = provenance.DictWithProvenance({"loaded_from_file": None}, {})
+    config["new_branch"].set_provenance(new_prov)
+    check_provenance["new_branch"] = {"loaded_from_file": new_prov}
     assert config.get_provenance() == check_provenance
 
 

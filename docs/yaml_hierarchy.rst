@@ -19,7 +19,7 @@ parameter if it's defined in a ``setup`` or the ``runscript``.
 How can I know where a parameter is defined?
 --------------------------------------------
 
-One of the first steps every `ESM-Tools` operation is to load the configuration files
+One of the first steps in every `ESM-Tools` operation is to load the configuration files
 and merge their information following the hierarchy described above. During runtime,
 this final dictionary is stored in a yaml file under the following possible paths:
 
@@ -27,15 +27,15 @@ this final dictionary is stored in a yaml file under the following possible path
 * ``<base_dir>/<expid>/configs/<expid>_finished_config.yaml``
 
 One can use this file to check the final value of the desired parameter. The same
-information can also be displayed by using inspect command
+information can also be retriece by using inspect command
 (:ref:`esm_runscripts:Arguments`):
 
 .. code-block:: bash
 
     esm_runscripts <your_runscript> -e <expid> --inspect config
 
-Additionally, these files also contain information about the provenance of the value
-in the form of comments:
+Additionally, these files/output also contain information about the provenance of the
+value in the form of comments:
 
 .. code-block:: yaml
 

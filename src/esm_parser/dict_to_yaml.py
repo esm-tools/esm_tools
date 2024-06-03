@@ -7,10 +7,6 @@ import yaml
 from loguru import logger
 from ruamel.yaml import YAML
 
-import esm_calendar
-import esm_parser
-import esm_runscripts
-
 
 def yaml_dump(config, config_file_path=None):
     """
@@ -25,6 +21,11 @@ def yaml_dump(config, config_file_path=None):
         Path to the YAML file where the config will be saved. If not provided, the
         config will be printed to the standard output.
     """
+    # This is here to avoid circular imports
+    import esm_calendar
+    import esm_parser
+    import esm_runscripts
+
     my_yaml = YAML()
     my_yaml.width = 10000
 

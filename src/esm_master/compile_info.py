@@ -115,7 +115,6 @@ def combine_components_yaml(parsed_args):
 
     components_dict["defaults"] = default_infos
 
-    # esm_parser.pprint_config(components_dict)
     # sys.exit(0)
     return components_dict, relevant_entries
 
@@ -462,7 +461,6 @@ class setup_and_model_infos:
             else:
                 new_config.update({headline: reduced_config[headline]})
 
-        # esm_parser.pprint_config(new_config)
         # sys.exit(0)
         return new_config
 

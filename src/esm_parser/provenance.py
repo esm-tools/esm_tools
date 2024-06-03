@@ -568,6 +568,8 @@ class DictWithProvenance(dict):
         for key, val in new_provs.items():
             self[key].provenance = val
 
+DictWithProvenance.yaml_dump = esm_parser.yaml_dump
+
 
 class ListWithProvenance(list):
     """
@@ -742,6 +744,8 @@ class ListWithProvenance(list):
                 val_new.provenance = new_provenance
 
         super().__setitem__(indx, val_new)
+
+ListWithProvenance.yaml_dump = esm_parser.yaml_dump
 
 
 # Define the global variable PROVENANCE_MAPPINGS for operations such as ``isinstance``

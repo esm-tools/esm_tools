@@ -292,6 +292,6 @@ class version_control_infos:
 
     def output(self):
         print()
-        esm_parser.pprint_config(self.config)
+        self.config.yaml_dump()
         print("Known repos: " + str(self.known_repos))
         print("Known vcs-commands: " + str(self.known_todos))

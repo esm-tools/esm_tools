@@ -2865,6 +2865,8 @@ class GeneralConfig(dict):  # pragma: no cover
             "Subclasses of GeneralConfig must define a _config_init!"
         )
 
+GeneralConfig.yaml_dump = esm_parser.yaml_dump
+
 
 class ConfigSetup(GeneralConfig):  # pragma: no cover
     """Config Class for Setups"""
@@ -3096,7 +3098,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             verbose=self.config["general"].get("verbose", False),
         )
 
-        # pprint_config(self.config)
         # sys.exit(0)
 
     def check_user_defined_versions(self, user_config):

@@ -122,7 +122,7 @@ def write_to_log(config, message, message_sep=None):
         logger.error(
             "Sorry; couldn't find 'experiment_log_file' in config['general']..."
         )
-        esm_parser.pprint_config(config["general"])
+        config["general"].yaml_dump()
         raise
 
 

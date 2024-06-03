@@ -770,7 +770,7 @@ def keep_provenance_in_recursive_function(func):
         custom_setitem_was_turned_off_in_this_instance = False
         if hasattr(rhs, "custom_setitem") and rhs.custom_setitem:
             rhs.custom_setitem = False
-            custom_setitem_was_turned_off = True
+            custom_setitem_was_turned_off_in_this_instance = True
 
         output = func(tree, rhs, *args, **kwargs)
 

@@ -40,12 +40,12 @@ value in the form of comments:
 .. code-block:: yaml
 
     fesom:
-        model: fesom  # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:4,col:8
-        branch: 2.0.2 # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:17,col:13
-        version: 2 # /Users/mandresm/Codes/esm_tools/configs/setups/awicm3/awicm3.yaml,line:399,col:18
-        type: ocean # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:7,col:7
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all` # /Users/mandresm/Codes/esm_tools/configs/setups/awicm3/awicm3.yaml,line:414,col:31
-        clean_command: rm -rf build CMakeCache.txt # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:10,col:16
+        model: fesom  # <PATH>/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:4,col:8
+        branch: 2.0.2 # <PATH>/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:17,col:13
+        version: 2 # <PATH>/esm_tools/configs/setups/awicm3/awicm3.yaml,line:399,col:18
+        type: ocean # <PATH>/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:7,col:7
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all` # <PATH>/esm_tools/configs/setups/awicm3/awicm3.yaml,line:414,col:31
+        clean_command: rm -rf build CMakeCache.txt # <PATH>/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:10,col:16
         required_plugins:
-        - git+https://github.com/esm-tools-plugins/tar_binary_restarts  # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:13,col:3
-        install_bins: bin/fesom.x  # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:22,col:19
+        - git+https://github.com/esm-tools-plugins/tar_binary_restarts  # <PATH>/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:13,col:3
+        install_bins: bin/fesom.x  # <PATH>/esm_tools/configs/components/fesom/fesom-2.0.yaml,line:22,col:19

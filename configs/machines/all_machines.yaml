@@ -42,6 +42,10 @@ glogin:
         compute_nodes: '^g[A-Za-z0-9]+\.usr\.hlrn\.de$'
         post_nodes: 'glogin*'
 
+gloginp3:
+        login_nodes: 'glogin[11-13]'
+        compute_nodes: '^g[A-Za-z0-9]+\.usr\.hlrn\.de$'
+        post_nodes: 'glogin[11-13]'
 aleph:
         login_nodes: 'elogin*'
         compute_nodes: 'mom*'

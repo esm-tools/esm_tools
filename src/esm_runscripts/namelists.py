@@ -353,7 +353,7 @@ class Namelist:
                         header=None,
                     )
                     co2, n2o, ch4, cecc, cobld, clonp = forcing_table.loc[
-                        config["general"]["current_date"].year
+                        str(config["general"]["current_date"].year)
                     ]
                     radctl["co2vmr"] = co2
                     radctl["n2ovmr"] = n2o
@@ -418,6 +418,7 @@ class Namelist:
                         sys.exit(1)
                     # TODO(PG): This is a bit harsh, but until we get a better idea, dump the error:
                     logger.error(e)
+                    breakpoint()
                     sys.exit(1)
         return config
 

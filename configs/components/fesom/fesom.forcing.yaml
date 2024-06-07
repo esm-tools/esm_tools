@@ -180,3 +180,63 @@ choose_asforcing:
         ECHAM5:
                 leapyear: true
 
+        RYF58-83:
+                leapyear: false
+                forcing_folder: "/RYF58-83/"
+
+                Ce_atm_oce: 1.75e-3
+                Ch_atm_oce: 1.75e-3
+                Cd_atm_oce: 1.0e-3
+                Ce_atm_ice: 1.75e-3
+                Ch_atm_ice: 1.75e-3
+                Cd_atm_ice: 1.2e-3
+
+                AOMIP_drag_coeff: False
+                ncar_bulk_formulae: True
+                ncar_bulk_z_wind: 10.0
+                ncar_bulk_z_tair: 10.0
+                ncar_bulk_z_shum: 10.0
+
+                xwind_prefix: "uas."
+                ywind_prefix: "vas."
+                humi_prefix: "huss."
+                qsr_prefix: "rsds."
+                qlw_prefix: "rlds."
+                tair_prefix: "tas."
+                prec_prefix: "prra."
+                snow_prefix: "prsn."
+                mslp_prefix: "psl."
+
+                nm_xwind_var: "uas"
+                nm_ywind_var: "vas"
+                nm_humi_var: "huss"
+                nm_qsr_var: "rsds"
+                nm_qlw_var: "rlds"
+                nm_tair_var: "tas"
+                nm_prec_var: "prra"
+                nm_snow_var: "prsn"
+                nm_mslp_var: "psl"
+
+                nm_nc_iyear: 1900
+                nm_nc_imm: 1
+                nm_nc_idd: 1
+                nm_nc_freq: 1
+                nm_nc_tmid: 0
+                l_xwind: True
+                l_ywind: True
+                l_humi: True
+                l_qsr: True
+                l_qlw: True
+                l_tair: True
+                l_prec: True
+                l_mslp: False
+                l_cloud: False
+                l_snow: True
+
+                runoff_file: "CORE2_runoff.nc"
+                sss_data_file: "PHC2_salx.nc"
+
+                runoff_data_source: 'CORE2'
+                sss_data_source: 'CORE2'
+                
+

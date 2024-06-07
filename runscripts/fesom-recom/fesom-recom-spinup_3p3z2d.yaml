@@ -1,0 +1,68 @@
+general:
+        base_dir: "/work/ba1103/a270120/out/fesom-recom_3p3z2d" 
+        initial_date: "1958-01-01"
+        final_date: "3000-01-01"
+        setup_name: fesom
+        version: "2.1-recom_3p3z2d"
+        compute_time: 05:30:00
+        nyear: 0
+        nmonth: 1
+        account: ab1095
+        use_venv: False
+        #submit_to_batch_system: False
+
+fesom:
+#        version: "2.1-recom"
+        with_recom: true
+        nproc: 864
+        lresume: False
+        model_dir: /home/a/a270120/fesom2_recom_models/fesom-2.1-recom_3p3z2d
+        resolution: CORE2
+        mesh_dir: /home/a/a270105/fesom_meshes/mesh_core2/
+        climate_data_dir: "/home/a/a270120/init_data_fesom2_recom/climate_data/"
+        run_length: 1
+        run_length_unit: "m"
+        restart_length: 1
+        restart_length_unit: "m"
+        restart_rate: 1
+        restart_unit: "m"
+
+ 
+        # FESOM-RECOM BLOCK ###########################################################
+        # Copied from awiesm.yaml: FESOM-2.1-REcoM was never implemented as standalone
+        # version
+        # TODO: eventually move this to fesom-2.1.yaml?
+        #version: "2.1-recom"
+        
+        namelist_changes:
+            namelist.forcing:
+                nam_sbc:
+                    y_perpetual: false
+#                namelist.config:
+#                        paths:
+#                            ForcingDataPath: remove_from_namelist
+#                            OpbndPath: remove_from_namelist
+#                            TideForcingPath: remove_from_namelist
+
+
+recom:
+    lresume: False
+    data_path: /home/a/a270120/init_data_fesom2_recom/recom_data/
+    restart_name: "restart."
+    remove_namelist_changes.namelist.recom.pavariables:
+        - constant_CO2
+        - firstyearoffesomcycle
+        - lastyearoffesomcycle
+        - numofCO2cycles
+        - currentCO2cycle
+        - REcoM_PI
+    remove_namelist_changes.namelist.recom.paco2_flux_param:
+        - CO2_for_spinup
+
+    namelist_changes:
+        namelist.recom:
+            pavariables:
+                DIC_PI: True
+                use_atbox: false
+
+        # END FESOM-RECOM BLOCK #######################################################

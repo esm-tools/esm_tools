@@ -10,6 +10,7 @@ from .general_stuff import (
     SETUPS_DIR,
     DEFAULTS_DIR,
     ESM_SOFTWARE_DIR,
+    ESM_MASTER_PICKLE,
     ESM_MASTER_DIR,
 )
 
@@ -115,6 +116,7 @@ def combine_components_yaml(parsed_args):
 
     components_dict["defaults"] = default_infos
 
+    # esm_parser.pprint_config(components_dict)
     # sys.exit(0)
     return components_dict, relevant_entries
 
@@ -335,7 +337,16 @@ def get_relevant_info(relevant_entries, raw_config, merge_into_this_config=None)
 class setup_and_model_infos:
     def __init__(self, vcs, general, parsed_args):
 
-        self.config, self.relevant_entries = combine_components_yaml(parsed_args)
+        if not os.path.isfile(ESM_MASTER_PICKLE):
+            self.config, self.relevant_entries = combine_components_yaml(parsed_args)
+            save_pickle(self.config, ESM_MASTER_PICKLE)
+
+        elif "list_all_packages" in parsed_args:
+            self.config = load_pickle(ESM_MASTER_PICKLE)
+
+        else:
+            self.config, self.relevant_entries = combine_components_yaml(parsed_args)
+            save_pickle(self.config, ESM_MASTER_PICKLE)
 
         self.model_kinds = list(self.config.keys())
         self.meta_todos = general.meta_todos
@@ -461,6 +472,7 @@ class setup_and_model_infos:
             else:
                 new_config.update({headline: reduced_config[headline]})
 
+        # esm_parser.pprint_config(new_config)
         # sys.exit(0)
         return new_config
 

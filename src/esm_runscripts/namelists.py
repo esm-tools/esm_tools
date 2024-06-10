@@ -418,7 +418,6 @@ class Namelist:
                         sys.exit(1)
                     # TODO(PG): This is a bit harsh, but until we get a better idea, dump the error:
                     logger.error(e)
-                    breakpoint()
                     sys.exit(1)
         return config
 

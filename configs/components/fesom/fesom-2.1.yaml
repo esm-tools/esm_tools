@@ -628,8 +628,15 @@ choose_with_wiso:
 choose_fesom.with_recom:
     True:
         add_config_sources:
-            oce:    "${namelist_dir}/namelist.oce.recom"
+            oce:    "${namelist_dir}/namelist.oce"
             io:     "${namelist_dir}/namelist.io.recom"
+            io_recom: "${namelist_dir}/namelist.io.recom"
+        add_config_in_work:
+            io_recom: "namelist.io.recom"
+        add_namelists:
+            - namelist.io.recom
+        add_config_files:
+            io_recom: io_recom
         remove_namelist_changes.namelist.config: [inout]
         add_namelist_changes:
             namelist.config:

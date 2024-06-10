@@ -586,12 +586,12 @@ def replace_year_placeholder(config):
                                 # if the source contains 'from' or 'to' information
                                 # then they have a dict type
                                 if (
-                                    type(
+                                    isinstance(
                                         config[model][filetype + "_sources"][
                                             file_category
-                                        ]
+                                        ],
+                                        dict
                                     )
-                                    == dict
                                 ):
 
                                     # process the 'from' and 'to' information in
@@ -735,8 +735,7 @@ def replace_year_placeholder(config):
                 for file_category in config[model][filetype + "_targets"]:
 
                     if (
-                        type(config[model][filetype + "_sources"][file_category])
-                        == dict
+                        isinstance(config[model][filetype + "_sources"][file_category], dict)
                     ):
                         config[model][filetype + "_sources"][file_category] = (
                             find_valid_year(

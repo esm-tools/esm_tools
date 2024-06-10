@@ -1,16 +1,9 @@
-import copy
 import os
 import stat
 import subprocess
 import time
 
-import f90nml
-import yaml
 from loguru import logger
-
-import esm_calendar
-import esm_parser
-import esm_runscripts
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
@@ -110,7 +103,7 @@ def create_empty_folders(config):
     for model in list(config):
         if "create_folders" in config[model]:
             folders = config[model]["create_folders"]
-            if not type(folders) == list:
+            if not isinstance(folders, list):
                 folders = [folders]
             for folder in folders:
                 if not os.path.isdir(folder):
@@ -247,7 +240,10 @@ def copy_files_to_work(config):
 
 def _write_finalized_config(config, config_file_path=None):
     """
-    Writes <expid>_finished_config.yaml file
+    Writes <expid>_finished_config.yaml file.
+
+    This function also adds provenance information to the config values and writes
+    them to the file as comments.
 
     Input
     -----
@@ -261,101 +257,20 @@ def _write_finalized_config(config, config_file_path=None):
     Returns
     -------
     config : dict
-
     """
-
-    # first define the representers for the non-built-in types, as recommended
-    # here: https://pyyaml.org/wiki/PyYAMLDocumentation
-    def date_representer(dumper, date):
-        return dumper.represent_str(f"{date.output()}")
-
-    def calendar_representer(dumper, calendar):
-        # Calendar has a __str__ method
-        return dumper.represent_str(str(calendar))
-
-    def batch_system_representer(dumper, batch_system):
-        return dumper.represent_str(f"{batch_system.name}")
-
-    def coupler_representer(dumper, coupler):
-        # prevent dumping of whole namcouple
-        return dumper.represent_str(f"{coupler.name}")
-
-    def oasis_representer(dumper, oasis):
-        return dumper.represent_str(f"{oasis.name}")
-
-    def namelist_representer(dumper, f90nml):
-        return dumper.represent_str(f"f90nml.name")
-
-    # dumper object for the ESM-Tools configuration
-    class EsmConfigDumper(yaml.dumper.Dumper):
-        pass
-
-    # pyyaml does not support tuple and prints !!python/tuple
-    EsmConfigDumper.add_representer(
-        tuple, yaml.representer.SafeRepresenter.represent_list
-    )
-
-    # Determine how non-built-in types will be printed be the YAML dumper
-    EsmConfigDumper.add_representer(esm_calendar.Date, date_representer)
-
-    EsmConfigDumper.add_representer(
-        esm_calendar.esm_calendar.Calendar, calendar_representer
-    )
-    # yaml.representer.SafeRepresenter.represent_str)
-
-    EsmConfigDumper.add_representer(
-        esm_parser.esm_parser.ConfigSetup,
-        yaml.representer.SafeRepresenter.represent_dict,
-    )
-
-    EsmConfigDumper.add_representer(batch_system, batch_system_representer)
-
-    # format for the other ESM data structures
-    EsmConfigDumper.add_representer(
-        esm_runscripts.coupler.coupler_class, coupler_representer
-    )
-
-    EsmConfigDumper.add_representer(f90nml.namelist.Namelist, namelist_representer)
-
-    if "oasis3mct" in config:
-        EsmConfigDumper.add_representer(esm_runscripts.oasis.oasis, oasis_representer)
-
     thisrun_config_dir = config["general"]["thisrun_config_dir"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
+
     if not config_file_path:
         config_file_path = (
             f"{thisrun_config_dir}/"
             f"{expid}_{it_coupled_model_name}finished_config.yaml"
         )
-    with open(config_file_path, "w") as config_file:
-        # Avoid saving ``prev_run`` information in the config file
-        config_final = copy.deepcopy(config)  # PrevRunInfo
-        delete_prev_objects(config_final)  # PrevRunInfo
 
-        out = yaml.dump(
-            config_final, Dumper=EsmConfigDumper, width=10000, indent=4
-        )  # PrevRunInfo
-        config_file.write(out)
+    config.yaml_dump(config_file_path)
+
     return config
-
-
-def delete_prev_objects(config):
-    """
-    Delete key-values in the ``config`` which values correspond to ``prev_`` objects,
-    for example, ``prev_run`` (contains values of the config of the previous run) and
-    ``prev_chunk_<model>`` (that contains values of the config of a previous chunk
-    in a offline coupled simulation). This deletion is necessary because otherwise
-    the ``finished_config.yaml`` gets a lot of nested information from the previous
-    runs that keeps growing each new run/chunk.
-
-    Parameters
-    ----------
-    config : dict
-        Dictionary containing the simulation/compilation information
-    """
-    for prev_object in getattr(config, "prev_objects", []):
-        del config[prev_object]
 
 
 def _show_simulation_info(config):

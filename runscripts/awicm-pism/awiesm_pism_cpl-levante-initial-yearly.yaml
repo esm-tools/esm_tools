@@ -1,0 +1,17 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+        account: "ab0246"
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm_cpl-levante-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: pism_cpl-levante-initial-yearly.yaml
+        chunk_size: 1
+        chunk_unit: "years"

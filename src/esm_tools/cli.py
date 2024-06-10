@@ -58,5 +58,37 @@ def create_new_config(name, type):
     return 0
 
 
+# TODO(PG): This doesn't belong in the cli.py but whatever...
+@main.command()
+@click.argument("file_name", nargs=1, required=False)
+@click.argument("current_year", nargs=1, required=False)
+def check_transient_forcing(file_name=None, current_year=None):
+    import pandas
+    import questionary
+
+    file_name = file_name or questionary.filepath("Select the file to read").ask()
+    df = pandas.read_csv(
+        file_name,
+        sep=";",
+        index_col=0,
+        header=None,
+    )
+    current_year = (
+        current_year
+        or questionary.text(
+            "Enter a value for year that you know is in the table"
+        ).ask()
+    )
+    # current_year = int(current_year)
+    co2, n2o, ch4, cecc, cobld, clonp = df.loc[current_year]
+    print(f"Forcing table was OK to read at year {current_year}")
+    print(f"CO2: {co2}")
+    print(f"N2O: {n2o}")
+    print(f"CH4: {ch4}")
+    print(f"CECC: {cecc}")
+    print(f"COBLD: {cobld}")
+    print(f"CLONP: {clonp}")
+
+
 if __name__ == "__main__":
     sys.exit(main())

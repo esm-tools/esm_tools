@@ -145,7 +145,7 @@ module_actions:
     - "load nco/5.0.1"
     - "load git/2.35.2"
     - "load perl/5.35.0-gcc12.1.0"
-    - "load python/3.10.4"
+    - "load python/3.9.12"
     # Show what is there in the log:
     - "list"
 

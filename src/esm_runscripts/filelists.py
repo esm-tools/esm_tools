@@ -1283,7 +1283,7 @@ def movement(func):
             return True
         except IOError:
             logger.error(
-                f"Could not copy {file_source} to {file_target} for unknown reasons.",
+                f"Could not execute movement ({func.__name__}) {file_source} to {file_target} for unknown reasons.",
             )
             helpers.print_datetime(config)
             return False

@@ -27,7 +27,7 @@ this final dictionary is stored in a yaml file under the following possible path
 * ``<base_dir>/<expid>/configs/<expid>_finished_config.yaml``
 
 One can use this file to check the final value of the desired parameter. The same
-information can also be retriece by using inspect command
+information can also be retrieved by using inspect command
 (:ref:`esm_runscripts:Arguments`):
 
 .. code-block:: bash

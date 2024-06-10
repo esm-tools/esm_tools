@@ -944,8 +944,6 @@ def copy_files(config, filetypes, source, target):
 
         # For login nodes take only 1/3 of the possible threads
         machine, node = esm_parser.determine_computer_and_node_from_hostname()
-        import ipdb
-        ipdb.set_trace()
         if node == "login_nodes":
             number_of_threads = number_of_threads // 3
         else:

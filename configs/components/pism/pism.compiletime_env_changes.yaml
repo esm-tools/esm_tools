@@ -20,10 +20,10 @@ choose_computer.name:
     levante:
         environment_changes:
             add_export_vars:
-                - "UDUNITS2_ROOT=/sw/spack-levante/udunits-2.2.28-da6pla/ #/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
-                - "FFTW_ROOT=/sw/spack-levante/fftw-3.3.10-lnogal/ #/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
-                - "PROJ_ROOT=/sw/spack-levante/proj-5.2.0-w7auht/ #/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
-                - "PETSC_DIR=/sw/spack-levante/petsc-3.16.2-oorrxp/ #/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+                - "UDUNITS2_ROOT=/sw/spack-levante/udunits-2.2.28-da6pla/" #/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+                - "FFTW_ROOT=/sw/spack-levante/fftw-3.3.10-lnogal/" #/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+                - "PROJ_ROOT=/sw/spack-levante/proj-5.2.0-w7auht/" #/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+                - "PETSC_DIR=/sw/spack-levante/petsc-3.16.2-oorrxp/" #/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
                 - "HDF5_ROOT=$HDF5ROOT"
                 - "LD_LIBRARY_PATH=/sw/spack-levante/gsl-2.7-5ou4yk/lib:$LD_LIBRARY_PATH"
                 #- "UDUNITS2_ROOT=/home/a/a270124/model_codes/dependencies/udunits-2.2.28-6havf7"

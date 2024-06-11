@@ -4,3 +4,4 @@ intermediate_movements:
 - "config"
 - "bin"
 - "input"
+parallel_file_movements: threads

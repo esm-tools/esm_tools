@@ -71,15 +71,15 @@ choose_version:
     mpi_num_groups: 1
     choose_recom.pzd_case:
         "2p1z1d":
-            conf_command: "sed -i '/ private __recom / s/^#*/#/' ${destination}/src/cmakelists.txt && sed -i '/ private __recom use_precision=2)/s/^#//g' ${destination}/src/cmakelists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2)/s/^#//g' ${destination}/src/CMakeLists.txt"
         "3p1z1d":
-            conf_command: "$sed -i '/ private __recom / s/^#*/#/' ${destination}/src/cmakelists.txt && sed -i '/ private __recom use_precision=2 __coccos)/s/^#//g' ${destination}/src/cmakelists.txt"
+            conf_command: "$sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos)/s/^#//g' ${destination}/src/CMakeLists.txt"
         "2p3z2d":
-            conf_command: "sed -i '/ private __recom / s/^#*/#/' ${destination}/src/cmakelists.txt && sed -i '/ private __recom use_precision=2 __3zoo2det)/s/^#//g' ${destination}/src/cmakelists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __3zoo2det)/s/^#//g' ${destination}/src/CMakeLists.txt"
         "3p3z2d":
-            conf_command: "sed -i '/ private __recom / s/^#*/#/' ${destination}/src/cmakelists.txt && sed -i '/ private __recom use_precision=2 __coccos __3zoo2det)/s/^#//g' ${destination}/src/cmakelists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos __3zoo2det)/s/^#//g' ${destination}/src/CMakeLists.txt"
         "*":
-            conf_command: "sed -i '/ private __recom / s/^#*/#/' ${destination}/src/cmakelists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt"
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
@@ -460,9 +460,9 @@ choose_general.iterative_coupling:
                                 use_landice_water: False
                         "*":
                                 use_landice_water: True
-                
-                fwf_path: "${general.experiment_couple_dir}" 
-                
+
+                fwf_path: "${general.experiment_couple_dir}"
+
                 #choose_echam.hosing_correction:
                 #        true:
                 add_namelist_changes:
@@ -471,7 +471,7 @@ choose_general.iterative_coupling:
                                             use_landice_water: "${use_landice_water}"
                                             landice_start_mon: 1
                                             landice_end_mon: 12
-                                            fwf_path: "${fwf_path}" 
+                                            fwf_path: "${fwf_path}"
         '*':
                 use_landice_water: False
 

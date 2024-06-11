@@ -1,8 +1,5 @@
 #!/usr/bin/env python
-# import fileinput, os, sys, getopt
-
 import subprocess
-import sys
 import os
 import yaml
 
@@ -102,7 +99,6 @@ def main_flow(parsed_args, target):
 
         print("esm_master: check mode is activated. Not executing the actions above")
         return 0
-
 
     user_task.execute(ignore_errors)  # env)
 

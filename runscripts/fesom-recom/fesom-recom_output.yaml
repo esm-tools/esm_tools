@@ -8,6 +8,7 @@ daily_outputs: []
 monthly_outputs:
     - aCO2
     - aFe
+    - aAlk
     - aN
     - CO2
     - CO2y

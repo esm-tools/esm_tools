@@ -118,6 +118,7 @@ fesom:
         # end of the FESOM monthly outputs. Next comes the RECOM monthly outputs.
         - aCO2
         - aFe
+	- aAlk
         - alphaCO2
         - aN
         - benC
@@ -184,6 +185,7 @@ fesom:
         - NPPn
 	- NPPc
 	- OmegaC
+	- OmegaA
         - O2f
         - PAR
 	- pCO2

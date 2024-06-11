@@ -6,8 +6,8 @@ REcoM_restart         =.false.      ! First year .false.
 recom_binary_write    =.false.      ! Determines if tracervalue snapshots are saved. For fine grids it may crash the model to set this to true
 
 recom_binary_init     = .false.     ! Restart from binary
-bgc_num               = 31         ! set it 28 in case of REcoM_Second_Zoo=.true. (Turn on second zoo and detritus classes)   ! NEW changed number from 22 to 31
-diags3d_num           = 28             ! Number of diagnostic 3d tracers to be saved ! -- set it 20 for oxygen -- set it 2 for co2_coupling with echam --   ! NEW changed number from 2 to 28
+bgc_num               = 31          ! NEW changed from 28 to 31 ! set it 28 in case of REcoM_Second_Zoo=.true. (Turn on second zoo and detritus classes)
+diags3d_num           = 28          ! NEW changed from 20 to 28  ! Number of diagnostic 3d tracers to be saved ! -- set it 20 for oxygen -- set it 2 for co2_coupling with echam --
 VDet                  = 20.d0       ! Sinking velocity, constant through the water column and positive downwards
 VDet_zoo2             = 200.d0       ! Sinking velocity, constant through the water column
 VPhy                  = 0.d0        !!! If the number of sinking velocities are different from 3, code needs to be changed !!!
@@ -16,14 +16,14 @@ VCocco                = 0.d0        ! NEW
 allow_var_sinking     = .true.   
 biostep               = 1           ! Number of times biology should be stepped forward for each time step		 
 REcoM_Geider_limiter  = .false.     ! Decides what routine should be used to calculate limiters in sms
-REcoM_Grazing_Variable_Preference = .true. ! Decides if grazing should have preference for phyN or DiaN    ! NEW changed from false to true
-REcoM_Second_Zoo      = .true.     ! Decides second zooplankton or no     ! NEW changed from false to true
-Grazing_detritus      = .true.      ! NEW changed from false to true
-zoo2_fecal_loss       = .true.      ! NEW changed from false to true
+REcoM_Grazing_Variable_Preference = .true. ! Decides if grazing should have preference for phyN or DiaN 
+REcoM_Second_Zoo      = .true.     ! Decides second zooplankton or no 
+Grazing_detritus      = .true.
+zoo2_fecal_loss       = .true.
 zoo2_initial_field    = .false.
-het_resp_noredfield   = .true.      ! Decides respiratation of copepod group     ! NEW changed from false to true
-diatom_mucus          = .true.      ! Decides nutrient limitation effect on aggregation     ! NEW changed from false to true
-Graz_pref_new         = .true.      ! If it is true Fasham 1990, if not recom original variable preference   ! NEW changed from false to true
+het_resp_noredfield   = .true.      ! Decides respiratation of copepod group
+diatom_mucus          = .true.      ! Decides nutrient limitation effect on aggregation
+Graz_pref_new         = .true.      ! If it is true Fasham 1990, if not recom original variable preference
 use_coccos            = .true.      ! NEW
 OmegaC_diss           = .true.      ! NEW use OmegaC from Mocsy to compute calcite dissolution (following Aumont et al. 2015 and Gehlen et al. 2007)
 CO2lim                = .true.      ! NEW CO2 dependence of growth and calcification
@@ -45,13 +45,10 @@ numofCO2cycles        = 1           ! Number of cycles of the forcing planned
 currentCO2cycle       = 1           ! Which CO2 cycle we are currently running
 REcoM_PI              = .true.      ! Consistent with constant_CO2 = .true. (just for initialization)
 Nmocsy                = 1           ! Length of the vector that is passed to mocsy (always one for recom)
-UseAlkAddition        = .true.      ! NEW Alk use alkalinization (OceanNets, 2040-high)
-UselimAlk             = .true.      ! NEW limAlkAdd use limited OAE (OceanNETs, do not add Alk where OmegaA is >10)
-UseDICRemoval 	      =	.true.	    ! NEW DICremoval use removal of DIC	(OceanNETs, 2040-high)
 
 /
 &pasinking
-Vdet_a                = 0.0288d0    ! [1/day]
+Vdet_a                = 0.0288d0      ! [1/day]
 /
 
 &painitialization_N
@@ -103,7 +100,7 @@ NMaxSlope             = 1000.d0     ! Max slope for limiting function
 SiMaxSlope            = 1000.d0
 NCmax                 = 0.2d0       ! [mmol N/mmol C] Maximum cell quota of nitrogen (N:C)
 NCmax_d               = 0.2d0
-NCmax_c               = 0.15d0       ! NEW
+NCmax_c               = 0.15d0      ! NEW
 SiCmax                = 0.8d0
 NCuptakeRatio         = 0.2d0       ! [mmol N/mmol C] Maximum uptake ratio of N:C
 NCUptakeRatio_d       = 0.2d0

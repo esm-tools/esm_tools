@@ -45,6 +45,9 @@ numofCO2cycles        = 1           ! Number of cycles of the forcing planned
 currentCO2cycle       = 1           ! Which CO2 cycle we are currently running
 REcoM_PI              = .true.      ! Consistent with constant_CO2 = .true. (just for initialization)
 Nmocsy                = 1           ! Length of the vector that is passed to mocsy (always one for recom)
+UseAlkAddition        = .true.      ! NEW Alk use alkalinization (OceanNets, 2040-high)
+UselimAlk             = .true.      ! NEW limAlkAdd use limited OAE (OceanNETs, do not add Alk where OmegaA is >10)
+UseDICRemoval         = .true.      ! NEW DICremoval use removal of DIC (OceanNETs, 2040-high)
 
 /
 &pasinking

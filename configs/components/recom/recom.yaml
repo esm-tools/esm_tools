@@ -109,9 +109,12 @@ choose_version:
             - kspc
             - NPPc
             - OmegaC
+            - OmegaA
             - pCO2
             - pH
             - rhoSW
+            - aAlk
+            - DICremoval
     2.0-r:
         # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
         branch: recom-update
@@ -279,6 +282,8 @@ monthly_outputs:
     - aCO2
     - aFe
     - aN
+    - aAlk
+    - DICremoval
     - bgc01
     - bgc02
     - bgc03

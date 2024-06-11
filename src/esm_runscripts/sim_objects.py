@@ -6,6 +6,8 @@ import sys
 
 from loguru import logger
 
+import esm_parser
+
 from . import (config_initialization, helpers, logfiles, prepare, prepexp,
                prev_run, resubmit, workflow)
 

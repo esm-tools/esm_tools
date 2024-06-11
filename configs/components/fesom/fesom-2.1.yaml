@@ -71,15 +71,15 @@ choose_version:
     mpi_num_groups: 1
     choose_recom.pzd_case:
         "2p1z1d":
-            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2)/s/^#//g' ${destination}/src/CMakeLists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2)/s/^#//g' src/CMakeLists.txt"
         "3p1z1d":
-            conf_command: "$sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos)/s/^#//g' ${destination}/src/CMakeLists.txt"
+            conf_command: "$sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos)/s/^#//g' src/CMakeLists.txt"
         "2p3z2d":
-            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __3zoo2det)/s/^#//g' ${destination}/src/CMakeLists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __3zoo2det)/s/^#//g' src/CMakeLists.txt"
         "3p3z2d":
-            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos __3zoo2det)/s/^#//g' ${destination}/src/CMakeLists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos __3zoo2det)/s/^#//g' src/CMakeLists.txt"
         "*":
-            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' ${destination}/src/CMakeLists.txt"
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt"
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:

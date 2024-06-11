@@ -55,7 +55,7 @@ def main_flow(parsed_args, target):
     complete_setup = SimulationSetup(user_config=user_config)
     complete_config = complete_setup.config
 
-    setups2models.update_relevant_entries_with_config(complete_config)
+    setups2models.update_entries_with_config(complete_config)
 
     # This will be a problem later with GEOMAR
     # setups2models.replace_last_vars(env)

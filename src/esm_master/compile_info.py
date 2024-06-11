@@ -489,16 +489,8 @@ class setup_and_model_infos:
             True,
         )
 
-    def update_relevant_entries_with_config(self, config):
-        for component in config:
-            for entry in self.relevant_entries:
-                if (
-                    entry in config[component]
-                    and component in self.config["components"]
-                ):
-                    self.config["components"][component][entry] = config[component][
-                        entry
-                    ]
+    def update_entries_with_config(self, config):
+        self.config["components"] = config
 
     def update_packages(self, vcs, general):
         for package in self.all_packages:

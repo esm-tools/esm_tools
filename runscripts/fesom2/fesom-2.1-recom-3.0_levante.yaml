@@ -22,9 +22,9 @@ fesom:
     forcing_data_dir: "${pool_dir}/FORCING/"
     restart_rate: 1
     restart_first: 1
-    restart_unit: 'd' # general.nday: 1
-    #restart_unit: 'm' # general.nmonth: 1
-    #restart_unit: 'y' # general.nyear: 1
+    restart_unit: 'd' # if general.nday: 1
+    #restart_unit: 'm' # if general.nmonth: 1
+    #restart_unit: 'y' # if general.nyear: 1
     lresume: 0
 
 recom:

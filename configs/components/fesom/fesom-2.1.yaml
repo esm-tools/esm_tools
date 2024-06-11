@@ -606,10 +606,16 @@ choose_with_wiso:
 # Settings for running with REcoM
 choose_fesom.with_recom:
     True:
+        add_namelists: # todo(cd): recom people need to decide namelist.io.recom strategy
+            - namelist.io.recom
+        add_config_files:
+            io_recom: io_recom
         add_config_sources:
-            oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
-            io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
-        remove_namelist_changes.namelist.config: [inout]
+            oce:      "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
+            io:       "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+            io_recom: "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+        add_config_in_work:
+            io_recom: "namelist.io.recom"
         add_namelist_changes:
             namelist.config:
                 restart_log:
@@ -620,6 +626,7 @@ choose_fesom.with_recom:
             namelist.oce:
                 oce_tra:
                     num_tracers: "${num_tracers}"
+        remove_namelist_changes.namelist.config: [inout]
 
         # use_ciso switch
         # ---------------

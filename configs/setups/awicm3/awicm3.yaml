@@ -94,29 +94,30 @@ general:
             add_further_reading:
             - xios/xios.env.yaml
             oasis_with_yac: True
+          v3.2.2:
+            major_version: v3.2
+            couplings:
+            - fesom-2.5-2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
+            add_include_models:
+            - xios
+            add_further_reading:
+            - xios/xios.env.yaml
+            oasis_with_yac: True
           v3.3:
             major_version: v3.3
             couplings:
-            - fesom-2.5+oifs-48r1+xios-2.5
+            - fesom-2.5-2+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - oifs/oifs48.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
+            - fesom/fesom.env.yaml
             add_add_environment_changes:
                 levante:
                     iolibraries: system_gnu_libs
             oasis_with_yac: False
-          v3.2.2:
-            major_version: v3.2
-            couplings:
-            - fesom-2.5.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
-            add_include_models:
-            - xios
-            add_further_reading:
-            - xios/xios.env.yaml
-            oasis_with_yac: True
           master:
             major_version: master
             couplings:

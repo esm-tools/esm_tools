@@ -41,6 +41,7 @@ choose_version:
   "2.5-2":
     branch: "2.5.2"
 
+
 destination: "fesom-2.5"
 install_bins: bin/fesom.x
 git-repository:
@@ -546,6 +547,8 @@ compiletime_environment_changes:
         add_export_vars:
                 taken2from:      fesom2_compile
 
+
+
 config_in_work:
         config:  "namelist.config"
         cvmix:   "namelist.cvmix"
@@ -643,6 +646,7 @@ grids:
 
 further_reading:
         - fesom/fesom.forcing.yaml
+        - fesom/fesom.env.yaml
 
 # ------------------------
 # RECIPE

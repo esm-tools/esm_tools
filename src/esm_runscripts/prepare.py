@@ -69,10 +69,53 @@ def _read_date_file(config):
         date = config["general"].get("initial_date", "18500101")
         run_number = 1
         write_file = True
+
+    date_c = config["general"].get("current_date", None)
+
+    if date_c is not None:
+        date_fdf = Date(date)
+        date_c = Date(str(config["general"]["current_date"]))
+        run_number_c = int(config["general"]["run_number"])
+        last_jobtype = config["general"].get("last_jobtype", "")
+        isresubmitted = last_jobtype == config["general"]["jobtype"]
+
+        if date_fdf != date_c:
+
+            msg = (
+                f"``Date`` and ``run_number`` are ``not`` taken from date file, "
+                f"but from command_line argument (provided by -s or --start_date). "
+                f"The given start_date ({date_c}) and run_number ({run_number_c}) "
+                f"are different from the values "
+                f"in the current date file of your experiment ({date}, {run_number}). "
+                f"Your experiment may now be in a non consecutive state. "
+                f"Please confirm if you want to continue:"
+            )
+            esm_parser.user_note("Detached experiment:", msg)
+            proceed = ""
+            if isresubmitted:
+                proceed = questionary.select(
+                    "Do you want to continue?",
+                    choices=[
+                        f"Yes, with date from command line argument: {str(config['general']['current_date'])}",
+                        f"Yes, with date from date file: {date}",
+                        "No, cancel."
+                    ]).ask()
+
+                if 'Yes, with date from command line argument' in proceed:
+                    date = str(date_c)
+                    run_number = run_number_c
+                elif 'Yes, with date from date file' in proceed:
+                    date = date
+                    run_number = run_number
+                else:
+                    esm_parser.user_note("The experiment will be cancelled:", f"You cancelled the experiment due to date discrepancies.")
+                    sys.exit(1)
+
     config["general"]["run_number"] = run_number
     config["general"]["current_date"] = date
     logging.info("current_date = %s", date)
     logging.info("run_number = %s", run_number)
+
     return config
 
 

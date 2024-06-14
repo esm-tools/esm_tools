@@ -155,7 +155,10 @@ provenance_feature:
             ready to be used! To get started, make sure you have at least version 6.35\n
             and \x1b[96mmake sure to reinstall the package (cd <PATH>/esm_tools; ./install.sh)\x1b[0m since new depdency libraries\n
             have been added. Once active, you can see where each value in your configuration originated \n
-            in the >> finished_config.yaml << files in you experiment config directories\n"
+            in the >> finished_config.yaml << files in you experiment config directories\n
+            You will get output in the form:\n\n
+              model: fesom  # /home/a/a270152/esm_tools/configs/components/fesom/fesom-2.5.yaml,line:4,col:8\n
+  branch: '2.5' # /home/a/a270152/esm_tools/configs/components/fesom/fesom-2.5.yaml,line:27,col:13\n"
         action: DELAY(1)
         announcement: true
 

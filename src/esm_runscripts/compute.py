@@ -278,11 +278,13 @@ def initialize_experiment_logfile(config):
     if "trace_sink" in dir(logger):
         experiment_dir = config["general"]["experiment_dir"]
         expid = config["general"]["expid"]
+        jobid = config["general"].get("jobid", None)
+        jobid = f"_{jobid}" if jobid else ""
         it_coupled_model_name = config["general"]["iterative_coupled_model"]
         datestamp = config["general"]["run_datestamp"]
         logfile_path = (
             f"{experiment_dir}/log/"
-            f"{expid}_{it_coupled_model_name}esm_runscripts_{datestamp}.log"
+            f"{expid}_{it_coupled_model_name}esm_runscripts_{datestamp}{jobid}.log"
         )
 
         logger.trace_sink.def_path(logfile_path)

@@ -5,135 +5,320 @@ ESM Runscripts - Using the Workflow Manager
 Introduction
 ------------
 
-Starting with Release 6.0, esm_runscripts allows the user to define additional subjobs for data processing, arrange them in clusters, and set the order of execution
-of these and the standard runjob parts in a flexible and short way from the runscript. This is applicable for both pre- and postprocessing, but especially useful
-for iterative coupling jobs, like e.g. coupling pism to vilma (see below). In this section we explain the basic concept, and the keywords that have to be set in the
-runscript to make use of this feature.
+Starting with Release 6.0, esm_runscripts allows to define additional phases for e.g. data processing, coupling.
+Such subjobs can be arranged into clusters, and the order of execution can be set in a flexible and short way from the runscript. This is applicable for both pre- and postprocessing, but especially useful for iterative coupling jobs, like e.g. coupling pism to vilma (see below). In this section we explain the basic concept, describe the keywords that have to be set in the runscript in order to make use of this feature, and give some examples on how to integrate pre- and postprocessing jobs and how to set up phases for iterative coupling.
 
-Subjobs of a ``normal`` run
----------------------------
+Default phases of a general model simulation run
+--------------------------------------------------------
 
-Even before the addition of the workflow manager, the run jobs of esm_runscript were split into different subjobs, even though that was mostly hidden from the user's view. Before
-Release 6.0, these subjobs were:
-
-::
-
-        compute --> tidy_and_resubmit (incl. wait_and_observe + resubmit next run)
-
-Technically, ``wait_and_observe`` was part of the tidy_and_resubmit job, as was the resubmission, including above only for the purpose of demonstrating the difference to the 
-new standard workflow, which is now (post-Release 6.0)::
+ESM-Tools uses the workflow manager itself to organize the default :term:`workflow` :term:`phases<phase>` of a simulation :term:`run`. Since Release 6.0 the default workflow phases are the following::
 
         newrun --> prepcompute --> compute --> observe_compute --> tidy (+ resubmit next run)
 
-Other than before adding the workflow manager, these standard subjobs are all separated and independant subjobs, each submitted (or started) by the previous subjob in one of three
-ways (see below). The splitting of the old compute job into newrun, prepcompute and compute on one side, and tidy_and_resubmit into observe and tidy, was necessary to enable
-the user to insert coupling subjobs for iterative coupling at the correct places. Here is what each of the standard subjobs does:
+.. Other than before adding the workflow manager, 
 
+These standard phases are all separated and independant phases, each submitted (or started) by the previous phase in one of three ways (see below). Here is what each of the standard phases does:
 
-====================================================== ==========================================================
-Subjob                                                 Function
-====================================================== ==========================================================
+.. The splitting of the old compute job into newrun, prepcompute and compute on one side, and tidy_and_resubmit into observe and tidy, was necessary to enable the user to insert coupling subjobs for iterative coupling at the correct places. Here is what each of the standard subjobs does:
+
+====================================================== ============================================================= ========================
+Phase                                                  Function                                                      Started by
+====================================================== ============================================================= ========================
   newrun                                               Initializes a new experiment, only very basic stuff, like
                                                        creating (empty) folders needed by any of the following 
-                                                       subjobs. NEEDS TO BE THE FIRST SUBJOB OF ANY EXPERIMENT.
+                                                       subjobs/phases. 
+                                                       NEEDS TO BE THE FIRST SUBJOB/PHASE OF ANY 
+                                                       :term:`EXPERIMENT<experiment>`.
   prepcompute                                          Prepares the compute job. All the (Python) functionality that
                                                        needs to be run, up to the job submission. Includes copying
                                                        files, editing namelists, write batch scripts, etc.
-  compute                                              Actual model integration, nothing else. No Python codes
+  compute                                              Actual model integration, nothing else. No Python codes       sbatch
                                                        involved.
-  observe_compute                                      Python job running at the same time as compute, checking if
+  observe_compute                                      Python job running at the same time as compute, checking if   sbatch (compute), started by its own esm_runscripts call
                                                        the compute job is still running, looking for some known 
                                                        errors for monitoring / job termination.
-  tidy                                                 Sorts the produced outputs, restarts and log files into 
+  tidy                                                 Sorts the produced outputs, restarts and log files into       observe_compute
                                                        the correct folders, checks for missing and unknown files,
                                                        builds coupler restart files if not present
-====================================================== ==========================================================
+====================================================== ============================================================= ========================
 
-It is important to understand that none of this has to be edited by the users, this is the default setup. 
+It is important to understand that none of this has to be edited by the users. The above described workflow phases form the default set of phases. Changing anyone of these phases may lead esm-tools to fail. 
 
+Inspect workflow phases
+-----------------------
 
-Keywords available for defining additional data processing subjobs
-------------------------------------------------------------------
+To inspect the workflow and workflow phases that are defined by e.g. a choosen setup or in an already run simulation/experiment, you can run esm_runscript with the -i (--inspect) option. This can be done for two different cases:
 
-The workflow manager is intended to include shell scripted data processing jobs into the
-esm_runscripts workflow, so several things have to be defined:
+- To inspect the workflow previous to running a certain experiment. For exampl, if you want to add a new workflow phase, and need to know which phases are already defined in a choosen setup or model configuration::
 
+        esm_runscripts runscript.yaml -i workflow
+
+- To inspect a workflow from an experiment that has beed carried out already or created during a check-run (-c)::
+
+        esm_runscripts runscript.yaml -e <expid> -i workflow
+
+It will display the workflow configuration showing the order of workflow phases and their attributes and possible dependencies. This output should help to find out the correct keyworkds to be set when integrating a new workflow phase.
+
+**Example output**::
+
+        Workflow sequence (cluster [phases])
+        ------------------------------------
+        prepcompute ['prepcompute'] ->  compute ['compute'] ->  tidy ['tidy'] ->  prepcompute ['prepcompute'] and my_own_new_cluster ['my_new_last_phase', 'my_second_new_phase']
+
+.. _def_workflow_phases:
+
+Defining additional workflow phases
+-----------------------------------
+
+If it is necessary to complement the default workflow with simulation specific processing steps, this sequence of default workflow phases can be extended by adapting the runscipt or any component specific configuration files. The workflow manager will evaluate these additional phases and integrate them into the default sequence of the workflow. In order to integrate the additional phases correctly, theses phases have to be defined by providing the following information. In the following, we will explain how an additional phase can be defined by describing the necessary keywords and what kind of restrictions need to be taken into account.
+
+In order to integrate a user defined phase into the default workflow, the following information need to be provided:
  * Name of the script to be run
  * Name of the python script used for setting up the environment
- * Name of the folder in which both of the above scripts can be found
- * Information on how often the subjob should be called
- * Information on between which other subjobs the new subjob should be inserted into the workflow
- * In case it isn't clear: Which subjob should resubmit the next run.
+ * Path to the folder in which both of the above scripts can be found
+ * Information on how often the phase should be called
+ * Information about between which other phases the new user defined phase is to be inserted into the workflow
+ * In case it isn't clear: Which phase should resubmit the next run.
 
-The keywords used to define that are:
+In general, a workflow can be defined in the runscript or in any component configuration file. But there are some restrictions to the definition that needs to be taken into account:
+ * The name of each phase needs to be unique. Otherwise, an exception error will be raised.
+ * The names of the default phases are not allowed to be used for any new phases. This will also cause an exception error during runtime.
+ * Settings in the runscript will overwrite settings in other config files. (See also :ref:`yaml_hierarchy:Hierarchy of YAML configuration files`.)
 
-====================================================== ==========================================================
-Keyword                                                Function
-====================================================== ==========================================================
-  workflow                                             Chapter headline in a model's section, indicating that
-                                                       alterations to the standard workflow will be defined here
-  subjob_clusters                                      Section in the workflow chapter, containing the information
-                                                       on additional subjob_clusters. A subjob_cluster is a
-                                                       collection of subjobs run from the same batch script. Each
-                                                       subjob needs to belong to one cluster, if none is defined, 
-                                                       each subjob will automatically get assigned to its own
-                                                       cluster. Each entry in ``subjob_clusters`` is a dict,
-                                                       with the outermost key being the (arbitrary) name of the
-                                                       cluster.
-  subjobs                                              Section in the workflow chapter, containing the information
-                                                       on additional subjobs. 
-  run_after / run_before                               Entry in spevifications of a subjob_cluster, to define
-                                                       before or after which other cluster of the workflow this cluster
-                                                       is supposed to run. Only one of the two should be specified.
-                                                       Can also be used in the specifications of subjobs if these
-                                                       subjobs get a corresponding cluster auto-assigned.
-  script:
-  script_dir:
-  call_function:
-  env_preparation:
-  next_run_triggered_by:
-====================================================== ==========================================================
+Keywords to define a new workflow phase
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+To define a new phase, the following keywords and mappings (key/value pairs) are available. (Keywords that are indicated with ``< >`` need to be adapted by the user.)
+
+====================================================== ============ =========================== ==========================================================
+Keyword                                                Mandatory    (Default) values            Function
+====================================================== ============ =========================== ==========================================================
+  **workflow**                                         yes          --                          Chapter headline in a runscript or configuration section, 
+                                                                                                indicating that an alterations to the standard workflow 
+                                                                                                will be defined here.
+
+  **phases**                                           yes          user defined string         Section within the ``workflow`` chapter that containes new 
+                                                                                                additional workflow phases.
+
+  **<new_phase_name>**                                 yes          user defined string         Section within the ``new_phases`` section for each new phase.
+                                                                                                The name of the new phase needs to be unique. See also further
+                                                                                                explenation here :ref:`def_workflow_phases`
+
+  run_after: <value> or run_before: <value>            no           default: last phase in      Key/value entry in each ``<new_phase_name>`` section. 
+                                                                    (default) workflow          This mapping defines the (default or user) phase of the 
+                                                                    (e.g. tidy)                 workflow after or before the new phase should be executed.
+                                                                                                Only one of the two should be specified. 
+
+  submit_to_batch_system: <value>                      no           **false**, true             Key/value entry in each ``<new_phase_name>`` section. 
+                                                                                                This mapping defines if the (default or user) phase is 
+                                                                                                submitted to batch system or not.
+
+  run_on_queue: <value>                                no           None                        Key/value entry in each ``<new_phase_name>`` section.
+                                                                                                This mapping defines to which queue (name) the job of the new phase
+                                                                                                should be submitted to.
+
+  batch_or_shell: <value>                              no           **shell**, batch            Key/value entry in each ``<new_phase_name>`` section.
+                                                                                                This mapping defines if the (default or user) phase is submitted
+                                                                                                as batch job or as shell script. 
+                                                                                                This attribute will be overwritten depending on ``submit_to_batch_system``
+                                                                                                
+  cluster: <value>                                     no           Phase name                  Key/value entry in each ``<new_phase_name>`` section. Phases
+                                                                                                that have the same entry in ``cluster`` will be run 
+                                                                                                from the same batch script.
+
+  order_in_cluster: <value>                            no           **sequential**, concurrent  Key/value entry in each ``<new_phase_name>`` section. This mapping
+                                                                                                defines how phases in the same ``<cluster>`` should be run.
+                                                                                                Concurrent or serial.
+
+  **script: <value>**                                  yes          None                        Key/value entry in each ``<new_phase_name>`` section. 
+                                                                                                This mapping defines the name of the script that is going 
+                                                                                                to be executed during the new workflow phase.
+
+  **script_dir: <value>**                              yes          None                        Key/value entry in each ``<new_phase_name>`` section. 
+                                                                                                This mapping defines the path to the script set by the variable
+                                                                                                ``<script>``.
+
+  call_function: <value>                               no           None                        Key/value entry in each ``<new_phase_name>`` section. 
+                                                                                                This mapping defines the function within the script defined in
+                                                                                                variable ``<script>`` should be executed.
+
+  env_preparation: <value>                             no           None                        Key/value entry in each ``<new_phase_name>`` section. This
+                                                                                                mapping defines e.g. a Python script/function that prepares 
+                                                                                                a dictionary with environment variables.
+
+  nproc: <value>                                       no           1                           Key/value entry in each ``<new_phase_name>`` section.
+                                                                                                This mapping defines the number of CPUs a phase should run with
+                                                                                                (if run via sbatch).
+
+  run_only: <value>                                    no           None                        Key/value entry in each ``<new_phase_name>`` section.
+                                                                                                This mapping defines when the phase should be run. E.g. run only
+                                                                                                at the beginning of a :term:`chunk` (set of runs).
+
+  skip_chunk_number: <value>                           no           None                        Key/value entry in each ``<new_phase_name>`` section. This
+                                                                                                mapping defines how many chunks should be skipped before the 
+                                                                                                phase will be execited.
+
+  trigger_next_run: <value>                            no           **false**, true             If phase should trigger next run                    
+====================================================== ============ =========================== ==========================================================
+
+Syntax example
+^^^^^^^^^^^^^^
+The following code snippet shows the general syntax for defining a new workflow phase.
+::
+
+    workflow:
+        phases:
+            <new_phase_name>:
+                run_after: <value>
+                submit_to_batch_system: <value>
+                run_on_queue: <value>
+                cluster: <value>
+                order_in_cluster: <value>
+                script: <value>
+                call_function: <value>
+                env_preparation: <value>
+                nproc: <value>
+                run_only: <value>
+                skip_chunk_number: <value>
+                trigger_next_run: <value>
+
+Workflow defaults
+-----------------
+
+A minimal example of defining a new workflow phase is given in Example 1. This will integrate a new phase with the following default assumptions:
+
+- The new phase will be run after the last phase of the default workflow.
+- The script given for this phase is run as a subprocess (not a batch run).
+- The next run of the overall experiment will be (still) triggered by the last phase of the default workflow and not the new phase.
 
 
-
+Examples for the definition of new workflow phases
+--------------------------------------------------
 
 Example 1: Adding an additional postprocessing subjob
------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+In the case of a simple postprocessing task (here for model Echam), that sould be run as the last task of each run, independantly from restarting the experiment, the corresponding minimal code snippet in a runscript could look like this::
 
- In the case of a simple echam postprocessing job, the corresponding section in the runscript could look like this::
+    echam:
+        [...other information...]
 
-
-        echam:
-                [...other information...]
-
-                workflow:
-                        next_run_triggered_by: tidy
-                        
-                        subjobs:
-                                my_new_subjob:
-                                        nproc: 1
-                                        run_after: tidy
-                                        script_dir:
-                                        script:
-                                        call_function:
-                                        env_preparation:
-
+        workflow:
+            phases:
+                my_postprocessing:
+                    script_dir: <value>
+                    script: <values>
 
 
 Example 2: Adding an additional preprocessing subjob
------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A preprocessing job basically is configured the same way as a postprocessing job, but the run_after entry is repl
+A preprocessing job basically is configured the same way as a postprocessing job, but the run_before keyword is needed now, to define when the new phase should be run::
+
+    echam:
+        [...other information...]
+
+        workflow:
+            phases:
+                my_preprocessing:
+                    run_before: prepcompute
+                    script_dir: <value>
+                    script: <values>
+
+Example 3: Adding a new phase as the last task in a run
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To integrate a new phase that should be run as the last task in every run but before the next run starts, use the following example::
+
+    echam:
+        [...other information...]
+
+        workflow:
+            phases:
+                my_new_last_phase:
+                    script_dir: <value>
+                    script: <values>
+                    trigger_next_run: True
+
+Example 4: Adding multiple user phases that can be run concurrently in a workflow cluster
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+It is possible to define multiple new phases that should start at the same but can be run independently from each other. This can be done by assigning these phases to the same workflow cluster and run them concurrently over the batch system::
+
+    echam:
+        [...other information...]
+
+        workflow:
+            phases:
+                my_new_last_phase:
+                    script_dir: <value>
+                    script: <values>
+                    submit_to_batch_system: True
+                    run_on_queue: <value>
+                    cluster: my_own_new_cluster
+
+                my_second_new_phase:
+                    script_dir: <value>
+                    script: <values>
+                    submit_to_batch_system: True
+                    run_on_queue: <value>
+                    cluster: my_own_new_cluster
 
 
-
-
-Example 3: Adding a iterative coupling job
-------------------------------------------
+Example 5: Adding an iterative coupling job
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Writing a runscript for iterative coupling using the workflow manager requires some more changes. The principal idea is
 that each coupling step consists of two data processing jobs, one pre- and one postprocessing job. This is done this way
 as to make the coupling modular, and enable the modeller to easily replace one of the coupled components by a different
 implementation. This is of course up to the user to decide, but we generally advise to do so, and the iterative couplings
-distributed with ESM-Tools are organized this way.
+distributed with `ESM-Tools` are organized this way. ::
+
+    echam:
+        [...other information...]
+
+         workflow:
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2echam.functions
+                    script_dir: ${general.script_dir}/echam
+                    call_function: ice2echam
+                    env_preparation: env_echam.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_echam2ice.functions
+                    script_dir: ${general.script_dir}/echam
+                    call_function: echam2ice
+                    env_preparation: env_echam.py
+                    run_only: last_run_in_chunk
+                    trigger_next_run: True
+
+    fesom:
+        [...other information...]
+
+        workflow:
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2fesom.functions
+                    script_dir: ${general.script_dir}/fesom
+                    call_function: ice2fesom
+                    env_preparation: env_fesom.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_fesom2ice.functions
+                    script_dir: ${general.script_dir}/fesom
+                    call_function: fesom2ice
+                    env_preparation: env_fesom.py
+                    run_only: last_run_in_chunk
+                    trigger_next_run: True

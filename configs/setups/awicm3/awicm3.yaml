@@ -110,13 +110,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
-            - oifs/oifs48.env.yaml
-            - xios/xios.env.yaml
-            - rnfmap/rnfmap.env.yaml
-            - fesom/fesom.env.yaml
-            add_add_environment_changes:
-                levante:
-                    iolibraries: system_gnu_libs
+            - ../setups/awicm3/awicm3-v3.3.env.yaml
             oasis_with_yac: False
           master:
             major_version: master
@@ -174,15 +168,6 @@ general:
         dr_hook_ignore_signals: -1
         further_reading:
                 - oasis3mct/oasis3mct.env.yaml
-
-        add_environment_changes:
-                choose_computer.name:
-                        blogin:
-                                compiler_mpi: intel2019_ompi
-                        glogin:
-                                compiler_mpi: intel2019_ompi
-                        levante:
-                                compiler_mpi: intel2022_openmpi
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

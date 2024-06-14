@@ -153,7 +153,7 @@ provenance_feature:
 
             A useful \x1b[96mnew feature to show configuration history \x1b[0m is now\n
             ready to be used! To get started, make sure you have at least version 6.35\n
-            and \x1b[96mmake sure to reinstall the package\x1b[0m since new depdency libraries\n
+            and \x1b[96mmake sure to reinstall the package (cd <PATH>/esm_tools; ./install.sh)\x1b[0m since new depdency libraries\n
             have been added. Once active, you can see where each value in your configuration originated \n
             in the >> finished_config.yaml << files in you experiment config directories\n"
         action: DELAY(1)

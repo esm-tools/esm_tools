@@ -620,7 +620,7 @@ class EnvironmentInfos:
         return f"{name}_script.sh"
 
     def output(self):
-        esm_parser.pprint_config(self.config)
+        self.config.yaml_dump()
 
 
 class environment_infos(EnvironmentInfos):

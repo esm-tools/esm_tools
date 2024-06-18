@@ -8,6 +8,14 @@ mct_version: "2.8" # TODO: set mct_version = version (can't do at the moment as 
 git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
 contact: "miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
+bin_sources:
+        yaclib: ${oasis3mct.model_dir}/lib/yac/*
+        yaxtlib: ${oasis3mct.model_dir}/lib/yaxt/*
+
+bin_in_work: 
+        yaclib: lib/oasis/*
+        yaxtlib: lib/oasis/*
+
 config_files:
         cf: cf
 

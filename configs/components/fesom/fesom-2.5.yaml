@@ -513,11 +513,12 @@ choose_lresume:
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
 
 bin_in_work:
-        fesom: "${executable}"
+        bin: "${executable}"
+        lib: "lib/fesom/*"
 
 bin_sources:
-        fesom: "${bin_dir}/${comp_executable}"
-
+        bin: "${bin_dir}/${comp_executable}"
+        lib: "${fesom.model_dir}/build/lib/*"
 
 
 config_files:
@@ -643,6 +644,7 @@ grids:
 
 further_reading:
         - fesom/fesom.forcing.yaml
+        - fesom/fesom.env.yaml
 
 # ------------------------
 # RECIPE

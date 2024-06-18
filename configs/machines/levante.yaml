@@ -222,7 +222,7 @@ choose_iolibraries:
             mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
             MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
             mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-            LD_LIBRARY_PATH: $MPI_HOME/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
+            LD_LIBRARY_PATH: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:$AEC_ROOT/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
 
     system_libs:
         add_module_actions:

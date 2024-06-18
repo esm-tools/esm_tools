@@ -31,6 +31,7 @@ choose_version:
         git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
         branch: oxygen
         destination: recom
+        namelist_dir: "${general.model_dir}/recom/"
         comp_strategy: "lib"
         out_strategy: "fesom1"
         # - additional recom output in ocean-only fesom1+recom2 setup
@@ -88,16 +89,19 @@ choose_version:
         git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
         branch: oxygen
         destination: recom
+        namelist_dir: "${general.model_dir}/recom/"
         comp_strategy: "lib"
         out_strategy: "fesom1"
     "3.0":
         comp_strategy: "flag"
         pzd_case: "3p3z2d" # 2p1z1d, 3p1z1d, 2p3z2d, 3p3z2d
+        namelist_dir: "${fesom.model_dir}/${fesom.destination}/config/case_${pzd_case}/"
         out_strategy: "fesom2" # output is handled via fesom2 namelist.io(.recom); see respective fesom and awicm yamls
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
+namelist_dir: "NONE"
 data_path: ""
 time_step: 1800 # todo(cd): recom gets its time step always from fesom. its misleading to define it here. should be removed
 #chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds ))
@@ -107,10 +111,9 @@ choose_comp_strategy:
         clean_command: ${defaults.clean_command}
         comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
         install_libs: build/librecom.a
-        namelist_dir: "${general.model_dir}/recom/"
-    "flag": # recom3 is part of fesom2; compiler flag needs to be added to fesom comp cmd
-        # necessary compiling flag is defined in respective setup yaml
-        namelist_dir: "${fesom.model_dir}/config/" # todo(cd): add pzd case
+    #"flag": # recom3 is part of fesom2; compiler flag needs to be added to fesom comp cmd
+             # commented out since its not possible to have an empty block
+        # necessary compiling flag is defined in respective setup yaml --> nothing to do here
 # keeping for reference:
 #fesom2_standalone: "$((
 #        '${general.setup_name}' == 'fesom' and

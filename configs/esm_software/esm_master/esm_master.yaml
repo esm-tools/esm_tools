@@ -1,10 +1,8 @@
 install_meta_command:
         - get
-        - conf
         - comp
 
 recomp_meta_command:
-        - conf
         - clean
         - comp
 

@@ -27,7 +27,7 @@ choose_version:
     branch: "2.5"
 
   "2.5-paleodyn":
-    branch: "2.5.2_paleo"
+    branch: "2.5.1_paleo"
     destination: "fesom-2.5"
     git-repository:
     - https://github.com/FESOM/fesom2.git # LA: only temporarily

@@ -1,19 +1,15 @@
 """
 Documentation goes here
 """
-import sys
-import os
 
-from . import config_initialization
-from . import prepare
-from . import prepexp
-from . import workflow
-from . import resubmit
-from . import helpers
-from . import logfiles
-from . import prev_run
+import sys
+
+from loguru import logger
 
 import esm_parser
+
+from . import (config_initialization, helpers, logfiles, prepare, prepexp,
+               prev_run, resubmit, workflow)
 
 
 class SimulationSetup(object):
@@ -71,7 +67,9 @@ class SimulationSetup(object):
             )
 
         # 3. Initialize information about interactive sessions
-        user_config = config_initialization.init_interactive_info(user_config, command_line_config)
+        user_config = config_initialization.init_interactive_info(
+            user_config, command_line_config
+        )
 
         # 4. Initialize iterative coupling information (offline coupling)
         user_config = config_initialization.init_iterative_coupling(
@@ -94,9 +92,7 @@ class SimulationSetup(object):
         self.config = config_initialization.check_account(self.config)
 
         # 8. Complete information for inspect
-        self.config = config_initialization.complete_config_with_inspect(
-            self.config
-        )
+        self.config = config_initialization.complete_config_with_inspect(self.config)
 
         # 9. Store the ``command_line_config`` in ``general``
         self.config = config_initialization.save_command_line_config(
@@ -105,17 +101,14 @@ class SimulationSetup(object):
 
         # 10. Initialize the ``prev_run`` object
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
+        self.store_prev_objects()
 
         # 11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
         self.config = prepare.run_job(self.config)
 
-        # esm_parser.pprint_config(self.config)
-        # sys.exit(0)
-
     def __call__(self, kill_after_submit=True):
         # Trigger inspect functionalities
         if self.config["general"]["jobtype"] == "inspect":
-            # esm_parser.pprint_config(self.config)
             self.inspect()
             helpers.end_it_all(self.config)
 
@@ -210,7 +203,7 @@ class SimulationSetup(object):
     def inspect(self):
         from . import inspect
 
-        print(f"Inspecting {self.config['general']['experiment_dir']}")
+        logger.info(f"Inspecting {self.config['general']['experiment_dir']}")
         self.config = inspect.run_job(self.config)
 
     ###################################     PREPCOMPUTE      #############################################################
@@ -243,3 +236,13 @@ class SimulationSetup(object):
         import esm_viz as viz
 
         self.config = viz.run_job(self.config)
+
+    #########################     HELPERS      #############################################################
+
+    def store_prev_objects(self):
+        self.config.prev_objects = ["prev_run"]
+        self.config.prev_objects.extend(self.config["general"].get(
+            "prev_chunk_objs", [])
+        )
+        if "prev_chunk_objs" in self.config["general"]:
+            del self.config["general"]["prev_chunk_objs"]

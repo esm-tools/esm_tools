@@ -182,7 +182,7 @@ choose_asforcing:
 
         RYF58-83:
                 leapyear: false
-                forcing_folder: "/RYF58-83/"
+                forcing_folder: "/RYF_Miriam/"
 
                 Ce_atm_oce: 1.75e-3
                 Ch_atm_oce: 1.75e-3

@@ -27,6 +27,7 @@ fesom:
     time_step: 1800
     nproc: 128
     tar_binary_restarts: true
+    namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.3/fesom-2.5/config/"
 
 oifs:
     resolution: "TCO95"

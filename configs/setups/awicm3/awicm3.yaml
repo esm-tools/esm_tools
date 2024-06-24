@@ -650,7 +650,7 @@ xios:
                                 - file_def
                                 - field_def
                 "*":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/order_${xios_interp_order}/${general.resolution}"
+                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
 
 
 

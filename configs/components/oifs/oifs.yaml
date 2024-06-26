@@ -3,7 +3,7 @@
 #
 
 model: oifs
-executable: OpenIFS
+executable: oifs
 execution_command: ${executable} -e ${oifs.input_expid}
 version: 43r3
 major_version: 43r3

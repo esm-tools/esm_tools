@@ -9,8 +9,8 @@ git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
 contact: "miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 bin_sources:
-        yaclib: ${oasis3mct.model_dir}/lib/yac/*
-        yaxtlib: ${oasis3mct.model_dir}/lib/yaxt/*
+        yaclib: ${oasis3mct.model_dir}/lib/yac/lib/*
+        yaxtlib: ${oasis3mct.model_dir}/lib/yaxt/lib/*
 
 bin_in_work: 
         yaclib: lib/oasis/*

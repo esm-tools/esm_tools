@@ -42,6 +42,4 @@ setup_dir: "${model_dir}"
 time_step: 2700
 resolution: GR15
 
-further_reading:
-        - mpiom/mpiom.compiletime_env_changes.yaml
 

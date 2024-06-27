@@ -32,10 +32,6 @@ general:
         reusable_filetypes: [input, bin, src]
 
         choose_computer.name:
-                mistral:
-                        pool_dir: "/work/ab0246/a270092/input"
-                ollie:
-                        pool_dir: "/work/ollie/jstreffi/input"
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
                 aleph:

@@ -67,7 +67,6 @@ compile_infos:
     comp_command: make -j `nproc --all`
 
     #comp_command: make 
-    #conf_command: /home/ollie/dural/icon_utilities/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
     #conf_command: export STUFF_DIR=$PWD/../../../stuff; $STUFF_DIR/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
     #conf_command: ${general.esm_function_dir}/../stuff/change_mh_file.py && ./configure --with-fortran=gcc --with-openmp --with-grib_api
 
@@ -87,7 +86,7 @@ choose_version:
         resolution: R02B05
         dt_restart: 21600
         
-        pool_dir: "/work/ollie/rakoehler/icon_global_testcase/experiment"
+        pool_dir: "to_be_set"
         input_dir: "${pool_dir}/input"
         grid_dir: "${input_dir}/grid"
         bound_dir: "${input_dir}/bound"
@@ -156,7 +155,7 @@ choose_version:
         resolution: R3B11
         dt_restart: 21600
 
-        pool_dir: "/work/ollie/dlittman/icon"
+        pool_dir: "to_be_set"
         input_dir: "${pool_dir}/arctic/input"
         grid_dir: "${input_dir}"
         bound_dir: "${pool_dir}/test_cases/case_les/arctic/input/R3B11_CanadaI"
@@ -274,107 +273,4 @@ config_sources:
 # settings in the machine files. (Deniz)
 # Deniz: look at the conf_command. MPI env vars are deleted
 useMPI: 
-
-choose_computer.name:
-    ollie:
-        add_compiletime_environment_changes: 
-            add_module_actions:
-                - "unload cmake" 
-                - "unload intel.compiler"
-                - "unload intel.mpi"
-                - "load gnu.compiler/6.3.0"
-                - "load centoslibs"
-                - "unload netcdf/4.6.2_intel"
-                - "load netcdf/4.6.2_gnu"
-                - "load cdo"
-                - "load nco"
-                - "load intel.mpi"
-                
-            add_export_vars:
-                - 'FC=mpif90'
-                - 'F77=mpif90'
-                - 'MPIFC=mpif90'
-                - 'MPICC=mpigxx'
-                - 'CC=mpigcc'
-                - 'CXX=mpigxx'
-
-            choose_version:
-                2.6.2-rc:
-                    add_module_actions:
-                        - "purge"
-                        - "load gnu.compiler/6.5.0"
-                        - "load automake/1.16.2"
-                        - "load intel.mpi"
-                        - "load intel.compiler/18.0.5"
-                        - "load hdf5"
-                        - "load netcdf/4.6.2_intel"
-
-                    add_export_vars:
-                        - "HDF5_ROOT_ICON=/global/AWIsoft/hdf5/hdf5-1.10.2_gnu"
-                        - "HDF5_LIBS_ICON='-lhdf5'"
-                        - "NETCDF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
-                        - "NETCDF_LIBS_ICON='-lnetcdf'"
-                        - "NETCDFF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
-                        - "NETCDFF_LIBS_ICON='-lnetcdff'"
-                        - "GRIBAPI_ROOT_ICON=/global/AWIsoft/grib_api/1.12.3_gnu"
-                        - "GRIBAPI_LIBS_ICON='-lgrib_api'"
-                        - "XML2_ROOT='/usr'"
-                        - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --disable-parallel-netcdf'"
-                        - "FC=mpiifort"
-                        - "F77=mpiifort"
-                        - "MPIFC=mpiifort"
-                        - "CC=mpiicc"
-                        - "CXX=mpiicpc"
-                            
-    mistral: 
-        add_compiletime_environment_changes:
-            add_module_actions:
-                - "unload cmake" 
-                - "unload gcc/4.8.2"
-                - "load gcc/6.4.0"
-                - "unload openmpi-2.0.2p1_hpcx-gcc64"
-                - "load intelmpi/2018.5.288"
-                - "load anaconda3/bleeding_edge"
-                - "load netcdf_c/4.3.2-gcc48"
-                - "load cdo"
-                - "load nco"
-
-            add_export_vars:
-                - 'FC=mpif90'
-                - 'F77=mpif90'
-                - 'MPIFC=mpif90'
-                - 'MPICC=mpigxx'
-                - 'CC=mpigcc'
-                - 'CXX=mpigxx'
-                        
-            choose_version:
-                2.6.2-rc:
-                    add_module_actions:
-                        - "purge"
-                        - "unload intel intelmpi"
-                        - "unload gcc"
-                        - "load gcc/6.4.0"
-                        - "load intel/18.0.4"
-                        - "load libtool/2.4.6"
-                        - "load autoconf/2.69"
-                        - "load automake/1.14.1"
-                        - "load openmpi/2.0.2p1_hpcx-intel14"
-
-                    add_export_vars:
-                        - "HDF5_ROOT_ICON=/sw/rhel6-x64/hdf5/hdf5-1.8.18-parallel-openmpi2-intel14"
-                        - "HDF5_LIBS_ICON='-lhdf5'"
-                        - "NETCDF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-parallel-openmpi2-intel14"
-                        - "NETCDF_LIBS_ICON='-lnetcdf'"
-                        - "NETCDFF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-openmpi2-intel14"
-                        - "NETCDFF_LIBS_ICON='-lnetcdff'"
-                        - "GRIBAPI_ROOT_ICON=/sw/rhel6-x64/grib_api/grib_api-1.15.0-gcc48"
-                        - "GRIBAPI_LIBS_ICON='-lgrib_api'"
-                        - "XML2_ROOT='/usr'"
-                        - "LD_LIBRARY_PATH=$HDF5_ROOT_ICON/lib:$NETCDF_ROOT_ICON/lib:$NETCDFF_ROOT_ICON/lib:$GRIBAPI_ROOT_ICON/lib:$LD_LIBRARY_PATH"
-                        - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --enable-parallel-netcdf'"
-                        - "FC=mpif90"
-                        - "F77=mpif90"
-                        - "MPIFC=mpif90"
-                        - "CC=mpicc"
-                        - "CXX=mpicxx"
 

@@ -109,7 +109,6 @@ solidearth_initialize_method: regrid # either dummy, regrid or first_timestep
 
 further_reading:
     - pism_nh/pism_nh.domains.yaml
-    - pism_nh/pism_nh.compiletime_env_changes.yaml
     - pism_nh/pism_nh.input_and_restart_files.yaml
     - pism_nh/pism_nh.outputs.yaml
     - pism_nh/pism_nh.calendar.yaml

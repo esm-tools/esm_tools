@@ -38,6 +38,12 @@ focioifs:
    model_dir: /scratch/usr/shkjocke/model_test/focioifs-agrif-4.0/
   
 oifs:
+   runtime_environment_changes:
+      choose_computer.name:
+         "glogin":
+             compiler_mpi: intel2019_impi2019_nemo4
+             #compiler_mpi: intel2022_impi2021
+
    version: "43r3"
    with_xios: True
    scenario: "piControl"
@@ -73,10 +79,11 @@ oasis3mct:
    norestart: F
    use_lucia: True
    debug_level: 1 
-   export_mode: EXPOUT
-   pool_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/
-   ini_parent_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/
+   export_mode: EXPORTED 
+   pool_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10b/
+   ini_parent_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10b/
    oasis_date_stamp: ""
+   c2o_remap_method: "gauswgt" 
       
 nemo:
    # Note for future runs:
@@ -86,38 +93,31 @@ nemo:
    # So far, we stick with 3x to keep consistency with existing runs. 
    input_dir: "/scratch/projects/shk00018/foci_input2/NEMO4_ORCA05_input/" 
    agrif_dir: "/scratch/projects/shk00018/foci_input2/agrif_nwpac10/"
-   #nest_refinement: 3
+   nest_refinement: 3
    resolution: "ORCA05"
-   time_step: 360        
+   time_step: 1800        
    version: "ORCA05_SI3_COUPLED_AGRIF"
    # Remove periodic points from namcouple (720 instead of 722)
    _nx: 720
    _ny: 510
    # This gives subdomains of 15x15 grid cells which is near the limit in NEMO
    # More nproc should not be used
-   jpni: 36
-   jpnj: 24
-   nproc: 864
+   jpni: 48
+   jpnj: 36
+   nproc: 1728
    nest1: NWPAC10
    
-   add_namelist_changes:
-      1_namelist_cfg:
-         # Viscosity in ORCA05 is -1.709e12
-         # If grid refinement is factor 5, then new visc should be
-         # computed as -1.709e12 / 5^3
-         #
-         # Note: -1.709e12 is applied at the largest ORCA05 cell, at equator
-         # but coeff is actually -1.267e12 where VIKING10 starts
-         # So: If largest cell in ORCA05 (at eq) is dx_max, 
-         # and largest ORCA05 grid cell size in nest region is dx_nest_max
-         # then you need to compute the following:
-         # rn_ahm_0_blp = -1.709e12 * (dx_nest_max / dx_max) / (refinement_factor^3)
-         #
-         # For VIKING10: -1.013e10
-         # 
-         # Similar considerations should be done for other nests
-         namldf_dyn:
-            rn_ahm_0_blp: -1.013e10
+   #add_namelist_changes:
+   #   namelist_cfg:
+   #      namdyn_hpg:
+   #         ln_hpg_sco: '.false.'
+   #         ln_hpg_zco: '.false.'
+   #         ln_hpg_zps: '.true.'
+   #   #1_namelist_cfg:
+   #   #   namdyn_hpg:
+   #   #      ln_hpg_sco: '.false.'
+   #   #      ln_hpg_zco: '.false.'
+   #   #      ln_hpg_zps: '.true.'
    
 rnfmap:
    nproc: 1

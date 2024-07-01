@@ -170,9 +170,9 @@ choose_compiler_mpi:
 
        intel2022_openmpi:
                 # ESM-Tools vars necessary for ``system_libs`` case
-                mod_netcdf_c: netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0
-                mod_netcdf_f: netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0
-                mod_hdf5: hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0
+                mod_netcdf_c: netcdf-c/4.8.1-intel-2021.5.0
+                mod_netcdf_f: netcdf-fortran/4.5.3-intel-2021.5.0
+                mod_hdf5: hdf5/1.12.1-intel-2021.5.0
                 netcdf_cxx_root: /work/ab0995/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0 #/sw/spack-levante/netcdf-cxx-4.2-selbph
                 add_module_actions:
                         - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
@@ -180,18 +180,50 @@ choose_compiler_mpi:
                         - "load openmpi/4.1.2-intel-2021.5.0"
 
                 add_export_vars:
-                        FC: mpif90
-                        F77: mpif90
+                        FC: ifort
+                        F77: ifort
                         MPICC: mpicc
                         MPIFC: mpif90
-                        CC: mpicc
-                        CXX: mpicxx
+                        CC: icc
+                        CXX: icpc
 # kh 15.02.22 todo: check
                         MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                         MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
 
 choose_iolibraries:
+    awi_gnu_libs: #Copy paste from DE IFS env.sh
+        add_module_actions:
+            - "load fftw/3.3.10-gcc-11.2.0"
+            - "load git/2.31.1-gcc-11.2.0"
+        add_export_vars:
+            LD_RUN_PATH: $LD_LIBRARY_PATH
+            PATH: /work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-gcc-11.2.0/bin:/sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
+            IO_LIB_ROOT: "/work/ab0246/HPC_libraries/gcc/gcc-11.2.0/openmpi/4.1.2-ompi-2021.5.gcc/"
+            AEC_ROOT: $IO_LIB_ROOT
+            aec_ROOT: $IO_LIB_ROOT
+            HDF5ROOT: $IO_LIB_ROOT
+            HDF5_ROOT: $HDF5ROOT
+            NetCDF_C_ROOT: $IO_LIB_ROOT
+            NetCDF_Fortran_ROOT: $IO_LIB_ROOT
+            NETCDF_PATH: $NetCDF_C_ROOT
+            NETCDF_ROOT: $NetCDF_Fortran_ROOT
+            NETCDFROOT: $NetCDF_C_ROOT
+            NETCDFFROOT: $NetCDF_Fortran_ROOT
+            TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
+            TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
+            HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+            NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+            NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_INC_DIR: $NETCDF_C_INCLUDE_DIRECTORIES
+            NETCDF_INC_DIR_F: $NETCDF_Fortran_INCLUDE_DIRECTORIES
+            MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            LD_LIBRARY_PATH: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:$AEC_ROOT/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
     system_gnu_libs: #Copy paste from DE IFS env.sh
         add_module_actions:
             - "unload cdo"
@@ -229,19 +261,36 @@ choose_iolibraries:
             - "load ${mod_netcdf_c}"
             - "load ${mod_netcdf_f}"
             - "load ${mod_hdf5}"
+            - "load libaec/1.0.5-intel-2021.5.0"
+            - "load fftw/3.3.10-gcc-11.2.0"
 
         add_export_vars:
             IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
             # NOTE: Could be set by the module
+            PATH: /sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
+            MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+            MPI_HOME: $MPI_ROOT
+            mpi_ROOT: $MPI_ROOT
+            MPI_DIR: $MPI_ROOT
+            mpi_DIR: $MPI_ROOT
+            AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
+            aec_ROOT: $AEC_ROOT
             HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-tvymb5"
             HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
             HDF5_ROOT: $HDF5ROOT
             NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
             NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
+            NETCDF_ROOT: $NETCDFFROOT
+            NETCDF_DIR: $NETCDFROOT
             NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
             NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+            NetCDF_Fortran_LIBRARY: $NETCDFFROOT/lib
+            NetCDF_C_LIBRARY: $NETCDFROOT/lib
+            TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
+            TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
+            CPU_MODEL: AMD_EPYC_ZEN3
             # flags required for ECHAM6 (and possibly other models)
             # compilation with cmake if parastationMPI or openMPI is used
             # contact seb-wahl for details
@@ -260,7 +309,7 @@ choose_iolibraries:
             # kh 17.02.22 orig mistral, not yet tested on levante (but should work)
             PERL5LIB: /usr/lib64/perl5
 
-            LD_LIBRARY_PATH[(0)]: $HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH
+            LD_LIBRARY_PATH[(0)]: $TBBMALLOC_DIR/lib:$MPI_ROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$AEC_ROOT/lib:$LD_LIBRARY_PATH
 
             # avoid GLIBCXX_3.4.15 not found error
             # MA: This solves nothing for AWICM3

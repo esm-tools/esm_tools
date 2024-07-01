@@ -36,7 +36,7 @@ def prepare_environment(config):
             "SPINUP_FILE_pism": config[config["general"]["setup_name"]]["spinup_file"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
-            "first_year_in_chunk_input": config[config["general"]["setup_name"]]["experiment_input_dir"] + "/" + config["general"]["expid"] + "_pismr_input_" + config["general"]["chunk_start_date"].syear + "0101-" + config["general"]["chunk_start_date"].syear + "1231.nc", 
+            "first_year_in_chunk_input": config[config["general"]["setup_name"]]["experiment_input_dir"] + "/" + config["general"]["expid"] + "_pismr_input_"  + config["general"]["chunk_start_date"].syear + "0101-" + str(int( config["general"]["chunk_start_date"].syear ) + int( config["general"]["nyear"] - 1 )) + "1231.nc", 
             "last_year_in_chunk_restart": config[config["general"]["setup_name"]]["restart_out_targets"]["restart"],
             "PISM_TO_OCEAN": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False)),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),

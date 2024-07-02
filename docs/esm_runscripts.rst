@@ -332,6 +332,11 @@ This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb
 
     general: 
         debug_recipe: True
+
+Configuration Provenance
+------------------------
+
+In addition to the hints summarized in the "Debugging an Experiment" section, you will also find that the ``finished_config.yaml`` found in your ``config`` directory contains end-of-line comments detailing where a particular setting came from. You can use this to better track down what is being set and why, but it is **strongly recommended** that the configuration files found in your ``esm-tools`` source directory should **not** be changed unless you know exactly what you are doing. All of the configuration settings can be overridden from the run configuration, which is the prefered location for user changes. For more information see :ref:`YAML File Hierarchy:How can I know where a parameter is defined?`.
         
 Setting the file movement method for filetypes in the runscript
 ---------------------------------------------------------------

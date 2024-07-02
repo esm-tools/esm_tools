@@ -148,17 +148,24 @@ oasis_branchoff6.21.23:
 
 provenance_feature:
         package: "esm_tools"
-        versions: "<6.35"
+        versions: "<6.35.0"
         message: "\x1b[1m\x1b[96mCONFIGURATION IS HISTORY!\x1b[0m\n
 
-            A useful \x1b[96mnew feature to show configuration history \x1b[0m is now\n
+            A useful \x1b[96mnew feature to show configuration provenance \x1b[0mis now\n
             ready to be used! To get started, make sure you have at least version 6.35\n
-            and \x1b[96mmake sure to reinstall the package (cd <PATH>/esm_tools; ./install.sh)\x1b[0m since new depdency libraries\n
-            have been added. Once active, you can see where each value in your configuration originated \n
-            in the >> finished_config.yaml << files in you experiment config directories\n
-            You will get output in the form:\n\n
-              model: fesom  # /home/a/a270152/esm_tools/configs/components/fesom/fesom-2.5.yaml,line:4,col:8\n
-  branch: '2.5' # /home/a/a270152/esm_tools/configs/components/fesom/fesom-2.5.yaml,line:27,col:13\n"
+            and \x1b[96mmake sure to reinstall the package (cd <PATH>/esm_tools; ./install.sh)\n
+            \x1b[0msince new depdency libraries have been added. Once active, you can see\n
+            where each value in your configuration originated in the >> \x1b[96mfinished_config.yaml\x1b[0m\n
+            << files in you experiment config directories\n
+
+            Within the finish_config.yaml you will be able to see the provenance of parameters\n
+            as a comment, in the form:\n\n
+              \x1b[96mmodel\x1b[35m: \x1b[31mfesom \x1b[34m# /home/a/a270152/esm_tools/configs/components/fesom/fesom-2.5.yaml,line:4,col:8\x1b[0m\n
+\x1b[96mbranch\x1b[35m: \x1b[31m'2.5' \x1b[34m# /home/a/a270152/esm_tools/configs/components/fesom/fesom-2.5.yaml,line:27,col:13\x1b[0m\n
+
+            Read more about it in:\n
+            \x1b[34mhttps://esm-tools.readthedocs.io/en/latest/yaml_hierarchy.html#how-can-i-know-where-a-parameter-is-defined\x1b[0m\n
+            "
         action: DELAY(1)
         announcement: true
 

@@ -324,20 +324,20 @@ in the `general` experiment directory or in the `run` subdirectory:
 
   * The `ESM-Tools` variable space file ``config/<experiment_ID>_finished_config.yaml``.
   * The run log file ``run_YYYYMMDD-YYYYMMDD/<experiment_ID>_compute_YYYYMMDD-YYYYMMDD_<JobID>.log```.
-  
+
 For interactive debugging, you may also add the following to the ``general`` section of your configuration file. 
 This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb.html#debugger-commands>`_, and allow you to step through the recipe.
 
 .. code-block:: yaml
 
-    general: 
+    general:
         debug_recipe: True
 
 Configuration Provenance
 ------------------------
 
-In addition to the hints summarized in the "Debugging an Experiment" section, you will also find that the ``finished_config.yaml`` found in your ``config`` directory contains end-of-line comments detailing where a particular setting came from. You can use this to better track down what is being set and why, but it is **strongly recommended** that the configuration files found in your ``esm-tools`` source directory should **not** be changed unless you know exactly what you are doing. All of the configuration settings can be overridden from the run configuration, which is the prefered location for user changes. For more information see :ref:`YAML File Hierarchy:How can I know where a parameter is defined?`.
-        
+In addition to the hints summarized in the "Debugging an Experiment" section, you will also find that the ``finished_config.yaml`` found in your ``config`` directory contains end-of-line comments detailing where a particular setting came from. You can use this to better track down what is being set and why, but it is **strongly recommended** that the configuration files found in your ``esm-tools`` source directory should **not** be changed unless you know exactly what you are doing. All of the configuration settings can be overridden from the run configuration, which is the prefered location for user changes. For more information see :ref:`yaml_hierarchy:How can I know where a parameter is defined?`.
+
 Setting the file movement method for filetypes in the runscript
 ---------------------------------------------------------------
 

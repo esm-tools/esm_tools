@@ -234,7 +234,8 @@ oifs:
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
-                compiler_mpi: intel2020_impi2020
+                compiler_mpi: intel2023_impi2021
+                iolibraries: system_libs
 
         runtime_environment_changes:
           iolibraries: geomar_libs
@@ -257,9 +258,8 @@ oifs:
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
-                compiler_mpi: intel2020_impi2020
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                compiler_mpi: intel2023_impi2021
+                iolibraries: system_libs
 
         version: "43r3"
         

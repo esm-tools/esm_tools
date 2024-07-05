@@ -2100,7 +2100,6 @@ namelist_changes:
                         nn_leapy: ${nn_leapy} 
                         nn_rstctl: ${nn_rstctl} 
                         ln_rstart: ${nemo.lresume}
-                        ln_1st_euler: ${ln_1st_euler}
                 namtsd:                                                
                         #ln_tsd_tradmp: ${ln_tsd_tradmp} 
                         ln_tsd_init: ${ln_tsd_init} 
@@ -2141,6 +2140,8 @@ choose_generation:
                 
                 add_namelist_changes:
                         namelist_cfg:
+                                namrun: 
+                                        ln_1st_euler: ${ln_1st_euler}
                                 namdom:
                                         rn_Dt: ${time_step}
                                         ln_meshmask: ${ln_meshmask}
@@ -2216,6 +2217,8 @@ choose_generation:
                 
                 add_namelist_changes:
                         namelist_cfg:
+                                namrun:
+                                        nn_euler: ${nn_euler}
                                 namdom:
                                         nn_closea: 1
                                         nn_msh: ${nn_msh}
@@ -2252,6 +2255,10 @@ choose_generation:
                       # dont write mesh_mask files
                       nn_msh: 0
                       ln_meshmask: false
+                      # Set nn_euler = 0 to make the model start with leap frog
+                      # Only works if restart files with two time levels (before and now)
+                      # are stored. 
+                      nn_euler: 0
                       
                       # Run is a restart but run number = 1, 
                       # i.e. it is the first run of the experiment

@@ -358,6 +358,8 @@ fesom:
 
         namelist_changes:
                 namelist.config:
+                        ale_def:
+                                which_ale: "${ALE_scheme}"                        
                         paths:
                                 OpbndPath: "${opbnd_dir}"
                                 TideForcingPath: "${tide_forcing_dir}"

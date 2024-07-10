@@ -144,7 +144,7 @@ def add_eol_comments_with_provenance(commented_config, config):
     """
     if isinstance(commented_config, dict):
         for key, cvalue in commented_config.items():
-            pvalue = config[key]
+            pvalue = config.get(key)
             if isinstance(cvalue, (list, dict)):
                 add_eol_comments_with_provenance(cvalue, pvalue)
             else:

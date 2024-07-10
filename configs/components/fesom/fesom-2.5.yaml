@@ -41,6 +41,10 @@ choose_version:
   "2.5-2":
     branch: "2.5.2"
 
+  "2.5-refactoring":
+    branch: "refactoring"
+    comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+
 destination: "fesom-2.5"
 install_bins: bin/fesom.x
 git-repository:
@@ -513,10 +517,12 @@ choose_lresume:
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
 
 bin_in_work:
-        fesom: "${executable}"
+        bin: "${executable}"
+        lib: "lib/fesom/*"
 
 bin_sources:
-        fesom: "${bin_dir}/${comp_executable}"
+        bin: "${bin_dir}/${comp_executable}"
+        lib: "${fesom.model_dir}/build/lib/*"
 
 
 
@@ -643,6 +649,7 @@ grids:
 
 further_reading:
         - fesom/fesom.forcing.yaml
+        - fesom/fesom.env.yaml
 
 # ------------------------
 # RECIPE

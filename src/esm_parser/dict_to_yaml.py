@@ -143,10 +143,9 @@ def add_eol_comments_with_provenance(commented_config, config):
         Dictionary with the config values and provenance information.
     """
     if isinstance(commented_config, dict):
-        for (ckey, cvalue), (pkey, pvalue) in zip(
-            commented_config.items(), config.items()
-        ):
-            if isinstance(cvalue, (list, dict)):
+        for key, cvalue in commented_config.items():
+            pvalue = config.get(key)
+            if isinstance(cvalue, (list, dict)) and pvalue is not None:
                 add_eol_comments_with_provenance(cvalue, pvalue)
             else:
                 provenance = getattr(pvalue, "provenance", [None])[-1]
@@ -154,7 +153,7 @@ def add_eol_comments_with_provenance(commented_config, config):
                     provenance_comment = f"{provenance['yaml_file']},line:{provenance['line']},col:{provenance['col']}"
                 else:
                     provenance_comment = f"no provenance info"
-                commented_config.yaml_add_eol_comment(provenance_comment, ckey)
+                commented_config.yaml_add_eol_comment(provenance_comment, key)
     elif isinstance(commented_config, list):
         for indx, value in enumerate(commented_config):
             if isinstance(value, (list, dict)):

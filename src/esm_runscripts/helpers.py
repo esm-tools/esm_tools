@@ -334,7 +334,9 @@ def is_git_repo(path):
     except git.exc.InvalidGitRepositoryError:
         return False
     except git.exc.NoSuchPathError:
-        logger.error("You specified a non-existant directory")
+        logger.error(
+            f"esm_runscripts.helpers.is_git_repo points at a non-existing path: {path}"
+        )
         # Is False the right answer here? I am not 100% sure...
         return False
 
@@ -369,7 +371,7 @@ def get_git_hash(path, allow_dirty=True):
         raise GitDirtyError(
             f"Your repo at {path} is dirty, thus the git hash is not meaningful!"
         )
-    return repo.git.rev_parse(repo.head, short=True)
+    return repo.git.rev_parse(repo.head, short=False)
 
 
 def get_git_branch(path):

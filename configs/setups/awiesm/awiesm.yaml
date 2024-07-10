@@ -70,7 +70,7 @@ general:
                 - "modify_files"
                 - "copy_files_to_work"
                 - "report_missing_files"
-                #- "add_vcs_info"
+                - "add_vcs_info"
                 #- "check_vcs_info_against_last_run"
                 - "_write_finalized_config"
                 - "database_entry"

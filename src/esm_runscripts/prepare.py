@@ -722,8 +722,11 @@ def add_vcs_info(config):
         esm_parser.user_error(
             "esm_tools doesn't know where it's own install location is. Something is very seriously wrong."
         )
-    with open(exp_vcs_info_file, "w") as f:
-        yaml.dump(vcs_versions, f)
+
+    esm_parser.yaml_dump(vcs_versions, exp_vcs_info_file)
+
+    print(exp_vcs_info_file)
+
     return config
 
 

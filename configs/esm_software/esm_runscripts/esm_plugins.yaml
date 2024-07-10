@@ -25,7 +25,7 @@ core:
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
-                        #- "add_vcs_info"
+                        - "add_vcs_info"
                         #- "check_vcs_info_against_last_run"
                         - "check_config_for_warnings_errors"
 

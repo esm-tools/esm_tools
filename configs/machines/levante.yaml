@@ -235,14 +235,14 @@ choose_iolibraries:
             - "load libaec/1.0.5-gcc-11.2.0"
         add_export_vars:
             LD_RUN_PATH: $LD_LIBRARY_PATH
-            PATH: /work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-gcc-11.2.0/bin:/sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
+            #PATH: /work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-gcc-11.2.0/bin:/sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
             AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-kxfaux"
             HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
             HDF5_ROOT: $HDF5ROOT
-            NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-qk24yp
-            NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-l2ulgp
+            NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-6qheqr
+            NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-jlxcfz
             NETCDF_PATH: $NetCDF_C_ROOT
             NETCDF_ROOT: $NetCDF_Fortran_ROOT
             NETCDFROOT: $NetCDF_C_ROOT
@@ -255,6 +255,7 @@ choose_iolibraries:
             MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
             mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
             LD_LIBRARY_PATH: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:$AEC_ROOT/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
+            LD_LIBRARY_PATH[(0)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
 
     system_libs:
         add_module_actions:

@@ -14,5 +14,6 @@ coupling_changes:
 - sed -i '/LNEMOLIMALB = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
 - sed -i '/LNEMOLIMTEMP = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
 - sed -i '/LNEMOLIMTHK = /s/.TRUE./.FALSE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOLIMCUR = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
 - sed -i '/LNEMOSICOUP = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
 

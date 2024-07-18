@@ -310,6 +310,13 @@ o3_scheme: "default"
 scenario: "amip-prepifs"
 output: "default"
 
+# We need to get a default nproc 
+# This is later modified in a 
+# choose statement below
+# and most likely in the 
+# user runscript
+nproc: 96
+
 wam: False
 wam_2w: True
 wam_step: 1
@@ -466,6 +473,8 @@ choose_computer.partitions.compute.cores_per_node:
                 nproc: 108
         48:
                 nproc: 96
+        72:     
+                nproc: 144
         96:
                 nproc: 96
         128:

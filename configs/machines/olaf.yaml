@@ -64,11 +64,11 @@ sh_interpreter: "/bin/bash"
 partition: normal_cpu
 
 choose_partition:
-        "normal_cpu":
-                partition_name: "normal_cpu"
+        'normal_cpu':
+                partition_name: 'normal_cpu'
                 partition_cpn: 72
-        "long_cpu":
-                partition_name: "long_cpu"
+        'long_cpu':
+                partition_name: 'long_cpu'
                 partition_cpn: 72
 
 partitions:
@@ -110,7 +110,9 @@ choose_compiler_mpi:
    intel2021_impi2021:
       add_module_actions:
          - "load intel/2021.3.0"
-         - "load impi/2021.3.0"
+         # impi/2021.3.0 causes MPI_IProbe seg fault in XIOS
+         # switching to 2021.7.1 solved it. 
+         - "load impi/2021.7.1"
          #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
          #- "load gcc/9.3.0"
       add_export_vars:
@@ -142,6 +144,10 @@ choose_iolibraries:
          NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
          NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
          OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'   
+
+         # For OASIS3-MCT5 from CERFACS
+         OASIS_NETCDF: $IO_LIB_ROOT
+         OASIS_NETCDFF: $IO_LIB_ROOT
 
       choose_compiler_mpi:
             intel2021_impi2021:

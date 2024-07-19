@@ -1,3 +1,5 @@
+from loguru import logger
+
 from . import helpers
 
 
@@ -90,7 +92,7 @@ def _assemble_postprocess_tasks(config):
                 **args,
                 "flags": flags,
             }
-            print(all_call_things)
+            logger.info(all_call_things)
             index_map = {v: i for i, v in enumerate(method_definition["call_order"])}
             call_list = sorted(
                 all_call_things.items(), key=lambda pair: index_map[pair[0]]

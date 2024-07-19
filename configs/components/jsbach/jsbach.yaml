@@ -219,6 +219,19 @@ choose_version:
                         ssp585:
                                 scenario_type: cmip6
 
+                choose_general.iterative_coupling:
+                        True:
+                                add_input_sources:
+                                        "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
+                                choose_general.chunk_number:
+                                        1:
+                                                from_chunk_number_choose: <NOT_SPECIFIED>
+                                        "*":
+                                                add_input_files:
+                                                        jsbach: jsbach_ismc
+                        "*":
+                                from_iterative_coupling_choose: <NOT_SPECIFIED>
+
         "3.10":
                 dataset: r0007
                 namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/${resolution}"
@@ -340,9 +353,9 @@ choose_scenario_is_ssp:
 choose_echam.with_wiso:
         True:
                 restart_in_sources:
-                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
                 restart_out_sources:
-                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
                 add_streams:
                         - js_wiso
                         - la_wiso
@@ -364,7 +377,6 @@ forcing_in_work:
         "a_nd_file": "a_nd_file.nc"
         "lightning": "lightning.nc"
         "popdens": "population_density.nc"
-        # Naming based upon: https://gitlab.awi.de/paleodyn/Models/echam6/-/blob/6.3.05p2-awiesm-2.1/src/src_jsbach3/mo_cbal_landcover_change.f90#L3050 
         "LU" : "landuseHarvest.@YEAR@.nc"
         "Ndepo": "Ndepo.@YEAR@.nc"
         "LU_trans": "landuseTransitions.@YEAR@.nc"

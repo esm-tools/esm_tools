@@ -6,12 +6,14 @@ Namelists as part of the ``esm-runscripts`` recipe. All plugins are found under
 the class Namelist as static methods. A deprecated class ``namelist`` (small "n") is
 provided, which warns you when it is used.
 """
+
 import logging
 import os
 import sys
 import warnings
 
 import f90nml
+from loguru import logger
 
 from esm_parser import user_error
 
@@ -137,7 +139,7 @@ class Namelist:
             # If correct syntax, changes is always a dict.
             if not isinstance(changes, dict):
                 nml_syntax_error = True
-                this_is_wrong = (f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}: {changes}'\n...")
+                this_is_wrong = f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}: {changes}'\n..."
                 break
             else:
                 for change_chapter in list(changes):
@@ -146,8 +148,7 @@ class Namelist:
                     # If correct syntax, change_entries is always a dict.
                     if not isinstance(change_entries, dict):
                         nml_syntax_error = True
-                        this_is_wrong = (
-                            f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}':\n        '{change_chapter}: {change_entries}'\n...")
+                        this_is_wrong = f"There is a syntax error in the following lines:\n\n[add_]namelist_changes:\n    '{namelist}':\n        '{change_chapter}: {change_entries}'\n..."
                         break
         if nml_syntax_error:
             user_error(
@@ -231,7 +232,7 @@ class Namelist:
                         if remove_original_key:
                             del namelist_changes[namelist][change_chapter][original_key]
                         # mconfig instead of config, Grrrrr
-                        print(
+                        logger.info(
                             f"- NOTE: removing the variable: {key} from the namelist: {namelist}"
                         )
 
@@ -346,7 +347,10 @@ class Namelist:
 
                 try:
                     forcing_table = pd.read_csv(
-                        config["echam"]["transient_forcing_table"], sep=";", index_col=0
+                        config["echam"]["transient_forcing_table"],
+                        sep=";",
+                        index_col=0,
+                        header=None,
                     )
                     co2, n2o, ch4, cecc, cobld, clonp = forcing_table.loc[
                         config["general"]["current_date"].year
@@ -360,54 +364,60 @@ class Namelist:
                     # Line needed for making sure the changes in radctl make it to nml,
                     # even when ``radctl`` did not exist in ``nml``
                     nml["radctl"] = radctl
-                    print(
+                    logger.info(
                         "-------------------------------------------------------------"
                     )
-                    print("")
-                    print(
+                    logger.info("")
+                    logger.info(
                         "              > Applying transient foricng in echam namelist!"
                     )
-                    print("")
-                    print(
+                    logger.info("")
+                    logger.info(
                         "--------------------------------------------------------------"
                     )
-                    print("             > The new values are:")
-                    print(f"             CO2:  {radctl['co2vmr']}")
-                    print(f"             N2O:  {radctl['n2ovmr']}")
-                    print(f"             CH4:  {radctl['ch4vmr']}")
-                    print(f"             CECC: {radctl['cecc']}")
-                    print(f"             COBL: {radctl['cobld']}")
-                    print(f"             CLONP:{radctl['clonp']}")
+                    logger.info("             > The new values are:")
+                    logger.info(f"             CO2:  {radctl['co2vmr']}")
+                    logger.info(f"             N2O:  {radctl['n2ovmr']}")
+                    logger.info(f"             CH4:  {radctl['ch4vmr']}")
+                    logger.info(f"             CECC: {radctl['cecc']}")
+                    logger.info(f"             COBL: {radctl['cobld']}")
+                    logger.info(f"             CLONP:{radctl['clonp']}")
                 except Exception as e:
                     # Haha something went wrong. Let's be polite about it though
-                    print(
+                    logger.error(
                         "There was a problem with reading in the forcing from the transient forcing table"
                     )
-                    print()
-                    print("Sorry")
-                    print()
-                    print("Please be sure to use the correct format of your table!")
-                    print("It should be the following:")
-                    print(
+                    logger.error("")
+                    logger.error("Sorry")
+                    logger.error("")
+                    logger.error(
+                        "Please be sure to use the correct format of your table!"
+                    )
+                    logger.error("It should be the following:")
+                    logger.error(
                         "# Model Year; CO2; N2O; CH4; Eccentricty; Obliquity; Perihelion"
                     )
-                    print("Commented lines (with a #) will be ignored in that file")
-                    print(
+                    logger.error(
+                        "Commented lines (with a #) will be ignored in that file"
+                    )
+                    logger.error(
                         "Please note that you need to use a semicolon (;) as a seperator"
                     )
-                    print()
-                    print("Also, make sure that you set a valid filepath")
-                    print("We were looking for the following:")
+                    logger.error("")
+                    logger.error("Also, make sure that you set a valid filepath")
+                    logger.error("We were looking for the following:")
                     try:
-                        print(config["echam"]["transient_forcing_table"])
+                        logger.error(config["echam"]["transient_forcing_table"])
                     except KeyError:
-                        print(
+                        logger.error(
                             "Oops, looks like you didn't specify which forcing table to use!"
                         )
-                        print("You need to set in your echam configuration:")
-                        print("echam:")
-                        print("    transient_forcing_table: /path/to/your/table")
+                        logger.error("You need to set in your echam configuration:")
+                        logger.error("echam:")
+                        logger.error("    transient_forcing_table: /path/to/your/table")
                         sys.exit(1)
+                    # TODO(PG): This is a bit harsh, but until we get a better idea, dump the error:
+                    logger.error(e)
                     sys.exit(1)
         return config
 
@@ -435,38 +445,31 @@ class Namelist:
                     disturbance_file = [
                         int(line.strip()) for line in f.readlines() if line.strip()
                     ]
-                if config["general"]["verbose"]:
-                    print(disturbance_file)
+                logger.debug(disturbance_file)
             else:
                 disturbance_file = None
-                if config["general"]["verbose"]:
-                    print(
-                        "WARNING: "
-                        + config["general"]["experiment_scripts_dir"]
-                        + "/disturb_years.dat",
-                        "was not found",
-                    )
+                logger.warning(
+                    "WARNING: "
+                    + config["general"]["experiment_scripts_dir"]
+                    + "/disturb_years.dat was not found",
+                )
             disturbance_years = disturbance_file or config["echam"].get(
                 "disturbance_years", []
             )
             current_year = config["general"]["current_date"].year
             if current_year in disturbance_years:
-                print("-------------------------------------------------------")
-                print("")
-                print("              > Applying disturbance in echam namelist!")
-                print("")
-                print("-------------------------------------------------------")
+                logger.info("-------------------------------------------------------")
+                logger.info("")
+                logger.info("              > Applying disturbance in echam namelist!")
+                logger.info("")
+                logger.info("-------------------------------------------------------")
                 dynctl["enstdif"] = config["echam"].get("disturbance", 1.000001)
                 nml["dynctl"] = dynctl
             else:
-                if config["general"]["verbose"]:
-                    print("Not applying disturbance in echam namelist.")
-                    print(
-                        "Current year",
-                        current_year,
-                        "disturbance_years",
-                        disturbance_years,
-                    )
+                logger.debug("Not applying disturbance in echam namelist.")
+                logger.debug(
+                    f"Current year: {current_year}, disturbance_years: {disturbance_years}"
+                )
         return config
 
     @staticmethod
@@ -523,58 +526,20 @@ class Namelist:
             all_nmls[nml_name] = nml_obj  # PG: or a string representation?
         for nml_name, nml in all_nmls.items():
             message = f"\nFinal Contents of {nml_name}:"
-            print(message)
-            print(len(message) * "-")
+            logger.info(message)
+            logger.info(len(message) * "-")
             nml.write(sys.stdout)
-            print("-" * 80)
-            print(f"::: end of the contents of {nml_name}\n")
+            logger.info("-" * 80)
+            logger.info(f"::: end of the contents of {nml_name}\n")
         return mconfig
 
     @staticmethod
     def nmls_output_all(config):
-        print(
+        logger.info(
             "\n" "- Namelists modified according to experiment specifications..."
         )
         for model in config["general"]["valid_model_names"]:
             config[model] = nmls_output(config[model], config["general"]["verbose"])
-        return config
-
-    @staticmethod
-    def apply_iceberg_calving(config):
-        """
-        Calculates new number of icebergs when icesheet coupling is turned on
-
-        Relevant configuration entries:
-        """
-        if "fesom" in config["general"]["valid_model_names"] and config["fesom"].get(
-            "use_icebergs", False
-        ):
-            # Get the fesom config namelist:
-            nml = config["fesom"]["namelists"]["namelist.config"]
-            # Get the current icebergs chapter or make a new empty one:
-            icebergs = nml.get("icebergs", f90nml.namelist.Namelist())
-            # Determine if icesheet coupling is enabled:
-            if config["fesom"].get("use_icesheet_coupling", False):
-                icebergs["use_icesheet_coupling"] = True
-                if os.path.isfile(
-                    config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
-                ):
-                    with open(
-                        config["general"]["experiment_couple_dir"] + "/num_non_melted_icb_file"
-                    ) as f:
-                        ib_num_old = [
-                            int(line.strip()) for line in f.readlines() if line.strip()
-                        ][0]
-                elif config["general"].get("chunk_number", 0) == 1:
-                    ib_num_old = 0
-                else:
-                    print("Something went wrong! Continue without old icebergs.")
-                    ib_num_old = 0
-
-                print(" * iceberg_dir = ", config["fesom"].get("iceberg_dir"))
-                ib_num_new = sum(1 for line in open(config["fesom"].get("iceberg_dir") + "/LON.dat"))
-                icebergs["ib_num"] = ib_num_old + ib_num_new
-                nml["icebergs"] = icebergs
         return config
 
 

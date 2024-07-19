@@ -80,7 +80,7 @@ partitions:
 logical_cpus_per_core: 2
 
 threads_per_core: 1
-hetjob_flag: packjob
+hetjob_flag: hetjob
 
 pool_directories:
         pool: "/scratch/usr/hbkawi"

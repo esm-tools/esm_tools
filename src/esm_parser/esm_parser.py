@@ -2598,8 +2598,6 @@ def convert(value, tree=["NO_KEY"]):
         return int(float(value))
     elif could_be_float(value):
         return float(value)
-    elif could_be_complex(value):
-        return complex(value)
     return value
 
 

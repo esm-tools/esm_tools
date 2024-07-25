@@ -18,7 +18,7 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
-                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                launcher_flags: "--mpi=pmix -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
                                 add_export_vars:
                                         I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
@@ -32,7 +32,7 @@ choose_use_hyperthreading:
                                 hyperthreading_flag: "--ntasks-per-core=1"
                         True:
                                 hyperthreading_flag: ""
-                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                launcher_flags: "--mpi=pmix -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
                                 add_export_vars:
                                         I_MPI_SLURM_EXT: 0
                                 add_unset_vars:
@@ -42,14 +42,10 @@ choose_use_hyperthreading:
                                         - "SLURM_ARBITRARY_NODELIST"
 
 accounting: true
-
 batch_system: "slurm"
-
 jobtype: compute
 sh_interpreter: "/bin/bash"
-
-
-partition: standard96
+partition: cpu-clx:test 
 
 choose_partition:
         standard96:
@@ -57,6 +53,9 @@ choose_partition:
                 partition_cpn: 96
         'standard96:test':
                 partition_name: 'standard96:test'
+                partition_cpn: 96
+        'cpu-clx:test':
+                partition_name: 'cpu-clx:test'
                 partition_cpn: 96
 
 partitions:
@@ -69,7 +68,6 @@ partitions:
 
 
 logical_cpus_per_core: 2
-
 threads_per_core: 1
 hetjob_flag: packjob
 
@@ -81,19 +79,11 @@ pool_dir:  "/scratch/usr/hbkawi"
 
 # default settings for compiler, mpi and I/O libs
 # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
-compiler_mpi: intel2019_impi2019
+compiler_mpi: intel2024_impi2021
 iolibraries: geomar_libs
 
 # basic modules and export vars needed
 # for all compiler and I/O settings
-module_actions:
-   - "purge"
-   - "load slurm"
-   - "load HLRNenv"
-   - "load sw.skl"
-   - "load cmake"
-   - "load cdo nco"
-   - "load git"
 
 export_vars:
    LC_ALL: en_US.UTF-8
@@ -102,100 +92,37 @@ export_vars:
    #SLURM_CPU_BIND: none
 
 choose_compiler_mpi:
-   intel2022_impi2022:
+   intel2024_impi2021:
       add_module_actions:
-         - "load intel/2022.2.1"
-         - "load impi/2021.7.1"
-         - "load gcc/9.3.0"
+         - "load intel/2024.2"
+         - "load impi/2021.13"
+         # TODO: check whether loading gcc is still required
+         #- "load gcc/13.3.0"
       add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
+         FC: mpiifx
+         F77: mpiifx
+         MPIFC: mpiifx
+         CC: mpiicx
+         CXX: mpiicpx
          FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
-   intel2021_impi2021:
-      add_module_actions:
-         - "load intel/2021.2"
-         - "load impi/2021.2"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
-   intel2019_impi2019_nemo4:
-      add_module_actions:
-         - "load intel/19.0.5"
-         - "load impi/2019.5"
-         - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-         - "load gcc/9.3.0"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
-   intel2019_impi2019:
-      add_module_actions:
-         - "load intel/19.0.5"
-         - "load impi/2019.5"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
-   intel2019_ompi:
-      add_module_actions:
-         - "load intel/19.0.5"
-         - "load openmpi/intel/3.1.6"
-      add_export_vars:
-         FC: mpifort
-         F77: mpifort
-         MPIFC: mpifort
-         FCFLAGS: -free
-         CC: mpicc
-         CXX: mpic++
-         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+         MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
 choose_iolibraries:
 
+    # not yet configured for berlin as of August 2024 as e.g. netcdf is not yet available
+    # as a module
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
-         - "load netcdf/intel/4.7.3"
+         - "load hdf5-parallel/impi/intel/1.14.4" 
        # TODO: find the correct libraries and dependencies
        add_export_vars:
-         NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
-         LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
-         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
-         NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
-         # For OASIS3-MCT5 from CERFACS 
-         OASIS_NETCDF: $NETCDF_DIR
-         OASIS_NETCDFF: $NETCDF_DIR       
 
     geomar_libs:
        add_export_vars:
           IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
           PATH: $IO_LIB_ROOT/bin:$PATH
-          LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
           SZIPROOT: $IO_LIB_ROOT
           HDF5ROOT: $IO_LIB_ROOT
@@ -214,27 +141,15 @@ choose_iolibraries:
           OASIS_NETCDF: $NETCDFROOT
           OASIS_NETCDFF: $NETCDFFROOT
 
+          LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+
        choose_compiler_mpi:
 
-          intel2019_impi2019_nemo4:
+          intel2024_impi2021:
              add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
-          
-          intel2022_impi2022:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
-
-          intel2021_impi2021:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkjocke/sw/HPC_libraries/intel2021.2_impi2021.2_20211007
-
-          intel2019_impi2019:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
-
-          intel2019_ompi:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_ompi3.1.6_20201117
+                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2024.2_impi2021.13_20240723
+                HDF5ROOT: $IO_LIB_ROOT/HDF_Group/HDF5/1.14.4.3
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$HDF5ROOT/lib:$LD_LIBRARY_PATH
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"
@@ -243,7 +158,8 @@ mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
+# TODO: or stay with pmi2 ?
+launcher_flags: "--mpi=pmix -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

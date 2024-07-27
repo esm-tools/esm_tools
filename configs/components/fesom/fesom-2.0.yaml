@@ -9,6 +9,9 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+
 choose_version:
   '2.0':
     branch: 2.0.2
@@ -74,6 +77,8 @@ restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
 
+tar_binary_restarts: False
+
 time_step: 1800
 resolution: CORE2
 
@@ -137,6 +142,8 @@ choose_resolution:
                 nx: 72411
                 mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
                 nproc: 288
+        PI_ICEv2:
+                nx: 132273
         D3:
                 nx: 3160340
         orca25:
@@ -170,8 +177,10 @@ restart_in_in_work:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 restart_in_sources:
-        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
-        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        # TODO: When cleaning up the FESOM yamls, remove the wildcard and make this file
+        # be dependent on the corresponding namelist option
+        oce_restart: fesom.${parent_date!syear}.o*e.restart.nc
+        ice_restart: fesom.${parent_date!syear}.i*e.restart.nc
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -196,8 +205,10 @@ restart_out_in_work:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
 
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
@@ -206,8 +217,10 @@ restart_out_sources:
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
 
 
 outdata_sources:
@@ -236,6 +249,8 @@ file_movements:
                 all_directions: move
         fesom_raw_restart_info_out:
                 all_directions: move
+        fesom_raw_restart_tar_out:
+                all_directions: move
         fesom_bin_restart_in:
                 all_directions: move
         fesom_bin_restart_out:
@@ -244,6 +259,13 @@ file_movements:
                 all_directions: move
         fesom_bin_restart_info_out:
                 all_directions: move
+        fesom_bin_restart_tar_out:
+                all_directions: move
+
+choose_tar_binary_restarts:
+    True:
+        add_restart_out_files:
+            fesom_raw_restart_tar: fesom_raw_restart_tar
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -401,5 +423,20 @@ grids:
                 nx: ${nx}
                 ny: 1
                 oasis_grid_type: "U"
+                oyac_grid_type: "GC"
+                oyac_io_per_node: 4
                 number_of_overlapping_points: 0 # oasis P-value
 
+# ------------------------
+# RECIPE
+# ------------------------
+tidy_recipe:
+    - "tidy_coupler"
+    - "tar_binary_restarts"
+    - "assemble"
+    - "check_for_unknown_files"
+    - "log_used_files"
+    - "throw_away_some_infiles"
+    - "copy_stuff_back_from_work"
+    - "copy_all_results_to_exp"
+    - "clean_run_dir"

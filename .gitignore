@@ -140,3 +140,15 @@ src/esm_tests/user_config.yaml
 
 # Smooth installation of version 6 even after having checkout release and pull
 esm_tools/__init__.py
+
+#Vim temp files
+*.swp
+# backup files
+*.py.*
+
+# binaries
+dEBMmain
+pack
+unpack
+jsbach_init_file
+calnoro

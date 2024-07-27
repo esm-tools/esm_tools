@@ -1,14 +1,10 @@
 name: esm-tools main test
 
-# Controls when the action will run. Triggers the workflow on push or pull request.
-
 on: [push, pull_request]
 
 jobs:
   basic_tests:
-    # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
-    # Docker Hub image that `container-job` executes in
     env:
       LC_ALL: en_US.UTF-8
       LANG: en_US.UTF-8
@@ -16,16 +12,19 @@ jobs:
       image: koldunovn/esm_test:latest
       options: --hostname ollie1
 
-    # Service containers to run with `gfortran_ubuntu`
     steps:
-    # NK: this changes working directory to fesom2
     - uses: actions/checkout@v2
 
-    - name: add to the path
+    - name: Setup Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Add to the path
       run: |
         echo "$HOME/.local/bin" >> $GITHUB_PATH
 
-    - name: install esm-tools
+    - name: Install esm-tools
       run: |
         ./install.sh
 
@@ -33,30 +32,28 @@ jobs:
       run: |
         pip install pytest
         pytest -v .
-        # For now, only test actual source code. Stuff like coupling scripts is ignored
-        pytest -v --doctest-modules src --ignore src/esm_runscripts/coupling --ignore-glob "*backup*" 
+        pytest -v --doctest-modules src --ignore src/esm_runscripts/coupling --ignore-glob "*backup*"
 
-    - name: run esm_master first time
+    - name: Run esm_master first time
       run: |
         yes Y | esm_master
 
-    - name: run esm_master second time
+    - name: Run esm_master second time
       run: |
         esm_master
 
-    - name: run esm_plugins
+    - name: Run esm_plugins
       run: |
         esm_plugins
 
-    - name: run get-fesom-2.0
+    - name: Run get-fesom-2.0
       run: |
         esm_master get-fesom-2.0
 
-    - name: run status-fesom-2.0
+    - name: Run status-fesom-2.0
       run: |
         esm_master status-fesom-2.0
 
-    - name: run clean-fesom-2.0
+    - name: Run clean-fesom-2.0
       run: |
         esm_master clean-fesom-2.0
-

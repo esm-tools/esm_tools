@@ -226,8 +226,7 @@ oifs:
                 compiler_mpi: intel2022_openmpi 
                 iolibraries: system_libs 
              blogin:
-                compiler_mpi: intel2022_impi2022
-                #compiler_mpi: intel2019_impi2019_nemo4
+                compiler_mpi: intel2024_impi2021
              glogin:
                 compiler_mpi: intel2019_impi2019_nemo4
                 #compiler_mpi: intel2022_impi2021 

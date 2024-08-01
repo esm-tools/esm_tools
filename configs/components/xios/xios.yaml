@@ -49,14 +49,14 @@ choose_version:
     branch: xios_trunk 
     archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
     contact: "swahl(at)geomar.de"
   trunk_oasis:
     git-repository: https://git.geomar.de/foci/src/xios.git
     branch: xios_trunk 
     archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
     contact: "swahl(at)geomar.de"
   "2.5":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
@@ -83,9 +83,11 @@ choose_version:
     choose_computer.name:
         levante:
             archfile: ESMTOOLS_levante_oasis_intel
+        ecmwf-atos:
+            archfile: ESMTOOLS_ecmwf-atos_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: master
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
   "2.5-yac":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
     archfile: ESMTOOLS_generic_oasis_intel
@@ -113,7 +115,7 @@ choose_version:
             archfile: ESMTOOLS_levante_oasisyac_intel
     use_oasis: --use_oasis oasis3_mct
     branch: master
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
   # XIOS with oasis dependencies and oasis support  
   2.5_r1910:
     archfile: ESMTOOLS_generic_oasis_intel
@@ -146,9 +148,9 @@ choose_version:
         levante:
             archfile: ESMTOOLS_levante_oasis_intel
     use_oasis: --use_oasis oasis3_mct
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
 clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
-comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
+comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 12; cp bin/xios_server.exe bin/xios.x
 #destination: xios-${version}
 destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git

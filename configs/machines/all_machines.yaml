@@ -53,4 +53,7 @@ nesh:
                - 'neshcl*'
                - 'nesh-bigmem*'
         post_nodes: 'neshcl*'
-
+ecmwf-atos:
+        login_nodes: 'ac*-*'
+        compute_nodes: 'ac*-*'
+        post_nodes: 'ac*-*'

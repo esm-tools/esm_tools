@@ -148,6 +148,8 @@ general:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
                 albedo:
                         pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+                ecmwf-atos:
+                        pool_dir: "/hpcperm/duts/pool"
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -353,6 +355,10 @@ oifs:
                                 iolibraries: geomar_libs
                         levante:
                                 iolibraries: system_libs
+                        ecmwf-atos:
+                                add_export_vars:
+                                        - 'FFLAGS="-r8 -i4 -fp-model precise -no-prec-div -no-prec-sqrt -fimf-use-svml -ip -init=zero -no-warp-margin -march=core-avx2 -mtune=core-avx2"'
+
 
         res_level: ${resolution}${levels}
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]

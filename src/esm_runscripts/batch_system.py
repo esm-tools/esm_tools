@@ -1,4 +1,5 @@
 import copy
+import math
 import os
 import stat
 import sys
@@ -847,7 +848,7 @@ class batch_system:
         config[model]["nodes"] = nodes
 
         # PEs (MPI-ranks) per compute node (e.g. aprun -N)
-        nproc_per_node = int(nproc / nodes)
+        nproc_per_node = math.ceil(nproc / nodes)
 
         # Replace tags in the laucher flags
         replacement_tags = [

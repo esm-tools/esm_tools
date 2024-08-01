@@ -1,4 +1,11 @@
 # GLOGIN YAML CONFIGURATION FILES
+#
+# This file describes the glogin (Emmy) HPC in phase 3 which came into operation July 2024. 
+# The machine file for the older phases of Emmy, see glogin_old
+#
+# Documentation: https://docs.hpc.gwdg.de/compute_partitions/cpu_partitions/index.html
+# Hardware: Intel Cascade-Lake 9242. 48 cores per chip, 2 chips per node. 364 Gb memory per node. 
+# 
 
 name: glogin
 account: None
@@ -44,6 +51,9 @@ choose_use_hyperthreading:
                                         - "SLURM_JOB_NUM_NODES" 
                                         - "SLURM_NNODES"
 
+# If you do not have a project, there may be a small 
+# amount of resources given to each user
+# If so, the account name is usually the username
 accounting: true
 
 batch_system: "slurm"
@@ -51,23 +61,41 @@ batch_system: "slurm"
 jobtype: compute
 sh_interpreter: "/bin/bash"
 
-
+# This is the default partition (96 cores, Intel Cascade Lake)
 partition: standard96
 
+# Describe partitions available
+# There are more (48-core nodes etc)
+# but I (Joakim) see no reason to use them
+# The performance difference between Cascade Lake and Sapphire Rapids is to be tested
 choose_partition:
+        # 2 x 48-core Intel Cascade-Lake 9242. 2,3 GHz base clock. 
         standard96:
                 partition_name: standard96
                 partition_cpn: 96
+        # 2 x 48-core Intel Cascade-Lake 9242 (Cent OS 7)
+        'standard96:el7':
+                partition_name: 'standard96:el8'
+                partition_cpn: 96
+        # 2 x 48-core Intel Cascade-Lake 9242        
         'standard96:el8':
                 partition_name: 'standard96:el8'
                 partition_cpn: 96
+        # 2 x 48-core Intel Cascade-Lake 9242. For short tests (< 1hr walltime)        
         'standard96:test':
                 partition_name: 'standard96:test'
                 partition_cpn: 96
-        'standard96:eoptimized':
-                partition_name: 'standard96:eoptimized'
+        # 2 x Sapphire Rapids 8468. 514 Gb memory per node. 2,1 GHz base clock. 
+        'standard96s':
+                partition_name: 'standard96s'
+                partition_cpn: 96
+        'standard96s:test':
+                partition_name: 'standard96s'
                 partition_cpn: 96
 
+# Choose partition for different kinds of jobs 
+# compute: Simulations
+# pp: post processing
 partitions:
         compute:
                 name: ${computer.partition_name}
@@ -76,37 +104,47 @@ partitions:
                 name: ${computer.partition_name}
                 cores_per_node: ${computer.partition_cpn}
 
-
+# Intel chips support hyper-threading which means 
+# each core presents two logical cores to the system. 
+# It is possible to run 2 threads per core. 
+# Hyper-threading has not been found to speed up OpenIFS 
+# in any way, so we usually use 1 thread per core. 
 logical_cpus_per_core: 2
-
 threads_per_core: 1
+
 hetjob_flag: packjob
 
+# Set default pool directory
 pool_directories:
-        pool: "/scratch/usr/hbkawi"
-        focipool: "/scratch/usr/shkifmsw/foci_input2"
+        # This currently points to the shk00018 project from GEOMAR
+        # but can of course be set by the user in the runscript
+        pool: "/scratch/projects/shk00018/foci_input2/"
+        # This is default pool dir for FOCI and FOCI-OpenIFS
+        focipool: "/scratch/projects/shk00018/foci_input2/"
 
-pool_dir:  "/scratch/usr/hbkawi"
+pool_dir:  "/scratch/projects/shk00018"
 
-# default settings for compiler, mpi and I/O libs
-# TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
+# 
+# Now set default compiler etc
+# The user can choose a compiler set which is something like intel2023_impi2021
+# which indicates the C/Fortran compiler and the MPI implementation. 
+# For each compiler set, we have a pre-defined list of modules for netCDF etc. 
+# That way, the user just picks compiler and ESM-Tools solves all other modules
+#
 
-# Available options: 
-# On standard96 and standard96:el7 nodes
-# * intel2019_impi2019 - old software stack. Old but works. 
-# * intel2019_impi2019_nemo4 - old software stack. Loads gcc/9.3.0 required for newer XIOS versions and NEMO v4. 
-# * intel2022_impi2021 - old software stack. Newer. Problems with tracebacks. 
-# On standard96:el8, new compute nodes. 
-# * intel2023_impi2021 - new software stack. Must use system libraries. 
+# Available compiler options 
+# 
+# * intel2023_impi2021 
+# * intel2023_ompi416
 
-# Default.
-# NOTE: Only for old nodes, glogin1-10. 
-# For new nodes, glogin11-13, use intel2023_impi2021
-compiler_mpi: intel2022_impi2021
+# Default compiler
+# NOTE: THE COMPILER DEFAULT IS OFTEN SET FOR EACH MODEL, E.G. configs/setups/focioifs.yaml
+# SO THIS LINE MAY NOT ACTUALLY DO ANYTHING
+compiler_mpi: intel2023_impi2021
 
-# to compile nemo standalone, comment the line above and uncomment the one below
-#compiler_mpi: 
-#iolibraries: system_libs
+# Do we use modules available on the system 
+# or install our own (geomar_libs)
+iolibraries: system_libs
 
 export_vars:
    LC_ALL: en_US.UTF-8
@@ -114,117 +152,19 @@ export_vars:
    # removed by seb-wahl as it slows down ECHAM6 by 50% 
    #SLURM_CPU_BIND: none
 
+# Start by clearing all loaded modules
 module_actions:
     - "purge"
 
 choose_compiler_mpi:
 
-   intel2019_impi2019_nemo4:
-      
-      # Use GEOMAR libraries, not system modules
-      iolibraries: geomar_libs
-         
-      add_module_actions:
-         - "load slurm"
-         - "load HLRNenv"
-         - "load sw.skl"
-         - "load cmake"
-         - "load cdo nco"
-         - "load git"
-         - "load intel/19.0.5"
-         - "load impi/2019.5"
-         - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-         - "load gcc/9.3.0"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
-   intel2019_impi2019:
-      
-      # Use GEOMAR libraries, not system modules
-      iolibraries: geomar_libs
-      
-      add_module_actions:
-         - "load slurm"
-         - "load HLRNenv"
-         - "load sw.skl"
-         - "load cmake"
-         - "load cdo nco"
-         - "load git"
-         - "load intel/19.0.5"
-         - "load impi/2019.5"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-
-   intel2019_ompi:
-      
-      # Use GEOMAR libraries, not system modules
-      iolibraries: geomar_libs
-      
-      add_module_actions:
-         - "load slurm"
-         - "load HLRNenv"
-         - "load sw.skl"
-         - "load cmake"
-         - "load cdo nco"
-         - "load git"
-         - "load intel/19.0.5"
-         - "load openmpi/intel/3.1.6"
-         - "load gcc/9.3.0"
-      add_export_vars:
-         FC: mpifort
-         F77: mpifort
-         MPIFC: mpifort
-         FCFLAGS: -free
-         CC: mpicc
-         CXX: mpic++
-         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-   
-   intel2022_impi2021:
-      
-      # Use GEOMAR libraries, not system modules
-      iolibraries: geomar_libs
-      
-      add_module_actions:
-         - "load slurm"
-         - "load HLRNenv"
-         - "load sw.skl"
-         - "load cmake"
-         - "load cdo nco"
-         - "load git"
-         - "load intel/2022.2"
-         - "load impi/2021.6"
-         - "load gcc/9.3.0" 
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-   
-   # For the new software stack on the new nodes      
    intel2023_impi2021:
       
       # Use system modules
       iolibraries: system_libs
       
+      # Here we load compiler and MPI
+      # netCDF etc is done later
       add_module_actions:
          - "load intel-oneapi-compilers/2023.2.1"
          - "load intel-oneapi-mpi/2021.10.0"
@@ -254,6 +194,85 @@ choose_compiler_mpi:
          CXX: mpiicpc #mpiicpx
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+   
+   intel2023_ompi416:
+      
+      # Use system modules
+      iolibraries: system_libs
+      
+      # Here we load compiler and MPI
+      # netCDF etc is done later
+      add_module_actions:
+         - "load intel-oneapi-compilers/2023.2.1"
+         - "load openmpi/4.1.6"
+         # MKL needed for OpenIFS
+         - "load intel-oneapi-mkl/2023.2.0" 
+         # required for CMake
+         #- "load curl/8.4.0-5rlmgmu ncurses/6.4-u72r7qn zlib-ng/2.1.4-ftbye2s"
+         - "load cmake/3.27.7"
+         # git conflicts
+         #- "load git/2.42.0"
+         
+      
+      # Note: Intel compilers now have new names: 
+      # mpiicc (C) = mpiicx
+      # mpiicpc (C++) = mpiicpx
+      # mpiifort (Fortran) = mpiifx
+      # 
+      # OASIS compiles with mpiifx etc, but 
+      # XIOS and OpenIFS do not, so we 
+      # use the old mpiifort etc and live with the warnings
+      add_export_vars:
+         FC: mpifort #mpiifx
+         F77: mpifort #mpiifx
+         MPIFC: mpifort #mpiifx
+         FCFLAGS: -free
+         CC: mpicc #mpiicx
+         CXX: mpicxx #mpiicpx
+         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+         
+   gcc11_ompi416:
+      
+      # Use system modules
+      iolibraries: system_libs
+      
+      # Here we load compiler and MPI
+      # netCDF etc is done later
+      add_module_actions:
+         - "load gcc/11.4.0"
+         - "load openmpi/4.1.6"
+         # MKL needed for OpenIFS 
+         # Intel MKL works with GCC. Not specific to Intel Fortran
+         - "load intel-oneapi-mkl/2023.2.0" 
+         # Load FFTW 
+         # (yes it really does stand for Fastest Fourier Transform in the West)
+         - "load fftw/3.3.10" 
+         # required for CMake
+         #- "load curl/8.4.0-5rlmgmu ncurses/6.4-u72r7qn zlib-ng/2.1.4-ftbye2s"
+         - "load cmake/3.27.7"
+         # git conflicts
+         #- "load git/2.42.0"
+      
+      # Note: Intel compilers now have new names: 
+      # mpiicc (C) = mpiicx
+      # mpiicpc (C++) = mpiicpx
+      # mpiifort (Fortran) = mpiifx
+      # 
+      # OASIS compiles with mpiifx etc, but 
+      # XIOS and OpenIFS do not, so we 
+      # use the old mpiifort etc and live with the warnings
+      add_export_vars:
+         FC: mpifort #mpiifx
+         F77: mpifort #mpiifx
+         MPIFC: mpifort #mpiifx
+         FCFLAGS: -free
+         CC: mpicc #mpiicx
+         CXX: mpic++ #mpiicpx
+         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+         MKLROOT: $INTEL_ONEAPI_MKL_MODULE_INSTALL_PREFIX
+         FFTWROOT: $FFTW_MODULE_INSTALL_PREFIX
 
 choose_iolibraries:
 
@@ -265,23 +284,36 @@ choose_iolibraries:
                     # Parallel HDF5
                     - "load hdf5/1.14.3"
                     - "load netcdf-c/4.9.2"
+                    # Dont load netcdf. Use path instead
                     - "load netcdf-fortran/4.6.1-mpi"
                     # ecCodes required by OpenIFS
-                    - "load eccodes/2.34.0"
+                    # Some strange ELF issue with ecCodes module
+                    # Will use own ecCodes below (this is not a permanent solution)
+                    #- "load eccodes/2.34.0"
                     # CDO loads eccodes/2.25.0 which conflicts with eccodes/2.34.0
                     #- "load cdo/2.2.2" 
-                    - "load nco/5.1.6" 
+                    #- "load nco/5.1.6" 
                 
                 add_export_vars:
                     # Run module show on the modules to see how 
                     # each module changes or sets env variables
+                    # Module load usually sets <libname>_INSTALL_PREFIX
+                    # so we just use that to find the libraries and includes. 
                     HDF5_ROOT: $HDF5_MODULE_INSTALL_PREFIX
                     HDF5ROOT: $HDF5_ROOT
                     NETCDF_DIR: $NETCDF_C_MODULE_INSTALL_PREFIX
                     NETCDFROOT: $NETCDF_C_MODULE_INSTALL_PREFIX
+                    # Use path for netcdf-fortran instead
                     NETCDFFROOT: $NETCDF_FORTRAN_MODULE_INSTALL_PREFIX
-                    ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
-                    LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+                    #NETCDFFROOT: /sw/rev/24.05/sapphirerapids_opa_rocky8/linux-rocky8-sapphirerapids/gcc-11.4.0/netcdf-fortran-4.6.1-b4s43qtqze4kel6knhp7imr2yshypvjy/
+                    # we cant use ecCodes module due to some ELF error
+                    # Will give path to my own ecCodes
+                    #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
+                    ECCODESROOT: /home/shkjocke/sw/HPC_libraries/eccodes_intel2023.2.1_impi2021/
+                    
+                    # Add NETCDF to LD_LIBRARY_PATH
+                    # Gottingen support recommended to also add LD_RUN_PATH
+                    LD_LIBRARY_PATH: $ECCODESROOT/lib/:$NETCDF_DIR/lib/:$LD_RUN_PATH:$LD_LIBRARY_PATH
                     NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
                     
                     # For OASIS
@@ -292,10 +324,101 @@ choose_iolibraries:
                     OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                     
                     # For OASIS3-MCT5 from CERFACS
-                    OASIS_NETCDF: $NETCDF_DIR
-                    OASIS_NETCDFF: $NETCDF_DIR
+                    OASIS_NETCDF: $NETCDFROOT
+                    OASIS_NETCDFF: $NETCDFFROOT
+            
+            intel2023_ompi416:
+                # Modules to load 
+                add_module_actions:
+                    # Parallel HDF5
+                    - "load hdf5/1.14.3"
+                    - "load netcdf-c/4.9.2"
+                    # Dont load netcdf. Use path instead
+                    - "load netcdf-fortran/4.6.1-mpi"
+                    # ecCodes required by OpenIFS
+                    # Some strange ELF issue with ecCodes module
+                    # Will use own ecCodes below (this is not a permanent solution)
+                    #- "load eccodes/2.34.0"
+                    # CDO loads eccodes/2.25.0 which conflicts with eccodes/2.34.0
+                    #- "load cdo/2.2.2" 
+                    #- "load nco/5.1.6" 
+                
+                add_export_vars:
+                    # Run module show on the modules to see how 
+                    # each module changes or sets env variables
+                    # Module load usually sets <libname>_INSTALL_PREFIX
+                    # so we just use that to find the libraries and includes. 
+                    HDF5_ROOT: $HDF5_MODULE_INSTALL_PREFIX
+                    HDF5ROOT: $HDF5_ROOT
+                    NETCDF_DIR: $NETCDF_C_MODULE_INSTALL_PREFIX
+                    NETCDFROOT: $NETCDF_C_MODULE_INSTALL_PREFIX
+                    # Use path for netcdf-fortran instead
+                    NETCDFFROOT: $NETCDF_FORTRAN_MODULE_INSTALL_PREFIX
+                    #NETCDFFROOT: /sw/rev/24.05/sapphirerapids_opa_rocky8/linux-rocky8-sapphirerapids/gcc-11.4.0/netcdf-fortran-4.6.1-b4s43qtqze4kel6knhp7imr2yshypvjy/
+                    # we cant use ecCodes module due to some ELF error
+                    # Will give path to my own ecCodes
+                    #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
+                    ECCODESROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/eccodes-2.34.0-cwlamwcpvlhsuejrpqjlr7z3pdbkkw56/
+                    
+                    # Add NETCDF to LD_LIBRARY_PATH
+                    # Gottingen support recommended to also add LD_RUN_PATH
+                    LD_LIBRARY_PATH: $ECCODESROOT/lib64/:$NETCDF_DIR/lib/:$LD_RUN_PATH:$LD_LIBRARY_PATH
+                    NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+                    
+                    # For OASIS
+                    HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                    NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                    NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                    NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                    
+                    # For OASIS3-MCT5 from CERFACS
+                    OASIS_NETCDF: $NETCDFROOT
+                    OASIS_NETCDFF: $NETCDFFROOT
+            
+            gcc11_ompi416:
+                # Modules to load 
+                add_module_actions:
+                    # Parallel HDF5
+                    - "load hdf5/1.14.3"
+                    - "load netcdf-c/4.9.2"
+                    - "load netcdf-fortran/4.6.1-mpi"
+                    # ecCodes required by OpenIFS
+                    - "load eccodes/2.34.0"
+                    # cdo and nco required for pre- and post processing of OpenIFS and NEMO
+                    - "load cdo/2.2.2" 
+                    - "load nco/5.1.6" 
+                
+                add_export_vars:
+                    # Run module show on the modules to see how 
+                    # each module changes or sets env variables
+                    # Module load usually sets <libname>_INSTALL_PREFIX
+                    # so we just use that to find the libraries and includes. 
+                    HDF5_ROOT: $HDF5_MODULE_INSTALL_PREFIX
+                    HDF5ROOT: $HDF5_ROOT
+                    NETCDF_DIR: $NETCDF_C_MODULE_INSTALL_PREFIX
+                    NETCDFROOT: $NETCDF_C_MODULE_INSTALL_PREFIX
+                    NETCDFFROOT: $NETCDF_FORTRAN_MODULE_INSTALL_PREFIX
+                    ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
+                    # Add NETCDF to LD_LIBRARY_PATH
+                    # Gottingen support recommended to also add LD_RUN_PATH
+                    LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_RUN_PATH:$LD_LIBRARY_PATH
+                    NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+                    
+                    # For OASIS
+                    HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                    NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                    NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                    NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                    OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                    
+                    # For OASIS3-MCT5 from CERFACS
+                    OASIS_NETCDF: $NETCDFROOT
+                    OASIS_NETCDFF: $NETCDFFROOT        
          
     geomar_libs:
+       # This option is never used!
+       # It is kept here as a skeleton in case we want to use it in the future
        add_export_vars:
           IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
           PATH: $IO_LIB_ROOT/bin:$PATH
@@ -324,23 +447,6 @@ choose_iolibraries:
              add_export_vars:
                 IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
 
-          intel2021_impi2021:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkjocke/sw/HPC_libraries/intel2021.2_impi2021.2_20211007
-          
-          # for now: use libraries compiled with older compilers
-          intel2022_impi2021:
-              add_export_vars:
-                IO_LIB_ROOT:  /home/shkifmsw/sw/HPC_libraries/intel2022.2_impi2021.6_20230815 
-                #IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2022.2_impi2021.6_20230719_save/ 
-                
-          intel2019_impi2019:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
-
-          intel2019_ompi:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_ompi3.1.6_20201117
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"

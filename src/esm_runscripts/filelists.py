@@ -814,6 +814,8 @@ def log_used_files(config):
 
     esm_parser.yaml_dump(all_files, flist_file_yaml)
 
+    return config
+
 
 def check_for_unknown_files(config):
     # files = os.listdir(config["general"]["thisrun_work_dir"])

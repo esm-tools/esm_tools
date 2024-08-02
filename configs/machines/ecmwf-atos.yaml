@@ -85,6 +85,16 @@ export_vars:
 
         CRAYPE_LINK_TYPE: dynamic
 
+        # AMD Epyc Rome configurations
+        # ----------------------------
+        # It's actually ZEN2, but this option in FESOM1 triggers the correct
+        # flags for ZEN2 and ZEN3 architecture
+        CPU_MODEL: AMD_EPYC_ZEN3
+        # This flag in FESOM2 only controls the arch flags needed for the AMD
+        # arch and nothing else related to levante. It will require a fix in
+        # fesom source code so that it all makes more sense...
+        FESOM_PLATFORM_STRATEGY: levante.dkrz.de
+
         IO_LIB_ROOT: ""
         HDF5ROOT: $HDF5_PARALLEL_DIR
 

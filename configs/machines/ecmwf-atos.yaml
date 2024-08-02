@@ -16,17 +16,18 @@ additional_flags:
     - "--qos=np"
     # No hyperthreading in ECMWF-ATOS
     - "--hint=nomultithread"
+    - "--ntasks-per-core=1"
 
 partitions:
         compute:
                 name: compute
                 cores_per_node: 128
         pp:
-                name: gpil
-                cores_per_node: 1
+                name: compute
+                cores_per_node: 128
 
 
-logical_cpus_per_core: 1
+logical_cpus_per_core: 2
 
 threads_per_core: 1
 
@@ -57,17 +58,18 @@ useMPI: openmpi
 module_actions:
         - "reset"
         - "load prgenv/intel"
-        - "load udunits"
+        - "load udunits/2.2.28"
         - "load intel-mkl/19.0.5"
         - "load hpcx-openmpi/2.9.0"
         - "load hdf5-parallel/1.10.6"
         - "load netcdf4-parallel/4.7.4"
-        - "load cdo nco"
-        - "load openblas"
-        - "load fftw"
+        - "load cdo/2.1.1"
+        - "load nco/4.9.7"
+        - "load openblas/0.3.21"
+        - "load fftw/3.3.10"
         - "load ecmwf-toolbox/2023.01.0.0"
         - "load python3/3.8.8-01"
-        - "load git"
+        - "load git/2.39.1"
         - "list"
 
 export_vars:
@@ -107,6 +109,7 @@ export_vars:
         OMP_PLACES: "threads"
         # Avoid PMI hangs with heterogeneous jobs
         SLURM_MPI_TYPE: "none"
+        #UCX_TLS: "dc_x,self,sm"
 
 choose_useMPI:
         openmpi:

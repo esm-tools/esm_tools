@@ -49,14 +49,14 @@ choose_version:
     branch: xios_trunk 
     archfile: ESMTOOLS_generic_intel
     use_oasis: '' 
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
     contact: "swahl(at)geomar.de"
   trunk_oasis:
     git-repository: https://git.geomar.de/foci/src/xios.git
     branch: xios_trunk 
     archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
     contact: "swahl(at)geomar.de"
   "2.5":
     git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
@@ -148,9 +148,9 @@ choose_version:
         levante:
             archfile: ESMTOOLS_levante_oasis_intel
     use_oasis: --use_oasis oasis3_mct
-    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 12 --prod; cp bin/xios_server.exe bin/xios.x
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
 clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
-comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 12; cp bin/xios_server.exe bin/xios.x
+comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
 #destination: xios-${version}
 destination: xios
 git-repository: https://git.geomar.de/foci/src/xios.git

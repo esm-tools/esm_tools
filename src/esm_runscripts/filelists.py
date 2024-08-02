@@ -776,6 +776,9 @@ def log_used_files(config):
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
     flist_file = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}"
+    )
+    flist_file_yaml = (
         f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}.yaml"
     )
     all_files = {}
@@ -797,66 +800,19 @@ def log_used_files(config):
                     "source": model_config[f"{filetype}_sources"][file],
                     "intermediate": model_config[f"{filetype}_intermediate"][file],
                     "target": model_config[f"{filetype}_targets"][file],
-                    "type": filetype,
+                    "kind": filetype,
                     "checksum": checksum,
                 }
 
-                if config["general"]["verbose"]:
-                    print(flush=True)
-                    print(f"::: logging file category: {filetype}")
-                    print(f"- source: {model_files[file]['source']}", flush=True)
-                    print(f"- target: {model_files[file]['target']}", flush=True)
-                    helpers.print_datetime(config)
+                logger.debug(f"::: logging file category: {filetype}")
+                logger.debug(f"- source: {model_files[file]['source']}")
+                logger.debug(f"- target: {model_files[file]['target']}")
+                helpers.print_datetime(config)
 
             if model_files:
                 all_files[model] = model_files
 
-    with open(flist_file, "w") as flist:
-        yaml.dump(all_files, flist)
-
-        with open(flist_file, "w") as flist:
-            flist.write(
-                f"These files are used for \n"
-                f"experiment {config['general']['expid']}\n"
-                f"component {model}\n"
-                f"date {config['general']['run_datestamp']}"
-            )
-            flist.write("\n")
-            flist.write(80 * "-")
-            for filetype in filetypes:
-                if filetype + "_sources" in config[model]:
-                    flist.write("\n" + filetype.upper() + ":\n")
-                    for category in config[model][filetype + "_sources"]:
-                        flist.write(
-                            "\nSource: "
-                            + config[model][filetype + "_sources"][category]
-                        )
-                        flist.write(
-                            "\nExp Tree: "
-                            + config[model][filetype + "_intermediate"][category]
-                        )
-                        flist.write(
-                            "\nTarget: "
-                            + config[model][filetype + "_targets"][category]
-                        )
-                        logger.debug(f"::: logging file category: {category}")
-                        logger.debug(
-                            (
-                                f"- source: "
-                                f'{config[model][filetype + "_sources"][category]}'
-                            ),
-                        )
-                        logger.debug(
-                            (
-                                f"- target: "
-                                f'{config[model][filetype + "_targets"][category]}'
-                            ),
-                        )
-                        helpers.print_datetime(config)
-                        flist.write("\n")
-                flist.write("\n")
-                flist.write(80 * "-")
-    return config
+    esm_parser.yaml_dump(all_files, flist_file_yaml)
 
 
 def check_for_unknown_files(config):

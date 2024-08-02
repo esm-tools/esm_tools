@@ -1,0 +1,39 @@
+#!/bin/ksh
+
+## @fn ice2echam() 
+ice2echam() {
+        echo "                =================================================================="
+        echo "                 *** S T A R T I N G    ice2echam *** "; echo
+
+        if [ "$MACHINE" == "mistral" ]; then
+            module load defaults
+        fi
+
+        . ${FUNCTION_PATH}/general_lists.functions
+        . ${FUNCTION_PATH}/coupling_general.functions
+        . ${FUNCTION_PATH}/coupling_ice2echam.functions
+
+        export PISM_HEMISPHERE="pism_nh"
+        ice2echam_1st
+        wait
+        for FILE in "echam6_new_orography_before_calnoro.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
+            cdo -s sellonlatbox,0,360,0,90 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 
+            ncecat ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+            ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+        done
+        
+        export PISM_HEMISPHERE="pism_sh"
+        ice2echam_1st
+        wait
+        for FILE in "echam6_new_orography_before_calnoro.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
+            cdo -s sellonlatbox,0,360,-90,0 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 
+            ncecat ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+            ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+        
+            ncrcat "${COUPLE_DIR}/pism_nh/sellonlatbox.$FILE" "${COUPLE_DIR}/pism_sh/sellonlatbox.$FILE" "${COUPLE_DIR}/$FILE"
+            ncpdq -O -a record,lat,lon ${COUPLE_DIR}/$FILE tmp; mv tmp ${COUPLE_DIR}/$FILE
+            ncwa -O -a record ${COUPLE_DIR}/$FILE tmp; mv tmp ${COUPLE_DIR}/$FILE
+        done
+
+        ice2echam_2nd
+}

@@ -1,0 +1,8 @@
+components:
+- echam-6.3.05p2-awiesm-2.1
+- fesom-2.5-paleodyn
+- oasis3mct-2.8-paleodyn
+coupling_changes:
+- sed -i '/set(FESOM_COUPLED/s/OFF/ON/g' fesom-2.5/CMakeLists.txt
+- sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.05p2/config/mh-linux
+- sed -ir '/..FC_DEFINE}__cpl_mpiom/s/..FC_DEFINE}__cpl_mpiom//g' echam-6.3.05p2/configure.ac

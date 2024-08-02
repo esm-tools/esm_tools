@@ -1,0 +1,104 @@
+general:
+    setup_name: "awiesm"
+    compute_time: "01:10:00"
+    initial_date: "2000-01-01T00:00:00"       # Initial exp. date
+    final_date: "2009-12-31T00:00:00"         # Final date of the experiment
+    script_dir: "${general.esm_couplings_dir}"
+    restart_dir: ""
+    nmonth: 0
+    nyear: 1
+    with_wiso: False
+    use_venv: False
+#    clean_old_rundirs_except: 5
+#    clean_old_rundirs_keep_every: 25
+    version: "2.1-paleodyn-2.5"
+    description: >
+      Basic AWIESM-PISM Test
+    files_to_wait_for:
+        - "latest_jsbach_init_file.nc"
+        - "latest_gfw_atmo.nc"
+        - "latest_jsbach_restart_file.nc"
+        - "latest_veg_restart_file.nc"
+        - "latest_target_orography.nc"
+        - "landice_yearly_mass_loss.out"
+
+awiesm:
+    postprocessing: false
+    model_dir: "/albedo/home/lackerma/modeldir/awiesm-2.1-paleodyn-2.5/"
+
+echam:
+    restart_rate: 1
+    restart_unit: "years"
+    lresume: False
+    use_transient_forcing: False
+    transient_forcing_table: ""
+    add_config_sources: 
+            echam: "/albedo/home/lackerma/namelists/production/echam/namelist.echam"
+    add_namelist_changes:
+            namelist.echam:
+                radctl:
+                    lrad_async: False
+                    yr_perp: remove_from_namelist
+                runctl:
+                    l_orbvsop87: false
+                    default_output: false
+                wisoctl:
+                    lwiso_rerun: False
+                    lwiso: False
+                    nwiso: 0
+            #    submodelctl:
+            #        lupdate_orog: False
+
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2echam.functions
+                    script_dir: ${general.script_dir}/echam
+                    call_function: ice2echam
+                    env_preparation: env_echam.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_echam2ice.functions
+                    script_dir: ${general.script_dir}/echam
+                    call_function: echam2ice
+                    env_preparation: env_echam.py
+                    run_only: last_run_in_chunk
+
+jsbach:
+    dynamic_vegetations: True
+
+fesom:
+    nproc: 384
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: False
+    mesh_dir: "/albedo/pool/FESOM2/core2"
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2fesom.functions
+                    script_dir: ${general.script_dir}/fesom
+                    call_function: ice2fesom
+                    env_preparation: env_fesom.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_fesom2ice.functions
+                    script_dir: ${general.script_dir}/fesom
+                    call_function: fesom2ice
+                    env_preparation: env_fesom.py
+                    run_only: last_run_in_chunk

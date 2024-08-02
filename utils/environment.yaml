@@ -24,15 +24,17 @@ dependencies:
   - coloredlogs
   - emoji
   - f90nml
-  - gitpython
+  - gitpython=3.1.37
   - loguru
   - numpy
   - packaging
   - pandas>=1.0
+  - pip=23.3
   - psutil
-  - pyyaml
-  - pyyaml>=5.1
+  - pytest
+  - pyyaml=6.0.1
   - questionary
+  - ruamel.yaml==0.17.32
   - semver
   - sqlalchemy
   - tabulate

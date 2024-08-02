@@ -17,7 +17,10 @@ bs = "\033[1m"
 be = "\033[0m"
 
 # Define default files for comparisson
-compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelists"]}
+compare_files = {
+    "comp": ["comp-"],
+    "run": [".run", "finished_config", "namelists", "filelist"],
+}
 
 """
 ``config.yaml``:

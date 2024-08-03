@@ -312,8 +312,8 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     # that match that string to ``subpaths``. These files are taken always from the
     # first ``run_`` folder so that a check test and an actual test files are
     # comparable
-    elif cfile in [".run", "finished_config"]:
-        files_to_folders = {".run": "scripts", "finished_config": "config"}
+    elif cfile in [".run", "finished_config", "filelist"]:
+        files_to_folders = {".run": "scripts", "finished_config": "config", "filelist": "log"}
         ctype = files_to_folders[cfile]
         ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
         ldir.sort()

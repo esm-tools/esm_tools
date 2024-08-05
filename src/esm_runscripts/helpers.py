@@ -8,7 +8,6 @@ from loguru import logger
 import esm_parser
 import esm_plugin_manager
 import esm_tools
-from loguru import logger
 from esm_profile import print_profile_summary
 
 
@@ -447,3 +446,32 @@ def get_all_git_info(path):
         "diffs": get_git_diffs(path, add_colors=False),
     }
     return git_info
+
+
+class CachedFile:
+    """
+    Represents a file that might already have saved information somewhere. Can be used to check if a cache is valid
+    """
+
+    def __init__(self, path):
+        self.path = path
+
+    def is_younger_than(self, other, check_by="mtime"):
+        if check_by == "mtime":
+            return os.path.getmtime(self.path) < os.path.getmtime(other.path)
+        else:
+            raise ValueError("Invalid check_by value. Only 'mtime' is supported.")
+
+    def is_older_than(self, other, check_by="mtime"):
+        if check_by == "mtime":
+            return os.path.getmtime(self.path) > os.path.getmtime(other.path)
+        else:
+            raise ValueError("Invalid check_by value. Only 'mtime' is supported.")
+
+    def read(self):
+        with open(self.path, "r") as f:
+            return f.read()
+
+    def load_cache(self):
+        data = self.read()
+        return yaml.safe_load(data)

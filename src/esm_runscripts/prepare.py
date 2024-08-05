@@ -5,12 +5,12 @@ import sys
 
 import questionary
 import yaml
+from loguru import logger
 
 import esm_parser
 import esm_utilities
 from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
-from loguru import logger
 
 from . import batch_system, helpers
 
@@ -695,6 +695,7 @@ def add_vcs_info(config):
         The experiment configuration
     """
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    esm_vcs_info_file_cache = helpers.CachedFile(exp_vcs_info_file)
     logger.debug("Experiment information is being stored for usage under:")
     logger.debug(f">>> {exp_vcs_info_file}")
     vcs_versions = {}
@@ -708,7 +709,12 @@ def add_vcs_info(config):
             vcs_versions[model] = f"Unable to locate model_dir for {model}."
             continue
         if helpers.is_git_repo(model_dir):
-            vcs_versions[model] = helpers.get_all_git_info(model_dir)
+            if esm_vcs_info_file_cache.is_younger_than(model_dir):
+                logger.debug(f"Using cached VCS info for {model}")
+                cached_info = esm_vcs_info_file_cache.load_cache()
+                vcs_versions[model] = cached_info[model]
+            else:
+                vcs_versions[model] = helpers.get_all_git_info(model_dir)
         else:
             vcs_versions[model] = "Not a git-controlled model!"
 

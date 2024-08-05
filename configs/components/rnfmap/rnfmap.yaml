@@ -239,8 +239,8 @@ choose_computer.name:
              fflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
              cflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
           '*':
-             fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0 
-             cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0     
+             fflags: -r8 -fp-model precise -align array32byte -O3 -g -traceback -convert big_endian -fpe0 
+             cflags: -fp-model precise -O3 -g -traceback -qopt-report=0     
     "*":
        fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
-       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0
+       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0

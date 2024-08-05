@@ -140,7 +140,7 @@ pool_dir:  "/scratch/projects/shk00018"
 # Default compiler
 # NOTE: THE COMPILER DEFAULT IS OFTEN SET FOR EACH MODEL, E.G. configs/setups/focioifs.yaml
 # SO THIS LINE MAY NOT ACTUALLY DO ANYTHING
-compiler_mpi: intel2023_impi2021
+compiler_mpi: intel2023_ompi416
 
 # Do we use modules available on the system 
 # or install our own (geomar_libs)
@@ -186,14 +186,23 @@ choose_compiler_mpi:
       # XIOS and OpenIFS do not, so we 
       # use the old mpiifort etc and live with the warnings
       add_export_vars:
-         FC: mpiifort #mpiifx
-         F77: mpiifort #mpiifx
-         MPIFC: mpiifort #mpiifx
+         #FC: mpiifort 
+         #F77: mpiifort 
+         #MPIFC: mpiifort 
+         #FCFLAGS: -free
+         #CC: mpiicc 
+         #CXX: mpiicpc
+         #MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         #MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+         
+         FC: mpiifx
+         F77: mpiifx
+         MPIFC: mpiifx
          FCFLAGS: -free
-         CC: mpiicc #mpiicx
-         CXX: mpiicpc #mpiicpx
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+         CC: mpiicx
+         CXX: mpiicpx
+         MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
    
    intel2023_ompi416:
       
@@ -207,28 +216,22 @@ choose_compiler_mpi:
          - "load openmpi/4.1.6"
          # MKL needed for OpenIFS
          - "load intel-oneapi-mkl/2023.2.0" 
-         # required for CMake
-         #- "load curl/8.4.0-5rlmgmu ncurses/6.4-u72r7qn zlib-ng/2.1.4-ftbye2s"
+         # CMake to compile OASIS etc
          - "load cmake/3.27.7"
-         # git conflicts
-         #- "load git/2.42.0"
-         
       
-      # Note: Intel compilers now have new names: 
-      # mpiicc (C) = mpiicx
-      # mpiicpc (C++) = mpiicpx
-      # mpiifort (Fortran) = mpiifx
-      # 
-      # OASIS compiles with mpiifx etc, but 
-      # XIOS and OpenIFS do not, so we 
-      # use the old mpiifort etc and live with the warnings
+      # Note: OpenMPI compilers link to new Intel compilers, e.g.
+      # mpicc (C) = icx
+      # mpicxx (C++) = icx
+      # mpifort (Fortran) = ifx
+      # Some changes in arch files for XIOS and NEMO are necessary to compile
+      # and XIOS must be quite new.  
       add_export_vars:
-         FC: mpifort #mpiifx
-         F77: mpifort #mpiifx
-         MPIFC: mpifort #mpiifx
+         FC: mpifort 
+         F77: mpifort 
+         MPIFC: mpifort 
          FCFLAGS: -free
-         CC: mpicc #mpiicx
-         CXX: mpicxx #mpiicpx
+         CC: mpicc 
+         CXX: mpicxx 
          MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
          
@@ -310,6 +313,7 @@ choose_iolibraries:
                     # Will give path to my own ecCodes
                     #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
                     ECCODESROOT: /home/shkjocke/sw/HPC_libraries/eccodes_intel2023.2.1_impi2021/
+                    PATH: $ECCODESROOT/bin:$PATH
                     
                     # Add NETCDF to LD_LIBRARY_PATH
                     # Gottingen support recommended to also add LD_RUN_PATH
@@ -338,10 +342,10 @@ choose_iolibraries:
                     # ecCodes required by OpenIFS
                     # Some strange ELF issue with ecCodes module
                     # Will use own ecCodes below (this is not a permanent solution)
-                    #- "load eccodes/2.34.0"
+                    - "load eccodes/2.34.0"
                     # CDO loads eccodes/2.25.0 which conflicts with eccodes/2.34.0
-                    #- "load cdo/2.2.2" 
-                    #- "load nco/5.1.6" 
+                    - "load cdo/2.2.2" 
+                    - "load nco/5.1.6" 
                 
                 add_export_vars:
                     # Run module show on the modules to see how 
@@ -357,8 +361,8 @@ choose_iolibraries:
                     #NETCDFFROOT: /sw/rev/24.05/sapphirerapids_opa_rocky8/linux-rocky8-sapphirerapids/gcc-11.4.0/netcdf-fortran-4.6.1-b4s43qtqze4kel6knhp7imr2yshypvjy/
                     # we cant use ecCodes module due to some ELF error
                     # Will give path to my own ecCodes
-                    #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
-                    ECCODESROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/eccodes-2.34.0-cwlamwcpvlhsuejrpqjlr7z3pdbkkw56/
+                    ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
+                    #ECCODESROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/eccodes-2.34.0-cwlamwcpvlhsuejrpqjlr7z3pdbkkw56/
                     
                     # Add NETCDF to LD_LIBRARY_PATH
                     # Gottingen support recommended to also add LD_RUN_PATH

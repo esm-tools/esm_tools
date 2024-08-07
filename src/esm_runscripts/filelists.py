@@ -769,48 +769,54 @@ def replace_year_placeholder(config):
 
 
 def log_used_files(config):
+    compute_file_checksums = config["general"].get("compute_file_checksums", False)
     logger.debug("\n::: Logging used files")
+    jobtype = config["general"].get("jobtype", "unknown")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
     flist_file = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}"
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_{jobtype}_filelist_{datestamp}"
     )
     flist_file_yaml = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}filelist_{datestamp}.yaml"
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
     )
-    all_files = {}
+    all_files = []
 
     for model in config["general"]["valid_model_names"] + ["general"]:
         for filetype in filetypes:
             model_config = config[model]
-            model_files = {}
 
             for file in model_config.get(f"{filetype}_sources", []):
-                try:
-                    checksum = hashlib.md5(
-                        open(model_config[f"{filetype}_targets"][file], "rb"
-                    ).read()).hexdigest()
-                except FileNotFoundError as err:
+                import ipdb
+                #ipdb.set_trace()
+                if compute_file_checksums:
+                    try:
+                        checksum = hashlib.md5(
+                            open(model_config[f"{filetype}_targets"][file], "rb"
+                        ).read()).hexdigest()
+                    except FileNotFoundError as err:
+                        checksum = None
+                else:
                     checksum = None
 
-                model_files[file] = {
-                    "source": model_config[f"{filetype}_sources"][file],
-                    "intermediate": model_config[f"{filetype}_intermediate"][file],
-                    "target": model_config[f"{filetype}_targets"][file],
-                    "kind": filetype,
-                    "checksum": checksum,
-                }
+                all_files.append(
+                    {file: {
+                        "component": model,
+                        "source": model_config[f"{filetype}_sources"][file],
+                        "intermediate": model_config[f"{filetype}_intermediate"][file],
+                        "target": model_config[f"{filetype}_targets"][file],
+                        "kind": filetype,
+                        "checksum": checksum,
+                    }}
+                )
 
                 logger.debug(f"::: logging file category: {filetype}")
-                logger.debug(f"- source: {model_files[file]['source']}")
-                logger.debug(f"- target: {model_files[file]['target']}")
+                logger.debug(f"- source: {all_files[-1][file]['source']}")
+                logger.debug(f"- target: {all_files[-1][file]['target']}")
                 helpers.print_datetime(config)
-
-            if model_files:
-                all_files[model] = model_files
 
     esm_parser.yaml_dump(all_files, flist_file_yaml)
 

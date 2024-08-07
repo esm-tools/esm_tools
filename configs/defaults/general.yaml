@@ -4,4 +4,4 @@ intermediate_movements:
 - "config"
 - "bin"
 - "input"
-- "log"
+compute_file_checksums: True

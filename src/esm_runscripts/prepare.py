@@ -93,7 +93,6 @@ def check_model_lresume(config):
                     model, user_lresume, config, [], []
                 )
             if isinstance(user_lresume, str):
-
                 if user_lresume == "0" or user_lresume.upper() == "FALSE":
                     user_lresume = False
                 elif user_lresume == "1" or user_lresume.upper() == "TRUE":
@@ -355,7 +354,6 @@ def set_leapyear(config):
 
 
 def set_overall_calendar(config):
-
     # set the overall calendar
     if config["general"]["leapyear"]:
         config["general"]["calendar"] = Calendar(1)
@@ -365,7 +363,6 @@ def set_overall_calendar(config):
 
 
 def find_last_prepared_run(config):
-
     calendar = config["general"]["calendar"]
     current_date = Date(config["general"]["current_date"], calendar)
     initial_date = Date(config["general"]["initial_date"], calendar)
@@ -409,7 +406,6 @@ def find_last_prepared_run(config):
 
 
 def set_most_dates(config):
-
     calendar = config["general"]["calendar"]
     if isinstance(config["general"]["current_date"], Date):
         current_date = config["general"]["current_date"]
@@ -694,14 +690,27 @@ def add_vcs_info(config):
     config : dict
         The experiment configuration
     """
+    vcs_logger = logger.add(
+        f"{config['general']['experiment_log_dir']}/pauls_vcs_info.log"
+    )
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
-    esm_vcs_info_file_cache = helpers.CachedFile(exp_vcs_info_file)
-    logger.debug("Experiment information is being stored for usage under:")
-    logger.debug(f">>> {exp_vcs_info_file}")
+    esm_vcs_info_file_cache = helpers.CachedFile(
+        f"{config['general']['experiment_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    )
+    logger.critical("Experiment information is being stored for usage under:")
+    logger.critical(f">>> {exp_vcs_info_file}")
+    if os.path.exists(esm_vcs_info_file_cache.path):
+        logger.critical(">>> CACHE FILE EXISTS!")
+        logger.critical(
+            f">>> Last modification time of cache: {os.path.getmtime(esm_vcs_info_file_cache.path)}"
+        )
+    else:
+        logger.critical(">>> CACHE FILE DOES NOT EXIST!")
+        logger.critical(f"I was looking for: {esm_vcs_info_file_cache.path}")
     vcs_versions = {}
     all_models = config.get("general", {}).get("models", [])
     for model in all_models:
-        logger.debug(f"Locating {model}")
+        logger.critical(f"Locating {model}")
         try:
             model_dir = config[model]["model_dir"]
         except KeyError:
@@ -709,11 +718,12 @@ def add_vcs_info(config):
             vcs_versions[model] = f"Unable to locate model_dir for {model}."
             continue
         if helpers.is_git_repo(model_dir):
-            if esm_vcs_info_file_cache.is_younger_than(model_dir):
-                logger.debug(f"Using cached VCS info for {model}")
+            if esm_vcs_info_file_cache.is_older_than(model_dir):
+                logger.critical(f"Using cached VCS info for {model}")
                 cached_info = esm_vcs_info_file_cache.load_cache()
                 vcs_versions[model] = cached_info[model]
             else:
+                logger.critical(f"Getting get info for {model_dir}")
                 vcs_versions[model] = helpers.get_all_git_info(model_dir)
         else:
             vcs_versions[model] = "Not a git-controlled model!"
@@ -726,12 +736,14 @@ def add_vcs_info(config):
     else:
         # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
         esm_parser.user_error(
-            "esm_tools doesn't know where it's own install location is. Something is very seriously wrong."
+            "VCS Info",
+            "esm_tools doesn't know where it's own install location is. Something is very seriously wrong.",
         )
 
     esm_parser.yaml_dump(vcs_versions, exp_vcs_info_file)
 
-    print(exp_vcs_info_file)
+    logger.debug(exp_vcs_info_file)
+    logger.remove(vcs_logger)
 
     return config
 
@@ -802,7 +814,6 @@ def finalize_config(config):
 
 
 def add_submission_info(config):
-
     bs = batch_system.batch_system(config, config["computer"]["batch_system"])
 
     submitted = bs.check_if_submitted()
@@ -817,7 +828,6 @@ def add_submission_info(config):
 
 
 def initialize_batch_system(config):
-
     config["general"]["batch"] = batch_system.batch_system(
         config, config["computer"]["batch_system"]
     )

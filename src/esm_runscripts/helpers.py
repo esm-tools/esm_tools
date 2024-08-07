@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime
 
@@ -21,7 +22,6 @@ def print_datetime(config):
 
 
 def evaluate(config, job_type, recipe_name):
-
     # Check for a user defined compute recipe in the setup section of the
     # general section. If nothing is found, recipe_steps should evaluate to
     # None and the default is used
@@ -457,14 +457,27 @@ class CachedFile:
         self.path = path
 
     def is_younger_than(self, other, check_by="mtime"):
+        if not os.path.exists(self.path):
+            return False
         if check_by == "mtime":
-            return os.path.getmtime(self.path) < os.path.getmtime(other.path)
+            logger.debug("Checking modification times:")
+            logger.debug(f"{self.path}: {os.path.getmtime(self.path)}")
+            logger.debug(f"{other}: {os.path.getmtime(other)}")
+            am_I_younger = os.path.getmtime(self.path) < os.path.getmtime(other)
+            if am_I_younger:
+                logger.debug(f"This file {self.path} is younger than {other}")
+            return am_I_younger
         else:
             raise ValueError("Invalid check_by value. Only 'mtime' is supported.")
 
     def is_older_than(self, other, check_by="mtime"):
+        if not os.path.exists(self.path):
+            return False
         if check_by == "mtime":
-            return os.path.getmtime(self.path) > os.path.getmtime(other.path)
+            logger.debug("Checking modification times:")
+            logger.debug(f"{self.path}: {os.path.getmtime(self.path)}")
+            logger.debug(f"{other}: {os.path.getmtime(other)}")
+            return os.path.getmtime(self.path) > os.path.getmtime(other)
         else:
             raise ValueError("Invalid check_by value. Only 'mtime' is supported.")
 

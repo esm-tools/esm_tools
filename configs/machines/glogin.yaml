@@ -157,7 +157,35 @@ module_actions:
     - "purge"
 
 choose_compiler_mpi:
-
+   
+   # build locally for myself using spack
+   intel2021_impi2019:
+      
+      # Use spack libraries
+      iolibraries: spack_libs
+      
+      # Here we load compiler and MPI
+      # netCDF etc is done later
+      add_module_actions:
+         - "load spack"
+         - "source $SPACK_ROOT/share/spack/setup-env.sh"
+         - "load intel-oneapi-compilers"
+      
+      add_spack_actions:
+         - "load netcdf-fortran@4.6.1%intel@2021.10.0+mpi ^intel-mpi%intel@2021.10.0 ^hdf5%intel@2021.10.0+hl+cxx+fortran~java+threadsafe+map"
+         - "load eccodes@2.34.0%intel@2021.10.0+aec+fortran+openmp+tools"
+         - "load intel-mkl@2020.4.304%intel@2021.10.0 threads=openmp"
+         
+      add_export_vars:
+         FC: mpiifort 
+         F77: mpiifort 
+         MPIFC: mpiifort 
+         FCFLAGS: -free
+         CC: mpiicc 
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+   
    intel2023_impi2021:
       
       # Use system modules
@@ -420,6 +448,31 @@ choose_iolibraries:
                     OASIS_NETCDF: $NETCDFROOT
                     OASIS_NETCDFF: $NETCDFFROOT        
          
+    spack_libs:
+       choose_compiler_mpi:
+          intel2021_impi2019:
+             add_export_vars:
+                SPACK_ROOT: "/home/shkjocke/.spack/install/linux-rocky8-cascadelake/intel-2021.10.0/"
+                MKLROOT: $SPACK_ROOT/intel-mkl-2020.4.304-osfsndi25x7ompvdhkuc3e7oy6w7x22y/mkl/
+                I_MPI_ROOT: $SPACK_ROOT/intel-mpi-2019.10.317-vh3d4dgpdnc5ijnbpi27qlc2e65s6gs7/impi/2019.10.317/
+                SZIPROOT: $SPACK_ROOT/libaec-1.0.6-s3yiohe2h2ndywnrwc6lzj5wwc4znojo/
+                HDF5ROOT: $SPACK_ROOT/hdf5-1.14.3-qxyba7lcbmntigtjqpwhc7jj7apk26qx
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $SPACK_ROOT/netcdf-c-4.9.2-k4etwcxcattbfttshg6urbpmnxsvs5ip
+                NETCDFFROOT: $SPACK_ROOT/netcdf-fortran-4.6.1-f2img6lithx3dktkhfebq7ishu72bg5u
+                ECCODESROOT: $SPACK_ROOT/eccodes-2.34.0-x4itugitwwo7cbxoxmsj4gprctnlui5i
+                
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+             
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT 
+             
+    
     geomar_libs:
        # This option is never used!
        # It is kept here as a skeleton in case we want to use it in the future

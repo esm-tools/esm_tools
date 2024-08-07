@@ -229,8 +229,10 @@ oifs:
                 compiler_mpi: intel2024_impi2021
              glogin:
                 #compiler_mpi: intel2023_impi2021
-                compiler_mpi: intel2023_ompi416
-                iolibraries: system_libs 
+                #compiler_mpi: intel2023_ompi416
+                #iolibraries: system_libs 
+                compiler_mpi: intel2021_impi2019
+                iolibraries: spack_libs
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:
@@ -252,9 +254,11 @@ oifs:
              blogin:
                 compiler_mpi: intel2024_impi2021
              glogin:
-                compiler_mpi: intel2023_ompi416
+                #compiler_mpi: intel2023_ompi416
                 #compiler_mpi: intel2023_impi2021
-                iolibraries: system_libs 
+                #iolibraries: system_libs 
+                compiler_mpi: intel2021_impi2019
+                iolibraries: spack_libs
              juwels:
                 compiler_mpi: intel2020_psmpi2020
              nesh:

@@ -769,8 +769,8 @@ def replace_year_placeholder(config):
 
 
 def log_used_files(config):
-    compute_file_checksums = config["general"].get("compute_file_checksums", False)
     logger.debug("\n::: Logging used files")
+    compute_file_checksums = config["general"].get("compute_file_checksums", False)
     jobtype = config["general"].get("jobtype", "unknown")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
@@ -821,6 +821,93 @@ def log_used_files(config):
     esm_parser.yaml_dump(all_files, flist_file_yaml)
 
     return config
+
+
+def compute_and_log_file_checksums(config):
+    compute_file_checksums = config["general"].get("compute_file_checksums", False)
+    target = config["general"]["files_target"]
+    if not compute_file_checksums:
+        return config
+
+    logger.debug("\n::: Computing file checksums in ``{target}``")
+    jobtype = config["general"].get("jobtype", "unknown")
+    filetypes = config["general"]["relevant_filetypes"]
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    flist_file = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_{jobtype}_filelist_{datestamp}"
+    )
+    flist_file_yaml = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
+    )
+    all_files = {}
+
+    checksums = _compute_checksums_for_dir(config, target)
+    files_not_handled_by_filelists = checksums
+
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        component_files = {}
+        for filetype in filetypes:
+            model_config = config[model]
+
+            for file in model_config.get(f"{filetype}_sources", []):
+
+                target_file = model_config[f"{filetype}_targets"][file]
+                p_target_file = str(pathlib.Path(target_file).absolute())
+
+                checksum = checksums.get(p_target_file, None)
+                if checksum:
+                    del files_not_handled_by_filelists[p_target_file]
+
+                component_files[file] = {
+                    "source": model_config[f"{filetype}_sources"][file],
+                    "intermediate": model_config[f"{filetype}_intermediate"][file],
+                    "target": target_file,
+                    "kind": filetype,
+                    "checksum": checksum,
+                }
+
+                logger.debug(f"::: logging file category: {filetype}")
+                logger.debug(f"- source: {component_files[file]['source']}")
+                logger.debug(f"- target: {component_files[file]['target']}")
+                helpers.print_datetime(config)
+
+        all_files[model] = component_files
+
+    all_files["not_handled_by_filelists"] = {}
+    for file, checksum in files_not_handled_by_filelists.items():
+        all_files["not_handled_by_filelists"][file] = {
+            "source": "unknown",
+            "intermediate": "unknown",
+            "target": file,
+            "kind": "not_handled_by_filelists",
+            "checksum": checksum,
+        }
+
+    esm_parser.yaml_dump(all_files, flist_file_yaml)
+
+    return config
+
+
+def _compute_checksums_for_dir(config, target):
+
+    if target == "work":
+        dir_path = pathlib.Path(config["general"]["thisrun_work_dir"])
+        file_paths = [str(file.absolute()) for file in dir_path.rglob('*') if file.is_file()]
+    else:
+        logger.error(
+            f"Checksums of files in ``{target}`` directory types are not yet "
+            "supported. Only files in the ``work`` directory currently supported. "
+        )
+        exit(1)
+
+    checksums = {}
+    for f in file_paths:
+        checksums[f] = hashlib.md5(open(f, "rb").read()).hexdigest()
+
+    return checksums
 
 
 def check_for_unknown_files(config):
@@ -913,9 +1000,10 @@ def copy_files(config, filetypes, source, target):
     Note
     ----
     Relevant variables in this function:
-    
+
     intermediate_movements : list
-        List of file types that will be considered in the intermediate step (copy         from source to intermediate and then to work, rather than directly to work)
+        List of file types that will be considered in the intermediate step (copy
+        from source to intermediate and then to work, rather than directly to work)
 
     Parameters
     ----------
@@ -935,6 +1023,10 @@ def copy_files(config, filetypes, source, target):
 
     successful_files = []
     missing_files = {}
+
+    # Save the source and target for later use in other methods
+    config["general"]["files_source"] = source
+    config["general"]["files_target"] = target
 
     # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(

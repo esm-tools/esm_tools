@@ -770,56 +770,63 @@ def replace_year_placeholder(config):
 
 def log_used_files(config):
     logger.debug("\n::: Logging used files")
-    compute_file_checksums = config["general"].get("compute_file_checksums", False)
-    jobtype = config["general"].get("jobtype", "unknown")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    # this file contains the files used in the experiment
     flist_file = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_{jobtype}_filelist_{datestamp}"
+        f"{thisrun_log_dir}/"
+        f"{expid}_{it_coupled_model_name}filelist_{datestamp}"
     )
-    flist_file_yaml = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
-    )
-    all_files = []
 
-    for model in config["general"]["valid_model_names"] + ["general"]:
-        for filetype in filetypes:
-            model_config = config[model]
+    with open(flist_file, "w") as flist:
 
-            for file in model_config.get(f"{filetype}_sources", []):
-                import ipdb
-                #ipdb.set_trace()
-                if compute_file_checksums:
-                    try:
-                        checksum = hashlib.md5(
-                            open(model_config[f"{filetype}_targets"][file], "rb"
-                        ).read()).hexdigest()
-                    except FileNotFoundError as err:
-                        checksum = None
-                else:
-                    checksum = None
+        for model in config["general"]["valid_model_names"] + ["general"]:
+            flist.write(
+                f"These files are used for\n"
+                f"experiment {config['general']['expid']}\n"
+                f"component {model}\n"
+                f"date {config['general']['run_datestamp']}"
+            )
 
-                all_files.append(
-                    {file: {
-                        "component": model,
-                        "source": model_config[f"{filetype}_sources"][file],
-                        "intermediate": model_config[f"{filetype}_intermediate"][file],
-                        "target": model_config[f"{filetype}_targets"][file],
-                        "kind": filetype,
-                        "checksum": checksum,
-                    }}
-                )
-
-                logger.debug(f"::: logging file category: {filetype}")
-                logger.debug(f"- source: {all_files[-1][file]['source']}")
-                logger.debug(f"- target: {all_files[-1][file]['target']}")
-                helpers.print_datetime(config)
-
-    esm_parser.yaml_dump(all_files, flist_file_yaml)
-
+            flist.write("\n")
+            flist.write(80 * "-")
+            for filetype in filetypes:
+                if filetype + "_sources" in config[model]:
+                    flist.write("\n" + filetype.upper() + ":\n")
+                    for category in config[model][filetype + "_sources"]:
+                        flist.write(
+                            "\nSource: "
+                            + config[model][filetype + "_sources"][category]
+                        )
+                        flist.write(
+                            "\nExp Tree: "
+                            + config[model][filetype + "_intermediate"][category]
+                        )
+                        flist.write(
+                            "\nTarget: "
+                            + config[model][filetype + "_targets"][category]
+                        )
+                        logger.debug(f"::: logging file category: {category}")
+                        logger.debug(
+                            (
+                                f"- source: "
+                                f'{config[model][filetype + "_sources"][category]}'
+                            ),
+                        )
+                        logger.debug(
+                            (
+                                f"- target: "
+                                f'{config[model][filetype + "_targets"][category]}'
+                            ),
+                        )
+                        helpers.print_datetime(config)
+                        flist.write("\n")
+                flist.write("\n")
+                flist.write(80 * "-")
+            flist.write("\n")
     return config
 
 
@@ -836,9 +843,6 @@ def compute_and_log_file_checksums(config):
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
-    flist_file = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_{jobtype}_filelist_{datestamp}"
-    )
     flist_file_yaml = (
         f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
     )
@@ -847,14 +851,14 @@ def compute_and_log_file_checksums(config):
     checksums = _compute_checksums_for_dir(config, target)
     files_not_handled_by_filelists = checksums
 
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for component in config["general"]["valid_model_names"] + ["general"]:
         component_files = {}
         for filetype in filetypes:
-            model_config = config[model]
+            component_config = config[component]
 
-            for file in model_config.get(f"{filetype}_sources", []):
+            for file in component_config.get(f"{filetype}_sources", []):
 
-                target_file = model_config[f"{filetype}_targets"][file]
+                target_file = component_config[f"{filetype}_targets"][file]
                 p_target_file = str(pathlib.Path(target_file).absolute())
 
                 checksum = checksums.get(p_target_file, None)
@@ -862,8 +866,8 @@ def compute_and_log_file_checksums(config):
                     del files_not_handled_by_filelists[p_target_file]
 
                 component_files[file] = {
-                    "source": model_config[f"{filetype}_sources"][file],
-                    "intermediate": model_config[f"{filetype}_intermediate"][file],
+                    "source": component_config[f"{filetype}_sources"][file],
+                    "intermediate": component_config[f"{filetype}_intermediate"][file],
                     "target": target_file,
                     "kind": filetype,
                     "checksum": checksum,
@@ -874,7 +878,7 @@ def compute_and_log_file_checksums(config):
                 logger.debug(f"- target: {component_files[file]['target']}")
                 helpers.print_datetime(config)
 
-        all_files[model] = component_files
+        all_files[component] = component_files
 
     all_files["not_handled_by_filelists"] = {}
     for file, checksum in files_not_handled_by_filelists.items():

@@ -19,7 +19,7 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {
     "comp": ["comp-"],
-    "run": [".run", "finished_config", "namelists", "filelist"],
+    "run": [".run", "finished_config", "namelists"],
 }
 
 
@@ -198,6 +198,10 @@ def save_files(info, user_choice):
         test_type_r = "actual"
     else:
         test_type_r = "check"
+
+    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+    if not info["in_github"]:
+        compare_files["run"].append("prepcompute_filelist")
 
     logger.info(f"Saving files to '{last_tested_dir}'...")
     # Loop through models

@@ -19,7 +19,7 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {
     "comp": ["comp-"],
-    "run": [".run", "finished_config", "namelists", "filelist"],
+    "run": [".run", "finished_config", "namelists"],
 }
 
 """
@@ -610,6 +610,10 @@ def check(info, mode, model, version, out, script, v):
         )
         v["state"][f"{mode}_files"] = files_checked
         success = success and files_checked
+
+    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+    if not info["in_github"]:
+        compare_files["run"].append("prepcompute_filelist")
 
     # Compare scripts with previous, if existing
     this_compare_files = copy.deepcopy(compare_files[config_mode])

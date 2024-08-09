@@ -296,10 +296,16 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     subpaths_target : list
         Relative paths of the file in the ``last_tested`` folder
     """
+    # File types to check
+    some_compare_files = [".run", "finished_config"]
     # Load relevant variables from ``info``
     user_info = info["user"]
     # Initialize ``subpaths`` list
     subpaths = []
+
+    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+    if not info["in_github"]:
+        some_compare_files.append("prepcompute_filelist")
     # If the file type is ``comp-``, append all the files that match that string to
     # ``subpaths``
     if cfile == "comp-":
@@ -312,8 +318,8 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     # that match that string to ``subpaths``. These files are taken always from the
     # first ``run_`` folder so that a check test and an actual test files are
     # comparable
-    elif cfile in [".run", "finished_config", "filelist"]:
-        files_to_folders = {".run": "scripts", "finished_config": "config", "filelist": "log"}
+    elif cfile in some_compare_files:
+        files_to_folders = {".run": "scripts", "finished_config": "config", "prepcompute_filelist": "log"}
         ctype = files_to_folders[cfile]
         ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
         ldir.sort()

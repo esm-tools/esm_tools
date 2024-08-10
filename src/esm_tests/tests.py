@@ -611,12 +611,11 @@ def check(info, mode, model, version, out, script, v):
         v["state"][f"{mode}_files"] = files_checked
         success = success and files_checked
 
-    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
-    if not info["in_github"]:
-        compare_files["run"].append("prepcompute_filelist")
-
     # Compare scripts with previous, if existing
     this_compare_files = copy.deepcopy(compare_files[config_mode])
+    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+    if not info["in_github"] and config_mode == "run":
+        this_compare_files.append("prepcompute_filelist")
     # TODO: The iterative coupling needs a rework. Therefore, no testing for files
     # is develop. Include the tests after iterative coupling is reworked
     if config_mode == "run" and v["iterative_coupling"]:

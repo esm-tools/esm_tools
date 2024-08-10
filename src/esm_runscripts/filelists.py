@@ -849,43 +849,43 @@ def compute_and_log_file_checksums(config):
     all_files = {}
 
     checksums = _compute_checksums_for_dir(config, target)
-    files_not_handled_by_filelists = checksums
+    files_not_handled_by_filelists = copy.deepcopy(checksums)
 
     for component in config["general"]["valid_model_names"] + ["general"]:
         component_files = {}
         for filetype in filetypes:
             component_config = config[component]
 
-            for file in component_config.get(f"{filetype}_sources", []):
+            for f in component_config.get(f"{filetype}_sources", []):
 
-                target_file = component_config[f"{filetype}_targets"][file]
+                target_file = component_config[f"{filetype}_targets"][f]
                 p_target_file = str(pathlib.Path(target_file).absolute())
 
                 checksum = checksums.get(p_target_file, None)
                 if checksum:
                     del files_not_handled_by_filelists[p_target_file]
 
-                component_files[file] = {
-                    "source": component_config[f"{filetype}_sources"][file],
-                    "intermediate": component_config[f"{filetype}_intermediate"][file],
+                component_files[f] = {
+                    "source": component_config[f"{filetype}_sources"][f],
+                    "intermediate": component_config[f"{filetype}_intermediate"][f],
                     "target": target_file,
                     "kind": filetype,
                     "checksum": checksum,
                 }
 
                 logger.debug(f"::: logging file category: {filetype}")
-                logger.debug(f"- source: {component_files[file]['source']}")
-                logger.debug(f"- target: {component_files[file]['target']}")
+                logger.debug(f"- source: {component_files[f]['source']}")
+                logger.debug(f"- target: {component_files[f]['target']}")
                 helpers.print_datetime(config)
 
         all_files[component] = component_files
 
     all_files["not_handled_by_filelists"] = {}
-    for file, checksum in files_not_handled_by_filelists.items():
-        all_files["not_handled_by_filelists"][file] = {
+    for f, checksum in files_not_handled_by_filelists.items():
+        all_files["not_handled_by_filelists"][os.path.basename(f)] = {
             "source": "unknown",
             "intermediate": "unknown",
-            "target": file,
+            "target": f,
             "kind": "not_handled_by_filelists",
             "checksum": checksum,
         }

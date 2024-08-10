@@ -199,10 +199,6 @@ def save_files(info, user_choice):
     else:
         test_type_r = "check"
 
-    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
-    if not info["in_github"]:
-        compare_files["run"].append("prepcompute_filelist")
-
     logger.info(f"Saving files to '{last_tested_dir}'...")
     # Loop through models
     for model, scripts in scripts_info.items():
@@ -221,6 +217,9 @@ def save_files(info, user_choice):
             config_test.get("comp", {}).get(test_type_c, {}).get("compare", [])
         )
         compare_files_run = copy.deepcopy(compare_files["run"])
+        # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+        if not info["in_github"]:
+            compare_files_run.append("prepcompute_filelist")
         # TODO: The iterative coupling needs a rework. Therefore, no testing for files
         # is develop. Include the tests after iterative coupling is reworked
         if next(iter(scripts.values()))["iterative_coupling"]:

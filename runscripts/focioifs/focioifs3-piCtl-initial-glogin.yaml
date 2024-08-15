@@ -7,9 +7,9 @@ general:
    resolution: "TCO95_ORCA05"
    version: "3.0"
    
-   compute_time: "02:00:00"
+   compute_time: "04:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1852-01-01T00:00:00"         # Final date of the experiment
    
    nyear: 1
    nmonth: 0
@@ -18,17 +18,21 @@ general:
    restart_unit: days 
    hours: 0
    account: shk00018
-   base_dir: /scratch/usr/shkjocke/esm-experiments/
-
+   #base_dir: /scratch/usr/shkjocke/esm-impi2021-spack/
+   base_dir: /scratch/usr/shkjocke/esm-phase3/
+   
    # This activates post processing for OpenIFS and NEMO
    postprocessing: 1
 
 computer:
    partition_name: "standard96"
    #additional_flags: '--qos=preempt'
-
+   launcher: mpirun
+   launcher_flags: "" 
+   
 focioifs:
-   model_dir: /scratch/usr/shkjocke/model_test/focioifs-3.0 
+   #model_dir: /scratch/usr/shkjocke/models_impi2021_spack/focioifs-3.0  
+   model_dir: /scratch/usr/shkjocke/models_p3/focioifs-3.0 
    
 oifs:
    lresume: False 
@@ -73,9 +77,11 @@ oasis3mct:
    # use_lucia to True to check timing
    use_lucia: False
    #export_mode: EXPOUT
-   debug_level: 0
+   debug_level: 2
       
 nemo:
+   input_dir:  /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/
+
    resolution: "ORCA05"
    jpni: 24
    jpnj: 18
@@ -87,4 +93,4 @@ rnfmap:
 xios:
    with_model: focioifs
    xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_prod/"
-   nproc: 20
+   nproc: 48

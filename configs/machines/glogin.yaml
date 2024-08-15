@@ -12,7 +12,11 @@ account: None
 
 # set default for hyperthreading_flag
 use_hyperthreading: False
-# seb-wahl: use old heterogeneous parallelization on HLRN4, the new approach does not work yet
+
+# need to check how heterogeneous parallelisation should be done on glogin now
+# I think we can use mpirun, for example: 
+# mpirun OMP_NUM_THREADS=4 -np 168 ./oifs -e ECE3 : -np 432 ./oceanx 
+# but it needs to be tested
 taskset: true
 choose_use_hyperthreading:
         "1":
@@ -136,11 +140,12 @@ pool_dir:  "/scratch/projects/shk00018"
 # 
 # * intel2023_impi2021 
 # * intel2023_ompi416
+# * intel2021_impi2019 (this requires the user to build their on spack environment)
 
 # Default compiler
 # NOTE: THE COMPILER DEFAULT IS OFTEN SET FOR EACH MODEL, E.G. configs/setups/focioifs.yaml
 # SO THIS LINE MAY NOT ACTUALLY DO ANYTHING
-compiler_mpi: intel2023_ompi416
+compiler_mpi: intel2023_impi2021
 
 # Do we use modules available on the system 
 # or install our own (geomar_libs)
@@ -148,9 +153,13 @@ iolibraries: system_libs
 
 export_vars:
    LC_ALL: en_US.UTF-8
-   # Recommended by HLNR support when using an MPI binary and srun
-   # removed by seb-wahl as it slows down ECHAM6 by 50% 
-   #SLURM_CPU_BIND: none
+   # Taken from the GWDG examples and recipes page
+   SLURM_CPU_BIND: none
+
+# We need to use mpirun rather than srun
+launcher: mpirun
+launcher_flags: ""
+#launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
 
 # Start by clearing all loaded modules
 module_actions:
@@ -159,6 +168,13 @@ module_actions:
 choose_compiler_mpi:
    
    # build locally for myself using spack
+   # Anyone else can do this too using the following commands:
+   # module load spack # load spack module 
+   # spack install netcdf-fortran@4.6.1%intel@2021.10.0+mpi ^intel-mpi%intel@2021.10.0 ^hdf5%intel@2021.10.0+hl+cxx+fortran~java+threadsafe+map
+   # spack install eccodes@2.34.0%intel@2021.10.0+aec+fortran+openmp+tools
+   # spack install intel-mkl@2020.4.304%intel@2021.10.0 threads=openmp
+   # This should give a build with Intel 2021.10.0, IMPI 2019, HDF5 and netcdf, ecCodes, MKL. 
+   # Note: There is no CDO with this build so postprocessing might not work. 
    intel2021_impi2019:
       
       # Use spack libraries
@@ -169,12 +185,25 @@ choose_compiler_mpi:
       add_module_actions:
          - "load spack"
          - "source $SPACK_ROOT/share/spack/setup-env.sh"
-         - "load intel-oneapi-compilers"
+         # we load system intel compilers and mpi. Needed for spack, but wont be used. 
+         - "load intel-oneapi-compilers/2023.2.1"
+         #- "load intel-oneapi-mpi/2021.10.0"
+         #- "load intel-oneapi-mkl/2023.2.0"
       
       add_spack_actions:
-         - "load netcdf-fortran@4.6.1%intel@2021.10.0+mpi ^intel-mpi%intel@2021.10.0 ^hdf5%intel@2021.10.0+hl+cxx+fortran~java+threadsafe+map"
-         - "load eccodes@2.34.0%intel@2021.10.0+aec+fortran+openmp+tools"
-         - "load intel-mkl@2020.4.304%intel@2021.10.0 threads=openmp"
+         # This part needs to be changed to your personal spack build. 
+         # first try. did not work
+         #- "load netcdf-fortran@4.6.1%intel@2021.10.0+mpi ^intel-mpi%intel@2021.10.0 ^hdf5%intel@2021.10.0+hl+cxx+fortran~java+threadsafe+map"
+         # using older netcdf-fortran. works
+         #- "load netcdf-fortran@4.5.3%intel@2021.10.0+mpi ^intel-mpi%intel@2021.10.0 ^hdf5@1.10.7%intel@2021.10.0+hl+cxx+fortran~threadsafe"
+         # load eccodes and mkl for intel 2021
+         #- "load eccodes@2.34.0%intel@2021.10.0+aec+fortran+openmp+tools"
+         #- "load intel-mkl@2020.4.304%intel@2021.10.0 threads=openmp"
+         # load netcdf and hdf5 for intel 2023 and intel mpi 2021
+         - "load netcdf-fortran@4.5.3%oneapi@2023.2.1+mpi ^intel-oneapi-mpi@2021.10.0%oneapi@2023.2.1 ^hdf5@1.10.7%oneapi@2023.2.1+hl+cxx+fortran~threadsafe"
+         - "load eccodes@2.34.0%oneapi@2023.2.1+aec+fortran+openmp+tools/2ls624l"
+         - "load intel-oneapi-mkl@2023.2.0%oneapi@2023.2.1 threads=openmp"
+         
          
       add_export_vars:
          FC: mpiifort 
@@ -186,6 +215,8 @@ choose_compiler_mpi:
          MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
    
+   # This is the new, recommended system Intel compiler set
+   # Note: The old release_mt stuff should not be needed anymore. 
    intel2023_impi2021:
       
       # Use system modules
@@ -199,11 +230,7 @@ choose_compiler_mpi:
          # MKL needed for OpenIFS
          - "load intel-oneapi-mkl/2023.2.0" 
          # required for CMake
-         #- "load curl/8.4.0-5rlmgmu ncurses/6.4-u72r7qn zlib-ng/2.1.4-ftbye2s"
          - "load cmake/3.27.7"
-         # git conflicts
-         #- "load git/2.42.0"
-         
       
       # Note: Intel compilers now have new names: 
       # mpiicc (C) = mpiicx
@@ -214,23 +241,30 @@ choose_compiler_mpi:
       # XIOS and OpenIFS do not, so we 
       # use the old mpiifort etc and live with the warnings
       add_export_vars:
-         #FC: mpiifort 
-         #F77: mpiifort 
-         #MPIFC: mpiifort 
-         #FCFLAGS: -free
-         #CC: mpiicc 
-         #CXX: mpiicpc
-         #MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         #MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-         
-         FC: mpiifx
-         F77: mpiifx
-         MPIFC: mpiifx
+         # For now (Intel 2023) we can stick to mpiifort etc
+         FC: mpiifort 
+         F77: mpiifort 
+         MPIFC: mpiifort 
          FCFLAGS: -free
-         CC: mpiicx
-         CXX: mpiicpx
-         MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+         CC: mpiicc 
+         CXX: mpiicpc
+         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+         
+         # It is possible to use the new compilers (mpiifx etc)
+         # But some changes are necessary. 
+         # -std=gnu89 is required in OIFS_CFLAGS. Also -mkl_sequential must be -qmkl=sequential
+         # Only new xios_trunk will work (not rev 1910) and only with -std=c++11
+         # The CPP for NEMO must be cpp -P. $CC will not work anymore. 
+         # 
+         #FC: mpiifx
+         #F77: mpiifx
+         #MPIFC: mpiifx
+         #FCFLAGS: -free
+         #CC: mpiicx
+         #CXX: mpiicpx
+         #MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         #MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
    
    intel2023_ompi416:
       
@@ -262,7 +296,10 @@ choose_compiler_mpi:
          CXX: mpicxx 
          MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
          MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-         
+   
+   # At first I (Joakim) could not get Intel 2023 + IMPI 2021 to work so I tried GNU + OpenMPI
+   # It turned out to be very hard to compile FOCI-OpenIFS with GNU, and I could never get it to run
+   # These settings can remain here, but I strongly recommend against using them.       
    gcc11_ompi416:
       
       # Use system modules
@@ -310,21 +347,40 @@ choose_iolibraries:
     system_libs:
         choose_compiler_mpi:
             intel2023_impi2021:
-                # Modules to load 
                 add_module_actions:
+                    # This took a long time to work out how to do
+                    # I (Joakim) figured out that FOCI-OpenIFS can not run with 
+                    # netcdf-fortran 4.6.1, due to "floating invalid" during nf90_open, 
+                    # so a slightly older version is required. 
+                    # See: https://www.unidata.ucar.edu/support/help/MailArchives/netcdf/msg15037.html
+                    # Therefore, GWDG support older HDF5 and netCDF for us. 
+                    
                     # Parallel HDF5
-                    - "load hdf5/1.14.3"
-                    - "load netcdf-c/4.9.2"
-                    # Dont load netcdf. Use path instead
-                    - "load netcdf-fortran/4.6.1-mpi"
-                    # ecCodes required by OpenIFS
-                    # Some strange ELF issue with ecCodes module
-                    # Will use own ecCodes below (this is not a permanent solution)
+                    - "load hdf5/1.10.7"
+                    
+                    # netcdf built with older HDF5 
+                    - "load netcdf-c/4.9.2-hdf5-1.10"
+                    
+                    # bug in netcdf-fortran 4.6.1. avoid it
+                    - "load netcdf-fortran/4.5.3-hdf5-1.10"
+                    
+                    # GWDG support suspected a problem with netcdf when not built with fp-model precise
+                    # Here are some test modules with fp-model precise
+                    # I could not find that it made any difference in FOCI-OpenIFS though
+                    #- "load hdf5/1.10.7-precise-fp"
+                    #- "load netcdf-c/4.9.2-hdf5-1.10-precise-fp"
+                    #- "load netcdf-fortran/4.5.3-hdf5-1.10-precise-fp"
+                    
+                    # The ecCodes, CDO and NCO modules are built with modern 
+                    # netcdf, so they conflict when loaded. 
+                    # Instead, we can load them manually (below) by adding paths
+                    # In the future, GWDG should re-build these libraries. 
+                    # eccodes
                     #- "load eccodes/2.34.0"
-                    # CDO loads eccodes/2.25.0 which conflicts with eccodes/2.34.0
-                    #- "load cdo/2.2.2" 
-                    #- "load nco/5.1.6" 
-                
+                    # cdo and nco
+                    #- "load cdo/2.2.2"
+                    #- "load nco/5.1.6"
+                    
                 add_export_vars:
                     # Run module show on the modules to see how 
                     # each module changes or sets env variables
@@ -334,21 +390,21 @@ choose_iolibraries:
                     HDF5ROOT: $HDF5_ROOT
                     NETCDF_DIR: $NETCDF_C_MODULE_INSTALL_PREFIX
                     NETCDFROOT: $NETCDF_C_MODULE_INSTALL_PREFIX
-                    # Use path for netcdf-fortran instead
                     NETCDFFROOT: $NETCDF_FORTRAN_MODULE_INSTALL_PREFIX
-                    #NETCDFFROOT: /sw/rev/24.05/sapphirerapids_opa_rocky8/linux-rocky8-sapphirerapids/gcc-11.4.0/netcdf-fortran-4.6.1-b4s43qtqze4kel6knhp7imr2yshypvjy/
-                    # we cant use ecCodes module due to some ELF error
-                    # Will give path to my own ecCodes
-                    #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
-                    ECCODESROOT: /home/shkjocke/sw/HPC_libraries/eccodes_intel2023.2.1_impi2021/
-                    PATH: $ECCODESROOT/bin:$PATH
                     
-                    # Add NETCDF to LD_LIBRARY_PATH
+                    # Path to ecCodes module 
+                    ECCODESROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/eccodes-2.34.0-cwlamwcpvlhsuejrpqjlr7z3pdbkkw56/
+                    PATH: $ECCODESROOT/bin:$PATH
+                    # This should be done when correct module is installed
+                    #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
+                    
+                    # Add everything to LD_LIBRARY_PATH
                     # Gottingen support recommended to also add LD_RUN_PATH
-                    LD_LIBRARY_PATH: $ECCODESROOT/lib/:$NETCDF_DIR/lib/:$LD_RUN_PATH:$LD_LIBRARY_PATH
-                    NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+                    # Add both lib and lib64 for ecCodes since it varies
+                    LD_LIBRARY_PATH: $ECCODESROOT/lib/:$ECCODESROOT/lib64/:$NETCDFROOT/lib/:$NETCDFFROOT/lib/:$HDF5ROOT/lib/:$LD_LIBRARY_PATH
                     
                     # For OASIS
+                    NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
                     HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
                     NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
                     NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
@@ -452,15 +508,31 @@ choose_iolibraries:
        choose_compiler_mpi:
           intel2021_impi2019:
              add_export_vars:
-                SPACK_ROOT: "/home/shkjocke/.spack/install/linux-rocky8-cascadelake/intel-2021.10.0/"
-                MKLROOT: $SPACK_ROOT/intel-mkl-2020.4.304-osfsndi25x7ompvdhkuc3e7oy6w7x22y/mkl/
-                I_MPI_ROOT: $SPACK_ROOT/intel-mpi-2019.10.317-vh3d4dgpdnc5ijnbpi27qlc2e65s6gs7/impi/2019.10.317/
-                SZIPROOT: $SPACK_ROOT/libaec-1.0.6-s3yiohe2h2ndywnrwc6lzj5wwc4znojo/
-                HDF5ROOT: $SPACK_ROOT/hdf5-1.14.3-qxyba7lcbmntigtjqpwhc7jj7apk26qx
+                # using intel 2021 + intel mpi 2019
+                #SPACK_ROOT: "/home/shkjocke/.spack/install/linux-rocky8-cascadelake/intel-2021.10.0/"
+                #MKLROOT: $SPACK_ROOT/intel-mkl-2020.4.304-osfsndi25x7ompvdhkuc3e7oy6w7x22y/mkl/
+                #I_MPI_ROOT: $SPACK_ROOT/intel-mpi-2019.10.317-vh3d4dgpdnc5ijnbpi27qlc2e65s6gs7/impi/2019.10.317/
+                #SZIPROOT: $SPACK_ROOT/libaec-1.0.6-s3yiohe2h2ndywnrwc6lzj5wwc4znojo/
+                #HDF5ROOT: $SPACK_ROOT/hdf5-1.10.7-24p3eg5v3tbihcedtbvwapzjftechyyd
+                #HDF5_ROOT: $HDF5ROOT
+                #NETCDFROOT: $SPACK_ROOT/netcdf-c-4.9.2-jgl7ozmpjq7milfey4hmkq2qevhglvsc
+                #NETCDFFROOT: $SPACK_ROOT/netcdf-fortran-4.5.3-nmr2cb375x4woufnpgc2kbzldgdqvssi
+                #ECCODESROOT: $SPACK_ROOT/eccodes-2.34.0-x4itugitwwo7cbxoxmsj4gprctnlui5i
+                
+                # intel 2023 + impi 2021
+                SPACK_ROOT: "/home/shkjocke/.spack/install/linux-rocky8-cascadelake/oneapi-2023.2.1/"
+                MKLROOT: $SPACK_ROOT/intel-oneapi-mkl-2023.2.0-h5ucstnjeb3alppgni63w4jpi6mguwsy/mkl/2023.2.0/
+                I_MPI_ROOT: $SPACK_ROOT/intel-oneapi-mpi-2021.10.0-lmq35q4ue5xziuhtz6hc25xvw7gwov33/impi/2021.10.0/
+                SZIPROOT: $SPACK_ROOT/libaec-1.0.6-vqv6cuzfvcxou7crktob7zjbxwfm2yhc/
+                HDF5ROOT: $SPACK_ROOT/hdf5-1.10.7-amszjwv3rqdfl6nk3jrt42mc7i7kykyf/
                 HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $SPACK_ROOT/netcdf-c-4.9.2-k4etwcxcattbfttshg6urbpmnxsvs5ip
-                NETCDFFROOT: $SPACK_ROOT/netcdf-fortran-4.6.1-f2img6lithx3dktkhfebq7ishu72bg5u
-                ECCODESROOT: $SPACK_ROOT/eccodes-2.34.0-x4itugitwwo7cbxoxmsj4gprctnlui5i
+                NETCDFROOT: $SPACK_ROOT/netcdf-c-4.9.2-hfyf5eu4hji45jx23rwdjvcejgm4awpa
+                NETCDFFROOT: $SPACK_ROOT/netcdf-fortran-4.5.3-atv5woc3ewjyylewbylm3o2zixb6rv33
+                ECCODESROOT: $SPACK_ROOT/eccodes-2.34.0-2ls624lxsfralpzotgntfwpblyli7ahw
+                
+                # and we need to add stuff to LD_LIBRARY_PATH manually
+                LD_LIBRARY_PATH: $SZIPROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$ECCODESROOT/lib64:$LD_LIBRARY_PATH
+                PATH: $ECCODESROOT/bin:$PATH
                 
                 HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
                 NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
@@ -511,8 +583,6 @@ cc: "$CC"
 mpifc: "$MPIFC"
 mpicc: "$MPICC"
 cxx: "$CXX"
-
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
 
 further_reading:
         - batch_system/slurm.yaml

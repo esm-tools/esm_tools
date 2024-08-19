@@ -4,28 +4,30 @@ general:
         setup_name: fesom
         compute_time: "08:00:00"
         initial_date: '1958-01-01'
-        final_date: '2018-03-31'
-        base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-        nyear: 20
+        final_date: '2017-12-31'
+        base_dir: "/work/ab0246/${user}/runtime/fesom26_rc1/"
+        nyear: 10
         nmonth: 0
         use_venv: False
 
 fesom:
         version: 2.5-refactoring
         model_dir: "/work/ab0246/a270092/model_codes/fesom-2.5/"
-        namelist_dir: "/work/ab0246/a270092/model_codes/fesom-2.5/config/"
+        choose_general.run_number:
+                1:
+                        namelist_dir: "/work/ab0246/a270092/model_codes/fesom-2.5/config/"
+                "*":
+                        namelist_dir: "${fesom.experiment_config_dir}"
+
         pool_dir: "/work/ab0246/a270092/input/"
         mesh_dir: "/work/ab0246/a270092/input/fesom2/core2/"
         forcing_data_dir: "/work/ab0246/a270092/input/fesom2/forcing/"
         climatedatapath: "/work/ab0246/a270092/input/fesom2/INITIAL/phc3.0/"
-        restart_rate: 20
-        restart_first: 20
+        restart_rate: 10
+        restart_first: 10
         restart_unit: 'y'
         resolution: "CORE2"
         lresume: false
         time_step: 1800
         nproc: 768
         tar_binary_restarts: true
-        add_runtime_environment_changes:
-                add_export_vars:
-                        LD_LIBRARY_PATH[(10)]: "/work/ab0246/a270092/model_codes/fesom-2.5/build/lib:$LD_LIBRARY_PATH"

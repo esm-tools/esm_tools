@@ -769,6 +769,28 @@ def replace_year_placeholder(config):
 
 
 def log_used_files(config):
+    """
+    This function logs the files used in the experiment to a text file in the
+    ``thisrun_log_dir`` directory. The file is named as follows:
+    ``{expid}_{it_coupled_model_name}filelist_{datestamp}`` and contains the
+    following information:
+
+    - The experiment ID
+    - The component/model name
+    - The date of the run
+    - The source, intermediate, and target files for each file category
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration with the file list logged
+    """
+
     logger.debug("\n::: Logging used files")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
@@ -831,6 +853,32 @@ def log_used_files(config):
 
 
 def compute_and_log_file_checksums(config):
+    """
+    This function computes the checksums of the files in the ``work`` directory and
+    logs them to a YAML file in the ``thisrun_log_dir`` directory. The file is named
+    as follows: ``{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml``
+    and contains the following information:
+
+    - The source, intermediate, and target files for each file category
+    - The checksum of each file
+
+    Files are grouped by component/model and file category as a dictionary of
+    dictionaries.
+
+    These yaml checksum files are used to be compared with older versions of them
+    generated via the baseline tests run in the HPCs, to check if the files in the
+    work directory have changed since the last test.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration with the file checksums computed and logged
+    """
     compute_file_checksums = config["general"].get("compute_file_checksums", False)
     target = config["general"]["files_target"]
     if not compute_file_checksums:
@@ -848,23 +896,27 @@ def compute_and_log_file_checksums(config):
     )
     all_files = {}
 
+    # Compute checksums of all files in a the target directory
     checksums = _compute_checksums_for_dir(config, target)
     files_not_handled_by_filelists = copy.deepcopy(checksums)
 
+    # Loop over all components, file types, and files
     for component in config["general"]["valid_model_names"] + ["general"]:
         component_files = {}
         for filetype in filetypes:
             component_config = config[component]
-
             for f in component_config.get(f"{filetype}_sources", []):
-
+                # Get the absolute path of the file
                 target_file = component_config[f"{filetype}_targets"][f]
                 p_target_file = str(pathlib.Path(target_file).absolute())
 
+                # Load the corresponding checksum and remove the file from the
+                # files_not_handled_by_filelists if it is found
                 checksum = checksums.get(p_target_file, None)
                 if checksum:
                     del files_not_handled_by_filelists[p_target_file]
 
+                # Add all the file information to the component_files dictionary
                 component_files[f] = {
                     "source": component_config[f"{filetype}_sources"][f],
                     "intermediate": component_config[f"{filetype}_intermediate"][f],
@@ -873,6 +925,7 @@ def compute_and_log_file_checksums(config):
                     "checksum": checksum,
                 }
 
+                # Log the file information
                 logger.debug(f"::: logging file category: {filetype}")
                 logger.debug(f"- source: {component_files[f]['source']}")
                 logger.debug(f"- target: {component_files[f]['target']}")
@@ -880,6 +933,7 @@ def compute_and_log_file_checksums(config):
 
         all_files[component] = component_files
 
+    # Add the files not handled by the filelists to the all_files dictionary
     all_files["not_handled_by_filelists"] = {}
     for f, checksum in files_not_handled_by_filelists.items():
         all_files["not_handled_by_filelists"][os.path.basename(f)] = {
@@ -890,15 +944,33 @@ def compute_and_log_file_checksums(config):
             "checksum": checksum,
         }
 
+    # Dump the all_files dictionary to a yaml file
     esm_parser.yaml_dump(all_files, flist_file_yaml)
 
     return config
 
 
 def _compute_checksums_for_dir(config, target):
+    """
+    Compute the checksums of all files in the ``work`` directory.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+    target : str
+        The target directory to compute the checksums for
+
+    Returns
+    -------
+    checksums : dict
+        A dictionary containing the checksums of all files in the target directory
+    """
 
     if target == "work":
         dir_path = pathlib.Path(config["general"]["thisrun_work_dir"])
+        # Get all the absolute paths of the files in the work directory, including
+        # files in all subdirectories
         file_paths = [str(file.absolute()) for file in dir_path.rglob('*') if file.is_file()]
     else:
         logger.error(
@@ -907,6 +979,8 @@ def _compute_checksums_for_dir(config, target):
         )
         exit(1)
 
+    # Compute the checksums of all files in the target directory
+    # TODO: parallelize this
     checksums = {}
     for f in file_paths:
         checksums[f] = hashlib.md5(open(f, "rb").read()).hexdigest()

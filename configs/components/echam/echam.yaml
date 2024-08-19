@@ -152,9 +152,9 @@ choose_general.iterative_coupling:
                                 submodelctl:
                                         lgfw: "${lgfw}"
                                         lupdate_orog: "${lupdate_orography}"
-                hosing_correction: True
+                hosing_correction: 1
         '*':
-                hosing_correction: False
+                hosing_correction: 0
 
 ini_parent_date: 22941231
 ini_parent_exp_id: khw0030

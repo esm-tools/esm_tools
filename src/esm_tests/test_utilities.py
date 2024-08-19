@@ -319,7 +319,11 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     # first ``run_`` folder so that a check test and an actual test files are
     # comparable
     elif cfile in some_compare_files:
-        files_to_folders = {".run": "scripts", "finished_config": "config", "prepcompute_filelist": "log"}
+        files_to_folders = {
+            ".run": "scripts",
+            "finished_config": "config",
+            "prepcompute_filelist": "log",
+        }
         ctype = files_to_folders[cfile]
         ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
         ldir.sort()
@@ -349,7 +353,9 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
             info, "finished_config", v, this_test_dir
         )
         if len(s_config_yaml) > 0:
-            namelists, models = extract_namelists(f"{user_info['test_dir']}/{s_config_yaml[0]}")
+            namelists, models = extract_namelists(
+                f"{user_info['test_dir']}/{s_config_yaml[0]}"
+            )
             ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
             ldir.sort()
             for f in ldir:
@@ -361,11 +367,15 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
                         if not os.path.isfile(namelist_path):
                             logger.debug(f"'{cf_path}/{n}' does not exist!")
                         # Is broken link
-                        if os.path.islink(namelist_path) and not os.path.exists(os.readlink(namelist_path)):
+                        if os.path.islink(namelist_path) and not os.path.exists(
+                            os.readlink(namelist_path)
+                        ):
                             path_in_general_config = (
                                 f"{this_test_dir}/config/{model}/{n}_{f.split('_')[-1]}"
                             )
-                            if os.path.exists(f"{user_info['test_dir']}/{path_in_general_config}"):
+                            if os.path.exists(
+                                f"{user_info['test_dir']}/{path_in_general_config}"
+                            ):
                                 subpaths.append(f"{path_in_general_config}")
                             else:
                                 logger.debug(f"'{cf_path}/{n}' does not exist!")

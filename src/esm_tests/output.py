@@ -52,13 +52,13 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
     file_t = clean_user_specific_info(info, file_t)
 
     # Pattern of provenance
-    provenance_pattern = r'\s*#\s*[^,]+,line:\d+,col:\d+'
+    provenance_pattern = r"\s*#\s*[^,]+,line:\d+,col:\d+"
 
     # Check for ignored lines
     new_file_s = []
     for line in file_s:
         ignore_this = False
-        line_no_prov = re.sub(provenance_pattern, '', line)
+        line_no_prov = re.sub(provenance_pattern, "", line)
         for iline in ignore_lines:
             if re.search(iline, line_no_prov):
                 ignore_this = True
@@ -68,7 +68,7 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
     new_file_t = []
     for line in file_t:
         ignore_this = False
-        line_no_prov = re.sub(provenance_pattern, '', line)
+        line_no_prov = re.sub(provenance_pattern, "", line)
         for iline in ignore_lines:
             if re.search(iline, line_no_prov):
                 ignore_this = True

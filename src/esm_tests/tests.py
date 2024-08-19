@@ -436,7 +436,9 @@ def run_test(info):
                         # If the run has errors label the state for ``run_finished`` as
                         # ``False`` and run a check for files that should have been
                         # created anyway
-                        elif any([run_error in observe_out for run_error in run_errors]):
+                        elif any(
+                            [run_error in observe_out for run_error in run_errors]
+                        ):
                             subc, finished_runs, success = experiment_state_action(
                                 info,
                                 "Simulation crashed!",
@@ -805,6 +807,7 @@ def exist_files(files, path, version):
                 files_checked = False
 
     return files_checked
+
 
 def find_exceptions(string_to_be_checked):
     """

@@ -102,6 +102,7 @@ general:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: True
+            xios_interp_order: 2
           v3.2.2:
             major_version: v3.2
             couplings:

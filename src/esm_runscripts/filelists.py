@@ -1,6 +1,7 @@
 import copy
 import filecmp
 import glob
+import hashlib
 import os
 import pathlib
 import re
@@ -21,7 +22,6 @@ def rename_sources_to_targets(config):
     # filetype_targets are set correctly, and _in_work is unset
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
-
             sources = filetype + "_sources" in config[model]
             targets = filetype + "_targets" in config[model]
             in_work = filetype + "_in_work" in config[model]
@@ -29,7 +29,6 @@ def rename_sources_to_targets(config):
             if (
                 filetype in config["general"]["out_filetypes"]
             ):  # stuff to be copied out of work
-
                 if sources and targets and in_work:
                     if (
                         not config[model][filetype + "_sources"]
@@ -77,7 +76,6 @@ def rename_sources_to_targets(config):
                         )
 
             else:  # stuff to be copied into work
-
                 if sources and targets and in_work:
                     if (
                         not config[model][filetype + "_targets"]
@@ -99,9 +97,7 @@ def rename_sources_to_targets(config):
                     pass
 
                 elif (not sources and in_work) or (not sources and targets):
-                    logger.error(
-                        filetype + "_sources missing in model " + model
-                    )
+                    logger.error(filetype + "_sources missing in model " + model)
                     helpers.print_datetime(config)
                     sys.exit(-1)
 
@@ -150,9 +146,9 @@ def complete_targets(config):
                             )
                             esm_parser.user_error(error_type, error_text)
                         else:
-                            config[model][filetype + "_targets"][category] = (
-                                os.path.basename(file_source)
-                            )
+                            config[model][filetype + "_targets"][
+                                category
+                            ] = os.path.basename(file_source)
 
     return config
 
@@ -221,7 +217,6 @@ def choose_needed_files(config):
 
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
-
             if not filetype + "_files" in config[model]:
                 continue
 
@@ -288,9 +283,9 @@ def globbing(config):
                             if (
                                 config[model][filetype + "_targets"][descr] == filename
                             ):  # source and target are identical if autocompleted
-                                config[model][filetype + "_targets"][newdescr] = (
-                                    os.path.basename(new_filename)
-                                )
+                                config[model][filetype + "_targets"][
+                                    newdescr
+                                ] = os.path.basename(new_filename)
                             else:
                                 config[model][filetype + "_targets"][newdescr] = config[
                                     model
@@ -323,9 +318,9 @@ def target_subfolders(config):
                         # in routine 'globbing' above, if we don't check here, wildcards are handled twice
                         # for files and hence filenames of e.g. restart files are screwed up.
                         if filename.endswith("/*"):
-                            config[model][filetype + "_targets"][descr] = (
-                                filename.replace("*", source_filename)
-                            )
+                            config[model][filetype + "_targets"][
+                                descr
+                            ] = filename.replace("*", source_filename)
                         elif "/" in filename:
                             # Return the correct target name
                             target_name = get_target_name_from_wildcard(
@@ -517,7 +512,6 @@ def replace_year_placeholder(config):
                         filetype + "_additional_information"
                     ]:
                         if file_category in config[model][filetype + "_targets"]:
-
                             all_years = [config["general"]["current_date"].year]
 
                             if (
@@ -585,15 +579,10 @@ def replace_year_placeholder(config):
 
                                 # if the source contains 'from' or 'to' information
                                 # then they have a dict type
-                                if (
-                                    isinstance(
-                                        config[model][filetype + "_sources"][
-                                            file_category
-                                        ],
-                                        dict
-                                    )
+                                if isinstance(
+                                    config[model][filetype + "_sources"][file_category],
+                                    dict,
                                 ):
-
                                     # process the 'from' and 'to' information in
                                     # file sources and targets
                                     config[model][filetype + "_sources"][
@@ -733,15 +722,14 @@ def replace_year_placeholder(config):
                 year = config["general"]["current_date"].year
 
                 for file_category in config[model][filetype + "_targets"]:
-
-                    if (
-                        isinstance(config[model][filetype + "_sources"][file_category], dict)
+                    if isinstance(
+                        config[model][filetype + "_sources"][file_category], dict
                     ):
-                        config[model][filetype + "_sources"][file_category] = (
-                            find_valid_year(
-                                config[model][filetype + "_sources"][file_category],
-                                year,
-                            )
+                        config[model][filetype + "_sources"][
+                            file_category
+                        ] = find_valid_year(
+                            config[model][filetype + "_sources"][file_category],
+                            year,
                         )
                     if "@YEAR@" in config[model][filetype + "_targets"][file_category]:
                         new_target_name = config[model][filetype + "_targets"][
@@ -768,26 +756,48 @@ def replace_year_placeholder(config):
 
 
 def log_used_files(config):
+    """
+    This function logs the files used in the experiment to a text file in the
+    ``thisrun_log_dir`` directory. The file is named as follows:
+    ``{expid}_{it_coupled_model_name}filelist_{datestamp}`` and contains the
+    following information:
+
+    - The experiment ID
+    - The component/model name
+    - The date of the run
+    - The source, intermediate, and target files for each file category
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration with the file list logged
+    """
+
     logger.debug("\n::: Logging used files")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
-    for model in config["general"]["valid_model_names"] + ["general"]:
-        thisrun_config_dir = config[model]["thisrun_config_dir"]
-        # this file contains the files used in the experiment
-        flist_file = (
-            f"{thisrun_config_dir}/"
-            f"{expid}_{it_coupled_model_name}filelist_{datestamp}"
-        )
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    # this file contains the files used in the experiment
+    flist_file = (
+        f"{thisrun_log_dir}/" f"{expid}_{it_coupled_model_name}filelist_{datestamp}"
+    )
 
-        with open(flist_file, "w") as flist:
+    with open(flist_file, "w") as flist:
+        for model in config["general"]["valid_model_names"] + ["general"]:
             flist.write(
-                f"These files are used for \n"
+                f"These files are used for\n"
                 f"experiment {config['general']['expid']}\n"
                 f"component {model}\n"
                 f"date {config['general']['run_datestamp']}"
             )
+
             flist.write("\n")
             flist.write(80 * "-")
             for filetype in filetypes:
@@ -823,7 +833,144 @@ def log_used_files(config):
                         flist.write("\n")
                 flist.write("\n")
                 flist.write(80 * "-")
+            flist.write("\n")
     return config
+
+
+def compute_and_log_file_checksums(config):
+    """
+    This function computes the checksums of the files in the ``work`` directory and
+    logs them to a YAML file in the ``thisrun_log_dir`` directory. The file is named
+    as follows: ``{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml``
+    and contains the following information:
+
+    - The source, intermediate, and target files for each file category
+    - The checksum of each file
+
+    Files are grouped by component/model and file category as a dictionary of
+    dictionaries.
+
+    These yaml checksum files are used to be compared with older versions of them
+    generated via the baseline tests run in the HPCs, to check if the files in the
+    work directory have changed since the last test.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration with the file checksums computed and logged
+    """
+    compute_file_checksums = config["general"].get("compute_file_checksums", False)
+    target = config["general"]["files_target"]
+    if not compute_file_checksums:
+        return config
+
+    logger.debug("\n::: Computing file checksums in ``{target}``")
+    jobtype = config["general"].get("jobtype", "unknown")
+    filetypes = config["general"]["relevant_filetypes"]
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    flist_file_yaml = f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
+    all_files = {}
+
+    # Compute checksums of all files in a the target directory
+    checksums = _compute_checksums_for_dir(config, target)
+    files_not_handled_by_filelists = copy.deepcopy(checksums)
+
+    # Loop over all components, file types, and files
+    for component in config["general"]["valid_model_names"] + ["general"]:
+        component_files = {}
+        for filetype in filetypes:
+            component_config = config[component]
+            for f in component_config.get(f"{filetype}_sources", []):
+                # Get the absolute path of the file
+                target_file = component_config[f"{filetype}_targets"][f]
+                p_target_file = str(pathlib.Path(target_file).absolute())
+
+                # Load the corresponding checksum and remove the file from the
+                # files_not_handled_by_filelists if it is found
+                checksum = checksums.get(p_target_file, None)
+                if checksum:
+                    del files_not_handled_by_filelists[p_target_file]
+
+                # Add all the file information to the component_files dictionary
+                component_files[f] = {
+                    "source": component_config[f"{filetype}_sources"][f],
+                    "intermediate": component_config[f"{filetype}_intermediate"][f],
+                    "target": target_file,
+                    "kind": filetype,
+                    "checksum": checksum,
+                }
+
+                # Log the file information
+                logger.debug(f"::: logging file category: {filetype}")
+                logger.debug(f"- source: {component_files[f]['source']}")
+                logger.debug(f"- target: {component_files[f]['target']}")
+                helpers.print_datetime(config)
+
+        all_files[component] = component_files
+
+    # Add the files not handled by the filelists to the all_files dictionary
+    all_files["not_handled_by_filelists"] = {}
+    for f, checksum in files_not_handled_by_filelists.items():
+        all_files["not_handled_by_filelists"][os.path.basename(f)] = {
+            "source": "unknown",
+            "intermediate": "unknown",
+            "target": f,
+            "kind": "not_handled_by_filelists",
+            "checksum": checksum,
+        }
+
+    # Dump the all_files dictionary to a yaml file
+    esm_parser.yaml_dump(all_files, flist_file_yaml)
+
+    return config
+
+
+def _compute_checksums_for_dir(config, target):
+    """
+    Compute the checksums of all files in the ``work`` directory.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+    target : str
+        The target directory to compute the checksums for
+
+    Returns
+    -------
+    checksums : dict
+        A dictionary containing the checksums of all files in the target directory
+    """
+
+    if target == "work":
+        dir_path = pathlib.Path(config["general"]["thisrun_work_dir"])
+        # Get all the absolute paths of the files in the work directory, including
+        # files in all subdirectories
+        file_paths = [
+            str(file.absolute()) for file in dir_path.rglob("*") if file.is_file()
+        ]
+    else:
+        logger.error(
+            f"Checksums of files in ``{target}`` directory types are not yet "
+            "supported. Only files in the ``work`` directory currently supported. "
+        )
+        exit(1)
+
+    # Compute the checksums of all files in the target directory
+    # TODO: parallelize this
+    checksums = {}
+    for f in file_paths:
+        checksums[f] = hashlib.md5(open(f, "rb").read()).hexdigest()
+
+    return checksums
 
 
 def check_for_unknown_files(config):
@@ -856,7 +1003,6 @@ def check_for_unknown_files(config):
     index = 0
 
     for thisfile in all_files:
-
         if os.path.realpath(thisfile) in known_files + unknown_files:
             continue
         config["general"]["unknown_sources"][index] = os.path.realpath(thisfile)
@@ -916,9 +1062,10 @@ def copy_files(config, filetypes, source, target):
     Note
     ----
     Relevant variables in this function:
-    
+
     intermediate_movements : list
-        List of file types that will be considered in the intermediate step (copy         from source to intermediate and then to work, rather than directly to work)
+        List of file types that will be considered in the intermediate step (copy
+        from source to intermediate and then to work, rather than directly to work)
 
     Parameters
     ----------
@@ -938,6 +1085,10 @@ def copy_files(config, filetypes, source, target):
 
     successful_files = []
     missing_files = {}
+
+    # Save the source and target for later use in other methods
+    config["general"]["files_source"] = source
+    config["general"]["files_target"] = target
 
     # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(
@@ -1019,11 +1170,13 @@ def copy_files(config, filetypes, source, target):
                                 )
                                 helpers.print_datetime(config)
                                 continue
-                            files_to_be_moved.append({
-                                "movement_method": movement_method,
-                                "file_source": file_source,
-                                "file_target": file_target,
-                            })
+                            files_to_be_moved.append(
+                                {
+                                    "movement_method": movement_method,
+                                    "file_source": file_source,
+                                    "file_target": file_target,
+                                }
+                            )
 
                             # To avoid overwriting in general experiment folder
                             if skip_intermediate == True:
@@ -1048,9 +1201,7 @@ def copy_files(config, filetypes, source, target):
         if config["general"]["verbose"]:
             logger.warning("\n\nWARNING: These files were missing:")
             for missing_file in missing_files:
-                logger.warning(
-                    f"- missing source: {missing_files[missing_file]}"
-                )
+                logger.warning(f"- missing source: {missing_files[missing_file]}")
                 logger.warning(f"- missing target: {missing_file}")
                 helpers.print_datetime(config)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
@@ -1065,7 +1216,7 @@ def avoid_overwriting(config, source, target):
     stamp.
 
     Note
-    ---- 
+    ----
         This function does not execute the file movement.
 
     Parameters
@@ -1086,7 +1237,7 @@ def avoid_overwriting(config, source, target):
             esm_parser.user_error(
                 "File movement conflict",
                 f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
-                f"{source} -> {date_stamped_target}"
+                f"{source} -> {date_stamped_target}",
             )
             return target
 
@@ -1102,7 +1253,7 @@ def avoid_overwriting(config, source, target):
         esm_parser.user_error(
             "File operation not supported",
             f"The target ``{target}`` is a folder, and this should not be happening "
-            "here. Please, open an issue in www.github.com/esm-tools/esm_tools"
+            "here. Please, open an issue in www.github.com/esm-tools/esm_tools",
         )
 
     return target
@@ -1253,7 +1404,6 @@ def get_method(movement):
 
 
 def complete_all_file_movements(config):
-
     mconfig = config["general"]
     general_file_movements = copy.deepcopy(mconfig.get("file_movements", {}))
     if "defaults.yaml" in mconfig:

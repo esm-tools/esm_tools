@@ -44,7 +44,7 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
     file_t = open(tfile).readlines()
 
     # Delete dictionaries to be ignored from the finished_config.yaml
-    if "finished_config.yaml" in tfile:
+    if "finished_config.yaml" in tfile or "filelist" in tfile:
         file_t = del_ignore_dicts(info, file_t)
 
     # Substitute user lines in target string

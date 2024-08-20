@@ -52,7 +52,7 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
     file_t = clean_user_specific_info(info, file_t)
 
     # Pattern of provenance
-    provenance_pattern = r"\s*#\s*[^,]+,line:\d+,col:\d+"
+    provenance_pattern = r'\s*#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
 
     # Check for ignored lines
     new_file_s = []

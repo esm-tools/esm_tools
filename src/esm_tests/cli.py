@@ -51,7 +51,7 @@ def main():
     update_resources_submodule(info)
 
     info["this_computer"] = (
-        determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
+        determine_computer_yaml_from_hostname().split("/")[-1].replace(".yaml", "")
     )
     info["last_tested_dir"] = get_last_tested_dir()
 

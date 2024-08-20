@@ -2257,7 +2257,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
     return rhs
 
 
-def determine_computer_from_hostname():
+def determine_computer_yaml_from_hostname():
     """
     Determines which yaml config file is needed for this computer
 
@@ -2271,31 +2271,48 @@ def determine_computer_from_hostname():
     str
         A string for the path of the computer specific yaml file.
     """
+    machine, node = determine_computer_and_node_from_hostname()
+    if machine:
+        return CONFIG_PATH + "/machines/" + machine + ".yaml"
+    else:
+        logging.warning(
+            "The yaml file for this computer (%s) could not be determined!"
+            % socket.gethostname()
+        )
+        logging.warning("Continuing with generic settings...")
+        return CONFIG_PATH + "/machines/generic.yaml"
+
+
+def determine_computer_and_node_from_hostname():
+    """
+    Determines the name of the computer and the node from the hostname
+
+    Returns
+    -------
+    tuple
+        A tuple of two strings, the first being the name of the computer and the
+        second being the node.
+    """
     all_computers = yaml_file_to_dict(CONFIG_PATH + "/machines/all_machines.yaml")
-    for this_computer in all_computers:
-        for computer_pattern in all_computers[this_computer].values():
+    for this_computer, nodes in all_computers.items():
+        for node, computer_pattern in nodes.items():
             if isinstance(computer_pattern, str):
                 if re.match(computer_pattern, socket.gethostname()) or re.match(
                     computer_pattern, socket.getfqdn()
                 ):
-                    return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
+                    return this_computer, node
             elif isinstance(computer_pattern, (list, tuple)):
                 # Pluralize to avoid confusion:
                 computer_patterns = computer_pattern
                 for pattern in computer_patterns:
                     if re.match(pattern, socket.gethostname()):
-                        return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
+                        return this_computer, node
+
     logging.warning(
-        "The yaml file for this computer (%s) could not be determined!"
+        "The name and node for this computer (%s) could not be determined!"
         % socket.gethostname()
     )
-    logging.warning("Continuing with generic settings...")
-    return CONFIG_PATH + "/machines/generic.yaml"
-
-    # raise FileNotFoundError(
-    #    "The yaml file for this computer (%s) could not be determined!"
-    #    % socket.gethostname()
-    # )
+    return None, None
 
 
 @keep_provenance_in_recursive_function
@@ -2892,7 +2909,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # construct the `defaults` section of the configuration
         user_config["defaults"].update(default_infos)
 
-        computer_file = determine_computer_from_hostname()
+        computer_file = determine_computer_yaml_from_hostname()
         computer_config = yaml_file_to_dict(computer_file)
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):

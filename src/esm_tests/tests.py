@@ -5,7 +5,7 @@ import re
 import shutil
 import time
 import yaml
-from esm_parser import determine_computer_from_hostname
+from esm_parser import determine_computer_yaml_from_hostname
 from loguru import logger
 
 from .output import *

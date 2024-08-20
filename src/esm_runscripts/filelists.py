@@ -1,3 +1,4 @@
+import concurrent
 import copy
 import filecmp
 import glob
@@ -722,8 +723,8 @@ def replace_year_placeholder(config):
                 year = config["general"]["current_date"].year
 
                 for file_category in config[model][filetype + "_targets"]:
-                    if isinstance(
-                        config[model][filetype + "_sources"][file_category], dict
+                    if (
+                        isinstance(config[model][filetype + "_sources"][file_category], dict)
                     ):
                         config[model][filetype + "_sources"][
                             file_category
@@ -896,7 +897,7 @@ def compute_and_log_file_checksums(config):
                 # Load the corresponding checksum and remove the file from the
                 # files_not_handled_by_filelists if it is found
                 checksum = checksums.get(p_target_file, None)
-                if checksum:
+                if checksum and files_not_handled_by_filelists.get(p_target_file):
                     del files_not_handled_by_filelists[p_target_file]
 
                 # Add all the file information to the component_files dictionary
@@ -1064,8 +1065,8 @@ def copy_files(config, filetypes, source, target):
     Relevant variables in this function:
 
     intermediate_movements : list
-        List of file types that will be considered in the intermediate step (copy
-        from source to intermediate and then to work, rather than directly to work)
+        List of file types that will be considered in the intermediate step (copy from
+        source to intermediate and then to work, rather than directly to work)
 
     Parameters
     ----------
@@ -1089,6 +1090,26 @@ def copy_files(config, filetypes, source, target):
     # Save the source and target for later use in other methods
     config["general"]["files_source"] = source
     config["general"]["files_target"] = target
+
+    # Initialization for parallelization with futures
+    futures = {}
+    if config["general"].get("parallel_file_movements", False) == "threads":
+        number_of_threads = (
+            config["computer"]
+            .get("partitions", {})
+            .get("compute", {})
+            .get("cores_per_node", 2)
+        )
+
+        # For login nodes take only 1/3 of the possible threads
+        machine, node = esm_parser.determine_computer_and_node_from_hostname()
+        if node == "login_nodes":
+            number_of_threads = number_of_threads // 3
+        else:
+            number_of_threads = number_of_threads - 1
+
+        # Initialize client
+        client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
 
     # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(
@@ -1149,51 +1170,66 @@ def copy_files(config, filetypes, source, target):
                     dest_dir = os.path.dirname(file_target)
                     file_source = resolve_symlinks(config, file_source)
                     if not os.path.isdir(file_source):
-                        try:
-                            if not os.path.isdir(dest_dir):
-                                # MA: ``os.makedirs`` creates the specified directory
-                                # and the parent directories if the last don't exist
-                                # (same as with ``mkdir -p <directory>>``)
-                                os.makedirs(dest_dir)
-                            if not os.path.isfile(file_source):
-                                logger.warning(
-                                    f"File not found: {file_source}",
-                                )
-                                helpers.print_datetime(config)
-                                missing_files.update({file_target: file_source})
-                                continue
-                            if os.path.isfile(file_target) and filecmp.cmp(
-                                file_source, file_target
-                            ):
-                                logger.debug(
-                                    f"Source and target file are identical, skipping {file_source}",
-                                )
-                                helpers.print_datetime(config)
-                                continue
-                            files_to_be_moved.append(
-                                {
-                                    "movement_method": movement_method,
-                                    "file_source": file_source,
-                                    "file_target": file_target,
-                                }
-                            )
-
-                            # To avoid overwriting in general experiment folder
-                            if skip_intermediate == True:
-                                file_target = avoid_overwriting(
-                                    config, file_source, file_target
-                                )
-
-                            # Execute movement
-                            movement_method(file_source, file_target)
-
-                            successful_files.append(file_source)
-                        except IOError:
-                            logger.error(
-                                f"Could not copy {file_source} to {file_target} for unknown reasons.",
-                            )
+                        if not os.path.isdir(dest_dir):
+                            # MA: ``os.makedirs`` creates the specified directory
+                            # and the parent directories if the last don't exist
+                            # (same as with ``mkdir -p <directory>>``)
+                            os.makedirs(dest_dir)
+                        if not os.path.isfile(file_source):
+                            logger.warning(f"File not found: {file_source}")
                             helpers.print_datetime(config)
                             missing_files.update({file_target: file_source})
+                            continue
+                        if os.path.isfile(file_target) and filecmp.cmp(
+                            file_source, file_target
+                        ):
+                            logger.debug(
+                                f"Source and target file are identical, skipping {file_source}",
+                            )
+                            helpers.print_datetime(config)
+                            continue
+                        files_to_be_moved.append(
+                            {
+                                "movement_method": movement_method,
+                                "file_source": file_source,
+                                "file_target": file_target,
+                            }
+                        )
+
+                        # To avoid overwriting in general experiment folder
+                        if skip_intermediate == True:
+                            file_target = avoid_overwriting(
+                                config, file_source, file_target
+                            )
+
+                        # Execute movement with or without futures (parallelization on/off)
+                        if (
+                            config["general"].get("parallel_file_movements", False)
+                            == "threads"
+                        ):
+                            future = client.submit(
+                                movement_method,
+                                config,
+                                file_source,
+                                file_target,
+                            )
+                            futures[(file_source, file_target)] = future
+                        else:
+                            futures[(file_source, file_target)] = movement_method(
+                                config,
+                                file_source,
+                                file_target,
+                            )
+
+    for (file_source, file_target), movement_output in futures.items():
+        if config["general"].get("parallel_file_movements", False):
+            result = movement_output.result()
+        else:
+            result = movement_output
+        if result:
+            successful_files.append(file_source)
+        else:
+            missing_files.update({file_target: file_source})
 
     if missing_files:
         if not "files_missing_when_preparing_run" in config["general"]:
@@ -1217,7 +1253,7 @@ def avoid_overwriting(config, source, target):
 
     Note
     ----
-        This function does not execute the file movement.
+    This function does not execute the file movement.
 
     Parameters
     ----------
@@ -1291,7 +1327,6 @@ def filter_allowed_missing_files(config):
     """
     allowed_missing_files = config["general"].setdefault("allowed_missing_files", {})
     missing_files = config["general"].get("files_missing_when_preparing_run", {})
-    # TODO(PG): Replace with logger statements
     logger.debug("Currently known missing files:")
     for k, v in missing_files.items():
         logger.debug(f"source: {k} --> target: {v}")
@@ -1309,7 +1344,6 @@ def filter_allowed_missing_files(config):
                     or re.match(allowed_missing_pattern, missing_file_target_fname)
                     or missing_file_target_fname in glob.glob(allowed_missing_pattern)
                 ):
-                    # TODO(PG): Replace with logger statements
                     logger.debug(
                         f"Detected allowed missing file with {allowed_missing_pattern}"
                     )
@@ -1394,13 +1428,43 @@ def complete_one_file_movement(config, model, filetype, movement, movetype):
 
 def get_method(movement):
     if movement == "copy":
-        return shutil.copy2
+        return actually_copy
     elif movement == "link":
-        return os.symlink
+        return actually_link
     elif movement == "move":
-        return os.rename
+        return actually_move
     logger.info("Unknown file movement type, using copy (safest option).")
-    return shutil.copy2
+    return actually_copy
+
+
+def movement(func):
+    def inner(config, source_path, target_path):
+        try:
+            func(source_path, target_path)
+            return True
+        except IOError:
+            logger.error(
+                f"Could not execute movement ({func.__name__}) {file_source} to {file_target} for unknown reasons.",
+            )
+            helpers.print_datetime(config)
+            return False
+
+    return inner
+
+
+@movement
+def actually_copy(source_path, target_path):
+    shutil.copy2(source_path, target_path)
+
+
+@movement
+def actually_link(source_path, target_path):
+    os.symlink(source_path, target_path)
+
+
+@movement
+def actually_move(source_path, target_path):
+    os.rename(source_path, target_path)
 
 
 def complete_all_file_movements(config):

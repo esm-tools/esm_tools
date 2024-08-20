@@ -31,7 +31,6 @@ scenario_type: ${scenario}
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
 
-# normally, except awicm on ollie :-(((
 no_dynveg_file_ending: "_no-dynveg"
 dynveg_file_ending: "_dynveg"
 

@@ -389,10 +389,6 @@ jsbach:
         # directories
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6_${echam.resolution}/JSBACH/"
         input_dir_couple: "${pool_dir}/input/"
-        choose_computer.name:
-               ollie:
-                      dynveg_file_ending: ""
-                      no_dynveg_file_ending: ""
 
         dynamic_vegetations: True
 

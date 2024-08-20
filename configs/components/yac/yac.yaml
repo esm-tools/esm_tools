@@ -1,13 +1,4 @@
 model: yac
-environment_changes:
-        choose_computer.name:
-                mistral:
-                        add_module_actions:
-                                - "load autoconf/2.69"
-                                - "load automake/1.16.1"
-                ollie:
-                        add_module_actions:
-                                - "load automake"
 
 available_versions:
 - 1.5.5

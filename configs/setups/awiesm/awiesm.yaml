@@ -290,10 +290,6 @@ jsbach:
                             use_dynveg: "${dynamic_vegetations}"
         version: "3.20"
 
-        choose_computer.name:
-                ollie:
-                        dynveg_file_ending: ""
-                        no_dynveg_file_ending: ""
 
 #########################################################################################
 
@@ -442,8 +438,6 @@ recom:
                         add_choose_computer.name:
                             levante:
                                 data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
-                            ollie:
-                                data_path: /work/ollie/mbutzin/fesom2/input/dust/
 
                         restart_name: "restart."
 

@@ -897,7 +897,7 @@ def compute_and_log_file_checksums(config):
                 # Load the corresponding checksum and remove the file from the
                 # files_not_handled_by_filelists if it is found
                 checksum = checksums.get(p_target_file, None)
-                if checksum:
+                if checksum and files_not_handled_by_filelists.get(p_target_file):
                     del files_not_handled_by_filelists[p_target_file]
 
                 # Add all the file information to the component_files dictionary
@@ -1221,9 +1221,11 @@ def copy_files(config, filetypes, source, target):
                                 file_target,
                             )
 
-    for (file_source, file_target), result in futures.items():
+    for (file_source, file_target), movement_output in futures.items():
         if config["general"].get("parallel_file_movements", False):
-            result = future.result()
+            result = movement_output.result()
+        else:
+            result = movement_output
         if result:
             successful_files.append(file_source)
         else:

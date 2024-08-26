@@ -96,7 +96,9 @@ available_versions:
 - 43r3-awicm-3.1
 - 43r3-awicm-3.1.1
 - 43r3-awicm-3.1.2
+- 43r3-awicm-3.1.3
 - 43r3-awicm-3.2
+- 43r3-awicm-3.2.1
 - 43r3-awicm-frontiers-xios
 - 43r3-foci
 - 43r3-v1
@@ -171,9 +173,31 @@ choose_version:
     destination: oifs-43r3
     with_xios: true
     major_version: 43r3
+  43r3-awicm-3.1.3:
+    requires:
+    - oasis3mct-4.0-awicm-3.1
+    branch: awicm-3.1.3
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+    install_bins: make/esm/oifs/bin/oifs
+    destination: oifs-43r3
+    with_xios: true
+    major_version: 43r3
   43r3-awicm-3.2:
     requires:
     - oasis3mct-4.0-awicm-3.1
+    branch: awicm-3.2
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+    install_bins: make/esm/oifs/bin/oifs
+    destination: oifs-43r3
+    with_xios: true
+    major_version: 43r3
+  43r3-awicm-3.2.1:
+    requires:
+    - oasis3mct-6.0-YAC
+    add_include_models:
+    - oasis3mct
     branch: awicm-3.2
     comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -1221,16 +1245,22 @@ grids:
                 nx: "${nx}"
                 ny: "${ny}"
                 oasis_grid_type: "D"
+                oyac_grid_type: "LL"
+                oyac_io_per_node: 4
         atml:
                 name: ${oasis_grid_name_l}
                 nx: "${nx}"
                 ny: "${ny}"
                 oasis_grid_type: "D"
+                oyac_grid_type: "LL"
+                oyac_io_per_node: 4
         atmr:
                 name: ${oasis_grid_name_r}
                 nx: "${nx}"
                 ny: "${ny}"
                 oasis_grid_type: "D"
+                oyac_grid_type: "LL"
+                oyac_io_per_node: 4
 
 
 #======================================================================================
@@ -1251,7 +1281,7 @@ choose_output:
                                 NAMCT0:
                                         NFRPOS: 12
                                         NFRHIS: 12
-         
+
         "1hr":
                  add_namelist_changes:
                         fort.4:
@@ -1317,7 +1347,7 @@ choose_eternal_run_number:
                         ${oifs.nx}
                         ${oifs.ensemble_id};
                     ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
-                        ${thisrun_restart_in_dir}/
+                        ${thisrun_work_dir}/
                         ${pseudo_initial_date!syear!smonth!sday}
                         ${oifs.time_step}
                         ${oifs.seconds_since_initial}
@@ -1336,7 +1366,7 @@ choose_general.standalone:
         True:
                 slice_icml: "
                     ${general.esm_function_dir}/components/oifs/slice_icmcl_file.sh
-                        ${thisrun_input_dir}/
+                        ${thisrun_work_dir}/
                         ${icmcl_dir}/${icmcl_file}
                         ${oifs.input_expid}
                         ${start_date!syear!smonth!sday}

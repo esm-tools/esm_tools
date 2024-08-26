@@ -22,7 +22,8 @@ compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelist
 
 def print_diff(info, sfile, tfile, name, ignore_lines):
     """
-    Prints the differences between two equivalent configuration files.
+    Prints the differences between two equivalent configuration files. Ignores the
+    provenance comments.
 
     Parameters
     ----------
@@ -47,24 +48,29 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
     # Substitute user lines in target string
     file_t = clean_user_specific_info(info, file_t)
 
+    # Pattern of provenance
+    provenance_pattern = r'\s*#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
+
     # Check for ignored lines
     new_file_s = []
     for line in file_s:
         ignore_this = False
+        line_no_prov = re.sub(provenance_pattern, '', line)
         for iline in ignore_lines:
-            if re.search(iline, line):
+            if re.search(iline, line_no_prov):
                 ignore_this = True
         if not ignore_this:
-            new_file_s.append(line)
+            new_file_s.append(line_no_prov)
     file_s = new_file_s
     new_file_t = []
     for line in file_t:
         ignore_this = False
+        line_no_prov = re.sub(provenance_pattern, '', line)
         for iline in ignore_lines:
-            if re.search(iline, line):
+            if re.search(iline, line_no_prov):
                 ignore_this = True
         if not ignore_this:
-            new_file_t.append(line)
+            new_file_t.append(line_no_prov)
     file_t = new_file_t
 
     diffobj = difflib.SequenceMatcher(a=file_s, b=file_t)

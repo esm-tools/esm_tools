@@ -1,0 +1,113 @@
+<!-- Extra OpenIFS output fields that are *not* CMIP6 compliant -->
+
+<field_definition
+    default_value="1e20"
+>
+
+    <!-- 2d fields -->
+
+    <field
+        id="surface_net_solar_radiation__rsns" name="rsns"
+        field_ref="ssr"
+        standard_name="surface_net_solar_radiation"
+        long_name="Surface net solar radiation"
+        unit="W m-2"
+    >
+        ssr/3600
+    </field>
+
+    <field
+        id="surface_net_thermal_radiation__rlns" name="rlns"
+        field_ref="str"
+        standard_name="surface_net_thermal_radiation"
+        long_name="Surface net thermal radiation"
+        unit="W m-2"
+    >
+        str/3600
+    </field>
+
+    <field
+        id="top_net_solar_radiation__rsnt" name="rsnt"
+        field_ref="tsr"
+        standard_name="top_net_solar_radiation"
+        long_name="Top net solar radiation"
+        unit="W m-2"
+    >
+        tsr/3600
+    </field>
+
+    <field
+        id="top_net_thermal_radiation__rlnt" name="rlnt"
+        field_ref="ttr"
+        standard_name="top_net_thermal_radiation"
+        long_name="Top net thermal radiation"
+        unit="W m-2"
+    >
+        ttr/3600
+    </field>
+
+    <field
+        id="top_net_solar_radiation_clearsky__rsntcs" name="rsntcs"
+        field_ref="tsrc"
+        standard_name="top_net_solar_radiation_clearsky"
+        long_name="Top net solar radiation, clear sky"
+        unit="W m-2"
+    >
+        tsrc/3600
+    </field>
+
+    <field
+        id="top_net_thermal_radiation_clearsky__rlntcs" name="rlntcs"
+        field_ref="ttrc"
+        standard_name="top_net_thermal_radiation_clearsky"
+        long_name="Top net thermal radiation, clear sky"
+        unit="W m-2"
+    >
+        ttrc/3600
+    </field>
+
+    <field
+        id="atmosphere_mass_content_of_cloud_ice_water__iwp" name="iwp"
+        field_ref="tciw"
+        standard_name="atmosphere_mass_content_of_cloud_ice_water"
+        long_name="Ice Water Path"
+    />
+
+    <field
+        id="high_cloud_area_fraction__clh" name="clh"
+        field_ref="hcc"
+        standard_name="high_cloud_area_fraction"
+        long_name="High Cloud Cover Percentage"
+        unit="%"
+    >
+        100*hcc
+    </field>
+
+    <field
+        id="medium_cloud_area_fraction__clm" name="clm"
+        field_ref="mcc"
+        standard_name="medium_cloud_area_fraction"
+        long_name="Medium Cloud Cover Percentage"
+        unit="%"
+    >
+        100*mcc
+    </field>
+
+    <field
+        id="low_cloud_area_fraction__cll" name="cll"
+        field_ref="lcc"
+        standard_name="low_cloud_area_fraction"
+        long_name="Low Cloud Cover Percentage"
+        unit="%"
+    >
+        100*lcc
+    </field>
+
+    <field
+        id="forecast_albedo__alb" name="alb"
+        field_ref="fal"
+        standard_name="forecast_albedo"
+        long_name="Forecast Albedo"
+    />
+
+</field_definition>

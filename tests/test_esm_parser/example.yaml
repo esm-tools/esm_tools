@@ -1,0 +1,28 @@
+person:
+  name: Paul Gierz
+  username: !ENV ${USER}
+  a_string: "
+    hello world
+    I am here to make your life impossible
+  "
+  # My comment
+  my_var: MY_VAR
+  my_other_var:
+      - a
+
+      - b
+      - c
+  my_other_list: [a, b, c]
+
+  my_bolean: True
+  my_int: 12.1
+  my_int2: 42
+  list_with_dict_inside:
+  - 1
+  - 2
+  - my_dict:
+      foo:
+        - 1
+        - 2
+        - my_dict:
+            foo: bar

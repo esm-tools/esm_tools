@@ -6,6 +6,7 @@ general:
     compute_time: "08:00:00"
     initial_date: "1990-01-01"
     final_date: "2040-01-02"
+
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
     nmonth: 0
@@ -36,7 +37,7 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 256
+    nproc: 384
     omp_num_threads: 8
 
 oasis3mct:

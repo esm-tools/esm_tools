@@ -4,24 +4,33 @@
 
 model: fesom
 type: ocean
+metadata:
+        Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
+        Description:
+                Multiresolution sea ice-ocean model that solves the equations
+                of motion on unestructured meshes
+        Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
+        Publications:
+                - "Danilov et al. 2004: A finite-element ocean model: principles and evaluation <https://doi.org/10.1016/s1463-5003(02)00063-x>"
+                - "Wang et al. 2014: The Finite Element Sea Ice-Ocean Model (FESOM) v.1.4: formulation of an ocean general circulation model. <https://doi.org/10.5194/gmd-7-663-2014>"
+        License:
+                www.fesom.de
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
-# default branch and version
-branch: master
-destination: fesom-1.4
+# defaults
 version: "1.4"
+branch: master
+git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
+destination: fesom-1.4
+install_bins: bin/fesom
+clean_command: ${defaults.clean_command}
+comp_command: mkdir -p build; cd build; cmake ..;   make install
 
 available_versions:
 - '1.4'
 - '1.4-esm_interface'
 - '1.4-recom'
 - '1.4-recom-awicm'
-- '2.0'
-- '2.0-o'
-- '2.0-paleodyn'
-- '2.0-r' # OG: temporarily here
-- '2.1'
-- '2.1-recom'
-- '2.1-wiso'
 
 choose_version:
     '1.4-esm_interface':
@@ -57,37 +66,19 @@ choose_version:
             - "${fesom.12_step_outputs}"
             - "${recom.12_step_outputs}"
 
-git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
-install_bins: bin/fesom
-clean_command: ${defaults.clean_command}
-comp_command: mkdir -p build; cd build; cmake ..;   make install
-contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
-
-metadata:
-        Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
-        Description:
-                Multiresolution sea ice-ocean model that solves the equations
-                of motion on unestructured meshes
-        Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
-        Publications:
-                - "Danilov et al. 2004: A finite-element ocean model: principles and evaluation <https://doi.org/10.1016/s1463-5003(02)00063-x>"
-                - "Wang et al. 2014: The Finite Element Sea Ice-Ocean Model (FESOM) v.1.4: formulation of an ocean general circulation model. <https://doi.org/10.5194/gmd-7-663-2014>"
-        License:
-                www.fesom.de
-
 restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
 yearly_outputs_start: 1 # Year in which the yearly output starts to be saved
 
-time_step: 1800
 resolution: CORE2
-
 mesh_rotated: false
 old_mesh_format: false
 with_part_format: false
 time_dimension: "time"
+time_step: 1800
+steps_per_day: "$(( 86400 / ${time_step} ))"
 
 #model_dir: "${esm_master_dir}/fesom-${version}/"
 pool_dir: "${computer.pool_directories.pool}"
@@ -97,13 +88,8 @@ climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
 ini_data_dir: "${pool_dir}/pool-data/"
 namelist_dir: "${esm_namelist_dir}/${model}"
-
 opbnd_dir: "somepath"
 tide_forcing_dir: "somepath"
-
-steps_per_day: "$(( 86400 / ${time_step} ))"
-
-asforcing: CORE2
 
 namelists:
         - namelist.config
@@ -112,6 +98,7 @@ namelists:
         - namelist.ice
         - namelist.diag
 
+asforcing: CORE2
 choose_asforcing:
         CORE2:
                 leapyear: false
@@ -282,13 +269,13 @@ config_sources:
         oce:     "${namelist_dir}/namelist.oce"
         diag:    "${namelist_dir}/namelist.diag"
 
-# default output of fesom component
+# default output of fesom1 component (output schedular of fesom1 needs env variable `AWI_FESOM_YAML`, see below)
 # 1. variables listed in `*_outputs` but not defined/not requested in the model will be ignored by the fesom-1.4 output scheduler
 # 2. variables defined/requested in the model but not listed in `*_outputs` will raise an error in the fesom-1.4 output scheduler
 # 3. variable names are case sensitive
 # 4. please keep alphabetic order
 # 5. a custom variable list can be provided in the runscript via `further_reading` in the fesom section, or in your runscript
-# 6. if fesom1:namelist.oce:use_age_tracer=.true., variables `age01`, `age02`, ... must be added to `fesom_*_outputs`-lists
+# todo: if fesom1:namelist.oce:use_age_tracer=.true., variables `age01`, `age02`, ... must be added to `fesom_*_outputs`-lists
 yearly_outputs:
     - flice
     - fsitherm
@@ -405,8 +392,8 @@ daily_outputs_for_AWI_FESOM_YAML: ${daily_outputs}
 
 # export output lists to env variable `AWI_FESOM_YAML`
 # - `AWI_FESOM_YAML` is used by fesom-1.4/fesom_cpl/output_scheduler; check its value in finished_config.yaml
-# - there can be several blocks in `AWI_FESOM_YAML` with the same output frequency
-# - the variable lists exported here include recom variables if necessary
+# - there can be more than one block in `AWI_FESOM_YAML` with the same output frequency
+# - the variable list includes recom variables if enabled
 runtime_environment_changes:
         add_export_vars:
                 AWI_FESOM_YAML:
@@ -481,7 +468,7 @@ coupling_fields:
                 grid: feom
         sie_feom:
                 grid: feom
-        snt_feom: # snow temp
+        snt_feom: # snow thick
                 grid: feom
         taux_oce:
                 grid: feom

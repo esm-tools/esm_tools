@@ -167,7 +167,9 @@ choose_version:
     requires:
     - oasis3mct-4.0-awicm-3.1
     branch: awicm-3.1.2
-    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    # todo(cd): disable chmod for development
+    #comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
     install_bins: make/esm/oifs/bin/oifs
     destination: oifs-43r3
@@ -903,7 +905,7 @@ choose_massfixer:
                                         NFRMASSCON: ${oifs.nfrmasscon}
                                 NAMGFL:
                                         #LTRCMFIX_PS: ".true."
-                                        LTRCMFMG: ".true."
+                                        #LTRCMFMG: ".true."
                                         YS_NL%LMASSFIX: ".true."
                                         YR_NL%LMASSFIX: ".true."
                                         YI_NL%LMASSFIX: ".true."

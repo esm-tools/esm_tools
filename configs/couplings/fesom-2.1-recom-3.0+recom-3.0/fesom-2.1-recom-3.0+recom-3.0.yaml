@@ -1,0 +1,21 @@
+components:
+    - fesom-2.1-recom-3.0
+    - recom-3.0
+coupling_changes:
+    - sed -i '/RECOM_COUPLED/s/OFF/ON/g' fesom-2.1-recom-3.0/CMakeLists.txt
+    - sed -i '/ PRIVATE __recom / s/^#*/#/' fesom-2.1-recom-3.0/src/CMakeLists.txt # comment out all lines with pattern " PRIVATE __recom "
+      #choose_recom.pzd_case:
+      #  "2p1z1d":
+      #      - sed -i '/ PRIVATE __recom USE_PRECISION=2)/s/^#//g' fesom-2.1-recom-3.0/src/CMakeLists.txt
+      #  "3p1z1d":
+      #      - sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos)/s/^#//g' fesom-2.1-recom-3.0/src/CMakeLists.txt
+      #  "2p3z2d":
+      #      - sed -i '/ PRIVATE __recom USE_PRECISION=2 __3Zoo2Det)/s/^#//g' fesom-2.1-recom-3.0/src/CMakeLists.txt
+      #  "3p3z2d":
+      #      - sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos __3Zoo2Det)/s/^#//g' fesom-2.1-recom-3.0/src/CMakeLists.txt
+      #  "*":
+      #      add_error:
+      #          "`recom.pzd_case` (number of _p_hytoplankton, _z_ooplankton and _d_etritus groups) not defined"
+      #              message:
+      #                  "`recom.pzd_case` (number of _p_hytoplankton, _z_ooplankton and _d_etritus groups) not defined"
+

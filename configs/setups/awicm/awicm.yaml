@@ -119,7 +119,7 @@ fesom:
                         add_namelist_changes:
                             namelist.oce:
                                 viscdiff:
-                                    Kh0: 800.0 # default for setup with recom involved
+                                    Kh0: 800.0 # better tuning results awi-esm-1-recom; jh
                 "2.0":
                         version: "2.0"
         choose_general.resolution:
@@ -149,7 +149,7 @@ fesom:
 recom:
     choose_general.version:
         1.0-recom:
-            version: "2.0-recom-awicm"
+            version: "2.0-awicm"
 
             # NOTE: look at README.md for description of the namelists
             scenario: "${general.scenario}"

@@ -2,75 +2,47 @@
 #
 
 model: fesom
-branch: master
-version: "2.0"
 type: ocean
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
+
+# defaults
+version: "2.0"
+branch: master
+git-repository:
+- https://github.com/FESOM/fesom2.git
+- https://gitlab.dkrz.de/FESOM/fesom2.git
+install_bins: bin/fesom.x
+destination: fesom-2.0
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
-
-required_plugins:
-- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+comp_executable: fesom.x
+executable: fesom
 
 choose_version:
   '2.0':
     branch: 2.0.2
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    install_bins: bin/fesom.x
   2.0pico:
     branch: pico_cpl
     destination: fesom-2.0pico
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    install_bins: bin/fesom.x
   2.0-master:
     branch: refactoring
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-awicm-3.0:
     branch: AWI-CM3_v3.0
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
   2.0-awicm-3.1:
     branch: AWI-CM3_v3.1
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
+  2.0-awicm-3.1-recom:
+    branch: awicm-3-recom
+    git-repository: https://github.com/chrisdane/fesom2.git
   2.0-frontiers:
     branch: awicm-3-frontiers_parallel-restart
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
   2.0-esm_interface:
     branch: using_esm-interface_yac
-    destination: fesom-2.0
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    install_bins: bin/fesom.x
   2.0-paleodyn:
     branch: paleodyn_frozen
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-  2.0-r:
-    # OG: This will be the master branch for fesom-recom-2.0. All the recom related
-    # files will be cleared from the src folder. After Dima's update we will return
-    # fesom-2.0 master branch back and remove this part
-    branch: recom-update
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-
-install_bins: bin/fesom.x
-git-repository:
-- https://github.com/FESOM/fesom2.git
-- https://gitlab.dkrz.de/FESOM/fesom2.git
-contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 restart_rate: "12"
 restart_unit: "m"
@@ -81,10 +53,6 @@ tar_binary_restarts: False
 
 time_step: 1800
 resolution: CORE2
-
-comp_executable: fesom.x
-executable: fesom
-
 mesh_rotated: false
 old_mesh_format: false
 with_part_format: false
@@ -112,25 +80,13 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
-
-# FIXME(KH, PG): This will need to be put in correctly.
-# NOTE(PG): For awiesm test on levante --> cvmix namelist back in, recom namelist out!
-# kh 21.02.22 orig (disabled for a special test)
         - namelist.cvmix
-# kh 21.02.22 orig (disabled for a special test)
-#        - namelist.cvmix
-
-# kh 21.02.22 special test only
-#        - namelist.recom
-
 
 choose_asforcing:
         CORE2:
                 leapyear: false
         ECHAM5:
                 leapyear: true
-
-
 
 choose_resolution:
         CORE2:
@@ -176,6 +132,7 @@ restart_in_in_work:
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+
 restart_in_sources:
         # TODO: When cleaning up the FESOM yamls, remove the wildcard and make this file
         # be dependent on the corresponding namelist option
@@ -221,7 +178,6 @@ restart_out_sources:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         fesom_bin_restart_tar: fesom_bin_restart.tar.*
-
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
@@ -283,8 +239,6 @@ choose_branchoff:
                         fesom_raw_restart: fesom_raw_restart
                         fesom_bin_restart_info: fesom_bin_restart_info
                         fesom_bin_restart: fesom_bin_restart
-
-
 
 namelist_changes:
         namelist.config:
@@ -351,8 +305,6 @@ bin_in_work:
 
 bin_sources:
         fesom: "${bin_dir}/${comp_executable}"
-
-
 
 config_files:
         config:  config

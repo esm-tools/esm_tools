@@ -3,14 +3,13 @@ general:
     setup_name: "awicm3"
     version: "v3.2"
     account: "ab0246"
-    compute_time: "08:00:00"
+    compute_time: "00:30:00"
     initial_date: "1990-01-01"
-    final_date: "2040-01-02"
-
+    final_date: "1992-01-01"
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
     nmonth: 0
-    nyear: 25
+    nyear: 1
 
 computer:
     taskset: true
@@ -21,18 +20,18 @@ awicm3:
 
 fesom:
     resolution: "CORE2"
-    restart_rate: 25
+    restart_rate: 1
     restart_unit: "y"
-    restart_first: 25
+    restart_first: 1
     lresume: false
     time_step: 1800
     nproc: 768
     tar_binary_restarts: true
 
 oifs:
-    resolution: "TCO95"
+    resolution: "TL159"
     levels: "L91"
-    prepifs_expid: aack
+    prepifs_expid: abda
     input_expid: awi3
     wam: true
     lresume: false

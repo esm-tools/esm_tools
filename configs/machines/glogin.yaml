@@ -377,9 +377,11 @@ choose_iolibraries:
                     # In the future, GWDG should re-build these libraries. 
                     # eccodes
                     #- "load eccodes/2.34.0"
-                    # cdo and nco
-                    #- "load cdo/2.2.2"
-                    #- "load nco/5.1.6"
+                    
+                    # cdo and nco built with older netcdf
+                    # post processing seems ok
+                    - "load nco/5.1.6-hdf5-1.10"
+                    - "load cdo/2.2.2-hdf5-1.10"
                     
                 add_export_vars:
                     # Run module show on the modules to see how 
@@ -394,7 +396,10 @@ choose_iolibraries:
                     
                     # Path to ecCodes module 
                     ECCODESROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/eccodes-2.34.0-cwlamwcpvlhsuejrpqjlr7z3pdbkkw56/
-                    PATH: $ECCODESROOT/bin:$PATH
+                    # Path to CDO
+                    CDOROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/cdo-2.2.2-hmzmwdifoec6niyoau7mobur43v7q52p/
+                    
+                    PATH: $ECCODESROOT/bin:$CDOROOT/bin:$PATH
                     # This should be done when correct module is installed
                     #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX 
                     

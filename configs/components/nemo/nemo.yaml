@@ -24,6 +24,13 @@ comp_command: export NEMO_TOPLEVEL=${model_dir}/../../ ; cp cfg.inc ../cfg.txt ;
   cd ..
 
 archfile: ESMTOOLS_generic_oasis_intel
+choose_computer.name:
+  glogin:
+    choose_computer.compiler_mpi:
+      gcc11_ompi416:
+        archfile: ESMTOOLS_generic_oasis_GNU 
+    
+
 
 destination: ${version}
 install_bins: BLD/bin/oceanx

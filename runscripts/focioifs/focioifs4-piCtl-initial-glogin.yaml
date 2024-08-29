@@ -9,16 +9,16 @@ general:
    
    compute_time: "12:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
    
-   nyear: 1
-   nmonth: 0
+   nyear: 0
+   nmonth: 1
    nday: 0
    #restart_rate: 1
    #restart_unit: days 
    hours: 0
    account: shk00018
-   base_dir: /scratch/usr/shkjocke/esm-experiments/
+   base_dir: /scratch/usr/shkjocke/esm-phase3/
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: 1
@@ -43,16 +43,13 @@ general:
 computer:
    partition_name: "standard96"
    #additional_flags: '--qos=preempt'
+   #taskset: false
+   #hetjob_flag: hetjob 
 
 focioifs:
-   model_dir: /scratch/usr/shkjocke/model_test/focioifs-4.0/
+   model_dir: /scratch/usr/shkjocke/models_p3/focioifs-4.0/
    
 oifs:
-   runtime_environment_changes:
-      choose_computer.name:
-         "glogin":
-             compiler_mpi: intel2019_impi2019_nemo4
-             #compiler_mpi: intel2022_impi2021
    
    lresume: ${general.lresume}
    # This would be for a traditional restart
@@ -90,12 +87,22 @@ oifs:
    levels: L91
    nproc: 288
    omp_num_threads: 1
-   use_ocean_currents: 0
-   sclct_switch: 2
+   use_ocean_currents: 1
+   sclct_switch: 1
    #initial_date_cold: "4000-01-01"
    solarspectrum: True 
    
    ini_pseudo_initial_date: "1859-01-01"
+   
+   add_namelist_changes:
+      fort.4:
+         NAMCUMF: 
+            # Conversion rate from cloud water to rain 
+            # See eq 6.38 in IFS doc 43r3 (variable c00)
+            RPRCON: 1.4e-3  # default 1.4e-3
+         NAMCLDP:
+            # Vi in section 7.2.4i in IFS doc 43r3  
+            RVICE: 0.13 # default 0.13 
 
 oasis3mct:
    lresume: True
@@ -106,7 +113,7 @@ oasis3mct:
    a2o_remap_method: "bilincub"
    o2a_remap_method: "bilinear"
    norestart: F
-   use_lucia: True
+   use_lucia: False
    #export_mode: EXPOUT
    debug_level: 1
    mct_version: "5.0"
@@ -124,7 +131,7 @@ nemo:
    input_dir: "/scratch/projects/shk00018/foci_input2/NEMO4_ORCA05_input/"
    
    resolution: "ORCA05"
-   version: "ORCA05_Z46_SI3_COUPLED" 
+   #version: "ORCA05_Z46_SI3_COUPLED" 
    # 64x51 = 3264 
    # 48x48 = 2304
    # 36x36 = 1296
@@ -160,5 +167,5 @@ rnfmap:
 xios: 
    with_model: focioifs 
    xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_diag/"
-   nproc: 4
-   omp_num_threads: 48
+   nproc: 20
+   omp_num_threads: 1

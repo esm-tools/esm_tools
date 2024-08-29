@@ -40,6 +40,7 @@ general:
         - fs
         - fs_oasismct4
         - default_oasismct4
+        - default_oasismct5
         - agrif 
         - agrif_oasismct4 
         choose_version:
@@ -58,6 +59,9 @@ general:
           default_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct4
+          default_oasismct5:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct5
           agrif_noaow:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
@@ -89,7 +93,7 @@ echam:
                 #compiler_mpi: intel2019_impi2019
                 compiler_mpi: intel2022_psmpi2022
              blogin:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2024_impi2021
              glogin:
                 #compiler_mpi: intel2022_impi2021
                 compiler_mpi: intel2019_impi2019
@@ -134,6 +138,8 @@ echam:
                 fs_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
                 default_oasismct4:
+                        version: "6.3.05p2-foci_oasismct4"
+                default_oasismct5:
                         version: "6.3.05p2-foci_oasismct4"
                 agrif:
                         version: "6.3.05p2-foci"
@@ -721,6 +727,43 @@ oasis3mct:
                         norestart: "T"
                         mct_version: "4.0"
                         version: "4.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+
+                default_oasismct5:
+
+                        norestart: "T"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
 
                         export_mode_a2o: EXPORTED
 

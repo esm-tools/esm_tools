@@ -117,7 +117,16 @@ choose_version:
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
   # XIOS with oasis dependencies and oasis support  
   2.5_r1910:
-    archfile: ESMTOOLS_generic_oasis_intel
+    # Switch arch file if we use GCC on glogin
+    choose_computer.name:
+      glogin:
+        choose_computer.compiler_mpi:
+          gcc11_ompi416:
+            archfile: ESMTOOLS_generic_oasis_GNU
+          '*': 
+            archfile: ESMTOOLS_generic_oasis_intel
+      '*':
+        archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: 2.5_r1910
   # XIOS with oasis dependencies 

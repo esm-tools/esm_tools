@@ -12,13 +12,13 @@ general:
    final_date: "1850-02-01T00:00:00"         # Final date of the experiment
    
    nyear: 0
-   nmonth: 2
+   nmonth: 1
    nday: 0
    #restart_rate: 1
    #restart_unit: days 
    hours: 0
    account: shk00018
-   base_dir: /scratch/usr/shkjocke/esm-intel-ompi/
+   base_dir: /scratch/usr/shkjocke/esm-phase3/
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: 1
@@ -47,7 +47,7 @@ computer:
    #hetjob_flag: hetjob 
 
 focioifs:
-   model_dir: /scratch/usr/shkjocke/models_intel_ompi/focioifs-4.0/
+   model_dir: /scratch/usr/shkjocke/models_p3/focioifs-4.0/
    
 oifs:
    
@@ -113,7 +113,7 @@ oasis3mct:
    a2o_remap_method: "bilincub"
    o2a_remap_method: "bilinear"
    norestart: F
-   use_lucia: True
+   use_lucia: False
    #export_mode: EXPOUT
    debug_level: 1
    mct_version: "5.0"
@@ -167,5 +167,5 @@ rnfmap:
 xios: 
    with_model: focioifs 
    xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_diag/"
-   nproc: 24
+   nproc: 20
    omp_num_threads: 1

@@ -87,6 +87,34 @@ choose_version:
     use_oasis: --use_oasis oasis3_mct
     branch: master
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+  "2.5-yac":
+    git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
+    archfile: ESMTOOLS_generic_oasis_intel
+    choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+      cray_mpich:
+        archfile: ESMTOOLS_generic_oasisyac_cray
+      intelmpi:
+        archfile: ESMTOOLS_generic_oasisyac_intel
+      parastationmpi:
+        archfile: ESMTOOLS_generic_oasisyac_intel
+      "*":
+        foo: bar
+    # MA: yet another block, this time for albedo. We cannot fix this now, but in the
+    # future we should adopt the compiler suite logic for the other computers. Already
+    # included in ESM-Tools clickup
+    choose_computer.compiler_suite:
+        gcc:
+            archfile: ESMTOOLS_generic_oasisyac_gcc
+        intel-oneapi:
+            archfile: ESMTOOLS_levante_oasisyac_intel
+        "*":
+            foo: bar
+    choose_computer.name:
+        levante:
+            archfile: ESMTOOLS_levante_oasisyac_intel
+    use_oasis: --use_oasis oasis3_mct
+    branch: master
+    comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
   # XIOS with oasis dependencies and oasis support  
   2.5_r1910:
     # Switch arch file if we use GCC on glogin

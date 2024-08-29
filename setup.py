@@ -26,8 +26,10 @@ requirements = [
     "packaging==21.3",
     "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
+    "pytest==7.1.2",
     "pyyaml==6.0.1",
     "questionary==1.10.0",
+    "ruamel.yaml==0.17.32",
     "semver==2.13.0",
     "sqlalchemy==1.4.39",
     "tabulate==0.8.10",
@@ -87,22 +89,24 @@ setup(
     keywords="esm_tools",
     name="esm-tools",
     packages=find_packages("src")
-    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
+    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts", "esm_tools.couplings"],
     package_dir={
         "": "src",
         "esm_tools.configs": "configs",
         "esm_tools.namelists": "namelists",
         "esm_tools.runscripts": "runscripts",
+        "esm_tools.couplings": "couplings",
     },
     package_data={
         "esm_tools.configs": ["../configs/*"],
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
+        "esm_tools.couplings": ["../couplings/*"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.27.4",
+    version="6.37.1",
     zip_safe=False,
 )

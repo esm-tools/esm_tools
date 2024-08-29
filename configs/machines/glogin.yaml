@@ -115,7 +115,6 @@ partitions:
 # in any way, so we usually use 1 thread per core. 
 logical_cpus_per_core: 2
 threads_per_core: 1
-
 hetjob_flag: packjob
 
 # Set default pool directory

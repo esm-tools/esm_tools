@@ -1,0 +1,10 @@
+echam:
+    type: "atmosphere"
+    files:
+        greenhouse:
+            kind: "input"
+            path_in_computer: "/my/path/in/computer"
+            a_list:
+                - 1
+                - 2
+                - 3

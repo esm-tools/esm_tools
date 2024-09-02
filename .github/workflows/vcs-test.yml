@@ -31,6 +31,7 @@ jobs:
                   sudo mkdir -p /work/esm-bot/my-project/model-codes
                   sudo mkdir -p /work/esm-bot/my-project/experiments
                   sudo mkdir -p /work/esm-bot/my-project/run-configs
+                  sudo chown -R runner /work/esm-bot
             - name: Install esm-tools
               run: "export LC_ALL=\"en_US.UTF-8\"\nexport LANG=\"en_US.UTF-8\" \nPATH=${HOME}/.local/bin:${PATH}\n./install.sh\n"
             - name: Set up the dummy model

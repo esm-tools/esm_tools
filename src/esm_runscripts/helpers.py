@@ -457,30 +457,34 @@ class CachedFile:
     def __init__(self, path):
         self.path = path
 
-    def is_younger_than(self, other, check_by="mtime"):
+    def is_younger_than(self, other, check_by="atime"):
         if not os.path.exists(self.path):
             return False
-        if check_by == "mtime":
-            logger.debug("Checking modification times:")
-            logger.debug(f"{self.path}: {os.path.getmtime(self.path)}")
-            logger.debug(f"{other}: {os.path.getmtime(other)}")
-            am_I_younger = os.path.getmtime(self.path) > os.path.getmtime(other)
+        if check_by == "atime":
+            logger.debug("Checking access times:")
+            logger.debug(
+                f"{self.path}: {datetime.fromtimestamp(os.path.getatime(self.path))}"
+            )
+            logger.debug(f"{other}: {datetime.fromtimestamp(os.path.getatime(other))}")
+            am_I_younger = os.path.getatime(self.path) > os.path.getatime(other)
             if am_I_younger:
                 logger.debug(f"This file {self.path} is younger than {other}")
             return am_I_younger
         else:
-            raise ValueError("Invalid check_by value. Only 'mtime' is supported.")
+            raise ValueError("Invalid check_by value. Only 'atime' is supported.")
 
-    def is_older_than(self, other, check_by="mtime"):
+    def is_older_than(self, other, check_by="atime"):
         if not os.path.exists(self.path):
             return False
-        if check_by == "mtime":
-            logger.debug("Checking modification times:")
-            logger.debug(f"{self.path}: {os.path.getmtime(self.path)}")
-            logger.debug(f"{other}: {os.path.getmtime(other)}")
-            return os.path.getmtime(self.path) < os.path.getmtime(other)
+        if check_by == "atime":
+            logger.debug("Checking access times:")
+            logger.debug(
+                f"{self.path}: {datetime.fromtimestamp(os.path.getatime(self.path))}"
+            )
+            logger.debug(f"{other}: {datetime.fromtimestamp(os.path.getatime(other))}")
+            return os.path.getatime(self.path) < os.path.getatime(other)
         else:
-            raise ValueError("Invalid check_by value. Only 'mtime' is supported.")
+            raise ValueError("Invalid check_by value. Only 'atime' is supported.")
 
     def read(self):
         with open(self.path, "r") as f:

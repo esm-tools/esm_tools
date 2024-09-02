@@ -10,103 +10,102 @@
 #                       - "_read_date_file"
 
 core:
-        esm_runscripts:
-                prepare:
-                        - "_read_date_file"
-                        - "check_model_lresume"
-                        - "resolve_some_choose_blocks"
-                        - "_initialize_calendar"
-                        - "_add_all_folders"
-                        - "set_prev_date"
-                        - "set_parent_info"
-                        - "finalize_config"
-                        - "install_missing_plugins"
-                        - "add_submission_info"
-                        - "initialize_batch_system"
-                        - "initialize_coupler"
-                        - "set_logfile"
-                        - "add_vcs_info"
-                        #- "check_vcs_info_against_last_run"
-                        - "check_config_for_warnings_errors"
+    esm_runscripts:
+        prepare:
+            - "_read_date_file"
+            - "check_model_lresume"
+            - "resolve_some_choose_blocks"
+            - "_initialize_calendar"
+            - "_add_all_folders"
+            - "set_prev_date"
+            - "set_parent_info"
+            - "finalize_config"
+            - "install_missing_plugins"
+            - "add_submission_info"
+            - "initialize_batch_system"
+            - "initialize_coupler"
+            - "set_logfile"
+            - "add_checksum_and_timestamp_model_src_info"
+            - "add_vcs_info"
+            #- "check_vcs_info_against_last_run"
+            - "check_config_for_warnings_errors"
 
-                prepexp:
-                        - "_create_setup_folders"
-                        - "_create_component_folders"
-                        - "initialize_experiment_logfile"
-                        - "copy_tools_to_thisrun"
-                        - "call_esm_runscripts_from_prepexp"
-                        - "_copy_preliminary_files_from_experiment_to_thisrun"
+        prepexp:
+            - "_create_setup_folders"
+            - "_create_component_folders"
+            - "initialize_experiment_logfile"
+            - "copy_tools_to_thisrun"
+            - "call_esm_runscripts_from_prepexp"
+            - "_copy_preliminary_files_from_experiment_to_thisrun"
 
-                prepcompute:
-                        - "compile_model"
-                        - "_write_finalized_config"
-                        - "_show_simulation_info"
-                        - "assemble_filelists"
-                        - "wait_for_iterative_coupling"
-                        - "copy_files_to_thisrun"
-                        - "modify_namelists"
-                        - "modify_files"
-                        - "create_new_files"
-                        - "create_empty_folders"
-                        - "prepare_coupler_files"
-                        - "add_batch_hostfile"
-                        - "copy_files_to_work"
+        prepcompute:
+            - "compile_model"
+            - "_write_finalized_config"
+            - "_show_simulation_info"
+            - "assemble_filelists"
+            - "wait_for_iterative_coupling"
+            - "copy_files_to_thisrun"
+            - "modify_namelists"
+            - "modify_files"
+            - "create_new_files"
+            - "create_empty_folders"
+            - "prepare_coupler_files"
+            - "add_batch_hostfile"
+            - "copy_files_to_work"
 
-                tidy:
-                        - "tidy_coupler"
-                        - "copy_stuff_back_from_work"
-                        - "copy_all_results_to_exp"
-                        - "clean_run_dir"
-                        - "start_post_job"
-                        - "_increment_date_and_run_number"
-                        - "_write_date_file"
-                        - "signal_tidy_completion"
-                        - "throw_away_some_infiles"
+        tidy:
+            - "tidy_coupler"
+            - "copy_stuff_back_from_work"
+            - "copy_all_results_to_exp"
+            - "clean_run_dir"
+            - "start_post_job"
+            - "_increment_date_and_run_number"
+            - "_write_date_file"
+            - "signal_tidy_completion"
+            - "throw_away_some_infiles"
 
+        observe:
+            - "init_monitor_file"
+            - "wait_and_observe"
+            - "wake_up_call"
 
-                observe:
-                        - "init_monitor_file"
-                        - "wait_and_observe"
-                        - "wake_up_call"
+        inspect:
+            - "inspect_overview"
+            - "inspect_workflow"
+            - "inspect_namelists"
+            - "inspect_folder"
+            - "inspect_file"
+            - "inspect_size"
+            - "inspect_config"
 
-                inspect:
-                        - "inspect_overview"
-                        - "inspect_workflow"
-                        - "inspect_namelists"
-                        - "inspect_folder"
-                        - "inspect_file"
-                        - "inspect_size"
-                        - "inspect_config"
+        last_minute:
+            - "apply_last_minute_changes"
+            - "restore_protected_last_minute_changes"
 
-                last_minute:
-                        - "apply_last_minute_changes"
-                        - "restore_protected_last_minute_changes"
+        filelists:
+            - "assemble"
+            - "log_used_files"
+            - "report_missing_files"
+            - "check_for_unknown_files"
 
-                filelists:
-                        - "assemble"
-                        - "log_used_files"
-                        - "report_missing_files"
-                        - "check_for_unknown_files"
+        database_actions:
+            - "database_entry"
 
-                database_actions:
-                        - "database_entry"
+        batch_system:
+            - "write_simple_runscript"
+            - "write_env"
+            - "find_openmp"
 
-                batch_system:
-                        - "write_simple_runscript"
-                        - "write_env"
-                        - "find_openmp"
+        virtual_env_builder:
+            - "venv_bootstrap"
 
-                virtual_env_builder:
-                        - "venv_bootstrap"
+        resubmit:
+            - "submit"
 
-                resubmit:
-                        - "submit"
+        chunky_parts:
+            - "_update_run_in_chunk"
+            - "_update_chunk_date_file"
+            - "set_chunk_calendar"
 
-                chunky_parts:
-                        - "_update_run_in_chunk"
-                        - "_update_chunk_date_file"
-                        - "set_chunk_calendar"
-
-                workflow:
-                        - "assemble_workflow"
-
+        workflow:
+            - "assemble_workflow"

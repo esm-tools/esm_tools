@@ -41,3 +41,37 @@ jobs:
                   whoami
                   ls -ratl .
                   esm_master install-dummy_model-1.0
+            - name: Sanity check
+              run: |
+                  ls -l /work/esm-bot/my-project/model-codes/dummy_model-1.0/bin/HelloWorld
+                  /work/esm-bot/my-project/model-codes/dummy_model-1.0/bin/HelloWorld
+
+            - name: Copy test runscript
+              run: |
+                  cp runscripts/dummy-model/dummy-model.yaml /work/esm-bot/my-project/run-configs/
+
+            - name: One small run
+              run: |
+                  cd /work/esm-bot/my-project/run-configs
+                  export PATH=${HOME}/.local/bin:${PATH}
+                  esm_runscripts dummy-model.yaml
+
+            - name: Make model source change
+              run: |
+                  sed -i s/\!// /work/esm-bot/my-project/model-codes/dummy_model-1.0/src/hello.f90
+
+            - name: Recompile
+              run: |
+                  cd /work/esm-bot/my-project/model-codes
+                  PATH=${HOME}/.local/bin:${PATH}
+                  whoami
+                  ls -ratl .
+                  esm_master recomp-dummy_model-1.0
+
+            - name: One small run
+              run: |
+                  cd /work/esm-bot/my-project/run-configs
+                  export PATH=${HOME}/.local/bin:${PATH}
+                  esm_runscripts dummy-model.yaml
+
+            # - name: Check differences

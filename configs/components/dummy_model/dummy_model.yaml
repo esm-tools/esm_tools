@@ -9,6 +9,8 @@ available_versions:
 choose_version:
   '1.0':
     branch: main
+comp_command: ${defaults.comp_command}
+clean_command: ${defaults.clean_command}
 git-repository: "https://github.com/esm-tools/dummy-model.git"
 contact: "paul.gierz(at)awi.de"
 install_bins: bin/helloWorld

@@ -1,40 +1,42 @@
 name: CI for VCS
 on:
-  push:
+    push:
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
-      - name: Update apt-get
-        run: sudo apt-get update -y && sudo apt-get upgrade -y
-      - name: Install Dependencies
-        run: |
-          sudo apt-get install -y \
-              build-essential \
-              gfortran \
-              libnetcdf-dev \
-              libnetcdff-dev \
-              libhdf5-dev
-      - name: Install up Cmake
-        run: sudo apt-get install -y cmake
-      - name: Install modulefiles
-        run: |
-          sudo apt-get install -y environment-modules
-          source /etc/profile.d/modules.sh
-      - name: Set up work folders
-        run: |
-          sudo mkdir -p /work/esm-bot/my-project/model-codes
-          sudo mkdir -p /work/esm-bot/my-project/experiments
-          sudo mkdir -p /work/esm-bot/my-project/run-configs
-      - name: Install esm-tools
-        run: "export LC_ALL=\"en_US.UTF-8\"\nexport LANG=\"en_US.UTF-8\" \nPATH=${HOME}/.local/bin:${PATH}\n./install.sh\n"
-      - name: Set up the dummy model
-        run: |
-          cd /work/esm-bot/my-project/model-codes
-          PATH=${HOME}/.local/bin:${PATH}
-          esm_master install-dummy_model-1.0
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v2
+            - name: Set up Python
+              uses: actions/setup-python@v2
+              with:
+                  python-version: 3.9
+            - name: Update apt-get
+              run: sudo apt-get update -y && sudo apt-get upgrade -y
+            - name: Install Dependencies
+              run: |
+                  sudo apt-get install -y \
+                      build-essential \
+                      gfortran \
+                      libnetcdf-dev \
+                      libnetcdff-dev \
+                      libhdf5-dev
+            - name: Install up Cmake
+              run: sudo apt-get install -y cmake
+            - name: Install modulefiles
+              run: |
+                  sudo apt-get install -y environment-modules
+                  source /etc/profile.d/modules.sh
+            - name: Set up work folders
+              run: |
+                  sudo mkdir -p /work/esm-bot/my-project/model-codes
+                  sudo mkdir -p /work/esm-bot/my-project/experiments
+                  sudo mkdir -p /work/esm-bot/my-project/run-configs
+            - name: Install esm-tools
+              run: "export LC_ALL=\"en_US.UTF-8\"\nexport LANG=\"en_US.UTF-8\" \nPATH=${HOME}/.local/bin:${PATH}\n./install.sh\n"
+            - name: Set up the dummy model
+              run: |
+                  cd /work/esm-bot/my-project/model-codes
+                  PATH=${HOME}/.local/bin:${PATH}
+                  whoami
+                  ls -ratl .
+                  esm_master install-dummy_model-1.0

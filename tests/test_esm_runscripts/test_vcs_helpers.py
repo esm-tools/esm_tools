@@ -1,6 +1,8 @@
 import os
 import time
+
 import pytest
+
 from esm_runscripts.helpers import CachedFile
 
 
@@ -11,6 +13,11 @@ class TestCachedFile:
         self.test_file_2 = "test2.txt"
         self.test_file_3 = "test.txt"
         self.test_file_4 = "test.yaml"
+        for tfile in [self.test_file_1, self.test_file_2, self.test_file_3]:
+            with open(tfile, "w") as f:
+                f.write("test")
+        with open(self.test_file_4, "w") as f:
+            f.write("test: test")
         yield
         os.remove(self.test_file_1)
         os.remove(self.test_file_2)
@@ -29,7 +36,7 @@ class TestCachedFile:
             f.write("test")
         cf1 = CachedFile(self.test_file_1)
         cf2 = CachedFile(self.test_file_2)
-        assert not cf1.is_younger_than(cf2.path)
+        assert cf2.is_younger_than(cf1.path)
 
     def test_is_older_than(self):
         with open(self.test_file_1, "w") as f:

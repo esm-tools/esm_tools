@@ -4,6 +4,7 @@ from datetime import datetime
 
 import colorama
 import git
+import yaml
 from loguru import logger
 
 import esm_parser
@@ -463,7 +464,7 @@ class CachedFile:
             logger.debug("Checking modification times:")
             logger.debug(f"{self.path}: {os.path.getmtime(self.path)}")
             logger.debug(f"{other}: {os.path.getmtime(other)}")
-            am_I_younger = os.path.getmtime(self.path) < os.path.getmtime(other)
+            am_I_younger = os.path.getmtime(self.path) > os.path.getmtime(other)
             if am_I_younger:
                 logger.debug(f"This file {self.path} is younger than {other}")
             return am_I_younger
@@ -477,7 +478,7 @@ class CachedFile:
             logger.debug("Checking modification times:")
             logger.debug(f"{self.path}: {os.path.getmtime(self.path)}")
             logger.debug(f"{other}: {os.path.getmtime(other)}")
-            return os.path.getmtime(self.path) > os.path.getmtime(other)
+            return os.path.getmtime(self.path) < os.path.getmtime(other)
         else:
             raise ValueError("Invalid check_by value. Only 'mtime' is supported.")
 

@@ -89,7 +89,7 @@ export_vars:
 
 additional_flags: 
       - --mem=72000
-      - --constraint="cascade"
+§
 
 # Now choose the compiler_mpi
 # Note: We must set the environment first, oneapi or gcc
@@ -107,14 +107,23 @@ choose_compiler_mpi:
          - "load git-lfs/3.4.0"
       
       add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
+         #FC: mpiifort
+         #F77: mpiifort
+         #MPIFC: mpiifort
+         #CC: mpiicc
+         #CXX: mpiicpc
+         #MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         #MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+         
+         FC: mpiifx
+         F77: mpiifx
+         MPIFC: mpiifx
+         CC: mpiicx
+         CXX: mpiicx
+         MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+         
          FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
          I_MPI_PMI_LIBRARY: libpmi.so
          I_MPI_FABRICS: shm:ofi
          I_MPI_LARGE_SCALE_THRESHOLD: 8192

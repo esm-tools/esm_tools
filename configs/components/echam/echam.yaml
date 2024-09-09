@@ -83,6 +83,9 @@ compile_infos:
           6.3.05p2-foci_oasismct4:
             branch: esm-tools-oasis3mct4
             git-repository: https://git.geomar.de/foci/src/echam.git
+            add_export_vars:
+              MPEU_Fortran_INCLUDE_DIRECTORIES: "/home/shktkeme/esm/models/foci-agrif_mops_oasismct4/oasis/INSTALL_OASIS.ESMTOOLS/include"
+              MPEU_Fortran_LIBRARIES: "/home/shktkeme/esm/models/foci-agrif_mops_oasismct4/oasis/INSTALL_OASIS.ESMTOOLS/lib"
           6.3.05p2-wiso:
             branch: "wiso"
             clean_command: rm -rf src/echam/bin; rm -rf bin; make clean

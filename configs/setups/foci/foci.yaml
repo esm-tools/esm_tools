@@ -81,7 +81,7 @@ echam:
         # compiletime and runtime env changes have to be placed within one of the components (does not
         # matter which one) and then they are valid for all components.
         compiletime_environment_changes:
-          iolibraries: geomar_libs
+          iolibraries: system_libs
           choose_computer.name:
              levante:
                 #compiler_mpi: intel2022_impi2021
@@ -95,13 +95,13 @@ echam:
                 compiler_mpi: intel2019_impi2019_nemo4
                 #compiler_mpi: intel2021_impi2021
              glogin:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2023_impi2021
                 #compiler_mpi: intel2019_impi2019_nemo4
              nesh:
                 compiler_mpi: intel2019_impi2019
 
         runtime_environment_changes:
-          iolibraries: geomar_libs
+          iolibraries: system_libs
           choose_computer.name:
              levante:
                 #compiler_mpi: intel2022_impi2021
@@ -119,10 +119,11 @@ echam:
                 compiler_mpi: intel2019_impi2019_nemo4
                 #compiler_mpi: intel2021_impi2021
              glogin:
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2023_impi2021
                 #compiler_mpi: intel2019_impi2019_nemo4
                 add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                   - "source $I_MPI_ROOT/../../setvars.sh"
+                        #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              nesh:
                 compiler_mpi: intel2019_impi2019
                 add_module_actions:

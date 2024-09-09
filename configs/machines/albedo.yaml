@@ -187,7 +187,7 @@ export_vars:
     # NOTE(PG): I do not like this....should be set via module file, or fixed in model
     LAPACK_LIB: "'-L${mkl_root} -lmkl_intel_lp64 -lmkl_core -lmkl_sequential -lm -ldl'"
 
-    LD_LIBRARY_PATH[(1)]: ${mkl_root}/lib/intel64:$LD_LIBRARY_PATH
+    LD_LIBRARY_PATH[(1)]: $ECCODESROOT/lib:$NETCDFFROOT/lib:${mkl_root}/lib/intel64:$LD_LIBRARY_PATH
 
     PATH[(1)]: "$PERL5LIB/../bin:$PATH"
     PATH[(2)]: "$PATH:$ECCODESROOT/bin"  #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH

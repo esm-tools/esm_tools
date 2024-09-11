@@ -89,7 +89,6 @@ export_vars:
 
 additional_flags: 
       - --mem=72000
-§
 
 # Now choose the compiler_mpi
 # Note: We must set the environment first, oneapi or gcc

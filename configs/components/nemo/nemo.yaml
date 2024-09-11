@@ -2006,7 +2006,7 @@ ln_tsd_tradmp: false
 # Nest settings
 # Note: ESM-Tools only supports one nest at the moment
 # name of first nest 
-nest1: no
+nest1: false
 # use tracer, LIM2 (NEMO 3.6), SI3 (NEMO 4.2) 
 use_tracer_agrif:   false
 use_lim2_agrif:     false

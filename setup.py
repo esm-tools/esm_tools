@@ -13,7 +13,7 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "Click==8.0.4",  # Maximum version for Python 3.6 support
+    "Click",  # Maximum version for Python 3.6 support
     "PyGithub==1.55",
     "colorama==0.4.5",
     "coloredlogs==15.0.1",  # NOTE(PG): Should be removed during cleanup for loguru instead
@@ -55,7 +55,7 @@ setup(
         "deniz.ural@awi.de",
         "jan.streffing@awi.de",
         "sebastian.wahl@geomar.de",
-	      "kai.himstedt@dkrz.de",
+        "kai.himstedt@dkrz.de",
     ],
     python_requires=">=3.6, <=3.11",
     classifiers=[
@@ -89,7 +89,13 @@ setup(
     keywords="esm_tools",
     name="esm-tools",
     packages=find_packages("src")
-    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts", "esm_tools.couplings"],
+    + [
+        "esm_tools",
+        "esm_tools.configs",
+        "esm_tools.namelists",
+        "esm_tools.runscripts",
+        "esm_tools.couplings",
+    ],
     package_dir={
         "": "src",
         "esm_tools.configs": "configs",

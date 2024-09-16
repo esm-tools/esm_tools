@@ -1,3 +1,5 @@
+computer:
+        partition: "standard96"
 general:
    use_venv: False
    verbose: True 
@@ -6,9 +8,9 @@ general:
    homedir: !ENV ${HOME}
 
    # operational settings: yearly restarts
-   compute_time: "01:15:00"
+   compute_time: "00:15:00"
    initial_date: "2015-01-01T00:00:00"       # Initial exp. date
-   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2016-01-01T00:00:00"         # Final date of the experiment
    nmonth: 12
    clean_runs: 2
    # test settings, daily restarts
@@ -19,14 +21,19 @@ general:
    
    postprocessing: 0
    # machine specific setup 
-   account: shk00018
+   account: shktkeme
    base_dir: ${homedir}/esm/esm-experiments/
 
    lresume: True
    ini_parent_exp_id: "FOCI1.20.0-CC105_RCP_ESM_spinup2099"
    ini_parent_date: "20141231" 
    ini_nemo_restart_steps: 2410600 
-   ini_parent_dir: "/scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/${ini_parent_exp_id}/"
+   ini_parent_dir: "/scratch/usr/shktkeme/foci_input/FOCI-MOPS/${ini_parent_exp_id}"
+
+   #oasis3mct:
+   #   export_mode_a2o: "EXPOUT"
+   #   export_mode: "EXPOUT"
+   #   debug_level: 0
 
 foci:
    model_dir: ${general.homedir}/esm/models/foci-mops_oasismct4/
@@ -52,9 +59,13 @@ echam:
    namelist_changes:
       namelist.echam:
          parctl:
-            iomode: 2 
+            iomode: 2
             nprocio: ${nprocio}
-   
+         co2ctl:
+            lco2_emis: true
+            lco2_2per: true
+         submodelctl:
+            lmethox: true
 nemo:
    resolution: "ORCA05"
    # overwrite default time step of 1800s 
@@ -66,14 +77,15 @@ nemo:
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
    # alkalinity masks
    namelist_changes:
-      namelist_cfg:
-         namsbc: 
-            ln_alk: true
-   forcing_dir: /scratch/usr/shktkeme/foci_input/alk_mask/CoastEU/
-   forcing_sources:
-      alkalinity: ${forcing_dir}/alkalinity_mask_y@YEAR@.nc
-   forcing_files:
-      alkalinity: alkalinity
+      namelist_top_cfg:
+         namtrc_rad:
+            ln_trcrad: .false.
+            #ln_alk: false
+            #forcing_dir: /scratch/usr/shktkeme/foci_input/alk_mask/CoastEU/
+            #forcing_sources:
+            #alkalinity: ${forcing_dir}/alkalinity_mask_y@YEAR@.nc
+            #forcing_files:
+            #alkalinity: alkalinity
    
 xios:
    nproc: 12 

@@ -1,5 +1,5 @@
 computer:
-        partition: "standard96"
+        partition: "standard96:test"
 general:
    use_venv: False
    verbose: True 
@@ -8,18 +8,18 @@ general:
    homedir: !ENV ${HOME}
 
    # operational settings: yearly restarts
-   #compute_time: "01:00:00"
-   #initial_date: "1900-01-01T00:00:00"       # Initial exp. date
-   #final_date: "1940-01-01T00:00:00"         # Final date of the experiment
-   #nmonth: 12
-   #postprocessing: 1
-   #clean_runs: 2
-   # test settings, daily restarts
-   compute_time: "00:10:00"
+   compute_time: "00:20:00"
    initial_date: "1900-01-01T00:00:00"       # Initial exp. date
-   final_date: "1900-01-04T00:00:00"         # Final date of the experiment
-   nday: 1 
-   postprocessing: 0
+   final_date: "1940-01-01T00:00:00"         # Final date of the experiment
+   nmonth: 12
+   postprocessing: 1
+   clean_runs: 2
+   # test settings, daily restarts
+   #compute_time: "00:03:00"
+   #initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   #final_date: "1900-01-04T00:00:00"         # Final date of the experiment
+   #nday: 1 
+   #postprocessing: 0
    
    # machine specific setup 
    account: shktkeme
@@ -43,7 +43,7 @@ oasis3mct:
    # export_mode_a2o: "EXPOUT"
    export_mode_a2o: "EXPOUT"
    export_mode: "EXPOUT"
-   debug_level: 50
+   debug_level: 0
 
 echam:
    # all ssp* scenarios use historical forcing before 2015, i.e. the setting
@@ -55,11 +55,11 @@ echam:
    scenario: "PI-CTRL"
    resolution: "T63"
    # operational settings: yearly restarts
-   #restart_rate: ${general.nmonth}
-   #restart_unit: "months"
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
    # test settings, daily restarts
-   restart_rate: ${general.nday}
-   restart_unit: "days"
+   #restart_rate: ${general.nday}
+   #restart_unit: "days"
    nproca: 12
    nprocb: 16
    nprocio: 0
@@ -67,7 +67,19 @@ echam:
       namelist.echam:
          parctl:
             iomode: 0
-            nprocio: ${nprocio}
+            nprocio: ${nprocio}  
+         radctl:
+            iaero: 3
+            io3: 4
+            isolrad: 6
+            ich4: 3
+            in2o: 3
+            ico2: 1
+            co2vmr: 284.3169860840e-06
+            ch4vmr: 808.2490234375e-09
+            n2ovmr: 273.0210571289e-09
+            yr_perp: 1850
+
 nemo:
    # set your own agrif input directory
    agrif_dir: /scratch/usr/shktkeme/foci_input/AGRIF/agrif_VIKING10/host_bathy_meter_nest_smoothed_for_TK011

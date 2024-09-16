@@ -4,6 +4,7 @@ name: ecmwf-atos
 
 accounting: true
 batch_system: "slurm"
+hetjob_flag: "hetjob"
 
 operating_system: "linux-centos"
 
@@ -16,7 +17,13 @@ additional_flags:
     - "--qos=np"
     # No hyperthreading in ECMWF-ATOS
     - "--hint=nomultithread"
-    - "--ntasks-per-core=1"
+
+# TODO: change this to a heterogeneous_parallelization choose block == True
+add_unset_vars:
+    - "SLURM_DISTRIBUTION"
+    - "SLURM_NTASKS"
+    - "SLURM_NPROCS"
+    - "SLURM_ARBITRARY_NODELIST"
 
 partitions:
         compute:
@@ -47,8 +54,6 @@ choose_submitted:
                 nothing: much
 
 submitted: false
-
-hetjob_flag: ""
 
 # standard environment setup
 #
@@ -129,6 +134,8 @@ choose_useMPI:
                 mpifc: mpifort
                 cc: mpicc
                 cxx: mpicxx
+
+launcher_flags: "-l --mpi=pmi2"
 
 further_reading:
         - batch_system/slurm.yaml

@@ -138,25 +138,18 @@ general:
         choose_computer.name:
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
-                        pool_structure: old
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
-                        pool_structure: old
                 aleph:
                         pool_dir: "/proj/awi/input"
-                        pool_structure: old
                 blogin:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
-                        pool_structure: old
                 albedo:
                         pool_dir: "/albedo/pool"
-                        pool_structure: new
                 ecmwf-atos:
                         pool_dir: "/hpcperm/duts/pool"
-                        pool_structure: new
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
-                        pool_structure: old
 
         # Load compute recipe from oifs.yaml
         prepcompute_recipe: ${oifs.prepcompute_recipe}
@@ -181,14 +174,7 @@ oifs:
         add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
-        # Recommended new structure to support more versions under the same OpenIFS
-        # folder. Make it the default after generalization in all pools
-        choose_general.pool_structure:
-            new:
-                pool_dir: ${general.pool_dir}/OpenIFS
-            old:
-                pool_dir: ${general.pool_dir}
-
+        pool_dir: ${general.pool_dir}
         model_dir: ${general.model_dir}/oifs-${version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"

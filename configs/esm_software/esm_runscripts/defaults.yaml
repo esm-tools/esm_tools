@@ -7,6 +7,9 @@ general:
     reset_calendar_to_last: False
     verbose: False
 
+computer:
+    heterogeneous_batch_resources: false
+
 # Defaults to be added to each model or component
 per_model_defaults:
         file_movements:

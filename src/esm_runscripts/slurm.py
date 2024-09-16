@@ -164,7 +164,10 @@ class Slurm:
     def het_par_headers(config, cluster, headers):
         """
         Modifies the list of ``headers`` to include the ``packjob``/``hetjob`` logic
-        for heterogeneous parallelization in SLURM.
+        for heterogeneous parallelization in SLURM with
+        ``heterogeneous_batch_resources``. Not needed if no heterogeneous batch
+        resources are used (for example, the same ``account``, ``partition``, ... across
+        the whole reservation).
 
         Parameters
         ----------
@@ -186,8 +189,16 @@ class Slurm:
         if (
             config["computer"].get("heterogeneous_parallelization", False)
             and not config["computer"].get("taskset", False)
-            and config["computer"].get("hetjob_flag")
+            and config["computer"].get("heterogeneous_batch_resources")
         ):
+            if "hetjob_flag" not in config["computer"]:
+                esm_parser.user_error(
+                    "missing parameter",
+                    "The parameter ``hetjob_flag`` (with values ``hetjob`` or "
+                    "``patchjob``) needs to be defined for jobs where "
+                    "``heterogeneous_batch_resources`` is set to ``True``"
+                )
+
             this_batch_system = config["computer"]
             # Get the variables to be modified for the headers
             nodes_flag = this_batch_system["nodes_flag"].split("=")[0]

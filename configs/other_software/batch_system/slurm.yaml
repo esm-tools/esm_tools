@@ -76,7 +76,8 @@ add_choose_heterogeneous_parallelization:
                     ${mt_launcher_flag}
                     --nodes=@nnodes@
                     --ntasks=@nproc@
-                    --cpus-per-task=@cpus_per_proc@"
+                    --cpus-per-task=@cpus_per_proc@
+                    --export=ALL,OMP_NUM_THREADS=@cpus_per_proc@"
                 srun_execution_command: "${debugger_flags_prelauncher} ${launcher} \\\n@components@"
                 launcher_comp_sep: " \\\n:"
     false:

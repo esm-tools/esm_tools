@@ -302,6 +302,7 @@ def add_esm_runscripts_defaults_to_config(config):
     the ``config``, if those key-values do not exist yet. The ``keys`` supported in that
     file are:
     - ``general``: to be assigned to the ``general`` section of the ``config``
+    - ``computer``: to be assigned to the ``general`` section of the ``computer``
     - ``per_model_defaults``: to be added to each component/model section of the
       ``config``
 
@@ -325,6 +326,11 @@ def add_esm_runscripts_defaults_to_config(config):
     if "general" in default_config:
         config["general"] = esm_parser.new_deep_update(
             config["general"], default_config["general"]
+        )
+
+    if "computer" in default_config:
+        config["computer"] = esm_parser.new_deep_update(
+            config["computer"], default_config["computer"]
         )
 
     if "per_model_defaults" in default_config:

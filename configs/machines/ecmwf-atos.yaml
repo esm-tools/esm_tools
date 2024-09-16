@@ -14,6 +14,7 @@ partition: false
 exclusive: false
 additional_flags:
     - "--qos=np"
+    - "--ntasks-per-core=1"
     # No hyperthreading in ECMWF-ATOS
     - "--hint=nomultithread"
 
@@ -139,7 +140,8 @@ choose_useMPI:
                 cc: mpicc
                 cxx: mpicxx
 
-launcher_flags: ""
+#launcher_flags: ""
+launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
 
 further_reading:
         - batch_system/slurm.yaml

@@ -1247,7 +1247,7 @@ choose_version:
           sn_tracer(8)%clsname: DIN
           sn_tracer(9)%clsname: DIC
           sn_tracer(10)%clsname: ALK
-          #sn_tracer(11)%clsname: IDEAL
+          sn_tracer(11)%clsname: IDEAL
 
           sn_tracer(1)%cllname: age
           sn_tracer(2)%cllname: phosphate
@@ -1259,7 +1259,7 @@ choose_version:
           sn_tracer(8)%cllname: din
           sn_tracer(9)%cllname: dic
           sn_tracer(10)%cllname: alkalinity
-          #sn_tracer(11)%cllname: ideal
+          sn_tracer(11)%cllname: ideal
 
           sn_tracer(1)%clunit: s
           sn_tracer(2)%clunit: mmol/m3
@@ -1271,7 +1271,7 @@ choose_version:
           sn_tracer(8)%clunit: mmol/m3
           sn_tracer(9)%clunit: umol/kg
           sn_tracer(10)%clunit: umol/kg
-          #sn_tracer(11)%clunit: mmol/m3
+          sn_tracer(11)%clunit: mmol/m3
 
           sn_tracer(1)%llinit: false
           sn_tracer(2)%llinit: true
@@ -1283,7 +1283,7 @@ choose_version:
           sn_tracer(8)%llinit: true
           sn_tracer(9)%llinit: true
           sn_tracer(10)%llinit: true
-          #sn_tracer(11)%llinit: true
+          sn_tracer(11)%llinit: true
           sn_tracer(1)%llsave: true
           sn_tracer(2)%llsave: true
           sn_tracer(3)%llsave: true
@@ -1294,7 +1294,7 @@ choose_version:
           sn_tracer(8)%llsave: true
           sn_tracer(9)%llsave: true
           sn_tracer(10)%llsave: true
-          #sn_tracer(11)%llsave: true
+          sn_tracer(11)%llsave: true
 
        1_namelist_top_cfg:
          namtrc:
@@ -1309,7 +1309,7 @@ choose_version:
           sn_tracer(8)%clsname: DIN
           sn_tracer(9)%clsname: DIC
           sn_tracer(10)%clsname: ALK
-          #sn_tracer(11)%clsname: IDEAL
+          sn_tracer(11)%clsname: IDEAL
 
           sn_tracer(1)%cllname: age
           sn_tracer(2)%cllname: phosphate
@@ -1321,7 +1321,7 @@ choose_version:
           sn_tracer(8)%cllname: din
           sn_tracer(9)%cllname: dic
           sn_tracer(10)%cllname: alkalinity
-          #sn_tracer(11)%cllname: ideal
+          sn_tracer(11)%cllname: ideal
 
           sn_tracer(1)%clunit: s
           sn_tracer(2)%clunit: mmol/m3
@@ -1333,7 +1333,7 @@ choose_version:
           sn_tracer(8)%clunit: mmol/m3
           sn_tracer(9)%clunit: umol/kg
           sn_tracer(10)%clunit: umol/kg
-          #sn_tracer(11)%clunit: mmol/m3
+          sn_tracer(11)%clunit: mmol/m3
 
           sn_tracer(1)%llinit: false
           sn_tracer(2)%llinit: true
@@ -1345,7 +1345,7 @@ choose_version:
           sn_tracer(8)%llinit: true
           sn_tracer(9)%llinit: true
           sn_tracer(10)%llinit: true
-          #sn_tracer(11)%llinit: true
+          sn_tracer(11)%llinit: true
           sn_tracer(1)%llsave: true
           sn_tracer(2)%llsave: true
           sn_tracer(3)%llsave: true
@@ -1356,7 +1356,7 @@ choose_version:
           sn_tracer(8)%llsave: true
           sn_tracer(9)%llsave: true
           sn_tracer(10)%llsave: true
-          #sn_tracer(11)%llsave: true
+          sn_tracer(11)%llsave: true
     
     add_coupling_fields:
         "[[opat_mops_fields-->FIELD]]":
@@ -1534,7 +1534,7 @@ choose_version:
       namelist_top_cfg:
         namtrc:
           sn_tracer: "remove_from_namelist"
-          sn_tracer(1)%clsname: AGE 
+          sn_tracer(1)%clsname: AGE
           sn_tracer(2)%clsname: PO4
           sn_tracer(3)%clsname: DOP
           sn_tracer(4)%clsname: O2
@@ -1546,21 +1546,52 @@ choose_version:
           sn_tracer(10)%clsname: ALK
           sn_tracer(11)%clsname: IDEAL
 
-          sn_tracer(1:11)%cllname: "     "
+          sn_tracer(1)%cllname: age
+          sn_tracer(2)%cllname: phosphate
+          sn_tracer(3)%cllname: dop
+          sn_tracer(4)%cllname: oxygen
+          sn_tracer(5)%cllname: phytoplankton
+          sn_tracer(6)%cllname: zooplankton
+          sn_tracer(7)%cllname: det
+          sn_tracer(8)%cllname: din
+          sn_tracer(9)%cllname: dic
+          sn_tracer(10)%cllname: alkalinity
+          sn_tracer(11)%cllname: ideal
 
           sn_tracer(1)%clunit: s
-          sn_tracer(2:8)%clunit: mmol/m3
-          sn_tracer(9:10)%clunit: umol/kg
+          sn_tracer(2)%clunit: mmol/m3
+          sn_tracer(3)%clunit: mmol/m3
+          sn_tracer(4)%clunit: mmol/m3
+          sn_tracer(5)%clunit: mmol/m3
+          sn_tracer(6)%clunit: mmol/m3
+          sn_tracer(7)%clunit: mmol/m3
+          sn_tracer(8)%clunit: mmol/m3
+          sn_tracer(9)%clunit: umol/kg
+          sn_tracer(10)%clunit: umol/kg
           sn_tracer(11)%clunit: mmol/m3
 
           sn_tracer(1)%llinit: false
           sn_tracer(2)%llinit: true
           sn_tracer(3)%llinit: false
           sn_tracer(4)%llinit: true
-          sn_tracer(5:7)%llinit: false
-          sn_tracer(8:11)%llinit: true
-
-          sn_tracer(1:11)%llsave: true
+          sn_tracer(5)%llinit: false
+          sn_tracer(6)%llinit: false
+          sn_tracer(7)%llinit: false
+          sn_tracer(8)%llinit: true
+          sn_tracer(9)%llinit: true
+          sn_tracer(10)%llinit: true
+          sn_tracer(11)%llinit: true
+          sn_tracer(1)%llsave: true
+          sn_tracer(2)%llsave: true
+          sn_tracer(3)%llsave: true
+          sn_tracer(4)%llsave: true
+          sn_tracer(5)%llsave: true
+          sn_tracer(6)%llsave: true
+          sn_tracer(7)%llsave: true
+          sn_tracer(8)%llsave: true
+          sn_tracer(9)%llsave: true
+          sn_tracer(10)%llsave: true
+          sn_tracer(11)%llsave: true
 
     add_input_files:
        # reference namelists

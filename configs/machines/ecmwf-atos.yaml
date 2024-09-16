@@ -125,6 +125,8 @@ export_vars:
         OMPI_MCA_btl: "^vader"
         # Ensure OpenMP correct pinning
         OMP_PLACES: "threads"
+        # To avoid segmentation faults
+        OMP_STACKSIZE: "128M"
         # Avoid PMI hangs with heterogeneous jobs
         SLURM_MPI_TYPE: "none"
         #UCX_TLS: "dc_x,self,sm"

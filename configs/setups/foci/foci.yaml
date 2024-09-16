@@ -33,7 +33,13 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "01:30:00"
-        
+        environment_changes:
+                choose_computer.name:
+                        glogin:
+                                add_export_vars:
+                                        - 'ECHAM6_THREADS=1'
+                                        - 'NEMO_THREADS=1'
+                                        - 'I_MPI_DEBUG=1'
         available_versions:
         - default
         - default_autotools
@@ -553,6 +559,8 @@ nemo:
                         version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
                 agrif_mops_oasismct4:
                         version: "ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4"
+                mops_oasismct4:
+                        version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}

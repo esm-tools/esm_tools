@@ -78,7 +78,7 @@ add_choose_heterogeneous_parallelization:
                     --ntasks=@nproc@
                     --cpus-per-task=@cpus_per_proc@
                     --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
-                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} \\\n@components@"
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
                 launcher_comp_sep: " \\\n:"
     false:
         cpu_bind: "cores"

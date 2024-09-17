@@ -14,7 +14,6 @@ partition: false
 exclusive: false
 additional_flags:
     - "--qos=np"
-    - "--ntasks-per-core=1"
     # No hyperthreading in ECMWF-ATOS
     - "--hint=nomultithread"
 

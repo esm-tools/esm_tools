@@ -191,6 +191,8 @@ class batch_system:
         if cluster in reserved_jobtypes:
             for model in config["general"]["valid_model_names"]:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
+                # CPUs per MPI-rank (e.g. aprun -d)
+                cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
 
                 if "nproc" in config[model]:
                     logger.info(f"nproc: {config[model]['nproc']}")
@@ -238,8 +240,8 @@ class batch_system:
                     cores_per_node = config["computer"]["partitions"]["pp"][
                         "cores_per_node"
                     ]
-                nodes += int(nproc * omp_num_threads / cores_per_node) + (
-                    (nproc * omp_num_threads) % cores_per_node > 0
+                nodes += int(nproc * cpus_per_proc / cores_per_node) + (
+                    (nproc * cpus_per_proc) % cores_per_node > 0
                 )
 
                 config[model]["threads"] = config[model]["tasks"] * omp_num_threads
@@ -856,7 +858,7 @@ class batch_system:
             ("@nnodes@", nodes),
             ("@nproc@", nproc),
             ("@nproc_per_node@", nproc_per_node),
-            ("@cpus_per_proc@", cpus_per_proc),
+            ("@cpus_per_proc@", int(cpus_per_proc)),
             ("@omp_num_threads@", omp_num_threads),
         ]
         # Replace all tags

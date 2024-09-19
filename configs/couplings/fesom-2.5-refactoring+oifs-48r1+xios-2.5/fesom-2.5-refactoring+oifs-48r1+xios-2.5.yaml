@@ -2,7 +2,7 @@ components:
 - xios-2.5-ece
 - rnfmap-v1.0
 - oifs-48r1
-- fesom-2.5
+- fesom-2.5-refactoring
 - oasis3mct-5.0-smhi
 coupling_changes:
 - sed -i '/CPLNG_ACTIVE = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90

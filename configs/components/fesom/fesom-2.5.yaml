@@ -6,7 +6,7 @@ branch: "2.5"
 version: "2.5"
 type: ocean
 
-comp_command: ${defaults.comp_command}
+comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
 clean_command: ${defaults.clean_command}
 
 # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
@@ -43,7 +43,6 @@ choose_version:
 
   "2.5-refactoring":
     branch: "refactoring"
-    comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
 
 destination: "fesom-2.5"
 install_bins: bin/fesom.x

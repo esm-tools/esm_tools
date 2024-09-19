@@ -5,10 +5,10 @@ general:
     account: "ab0246"
     compute_time: "01:00:00"
     initial_date: "2001-01-01"
-    final_date: "2001-01-04"
+    final_date: "2001-02-01"
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-    nday: 1
-    nmonth: 0
+    nday: 0
+    nmonth: 1
     nyear: 0
 
 computer:
@@ -29,4 +29,4 @@ oifs:
     lresume: false
     time_step: 3600
     nproc: 128
-    omp_num_threads: 1
+    omp_num_threads: 8

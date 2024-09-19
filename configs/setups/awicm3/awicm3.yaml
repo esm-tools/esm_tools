@@ -118,7 +118,7 @@ general:
           v3.3:
             major_version: v3.3
             couplings:
-            - fesom-2.5+oifs-48r1+xios-2.5
+            - fesom-2.5-refactoring+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             add_further_reading:

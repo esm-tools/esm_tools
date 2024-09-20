@@ -17,15 +17,21 @@ additional_flags:
     # No hyperthreading in ECMWF-ATOS
     - "--hint=nomultithread"
 
-taskset: false
+hetpar_type: standard
 hetjob_flag: "hetjob"
 heterogeneous_batch_resources: false
-choose_heterogeneous_batch_resources:
-    add_unset_vars:
-        - "SLURM_DISTRIBUTION"
-        - "SLURM_NTASKS"
-        - "SLURM_NPROCS"
-        - "SLURM_ARBITRARY_NODELIST"
+choose_heterogeneous_parallelization:
+    True:
+        add_choose_hetpar_type:
+            "taskset":
+                this_launcher_flags: "-l --mpi=pmi2"
+                add_unset_vars:
+                    - "SLURM_DISTRIBUTION"
+                    - "SLURM_NTASKS"
+                    - "SLURM_NPROCS"
+                    - "SLURM_ARBITRARY_NODELIST"
+            "*":
+                this_launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
 
 partitions:
         compute:
@@ -140,7 +146,7 @@ choose_useMPI:
                 cxx: mpicxx
 
 #launcher_flags: ""
-launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
+launcher_flags: "${this_launcher_flags}"
 
 further_reading:
         - batch_system/slurm.yaml

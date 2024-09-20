@@ -67,10 +67,12 @@ class Slurm:
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
 
-        if (
-            config["computer"].get("heterogeneous_parallelization", False)
-            and not config["computer"].get("hetpar_type", "standard") == "taskset"
-        ):
+        if config["computer"].get(
+            "heterogeneous_parallelization", False
+        ) and not config["computer"].get("hetpar_type", "standard") in [
+            "taskset",
+            "hostfile_srun",
+        ]:
             # Prepare heterogeneous parallelization call
             config["general"]["batch"].het_par_launcher_lines(config, cluster)
         else:
@@ -189,7 +191,8 @@ class Slurm:
         # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
         if (
             config["computer"].get("heterogeneous_parallelization", False)
-            and not config["computer"].get("hetpar_type", "standard") == "taskset"
+            and not config["computer"].get("hetpar_type", "standard")
+            in ["taskset", "hostfile_srun"]
             and config["computer"].get("heterogeneous_batch_resources")
         ):
             if "hetjob_flag" not in config["computer"]:
@@ -239,8 +242,9 @@ class Slurm:
     @staticmethod
     def write_het_par_wrappers(config):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
+        hetpar_type = config["computer"].get("hetpar_type", "standard")
 
-        scriptfolder = config["general"]["thisrun_scripts_dir"] + "../work/"
+        scriptfolder = f'{config["general"]["thisrun_scripts_dir"]}../work/'
         if config["computer"].get("heterogeneous_parallelization", False):
             for model in config["general"]["valid_model_names"]:
                 if "oasis3mct" == model:
@@ -261,53 +265,58 @@ class Slurm:
                 command = "./" + config[model].get(
                     "execution_command", config[model]["executable"]
                 )
-                scriptname = "script_" + model + ".sh"
-                with open(scriptfolder + scriptname, "w") as f:
-                    f.write("#!/bin/sh" + "\n")
+                scriptname = f"script_{model}.sh"
+                with open(f"{scriptfolder}/{scriptname}", "w") as f:
+                    f.write("#!/bin/sh\n")
                     f.write(
                         "export OMP_NUM_THREADS="
-                        + str(config[model].get("omp_num_threads", 1))
-                        + "\n"
+                        f'{str(config[model].get("omp_num_threads", 1))}\n'
                     )
-                    f.write(command + "\n")
-                os.chmod(scriptfolder + scriptname, 0o755)
+                    f.write(f"{command}\n")
+                os.chmod(f"{scriptfolder}/{scriptname}", 0o755)
 
-                progname = "prog_" + model + ".sh"
+                progname = f"prog_{model}.sh"
 
                 start_core = config[model]["start_core"]
                 end_core = config[model]["end_core"]
 
-                with open(scriptfolder + progname, "w") as f:
-                    f.write("#!/bin/sh" + "\n")
-                    f.write(
-                        "if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n"
-                    )
-                    f.write("(( init = $PMI_RANK ))" + "\n")
-                    f.write(
-                        "(( index = init * "
-                        + str(config[model].get("omp_num_threads", 1))
-                        + " ))"
-                        + "\n"
-                    )
-                    f.write("(( slot = index % " + str(cores_per_node) + " ))" + "\n")
-                    f.write(
-                        "echo "
-                        + model
-                        + " taskset -c $slot-$((slot + "
-                        + str(config[model].get("omp_num_threads", 1))
-                        + " - 1"
-                        + "))"
-                        + "\n"
-                    )
-                    f.write(
-                        "taskset -c $slot-$((slot + "
-                        + str(config[model].get("omp_num_threads", 1))
-                        + " - 1)) ./script_"
-                        + model
-                        + ".sh"
-                        + "\n"
-                    )
-                os.chmod(scriptfolder + progname, 0o755)
+                with open(f"{scriptfolder}/{progname}", "w") as f:
+                    f.write("#!/bin/sh\n")
+                    if hetpar_type == "taskset":
+                        f.write(
+                            "if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi"
+                            + "\n"
+                        )
+                        f.write("(( init = $PMI_RANK ))" + "\n")
+                        f.write(
+                            "(( index = init * "
+                            + str(config[model].get("omp_num_threads", 1))
+                            + " ))"
+                            + "\n"
+                        )
+                        f.write(
+                            "(( slot = index % " + str(cores_per_node) + " ))" + "\n"
+                        )
+                        f.write(
+                            "echo "
+                            + model
+                            + " taskset -c $slot-$((slot + "
+                            + str(config[model].get("omp_num_threads", 1))
+                            + " - 1"
+                            + "))"
+                            + "\n"
+                        )
+                        f.write(
+                            "taskset -c $slot-$((slot + "
+                            + str(config[model].get("omp_num_threads", 1))
+                            + " - 1)) ./script_"
+                            + model
+                            + ".sh"
+                            + "\n"
+                        )
+                    else:
+                        f.write(f"./script_{model}.sh\n")
+                os.chmod(f"{scriptfolder}{progname}", 0o755)
                 execution_command_het_par = f"prog_{model}.sh"
                 config[model]["execution_command_het_par"] = execution_command_het_par
         return config

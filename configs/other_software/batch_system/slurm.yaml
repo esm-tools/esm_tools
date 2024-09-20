@@ -68,6 +68,9 @@ add_choose_heterogeneous_parallelization:
             # Support for old taskset heterogeneous parallelization approach
             taskset:
                 srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
+            # Heterogeneous parallelization without taskset, but still using hostfile_srun and wrapper scripts that define OMP_NUM_THREADS (for AWI-CM3 performing better at ECMWF-Atos)
+            hostfile_srun:
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
             # Support for new packjob heterogeneous parallelization approach
             standard:
 

@@ -458,10 +458,9 @@ class batch_system:
             if batch_or_shell == "batch":
                 config = batch_system.calculate_requirements(config, cluster)
                 # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if (
-                    cluster in reserved_jobtypes
-                    and config["computer"].get("hetpar_type", "standard") == "taskset"
-                ):
+                if cluster in reserved_jobtypes and config["computer"].get(
+                    "hetpar_type", "standard"
+                ) in ["taskset", "hostfile_srun"]:
                     config = config["general"]["batch"].write_het_par_wrappers(config)
                 # Prepare launcher
                 config = config["general"]["batch"].prepare_launcher(config, cluster)

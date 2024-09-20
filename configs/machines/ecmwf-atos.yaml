@@ -30,6 +30,10 @@ choose_heterogeneous_parallelization:
                     - "SLURM_NTASKS"
                     - "SLURM_NPROCS"
                     - "SLURM_ARBITRARY_NODELIST"
+            "hostfile_srun":
+                add_additional_flags:
+                    - "--ntasks-per-core=1"
+                this_launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
             "*":
                 this_launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
 

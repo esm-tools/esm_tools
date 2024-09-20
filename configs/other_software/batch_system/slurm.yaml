@@ -58,18 +58,18 @@ thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${gener
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
-taskset: false
+hetpar_type: "standard"
 mt_launcher_flag: ""
 
 add_choose_heterogeneous_parallelization:
     true:
         cpu_bind: "none"
-        choose_taskset:
+        choose_hetpar_type:
             # Support for old taskset heterogeneous parallelization approach
-            true:
+            taskset:
                 srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
             # Support for new packjob heterogeneous parallelization approach
-            false:
+            standard:
 
  # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
                 launcher_flags_per_component: "

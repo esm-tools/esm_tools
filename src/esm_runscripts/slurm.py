@@ -67,9 +67,10 @@ class Slurm:
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
 
-        if config["computer"].get(
-            "heterogeneous_parallelization", False
-        ) and not config["computer"].get("taskset", False):
+        if (
+            config["computer"].get("heterogeneous_parallelization", False)
+            and not config["computer"].get("hetpar_type", "standard") == "taskset"
+        ):
             # Prepare heterogeneous parallelization call
             config["general"]["batch"].het_par_launcher_lines(config, cluster)
         else:
@@ -157,7 +158,7 @@ class Slurm:
 
         # TODO: remove it once it's not needed anymore (substituted by packjob)
         if config["computer"].get("heterogeneous_parallelization", False):
-            if config["computer"].get("taskset", False):
+            if config["computer"].get("hetpar_type", "standard") == "taskset":
                 self.add_hostlist_file_gen_lines(config, runfile)
 
     @staticmethod
@@ -188,7 +189,7 @@ class Slurm:
         # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
         if (
             config["computer"].get("heterogeneous_parallelization", False)
-            and not config["computer"].get("taskset", False)
+            and not config["computer"].get("hetpar_type", "standard") == "taskset"
             and config["computer"].get("heterogeneous_batch_resources")
         ):
             if "hetjob_flag" not in config["computer"]:
@@ -196,7 +197,7 @@ class Slurm:
                     "missing parameter",
                     "The parameter ``hetjob_flag`` (with values ``hetjob`` or "
                     "``patchjob``) needs to be defined for jobs where "
-                    "``heterogeneous_batch_resources`` is set to ``True``"
+                    "``heterogeneous_batch_resources`` is set to ``True``",
                 )
 
             this_batch_system = config["computer"]

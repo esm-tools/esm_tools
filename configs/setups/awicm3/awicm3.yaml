@@ -1008,7 +1008,7 @@ computer:
         # Activates the taskset approach for heterogeneous parallelization, by default
         # since hetjob approach doesn't seem to work (second run showing mpi/pmix
         # problems)
-        taskset: true
+        hetpar_type: taskset
 
         choose_computer.name:
                 blogin:

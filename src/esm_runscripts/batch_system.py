@@ -23,7 +23,6 @@ class UnknownBatchSystemError(Exception):
 
 
 class batch_system:
-
     # all wrappers to slurm, pbs and co as esm_runscript
     # should be written independent of actual batch system
     def __init__(self, config, name):
@@ -374,7 +373,6 @@ class batch_system:
 
     @staticmethod
     def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
-
         commands = []
         if subjob.startswith("compute"):
             if config["general"].get("submit_to_batch_system", True):
@@ -432,7 +430,6 @@ class batch_system:
 
     @staticmethod
     def write_simple_runscript(config, cluster, batch_or_shell="batch"):
-
         # if no cluster is specified, work on the one we are in
         # if not cluster:
         #    cluster = config["general"]["jobtype"]
@@ -457,14 +454,13 @@ class batch_system:
         logger.debug(f"writing run file for: {cluster}")
 
         with open(runfilename, "w") as runfile:
-
             # batch header (if any)
             if batch_or_shell == "batch":
-
                 config = batch_system.calculate_requirements(config, cluster)
                 # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if cluster in reserved_jobtypes and config["computer"].get(
-                    "taskset", False
+                if (
+                    cluster in reserved_jobtypes
+                    and config["computer"].get("hetpar_type", "standard") == "taskset"
                 ):
                     config = config["general"]["batch"].write_het_par_wrappers(config)
                 # Prepare launcher
@@ -484,7 +480,6 @@ class batch_system:
 
             if clusterconf:
                 for subjob in clusterconf["subjobs"]:
-
                     # environment for each subjob of a cluster
                     environment = batch_system.get_environment(config, subjob)
                     batch_system.write_env(config, environment, runfilename)
@@ -838,7 +833,6 @@ class batch_system:
             cpus_per_proc = 1
             omp_num_threads = 1
         else:
-
             # kh 22.06.22 defensive (user_error/user_note could also be added here)
             nproc = 0
             cpus_per_proc = 0

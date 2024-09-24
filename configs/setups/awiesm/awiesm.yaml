@@ -95,7 +95,7 @@ general:
           '2.1-paleodyn-2.5':
             couplings:
             - fesom-2.5+echam-6.3.05p2-awiesm-2.1
-            fesom_Dflags: "-DFESOM_COUPLED=ON"
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../"
             with_recom: false
           '2.1':
             couplings:

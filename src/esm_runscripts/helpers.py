@@ -1,14 +1,15 @@
+import os
 import sys
 from datetime import datetime
 
 import colorama
 import git
+import yaml
 from loguru import logger
 
 import esm_parser
 import esm_plugin_manager
 import esm_tools
-from loguru import logger
 from esm_profile import print_profile_summary
 
 
@@ -22,7 +23,6 @@ def print_datetime(config):
 
 
 def evaluate(config, job_type, recipe_name):
-
     # Check for a user defined compute recipe in the setup section of the
     # general section. If nothing is found, recipe_steps should evaluate to
     # None and the default is used
@@ -334,7 +334,9 @@ def is_git_repo(path):
     except git.exc.InvalidGitRepositoryError:
         return False
     except git.exc.NoSuchPathError:
-        logger.error("You specified a non-existant directory")
+        logger.error(
+            f"esm_runscripts.helpers.is_git_repo points at a non-existing path: {path}"
+        )
         # Is False the right answer here? I am not 100% sure...
         return False
 
@@ -369,7 +371,7 @@ def get_git_hash(path, allow_dirty=True):
         raise GitDirtyError(
             f"Your repo at {path} is dirty, thus the git hash is not meaningful!"
         )
-    return repo.git.rev_parse(repo.head, short=True)
+    return repo.git.rev_parse(repo.head, short=False)
 
 
 def get_git_branch(path):
@@ -445,3 +447,49 @@ def get_all_git_info(path):
         "diffs": get_git_diffs(path, add_colors=False),
     }
     return git_info
+
+
+class CachedFile:
+    """
+    Represents a file that might already have saved information somewhere. Can be used to check if a cache is valid
+    """
+
+    def __init__(self, path):
+        self.path = path
+
+    def is_younger_than(self, other, check_by="atime"):
+        if not os.path.exists(self.path):
+            return False
+        if check_by == "atime":
+            logger.debug("Checking access times:")
+            logger.debug(
+                f"{self.path}: {datetime.fromtimestamp(os.path.getatime(self.path))}"
+            )
+            logger.debug(f"{other}: {datetime.fromtimestamp(os.path.getatime(other))}")
+            am_I_younger = os.path.getatime(self.path) > os.path.getatime(other)
+            if am_I_younger:
+                logger.debug(f"This file {self.path} is younger than {other}")
+            return am_I_younger
+        else:
+            raise ValueError("Invalid check_by value. Only 'atime' is supported.")
+
+    def is_older_than(self, other, check_by="atime"):
+        if not os.path.exists(self.path):
+            return False
+        if check_by == "atime":
+            logger.debug("Checking access times:")
+            logger.debug(
+                f"{self.path}: {datetime.fromtimestamp(os.path.getatime(self.path))}"
+            )
+            logger.debug(f"{other}: {datetime.fromtimestamp(os.path.getatime(other))}")
+            return os.path.getatime(self.path) < os.path.getatime(other)
+        else:
+            raise ValueError("Invalid check_by value. Only 'atime' is supported.")
+
+    def read(self):
+        with open(self.path, "r") as f:
+            return f.read()
+
+    def load_cache(self):
+        data = self.read()
+        return yaml.safe_load(data)

@@ -2,17 +2,19 @@ import copy
 import logging
 import os
 import sys
+from datetime import datetime
 
 import questionary
 import yaml
+from loguru import logger
 
 import esm_parser
 import esm_utilities
 from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
-from loguru import logger
 
 from . import batch_system, helpers
+from .checksum_helpers import AuditFile
 
 
 def run_job(config):
@@ -93,7 +95,6 @@ def check_model_lresume(config):
                     model, user_lresume, config, [], []
                 )
             if isinstance(user_lresume, str):
-
                 if user_lresume == "0" or user_lresume.upper() == "FALSE":
                     user_lresume = False
                 elif user_lresume == "1" or user_lresume.upper() == "TRUE":
@@ -355,7 +356,6 @@ def set_leapyear(config):
 
 
 def set_overall_calendar(config):
-
     # set the overall calendar
     if config["general"]["leapyear"]:
         config["general"]["calendar"] = Calendar(1)
@@ -365,7 +365,6 @@ def set_overall_calendar(config):
 
 
 def find_last_prepared_run(config):
-
     calendar = config["general"]["calendar"]
     current_date = Date(config["general"]["current_date"], calendar)
     initial_date = Date(config["general"]["initial_date"], calendar)
@@ -409,7 +408,6 @@ def find_last_prepared_run(config):
 
 
 def set_most_dates(config):
-
     calendar = config["general"]["calendar"]
     if isinstance(config["general"]["current_date"], Date):
         current_date = config["general"]["current_date"]
@@ -679,6 +677,30 @@ def set_parent_info(config):
     return config
 
 
+def add_checksum_and_timestamp_model_src_info(config):
+    """
+    Provides a checksum and modification time information for model source folders
+    """
+    checksum_logger = logger.add(
+        f"{config['general']['experiment_log_dir']}/vcs_info_and_cache.log"
+    )
+    audit_log = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_src_audit.yaml"
+    all_models = config.get("general", {}).get("models", [])
+    audits = {}
+    for model in all_models:
+        audit = audits[model] = {}
+        model_dir = config[model]["model_dir"]
+        for root, _, files in os.walk(model_dir):
+            for file in files:
+                audit[f"{root}/{file}"] = d = AuditFile(f"{root}/{file}").to_dict()
+                logger.debug(d)
+    if config["general"]["run_number"] == 1:
+        esm_parser.yaml_dump(audits, audit_log)
+
+    logger.remove(checksum_logger)
+    return config
+
+
 def add_vcs_info(config):
     """
     Adds version control system information in a plain text yaml file under the
@@ -694,9 +716,23 @@ def add_vcs_info(config):
     config : dict
         The experiment configuration
     """
+    vcs_logger = logger.add(
+        f"{config['general']['experiment_log_dir']}/vcs_info_and_cache.log"
+    )
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    esm_vcs_info_file_cache = helpers.CachedFile(
+        f"{config['general']['experiment_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
+    )
     logger.debug("Experiment information is being stored for usage under:")
     logger.debug(f">>> {exp_vcs_info_file}")
+    if os.path.exists(esm_vcs_info_file_cache.path):
+        logger.debug(">>> CACHE FILE EXISTS!")
+        logger.debug(
+            f">>> Last modification time of cache: {datetime.fromtimestamp(os.path.getmtime(esm_vcs_info_file_cache.path))}"
+        )
+    else:
+        logger.debug(">>> CACHE FILE DOES NOT EXIST!")
+        logger.debug(f"I was looking for: {esm_vcs_info_file_cache.path}")
     vcs_versions = {}
     all_models = config.get("general", {}).get("models", [])
     for model in all_models:
@@ -708,7 +744,14 @@ def add_vcs_info(config):
             vcs_versions[model] = f"Unable to locate model_dir for {model}."
             continue
         if helpers.is_git_repo(model_dir):
-            vcs_versions[model] = helpers.get_all_git_info(model_dir)
+            if esm_vcs_info_file_cache.is_younger_than(model_dir):
+                logger.debug(f"Using cached VCS info for {model}")
+                cached_info = esm_vcs_info_file_cache.load_cache()
+                vcs_versions[model] = cached_info[model]
+            else:
+                logger.debug("Cache file is older than model. Updating cache...")
+                logger.debug(f"Getting get info for {model_dir}")
+                vcs_versions[model] = helpers.get_all_git_info(model_dir)
         else:
             vcs_versions[model] = "Not a git-controlled model!"
 
@@ -720,10 +763,16 @@ def add_vcs_info(config):
     else:
         # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
         esm_parser.user_error(
-            "esm_tools doesn't know where it's own install location is. Something is very seriously wrong."
+            "VCS Info",
+            "esm_tools doesn't know where it's own install location is. Something is very seriously wrong.",
         )
-    with open(exp_vcs_info_file, "w") as f:
-        yaml.dump(vcs_versions, f)
+
+    # FIXME(PG): This is bad. It doesn't really help with caching, since the info is dumped every single time...
+    esm_parser.yaml_dump(vcs_versions, exp_vcs_info_file)
+
+    logger.debug(exp_vcs_info_file)
+    logger.remove(vcs_logger)
+
     return config
 
 
@@ -793,7 +842,6 @@ def finalize_config(config):
 
 
 def add_submission_info(config):
-
     bs = batch_system.batch_system(config, config["computer"]["batch_system"])
 
     submitted = bs.check_if_submitted()
@@ -808,7 +856,6 @@ def add_submission_info(config):
 
 
 def initialize_batch_system(config):
-
     config["general"]["batch"] = batch_system.batch_system(
         config, config["computer"]["batch_system"]
     )

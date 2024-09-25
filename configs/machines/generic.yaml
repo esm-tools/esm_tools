@@ -31,7 +31,7 @@ pool_dir:  "/path/not/set/for/generic/yaml/"
 
 # standard environment setup
 module_actions:
-   - "load something"
+    - "load null"  # NOTE(PG): The `null` module is provided as an example by modern modulefiles distributions
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "unset"

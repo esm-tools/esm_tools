@@ -33,7 +33,7 @@ requirements = [
     "semver==2.13.0",
     "sqlalchemy==1.4.39",
     "tabulate==0.8.10",
-    "tqdm==4.64.0",
+    "tqdm==4.66.3",
     "typing_extensions==4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",
     "pydantic==1.10.2",
@@ -107,6 +107,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.38.0",
+    version="6.38.1",
     zip_safe=False,
 )

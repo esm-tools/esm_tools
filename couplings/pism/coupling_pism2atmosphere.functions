@@ -12,6 +12,9 @@ function pism2atmosphere {
 
         echo "PISM_TO_ATMOSPHERE=${PISM_TO_ATMOSPHERE}"
 
+        echo "LA DEBUG: first_year_in_chunk_input = ${first_year_in_chunk_input}"
+        echo "LA DEBUG: last_year_in_chunk_restart = ${last_year_in_chunk_restart}"
+
         if [[ $PISM_TO_ATMOSPHERE -eq 1 ]]; then
                 iterative_coupling_pism_atmosphere_write_grid
                 iterative_coupling_pism_atmosphere_write_names
@@ -27,6 +30,7 @@ function iterative_coupling_pism_atmosphere_make_forcing {
         pism_atmosphere_get_newest_output
         pism_atmosphere_update_domain_mask
         pism_atmosphere_generate_orography_anomaly
+        pism_atmosphere_generate_ice_thickness_anomaly
         pism_atmosphere_generate_runoff
         pism_atmosphere_assemble_final_file
 }
@@ -85,16 +89,19 @@ function pism_atmosphere_get_newest_output {
                 j=$(( $i + ${NYEAR} -1 ))
                 if [ ${i} -lt 10 ]; then i=0${i}; fi
                 IFILE="${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}0101-${j}1231.nc"
-                if [[ -f ${IFILE}.ymonmean ]]; then 
-                        IFILE=${IFILE}.ymonmean
-                        PISM_cleanup_list="${PISM_cleanup_list} ${IFILE}"
+                #if [[ -f ${IFILE}.ymonmean ]]; then 
+                #        IFILE=${IFILE}.ymonmean
+                #        PISM_cleanup_list="${PISM_cleanup_list} ${IFILE}"
+                #fi
+                #OFILE="${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc"
+                #cdo -ymonmean \
+                #    -select,name="${CDO_SELECT_VAR_LIST}" \
+                #    ${IFILE} \
+                #    ${OFILE} 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+                #echo; echo " * i = ${i} "; PISM_OFILE_LIST="${PISM_OFILE_LIST} ${OFILE}"; 
+                if [[ -f ${IFILE} ]]; then 
+                    PISM_OFILE_LIST="${PISM_OFILE_LIST} ${IFILE}"
                 fi
-                OFILE="${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${i}.tendency.timmean.nc"
-                cdo -ymonmean \
-                    -select,name="${CDO_SELECT_VAR_LIST}" \
-                    ${IFILE} \
-                    ${OFILE} 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-                echo; echo " * i = ${i} "; PISM_OFILE_LIST="${PISM_OFILE_LIST} ${OFILE}"; 
             done
 
             echo; echo "                *   Concatenating these files: ${PISM_OFILE_LIST} "
@@ -172,6 +179,15 @@ function pism_atmosphere_generate_orography_anomaly {
         echo; echo "                 Generating orography anomaly..."
         generate_orography_anomaly_over_pism_run
         correct_lonlat_order ${COUPLE_DIR}/ice_orog_difference.nc
+        echo; echo "                  ...done."
+}
+
+function pism_atmosphere_generate_ice_thickness_anomaly {
+        echo; echo "                 Generating ice_thickness anomaly..."
+        generate_ice_thickness_anomaly_over_pism_run
+        correct_lonlat_order ${COUPLE_DIR}/ice_thk_above_flotation_difference.nc
+        correct_lonlat_order ${COUPLE_DIR}/ice_thk_difference.nc
+        convert_ice_thk_diff_to_flux_over_pism_run
         echo; echo "                  ...done."
 }
 
@@ -255,21 +271,73 @@ function update_domain_mask_set_mask_values_to_binary {
         unset ifile ofile
 }
 
+function generate_ice_thickness_anomaly_over_pism_run { 
+        echo ""; echo "                 *   calculating ice thickness change over the last pism chunk"
+        ifile1=${last_year_in_chunk_restart}
+        ifile2=${first_year_in_chunk_input}
+        ofile1=${COUPLE_DIR}/ice_thk_above_flotation_difference.nc
+        ofile2=${COUPLE_DIR}/ice_thk_difference.nc
+        cdo -s -expr,"thk_topg=thk+topg" \
+                $ifile1 \
+                tmp1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        
+        cdo -s -expr,"thk_topg=thk+topg" \
+                $ifile2 \
+                tmp2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        
+        cdo -s -chname,"thk_topg","thk_diff" \
+                -sub \
+                -ifthen -gtc,0 tmp1 tmp1 \
+                -ifthen -gtc,0 tmp2 tmp2 \
+                $ofile1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        
+        rm tmp1 tmp2
+
+        cdo -s -chname,"thk","thk_diff" \
+                -sub \
+                -selvar,"thk" \
+                $ifile1 \
+                -selvar,"thk" \
+                $ifile2 \
+                $ofile2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        
+        #ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        #mv tmp.nc $ofile
+}
+
+function convert_ice_thk_diff_to_flux_over_pism_run {
+        echo ""; echo "                 *   converting thickness difference to freshwater flux over the last pism chunk"
+        ifile1=${COUPLE_DIR}/ice_thk_above_flotation_difference.nc
+        ifile2=${COUPLE_DIR}/ice_thk_difference.nc
+        ofile1=${COUPLE_DIR}/ice_runoff_from_thk_above_flotation_difference.nc
+        ofile2=${COUPLE_DIR}/ice_runoff_from_thk_difference.nc
+
+        cdo -s -divc,${CHUNK_SIZE_pism_standalone} \
+                -chname,"thk_diff","runoff" \
+                -mulc,910 \
+                $ifile1 \
+                $ofile1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        
+        cdo -s -divc,${CHUNK_SIZE_pism_standalone} \
+                -chname,"thk_diff","runoff" \
+                -mulc,910 \
+                $ifile2 \
+                $ofile2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                #-mulc,${RES_pism//km} \
+                #-mulc,${RES_pism//km} \
+}
+
 function generate_orography_anomaly_over_pism_run { 
         echo ""; echo "                 *   calculating surface height change over the last pism chunk"
-        ifile=${newest_pism_file_chunk}
-        rfile=${IFILE_pism}
+        ifile1=${last_year_in_chunk_restart}
+        ifile2=${first_year_in_chunk_input}
         ofile=${COUPLE_DIR}/ice_orog_difference.nc
-        # FIXME: If the very first year, then we need to construct usurf from topg+thk
-        #        If not, the output already has usurf...
         cdo -s -sub \
                 -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
-                -seltimestep,-1 \
-                -selvar,${OROG_VARNAME_pism} \
-                $ifile \
-                -seltimestep,1 \
-                -selvar,${OROG_VARNAME_pism} \
-                $ifile \
+                -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                $ifile1 \
+                -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                $ifile2 \
                 $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
 
         ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
@@ -278,7 +346,12 @@ function generate_orography_anomaly_over_pism_run {
 
 function generate_runoff_select_variables {
         echo ""; echo "                 *   selecting vars"
-        ifile=${newest_pism_file}
+        # LA account_all_fw_input needs to be defined
+        if [[ "x${account_all_fw_input}" == "x1" ]]; then
+            ifile=${COUPLE_DIR}/ice_runoff_from_thk_difference.nc
+        else
+            ifile=${COUPLE_DIR}/ice_runoff_from_thk_above_flotation_difference.nc
+        fi
         ofile=${COUPLE_DIR}/ice_runoff.nc
 
 	case ${VERSION_pism:--0.1} in
@@ -300,7 +373,7 @@ function generate_runoff_select_variables {
                     PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_discharge" "tendency_of_ice_amount") # "tendency_of_ice_amount_due_to_calving")
                 #***************************************************************************
                 else
-                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount"}
+                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"runoff"}
 	        fi
             ;;
 	*)
@@ -358,7 +431,7 @@ function generate_runoff_transform_units {
 		    #ncatted -a units,tendency_of_ice_amount_due_to_basal_mass_flux,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
         #***************************************************************************
 		else
-            ncatted -a units,tendency_of_ice_amount,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
+            ncatted -a units,runoff,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
 		fi
                 ;;
 	*)
@@ -436,7 +509,7 @@ function generate_runoff_combine_fields {
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
                     ncrename -v tendency_of_ice_amount,total_ice_mass_loss_flux $ofile
                 else
-                    ncrename -v tendency_of_ice_amount,total_ice_mass_loss_flux $ofile
+                    ncrename -v runoff,total_ice_mass_loss_flux $ofile
 		fi
                 ;;
     	esac

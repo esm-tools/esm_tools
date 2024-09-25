@@ -4,5 +4,5 @@ intermediate_movements:
 - "config"
 - "bin"
 - "input"
-compute_file_checksums: True
-parallel_file_movements: threads
+compute_file_checksums: False
+parallel_file_movements: False

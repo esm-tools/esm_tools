@@ -57,6 +57,10 @@ cmip5_data_dir_nml: ${cmip5_data_dir}
 restart_dir: ""
 in_date_folder: "${parent_date!syear!smonth!sday}"
 out_date_folder: "${end_date!syear!smonth!sday}"
+buildtype_flag: "" # "--build-type Debug"  TODO: https://github.com/esm-tools/esm_tools/issues/1221
+xios_flag: ""
+cplng_flag: ""
+
 
 parent_expid: "test"
 parent_dir: "${pool_dir}/OPENIFS43R3-TCO95/restart/${parent_expid}"
@@ -273,8 +277,8 @@ choose_version:
     major_version: 43r3
   48r1:
     branch: 'dev/integrate-with-ece4'
-    #comp_command: "./openifs-bundle create; ./openifs-bundle build --build-type Debug --threads=32 --openifs-only --without-single-precision --with-oifs-xios --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
-    #comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+    # --build-type Debug
+    comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
     clean_command: rm -rf build
     executable: OpenIFS
     git-repository: https://git.smhi.se/uwe.fladrich/oifs48r1

@@ -15,7 +15,6 @@
 name: esm_tools
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - python=3.9
   - Click>=7.0
@@ -36,6 +35,7 @@ dependencies:
   - questionary
   - ruamel.yaml==0.17.32
   - semver
+  - setuptools<=65.5.1
   - sqlalchemy
   - tabulate
   - tqdm

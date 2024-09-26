@@ -1,0 +1,35 @@
+<axis_definition>
+  <!-- Definition of model levels axes -->
+  <axis_group id="ml_axes" unit="-" positive="up" >
+    <axis id="model_levels" long_name="vertical model levels" />
+    <axis id="model_levels_zoom" long_name="vertical model levels zoom" axis_ref="model_levels" >
+      <zoom_axis index="(0,10)[0 1 2 3 4 23 24 25 26 78 79]" />
+    </axis>
+  </axis_group>
+
+  <!-- Definition of pressure levels axes -->
+  <axis_group id="pl_axes" unit="Pa" positive="up" >
+    <axis id="pressure_levels" long_name="vertical pressure levels" n_glo="19" value="(0,18)[100000.0 92500.0 85000.0 70000.0 60000.0 50000.0 40000.0 30000.0 25000.0 20000.0 15000.0 10000.0 7000.0 5000.0 3000.0 2000.0 1000.0 500.0 100.0]" />
+    <!--<axis id="pressure_levels" long_name="vertical pressure levels" n_glo="39" value="(0,38)[100000.0 92500.0 85000.0 70000.0 60000.0 50000.0 40000.0 30000.0 25000.0 20000.0 17000.0 15000.0 13000.0 11500.0 10000.0 9000.0 8000.0 7000.0 5000.0 3000.0 2000.0 1500.0 1000.0 700.0 500.0 300.0 200.0 150.0 100.0 70.0 50.0 40.0 30.0 20.0 15.0 10.0 7.0 5.0 3.0]" />-->
+    <axis id="pressure_levels_zoom" long_name="vertical pressure levels zoom" axis_ref="pressure_levels" >
+      <zoom_axis index="(0,2)[10 11 12]" />
+    </axis>
+  </axis_group>
+
+  <!-- Definition of theta levels axes -->
+  <axis_group id="th_axes" unit="K" positive="up" >
+    <axis id="theta_levels" long_name="vertical theta (potential temperature) levels" n_glo="3" value="(0,2)[300 320 360]" />
+    <axis id="theta_levels_zoom" long_name="vertical theta (potential temperature) levels zoom" axis_ref="theta_levels" >
+      <zoom_axis index="(0,1)[0 2]" />
+    </axis>
+  </axis_group>
+
+  <!-- Definition of PV levels axes -->
+  <axis_group id="pv_axes" unit="PVU" positive="up" >
+    <axis id="pv_levels" long_name="vertical potential vorticity (PV) levels" n_glo="2" value="(0,1)[2.e-6 3.e-6]" />
+    <axis id="pv_levels_zoom" long_name="vertical potential vorticity (PV) levels zoom" axis_ref="pv_levels" >
+      <!-- <zoom_axis begin="1" n="1" /> -->
+      <zoom_axis index="(0,0)[1]" />
+    </axis>
+  </axis_group>
+</axis_definition>

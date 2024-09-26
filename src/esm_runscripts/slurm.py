@@ -163,6 +163,14 @@ class Slurm:
             if config["computer"].get("hetpar_type", "standard") == "taskset":
                 self.add_hostlist_file_gen_lines(config, runfile)
 
+        conda_env = config["computer"].get("conda", {}).get("env", False)
+        if conda_env:
+            # TODO check if conda module is loaded already
+            path = config["computer"].get("conda", {}).get("path", None)
+            if path:
+                runfile.write(f"source {path}/bin/activate\n")
+            runfile.write(f"conda activate {conda_env}\n")
+
     @staticmethod
     def het_par_headers(config, cluster, headers):
         """

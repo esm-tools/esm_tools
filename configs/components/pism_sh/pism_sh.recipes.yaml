@@ -29,6 +29,7 @@ prepcompute_recipe:
         
           #- "add_batch_hostfile"
         - "copy_files_to_work"
+        - "compute_and_log_file_checksums"
           #- "write_simple_runscript"
         - "report_missing_files"
         - "database_entry"

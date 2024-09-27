@@ -519,6 +519,6 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
         method = filelists.get_method(copy_or_link)
 
         if os.path.isfile(f"{source}/{filename}"):
-            method(f"{source}/{filename}", f"{dest}/{filename}")
+            method(config, f"{source}/{filename}", f"{dest}/{filename}")
 
     return config

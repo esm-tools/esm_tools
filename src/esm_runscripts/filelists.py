@@ -724,8 +724,8 @@ def replace_year_placeholder(config):
                 year = config["general"]["current_date"].year
 
                 for file_category in config[model][filetype + "_targets"]:
-                    if (
-                        isinstance(config[model][filetype + "_sources"][file_category], dict)
+                    if isinstance(
+                        config[model][filetype + "_sources"][file_category], dict
                     ):
                         config[model][filetype + "_sources"][
                             file_category

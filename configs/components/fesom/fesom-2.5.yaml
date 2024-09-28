@@ -153,6 +153,8 @@ choose_resolution:
                 nx: 33348172
         SO3:
                 nx: 11087062
+        Arc01_fesom2:
+                nx: 753179
 
 
 restart_in_files:
@@ -250,6 +252,7 @@ choose_with_icb:
             - "modify_files"
             - "copy_files_to_work"
             - "report_missing_files"
+            - "compute_and_log_file_checksums"
             - "_write_finalized_config"
             - "database_entry"
 

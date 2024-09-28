@@ -13,9 +13,9 @@ import sys
 import warnings
 
 import f90nml
+from loguru import logger
 
 from esm_parser import user_error
-from loguru import logger
 
 
 class Namelist:
@@ -416,6 +416,8 @@ class Namelist:
                         logger.error("echam:")
                         logger.error("    transient_forcing_table: /path/to/your/table")
                         sys.exit(1)
+                    # TODO(PG): This is a bit harsh, but until we get a better idea, dump the error:
+                    logger.error(e)
                     sys.exit(1)
         return config
 
@@ -465,7 +467,9 @@ class Namelist:
                 nml["dynctl"] = dynctl
             else:
                 logger.debug("Not applying disturbance in echam namelist.")
-                logger.debug(f"Current year: {current_year}, disturbance_years: {disturbance_years}")
+                logger.debug(
+                    f"Current year: {current_year}, disturbance_years: {disturbance_years}"
+                )
         return config
 
     @staticmethod

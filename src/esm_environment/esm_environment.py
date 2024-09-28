@@ -55,7 +55,7 @@ class EnvironmentInfos:
         if complete_config and "computer" in complete_config:
             self.config = complete_config["computer"]
         else:
-            self.machine_file = esm_parser.determine_computer_from_hostname()
+            self.machine_file = esm_parser.determine_computer_yaml_from_hostname()
             self.config = esm_parser.yaml_file_to_dict(self.machine_file)
             esm_parser.basic_choose_blocks(self.config, self.config)
             esm_parser.recursive_run_function(
@@ -620,7 +620,7 @@ class EnvironmentInfos:
         return f"{name}_script.sh"
 
     def output(self):
-        esm_parser.pprint_config(self.config)
+        self.config.yaml_dump()
 
 
 class environment_infos(EnvironmentInfos):

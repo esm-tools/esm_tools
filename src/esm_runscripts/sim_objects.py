@@ -6,12 +6,14 @@ import sys
 
 from loguru import logger
 
+import esm_parser
+from esm_tools import __version__
+
 from . import (config_initialization, helpers, logfiles, prepare, prepexp,
                prev_run, resubmit, workflow)
 
 
 class SimulationSetup(object):
-
     def __init__(self, command_line_config=None, user_config=None):
         """
         Initializes the ``SimulationSetup`` object, and prepares the ``self.config`` by
@@ -104,6 +106,9 @@ class SimulationSetup(object):
         # 11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
         self.config = prepare.run_job(self.config)
 
+        # 12. Store the ESM-Tools version in the config for later reference
+        self.config["general"]["esm_tools_version"] = __version__
+
     def __call__(self, kill_after_submit=True):
         # Trigger inspect functionalities
         if self.config["general"]["jobtype"] == "inspect":
@@ -164,7 +169,6 @@ class SimulationSetup(object):
     #########################     OBSERVE      #############################################################
 
     def observe(self):
-
         from . import observe
 
         self.config = observe.run_job(self.config)
@@ -239,8 +243,8 @@ class SimulationSetup(object):
 
     def store_prev_objects(self):
         self.config.prev_objects = ["prev_run"]
-        self.config.prev_objects.extend(self.config["general"].get(
-            "prev_chunk_objs", [])
+        self.config.prev_objects.extend(
+            self.config["general"].get("prev_chunk_objs", [])
         )
         if "prev_chunk_objs" in self.config["general"]:
             del self.config["general"]["prev_chunk_objs"]

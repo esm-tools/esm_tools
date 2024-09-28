@@ -3,7 +3,6 @@ import glob
 import os
 import sys
 
-from esm_parser import pprint_config
 from loguru import logger
 
 from . import workflow
@@ -43,7 +42,7 @@ def inspect_namelists(config):
 
 def inspect_config(config):
     if config["general"]["inspect"] == "config":
-        pprint_config(config)
+        config.yaml_dump()
         sys.exit(0)
     return config
 

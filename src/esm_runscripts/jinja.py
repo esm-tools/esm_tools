@@ -52,18 +52,3 @@ def render_template(config, source, target):
     # Write the rendered file
     with open(target, "w") as f:
         f.write(content)
-
-
-if __name__ == "__main__":
-    config = {
-        "xios": {
-            "ni_glo": 400,
-            "nj_glo": 600,
-        },
-    }
-
-    render_template(
-        config,
-        "/Users/mandresm/Codes/esm_tools/namelists/oifs/43r3/xios/domain_def.j2",
-        "out_file.xml",
-    )

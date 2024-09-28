@@ -12,6 +12,7 @@ Welcome to ESM Tools's documentation!
    installation
    esm_tools
    yaml
+   jinja
    yaml_hierarchy
    esm_variables
    esm_master

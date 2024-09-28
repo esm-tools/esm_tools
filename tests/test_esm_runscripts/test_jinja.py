@@ -3,6 +3,7 @@
 """ Tests for ``esm_runscripts.jinja``"""
 import copy
 import sys
+import tempfile
 import unittest
 from io import StringIO
 
@@ -14,6 +15,19 @@ config = {
         "nj_glo": 600,
     },
 }
+
+template = """<domain_definition>
+  <!-- Definition of the native domain of the model -->
+  <domain id="reduced_gaussian" long_name="reduced Gaussian grid" type="gaussian" />
+
+  <!-- Definition of regular Gaussian domains -->
+  <domain_group id="regular_domains" type="rectilinear" >
+    <domain id="regular" long_name="regular grid" ni_glo="{{ xios['ni_glo'] }}" nj_glo="{{ xios['nj_glo'] }}" >
+      <generate_rectilinear_domain />
+      <interpolate_domain order="1" write_weight="true" />
+    </domain>
+  </domain_group>
+</domain_definition>"""
 
 rendered_file = """<domain_definition>
   <!-- Definition of the native domain of the model -->
@@ -49,12 +63,17 @@ class TestJinja(unittest.TestCase):
     def setUp(self):
         """Prepares everything to might be needed"""
         self.config = config
+        self._test_dir = tempfile.mkdtemp()
+        with open(f"{self._test_dir}/template.j2", "w") as f:
+            f.write(template)
 
     def test_jinja(self):
         """Tests whether jinja is working correctly"""
-        jinja.render_template(self.config, "template.j2", "output.xml")
+        jinja.render_template(
+            self.config, f"{self._test_dir}/template.j2", f"{self._test_dir}/output.xml"
+        )
 
-        with open("output.xml", "r") as f:
+        with open(f"{self._test_dir}/output.xml", "r") as f:
             output = f.read()
 
         assert output == rendered_file
@@ -64,9 +83,13 @@ class TestJinja(unittest.TestCase):
         Checks that the error is raised when the rendered file still contains the j2
         extension
         """
-        jinja.render_template(self.config, "template.j2", "output.xml.j2")
+        jinja.render_template(
+            self.config,
+            f"{self._test_dir}/template.j2",
+            f"{self._test_dir}/output.xml.j2",
+        )
 
-        with open("output.xml", "r") as f:
+        with open(f"{self._test_dir}/output.xml", "r") as f:
             output = f.read()
 
         assert output == rendered_file
@@ -81,7 +104,11 @@ class TestJinja(unittest.TestCase):
 
         with Capturing() as output:
             try:
-                jinja.render_template(cconfig, "template.j2", "output.xml")
+                jinja.render_template(
+                    cconfig,
+                    f"{self._test_dir}/template.j2",
+                    f"{self._test_dir}/output.xml",
+                )
             except SystemExit as e:
                 error = e
 

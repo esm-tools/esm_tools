@@ -1,0 +1,82 @@
+# LPJ-GUESS 4
+#
+# For more information about the extended YAML syntax, please consult:
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#esm-tools-extended-yaml-syntax
+#
+# For more information about the ESM-Tools feature variables available, please consult:
+# https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
+
+model: lpj_guess
+version: 4.1.1
+
+metadata:
+        Institute: Lund Universitiy
+        Description:
+                Dynamic vegetation model
+        Authors: Ben Smith
+        Publications:
+                - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637."
+                - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185."
+                - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development - Preprint"
+                - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. https://doi.org/10.5281/zenodo.8065737"
+        License: Mozilla Public License Version 2.0
+                
+
+git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
+branch: main
+comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
+install_bins: "build/guess"
+clean_command: "rm -rf build"
+executable: guess
+execution_command: ${executable} ${runscript_name}
+
+choose_version:
+    # Here you can place all the variables you would want to control via the version
+    # variable above (for example, you could also add ``git-repository``,
+    # ``comp_command``, ``destination``, ...) 
+    4.1.1:
+        runscript_name: run_trunk_4_1.ins
+        git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
+        branch: main
+
+# ``model_dir`` let's ESM-Tools know where is the source code of your component (must
+# be an absolute path). Normally, changed via the runscript. We recommend you leave it
+# as below, changing only the ``name_of_your_model`` part to whatever you defined as 
+# the ``model`` var. This will automatically select the source code for esm_master if
+# the command is operating with a coupled setup
+model_dir: "lpj-guess${version}"
+
+# This section takes care of dealing with environment changes you might want to do, to
+# deviated from the defaults define for the specific machine
+# (``configs/machine/<the_machine_used>.yaml``). For more information consult:
+# https://esm-tools.readthedocs.io/en/latest/esm_environment.html#esm-environment
+choose_computer.name:
+    levante:
+        pool_dir: "/work/ab0246/a270092/input/"
+
+# Some recommended defaults (restart for old experiment yes or no?)
+lresume: false
+
+# Some commonly used variables in other ESM-Tools components (but optional)
+input_dir: ${pool_dir}/lpj-guess/
+namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
+gridlist_dir: ${input_dir}/gridlists/
+forcing_dir: ${input_dir}/climate_forcing_data/
+
+gridlist: "global" # sets up grid cell list =/ setup_name!!
+setup_name: "global" # sets up all the model parameters
+
+
+# File dictionaries to control the copying/moving/linking of all files associated to
+# the simulation. This syntax will change for something better soon. For more details
+# about this syntax consult:
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
+config_sources:
+    runscript: ${namelist_dir}/run_trunk_4_1.j2
+    forcing_path_file: ${namelist_dir}/paths_forcing.j2
+config_in_work:
+    runscript: ${runscript_name}
+    forcing_path_file: paths_forcing.ins
+
+bin_sources:
+    bin_tag: ${model_dir}/build/${executable} 

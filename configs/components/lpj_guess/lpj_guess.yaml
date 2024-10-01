@@ -23,6 +23,7 @@ metadata:
                 
 
 git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
+destination: lpj-guess
 branch: main
 comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
 install_bins: "build/guess"
@@ -44,7 +45,7 @@ choose_version:
 # as below, changing only the ``name_of_your_model`` part to whatever you defined as 
 # the ``model`` var. This will automatically select the source code for esm_master if
 # the command is operating with a coupled setup
-model_dir: "lpj-guess${version}"
+model_dir: ${general.model_dir}
 
 # This section takes care of dealing with environment changes you might want to do, to
 # deviated from the defaults define for the specific machine
@@ -63,7 +64,7 @@ namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
 gridlist_dir: ${input_dir}/gridlists/
 forcing_dir: ${input_dir}/climate_forcing_data/
 
-gridlist: "global" # sets up grid cell list =/ setup_name!!
+gridlist: "full_global" # sets up grid cell list =/ setup_name!!
 setup_name: "global" # sets up all the model parameters
 
 

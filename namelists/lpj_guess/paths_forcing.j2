@@ -1,30 +1,30 @@
 ! This file contains paths to forcing data used by the benchmarks
 
 ! CO2
-param "file_co2"      (str ""{{lpj_guess.forcing_dir}}"/2019-04-29/co2/co2_1901_2018.txt")
+param "file_co2"      (str "{{lpj_guess.forcing_dir}}/2019-04-29/co2/co2_1901_2018.txt")
 
 ! CRU climate files
-param "file_cru"      (str ""{{lpj_guess.forcing_dir}}"/2019_09_03/cru_ncep/cruncep_1901_2015.bin")
-param "file_cru_misc" (str ""{{lpj_guess.forcing_dir}}"/2019_09_03/cru_ncep/cruncep_1901_2015misc.bin")
+param "file_cru"      (str "{{lpj_guess.forcing_dir}}/2019_09_03/cru_ncep/cruncep_1901_2015.bin")
+param "file_cru_misc" (str "{{lpj_guess.forcing_dir}}/2019_09_03/cru_ncep/cruncep_1901_2015misc.bin")
 
 ! netCDF climate files
-!param "file_temp"     (str ""{{lpj_guess.forcing_dir}}"netCDF/tas_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_monmean.nc")
-!param "file_prec"     (str ""{{lpj_guess.forcing_dir}}"/netCDF/pr_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_monsum.nc")
-!param "file_insol"    (str ""{{lpj_guess.forcing_dir}}"/netCDF/rsds_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_monmean.nc")
-!param "file_wetdays"  (str ""{{lpj_guess.forcing_dir}}"/netCDF/wetday_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_pd1.0_monsum.nc")
+!param "file_temp"     (str "{{lpj_guess.forcing_dir}}netCDF/tas_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_monmean.nc")
+!param "file_prec"     (str "{{lpj_guess.forcing_dir}}/netCDF/pr_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_monsum.nc")
+!param "file_insol"    (str "{{lpj_guess.forcing_dir}}/netCDF/rsds_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_monmean.nc")
+!param "file_wetdays"  (str "{{lpj_guess.forcing_dir}}/netCDF/wetday_bced_1960_1999_gfdl-esm2m_hist_rcp8p5_1901-2099_noleap_pd1.0_monsum.nc")
 
 ! N deposition (blank string to use constant pre-industrial level of 2 kgN/ha/year)
-param "file_ndep"     (str ""{{lpj_guess.forcing_dir}}"/2015_12_14/ndep/GlobalNitrogenDeposition.bin")
+param "file_ndep"     (str "{{lpj_guess.forcing_dir}}/2015_12_14/ndep/GlobalNitrogenDeposition.bin")
 
 ! SIMFIRE related files  
-param "file_simfire"  (str ""{{lpj_guess.forcing_dir}}"/2019-04-29/fire/SimfireInput.bin")
+param "file_simfire"  (str "{{lpj_guess.forcing_dir}}/2019-04-29/fire/SimfireInput.bin")
 
 ! Soil map
-param "file_soildata" (str ""{{lpj_guess.forcing_dir}}"/2019-03-20/soil/soilmap_center_interpolated.dat")
-!param "file_soildata" (str ""{{lpj_guess.forcing_dir}}"/2019-03-20/soil/fao_soilcodes.txt")
+param "file_soildata" (str "{{lpj_guess.forcing_dir}}/2019-03-20/soil/soilmap_center_interpolated.dat")
+!param "file_soildata" (str "{{lpj_guess.forcing_dir}}/2019-03-20/soil/fao_soilcodes.txt")
 
 ! Location of EUROFLUX data
-param "flux_dir"      (str ""{{lpj_guess.forcing_dir}}"/2013_02_12/euroflux/")
+param "flux_dir"      (str "{{lpj_guess.forcing_dir}}/2013_02_12/euroflux/")
 
 ! Location of subset of WATCH diurnal data
-param "watch_dir"     (str ""{{lpj_guess.forcing_dir}}"/2013_02_12/watch_subset")
+param "watch_dir"     (str "{{lpj_guess.forcing_dir}}/2013_02_12/watch_subset")

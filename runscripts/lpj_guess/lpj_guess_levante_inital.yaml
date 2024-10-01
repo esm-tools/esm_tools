@@ -12,7 +12,7 @@ general:
 
 lpj_guess:
         version: 4.1.1
-        model_dir: "/work/ab0995/${user}/model_codes/"
+        model_dir: "/work/ab0995/${user}/model_codes/lpj-guess/"
         lresume: 0
         post_processing: 0
-
+        nproc: 128

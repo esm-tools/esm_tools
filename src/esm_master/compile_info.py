@@ -605,6 +605,21 @@ class setup_and_model_infos:
 
         for package in self.all_packages:
             if package.raw_name == rawtarget:
+                # A special case for versions defined by couplings. The version
+                # parameter's provenance points correctly at the component, however,
+                # the version is selected based on the coupling. This is a patch where
+                # we modify the provenance of the version parameter to point at the
+                # coupling. Once we get rid of the couplings files and merge them into
+                # the setups we will be able to remove this special case.
+                if (
+                    hasattr(rawtarget, "provenance")
+                    and hasattr(package.version, "provenance")
+                    and rawtarget.provenance[-1].get("category") == "couplings"
+                ):
+                    package.version.provenance.extend_and_modified_by(
+                        rawtarget.provenance, "esm_master.compile_info.split_raw_target"
+                    )
+                # Returns the selected package data
                 return (
                     todo,
                     package.kind,

@@ -520,7 +520,7 @@ class DictWithProvenance(dict):
         val : any
             Value of the item
         """
-        category_hierarchy = ["none", "defaults", "other_software", "machines", "components", "setups", "runscript"]
+        category_hierarchy = ["defaults", "other_software", "machines", "components", "setups", "couplings", "runscript", "none"]
         respect_hierarchy_in_setitem = True
         val_new = val
         if (

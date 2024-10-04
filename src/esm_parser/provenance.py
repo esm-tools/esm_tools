@@ -37,9 +37,12 @@ This module contains:
 
 import copy
 
+from loguru import logger
+
 import esm_parser
 from esm_calendar import Date
 
+CATEGORY_HIERARCHY = yaml_file_to_dict(f"{esm_parser.DEFAULTS_DIR}/yaml_file_hierarchy.yaml")
 
 # =================
 # PROVENANCE CLASS
@@ -415,6 +418,7 @@ class DictWithProvenance(dict):
         self.custom_setitem = False
         self.put_provenance(provenance)
         self.custom_setitem = True
+        self.respect_hierarchy_in_setitem = True
 
     def put_provenance(self, provenance):
         """
@@ -511,7 +515,9 @@ class DictWithProvenance(dict):
         """
         Any time an item in a DictWithProvenance is set, extend the old provenance of
         the old value with the provenance of the new ``val`` and make that be the new
-        extended provenance history of the value.
+        extended provenance history of the value. Does not set the new valeu if the old
+        value comes from a yaml file with higher category hierarchy as defined in
+        ``CATEGORY_HIERARCHY``.
 
         Parameters
         ----------
@@ -520,44 +526,60 @@ class DictWithProvenance(dict):
         val : any
             Value of the item
         """
-        category_hierarchy = ["defaults", "other_software", "machines", "components", "setups", "couplings", "runscript", "none"]
-        respect_hierarchy_in_setitem = True
-        val_new = val
+        # Initialize values. final_val is the variable that will be used in
+        # super().__setitem__
+        new_val = val
+        old_val = self.get(key, None)
+        final_val = new_val
         if (
             key in self
-            and not isinstance(self[key], (dict, list))
-            and hasattr(self[key], "provenance")
+            and not isinstance(old_val, (dict, list))
+            and hasattr(old_val, "provenance")
             and hasattr(self, "custom_setitem")
             and self.custom_setitem
         ):
-            if self[key].provenance[-1]:
-                old_category = self[key].provenance[-1].get("category", None)
+            # Define the category of the old value (components, setups, machines, ...)
+            if old_val.provenance[-1]:
+                old_category = old_val.provenance[-1].get("category", None)
             else:
                 old_category = "none"
-            new_provenance = copy.deepcopy(self[key].provenance)
-            if hasattr(val, "provenance"):
+
+            # Initialize new provenance with the old provenance
+            new_provenance = copy.deepcopy(old_val.provenance
+
+            # If the new value has provenance extend its provenance with the old one
+            if hasattr(new_val, "provenance"):
                 new_provenance.extend_and_modified_by(
-                    val.provenance, "dict.__setitem__"
+                    new_val.provenance, "dict.__setitem__"
                 )
 
-                old_category_index = category_hierarchy.index(old_category)
+                # Define the category of the new value
                 if new_provenance[-1]:
                     new_category = new_provenance[-1].get("category", None)
                 else:
                     new_category = "none"
-                new_category_index = category_hierarchy.index(new_category)
+
+                # Obtain category indexes (numerical hierarcgy))
+                old_category_index = CATEGORY_HIERARCHY.index(old_category)
+                new_category_index = CATEGORY_HIERARCHY.index(new_category)
+
                 # Assign the new value if the new category is higher in the hierarchy
-                if old_category_index <= new_category_index:
-                    val_new = copy.deepcopy(val)
+                if old_category_index <= new_category_index or old_val == None:
+                    final_val = copy.deepcopy(new_val)
                 # Keep the old value if the new category is lower in the hierarchy
-                elif respect_hierarchy_in_setitem:
-                    val_new = copy.deepcopy(self[key])
-                    #print(f"{key}: {self[key].provenance}")
-                    new_provenance.extend_and_modified_by(Provenance(self[key].provenance[-1]), "dict.__setitem__->reverted_by_hierarchy")
+                elif self.respect_hierarchy_in_setitem:
+                    final_new = copy.deepcopy(old_val)
+                    new_provenance.extend_and_modified_by(Provenance(old_val.provenance[-1]), "dict.__setitem__->reverted_by_hierarchy")
+                    logger.debug(
+                        f"Value {new_val} won't be assigned to the key {key}, because "
+                        f"the old value {old_val} comes from a category higher in the "
+                        f"hierarchy ({old_val}:{old_category} > "
+                        f"{new_val}:{new_category})"
+                    )
 
-                val_new.provenance = new_provenance
+                final_val.provenance = new_provenance
 
-        super().__setitem__(key, val_new)
+        super().__setitem__(key, final_val)
 
     def update(self, dictionary, *args, **kwargs):
         """

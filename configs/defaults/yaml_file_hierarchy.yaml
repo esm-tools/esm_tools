@@ -1,0 +1,14 @@
+# Defines the hierarchy of overwriting when merging yaml dictionaries from different
+# files. Note that this list should never be loaded into the ``config`` because it
+# could cause a circular dependency. This file is only loaded from the provenance
+# module
+category_hierarchy:
+- "defaults"            # Lowest in the hierarchy
+- "other_software"
+- "machines"
+- "components"
+- "setups"
+- "couplings"
+- "runscript"
+- "none"                # Highest in the hierarchy (no category means it is a change
+                        # from ESM-Tools functions)

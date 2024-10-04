@@ -545,7 +545,7 @@ class DictWithProvenance(dict):
                 old_category = "none"
 
             # Initialize new provenance with the old provenance
-            new_provenance = copy.deepcopy(old_val.provenance
+            new_provenance = copy.deepcopy(old_val.provenance)
 
             # If the new value has provenance extend its provenance with the old one
             if hasattr(new_val, "provenance"):

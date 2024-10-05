@@ -44,10 +44,16 @@ import esm_parser
 import esm_tools
 from esm_calendar import Date
 
-DEFAULTS_DIR = f"{esm_tools.get_config_filepath()}/defaults"
-with open(f"{DEFAULTS_DIR}/yaml_file_hierarchy.yaml", "r") as f:
-    yaml_file_hierarchy = YAML().load(f)
-CATEGORY_HIERARCHY = yaml_file_hierarchy["category_hierarchy"]
+CATEGORY_HIERARCHY = [
+    "defaults",  # Lowest in the hierarchy
+    "other_software",
+    "machines",
+    "components",
+    "setups",
+    "couplings",
+    "runscript",
+    "none",  # Highest in the hierarchy (no category means it is a change
+]  # from ESM-Tools functions)
 
 
 # =================

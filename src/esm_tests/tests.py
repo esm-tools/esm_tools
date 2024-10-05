@@ -5,7 +5,7 @@ import re
 import shutil
 import time
 import yaml
-from esm_parser import determine_computer_from_hostname
+from esm_parser import determine_computer_yaml_from_hostname
 from loguru import logger
 
 from .output import *
@@ -17,7 +17,10 @@ bs = "\033[1m"
 be = "\033[0m"
 
 # Define default files for comparisson
-compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelists"]}
+compare_files = {
+    "comp": ["comp-"],
+    "run": [".run", "finished_config", "namelists"],
+}
 
 """
 ``config.yaml``:
@@ -433,7 +436,9 @@ def run_test(info):
                         # If the run has errors label the state for ``run_finished`` as
                         # ``False`` and run a check for files that should have been
                         # created anyway
-                        elif any([run_error in observe_out for run_error in run_errors]):
+                        elif any(
+                            [run_error in observe_out for run_error in run_errors]
+                        ):
                             subc, finished_runs, success = experiment_state_action(
                                 info,
                                 "Simulation crashed!",
@@ -610,6 +615,9 @@ def check(info, mode, model, version, out, script, v):
 
     # Compare scripts with previous, if existing
     this_compare_files = copy.deepcopy(compare_files[config_mode])
+    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+    if not info["in_github"] and config_mode == "run":
+        this_compare_files.append("prepcompute_filelist")
     # TODO: The iterative coupling needs a rework. Therefore, no testing for files
     # is develop. Include the tests after iterative coupling is reworked
     if config_mode == "run" and v["iterative_coupling"]:
@@ -799,6 +807,7 @@ def exist_files(files, path, version):
                 files_checked = False
 
     return files_checked
+
 
 def find_exceptions(string_to_be_checked):
     """

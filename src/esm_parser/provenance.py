@@ -38,11 +38,17 @@ This module contains:
 import copy
 
 from loguru import logger
+from ruamel.yaml import YAML
 
 import esm_parser
+import esm_tools
 from esm_calendar import Date
 
-CATEGORY_HIERARCHY = yaml_file_to_dict(f"{esm_parser.DEFAULTS_DIR}/yaml_file_hierarchy.yaml")
+DEFAULTS_DIR = f"{esm_tools.get_config_filepath()}/defaults"
+with open(f"{DEFAULTS_DIR}/yaml_file_hierarchy.yaml", "r") as f:
+    yaml_file_hierarchy = YAML().load(f)
+CATEGORY_HIERARCHY = yaml_file_hierarchy["category_hierarchy"]
+
 
 # =================
 # PROVENANCE CLASS
@@ -569,7 +575,10 @@ class DictWithProvenance(dict):
                 # Keep the old value if the new category is lower in the hierarchy
                 elif self.respect_hierarchy_in_setitem:
                     final_new = copy.deepcopy(old_val)
-                    new_provenance.extend_and_modified_by(Provenance(old_val.provenance[-1]), "dict.__setitem__->reverted_by_hierarchy")
+                    new_provenance.extend_and_modified_by(
+                        Provenance(old_val.provenance[-1]),
+                        "dict.__setitem__->reverted_by_hierarchy",
+                    )
                     logger.debug(
                         f"Value {new_val} won't be assigned to the key {key}, because "
                         f"the old value {old_val} comes from a category higher in the "
@@ -610,6 +619,7 @@ class DictWithProvenance(dict):
 
         for key, val in new_provs.items():
             self[key].provenance = val
+
 
 DictWithProvenance.yaml_dump = esm_parser.yaml_dump
 
@@ -787,6 +797,7 @@ class ListWithProvenance(list):
                 val_new.provenance = new_provenance
 
         super().__setitem__(indx, val_new)
+
 
 ListWithProvenance.yaml_dump = esm_parser.yaml_dump
 

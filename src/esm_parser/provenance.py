@@ -574,7 +574,7 @@ class DictWithProvenance(dict):
                     final_val = copy.deepcopy(new_val)
                 # Keep the old value if the new category is lower in the hierarchy
                 elif self.respect_hierarchy_in_setitem:
-                    final_new = copy.deepcopy(old_val)
+                    final_val = copy.deepcopy(old_val)
                     new_provenance.extend_and_modified_by(
                         Provenance(old_val.provenance[-1]),
                         "dict.__setitem__->reverted_by_hierarchy",

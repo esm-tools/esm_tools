@@ -1,5 +1,8 @@
 import sys
 
+import esm_parser
+from loguru import logger
+
 known_couplers = ["oasis3mct", "yac"]
 
 
@@ -49,7 +52,7 @@ class coupler_class:
             )
 
         else:
-            print("Unknown coupler :", name)
+            logger.error(f"Unknown coupler : {name}")
             sys.exit(0)
 
     def prepare(self, full_config, destination_dir):
@@ -92,7 +95,9 @@ class coupler_class:
                         rights = [rightside]
 
                     if not len(lefts) == len(rights):
-                        print("Left and right side of coupling don't match: ", coupling)
+                        logger.error(
+                            f"Left and right side of coupling don't match: {coupling}"
+                        )
                         sys.exit(0)
 
                     left_grid = lgrid_info = None
@@ -119,7 +124,7 @@ class coupler_class:
                                                 left
                                             ]["grid"]
                                         ):
-                                            print(
+                                            logger.error(
                                                 "All fields coupled together need to exist on same grid"
                                             )
                                             sys.exit(0)
@@ -140,16 +145,16 @@ class coupler_class:
                                                 right
                                             ]["grid"]
                                         ):
-                                            print(
+                                            logger.error(
                                                 "All fields coupled together need to exist on same grid"
                                             )
                                             sys.exit(0)
                                 if found_right and found_left:
                                     break
                         if not found_left:
-                            print("Coupling var not found: ", left)
+                            logger.error(f"Coupling var not found: {left}")
                         if not found_right:
-                            print("Coupling var not found: ", right)
+                            logger.error(f"Coupling var not found: {right}")
                         if not found_left or not found_right:
                             sys.exit(0)
 
@@ -168,6 +173,13 @@ class coupler_class:
                             transf_info = full_config[self.name]["coupling_methods"][
                                 interpolation
                             ]
+                        else:
+                            esm_parser.user_error(
+                                "Missing coupling method",
+                                f"The coupling method ``{interpolation}`` defined in "
+                                f"the ``{self.name}.coupling_target_fields`` is not "
+                                f"defined anywhere in ``{self.name}.coupling_methods``.",
+                            )
 
                     self.coupler.add_output_file(
                         lefts, rights, leftmodel, rightmodel, full_config[self.name]
@@ -227,20 +239,20 @@ class coupler_class:
                     # Check that the dimensions are correct
                     dym_issue = False
                     if len(all_lefts) != len(all_leftmodels):
-                        print(
+                        logger.error(
                             "Coupling fields and their corresponding models do not"
                             + "have the same dimensions:"
                         )
-                        print("all_lefts =", all_lefts)
-                        print("all_leftmodels =", all_leftmodels)
+                        logger.error(f"all_lefts = {all_lefts}")
+                        logger.error(f"all_leftmodels = {all_leftmodels}")
                         dym_issue = True
                     if len(all_rights) != len(all_rightmodels):
-                        print(
+                        logger.error(
                             "Coupling fields and their corresponding models do not"
                             + "have the same dimensions:"
                         )
-                        print("all_rights =", all_rights)
-                        print("all_rightmodels =", all_rightmodels)
+                        logger.error(f"all_rights = {all_rights}")
+                        logger.error(f"all_rightmodels = {all_rightmodels}")
                         dym_issue = True
                     if dym_issue:
                         sys.exit(0)
@@ -279,10 +291,8 @@ class coupler_class:
                             rights = [rightside]
 
                         if not len(lefts) == len(rights):
-                            print(
-                                "Left and right side of coupling don't match: ",
-                                coupling,
-                            )
+                            logger.error(
+                                f"Left and right side of coupling don't match: {coupling}")
                             sys.exit(0)
 
                         left_grid = lgrid_info = None
@@ -309,7 +319,7 @@ class coupler_class:
                                                     "coupling_fields"
                                                 ][left]["grid"]
                                             ):
-                                                print(
+                                                logger.error(
                                                     "All fields coupled together need to exist on same grid"
                                                 )
                                                 sys.exit(0)
@@ -330,20 +340,22 @@ class coupler_class:
                                                     "coupling_fields"
                                                 ][right]["grid"]
                                             ):
-                                                print(
+                                                logger.error(
                                                     "All fields coupled together need to exist on same grid"
                                                 )
                                                 sys.exit(0)
                                     if found_right and found_left:
                                         break
                             if not found_left:
-                                print("Coupling var not found: ", left)
+                                logger.error(f"Coupling var not found: {left}")
                             if not found_right:
-                                print("Coupling var not found: ", right)
+                                logger.error(f"Coupling var not found: {right}")
                             if not found_left or not found_right:
                                 sys.exit(0)
 
-                        export_mode = full_config[self.name].get("export_mode", "DEFAULT")
+                        export_mode = full_config[self.name].get(
+                            "export_mode", "DEFAULT"
+                        )
 
                         direction_info = None
                         if "coupling_directions" in full_config[self.name]:
@@ -356,7 +368,9 @@ class coupler_class:
                                 ][right_grid + "->" + left_grid]
 
                                 # Use export_mode from coupling_directions if set. Required for NEMO-AGRIF
-                                export_mode = direction_info.get("export_mode",export_mode)
+                                export_mode = direction_info.get(
+                                    "export_mode", export_mode
+                                )
                         transf_info = None
                         if "coupling_methods" in full_config[self.name]:
                             if (

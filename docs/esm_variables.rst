@@ -59,30 +59,33 @@ Installation variables
 Runtime variables
 -----------------
 .. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
+   :header: Key, Section, Description
+   :widths: 10, 10, 80
 
-   account,             User account of the HPC system to be used to run the experiment.
-   model_dir,           "Absolute path of the model directory (where it was installed by `esm_master`)."
-   setup_dir,           "Absolute path of the setup directory (where it was installed by `esm_master`)."
-   executable,          "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
-   compute_time,        "Estimated computing time for a run, used for submitting a job with the job scheduler."
-   time_step,           Time step of the component in seconds.
-   lresume,             Boolean to indicate whether the run is an initial run or a restart.
-   pool_dir,            "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
-   namelists,           "List of namelist files required for the model."
-   namelist_changes,    "Functionality to handle changes in the namelists from the yaml files (see :ref:`yaml:Changing Namelists`)."
-   nproc,               Number of processors to use for the model.
-   nproca/nprocb,       "Number of processors for different MPI tasks/ranks. Incompatible with ``nproc``."
-   base_dir,            Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
-   post_processing,     Boolean to indicate whether to run postprocessing or not.
-   ":ref:`yaml:File Dictionaries`",     "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files (see :ref:`yaml:File Dictionaries`)."
-   expid,               "ID of the experiment. This variable can also be defined when calling ``esm_runscripts`` with the ``-e`` flag."
-   ini_restart_exp_id,  "ID of the restarted experiment in case the current experiment has a different ``expid``. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
-   ini_restart_dir,     "Path of the restarted experiment in case the current experiment runs in a different directory. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
-   execution_command,   "Command for executing the component, including ``${executable}`` and the necessary flags."
-   heterogeneous_parallelization,   "A boolean that controls whether the simulation needs to be run with or without heterogeneous parallelization. When ``false`` OpenMP is not used for any component, independently of the value of ``omp_num_threads`` defined in the components. When ``true``, ``open_num_threads`` needs to be specified for each component using OpenMP. ``heterogeneous_parallelization`` variable **needs to be defined inside the** ``computer`` section of the runscript. See :ref:`cookbook:Heterogeneous Parallelization Run (MPI/OpenMP)` for examples."
-   omp_num_threads,     "A variable to control the number of OpenMP threads used by a component during an heterogeneous parallelization run. This variable **has to be defined inside the section of the components** for which OpenMP needs to be used. This variable will be ignored if ``computer.heterogeneous_parallelization`` is not set to ``true``."
+   account,             general,                User account of the HPC system to be used to run the experiment.
+   base_dir,            general,                Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
+   compute_time,        general,                "Estimated computing time for a run, used for submitting a job with the job scheduler."
+   executable,          <component>,            "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
+   execution_command,   <component>,            "Command for executing the component, including ``${executable}`` and the necessary flags."
+   expid,               general,                "ID of the experiment. This variable can also be defined when calling ``esm_runscripts`` with the ``-e`` flag."
+   ":ref:`yaml:File Dictionaries`",     <component>,    "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files (see :ref:`yaml:File Dictionaries`)."
+   heterogeneous_parallelization,   computer,    "A boolean that controls whether the simulation needs to be run with or without heterogeneous parallelization. When ``false`` OpenMP is not used for any component, independently of the value of ``omp_num_threads`` defined in the components. When ``true``, ``open_num_threads`` needs to be specified for each component using OpenMP. ``heterogeneous_parallelization`` variable **needs to be defined inside the** ``computer`` section of the runscript. See :ref:`cookbook:Heterogeneous Parallelization Run (MPI/OpenMP)` for examples."
+   ini_restart_dir,     <component>,            "Path of the restarted experiment in case the current experiment runs in a different directory. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
+   ini_restart_exp_id,  <component>,            "ID of the restarted experiment in case the current experiment has a different ``expid``. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
+   install_missing_plugins,     general,        "A boolean to indicate whether ``esm_runscripts`` needs to install missing plugins (``True``, default) or not (``False``). Implemented to solve a problem with the ``esm_tests`` CI in GitHub where we might not have access to some repositories."
+   lresume,             <component>,            Boolean to indicate whether the run is an initial run or a restart.
+   mail_type,           general/computer,       "Value for the SBATCH flag ``--mail-type`` (see https://slurm.schedmd.com/sbatch.html#OPT_mail-type)"
+   mail_user,           general/computer,       "Value for the SBATCH flag ``--mail-user`` (see https://slurm.schedmd.com/sbatch.html#OPT_mail-user)"
+   model_dir,           general/<component>,    "Absolute path of the model directory (where it was installed by `esm_master`)."
+   namelists,           <component>,            "List of namelist files required for the model."
+   namelist_changes,    <component>,            "Functionality to handle changes in the namelists from the yaml files (see :ref:`yaml:Changing Namelists`)."
+   nproc,               <component>,            Number of processors to use for the model.
+   nproca/nprocb,       <component>,            "Number of processors for different MPI tasks/ranks. Incompatible with ``nproc``."
+   omp_num_threads,     <component>,            "A variable to control the number of OpenMP threads used by a component during an heterogeneous parallelization run. This variable **has to be defined inside the section of the components** for which OpenMP needs to be used. This variable will be ignored if ``computer.heterogeneous_parallelization`` is not set to ``true``."
+   pool_dir,            general,                "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
+   post_processing,     <component>,            Boolean to indicate whether to run postprocessing or not.
+   setup_dir,           general,                "Absolute path of the setup directory (where it was installed by `esm_master`)."
+   time_step,           <component>,            Time step of the component in seconds.
 
 Calendar variables
 ------------------

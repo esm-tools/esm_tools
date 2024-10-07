@@ -178,6 +178,8 @@ grids:
                 nx: 512
                 ny: 256
                 oasis_grid_type: "LR"
+                oyac_grid_type: "LL"
+                oyac_io_per_node: 4
 
 choose_general.setup_name:
         focioifs:
@@ -188,22 +190,30 @@ choose_general.setup_name:
                                 ny: "${nemo._ny}"
                                 oasis_grid_type: "LR"
                                 number_of_overlapping_points: 2
+                                oyac_grid_type: "LL"
+                                oyac_io_per_node: 4
                         rnfo:
                                 name: rnfo
                                 nx: "${nemo._nx}"
                                 ny: "${nemo._ny}"
                                 oasis_grid_type: "LR"
                                 number_of_overlapping_points: 0
+                                oyac_grid_type: "LL"
+                                oyac_io_per_node: 4
                         rnfm:   
                                 name: rnfm
                                 nx: 512
                                 ny: 256
                                 oasis_grid_type: "LR"
+                                oyac_grid_type: "LL"
+                                oyac_io_per_node: 4
                         rnfs:
                                 name: rnfs
                                 nx: 512
                                 ny: 256
                                 oasis_grid_type: "LR"
+                                oyac_grid_type: "LL"
+                                oyac_io_per_node: 4
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml
@@ -233,6 +243,14 @@ choose_computer.name:
     levante:
         fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
         cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+    glogin:
+       choose_computer.compiler_mpi:
+          gcc11_ompi416:
+             fflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
+             cflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
+          '*':
+             fflags: -r8 -fp-model precise -align array32byte -O3 -g -traceback -convert big_endian -fpe0 
+             cflags: -fp-model precise -O3 -g -traceback -qopt-report=0     
     "*":
        fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
-       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0
+       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0

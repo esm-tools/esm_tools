@@ -1,12 +1,15 @@
 """
 Contains functions for dealing with SLURM-based batch systems
 """
+
 import os
 import shutil
 import subprocess
 import sys
 
 import esm_parser
+from loguru import logger
+
 
 class Slurm:
     """
@@ -58,21 +61,34 @@ class Slurm:
         return os.environ.get("SLURM_JOB_ID")
 
     def prepare_launcher(self, config, cluster):
+        # which launcher are we using?
+        launcher = config["computer"].get("launcher",None)
+        # friendly check that you are using a launcher that we support
+        if launcher not in ["srun", "mpirun"]:
+            print(" The launcher %s is not compatible with ESM-Tools in SLURM " % (launcher,))
+            print(" Supported launchers for SLURM are srun and mpirun ")
+        
         # MA: not sure how this will play with heterogeneous parallelization
         if "multi_srun" in config["general"]:
             for run_type in list(config["general"]["multi_srun"]):
                 current_hostfile = self.path + "_" + run_type
-                write_one_hostfile(current_hostfile, config)
+                if launcher == "srun":
+                    write_one_hostfile_srun(current_hostfile, config)
+                elif launcher == "mpirun":
+                    write_one_hostfile_mpirun(current_hostfile, config)
 
-        if (
-            config["computer"].get("heterogeneous_parallelization", False)
-            and not config["computer"].get("taskset", False)
-        ):
+        if config["computer"].get(
+            "heterogeneous_parallelization", False
+        ) and not config["computer"].get("taskset", False):
             # Prepare heterogeneous parallelization call
             config["general"]["batch"].het_par_launcher_lines(config, cluster)
         else:
             # Standard/old way of running jobs with slurm
-            self.write_one_hostfile(self.path, config)
+            if launcher == "srun":
+                self.write_one_hostfile_srun(self.path, config)
+            elif launcher == "mpirun":
+                # JK: Need to think about how to handle heterogeneous paralleisation here...
+                self.write_one_hostfile_mpirun(self.path, config)
 
             hostfile_in_work = (
                 config["general"]["work_dir"] + "/" + os.path.basename(self.path)
@@ -81,10 +97,11 @@ class Slurm:
 
         return config
 
-    def write_one_hostfile(self, hostfile, config):
+    def write_one_hostfile_srun(self, hostfile, config):
         """
         Gathers previously prepared requirements
         (batch_system.calculate_requirements) and writes them to ``self.path``.
+        Suitable for srun
         """
 
         with open(hostfile, "w") as hostfile:
@@ -108,7 +125,50 @@ class Slurm:
                 hostfile.write(
                     str(start_proc) + "-" + str(end_proc) + "  " + command + "\n"
                 )
+    
+    def write_one_hostfile_mpirun(self, hostfile, config):
+        """ 
+        Gathers previously prepared requirements
+        (batch_system.calculate_requirements) and writes them to ``self.path``.
+        Suitable for mpirun launcher
+        """
+        
+        # make an empty string which we will append commands to
+        mpirun_options = ""
 
+        for model in config["general"]["valid_model_names"]:
+            end_proc = config[model].get("end_proc", None)
+            start_proc = config[model].get("start_proc", None)
+            
+            # a model component like oasis3mct does not need cores
+            # since its technically a library
+            # So start_proc and end_proc will be None. Skip it
+            if start_proc == None or end_proc == None:
+                continue
+            
+            # number of cores needed
+            no_cpus = end_proc - start_proc + 1
+            
+            # check if execution_command or executable exist
+            if "execution_command" in config[model]:
+                command = "./" + config[model]["execution_command"]
+            elif "executable" in config[model]:
+                command = "./" + config[model]["executable"]
+            else:
+                print('warning: the executable or execution_command could not be detemined for %s' % (model,))
+                continue
+            
+            # the mpirun command is set here. 
+            mpirun_options += (
+                    " -np %d %s :" % (no_cpus, command)
+                )
+    
+        mpirun_options = mpirun_options[:-1]  # remove trailing ":"
+    
+        with open(hostfile, "w") as hostfile:
+            hostfile.write(mpirun_options)
+            
+    
     @staticmethod
     def get_job_state(jobid):
         """
@@ -181,10 +241,9 @@ class Slurm:
             for heterogeneous parallelization in SLURM.
         """
         # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
-        if (
-            config["computer"].get("heterogeneous_parallelization", False)
-            and not config["computer"].get("taskset", False)
-        ):
+        if config["computer"].get(
+            "heterogeneous_parallelization", False
+        ) and not config["computer"].get("taskset", False):
             this_batch_system = config["computer"]
             # Get the variables to be modified for the headers
             nodes_flag = this_batch_system["nodes_flag"].split("=")[0]
@@ -193,7 +252,7 @@ class Slurm:
             # will be added at the end of the headers for each component
             headers_new = []
             for val in headers:
-                 if nodes_flag not in val and partition_flag not in val:
+                if nodes_flag not in val and partition_flag not in val:
                     headers_new.append(val)
             headers = headers_new
             # Loop through the models to add the respective component headers (nodes
@@ -201,15 +260,15 @@ class Slurm:
             for model in config["general"]["valid_model_names"]:
                 nodes = config[model].get("nodes")
 
-# kh 24.06.22 observed behavior was:
-#model:  echam, nodes:  4
-#model:  fesom, nodes:  32
-#model:  oasis3mct, nodes:  None
-#model:  recom, nodes:  None
-#model:  jsbach, nodes:  None
-#model:  hdmodel, nodes:  1
+                # kh 24.06.22 observed behavior was:
+                # model:  echam, nodes:  4
+                # model:  fesom, nodes:  32
+                # model:  oasis3mct, nodes:  None
+                # model:  recom, nodes:  None
+                # model:  jsbach, nodes:  None
+                # model:  hdmodel, nodes:  1
 
-# kh 24.06.22 workaround: filter hdmodel
+                # kh 24.06.22 workaround: filter hdmodel
                 if nodes:
                     headers.append(f"{nodes_flag}={nodes}")
                     headers.append(this_batch_system["partition_flag"])
@@ -230,16 +289,15 @@ class Slurm:
             for model in config["general"]["valid_model_names"]:
                 if "oasis3mct" == model:
                     continue
-                elif (
-                        not config[model].get("execution_command")
-                        and not config[model].get("executable")
-                ):
+                elif not config[model].get("execution_command") and not config[
+                    model
+                ].get("executable"):
                     esm_parser.user_note(
                         "Execution command",
-                        f"Execution command for ``{model}`` not found. This is okay " \
-                        "if this component has no binary to be called, but if it does" \
-                        " please make sure you specify either an ``executable`` " \
-                        f"or an ``execution_command`` variable in the ``{model}`` " \
+                        f"Execution command for ``{model}`` not found. This is okay "
+                        "if this component has no binary to be called, but if it does"
+                        " please make sure you specify either an ``executable`` "
+                        f"or an ``execution_command`` variable in the ``{model}`` "
                         "of your configuration file.",
                     )
                     continue
@@ -265,7 +323,9 @@ class Slurm:
 
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")
-                    f.write("if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n")
+                    f.write(
+                        "if [ -z ${PMI_RANK+x} ]; then PMI_RANK=$PMIX_RANK; fi" + "\n"
+                    )
                     f.write("(( init = $PMI_RANK ))" + "\n")
                     f.write(
                         "(( index = init * "
@@ -318,20 +378,15 @@ class Slurm:
         runfile.write("current_core=0" + "\n")
         runfile.write("current_core_mpi=0" + "\n")
         for model in config["general"]["valid_model_names"]:
-            if (
-                "oasis3mct" != model
-                and (
-                    config[model].get("execution_command")
-                    or config[model].get("executable")
-                )
+            if "oasis3mct" != model and (
+                config[model].get("execution_command")
+                or config[model].get("executable")
             ):
                 if "nproca" in config[model]:
                     mpi_tasks = config[model]["nproca"] * config[model]["nprocb"]
                 else:
                     mpi_tasks = config[model]["nproc"]
-                runfile.write(
-                    "mpi_tasks_" + model + "=" + str(mpi_tasks) + "\n"
-                )
+                runfile.write("mpi_tasks_" + model + "=" + str(mpi_tasks) + "\n")
                 runfile.write(
                     "omp_threads_"
                     + model
@@ -377,21 +432,21 @@ class Slurm:
         setup_name = config["general"]["setup_name"]
         if config["general"].get("multi_srun"):
             for run_type in config["general"]["multi_srun"]:
-                print(run_type)
+                logger.info(run_type)
                 total_tasks = 0
                 for model in config["general"]["multi_srun"][run_type]["models"]:
-                    print(total_tasks)
+                    logger.info(total_tasks)
                     # determine how many nodes that component needs
                     if "nproc" in config[model]:
-                        print("Adding to total_tasks")
+                        logger.info("Adding to total_tasks")
                         total_tasks += int(config[model]["nproc"])
-                        print(total_tasks)
+                        logger.info(total_tasks)
                     elif "nproca" in config[model] and "nprocb" in config[model]:
-                        print("Adding to total_tasks")
+                        logger.info("Adding to total_tasks")
                         total_tasks += int(config[model]["nproca"]) * int(
                             config[model]["nprocb"]
                         )
-                        print(total_tasks)
+                        logger.info(total_tasks)
 
                         # KH 30.04.20: nprocrad is replaced by more flexible
                         # partitioning using nprocar and nprocbr
@@ -400,25 +455,25 @@ class Slurm:
                                 config[model]["nprocar"] != "remove_from_namelist"
                                 and config[model]["nprocbr"] != "remove_from_namelist"
                             ):
-                                print("Adding to total_tasks")
+                                logger.info("Adding to total_tasks")
                                 total_tasks += (
                                     config[model]["nprocar"] * config[model]["nprocbr"]
                                 )
-                                print(total_tasks)
+                                logger.info(total_tasks)
 
                     else:
                         continue
                 config["general"]["multi_srun"][run_type]["total_tasks"] = total_tasks
-            print(config["general"]["multi_srun"])
+            logger.info(config["general"]["multi_srun"])
         return config
 
 
 def get_run_commands_multisrun(config, commands):
     default_exec_command = config["computer"]["execution_command"]
-    print("---> This is a multi-srun job.")
-    print("The default command:")
-    print(default_exec_command)
-    print("Will be replaced")
+    logger.info("---> This is a multi-srun job.")
+    logger.info("The default command:")
+    logger.info(default_exec_command)
+    logger.info("Will be replaced")
     # Since I am already confused, I need to write comments.
     #
     # The next part is actually a shell script fragment, which will be injected

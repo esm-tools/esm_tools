@@ -1,0 +1,124 @@
+# 
+# Runscript to run FOCI-OpenIFS with NWPAC10
+# on Olaf (IBS, Korea)
+#
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   projdir: !ENV ${PROJ}
+    
+   setup_name: "focioifs"      
+   version: "agrif-4.0"
+   resolution: "TCO95_ORCA05"
+
+   # How much walltime to request 
+   compute_time: "01:00:00"
+ 
+   # Time period to simulate
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
+
+   # How often to restart
+   nyear: 0
+   nmonth: 1
+   nday: 0
+   hours: 0
+  
+   account: iccp 
+   base_dir: ${general.projdir}/esm-experiments/ 
+  
+   # Activate NEMO and OpenIFS post processing  
+   postprocessing: 1
+   
+computer: 
+   partition: "normal_cpu" 
+
+focioifs:
+   model_dir: /proj/home/ibs/iccp/jkjellsson/esm/models/focioifs-agrif-4.0/
+  
+oifs:
+   version: "43r3"
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   pool_dir: /proj/internal_group/iccp/jkjellsson/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy43_tco95/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco95/95_4/"
+   ifsdata_dir: "${pool_dir}/openifs_cy43_general/ifsdata/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy43_tco95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   resolution: TCO95
+   levels: L91
+   time_step: 1800
+   lresume: 0
+   nproc: 96
+   omp_num_threads: 1
+
+   # tau = rho * Cd (u10m - use_ocean_current * u_current)
+   use_ocean_currents: 1
+   
+   # Tell OpenIFS to expect
+   # coupling fields from nest  
+   with_nest1: true
+
+oasis3mct:
+   coupling_time_step: 3600 
+   mct_version: "5.0" 
+   norestart: F
+   use_lucia: True
+   debug_level: 1 
+   export_mode: EXPORTED 
+   pool_dir: /proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/
+   ini_parent_dir: /proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/
+   oasis_date_stamp: ""
+   c2o_remap_method: "gauswgt" 
+      
+nemo:
+   # Note for future runs:
+   # We currently use a 5x grid refinement in VIKING10 and 3x time step
+   # It would make more sense to also refine time step by 5x so that Courant number is reasonable
+   # This can be done by simply changing the 3 to a 5 in the 2nd line of AGRIF_FixedGrids.in 
+   # So far, we stick with 3x to keep consistency with existing runs. 
+   input_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/nemo4_orca05/" 
+   agrif_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/agrif_nwpac10/"
+   nest_refinement: 3
+   resolution: "ORCA05"
+   time_step: 1800        
+   version: "ORCA05_SI3_COUPLED_AGRIF"
+   # Remove periodic points from namcouple (720 instead of 722)
+   _nx: 720
+   _ny: 510
+   # This gives subdomains of 15x15 grid cells which is near the limit in NEMO
+   # More nproc should not be used
+   jpni: 25
+   jpnj: 17
+   nproc: 347
+   nest1: NWPAC10
+   
+   #add_namelist_changes:
+   #   namelist_cfg:
+   #      namdyn_hpg:
+   #         ln_hpg_sco: '.false.'
+   #         ln_hpg_zco: '.false.'
+   #         ln_hpg_zps: '.true.'
+   #   #1_namelist_cfg:
+   #   #   namdyn_hpg:
+   #   #      ln_hpg_sco: '.false.'
+   #   #      ln_hpg_zco: '.false.'
+   #   #      ln_hpg_zps: '.true.'
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: /proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05_nwpac10/output_for_diag/
+   # This should make 4 XIOS cores spread over 2 nodes (on HLRN standard96(
+   nproc: 20
+   

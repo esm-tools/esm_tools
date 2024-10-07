@@ -1,4 +1,14 @@
-# NESH YAML CONFIGURATION FILES
+# Configuration file for NESH, HPC at Kiel University, Germany
+#
+# Reference: https://www.hiperf.rz.uni-kiel.de/nesh/
+#
+# NESH underwent significant upgrade of hardware and software late 2023
+# The yaml file for the old machine is kept as nesh_old 
+#
+# Hardware: 
+# nesh-srp[100-339]: 2x Intel Xeon Gold 6426Y (Sapphire Rapids), 32 cores (2.5-4.1GHz), 256GB main memory
+# nesh-clk[344-623]: 2x Intel Xeon Gold 6226R (Cascade Lake), 32 cores (2.9-3.9GHz), 192GB main memory
+# 
 
 name: nesh
 account: None
@@ -15,6 +25,7 @@ choose_use_hyperthreading:
         False:
                 hyperthreading_flag: "--ntasks-per-core=1"
 
+# There is no accounting on NESH
 accounting: false
 
 batch_system: "slurm"
@@ -23,14 +34,16 @@ jobtype: compute
 sh_interpreter: "/usr/bin/bash"
 
 # Set default partition on NESH
-partition: cluster
+partition: base
 
+# Set partition name and core per node
 choose_partition:
-        cluster:
-                # Set partition name and core per node
-                partition_name: cluster
+        base: 
+                partition_name: base
                 partition_cpn: 32
-                #cores_per_node: 32
+        highmem: 
+                partition_name: highmem
+                partition_cpn: 32
 
 # Define all partitions available
 partitions:
@@ -41,123 +54,126 @@ partitions:
                 name: ${computer.partition_name}
                 cores_per_node: ${computer.partition_cpn}
 
-
-# Set default for each job type
-#choose_jobtype:
-#        tidy_and_resubmit:
-#                partition: cluster 
-#        post:
-#                partition: cluster 
-#        compute:
-#                partition: cluster 
-
+# Intel chips support hyperthreading where each core
+# presents two logical core to the system. 
+# It is thus possible to run 2 threads per core
+# However, this seems to not lead to any speedup, so 
+# we will stick to one thread per core. 
 logical_cpus_per_core: 2
 
 threads_per_core: 1
 
+# Sebastians work directory as default pool
 pool_directories:
-        pool: "/gxfs_work1/geomar/smomw235/foci_input2/"
-        focipool: "/gxfs_work1/geomar/smomw235/foci_input2/"
+        pool: "/gxfs_work/geomar/smomw235/foci_input2/"
+        focipool: "/gxfs_work/geomar/smomw235/foci_input2/"
 
 pool_dir: "/not/available/on/nesh/" 
 
-# TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
-compiler_mpi: intel2019_impi2019
-iolibraries: geomar_libs
+# Set default compiler and MPI
+# NOTE: Many models set a default compiler_mpi in e.g. configs/setups/focioifs.yaml
+#       so the default set below may not actually do anything...
+compiler_mpi: intel2023_impi2021
+iolibraries: system_libs
 
-# basic modules and export vars needed
-# for all compiler and I/O settings
+# Module and export commands to run for all compilers 
 module_actions:
-   - "load cmake"
-   - "load git git-lfs" 
+   # clear all currently loaded modules
+   - "purge" 
+   # everything else depends on compiler environment
+   #- "load cmake"
+   #- "load git git-lfs" 
 
 export_vars:
    LC_ALL: en_US.UTF-8
 
 additional_flags: 
       - --mem=72000
-      - --constraint="cascade"
 
+# Now choose the compiler_mpi
+# Note: We must set the environment first, oneapi or gcc
 choose_compiler_mpi:
-
-   intel2020_impi2020:
+   
+   intel2023_impi2021:
+      
       add_module_actions:
-         - "load intel/20.0.4"
-         - "load intelmpi/20.0.4"
+         # Load Intel compilers, MKL and Intel MPI
+         - "load oneapi2023-env/2023.2.0"
+         - "load oneapi/2023.2.0" 
+         - "load oneapi-mpi/2021.10.0"
+         - "load oneapi-mkl/2023.1.0"
+         # Load git-lfs
+         - "load git-lfs/3.4.0"
+      
       add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
+         #FC: mpiifort
+         #F77: mpiifort
+         #MPIFC: mpiifort
+         #CC: mpiicc
+         #CXX: mpiicpc
+         #MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         #MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+         
+         FC: mpiifx
+         F77: mpiifx
+         MPIFC: mpiifx
+         CC: mpiicx
+         CXX: mpiicx
+         MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+         MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
+         
          FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
          I_MPI_PMI_LIBRARY: libpmi.so
          I_MPI_FABRICS: shm:ofi
          I_MPI_LARGE_SCALE_THRESHOLD: 8192
          I_MPI_DYNAMIC_CONNECTION: 1
          
-   intel2019_impi2019:
-      add_module_actions:
-         - "load intel/19.0.4"
-         - "load intelmpi/19.0.4"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
-         I_MPI_PMI_LIBRARY: libpmi.so
-         I_MPI_FABRICS: shm:ofi
-         #FI_PROVIDER: verbs
-         #FI_VERBS_IFACE: ib
-         I_MPI_LARGE_SCALE_THRESHOLD: 8192
-         I_MPI_DYNAMIC_CONNECTION: 1
-         #I_MPI_SLURM_EXT: 0
-
-   intel2019_ompi:
-      add_module_actions:
-         - "load intel/19.0.4"
-         - "load openmpi-intel19/3.1.6"
-      add_export_vars:  
-         FC: mpifort
-         F77: mpifort
-         MPIFC: mpifort
-         FCFLAGS: -free
-         CC: mpicc
-         CXX: mpic++
-         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
-
-   intel2020_ompi:
-      add_module_actions:
-         - "load intel/20.0.4"
-         - "load openmpi-intel20/3.1.6"
-      add_export_vars:  
-         FC: mpifort
-         F77: mpifort
-         MPIFC: mpifort
-         FCFLAGS: -free
-         CC: mpicc
-         CXX: mpic++
-         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""  
-
+# Now we choose whether to use the modules available on the system (system_libs)
+# or modules compiled by ourselves (geomar_libs etc) 
 choose_iolibraries:
 
     system_libs:
-       # TODO: find the correct libraries and dependencies
+       
        add_module_actions:
-         - "load netcdf"
+         # CMake required to build some models
+         - "load cmake/3.27.4"
+         # HDF5 and netCDF required by most models
+         - "load hdf5/1.14.1-2-with-with-oneapi-mpi-2021.10.0"
+         - "load netcdf-c/4.9.2-with-oneapi-mpi-2021.10.0"
+         - "load netcdf-fortran/4.6.0-with-oneapi-mpi-2021.10.0"
+         # ecCodes required by OpenIFS
+         #- "load eccodes/2.25.0"
+         - "load eccodes/2.34.1"
+         # CDO and NCO required for some pre and post processing
+         - "load cdo/1.9.9"
+         - "load nco/5.1.5"
+         
        # TODO: find the correct libraries and dependencies
        add_export_vars:
-         NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
-         LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
-
+         # 
+         HDF5_ROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/hdf5-1.14.1-2-gniprdhdkijaxy6i3khsln6lrqjucyjw/"
+         HDF5ROOT: $HDF5_ROOT
+         NETCDF_DIR: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-c-4.9.2-jehsuqkvfvcqhspfczokywh3bxpzdb7o/"
+         NETCDFROOT: $NETCDF_DIR
+         NETCDFFROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-fortran-4.6.0-dq6omuhdb5wvodcyxzgh4p54jqclsp6q/"
+         #ECCODESROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/eccodes-2.25.0-6phun47jsw5l2ztchbjipsg6gtxsa4z2/" 
+         ECCODESROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/eccodes-2.34.1-yk4grts4gppymo2cg5jrqydkrkb3we43/"
+         NETCDF_CXX_LIBRARIES: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-cxx4-4.3.1-n6bh6c2tp5yrnd5xotosfnk5vu3yxoga/lib"
+         # Loading modules adds them to LD_LIBRARY_PATH
+         #LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+         
+         # For OASIS
+         HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+         NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+         OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                    
+         # For OASIS3-MCT5 from CERFACS
+         OASIS_NETCDF: $NETCDF_DIR
+         OASIS_NETCDFF: $NETCDF_DIR
+         
+    # This option is currently not configured. But leave it here for reference
     geomar_libs:
        choose_compiler_mpi:
           intel2020_impi2020:
@@ -178,62 +194,10 @@ choose_iolibraries:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-          intel2019_impi2019:
-             add_export_vars:
-                IO_LIB_ROOT: ~smomw235/sw/HPC_libraries/intel2019.0.4_impi2019.0.4_20210122
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-          intel2019_ompi:
-             add_export_vars:
-                IO_LIB_ROOT: ~smomw235/sw/HPC_libraries/intel2019.0.4_ompi3.1.6_20210322
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-          intel2020_ompi:
-             add_export_vars:
-                IO_LIB_ROOT: ~smomw235/sw/HPC_libraries/intel2020.0.4_ompi3.1.6_20210322
-                PATH: $IO_LIB_ROOT/bin:$PATH
-                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-                SZIPROOT: $IO_LIB_ROOT
-                HDF5ROOT: $IO_LIB_ROOT
-                HDF5_ROOT: $HDF5ROOT
-                NETCDFROOT: $IO_LIB_ROOT
-                NETCDFFROOT: $IO_LIB_ROOT
-                ECCODESROOT: $IO_LIB_ROOT
-
-                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them
 fc: "$FC"

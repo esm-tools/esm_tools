@@ -1,0 +1,37 @@
+# PG: BUG!! This doesn't work, but should. It is overriden by the other
+# add_export_vars???
+#add_export_vars:
+    # NOTE(PG): The version of HDF5_ROOT **WITH** an underscore is used by PISM Cmake:
+    #    - "HDF5_ROOT=$HDF5ROOT"
+
+choose_computer.name:
+    ollie:
+        environment_changes:
+            add_module_actions:
+                - "unload netcdf"
+                - "unload intel.compiler"
+                - "unload intel.mpi"
+                - "use ~dbarbi/modulefiles"
+                - "unload hdf5"
+                - "load pism_externals"
+                - "load proj"
+            add_export_vars:
+                - "I_MPI_FABRICS=shm:tmi"
+                - "HDF5_ROOT=$HDF5ROOT"
+                - "PROJ_ROOT=/global/AWIsoft/proj/5.1.0/"
+    mistral:
+        environment_changes:
+            add_module_actions:
+                - "unload gcc"
+                - "load gcc/7.1.0"
+            add_export_vars:
+                - "UDUNITS2_ROOT=/pf/a/pism_build_sebastian02/local/modules/uunits2/"
+                - "FFTW_ROOT=/pf/a/pism_build_sebastian02/local/modules/fftw/"
+                - "PROJ4_ROOT=/pf/a/pism_build_sebastian02/local/modules/proj4/"
+                - "PETSC_DIR=/pf/a/pism_build_sebastian02/local/modules/petsc-v3.12/"
+                - "HDF5_ROOT=/pf/a/pism_build_sebastian02/local/modules/hdf5/"
+                #- "UDUNITS2_ROOT=/sw/rhel6-x64/util/udunits-2.2.26-gcc64"
+                #- "FFTW_ROOT=/sw/rhel6-x64/numerics/fftw-3.3.7-openmp-gcc64"
+                #- "PROJ4_ROOT=/sw/rhel6-x64/graphics/proj4-4.9.3-gcc48"
+                #- "PETSC_DIR=/sw/rhel6-x64/numerics/PETSc-3.12.2-impi2018-intel18/"
+                #- "HDF5_ROOT=$HDF5ROOT"

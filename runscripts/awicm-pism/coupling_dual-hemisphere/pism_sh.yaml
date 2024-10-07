@@ -1,0 +1,75 @@
+general:
+        setup_name: "pism_sh"
+        compute_time: "00:25:00"
+        initial_date: "1000-01-01"
+        final_date: "1099-12-31"
+        nyear: 10
+        base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+        #couple_dir: "${base_dir}/${exp_id}/couple/"
+       
+        files_to_wait_for:
+            - "pism_sh/latest_atmo_forcing_file.nc"
+            - "pism_sh/latest_ocean_forcing_file.nc"
+
+pism_sh:
+        version: "github1.2.1"
+        resolution: "16km"
+        model_dir: "/pf/a/a270124/pism_v1.2.1/"
+        lresume: 1
+
+        ###################
+        # Settings for AWIES - PISM coupling
+        # DEBM
+        ablation_method: "DEBM"
+        debm_path: "/pf/a/a270129/dEBM_esm_tools/dEBMmain"
+        debm_obl: "22.944859"
+        # lapse rate
+        lapse_rate: -0.005
+        iceberg_coupling: False
+        ###################
+        
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+        spinup_file: "/work/ba0989/a270124/esm-experiments/icebergs/antarctic/restarts_lennert/pismr_antarctica_16km.spinup_start.nc"
+        pool_dir: "/work/ba1066/a270124/pool_pism/"
+        ts_interval: "1"
+        ex_interval: "monthly"
+        domain: "antarctica"
+        force_bootstrap_first_run: True
+        
+        couplers:
+                atmosphere: 
+                    given:
+                        files:
+                            atmosphere_given_file: "latest_atmo_forcing_file.nc"
+                ocean:
+                    th:
+                        files:
+                            ocean_th_file: "latest_ocean_forcing_file.nc"
+
+        workflow:
+                next_run_triggered_by: couple_out
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                #script: pseudo_couple_in_pism.sh
+                                script: coupling_awiesm2pism.functions
+                                script_dir: /home/a/a270124/esm_tools/runscripts/awicm-pism/coupling/
+                                #call_function: call_this
+                                call_function: awiesm2pism
+                                env_preparation: env_pism.py
+                                run_only: first_run_in_chunk
+                                #skip_chunk_number: 1
+
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                #script: pseudo_couple_out_pism.sh
+                                script: coupling_awiesm2pism.functions
+                                script_dir: /home/a/a270124/esm_tools/runscripts/awicm-pism/coupling/
+                                #call_function: call_this
+                                call_function: pism2awiesm
+                                env_preparation: env_pism2awiesm.py
+                                run_only: last_run_in_chunk

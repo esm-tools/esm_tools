@@ -24,6 +24,13 @@ comp_command: export NEMO_TOPLEVEL=${model_dir}/../../ ; cp cfg.inc ../cfg.txt ;
   cd ..
 
 archfile: ESMTOOLS_generic_oasis_intel
+choose_computer.name:
+  glogin:
+    choose_computer.compiler_mpi:
+      gcc11_ompi416:
+        archfile: ESMTOOLS_generic_oasis_GNU 
+    
+
 
 destination: ${version}
 install_bins: BLD/bin/oceanx
@@ -70,9 +77,10 @@ available_versions:
 - ORCA05_LIM2_KCM_AOW_FS
 - ORCA05_LIM2_FOCI_AGRIF
 - ORCA05_LIM2_FOCI_AGRIF_AOW
-- ORCA05_LIM2_KCM_AGRIF_OASISMCT4
+- ORCA05_LIM2_KCM_AGRIF_OASISMCT4 
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
-- ORCA12_LIM2_KCM_AOW_FS_OASISMCT4
+- ORCA05_LIM2_KCM_AOW_OASISMCT5
+- ORCA05_LIM2_KCM_AOW_FS_OASISMCT5
 - ORCA05_LIM2_NEMO_JRA55_test
 - GYRE_XIOS
 - GYRE_PISCES
@@ -80,6 +88,7 @@ available_versions:
 - eORCA025_Z75_SI3_JRA55 
 - eORCA025_Z75_SI3_COUPLED
 - ORCA05_Z46_SI3_COUPLED
+- ORCA05_SI3_COUPLED_AGRIF
 
 choose_version:
 
@@ -235,6 +244,12 @@ choose_version:
        data_tem_eORCA025: data_tem.nc
        data_sal_eORCA025: data_sal.nc
        ghflux_v2.0: geothermal_heating.nc
+       
+       # AGRIF files
+       # Note: You can initialise T/S from parent
+       # so no 1_data_tem etc is needed. 
+       1_domain_cfg: 1_domain_cfg.nc 
+       1_subbasins: 1_subbasins.nc 
        
     # surface forcing for uncoupled NEMO4
     forcing_files:
@@ -714,6 +729,334 @@ choose_version:
        ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
        
        seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc 
+       
+  ORCA05_SI3_COUPLED_AGRIF:
+    # coupled ORCA05 with AGRIF set up with SI3 sea ice model
+    # 
+    # This configuration is based on the ICE_AGRIF_CPL in cfgs in NEMO
+    # but the settings here are defaults for ORCA05 with 5x AGRIF. 
+    # It should be possible to use this config for e.g. ORCA025 with 1/20 
+    # AGRIF as well, but one would have to modify time step (rn_Dt) 
+    # diffusion etc. 
+    #
+    # modifications to compile time and runtime environment changes
+    # are set in components/setups/focioifs.yaml
+
+    requires:
+        - nemobasemodel-4.2.2
+
+    branch: master
+    reference_expid: 'EXP00'
+    clone_destination: nemo-${nemo.version}/cfgs/ICE_AGRIF_CPL
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ice_agrif_cpl.git
+    
+    # TODO: include arch repo as separate component
+    comp_command: export NEMO_TOPLEVEL=${model_dir} ; export XIOS_TOPLEVEL=${model_dir}/../xios; 
+                  test -d arch/GEOMAR || git clone https://git.geomar.de/foci/src/nemo_arch.git arch/GEOMAR;
+                  cp cfgs/ICE_AGRIF_CPL/work_cfgs.inc cfgs/ref_cfgs.txt;
+                  ./makenemo -n ${version} -m ${archfile} -r ICE_AGRIF_CPL -j 24 ; 
+                  cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${version}/BLD/bin/oceanx
+    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ICE_AGRIF_CPL clean
+    archfile: ESMTOOLS_generic_oasis_intel
+    destination: nemo-${nemo.version}
+    install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
+
+    namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/${reference_expid}/
+
+    generation: "4.2"
+    resolution: ORCA05
+    use_tracer: false 
+    use_si3_agrif: true 
+    leapyear: true  
+    free_surface: nonlinear
+    
+    input_dir: ${pool_dir}/NEMO4_${resolution}/input
+    
+    # We need to add the namelist files for AGRIF
+    add_config_files:
+       1_namelist_cfg: 1_namelist_cfg
+       1_namelist_ice_cfg: 1_namelist_ice_cfg
+       # uncomment if we would use top for biogeochemistry
+       #1_namelist_top_cfg: 1_namelist_top_cfg 
+    
+    add_input_sources:
+        namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+        namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+        #namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
+        
+        # 1_namelist_ref is just a copy of namelist_ref
+        1_namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+        1_namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+        #1_namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref 
+        
+        # Ensure we take domain_cfg made with AGRIF in mind
+        domain_cfg_orca05_nemo4: ${agrif_dir}/domain_cfg.nc
+
+    add_input_files:
+       # add reference namelists to the work dir
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       #namelist_top_ref: namelist_top_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       #1_namelist_top_ref: 1_namelist_top_ref
+       
+       # from Sebastian / Markus
+       # Note: Some of these files may be different 
+       # than those used for non-AGRIF ORCA05 since 
+       # the nesting tools modify the bathymetry for the 
+       # parent grid
+       bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
+       coordinates_orca05_nemo4: bathy_meter_orca05_nemo4 
+       bfr_coef_orca05_nemo4: bfr_coef_orca05_nemo4
+       subbasins_orca05_nemo4: subbasins_orca05_nemo4
+       domain_cfg_orca05_nemo4: domain_cfg_orca05_nemo4
+       # ghflux remapped to ORCA05, no reshape file needed
+       ghflux_v2.0_orca05_nemo4: ghflux_v2.0_orca05_nemo4
+       
+       # inital data
+       # Note: We will initialise the child grids 
+       # from the parent data, so no need for 
+       # 1_data_tem etc 
+       data_tem_orca05_nemo4: data_tem_orca05_nemo4
+       data_sal_orca05_nemo4: data_sal_orca05_nemo4
+       
+       # inital data
+       seaice_orca05_nemo4: seaice_orca05_nemo4
+       
+       # domain_cfg and AGRIF_FixedGrids.in for AGRIF
+       1_domain_cfg: 1_domain_cfg 
+       fixed_grids: fixed_grids
+       # if subbasins is present for the parent grid
+       # (to compute Atlantic, Pacific overturning etc)
+       # then 1_subbasins must also be present for child 
+       # Mostly, this file should only contain zeros
+       # since AGRIF nests usually do not enclose an 
+       # entire ocean, e.g. Pacific or Atlantic
+       1_subbasins: 1_subbasins
+
+    input_in_work:
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       #1_namelist_top_ref: 1_namelist_top_ref
+       
+       domain_cfg_orca05_nemo4: domain_cfg.nc
+       coordinates_orca05_nemo4: coordinates.nc
+       bfr_coef_orca05_nemo4: bfr_coef.nc
+       subbasins_orca05_nemo4: subbasins.nc
+       
+       1_domain_cfg: 1_domain_cfg.nc 
+       1_subbasins: 1_subbasins.nc 
+       
+       # inital data
+       data_tem_orca05_nemo4: data_tem.nc
+       data_sal_orca05_nemo4: data_sal.nc
+       ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
+       seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc 
+     
+    # Add extra coupling fields to couple AGRIF to OpenIFS  
+    add_coupling_fields:
+        "[[agr1_t_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_c_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_r_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_rc_fields-->FIELD]]":
+            grid: agr1
+        "[[agr2_t_fields-->FIELD]]":
+            grid: agr2
+            
+    # Namelist changes for AGRIF coupled 
+    add_namelist_changes:
+       
+       # override hardcoded path to runoff forcing
+       namelist_cfg:
+          namsbc_blk:
+             cn_dir: "./"
+          # use domain_cfg file to set the grid
+          namcfg: 
+             ln_read_cfg: ".true. "
+             cn_domcfg: "domain_cfg.nc"
+             ln_closea: '.false.'
+          namsbc:
+             # turn off all sbc except coupling
+             ln_blk: false
+             ln_cpl: true
+             ln_ssr: false
+             ln_rnf: false
+             ln_traqsr: false
+             ln_apr_dyn: false
+          # turn on most coupling fields
+          namsbc_cpl:
+             sn_snd_temp: ['oce and ice', 'no', '', '', '']
+             sn_snd_alb: ['ice', 'no', '', '', '']
+             sn_snd_thick: ['ice and snow', 'no', '', '', '']
+             sn_snd_crt: ['oce only', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_snd_co2: ['none', 'no', '', '', '']
+             sn_snd_cond: ['none', 'no', '', '', '']
+             sn_snd_mpnd: ['none', 'no', '', '', '']
+             sn_snd_sstfrz: ['none','no','','','']
+             sn_snd_wlev: ['none','no','','','']
+             sn_snd_ttilyr: ['none','no','','','']
+             sn_rcv_w10m: ['none', 'no', '', '', '']
+             sn_rcv_taumod: ['none', 'no', '', '', '']
+             sn_rcv_tau: ['oce and ice', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_rcv_dqnsdt: ['coupled', 'no', '', '', '']
+             sn_rcv_qsr: ['conservative', 'no', '', '', '']
+             sn_rcv_qns: ['conservative', 'no', '', '', '']
+             sn_rcv_emp: ['conservative', 'no', '', '', '']
+             sn_rcv_rnf: ['coupled', 'no', '', '', '']
+             sn_rcv_cal: ['coupled', 'no', '', '', '']
+             sn_rcv_co2: ['none', 'no', '', '', ''] 
+          nambbc:
+             # Unlike default, we use geothermal heating remapped to ORCA05
+             # No need for a reshape file
+             sn_qgh: ['geothermal_heating.nc', -12.0, 'gh_flux', .false., .true., 'yearly', '', '']
+          
+          # This is set later in this file under choose_free_surface
+          #namdyn_hpg:
+          #   ln_hpg_zco: '.false.'
+          #   ln_hpg_zps: '.false.'
+          #   ln_hpg_sco: '.true.'
+          
+          namlbc:
+             # no slip 
+             rn_shlat: 0
+             
+          # set diffusion to be 600 m2/s
+          # and visc to be -1,709 m4/s
+          # A = Ud * Ld / 2. Ud = 0.024 gives approx A=600 m2/s for Ld=50km. 
+          # A = Uv * Lv / 12. Uv = 0.164 gives around A=-1,709 m4/s for Ld=50km
+          namtra_ldf:
+             # Laplacian, iso-neutral
+             ln_traldf_lap: '.true.'
+             ln_traldf_iso: '.true.'
+             ln_traldf_msc: '.true.'
+             # 2D varying, i.e. scaled by grid-cell size
+             nn_aht_ijk_t: 20
+             rn_ud: 0.018
+             rn_Ld: 200.e+3
+          
+          namtra_eiv:
+             ln_ldfeiv: '.false.'
+             # 21 = Treguier et al. JPO 1997 formulation
+             nn_aei_ijk_t: 21
+             # rn_ue and rn_le are irrelevant if nn_aei_ijk_t = 21
+             rn_ue: 0.03
+             rn_Le: 200.e+3
+             ln_ldfeiv_dia: '.true.'
+          
+          namdyn_ldf:
+             # Bi-Laplacian, horizontal
+             ln_dynldf_blp: '.true.'
+             ln_dynldf_hor: '.true.'
+             # Constant
+             nn_ahm_ijk_t: 0
+             rn_uv: 0.164
+             rn_Lv: 10.e+3
+          
+          namagrif: 
+             ln_spc_dyn: '.true.'
+             # use default sponge diffusion for now
+             # Experiment with this later...
+             
+       1_namelist_cfg:
+          namrun:
+             cn_exp: ${expid}
+             nn_it000: ${thisstep_nest}
+             nn_itend: ${newstep_nest}
+             nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag} 
+             cn_ocerst_indir: '${parent_restart_dir}/'
+             cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+             cn_ocerst_outdir: '${experiment_restart_out_dir}/'
+             nn_stock: ${newstep_nest}
+             nn_leapy: ${nn_leapy} 
+             nn_rstctl: ${nn_rstctl} 
+             ln_rstart: ${nemo.lresume}
+             ln_1st_euler: ${ln_1st_euler}
+             
+          namcfg: 
+             ln_read_cfg: ".true. "
+             cn_domcfg: "domain_cfg.nc"
+             ln_closea: '.false.'                           
+             
+          namtsd:                                                
+             ln_tsd_dmp: '.false.' 
+             ln_tsd_init: '.false.'
+             
+          namdom:
+             rn_Dt: ${time_step_nest}
+             ln_meshmask: ${ln_meshmask}
+          
+          namlbc:
+             # free slip in the nest
+             rn_shlat: 2.0   
+    
+          namagrif: 
+             ln_agrif_2way: '.true.'
+             # initialise AGRIF from parent T/S
+             ln_init_chfrpar: ${ln_init_chfrpar}
+             ln_vert_remap: '.false.'
+             # check bathymetry 
+             ln_chk_bathy: '.true.'
+             #rn_sponge_tra: 600
+             #rn_sponge_dyn: 600
+             
+          namsbc:
+             ln_blk: false
+             ln_cpl: true
+             ln_ssr: false
+             ln_rnf: false
+             ln_traqsr: false
+             ln_apr_dyn: false
+             nn_fsbc: 1 #${nest_refinement} 
+          namsbc_cpl:
+             sn_snd_temp: ['oce and ice', 'no', '', '', '']
+             sn_snd_alb: ['ice', 'no', '', '', '']
+             sn_snd_thick: ['ice and snow', 'no', '', '', '']
+             sn_snd_crt: ['oce only', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_snd_co2: ['none', 'no', '', '', '']
+             sn_snd_cond: ['none', 'no', '', '', '']
+             sn_snd_mpnd: ['none', 'no', '', '', '']
+             sn_snd_sstfrz: ['none','no','','','']
+             sn_snd_wlev: ['none','no','','','']
+             sn_snd_ttilyr: ['none','no','','','']
+             sn_rcv_w10m: ['none', 'no', '', '', '']
+             sn_rcv_taumod: ['none', 'no', '', '', '']
+             sn_rcv_tau: ['oce and ice', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_rcv_dqnsdt: ['coupled', 'no', '', '', '']
+             sn_rcv_qsr: ['conservative', 'no', '', '', '']
+             sn_rcv_qns: ['conservative', 'no', '', '', '']
+             sn_rcv_emp: ['conservative', 'no', '', '', '']
+             sn_rcv_rnf: ['coupled', 'no', '', '', '']
+             sn_rcv_cal: ['coupled', 'no', '', '', '']
+             sn_rcv_co2: ['none', 'no', '', '', ''] 
+         
+          # Sang-Yeobs first test was with partial steps
+          namdyn_hpg:
+             ln_hpg_zco: '.false.'
+             ln_hpg_zps: '.false.'
+             ln_hpg_sco: '.true.'
+             
+          namtra_ldf:
+             # For now turn it all off
+             ln_traldf_OFF: '.true.'
+             # aht = 1/2 * rn_Ud * rn_Ld = 1/2 * 0.02 * 10000 = 100 m2/s
+             #ln_traldf_lap: '.true.'
+             #ln_traldf_iso: '.true.'
+             #nn_aht_ijk_t:  20
+             #rn_Ud: 0.02  
+             #rn_Ld: 10000 
+             
+          namdyn_ldf:
+             # For now turn it all off
+             ln_dynldf_off: '.true.'
+             #ln_dynldf_blp: '.true.'
+             #ln_dynldf_hor: '.true.'
+             #nn_ahm_ijk_t: 32
+             
 
   ORCA05_LIM2_FOCI_AGRIF:
     requires:
@@ -731,8 +1074,10 @@ choose_version:
     # use tracer in AGRIF?
     use_tracer: false
     use_tracer_agrif: false 
+    
     # use LIM2 in AGRIF?
     use_lim2_agrif: true
+    
     free_surface: linear
     leapyear: true  
 
@@ -1041,6 +1386,152 @@ choose_version:
              nn_msh: ${nn_msh}
              rn_rdt: ${time_step_nest}
           namsbc:
+             nn_fsbc: 1
+             nn_ice: 2
+             ln_echam: '.false.'
+             ln_cpl: '.true.'
+          namtra_ldf: 
+             rn_aeiv_0: 0.
+             rn_aht_0: 120.
+             rn_aht_m: 120.
+          namdyn_ldf:
+             # Computed as -1.709e12 / 5^3 = -1.37e10
+             # Note: -1.709e12 is applied at the largest ORCA05 cell, at equator
+             # but coeff is actually -1.267e12 where VIKING10 starts
+             # So ahm should be -1.267e12 / 5^3 = -1.013e10
+             # We should scale this by 0.74.
+             rn_ahm_0_blp: -1.013e10
+             rn_ahm_m_blp: -1.37e11
+             rn_ahm_m_lap: 0.
+          nammpp:
+             jpni: ${jpni}
+             jpnj: ${jpnj}
+             jpnij: ${nproc}
+          #namnc4:
+          #   ln_nc4zip: '.false.'
+          #   nn_nchunks_i: 4
+          #   nn_nchunks_j: 4
+          #   nn_nchunks_k: 4
+          nambbl:
+             rn_ahtbbl: 1000
+          namctl:
+             ln_ctl: '.false.'
+             nn_timing: 0
+          # with AGRIF always use linear free surface
+          # always set free_surface: linear with AGRIF
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+       namelist_cfg:
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+    
+    add_coupling_fields:
+        "[[agr1_t_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_c_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_r_fields-->FIELD]]":
+            grid: agr1r
+        "[[agr1_rc_fields-->FIELD]]":
+            grid: agrc
+        "[[agr2_t_fields-->FIELD]]":
+            grid: agr2
+            
+  ORCA05_LIM2_KCM_AGRIF_OASISMCT5:
+    requires:
+    - nemobasemodel-3.6foci
+    branch: esm-tools
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
+    archfile: ESMTOOLS_generic_oasis_intel_agrif
+    
+    # use tracer in AGRIF?
+    use_tracer_agrif: true
+    # use LIM2 in AGRIF?
+    use_lim2_agrif: true
+    free_surface: linear
+    leapyear: true  
+    
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+       1_sn_tem_levitus: 1_sn_tem_levitus
+       1_sn_sal_levitus: 1_sn_sal_levitus
+       1_ice_init: 1_ice_init
+       # reference namelists
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       # grids and coefficients
+       cn_batmeter: bathy_updated
+       1_cn_batmeter: 1_bathy_meter
+       1_coordinates: 1_coordinates
+       fixed_grids: fixed_grids
+       # reshape files for nest
+       1_reshape_bicub: 1_reshape_bicub
+       1_reshape_bilin: 1_reshape_bilin
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       1_coordinates: 1_coordinates_ORCA05.nc
+    
+    add_config_files:
+       1_namelist_cfg: 1_namelist_cfg
+       1_namelist_ice_cfg: 1_namelist_ice_cfg
+       1_namelist_top_cfg: 1_namelist_top_cfg
+
+    add_namelist_changes:
+       1_namelist_cfg:
+          namrun:
+             cn_exp: ${expid}
+             nn_it000: ${thisstep_nest}
+             nn_itend: ${newstep_nest}
+             nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag}
+             cn_ocerst_indir: '${parent_restart_dir}/'
+             cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+             cn_ocerst_outdir: '${experiment_restart_out_dir}/'
+             nn_stock: ${newstep_nest}
+             nn_leapy: ${nn_leapy}
+             nn_rstctl: ${nn_rstctl}
+             ln_rstart: ${nemo.lresume}
+          #namcfg:
+          #   jpidta: ${_nx_nest1}
+          #   jpjdta: ${_ny_nest1}
+          #   jpiglo: ${_nx_nest1}
+          #   jpjglo: ${_ny_nest1}
+          namlbc: 
+             rn_shlat: 2
+             ln_vorlat: '.false.'
+          namagrif:
+             #nn_cln_update: 3
+             rn_sponge_tra: 600 
+             rn_sponge_dyn: 600 
+          namtsd:
+             ln_tsd_tradmp: ${ln_tsd_tradmp}
+             ln_tsd_init: ${ln_tsd_init}
+          namdom:
+             nn_closea: 1
+             nn_msh: ${nn_msh}
+             rn_rdt: ${time_step_nest}
+          namsbc:
              nn_fsbc: 3
              nn_ice: 2
              ln_echam: '.false.'
@@ -1084,10 +1575,6 @@ choose_version:
             grid: agr1
         "[[agr1_c_fields-->FIELD]]":
             grid: agr1
-        "[[agr1_r_fields-->FIELD]]":
-            grid: agr1r
-        "[[agr1_rc_fields-->FIELD]]":
-            grid: agrc
         "[[agr2_t_fields-->FIELD]]":
             grid: agr2
 
@@ -1172,37 +1659,14 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
-
-  ORCA05_LIM2_KCM_AOW_OASISMCT4:
-    requires:
-    #- xios-2.0_r982
-    - nemobasemodel-3.6foci
-    branch: oasismct4 
-    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
-    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW.git
-
-    add_input_files:
-       # reference namelists
-       namelist_ref: namelist_ref
-       namelist_ice_ref: namelist_ice_ref
-       # grids and coefficients 
-       cn_batmeter: bathy_meter 
-       coordinates: coordinates
-       subbasins: subbasins
-       coef-G70: coef-G70
-       # init and (if used) damping data
-       sn_tem: sn_tem_levitus
-       sn_sal: sn_sal_levitus
-       ice_init: ice_init_kkg36f13h
-
-    input_in_work:
-       ice_init: Ice_initialization.nc
-       namelist_ice_ref: namelist_ice_ref
-
+  
+  # Use for FOCI-OpenIFS v2.x
+  # No smagorinsky
+  # Add flag to support OASIS3-MCT >= 3.0
   ORCA05_LIM2_KCM_AOW_FS_OASISMCT4:
     requires:
     - nemobasemodel-3.6foci
-    branch: esm-tools
+    branch: mct3_nosmag
     destination: nemo-${nemo.version}/CONFIG/${nemo.version}
     git-repository: https://git.geomar.de/foci/src/nemo_config/${nemo.version}.git
 
@@ -1226,6 +1690,79 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
+  
+  # As for ORCA05_LIM2_KCM_AOW_FS_OASISMCT4_SMAG
+  # here we use ORCA05_LIM2_KCM_AOW_FS_OASISMCT4 
+  # and set free_surface = linear
+  # and also change branch name. 
+  ORCA05_LIM2_KCM_AOW_OASISMCT4:
+    requires:
+    - nemobasemodel-3.6foci
+    branch: mct3_nosmag_novvl
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4.git
+
+    free_surface: linear
+    leapyear: true  
+
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+  
+  # Use for FOCI-OpenIFS v3.0 
+  # Note: This version is identical to ORCA05_LIM2_KCM_AOW_FS_OASISMCT4 
+  # and is the same repo, just a different branch.
+  # But for some strange reason we can't just change branch, but have to define
+  # a new version... 
+  # 
+  # In the future we should have one repo for all NEMO 3.6 code
+  # and then just change branches between model versions
+  #
+  ORCA05_LIM2_KCM_AOW_FS_OASISMCT4_SMAG:
+    requires:
+    - nemobasemodel-3.6foci
+    # unlike the other versions, we hard code the name here
+    # so that we avoid the SMAG at the end.
+    # That way, we use the same repo as ORCA05_LIM2_KCM_AOW_FS_OASISMCT4, but different branch
+    branch: esm-tools
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_KCM_AOW_FS_OASISMCT4.git
+    
+    free_surface: nonlinear
+    leapyear: true  
+
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+  
   
   #ORCA05_SI3_FOCI_FS_AOW:
   #  requires:
@@ -1448,7 +1985,16 @@ jpni:           0
 jpnj:           0
 nproc:          $(( ${jpni} * ${jpnj} )) 
 
+# first step is an Euler step
+# this needs to be true for a cold start
+# but should be false for restarts
+nn_euler:        1 # use Euler step in NEMO 3.6
+ln_1st_euler: true # use Euler step in NEMO 4.2
+
+# use_lim2 is kept default here
+# but for NEMO 4, one should have use_lim2 = false and use_si3 = true
 use_lim2:       true
+use_si3:        false
 use_tracer:     true
 hosing:         false
 lresume:        false
@@ -1458,9 +2004,16 @@ correct_neg_tracer_conc: true
 ln_tsd_tradmp: false 
 
 # Nest settings
-nest1: no
+# Note: ESM-Tools only supports one nest at the moment
+# name of first nest 
+nest1: false
+# use tracer, LIM2 (NEMO 3.6), SI3 (NEMO 4.2) 
 use_tracer_agrif:   false
 use_lim2_agrif:     false
+use_si3_agrif:      false
+# initialise AGRIF temperature and salinity
+# from parent? Only works in NEMO 4.2. 
+ln_init_chfrpar:    true
 
 # calendar:
 leapyear: False 
@@ -1469,9 +2022,10 @@ leapyear: False
 # values below will be set to false if lresume = true
 ln_tsd_init: true 
 ln_limini: true 
-# in NEMO4.x limini is called ln_iceini
-ln_iceini: ${ln_limini} 
 ln_limini_agrif: false
+# in NEMO4.x limini is called ln_iceini
+ln_iceini: true 
+ln_iceini_agrif: false
 nn_msh: 1
 ln_meshmask: true
 # will be set to 0 if lresume = true and run_number=1
@@ -1535,7 +2089,9 @@ coupling_freq_in_steps: 6
 #jrastart: 1958
 #jraend: 1960
 
-
+#
+# These changes are done for all configurations
+#
 namelist_changes:
         namelist_cfg:
                 namrun:
@@ -1555,14 +2111,34 @@ namelist_changes:
                         #ln_tsd_tradmp: ${ln_tsd_tradmp} 
                         ln_tsd_init: ${ln_tsd_init} 
                 namsbc:
+                        # Note: This could actually be set to 1 as well
+                        # It would mean calling ice model each step 
+                        # which is expensive. 
+                        # Something to be tested in the future. 
                         nn_fsbc: ${coupling_freq_in_steps}
                 nammpp:
                         jpni: ${jpni}
                         jpnj: ${jpnj}
+                        
 
+#
+# Settings for all configurations but
+# separate for NEMO generations.
+#
 choose_generation:
         "4.2": 
+                
+                # Switching from LIM2 (NEMO 3.6) to SI3 (NEMO 4)
+                use_lim2: false
+                use_si3: true
+                
+                # coupling fields are the same as in NEMO 3.6 except for:
+                # 1) OIceFrac is now OIceFrc
+                # 2) O_AlbIce is added 
+                # 3) O_SnwTck, O_IceTck are now OSnwTck, OIceTck 
                 opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+                agr1_t_fields: [1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_OIceTck, 1_OSnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
+
                 # in NEMO 4, the periodic points, i.e. i=1, i=imax
                 # are not included in the coupling
                 # So we need to set P 0 in namecouple
@@ -1571,8 +2147,10 @@ choose_generation:
                 
                 add_namelist_changes:
                         namelist_cfg:
+                                namrun: 
+                                        ln_1st_euler: ${ln_1st_euler}
                                 namdom:
-                                        rn_dt: ${time_step}
+                                        rn_Dt: ${time_step}
                                         ln_meshmask: ${ln_meshmask}
                                 namcfg:
                                         ln_closea: '.false.'
@@ -1583,17 +2161,71 @@ choose_generation:
                    nonlinear:
                       add_namelist_changes:
                          namelist_cfg:
+                            namdom:
+                               ln_linssh: '.false.'
                             namdyn_hpg:
+                               ln_hpg_zco: '.false.'
+                               ln_hpg_zps: '.false.'
                                ln_hpg_sco: '.true.'
+                               
+                # Restart settings               
+                choose_lresume:
+                   
+                   # If the run is a restart
+                   true:
+                      # Turn off initialisation
+                      ln_iceini: false
+                      ln_limini_agrif: false
+                      ln_tsd_init: false
+                      # dont write mesh_mask files
+                      ln_meshmask: false
+                      # take date from restart file
+                      nn_rstctl: 2
+                      # do not initialise AGRIF from parent
+                      # We need to use AGRIF restart files
+                      ln_init_chfrpar: '.false.'
+                      # Do not use Euler forward for first step
+                      # This only works if you have restart files with two
+                      # time levels stored
+                      ln_1st_euler: false
+                            
+                      # Run is a restart but run number = 1, 
+                      # i.e. it is the first run of the experiment
+                      # That means you are restarting (branching off) 
+                      # from another experiment.                
+                      choose_general.run_number:
+                         # For the first run
+                         1:
+                            # Take date from nn_date0, not restart file
+                            # (allows to restart at year 1850 from picontrol at year 3000)
+                            nn_rstctl: 0
+                            nn_rsttr : 0 # only needed if tracers are used
+                            # This assumes you have glued restart files into one global file.
+                            # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
+                            global_tag: "_global" 
+                            prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
+                            prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
+                   
+                   # If not a restart, i.e. cold start
+                   false:
+                      add_outdata_sources:
+                         mesh_mask: "*mesh_mask*.nc"
+                               
         "3.6":
+                # Coupling fields are different for NEMO 3.6 and 4.2, so it has to go in this choose block
+                # see comment for 4.2
                 choose_sst_grid_name: 
                         "opat":
                                 opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
                         "opac":
                                 opat_fields: []
                                 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT, OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1] 
+                agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
+                
                 add_namelist_changes:
                         namelist_cfg:
+                                namrun:
+                                        nn_euler: ${nn_euler}
                                 namdom:
                                         nn_closea: 1
                                         nn_msh: ${nn_msh}
@@ -1618,6 +2250,45 @@ choose_generation:
                                ln_hpg_sco: '.true.'
                                ln_dynhpg_imp: '.false.'
                 
+                # Restart settings               
+                choose_lresume:
+                   
+                   # If the run is a restart
+                   true:
+                      # Turn off initialisation
+                      ln_limini: false
+                      ln_limini_agrif: false
+                      ln_tsd_init: false
+                      # dont write mesh_mask files
+                      nn_msh: 0
+                      ln_meshmask: false
+                      # Set nn_euler = 0 to make the model start with leap frog
+                      # Only works if restart files with two time levels (before and now)
+                      # are stored. 
+                      nn_euler: 0
+                      
+                      # Run is a restart but run number = 1, 
+                      # i.e. it is the first run of the experiment
+                      # That means you are restarting (branching off) 
+                      # from another experiment.                
+                      choose_general.run_number:
+                         # For the first run
+                         1:
+                            # Take date from nn_date0, not restart file
+                            # (allows to restart at year 1850 from picontrol at year 3000)
+                            nn_rstctl: 0
+                            nn_rsttr : 0 # only needed if tracers are used
+                            # This assumes you have glued restart files into one global file.
+                            # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
+                            global_tag: "_global" 
+                            prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
+                            prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
+                   
+                   # If not a restart, i.e. cold start
+                   false:
+                      add_outdata_sources:
+                         mesh_mask: "*mesh_mask*.nc"
+                
 choose_leapyear:
         False:
               nn_leapy: 0 
@@ -1631,26 +2302,26 @@ choose_hosing:
                                 namdyn_sbc:
                                         ln_hosing: '.true.'
 
-choose_lresume:
-        true:
-                ln_limini: false
-                ln_limini_agrif: false
-                ln_tsd_init: false
-                nn_msh: 0
-                ln_meshmask: false
-                                        
-                choose_general.run_number:
-                        1:
-                                nn_rstctl: 0
-                                nn_rsttr : 0 # only needed if tracers are used
-                                # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
-                                global_tag: "_global" 
-                                prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
-                                prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
-
-        false:
-                add_outdata_sources:
-                        mesh_mask: "*mesh_mask*.nc"
+#choose_lresume:
+#        true:
+#                ln_limini: false
+#                ln_limini_agrif: false
+#                ln_tsd_init: false
+#                nn_msh: 0
+#                ln_meshmask: false
+#                                        
+#                choose_general.run_number:
+#                        1:
+#                                nn_rstctl: 0
+#                                nn_rsttr : 0 # only needed if tracers are used
+#                                # upon restart, nemo restart files are global files and have end on _global.nc (FOCI convention)
+#                                global_tag: "_global" 
+#                                prevstep_formatted: "<--format(%08d)-- ${ini_restart_steps}" 
+#                                prevstep_formatted_nest: "<--format(%08d)-- ${ini_restart_steps_nest}" 
+#
+#        false:
+#                add_outdata_sources:
+#                        mesh_mask: "*mesh_mask*.nc"
 
 
 # choices:
@@ -1737,6 +2408,10 @@ choose_nest1:
                 _nx_nest1: 1569
                 _ny_nest1: 664
                 nest_refinement: 3
+        NWPAC10:
+                _nx_nest1: 733
+                _ny_nest1: 838
+                nest_refinement: 4
         WG10:
                 _nx_nest1: 1414
                 _ny_nest1: 944
@@ -1774,6 +2449,7 @@ choose_levels:
 
 
 choose_use_lim2:
+   # NOTE: LIM2 only available for NEMO v3
    true:
       add_config_files:
          namelist_ice_cfg: namelist_ice_cfg
@@ -1789,18 +2465,6 @@ choose_use_lim2:
                      cn_icerst_outdir: '${experiment_restart_out_dir}/'
                   namiceini:
                      ln_limini: ${ln_limini} 
-         "4.2":
-            add_namelist_changes:
-               namelist_ice_cfg:
-                  nampar:
-                     cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
-                     cn_icerst_indir: '${parent_restart_dir}/'
-                     cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
-                     cn_icerst_outdir: '${experiment_restart_out_dir}/'
-                  namini:
-                     ln_iceini: ${ln_iceini} 
-                     # initialize sea ice based on SSTs
-                     nn_iceini_file: 0
 
       choose_use_lim2_agrif:
          true:
@@ -1815,6 +2479,43 @@ choose_use_lim2:
                      cn_icerst_outdir: '${experiment_restart_out_dir}/'
                   namiceini:
                      ln_limini: ${ln_limini_agrif} 
+
+choose_use_si3:
+   # NOTE: SI3 only available for NEMO v4
+   true:
+      add_config_files:
+         namelist_ice_cfg: namelist_ice_cfg
+      
+      choose_generation:
+         "4.2":
+            add_namelist_changes:
+               namelist_ice_cfg:
+                  nampar:
+                     cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                     cn_icerst_indir: '${parent_restart_dir}/'
+                     cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                     cn_icerst_outdir: '${experiment_restart_out_dir}/'
+                  namini:
+                     ln_iceini: ${ln_iceini} 
+                     # initialize sea ice based on SSTs
+                     nn_iceini_file: 0
+         
+            # Additional changes for 1st AGRIF child
+            choose_use_si3_agrif:
+               true: 
+                  add_config_files:
+                     1_namelist_ice_cfg: 1_namelist_ice_cfg
+                  add_namelist_changes:
+                     1_namelist_ice_cfg:
+                        nampar:
+                           cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                           cn_icerst_indir: '${parent_restart_dir}/'
+                           cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                           cn_icerst_outdir: '${experiment_restart_out_dir}/'
+                        namini:
+                           ln_iceini: ${ln_iceini_agrif} 
+                           # initialize sea ice based on SSTs
+                           nn_iceini_file: 0
 
 choose_use_tracer:
    true:
@@ -1950,21 +2651,22 @@ input_sources:
         #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noclo.nc
         domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noCaspian.nc
         #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg_ORCA05_v1.1.nc
-       
+        
         reshape_jra_orca05_nemo4_bicub: ${input_dir}/reshape_jra_bicub__4.2.0_ORCA05_v1.0.0.nc
         reshape_jra_orca05_nemo4_bilin: ${input_dir}/reshape_jra_bilin__4.2.0_ORCA05_v1.0.0.nc
         
         # inital data
-        #data_tem_orca05_nemo4: ${input_dir}/Tpot_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
-        #data_sal_orca05_nemo4: ${input_dir}/Salt_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
-        #sss_orca05_nemo4: ${input_dir}/SSS_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
-        #runoff_orca05_nemo4: ${input_dir}/runoff_12month__4.2.0_ORCA05_Kv1.0.0.nc
         data_tem_orca05_nemo4: ${input_dir}/Tpot_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
         data_sal_orca05_nemo4: ${input_dir}/Salt_PHC2.1_WOA98__4.2.0_ORCA05.L46_Kv1.0.0.nc
         seaice_orca05_nemo4: ${input_dir}/seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc
         
         # remapped ghflux to orca05
         ghflux_v2.0_orca05_nemo4: ${input_dir}/ghflux_v2.0_ORCA05.nc
+        
+        # NEMO 4.2.x input for AGRIF
+        1_domain_cfg: ${agrif_dir}/1_domain_cfg.nc
+        1_subbasins: ${agrif_dir}/1_subbasins.nc 
+        
         
 #forcing_files:
 
@@ -2027,8 +2729,7 @@ sst_grid_name: "opat"
 
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
 
-agr1_t_fields: [1_OIceFrac, 1_O_SSTSST, 1_O_TepIce, 1_O_IceTck, 1_O_SnwTck, 1_O_OCurx1, 1_O_OCury1, 
-                1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
+# agr1_t_fields are added in a choose block higher up since they are different for NEMO 3.6 and 4.2
 agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OTotEvap, 1_OIceEvap, 1_O_dQnsdT]
 agr2_t_fields: [1_O_AgrSpg]
 
@@ -2070,6 +2771,7 @@ choose_runoff_method:
         "*":
                 ornf_fields: [O_Runoff]
                 agr1_r_fields: [1_O_Runoff]
+                agr1_rc_fields: [1_OCalving]
                 add_coupling_fields:
                         "[[ornf_fields-->FIELD]]":
                                 grid: rnfo
@@ -2095,12 +2797,6 @@ grids:
                 ny: ${_ny}
                 oasis_grid_type: "LR"
                 number_of_overlapping_points: 0
-        #opar:
-        #        name: opar
-        #        nx: ${_nx}
-        #        ny: ${_ny}
-        #        oasis_grid_type: "LR"
-        #        number_of_overlapping_points: 2 
         rnfo:
                 name: rnfo
                 nx: ${_nx}

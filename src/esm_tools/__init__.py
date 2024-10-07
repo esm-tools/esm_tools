@@ -23,7 +23,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.21.19"
+__version__ = "6.37.1"
 
 import functools
 import inspect
@@ -96,6 +96,18 @@ def _get_real_dir_from_pth_file(subfolder):
         [],
     )
     logger.debug(site_packages_dirs)
+
+    # Check if the user is running with direnv and removes all other sites
+    direnv = os.getenv("VIRTUAL_ENV")
+    if direnv:
+        logger.debug(f"User running with direnv, removing other sites")
+        site_package_dirs_new = []
+        for site_package_dir in site_packages_dirs:
+            if direnv in site_package_dir:
+                site_package_dirs_new.append(site_package_dir)
+        site_packages_dirs = site_package_dirs_new
+        logger.debug(site_packages_dirs)
+
     for site_package_dir in site_packages_dirs:
         logger.debug(f"Working on {site_package_dir}")
         # Read the pth file:
@@ -164,6 +176,14 @@ def _get_runscript_filepath_standard_install(runscript):
 
 def _get_runscript_filepath_editable_install(runscript):
     return f"{_get_real_dir_from_pth_file('runscripts')}/{runscript}"
+
+
+def _get_coupling_filepath_standard_install(coupling):
+    return pkg_resources.resource_filename("esm_tools.couplings", coupling)
+
+
+def _get_coupling_filepath_editable_install(coupling):
+    return f"{_get_real_dir_from_pth_file('couplings')}/{coupling}"
 
 
 def get_config_as_str(config):
@@ -271,6 +291,16 @@ def _copy_runscript_folder_editable_install(dest_path):
     return shutil.copytree(src_path, dest_path)
 
 
+def _copy_coupling_folder_standard_install(dest_path):
+    src_path = pkg_resources.resource_filename("esm_tools.couplings", ".")
+    return shutil.copytree(src_path, dest_path)
+
+
+def _copy_coupling_folder_editable_install(dest_path):
+    src_path = _get_coupling_filepath_editable_install("")
+    return shutil.copytree(src_path, dest_path)
+
+
 def _read_namelist_editable_install(nml):
     """
     Reads a namelist file for the case that you have done an editable/develop install.
@@ -374,6 +404,7 @@ def get_config_filepath(config=""):
         cpath = _get_config_filepath_editable_install(config)
     else:
         cpath = _get_config_filepath_standard_install(config)
+    logger.debug(cpath)
     return cpath
 
 
@@ -382,6 +413,13 @@ def get_runscript_filepath(runscript=""):
     if EDITABLE_INSTALL:
         return _get_runscript_filepath_editable_install(runscript)
     return _get_runscript_filepath_standard_install(runscript)
+
+
+@caller_wrapper
+def get_coupling_filepath(coupling=""):
+    if EDITABLE_INSTALL:
+        return _get_coupling_filepath_editable_install(coupling)
+    return _get_coupling_filepath_standard_install(coupling)
 
 
 @caller_wrapper

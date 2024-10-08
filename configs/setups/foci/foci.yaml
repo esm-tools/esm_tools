@@ -33,7 +33,13 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "01:30:00"
-        
+        environment_changes:
+                choose_computer.name:
+                        glogin:
+                                add_export_vars:
+                                        - 'ECHAM6_THREADS=1'
+                                        - 'NEMO_THREADS=1'
+                                        - 'I_MPI_DEBUG=1'
         available_versions:
         - default
         - default_autotools
@@ -41,8 +47,10 @@ general:
         - fs_oasismct4
         - default_oasismct4
         - default_oasismct5
+        - mops_oasismct4
         - agrif 
         - agrif_oasismct4 
+        - agrif_mops_oasismct4 
         choose_version:
           default:
             couplings:
@@ -62,6 +70,9 @@ general:
           default_oasismct5:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct5
+          mops_oasismct4:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_oasismct4
           agrif_noaow:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
@@ -71,8 +82,9 @@ general:
           agrif_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+echam-6.3.05p2-foci_oasismct4
-            #add_include_models:
-            #- xios
+          agrif_mops_oasismct4:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4+echam-6.3.05p2-foci_oasismct4
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -83,7 +95,7 @@ echam:
         # compiletime and runtime env changes have to be placed within one of the components (does not
         # matter which one) and then they are valid for all components.
         compiletime_environment_changes:
-          iolibraries: geomar_libs
+          iolibraries: system_libs
           choose_computer.name:
              levante:
                 #compiler_mpi: intel2022_impi2021
@@ -95,14 +107,12 @@ echam:
              blogin:
                 compiler_mpi: intel2024_impi2021
              glogin:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2019_impi2019
-                #compiler_mpi: intel2019_impi2019_nemo4
+                compiler_mpi: intel2023_impi2021
              nesh:
                 compiler_mpi: intel2019_impi2019
 
         runtime_environment_changes:
-          iolibraries: geomar_libs
+          iolibraries: system_libs
           choose_computer.name:
              levante:
                 #compiler_mpi: intel2022_impi2021
@@ -114,15 +124,17 @@ echam:
                 #add_module_actions:
                 #   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
              blogin:
-                compiler_mpi: intel2019_impi2019
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                #compiler_mpi: intel2019_impi2019
+                #add_module_actions:
+                #   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                compiler_mpi: intel2019_impi2019_nemo4
+                #compiler_mpi: intel2021_impi2021
              glogin:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2019_impi2019
+                compiler_mpi: intel2023_impi2021
                 #compiler_mpi: intel2019_impi2019_nemo4
                 add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                   - "source $I_MPI_ROOT/../../setvars.sh"
+                        #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              nesh:
                 compiler_mpi: intel2019_impi2019
                 add_module_actions:
@@ -131,20 +143,64 @@ echam:
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_autotools:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 fs:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 fs_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_oasismct5:
                         version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+
+                mops_oasismct4:
+                        version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              runctl:   
+                                 lcouple_co2: true
+                              submodelctl:
+                                 lco2: true
+                              radctl:
+                                 ico2: 1
+
+                        add_restartstreams:
+                           - tracer
+
+                        add_streams:
+                           - tracer
                 agrif:
                         version: "6.3.05p2-foci"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 agrif_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+
+                agrif_mops_oasismct4:
+                        version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              runctl:   
+                                 lcouple_co2: true
+                              submodelctl:
+                                 lco2: true
+                              radctl:
+                                 ico2: 1
+
+                        add_restartstreams:
+                           - tracer
+
+                        add_streams:
+                           - tracer
 
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6"
         greenhouse_dir: "${pool_dir}/input"
@@ -330,9 +386,13 @@ echam:
                      message: "high wind speed was found during your run..."
                      file: "${general.work_dir}/atmout"
                      frequency: 90
-        
-        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
+        # due to a bug in esm_master all POSSIBLE coupling fields have to be listed here
+        # esm_master shouldn't bother about coupling fields but does for some unknown reason
+        # Sebastian Wahl 05/2023
+        #foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+
+        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
         coupling_fields:
             "[[foci_fields-->FIELD]]":
                 grid: atmo
@@ -510,6 +570,10 @@ nemo:
                         version: "ORCA05_LIM2_FOCI_AGRIF"
                 agrif_oasismct4:
                         version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+                agrif_mops_oasismct4:
+                        version: "ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4"
+                mops_oasismct4:
+                        version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
@@ -796,6 +860,44 @@ oasis3mct:
                            rmp_a2oc: rmp_a2oc
                            rmp_a2ot: rmp_a2ot
 
+                mops_oasismct4:
+
+                        norestart: "T"
+                        mct_version: "4.0"
+                        version: "4.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
+                              - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
+                              - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+
+                           flxatmos:
+                              - 'O_OTaux1 <--gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--gauswgt-- ATotSnow'
+                              - 'OIceEvap <--gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - 'O_AtmCO2 <--gauswgt-- CO2CONAT'
+                              - 'CO2FLXOC <--gauswgt_global-- CO2FLXAT'
+
                 agrif_oasismct4:
 
                         norestart: "T"
@@ -889,6 +991,65 @@ oasis3mct:
                            rmp_ot2a: rmp_ot2a 
                            rmp_a2oc: rmp_a2oc
                            rmp_a2ot: rmp_a2ot
+
+                agrif_mops_oasismct4:
+
+                        norestart: "T"
+                        mct_version: "4.0"
+                        version: "4.0-geomar"
+                        
+                        export_mode_a2o: EXPORTED     
+                         
+                        add_restart_in_files:
+                           flxatmos1: flxatmos1
+                        add_restart_out_files:
+                           flxatmos1: flxatmos1
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
+                              - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
+                              - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+
+                           flxatmos:
+                              - 'O_OTaux1 <--gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--gauswgt-- ATotSnow'
+                              - 'OIceEvap <--gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - 'O_AtmCO2 <--gauswgt-- CO2CONAT'
+                              - 'CO2FLXOC <--gauswgt_global-- CO2FLXAT'
+        
+                           flxatmos_1:
+                              - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
+                              - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
+                              - '1_O_ITaux1 <--gauswgt-- A_ITaux1'
+                              - '1_O_ITauy1 <--gauswgt-- A_ITauy1'
+                              - '1_O_QsrIce <--gauswgt-- A_QsrIce'
+                              - '1_O_QsrMix <--gauswgt-- A_QsrMix'
+                              - '1_O_QnsIce <--gauswgt-- A_QnsIce'
+                              - '1_O_QnsMix <--gauswgt-- A_QnsMix'
+                              - '1_OTotRain <--gauswgt-- ATotRain'
+                              - '1_OTotSnow <--gauswgt-- ATotSnow'
+                              - '1_OIceEvap <--gauswgt-- AIceEvap'
+                              - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - '1_O_AtmCO2 <--gauswgt-- CO2CONAT'
+                              - '1_CO2FLXOC <--gauswgt-- CO2FLXAT'
 
         coupling_directions:
                 'opat->atmo':

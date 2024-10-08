@@ -78,6 +78,8 @@ available_versions:
 - ORCA05_LIM2_FOCI_AGRIF
 - ORCA05_LIM2_FOCI_AGRIF_AOW
 - ORCA05_LIM2_KCM_AGRIF_OASISMCT4 
+- ORCA05_LIM2_FOCI_MOPS_OASISMCT4
+- ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
 - ORCA05_LIM2_KCM_AOW_OASISMCT5
 - ORCA05_LIM2_KCM_AOW_FS_OASISMCT5
@@ -353,6 +355,9 @@ choose_version:
     use_tracer: false 
     leapyear: false  
     free_surface: nonlinear
+
+    # coupling fields differ for NEMO 3.6 and 4.2
+    opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
 
     input_dir: ${pool_dir}/NEMO4_${resolution}/input
 
@@ -1578,6 +1583,288 @@ choose_version:
         "[[agr2_t_fields-->FIELD]]":
             grid: agr2
 
+  ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4:
+    requires:
+    # seb-wahl: workaround if used with OIFS which also uses XIOS which causes XIOS
+    # to be cloned and compiled twice, need to file an issue
+    #- xios-2.5_r1910
+    - nemobasemodel-3.6foci
+    branch: esm-tools
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_FOCI_AGRIF_MOPS.git 
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    archfile: ESMTOOLS_generic_oasis_intel_agrif
+    
+    # use tracer in AGRIF?
+    use_tracer_agrif: true
+    # use LIM2 in AGRIF?
+    use_lim2_agrif: true
+    free_surface: linear
+    leapyear: true  
+
+   # coupling fields
+    opac_mops_fields: [O_AtmCO2, CO2FLXOC]
+    opat_mops_fields: [CO2OCEAN, CO2TRA, FF_OCE]
+    
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+       1_sn_tem_levitus: 1_sn_tem_levitus
+       1_sn_sal_levitus: 1_sn_sal_levitus
+       1_ice_init: 1_ice_init
+       # reference namelists
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       # grids and coefficients
+       cn_batmeter: bathy_updated
+       1_cn_batmeter: 1_bathy_meter
+       1_coordinates: 1_coordinates
+       fixed_grids: fixed_grids
+       # reshape files for nest
+       1_reshape_bicub: 1_reshape_bicub
+       1_reshape_bilin: 1_reshape_bilin
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+       1_namelist_ref: 1_namelist_ref
+       1_namelist_ice_ref: 1_namelist_ice_ref
+       1_namelist_top_ref: 1_namelist_top_ref
+       1_coordinates: 1_coordinates_ORCA05.nc
+    
+    add_config_files:
+       1_namelist_cfg: 1_namelist_cfg
+       1_namelist_ice_cfg: 1_namelist_ice_cfg
+       1_namelist_top_cfg: 1_namelist_top_cfg
+
+    add_namelist_changes:
+       1_namelist_cfg:
+          namrun:
+             cn_exp: ${expid}
+             nn_it000: ${thisstep_nest}
+             nn_itend: ${newstep_nest}
+             nn_date0: ${initial_date!syear!smonth!sday} # ${ini_date}
+             cn_ocerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_${parent_date!syear!smonth!sday}${global_tag}
+             cn_ocerst_indir: '${parent_restart_dir}/'
+             cn_ocerst_out: restart_${end_date_m1!syear!smonth!sday}
+             cn_ocerst_outdir: '${experiment_restart_out_dir}/'
+             nn_stock: ${newstep_nest}
+             nn_leapy: ${nn_leapy}
+             nn_rstctl: ${nn_rstctl}
+             ln_rstart: ${nemo.lresume}
+          #namcfg:
+          #   jpidta: ${_nx_nest1}
+          #   jpjdta: ${_ny_nest1}
+          #   jpiglo: ${_nx_nest1}
+          #   jpjglo: ${_ny_nest1}
+          namlbc: 
+             rn_shlat: 0
+             ln_vorlat: '.false.'
+          namagrif:
+             #nn_cln_update: 3
+             rn_sponge_tra: 600 
+             rn_sponge_dyn: 600 
+          namtsd:
+             ln_tsd_tradmp: ${ln_tsd_tradmp}
+             ln_tsd_init: ${ln_tsd_init}
+          namdom:
+             nn_closea: 0
+             nn_msh: ${nn_msh}
+             rn_rdt: ${time_step_nest}
+          namsbc:
+             nn_fsbc: 3
+             nn_ice: 2
+             ln_echam: '.false.'
+             ln_cpl: '.true.'
+          namtra_ldf: 
+             rn_aeiv_0: 0.
+             rn_aht_0: 120.
+             rn_aht_m: 120.
+          namdyn_ldf:
+             rn_ahm_0_blp: -2.4e10
+             rn_ahm_m_blp: -8.e9
+             rn_ahm_m_lap: 0.
+          nammpp:
+             jpni: ${jpni}
+             jpnj: ${jpnj}
+             jpnij: ${nproc}
+          #namnc4:
+          #   ln_nc4zip: '.false.'
+          #   nn_nchunks_i: 4
+          #   nn_nchunks_j: 4
+          #   nn_nchunks_k: 4
+          nambbl:
+             rn_ahtbbl: 1000
+          namctl:
+             ln_ctl: '.false.'
+             nn_timing: 0
+          # with AGRIF always use linear free surface
+          # always set free_surface: linear with AGRIF
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+       namelist_cfg:
+          namdyn_hpg:
+             ln_hpg_zps: '.true.'
+             ln_hpg_sco: '.false.'
+             ln_dynhpg_imp: '.true.'
+       # workaround for bug in f90nml library used by esm_runscripts, see
+       # https://github.com/esm-tools/esm_tools/issues/633 and
+       # https://github.com/marshallward/f90nml/issues/110
+       namelist_top_cfg:
+         namtrc:
+          sn_tracer: "remove_from_namelist"
+          sn_tracer(1)%clsname: AGE
+          sn_tracer(2)%clsname: PO4
+          sn_tracer(3)%clsname: DOP
+          sn_tracer(4)%clsname: O2
+          sn_tracer(5)%clsname: PHY
+          sn_tracer(6)%clsname: ZOO
+          sn_tracer(7)%clsname: DET
+          sn_tracer(8)%clsname: DIN
+          sn_tracer(9)%clsname: DIC
+          sn_tracer(10)%clsname: ALK
+          sn_tracer(11)%clsname: IDEAL
+
+          sn_tracer(1)%cllname: age
+          sn_tracer(2)%cllname: phosphate
+          sn_tracer(3)%cllname: dop
+          sn_tracer(4)%cllname: oxygen
+          sn_tracer(5)%cllname: phytoplankton
+          sn_tracer(6)%cllname: zooplankton
+          sn_tracer(7)%cllname: det
+          sn_tracer(8)%cllname: din
+          sn_tracer(9)%cllname: dic
+          sn_tracer(10)%cllname: alkalinity
+          sn_tracer(11)%cllname: ideal
+
+          sn_tracer(1)%clunit: s
+          sn_tracer(2)%clunit: mmol/m3
+          sn_tracer(3)%clunit: mmol/m3
+          sn_tracer(4)%clunit: mmol/m3
+          sn_tracer(5)%clunit: mmol/m3
+          sn_tracer(6)%clunit: mmol/m3
+          sn_tracer(7)%clunit: mmol/m3
+          sn_tracer(8)%clunit: mmol/m3
+          sn_tracer(9)%clunit: umol/kg
+          sn_tracer(10)%clunit: umol/kg
+          sn_tracer(11)%clunit: mmol/m3
+
+          sn_tracer(1)%llinit: false
+          sn_tracer(2)%llinit: true
+          sn_tracer(3)%llinit: false
+          sn_tracer(4)%llinit: true
+          sn_tracer(5)%llinit: false
+          sn_tracer(6)%llinit: false
+          sn_tracer(7)%llinit: false
+          sn_tracer(8)%llinit: true
+          sn_tracer(9)%llinit: true
+          sn_tracer(10)%llinit: true
+          sn_tracer(11)%llinit: true
+          sn_tracer(1)%llsave: true
+          sn_tracer(2)%llsave: true
+          sn_tracer(3)%llsave: true
+          sn_tracer(4)%llsave: true
+          sn_tracer(5)%llsave: true
+          sn_tracer(6)%llsave: true
+          sn_tracer(7)%llsave: true
+          sn_tracer(8)%llsave: true
+          sn_tracer(9)%llsave: true
+          sn_tracer(10)%llsave: true
+          sn_tracer(11)%llsave: true
+
+       1_namelist_top_cfg:
+         namtrc:
+          sn_tracer: "remove_from_namelist"
+          sn_tracer(1)%clsname: AGE
+          sn_tracer(2)%clsname: PO4
+          sn_tracer(3)%clsname: DOP
+          sn_tracer(4)%clsname: O2
+          sn_tracer(5)%clsname: PHY
+          sn_tracer(6)%clsname: ZOO
+          sn_tracer(7)%clsname: DET
+          sn_tracer(8)%clsname: DIN
+          sn_tracer(9)%clsname: DIC
+          sn_tracer(10)%clsname: ALK
+          sn_tracer(11)%clsname: IDEAL
+
+          sn_tracer(1)%cllname: age
+          sn_tracer(2)%cllname: phosphate
+          sn_tracer(3)%cllname: dop
+          sn_tracer(4)%cllname: oxygen
+          sn_tracer(5)%cllname: phytoplankton
+          sn_tracer(6)%cllname: zooplankton
+          sn_tracer(7)%cllname: det
+          sn_tracer(8)%cllname: din
+          sn_tracer(9)%cllname: dic
+          sn_tracer(10)%cllname: alkalinity
+          sn_tracer(11)%cllname: ideal
+
+          sn_tracer(1)%clunit: s
+          sn_tracer(2)%clunit: mmol/m3
+          sn_tracer(3)%clunit: mmol/m3
+          sn_tracer(4)%clunit: mmol/m3
+          sn_tracer(5)%clunit: mmol/m3
+          sn_tracer(6)%clunit: mmol/m3
+          sn_tracer(7)%clunit: mmol/m3
+          sn_tracer(8)%clunit: mmol/m3
+          sn_tracer(9)%clunit: umol/kg
+          sn_tracer(10)%clunit: umol/kg
+          sn_tracer(11)%clunit: mmol/m3
+
+          sn_tracer(1)%llinit: false
+          sn_tracer(2)%llinit: true
+          sn_tracer(3)%llinit: false
+          sn_tracer(4)%llinit: true
+          sn_tracer(5)%llinit: false
+          sn_tracer(6)%llinit: false
+          sn_tracer(7)%llinit: false
+          sn_tracer(8)%llinit: true
+          sn_tracer(9)%llinit: true
+          sn_tracer(10)%llinit: true
+          sn_tracer(11)%llinit: true
+          sn_tracer(1)%llsave: true
+          sn_tracer(2)%llsave: true
+          sn_tracer(3)%llsave: true
+          sn_tracer(4)%llsave: true
+          sn_tracer(5)%llsave: true
+          sn_tracer(6)%llsave: true
+          sn_tracer(7)%llsave: true
+          sn_tracer(8)%llsave: true
+          sn_tracer(9)%llsave: true
+          sn_tracer(10)%llsave: true
+          sn_tracer(11)%llsave: true
+    
+    add_coupling_fields:
+        "[[opat_mops_fields-->FIELD]]":
+            grid: opat
+        "[[opac_mops_fields-->FIELD]]":
+            grid: opac
+        "[[agr1_t_mops_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_c_mops_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_t_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_c_fields-->FIELD]]":
+            grid: agr1
+        "[[agr1_r_fields-->FIELD]]":
+            grid: agr1r
+        "[[agr1_rc_fields-->FIELD]]":
+            grid: agrc
+        "[[agr2_t_fields-->FIELD]]":
+            grid: agr2
+
   ORCA05_LIM2_KCM_AOW:
     requires:
     #- xios-2.0_r982
@@ -1599,10 +1886,12 @@ choose_version:
        # init and (if used) damping data
        sn_tem: sn_tem_levitus
        sn_sal: sn_sal_levitus
+       sn_sal_diag: sn_sal_levitus
        ice_init: ice_init_kkg36f13h
 
     input_in_work:
        ice_init: Ice_initialization.nc
+       sn_sal_diag: sali_ref_clim_monthly.nc
        namelist_ice_ref: namelist_ice_ref
 
   ORCA05_LIM2_KCM_AOW_autotools:
@@ -1690,6 +1979,108 @@ choose_version:
     input_in_work:
        ice_init: Ice_initialization.nc
        namelist_ice_ref: namelist_ice_ref
+
+  ORCA05_LIM2_FOCI_MOPS_OASISMCT4:
+    requires:
+    - nemobasemodel-3.6foci
+    branch: esm-tools-oasismct4
+    destination: nemo-${nemo.version}/CONFIG/${nemo.version}
+    git-repository: https://git.geomar.de/foci/src/nemo_config/ORCA05_LIM2_FOCI_MOPS.git
+
+    # tracers are used by default
+    free_surface: nonlinear
+    leapyear: true  
+
+    # workaround for bug in f90nml library used by esm_runscripts, see 
+    # https://github.com/esm-tools/esm_tools/issues/633 and 
+    # https://github.com/marshallward/f90nml/issues/110
+    add_namelist_changes:
+      namelist_top_cfg:
+        namtrc:
+          sn_tracer: "remove_from_namelist"
+          sn_tracer(1)%clsname: AGE
+          sn_tracer(2)%clsname: PO4
+          sn_tracer(3)%clsname: DOP
+          sn_tracer(4)%clsname: O2
+          sn_tracer(5)%clsname: PHY
+          sn_tracer(6)%clsname: ZOO
+          sn_tracer(7)%clsname: DET
+          sn_tracer(8)%clsname: DIN
+          sn_tracer(9)%clsname: DIC
+          sn_tracer(10)%clsname: ALK
+          sn_tracer(11)%clsname: IDEAL
+
+          sn_tracer(1)%cllname: age
+          sn_tracer(2)%cllname: phosphate
+          sn_tracer(3)%cllname: dop
+          sn_tracer(4)%cllname: oxygen
+          sn_tracer(5)%cllname: phytoplankton
+          sn_tracer(6)%cllname: zooplankton
+          sn_tracer(7)%cllname: det
+          sn_tracer(8)%cllname: din
+          sn_tracer(9)%cllname: dic
+          sn_tracer(10)%cllname: alkalinity
+          sn_tracer(11)%cllname: ideal
+
+          sn_tracer(1)%clunit: s
+          sn_tracer(2)%clunit: mmol/m3
+          sn_tracer(3)%clunit: mmol/m3
+          sn_tracer(4)%clunit: mmol/m3
+          sn_tracer(5)%clunit: mmol/m3
+          sn_tracer(6)%clunit: mmol/m3
+          sn_tracer(7)%clunit: mmol/m3
+          sn_tracer(8)%clunit: mmol/m3
+          sn_tracer(9)%clunit: umol/kg
+          sn_tracer(10)%clunit: umol/kg
+          sn_tracer(11)%clunit: mmol/m3
+
+          sn_tracer(1)%llinit: false
+          sn_tracer(2)%llinit: true
+          sn_tracer(3)%llinit: false
+          sn_tracer(4)%llinit: true
+          sn_tracer(5)%llinit: false
+          sn_tracer(6)%llinit: false
+          sn_tracer(7)%llinit: false
+          sn_tracer(8)%llinit: true
+          sn_tracer(9)%llinit: true
+          sn_tracer(10)%llinit: true
+          sn_tracer(11)%llinit: true
+          sn_tracer(1)%llsave: true
+          sn_tracer(2)%llsave: true
+          sn_tracer(3)%llsave: true
+          sn_tracer(4)%llsave: true
+          sn_tracer(5)%llsave: true
+          sn_tracer(6)%llsave: true
+          sn_tracer(7)%llsave: true
+          sn_tracer(8)%llsave: true
+          sn_tracer(9)%llsave: true
+          sn_tracer(10)%llsave: true
+          sn_tracer(11)%llsave: true
+
+    add_input_files:
+       # reference namelists
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       # grids and coefficients 
+       cn_batmeter: bathy_meter 
+       coordinates: coordinates
+       subbasins: subbasins
+       coef-G70: coef-G70
+       # init and (if used) damping data
+       sn_tem: sn_tem_levitus
+       sn_sal: sn_sal_levitus
+       ice_init: ice_init_kkg36f13h
+
+    input_in_work:
+       ice_init: Ice_initialization.nc
+       namelist_ice_ref: namelist_ice_ref
+
+    add_coupling_fields:
+        "[[opat_mops_fields-->FIELD]]":
+                grid: opat
+        "[[opac_mops_fields-->FIELD]]":
+                grid: opac
+  
   
   # As for ORCA05_LIM2_KCM_AOW_FS_OASISMCT4_SMAG
   # here we use ORCA05_LIM2_KCM_AOW_FS_OASISMCT4 
@@ -2566,8 +2957,8 @@ bin_sources:
 
 input_sources:
         # grids and coefficients
-        bathy_meter: ${input_dir}/bathy_meter.nc
-        coordinates: ${input_dir}/coordinates.nc
+        bathy_meter: ${agrif_dir}/bathy_meter.nc
+        coordinates: ${agrif_dir}/coordinates.nc
         #subbasins: ${input_dir}/orca05_subbasins_3.6.nc
         coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
         subbasins: ${input_dir}/orca05_subbasins_3.6.nc 
@@ -2644,6 +3035,7 @@ input_sources:
         # grids and coefficients
         bathy_meter_orca05_nemo4: ${input_dir}/bathy_meter__4.2.0_ORCA05.L46.nc
         coordinates_orca05_nemo4: ${input_dir}/coordinates.nc
+        #coordinates_orca05_nemo4: ${input_dir}/bathy_meter__4.2.0_ORCA05.L46.nc
         bfr_coef_orca05_nemo4: ${input_dir}/bfr_coef__4.2.0_ORCA05.nc
         subbasins_orca05_nemo4: ${input_dir}/subbasins__4.2.0_ORCA05.nc
         # File from Joakim. Use same settings as ORCA05 in 3.6
@@ -2726,12 +3118,21 @@ log_sources:
 ##########################  coupling stuff
 
 sst_grid_name: "opat"
+opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+opat_mops_fields: [CO2OCEAN, CO2TRA, FF_OCE]
 
 opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
+opac_mops_fields: [O_AtmCO2, CO2FLXOC]
 
 # agr1_t_fields are added in a choose block higher up since they are different for NEMO 3.6 and 4.2
+agr1_t_mops_fields: [1_CO2OCEAN, 1_CO2TRA, 1_FF_OCE]
+
 agr1_c_fields: [1_O_QsrIce, 1_O_QsrMix, 1_O_QnsIce, 1_O_QnsMix, 1_OTotRain, 1_OTotSnow, 1_OTotEvap, 1_OIceEvap, 1_O_dQnsdT]
+agr1_c_mops_fields: [1_O_AtmCO2, 1_CO2FLXOC]
+
 agr2_t_fields: [1_O_AgrSpg]
+# default needs to be set even if not used
+agr1_rc_fields: [1_OCalving]
 
 # How many periodic points on the NEMO grid
 # This is 2 for NEMO 3.6 (i=1, and i=imax)

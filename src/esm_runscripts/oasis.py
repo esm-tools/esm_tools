@@ -545,12 +545,9 @@ class oasis:
         config["restart_in_in_work"][restart_file_label] = restart_file
 
         # In case of a branch-off experiment -> use the correct oasis restart files:
-        # Not the soft link to the last, but the actual one for the branch-off date
-        if (
-            gconfig["run_number"] == 1
-            and config["lresume"]
-            and gconfig["jobtype"] == "prepcompute"
-        ):
+        # Not the rstas.nc soft link to the last, but the actual one for the
+        # branch-off date
+        if gconfig["run_number"] == 1 and config["lresume"] and gconfig["jobtype"] == "prepcompute" and config.get("norestart", "F") == "F":
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
             if "ini_parent_date" in config and "ini_restart_date" not in config:
@@ -566,7 +563,7 @@ class oasis:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
                 glob_search_file = (
-                    f"{restart_file_path}_????????-"
+                    f"{config['ini_restart_dir']}{restart_file}*"
                     f"{config['ini_restart_date'].year}"
                     f"{config['ini_restart_date'].month:02}"
                     f"{config['ini_restart_date'].day:02}"

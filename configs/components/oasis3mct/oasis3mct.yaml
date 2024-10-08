@@ -4,7 +4,7 @@ cf_name_dir: ${model_dir}
 time_step: 900 # changed by coupled setup anyway
 norestart: F
 use_lucia: False
-mct_version: "2.8" # TODO: set mct_version = version (can't do at the moment as version is a string)
+mct_version: "4.0-geomar" # TODO: set mct_version = version (can't do at the moment as version is a string)
 git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
 contact: "miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 

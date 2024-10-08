@@ -1,0 +1,140 @@
+computer:
+        partition: "standard96:test"
+general:
+   use_venv: False
+   verbose: True 
+   setup_name: "foci"
+   version: "agrif_mops_oasismct4"
+   homedir: !ENV ${HOME}
+
+   # operational settings: yearly restarts
+   compute_time: "00:20:00"
+   initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   final_date: "1940-01-01T00:00:00"         # Final date of the experiment
+   nmonth: 12
+   postprocessing: 1
+   clean_runs: 2
+   # test settings, daily restarts
+   #compute_time: "00:03:00"
+   #initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   #final_date: "1900-01-04T00:00:00"         # Final date of the experiment
+   #nday: 1 
+   #postprocessing: 0
+   
+   # machine specific setup 
+   account: shktkeme
+   base_dir: ${homedir}/esm/esm-experiments/
+
+   lresume: True
+   # test data provided by Tronje Kemena 
+   ini_parent_exp_id: "FOCI2.0-TK105_FAM_ESM_piControl_2129TK012"
+   ini_parent_date: "18991231" 
+   ini_nemo_restart_steps: 876576 
+   ini_parent_dir: "/scratch/usr/shktkeme/foci_input/FOCI-AGRIF-MOPS-OASISMCT4/${ini_parent_exp_id}/"
+
+foci:
+   model_dir: ${general.homedir}/esm/models/foci-agrif_mops_oasismct4/
+
+# set input_dir for oasis grids, masks and areas
+# only required as long as we generate the remapping files on the fly 
+oasis3mct:
+   input_dir: "/scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05_${nemo.nest1}/"
+   # test settings, write out coupling files
+   # export_mode_a2o: "EXPOUT"
+   export_mode_a2o: "EXPOUT"
+   export_mode: "EXPOUT"
+   debug_level: 0
+
+echam:
+   # all ssp* scenarios use historical forcing before 2015, i.e. the setting
+   # scenario: "cmip6hist" and # scenario: "ssp???" produce the same results 
+   # until year 2014
+   # available scenarios: PI-CTRL, 1percCO2, ssp126, ssp245, ssp370, ssp585, ssp585os
+   # technically tested: PI-CTRL, cmip6hist, ssp370 and ssp585
+   # seb-wahl, 2021-08-11
+   scenario: "PI-CTRL"
+   resolution: "T63"
+   # operational settings: yearly restarts
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   # test settings, daily restarts
+   #restart_rate: ${general.nday}
+   #restart_unit: "days"
+   nproca: 12
+   nprocb: 16
+   nprocio: 0
+   namelist_changes:
+      namelist.echam:
+         parctl:
+            iomode: 0
+            nprocio: ${nprocio}  
+         radctl:
+            iaero: 3
+            io3: 4
+            isolrad: 6
+            ich4: 3
+            in2o: 3
+            ico2: 1
+            co2vmr: 284.3169860840e-06
+            ch4vmr: 808.2490234375e-09
+            n2ovmr: 273.0210571289e-09
+            yr_perp: 1850
+
+nemo:
+   # set your own agrif input directory
+   agrif_dir: /scratch/usr/shktkeme/foci_input/AGRIF/agrif_VIKING10/host_bathy_meter_nest_smoothed_for_TK011
+   nest1: VIKING10
+   resolution: "ORCA05"
+   # overwrite default time step of 1800s 
+   time_step: 1800
+   version: "ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4"
+   jpni: 36
+   jpnj: 24
+   nproc: 864 
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   # alkalinity masks
+   namelist_changes:
+      namelist_top_cfg:
+         namtrc_rad:
+            ln_trcrad: .false.
+      1_namelist_top_cfg:
+         namtrc_rad:
+            ln_trcrad: .false.
+      namelist_cfg:
+         namzgr:
+            cn_batmeter: "bathy_meter.nc"
+
+      1_namelist_cfg:
+         namsbc_cpl:
+            sn_snd_co2: "coupled"
+            sn_rcv_co2: "coupled"
+         namlbc:
+            rn_shlat: 0.0
+         namnc4:
+            nn_nchunks_k: 46
+   #nn_rstctl does not work in 1_namelist_cfg
+   #namelist_changes:
+   #   namelist_cfg:
+   #      namsbc: 
+   #         ln_alk: true
+   #forcing_dir: /scratch/usr/shktkeme/foci_input/alk_mask/CoastEU/
+   #forcing_sources:
+   #   alkalinity: ${forcing_dir}/alkalinity_mask_y@YEAR@.nc
+   #forcing_files:
+   #   alkalinity: alkalinity
+   add_input_files:
+      batmeter: bathy_meter
+      cn_batmeter: bathy_meter
+      1_batmeter: 1_bathy_meter
+      1_cn_batmeter: 1_bathy_meter
+   input_sources:
+      coordinates: ${agrif_dir}/coordinates.nc
+      bathy_meter: ${agrif_dir}/bathy_meter.nc
+      1_bathy_meter: ${agrif_dir}/1_bathy_meter.nc
+      1_coordinates: ${agrif_dir}/1_coordinates_ORCA05.nc
+      fixed_grids: ${agrif_dir}/AGRIF_FixedGrids.in
+      cordinates: ${agrif_dir}/coordinates_ORCA05.nc
+
+
+xios:
+   nproc: 48

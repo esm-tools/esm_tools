@@ -16,7 +16,19 @@ account: None
 mail1: ""
 mail2: ""
 
-exclusive_flag: "--exclusive"
+# Turns on or off the exclusive flag
+choose_exclusive:
+    "*":
+        exclusive_flag: "--exclusive"
+    false:
+        exclusive_flag: ""
+
+# Turns on or off the partition flag
+choose_partition:
+    "*":
+        partition_flag: "--partition=@partition@"
+    false:
+        partition_flag: ""
 
 choose_accounting:
         True:
@@ -38,7 +50,6 @@ choose_general.mail_user:
 notification_flag: "${mail1} ${mail2}"
 single_proc_submit_flag: "--ntasks-per-node=1"
 tasks_flag: "--ntasks=@tasks@"
-partition_flag: "--partition=@partition@"
 nodes_flag: "--nodes=@nodes@"
 time_flag: "--time=${compute_time}"
 additional_flags: []
@@ -65,10 +76,8 @@ add_choose_heterogeneous_parallelization:
                     ${mt_launcher_flag}
                     --nodes=@nnodes@
                     --ntasks=@nproc@
-                    --ntasks-per-node=@nproc_per_node@
-                    --cpus-per-task=@cpus_per_proc@
-                    --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
-                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
+                    --cpus-per-task=@cpus_per_proc@"
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} \\\n@components@"
                 launcher_comp_sep: " \\\n:"
     false:
         cpu_bind: "cores"

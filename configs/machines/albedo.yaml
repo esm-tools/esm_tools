@@ -20,6 +20,7 @@ partitions:
     pp:
         name: smp
         cores_per_node: 1
+partition: ${partitions.compute.name}
 
 # compute node hardware information:
 logical_cpus_per_core: 2

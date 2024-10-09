@@ -1,0 +1,141 @@
+# THE ECMWF Atos YAML config file
+
+name: ecmwf-atos
+
+accounting: true
+batch_system: "slurm"
+hetjob_flag: "hetjob"
+
+operating_system: "linux-centos"
+
+jobtype: compute
+sh_interpreter: "/usr/bin/bash"
+
+partition: false
+exclusive: false
+additional_flags:
+    - "--qos=np"
+    # No hyperthreading in ECMWF-ATOS
+    - "--hint=nomultithread"
+
+# TODO: change this to a heterogeneous_parallelization choose block == True
+add_unset_vars:
+    - "SLURM_DISTRIBUTION"
+    - "SLURM_NTASKS"
+    - "SLURM_NPROCS"
+    - "SLURM_ARBITRARY_NODELIST"
+
+partitions:
+        compute:
+                name: compute
+                cores_per_node: 128
+        pp:
+                name: compute
+                cores_per_node: 128
+
+
+logical_cpus_per_core: 2
+
+threads_per_core: 1
+
+pool_dir: "/hpcperm/duts/pool"
+
+pool_directories:
+        pool: "/dev/null"
+        projects: "/dev/null"
+        focipool: "/dev/null"
+
+# ?????
+choose_submitted:
+        true:
+                modules_needed:
+                        - centoslibs
+        false:
+                nothing: much
+
+submitted: false
+
+# standard environment setup
+#
+#
+
+useMPI: openmpi
+module_actions:
+        - "reset"
+        - "load prgenv/intel"
+        - "load udunits/2.2.28"
+        - "load intel-mkl/19.0.5"
+        - "load hpcx-openmpi/2.9.0"
+        - "load hdf5-parallel/1.10.6"
+        - "load netcdf4-parallel/4.7.4"
+        - "load cdo/2.1.1"
+        - "load nco/4.9.7"
+        - "load openblas/0.3.21"
+        - "load fftw/3.3.10"
+        - "load ecmwf-toolbox/2023.01.0.0"
+        - "load python3/3.8.8-01"
+        - "load git/2.39.1"
+        - "list"
+
+export_vars:
+        LC_ALL: en_US.UTF-8
+        FC: ${fc}
+        #FCFLAGS: -r8 -traceback -g -fp-model precise -fp-speculation=safe -O2 -xHost
+        F77: ${f77}
+        MPIFC: ${mpifc}
+        MPICC: ${cc}
+        #CCFLAGS: -traceback -g -O2 -xHost
+        CC: ${cc}
+        CXX: ${cxx}
+
+        CRAYPE_LINK_TYPE: dynamic
+
+        # AMD Epyc Rome configurations
+        # ----------------------------
+        # It's actually ZEN2, but this option in FESOM1 triggers the correct
+        # flags for ZEN2 and ZEN3 architecture
+        CPU_MODEL: AMD_EPYC_ZEN3
+        # This flag in FESOM2 only controls the arch flags needed for the AMD
+        # arch and nothing else related to levante. It will require a fix in
+        # fesom source code so that it all makes more sense...
+        FESOM_PLATFORM_STRATEGY: levante.dkrz.de
+
+        IO_LIB_ROOT: ""
+        HDF5ROOT: $HDF5_PARALLEL_DIR
+
+        NETCDFFROOT: $NETCDF4_PARALLEL_DIR
+        NETCDFROOT: $NETCDF4_PARALLEL_DIR
+        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
+        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
+        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF4_PARALLEL_DIR/include
+        NETCDF_CXX_LIBRARIES: $NETCDF4_PARALLEL_DIR/lib
+
+        ECCODESROOT: $ECCODES_DIR
+
+        XML2ROOT: /usr
+        ZLIBROOT: /usr
+
+        MPIROOT: "$(${mpifc} -show | perl -lne 'm{ -I(.*?)/include } and print $1')"
+        MPIDIR: $MPIROOT
+        MPI_LIB: "$(${mpifc} -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')"
+
+        LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$NETCDF4_PARALLEL_DIR/lib:$ECCODES_DIR/lib:$HDF5_PARALLEL_DIR/lib
+        OMPI_MCA_btl: "^vader"
+        # Ensure OpenMP correct pinning
+        OMP_PLACES: "threads"
+        # Avoid PMI hangs with heterogeneous jobs
+        SLURM_MPI_TYPE: "none"
+        #UCX_TLS: "dc_x,self,sm"
+
+choose_useMPI:
+        openmpi:
+                fc: mpifort
+                f77: mpifort
+                mpifc: mpifort
+                cc: mpicc
+                cxx: mpicxx
+
+launcher_flags: "-l --mpi=pmi2"
+
+further_reading:
+        - batch_system/slurm.yaml

@@ -278,7 +278,7 @@ choose_version:
   48r1:
     branch: 'dev/integrate-with-ece4'
     # --build-type Debug
-    comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+    comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
     clean_command: rm -rf build
     executable: OpenIFS
     git-repository: https://git.smhi.se/uwe.fladrich/oifs48r1
@@ -980,7 +980,8 @@ choose_major_version:
                                         FOCI_CPL_NEMO_LIM: ".false."
 
                 further_reading:
-                        - oifs/oifs.env43.yaml
+                        - oifs/oifs43.env.yaml
+                        - oifs/oifs43.cmip.yaml
         43r3:
                 append_icmcl: ""
                 add_namelist_changes:
@@ -1005,6 +1006,7 @@ choose_major_version:
                         ICMUA: ICMUA
                 further_reading:
                         - oifs/oifs43.env.yaml
+                        - oifs/oifs43.cmip.yaml
         48r1:
                 mip: none
                 o3_scheme: none
@@ -1046,6 +1048,7 @@ choose_major_version:
                                         LRSACC: ".true." # reset accumulation of fluxes
                 further_reading:
                         - oifs/oifs48.env.yaml
+                        #- oifs/oifs48.cmip.yaml
 
 
 # If 1, use Coddington spectrum which reduced stratospheric warm bias
@@ -1127,29 +1130,6 @@ restart_type: "ifs_default"
 # evaluate one of the branches
 # NOTE 2: Im leaving CMIP5 in here, but I dont think we will ever use it
 
-choose_mip:
-        "cmip5":
-                add_namelist_changes:
-                        fort.4:
-                                NAERAD:
-                                        CMIP5DATADIR: "${cmip5_data_dir_nml}"
-        "cmip6":
-                add_namelist_changes:
-                        fort.4:
-                                NAERAD:
-                                        LCMIP6: ".true."
-                                        CMIP6DATADIR: "${cmip6_data_dir_nml}"
-                choose_scenario:
-                        "piControl":
-                                add_namelist_changes:
-                                        fort.4:
-                                                NAERAD:
-                                                        NCMIPFIXYR: 1850
-                        "SSP5-8.5":
-                                add_namelist_changes:
-                                        fort.4:
-                                                NAERAD:
-                                                        SSPNAME: "SSP5-8.5"
 
 #choose_o3_scheme:
 #        "prescribed":

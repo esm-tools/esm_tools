@@ -1,15 +1,5 @@
-# nesh only
-# It is currently under investigation whether the extra
-# #SBATCH flags below improve model performance
-# Sebastian Wahl 05/2021
-# uncomment below if you run on nesh at CAU
-#computer:
-#   additional_flags:
-#      - --mem=72000
-#      - --constraint="cascade"
 computer:
-   partition: "standard96"
-
+        pool_dir: "/scratch/usr/shkifmsw/foci_input2/"
 general:
    use_venv: False
    verbose: False
@@ -27,7 +17,7 @@ general:
    
    # machine specific setup 
    # nesh: comment account
-   account: shk00018
+   account: shk00060
    base_dir: ${homedir}/esm/esm-experiments/
 
 foci:

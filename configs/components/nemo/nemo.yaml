@@ -2957,8 +2957,9 @@ bin_sources:
 
 input_sources:
         # grids and coefficients
-        bathy_meter: ${agrif_dir}/bathy_meter.nc
-        coordinates: ${agrif_dir}/coordinates.nc
+        # TODO: why did Tronje put agrif_dir for bathy_meter and coordinates
+        bathy_meter: ${input_dir}/bathy_meter.nc
+        coordinates: ${input_dir}/coordinates.nc
         #subbasins: ${input_dir}/orca05_subbasins_3.6.nc
         coef-G70: ${input_dir}/orca05_bfr_coef-G70.nc
         subbasins: ${input_dir}/orca05_subbasins_3.6.nc 

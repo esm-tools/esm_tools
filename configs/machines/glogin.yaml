@@ -118,12 +118,13 @@ threads_per_core: 1
 hetjob_flag: packjob
 
 # Set default pool directory
+# TODO: clarify with AWI: why pool, pool_dir and focipool
 pool_directories:
         # This currently points to the shk00018 project from GEOMAR
         # but can of course be set by the user in the runscript
-        pool: "/scratch/projects/shk00018/foci_input2/"
+        pool: ${computer.pool_dir} 
         # This is default pool dir for FOCI and FOCI-OpenIFS
-        focipool: "/scratch/projects/shk00018/foci_input2/"
+        focipool: ${computer.pool_dir} 
 
 pool_dir:  "/scratch/projects/shk00018"
 

@@ -7,7 +7,7 @@
 basedir=~/esm/esm-experiments/  # change via -p
 EXP_ID="test_experiment"        # change via -r
 ncpus=48
-use_singularity=true
+use_apptainer=true
 #
 #------- DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING ------#
 #
@@ -102,12 +102,12 @@ sw_bind=""
 if [[ "$(hostname)" =~ "nesh" ]] ; then
    echo "`date` NOTE: This code runs on $(hostname)"
    # need to do this as /gxfs_work1/gxfs_home_interim/sw is a soft link to
-   # /gxfs_work1/gxfs_home_interim/sw which singularity does not like as the 
+   # /gxfs_work1/gxfs_home_interim/sw which apptainer does not like as the 
    # soft link can't be resolved in the container
    sw_bind="--bind /gxfs_home/sw:/gxfs_work1/gxfs_home_interim/sw"
    shome_bind="--bind /gxfs_home/geomar/smomw235:/gxfs_home/geomar/smomw235"
 	foci_input2="/gxfs_work1/geomar/smomw235/foci_input2"
-	# only used if use_singularity=false
+	# only used if use_apptainer=false
 	MINICONDA_HOME=~smomw235/miniconda3 
 	module load nco
 elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] || \ 
@@ -120,7 +120,7 @@ elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] || \
 	# required shared libs are installed in our conda environment
 	export LD_LIBRARY_PATH=/opt/conda/envs/monitoring/lib:$LD_LIBRARY_PATH
 	foci_input2="/scratch/usr/shkifmsw/foci_input2"
-	# only used if use_singularity=false
+	# only used if use_apptainer=false
 	MINICONDA_HOME=~shkifmsw/miniconda3 
 	module load nco
 else
@@ -141,9 +141,9 @@ exclude_freq_from_diag_and_plots = 1d,5d,1m,730h,5y,10y,20y
 simple_mode = True
 EOF
 
-if $use_singularity ; then
-	module load singularity
-	# run monitoring from the singularity container
+if $use_apptainer ; then
+	module load apptainer
+	# run monitoring from the apptainer container
 	# TODO: currently the .sif files is expected in the cwd, this is not the best solution
    ln -sfv ${foci_input2}/SINGULARITY/mkexp-monitoring.sif .
 
@@ -152,7 +152,7 @@ if $use_singularity ; then
 	SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH \
 	SINGULARITYENV_APPEND_PATH=$(dirname $(which ncrcat)) \
 	SINGULARITYENV_PYTHONPATH=/usr/local/Monitoring \
-		singularity exec --bind $WORK:$WORK --bind $HOME:$HOME \
+		apptainer exec --bind $WORK:$WORK --bind $HOME:$HOME \
 		$sw_bind $input_bind $shome_bind --bind ${IO_LIB_ROOT}/bin:/usr/local/bin \
 		mkexp-monitoring.sif python \
 		/usr/local/Monitoring/scripts/monitoring_parallel.py \

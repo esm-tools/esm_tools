@@ -155,10 +155,12 @@ nemo:
               # (Smagorinsky)
               nn_ahm_ijk_t: 32
           namtra_ldf:
-              # Diffusion set by local baroclinic growth rate 
+              # Diffusion set by local baroclinic growth rate
+              # Recommended by CdL to bump up by 50%
               nn_aht_ijk_t: 20
               rn_aht_scale: 1.5 
           namtra_eiv:
+              # Reduce eddy-ind diffusivity to help ACC
               rn_aeiv_scale: 0.5 
    
 rnfmap:

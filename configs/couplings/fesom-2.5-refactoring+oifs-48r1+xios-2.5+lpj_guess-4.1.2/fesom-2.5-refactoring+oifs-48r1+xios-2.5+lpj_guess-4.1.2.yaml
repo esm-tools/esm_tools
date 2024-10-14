@@ -1,0 +1,20 @@
+components:
+- xios-2.5-ece
+- rnfmap-v1.0
+- oifs-48r1
+- fesom-2.5-refactoring
+- oasis3mct-5.0-smhi
+- lpj_guess-4.1.2
+coupling_changes:
+- sed -i '/CPLNG_ACTIVE = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/COUPLEFESOM2 = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/COUPLENEMOFOCI = /s/.TRUE./.FALSE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOLIMGET = /s/.TRUE./.FALSE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOLIMPUT = /s/.TRUE./.FALSE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOLIMALB = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOLIMTEMP = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOLIMTHK = /s/.TRUE./.FALSE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOLIMCUR = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+- sed -i '/LNEMOSICOUP = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
+

@@ -39,6 +39,11 @@ choose_version:
         runscript_name: run_trunk_4_1.ins
         git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
         branch: main
+    4.1.2:
+        runscript_name: run_coupled_4_1_2.ins
+        git-repository: https://git.smhi.se/marlin/ec-earth-4-lpjgv-4-p-1-novelty.git
+        branch: main
+        model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/
 
 # ``model_dir`` let's ESM-Tools know where is the source code of your component (must
 # be an absolute path). Normally, changed via the runscript. We recommend you leave it

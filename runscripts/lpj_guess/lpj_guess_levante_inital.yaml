@@ -1,0 +1,18 @@
+general:
+        user: !ENV ${USER}
+        setup_name: lpj_guess
+        account: "ab0995"
+        compute_time: "00:08:00"
+        initial_date: '2000-01-01'
+        final_date: '2001-01-01'
+        base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/"
+        nyear: 1
+        nmonth: 0
+        use_venv: False
+
+lpj_guess:
+        version: 4.1.1
+        model_dir: "/work/ab0995/${user}/model_codes/lpj-guess/"
+        lresume: 0
+        post_processing: 0
+        nproc: 128

@@ -1,3 +1,5 @@
+computer:
+        pool_dir: "/scratch/usr/shkifmsw/foci_input2/"
 general:
    use_venv: False
    verbose: False
@@ -12,7 +14,7 @@ general:
    nday: 1 
    
    # machine specific setup 
-   account: shk00018
+   account: shk00060
    base_dir: ${homedir}/esm/esm-experiments/
 
 foci:

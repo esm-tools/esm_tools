@@ -306,6 +306,10 @@ choose_iolibraries:
             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
             PATH: $IO_LIB_ROOT/bin:$PATH
+            
+            # For OASIS3-MCT5 from CERFACS
+            OASIS_NETCDF: $NETCDFROOT
+            OASIS_NETCDFF: $NETCDFFROOT
 
         choose_compiler_mpi:
             intel2022_ompi2022:
@@ -334,6 +338,10 @@ choose_iolibraries:
             NETCDFROOT: $IO_LIB_ROOT
             NETCDFFROOT: $IO_LIB_ROOT
             ECCODESROOT: $IO_LIB_ROOT
+            
+            # For OASIS3-MCT5 from CERFACS
+            OASIS_NETCDF: $NETCDFROOT
+            OASIS_NETCDFF: $NETCDFFROOT
 
             HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
             NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include

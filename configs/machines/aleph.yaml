@@ -82,7 +82,11 @@ export_vars:
         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFROOT/include
         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
         NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
-
+        
+        # For OASIS3-MCT5 from CERFACS 
+        OASIS_NETCDF: $NETCDF_DIR
+        OASIS_NETCDFF: $NETCDF_DIR
+        
         PERL5LIB: /usr/lib64/perl5
         #LAPACK_LIB: '"-lmkl_intel_lp64 -lmkl_core -mkl=sequential -lpthread -lm -ldl"'
         #LAPACK_LIB_DEFAULT: '"-L/global/AWIsoft/intel/2018/compilers_and_libraries_2018.5.274/linux/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential"'

@@ -47,7 +47,13 @@ class oasis:
         self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
         # seb-wahl: add lucia support
         if lucia:
-            self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
+            # LUCIA (load balancing) is done differently in MCT 5.0
+            if mct_version >= (5,0):
+                # In MCT5 you set X Y Z, where X refers to verbosity, Y to timing info and Z to load balancing
+                # Here: Set X = debug_level, Y = 0 (no info), Z = 1 (activate load balancing)
+                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1 ", " $END"]
+            else:
+                self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
             self.namcouple += [" $NLOGPRT", "           " + str(debug_level), " $END"]
         if mct_version >= (4, 0):
@@ -539,12 +545,9 @@ class oasis:
         config["restart_in_in_work"][restart_file_label] = restart_file
 
         # In case of a branch-off experiment -> use the correct oasis restart files:
-        # Not the soft link to the last, but the actual one for the branch-off date
-        if (
-            gconfig["run_number"] == 1
-            and config["lresume"]
-            and gconfig["jobtype"] == "prepcompute"
-        ):
+        # Not the rstas.nc soft link to the last, but the actual one for the
+        # branch-off date
+        if gconfig["run_number"] == 1 and config["lresume"] and gconfig["jobtype"] == "prepcompute" and config.get("norestart", "F") == "F":
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
             if "ini_parent_date" in config and "ini_restart_date" not in config:
@@ -560,7 +563,7 @@ class oasis:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
                 glob_search_file = (
-                    f"{restart_file_path}*"
+                    f"{config['ini_restart_dir']}{restart_file}*"
                     f"{config['ini_restart_date'].year}"
                     f"{config['ini_restart_date'].month:02}"
                     f"{config['ini_restart_date'].day:02}"
@@ -576,7 +579,13 @@ class oasis:
                     restart_file = os.path.basename(glob_restart_file[0])
                 elif len(glob_restart_file) == 0:
                     restart_file = restart_file_path
-                    if not os.path.isfile(restart_file):
+                    # in case config["restart_in_sources"] are given explicitely 
+                    # AND are not absolute paths as e.g in FOCI
+                    # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+                    #    restart_in_sources: sstocean_${parent_expid}_...
+                    # we need to check for the full path as well 
+                    # btw it was a nightmare to track this down
+                    if not os.path.isfile(restart_file) and not os.path.isfile(f"{config['ini_restart_dir']}/{restart_file}"):
                         user_error(
                             "Restart file missing",
                             f"No OASIS restart file for ``{restart_file_label}`` found "

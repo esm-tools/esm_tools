@@ -1,0 +1,141 @@
+# example to use the a small number of nodes / CPUs that 
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   version: "agrif"
+   resolution: "TCO319_ORCA05"
+
+   compute_time: "12:00:00"
+   initial_date: "1950-01-01T00:00:00"       # Initial exp. date
+   final_date: "2050-01-01T00:00:00"         # Final date of the experiment
+
+   nyear: 1
+   nmonth: 0
+   nday: 0
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+  
+   # machine specific setup 
+   account: shk00057 
+   base_dir: ${general.homedir}/esm/esm-experiments/ 
+   
+   postprocessing: 1
+   
+computer: 
+   partition: "standard96" 
+
+focioifs:
+   model_dir: ${general.homedir}/esm/models/focioifs-agrif-3.0/
+   version: "agrif-3.0"
+  
+oifs:
+   runtime_environment_changes:
+      choose_computer.name:
+         "glogin":
+             compiler_mpi: intel2019_impi2019
+   
+   version: "43r3"
+   with_xios: True
+   scenario: "historical"
+   mip: "cmip6"
+   pool_dir: "/scratch/projects/shk00018/foci_input2/"
+   input_dir: "${pool_dir}/openifs_cy43_tco319/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco319/319_4/"
+   ifsdata_dir: "/scratch/projects/shk00018/foci_input2/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy43_tco319/1950010100/"
+   icmcl_file: "ICMCLaazgINIT"
+   prepifs_expid: aazg
+   prepifs_startdate: 19500101
+   resolution: TCO319
+   levels: L137
+   time_step: 900
+   lresume: 0
+   nproc: 576
+   omp_num_threads: 4
+   use_ocean_currents: 1
+   
+   # use CMIP6 ozone
+   o3_scheme: cmip6
+   
+   # new solar spectrum
+   solarspectrum: True
+   
+   with_nest1: true
+   add_namelist_changes:
+      fort.4:
+         NAERAD:
+              NAERANT_SCALE: 1 # turn on aerosol scaling
+              NCMIPFIXYR: 1950 # Fix GHG to 1950                                        
+              LSOLAR1950: ".true." # solar cycle for 1950 as HrMIP
+         NAMCLDP:
+              # diffusion coeff for cloud edges
+              RCLDIFF: 5.e-6 # default 3e-6
+              # for convection, RCLDIFF=RCLDIFF*RCLDIFF_CONVI
+              #RCLDIFF_CONVI: 7 # default 7.0
+         NAMMCC:
+              RALBSEAD_NML: 0.045
+              RALBSCALE_AR: 0.8
+
+oasis3mct:
+   norestart: F
+   use_lucia: True
+   c2o_remap_method: "gauswgt"
+   coupling_time_step: 3600
+   mct_version: "5.0"
+   debug_level: 0
+   export_mode: EXPORTED
+   pool_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco319_orca05_viking10/
+   ini_parent_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco319_orca05_viking10/
+   oasis_date_stamp: ""
+      
+nemo:
+   agrif_dir: /scratch/projects/shk00018/foci_input2/agrif_viking10_jk/
+   resolution: "ORCA05"
+   #time_step: 600      
+   version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+   jpni: 36
+   jpnj: 24
+   nproca: 36
+   nprocb: 24
+   nproc: 864
+   nest1: viking10
+   
+   add_namelist_changes:
+      namelist_cfg:
+         #namsbc: 
+         #   nn_fsbc: 1
+         namsbc_rnf:
+            rn_rfact: 1.00
+         # Malins visc and diff changes
+         namdyn_ldf:
+            rn_ahm_0_blp: -1.709e12
+         namtra_ldf:
+            rn_aht_0: 600
+      1_namelist_cfg:
+         #namsbc:
+         #   nn_fsbc: 1
+         namlbc:
+            rn_shlat: 0
+         namsbc_rnf:
+            rn_rfact: 1.0
+         namdyn_ldf:
+            rn_ahm_0_blp: -1.37e10
+         namtra_ldf:
+            rn_aht_0: 120
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco319_orca05_viking10/output_for_prod/
+   nproc: 6
+   omp_num_threads: 48

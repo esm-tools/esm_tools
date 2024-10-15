@@ -171,7 +171,10 @@ export_vars:
     NETCDFROOT: ""
     NETCDFFROOT: ""
     ECCODESROOT: ""
-
+    
+    OASIS_NETCDF: $NETCDFROOT
+    OASIS_NETCDFF: $NETCDFFROOT 
+    
     OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
     # Message Passing Interface (MPI) environment variables:

@@ -101,8 +101,14 @@ available_versions:
 - 43r3-awicm-3.2.1
 - 43r3-awicm-frontiers-xios
 - 43r3-foci
+- 43r3-foci21 
+- 43r3-foci211 
+- 43r3-foci22 
+- 43r3-foci30
 - 43r3-v1
+- 43r3-v2
 - 48r1
+
 choose_version:
   40r1:
     branch: foci_conserv
@@ -253,6 +259,37 @@ choose_version:
     - xios-2.5_r1910
     contact: "swahl(at)geomar.de"
     major_version: 43r3
+  43r3-foci22:
+    branch: foci22
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} . ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    install_bins: make/esm/oifs/bin/oifs
+    requires:
+    - oasis3mct-EM21
+    - xios-2.5_r1910
+    contact: "swahl(at)geomar.de"
+    major_version: 43r3
+  43r3-foci30:
+    branch: foci22
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} . ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    install_bins: make/esm/oifs/bin/oifs
+    requires:
+    - oasis3mct-5.0-geomar
+    - xios-2.5_r1910
+    contact: "swahl(at)geomar.de"
+    major_version: 43r3
+  43r3-foci40:
+    # CSW: new branch once created by Joakim
+    branch: foci40
+    git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    install_bins: make/esm/oifs/bin/oifs
+    requires:
+    - oasis3mct-5.0-geomar
+    - xios-trunk_oasis
+    contact: "swahl(at)geomar.de"
+    major_version: 43r3
   43r3-v1:
     branch: 43r3v1-foci
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
@@ -265,11 +302,13 @@ choose_version:
   43r3-v2:
     branch: master
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+    comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
     install_bins: make/esm/oifs/bin/oifs
     requires:
-    - oasis3mct-4.0
-    - xios-2.5_r1910_oifs
+    #- oasis3mct-4.0
+    #- xios-2.5_r1910_oifs
+    - oasis3mct-5.0-geomar
+    - xios-trunk
     major_version: 43r3
   48r1:
     branch: main
@@ -296,6 +335,13 @@ mip: "cmip5"
 o3_scheme: "default"
 scenario: "amip-prepifs"
 output: "default"
+
+# We need to get a default nproc 
+# This is later modified in a 
+# choose statement below
+# and most likely in the 
+# user runscript
+nproc: 96
 
 wam: False
 wam_2w: True
@@ -347,7 +393,12 @@ choose_resolution:
         TCO95:
                 nx: 40320
                 ny: 1
-                time_step: 3600
+                # Joakim: Lower Tco95 time step to 1800s
+                # This has 2x computer cost but reduces
+                # biases by a lot, so it is worth it
+                # Savita et al. (2024) 10.5194/gmd-2023-101 
+                #time_step: 3600
+                time_step: 1800
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
@@ -448,6 +499,8 @@ choose_computer.partitions.compute.cores_per_node:
                 nproc: 108
         48:
                 nproc: 96
+        72:     
+                nproc: 144
         96:
                 nproc: 96
         128:
@@ -459,6 +512,11 @@ choose_computer.partitions.compute.cores_per_node:
 #======================================================================================
 
 # Microphysics switch: 0 for off, 1 for light version and 2 for full
+# sclct_switch <= 1 : Transform all cloud water below 600 hPa to liquid phase
+# sclct_switch == 2 : Reduce ice deposition rate by 50% to retain supercooled water
+# sclct_switch should be set to 2 to reduce warm bias in Southern Ocean
+# Note: Only works for 43r3. 
+# See Forbes 2016 10.21957/s41h7q7l 
 sclct_switch: 0
 
 # Namelist modifications for truncation types
@@ -518,7 +576,7 @@ file_movements:
             all_directions: copy
         waminfo_in:
             all_directions: copy
-        outdata: # TODO: ask GEOMAR if they are fine with this, otherwise we have to put it into awicm3.yaml
+        outdata:
             all_directions: move
 
 # TODO: expand comment
@@ -993,7 +1051,13 @@ choose_major_version:
                                         ORBIY: "${orb_iyear}"
 
                 add_outdata_files:
+                        # output is handled by XIOS
+                        # but we write the full model state at the last time step
+                        # in case we want to create restart files 
                         ICMUA: ICMUA
+                        ICMSH: ICMSH
+                        ICMGG: ICMGG 
+
                 further_reading:
                         - oifs/oifs.env.yaml
         48r1:
@@ -1142,7 +1206,21 @@ choose_mip:
                                         fort.4:
                                                 NAERAD:
                                                         SSPNAME: "SSP5-8.5"
-
+                        "4xCO2":
+                                # quadruple CO2 from 1850 levels
+                                add_namelist_changes:
+                                        fort.4:
+                                                NAERAD: 
+                                                        LA4xCO2: ".true."
+                                                        NCMIPFIXYR: 1850
+                        "1pctCO2":
+                                # increase CO2 from 1850 by 1pct per year
+                                # (quadruple by year 140)
+                                add_namelist_changes:
+                                         fort.4:
+                                                NAERAD:
+                                                        L1PCTCO2: ".true."
+                                                        NCMIPFIXYR: 1850
 #choose_o3_scheme:
 #        "prescribed":
 #                choose_mip:
@@ -1297,18 +1375,63 @@ choose_output:
 # as general.run_number, but for branchoff experiments should be 0 so that the 3rd
 # preprocessing option is used, instead of the options 1 or 2.
 branchoff: false
+ini_pseudo_initial_date: "${initial_date}" #${prev_run.general.start_date}"  
 eternal_run_number: "$((
         0 if (${lresume} and ${general.run_number} == 1)
             or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})
         else ${general.run_number}
-    ))"
+    ))" 
+
+# There are four kinds of runs:
+# eternal_run_number=0 - Restart from another experiment. 
+# eternal_run_number=1 - Start from initial conditions
+# eternal_run_number=2 - Regular restart
+# eternal_run_number=3 - Also regular restart, but we trick OpenIFS to think 
+#                        the initial_date is the start_date of the previous run
+#                        i.e. OpenIFS never knows it does more than 1 restart
+#                        This avoids both a memory issue for long runs and 
+#                        overflow of some calendar variables in single precision. 
+#
+# When we branch off from an existing experiment, we must set ini_pseudo_initial_date
+# in the runscript to inform ESM-Tools what initial_date it should trick OpenIFS it is.
+# For example, a piControl may start from 1850 and run to 2850. 
+# A historical run would then start from 2850 of the existing run, but we would set 
+# start_date for the new run to be 1850 and also trick OpenIFS to think initial_date is 1849. 
 
 # The following choose defines a pseudo_initial_date for OIFS. This allows us to trick
 # OIFS into thinking that, from leg 3, it is always running a 2nd leg, avoiding the
 # memory issues mentioned before. This is done by declaring the pseudo_initial_date
 # as the last start date.
 choose_eternal_run_number:
+        0:
+                # If we are branching off from an existing run
+                pseudo_initial_date: "${ini_pseudo_initial_date}"
+                start_ndays_source: "${prev_run.oifs.next_ndays}"
+                branchoff: true
+                preprocess_method: "
+                    ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${thisrun_input_dir}/
+                        ${oifs.input_expid}
+                        ${oifs.input_expid}
+                        ${pseudo_initial_date!syear!smonth!sday}
+                        ${start_date!syear!smonth!sday}
+                        ${oifs.wam_number}
+                        ${oifs.perturb}
+                        ${oifs.nx}
+                        ${oifs.ensemble_id};
+                    ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
+                        ${thisrun_restart_in_dir}/
+                        ${pseudo_initial_date!syear!smonth!sday}
+                        ${oifs.time_step}
+                        ${oifs.seconds_since_initial}
+                        ${oifs.start_ndays}
+                        ${oifs.wam};
+                    ${slice_icml}
+                    ${append_icmcl}
+                    echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
+                                
         1:
+                # If this is the first leg for an experiment
                 pseudo_initial_date: "${initial_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "
@@ -1326,6 +1449,7 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         2:
+                # First restart 
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${start_ndays}"
                 preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
@@ -1333,6 +1457,7 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
         "*":
+                # Any restart that is not the first
                 pseudo_initial_date: "${prev_run.general.start_date}"
                 start_ndays_source: "${prev_run.oifs.next_ndays}"
                 preprocess_method: "
@@ -1357,9 +1482,9 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
-                choose_eternal_run_number:
-                        0:
-                                branchoff: true
+                #choose_eternal_run_number:
+                #        0:
+                #                branchoff: true
 
 
 choose_general.standalone:
@@ -1388,11 +1513,30 @@ preprocess:
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script
 # not working as expected as there is no "wait" after submit in the compute recipe below
-postprocess:
-        postprocess_shell:
-                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-                type: shell
+#postprocess:
+#        postprocess_shell:
+#                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
+#                type: shell
 
+choose_oifs.post_processing:
+        True:
+                workflow:
+                        next_run_triggered_by: tidy
+                        subjobs:
+                                oifs_postprocessing:
+                                        batch_or_shell: shell
+                                        order_in_cluster: concurrent
+                                        run_on_queue: ${computer.partitions.pp.name}
+                                        run_after: tidy
+                                        script_dir: ${general.esm_function_dir}/setups/focioifs/
+                                        submit_to_batch_system: True
+                                        script: "
+                                                oifs_postprocessing.sh -m
+                                                    -r ${general.expid}
+                                                    -s ${start_date}
+                                                    -e ${end_date}
+                                                    -p ${general.base_dir}"
+                                        nproc: 1
 
 #======================================================================================
 # RECIPE

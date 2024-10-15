@@ -3,8 +3,9 @@
 #
 
 model: xios
-version: 2.0r982
+version: 2.5_r1910
 executable: xios.x
+xml_dir: ""
 
 metadata:
         Institute: IPSL and CEA
@@ -27,6 +28,7 @@ available_versions:
 - trunk_oasis
 - "2.5"
 - 2.5_r1910
+- 2.5_r2497
 - 2.5_r1910_oifs
 - 2.5_r1910_ogcm
 - 2.5_smhi
@@ -53,7 +55,7 @@ choose_version:
     contact: "swahl(at)geomar.de"
   trunk_oasis:
     git-repository: https://git.geomar.de/foci/src/xios.git
-    branch: xios_trunk 
+    branch: xios_trunk
     archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
@@ -116,10 +118,23 @@ choose_version:
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
   # XIOS with oasis dependencies and oasis support  
   2.5_r1910:
-    archfile: ESMTOOLS_generic_oasis_intel
+    # Switch arch file if we use GCC on glogin
+    choose_computer.name:
+      glogin:
+        choose_computer.compiler_mpi:
+          gcc11_ompi416:
+            archfile: ESMTOOLS_generic_oasis_GNU
+          '*': 
+            archfile: ESMTOOLS_generic_oasis_intel
+      '*':
+        archfile: ESMTOOLS_generic_oasis_intel
     use_oasis: --use_oasis oasis3_mct
     branch: 2.5_r1910
-  # XIOS with oasis dependencies 
+  2.5_r2497:
+    archfile: ESMTOOLS_generic_oasis_intel
+    use_oasis: --use_oasis oasis3_mct
+    branch: 2.5_r2497
+  # XIOS without oasis dependencies 
   2.5_r1910_oifs:
     archfile: ESMTOOLS_generic_intel
     use_oasis: ''
@@ -184,22 +199,11 @@ choose_general.setup_name:
                         ifs_xml: ifs_xml
         focioifs:
                 xml_dir: "${computer.pool_directories.focipool}"
-                choose_general.version:
-                        "*":
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        domain_def: domain_def
-                                        field_def: field_def
-                                        file_def: file_def
-                        agrif:
-                                add_config_files:
-                                        context_ifs: context_ifs
-                                        ifs_xml: ifs_xml
-                                        domain_def: domain_def
-                                        field_def: field_def
-                                        file_def: file_def
-                                        file_def_agrif: file_def_agrif
+                add_config_files:
+                        context_ifs: context_ifs
+                        ifs_xml: ifs_xml
+                        nemo_xml: nemo_xml                        
+
         foci:
            choose_general.version:
               default: 
@@ -220,7 +224,19 @@ choose_general.setup_name:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
+              fs_oasismct4: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
               default_oasismct4: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
+              mops_oasismct4: 
                  xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def
@@ -234,6 +250,13 @@ choose_general.setup_name:
                     file_def: file_def
                     file_def_agrif: file_def_agrif
               agrif_oasismct4: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
+                    file_def_agrif: file_def_agrif
+              agrif_mops_oasismct4: 
                  xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:
                     domain_def: domain_def

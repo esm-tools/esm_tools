@@ -5,6 +5,8 @@ components:
 - fesom-2.5-refactoring
 - oasis3mct-5.0-smhi
 coupling_changes:
+- sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml
+- sed -i 's/oasis3-mct-5.2/oasis/g' oifs-48r1/bundle.yml
 - sed -i '/CPLNG_ACTIVE = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
 - sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90
 - sed -i '/COUPLEFESOM2 = /s/.FALSE./.TRUE./g' oifs-48r1/ifs-source/arpifs/module/yommcc.F90

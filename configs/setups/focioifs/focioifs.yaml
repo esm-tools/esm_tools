@@ -77,8 +77,9 @@ general:
         # 3.0.1 - no Smag (as used in 3.0-agrif)
         #
         # 4.0 Using NEMO 4
-        # 4.1  - with ECWAM
-        # 4.1.1 - with reduced Charnock in ECWAM
+        # 4.0.1  - with ECWAM (with backported Charnock cap)
+        # 4.1 - with eORCA05.L75
+        # 4.1.1 - with ECWAM (and backported Charnock cap)
         # agrif-4.0
         #
         # 2.1 also comes with O12 (ORCA12)
@@ -91,14 +92,14 @@ general:
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
-            - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci40
+            - nemo-eORCA05_Z75_SI3_COUPLED+oifs43r3-foci40
           
           # Introduce ECWAM wave model
           '4.1':
             runoff_method: "EM21"
             calving_method: "JS"
             couplings:
-            - nemo-ORCA05_Z46_SI3_COUPLED+oifs43r3-foci40
+            - nemo-eORCA05_Z75_SI3_COUPLED+oifs43r3-foci40
           
           # NEMO 4.2.2 and AGRIF
           'agrif-4.0':
@@ -358,6 +359,8 @@ oifs:
         choose_general.resolution:
                 TCO95_ORCA05:
                         nproc: 279
+                TCO95_eORCA05: 
+                        nproc: 288
                 TCO95_eORCA025:
                         nproc: 279
                 TCO95_ORCA12:
@@ -701,6 +704,8 @@ nemo:
                 ORCA05:
                         nproca: 24
                         nprocb: 20
+                        loccunif_nb: 4
+                eORCA05: 
                         loccunif_nb: 4
                 # Joakim: Need to find good choice for ORCA12
                 ORCA12:

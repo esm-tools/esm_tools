@@ -90,6 +90,7 @@ available_versions:
 - eORCA025_Z75_SI3_JRA55 
 - eORCA025_Z75_SI3_COUPLED
 - ORCA05_Z46_SI3_COUPLED
+- eORCA05_Z75_SI3_COUPLED
 - ORCA05_SI3_COUPLED_AGRIF
 
 choose_version:
@@ -1062,6 +1063,146 @@ choose_version:
              #ln_dynldf_hor: '.true.'
              #nn_ahm_ijk_t: 32
              
+
+  eORCA05_Z75_SI3_COUPLED:
+    # coupled eORCA05.L75, set up with SI3 sea ice model
+    # Used for FOCI-OpenIFS 4.1
+    #
+    # The configuration is similar to ORCA05_Z46_SI3_COUPLED above
+    # but has the grid extended south (more j points, but same i points) 
+    # and more vertical levels. 
+    #
+    # NOTE: The source code is the same as ORCA05_Z46_SI3_COUPLED
+    #       so we use the same git repository. 
+    #       The main modifications in this config is the use of 
+    #       different input files (domain_cfg etc). 
+
+    requires:
+        - nemobasemodel-4.2.2
+
+    # We use the orca05_z46_si3_coupled git repo, but a different branch
+    branch: eORCA05_Z75_SI3_COUPLED
+    
+    reference_expid: 'FOCIOIFS'
+    
+    # The code is the same as for ORCA05_Z46
+    # So we clone that repo and build a new config based on it
+    clone_destination: nemo-${nemo.version}/cfgs/${version}
+    
+    # Use the same code as for orca05_z46
+    git-repository: https://git.geomar.de/foci/src/nemo_config/orca05_z46_si3_coupled.git
+    
+    # Use the ORCA05_Z46_SI3_COUPLED config
+    comp_command: export NEMO_TOPLEVEL=${model_dir} ; export XIOS_TOPLEVEL=${model_dir}/../xios; 
+                  test -d arch/GEOMAR || git clone https://git.geomar.de/foci/src/nemo_arch.git arch/GEOMAR;
+                  cp cfgs/${nemo.version}/work_cfgs.inc cfgs/ref_cfgs.txt;
+                  ./makenemo -n ${version} -m ${archfile} -r ${version} -j 24 ; 
+                  cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${version}/BLD/bin/oceanx
+    clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${version} clean
+    archfile: ESMTOOLS_generic_oasis_intel
+    destination: nemo-${nemo.version}
+    install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
+
+    namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/${reference_expid}/
+
+    generation: "4.2"
+    resolution: ORCA05
+    use_tracer: false 
+    leapyear: true  
+    free_surface: nonlinear
+    
+    input_dir: ${pool_dir}/NEMO4_eORCA05/L75/
+
+    # override hardcoded path to runoff forcing
+    add_namelist_changes:
+       namelist_cfg:
+          namsbc_blk:
+             cn_dir: "./"
+          #namrun:
+          #    nn_write: 3 # hourly output (no xios used)
+          namsbc:
+             ln_blk: false
+             ln_cpl: true
+             ln_ssr: false
+             ln_rnf: false
+             ln_traqsr: false
+             ln_apr_dyn: false
+          namsbc_cpl:
+             sn_snd_temp: ['oce and ice', 'no', '', '', '']
+             sn_snd_alb: ['ice', 'no', '', '', '']
+             sn_snd_thick: ['ice and snow', 'no', '', '', '']
+             sn_snd_crt: ['oce only', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_snd_co2: ['none', 'no', '', '', '']
+             sn_snd_cond: ['none', 'no', '', '', '']
+             sn_snd_mpnd: ['none', 'no', '', '', '']
+             sn_snd_sstfrz: ['none','no','','','']
+             sn_snd_wlev: ['none','no','','','']
+             sn_snd_ttilyr: ['none','no','','','']
+             sn_rcv_w10m: ['none', 'no', '', '', '']
+             sn_rcv_taumod: ['none', 'no', '', '', '']
+             sn_rcv_tau: ['oce and ice', 'no', 'spherical', 'eastward-northward', 'T']
+             sn_rcv_dqnsdt: ['coupled', 'no', '', '', '']
+             sn_rcv_qsr: ['conservative', 'no', '', '', '']
+             sn_rcv_qns: ['conservative', 'no', '', '', '']
+             sn_rcv_emp: ['conservative', 'no', '', '', '']
+             sn_rcv_rnf: ['coupled', 'no', '', '', '']
+             sn_rcv_cal: ['coupled', 'no', '', '', '']
+             sn_rcv_co2: ['none', 'no', '', '', ''] 
+          nambbc:
+             # set to constant flux since we dont have the file
+             nn_geoflx: 1
+             
+          #   # Unlike default, we use geothermal heating remapped to ORCA05
+          #   # No need for a reshape file
+          #   sn_qgh: ['geothermal_heating.nc', -12.0, 'gh_flux', .false., .true., 'yearly', '', '']
+
+          # set diffusion to be 600 m2/s
+          # and visc to be -1,709 m4/s
+          # A = Ud * Ld / 2. Ud = 0.024 gives approx A=600 m2/s for Ld=50km. 
+          # A = Uv * Lv / 12. Uv = 0.164 gives around A=-1,709 m4/s for Ld=50km
+          namtra_ldf:
+             rn_ud: 0.024
+          namdyn_ldf:
+             rn_uv: 0.164
+   
+    add_input_sources:
+        namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+        namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+
+    add_input_files:
+       namelist_ref: namelist_ref
+       namelist_ice_ref: namelist_ice_ref
+       
+       # from Sebastian / Markus
+       #bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
+       #coordinates_orca05_nemo4: bathy_meter_orca05_nemo4 
+       bfr_coef_orca05_nemo4: bfr_coef_eorca05_nemo4
+       subbasins_orca05_nemo4: subbasins_eorca05_nemo4
+       domain_cfg_orca05_nemo4: domain_cfg_eorca05_nemo4
+       
+       # NEMO ORCA05 4.2.x input files
+       #ghflux_v2.0_orca05_nemo4: ghflux_v2.0_eorca05_nemo4
+       
+       # inital data
+       data_tem_orca05_nemo4: data_tem_eorca05_nemo4
+       data_sal_orca05_nemo4: data_sal_eorca05_nemo4
+       
+       # inital data
+       #seaice_orca05_nemo4: seaice_eorca05_nemo4
+
+    input_in_work:
+       domain_cfg_orca05_nemo4: domain_cfg.nc
+       #coordinates_orca05_nemo4: coordinates.nc
+       bfr_coef_orca05_nemo4: bfr_coef.nc
+       subbasins_orca05_nemo4: subbasins.nc
+      
+       # inital data
+       data_tem_orca05_nemo4: data_tem.nc
+       data_sal_orca05_nemo4: data_sal.nc
+       #ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
+       
+       #seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc 
+
 
   ORCA05_LIM2_FOCI_AGRIF:
     requires:
@@ -2728,7 +2869,14 @@ choose_resolution:
                 _nx: 722
                 _ny: 511
                 time_step: 1800
-                
+        
+        eORCA05:
+                # Periodic points and folding points
+                # are not included on grid for NEMO 4.2
+                _nx: 722
+                _ny: 604
+                time_step: 1800
+                        
         ORCA12:
                 _nx: 4322
                 _ny: 3059
@@ -3041,9 +3189,7 @@ input_sources:
         subbasins_orca05_nemo4: ${input_dir}/subbasins__4.2.0_ORCA05.nc
         # File from Joakim. Use same settings as ORCA05 in 3.6
         # (zps, no isf, Caspian included)
-        #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noclo.nc
         domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg__ORCA05_zps_noCaspian.nc
-        #domain_cfg_orca05_nemo4: ${input_dir}/domain_cfg_ORCA05_v1.1.nc
         
         reshape_jra_orca05_nemo4_bicub: ${input_dir}/reshape_jra_bicub__4.2.0_ORCA05_v1.0.0.nc
         reshape_jra_orca05_nemo4_bilin: ${input_dir}/reshape_jra_bilin__4.2.0_ORCA05_v1.0.0.nc
@@ -3059,6 +3205,15 @@ input_sources:
         # NEMO 4.2.x input for AGRIF
         1_domain_cfg: ${agrif_dir}/1_domain_cfg.nc
         1_subbasins: ${agrif_dir}/1_subbasins.nc 
+        
+        # eORCA05.L75 files
+        domain_cfg_eorca05_nemo4: ${input_dir}/eORCA05.L75_domain_cfg_cut.nc # was cut from 722x604 to 720x603
+        #coordinates_orca05_nemo4: eORCA05.L75_mesh_mask.nc
+        bfr_coef_eorca05_nemo4: ${input_dir}/eORCA05.L75_bfr2d.nc
+        subbasins_eorca05_nemo4: ${input_dir}/subbasins.nc
+        data_tem_eorca05_nemo4: ${input_dir}/eORCA05.L75_81B0_WOA18_1m_votemper.nc  #eORCA05.L75_GOU18_1m_votemper.nc
+        data_sal_eorca05_nemo4: ${input_dir}/eORCA05.L75_81B0_WOA18_1m_vosaline.nc  #eORCA05.L75_GOU18_1m_vosaline.nc
+        
         
         
 #forcing_files:

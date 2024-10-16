@@ -22,6 +22,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
+      - name: Update Ubuntu
+        run: sudo apt-get update
+
       - name: Install libhdf5-dev
         run: sudo apt-get install libhdf5-dev
 

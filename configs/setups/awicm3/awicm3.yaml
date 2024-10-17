@@ -271,10 +271,13 @@ oifs:
                 "v3.3":
                         version: "48r1"
                         with_xios: True
+                        git-repository: https://git.smhi.se/sager/oifs48r1
+                        branch: 'dev/integrate-with-ece4'
                         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.3
                         mip: "cmip6"
                         wam: true
+                        restart_type: "ifs_default"
                         add_namelist_changes:
                                 fort.4:
                                         NAMCT0:
@@ -518,6 +521,7 @@ fesom:
                 "v3.3":
                         version: "2.5"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
+                        append_icmcl: ""
                         add_namelist_changes:
                                 namelist.config:
                                         ale_def:
@@ -712,7 +716,6 @@ oasis3mct:
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${general.pool_dir}/oasis/
         norestart: "F"
-
         process_ordering:
                 - fesom
                 - oifs
@@ -802,8 +805,8 @@ oasis3mct:
                 'v3.3':
                         mct_version: 5.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
-                        rstos_file_name: 'rstos_uv'
-                        rstas_file_name: 'rstas_uv'
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
                         add_process_ordering:
                                 - xios
                         coupling_target_fields:

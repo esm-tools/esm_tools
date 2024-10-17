@@ -10,7 +10,7 @@ def replace_var(var, tag, value):
         if isinstance(var, (str, int, float)):
             var = str(var)
             return var.replace("${" + tag + "}", value)
-        elif type(var) == list:
+        elif isinstance(var, list):
             newlist = []
             for entry in var:
                 newlist.append(replace_var(entry, tag, value))
@@ -24,7 +24,7 @@ class software_package:
     def __init__(
         self, raw, setup_info, vcs, general, no_infos=False
     ):  # model_and_version):
-        if type(raw) == str:
+        if isinstance(raw, str):
             (
                 dummy,
                 self.kind,
@@ -66,6 +66,7 @@ class software_package:
             self.coupling_changes = None
             # deniz: Linux pipe support: eg. curl foo.tar.gz | tar zx
             self.pipe_options = None
+            self.permissions = None
 
     def fill_in_infos(self, setup_info, vcs, general):
 
@@ -74,10 +75,9 @@ class software_package:
         self.complete_targets(setup_info)
 
         # kh 11.09.20 support git options like --recursive
-        self.repo_type, self.repo, self.branch, self.repo_options = self.get_repo_info(
-            setup_info, vcs
-        )
+        self.get_repo_info(setup_info, vcs)
         self.destination = setup_info.get_config_entry(self, "destination")
+        self.contact = setup_info.get_config_entry(self, "contact")
         self.clone_destination = setup_info.get_config_entry(self, "clone_destination")
         if not self.destination:
             self.destination = self.raw_name
@@ -221,29 +221,28 @@ class software_package:
     def get_comp_type(self, setup_info):
         exec_names = setup_info.get_config_entry(self, "install_bins")
         if exec_names:
-            if type(exec_names) == str:
+            if isinstance(exec_names, str):
                 exec_names = [exec_names]
             return "bin", exec_names
         exec_names = setup_info.get_config_entry(self, "install_libs")
         if exec_names:
-            if type(exec_names) == str:
+            if isinstance(exec_names, str):
                 exec_names = [exec_names]
             return "lib", exec_names
         return "bin", []
 
     def get_repo_info(self, setup_info, vcs):
-        repo = branch = repo_type = None
+        self.repo = self.branch = self.repo_type = None
         for check_repo in vcs.known_repos:
-            repo = setup_info.get_config_entry(self, check_repo + "-repository")
-            if repo:
-                repo_type = check_repo
+            self.repo = setup_info.get_config_entry(self, check_repo + "-repository")
+            if self.repo:
+                self.repo_type = check_repo
                 break
-        branch = setup_info.get_config_entry(self, "branch")
+        self.branch = setup_info.get_config_entry(self, "branch")
 
         # kh 11.09.20 support git options like --recursive
-        repo_options = setup_info.get_config_entry(self, "repo_options")
-
-        return repo_type, repo, branch, repo_options
+        self.repo_options = setup_info.get_config_entry(self, "repo_options")
+        self.permissions = setup_info.get_config_entry(self, "source_code_permissions")
 
     def get_command_list(self, setup_info, vcs, general):
         command_list = {}
@@ -253,7 +252,7 @@ class software_package:
             else:
                 commands = setup_info.get_config_entry(self, todo + "_command")
             if commands:
-                if type(commands) == str:
+                if isinstance(commands, str):
                     commands = [commands]
                 if not todo == "get":
                     commands.insert(0, "cd " + self.destination)

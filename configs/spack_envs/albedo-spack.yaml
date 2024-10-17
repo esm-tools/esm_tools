@@ -1,0 +1,32 @@
+# This is a Spack Environment file to install all software 
+# needed for compilation of various climate models currently 
+# employed under the esm-tools infrastructure umbrella.
+#
+# It describes a set of packages to be installed, along with
+# configuration settings.
+spack:
+  # add package specs to the `specs` list
+  specs:
+  - intel-oneapi-compilers@2022.0.1
+  - openmpi@4.1.3
+  - netcdf-c@4.8.1
+  - netcdf-cxx4@4.3.1 ^netcdf-c@4.8.1
+  - netcdf-fortran@4.6.0 ^netcdf-c@4.8.1
+  - hdf5@1.12.2 +fortran+hl
+  - intel-oneapi-mkl@2022.0.1
+  - udunits@2.2.28
+  - git@2.38.1
+  # - python@3.10.4
+  # - py-pip ^python@3.10.4
+  - eccodes@2.25.0+fortran+netcdf+openmp %intel@2021.5.0 ^openmpi@4.1.3%intel@2021.5.0 ^hdf5+fortran+hl ^netcdf-c@4.8.1%intel@2021.5.0
+  - perl@5.34.1
+  packages:
+    all:
+      compiler: [intel@2021.5.0]
+  view: true
+  concretizer:
+    unify: true
+  modules:
+    prefix_inspections:
+      include:
+      - CPATH

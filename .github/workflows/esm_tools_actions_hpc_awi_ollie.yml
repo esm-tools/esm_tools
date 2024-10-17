@@ -10,6 +10,10 @@ on:
             model_version:
                 required: True
                 type: string
+            skip_clean:
+              required: False
+              default: False
+              type: boolean
         secrets:
             dkrz-token:
                 required: True
@@ -22,6 +26,16 @@ defaults:
     shell: bash -leo pipefail {0}
 
 jobs:
+    skip_ci:
+      runs-on: ubuntu-latest
+      # Map the output to the job's outputs
+      outputs:
+        canSkip: ${{ steps.check.outputs.canSkip }}
+      steps:
+        - id: check
+          uses: Legorooj/skip-ci@main
+          with:
+             pattern: (\[skip[\s\-](ci|actions|ga|model-comp)|(ci|actions|ga|model-comp)[\s\-]skip\])
     setup_version_matrix:
         runs-on: hpc_awi_ollie
         outputs:
@@ -29,6 +43,10 @@ jobs:
         steps:
             - name: Download Code
               uses: actions/checkout@v2
+            - id: print_inputs
+              run: echo ${{inputs.model_version}}
+            - id: print_version_env
+              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})"
             - id: set_version_env
               run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{inputs.model_version}})" >> $GITHUB_ENV
             - id: test-set-matrix
@@ -36,7 +54,11 @@ jobs:
             - id: set-matrix
               run: echo "::set-output name=matrix::${{ env.VERSION }}"
     basic_compile_test:
-        needs: setup_version_matrix
+        needs: 
+          - setup_version_matrix
+          - skip_ci
+        # And only run the build if canSkip isn't 'true'.
+        if: ${{ needs.skip_ci.outputs.canSkip != 'true' }}
         runs-on: hpc_awi_ollie
         strategy:
             matrix: ${{fromJSON(needs.setup_version_matrix.outputs.matrix)}}
@@ -44,20 +66,21 @@ jobs:
         env:
             LC_ALL: en_US.UTF-8
             LANG: en_US.UTF-8
+            GITLAB_DKRZ_USER_NAME: ${{ secrets.dkrz-token }}
+            GITLAB_AWI_USER_NAME: ${{ secrets.awi-token }}
 
         steps:
           - name: Download Code
             uses: actions/checkout@v2
 
-          - name: Add to the path
-            run: |
-              echo "$HOME/.local/bin" >> $GITHUB_PATH
-
           - name: Install esm-tools
             run: |
               module load git
               module load python3
+              python3 -m venv .venv
+              source .venv/bin/activate
               ./install.sh
+              echo $PATH
 
           - name: Create esmtoolsrc file
             run: |
@@ -66,26 +89,42 @@ jobs:
 
           - name: Run esm_master
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
               esm_master
 
           - name: Run esm_plugins
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
               esm_plugins
 
           - name: Run get-${{ inputs.model_name }}-${{ matrix.version }}
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
+              module load git
               esm_master get-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run status-${{ inputs.model_name }}-${{ matrix.version }}
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
               esm_master status-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run comp-${{ inputs.model_name }}-${{ matrix.version }}
             run: |
-                esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
+              esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Run clean-${{ inputs.model_name }}-${{ matrix.version }}
+            if: ${{ !inputs.skip_clean }}
             run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              source .venv/bin/activate
+              # QUESTION(PG): If we do run tests, do we still need this part?
+              # Won't that erase the actual binaries??
               esm_master clean-${{ inputs.model_name }}-${{ matrix.version }}
 
           - name: Clean up

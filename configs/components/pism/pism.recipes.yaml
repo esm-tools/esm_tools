@@ -11,10 +11,11 @@ prepcompute_recipe:
         - "pism_set_kv_pairs"
         - "pism_set_flags"
         - "pism_set_couplers"
-        - "pism_override_file"
+        #- "pism_override_file"
         
         - "assemble"
         - "log_used_files"
+        - "wait_for_iterative_coupling"
         - "_write_finalized_config"
           #- "assemble_filelists"
         #- "copy_tools_to_thisrun"
@@ -28,7 +29,10 @@ prepcompute_recipe:
         
           #- "add_batch_hostfile"
         - "copy_files_to_work"
+        - "compute_and_log_file_checksums"
           #- "write_simple_runscript"
         - "report_missing_files"
+        #- "add_vcs_info"
+        #- "check_vcs_info_against_last_run"
         - "database_entry"
         # - "submit"

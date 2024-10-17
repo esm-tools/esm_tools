@@ -13,18 +13,20 @@ license_text: |
         Please make sure you have a licence to use echam.In case you are
         unsure, please contact redmine....
 
-
 pool_dir: "${computer.pool_directories.pool}/JSBACH"
 input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${echam.resolution}"
 cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
-dynamic_vegetations: False
+pool_dir_couple: "${computer.pool_directories.pool}/AWICM/JSBACH"
+input_dir_couple: "${pool_dir_couple}/input/${dataset}"
 
+dynamic_vegetations: False
 
 version: "3.20"
 dataset: r0009
-scenario_type: ${echam.scenario} 
+scenario: ${echam.scenario}
+scenario_type: ${scenario}
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -41,7 +43,7 @@ choose_version:
         "3.20p1":
                 dataset: r0010
                 forcing_in_work:
-                       LU : "landuseHarvest.@YEAR@.nc"
+                        LU: "landuseHarvest.@YEAR@.nc"
 
                 choose_dynamic_vegetations:
                         true:
@@ -63,6 +65,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         "1950":
                                 add_input_files:
                                         jsbach: jsbach_1976
@@ -73,6 +76,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         #lightning: lightning
                                         #popdens: popdens
+
                         1percCO2:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -83,30 +87,38 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
-                        ssp585:
+
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
+                        # further options are given under `choose_scenario_type` section
+                        cmip6hist:
                                 scenario_type: cmip6
+
                         ssp370:
                                 scenario_type: cmip6
+
                         ssp126:
                                 scenario_type: cmip6
+
                         ssp245:
                                 scenario_type: cmip6
+
                         ssp534os:
                                 scenario_type: cmip6
-                        cmip6hist:
-                                scenario_type: cmip6                
+                        ssp585:
+                                scenario_type: cmip6
+
 
         "3.20":
                 dataset: r0010
                 choose_dynamic_vegetations:
                         true:
-                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/dynveg"
                                 dynveg: "_dynveg"
                                 jsbachnc_file_ending: "${dynveg_file_ending}"
                         false:
-                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario}/no_dynveg"
+                                namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg"
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
-                                dynveg: "_no_dynveg"
+                                dynveg: "_no-dynveg"
                 choose_echam.scenario:
                         PI-CTRL:
                                 add_input_files:
@@ -118,6 +130,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         1850:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -128,6 +141,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         PALEO:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -139,6 +153,7 @@ choose_version:
                                         lightning: lightning
                                         popdens: popdens
                                 dynamic_vegetations: True
+
                         4CO2:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -149,6 +164,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         1percCO2:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -165,16 +181,56 @@ choose_version:
                                         jsbach: jsbach_1850
                                 forcing_files:
                                         LU: LU_HIST
-                                        LU_trans: LU_trans_none
+                                        LU_trans: LU_trans_hist
                                         cover_fract: cover_fract_HIST
+                                        Ndepo: Ndepo_1850
+                                        a_nd_file: a_nd_file
+                                        lightning: lightning
+                                        popdens: popdens
+
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
                                 forcing_files:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
+                                        Ndepo: Ndepo_1950
+                                        a_nd_file: a_nd_file
+                                        #lightning: lightning
+                                        #popdens: popdens
 
+                        # SSP scenarios share common paths. They are grouped under cmip6 and
+                        # further options are given under `choose_scenario_type` section
+                        cmip6hist:
+                                scenario_type: cmip6
 
+                        ssp126:
+                                scenario_type: cmip6
+
+                        ssp245:
+                                scenario_type: cmip6
+
+                        ssp370:
+                                scenario_type: cmip6
+
+                        ssp534os:
+                                scenario_type: cmip6
+
+                        ssp585:
+                                scenario_type: cmip6
+
+                choose_general.iterative_coupling:
+                        True:
+                                add_input_sources:
+                                        "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
+                                choose_general.chunk_number:
+                                        1:
+                                                from_chunk_number_choose: <NOT_SPECIFIED>
+                                        "*":
+                                                add_input_files:
+                                                        jsbach: jsbach_ismc
+                        "*":
+                                from_iterative_coupling_choose: <NOT_SPECIFIED>
 
         "3.10":
                 dataset: r0007
@@ -184,6 +240,7 @@ choose_version:
                                 dynveg: "_dynveg"
                         false:
                                 dynveg: "_no_dynveg"
+
                 choose_echam.scenario:
                         PI-CTRL:
                                 add_input_files:
@@ -195,6 +252,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         1850:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -205,6 +263,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         PALEO:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -215,6 +274,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         4CO2:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -225,6 +285,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         1percCO2:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -235,6 +296,7 @@ choose_version:
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
+
                         HIST:
                                 add_input_files:
                                         jsbach: jsbach_1850
@@ -249,27 +311,54 @@ choose_version:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
 
+# common options for scenarios, eg. CMIP6
+Ndepo_cmip6: Ndepo_hist_scenario
+Ndepo_path: ""
+popdens_cmip6: popdens
+cover_fract_cmip6: cover_fract.@YEAR@.nc
+
 choose_scenario_type:
         cmip6:
+                Ndepo_path: "${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_"
                 add_input_files:
                         jsbach: jsbach_1850
                 forcing_files:
                         LU: LU_hist_scenario
                         LU_trans: LU_trans_hist_scenario
-                        Ndepo: Ndepo_hist_scenario
+                        Ndepo: ${Ndepo_cmip6}
                         a_nd_file: a_nd_file
                         lightning: lightning
-                        popdens: popdens
+                        popdens: ${popdens_cmip6}
+                        cover_fract: ${cover_fract_cmip6}
 
 
-choose_echam.version:
-        6.3.05p2-wiso:
+# For ssp scenarios find the pathway first 4 characters
+scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
+choose_scenario_is_ssp:
+        True:
+                ssp_num: "$(( '${scenario}'[:4] ))"
+                # SSP scenarios share common paths. They are grouped under cmip6 and
+                # further options are given under `choose_scenario_type` section
+                scenario_type: cmip6
+                Ndepo_cmip6: Ndepo_ssp
+                popdens_cmip6: popdens_ssp
+                cover_fract_cmip6: cover_fract_ssp
+                Ndepo_sufix: "_${echam.scenario}"
+
+        False:
+                ssp_num: null
+                Ndepo_sufix: ""
+
+choose_echam.with_wiso:
+        True:
                 restart_in_sources:
-                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
                 restart_out_sources:
-                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
                 add_streams:
                         - js_wiso
+                        - la_wiso
+                        - sf_wiso
 
 input_files:
         "lctlib": "lctlib"
@@ -287,13 +376,12 @@ forcing_in_work:
         "a_nd_file": "a_nd_file.nc"
         "lightning": "lightning.nc"
         "popdens": "population_density.nc"
-        "LU" : "landuse_harvest.@YEAR@.nc"
+        "LU" : "landuseHarvest.@YEAR@.nc"
         "Ndepo": "Ndepo.@YEAR@.nc"
         "LU_trans": "landuseTransitions.@YEAR@.nc"
 
 forcing_modifications:
         Ndepo:  "<--setyear-- @YEAR@"
-
 
 forcing_additional_information:
         "LU":
@@ -306,7 +394,6 @@ forcing_additional_information:
                 - need_timestep_before
                 - need_timestep_after
 
-
 streams:
         - jsbach
         - jsbid
@@ -315,8 +402,6 @@ streams:
         - nitro
         - veg
         - land
-
-
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 
@@ -337,7 +422,6 @@ ignore_in_work:
         "[[streams-->STREAM]]_restart": restart_${general.expid}_STREAM.nc
         "[[streams-->STREAM]]_codes": ${general.expid}_${next_date!syear!smonth}.${next_date!sday}_STREAM.codes
 
-
 outdata_files:
         "[[streams-->STREAM]]": STREAM
         "[[streams-->STREAM]]_codes": STREAM_codes
@@ -346,26 +430,36 @@ outdata_sources:
         "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
 
+outdata_in_work:
+        "[[streams-->STREAM]]": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM
+        "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
+
 restart_in_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        # deniz: removed hour, minute, second information. Now it is compatible with ECHAM
+        # INFO: for continuous restarts it is fine but branch-off restarts fail
+        # since esm-tools is looking for YYYYMMDDHHMMSS.nc data instead
+        # "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
 
 restart_in_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
-
 
 restart_out_files:
         "[[streams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
+        # deniz: removed hour, minute, second information. Now it is compatible with ECHAM
+        # INFO: for continuous restarts it is fine but branch-off restarts fail
+        # since esm-tools is looking for YYYYMMDDHHMMSS.nc data instead
+        # Same as the problem we have in `restart_in_sources`
+        # "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
 
 restart_out_in_work:
         "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
-
-
 
 namelists:
         - "namelist.jsbach"

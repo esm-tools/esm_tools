@@ -6,24 +6,30 @@ Welcome to ESM Tools's documentation!
    :caption: Contents:
 
    introduction
+   get_esm-tools
+   before_you_continue
    ten_steps
    installation
-   transitioning
+   esm_tools
    yaml
+   jinja
    yaml_hierarchy
    esm_variables
-   Supported_Models
    esm_master
    esm_versions
    esm_runscripts
    workflow
    esm_environment
+   esm_tests
    motd
    cookbook
    faq
    packages
    API
+   Supported_Models
+   transitioning
    contributing
+   howtocite
    authors
 
 .. exclude:: ../README.rst

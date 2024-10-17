@@ -1,0 +1,155 @@
+#######################################################################################
+# The dummy yaml machine config file for esm-tools
+#
+# This is a dummy machine file. It is intend to be used for creating a new config file 
+# for a new machine setup. It provides a minimal structure to be filled in with
+# the oppropriate values of the new HPC system. 
+#
+# Usage:  
+#     - Please replace the placeholder indicated by <...> 
+#       with your PHC specific values
+#     - Please uncomment sections of this yaml file if appropriate.
+#       Possible sections are indicating this (see below).
+#     - See also files for other machines that are already implemented in esm-tools.
+#     - After editing this file, save it as <machine>.yaml in configs/machines. Add also
+#       an entry in the file configs/machines/all_machines.yaml (in this folder) for the
+#       new machine.
+#######################################################################################
+
+# GENERIC YAML CONFIGURATION FILES
+#
+# Set hostname of the machine 
+name: <hostname>
+
+# General information about operating system
+# Operating system
+#operating_system: "<your-operating-system>"
+# Shell interpreter (e.g. "/usr/bin/bash")
+sh_interpreter: "<path-to-shell>"
+
+# Information about the job scheduler
+# Set batch system (e.g. slurm/pbs)
+batch_system: "<your-job-scheduler>"
+
+# Set whether an account needs to be set for batch system (e.g. true or false). 
+# The actual account that will be used for the experiment will be set in the runscript.
+accounting: true 
+#
+#hetjob_flag: "?" # either hetjob or packjob, this depends on your SLURM version. More info can be found: https://slurm.schedmd.com/heterogeneous_jobs.html
+#
+#jobtype: compute
+#
+# Information about the partitions of the machine
+#
+# Specify if hyperthreading should be used.
+use_hyperthreading: False
+# Set further options depending on hyperthreading variable 'use_hyperthreading' by 
+# uncommenting and editing the following 'choose_use_hyperthreading' section:
+#choose_use_hyperthreading:
+#    True: 
+#        hyperthreading_flag: ""
+#        mt_launcher_flag: ""
+#    False: 
+#       <set_any_variable_here_related_to_hypertherading>: <value>
+
+# Set default partition (e.g. compute)
+partition: <partition_name>
+#
+# Set detail information for available partitions on the machine.
+# These variables will be used in other parts of this yaml file.
+choose_partition:
+    <partition_name>:
+        partition_name: "<partition_name>"
+        partition_cpn: <number_of_cores_per_node>  # integer number 
+#
+# Define available partitions of the machine for different jobtypes (e.g. for computing [compute], post-processing [PP], etc.)
+#
+partitions:
+    compute:
+        name: ${computer.partition_name}     # this uses the variable set in choose_partition section (see above)
+        #name: "compute"                     # or set the partition name as string
+        cores_per_node: ${computer.partition_cpn}
+#
+#logical_cpus_per_core: 2
+#
+#threads_per_core: 1
+#
+# Specify different pool directories for this machine.
+#
+pool_directories:
+#    focipool: "<set_path_to_pool_dir>"
+#    pool: "<set_path_to_pool_dir"
+#
+pool_dir:  "<set_path_to_pool_dir>"
+#
+
+# Setup environment
+# Load necessary modules (e.g. git, cdo, nco, compiler). Edit and extent the following lines.
+module_actions:
+    - "purge"
+    - "load <module>"
+#    - "load <module>"
+#    - "load <module>"
+#
+# Export environment variables. Extend the following lines to export needed environment variables.
+export_vars:
+    # Locale Settings
+    LC_ALL: en_US.UTF-8
+    # Compiler
+    FC: <mpif90>
+    F77: <mpif90>
+    MPICC: <mpicc>
+    MPIFC: <mpif90>
+    CC: <mpicc>
+    CXX: <mpicxx>
+    # Other environemnt variables
+
+## Some other yaml files use a file 'computer.fc', etc to identify the compiler, so we need to add them here.
+fc: "$FC"
+cc: "$CC"
+mpifc: "$MPIFC"
+mpicc: "$MPICC"
+cxx: "$CXX"
+#
+#
+# Launcher flags (i.e. flags for the srun/mpirun/aprun command)
+launcher_flags: "-l"
+
+# Choose another configuration file, that should be evaluated (e.g. slurm.yaml, pbs.yaml)
+further_reading:
+    - batch_system/slurm.yaml
+
+
+####################################################################################
+# Further functionality: 
+# 
+# If there are modules or environment variables that are different for 
+# different e.g. compilers, you can use the funcionality of 
+# declaring choose_ blocks in this yaml file.
+# (For more details about yaml syntax please also see the documentation
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#switches-choose)
+#
+# The following lines show an example of how such a choose_ block can be 
+# set up depending on a given compiler value/key given by the variable compiler_mpi.
+#
+
+#compiler_mpi: <compiler>
+
+#choose_compiler_mpi:
+#    <compiler>:
+#        <variable>: <value>
+#        # load additional modules specific for compiler
+#            add_module_actions:
+#                - "load <module1>"
+#                - "load <module2>"
+#                - "load <module3>"
+#        # add additional variables to exported: change and extend following lines:
+#            add_export_vars:
+#                # Compiler
+#                FC: <mpif90>
+#                F77: <mpif90>
+#                MPICC: <mpicc>
+#                MPIFC: <mpif90>
+#                CC: <mpicc>
+#                CXX: <mpicxx>
+####################################################################################

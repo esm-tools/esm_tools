@@ -77,8 +77,6 @@ import pprint
 
 import click
 import emoji
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 from .esm_archiving import (
     archive_mistral,
@@ -90,19 +88,11 @@ from .esm_archiving import (
     sum_tar_lists_human_readable,
 )
 
-from .database.model import Base, Experiments, Archive, Tarball, ArchivedFile
 
 from .config import load_config, write_config_yaml
 
 pp = pprint.PrettyPrinter(width=41, compact=True)
 config = load_config()
-
-if __name__ == "__main__":
-    # DB Initializations (only when actually running):
-    engine = create_engine("sqlite:///" + config["general"]["database_file"])
-    Base.metadata.create_all(engine)
-
-    Session = sessionmaker(bind=engine)
 
 
 @click.group(invoke_without_command=True)

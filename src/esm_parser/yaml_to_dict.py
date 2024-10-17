@@ -1,13 +1,21 @@
 import os
+import pathlib
 import re
 import sys
 
+import ruamel.yaml
 import yaml
 from loguru import logger
+from ruamel.yaml import RoundTripConstructor
+from ruamel.yaml.nodes import ScalarNode
 
 import esm_parser
+import esm_tools
+
+from .provenance import *
 
 YAML_AUTO_EXTENSIONS = ["", ".yml", ".yaml", ".YML", ".YAML"]
+CONFIG_PATH = esm_tools.get_config_filepath()
 
 
 class EsmConfigFileError(Exception):
@@ -125,7 +133,6 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
             if envvar_matches:
                 full_value = value
                 for env_var in envvar_matches:
-
                     # first check if the variable exists in the shell environment
                     if not os.getenv(env_var):
                         esm_parser.user_error(
@@ -152,6 +159,15 @@ def yaml_file_to_dict(filepath):
     If you do not give an extension, tries again after appending one.
     It raises an EsmConfigFileError exception if yaml files contain tabs.
 
+    On top of loading the yaml file it also:
+    - Checks for duplicates
+    - Checks for incompatible ``_changes`` (no more than one ``_changes`` type should be
+        accessible simultaneously)
+    - Checks for incompatible ``add_``
+    - Checks for empty components
+    - Adds environment variables to the dictionary
+    - Adds provenance information to the dictionary
+
     Parameters
     ----------
     filepath : str
@@ -169,7 +185,7 @@ def yaml_file_to_dict(filepath):
     FileNotFoundError
         Raised when the YAML file cannot be found and all extensions have been tried.
     """
-    loader = create_env_loader()
+    esm_tools_loader = EsmToolsLoader()
     for extension in YAML_AUTO_EXTENSIONS:
         try:
             with open(filepath + extension) as yaml_file:
@@ -178,18 +194,18 @@ def yaml_file_to_dict(filepath):
                 # Back to the beginning of the file
                 yaml_file.seek(0, 0)
                 # Actually load the file
-                yaml_load = yaml.load(yaml_file, Loader=loader)  # yaml.FullLoader)
+                esm_tools_loader.set_filename(yaml_file)
+                yaml_load, provenance = esm_tools_loader.load(yaml_file)
+
                 # Check for incompatible ``_changes`` (no more than one ``_changes``
                 # type should be accessible simultaneously)
                 check_changes_duplicates(yaml_load, filepath + extension)
-                # Add the file name you loaded from to track it back:
-                yaml_load["debug_info"] = {"loaded_from_file": yaml_file.name}
-                if loader.env_variables:
+                if esm_tools_loader.env_variables:
                     runtime_env_changes = yaml_load.get("computer", {}).get(
                         "runtime_environment_changes", {}
                     )
                     add_export_vars = runtime_env_changes.get("add_export_vars", {})
-                    for env_var_name, env_var_value in loader.env_variables:
+                    for env_var_name, env_var_value in esm_tools_loader.env_variables:
                         add_export_vars[env_var_name] = env_var_value
                     # TODO(PG): There is probably a more elegant way of doing this:
                     yaml_load["computer"] = yaml_load.get("computer") or {}
@@ -199,21 +215,25 @@ def yaml_file_to_dict(filepath):
                     yaml_load["computer"]["runtime_environment_changes"][
                         "add_export_vars"
                     ] = add_export_vars
-                # Check for empty components/models
-                # check_for_empty_components(yaml_load, filepath + extension)
-                return yaml_load
+
+            yaml_load = DictWithProvenance(yaml_load, provenance)
+
+            return yaml_load
+
         except IOError as error:
             logger.debug(
                 f"IOError ({error.errno}): File not found with {filepath+extension}, trying another extension pattern."
             )
         except yaml.scanner.ScannerError as yaml_error:
             logger.debug(f"Your file {filepath + extension} has syntax issues!")
-            raise EsmConfigFileError(filepath + extension, yaml_error)
+            error = EsmConfigFileError(filepath + extension, yaml_error)
+            esm_parser.user_error("Yaml syntax", f"{error}")
         except Exception as error:
-            print("Something else went wrong")
-            print(f"Serious issue with {filepath}, goodbye...")
             logger.exception(error)
-            sys.exit()
+            esm_parser.user_error(
+                "Yaml syntax",
+                f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}",
+            )
     raise FileNotFoundError(
         "All file extensions tried and none worked for %s" % filepath
     )
@@ -275,6 +295,8 @@ def check_changes_duplicates(yamldict_all, fpath):
     for yamldict in yamldict_all.values():
         # Check if any <variable>_changes or add_<variable> exists, if not, return
         # Perform the check only for the dictionary objects
+        changes_list = []
+        add_list = []
         if isinstance(yamldict, dict):
             changes_list = esm_parser.find_key(
                 yamldict, "_changes", "add_", paths2finds=[], sep=","
@@ -311,7 +333,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                 changes_no_choose = [x.replace(",", ".") for x in changes_no_choose]
                 esm_parser.user_error(
                     "YAML syntax",
-                    "More than one ``_changes`` out of a ``choose_``in "
+                    "More than one ``_changes`` out of a ``choose_`` in "
                     + fpath
                     + ":\n    - "
                     + "\n    - ".join(changes_no_choose)
@@ -554,22 +576,296 @@ class EsmConfigFileError(Exception):
 
     def __init__(self, fpath, yaml_error):
         report = ""
+        tab = "\t"
         # Loop through the lines inside the yaml file searching for tabs
         with open(fpath) as yaml_file:
             for n, line in enumerate(yaml_file):
                 # Save lines and line numbers with tabs
-                if "\t" in line:
-                    report += str(n) + ":" + line.replace("\t", "____") + "\n"
+                if tab in line:
+                    report += f"{n}:{line.replace(tab, '``____``')}\n"
 
         # Message to return
         if len(report) == 0:
             # If no tabs are found print the original error message
-            print("\n\n\n" + yaml_error)
+            try:
+                print("\n" + yaml_error)
+            except:
+                self.message = f"\n\n A syntax error has been found in ``{fpath}``\n"
         else:
             # If tabs are found print the report
             self.message = (
-                "\n\n\n"
-                f"Your file {fpath} has tabs, please use ONLY spaces!\n"
-                "Tabs are in following lines:\n" + report
+                f"Your file ``{fpath}`` has ``tabs``, please use ONLY ``spaces``!\n"
+                f"Tabs are in following lines:\n\n{report}"
             )
         super().__init__(self.message)
+
+
+class EnvironmentConstructor(RoundTripConstructor):
+    """This class is used to replace the !ENV tag with the value of the environment variable."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.env_variables = []
+
+    def construct_scalar(self, node):
+        tag = "!ENV"
+        pattern_envvar = re.compile("\${(\w+)}")
+        pattern_envtag = re.compile("""^[^\#]*\!ENV[ \t]+['|"]?\$\{\w+\}['|"]?""")
+        if isinstance(node, ScalarNode) and node.tag == "!ENV":
+            env_variable = node.value
+            envvar_matches = pattern_envvar.findall(env_variable)
+            if envvar_matches:
+                full_value = env_variable
+                for env_var in envvar_matches:
+                    # first check if the variable exists in the shell environment
+                    if env_var in os.environ:
+                        rval = full_value.replace(f"${{{env_var}}}", os.getenv(env_var))
+                        self.env_variables.append((env_var, rval))
+                        return rval
+                    else:
+                        esm_parser.user_error(
+                            f"{env_var} is not defined",
+                            f"{env_var} is not an environment variable. Exiting",
+                        )
+                return rval
+            else:
+                raise ValueError(f"Environment variable {env_variable} not found")
+        rval = super().construct_scalar(node)
+
+        return rval
+
+
+class ProvenanceConstructor(EnvironmentConstructor):
+    """
+    Subclasses the ``EnvironmentConstructor`` to, instead of returning only a ``data``
+    returning a ``tuple`` where the element 0 is the ``data`` itself and the following
+    elements are the provenance values (1 -> line number, 2 -> column). The resulting
+    dictionary contains keys that are ``tuples`` and ``values`` that are tuples. This
+    can then be separated into two equivalent dictionaries, one with the "real" values
+    and another one with the values of the provenance.
+    """
+
+    def construct_object(self, node, *args, **kwargs):
+        """
+        Parameters
+        ----------
+        node : node object
+            The node containing all the information about the yaml element
+
+        Returns
+        -------
+        data : any
+            The "real" value as interpreted from the parent yaml constructor
+        provenance : tuple
+            provenance[0]: line number
+            provenance[1]: column number
+            provenance[2]: file name
+            provenance[3]: file category
+        """
+
+        data = super().construct_object(node, *args, **kwargs)
+
+        provenance = (
+            node.start_mark.line + 1,
+            node.start_mark.column + 1,
+        )
+
+        return (data, provenance)
+
+
+class EnvironmentRepresenter(ruamel.yaml.RoundTripRepresenter):
+    """When dumping, this class is used to remove the !ENV tag from a particular value."""
+
+    def represent_scalar(self, tag, value, style=None, anchor=None):
+        type_tags = {
+            "int": f"tag:{YAML_SPEC_TAG}:int",
+            "float": f"tag:{YAML_SPEC_TAG}:float",
+            "bool": f"tag:{YAML_SPEC_TAG}:bool",
+            "str": f"tag:{YAML_SPEC_TAG}:str",
+        }
+        if tag == "!ENV":
+            type_tag = type(value).__name__
+            actual_type = type_tags[type_tag]
+            return super().represent_scalar(actual_type, value, style, anchor=anchor)
+        return super().represent_scalar(tag, value, style, anchor=anchor)
+
+
+class EsmToolsLoader(ruamel.yaml.YAML):
+    """
+    This class is used to load a yaml file and return a dictionary with the values
+    and the provenance of each value. The provenance is stored in a tuple with the
+    line number and column number of the yaml file. The provenance is stored in the
+    dictionary as a tuple with the key being the same as the key of the value in the
+    dictionary.
+    """
+    def __init__(self, *args, **kwargs):
+        """
+        Initializes the class with the ``ProvenanceConstructor`` and the
+        ``EnvironmentRepresenter``.
+        """
+        super().__init__(*args, **kwargs)
+        self.filename = None
+        self.add_comments = True
+        self.env_variables = []
+        self.Constructor = ProvenanceConstructor
+        self.Constructor.add_constructor(None, ProvenanceConstructor.construct_scalar)
+        self.Constructor.add_constructor(
+            "tag:yaml.org,2002:bool", ProvenanceConstructor.construct_yaml_bool
+        )
+        self.Representer = EnvironmentRepresenter
+
+    def get_filename(self):
+        """Returns the filename of the yaml file."""
+        return self.filename
+
+    def set_filename(self, filename):
+        """
+        Sets the filename of the yaml file.
+
+        Parameters
+        ----------
+        filename : str
+            The filename of the yaml file.
+        """
+        self.filename = pathlib.Path(str(filename))
+
+    def set_file_categorty(self):
+        """Sets the category of the yaml file."""
+        if not hasattr(self, "filename"):
+            raise AttributeError(
+                "The attribute 'filename' has not been set yet. Set it using "
+                "'self.set_filename'"
+            )
+
+        # Compare path to yaml file with path to esm_tools, to get category correct.
+        # Choose one of the following, only if esm_tools path.
+        categories = os.listdir(CONFIG_PATH)
+        for category in categories:
+            path_to_category_folder = pathlib.Path(f"{CONFIG_PATH}/{category}")
+            if path_to_category_folder in self.filename.parents:
+                break
+            else:
+                category = "runscript"
+
+        self.category = category
+
+    def load(self, stream):
+        """
+        Loads the yaml file and returns a dictionary with the values and the provenance
+        of each value. The provenance is stored in a tuple with the line number and column
+        number of the yaml file. The provenance is stored in the dictionary as a tuple with
+        the key being the same as the key of the value in the dictionary.
+
+        Parameters
+        ----------
+        stream : file object
+            The file object of the yaml file
+        """
+        self.set_filename(stream.name)
+        self.set_file_categorty()
+        mapping_with_tuple_prov = super().load(stream)[0]
+
+        config, provenance = self._extract_dict_and_prov(mapping_with_tuple_prov)
+        self.env_variables = self.constructor.env_variables
+        return (config, provenance)
+
+    def _extract_dict_and_prov(self, mapping_with_prov):
+        """
+        Extracts the dictionary and provenance from the mapping with provenance.
+
+        Parameters
+        ----------
+        mapping_with_prov : dict
+            The dictionary with the provenance of each value
+        """
+        config = {}
+        config_prov = {}
+        for (key, key_prov), (value, value_prov) in mapping_with_prov.items():
+            if isinstance(value, dict):
+                config[key], config_prov[key] = self._extract_dict_and_prov(value)
+            elif isinstance(value, list):
+                config[key] = []
+                config_prov[key] = []
+                for elem, elem_prov in value:
+                    if isinstance(elem, dict):
+                        config[key].append(self._extract_dict_and_prov(elem)[0])
+                        config_prov[key].append(self._extract_dict_and_prov(elem)[1])
+                    else:
+                        prov = {}
+                        prov["line"], prov["col"] = elem_prov
+                        prov["yaml_file"] = str(self.filename)
+                        prov["category"] = self.category
+                        config_prov[key].append(prov)
+                        config[key].append(elem)
+            else:
+                prov = {}
+                prov["line"], prov["col"] = value_prov
+                prov["yaml_file"] = str(self.filename)
+                prov["category"] = self.category
+                config_prov[key] = prov
+                config[key] = value
+
+        return (config, config_prov)
+
+    def _add_origin_comments(self, data, comment=None, key=None):
+        """
+        Adds the provenance information to the yaml file.
+
+        Parameters
+        ----------
+        data : any
+            The data to which the provenance information should be added to
+        comment : dict
+            The provenance information to be added
+        key : str
+            The key of the data
+        """
+        if isinstance(data, dict):
+            for key, value in data.items():
+                self._add_origin_comments(
+                    value,
+                    comment,
+                    key,
+                )
+        elif isinstance(data, list):
+            for value in data:
+                self._add_origin_comments(
+                    value,
+                    comment,
+                    key,
+                )
+        try:
+            if comment is None:
+                comment = {
+                    "Source": self.filename,
+                    "line": data.lc.line,
+                    "col": data.lc.col,
+                    "Defined For": key,
+                    "Type": type(data).__name__,
+                }
+            if hasattr(data, "yaml_set_start_comment"):
+                print("Adding comment to data", data, comment, type(data))
+                data.yaml_set_start_comment(str(comment))
+            else:
+                # warnings.warn("Cannot add comment to data", data, comment)
+                print("Cannot add comment to data", data, comment)
+        except:
+            pass
+            # print("nope")
+
+    def dump(self, data, stream=None, **kw):
+        """
+        Dumps the dictionary to a yaml file and adds the provenance information to the
+        yaml file.
+
+        Parameters
+        ----------
+        data : dict
+            The dictionary to be dumped to a yaml file
+        stream : file object
+            The file object to write the yaml file to
+        """
+        if not self.add_comments:
+            return super().dump(data, stream, **kw)
+        self._add_origin_comments(data)
+        return super().dump(data, stream, **kw)

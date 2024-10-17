@@ -1,15 +1,24 @@
 import sys
 from datetime import datetime
 
+import colorama
+import git
+from loguru import logger
+
 import esm_parser
 import esm_plugin_manager
-import esm_rcfile
 import esm_tools
+from loguru import logger
+from esm_profile import print_profile_summary
 
 
 def vprint(message, config):
-    if config["general"]["verbose"]:
-        print(message)
+    logger.debug(message)
+
+
+def print_datetime(config):
+    """prints the datetime of the operation if `verbose` option is True"""
+    logger.debug(datetime.now())
 
 
 def evaluate(config, job_type, recipe_name):
@@ -23,27 +32,28 @@ def evaluate(config, job_type, recipe_name):
             "general"
         ].get(recipe_name)
     except KeyError:
-        print(
-            f"Your configuration is incorrect, and should include headings for {setup_name} as well as general!"
+        logger.error("Your configuration is incorrect.")
+        logger.error(
+            "It should include headings for the setup_name as well as general!"
         )
         sys.exit(1)
 
-    FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
+    FUNCTION_PATH = esm_tools.get_config_filepath()
 
-    ###########################################################################################
+    ####################################################################################
     # LA: hotfix for non-matching python paths
     if (
-        "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"
+        "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"  # noqa: E501
         in sys.path
     ):
         sys.path.remove(
-            "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"
+            "/global/AWIsoft/tkleiner/lib/python2.7/site-packages/netCDF4-1.2.4-py2.7-linux-x86_64.egg"  # noqa:501
         )
     if "/global/AWIsoft/tkleiner/lib/python2.7/site-packages" in sys.path:
         sys.path.remove("/global/AWIsoft/tkleiner/lib/python2.7/site-packages")
-    ###########################################################################################
+    ####################################################################################
 
-    recipe = FUNCTION_PATH + "esm_software/esm_runscripts/esm_runscripts.yaml"
+    recipe = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_runscripts.yaml"
     need_to_parse_recipe = True
     plugins_bare = FUNCTION_PATH + "/esm_software/esm_runscripts/esm_plugins.yaml"
     need_to_parse_plugins = True
@@ -64,15 +74,15 @@ def evaluate(config, job_type, recipe_name):
     return config
 
 
-#########################################################################################
-#                                   general stuff                                       #
-#########################################################################################
+########################################################################################
+#                                  general stuff                                       #
+########################################################################################
 def end_it_all(config):
-    if config["general"]["profile"]:
-        for line in timing_info:
-            print(line)
+    if config["general"].get("profile", False):
+        print_profile_summary()
+
     if config["general"]["verbose"]:
-        print("Exiting entire Python process!")
+        logger.debug("Exiting entire Python process!")
     sys.exit()
 
 
@@ -85,11 +95,11 @@ def write_to_log(config, message, message_sep=None):
     message : list
         A list of the message elements; which is joined by either (highest
         to lowest): 1) the message_sep argument passed to the method, 2)
-        The user's chosen seperator, as written in
+        The user's chosen separator, as written in
         ``config["general"]["experiment_log_file_message_sep"]``, 3)
         An empty space ``" "``.
     message_sep : None
-        The hard-coded message seperator to use; which ignores user choices.
+        The hard-coded message separator to use; which ignores user choices.
 
     Note
     ----
@@ -97,7 +107,7 @@ def write_to_log(config, message, message_sep=None):
 
     1) The datestamp formatting, whjich is taken from the config
        section ``general.experiment_log_file_dateformat``.
-    2) The message seperators; taken from
+    2) The message separators; taken from
        ``general.experiment_log_file_message_sep``. Note that if the
        programmer passes a ``message_sep`` argument; this one wins over
        the user choice.
@@ -109,8 +119,10 @@ def write_to_log(config, message, message_sep=None):
     except KeyError:
         import esm_parser
 
-        print("Sorry; couldn't find 'experiment_log_file' in config['general']...")
-        esm_parser.pprint_config(config["general"])
+        logger.error(
+            "Sorry; couldn't find 'experiment_log_file' in config['general']..."
+        )
+        config["general"].yaml_dump()
         raise
 
 
@@ -130,7 +142,7 @@ def assemble_log_message(
         timestampStr = "$(date +" + strftime_str + ")"
     else:
         timestampStr = dateTimeObj.strftime(strftime_str)
-    # TODO: Do we want to be able to specify a timestamp seperator as well?
+    # TODO: Do we want to be able to specify a timestamp separator as well?
     line = timestampStr + " : " + message_sep.join(message)
     return line
 
@@ -138,7 +150,7 @@ def assemble_log_message(
 def update_reusable_filetypes(config, reusable_filetypes=None):
     """
     Removes some filetypes from the "resuable files" list. Filetypes to be
-    removed are either specifed in the config, or passed as an argument.
+    removed are either specified in the config, or passed as an argument.
 
     Reusable filetypes, declared in general
     (``config["general"]["reusable_filetypes"]``), or in model specific
@@ -181,9 +193,9 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     update_filetypes = (
         config["general"].get("command_line_config", {}).get("update_filetypes", [])
     )
-    if config["general"].get("verbose", False) and update_filetypes:
-        print("User requests that the following filetypes be updated:")
-        [print(f"* {filetype}") for filetype in update_filetypes]
+    if update_filetypes:
+        logger.debug("User requests that the following filetypes be updated:")
+        [logger.debug(f"* {filetype}") for filetype in update_filetypes]
 
     # NOTE(MAM, PG): Originally defined in prepare.py
     # https://tinyurl.com/2p8awzsu
@@ -196,8 +208,8 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
         if update_filetype not in potentially_reusable_filetypes:
             esm_parser.user_error(
                 "update-filetypes",
-                f"``{update_filetype}`` specified by you in ``--update-filetypes`` is not a "
-                + "ESM-Tools file type. Please, select one (or more) of the "
+                f"``{update_filetype}`` specified by you in ``--update-filetypes`` is "
+                + "not a ESM-Tools file type. Please, select one (or more) of the "
                 + "following file types:\n\t- "
                 + "\n\t- ".join(potentially_reusable_filetypes),
             )
@@ -207,20 +219,18 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
             # Remove duplicates just in case
             reusable_filetypes = list(set(reusable_filetypes))
             # Do the removal
-            if config["general"].get("verbose", False):
-                print(f"Removing {update_filetype}")
+            logger.debug(f"Removing {update_filetype}")
             reusable_filetypes.remove(update_filetype)
-        elif config["general"].get("verbose", False):
-            print(
-                f"- The file type ``{update_filetype}`` you are trying to update was not "
-                "reusable accross runs in the first place, so it's been always "
+        else:
+            logger.debug(
+                f"- The file type ``{update_filetype}`` you are trying to update was"
+                "not reusable across runs in the first place, so it's been always "
                 "updated with the external source, and it will still be."
             )
 
-    if config["general"].get("verbose", False):
-        print("The following filetypes will be re-used from already copied sources:")
-        for reusable_filetype in reusable_filetypes:
-            print(f"* {reusable_filetype}")
+    logger.debug("The following filetypes will be re-used from already copied sources:")
+    for reusable_filetype in reusable_filetypes:
+        logger.debug(f"* {reusable_filetype}")
     config["general"]["reusable_filetypes"] = reusable_filetypes
 
     if return_config:
@@ -228,7 +238,9 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     return reusable_filetypes
 
 
-############################## SINK CLASS FOR LOGURU.LOGGER ###########################
+##############################
+# SINK CLASS FOR LOGURU.LOGGER
+##############################
 
 
 class SmartSink:
@@ -295,3 +307,141 @@ class SmartSink:
         """
         self.path = path
         self.write_log(self.log_record, "w")
+
+
+################################################################################
+# Git Checks of esm-tools
+#
+# NOTE(PG): These functions would likely be better as a separate file
+
+
+def is_git_repo(path):
+    """
+    Determines whether or not a directory is a git repository.
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        The location to check
+
+    Returns
+    bool :
+        True or False, depending on if the location is a git directory
+    """
+    try:
+        git.Repo(path).git_dir
+        return True
+    except git.exc.InvalidGitRepositoryError:
+        return False
+    except git.exc.NoSuchPathError:
+        logger.error("You specified a non-existant directory")
+        # Is False the right answer here? I am not 100% sure...
+        return False
+
+
+class GitDirtyError(git.exc.GitError):
+    """Thrown if the git repository is dirty"""
+
+
+def get_git_hash(path, allow_dirty=True):
+    """
+    Gets the commit has of a git directory stored at ``path``
+
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        Path to determine the git hash for
+    allow_dirty : bool
+        Complain or not complain about a dirty git repo.
+
+    Returns
+    -------
+    githash : str
+        The commit has the repository is currently on
+
+    Raises
+    ------
+    GitDirtyError :
+       Raised if the repo is "dirty"; thus meaning that the hash is not meaningful
+    """
+    repo = git.Repo(path)
+    if not allow_dirty and repo.is_dirty():
+        raise GitDirtyError(
+            f"Your repo at {path} is dirty, thus the git hash is not meaningful!"
+        )
+    return repo.git.rev_parse(repo.head, short=True)
+
+
+def get_git_branch(path):
+    """Gets the name of the current git branch for repo at path
+
+    Parameters
+    ----------
+    path : str
+        The path of the repository to examine
+
+    Returns
+    -------
+    str :
+        The branch name
+    """
+    repo = git.Repo(path)
+    if not repo.head.is_detached:
+        return repo.head.reference.name
+    commit = repo.head.commit
+    for tag in repo.tags:
+        if commit.hexsha == tag.commit.hexsha:
+            return f"DETACHED HEAD at tag {tag.name}"
+    else:
+        return f"DETACHED HEAD at commit {repo.head.commit.hexsha}"
+
+
+def get_git_diffs(path, add_colors={"+": colorama.Fore.GREEN, "-": colorama.Fore.RED}):
+    """
+    Gets the differences
+
+    Parameters
+    ----------
+    path : str
+        The git repository to check
+    add_colors : dict
+        A dictionary of ``colorama.Fore`` properties for added lines, stored
+        under the key ``'+'`` and removed lines, stored under the key ``'-'``.
+
+    Returns
+    -------
+    str :
+        The (maybe) colorized difference as a multi-line string.
+    """
+    repo = git.Repo(path)
+    diffs = repo.git.diff(repo.commit()).split("\n")
+    if add_colors:
+        for index, diff in enumerate(diffs):
+            if diff.startswith("+"):
+                diff = f'{add_colors["+"]}{diff}{colorama.Style.RESET_ALL}'
+            elif diff.startswith("-"):
+                diff = f'{add_colors["-"]}{diff}{colorama.Style.RESET_ALL}'
+            diffs[index] = diff
+    # In case no diffs are detected, we still want to return an empty
+    # list.
+    if not diffs:
+        diffs = "\n".join([])
+    return "\n".join(diffs)
+
+
+def get_all_git_info(path):
+    """Gets all information needed for the vcs dump file
+
+    Returns
+    -------
+    dict :
+        A dictionary with the following information: git hash, branch name, differences, .....
+    """
+    git_info = {
+        "path": path,
+        "hash": get_git_hash(path),
+        "branch_name": get_git_branch(path),
+        # NOTE(PG): Dumping to YAML is not friendly with colors, it seems...
+        "diffs": get_git_diffs(path, add_colors=False),
+    }
+    return git_info

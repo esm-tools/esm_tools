@@ -9,11 +9,13 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
-use_icebergs: False
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
 choose_version:
   '2.0':
     branch: 2.0.2
+    destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
     - https://gitlab.dkrz.de/FESOM/fesom2.git
@@ -25,13 +27,18 @@ choose_version:
     - https://github.com/FESOM/fesom2.git
     install_bins: bin/fesom.x
   2.0-master:
-    branch: master
+    branch: refactoring
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
     namelist_dir: "${model_dir}/fesom-2.0/config/"
   2.0-awicm-3.0:
-    branch: awicm3-frontiers-freeze-candidate-5
+    branch: AWI-CM3_v3.0
+    destination: fesom-2.0
+    git-repository:
+    - https://github.com/FESOM/fesom2.git
+  2.0-awicm-3.1:
+    branch: AWI-CM3_v3.1
     destination: fesom-2.0
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -46,19 +53,11 @@ choose_version:
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
     install_bins: bin/fesom.x
-  2.0-o:
-    branch: oifs-deck
-  2.0-jio:
-    branch: juwels_chunk_io
-    destination: fesom-2.0
-    git-repository:
-    - https://github.com/FESOM/fesom2.git
-    comp_command: git checkout $branch_deck; ${defaults.comp_command}
   2.0-paleodyn:
     branch: paleodyn_frozen
     destination: fesom-2.0
     git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
+    - https://github.com/FESOM/fesom2.git
   2.0-r:
     # OG: This will be the master branch for fesom-recom-2.0. All the recom related
     # files will be cleared from the src folder. After Dima's update we will return
@@ -71,20 +70,14 @@ install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
 - https://gitlab.dkrz.de/FESOM/fesom2.git
-
-
-choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
-
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
+
+tar_binary_restarts: False
 
 time_step: 1800
 resolution: CORE2
@@ -119,7 +112,16 @@ namelists:
         - namelist.oce
         - namelist.ice
         - namelist.io
+
+# FIXME(KH, PG): This will need to be put in correctly.
+# NOTE(PG): For awiesm test on levante --> cvmix namelist back in, recom namelist out!
+# kh 21.02.22 orig (disabled for a special test)
         - namelist.cvmix
+# kh 21.02.22 orig (disabled for a special test)
+#        - namelist.cvmix
+
+# kh 21.02.22 special test only
+#        - namelist.recom
 
 
 choose_asforcing:
@@ -140,12 +142,23 @@ choose_resolution:
                 nx: 72411
                 mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
                 nproc: 288
+        PI_ICEv2:
+                nx: 132273
         D3:
                 nx: 3160340
         orca25:
                 nx: 912469
         DART:
                 nx: 3160340
+        ROS2:
+                nx: 26306560
+        HR:
+                nx: 1306775
+        jane:
+                nx: 33348172
+        SO3:
+                nx: 11087062
+
 mesh_dir: "${pool_dir}/${resolution}/"
 
 restart_in_files:
@@ -153,22 +166,27 @@ restart_in_files:
         ice_restart: ice_restart
         par_oce_restart: par_oce_restart
         par_ice_restart: par_ice_restart
+
 restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 restart_in_sources:
-        oce_restart: fesom.${parent_date!syear}.oce.restart.nc
-        ice_restart: fesom.${parent_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
+        # TODO: When cleaning up the FESOM yamls, remove the wildcard and make this file
+        # be dependent on the corresponding namelist option
+        oce_restart: fesom.${parent_date!syear}.o*e.restart.nc
+        ice_restart: fesom.${parent_date!syear}.i*e.restart.nc
         par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
 
 restart_out_files:
         oce_restart: oce_restart
@@ -177,60 +195,38 @@ restart_out_files:
         par_ice_restart: par_ice_restart
         fesom_raw_restart_info: fesom_raw_restart_info
         fesom_raw_restart: fesom_raw_restart
+        fesom_bin_restart_info: fesom_bin_restart_info
+        fesom_bin_restart: fesom_bin_restart
+
 restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
+
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
         par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
         par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
         fesom_raw_restart_info: fesom_raw_restart/*.info
         fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
 
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
         fesom: "*.fesom.*.nc"
-
-choose_use_icebergs:
-        True:
-            ib_num_old: 0
-            ib_num_new: 0
-
-            add_restart_in_files:
-                    icb_restart: icb_restart
-
-            add_restart_out_files:
-                    icb_restart: icb_restart
-
-            input_in_work:
-                    longitude: "icb_longitude.dat"
-                    latitude: "icb_latitude.dat"
-                    length: "icb_length.dat"
-                    height: "icb_height.dat"
-                    scaling: "icb_scaling.dat"
-
-            input_sources:
-                    longitude: "${iceberg_dir}/LON.dat"
-                    latitude: "${iceberg_dir}/LAT.dat"
-                    length: "${iceberg_dir}/LENGTH.dat"
-                    height: "${iceberg_dir}/HEIGHT.dat"
-                    scaling: "${iceberg_dir}/SCALING.dat"
-
-            input_files:
-                    longitude: "longitude"
-                    latitude: "latitude"
-                    length: "length"
-                    height: "height"
-                    scaling: "scaling"
 
 log_files:
         clock: clock
@@ -253,6 +249,23 @@ file_movements:
                 all_directions: move
         fesom_raw_restart_info_out:
                 all_directions: move
+        fesom_raw_restart_tar_out:
+                all_directions: move
+        fesom_bin_restart_in:
+                all_directions: move
+        fesom_bin_restart_out:
+                all_directions: move
+        fesom_bin_restart_info_in:
+                all_directions: move
+        fesom_bin_restart_info_out:
+                all_directions: move
+        fesom_bin_restart_tar_out:
+                all_directions: move
+
+choose_tar_binary_restarts:
+    True:
+        add_restart_out_files:
+            fesom_raw_restart_tar: fesom_raw_restart_tar
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -268,6 +281,8 @@ choose_branchoff:
                 add_restart_in_files:
                         fesom_raw_restart_info: fesom_raw_restart_info
                         fesom_raw_restart: fesom_raw_restart
+                        fesom_bin_restart_info: fesom_bin_restart_info
+                        fesom_bin_restart: fesom_bin_restart
 
 
 
@@ -354,15 +369,6 @@ config_sources:
         io:      "${namelist_dir}/namelist.io"
         diag:    "${namelist_dir}/namelist.diag"
 
-compiletime_environment_changes:
-        add_export_vars:
-                taken2from:      fesom2_compile
-
-runtime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom2_run
-                taken2from:     fesom2_ru
-
 config_in_work:
         config:  "namelist.config"
         forcing: "namelist.forcing"
@@ -379,6 +385,10 @@ coupling_fields:
         sie_feom:
                 grid: feom
         snt_feom:
+                grid: feom
+        u_feom:
+                grid: feom
+        v_feom:
                 grid: feom
         taux_oce:
                 grid: feom
@@ -413,5 +423,20 @@ grids:
                 nx: ${nx}
                 ny: 1
                 oasis_grid_type: "U"
+                oyac_grid_type: "GC"
+                oyac_io_per_node: 4
                 number_of_overlapping_points: 0 # oasis P-value
 
+# ------------------------
+# RECIPE
+# ------------------------
+tidy_recipe:
+    - "tidy_coupler"
+    - "tar_binary_restarts"
+    - "assemble"
+    - "check_for_unknown_files"
+    - "log_used_files"
+    - "throw_away_some_infiles"
+    - "copy_stuff_back_from_work"
+    - "copy_all_results_to_exp"
+    - "clean_run_dir"

@@ -1,25 +1,25 @@
 import datetime
 import os
-import site
-
-import questionary
-
 import pathlib
+import site
 import subprocess
 import sys
 import venv
 
+import questionary
+
+from loguru import logger
+
 esm_tools_modules = [
-    "esm_calendar",
-    "esm_database",
-    "esm_environment",
-    "esm_master",
-    "esm_parser",
-    "esm_rcfile",
-    "esm_runscripts",
+    #    "esm_calendar",
+    #    "esm_database",
+    #    "esm_environment",
+    #    "esm_master",
+    #    "esm_parser",
+    #    "esm_runscripts",
     "esm_tools",
-    "esm_plugin_manager",
-    "esm_version_checker",
+    #    "esm_plugin_manager",
+    #    "esm_version_checker",
 ]
 
 
@@ -222,7 +222,9 @@ def _install_required_plugins(venv_context, config):
                 try:
                     assert isinstance(sub_cfg["required_plugins"], list)
                 except AssertionError:
-                    print(f"ERROR -- required plugins in {sub_cfg_key} must be a list!")
+                    logger.error(
+                        f"ERROR -- required plugins in {sub_cfg_key} must be a list!"
+                    )
                     sys.exit(1)
                 required_plugins += sub_cfg["required_plugins"]
     for required_plugin in required_plugins:
@@ -246,10 +248,10 @@ def venv_bootstrap(config):
                 ".venv_esmtools"
             )
             if venv_path.exists():
-                print(f"{venv_path} already exists, reusing...")
+                logger.info(f"{venv_path} already exists, reusing...")
                 venv_context = _EnvBuilder(with_pip=True).ensure_directories(venv_path)
             else:
-                print(
+                logger.info(
                     f"Building virtual env, please be patient (this takes about 3 minutes)..."
                 )
                 start_time = datetime.datetime.now()
@@ -265,7 +267,7 @@ def venv_bootstrap(config):
                 )
                 _install_tools(venv_context, config)
                 _install_required_plugins(venv_context, config)
-                print(
+                logger.info(
                     f"...finished {datetime.datetime.now() - start_time}, restarting your job in the virtual env"
                 )
             sys.argv[0] = pathlib.Path(sys.argv[0]).name
@@ -303,52 +305,38 @@ def find_package(pkg):
 
 def _integorate_user_venv(config):
     questionary.print("\t" + 100 * "=")
-    questionary.print(
-        "\t\tRunning jobs can optionally be encapsulated into a virtual environment\n"
+    questionary_text = (
+        "\t\tRunning jobs can optionally be encapsulated into a virtual environment\n\n"
+        "\t\tThis shields the run from changes made to the remainder of the ESM-Tool installation\n\n"
+        "\t\tBefore the first run, a local copy will be installed in the experiment tree,\n"
+        "\t\tand **this** installation will be used:\n"
+        f"\t\t\t {config['general']['experiment_dir']}/.venv_esmtools/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/esm_tools\n"
+        "\t\tinstead of:\n"
+        f"\t\t\t{find_package('esm-tools')}\n"
+        "\n\t\tIf you choose to use a virtual environment, a folder named `.venv_esmtools`\n"
+        "\t\twill be created at the root of your experiment. This contains all the Python\n"
+        "\t\tlibraries used by the esm-tools. The first installation induces some overhead (~2-3 minutes).\n"
+        "\n\t\tThe virtual environment installs by default the `release` branch, pulling it directly\n"
+        "\t\tfrom our GitHub repository. You can choose to override this default by specifying another\n"
+        "\t\tbranch, adding to your runscript:\n"
+        "\t\t\tgeneral:\n"
+        "\t\t\t\tinstall_esm_tools_branch: '<your_branch_name>'\n"
+        "\t\tNote: the branch needs to exist on GitHub as it is cloned form there, and not from your\n"
+        "\t\tlocal folder. If you made any changes in your local branch make sure they are pushed before\n"
+        "\t\trunning esm_runscripts with a virtual environment, so that your changes are included in the\n"
+        "\t\tvirtual environment installation.\n\n"
+        "\n\t\tYou may also select to install esm_tools in 'editable mode', in which case\n"
+        "\t\tthey will be installed in a folder `src/esm_tools/` in the root of\n"
+        "\t\tyour experiment. Any changes made to code in that folder **will** influence how the\n"
+        "\t\tesm-tools behave.\n"
+        "\n\t\tNote regarding config yamls and namelists\n"
+        "\t\t-----------------------------------------\n"
+        "\t\tWhen using a virtual environment, config files and namelists will come of the\n"
+        "\t\tfolder .venv_esmtools listed above and **not** from your user install directory.\n"
+        "\t\tYou should make **all** changes to the namelists and config files via your user\n"
+        "\t\trunscript. This is recommended in all cases!!!\n"
     )
-    questionary.print(
-        "\t\tThis shields the run from changes made to the remainder of the ESM-Tool installation\n"
-    )
-    questionary.print(
-        "\t\tBefore the first run, a local copy will be installed in the experiment tree,"
-    )
-    questionary.print("\t\tand **this** installation will be used:")
-    questionary.print(
-        f"\t\t\t {config['general']['experiment_dir']}/.venv_esmtools/lib/python-{sys.version_info.major}.{sys.version_info.minor}/site-packages/esm-tools"
-    )
-    questionary.print("\t\tinstead of:")
-    questionary.print(f"\t\t\t{find_package('esm-tools')}\n")
-    questionary.print(
-        "\n\t\tIf you choose to use a virtual environment, a folder named `.venv_esmtools`"
-    )
-    questionary.print(
-        "\t\twill be created at the root of your experiment. This contains all the Python"
-    )
-    questionary.print(
-        "\t\tlibraries used by the esm-tools. The first installation induces some overhead (~2-3 minutes)."
-    )
-    questionary.print(
-        "\n\t\tYou may also select to install some packages in 'editable mode', in which case"
-    )
-    questionary.print(
-        "\t\tthey will be installed in a folder `src/esm_tools/<package_name>` in the root of"
-    )
-    questionary.print(
-        "\t\tyour experiment. Any changes made to code in that folder **will** influence how the"
-    )
-    questionary.print("\t\tesm-tools behave.")
-    questionary.print("\n\t\tNote regarding config yamls and namelists")
-    questionary.print("\t\t-----------------------------------------")
-    questionary.print(
-        "\t\tWhen using a virtual environment, config files and namelists will come of the"
-    )
-    questionary.print(
-        "\t\tfolder .venv_esmtools listed above and **not** from your user install directory."
-    )
-    questionary.print(
-        "\t\tYou should make **all** changes to the namelists and config files via your user"
-    )
-    questionary.print("\t\trunscript. This is recommended in all cases!!!")
+    questionary.print(questionary_text)
     questionary.print(
         "\t\t --> Changing any settings in your user install ($HOME or similar) will therefore not change your run!! <--",
         style="fg:red",
@@ -379,17 +367,25 @@ def _integorate_user_venv(config):
             sys.exit(0)
         config["general"]["use_venv"] = "Run in virtualenv" in response
         user_confirmed = questionary.confirm("Are you sure?").ask()
-    if "Run in virtualenv" in response:
-        editable_mode_choices = questionary.checkbox(
-            "Which of the following packages do you want to install in 'editable mode'? End with <Enter>",
-            choices=esm_tools_modules,
-        ).ask()
-        for choice in editable_mode_choices:
-            config["general"][f"install_{choice}_editable"] = True
+    if (
+        "Run in virtualenv" in response
+        and not "install_esm_tools_editable" in config["general"]
+    ):
+        response = questionary.select(
+            "Do you want to install esm_tools in **editable mode**?",
+            choices=[
+                f"No (default, esm_tools will be installed in `{config['general']['experiment_dir']}/.venv_esmtools/lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages/esm_tools`)",
+                f"Yes (esm_tools will be installed in `{config['general']['experiment_dir']}/src/esm-tools`)",
+                "Quit right now to adapt your runscript (you can set `general.install_esm_tools_editable` to override this questionary)",
+            ],
+        ).ask()  # returns value of selection
+        if "Quit" in response:
+            sys.exit(0)
+        config["general"][f"install_esm_tools_editable"] = "Yes" in response
     return config
 
 
 if __name__ == "__main__":
     dummy_config = {"general": {"experiment_dir": "/foo/bar"}}
     config = _integorate_user_venv(dummy_config)
-    print(config)
+    logger.info(config)

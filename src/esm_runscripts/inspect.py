@@ -1,13 +1,14 @@
 import filecmp
-import os
 import glob
+import os
 import sys
 
-from esm_parser import pprint_config
-from .helpers import evaluate
-from .prepcompute import _show_simulation_info
-from .namelists import Namelist
+from loguru import logger
+
 from . import workflow
+from .helpers import evaluate
+from .namelists import Namelist
+from .prepcompute import _show_simulation_info
 
 
 def run_job(config):
@@ -41,7 +42,7 @@ def inspect_namelists(config):
 
 def inspect_config(config):
     if config["general"]["inspect"] == "config":
-        pprint_config(config)
+        config.yaml_dump()
         sys.exit(0)
     return config
 
@@ -62,7 +63,7 @@ def inspect_size(config):
         if total_size >= 1024:
             total_size = total_size / 1024.0
             unit = "TB"
-        print(f"Total size: {total_size:.2f} {unit}")
+        logger.info(f"Total size: {total_size:.2f} {unit}")
         sys.exit(0)
     return config
 
@@ -71,9 +72,9 @@ def inspect_folder(config):
     checkpath = config["general"]["thisrun_dir"] + "/" + config["general"]["inspect"]
     if os.path.isdir(checkpath):
         all_files = os.listdir(checkpath)
-        print(f"Files in folder {checkpath}:")
+        logger.info(f"Files in folder {checkpath}:")
         for thisfile in sorted(all_files):
-            print(f" -- {thisfile}")
+            logger.info(f" -- {thisfile}")
         sys.exit(0)
     return config
 
@@ -110,12 +111,14 @@ def inspect_file(config):
             somefile = os.path.basename(full_filepath)
             if somefile in knownfiles:
                 if filecmp.cmp(knownfiles[somefile], full_filepath):
-                    print(
+                    logger.info(
                         f"File {full_filepath} is identical to {knownfiles[somefile]}, skipping."
                     )
                     continue
                 else:
-                    print(f"File {full_filepath} differs from {knownfiles[somefile]}.")
+                    logger.info(
+                        f"File {full_filepath} differs from {knownfiles[somefile]}."
+                    )
             cat_file(full_filepath)
     return config
 
@@ -132,6 +135,6 @@ def dir_size(somepath):
 
 def cat_file(full_filepath):
     if os.path.isfile(full_filepath):
-        print(f"Content of {full_filepath}:")
+        logger.info(f"Content of {full_filepath}:")
         with open(full_filepath, "r") as log:
-            print(log.read())
+            logger.info(log.read())

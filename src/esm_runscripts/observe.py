@@ -1,11 +1,12 @@
 import os
 import sys
-import psutil
 import time
 
-from . import helpers
-from . import database_actions
-from . import logfiles
+import psutil
+
+from loguru import logger
+
+from . import database_actions, helpers, logfiles
 
 
 def run_job(config):
@@ -31,10 +32,9 @@ def init_monitor_file(config):
         + called_from
         + "_"
         + config["general"]["run_datestamp"]
-        +
-        # "_" +
-        # str(config["general"]["jobid"]) +
-        ".log"
+        + "_"
+        + str(config["general"]["jobid"])
+        + ".log"
     )
     log_in_run = (
         config["general"]["thisrun_log_dir"]
@@ -43,10 +43,9 @@ def init_monitor_file(config):
         + config["general"]["setup_name"]
         + "_"
         + called_from
-        +
-        # "_" +
-        # str(config["general"]["jobid"]) +
-        ".log"
+        + "_"
+        + str(config["general"]["jobid"])
+        + ".log"
     )
 
     if os.path.isfile(exp_log_path):
@@ -54,8 +53,8 @@ def init_monitor_file(config):
 
     monitor_file = logfiles.logfile_handle
 
-    print(called_from)
-    print(exp_log_path)
+    logger.info(called_from)
+    logger.info(exp_log_path)
 
     monitor_file.write("observing job initialized \n")
     monitor_file.write(
@@ -107,8 +106,8 @@ def assemble_error_list(config):
         + config["general"]["setup_name"]
         + "_"
         + called_from
-        # + "_"
-        # + gconfig["jobid"]
+        + "_"
+        + gconfig["jobid"]
         + ".log"
     )
 
@@ -128,6 +127,10 @@ def assemble_error_list(config):
                         search_file = config[model]["check_error"][trigger]["file"]
                         if search_file == "stdout" or search_file == "stderr":
                             search_file = stdout
+                        elif "@jobid@" in search_file:
+                            search_file = search_file.replace(
+                                "@jobid@", config["general"]["jobid"]
+                            )
                     if "method" in config[model]["check_error"][trigger]:
                         method = config[model]["check_error"][trigger]["method"]
                         if method not in known_methods:
@@ -184,8 +187,8 @@ def check_for_errors(config):
                                 monitor_file.write("ERROR: " + message + "\n")
                                 monitor_file.write("Will kill the run now..." + "\n")
                                 monitor_file.flush()
-                                print("ERROR: " + message)
-                                print("Will kill the run now...", flush=True)
+                                logger.error("ERROR: " + message)
+                                logger.error("Will kill the run now...")
                                 database_actions.database_entry_crashed(config)
                                 os.system(cancel_job)
                                 sys.exit(42)

@@ -16,7 +16,7 @@ license_text: |
 pool_dir: "${computer.pool_directories.pool}/JSBACH/input/${jsbach.dataset}/HD"
 input_dir: "${pool_dir}"
 
-executable: NONE
+executable: null
 
 input_files :
         hdstart: hdstart
@@ -35,7 +35,6 @@ input_sources:
         rmp_hd: "${input_dir}/rmp_${echam.resolution}_to_hd.nc"
         hdstart: "${input_dir}/hdstart.nc"
 
-
 choose_echam.version:
         6.3.05p2-wiso:
                 add_restart_in_files:
@@ -49,13 +48,13 @@ choose_echam.version:
                         hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart.nc
                         hdrestart_wiso: restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_hdrestart_wiso.nc
 
-
 restart_in_in_work:
         hdrestart: hdrestart.nc
         hdrestart_wiso: hdrestart_wiso.nc
 
 restart_in_sources:
         hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
+        hdrestart_wiso: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart_wiso.nc
 
 restart_in_files:
         hdrestart: hdrestart
@@ -69,16 +68,24 @@ restart_out_in_work:
 
 restart_out_sources:
         hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday}_hdrestart.nc
+        hdrestart_wiso: restart_${general.expid}_${other_date!syear!smonth!sday}_hdrestart_wiso.nc
+
+choose_general.with_wiso:
+        True:
+            add_restart_in_files:
+                    hdrestart_wiso: hdrestart_wiso
+            add_restart_out_files:
+                    hdrestart_wiso: hdrestart_wiso
+        "*":
+            from_general_with_wiso_choose: <NOT_SPECIFIED>
 
 log_in_work:
         outflow: hd_outflow_*.log # DIBA muss noch rausfinden was * in diesem Fall ist
-
 
 choose_hdpara_file:
         "*":
                 add_input_sources:
                         hdpara: ${hdpara_file}
-
 
 further_reading:
         - hdmodel/hdmodel.inherit.yaml

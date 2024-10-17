@@ -1,40 +1,22 @@
 import os
 import sys
-import esm_tools
-import esm_rcfile
-import esm_parser
 
+import esm_parser
+import esm_tools
 
 ######################################################################################
 ##################################### globals ########################################
 ######################################################################################
 
-FUNCTION_PATH = esm_rcfile.get_rc_entry("FUNCTION_PATH", default="/dev/null")
 ESM_MASTER_DIR = os.getenv("PWD")
 
-# PG: COMPONENTS_YAML is now built out of multiple small ones
-# COMPONENTS_YAML = FUNCTION_PATH + "/esm_master/setups2models.yaml"
-if not FUNCTION_PATH.startswith("/dev/null"):
-    COMPONENTS_DIR = FUNCTION_PATH + "/components/"
-    SETUPS_DIR = FUNCTION_PATH + "/setups/"
-    COUPLINGS_DIR = FUNCTION_PATH + "/couplings/"
-    DEFAULTS_DIR = FUNCTION_PATH + "/defaults/"
-    ESM_SOFTWARE_DIR = FUNCTION_PATH + "/esm_software/"
-    CONFIG_YAML = FUNCTION_PATH + "/esm_software/esm_master/esm_master.yaml"
-    VCS_FOLDER = FUNCTION_PATH + "/other_software/vcs/"
-# Else case covers if user has removed FUNCTION_PATH from rcfile:
-else:
-    COMPONENTS_DIR = esm_tools.get_config_filepath("/components/")
-    SETUPS_DIR = esm_tools.get_config_filepath("/setups/")
-    COUPLINGS_DIR = esm_tools.get_config_filepath("/couplings/")
-    DEFAULTS_DIR = esm_tools.get_config_filepath("/defaults/")
-    ESM_SOFTWARE_DIR = esm_tools.get_config_filepath("/esm_software/")
-    CONFIG_YAML = esm_tools.get_config_filepath(
-        "/esm_software/esm_master/esm_master.yaml"
-    )
-    VCS_FOLDER = esm_tools.get_config_filepath("/other_software/vcs/")
-
-OVERALL_CONF_FILE = esm_rcfile.rcfile
+COMPONENTS_DIR = esm_tools.get_config_filepath("/components/")
+SETUPS_DIR = esm_tools.get_config_filepath("/setups/")
+COUPLINGS_DIR = esm_tools.get_config_filepath("/couplings/")
+DEFAULTS_DIR = esm_tools.get_config_filepath("/defaults/")
+ESM_SOFTWARE_DIR = esm_tools.get_config_filepath("/esm_software/")
+CONFIG_YAML = esm_tools.get_config_filepath("/esm_software/esm_master/esm_master.yaml")
+VCS_FOLDER = esm_tools.get_config_filepath("/other_software/vcs/")
 
 ESM_MASTER_PICKLE = ESM_SOFTWARE_DIR + "/esm_master/esm_master.pkl"
 
@@ -137,71 +119,11 @@ class GeneralInfos:
 
         # Parses the ``esm_master.yaml`` configuration file
         self.config = esm_parser.yaml_file_to_dict(CONFIG_YAML)
-        self.emc = self.read_and_update_conf_files()
         self.meta_todos, self.meta_command_order = self.get_meta_command()
         self.display_kinds = self.get_display_kinds()
 
         if parsed_args.get("verbose", False):
             self.output()
-
-    def read_and_update_conf_files(self):
-        """
-        Reads and updates the `ESM-Tools` configuration files.
-
-        Loops through the configuration files ``OVERALL_CONF_FILE``
-        (i.e. ``~/.esmtoolsrc``) and includes the variables defined there into the
-        ``emc`` dictionary. If the ``basic_infos`` specified inside ``self.config``
-        (read from the ``CONFIG_YAML``, e.g. ``esm_master.yaml``) is not complete
-        it asks for the user input to complete the ``OVERALL_CONF_FILE``
-        (i.e. ``~/.esmtoolsrc``).
-
-        Returns
-        -------
-        emc : dict
-            A dictionary including the `ESM-Tools` configuration variables (i.e.
-            contained in ``~/.esmtoolsrc``).
-        """
-        complete = True
-        emc = {}
-        # Loop through the esm_tools configuration files (i.e. ``esmtoolsrc``)
-        for conffile in [OVERALL_CONF_FILE]:
-            # Check if the file exists, and load the elements in ``emc``
-            if os.path.isfile(conffile):
-                with open(conffile) as myfile:
-                    for line in myfile:
-                        # PG: Could be simpler: just line.split("=")
-                        name, var = line.partition("=")[::2]
-                        emc[name.strip()] = var.strip()
-        # If ``basic_infos`` exists inside the ``esm_master.yaml``
-        if "basic_infos" in self.config.keys():
-            # Iterate through the ``basic_info`` keys (i.e. ``GITLAB_DKRZ_USER_NAME``)
-            for basic_info in self.config["basic_infos"]:
-                # Store ``question`` and ``default``
-                question = self.config["basic_infos"][basic_info]["question"]
-                default = self.config["basic_infos"][basic_info]["default"]
-                # If the key was not provided by the ``esm_tools`` configuration file
-                # then ask for user input using the ``question`` and ``default`` answer
-                if not basic_info in emc.keys():
-                    if complete:
-                        print("The configuration files are incomplete or non-existent.")
-                        print(
-                            "Please answer the following questions to configure esm-tools:"
-                        )
-                        print("(Hit enter to accept default values.)")
-                        complete = False
-                    user_input = input(question + " (default = " + default + "): ")
-                    # If the ``user_input`` is empty define it using the ``default``
-                    if user_input.strip() == "":
-                        user_input = default
-                    # Add ``basic_info`` to ``emc``
-                    emc.update({basic_info.strip(): user_input.strip()})
-        # If the esm_tools configuration files were not complete rewrite them to include
-        # the information provided by the user as ``user_input``
-        if not complete:
-            with open(OVERALL_CONF_FILE, "w") as new_conf_file:
-                for oldentry in emc.keys():
-                    new_conf_file.write(oldentry + "=" + emc[oldentry] + "\n")
-        return emc
 
     def get_meta_command(self):
         """
@@ -229,8 +151,6 @@ class GeneralInfos:
 
     def output(self):
         print()
-        for key in self.emc:
-            print(key + ": " + str(self.emc[key]))
         print("Meta commands: ")
         for key in self.meta_command_order:
             print("    " + key + ": " + str(self.meta_command_order[key]))
@@ -314,17 +234,42 @@ class version_control_infos:
             except:
                 print("Sorry, no " + todo + "_command defined for " + package.repo_type)
                 sys.exit(42)
-            if type(package.repo) == list:
+            if isinstance(package.repo, list):
                 repo = package.repo[0]
             else:
                 repo = package.repo
-            if "https://gitlab.dkrz.de" in repo:
-                repo = (
-                    "https://"
-                    + general.emc["GITLAB_DKRZ_USER_NAME"]
-                    + "@"
-                    + repo.replace("https://", "")
-                )
+            if os.environ.get("CI"):
+                if "gitlab.awi.de" in repo:
+                    awi_user = os.environ.get("GITLAB_AWI_USER_NAME", "")
+                    if awi_user:
+                        awi_user += "@"
+                    repo = repo.replace("gitlab.awi.de", f"{awi_user}gitlab.dkrz.de")
+                elif "swrepo1.awi.de" in repo:
+                    print(
+                        f"swrepo1.awi.de is decommisioned, please consider correcting {repo}"
+                    )
+                    if os.environ.get("esm_tools_pedantic") or os.environ.get(
+                        "ESM_TOOLS_PEDANTIC"
+                    ):
+                        print("Pedantic mode is on, exiting instead of warning only!")
+                        sys.exit(1)
+                elif "gitlab.dkrz.de" in repo:
+                    # NOTE(PG): Empty string as return value to ensure that the f-string works nicely
+                    dkrz_user = os.environ.get("GITLAB_DKRZ_USER_NAME", "")
+                    if dkrz_user:
+                        dkrz_user += "@"
+                    repo = repo.replace("gitlab.dkrz.de", f"{dkrz_user}gitlab.dkrz.de")
+                elif "github.com" in repo:
+                    print("No token needed for github.com repositories!")
+                else:
+                    print(f"Sorry, no CI token defined for {repo}")
+                    # FIXME(PG): We should come up with a sensible convention for this:
+                    if os.environ.get("esm_tools_pedantic") or os.environ.get(
+                        "ESM_TOOLS_PEDANTIC"
+                    ):
+                        print("Pedantic mode is on, exiting instead of warning only!")
+                        sys.exit(1)
+
             raw_command = raw_command.replace("${repository}", repo)
             if todo == "get":
                 if package.repo_type == "curl":
@@ -337,12 +282,18 @@ class version_control_infos:
                     raw_command = raw_command + " " + package.destination
                 else:
                     raw_command = raw_command + " " + package.raw_name
+
+            commands = [raw_command]
+
+            if package.permissions:
+                commands.append(f"chmod {package.permissions} -R {package.destination}")
         else:
-            raw_command = None
-        return raw_command
+            commands = None
+
+        return commands
 
     def output(self):
         print()
-        esm_parser.pprint_config(self.config)
+        self.config.yaml_dump()
         print("Known repos: " + str(self.known_repos))
         print("Known vcs-commands: " + str(self.known_todos))

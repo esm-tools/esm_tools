@@ -9,7 +9,19 @@ type: ocean
 comp_command: ${defaults.comp_command}
 clean_command: ${defaults.clean_command}
 
-use_icebergs: False
+required_plugins:
+- "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
+
+# LA these are both iceberg related
+use_icebergs: False                 # turns on icebergs
+use_icesheet_coupling: False        # initializes new icebergs every restart
+# MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
+# below) whose source code contains the icebergs implementation
+icb_code: False
+
+with_wiso: false
+with_recom: false
+wiso_code: false
 
 choose_version:
   2.1-unstable:
@@ -17,38 +29,44 @@ choose_version:
     namelist_dir: "${model_dir}/config/"
   '2.1':
     branch: "2.1.0"
+  2.1-awiesm-2.1:
+    branch: "2.1-awiesm-2.1"
+    destination: "fesom-2.1"
+    wiso_code: true
+    icb_code: true
   2.1-wiso:
     branch: wiso
+    wiso_code: true
+  2.1-recom: # kh 13.04.22 for testing FESOM-REcoM MPI based tracer loop parallelization with ESM-Tools in Levante
+    branch: awiesm2-recom-mpi # YY: merged with awiesm2-recom-wiso-mass
+    choose_general.setup_name:
+        fesom:
+            destination: "fesom-2.1-recom"
     git-repository:
     - https://gitlab.dkrz.de/FESOM/fesom2.git
-    add_restart_in_files:
-        wiso_restart: wiso_restart
-    add_restart_out_files:
-        wiso_restart: wiso_restart
-    add_coupling_fields:
-        "[[wiso_fields-->FIELD]]":
-            grid: feom
-  2.1-recom:
-    branch: awiesm2-recom-wiso # MA: We will need a new branch for Martin Butzin changes
-    git-repository:
-    - https://gitlab.dkrz.de/FESOM/fesom2.git
-    add_restart_in_files:
-        wiso_restart: wiso_restart
-    add_restart_out_files:
-        wiso_restart: wiso_restart
-    add_coupling_fields:
-        "[[wiso_fields-->FIELD]]":
-            grid: feom
+    wiso_code: true
+    namelist_dir: "${model_dir}/config/"
+    asforcing: CORE2
+    nproc: 1024
+    with_recom: true
+    include_models: ["recom"]
+    fesom_Dflags: "-DRECOM_COUPLED=ON"
+    mpi_num_groups: 1
+
+
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
 - https://github.com/FESOM/fesom2.git
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 
 restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
+
+tar_binary_restarts: False
 
 time_step: 1800
 resolution: CORE2
@@ -75,6 +93,14 @@ choose_computer.name:
             add_module_actions:
                 - "unload gcc"
                 - "load gcc/4.8.2"
+    levante:
+        pool_dir: "${computer.pool_directories.pool}/AWICM/"
+        climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+        forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
+        mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+    albedo:
+        climate_data_dir: "${pool_dir}/FESOM/hydrography/"
+        mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
 
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
@@ -111,37 +137,81 @@ choose_resolution:
                 nx: 3140
                 mesh_dir: "${fesom.mesh_base_dir}/pi/"
                 nproc: 4
+# YY: add LGM with glac1d_m1 resolution
+        LGM:
+                nx: 95239
+                mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_glac1d_m1_512/"
+                nproc: 1024
 
 restart_in_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-        icb_restart: icb_restart
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
 
-restart_in_in_workdir:
+restart_in_in_work:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
         icb_restart: iceberg.restart #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM
 restart_in_sources:
         oce_restart: fesom.${parent_date!syear}.oce.restart.nc
         ice_restart: fesom.${parent_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
+        icb_restart: iceberg.restart.${parent_date!syear} #.${parent_date!syear!month}
+        icb_restart_ISM: iceberg.restart.ISM.${parent_date!syear}
 
 restart_out_files:
         oce_restart: oce_restart
         ice_restart: ice_restart
-        icb_restart: icb_restart
-restart_out_in_workdir:
+        par_oce_restart: par_oce_restart
+        par_ice_restart: par_ice_restart
+        fesom_raw_restart_info: fesom_raw_restart_info
+        fesom_raw_restart: fesom_raw_restart
+        fesom_bin_restart_info: fesom_bin_restart_info
+        fesom_bin_restart: fesom_bin_restart
+
+restart_out_in_work:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
+        icb_restart: iceberg.restart
+        icb_restart_ISM: iceberg.restart.ISM
 restart_out_sources:
         oce_restart: fesom.${end_date!syear}.oce.restart.nc
         ice_restart: fesom.${end_date!syear}.ice.restart.nc
+        par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
+        par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+        fesom_raw_restart_info: fesom_raw_restart/*.info
+        fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+        fesom_raw_restart_tar: fesom_raw_restart.tar.*
+        fesom_bin_restart_info: fesom_bin_restart/*.info
+        fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+        fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
+        icb_restart: iceberg.restart.${end_date!syear}
+        icb_restart_ISM: iceberg.restart.ISM.${end_date!syear}
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
@@ -150,29 +220,66 @@ outdata_targets:
 
 choose_use_icebergs:
         True:
-            ib_num_old: 0
-            ib_num_new: 0
+            update_icebergs: True
 
-            input_in_work:
-                    longitude: "icb_longitude.dat"
+            icb_inputs: [longitude,latitude,length,height,scaling,felem]
+
+            add_restart_in_files:
+                    icb_restart: icb_restart
+                    icb_restart_ISM: icb_restart_ISM
+
+            add_restart_out_files:
+                    icb_restart: icb_restart
+                    icb_restart_ISM: icb_restart_ISM
+
+            add_outdata_targets:
+                    buoys_track: "buoys_track.nc_${run_datestamp}"
+
+            add_outdata_sources:
+                    buoys_track: "buoys_track.nc"
+
+            choose_use_icesheet_coupling:
+                    true:
+                            choose_general.run_number:
+                                    1:
+                                            iceberg_dir: "${ini_iceberg_dir}"
+                                    "*":
+                                            iceberg_dir: "${general.experiment_couple_dir}"
+
+                            add_input_files:
+                                    num_non_melted_icb_file: "num_non_melted_icb_file"
+
+                    "*":
+                            iceberg_dir: "${ini_iceberg_dir}"
+
+            choose_update_icebergs:
+                    true:
+                            add_input_sources:
+                                    "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file"
+
+                    false:
+                            add_input_sources:
+                                    "[[icb_inputs-->ICB_INPUT]]": ${iceberg_dir}/icb_ICB_INPUT.dat_@YEAR@0101-@YEAR@1231
+                                    num_non_melted_icb_file: "${iceberg_dir}/num_non_melted_icb_file_@YEAR@0101-@YEAR@1231"
+
+            add_input_in_work:
                     latitude: "icb_latitude.dat"
+                    longitude: "icb_longitude.dat"
                     length: "icb_length.dat"
                     height: "icb_height.dat"
                     scaling: "icb_scaling.dat"
+                    felem: "icb_felem.dat"
+                    num_non_melted_icb_file: "num_non_melted_icb_file"
 
-            input_sources:
-                    longitude: "${iceberg_dir}/LON.dat"
-                    latitude: "${iceberg_dir}/LAT.dat"
-                    length: "${iceberg_dir}/LENGTH.dat"
-                    height: "${iceberg_dir}/HEIGHT.dat"
-                    scaling: "${iceberg_dir}/SCALING.dat"
-
-            input_files:
-                    longitude: "longitude"
+            add_input_files:
                     latitude: "latitude"
+                    longitude: "longitude"
                     length: "length"
                     height: "height"
                     scaling: "scaling"
+                    felem: "felem"
+                    #num_non_melted_icb_file: "num_non_melted_icb_file"
 
 log_files:
         clock: clock
@@ -186,6 +293,32 @@ log_sources:
         clock: fesom.clock
         mesh_diag: fesom.mesh.diag.nc
 
+file_movements:
+        fesom_raw_restart_in:
+                all_directions: move
+        fesom_raw_restart_out:
+                all_directions: move
+        fesom_raw_restart_info_in:
+                all_directions: move
+        fesom_raw_restart_info_out:
+                all_directions: move
+        fesom_raw_restart_tar_out:
+                all_directions: move
+        fesom_bin_restart_in:
+                all_directions: move
+        fesom_bin_restart_out:
+                all_directions: move
+        fesom_bin_restart_info_in:
+                all_directions: move
+        fesom_bin_restart_info_out:
+                all_directions: move
+        fesom_bin_restart_tar_out:
+                all_directions: move
+
+choose_tar_binary_restarts:
+    True:
+        add_restart_out_files:
+            fesom_raw_restart_tar: fesom_raw_restart_tar
 
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
@@ -198,6 +331,12 @@ choose_branchoff:
         false:
                 daynew: "${initial_date!sdoy}"
                 yearnew: "${initial_date!syear}"
+                add_restart_in_files:
+                        fesom_raw_restart_info: fesom_raw_restart_info
+                        fesom_raw_restart: fesom_raw_restart
+                        fesom_bin_restart_info: fesom_bin_restart_info
+                        fesom_bin_restart: fesom_bin_restart
+
 
 
 namelist_changes:
@@ -278,6 +417,37 @@ namelist_changes:
 
                         runoff_data_source: ${runoff_data_source}
                         sss_data_source: ${sss_data_source}
+choose_icb_code:
+    True:
+        add_namelist_changes:
+            namelist.config:
+                icebergs:
+                    use_icebergs: "${use_icebergs}"
+                    use_icesheet_coupling: "${use_icesheet_coupling}"
+                    steps_per_ib_step: 8
+
+use_landice_water: False
+choose_general.iterative_coupling:
+        true:
+                choose_general.chunk_number:
+                        1:
+                                use_landice_water: False
+                        "*":
+                                use_landice_water: True
+                
+                fwf_path: "${general.experiment_couple_dir}" 
+                
+                #choose_echam.hosing_correction:
+                #        true:
+                add_namelist_changes:
+                            namelist.forcing:
+                                    land_ice:
+                                            use_landice_water: "${use_landice_water}"
+                                            landice_start_mon: 1
+                                            landice_end_mon: 12
+                                            fwf_path: "${fwf_path}" 
+        '*':
+                use_landice_water: False
 
 lasttime: "$(( 86400 - ${time_step}))"
 currentday: "${current_date!sdoy}"
@@ -326,6 +496,8 @@ config_sources:
         io:      "${namelist_dir}/namelist.io"
         cvmix:   "${namelist_dir}/namelist.cvmix"
         icepack: "${namelist_dir}/namelist.icepack"
+        tra:     "${namelist_dir}/namelist.tra"
+        dyn:     "${namelist_dir}/namelist.dyn"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -338,9 +510,6 @@ compiletime_environment_changes:
                                 - "load netCDF-Fortran/4.4.5"
 
 runtime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom2_run
-                taken2from:     fesom2_ru
         choose_computer.name:
                 juwels:
                         add_module_actions:
@@ -356,6 +525,8 @@ config_in_work:
         io:      "namelist.io"
         cvmix:   "namelist.cvmix"
         icepack: "namelist.icepack"
+        tra:     "namelist.tra"
+        dyn:     "namelist.dyn"
 
 coupling_fields:
         sst_feom:
@@ -406,14 +577,78 @@ wiso_fields:
         - i2_oce
         - i3_oce
 
+choose_wiso_code:
+        True:
+                add_namelist_changes:
+                        namelist.config:
+                                run_config:
+                                        lwiso: "${with_wiso}"
+
+choose_with_wiso:
+        True:
+                add_restart_in_files:
+                        wiso_restart: wiso_restart
+                add_restart_out_files:
+                        wiso_restart: wiso_restart
+                add_coupling_fields:
+                        "[[wiso_fields-->FIELD]]":
+                                grid: feom
+
+# with_recom switch
+# -----------------
+# Settings for running with REcoM
+choose_fesom.with_recom:
+    True:
+        add_config_sources:
+            oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
+            io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+        remove_namelist_changes.namelist.config: [inout]
+        add_namelist_changes:
+            namelist.config:
+                restart_log:
+                    restart_length: "${restart_rate}"
+                    restart_length_unit: "${restart_unit}"
+                run_config:
+                    num_fesom_groups: "${mpi_num_groups}"
+            namelist.oce:
+                oce_tra:
+                    num_tracers: "${num_tracers}"
+
+        # use_ciso switch
+        # ---------------
+        # num_tracers only changed if ``with_recom: true``, i.e. indentation)
+        choose_recom.use_ciso:
+                True:
+                        namelist_ciso_sufix: ".ciso"
+                        num_tracers: 33
+                False:
+                        namelist_ciso_sufix: ""
+                        num_tracers: 24
+
 grids:
         feom:
                 name: feom
                 nx: ${nx}
                 ny: 1
                 oasis_grid_type: "U"
+                oyac_grid_type: "GC"
+                oyac_io_per_node: 4
                 number_of_overlapping_points: 0 # oasis P-value
 
 
 further_reading:
         - fesom/fesom.forcing.yaml
+
+# ------------------------
+# RECIPE
+# ------------------------
+tidy_recipe:
+    - "tidy_coupler"
+    - "tar_binary_restarts"
+    - "assemble"
+    - "check_for_unknown_files"
+    - "log_used_files"
+    - "throw_away_some_infiles"
+    - "copy_stuff_back_from_work"
+    - "copy_all_results_to_exp"
+    - "clean_run_dir"

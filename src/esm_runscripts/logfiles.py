@@ -1,4 +1,8 @@
-import os, sys, _io
+import os
+import sys
+
+import _io
+
 from . import helpers
 
 
@@ -117,7 +121,7 @@ class RuntimeLogger(_io.TextIOWrapper):
     """
     Logger object that takes care of both, writing the stdout and stderr to the
     'mini-log' file corresponding to the different elements of the workflow (observe,
-    tidy, ...), and writing to the system stdout/stderr so that it is catched by SLURM
+    tidy, ...), and writing to the system stdout/stderr so that it is caught by SLURM
     (or I guess PBS) and put into the ``*compute*.log`` specified in the ``.run`` file.
     The ``*compute*.log`` file is then used to catch errors by ``observe``.
 
@@ -132,18 +136,21 @@ class RuntimeLogger(_io.TextIOWrapper):
         def nmls_output(mconfig):
             all_nmls = {}
 
-            for nml_name, nml_obj in six.iteritems(mconfig.get("namelists", {})):
+            for nml_name, nml_obj in mconfig.get("namelists", {}).items():
                 all_nmls[nml_name] = nml_obj  # PG: or a string representation?
             for nml_name, nml in all_nmls.items():
                 message = f'\nFinal Contents of {nml_name}:'
-                six.print_(message)
-                six.print_(len(message) * '-')
+                print(message)
+                print(len(message) * '-')
                 nml.write(sys.stdout)  # Problematic line if the sys.stdout is not a file-like object
                 print('-' * 80)
                 print(f'::: end of the contents of {nml_name}\n')
             return mconfig
+
     Hopefully, we are not using any other methods than the ones specified here...
     """
+
+    # FIXME(PG): This can be better.....
 
     def __init__(self, *args, **kwargs):
         """

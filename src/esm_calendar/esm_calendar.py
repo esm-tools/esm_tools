@@ -261,6 +261,17 @@ class Date(object):
     """
 
     def __init__(self, indate, calendar=Calendar()):
+        if isinstance(indate, str):
+            self._init_from_str(indate, calendar=Calendar())
+        elif isinstance(indate, Date):
+            self._init_from_date(indate, calendar=Calendar())
+        else:
+            raise TypeError(
+                f"{type(indate)} is not a valid type to initialize a Date object "
+                "(valid types: str, Date)"
+            )
+
+    def _init_from_str(self, indate, calendar=Calendar()):
         printhours = True
         printminutes = True
         printseconds = True
@@ -274,6 +285,9 @@ class Date(object):
             indate2 = indate
         if "_" in indate2:
             date, time = indate2.split("_")
+        elif ":" in indate2 and not "-" in indate2:
+            date = "0000-00-00"
+            time = indate2
         else:
             date = indate2
             time = ""
@@ -332,6 +346,11 @@ class Date(object):
         self.sdoy = str(self.day_of_year())
 
         self._date_format = Dateformat(form, printhours, printminutes, printseconds)
+
+    def _init_from_date(self, indate, calendar=Calendar()):
+        self.year, self.month, self.day, self.hour, self.minute, self.second = (
+            indate.year, indate.month, indate.day, indate.hour, indate.minute, indate.second
+        )
 
     @property
     def sdoy(self):
@@ -438,14 +457,7 @@ class Date(object):
     fromlist = from_list
 
     def __repr__(self):
-        return "Date(%s-%s-%sT%s:%s:%s)" % (
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-        )
+        return f"Date({self.year:02}-{self.month:02}-{self.day:02}T{self.hour:02}:{self.minute:02}:{self.second:02})"
 
     def __getitem__(self, item):
         return (self.year, self.month, self.day, self.hour, self.minute, self.second)[
@@ -508,6 +520,9 @@ class Date(object):
         return self_tup <= other_tup
 
     def __eq__(self, other):
+        if not isinstance(other, Date):
+            return False
+
         self_tup = (
             self.year,
             self.month,
@@ -527,6 +542,9 @@ class Date(object):
         return self_tup == other_tup
 
     def __ne__(self, other):
+        if not isinstance(other, Date):
+            return True
+
         self_tup = (
             self.year,
             self.month,
@@ -586,7 +604,7 @@ class Date(object):
     def __sub__(self, other):
         if isinstance(other, Date):
             return self.sub_date(other)
-        elif type(other) == tuple:
+        elif isinstance(other, tuple):
             return self.sub_tuple(other)
         else:
             print("No known combination for subtraction")
@@ -698,41 +716,58 @@ class Date(object):
         self, form="SELF", givenph=None, givenpm=None, givenps=None
     ):  # basically format_date
         """
-        Needs a docstring!
-        The following forms are accepted:
-        + SELF: uses the format which was given when constructing the date
-        + 0: A Date formated as YYYY
+        Beautifully returns a ``Date`` object as a string.
 
-        In [5]: test.format(form=1)
-        Out[5]: '1850-01-01_00:00:00'
+        Parameters
+        ----------
+        form : str or int
+            Logic taken from from MPI-Met
+        givenph : bool-ish
+            Print hours
+        givenpm : bool-ish
+            Print minutes
+        givenps : bool-ish
+            Print seconds
 
-        In [6]: test.format(form=2)
-        Out[6]: '1850-01-01T00:00:00'
+        Note
+        ----
+        **How to use the ``form`` argument**
+            The following forms are accepted:
+            + SELF: uses the format which was given when constructing the date
+            + 0: A Date formatted as YYYY
 
-        In [7]: test.format(form=3)
-        Out[7]: '1850-01-01 00:00:00'
+            In [5]: test.format(form=1)
+            Out[5]: '1850-01-01_00:00:00'
 
-        In [8]: test.format(form=4)
-        Out[8]: '1850 01 01 00 00 00'
+            In [6]: test.format(form=2)
+            Out[6]: '1850-01-01T00:00:00'
 
-        In [9]: test.format(form=5)
-        Out[9]: '01 Jan 1850 00:00:00'
+            In [7]: test.format(form=3)
+            Out[7]: '1850-01-01 00:00:00'
 
-        In [10]: test.format(form=6)
-        Out[10]: '18500101_00:00:00'
+            In [8]: test.format(form=4)
+            Out[8]: '1850 01 01 00 00 00'
 
-        In [11]: test.format(form=7)
-        Out[11]: '1850-01-01_000000'
+            In [9]: test.format(form=5)
+            Out[9]: '01 Jan 1850 00:00:00'
 
-        In [12]: test.format(form=8)
-        Out[12]: '18500101000000'
+            In [10]: test.format(form=6)
+            Out[10]: '18500101_00:00:00'
 
-        In [13]: test.format(form=9)
-        Out[13]: '18500101_000000'
+            In [11]: test.format(form=7)
+            Out[11]: '1850-01-01_000000'
 
-        In [14]: test.format(form=10)
-        Out[14]: '01/01/1850 00:00:00'
+            In [12]: test.format(form=8)
+            Out[12]: '18500101000000'
+
+            In [13]: test.format(form=9)
+            Out[13]: '18500101_000000'
+
+            In [14]: test.format(form=10)
+            Out[14]: '01/01/1850 00:00:00'
         """
+        # Programmer notes to not be ever included in the doc-string: Paul really, Really, REALLY
+        # dislikes this function. It rubs me in the wrong way.
         if form == "SELF":
             form = self._date_format.form
 
@@ -740,11 +775,12 @@ class Date(object):
         pm = self._date_format.printminutes
         ps = self._date_format.printseconds
 
-        if not givenph == None:
+        # These variables are....utterly pointless
+        if givenph is not None:
             ph = givenph
-        if not givenpm == None:
+        if givenpm is not None:
             pm = givenpm
-        if not givenps == None:
+        if givenps is not None:
             ps = givenps
         ndate = list(
             map(

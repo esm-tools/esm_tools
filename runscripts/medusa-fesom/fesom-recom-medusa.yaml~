@@ -1,0 +1,20 @@
+general:
+        iterative_coupling: True
+        base_dir: "/work/bm1030/a270105/awiesm-output/"
+        use_venv: False
+
+model1:
+        setup_name: medusa
+        runscript: medusa-2.0-initial.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+model2:
+        setup_name: fesom
+            #YY: 'fesom-recom' exists in setups/
+            #MA: yes, it exists but your version of fesom-recom was never configured as
+            #    standalone. Therefore, we need to add the changes done in AWIESM into
+            #    the fesom-recom-run.yaml runscript
+        runscript: fesom-recom-run.yaml
+        chunk_size: 2
+        chunk_unit: "years"
+

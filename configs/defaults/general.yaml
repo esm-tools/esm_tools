@@ -1,1 +1,8 @@
 use_database: false
+profile: False
+intermediate_movements:
+- "config"
+- "bin"
+- "input"
+compute_file_checksums: False
+parallel_file_movements: False

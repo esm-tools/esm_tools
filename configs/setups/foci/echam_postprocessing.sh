@@ -75,7 +75,6 @@ if [[ ! -r $envfile ]] ; then
 else
 	source $envfile
 fi
-set -x
 #
 ###############################################################################
 # END OF USER INTERFACE
@@ -171,7 +170,9 @@ while [[ $currdate -le $enddate ]] ; do
     laststamp=${currdate%??}
     stamps="$stamps $laststamp"
     #currdate=$(calc_date plus -M 1 $currdate)
-	 currdate=$(date --date="$currdate + 1 month" "+%Y%m%d")
+	 # 18930401 does not exist for the date function and leads to an error
+    [[ "$currdate" == "18930401" ]] && currdate="18930331"
+    currdate=$(date --date="$currdate + 1 month" "+%Y%m%d")
 done
 
 # Computation of expected years for concatenated output
@@ -181,21 +182,13 @@ endyear=${enddate%????}
 #[[ $startyear == $iniyear && $inidate != *0101 ]] && ((++startyear)) 
 [[ $enddate != *1231 ]] && ((--endyear))
 
-# Temporary directory
-id="post"
-post_dir=$DATA_DIR/${id}_$startdate-$enddate
-if [[ -d $post_dir ]] ; then
-    print "Hey: previous job failed or still running; $post_dir exists. Will stop now"
-	 exit 1
-fi
-mkdir -p $post_dir
-
 function rename_files {
 
   prefix=$1
   stamps_in=$2
   filetags_in=$3
 
+  missing_output=0
   for stamp in $stamps_in ; do
 
     suffix=${stamp}${fileext}
@@ -217,12 +210,21 @@ function rename_files {
         else
            if ! [[ -f $output ]] ; then
               echo "$output not available."
+				  missing_output=1
 			  else
               echo "$output already available."
            fi
         fi
     done
   done
+
+  if [[ $missing_output -eq 1 ]] ; then
+    echo
+    echo " Not all files available required for yearly postprocessing. Will stop here"
+    echo
+    exit 0
+  fi	
+
 }
 #
 #  Postprocessing of ECHAM
@@ -249,10 +251,19 @@ filetags=${ATM_FILE_TAGS}
 atm_files_to_remove=
 
 # Generate monthly means, possibly apply afterburner transformations
-echo 0 > $post_dir/status
-rename_files $prefix "$stamps" "$filetags"
+rename_files $prefix "$stamps" "$filetags" 
 wait
 
+# Temporary directory
+id="post"
+post_dir=$DATA_DIR/${id}_$startdate-$enddate
+if [[ -d $post_dir ]] ; then
+    print "Hey: previous job failed or still running; $post_dir exists. Will stop now"
+	 exit 1
+fi
+mkdir -p $post_dir
+
+echo 0 > $post_dir/status
 remove_list=
 for stamp in $stamps ; do
 

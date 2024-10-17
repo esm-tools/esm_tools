@@ -62,7 +62,9 @@ if [[ ! -r $envfile ]] ; then
    echo
    exit 1
 else
-   source $envfile
+  # module purge in envfile writes non-printable chars to log
+  # TODO: tee "kills" the source command, need to find a workaround
+   source $envfile # | tee
 fi
 
 EXP_DIR=${basedir}/${EXP_ID}
@@ -104,13 +106,16 @@ if [[ "$(hostname)" =~ "nesh" ]] ; then
    # /gxfs_work1/gxfs_home_interim/sw which singularity does not like as the 
    # soft link can't be resolved in the container
    sw_bind="--bind /gxfs_home/sw:/gxfs_work1/gxfs_home_interim/sw"
+   shome_bind="--bind /home/smomw235:/home/smomw235"
 	foci_input2="/gxfs_work1/geomar/smomw235/foci_input2"
 	# only used if use_singularity=false
 	MINICONDA_HOME=~smomw235/miniconda3 
 	module load nco
-elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] ; then
+elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] || \ 
+ [[ "$(hostname)" =~ b?n* ]] || [[ "$(hostname)" =~ g?n* ]] ; then
    echo "`date` NOTE: This code runs on $(hostname)"
    sw_bind="--bind /sw:/sw"
+   shome_bind="--bind /home/shkifmsw:/home/shkifmsw"
 	# on HLRN4 cdftools are linked to e.g. libcurl.so.4 which are not 
 	# available in the default path in the container, luckily all the 
 	# required shared libs are installed in our conda environment
@@ -118,6 +123,7 @@ elif [[ "$(hostname)" =~ blogin* ]] || [[ "$(hostname)" =~ glogin* ]] ; then
 	foci_input2="/scratch/usr/shkifmsw/foci_input2"
 	# only used if use_singularity=false
 	MINICONDA_HOME=~shkifmsw/miniconda3 
+	module load nco
 else
    echo $(hostname) is untested.
    exit 1
@@ -140,23 +146,21 @@ if $use_singularity ; then
 	module load singularity
 	# run monitoring from the singularity container
 	# TODO: currently the .sif files is expected in the cwd, this is not the best solution
-	if [[ ! -f mkexp-monitoring.sif ]] ; then
-   	print "mkexp-monitoring.sif not available in $(pwd)"
-	   print "Need to fetch singularity image from https://cloud.geomar.de/s/K8wiQPaacQcJ5LL/download/mkexp-monitoring.sif"
-   	print "This only needs to be done once per simulation"
-   	curl -O https://cloud.geomar.de/s/K8wiQPaacQcJ5LL/download/mkexp-monitoring.sif
-	fi
+   ln -sfv ${foci_input2}/SINGULARITY/mkexp-monitoring.sif .
+
+	input_bind="--bind ${foci_input2}:${foci_input2}" 
 
 	SINGULARITYENV_LD_LIBRARY_PATH=$LD_LIBRARY_PATH \
+	SINGULARITYENV_APPEND_PATH=$(dirname $(which ncrcat)) \
 	SINGULARITYENV_PYTHONPATH=/usr/local/Monitoring \
 		singularity exec --bind $WORK:$WORK --bind $HOME:$HOME \
-		$sw_bind --bind ${IO_LIB_ROOT}/bin:/usr/local/bin \
+		$sw_bind $input_bind $shome_bind --bind ${IO_LIB_ROOT}/bin:/usr/local/bin \
 		mkexp-monitoring.sif python \
 		/usr/local/Monitoring/scripts/monitoring_parallel.py \
 		${MONITORING_PATH}/ini/monitoring_${EXP_ID}.ini
 else
 	if [[ ! -d Monitoring ]]; then
-		git clone -b develop-swahl git@git.geomar.de:TM/Monitoring.git Monitoring
+		git clone -b develop-swahl https://git.geomar.de/TM/Monitoring.git Monitoring
 	fi
 	# activate the python environment
 	source ${MINICONDA_HOME}/bin/activate monitoring
@@ -211,7 +215,7 @@ for f in $frequency ; do
 				ofile=''
 				if [[ "$firstfile" == "$lastfile" ]]; then
 					cp -pv $firstfile $targetdir/
-					ofile=$firstfile
+					ofile=${targetdir}/$(basename $firstfile)
 				else
 					rm -fv ${targetdir}/${run}_${f}_*_${var}.nc
 					ofile=${targetdir}/${run}_${f}_${startdate}_${enddate}_${var}.nc

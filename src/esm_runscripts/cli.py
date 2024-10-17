@@ -12,8 +12,10 @@ import logging
 import os
 import sys
 
-from esm_motd import check_all_esm_packages
 from loguru import logger
+
+from esm_motd import check_all_esm_packages
+from esm_parser import user_error
 
 from .helpers import SmartSink
 from .sim_objects import *
@@ -72,7 +74,7 @@ def parse_shargs():
         "-P",
         "--profile",
         help="Write profiling information (esm-tools)",
-        default=False,
+        default=None,
         action="store_true",
     )
 
@@ -84,13 +86,13 @@ def parse_shargs():
         default="",  # kh 15.07.20 "usermods.yaml"
     )
 
-    # parser.add_argument(
-    #    "-j",
-    #    "--last_jobtype",
-    #    help="Write the jobtype this run was called from (esm-tools internal)",
-    #    default="command_line",
-    # )
-    #
+    parser.add_argument(
+        "-j",
+        "--last-jobtype",
+        help="Write the jobtype this run was called from (esm-tools internal)",
+        default="command_line",
+    )
+
     parser.add_argument(
         "-t",
         "--task",
@@ -153,15 +155,21 @@ def parse_shargs():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--ignore-config-warnings",
+        help="do not halt in warnings defined in the config files",
+        default=False,
+        action="store_true",
+    )
+
     return parser.parse_args()
 
 
 def main():
-
     ARGS = parse_shargs()
 
     check = False
-    profile = False
+    profile = None
     update = False
     expid = "test"
     pid = -666
@@ -201,8 +209,10 @@ def main():
     if "inspect" in parsed_args:
         inspect = parsed_args["inspect"]
     if parsed_args["contained_run"] and parsed_args["open_run"]:
-        print("You have set both --contained-run and --open-run, this makes no sense.")
-        print(parsed_args)
+        logger.error(
+            "You have set both --contained-run and --open-run, this makes no sense."
+        )
+        logger.error(parsed_args)
         sys.exit(1)
     if parsed_args["contained_run"] is not None:
         use_venv = parsed_args["contained_run"]
@@ -212,6 +222,8 @@ def main():
         modify_config_file = parsed_args["modify"]
     if "no_motd" in parsed_args:
         no_motd = parsed_args["no_motd"]
+    if "ignore_config_warnings" in parsed_args:
+        ignore_config_warnings = parsed_args["ignore_config_warnings"]
 
     command_line_config = {}
     command_line_config["check"] = check
@@ -223,11 +235,12 @@ def main():
     command_line_config["current_date"] = start_date
     command_line_config["run_number"] = run_number
     command_line_config["jobtype"] = jobtype
-    # command_line_config["last_jobtype"] = ARGS.last_jobtype
+    command_line_config["last_jobtype"] = ARGS.last_jobtype
     command_line_config["verbose"] = verbose
     command_line_config["inspect"] = inspect
     command_line_config["use_venv"] = use_venv
     command_line_config["no_motd"] = no_motd
+    command_line_config["ignore_config_warnings"] = ignore_config_warnings
     if modify_config_file:
         command_line_config["modify_config_file"] = modify_config_file
 
@@ -237,6 +250,12 @@ def main():
     runscript_full_path = os.path.realpath(ARGS.runscript)
     runscript_dir, runscript = os.path.split(runscript_full_path)
     runscript_dir += "/"
+    if not os.path.exists(runscript_full_path):
+        user_error(
+            "runscript not found",
+            f"The runscript ``{ARGS.runscript}`` does not exists in folder ``{runscript_dir}``. ",
+            dsymbols=["``", "'"],
+        )
 
     # this might contain the relative path but it will be taken care of later
     command_line_config["original_command"] = original_command.strip()
@@ -255,14 +274,16 @@ def main():
     logger.remove()
     logger.add(trace_sink.sink, level="TRACE")
 
-    logger.add(sys.stdout, level="INFO", format="{message}")
     if verbose:
+        logger.add(sys.stdout, level="DEBUG", format="{message}")
         logger.debug(f"Started from: {command_line_config['started_from']}")
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
+    else:
+        logger.add(sys.stdout, level="INFO", format="{message}")
 
-    Setup = SimulationSetup(command_line_config)
+    setup = SimulationSetup(command_line_config=command_line_config)
     # if not Setup.config['general']['submitted']:
-    if not Setup.config["general"]["submitted"] and not no_motd:
+    if not setup.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
-    Setup()
+    setup()

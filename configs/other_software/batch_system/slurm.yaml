@@ -41,23 +41,43 @@ tasks_flag: "--ntasks=@tasks@"
 partition_flag: "--partition=@partition@"
 nodes_flag: "--nodes=@nodes@"
 time_flag: "--time=${compute_time}"
-additional_flags: ""
+additional_flags: []
 output_path: "${experiment_dir}/log/"
-#thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
-thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}.log"
+thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
 output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
 name_flag: "--job-name=${expid}"
 
+taskset: false
+mt_launcher_flag: ""
+
 add_choose_heterogeneous_parallelization:
-        true:
-                cpu_bind: "none"
-        false:
-                cpu_bind: "cores"
+    true:
+        cpu_bind: "none"
+        choose_taskset:
+            # Support for old taskset heterogeneous parallelization approach
+            true:
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
+            # Support for new packjob heterogeneous parallelization approach
+            false:
+
+ # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
+                launcher_flags_per_component: "
+                    ${mt_launcher_flag}
+                    --nodes=@nnodes@
+                    --ntasks=@nproc@
+                    --ntasks-per-node=@nproc_per_node@
+                    --cpus-per-task=@cpus_per_proc@
+                    --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
+                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
+                launcher_comp_sep: " \\\n:"
+    false:
+        cpu_bind: "cores"
+        srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
 
 choose_launcher:
         srun:
                 launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
-                execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} --multi-prog ${config_files.hostfile}"
+                execution_command: ${srun_execution_command}
         mpiexec.hydra:
                 launcher_flags: "-bootstrap slurm"
                 execution_command: "echo mpiexec.hydra as launcher not yet available"
@@ -102,7 +122,7 @@ check_error:
         "srun: error:" :
                 frequency: 30
                 method: "kill"
-                message: "SLURM ERROR: slurm endet with an error, exiting."
+                message: "SLURM ERROR: slurm ended with an error, exiting."
                 file: "stdout"
 
         "slurmstepd: error: execve():" :

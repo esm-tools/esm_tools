@@ -1,0 +1,108 @@
+name: 001 esm-tools Ollie (Manual Run)
+
+# Reusuable part
+on:
+    workflow_dispatch:
+      inputs:
+        model_name:
+          required: True
+          type: choice
+          description: "Which model shall be tested?"
+          options:
+            - awiesm
+            - awicm
+            - echam
+            - fesom
+            - pism
+        model_version:
+            required: True
+            type: string
+            description: "Which model version to be tested (space seperated for more than one)"
+
+defaults:
+  run:
+    shell: bash -leo pipefail {0}
+
+jobs:
+    setup_version_matrix:
+        runs-on: hpc_awi_ollie
+        outputs:
+            matrix: ${{ steps.set-matrix.outputs.matrix }}
+        steps:
+            - name: Download Code
+              uses: actions/checkout@v2
+            - id: print_inputs
+              run: echo ${{github.event.inputs.model_version}}
+            - id: print_version_env
+              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{github.event.inputs.model_version}})"
+            - id: set_version_env
+              run: echo "VERSION=$(python utils/versions_to_json_matrix.py ${{github.event.inputs.model_version}})" >> $GITHUB_ENV
+            - id: test-set-matrix
+              run: echo "..set-output name=matrix..${{ env.VERSION }}"
+            - id: set-matrix
+              run: echo "::set-output name=matrix::${{ env.VERSION }}"
+    basic_compile_test:
+        needs: setup_version_matrix
+        runs-on: hpc_awi_ollie
+        strategy:
+            matrix: ${{fromJSON(needs.setup_version_matrix.outputs.matrix)}}
+            fail-fast: false
+        env:
+            LC_ALL: en_US.UTF-8
+            LANG: en_US.UTF-8
+
+        steps:
+          - name: Load Modules
+            run: |
+              module load git
+              module load python3
+
+          - name: Download Code
+            uses: actions/checkout@v2
+
+          - name: Add to the path
+            run: |
+              echo "$HOME/.local/bin" >> $GITHUB_PATH
+              echo "./.venv/bin" >> $GITHUB_PATH
+
+          - name: Install esm-tools
+            run: |
+              module load git
+              module load python3
+              python3 -m venv .venv
+              source .venv/bin/activate
+              ./install.sh
+
+          - name: Create esmtoolsrc file
+            run: |
+                echo GITLAB_DKRZ_USER_NAME=${{ secrets.dkrz-token }} >> ${HOME}/.esmtoolsrc
+                echo SWREPO_AWI_USER_NAME=${{ secrets.awi-token }} >> ${HOME}/.esmtoolsrc
+
+          - name: Run esm_master
+            run: |
+              esm_master
+
+          - name: Run esm_plugins
+            run: |
+              esm_plugins
+
+          - name: Run get-${{ github.event.inputs.model_name }}-${{ matrix.version }}
+            run: |
+              esm_master get-${{ github.event.inputs.model_name }}-${{ matrix.version }}
+
+          - name: Run status-${{ github.event.inputs.model_name }}-${{ matrix.version }}
+            run: |
+              esm_master status-${{ github.event.inputs.model_name }}-${{ matrix.version }}
+
+          - name: Run comp-${{ github.event.inputs.model_name }}-${{ matrix.version }}
+            run: |
+                esm_master comp-${{ inputs.model_name }}-${{ matrix.version }}
+
+          - name: Run clean-${{ github.event.inputs.model_name }}-${{ matrix.version }}
+            run: |
+              esm_master clean-${{ inputs.model_name }}-${{ matrix.version }}
+
+          - name: Clean up
+            if: ${{ always() }}
+            run: |
+                rm -rf ${HOME}/.esmtoolsrc ${HOME}/.esm_tools

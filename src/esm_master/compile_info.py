@@ -40,10 +40,6 @@ def combine_components_yaml(parsed_args):
     """
     Combines various YAML files in esm_master config directory.
 
-    The esm_master config directory is taken from the ``.esmtoolsrc`` file as
-    ``${FUNCTION_PATH}/esm_master/``. All files under the ``components``,
-    ``setups``, and ``couplings`` sub-directories are read into the dictionary.
-
     Returns
     -------
     dict :
@@ -71,6 +67,8 @@ def combine_components_yaml(parsed_args):
         "archfile",
         "use_oasis",
         "pipe_options",  # deniz: Linux pipe support
+        "contact",
+        "source_code_permissions",
     ]
 
     categories = ["components", "couplings", "setups", "esm_software"]

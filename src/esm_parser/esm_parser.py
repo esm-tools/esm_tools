@@ -71,19 +71,23 @@ import socket
 import subprocess
 import sys
 import warnings
-import numpy
+
+if sys.version_info > (3, 9):
+    from collections.abc import Mapping
+else:
+    from collections import Mapping
 
 # Always import externals before any non standard library imports
 
 # Third-Party Imports
+import numpy
 import coloredlogs
 import colorama
 import yaml
-import six
 
 # functions reading in dict from file
-from .shell_to_dict import *
 from .yaml_to_dict import *
+from .provenance import *
 
 # Date class
 from esm_calendar import Date
@@ -107,19 +111,16 @@ CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE = ["further_reading"]
 # NOTE: For very strange reasons, DATE_MARKER ends up being unicode in py2, not a string...
 DATE_MARKER = str(">>>THIS_IS_A_DATE<<<")
 
+CONFIG_PATH = esm_tools.get_config_filepath()
+SETUP_PATH = CONFIG_PATH + "/setups"
+DEFAULTS_DIR = CONFIG_PATH + "/defaults"
+COMPONENT_PATH = CONFIG_PATH + "/components"
+NAMELIST_DIR = esm_tools.get_namelist_filepath()
+RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
+COUPLINGS_DIR = esm_tools.get_coupling_filepath()
 
-import esm_rcfile
-
-
-FUNCTION_PATH = esm_rcfile.EsmToolsDir("FUNCTION_PATH")
-SETUP_PATH = FUNCTION_PATH + "/setups"
-DEFAULTS_DIR = FUNCTION_PATH + "/defaults"
-COMPONENT_PATH = FUNCTION_PATH + "/components"
-
-
-esm_function_dir = FUNCTION_PATH
-esm_namelist_dir = esm_rcfile.EsmToolsDir("NAMELIST_PATH")
-esm_runscript_dir = esm_rcfile.EsmToolsDir("RUNSCRIPT_PATH")
+# global variables
+list_counter = 0
 
 gray_list = [
     r"choose_lresume",
@@ -141,11 +142,34 @@ constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
 protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version", "omp_num_threads"]
+early_choose_vars = ["include_models", "version", "omp_num_threads", "further_reading"]
 
-# Ensure FileNotFoundError exists:
-if six.PY2:  # pragma: no cover
-    FileNotFoundError = IOError
+
+def flatten_nested_lists(lst):
+    """Recursively flattens an arbitrarily nested list and yields a generator
+
+    Examples
+    --------
+    >>> list(flatten_nested_lists( [[1,2,3]] ))
+    [1, 2, 3]
+
+    >>> list(flatten_nested_lists( [1,2,3, [4,5,6], "foo"] ))
+    [1, 2, 3, 4, 5, 6, 'foo']
+
+    >>> list(flatten_nested_lists( [[1,2,3], [4,5,6], [7,8,9]] ))
+    [1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    >>> list(flatten_nested_lists( [[1,2,3], {"foo": "bar"}] ))
+    [1, 2, 3, {'foo': 'bar'}]
+    """
+    # Traverse the list and return the scalar item. If the item is a list, then
+    # enter recursion
+    for item in lst:
+        if isinstance(item, list):
+            for subitem in flatten_nested_lists(item):
+                yield subitem
+        else:
+            yield item
 
 
 def look_for_file(model, item, all_config=None):
@@ -183,9 +207,9 @@ def look_for_file(model, item, all_config=None):
     possible_paths = [
         f"{SETUP_PATH}/{model}/{item}",
         f"{COMPONENT_PATH}/{model}/{item}",
-        f"{FUNCTION_PATH}/esm_software/{model}/{item}",
-        f"{FUNCTION_PATH}/other_software/{model}/{item}",
-        f"{FUNCTION_PATH}/{model}/{item}",
+        f"{CONFIG_PATH}/esm_software/{model}/{item}",
+        f"{CONFIG_PATH}/other_software/{model}/{item}",
+        f"{CONFIG_PATH}/{model}/{item}",
         f"{runscript_path}/{item}",
         f"{os.getcwd()}/{item}",  # last resort: look at the CWD if others fail
     ]
@@ -219,34 +243,8 @@ def look_for_file(model, item, all_config=None):
     return None, False
 
 
-def shell_file_to_dict(filepath):
-    """
-    Generates a ~`ConfigSetup` from an old shell script.
-
-    See also ~`ShellscriptToUserConfig`
-
-    Parameters
-    ----------
-    filepath : str
-        The file to load
-
-    Returns
-    -------
-    ConfigSetup :
-        The parsed config.
-    """
-    config = ShellscriptToUserConfig(filepath)
-    config = complete_config(config)
-    return config
-
-
-def initialize_from_shell_script(filepath):
-    config = ShellscriptToUserConfig(filepath)
-    config = complete_config(config)
-    return config
-
-
 def initialize_from_yaml(filepath):
+    user_config = {}
     for file_ending in YAML_AUTO_EXTENSIONS:
         if filepath.endswith(file_ending) and not file_ending == "":
             user_config = yaml_file_to_dict(filepath)
@@ -257,18 +255,37 @@ def initialize_from_yaml(filepath):
             user_config["general"]["runscript_abspath"] = filepath
 
             user_config = complete_config(user_config)
+    if not user_config:
+        user_error(
+            "Incorrect extension",
+            f"The runscript provided (``{filepath}``) does not have a valid file "
+            "extension. The following are valid file extensions for runscripts: "
+            f"{YAML_AUTO_EXTENSIONS[1:]}"
+        )
     return user_config
 
+def check_for_empty_components_in_user_config(user_config):
+    for model in list(user_config):
+        if user_config[model] is None or user_config[model] == "" or not user_config[model]:
+            user_note(
+                f"Warning: YAML syntax",
+                f"The component ``{model}`` in your configuration "
+                f"file ``{user_config['general']['runscript_abspath']}`` is empty. "
+                "No further variables are set for this component in your runscript."
+            )
+            del user_config[model]
+    return user_config
 
 def complete_config(user_config):
     if not "general" in user_config:
         user_config["general"] = {}
     user_config["general"]["additional_files"] = []
+    user_config = check_for_empty_components_in_user_config(user_config)
 
     while True:
         for model in list(user_config):
             if "further_reading" in user_config[model]:
-                if type(user_config[model]["further_reading"]) == list:
+                if isinstance(user_config[model]["further_reading"], list):
                     for additional_file in user_config[model]["further_reading"]:
                         if (
                             not additional_file
@@ -277,7 +294,7 @@ def complete_config(user_config):
                             user_config["general"]["additional_files"].append(
                                 additional_file
                             )
-                elif type(user_config[model]["further_reading"]) == str:
+                elif isinstance(user_config[model]["further_reading"], str):
                     additional_file = user_config[model]["further_reading"]
                     if (
                         not additional_file
@@ -503,7 +520,7 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     if attach_key in config:
         attach_value = config[attach_key]
         del config[attach_key]
-        if type(attach_value) == str:
+        if isinstance(attach_value, str):
             attach_value = [attach_value]
         for attach_value in attach_value:
             try:
@@ -579,11 +596,11 @@ def new_dict_merge(dct, merge_dct, winner="to_be_included"):
     :param winner: should be either receiving (default) or to_be_included
     :return: None
     """
-    for k, v in six.iteritems(merge_dct):
+    for k in merge_dct:
         if (
             k in dct
             and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], collections.Mapping)
+            and isinstance(merge_dct[k], Mapping)
         ):
             new_dict_merge(dct[k], merge_dct[k], winner)
         else:
@@ -617,48 +634,18 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
     """
     # option to overwrite a dict value if merge_dict contains empty value. Default
     # is False
+
     dont_overwrite_with_empty_value = kwargs.get(
         "dont_overwrite_with_empty_value", False
     )
 
-    for k, v in six.iteritems(merge_dct):
+    for k, v in merge_dct.items():
         if (
             k in dct
-            and isinstance(dct[k], dict)
-            and isinstance(merge_dct[k], collections.Mapping)
+            and isinstance(v, dict)
+            and isinstance(merge_dct[k], Mapping)
         ):
-            # NOTE(PG): this is a very bad hack and doesn't belong here at all.
-            # Maybe instead the yaml_file_to_dict needs to say something like
-            # "add_debug_info", so everything gets put together, but for right
-            # now you are given ifnromation where your config originally came
-            # from...
-            #
-            # IDEA: It would be great if somehow we knew which key came from
-            # which config file: some are in the user, some are in the setup,
-            # some are in the component. However, I have no idea how to do that
-            # correctly...Turn the keys in the config into named tuples with
-            # the original file? Make a custom "class" for config keys?? That
-            # would then be:
-            #
-            # config['echam'].keys()
-            # * (key_name: namelist_changes, came_from: user, overrides: [setup, component])
-            # Above, the overrides list always gets longer depending on where the value actually came from.
-            # * (another key-tuple)
-            # * and so on...
-            #
-            # An idea...but I have absolutely no clue how to cleanly implement that...
-            if k != "debug_info":
-                dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
-            else:
-                if "debug_info" in dct:
-                    if isinstance(dct["debug_info"]["loaded_from_file"], str):
-                        dct["debug_info"]["loaded_from_file"] = [
-                            dct["debug_info"]["loaded_from_file"]
-                        ]
-                    else:
-                        dct["debug_info"]["loaded_from_file"].append(
-                            merge_dct["debug_info"]["loaded_from_file"]
-                        )
+            dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
         # MA: I'm not super happy about the resolve_nested_adds implementation. Nested
         # adds should probably resolved in a different place, after the first level
         # ones are resolved.
@@ -804,7 +791,7 @@ def find_remove_entries_in_config(mapping, model_name, models=[]):
     while mappings:
         mapping = mappings.pop()
         try:
-            items = six.iteritems(mapping)
+            items = mapping.items()
         except AttributeError:
             continue
         for key, value in items:
@@ -831,10 +818,10 @@ def remove_entries_from_chapter(config, remove_chapter, remove_entries):
 def add_entries_from_chapter(config, add_chapter, add_entries):
     my_entries = copy.deepcopy(add_entries)
     if add_chapter in config:
-        if type(config[add_chapter]) == list:
+        if isinstance(config[add_chapter], list):
             for entry in my_entries:
                 config[add_chapter].append(entry)
-        elif type(config[add_chapter]) == dict:
+        elif isinstance(config[add_chapter], dict):
             # MA: I'm not supper happy about the resolve_nested_adds implementation
             dict_merge(
                 config[add_chapter],
@@ -961,7 +948,7 @@ def basic_find_remove_entries_in_config(mapping):
     while mappings:
         mapping = mappings.pop()
         try:
-            items = six.iteritems(mapping)
+            items = mapping.items()
         except AttributeError:
             continue
         for key, value in items:
@@ -979,12 +966,7 @@ def basic_find_add_entries_in_config(mapping):
     mappings = [mapping]
     while mappings:
         mapping = mappings.pop()
-        # try:
-        #    items = six.iteritems(mapping)
-        # except AttributeError:
-        #    continue
-        for key in list(mapping):
-            value = mapping[key]
+        for key, value in mapping.items():
             # for key, value in items:
             if isinstance(key, str) and key.startswith("add_"):
                 all_adds.append((key, value))
@@ -1001,7 +983,7 @@ def find_add_entries_in_config(mapping, model_name):
     while mappings:
         mapping = mappings.pop()
         try:
-            items = six.iteritems(mapping)
+            items = mapping.items()
         except AttributeError:
             continue
         for key, value in items:
@@ -1014,9 +996,6 @@ def find_add_entries_in_config(mapping, model_name):
     # all_adds = [(add_echam.forcing_files, [sst, sic,])]
     # NOTE: Not Allowed: all_adds = [(add_echam.forcing_files, sst)]
     return all_adds
-
-
-list_counter = 0
 
 
 def add_entry_to_chapter(
@@ -1047,61 +1026,39 @@ def add_entry_to_chapter(
     # If the desired chapter doesn't exist yet, just put it there
     logging.debug(model_to_add_to)
     logging.debug(add_chapter)
-    if (
-        not add_chapter.split(".")[-1].replace("add_", "")
-        in target_config[model_to_add_to]
-    ):
-        target_config[model_to_add_to][
-            add_chapter.split(".")[-1].replace("add_", "")
-        ] = add_entries
+
+    # Eg. add_general.mylist -> mylist
+    chapter_to_add = add_chapter.split(".")[-1].replace("add_", "")
+    if chapter_to_add not in target_config[model_to_add_to]:
+        target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
-        if not type(
-            target_config[model_to_add_to][
-                add_chapter.split(".")[-1].replace("add_", "")
-            ]
-        ) == type(add_entries):
-            raise TypeError("Something is wrong")
-        else:
-            if isinstance(
-                target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ],
-                list,
-            ):
-                # Define the list to be modified
-                mod_list = target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ]
-                # Add the entries
-                mod_list += add_entries
-                # Remove duplicates
-                mod_list_no_dupl = []
-                for el in mod_list:
-                    if not isinstance(el, (dict, tuple, list)):
-                        if not el in mod_list_no_dupl:
-                            mod_list_no_dupl.append(el)
-                    else:
+        if not isinstance(add_entries, type(target_config[model_to_add_to][chapter_to_add])):
+            error_type = "Type mismatch"
+            error_text = f"Can not add a variable of incompatible type ``{type(add_entries).__name__}`` to ``{chapter_to_add}``"
+            user_error(error_type, error_text)
+
+        if isinstance(target_config[model_to_add_to][chapter_to_add], list):
+            # Define the list to be modified
+            mod_list = target_config[model_to_add_to][chapter_to_add]
+            # Add the entries
+            mod_list.extend(list(flatten_nested_lists(add_entries)))
+
+            # Remove duplicates
+            mod_list_no_dupl = ListWithProvenance([], None)
+            for el in mod_list:
+                if not isinstance(el, (dict, tuple, list)):
+                    if el not in mod_list_no_dupl:
                         mod_list_no_dupl.append(el)
-                target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ] = mod_list_no_dupl
-                global list_counter
-                list_counter += 1
-            elif isinstance(
-                target_config[model_to_add_to][
-                    add_chapter.split(".")[-1].replace("add_", "")
-                ],
-                dict,
-            ):
-                # If the chapter is a dictionary use dict_merge where the new entries
-                # have priority over the preexisting ones (user choices win over
-                # anything else)
-                dict_merge(
-                    target_config[model_to_add_to][
-                        add_chapter.split(".")[-1].replace("add_", "")
-                    ],
-                    add_entries,
-                )
+                else:
+                    mod_list_no_dupl.append(el)
+            target_config[model_to_add_to][chapter_to_add] = mod_list_no_dupl
+            global list_counter
+            list_counter += 1
+        elif isinstance(target_config[model_to_add_to][chapter_to_add], dict):
+            # If the chapter is a dictionary use dict_merge where the new entries
+            # have priority over the preexisting ones (user choices win over
+            # anything else)
+            dict_merge(target_config[model_to_add_to][chapter_to_add], add_entries)
     if list_counter > 1:
         pass
         # pdb.set_trace()
@@ -1224,7 +1181,7 @@ def find_value_for_nested_key(mapping, key_of_interest, tree=[]):
             tree = [None]
     for leaf in reversed(tree):
         logging.debug("Looking in bottommost leaf %s", leaf)
-        for key, value in six.iteritems(mapping):
+        for key, value in mapping.items():
             if key == key_of_interest:
                 return value
         if leaf:
@@ -1263,7 +1220,7 @@ def basic_choose_blocks(config_to_resolve, config_to_search, isblacklist=True):
 def basic_list_all_keys_starting_with_choose(mapping, ignore_list, isblacklist):
     logging.debug("Top of list_all_keys_starting_with_choose")
     all_chooses = []
-    for key, value in six.iteritems(mapping):
+    for key, value in mapping.items():
         if (
             isinstance(key, str)
             and key.startswith("choose_")
@@ -1329,7 +1286,7 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
 
 def basic_determine_set_variables_in_choose_block(config):
     set_variables = []
-    for k, v in six.iteritems(config):
+    for k, v in config.items():
         if isinstance(v, dict):  # and isinstance(k, str) and k.startswith("choose_"):
             # Go in further
             set_variables += basic_determine_set_variables_in_choose_block(v)
@@ -1363,7 +1320,7 @@ def determine_set_variables_in_choose_block(config, valid_model_names, model_nam
         determined in ``config``
     """
     set_variables = []
-    for k, v in six.iteritems(config):
+    for k, v in config.items():
         if isinstance(k, str) and k in valid_model_names:
             logging.debug(k)
             model_name = k
@@ -1400,7 +1357,6 @@ def basic_find_one_independent_choose(all_set_variables):
     """
     task_list = []
     for choose_keyword in list(all_set_variables):
-        # for choose_keyword, set_vars in six.iteritems(value):
         task_list.append(choose_keyword)
         task_list = basic_add_more_important_tasks(
             choose_keyword, all_set_variables, task_list
@@ -1468,17 +1424,46 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         choice = do_math_in_entry([False], choice, config)
     logging.debug(choice)
 
-    if choice in config_to_replace_in.get(choose_key):
-        for update_key, update_value in six.iteritems(
-            config_to_replace_in[choose_key][choice]
+    # This allows users to use version numbers (floats) and integers as choices inside
+    # the choose_blocks, instead of having to specify the choices as strings
+    if isinstance(choice, (int, float)) and not isinstance(choice, bool):
+        choice = str(choice)
+    choices_available = {}
+    if not isinstance(config_to_replace_in.get(choose_key, {}), dict):
+        user_error(
+            "choose_ block",
+            "``choose_`` blocks need to be defined as ``dictionaries``. Currently, "
+            f"``{choose_key}`` is of type ``{type(config_to_replace_in[choose_key])}``",
+        )
+    for ckey, cval in config_to_replace_in.get(choose_key, {}).items():
+        if (
+            isinstance(ckey, (int, float))
+            and not isinstance(ckey, bool)
+            and not isinstance(choice, bool)
         ):
+            choices_available[str(ckey)] = cval
+        else:
+            choices_available[ckey] = cval
+
+    # Are choices all booleans?
+    all_choices_are_bool = True
+    for ckey in choices_available:
+        all_choices_are_bool &= isinstance(ckey, bool)
+    # If the choices are booleans and the ``choice`` is a string, try to transform the
+    # string in an integer (that will be able to select a choice from the boolean
+    # choices)
+    if all_choices_are_bool and isinstance(choice, str):
+        if choice == "0" or choice == "1":
+            choice = int(choice)
+
+    # Resolve the choose variables
+    if choice in choices_available:
+        for update_key, update_value in choices_available[choice].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):
         logging.debug("Found a * case!")
-        for update_key, update_value in six.iteritems(
-            config_to_replace_in[choose_key]["*"]
-        ):
+        for update_key, update_value in config_to_replace_in[choose_key]["*"].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
     else:
         # Those two are too noisy
@@ -1528,7 +1513,7 @@ def resolve_choose_with_var(
     var : str
         Name of the variable to be searched inside ``choose_`` blocks.
     config : dict
-        Model configuration to be changed if the ``var`` is resolved by the ``choose_``.
+        Component configuration to be changed if the ``var`` is resolved by the ``choose_``.
     user_config : dict
         User configuration, used to search for the selected case of the ``choose_``.
     model_config : dict
@@ -1541,14 +1526,10 @@ def resolve_choose_with_var(
     sep = ","
     # Find the path to the variable ``var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_var = find_key(config, var, exc_strings="add_", paths2finds=[], sep=sep)
-    choose_with_var = [
-        x for x in choose_with_var if "choose_" in x and f"choose_{var}" not in x
-    ]
+    choose_with_var = get_chooses_with_var(config, var, sep=sep)
     # Find the path to the variable ``add_var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_add_var = find_key(config, f"add_{var}", paths2finds=[], sep=sep)
-    choose_with_add_var = [x for x in choose_with_add_var if "choose_" in x]
+    choose_with_add_var = get_chooses_with_var(config, f"add_{var}", sep=sep)
 
     # Resolve first for ``<var>`` and then for ``add_<var>``
     for choose_with_var, lvar in [
@@ -1593,6 +1574,20 @@ def resolve_choose_with_var(
                 config_copy[choose_with_var_new] = config_copy[choose_with_var]
                 del config_copy[choose_with_var]
                 choose_with_var = choose_with_var_new
+
+            # Resolve choose_key in case it is defined within another choose_block
+            for conf in [user_config, setup_config, model_config]:
+                component_config = conf.get(component_with_key, [])
+                if component_config:
+                    resolve_choose_with_var(
+                        choose_key,
+                        component_config,
+                        current_model=component_with_key,
+                        user_config=user_config,
+                        model_config=model_config,
+                        setup_config=setup_config
+                    )
+
             # Find where the case for the ``choose_`` is defined, with priority: user ->
             # setup -> model
             config_to_search_into = None
@@ -1612,6 +1607,63 @@ def resolve_choose_with_var(
                 # the ``var`` value to the ``config``.
                 if config_copy.get(var):
                     config[var] = config_copy.get(var)
+
+
+def get_chooses_with_var(component_config, var, sep=","):
+    """
+    Finds all the paths of a variable ``var`` contained in a case of a ``choose_``
+    (paths that start with ``choose_`` and containing the variable defined by the
+    string ``var``).
+
+    Parameters
+    ----------
+    component_config : dict
+        Config dictionary of a given component
+    var : str
+        Variable contained in the case of a choose
+    sep : str
+        Path separator
+
+    Returns
+    -------
+    choose_paths : list
+        A list of all the paths of the ``var`` vatiable contained in a case of a
+        ``choose_``
+    """
+
+    # Find all paths containing the variable ``var`` and excluding the ``exc_string``
+    paths_with_var = find_key(
+        component_config, var, paths2finds=[], sep=sep
+    )
+
+    # Filter out the paths that do not start with ``choose_`` and the ones including the
+    # target variable
+    choose_paths = []
+    for path_with_var in paths_with_var:
+        # Finds whether the variable containing the string ``var`` is a real variable
+        # or instead, a case of a ``choose_`` block. For example, var="albedo" and
+        # there is a path with ``choose_computer.name,albedo,pool_dir``. This path
+        # needs to be excluded as ``albedo`` in this case is not a var, but a case for
+        # the ``choose_``
+        split_path = path_with_var.split(sep)
+        prev_part = ""
+        for path_part in split_path:
+            if "choose_" not in path_part and "choose_" in prev_part and var in path_part:
+                var_is_variable = False
+            elif path_part == var:
+                var_is_variable = True
+            else:
+                var_is_variable = False
+            prev_part = path_part
+
+        # Filters out choose paths not containing the matching variable
+        if (
+            path_with_var.startswith("choose_")
+            and var_is_variable
+        ):
+            choose_paths.append(path_with_var)
+
+    return choose_paths
 
 
 def basic_add_more_important_tasks(choose_keyword, all_set_variables, task_list):
@@ -1696,6 +1748,7 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
     return task_list
 
 
+@keep_provenance_in_recursive_function
 def recursive_run_function(tree, right, level, func, *args, **kwargs):
     """Recursively runs func on all nested dicts.
 
@@ -1744,25 +1797,15 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logging.debug("Top of function")
     # logging.debug("tree=%s", tree)
     if level == "mappings":
-        do_func_for = [dict, list]
+        do_func_for = (dict, list)
     elif level == "atomic":
-        do_func_for = [str, int, float, Date]
-        if six.PY2:
-            do_func_for.append(unicode)
+        do_func_for = (str, int, float, Date)
     elif level == "always":
-        do_func_for = [str, dict, list, int, float, bool]
+        do_func_for = (str, dict, list, int, float, bool, BoolWithProvenance)
     elif level == "keys":
-        do_func_for = []
+        do_func_for = ()
     else:
-        do_func_for = []
-
-    # Python 2/3 error in YAML parser, bad workaround:
-    if six.PY2:
-        if isinstance(right, unicode):
-            logging.warning("Unicode type detected, converting to a regular string!")
-            right = right.encode("utf-8")
-            assert isinstance(right, str)
-            logging.warning(right)
+        do_func_for = ()
 
     logging.debug("Type right: %s", type(right))
     logging.debug("Do func for: %s", do_func_for)
@@ -1776,7 +1819,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             right.update({returned_key: old_value})
 
     # logger.debug("right is a %s!", type(right))
-    if type(right) in do_func_for:
+    if isinstance(right, do_func_for):
         if isinstance(right, dict):
             keys = list(right)
             for key in keys:
@@ -1804,7 +1847,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logger.debug("finished with do_func_for")
 
     if isinstance(right, list):
-        newright = []
+        if isinstance(right, ListWithProvenance):
+            newright = ListWithProvenance([], None)
+        else:
+            newright = []
         for index, item in enumerate(right):
             new_item = recursive_run_function(
                 tree + [None], item, level, func, *args, **kwargs
@@ -1816,8 +1862,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 extremely undesirable way of solving this
                 Miguels fault
             """
-            if type(item) == str and "[[" in item and func == list_to_multikey:
+            if isinstance(item, str) and "[[" in item and func == list_to_multikey:
                 newright += new_item
+            elif isinstance(new_item, list):
+                newright.extend(new_item)
             else:
                 newright.append(new_item)
         right = newright
@@ -1826,8 +1874,9 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         for key in keys:
             # Avoid doing this for ``prev_run`` chapters, this is not needed as the
             # previous config is already resolved
-            if key == "prev_run":  # PrevRunInfo
-                continue  # PrevRunInfo
+            if isinstance(key, str):
+                if ("prev_run" in key) or ("prev_chunk" in key):  # PrevRunInfo
+                    continue  # PrevRunInfo
             value = right[key]
             right[key] = recursive_run_function(
                 tree + [key], value, level, func, *args, **kwargs
@@ -1840,7 +1889,7 @@ def recursive_get(config_to_search, config_elements):
     Recusively gets entries in a nested dictionary in the form ``outer_key.middle_key.inner_key = value``
 
     Given a list of config elements in the form above (e.g. the result of
-    splitting the string ``"outer_key.middle_key.inner_key".split(".")``` on
+    splitting the string ``"outer_key.middle_key.inner_key".split(".")`` on
     the dot), the value "value" of the innermost nest is returned.
 
     Parameters
@@ -1876,17 +1925,6 @@ def recursive_get(config_to_search, config_elements):
     if my_config_elements:
         return recursive_get(result, my_config_elements)
 
-    # Unicode vs Str again
-    if six.PY2:
-        if isinstance(result, list):
-            for index, entry in enumerate(result):
-                if isinstance(entry, unicode):
-                    logging.critical("Changing unicode to str!")
-                    result[index] = str(index)
-        elif isinstance(result, unicode):
-            logging.critical("Changing unicode to str!")
-            entries_of_key = str(entries_of_key)
-
     return result
 
 
@@ -1899,19 +1937,20 @@ def determine_regex_list_match(test_str, regex_list):
     return any(result)
 
 
+@keep_provenance_in_recursive_function
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
         tree = tree[:-1]
     if isinstance(raw_str, str) and "${" in raw_str:
-        ok_part, rest = raw_str.split("${", 1)
-        var, new_raw = rest.split("}", 1)
+        prefix, rest = raw_str.split("${", 1)
+        var, suffix = rest.split("}", 1)
         if ((determine_regex_list_match(var, white_or_black_list)) != isblacklist) and (
             not determine_regex_list_match(var, constant_blacklist)
         ):
             var_result, var_attrs = actually_find_variable(tree, var, full_config)
 
-            if type(var_result) == str:
+            if isinstance(var_result, str):
                 if "${" in var_result:
                     var_result = find_variable(
                         tree,
@@ -1921,7 +1960,7 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
                         isblacklist,
                     )
 
-                if "$((" in var_result:
+                if isinstance(var_result, str) and "$((" in var_result:
                     var_result = do_math_in_entry(tree, var_result, full_config)
 
             if var_attrs:
@@ -1935,26 +1974,29 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
                     rentry.append(str(getattr(entry, attr)))
                 var_result = "".join(rentry)
 
-            # if var_result:
-            # BUG/FIXME: Note that this means that we **always** will get
-            # back a string if a variable is replaced!
-            if type(var_result) not in [list]:
-                ok_part, var_result, more_rest = (
-                    str(ok_part),
+            # If the substituted variable is not a list, and there is either a
+            # preceding (``prefix``) or following (``suffix``) string, then add up
+            # the parts, making sure that other variables (``${}``) are also
+            # substitute. The "NONE_YET" part is to handle PrevRunInfo class correctly
+            if (not isinstance(var_result, list) and (prefix or suffix)) or (
+                isinstance(var_result, dict) and "NONE_YET" in var_result
+            ):
+                prefix, var_result, more_rest = (
+                    str(prefix),
                     str(var_result),
-                    str(new_raw),
+                    str(suffix),
                 )
 
-                if "${" in ok_part + var_result + more_rest:
+                if "${" in prefix + var_result + more_rest:
                     raw_str = find_variable(
                         tree,
-                        ok_part + var_result + more_rest,
+                        prefix + var_result + more_rest,
                         full_config,
                         white_or_black_list,
                         isblacklist,
                     )
                 else:
-                    raw_str = ok_part + var_result + more_rest
+                    raw_str = prefix + var_result + more_rest
 
             else:
                 return var_result
@@ -2017,9 +2059,10 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
     Notes
     -----
     Internal variable definitions in this function; based upon the example:
-    prefix_[[streams-->STREAM]]_postfix
+    prefix_[[streams-->STREAM]]_suffix
 
-    + ``ok_part``: ``prefix_``
+    + ``prefix``: ``prefix_``
+    + ``suffix``: ``_suffix``
     + ``actual_list``: ``streams-->STREAM``
     + ``key_in_list``: ``streams``
     + ``value_in_list``: ``STREAM``
@@ -2032,8 +2075,8 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
         if isinstance(lhs, str) and lhs:
             if list_fence in lhs:
                 return_dict = {}
-                ok_part, rest = lhs.split(list_fence, 1)
-                actual_list, new_raw = rest.split(list_end, 1)
+                prefix, rest = lhs.split(list_fence, 1)
+                actual_list, suffix = rest.split(list_end, 1)
                 key_in_list, value_in_list = actual_list.split("-->", 1)
                 # PG: THIS NEEDS TO BE OFF!!!
                 # if isblacklist and not determine_regex_list_match(
@@ -2132,7 +2175,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                     keys_of_rhs_dict = list(rhs)
                     for replacement_key in entries_of_key:
                         inner_replacement_dict = replacement_dict[
-                            ok_part + replacement_key + new_raw
+                            prefix + replacement_key + suffix
                         ] = {}
                         for rhs_key in keys_of_rhs_dict:
                             entry = rhs[rhs_key]
@@ -2153,8 +2196,8 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                                 )
                     return_dict2 = replacement_dict
 
-                if list_fence in new_raw:
-                    for key, value in six.iteritems(return_dict2):
+                if list_fence in suffix:
+                    for key, value in return_dict2.items():
                         return_dict.update(
                             list_to_multikey(
                                 tree + [key],
@@ -2171,8 +2214,8 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
 
         if isinstance(rhs, str) and list_fence in rhs:
             rhs_list = []
-            ok_part, rest = rhs.split(list_fence, 1)
-            actual_list, new_raw = rest.split(list_end, 1)
+            prefix, rest = rhs.split(list_fence, 1)
+            actual_list, suffix = rest.split(list_end, 1)
             # seb-wahl: check if a [[ ...]] entry in the string parsed contains
             # '-->' to avoid a crash if a shell command such as 'if [[ ...]]; then' is parsed
             if "-->" in actual_list:
@@ -2197,7 +2240,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                 #            value_in_list, str(entry)
                 #        )
                 #    )
-            if list_fence in new_raw:
+            if list_fence in suffix:
                 out_list = []
                 for rhs_listitem in rhs_list:
                     out_list += list_to_multikey(
@@ -2214,7 +2257,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
     return rhs
 
 
-def determine_computer_from_hostname():
+def determine_computer_yaml_from_hostname():
     """
     Determines which yaml config file is needed for this computer
 
@@ -2228,33 +2271,51 @@ def determine_computer_from_hostname():
     str
         A string for the path of the computer specific yaml file.
     """
-    all_computers = yaml_file_to_dict(FUNCTION_PATH + "/machines/all_machines.yaml")
-    for this_computer in all_computers:
-        for computer_pattern in all_computers[this_computer].values():
+    machine, node = determine_computer_and_node_from_hostname()
+    if machine:
+        return CONFIG_PATH + "/machines/" + machine + ".yaml"
+    else:
+        logging.warning(
+            "The yaml file for this computer (%s) could not be determined!"
+            % socket.gethostname()
+        )
+        logging.warning("Continuing with generic settings...")
+        return CONFIG_PATH + "/machines/generic.yaml"
+
+
+def determine_computer_and_node_from_hostname():
+    """
+    Determines the name of the computer and the node from the hostname
+
+    Returns
+    -------
+    tuple
+        A tuple of two strings, the first being the name of the computer and the
+        second being the node.
+    """
+    all_computers = yaml_file_to_dict(CONFIG_PATH + "/machines/all_machines.yaml")
+    for this_computer, nodes in all_computers.items():
+        for node, computer_pattern in nodes.items():
             if isinstance(computer_pattern, str):
                 if re.match(computer_pattern, socket.gethostname()) or re.match(
                     computer_pattern, socket.getfqdn()
                 ):
-                    return FUNCTION_PATH + "/machines/" + this_computer + ".yaml"
+                    return this_computer, node
             elif isinstance(computer_pattern, (list, tuple)):
                 # Pluralize to avoid confusion:
                 computer_patterns = computer_pattern
                 for pattern in computer_patterns:
                     if re.match(pattern, socket.gethostname()):
-                        return FUNCTION_PATH + "/machines/" + this_computer + ".yaml"
+                        return this_computer, node
+
     logging.warning(
-        "The yaml file for this computer (%s) could not be determined!"
+        "The name and node for this computer (%s) could not be determined!"
         % socket.gethostname()
     )
-    logging.warning("Continuing with generic settings...")
-    return FUNCTION_PATH + "/machines/generic.yaml"
-
-    # raise FileNotFoundError(
-    #    "The yaml file for this computer (%s) could not be determined!"
-    #    % socket.gethostname()
-    # )
+    return None, None
 
 
+@keep_provenance_in_recursive_function
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2347,7 +2408,7 @@ def do_math_in_entry(tree, rhs, config):
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
         result = eval(math)
-        if type(result) == list:
+        if isinstance(result, list):
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
@@ -2359,6 +2420,7 @@ def do_math_in_entry(tree, rhs, config):
     return convert(entry.strip(), tree)
 
 
+@keep_provenance_in_recursive_function
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
@@ -2368,11 +2430,12 @@ def mark_dates(tree, rhs, config):
     logging.debug(entry)
     # if "${" in str(entry):
     #    return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         entry = str(entry) + DATE_MARKER
     return entry
 
 
+@keep_provenance_in_recursive_function
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2383,7 +2446,7 @@ def marked_date_to_date_object(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         # if isinstance(entry, str) and DATE_MARKER in entry and "<--" not in entry:
         while DATE_MARKER in entry and "${" not in entry:
             entry = entry.replace(DATE_MARKER, "")
@@ -2403,6 +2466,7 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2414,12 +2478,13 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
     lhs = tree[-1]
     entry = rhs
-    if type(entry) == str:
+    if isinstance(entry, str):
         if "[[" in entry:
             return rhs
         if "<--" in entry:
@@ -2464,6 +2529,7 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2478,7 +2544,7 @@ def purify_booleans(tree, rhs, config):
 
 
 def to_boolean(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return value
     elif value in ["True", "true", ".true."]:
         return True
@@ -2487,9 +2553,9 @@ def to_boolean(value):
 
 
 def could_be_bool(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return True
-    elif type(value) == str:
+    elif isinstance(value, str):
         if value.strip() in ["True", "true", "False", "false", ".true.", ".false."]:
             return True
     return False
@@ -2549,8 +2615,6 @@ def convert(value, tree=["NO_KEY"]):
         return int(float(value))
     elif could_be_float(value):
         return float(value)
-    elif could_be_complex(value):
-        return complex(value)
     return value
 
 
@@ -2710,9 +2774,9 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
         # If the key meets the criteria, add the path to the paths2finds
         if strings_in_key:
             paths2finds.append(level + str(key))
-        # If the key does not meet the criteria, but its value is a dictionary
-        # keep searching inside (recursion).
-        elif not strings_in_key and isinstance(d_search[key], dict):
+
+        # If the key is a dictionary keep searching inside (recursion).
+        if isinstance(d_search[key], dict):
             paths2finds = find_key(
                 d_search[key],
                 k_search,
@@ -2725,7 +2789,7 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
     return paths2finds
 
 
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
+def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
     """
     Notify the user about something. In the future this should also write in the log.
 
@@ -2736,14 +2800,23 @@ def user_note(note_heading, note_text, color=colorama.Fore.YELLOW):
     text : str
         Text clarifying the note.
     """
-    colorama.init(autoreset=True)
     reset_s = colorama.Style.RESET_ALL
-    note_text = re.sub("``([^`]*)``", f"{color}\\1{reset_s}", note_text)
-    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}")
+
+    if isinstance(note_text, list):
+        new_note_text = ""
+        for item in note_text:
+            new_note_text = f"{new_note_text}- {item}\n"
+        note_text = new_note_text
+
+    for dsymbol in dsymbols:
+        note_text = re.sub(
+            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
+        )
+    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
     print(f"{note_text}\n")
 
 
-def user_error(error_type, error_text, exit_code=1):
+def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
     """
     User-friendly error using ``sys.exit()`` instead of an ``Exception``.
 
@@ -2757,7 +2830,7 @@ def user_error(error_type, error_text, exit_code=1):
         The exit code to send back to the parent process (default to 1)
     """
     error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED)
+    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
     sys.exit(exit_code)
 
 
@@ -2766,6 +2839,8 @@ class GeneralConfig(dict):  # pragma: no cover
 
     def __init__(self, model, version, user_config):
         super(dict, self).__init__()
+
+        self.check_user_defined_versions(user_config)
 
         if os.path.isfile(model + "-" + version):
             config_path = model + "-" + version
@@ -2784,11 +2859,19 @@ class GeneralConfig(dict):  # pragma: no cover
             self.config = yaml_file_to_dict(include_path)
         else:
             self.config = include_path
+
+        resolve_choose_with_var(
+            "further_reading",
+            self.config,
+            model_config={model: self.config},
+            user_config=user_config,
+        )
+
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
         self._config_init(user_config)
-        for k, v in six.iteritems(self.config):
+        for k, v in self.config.items():
             self.__setitem__(k, v)
         del self.config
 
@@ -2796,6 +2879,8 @@ class GeneralConfig(dict):  # pragma: no cover
         raise NotImplementedError(
             "Subclasses of GeneralConfig must define a _config_init!"
         )
+
+GeneralConfig.yaml_dump = esm_parser.yaml_dump
 
 
 class ConfigSetup(GeneralConfig):  # pragma: no cover
@@ -2824,7 +2909,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # construct the `defaults` section of the configuration
         user_config["defaults"].update(default_infos)
 
-        computer_file = determine_computer_from_hostname()
+        computer_file = determine_computer_yaml_from_hostname()
         computer_config = yaml_file_to_dict(computer_file)
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):
@@ -2875,6 +2960,16 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 setup_config
             )
             setup_config["general"]["valid_model_names"] = valid_model_names = []
+
+            # Resolve the chooses including versions of the components to be able to
+            # later load the correct yaml files
+            for component in setup_config:
+                resolve_choose_with_var(
+                    "version",
+                    setup_config[component],
+                    current_model=component,
+                    user_config=user_config,
+                    setup_config=setup_config)
         else:
             setup_config["general"].update({"standalone": True})
             setup_config["general"].update({"models": [self.config["model"]]})
@@ -2905,9 +3000,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         setup_config["general"].update(
             {
-                "esm_function_dir": esm_function_dir,
-                "esm_namelist_dir": esm_namelist_dir,
-                "esm_runscript_dir": esm_runscript_dir,
+                "esm_function_dir": CONFIG_PATH,
+                "esm_namelist_dir": NAMELIST_DIR,
+                "esm_runscript_dir": RUNSCRIPT_DIR,
+                "esm_couplings_dir": COUPLINGS_DIR,
                 "expid": "test",
             }
         )
@@ -3017,8 +3113,49 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             verbose=self.config["general"].get("verbose", False),
         )
 
-        # pprint_config(self.config)
         # sys.exit(0)
+
+    def check_user_defined_versions(self, user_config):
+        """
+        Checks whether the user has defined the variable ``version`` in both the
+        main model/coupled setup section and in ``general`` and if that's the case
+        throws and error. If ``version`` is only defined in the ``general`` section
+        it creates a ``version`` with the same value in the model section, ensuring
+        that the user can arbitrarily define ``version`` in either ``general`` or
+        ``<model>`` sections.
+
+        Parameters
+        ----------
+        user_config : dict
+            Experiment configuration defined by the user (e.g. runscript)
+        setup_config : dict
+            Experiment configuration defined by the default ESM-Tools configuration
+            files (``<PATH>/esm_tools/configs/``)
+
+        Notes
+        -----
+        Version error : esm_parser.user_error
+            If something goes wrong with the user's version choices it exits the code
+            with a ``esm_parser.user_error``
+        """
+        if user_config["general"].get("run_or_compile", "runtime") == "runtime":
+            version_in_runscript_general = user_config["general"].get("version")
+            model_name = user_config["general"]["setup_name"]
+            version_in_runscript_model = user_config.get(model_name, {}).get("version")
+            if version_in_runscript_general and version_in_runscript_model:
+                user_error(
+                    "Version",
+                    "You have defined the ``version`` variable both in the "
+                    f"``general`` and ``{model_name}`` sections of your runscript. "
+                    "This is not supported as it is redundant information. Please "
+                    "define ``only one version`` in one of the two sections.",
+                )
+            elif version_in_runscript_general and not version_in_runscript_model:
+                if model_name in user_config:
+                    user_config[model_name]["version"] = version_in_runscript_general
+            elif version_in_runscript_model and not version_in_runscript_general:
+                if "general" in user_config:
+                    user_config["general"]["version"] = version_in_runscript_model
 
     def finalize(self):
         self.run_recursive_functions(self)

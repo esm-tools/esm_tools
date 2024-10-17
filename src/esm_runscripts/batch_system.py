@@ -1,18 +1,16 @@
-import os
-import textwrap
-import sys
-import stat
 import copy
+import os
+import stat
+import sys
+import textwrap
 
 import esm_environment
-import six
-
 from esm_parser import find_variable, user_error, user_note
-from . import helpers
-from . import dataprocess
-from . import prepare
-from .slurm import Slurm
+from loguru import logger
+
+from . import dataprocess, helpers, prepare
 from .pbs import Pbs
+from .slurm import Slurm
 
 known_batch_systems = ["slurm", "pbs"]
 reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect"]
@@ -47,13 +45,15 @@ class batch_system:
     def job_is_still_running(self, jobid):
         return self.bs.job_is_still_running(jobid)
 
-    def add_pre_launcher_lines(self, config, runfile):
-        return self.bs.add_pre_launcher_lines(config, runfile)
+    def add_pre_launcher_lines(self, config, cluster, runfile):
+        return self.bs.add_pre_launcher_lines(config, cluster, runfile)
 
+    # TODO: remove it once it's not needed anymore (substituted by packjob)
     def write_het_par_wrappers(self, config):
         return self.bs.write_het_par_wrappers(config)
 
-    # methods that actually do something
+    def het_par_headers(self, config, cluster, all_values_flat):
+        return self.bs.het_par_headers(config, cluster, all_values_flat)
 
     def prepare_launcher(self, config, cluster):
         self.bs.prepare_launcher(config, cluster)
@@ -144,7 +144,7 @@ class batch_system:
                     all_flags.append(flag)
 
         # some items in `all_values` list might be lists, so flatten it
-        all_values = [this_batch_system[flag] for flag in all_flags]
+        all_values = [this_batch_system.get(flag) for flag in all_flags]
         all_values_flat = []
         for value in all_values:
             if isinstance(value, str):
@@ -152,11 +152,18 @@ class batch_system:
             elif isinstance(value, list):
                 all_values_flat.extend(value)
 
+        # Call the ``het_par_headers`` method to calculate the heterogeneous
+        # parallelization flags, if necessary
+        all_values_flat = config["general"]["batch"].het_par_headers(
+            config, cluster, all_values_flat
+        )
+
         # loop over all batch flag values and replace the tags
         for value in all_values_flat:
-            for (tag, repl) in replacement_tags:
+            for tag, repl in replacement_tags:
                 value = value.replace(tag, str(repl))
-            header.append(this_batch_system["header_start"] + " " + value)
+            if this_batch_system.get("header_start") is not None:
+                header.append(this_batch_system["header_start"] + " " + value)
 
         return header
 
@@ -184,7 +191,14 @@ class batch_system:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
                 if "nproc" in config[model]:
-                    print(f"nproc: {config[model]['nproc']}")
+                    logger.info(f"nproc: {config[model]['nproc']}")
+
+                    # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI processes to start a program multiple times
+                    # (used for FESOM-REcoM tracer loop parallelization (MPI based))
+                    mpi_num_groups = config[model].get("mpi_num_groups", 1)
+
+                    # kh 22.06.22 adjust total number of MPI processes via mpi_num_groups at lowest level (nproc)
+                    config[model]["nproc"] *= mpi_num_groups
                     config[model]["tasks"] = config[model]["nproc"]
 
                     # cores_per_node = config['computer']['cores_per_node']
@@ -208,6 +222,11 @@ class batch_system:
                 else:
                     continue
 
+                # seb-wahl: add support for ECHAM6's parallel I/O feature
+                # namelist parctl in namelist.echam
+                if "nprocio" in config[model]:
+                    config[model]["tasks"] += config[model].get("nprocio", 0)
+
                 nproc = config[model]["tasks"]
                 if cluster == "compute":
                     cores_per_node = config["computer"]["partitions"]["compute"][
@@ -223,7 +242,7 @@ class batch_system:
 
                 config[model]["threads"] = config[model]["tasks"] * omp_num_threads
                 tasks += config[model]["tasks"]
-                print(f"tasks: {tasks}")
+                logger.info(f"tasks: {tasks}")
                 # Use the number of tasks and threads to update end_proc/core
                 end_proc = start_proc + config[model]["tasks"] - 1
                 end_core = start_core + config[model]["threads"] - 1
@@ -243,9 +262,9 @@ class batch_system:
 
             if (
                 not cluster
-                or not cluster in config["general"]["workflow"]["subjob_clusters"]
+                or cluster not in config["general"]["workflow"]["subjob_clusters"]
             ):
-                print(f"Unknown or unset cluster: {cluster}.")
+                logger.error(f"Unknown or unset cluster: {cluster}.")
                 sys.exit(-1)
             # user defined jobtype doing dataprocessing
             tasks = config["general"]["workflow"]["subjob_clusters"][cluster]["nproc"]
@@ -253,7 +272,7 @@ class batch_system:
             nodes = int(tasks / cores_per_node) + ((tasks % cores_per_node) > 0)
 
         config["general"]["resubmit_tasks"] = tasks
-        print(f"resubmit tasks: {config['general']['resubmit_tasks']}")
+        logger.info(f"resubmit tasks: {config['general']['resubmit_tasks']}")
         config["general"]["resubmit_nodes"] = nodes
 
         return config
@@ -358,7 +377,9 @@ class batch_system:
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
                     commands.append(
-                        "time " + batch_system["execution_command"] + " 2>&1 &"
+                        "time "
+                        + batch_system["execution_command"]
+                        + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
                     )
                     if config["general"].get("multi_srun"):
                         return self.bs.get_run_commands_multisrun(config, commands)
@@ -368,7 +389,9 @@ class batch_system:
                         continue
                     if "execution_command" in config[model]:
                         commands.append(
-                            "time ./" + config[model]["execution_command"] + " 2>&1 &"
+                            "time ./"
+                            + config[model]["execution_command"]
+                            + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
                         )
         else:
             subjob_tasks = dataprocess.subjob_tasks(config, subjob, batch_or_shell)
@@ -419,16 +442,15 @@ class batch_system:
                     ]
 
         if not clusterconf:
-            print(f"No config found for cluster {cluster}.")
+            logger.error(f"No config found for cluster {cluster}.")
             sys.exit(-1)
 
         self = config["general"]["batch"]
         runfilename = batch_system.get_run_filename(config, cluster)
 
-        if config["general"]["verbose"]:
-            print("still alive")
-            print("jobtype: ", config["general"]["jobtype"])
-            print("writing run file for:", cluster)
+        logger.debug("still alive")
+        logger.debug(f"jobtype: {config['general']['jobtype']}")
+        logger.debug(f"writing run file for: {cluster}")
 
         with open(runfilename, "w") as runfile:
 
@@ -436,10 +458,15 @@ class batch_system:
             if batch_or_shell == "batch":
 
                 config = batch_system.calculate_requirements(config, cluster)
-                if cluster in reserved_jobtypes:
+                # TODO: remove it once it's not needed anymore (substituted by packjob)
+                if cluster in reserved_jobtypes and config["computer"].get(
+                    "taskset", False
+                ):
                     config = config["general"]["batch"].write_het_par_wrappers(config)
-                header = batch_system.get_batch_header(config, cluster)
+                # Prepare launcher
                 config = config["general"]["batch"].prepare_launcher(config, cluster)
+                # Initiate the header
+                header = batch_system.get_batch_header(config, cluster)
 
                 for line in header:
                     runfile.write(line + "\n")
@@ -466,7 +493,9 @@ class batch_system:
                         runfile.write(line + "\n")
 
                     # Add actual commands
-                    commands = batch_system.get_run_commands(config, subjob, batch_or_shell)
+                    commands = batch_system.get_run_commands(
+                        config, subjob, batch_or_shell
+                    )
                     # commands = clusterconf.get("data_task_list", [])
                     runfile.write("\n")
                     runfile.write(self.append_start_statement(config, subjob) + "\n")
@@ -474,7 +503,7 @@ class batch_system:
                     runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
                     if cluster in reserved_jobtypes:
                         config["general"]["batch"].add_pre_launcher_lines(
-                            config, runfile
+                            config, cluster, runfile
                         )
 
                     for line in commands:
@@ -504,6 +533,8 @@ class batch_system:
                     + " -r "
                     + str(config["general"]["run_number"])
                     + " -v "
+                    + " --last-jobtype "
+                    + config["general"]["jobtype"]
                 )
 
                 if "--open-run" in config["general"]["original_command"] or not config[
@@ -515,8 +546,10 @@ class batch_system:
                 ] or config["general"].get("use_venv"):
                     observe_call += " --contained-run"
                 else:
-                    print("ERROR -- Not sure if you were in a contained or open run!")
-                    print(
+                    logger.error(
+                        "ERROR -- Not sure if you were in a contained or open run!"
+                    )
+                    logger.error(
                         "ERROR -- See write_simple_runscript for the code causing this."
                     )
                     sys.exit(1)
@@ -556,16 +589,15 @@ class batch_system:
             runfilestats = os.stat(runfilename)
             os.chmod(runfilename, runfilestats.st_mode | stat.S_IEXEC)
 
-        if config["general"]["verbose"]:
-            six.print_("\n", 40 * "+ ")
-            six.print_("Contents of ", runfilename, ":")
-            with open(runfilename, "r") as fin:
-                print(fin.read())
-            if os.path.isfile(self.bs.filename):
-                six.print_("\n", 40 * "+ ")
-                six.print_("Contents of ", self.bs.filename, ":")
-                with open(self.bs.filename, "r") as fin:
-                    print(fin.read())
+        logger.debug("\n" + 40 * "+ ")
+        logger.debug(f"Contents of {runfilename}:")
+        with open(runfilename, "r") as fin:
+            logger.debug(fin.read())
+        if os.path.isfile(self.bs.filename):
+            logger.debug("\n" + 40 * "+ ")
+            logger.debug(f"Contents of {self.bs.filename}:")
+            with open(self.bs.filename, "r") as fin:
+                logger.debug(fin.read())
 
         return config
 
@@ -595,7 +627,6 @@ class batch_system:
                 envfile.write(line + "\n")
 
         return config
-
 
     @staticmethod
     def find_openmp(config):
@@ -631,12 +662,12 @@ class batch_system:
                 (
                     "Since version 6.0, ``heterogeneous_parallelization`` variable "
                     "defined by the user is ignored, and instead its value is "
-                    "set to true if any ``omp_num_threads`` exists in the model's "
-                    "sections. To get rid of this warning, remove "
+                    "set to true if any ``omp_num_threads`` in the model's sections "
+                    "is larger than 1. To get rid of this error, remove "
                     "``heterogeneous_parallelization`` from your yaml files. "
                     "``heterogeneous_parallelization`` can still be used from a "
                     "``choose_`` block to decice the case."
-                )
+                ),
             )
         # Set ``heterogeneous_parallelization`` false, overriding whatever the user
         # has defined for this variable to be
@@ -658,12 +689,10 @@ class batch_system:
                     True,
                 )
             # Set ``heterogeneous_parallelization`` true if needed
-            if (
-                int(omp_num_threads) > 1
-                and model in config["general"].get("valid_model_names", [])
+            if int(omp_num_threads) > 1 and model in config["general"].get(
+                "valid_model_names", []
             ):
-                config["general"]["heterogeneous_parallelization"] = True
-                config["computer"]["heterogeneous_parallelization"] = True  # dont like this
+                config["computer"]["heterogeneous_parallelization"] = True
                 if (
                     not config[model].get("nproc", False)
                     and not config[model].get("nproca", False)
@@ -671,6 +700,170 @@ class batch_system:
                 ):
                     config[model]["nproc"] = 1
         return config
+
+    def het_par_launcher_lines(self, config, cluster):
+        """
+        Loops through the components to generate job launcher flags and execution
+        commands, to be appended in substitution to the ``@components@`` tag, in
+        ``computer.execution_command``, that would later be used in the writing of the
+        ``.run`` file, in ``batch_system.py``.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing information about the experiment and
+            experiment directory.
+        cluster : str
+            Type of job cluster.
+        """
+        component_lines = []
+        # Read in the separator to be used in between component calls in the job
+        # launcher
+        sep = config["computer"].get("launcher_comp_sep", "\\\n    ") + " "
+        # Loop through the components
+        for model in config["general"]["valid_model_names"]:
+            command = None
+            # Read in execution command
+            if "execution_command" in config[model]:
+                command = config[model]["execution_command"]
+            elif "executable" in config[model]:
+                command = config[model]["executable"]
+            # Prepare the MPMD commands
+
+            # kh 24.06.22 workaround: filter hdmodel
+            if command and (command != "NONE"):
+                launcher = config["computer"].get("launcher")
+                launcher_flags = self.calc_launcher_flags(config, model, cluster)
+                component_lines.append(f"{launcher_flags} ./{command} ")
+
+        # Merge each component flags and commands into a single string
+        components = sep.join(component_lines)
+        # Substitute the ``@components@`` tag for the final launch command
+        config["computer"]["execution_command"] = (
+            config["computer"]["execution_command"]
+            .replace("@components@", components)
+            .replace("@jobtype@", cluster)
+        )
+
+    @staticmethod
+    def calc_launcher_flags(config, model, cluster):
+        """
+        Calculates the launcher flags for the job luncher based on the ``nproc`` of the
+        different components, with the possibility of using heterogeneous
+        parallelization (using both MPI and OpenMP).
+
+        Launcher flags will vary from job launcher to job launcher, and therefore, a
+        variable ``launcher_flags`` needs to be defined for each different launcher in
+        the ``pbs.yaml`` configuration file. This variable should contain the flags
+        themselves followed by their respective values to be calculated in this method
+        and substituted in their respective tags of the ``launcher_flags`` variable.
+        This method supports the following variables:
+
+            - ``@nproc@``: total number of MPI tasks for the component taken from
+              ``<component>.nproc``.
+            - ``@nproc_per_node@``: number of MPI tasks per node calculated from
+              the number of number of CPUs per MPI task (``<component>.cpus_per_proc``),
+              and the number of cores per node in the machine
+              (``computer.cores_per_node``).
+            - ``@cpus_per_proc@``: number of CPUs per MPI task to be used
+              (``<component>.cpus_per_proc``). If not defined, it takes the value of
+              ``<component>.omp_num_threads``. This variables are not necessarily the
+              same, to allow the use of  more cores per MPI task than OpenMP threads,
+              if necessary.
+            - ``@omp_num_threads@``: number of OpenMP threads per MPI task
+              (``<component>.omp_num_threads``). Its default value is ``1``, if not
+              defined. The number of OpenMP threads per task cannot be larger than the
+              number of CPUs per task.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing information about the experiment and
+            experiment directory.
+        model : str
+            Component for which the flags are to be calculated.
+        cluster : str
+            Type of job cluster.
+
+        Returns
+        -------
+        launcher_flags : str
+            Launcher flags string with the calculated numbers for the ``model`` already
+            substituted in the tags.
+        """
+        launcher = config["computer"]["launcher"]
+        launcher_flags = config["computer"]["launcher_flags_per_component"]
+        # Cores per node
+        # cores_per_node = config["computer"]["cores_per_node"]
+        if cluster == "compute":
+            cores_per_node = config["computer"]["partitions"]["compute"][
+                "cores_per_node"
+            ]
+        else:
+            cores_per_node = config["computer"]["partitions"]["pp"]["cores_per_node"]
+        # Get the OMP number of threads
+        omp_num_threads = config[model].get("omp_num_threads", 1)
+
+        if "nproc" in config[model]:
+            # aprun flags commented following the conventions in p. 14 of the ALEPH ppt
+            # manual day_1.session_2.advanced_use_of_aprun.ppt
+
+            # Total number of PEs (MPI-ranks) (e.g. aprun -n)
+            nproc = config[model]["nproc"]
+            # CPUs per MPI-rank (e.g. aprun -d)
+            cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
+            # Check for CPUs and OpenMP threads
+            if omp_num_threads > cpus_per_proc:
+                esm_parser.user_error(
+                    "OpenMP configuration",
+                    (
+                        "The number of OpenMP threads cannot be larger than the number"
+                        + "of CPUs per MPI task requested. Your values:\n"
+                        + f"    {model}.omp_num_threads: {omp_num_threads}\n"
+                        + f"    {model}.cpus_per_proc: {cpus_per_proc}\n"
+                    ),
+                )
+        elif "nproca" in config[model] and "nprocb" in config[model]:
+            # ``nproca``/``nprocb`` not compatible with ``omp_num_threads``
+            if omp_num_threads > 1:
+                esm_parser.user_note(
+                    "nproc",
+                    "``nproca``/``nprocb`` not compatible with ``omp_num_threads``",
+                )
+            nproc = config[model]["nproca"] * config[model]["nprocb"]
+            cpus_per_proc = 1
+            omp_num_threads = 1
+        else:
+
+            # kh 22.06.22 defensive (user_error/user_note could also be added here)
+            nproc = 0
+            cpus_per_proc = 0
+        #           omp_num_threads = 0
+
+        # Number of nodes needed
+        nodes = int(nproc * cpus_per_proc / cores_per_node) + (
+            (nproc * cpus_per_proc) % cores_per_node > 0
+        )
+        config[model]["nodes"] = nodes
+
+        # PEs (MPI-ranks) per compute node (e.g. aprun -N)
+        nproc_per_node = int(nproc / nodes)
+
+        # Replace tags in the laucher flags
+        replacement_tags = [
+            ("@nnodes@", nodes),
+            ("@nproc@", nproc),
+            ("@nproc_per_node@", nproc_per_node),
+            ("@cpus_per_proc@", cpus_per_proc),
+            ("@omp_num_threads@", omp_num_threads),
+        ]
+        # Replace all tags
+        for tag, repl in replacement_tags:
+            launcher_flags = launcher_flags.replace(tag, str(repl))
+        # Substitute @MODEL@ with the model name
+        launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
+
+        return launcher_flags
 
 
 def submits_another_job(config, cluster):

@@ -35,11 +35,11 @@ echo " ========================== "
 # Modify OIFS restart control file
 # CSTEP is the time step OpenIFS thinks it starts on
 CSTEP=$(printf $(($((SECONDS_SINCE_INITAL))/$TIMESTEP)))
-sed -i `grep -n "CSTEP" ${RESTARTDIR}/rcf|cut -d ':' -f 1`"c \ CSTEP   = \" $CSTEP\"\," ${RESTARTDIR}/rcf
+sed -i "s/CSTEP[^,]*,/CSTEP   = \" $CSTEP\"\,/g" ${RESTARTDIR}/rcf
 #sed -i "s/CSTEP.*/CSTEP = \"$(($((SECONDS_SINCE_INITAL))/$((TIMESTEP))))\",/" ${RESTARTDIR}/rcf
 # CTIME is days since origin
 CTIME=$(printf '%08d' $(($DAYS_SINCE_INITIAL)))0000
-sed -i `grep -n "CTIME" ${RESTARTDIR}/rcf|cut -d ':' -f 1`"c \ CTIME   = \"$(printf '%-9s' $CTIME)  \"\," ${RESTARTDIR}/rcf
+sed -i "s/CTIME[^,]*,/CTIME   = \"$(printf '%-9s' $CTIME)  \"\,/g" ${RESTARTDIR}/rcf
 #sed -i "s/CTIME.*/CTIME = \"${NEWDAYS_FMT}\",/" ${RESTARTDIR}/rcf
 
 if [[ "x${WAM}" == "x1" ]] || [[ "x${WAM}" == "xtrue" ]] || [[ "x${WAM}" == "xTrue" ]]; then

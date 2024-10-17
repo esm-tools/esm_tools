@@ -34,16 +34,13 @@ echo " Output dir: $outdir "
 echo " InExp ID: $inexpid "
 echo " OutExp ID: $outexpid "
 echo " Start date: $startdate "
-echo " End date: $enddate "
 echo " Perturb: $perturb "
 ndate=$(date -u -d "${inidate}" +%Y%m%d)
 initime=$(date -u -d "${inidate}" +%Y-%m-%dT%T)
 starttime=$(date -u -d "${startdate}" +%Y-%m-%dT%T)
-endtime=$(date -u -d "${enddate}" +%Y-%m-%dT%T)
 echo " New date: $ndate "
 echo " Initial time: $initime "
 echo " Start time: $starttime "
-echo " End time: $endtime "
 echo " "
 
 echo " * Change dataDate in files: "

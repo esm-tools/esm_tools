@@ -1,58 +1,85 @@
+# =============================================================================
 # FESOM YAML CONFIGURATION FILE
-#
+# =============================================================================
 
 model: fesom
-branch: master
-version: "1.4"
 type: ocean
 
+# default branch and version
+branch: master
+destination: fesom-1.4
+version: "1.4"
+
 available_versions:
-- 2.0-o
-- 1.4-esm_interface
 - '1.4'
-- '1.4-recom-mocsy-slp'
-- 2.0-paleodyn
-- 1.4-recom-awicm
+- '1.4-esm_interface'
+- '1.4-recom'
+- '1.4-recom-awicm'
 - '2.0'
+- '2.0-o'
+- '2.0-paleodyn'
 - '2.0-r' # OG: temporarily here
-- '2.0-jio'
+- '2.1'
 - '2.1-recom'
 - '2.1-wiso'
-- '2.1'
 
 choose_version:
-  '1.4-recom-awicm':
-    destination: fesom-1.4
-    branch: co2_coupling
-  '1.4-recom-mocsy-slp':
-    branch: fesom-recom-mocsy-slp
-    destination: fesom-1.4
-  '1.4-esm_interface':
-    destination: fesom-1.4
-    branch: using_esm-interface
+    '1.4-esm_interface':
+        branch: using_esm-interface
+    '1.4-recom':
+        branch: fesom_recom_1.4_master
+        # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
+        yearly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.yearly_outputs}"
+            - "${recom.yearly_outputs}"
+        monthly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.monthly_outputs}"
+            - "${recom.monthly_outputs}"
+        daily_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.daily_outputs}"
+            - "${recom.daily_outputs}"
+        12_step_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.12_step_outputs}"
+            - "${recom.12_step_outputs}"
+    '1.4-recom-awicm':
+        branch: fesom_recom_1.4_master
+        # add recom variables to fesom1 output scheduler; see components/recom/recom.yaml
+        yearly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.yearly_outputs}"
+            - "${recom.yearly_outputs}"
+        monthly_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.monthly_outputs}"
+            - "${recom.monthly_outputs}"
+        daily_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.daily_outputs}"
+            - "${recom.daily_outputs}"
+        12_step_outputs_for_AWI_FESOM_YAML:
+            - "${fesom.12_step_outputs}"
+            - "${recom.12_step_outputs}"
 
 git-repository: https://gitlab.dkrz.de/modular_esm/fesom-1.4.git
 install_bins: bin/fesom
 clean_command: ${defaults.clean_command}
 comp_command: mkdir -p build; cd build; cmake ..;   make install
+contact: "dmitry.sidorenko(at)awi.de, nikolay.koldunov(at)awi.de, miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
 metadata:
-        Institute: Alfred Wegener Institute
+        Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
         Description:
                 Multiresolution sea ice-ocean model that solves the equations
                 of motion on unestructured meshes
         Authors: Dmitry Sidorenko (Dmitry.Sidorenko@awi.de), Nikolay V. Koldunov (nikolay.koldunov@awi.de)
         Publications:
-                - "The Finite-volumE Sea ice-Ocean Model (FESOM2) <https://doi.org/10.5194/gmd-10-765-2017>"
-                - "Scalability and some optimization of the Finite-volumE Sea ice-Ocean Model, Version 2.0 (FESOM2) <https://doi.org/10.5194/gmd-12-3991-2019>"
+                - "Danilov et al. 2004: A finite-element ocean model: principles and evaluation <https://doi.org/10.1016/s1463-5003(02)00063-x>"
+                - "Wang et al. 2014: The Finite Element Sea Ice-Ocean Model (FESOM) v.1.4: formulation of an ocean general circulation model. <https://doi.org/10.5194/gmd-7-663-2014>"
         License:
-                Please make sure you have a licence to use FESOM. In case you are unsure,
-                please contact redmine...
+                www.fesom.de
 
 restart_rate: "12"
 restart_unit: "m"
 restart_first: 12
 restart_flag: "last"
+yearly_outputs_start: 1 # Year in which the yearly output starts to be saved
 
 time_step: 1800
 resolution: CORE2
@@ -96,14 +123,15 @@ choose_asforcing:
                 leapyear: true
 
 executable: fesom
+
 choose_resolution:
         CORE2:
                 nx: 126859
-                mesh_dir: "${pool_dir}/meshes_default/core/"
+                mesh_dir: "${fesom.mesh_base_dir}/core/"
                 nproc: 288
         GLOB:
                 nx: 830305
-                mesh_dir: "${pool_dir}/meshes_default/glob/"
+                mesh_dir: "${fesom.mesh_base_dir}/glob/"
         GLOB_rmstep:
                 nx: 830305
                 mesh_dir: "/work/ba1150/a270147/meshes/"
@@ -115,12 +143,12 @@ choose_resolution:
                 mesh_dir: "${pool_dir}/meshes/mesh_ref/"
         BOLD:
                 nx: 1306775
-                mesh_dir: "${pool_dir}/meshes_default/bold/"
+                mesh_dir: "${fesom.mesh_base_dir}/bold/"
         fArc:
                 nx: 638387
         PI-GRID:
                 nx: 3140
-                mesh_dir: "${pool_dir}/meshes_default/pi-grid/"
+                mesh_dir: "${fesom.mesh_base_dir}/pi-grid/"
         CAVCORE2:
                 nx: 72411
 
@@ -153,7 +181,6 @@ restart_out_sources:
         oce_diag: fesom.${end_date!syear}.oce.diag.nc
         oce_restart: fesom.${end_date!syear}.oce.nc
         ice_restart: fesom.${end_date!syear}.ice.nc
-
 
 
 log_files:
@@ -195,9 +222,6 @@ namelist_changes:
                         restart_length_unit: "remove_from_namelist"
                 mesh_def:
                         part_format: "remove_from_namelist"
-        namelist.oce:
-                boundary:
-                        restore_s_surf: "1.929e-06"
         namelist.forcing:
                 forcing_source:
                         wind_data_source: ${asforcing}
@@ -205,7 +229,6 @@ namelist_changes:
                         precip_data_source: ${asforcing}
                         runoff_data_source: ${asforcing}
                         sss_data_source: ${asforcing}
-
 
 
 lasttime: "$(( 86400 - ${time_step}))"
@@ -229,6 +252,7 @@ choose_lresume:
                         fesom.clock:
                                 - "<--append-- ${lasttime} ${parent_date!sdoy} ${parent_date!syear}"
                                 - "<--append-- ${starttime} ${startday} ${start_date!syear}"
+
 # Is it a branchoff experiment?
 branchoff: "$(( ${lresume} and ${general.run_number}==1 ))"
 choose_branchoff:
@@ -240,9 +264,6 @@ choose_branchoff:
         false:
                 daynew: "${initial_date!sdoy}"
                 yearnew: "${initial_date!syear}"
-
-
-
 
 bin_sources:
         fesom: "${bin_dir}/${executable}"
@@ -261,15 +282,157 @@ config_sources:
         oce:     "${namelist_dir}/namelist.oce"
         diag:    "${namelist_dir}/namelist.diag"
 
+# default output of fesom component
+# 1. variables listed in `*_outputs` but not defined/not requested in the model will be ignored by the fesom-1.4 output scheduler
+# 2. variables defined/requested in the model but not listed in `*_outputs` will raise an error in the fesom-1.4 output scheduler
+# 3. variable names are case sensitive
+# 4. please keep alphabetic order
+# 5. a custom variable list can be provided in the runscript via `further_reading` in the fesom section, or in your runscript
+# 6. if fesom1:namelist.oce:use_age_tracer=.true., variables `age01`, `age02`, ... must be added to `fesom_*_outputs`-lists
+yearly_outputs:
+    - flice
+    - fsitherm
+    - opottemptend
+    - pbo
+    - relax_salt
+    - rho
+    - sidmassevapsubl
+    - sidmasssi
+    - sidmassth
+    - sidmasstranx
+    - sidmasstrany
+    - sifllatstop
+    - sisnconc
+    - sisnmass
+    - sisnthick
+    - sispeed
+    - sistrxdtop
+    - sistrxubot
+    - sistrydtop
+    - sistryubot
+    - thdgr
+    - thdgrsn
+    - u2o
+    - uhice
+    - uhsnow
+    - urho
+    - uso
+    - uto
+    - uv
+    - v2o
+    - vhice
+    - vhsnow
+    - virtual_salt
+    - volo
+    - vrho
+    - vso
+    - vto
+    - w2o
+    - wfo
+    - wso
+    - wto
+    - zossq
+monthly_outputs:
+    - evap
+    - evs
+    - hfds
+    - lwrd
+    - mlotst
+    - olat
+    - olwout
+    - omldamax
+    - osen
+    - prlq
+    - prsn
+    - rsdo
+    - runoff
+    - shum
+    - siarean
+    - siareas
+    - sic
+    - siextentn
+    - siextents
+    - sithick
+    - sitimefrac
+    - siu
+    - siv
+    - sivol
+    - sivoln
+    - sivols
+    - so
+    - soga
+    - sos
+    - tair
+    - tauuo
+    - tauvo
+    - thetao
+    - thetaoga
+    - tos
+    - tso
+    - uo
+    - uwind
+    - vo
+    - vwind
+    - wnet
+    - wo
+    - zos
+daily_outputs: []
+12_step_outputs: []
 
+# copy fesom model output to outdata/fesom; includes recom data if enabled
+outdata_files:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT
+        "[[daily_outputs-->OUTPUT]]": OUTPUT
+        "[[12_step_outputs-->OUTPUT]]": OUTPUT
 
-yearly_outputs: [lwrd,olat,olwout,osen,relax_salt,shum,tair,uwind,vwind]
+outdata_in_work:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-monthly_outputs: [evs,fsitherm,hfds,opottemptend,pbo,prlq,prsn,rsdo,siarean,siareas,sidmassevapsubl,sidmasssi,sidmassth,sidmasstranx,sidmasstrany,siextentn,siextents,sifllatstop,sisnconc,sisnmass,sisnthick,sispeed,sivol,sivoln,sivols,soga,thetaoga,u2o,uo,uso,uto,v2o,vo,volo,vso,vto,w2o,wfo,wo,wso,wto,zossq,rho,uhice,uhsnow,urho,uv,vhice,vhsnow,virtual_salt,vrho]
+outdata_sources:
+        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-daily_outputs: [mlotst,omldamax,sic,sistrxdtop,sistrxubot,sistrydtop,sistryubot,sithick,sitimefrac,siu,siv,so,sos,tauuo,tauvo,thetao,tos,zos,flice,wnet,evap,runoff,thdgr,thdgrsn]
+yearly_outputs_for_AWI_FESOM_YAML: ${yearly_outputs}
+monthly_outputs_for_AWI_FESOM_YAML: ${monthly_outputs}
+daily_outputs_for_AWI_FESOM_YAML: ${daily_outputs}
+12_step_outputs_for_AWI_FESOM_YAML: ${12_step_outputs}
 
-12_step_outputs: [tso]
+# export output lists to env variable `AWI_FESOM_YAML`
+# - `AWI_FESOM_YAML` is used by fesom-1.4/fesom_cpl/output_scheduler; check its value in finished_config.yaml
+# - there can be several blocks in `AWI_FESOM_YAML` with the same output frequency
+# - the variable lists exported here include recom variables if necessary
+runtime_environment_changes:
+        add_export_vars:
+                AWI_FESOM_YAML:
+                        output_schedules:
+                                -
+                                        vars: [restart]
+                                        unit: ${restart_unit}
+                                        first: ${restart_first}
+                                        rate: ${restart_rate}
+                                -
+                                        vars: ${yearly_outputs_for_AWI_FESOM_YAML}
+                                        unit: y
+                                        first: ${yearly_outputs_start}
+                                        rate: 1
+                                -
+                                        vars: ${monthly_outputs_for_AWI_FESOM_YAML}
+                                        unit: m
+                                        rate: 1
+                                -
+                                        vars: ${daily_outputs_for_AWI_FESOM_YAML}
+                                        unit: d
+                                        rate: 1
+                                -
+                                        vars: ${12_step_outputs_for_AWI_FESOM_YAML}
+                                        unit: s
+                                        rate: 12
 
 ignore_files:
         gf: gf
@@ -283,69 +446,33 @@ ignore_sources:
         gf: goodfile
         chloro: Chl_Sweeney.dat
 
-outdata_files:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT
-        "[[daily_outputs-->OUTPUT]]": OUTPUT
-
-outdata_in_work:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-
-outdata_sources:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-
-compiletime_environment_changes:
-        add_export_vars:
-                takenfrom:      fesom1
 choose_computer.name:
-        mistral:
-                add_compiletime_environment_changes:
-                        add_module_actions:
-                                - "unload gcc"
-                                - "load gcc/4.8.2"
+        ollie:
+                pool_dir: "${computer.pool_directories.pool}/FESOM/"
+                mesh_base_dir: "${pool_dir}/meshes_default/"
         blogin:
+                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
+        glogin:
+                mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
+        levante:
+                pool_dir: "${computer.pool_directories.pool}/AWICM/FESOM1/"
+                mesh_base_dir: "${pool_dir}/MESHES/"
                 add_compiletime_environment_changes:
                         add_export_vars:
-                                - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                                - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                                - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
-                                - "takenfrom='fesom1'"
+                                NETCDF_DIR: ${computer.netcdf_cxx_root}
+                                NETCDF_CXX_INCLUDE_DIRECTORIES: ${computer.netcdf_cxx_root}/include
+                                NETCDF_CXX_LIBRARIES: ${computer.netcdf_cxx_root}/lib
+                                LD_LIBRARY_PATH[(10)]: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+        albedo:
+                pool_dir: "${computer.pool_directories.pool}/FESOM/"
+                mesh_base_dir: "${pool_dir}/meshes_default/"
 
-runtime_environment_changes:
-        add_export_vars:
-                AWI_FESOM_YAML:
-                        output_schedules:
-                                -
-                                        vars: [restart]
-                                        unit: ${restart_unit}
-                                        first: ${restart_first}
-                                        rate: ${restart_rate}
-                                -
-                                        vars: ${monthly_outputs}
-                                        unit: m
-                                        rate: 1
-                                -
-                                        vars: ${daily_outputs}
-                                        unit: d
-                                        rate: 1
-                                -
-                                        vars: ${12_step_outputs}
-                                        unit: s
-                                        rate: 12
-                                -
-                                        vars: ${yearly_outputs}
-                                        unit: y
-                                        first: 1000
-                                        rate: 1
-
-
-
-
+environment_changes:
+    choose_computer.name:
+        blogin:
+            iolibraries: system_libs
+        glogin:
+            iolibraries: system_libs
 
 coupling_fields:
         sst_feom:
@@ -354,13 +481,8 @@ coupling_fields:
                 grid: feom
         sie_feom:
                 grid: feom
-        snt_feom:
+        snt_feom: # snow temp
                 grid: feom
-                #description: |
-                #       whatever snt means
-                #unit: kg m s
-                #standard_cf_name: 'shit no tuna?'
-                #cf_code: 42
         taux_oce:
                 grid: feom
         tauy_oce:
@@ -384,6 +506,12 @@ coupling_fields:
         heat_swo:
                 grid: feom
         hydr_oce:
+                grid: feom
+        co2_feom:
+                grid: feom
+        co2c_oce:
+                grid: feom
+        w10w_oce:
                 grid: feom
 
 grids:

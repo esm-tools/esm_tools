@@ -2,8 +2,10 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.0.5"
+__version__ = "6.41.1"
 
 
-from .yaml_to_dict import yaml_file_to_dict
+from .dict_to_yaml import *
 from .esm_parser import *
+from .provenance import *
+from .yaml_to_dict import yaml_file_to_dict

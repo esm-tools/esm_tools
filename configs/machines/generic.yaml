@@ -1,26 +1,21 @@
 # GENERIC YAML CONFIGURATION FILES
 
-#hyper_flag: "--cpus-per-task=1"
-additional_flags: "--mem=0"
-
-accounting: true
-
-"batch_system": "slurm"
+name: generic
+accounting: false
+hetjob_flag: "?" # either hetjob or packjob
+batch_system: "slurm"
 
 jobtype: compute
 
-partition: compute
+partition: generic 
 
 choose_partition:
-        "compute":
-                partition_name: compute
-                partition_cpn: 24
+        generic:
+                partition_name: generic
+                partition_cpn: 8 
 
 partitions:
         compute:
-                name: ${computer.partition_name}
-                cores_per_node: ${computer.partition_cpn}
-        pp:
                 name: ${computer.partition_name}
                 cores_per_node: ${computer.partition_cpn}
 
@@ -29,55 +24,44 @@ logical_cpus_per_core: 2
 threads_per_core: 1
 
 pool_directories:
-        pool: "/pool/data"
+        focipool: "/path/not/set/for/generic/yaml/"
+        pool: "/path/not/set/for/generic/yaml"
 
+pool_dir:  "/path/not/set/for/generic/yaml/"
 
 # standard environment setup
-#
-#
-
-useMPI: intelmpi
 module_actions:
+   - "load something"
 
-export_vars:
+# some yamls use computer.fc, etc to identify the compiler, so we need to add them
+fc: "unset"
+cc: "unset"
+mpifc: "unset"
+mpicc: "unset"
+cxx: "unset"
 
+further_reading:
+        - batch_system/slurm.yaml
 
+choose_general.check:
+    False:
+        error:
+            generic.yaml:
+                message: "
+                    You are trying to run an actual simulation with the environment from
+                    ``configs/machines/generic.yaml``. This is not allowed, you should
+                    always run using a specific machine file. The ``generic.yaml`` file
+                    is only aimed for local testing of ESM-Tools functionalities and dry
+                    check runs (``esm_runscripts -c``).\n
 
-choose_useMPI:
-        intelmpi:
-                add_module_actions:
-                        - "unload intelmpi"
-                        - "load intel/18.0.1 intelmpi/2018.1.163"
-                        - "load autoconf/2.69"
-                fc: mpiifort
-                f77: mpiifort
-                mpifc: mpiifort
-                cc: mpiicc
-                cxx: mpiicpc
-        openmpi:
-                add_module_actions:
-                        - "load openmpi/2.0.2p2_hpcx-intel14"
-                add_export_vars:
-                        OMPI_MCA_pml: cm         # sets the point-to-point management layer
-                        OMPI_MCA_mtl: mxm        # sets the matching transport layer
-                        MXM_RDMA_PORTS: mlx5_0:1
-                        MXM_LOG_LEVEL: ERROR
-                        MXM_HANDLE_ERRORS: bt
-                        UCX_HANDLE_ERRORS: bt
-                fc: mpif90
-                f77: mpif90
-                mpifc: mpif90
-                cc: mpicc
-                cxx: mpicxx
-        bullxmpi:
-                add_module_actions:
-                        - "load mxm/3.4.3082"
-                        - "load fca/2.5.2431"
-                        - "bullxmpi_mlx/bullxmpi_mlx-1.2.9.2"
-                add_export_vars:
-                        FC: mpif90
-                        F77: mpif90
-                        MPIFC: mpif90
-                        CC: mpicc
-                        CXX: mpicxx
+                    If you are running on an HPC and you're seeing this message, it's
+                    likely that the HOSTNAME of your machine does not match the
+                    pattern defined in ``configs/machines/all_machines.yaml``. Please,
+                    check that your machine is included in that file and that the
+                    ``configs/machines/<your_machine>.yaml`` exists.\n
 
+                    For more info on how to implement a new machine in ESM-Tools check:
+                    https://esm-tools.readthedocs.io/en/latest/cookbook.html#implement-a-new-hpc-machine\\
+                    "
+    "*":
+        placeholder: null

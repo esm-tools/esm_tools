@@ -8,6 +8,14 @@ mct_version: "2.8" # TODO: set mct_version = version (can't do at the moment as 
 git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
 contact: "miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
+bin_sources:
+        yaclib: ${oasis3mct.model_dir}/lib/yac/lib/*
+        yaxtlib: ${oasis3mct.model_dir}/lib/yaxt/lib/*
+
+bin_in_work: 
+        yaclib: lib/oasis/*
+        yaxtlib: lib/oasis/*
+
 config_files:
         cf: cf
 
@@ -62,6 +70,7 @@ choose_version:
   5.0-smhi:
     branch: main_dkrz
     git-repository: https://gitlab.dkrz.de/ec-earth/oasis3mct5-ece
+    comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
   ec-earth:
     branch: ec-earth-version
   foci:

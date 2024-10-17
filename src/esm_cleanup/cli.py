@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 import sys
 
-import click
-from click_help_colors import (HelpColorsCommand)
+import rich_click as click
 
-@click.command(cls=HelpColorsCommand,
-        help_headers_color="yellow",
-        help_options_color="green",
-        )
+
+@click.command()
 @click.option(
     "-f",
     "--folder",

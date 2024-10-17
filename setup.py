@@ -12,6 +12,8 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
+    "rich-click>=1.8.3",
+    "click-repl>=0.3.0",
     "Click>=8.0.4",  # Maximum version for Python 3.6 support
     "PyGithub==1.55",
     "colorama==0.4.5",
@@ -46,6 +48,21 @@ test_requirements = [
     "pyfakefs==4.6.0",
 ]
 
+console_scripts = [
+    "esm_archive=esm_archiving.cli:main",
+    "esm_cleanup=esm_cleanup.cli:main",
+    "esm_database=esm_database.cli:main",
+    "esm_master=esm_master.cli:main",
+    "esm_plugins=esm_plugin_manager.cli:main",
+    "esm_runscripts=esm_runscripts.cli:main",
+    "esm_tests=esm_tests.cli:main",
+    "esm_tools=esm_tools.cli:main",
+    "esm_utilities=esm_utilities.cli:main",
+]
+
+# Add esm-<name> alias for all console scripts
+console_scripts += [script.replace("esm_", "esm-", 1) for script in console_scripts]
+
 setup(
     author="The ESM Tools Team",
     author_email=[
@@ -70,17 +87,7 @@ setup(
     ],
     description="ESM Tools external infrastructure for Earth System Modelling",
     entry_points={
-        "console_scripts": [
-            "esm_archive=esm_archiving.cli:main",
-            "esm_cleanup=esm_cleanup.cli:main",
-            "esm_database=esm_database.cli:main",
-            "esm_master=esm_master.cli:main",
-            "esm_plugins=esm_plugin_manager.cli:main",
-            "esm_runscripts=esm_runscripts.cli:main",
-            "esm_tests=esm_tests.cli:main",
-            "esm_tools=esm_tools.cli:main",
-            "esm_utilities=esm_utilities.cli:main",
-        ],
+        "console_scripts": console_scripts,
     },
     install_requires=requirements,
     license="GNU General Public License v2",

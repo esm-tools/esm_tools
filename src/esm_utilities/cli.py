@@ -1,30 +1,26 @@
 """Console script for esm_utilities."""
+
 import sys
-import click
-from click_help_colors import HelpColorsGroup, HelpColorsCommand
+
+import rich_click as click
 
 from . import utils
 
 
-@click.group(
-        cls=HelpColorsGroup,
-        help_headers_color="yellow",
-        help_options_color="green",)
+@click.group()
 def main():
     """Various utility functions for esm-tools produced simulations."""
     return 0
 
 
-@main.command(
-        cls=HelpColorsCommand,
-        help_headers_color="yellow",
-        help_options_color="green",)
-@click.argument("log-file",
-        type=click.Path(exists=True),
-        )
+@main.command()
+@click.argument(
+    "log-file",
+    type=click.Path(exists=True),
+)
 def logfile_stats(log_file):
     """Determines simulation throughput, queue time, and compute time
-    
+
     LOG_FILE is the path to a simulation log file, typically
     found in the log folder.
 

@@ -14,7 +14,10 @@ startdate=$4
 enddate=$5
 outdir=$6
 
-source $indir/../../scripts/env.sh
+envfile=$indir/../scripts/env.sh
+
+echo "slice_icmcl_file. envfile " $envfile
+source $envfile
 
 echo " OpenIFS preprocessing "
 echo " ===================== "

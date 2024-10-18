@@ -1,0 +1,64 @@
+general:
+        use_venv: False
+        verbose: False
+        clean_runs: 3
+        
+        homedir: !ENV ${HOME}
+        workdir: !ENV ${WORK}
+         
+        setup_name: oifs
+        compute_time: "01:00:00"
+        account: shk00018
+        initial_date: "1979-01-01T00:00:00"
+        final_date: "1979-01-06T00:00:00"
+        model_dir: ${workdir}/models_p3/oifs-43r3-v2/
+        base_dir: ${workdir}/esm-phase3/
+        nyear: 0
+        nmonth: 0
+        nday: 5
+
+oifs:
+        version: 43r3
+        with_xios: True 
+        time_step: 1800
+        pool_dir: /scratch/projects/shk00018/foci_input2
+        input_dir: ${pool_dir}/openifs_cy43_tco95/
+        rtables_dir: ${pool_dir}/openifs_cy43_general/rtables/
+        vtables_dir: ${pool_dir}/openifs_cy43_general/vtables/
+        clim_dir: ${pool_dir}/openifs_cy43_tco95/95_4/
+        ifsdata_dir: ${pool_dir}/openifs_cy43_general/ifsdata/
+        cmip6_data_dir: ${pool_dir}/openifs_cy43_general/cmip6-data/
+        mip: cmip6
+        scenario: historical 
+        icmcl_dir: /scratch/projects/shk00018/foci_input2/openifs43r3-tco95-amip/
+        icmcl_file: ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231          
+        prepifs_expid: hagw
+        prepifs_startdate: 20080101
+        
+        resolution: TCO95
+        levels: L91
+        lresume: 0
+        
+        post_processing: 0
+        nproc: 168
+        omp_num_threads: 4
+        perturb: 1
+        ensemble_id: 1
+        restart_type: eternal
+        
+        # Only for 43r3-v2
+        solarspectrum: 1
+        o3_scheme: cmip6
+        
+        
+xios:
+        # Precip and 2t every time step + 3hr + 6hrPLev + 1 day PV + monthly
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1ts+3hr+6hrPLev+1dayPV+Amon
+        # 3hr surface var output, 6hr model levels, 1m surface + pressure levels 
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_3h+6hrLev
+        # 6hrPlev + 1day PV lev + 1day sfc + monthly means 
+        #xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_6hrPLev+Aday+Amon
+        # 1m surface + pressure levels
+        xml_dir: /scratch/projects/shk00018/foci_input2/openifs_cy43_tco95/output_for_prod/
+        with_model: oifs
+        nproc: 12

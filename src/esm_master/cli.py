@@ -29,7 +29,7 @@ from .esm_master import main_flow
 @click.option("--list-all-targets", is_flag=True, help="List all available targets.")
 @click.option("--no-motd", is_flag=True, help="Suppress the printing of MOTD.")
 @click.version_option(version=__version__, help="Show the version and exit.")
-def main(
+def cli(
     target,
     check,
     verbose,
@@ -64,4 +64,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    cli()

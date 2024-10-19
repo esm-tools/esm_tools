@@ -14,6 +14,7 @@ import esm_database.cli
 import esm_master
 import esm_master.cli
 import esm_plugin_manager.cli
+import esm_tests.cli
 import esm_tools
 import esm_utilities.cli
 
@@ -36,7 +37,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Developer Utilities",
-            "commands": ["list-plugins"],
+            "commands": ["list-plugins", "run-tests"],
             "help": "Commands for Developers",
             "table_styles": {"row_styles": ["blue"]},
         },
@@ -92,13 +93,15 @@ main.add_command(
     esm_master.cli.create_command("conf", "Configure code for compilation")
 )
 main.add_command(esm_master.cli.create_command("get", "Download model source code"))
+main.add_command(esm_tests.cli.main, name="run-tests")
 main.add_command(esm_plugin_manager.cli.main, name="list-plugins")
 main.add_command(esm_utilities.cli.logfile_stats, name="logfile-stats")
 
 
-main.add_command(esm_master.cli.cli, name="master")
-main.add_command(esm_utilities.cli.main, name="utilities")
 main.add_command(esm_database.cli.main, name="database")
+main.add_command(esm_master.cli.cli, name="master")
+main.add_command(esm_tests.cli.main, name="tests")
+main.add_command(esm_utilities.cli.main, name="utilities")
 
 if __name__ == "__main__":
     sys.exit(main())

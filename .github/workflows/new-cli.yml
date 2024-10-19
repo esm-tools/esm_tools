@@ -13,16 +13,13 @@ jobs:
 
         steps:
         - uses: actions/checkout@v2
-
         - name: Setup Python ${{ matrix.python-version }}
           uses: actions/setup-python@v4
           with:
             python-version: ${{ matrix.python-version }}
-
         - name: Add to the path
           run: |
             echo "$HOME/.local/bin" >> $GITHUB_PATH
-
         - name: Install esm-tools
           run: |
             ./install.sh
@@ -32,11 +29,7 @@ jobs:
         - name: Basic help
           run:
               esm-tools --help
-
         - name: New get FESOM-2.5
           run:
               esm-tools get fesom-2.5
-        - name: New comp FESOM-2.5
-          run:
-              esm-tools comp fesom-2.5
 

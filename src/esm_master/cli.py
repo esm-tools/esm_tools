@@ -8,8 +8,8 @@ from . import __version__
 from .esm_master import main_flow
 
 
-@click.group()
-@click.version_option(version=__version__, help="Show the version and exit.")
+@click.command()
+@click.argument("target", default="", required=False, metavar="target")
 @click.option(
     "--check",
     "-c",
@@ -28,9 +28,9 @@ from .esm_master import main_flow
 @click.option("--generate-tab-complete", is_flag=True, help="Generate tab completion.")
 @click.option("--list-all-targets", is_flag=True, help="List all available targets.")
 @click.option("--no-motd", is_flag=True, help="Suppress the printing of MOTD.")
-@click.pass_context
+@click.version_option(version=__version__, help="Show the version and exit.")
 def cli(
-    ctx,
+    target,
     check,
     verbose,
     modify_config,
@@ -41,20 +41,26 @@ def cli(
     no_motd,
 ):
     """Tool for downloading, configuring, and compiling."""
-    ctx.ensure_object(dict)
-    ctx.obj["check"] = check
-    ctx.obj["verbose"] = verbose
-    ctx.obj["modify_config"] = modify_config
-    ctx.obj["ignore_errors"] = ignore_errors
-    ctx.obj["keep_task_script"] = keep_task_script
-    ctx.obj["generate_tab_complete"] = generate_tab_complete
-    ctx.obj["list_all_targets"] = list_all_targets
-    ctx.obj["no_motd"] = no_motd
 
-    # Check if the first argument is not a registered subcommand
-    if ctx.invoked_subcommand is None:
-        target = ctx.args[0]  # Use the first argument as the target
-        main(target, **ctx.obj)  # Call main with the user-supplied target
+    # Check ESM packages if not suppressing MOTD
+    if not no_motd:
+        check_all_esm_packages()
+
+    # Prepare arguments for main flow
+    parsed_args = {
+        "target": target,
+        "check": check,
+        "verbose": verbose,
+        "modify": modify_config,
+        "ignore": ignore_errors,
+        "keep": keep_task_script,
+        "generate_tab_complete": generate_tab_complete,
+        "list_all_targets": list_all_targets,
+        "no_motd": no_motd,
+    }
+
+    # Execute main flow
+    main_flow(parsed_args, target)
 
 
 def create_command(command_name, docstring=None):
@@ -69,43 +75,6 @@ def create_command(command_name, docstring=None):
         main(target, **options)
 
     return command
-
-
-# Create commands dynamically
-cli.add_command(create_command("get", "Download model code"))
-cli.add_command(create_command("conf", "Configure code for compilation"))
-cli.add_command(create_command("comp", "Compile code"))
-cli.add_command(create_command("clean", "Clean up compilation artifacts"))
-
-
-def main(
-    target,
-    check,
-    verbose,
-    modify_config,
-    ignore_errors,
-    keep_task_script,
-    generate_tab_complete,
-    list_all_targets,
-    no_motd,
-):
-    """Run the main flow."""
-    options = {
-        "target": target,
-        "check": check,
-        "verbose": verbose,
-        "modify": modify_config,
-        "ignore": ignore_errors,
-        "keep": keep_task_script,
-        "generate_tab_complete": generate_tab_complete,
-        "list_all_targets": list_all_targets,
-        "no_motd": no_motd,
-    }
-
-    if not no_motd:
-        check_all_esm_packages()
-
-    main_flow(**options)
 
 
 if __name__ == "__main__":

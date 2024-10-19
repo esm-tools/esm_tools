@@ -72,7 +72,7 @@ def create_command(command_name, docstring=None):
     def command(ctx, arg=None):
         options = ctx.obj
         target = f"{command_name}-{arg}" if arg else command_name
-        main(target, **options)
+        cli(target, **options)
 
     return command
 

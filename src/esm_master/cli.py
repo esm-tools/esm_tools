@@ -60,7 +60,7 @@ def cli(
     }
 
     # Execute main flow
-    main_flow(parsed_args, target)
+    return main_flow(parsed_args, target)
 
 
 def create_command(command_name, docstring=None):
@@ -104,17 +104,25 @@ def create_command(command_name, docstring=None):
         no_motd,
     ):
         target = f"{command_name}-{arg}" if arg else command_name
-        cli(
-            target,
-            check,
-            verbose,
-            modify_config,
-            ignore_errors,
-            keep_task_script,
-            generate_tab_complete,
-            list_all_targets,
-            no_motd,
-        )
+        # Check ESM packages if not suppressing MOTD
+        if not no_motd:
+            check_all_esm_packages()
+
+        # Prepare arguments for main flow
+        parsed_args = {
+            "target": target,
+            "check": check,
+            "verbose": verbose,
+            "modify": modify_config,
+            "ignore": ignore_errors,
+            "keep": keep_task_script,
+            "generate_tab_complete": generate_tab_complete,
+            "list_all_targets": list_all_targets,
+            "no_motd": no_motd,
+        }
+
+        # Execute main flow
+        return main_flow(parsed_args, target)
 
     return command
 

@@ -10,8 +10,10 @@ from click_repl import repl as crepl
 
 import esm_archiving.cli
 import esm_cleanup.cli
+import esm_database.cli
 import esm_master
 import esm_master.cli
+import esm_plugin_manager.cli
 import esm_tools
 import esm_utilities.cli
 
@@ -33,17 +35,22 @@ click.rich_click.COMMAND_GROUPS = {
             "table_styles": {"row_styles": ["green"]},
         },
         {
+            "name": "Developer Utilities",
+            "commands": ["list-plugins"],
+            "help": "Commands for Developers",
+            "table_styles": {"row_styles": ["blue"]},
+        },
+        {
             "name": "Utilities",
-            "commands": ["utils"],
+            "commands": ["logfile-stats"],
             "help": "General utilities",
             "table_styles": {"row_styles": ["magenta"]},
         },
-        {"name": "Cleanup", "commands": ["clean"], "help": "Cleanup utilities"},
-    ],
-    "esm-tools utils": [
         {
-            "name": "Utility Commands",
-            "commands": ["logfile-stats"],
+            "name": "Cleanup",
+            "commands": ["clean"],
+            "help": "Cleanup utilities",
+            "table_styles": {"row_styles": ["yellow"]},
         },
     ],
 }
@@ -68,31 +75,6 @@ def main(args=None):
 
 
 @main.command()
-@click.argument("name")
-def comp(name):
-    """Compile ESM components"""
-    esm_master.comp(name)
-
-
-@main.command()
-def get():
-    """Download ESM components"""
-    click.echo("Downloading ESM components")
-
-
-@main.command()
-def conf():
-    """Configure ESM components"""
-    click.echo("Configuring ESM components")
-
-
-@main.command()
-def install():
-    """Install ESM components"""
-    click.echo("Installing ESM components")
-
-
-@main.command()
 def repl():
     """Start an interactive shell"""
     custom_kwargs = {
@@ -102,10 +84,21 @@ def repl():
     crepl(click.get_current_context(), prompt_kwargs=custom_kwargs)
 
 
-main.add_command(esm_utilities.cli.main, name="utils")
-main.add_command(esm_cleanup.cli.main, name="clean")
-main.add_command(esm_master.cli.cli, name="master")
 main.add_command(esm_archiving.cli.main, name="archive")
+main.add_command(esm_cleanup.cli.main, name="clean")
+main.add_command(esm_master.cli.create_command("clean", "Clean compilation artifacts"))
+main.add_command(esm_master.cli.create_command("comp", "Compile model"))
+main.add_command(
+    esm_master.cli.create_command("conf", "Configure code for compilation")
+)
+main.add_command(esm_master.cli.create_command("get", "Download model source code"))
+main.add_command(esm_plugin_manager.cli.main, name="list-plugins")
+main.add_command(esm_utilities.cli.logfile_stats, name="logfile-stats")
+
+
+main.add_command(esm_master.cli.cli, name="master")
+main.add_command(esm_utilities.cli.main, name="utilities")
+main.add_command(esm_database.cli.main, name="database")
 
 if __name__ == "__main__":
     sys.exit(main())

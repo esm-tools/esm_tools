@@ -14,17 +14,21 @@ Example::
     Docstring of plugin 2
 
 """
+
+import rich_click as click
+
 from esm_plugin_manager import find_installed_plugins
 
 
+@click.command()
 def main():
-    """The main plugin CLI"""
+    """List all installed plugins."""
     discovered_plugins = find_installed_plugins()
-    print("The following plugins are installed and available:")
+    click.echo("The following plugins are installed and available:")
     for plugin_name in discovered_plugins:
         plugin_code = discovered_plugins[plugin_name]["callable"]
-        print(plugin_name)
+        click.echo(plugin_name)
         doc = plugin_code.__doc__
         if doc:
-            print("-" * len(plugin_name))
-            print(doc)
+            click.echo("-" * len(plugin_name))
+            click.echo(doc)

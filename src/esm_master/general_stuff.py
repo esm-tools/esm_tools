@@ -1,5 +1,6 @@
 import os
 import sys
+import warnings
 
 import esm_parser
 import esm_tools
@@ -65,6 +66,7 @@ def write_minimal_user_config(config):
     Needs the name of the model / setup, and version (if exists) as input.
 
     """
+    # FIXME(PG): The comment above screams "HORRIBLE DESIGN CHOICE"
     user_config = {}
 
     for model in config["components"]:
@@ -161,7 +163,7 @@ class GeneralInfos:
 ######################################################################################
 
 
-class version_control_infos:
+class VersionControlInfos:
     def __init__(self, parsed_args):
         self.config = {}
         vcs_files = [f for f in os.listdir(VCS_FOLDER)]
@@ -297,3 +299,13 @@ class version_control_infos:
         self.config.yaml_dump()
         print("Known repos: " + str(self.known_repos))
         print("Known vcs-commands: " + str(self.known_todos))
+
+
+class version_control_infos(VersionControlInfos):
+    # Deprecated class name
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "class 'version_control_infos' is deprecated, use 'VersionControlInfos' instead",
+            DeprecationWarning,
+        )
+        super().__init__(*args, **kwargs)

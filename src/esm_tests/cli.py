@@ -3,7 +3,10 @@
 A small wrapper that combines the shell interface and the Python interface
 """
 
-# Import from Python Standard Library
+import os
+import sys
+
+import rich_click as click
 from loguru import logger
 
 from .info import *
@@ -14,10 +17,8 @@ from .repos import *
 from .test_utilities import *
 from .tests import *
 
-import os
-import sys
 
-
+@click.command()
 def main():
     # Logger
     logger.remove()

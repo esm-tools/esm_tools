@@ -6,3 +6,4 @@ __version__ = "6.42.0"
 
 
 from . import database
+from .meta_commands import *

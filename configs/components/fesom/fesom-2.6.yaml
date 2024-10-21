@@ -24,9 +24,10 @@ required_plugins:
 
 choose_version:
   "2.6":
-    branch: "2.6"
+    branch: "2.6.1"
 
   "2.6-paleodyn":
+    branch: "2.6.1"
     wiso_code: true
     icb_code: true
     namelist_dir: "${model_dir}/config/"
@@ -494,11 +495,11 @@ choose_lresume:
 
 bin_in_work:
         bin: "${executable}"
-        lib: "lib/fesom/*"
+        lib: "lib/fesom/libfesom.so"
 
 bin_sources:
         bin: "${bin_dir}/${comp_executable}"
-        lib: "${fesom.model_dir}/build/lib/*"
+        lib: "${fesom.model_dir}/build/lib/libfesom.so"
 
 
 

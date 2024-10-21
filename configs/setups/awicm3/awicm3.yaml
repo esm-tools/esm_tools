@@ -118,7 +118,7 @@ general:
           v3.4:
             major_version: v3.4
             couplings:
-            - fesom-2.5-refactoring+oifs-48r1+xios-2.5
+            - fesom-2.6+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
@@ -519,8 +519,7 @@ fesom:
                                                 albi: 0.6
                                                 albim: 0.43
                 "v3.4":
-                        version: "2.5"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
+                        version: "2.6"
                         append_icmcl: ""
                         add_namelist_changes:
                                 namelist.config:

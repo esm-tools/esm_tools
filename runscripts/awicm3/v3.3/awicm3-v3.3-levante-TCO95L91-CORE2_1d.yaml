@@ -1,0 +1,50 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.2"
+    account: "ab0246"
+    compute_time: "08:00:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-03"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+computer:
+    taskset: true
+
+awicm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE2"
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    lresume: false
+    time_step: 1800
+    nproc: 768
+    tar_binary_restarts: true
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: aack
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 8
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32
+

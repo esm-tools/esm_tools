@@ -1,0 +1,87 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.2"
+    account: "ba0989"
+    compute_time: "08:00:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-03"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 1
+    nyear: 0
+    use_venv: False
+
+computer:
+    taskset: true
+
+awicm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "HR"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: false
+    time_step: 120
+    nproc: 512
+    tar_binary_restarts: true
+    namelist_dir: "${fesom.model_dir}/config/"
+    ini_parent_exp_id: "lorem_ipsum"
+    ini_parent_date: "2000-01-02"
+    ini_parent_dir: "/work/ab0246/a270092/input/fesom2/restart/HR/"
+    add_namelist_changes:
+        namelist.dyn:
+            dynamics_visc:
+                leith_c: 5
+                div_c: 0.5
+    choose_general.run_number:
+        1:
+            lasttime: '86340'
+            restart_in_sources:
+                 par_oce_restart: /work/ab0246/a270092/input/fesom2/restart/HR/fesom.2000.oce.restart/*.nc
+                 par_ice_restart: /work/ab0246/a270092/input/fesom2/restart/HR//fesom.2000.ice.restart/*.nc
+
+oifs:
+    resolution: "TCO319"
+    levels: "L91"
+    prepifs_expid: h9wt
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 1200
+    nproc: 512
+    omp_num_threads: 2
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+    coupling_methods:
+        gauswgt_gss:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+            postprocessing:
+                conserv:
+                    method: gsspos
+                    algorithm: opt
+        gauswgt_i:
+            time_transformation: instant
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 9
+                    weight: "2"
+
+xios:
+    with_model: oifs
+    nproc: 12
+    omp_num_threads: 32
+

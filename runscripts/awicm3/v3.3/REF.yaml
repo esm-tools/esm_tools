@@ -11,6 +11,7 @@ general:
     nmonth: 0
     nyear: 25
     use_venv: true
+    install_esm_tools_branch: "feat/awicm_v33_fesom_26"
 
 computer:
     taskset: true

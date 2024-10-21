@@ -52,8 +52,8 @@ CATEGORY_HIERARCHY = [
     "setups",
     "couplings",
     "runscript",
-    "none",  # Highest in the hierarchy (no category means it is a change
-]  # from ESM-Tools functions)
+    "backend",  # Highest in the hierarchy (no category means it is a change
+]               # from ESM-Tools functions)
 
 
 # =================
@@ -554,7 +554,7 @@ class DictWithProvenance(dict):
             if old_val.provenance[-1]:
                 old_category = old_val.provenance[-1].get("category", None)
             else:
-                old_category = "none"
+                old_category = "backend"
 
             # Initialize new provenance with the old provenance
             new_provenance = copy.deepcopy(old_val.provenance)
@@ -569,7 +569,7 @@ class DictWithProvenance(dict):
                 if new_provenance[-1]:
                     new_category = new_provenance[-1].get("category", None)
                 else:
-                    new_category = "none"
+                    new_category = "backend"
 
                 # Obtain category indexes (numerical hierarcgy))
                 old_category_index = CATEGORY_HIERARCHY.index(old_category)

@@ -41,6 +41,7 @@ def prepare_environment(config):
             "iterative_coupling_atmosphere_pism_regrid_method": config[config["general"]["setup_name"]].get("regrid_method", "DOWNSCALE"), 
             "REDUCE_TEMP": int(config[config["general"]["setup_name"]].get("reduce_temp", 0)), 
             "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 
+            "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
             #"RESTART_DIR_pism": config[config["general"]["setup_name"]]["experiment_restart_in_dir"],

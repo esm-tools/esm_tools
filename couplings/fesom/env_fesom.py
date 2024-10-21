@@ -1,6 +1,6 @@
 def prepare_environment(config):
     environment_dict = {
-            "ICE_TO_FESOM": config["fesom"].get("use_icebergs", False),
+            "ICE_TO_FESOM": int(config["fesom"].get("use_icebergs", False)),
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],

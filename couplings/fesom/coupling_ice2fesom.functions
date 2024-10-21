@@ -8,7 +8,7 @@ function ice2fesom {
     . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
 
     echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
-    if [[ "x$ICE_TO_FESOM"=="x0" ]]; then
+    if [[ "x$ICE_TO_FESOM" == "x0" ]]; then
         echo " NOT generating ice forcing for ocean model"
 	    echo " since ICE_TO_FESOM=${ICE_TO_FESOM}"
 	    return

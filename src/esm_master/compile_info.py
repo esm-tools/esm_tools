@@ -336,7 +336,24 @@ def get_relevant_info(relevant_entries, raw_config, merge_into_this_config=None)
 
 class setup_and_model_infos:
     def __init__(self, vcs, general, parsed_args):
+        """
+        Initializes the setup and model information. It combines the components,
+        couplings, setups, and general information from the YAML files and gathers
+        the build todos (``model_todos``).
 
+        Parameters
+        ----------
+        vcs : class
+            An instance of the `vcs` class.
+        general : class
+            An instance of the `general` class.
+        parsed_args : dict
+            A dictionary containing the parsed arguments from the command line.
+        """
+
+        # If the master pickle file does not exist, then combine the components,
+        # couplings, setups, and general information from the YAML files. Otherwise,
+        # load the pickle file.
         if not os.path.isfile(ESM_MASTER_PICKLE):
             self.config, self.relevant_entries = combine_components_yaml(parsed_args)
             save_pickle(self.config, ESM_MASTER_PICKLE)
@@ -348,6 +365,7 @@ class setup_and_model_infos:
             self.config, self.relevant_entries = combine_components_yaml(parsed_args)
             save_pickle(self.config, ESM_MASTER_PICKLE)
 
+        # Initialize the setup and model information
         self.model_kinds = list(self.config.keys())
         self.meta_todos = general.meta_todos
         self.meta_command_order = general.meta_command_order
@@ -357,6 +375,8 @@ class setup_and_model_infos:
         for kind in self.model_kinds:
             for model in self.config[kind].keys():
                 version = None
+                # Find _commands parameters under choose_version and add them to
+                # model_todos
                 if "choose_version" in self.config[kind][model]:
                     for version in self.config[kind][model]["choose_version"]:
                         for entry in self.config[kind][model]["choose_version"][
@@ -366,6 +386,7 @@ class setup_and_model_infos:
                                 todo = entry.replace("_command", "")
                                 if todo not in self.model_todos:
                                     self.model_todos.append(todo)
+                # Find _commands parameters under model and add them to model_todos
                 for entry in self.config[kind][model]:
                     if entry.endswith("_command"):
                         todo = entry.replace("_command", "")
@@ -584,6 +605,21 @@ class setup_and_model_infos:
 
         for package in self.all_packages:
             if package.raw_name == rawtarget:
+                # A special case for versions defined by couplings. The version
+                # parameter's provenance points correctly at the component, however,
+                # the version is selected based on the coupling. This is a patch where
+                # we modify the provenance of the version parameter to point at the
+                # coupling. Once we get rid of the couplings files and merge them into
+                # the setups we will be able to remove this special case.
+                if (
+                    hasattr(rawtarget, "provenance")
+                    and hasattr(package.version, "provenance")
+                    and rawtarget.provenance[-1].get("category") == "couplings"
+                ):
+                    package.version.provenance.extend_and_modified_by(
+                        rawtarget.provenance, "esm_master.compile_info.split_raw_target"
+                    )
+                # Returns the selected package data
                 return (
                     todo,
                     package.kind,

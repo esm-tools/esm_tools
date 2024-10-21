@@ -1,7 +1,7 @@
 general:
     user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "v3.2"
+    version: "v3.3"
     account: "ab0246"
     compute_time: "08:00:00"
     initial_date: "1990-01-01"

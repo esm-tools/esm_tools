@@ -527,7 +527,7 @@ fesom:
                                 namelist.config:
                                         ale_def:
                                                 which_ALE: 'zstar'
-                                namelist.oce:
+                                #namelist.oce:
                                 #        oce_dyn:
                                 #                SPP: true
                                 #                k_gm_max: 3000
@@ -535,12 +535,9 @@ fesom:
                                 #                k_gm_rampmin: 30
                                 #                scaling_ferreira: true
                                 #                scaling_fesom14: true
-                                        oce_tra:
+                                namelist.tra:
+                                        tracer_phys:
                                                 surf_relax_s: "${surf_relax_s}"
-
-                                #namelist.tra:
-                                #        tracer_phys:
-                                #                surf_relax_s: "${surf_relax_s}"
                                 #                use_momix: false
                                 #                kv0_const: false
                                 #namelist.ice:

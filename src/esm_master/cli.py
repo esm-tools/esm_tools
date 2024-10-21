@@ -2,10 +2,13 @@
 import argparse
 import sys
 
+from loguru import logger
+
+from esm_motd import check_all_esm_packages
+
 # import logging
 # logging.basicConfig(level=logging.DEBUG)
 from . import __version__
-from esm_motd import check_all_esm_packages
 from .esm_master import main_flow
 
 
@@ -99,6 +102,13 @@ def main():
 
     if not no_motd:
         check_all_esm_packages()
+
+    # Logger setup
+    logger.add(sys.stderr, level="ERROR", format="{message}")
+    if verbose:
+        logger.add(sys.stdout, level="DEBUG", format="{message}")
+    else:
+        logger.add(sys.stdout, level="INFO", format="{message}")
 
     main_flow(parsed_args, target)
 

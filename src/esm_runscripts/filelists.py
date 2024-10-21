@@ -16,6 +16,7 @@ import esm_parser
 from loguru import logger
 
 from . import helpers
+from . import jinja
 
 
 def rename_sources_to_targets(config):
@@ -723,8 +724,8 @@ def replace_year_placeholder(config):
                 year = config["general"]["current_date"].year
 
                 for file_category in config[model][filetype + "_targets"]:
-                    if (
-                        isinstance(config[model][filetype + "_sources"][file_category], dict)
+                    if isinstance(
+                        config[model][filetype + "_sources"][file_category], dict
                     ):
                         config[model][filetype + "_sources"][
                             file_category
@@ -1440,7 +1441,12 @@ def get_method(movement):
 def movement(func):
     def inner(config, source_path, target_path):
         try:
-            func(source_path, target_path)
+            # If source_path is a template use jinja and copy, otherwise run the movement
+            # function
+            if source_path.endswith(".j2"):
+                jinja.render_template(config, source_path, target_path)
+            else:
+                func(source_path, target_path)
             return True
         except IOError:
             logger.error(

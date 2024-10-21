@@ -21,6 +21,7 @@ requirements = [
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
     "gitpython==3.1.41",  # Maximum version for Python 3.6 support
+    "jinja2==3.1.4",
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
@@ -113,6 +114,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.40.0",
+    version="6.42.0",
     zip_safe=False,
 )

@@ -1,0 +1,24 @@
+general:
+        user: !ENV ${USER}
+        account: "ab0246"
+        setup_name: fesom
+        compute_time: "08:00:00"
+        initial_date: '1958-01-01'
+        final_date: '2017-12-31'
+        base_dir: "/work/ab0246/${user}/runtime/fesom26_rc1/"
+        nyear: 10
+        nmonth: 0
+        use_venv: False
+
+fesom:
+        version: 2.6
+        model_dir: "/work/ab0246/${user}/model_codes/fesom-2.6/"
+        pool_dir: "/work/ab0246/a270092/input/"
+        mesh_dir: "/work/ab0246/a270092/input/fesom2/core2/"
+        restart_rate: 20
+        restart_first: 20
+        restart_unit: 'y'
+        resolution: "CORE2"
+        lresume: false
+        time_step: 1800
+        nproc: 768

@@ -527,7 +527,7 @@ class DictWithProvenance(dict):
         """
         Any time an item in a DictWithProvenance is set, extend the old provenance of
         the old value with the provenance of the new ``val`` and make that be the new
-        extended provenance history of the value. Does not set the new valeu if the old
+        extended provenance history of the value. Does not set the new value if the old
         value comes from a yaml file with higher category hierarchy as defined in
         ``CATEGORY_HIERARCHY``.
 

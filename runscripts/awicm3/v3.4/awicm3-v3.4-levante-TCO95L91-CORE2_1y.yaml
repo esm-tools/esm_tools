@@ -1,15 +1,15 @@
 general:
     user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "v3.3"
+    version: "v3.4"
     account: "ba0989"
-    compute_time: "00:20:00"
+    compute_time: "01:00:00"
     initial_date: "2000-01-01"
-    final_date: "2000-01-03"
+    final_date: "2020-01-01"
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-    nday: 1
+    nday: 0
     nmonth: 0
-    nyear: 0
+    nyear: 1
 
 computer:
     taskset: true
@@ -21,13 +21,13 @@ awicm3:
 fesom:
     resolution: "CORE2"
     restart_rate: 1
-    restart_unit: "d"
+    restart_unit: "y"
     restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 128
+    nproc: 768
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.3/fesom-2.5/config/"
+    namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.4/fesom-2.5/config/"
 
 oifs:
     resolution: "TCO95"
@@ -37,7 +37,7 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 128
+    nproc: 384
     omp_num_threads: 4
 
 oasis3mct:

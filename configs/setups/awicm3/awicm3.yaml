@@ -25,7 +25,7 @@ general:
         - 'v3.2'
         - 'v3.2.1'
         - 'v3.2.2'
-        - 'v3.3'
+        - 'v3.4'
         - 'master'
         - 'frontiers-xios'
 
@@ -115,8 +115,8 @@ general:
             - rnfmap/rnfmap.env.yaml
             oasis_with_yac: True
             xios_interp_order: 1
-          v3.3:
-            major_version: v3.3
+          v3.4:
+            major_version: v3.4
             couplings:
             - fesom-2.5-refactoring+oifs-48r1+xios-2.5
             add_include_models:
@@ -268,13 +268,13 @@ oifs:
                                         NAERAD:
                                                 NSOLARSPECTRUM: "1"
                                                 NAERANT_SCALE: "1"
-                "v3.3":
+                "v3.4":
                         version: "48r1"
                         with_xios: True
                         git-repository: https://git.smhi.se/sager/oifs48r1
                         branch: 'dev/integrate-with-ece4'
                         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
-                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.3
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         mip: "cmip6"
                         wam: true
                         restart_type: "ifs_default"
@@ -518,7 +518,7 @@ fesom:
                                                 albsnm: 0.77
                                                 albi: 0.6
                                                 albim: 0.43
-                "v3.3":
+                "v3.4":
                         version: "2.5"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
                         append_icmcl: ""
@@ -802,7 +802,7 @@ oasis3mct:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
-                'v3.3':
+                'v3.4':
                         mct_version: 5.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos'

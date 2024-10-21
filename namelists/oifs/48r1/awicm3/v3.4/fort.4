@@ -1,3 +1,10 @@
+&NAMECECFG
+ECE_CPL_AMIP=.false.
+ECE_CPL_NEMO_LIM=.false.
+ECE_CPL_FESOM_FESIM=.true.
+/
+&NAMECECMIP6
+/
 &NAMIOS
 CFRCF="./rcf",
 CIOSPRF="./srf",
@@ -21,6 +28,9 @@ NDLNPR=0,
 LMCCEC=true,
 LMCCIEC=false,
 LMCC_COMPO=false,
+LMCC04=false,
+LMCCDYNSEAICE = .true.
+LNEMOLIMCUR = true
 /
 &NAMTRANS
 LUSEFLT=false,
@@ -43,7 +53,7 @@ LEPCLD=true,
 LEEVAP=true,
 LEVGEN=true,
 LESSRO=true,
-LECURR=false,
+LECURR=true,
 LEOCWA=true,
 LEGWDG=true,
 LEGWWMS=true,

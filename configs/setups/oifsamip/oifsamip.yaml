@@ -47,7 +47,7 @@ general:
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
         further_reading:
-                - oifs/oifs.env.yaml
+                - oifs/oifs43.env.yaml
                 - oasis3mct/oasis3mct.env.yaml
 
 

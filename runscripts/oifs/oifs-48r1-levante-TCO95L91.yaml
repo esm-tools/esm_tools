@@ -29,4 +29,4 @@ oifs:
     lresume: false
     time_step: 3600
     nproc: 128
-    omp_num_threads: 1
+    omp_num_threads: 8

@@ -25,6 +25,7 @@ general:
         - 'v3.2'
         - 'v3.2.1'
         - 'v3.2.2'
+        - 'v3.4'
         - 'master'
         - 'frontiers-xios'
 
@@ -33,6 +34,8 @@ general:
             major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
+            add_further_reading:
+            - oifs/oifs43.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1:
@@ -42,6 +45,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
@@ -52,6 +56,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
@@ -62,6 +67,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
@@ -82,6 +88,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
@@ -92,6 +99,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: True
             xios_interp_order: 2
@@ -102,8 +110,25 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
+            - rnfmap/rnfmap.env.yaml
             oasis_with_yac: True
+            xios_interp_order: 1
+          v3.4:
+            major_version: v3.4
+            couplings:
+            - fesom-2.5-refactoring+oifs-48r1+xios-2.5
+            add_include_models:
+            - xios
+            add_further_reading:
+            - oifs/oifs48.env.yaml
+            - xios/xios.env.yaml
+            - rnfmap/rnfmap.env.yaml
+            add_add_environment_changes:
+                levante:
+                    iolibraries: system_gnu_libs
+            oasis_with_yac: False
             xios_interp_order: 1
           master:
             major_version: master
@@ -112,6 +137,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
@@ -122,6 +148,7 @@ general:
             add_include_models:
             - xios
             add_further_reading:
+            - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
@@ -160,9 +187,16 @@ general:
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
         further_reading:
-                - oifs/oifs.env.yaml
                 - oasis3mct/oasis3mct.env.yaml
 
+        add_environment_changes:
+                choose_computer.name:
+                        blogin:
+                                compiler_mpi: intel2019_ompi
+                        glogin:
+                                compiler_mpi: intel2019_ompi
+                        levante:
+                                compiler_mpi: intel2022_openmpi
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -189,6 +223,7 @@ oifs:
         rtables_dir: ${input_dir}/rtables/
         forcing_dir: ${input_dir}/${version}/ifsdata/
         ifsdata_dir: ${input_dir}/${version}/ifsdata/
+
         choose_general.major_version:
                 "v3.0":
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.0
@@ -233,6 +268,22 @@ oifs:
                                         NAERAD:
                                                 NSOLARSPECTRUM: "1"
                                                 NAERANT_SCALE: "1"
+                "v3.4":
+                        version: "48r1"
+                        with_xios: True
+                        git-repository: https://git.smhi.se/sager/oifs48r1
+                        branch: 'dev/integrate-with-ece4'
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
+                        mip: "cmip6"
+                        wam: true
+                        restart_type: "ifs_default"
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAEPHY:
+                                                LECURR: true
 
                 "frontiers-xios":
                         with_xios: True
@@ -325,34 +376,12 @@ oifs:
                 OpenMP_CCDEFS: "_OPENMP"
 
         runtime_environment_changes:
-                iolibraries: awi_libs
-                choose_computer.name:
-                        juwels:
-                                compiler_mpi: intel2022_ompi2022
-                        blogin:
-                                iolibraries: geomar_libs
-                        glogin:
-                                iolibraries: geomar_libs
-                        levante:
-                                iolibraries: system_libs
                 add_export_vars:
                         # Turn on FESOM coupling
                         FESOM_USE_CPLNG: '"active"'
                         ECE_CPL_NEMO_LIM: '"false"'
                         ECE_CPL_FESOM_FESIM: '"true"'
                         ECE_AWI_CPL_FESOM: '"true"'
-
-        compiletime_environment_changes:
-                iolibraries: awi_libs
-                choose_computer.name:
-                        juwels:
-                                compiler_mpi: intel2022_ompi2022
-                        blogin:
-                                iolibraries: geomar_libs
-                        glogin:
-                                iolibraries: geomar_libs
-                        levante:
-                                iolibraries: system_libs
 
         res_level: ${resolution}${levels}
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
@@ -489,6 +518,36 @@ fesom:
                                                 albsnm: 0.77
                                                 albi: 0.6
                                                 albim: 0.43
+                "v3.4":
+                        version: "2.5"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
+                        append_icmcl: ""
+                        add_namelist_changes:
+                                namelist.config:
+                                        ale_def:
+                                                which_ALE: 'zstar'
+                                namelist.oce:
+                                        oce_dyn:
+                                                SPP: true
+                                                k_gm_max: 3000
+                                                k_gm_rampmax: 40.0
+                                                k_gm_rampmin: 30
+                                                scaling_ferreira: true
+                                                scaling_fesom14: true
+                                        oce_tra:
+                                                surf_relax_s: "${surf_relax_s}"
+
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: "${surf_relax_s}"
+                                                use_momix: false
+                                                kv0_const: false
+                                namelist.ice:
+                                        ice_therm:
+                                                albsn: 0.81
+                                                albsnm: 0.77
+                                                albi: 0.6
+                                                albim: 0.43
                 "master":
                         namelist_dir: "${model_dir}/config/"
                         add_namelists:
@@ -599,7 +658,7 @@ xios:
                                 - file_def
                                 - field_def
                 "*":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/order_${xios_interp_order}/${general.resolution}"
+                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
 
 
 
@@ -657,7 +716,6 @@ oasis3mct:
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${general.pool_dir}/oasis/
         norestart: "F"
-
         process_ordering:
                 - fesom
                 - oifs
@@ -731,6 +789,24 @@ oasis3mct:
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos_uv'
                         rstas_file_name: 'rstas_uv'
+                        add_process_ordering:
+                                - xios
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                'v3.4':
+                        mct_version: 5.0
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
                         add_process_ordering:
                                 - xios
                         coupling_target_fields:
@@ -1005,11 +1081,3 @@ computer:
         # since hetjob approach doesn't seem to work (second run showing mpi/pmix
         # problems)
         taskset: true
-
-        choose_computer.name:
-                blogin:
-                        compiler_mpi: intel2019_ompi
-                glogin:
-                        compiler_mpi: intel2019_ompi
-                levante:
-                        compiler_mpi: intel2022_openmpi

@@ -4,9 +4,9 @@ general:
         setup_name: fesom
         compute_time: "08:00:00"
         initial_date: '1958-01-01'
-        final_date: '2018-03-31'
-        base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-        nyear: 20
+        final_date: '2017-12-31'
+        base_dir: "/work/ab0246/${user}/runtime/fesom26_rc1/"
+        nyear: 10
         nmonth: 0
         use_venv: False
 

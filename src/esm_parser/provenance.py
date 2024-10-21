@@ -520,6 +520,8 @@ class DictWithProvenance(dict):
         val : any
             Value of the item
         """
+        category_hierarchy = ["none", "defaults", "other_software", "machines", "components", "setups", "runscript"]
+        respect_hierarchy_in_setitem = True
         val_new = val
         if (
             key in self
@@ -528,12 +530,31 @@ class DictWithProvenance(dict):
             and hasattr(self, "custom_setitem")
             and self.custom_setitem
         ):
-            new_provenance = self[key].provenance
+            if self[key].provenance[-1]:
+                old_category = self[key].provenance[-1].get("category", None)
+            else:
+                old_category = "none"
+            new_provenance = copy.deepcopy(self[key].provenance)
             if hasattr(val, "provenance"):
                 new_provenance.extend_and_modified_by(
                     val.provenance, "dict.__setitem__"
                 )
-                val_new = copy.deepcopy(val)
+
+                old_category_index = category_hierarchy.index(old_category)
+                if new_provenance[-1]:
+                    new_category = new_provenance[-1].get("category", None)
+                else:
+                    new_category = "none"
+                new_category_index = category_hierarchy.index(new_category)
+                # Assign the new value if the new category is higher in the hierarchy
+                if old_category_index <= new_category_index:
+                    val_new = copy.deepcopy(val)
+                # Keep the old value if the new category is lower in the hierarchy
+                elif respect_hierarchy_in_setitem:
+                    val_new = copy.deepcopy(self[key])
+                    #print(f"{key}: {self[key].provenance}")
+                    new_provenance.extend_and_modified_by(Provenance(self[key].provenance[-1]), "dict.__setitem__->reverted_by_hierarchy")
+
                 val_new.provenance = new_provenance
 
         super().__setitem__(key, val_new)

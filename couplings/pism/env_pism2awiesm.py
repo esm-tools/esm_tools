@@ -53,6 +53,7 @@ def prepare_environment(config):
             "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],
             "account_all_fw_input": config[config["general"]["setup_name"]].get("account_all_fw_input", 0), 
+            "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             }
     print (environment_dict)
     return environment_dict

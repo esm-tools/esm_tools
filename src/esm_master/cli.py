@@ -1,8 +1,10 @@
 """Console script for esm_master."""
 
+
 import rich_click as click
 
 from esm_motd import check_all_esm_packages
+
 
 from . import __version__
 from .esm_master import main_flow
@@ -159,6 +161,7 @@ def create_meta_command(command_name, steps, docstring=None):
     @click.option(
         "--generate-tab-complete", is_flag=True, help="Generate tab completion."
     )
+
     @click.option(
         "--list-all-targets", is_flag=True, help="List all available targets."
     )
@@ -207,6 +210,7 @@ def create_meta_command(command_name, steps, docstring=None):
         return 0
 
     return command
+
 
 
 if __name__ == "__main__":

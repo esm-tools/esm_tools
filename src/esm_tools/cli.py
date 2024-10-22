@@ -90,6 +90,8 @@ main.add_command(
     esm_master.cli.create_command("conf", "Configure code for compilation")
 )
 main.add_command(esm_master.cli.create_command("get", "Download model source code"))
+for name, steps in esm_master.get_meta_commands().items():
+    main.add_command(esm_master.cli.create_meta_command(name, steps))
 main.add_command(esm_tests.cli.main, name="run-tests")
 main.add_command(esm_plugin_manager.cli.main, name="list-plugins")
 main.add_command(esm_utilities.cli.logfile_stats, name="logfile-stats")

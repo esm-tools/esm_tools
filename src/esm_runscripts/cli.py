@@ -95,47 +95,36 @@ click.rich_click.SHOW_ARGUMENTS = True
     help="do not halt in warnings defined in the config files",
     is_flag=True,
 )
-def main():
+def main(
+    runscript,
+    debug,
+    verbose,
+    contained_run,
+    expid,
+    check,
+    profile,
+    modify_config,
+    last_jobtype,
+    task,
+    inspect,
+    pid,
+    start_date,
+    exclude,
+    only,
+    run_number,
+    update,
+    update_filetypes,
+    no_motd,
+    ignore_config_warnings,
+):
     """ESM Tools Command Line Interface"""
-    ctx = click.get_current_context()
-    ARGS = ctx.params
 
-    check = False
-    profile = None
-    update = False
-    expid = "test"
-    pid = -666
-    start_date = None
-    run_number = None
-    jobtype = "unknown"
-    verbose = False
-    inspect = None
-    use_venv = None
-    modify_config_file = None
-    no_motd = False
-    update_filetypes = []
-
-    original_command = " ".join(sys.argv[1:])
-
-    # Transfer click parameters to variables
-    check = ARGS.get("check", False)
-    profile = ARGS.get("profile", None)
-    pid = ARGS.get("pid", -666)
-    start_date = ARGS.get("start_date", None)
-    run_number = ARGS.get("run_number", None)
-    update = ARGS.get("update", False)
-    update_filetypes = ARGS.get("update_filetypes", [])
-    expid = ARGS.get("expid", "test")
-    jobtype = ARGS.get("task", "unknown")
-    verbose = ARGS.get("verbose", False)
-    inspect = ARGS.get("inspect", None)
-
-    # The contained_run value will now be True/False/None based on the flag
-    use_venv = ARGS.get("contained_run")
-
-    modify_config_file = ARGS.get("modify_config", "")
-    no_motd = ARGS.get("no_motd", False)
-    ignore_config_warnings = ARGS.get("ignore_config_warnings", False)
+    use_venv = contained_run
+    if sys.argv[1] == "run":
+        # NOTE(PG): The new interface allows for esm-tools run <everything else>. We need to throw that out.
+        original_command = " ".join(sys.argv[2:])
+    else:
+        original_command = " ".join(sys.argv[1:])
 
     # Setup command line config dictionary
     command_line_config = {
@@ -147,8 +136,8 @@ def main():
         "launcher_pid": pid,
         "current_date": start_date,
         "run_number": run_number,
-        "jobtype": jobtype,
-        "last_jobtype": ARGS.get("last_jobtype", "command_line"),
+        "jobtype": task,
+        "last_jobtype": last_jobtype,
         "verbose": verbose,
         "inspect": inspect,
         "use_venv": use_venv,
@@ -156,23 +145,23 @@ def main():
         "ignore_config_warnings": ignore_config_warnings,
     }
 
-    if modify_config_file:
-        command_line_config["modify_config_file"] = modify_config_file
+    if modify_config:
+        command_line_config["modify_config_file"] = modify_config
 
-    runscript_full_path = os.path.realpath(ARGS["runscript"])
-    runscript_dir, runscript = os.path.split(runscript_full_path)
+    runscript_full_path = os.path.realpath(runscript)
+    runscript_dir, runscript_name = os.path.split(runscript_full_path)
     runscript_dir += "/"
 
     if not os.path.exists(runscript_full_path):
         user_error(
             "runscript not found",
-            f"The runscript ``{ARGS['runscript']}`` does not exists in folder ``{runscript_dir}``. ",
+            f"The runscript ``{runscript}`` does not exists in folder ``{runscript_dir}``. ",
             dsymbols=["``", "'"],
         )
 
     command_line_config["original_command"] = original_command.strip()
     command_line_config["started_from"] = runscript_dir
-    command_line_config["scriptname"] = runscript
+    command_line_config["scriptname"] = runscript_name
     command_line_config["runscript_abspath"] = runscript_full_path
 
     # Define a sink object to store the logs
@@ -185,7 +174,7 @@ def main():
     if verbose:
         logger.add(sys.stdout, level="DEBUG", format="{message}")
         logger.debug(f"Started from: {command_line_config['started_from']}")
-        logger.debug(f"starting (jobtype): {jobtype}")
+        logger.debug(f"starting (jobtype): {task}")
         logger.debug(command_line_config)
     else:
         logger.add(sys.stdout, level="INFO", format="{message}")

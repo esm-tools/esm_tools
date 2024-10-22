@@ -14,6 +14,7 @@ import esm_database.cli
 import esm_master
 import esm_master.cli
 import esm_plugin_manager.cli
+import esm_runscripts.cli
 import esm_tests.cli
 import esm_tools
 import esm_utilities.cli
@@ -25,13 +26,14 @@ click.rich_click.COMMAND_GROUPS = {
     "esm-tools": [
         {
             "name": "esm-master Commands",
-            "commands": ["get", "conf", "comp"] + list(esm_master.get_meta_commands()),
+            "commands": ["get", "conf", "comp", "clean"]
+            + list(esm_master.get_meta_commands()),
             "help": "Commands for downloading, compiling, and installing Models",
             "table_styles": {"row_styles": ["red"]},
         },
         {
             "name": "esm-runscripts Commands",
-            "commands": ["run", "clean", "archive"],
+            "commands": ["run", "rmexp", "archive"],
             "help": "Commands for running and cleaning up experiments",
             "table_styles": {"row_styles": ["green"]},
         },
@@ -46,12 +48,6 @@ click.rich_click.COMMAND_GROUPS = {
             "commands": ["logfile-stats"],
             "help": "General utilities",
             "table_styles": {"row_styles": ["magenta"]},
-        },
-        {
-            "name": "Cleanup",
-            "commands": ["clean"],
-            "help": "Cleanup utilities",
-            "table_styles": {"row_styles": ["yellow"]},
         },
     ],
 }
@@ -86,7 +82,8 @@ def repl():
 
 
 main.add_command(esm_archiving.cli.main, name="archive")
-main.add_command(esm_cleanup.cli.main, name="clean")
+main.add_command(esm_runscripts.cli.main, name="run")
+main.add_command(esm_cleanup.cli.main, name="rmexp")
 main.add_command(esm_master.cli.create_command("clean", "Clean compilation artifacts"))
 main.add_command(esm_master.cli.create_command("comp", "Compile model"))
 main.add_command(
@@ -100,6 +97,7 @@ main.add_command(esm_utilities.cli.logfile_stats, name="logfile-stats")
 
 main.add_command(esm_database.cli.main, name="database")
 main.add_command(esm_master.cli.cli, name="master")
+main.add_command(esm_runscripts.cli.main, name="runscripts")
 main.add_command(esm_tests.cli.main, name="tests")
 main.add_command(esm_utilities.cli.main, name="utilities")
 

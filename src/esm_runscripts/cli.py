@@ -7,267 +7,164 @@ from . import event_handlers
 event_handlers.signal_listener()
 
 # Import from Python Standard Library
-import argparse
-import logging
 import os
 import sys
 
+import rich_click as click
 from loguru import logger
 
 from esm_motd import check_all_esm_packages
 from esm_parser import user_error
 
 from .helpers import SmartSink
-from .sim_objects import *
+from .sim_objects import SimulationSetup
+
+# Configure rich_click styling
+click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.GROUP_ARGUMENTS_OPTIONS = True
+click.rich_click.SHOW_ARGUMENTS = True
 
 
-def parse_shargs():
-    """The arg parser for interactive use"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("runscript", default=None)
+@click.command()
+@click.argument("runscript", type=click.Path(exists=True))
+@click.option("-d", "--debug", help="Print lots of debugging statements", is_flag=True)
+@click.option("-v", "--verbose", help="Be verbose", is_flag=True)
+@click.option(
+    "--contained-run/--open-run",
+    help="Run in a virtual environment / Run in default install",
+    default=None,
+)
+@click.option("-e", "--expid", help="The experiment ID to use", default="test")
+@click.option(
+    "-c",
+    "--check",
+    help="Run in check mode (don't submit job to supercomputer)",
+    is_flag=True,
+)
+@click.option(
+    "-P", "--profile", help="Write profiling information (esm-tools)", is_flag=True
+)
+@click.option("--modify-config", "-m", help="[m]odify configuration", default="")
+@click.option(
+    "-j",
+    "--last-jobtype",
+    help="Write the jobtype this run was called from (esm-tools internal)",
+    default="command_line",
+)
+@click.option(
+    "-t",
+    "--task",
+    help="The task to run. Choose from: prepcompute, post, couple, tidy",
+    default="unknown",
+)
+@click.option(
+    "-i",
+    "--inspect",
+    help="Show some information, choose a keyword from 'overview', 'namelists'",
+)
+@click.option(
+    "-p", "--pid", help="The PID of the task to observe.", default=-666, type=int
+)
+@click.option(
+    "-s",
+    "--start-date",
+    help="The start_date of the run, overwriting settings in the date file.",
+)
+@click.option("-x", "--exclude", help="e[x]clude this step")
+@click.option("-o", "--only", help="[o]nly do this step")
+@click.option(
+    "-r",
+    "--run-number",
+    help="run_number for this run, overwriting settings in date file",
+)
+@click.option(
+    "-U",
+    "--update",
+    help="[U]date the tools from the current version and the runscript",
+    is_flag=True,
+)
+@click.option(
+    "--update-filetypes",
+    help="Updates the requested files from external sources in a currently ongoing simulation. "
+    "We strongly advise against using this option unless you really know what you are doing.",
+    multiple=True,
+)
+@click.option("--no-motd", help="supress the printing of MOTD", is_flag=True)
+@click.option(
+    "--ignore-config-warnings",
+    help="do not halt in warnings defined in the config files",
+    is_flag=True,
+)
+def main(
+    runscript,
+    debug,
+    verbose,
+    contained_run,
+    expid,
+    check,
+    profile,
+    modify_config,
+    last_jobtype,
+    task,
+    inspect,
+    pid,
+    start_date,
+    exclude,
+    only,
+    run_number,
+    update,
+    update_filetypes,
+    no_motd,
+    ignore_config_warnings,
+):
+    """ESM Tools Command Line Interface"""
 
-    parser.add_argument(
-        "-d",
-        "--debug",
-        help="Print lots of debugging statements",
-        action="store_const",
-        dest="loglevel",
-        const=logging.DEBUG,
-        default=logging.ERROR,
-    )
+    use_venv = contained_run
+    if sys.argv[1] == "run":
+        # NOTE(PG): The new interface allows for esm-tools run <everything else>. We need to throw that out.
+        original_command = " ".join(sys.argv[2:])
+    else:
+        original_command = " ".join(sys.argv[1:])
 
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        help="Be verbose",
-        action="store_true",
-        default=False,
-    )
+    # Setup command line config dictionary
+    command_line_config = {
+        "check": check,
+        "profile": profile,
+        "update": update,
+        "update_filetypes": update_filetypes,
+        "expid": expid,
+        "launcher_pid": pid,
+        "current_date": start_date,
+        "run_number": run_number,
+        "jobtype": task,
+        "last_jobtype": last_jobtype,
+        "verbose": verbose,
+        "inspect": inspect,
+        "use_venv": use_venv,
+        "no_motd": no_motd,
+        "ignore_config_warnings": ignore_config_warnings,
+    }
 
-    parser.add_argument(
-        "--contained-run",
-        help="Run in a virtual environment",
-        action="store_true",
-        default=None,
-    )
+    if modify_config:
+        command_line_config["modify_config_file"] = modify_config
 
-    parser.add_argument(
-        "--open-run",
-        help="Run in default install (not in virtual environment)",
-        action="store_true",
-        default=None,
-    )
-
-    parser.add_argument(
-        "-e", "--expid", help="The experiment ID to use", default="test"
-    )
-
-    parser.add_argument(
-        "-c",
-        "--check",
-        help="Run in check mode (don't submit job to supercomputer)",
-        default=False,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "-P",
-        "--profile",
-        help="Write profiling information (esm-tools)",
-        default=None,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "--modify-config",
-        "-m",
-        dest="modify",
-        help="[m]odify configuration",
-        default="",  # kh 15.07.20 "usermods.yaml"
-    )
-
-    parser.add_argument(
-        "-j",
-        "--last-jobtype",
-        help="Write the jobtype this run was called from (esm-tools internal)",
-        default="command_line",
-    )
-
-    parser.add_argument(
-        "-t",
-        "--task",
-        help="The task to run. Choose from: prepcompute, post, couple, tidy",
-        default="unknown",
-    )
-
-    parser.add_argument(
-        "-i",
-        "--inspect",
-        help="Show some information, choose a keyword from 'overview', 'namelists'",
-        default=None,
-    )
-
-    parser.add_argument(
-        "-p",
-        "--pid",
-        help="The PID of the task to observe.",
-        default=-666,
-    )
-
-    parser.add_argument(
-        "-s",
-        "--start_date",
-        help="The start_date of the run, overwriting settings in the date file.",
-        default=None,
-    )
-
-    parser.add_argument("-x", "--exclude", help="e[x]clude this step", default=None)
-    parser.add_argument("-o", "--only", help="[o]nly do this step", default=None)
-    parser.add_argument(
-        "-r",
-        "--run_number",
-        help="run_number for this run, overwriting settings in date file",
-        default=None,
-    )
-
-    # PG: Might not work anymore:
-    parser.add_argument(
-        "-U",
-        "--update",
-        help="[U]date the tools from the current version and the runscript",
-        default=False,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "--update-filetypes",
-        help="Updates the requested files from external sources in a currently ongoing "
-        "simulation. We strongly advise against using this option unless you "
-        "really know what you are doing.",
-        nargs="+",
-        default=[],
-    )
-
-    parser.add_argument(
-        "--no-motd",
-        help="supress the printing of MOTD",
-        default=False,
-        action="store_true",
-    )
-
-    parser.add_argument(
-        "--ignore-config-warnings",
-        help="do not halt in warnings defined in the config files",
-        default=False,
-        action="store_true",
-    )
-
-    return parser.parse_args()
-
-
-def main():
-    ARGS = parse_shargs()
-
-    check = False
-    profile = None
-    update = False
-    expid = "test"
-    pid = -666
-    start_date = None
-    run_number = None
-    jobtype = "unknown"
-    verbose = False
-    inspect = None
-    use_venv = None
-    modify_config_file = None
-    no_motd = False
-
-    parsed_args = vars(ARGS)
-
-    original_command = " ".join(sys.argv[1:])
-
-    if "check" in parsed_args:
-        check = parsed_args["check"]
-    if "profile" in parsed_args:
-        profile = parsed_args["profile"]
-    if "pid" in parsed_args:
-        pid = parsed_args["pid"]
-    if "start_date" in parsed_args:
-        start_date = parsed_args["start_date"]
-    if "run_number" in parsed_args:
-        run_number = parsed_args["run_number"]
-    if "update" in parsed_args:
-        update = parsed_args["update"]
-    if "update_filetypes" in parsed_args:
-        update_filetypes = parsed_args["update_filetypes"]
-    if "expid" in parsed_args:
-        expid = parsed_args["expid"]
-    if "task" in parsed_args:
-        jobtype = parsed_args["task"]
-    if "verbose" in parsed_args:
-        verbose = parsed_args["verbose"]
-    if "inspect" in parsed_args:
-        inspect = parsed_args["inspect"]
-    if parsed_args["contained_run"] and parsed_args["open_run"]:
-        logger.error(
-            "You have set both --contained-run and --open-run, this makes no sense."
-        )
-        logger.error(parsed_args)
-        sys.exit(1)
-    if parsed_args["contained_run"] is not None:
-        use_venv = parsed_args["contained_run"]
-    if parsed_args["open_run"] is not None:
-        use_venv = not parsed_args["open_run"]
-    if "modify" in parsed_args:
-        modify_config_file = parsed_args["modify"]
-    if "no_motd" in parsed_args:
-        no_motd = parsed_args["no_motd"]
-    if "ignore_config_warnings" in parsed_args:
-        ignore_config_warnings = parsed_args["ignore_config_warnings"]
-
-    command_line_config = {}
-    command_line_config["check"] = check
-    command_line_config["profile"] = profile
-    command_line_config["update"] = update
-    command_line_config["update_filetypes"] = update_filetypes
-    command_line_config["expid"] = expid
-    command_line_config["launcher_pid"] = pid
-    command_line_config["current_date"] = start_date
-    command_line_config["run_number"] = run_number
-    command_line_config["jobtype"] = jobtype
-    command_line_config["last_jobtype"] = ARGS.last_jobtype
-    command_line_config["verbose"] = verbose
-    command_line_config["inspect"] = inspect
-    command_line_config["use_venv"] = use_venv
-    command_line_config["no_motd"] = no_motd
-    command_line_config["ignore_config_warnings"] = ignore_config_warnings
-    if modify_config_file:
-        command_line_config["modify_config_file"] = modify_config_file
-
-    # runscript_from_cmdline = filter(lambda x: x.endswith(".yaml"), sys.argv)
-    # runscript_from_cmdline = list(runscript_from_cmdline)[0]
-    # runscript_full_path = os.path.realpath(runscript_from_cmdline)
-    runscript_full_path = os.path.realpath(ARGS.runscript)
-    runscript_dir, runscript = os.path.split(runscript_full_path)
+    runscript_full_path = os.path.realpath(runscript)
+    runscript_dir, runscript_name = os.path.split(runscript_full_path)
     runscript_dir += "/"
+
     if not os.path.exists(runscript_full_path):
         user_error(
             "runscript not found",
-            f"The runscript ``{ARGS.runscript}`` does not exists in folder ``{runscript_dir}``. ",
+            f"The runscript ``{runscript}`` does not exists in folder ``{runscript_dir}``. ",
             dsymbols=["``", "'"],
         )
 
-    # this might contain the relative path but it will be taken care of later
     command_line_config["original_command"] = original_command.strip()
     command_line_config["started_from"] = runscript_dir
-
-    # only the yaml file, without the path
-    command_line_config["scriptname"] = runscript
-    # full path including the yaml file: runscript_dir + runscript
+    command_line_config["scriptname"] = runscript_name
     command_line_config["runscript_abspath"] = runscript_full_path
 
-    # Define a sink object to store the logs. Path of the logs can be later specified
-    # by using <sink_obj>.def_path(<path>)
+    # Define a sink object to store the logs
     trace_sink = SmartSink()
     logger.trace_sink = trace_sink
 
@@ -277,13 +174,16 @@ def main():
     if verbose:
         logger.add(sys.stdout, level="DEBUG", format="{message}")
         logger.debug(f"Started from: {command_line_config['started_from']}")
-        logger.debug(f"starting (jobtype): {jobtype}")
+        logger.debug(f"starting (jobtype): {task}")
         logger.debug(command_line_config)
     else:
         logger.add(sys.stdout, level="INFO", format="{message}")
 
-    setup = SimulationSetup(command_line_config=command_line_config)
-    # if not Setup.config['general']['submitted']:
-    if not setup.config["general"]["submitted"] and not no_motd:
+    my_simulation = SimulationSetup(command_line_config=command_line_config)
+    if not my_simulation.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
-    setup()
+    my_simulation()
+
+
+if __name__ == "__main__":
+    main()

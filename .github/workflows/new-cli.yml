@@ -1,0 +1,35 @@
+name: esm-tools new cli test
+on: [push, pull_request]
+
+jobs:
+    basic_new_cli:
+        runs-on: ubuntu-latest
+        env:
+          LC_ALL: en_US.UTF-8
+          LANG: en_US.UTF-8
+        container:
+          image: koldunovn/esm_test:latest
+          options: --hostname ollie1
+
+        steps:
+        - uses: actions/checkout@v2
+        - name: Setup Python ${{ matrix.python-version }}
+          uses: actions/setup-python@v4
+          with:
+            python-version: ${{ matrix.python-version }}
+        - name: Add to the path
+          run: |
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+        - name: Install esm-tools
+          run: |
+            ./install.sh
+        - name: Basic usage
+          run:
+              esm-tools
+        - name: Basic help
+          run:
+              esm-tools --help
+        - name: New get FESOM-2.5
+          run:
+              esm-tools get fesom-2.5
+

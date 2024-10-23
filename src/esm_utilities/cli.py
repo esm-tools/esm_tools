@@ -1,24 +1,31 @@
 """Console script for esm_utilities."""
+
 import sys
-import click
+
+import rich_click as click
 
 from . import utils
 
 
 @click.group()
-def main(args=None):
-    """Console script for esm_utilities."""
-    click.echo(
-        "Replace this message by putting your code into " "esm_utilities.cli.main"
-    )
-    click.echo("See click documentation at https://click.palletsprojects.com/")
+def main():
+    """Various utility functions for esm-tools produced simulations."""
     return 0
 
 
 @main.command()
-@click.argument("f")
-def logfile_stats(f):
-    utils.logfile_stats(f)
+@click.argument(
+    "log-file",
+    type=click.Path(exists=True),
+)
+def logfile_stats(log_file):
+    """Determines simulation throughput, queue time, and compute time
+
+    LOG_FILE is the path to a simulation log file, typically
+    found in the log folder.
+
+    """
+    utils.logfile_stats(log_file)
 
 
 if __name__ == "__main__":

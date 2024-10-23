@@ -1,110 +1,111 @@
 """
 Functionality for displaying the version number
 """
-import shutil
+
 import sys
 
-import click
+import emoji
+import rich_click as click
+from click_repl import repl as crepl
 
-import esm_tests
+import esm_archiving.cli
+import esm_cleanup.cli
+import esm_database.cli
+import esm_master
+import esm_master.cli
+import esm_plugin_manager.cli
+import esm_runscripts.cli
+import esm_tests.cli
 import esm_tools
+import esm_utilities.cli
 
-# click.version_option read the PKG_INFO which contains the wrong version
-# number. Get it directly from __init__.py
-version = esm_tools.__version__
+VERSION = esm_tools.__version__
+EPILOGUE = f"Version {VERSION}, The ESM-Tools Developer Team, 2017-2024"
+
+click.rich_click.COMMAND_GROUPS = {
+    "esm-tools": [
+        {
+            "name": "esm-master Commands",
+            "commands": ["get", "conf", "comp", "clean"]
+            + list(esm_master.get_meta_commands()),
+            "help": "Commands for downloading, compiling, and installing Models",
+            "table_styles": {"row_styles": ["red"]},
+        },
+        {
+            "name": "esm-runscripts Commands",
+            "commands": ["run", "rmexp", "archive"],
+            "help": "Commands for running and cleaning up experiments",
+            "table_styles": {"row_styles": ["green"]},
+        },
+        {
+            "name": "Developer Utilities",
+            "commands": ["list-plugins", "run-tests"],
+            "help": "Commands for Developers",
+            "table_styles": {"row_styles": ["blue"]},
+        },
+        {
+            "name": "Utilities",
+            "commands": ["logfile-stats"],
+            "help": "General utilities",
+            "table_styles": {"row_styles": ["magenta"]},
+        },
+    ],
+}
 
 
-@click.group()
-@click.version_option(version=version)
-def main():
-    pass
-
-
-@main.command()
-def test_state():
-    """Prints the state of the last tested experiments."""
-
-    esm_tests.test_utilities.print_state_online()
-
-    return 0
-
-
-@main.command()
-@click.option(
-    "-t",
-    "--type",
-    type=click.Choice(["component", "setup", "machine"], case_sensitive=False),
-    help="Creates either a new component (default) or a new setup",
-    default="component",
-    show_default=True,
+@click.group(
+    help="""Tools for downloading, compiling, running, analyzing, and visualizing
+    simulation experiments with Earth System Models.""",
+    epilog=EPILOGUE,
 )
-@click.argument("name", nargs=1)
-def create_new_config(name, type):
-    """Opens your $EDITOR and creates a new file for NAME"""
-    click.echo(f"Creating a new {type} configuration for {name}")
-    template_file = esm_tools.get_config_filepath(
-        config=f"templates/{type}_template.yaml"
-    )
-    shutil.copy(template_file, f"{name}.yaml")
-    new_config_file = f"{name}.yaml"
-    # TODO(PG): Currently this lands in the current working directory.
-    # Would be nice if this landed already in an git-controlled
-    # editable version and prepared a commit for you:
-    click.edit(filename=new_config_file)
-    click.echo(
-        "Thank you! The new configuration has been saved. Please commit it (and get in touch with the"
-    )
-    click.echo("esm-tools team if you need help)!")
+@click.version_option(
+    version=VERSION,
+    prog_name="esm-tools",
+    message=emoji.emojize(
+        "%(prog)s :toolbox: %(version)s\nRunning with Python :snake: "
+        + sys.version.replace("\n", " ")
+    ),
+)
+def main(args=None):
+    """Main Command Line Interface entry point"""
     return 0
 
 
-# TODO(PG): This doesn't belong in the cli.py but whatever...
 @main.command()
-@click.argument("file_name", nargs=1, required=False)
-@click.argument("current_year", nargs=1, required=False)
-def check_transient_forcing(file_name=None, current_year=None):
-    import pandas
-    import questionary
+def repl():
+    """Start an interactive shell"""
+    custom_kwargs = {
+        "message": "esm-tools > ",
+        "prompt_continuation": "... ",
+    }
+    crepl(click.get_current_context(), prompt_kwargs=custom_kwargs)
 
-    file_name = file_name or questionary.filepath("Select the file to read").ask()
-    df = pandas.read_csv(
-        file_name,
-        sep=";",
-        index_col=0,
-        header=None,
+
+main.add_command(esm_archiving.cli.main, name="archive")
+main.add_command(esm_runscripts.cli.main, name="run")
+main.add_command(esm_cleanup.cli.main, name="rmexp")
+main.add_command(esm_master.cli.create_command("clean", "Clean compilation artifacts"))
+main.add_command(esm_master.cli.create_command("comp", "Compile model"))
+main.add_command(
+    esm_master.cli.create_command("conf", "Configure code for compilation")
+)
+main.add_command(esm_master.cli.create_command("get", "Download model source code"))
+for name, steps in esm_master.get_meta_commands().items():
+    main.add_command(
+        esm_master.cli.create_command(
+            name, f"Runs the following steps: {', '.join(steps)}"
+        )
     )
-    current_year = (
-        current_year
-        or questionary.text(
-            "Enter a value for year that you know is in the table"
-        ).ask()
-    )
-    # current_year = int(current_year)
-    co2, n2o, ch4, cecc, cobld, clonp = df.loc[current_year]
-    print(f"Forcing table was OK to read at year {current_year}")
-    print(f"CO2: {co2}")
-    print(f"N2O: {n2o}")
-    print(f"CH4: {ch4}")
-    print(f"CECC: {cecc}")
-    print(f"COBLD: {cobld}")
-    print(f"CLONP: {clonp}")
+main.add_command(esm_tests.cli.main, name="run-tests")
+main.add_command(esm_plugin_manager.cli.main, name="list-plugins")
+main.add_command(esm_utilities.cli.logfile_stats, name="logfile-stats")
 
 
-@main.command()
-@click.argument("version", nargs=1, required=False)
-@click.option("--local", default=False, help="Use the local MOTD file", is_flag=True)
-def motd(version=None, local=False):
-    """Prints the message of the day."""
-    import esm_motd
-
-    if version is None:
-        version = esm_tools.__version__
-
-    esm_motd.check_esm_package_with_version_and_local_options(
-        "esm_tools", version, local
-    )
-    return 0
-
+main.add_command(esm_database.cli.main, name="database")
+main.add_command(esm_master.cli.cli, name="master")
+main.add_command(esm_runscripts.cli.main, name="runscripts")
+main.add_command(esm_tests.cli.main, name="tests")
+main.add_command(esm_utilities.cli.main, name="utilities")
 
 if __name__ == "__main__":
     sys.exit(main())

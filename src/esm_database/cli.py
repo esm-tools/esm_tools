@@ -1,38 +1,14 @@
-#!/usr/bin/env python
-"""
-A small wrapper that combines the shell interface and the Python interface
-"""
+import rich_click as click
 
-# Import from Python Standard Library
-import argparse
-import logging
-import os
-import sys
-
-# Import from 3rd Party packages
-import coloredlogs
-
-from .esm_database import *
+from .esm_database import DisplayDatabase
 
 
-def parse_shargs():
-    """The arg parser for interactive use"""
-    parser = argparse.ArgumentParser()
-    parser.add_argument("table", nargs="?", default=None)
-
-    parser.add_argument("-f", "--find", help="Find keyword", default=None)
-
-    return parser.parse_args()
+@click.command()
+@click.argument("table", required=False)
+def main(table):
+    """Interactive tool to display database information."""
+    DisplayDatabase(table)
 
 
-def main():
-    ARGS = parse_shargs()
-
-    find = None
-
-    parsed_args = vars(ARGS)
-
-    if "find" in parsed_args:
-        find = parsed_args["find"]
-
-    db = DisplayDatabase(ARGS.table)
+if __name__ == "__main__":
+    main()

@@ -17,6 +17,7 @@ description: |
 ##
 available_versions:
 - ec-earth
+- agrif
 - awicm-3.0
 - awicm-3.1
 - awicm-frontiers
@@ -51,7 +52,9 @@ choose_version:
     branch: runoff
   foci211:
     branch: foci211
-
+  agrif:
+    branch: agrif 
+  
 clean_command: rm -rf bin; cd src; make clean; cd ..
 comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
 git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
@@ -91,6 +94,7 @@ nproca: 1
 nprocb: 1
 
 runoff_method: "old"
+with_agrif: False
                          
 runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
@@ -116,6 +120,23 @@ coupling_fields:
         "[[runoff_fields_send-->FIELD]]":
                 grid: opaf
 
+# If we run FOCI-OpenIFS with AGRIF, 
+# then AGRIF needs to send its mask 
+# to rnfmap
+# Rnfmap then computes runoff and calving fields
+# for AGRIF
+choose_with_agrif:
+        True:
+                runoff_agrif_fields_recv: [1_R_AgrSpg]
+                runoff_agrif_fields_send: [1_R_Runoff_oce]
+                calving_agrif_fields_send: [1_R_Calving_oce]
+                add_coupling_fields:
+                        "[[runoff_agrif_fields_send-->FIELD]]":
+                                grid: rnfm
+                        "[[calving_agrif_fields_send-->FIELD]]":
+                                grid: rnfs 
+                        "[[runoff_agrif_fields_recv-->FIELD]]":
+                                grid: rnfm 
 choose_runoff_method:
         'EM21':
                 runoff_fields_recv: [R_Runoff_atm]
@@ -222,6 +243,14 @@ choose_computer.name:
     levante:
         fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
         cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+    glogin:
+       choose_computer.compiler_mpi:
+          gcc11_ompi416:
+             fflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
+             cflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
+          '*':
+             fflags: -r8 -fp-model precise -align array32byte -O3 -g -traceback -convert big_endian -fpe0 
+             cflags: -fp-model precise -O3 -g -traceback -qopt-report=0     
     "*":
        fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
-       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0
+       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0

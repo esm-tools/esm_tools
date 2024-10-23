@@ -3,11 +3,11 @@ general:
         verbose: False
 
         setup_name: oifs
-        compute_time: "02:00:00"
+        compute_time: "00:30:00"
         initial_date: "1979-01-01T00:00:00"
-        final_date: "1980-01-01T00:00:00"
-        nyear: 1
-        nmonth: 0
+        final_date: "1979-02-01T00:00:00"
+        nyear: 0
+        nmonth: 1
         nday: 0
         restart_rate: 1
         restart_unit: days
@@ -18,11 +18,11 @@ general:
         # machine specific setup 
         account: shk00018
         model_dir: /home/shkjocke/esm/models/oifs-43r3-v1/
-        base_dir: /scratch/usr/shkjocke/esm-tuning-v2/
+        base_dir: /scratch/usr/shkjocke/esm-speed3/
 
 oifs:
         version: 43r3
-        with_xios: True         
+        with_xios: True
         pool_dir: /scratch/projects/shk00018/foci_input2/
         input_dir: ${pool_dir}/openifs_cy43_tco95/
         rtables_dir: ${pool_dir}/openifs_cy43_general/rtables/
@@ -39,8 +39,9 @@ oifs:
         resolution: TCO95
         levels: L91
         lresume: 0
-        post_processing: 0
-        nproc: 480
+        post_processing: 1
+        nproc: 288
+        omp_num_threads: 2
         time_step: 1800
         perturb: 1
         ensemble_id: 1
@@ -61,5 +62,5 @@ oifs:
 
 xios:        
         # 3hr surface + 6hr model lev + 1d pressure lev + 1d PV + 1m surf and pressure level
-        xml_dir: /scratch/usr/shkjocke/foci_input2/OPENIFS43R3-TCO95/output_1m_sfc_pl/
+        xml_dir: /scratch/projects/shk00018/foci_input2/openifs_cy43_tco95/output_1m+1d/
         nproc: 96

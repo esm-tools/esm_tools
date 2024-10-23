@@ -1,0 +1,28 @@
+computer:
+   partition: "standard96"
+general:
+   use_venv: false
+   homedir: !ENV ${HOME}
+   setup_name: nemo
+   compute_time: "04:59:00"
+   account: shkifmsw
+   initial_date: "1980-01-01T00:00:00"       # Initial exp. date
+   final_date: "1983-01-01T00:00:00"         # Final date of the experiment
+   leapyear: False
+   nyear: 1 
+   base_dir: ${homedir}/esm/esm-experiments/ 
+   model_dir: ${homedir}/esm/models/nemo-eORCA025_Z75_SI3_JRA55
+
+nemo:
+   version: eORCA025_Z75_SI3_JRA55
+   resolution: "eORCA025" 
+   leapyear: False
+   nproc: 1416 
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   jpni: 0 
+   jpnj: 0 
+   #time_step: 600
+
+xios:
+   model_dir: ${general.homedir}/esm/models/nemo-eORCA025.z75.SI3/xios
+   nproc: 24

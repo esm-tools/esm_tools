@@ -21,7 +21,11 @@ module load nco || module load NCO
 OCEAN_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
 OCEAN_CONVERT_NETCDF4=true
-OCEAN_FILE_TAGS="grid_T grid_U grid_V icemod ptrc_T"
+# In NEMO 3.6 we had grid_T, grid_U etc
+# In NEMO 4 we also use diaptr2D, diaptr3D and grid_U_vsum 
+# It should be fine to add them here. The script will search for them
+# if they exist they will be used, if not they will be skipped
+OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T diaptr2D diaptr3D grid_U_vsum"
 
 # Other settings
 max_jobs=20
@@ -180,7 +184,12 @@ endyear=$(date --date="$enddate" "+%Y")
 # simulation that ran in multiyear intervals.
 if [[ -z $increment ]] ; then
    if [[ $startyear == $endyear ]] ; then
-      increment=$((endmonth - startmonth + 1)) 
+	   # freq is 'y' for a full single year
+      if [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] ; then
+			increment=1
+		else
+      	increment=$((${endmonth#0} - ${startmonth#0} + 1)) 
+		fi
 	else
       increment=$((endyear - startyear + 1)) 
    fi
@@ -226,7 +235,7 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 		else
 			currdate1=$nextdate
 			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
-			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} year" "+%Y%m%d")	
 		fi
 
 		for filetag in $filetags
@@ -236,7 +245,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 				input=${s}_${currdate1}_${currdate2}_${filetag}.nc3
 		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
-      	  	if [[ -f $output ]] ; then
+      	  	 echo " Looking for $output " 
+                 if [[ -f $output ]] ; then
 					mv $output $input
                
 					# If too many jobs run at the same time, wait
@@ -310,7 +320,7 @@ do
 	else
 		currdate1=$nextdate
 		currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + ${increment} year" "+%Y%m%d")	
 	fi
 
 	for filetag in $filetags
@@ -384,7 +394,7 @@ do
 	else
 		currdate1=$nextdate
 		currdate2=$(date --date="$currdate1 + 1 year - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate2 + 1 year" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + 1 year" "+%Y%m%d")	
 	fi
 
 	# output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc

@@ -24,7 +24,7 @@ general:
    ini_parent_exp_id: "FOCI_GJK006"
    ini_string_parent_date: "4000-01-01"
    ini_nemo_restart_steps: 20161344
-   ini_parent_dir: "/scratch/usr/shkjocke/esm-experiments/${ini_parent_exp_id}/restart/"
+   ini_parent_dir: "/scratch/projects/shk00018/focioifs_restarts/${ini_parent_exp_id}/restart/"
    oasis_date_stamp: "_39900101-39991231"
    # We will not restart OpenIFS, techinically speaking
    # with the eternal restart feature, the complete yaml of the previous run needs to be available:
@@ -33,8 +33,9 @@ general:
    # This activates post processing for OpenIFS and NEMO
    postprocessing: 1
 
-computer:
-   additional_flags: '--qos=preempt'
+#computer:
+#   #partition_name: "standard96:eoptimized"
+#   additional_flags: '--qos=preempt'
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-2.1.1/
@@ -54,7 +55,6 @@ oifs:
    mip: "cmip6"
    pool_dir: /scratch/projects/shk00018/foci_input2/
    input_dir: "${pool_dir}/openifs_cy43_tco95/"
-   #input_dir: "/scratch/projects/shk00018/focioifs_restarts/FOCI_GJK006/restart/oifs/"
    rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
    vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
    clim_dir: "${pool_dir}/openifs_cy43_tco95/95_4/"
@@ -79,10 +79,16 @@ oifs:
    sclct_switch: 2
    initial_date_cold: "4000-01-01"
 
-   #add_namelist_changes:
-   #    fort.4:
-   #        NAMMCC:
-   #            RALBSEAD_NML: 0.045
+   add_namelist_changes:
+       fort.4:
+           NAMCLDP:
+              # diffusion coeff for cloud edges
+              RCLDIFF: 1.e-6 # default 3e-6
+              # for convection, RCLDIFF=RCLDIFF*RCLDIFF_CONVI
+              RCLDIFF_CONVI: 7.0 # default 7.0
+           #NAMMCC:
+           #    RALBSEAD_NML: 0.045
+           #    RALBSCALE_AR: 0.8
 
 oasis3mct:
    lresume: ${general.lresume}
@@ -91,7 +97,7 @@ oasis3mct:
    #ini_parent_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/"
    # Use FOCI_GJK006 4000-01-01
    ini_parent_exp_id: "${general.ini_parent_exp_id}"
-   ini_parent_dir: "/scratch/projects/shk00018/focioifs_restarts/${ini_parent_exp_id}/restart/oasis3mct/"
+   ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
    ini_parent_date: "${prev_date}"
 
    norestart: F
@@ -100,7 +106,7 @@ oasis3mct:
    debug_level: 5
    # in FOCIOIFS all oasis input files are treated as restarts.
    # in FOCI all remapping files are handled as inputs. Both approaches work.
-   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct"
+   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
    oasis_date_stamp: "${general.oasis_date_stamp}"
    #oasis_date_stamp: "" 
    
@@ -117,20 +123,21 @@ nemo:
    add_namelist_changes:
        namelist_cfg:
            namrun:
-               cn_ocerst_indir: ${parent_restart_dir}
-               cn_ocerst_outdir: ${experiment_restart_out_dir}
+               #cn_ocerst_indir: ${parent_restart_dir}
+               #cn_ocerst_outdir: ${experiment_restart_out_dir}
+               ln_single_prec_send: ".true." 
            namtra_ldf:
                rn_aht_0: 600
            namsbc_rnf:
                rn_rfact: 0.962 
-       namelist_ice_cfg:
-           namicerun:
-               cn_icerst_indir: ${parent_restart_dir}
-               cn_icerst_outdir: ${experiment_restart_out_dir}
-       namelist_top_cfg:
-           namtrc_run:
-               cn_trcrst_indir: ${parent_restart_dir}
-               cn_trcrst_outdir: ${experiment_restart_out_dir}
+       #namelist_ice_cfg:
+       #    namicerun:
+       #        cn_icerst_indir: ${parent_restart_dir}
+       #        cn_icerst_outdir: ${experiment_restart_out_dir}
+       #namelist_top_cfg:
+       #    namtrc_run:
+       #        cn_trcrst_indir: ${parent_restart_dir}
+       #        cn_trcrst_outdir: ${experiment_restart_out_dir}
 
 rnfmap:
    nproc: 1

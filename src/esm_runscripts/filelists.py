@@ -3,6 +3,7 @@ import copy
 import filecmp
 import glob
 import hashlib
+import importlib
 import os
 import pathlib
 import re
@@ -11,12 +12,11 @@ import sys
 
 import f90nml
 import yaml
-
-import esm_parser
 from loguru import logger
 
-from . import helpers
-from . import jinja
+import esm_parser
+
+from . import helpers, jinja
 
 
 def rename_sources_to_targets(config):
@@ -1631,16 +1631,19 @@ def get_movement(config, model, category, filetype, source, target):
         helpers.print_datetime(config)
         sys.exit(42)
 
+
 def append_namelist_dependent_sources(config):
     """If a model has streams defined in the one of it's namelists, append them to the sources here"""
     for model in config["general"]["valid_model_names"] + ["general"]:
-        if config["general"][model]["has_namelist_streams"]:  # Something truthy
+        if config[model].get("has_namelist_streams", False):  # Something truthy
             try:
-                model_module = importlib.import(f"esm_runscripts.{model}")
+                model_module = importlib.import_module(f"esm_runscripts.{model}")
                 # Important: we need to define something that is called append_namelist_dependent_sources in <model>.py
                 model_module.append_namelist_dependent_sources(config)
             except ImportError:
-                logger.error(f"Model {model} specifies that it has namelist streams, but there is module to import to handle that...")
+                logger.error(
+                    f"Model {model} specifies that it has namelist streams, but there is module to import to handle that..."
+                )
                 # keep going...
     return config
 

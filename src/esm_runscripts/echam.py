@@ -18,15 +18,21 @@ def _get_mvstream_tags_from_namelist(namelist):
     for chapter, contents in namelist.items():
         if chapter == "mvstreamctl":
             tag = contents.get("filetag")
-            mvstream_tags.append(tag)
+            if tag is not None:
+                mvstream_tags.append(tag)
     return mvstream_tags
 
 
 def append_namelist_dependent_sources(config):
     expid = config["general"]["expid"]
-    work_dir = config["general"]["work_dir"]
     econfig = config["echam"]
-    namelist = econfig["namelist_objs"]
+    try:
+        namelist = econfig["namelist_objs"]
+    except KeyError:  # Namelists not yet loaded...
+        namelist = f90nml.read(econfig["namelist_dir"] + "/namelist.echam")
     mvstream_tags = _get_mvstream_tags_from_namelist(namelist)
-    mvstream_dict = {tag: f"{work_dir}/{expid}*_{tag}" for tag in mvstream_tags}
-    config["outdata_sources"].update(mvstream_dict)
+    jsbach_streams = config["jsbach"]["streams"]
+    ignore_these_tags = econfig.get("ignore_tags", jsbach_streams)
+    mvstream_tags = [tag for tag in mvstream_tags if tag not in ignore_these_tags]
+    mvstream_dict = {tag: f"{expid}*_{tag}" for tag in mvstream_tags}
+    econfig["outdata_sources"].update(mvstream_dict)

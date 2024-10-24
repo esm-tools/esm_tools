@@ -1631,9 +1631,23 @@ def get_movement(config, model, category, filetype, source, target):
         helpers.print_datetime(config)
         sys.exit(42)
 
+def append_namelist_dependent_sources(config):
+    """If a model has streams defined in the one of it's namelists, append them to the sources here"""
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        if config["general"][model]["has_namelist_streams"]:  # Something truthy
+            try:
+                model_module = importlib.import(f"esm_runscripts.{model}")
+                # Important: we need to define something that is called append_namelist_dependent_sources in <model>.py
+                model_module.append_namelist_dependent_sources(config)
+            except ImportError:
+                logger.error(f"Model {model} specifies that it has namelist streams, but there is module to import to handle that...")
+                # keep going...
+    return config
+
 
 def assemble(config):
     config = complete_all_file_movements(config)
+    config = append_namelist_dependent_sources(config)
     config = rename_sources_to_targets(config)
     config = choose_needed_files(config)
     config = complete_targets(config)

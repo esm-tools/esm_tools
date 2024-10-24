@@ -1,15 +1,12 @@
 import filecmp
 import os
 import pathlib
-import re
 import shutil
 import sys
-import time
 
-import psutil
 from loguru import logger
 
-from . import coupler, database_actions, helpers, logfiles
+from . import helpers, logfiles
 from .filelists import copy_files, resolve_symlinks
 
 

@@ -225,7 +225,7 @@ def choose_needed_files(config):
             new_sources = new_targets = {}
             for category, name in config[model][filetype + "_files"].items():
                 # TODO: change with user_error()
-                if not name in config[model][filetype + "_sources"]:
+                if name not in config[model][filetype + "_sources"]:
                     logger.error(
                         "Implementation "
                         + name
@@ -1650,9 +1650,9 @@ def append_namelist_dependent_sources(config):
 
 def assemble(config):
     config = complete_all_file_movements(config)
-    config = append_namelist_dependent_sources(config)
     config = rename_sources_to_targets(config)
     config = choose_needed_files(config)
+    config = append_namelist_dependent_sources(config)
     config = complete_targets(config)
     config = complete_sources(config)
     config = reuse_sources(config)

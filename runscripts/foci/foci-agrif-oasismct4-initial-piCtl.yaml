@@ -1,28 +1,35 @@
 # use preempt feature on glogin
 #computer:
 #   additional_flags: "--qos=preempt"
+computer:
+        partition: "standard96:test"
 general:
    use_venv: False
-   verbose: False
+   verbose: True
    setup_name: "foci"
    version: "agrif_oasismct4"
    homedir: !ENV ${HOME}
 
    # operational settings: yearly restarts
-   compute_time: "06:35:00"
-   initial_date: "1850-01-01T00:00:00"   
-   final_date: "1862-01-01T00:00:00"    
-   postprocessing: 0
-   nmonth: 12 
+   compute_time: "01:00:00"
+   initial_date: "1900-01-01T00:00:00"   
+   final_date: "1940-01-01T00:00:00"    
+   postprocessing: 1
+   nmonth: 12
+   clean_runs: 2
    # test settings: 5 daily restarts
    #compute_time: "00:35:00"
    #initial_date: "1850-01-01T00:00:00"
    #final_date: "1850-01-16T00:00:00" 
-   postprocessing: 0
    
    # machine specific setup 
-   account: shk00018
+   account: shktkeme
    base_dir: ${homedir}/esm/esm-experiments/
+   lresume: True
+   ini_parent_exp_id: "FOCI2.0-TK105_FAM_ESM_piControl_2129TK012"
+   ini_parent_date: "18991231"
+   ini_nemo_restart_steps: 876576
+   ini_parent_dir: "/scratch/usr/shktkeme/foci_input/FOCI-AGRIF-MOPS-OASISMCT4/${ini_parent_exp_id}/"
 
 foci:
    model_dir: ${general.homedir}/esm/models/foci-agrif_oasismct4/
@@ -33,6 +40,9 @@ oasis3mct:
    input_dir: "/scratch/usr/shkifmsw/foci_input2/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05_${nemo.nest1}/"
    # test settings, write out coupling files
    # export_mode_a2o: "EXPOUT"
+   export_mode_a2o: "EXPOUT"
+   export_mode: "EXPOUT"
+   debug_level: 0
 
 echam:
    scenario: "PI-CTRL"
@@ -41,17 +51,36 @@ echam:
    restart_rate: ${general.nmonth}
    restart_unit: "months"
    # test settings: 5 daily restarts
-   restart_rate: ${general.nday}
-   restart_unit: "days"
+   #restart_rate: ${general.nday}
+   #restart_unit: "days"
    nproca: 16
    nprocb: 12
-   
+   nprocio: 0
+   namelist_changes:
+      namelist.echam:
+         parctl:
+            iomode: 0
+            nprocio: ${nprocio}
+         radctl:
+            iaero: 3
+            io3: 4
+            isolrad: 6
+            ich4: 3
+            in2o: 3
+            ico2: 1
+            co2vmr: 284.3169860840e-06
+            ch4vmr: 808.2490234375e-09
+            n2ovmr: 273.0210571289e-09
+            yr_perp: 1850
+
 nemo:
    # set your own agrif input directory
    #agrif_dir: /path/to/my/input_files/AGRIF/agrif_${nest}
+   agrif_dir: /scratch/usr/shktkeme/foci_input/AGRIF/agrif_VIKING10/host_bathy_meter_nest_smoothed_for_TK011
    nest1: VIKING10
    resolution: "ORCA05"
-   version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+   #version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+   version: "ORCA05_LIM2_FOCI_AGRIF_OASISMCT4"
    jpni: 36 
    jpnj: 24
    nproc: 864
@@ -63,6 +92,32 @@ nemo:
    #  namelist_cfg:
    #    namtra_ldf:
    #      rn_aht_0: 599
+   namelist_changes:
+      namelist_cfg:
+         namzgr:
+            cn_batmeter: "bathy_meter.nc"
+
+      1_namelist_cfg:
+         namsbc_cpl:
+            sn_snd_co2: "coupled"
+            sn_rcv_co2: "coupled"
+         namlbc:
+            rn_shlat: 0.0
+         namnc4:
+            nn_nchunks_k: 46
+   add_input_files:
+      batmeter: bathy_meter
+      cn_batmeter: bathy_meter
+      1_batmeter: 1_bathy_meter
+      1_cn_batmeter: 1_bathy_meter
+   input_sources:
+      coordinates: ${agrif_dir}/coordinates.nc
+      bathy_meter: ${agrif_dir}/bathy_meter.nc
+      1_bathy_meter: ${agrif_dir}/1_bathy_meter.nc
+      1_coordinates: ${agrif_dir}/1_coordinates_ORCA05.nc
+      fixed_grids: ${agrif_dir}/AGRIF_FixedGrids.in
+      cordinates: ${agrif_dir}/coordinates_ORCA05.nc
+
 
 xios:
    nproc: 36

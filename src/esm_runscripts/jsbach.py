@@ -28,7 +28,7 @@ def _get_comments_for_streams(namelist, mvstream_tags, flag="ESM_TOOLS_JSBACH_ST
 
         Examples
         --------
-        Assuming you have a namelist file at ``path/to/namelist`` with the following conntents:
+        Assuming you have a namelist file with the following contents:
 
         .. code-block:: fortran
 
@@ -52,7 +52,7 @@ def _get_comments_for_streams(namelist, mvstream_tags, flag="ESM_TOOLS_JSBACH_ST
         /
         The following will extract ['plants', 'soil']::
 
-        >>> namelist = "path/to/namelist"
+        >>> namelist = "tests/namelists/echam/jsbach_tags_namelist.echam"
         >>> mvstream_tags = ["plants", "soil", "something"]
         >>> _get_comments_for_streams(namelist, mvstream_tags)
         ['plants', 'soil']

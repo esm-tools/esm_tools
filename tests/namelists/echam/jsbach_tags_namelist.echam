@@ -1,0 +1,20 @@
+&mvstreamctl
+    filetag = 'plants' ! ESM_TOOLS_JSBACH_STREAM
+    source = 'g3b'
+    variables = 'soilwet', 'soiltemp', 'lai', 'gpp', 'npp'
+    interval = 1, 'months', 'last', 0
+/
+&mvstreamctl
+    filetag = 'soil' ! ESM_TOOLS_JSBACH_STREAM
+    source = 'g3b'
+    variables = 'soilwet', 'soiltemp'
+    interval = 1, 'months', 'last', 0
+/
+&mvstreamctl
+    filetag = 'something'
+    source = 'g3b'
+    variables = 'temp2'
+    interval = 1, 'months', 'last', 0
+/
+
+! vim: ft=fortran

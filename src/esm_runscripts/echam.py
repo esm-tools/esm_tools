@@ -160,9 +160,9 @@ def append_namelist_dependent_sources(config):
     try:
         namelist = econfig["namelist_objs"]
     except KeyError:  # Namelists not yet loaded...
-        namelist = f90nml.read(econfig["namelist_dir"] + "/namelist.echam")
+        namelist = f90nml.read(f"{econfig['namelist_dir']}/namelist.echam")
     mvstream_tags = _get_mvstream_tags_from_namelist(namelist)
-    jsbach_streams = config["jsbach"]["streams"]
+    jsbach_streams = config["jsbach"].get("streams", [])
     ignore_these_tags = econfig.get("ignore_tags", jsbach_streams)
     mvstream_tags = [tag for tag in mvstream_tags if tag not in ignore_these_tags]
     mvstream_dict = {tag: f"{expid}*{tag}" for tag in mvstream_tags}

@@ -39,7 +39,7 @@ def _get_mvstream_tags_from_namelist(namelist):
 
     Examples
     --------
-    Assuming you have a namelist file at ``/tmp/example/namelist.echam`` with the
+    Assuming you have a namelist file at ``tests/namelists/echam/paul_custom_namelist.echam`` with the
     following contents:
 
     .. code-block:: fortran
@@ -108,7 +108,7 @@ def _get_mvstream_tags_from_namelist(namelist):
 
     The following code will extract the mvstream tags from the namelist:
 
-    >>> namelist_path = "/tmp/example/namelist.echam"
+    >>> namelist_path = "tests/namelists/echam/paul_custom_namelist.echam"
     >>> tags = _get_mvstream_tags_from_namelist(namelist_path)
     >>> print(tags)
     ['paul_custom']

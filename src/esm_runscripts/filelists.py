@@ -3,6 +3,7 @@ import copy
 import filecmp
 import glob
 import hashlib
+import importlib
 import os
 import pathlib
 import re
@@ -11,12 +12,11 @@ import sys
 
 import f90nml
 import yaml
-
-import esm_parser
 from loguru import logger
 
-from . import helpers
-from . import jinja
+import esm_parser
+
+from . import helpers, jinja
 
 
 def rename_sources_to_targets(config):
@@ -225,7 +225,7 @@ def choose_needed_files(config):
             new_sources = new_targets = {}
             for category, name in config[model][filetype + "_files"].items():
                 # TODO: change with user_error()
-                if not name in config[model][filetype + "_sources"]:
+                if name not in config[model][filetype + "_sources"]:
                     logger.error(
                         "Implementation "
                         + name
@@ -1632,10 +1632,27 @@ def get_movement(config, model, category, filetype, source, target):
         sys.exit(42)
 
 
+def append_namelist_dependent_sources(config):
+    """If a model has streams defined in the one of it's namelists, append them to the sources here"""
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        if config[model].get("has_namelist_streams", False):  # Something truthy
+            try:
+                model_module = importlib.import_module(f"esm_runscripts.{model}")
+                # Important: we need to define something that is called append_namelist_dependent_sources in <model>.py
+                model_module.append_namelist_dependent_sources(config)
+            except ImportError:
+                logger.error(
+                    f"Model {model} specifies that it has namelist streams, but there is module to import to handle that..."
+                )
+                # keep going...
+    return config
+
+
 def assemble(config):
     config = complete_all_file_movements(config)
     config = rename_sources_to_targets(config)
     config = choose_needed_files(config)
+    config = append_namelist_dependent_sources(config)
     config = complete_targets(config)
     config = complete_sources(config)
     config = reuse_sources(config)

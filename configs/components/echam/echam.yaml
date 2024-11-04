@@ -79,7 +79,7 @@ compile_infos:
                make -j `nproc --all`; make install -j `nproc --all`;
             install_bins: ''
             branch: esm-tools
-            git-repository: https://git.geomar.de/foci/src/echam.git 
+            git-repository: https://git.geomar.de/foci/src/echam.git
           6.3.05p2-foci_oasismct4:
             branch: esm-tools-oasis3mct4
             git-repository: https://git.geomar.de/foci/src/echam.git
@@ -183,6 +183,7 @@ adj_input_dir: "${input_dir}/${resolution}"
 forcing_dir: "${input_dir}/${resolution}"
 greenhouse_dir: "${pool_dir}"
 namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario_type}"
+has_namelist_streams: True  # ECHAM has output filenames defined somehow in the namelist
 
 switch: 1
 value : "echam default"
@@ -585,7 +586,7 @@ choose_with_lco2_emis:
                 co2ctl:
                     lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
                     lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
-        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work
             HIST:
                 add_forcing_files:
                     carbon_emissions: carbon_emissions_hist
@@ -617,7 +618,7 @@ choose_icb_code:
                         namelist.echam:
                                 submodelctl:
                                         licb: "${licb}"
-                
+
 
 choose_wiso_code:
         True:
@@ -687,7 +688,7 @@ forcing_in_work:
         sic: "unit.96"
         sst: "unit.20"
         # ok this is another crazy ECHAM6 speciality
-        # every year the background aerosol files for 1849 to 1851 
+        # every year the background aerosol files for 1849 to 1851
         # need to be linked to the same file for historical/scenario runs
         # don't blame me (seb-wahl), blame the MAC-SP developers at MPI
         # MAC-SP describes aerosol w.r.t. piControl conditions.

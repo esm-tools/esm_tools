@@ -171,8 +171,8 @@ def append_namelist_dependent_sources(config):
     if namelist["runctl"].get("out_filetype") == 2:
         # Using NetCDF Outputs:
         mvstream_dict = {k: v + ".nc" for k, v in mvstream_dict.items()}
-    logger.info("Updating outdata_sources...")
+    logger.debug("Updating outdata_sources...")
     for k, v in mvstream_dict.items():
-        logger.info(f"{k}: {v}")
+        logger.debug(f"{k}: {v}")
     econfig["outdata_sources"].update(mvstream_dict)
-    logger.info("...done!")
+    logger.debug("...done!")

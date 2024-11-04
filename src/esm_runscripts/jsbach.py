@@ -67,6 +67,8 @@ def _get_comments_for_streams(namelist, mvstream_tags, flag="ESM_TOOLS_JSBACH_ST
             continue
         # Find the comment
         for line in matching_lines:
+            if "!" not in line:
+                continue
             comment = line.split("!")[1].strip()
             if flag in comment:
                 jsbach_tags.append(tag)

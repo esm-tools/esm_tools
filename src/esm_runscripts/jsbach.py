@@ -53,7 +53,7 @@ def _get_comments_for_streams(namelist, mvstream_tags, flag="ESM_TOOLS_JSBACH_ST
         The following will extract ['plants', 'soil']::
 
         >>> namelist = "path/to/namelist"
-        >>> mvstream_tags = ["plants", "soil", "something]
+        >>> mvstream_tags = ["plants", "soil", "something"]
         >>> _get_comments_for_streams(namelist, mvstream_tags)
         ['plants', 'soil']
     """

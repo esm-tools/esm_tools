@@ -163,7 +163,7 @@ def append_namelist_dependent_sources(config):
         namelist = f90nml.read(f"{econfig['namelist_dir']}/namelist.echam")
     mvstream_tags = _get_mvstream_tags_from_namelist(namelist)
     jsbach_streams = config["jsbach"].get("streams", [])
-    ignore_these_tags = econfig.get("ignore_tags", []])
+    ignore_these_tags = econfig.get("ignore_tags", [])
     if econfig.get("ignore_tags_include_jsbach_tags", True):
         ignore_these_tags.extend(jsbach_streams)
     mvstream_tags = [tag for tag in mvstream_tags if tag not in ignore_these_tags]

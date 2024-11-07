@@ -2,7 +2,7 @@ def prepare_environment(config):
     environment_dict = {
             "ICE_TO_ECHAM": int(config["general"]["first_run_in_chunk"]),
             "ECHAM_TO_ICE": int(config["general"]["last_run_in_chunk"]),
-            "ECHAM_TO_ISM_multiyear_mean": 1,
+            "ECHAM_TO_ISM_multiyear_mean":  int(config["echam"].get("multi_year_mean", 1)),
             "ISM_TO_ECHAM_update_orography": 1, 
             "ISM_TO_ECHAM_update_glacial_mask": int(config["echam"].get("update_glacial_mask", True).__bool__()), 
             "ISM_TO_ECHAM_update_land_runoff": 1,

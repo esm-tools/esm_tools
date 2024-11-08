@@ -92,8 +92,14 @@ general:
         - '2.1-wiso'
         - '2.1-recom'
         - '2.1-paleodyn-2.5'
+        - '2.6'
 
         choose_version:
+          '2.6':
+            couplings:
+            - fesom-2.6+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../"
+            with_recom: false
           '2.1-paleodyn-2.5':
             couplings:
             - fesom-2.5+echam-6.3.05p2-awiesm-2.1
@@ -192,6 +198,10 @@ echam:
                         version: "6.3.05p2-wiso"
                         model_dir: ${general.model_dir}/echam-${echam.version}
                 "2.1-paleodyn-2.5":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
+                "2.6":
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
@@ -319,6 +329,16 @@ fesom:
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
         choose_general.version:
+                "2.6":
+                        version: "2.6-paleodyn"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: 0.0
+                        outdata_targets:
+                                fesom: "*.fesom.*.nc"
                 "2.1-paleodyn-2.5":
                         version: "2.5-paleodyn"
                         ALE_scheme: 'zstar'
@@ -360,6 +380,8 @@ fesom:
 
         namelist_changes:
                 namelist.config:
+                        ale_def:
+                                which_ale: "${ALE_scheme}"
                         paths:
                                 OpbndPath: "${opbnd_dir}"
                                 TideForcingPath: "${tide_forcing_dir}"

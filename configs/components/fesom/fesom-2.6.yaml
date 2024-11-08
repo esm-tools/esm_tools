@@ -24,9 +24,10 @@ required_plugins:
 
 choose_version:
   "2.6":
-    branch: "2.6"
+    branch: "2.6.1"
 
   "2.6-paleodyn":
+    branch: "2.6.1"
     wiso_code: true
     icb_code: true
     namelist_dir: "${model_dir}/config/"

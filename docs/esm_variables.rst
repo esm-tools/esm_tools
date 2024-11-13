@@ -82,6 +82,7 @@ Runtime variables
    nproc,               <component>,            Number of processors to use for the model.
    nproca/nprocb,       <component>,            "Number of processors for different MPI tasks/ranks. Incompatible with ``nproc``."
    omp_num_threads,     <component>,            "A variable to control the number of OpenMP threads used by a component during an heterogeneous parallelization run. This variable **has to be defined inside the section of the components** for which OpenMP needs to be used. This variable will be ignored if ``computer.heterogeneous_parallelization`` is not set to ``true``."
+   parallel_file_movements,     general,        "A variable indicating whether the file movements should be done in parallel or not. If ``threads`` (default), the file movements will be done in parallel in a single node. If ``False``, the file movements will be done sequentially."
    pool_dir,            general,                "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
    post_processing,     <component>,            Boolean to indicate whether to run postprocessing or not.
    setup_dir,           general,                "Absolute path of the setup directory (where it was installed by `esm_master`)."

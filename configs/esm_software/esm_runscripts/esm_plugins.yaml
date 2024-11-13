@@ -87,6 +87,7 @@ core:
                         - "log_used_files"
                         - "report_missing_files"
                         - "check_for_unknown_files"
+                        - "compute_and_log_file_checksums"
 
                 database_actions:
                         - "database_entry"

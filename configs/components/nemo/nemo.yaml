@@ -2531,7 +2531,7 @@ use_tracer:     true
 hosing:         false
 lresume:        false
 free_surface:   linear
-correct_neg_tracer_conc: true
+correct_neg_tracer_conc: false
 # use damping?
 ln_tsd_tradmp: false 
 
@@ -2566,7 +2566,7 @@ nn_rstctl: 2
 # tracer stuff
 ln_rsttr: ${lresume} 
 nn_rsttr : 2
-ln_trcdta: true
+ln_trcdta: false
 
 # default directories
 pool_dir: ${computer.pool_directories.focipool}

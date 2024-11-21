@@ -78,6 +78,7 @@ iolibraries: system_libs
 
 module_actions:
         - "purge"
+        - "load python3"
         - "load git/2.31.1-gcc-11.2.0"
         - "load cdo/2.0.5-gcc-11.2.0"
         - "load nco/5.0.6-gcc-11.2.0"
@@ -241,6 +242,7 @@ choose_iolibraries:
             HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-kxfaux"
             HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
             HDF5_ROOT: $HDF5ROOT
+            MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
             NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-6qheqr
             NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-jlxcfz
             NETCDF_PATH: $NetCDF_C_ROOT
@@ -269,18 +271,19 @@ choose_iolibraries:
             IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
             # NOTE: Could be set by the module
             PATH: /sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
-            MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
             MPI_HOME: $MPI_ROOT
             mpi_ROOT: $MPI_ROOT
             MPI_DIR: $MPI_ROOT
             mpi_DIR: $MPI_ROOT
             AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
             aec_ROOT: $AEC_ROOT
-            HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-tvymb5"
+            HDF5ROOT: "\"$(module show ${mod_hdf5} | grep -m 1 'prepend-path' | sed 's|.*PATH ||; s|/bin||')\""
             HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
             HDF5_ROOT: $HDF5ROOT
-            NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
-            NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
+            NETCDFROOT: "\"$(module show ${mod_netcdf_c} | grep -m 1 'prepend-path' | sed 's|.*PATH ||; s|/bin||')\""
+            NETCDFFROOT: "\"$(module show ${mod_netcdf_f} | grep -m 1 'prepend-path' | sed 's|.*PATH ||; s|/bin||')\""
+            NetCDF_C_ROOT: $NETCDFROOT
+            NetCDF_Fortran_ROOT: $NETCDFFROOT
             NETCDF_ROOT: $NETCDFFROOT
             NETCDF_DIR: $NETCDFROOT
             NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
@@ -327,10 +330,10 @@ choose_iolibraries:
             # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
 
             # kh 17.02.22 currently required to use mkl
-            LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+            #LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
 
             # kh 07.03.22 currently required to use Intel MPI
-            LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
+            #LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
 
     # Work done on self-compiled libraries by Jan Streffing, currently in progress and untested.
     awi_paleodyn_libs:

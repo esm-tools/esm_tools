@@ -598,6 +598,7 @@ class oasis:
                                 "your branchoff experiment that matches the "
                                 "ini_restart_date you selected. Please select "
                                 "one of the following OASIS restart files:"
+                            )
             else:
                 glob_search_file = restart_file_path
 

@@ -47,7 +47,10 @@ class oasis:
         self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
         # seb-wahl: add lucia support
         if lucia:
-            self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
+            if mct_version >= (5, 0):
+                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1", " $END"]
+            else:
+                self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
             self.namcouple += [" $NLOGPRT", "           " + str(debug_level), " $END"]
         if mct_version >= (4, 0):

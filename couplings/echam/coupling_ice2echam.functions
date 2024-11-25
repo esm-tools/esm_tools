@@ -20,11 +20,11 @@ ice2echam() {
         while [ ${counter} -lt ${COUNT_MAX} ]
         do
             echo "          * inside while loop "
-            if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
+            if [ -f ${COUPLE_DIR}/ice_file_for_atmosphere.nc ]; then
                 break
             fi
 
-            echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
+            echo; echo "        * File ${COUPLE_DIR}/ice_file_for_atmosphere.nc not found. Waiting for 10 seconds ..."
             sleep 10
             counter=$((counter+1))
         done
@@ -400,7 +400,7 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
 set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
-        if [ -f jsbach_init_file ]; then
+        if [ -f ${FUNCTION_PATH}/../utils/jsbach_init_file ]; then
                 cp ${FUNCTION_PATH}/../utils/jsbach_init_file .
         elif [ -f ${FUNCTION_PATH}/../utils/install_jsbach_init_file.sh ]; then
                 echo "                   install_jsbach_init_file.sh found. Running installation ..."
@@ -587,9 +587,9 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         echo -e "\t\t-   determining where the glacial mask has advanced and retreated"
         echo -e "\t\t-   New JSBACH Init File: ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
         echo -e "\t\t-   Old JSBACH Init File: ${FORCING_DIR_jsbach}/jsbach.nc"
-        cdo -s -selvar,glac -sub \
-            ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
-            ${FORCING_DIR_jsbach}/jsbach.nc \
+        cdo -s -sub \
+            -selvar,glac ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+            -selvar,glac ${FORCING_DIR_jsbach}/jsbach.nc \
             ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_land_cover_fractions/cdo_stderr_ice2echam
         
         # Make two masks: one for glacial retreat, and one for glacial advance

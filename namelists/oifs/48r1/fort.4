@@ -159,6 +159,18 @@ YA_NL%LGP=true,
 YO3_NL%LGP=true,
 /
 &NAMFPC
+    CFPFMT = 'MODEL'
+    NFP3DFP = 3
+    MFP3DFP(:) = 129, 130, 133,
+    RFP3P(:) = 100000.0, 92500.0, 85000.0, 70000.0, 60000.0 50000.0, 40000.0, 30000.0,
+               25000.0, 20000.0, 15000.0, 10000.0, 7000.0, 5000.0, 3000.0,
+               2000.0, 1000.0, 500.0, 100.0
+    NFPPHY = 2
+    MFPPHY(:) = 166, 167
+    NFPCLI = 0
+    LFPQ = .false.
+    LTRACEFP = .false.
+    RFPCORR = 60000.0
 /
 &NAMDIM
 NPROMA=0,

@@ -1021,15 +1021,7 @@ choose_major_version:
                         ${start_date!syear!smonth!sday}
                         ${icmcl_end_date_formatted}
                         ${work_dir};"
-                append_icmcl: "
-                    ${general.esm_function_dir}/components/oifs/append_daily_icmcl_file.sh
-                        ${thisrun_input_dir}/
-                        ${icmcl_dir}/${icmcl_file}
-                        ${oifs.input_expid}
-                        ${start_date!syear!smonth!sday}
-                        ${icmcl_end_date_formatted}
-                        ${work_dir}
-                        ${pool_dir};"
+                append_icmcl: ""
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:

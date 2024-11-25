@@ -402,7 +402,8 @@ choose_iolibraries:
                     # post processing seems ok
                     - "load nco/5.1.6-hdf5-1.10"
                     - "load cdo/2.2.2-hdf5-1.10"
-                    
+                    - "load git"
+
                 add_export_vars:
                     # Run module show on the modules to see how 
                     # each module changes or sets env variables

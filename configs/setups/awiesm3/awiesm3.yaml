@@ -24,13 +24,9 @@ general:
           v3.4:
             major_version: v3.4
             couplings:
-            - fesom-2.5-refactoring+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+            - fesom-2.6+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs48.env.yaml
-            - xios/xios.env.yaml
-            - rnfmap/rnfmap.env.yaml
             add_add_environment_changes:
                 levante:
                     iolibraries: system_gnu_libs
@@ -67,11 +63,14 @@ general:
         dr_hook_ignore_signals: -1
         further_reading:
                 - oasis3mct/oasis3mct.env.yaml
+                - oifs/oifs48.env.yaml
+                - xios/xios.env.yaml
+                - rnfmap/rnfmap.env.yaml
 
-        add_environment_changes:
-                choose_computer.name:
-                        levante:
-                                compiler_mpi: intel2022_openmpi
+ #       add_environment_changes:
+            #    choose_computer.name:
+            #            levante:
+            #                    compiler_mpi: intel2022_openmpi
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -102,7 +101,7 @@ oifs:
                         version: "48r1"
                         with_xios: True
                         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
-                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.3
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         mip: "cmip6"
                         wam: true
                         add_add_namelist_changes:
@@ -111,7 +110,7 @@ oifs:
                                                 LXIOS: TRUE
                                         NAEPHY:
                                                 LECURR: true
-
+                                       
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -146,11 +145,11 @@ oifs:
                                 ECE_CPL_NEMO_LIM: '"false"'
                                 ECE_CPL_AMIP: '"false"'
                                 ECE_CPL_FESOM_FESIM: '"true"'
-                                ECE_CPL_LPJG: '"true"'
+                                ECE_CPL_LPJG: '"true"' #coupling switch LASZLO
 
         res_level: ${resolution}${levels}
         atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
-        atm_veg_fields: [TODO]
+        atm_veg_fields: [TODO] #LASZLO
         
         coupling_fields:
                 "[[atm_oce_fields-->FIELD]]":
@@ -355,10 +354,10 @@ oasis3mct:
 
         output_exchanged_vars: false
 
-        time_step: 7200
+        time_step: 86400 #separate timestep needed for atmosphere-ocean in the future LASZLO
 
         a2o_lag: "${lag}"
-        a2v_lag: "${lag}"
+        a2v_lag: "86400"
         a2r_lag: "${lag}"
         o2a_lag: "${lag}"
         o2r_lag: 0
@@ -369,7 +368,7 @@ oasis3mct:
         r2a_seq: 2
         a2v_seq: 2
         v2a_seq: 2
-        v2a_lag: "${lag}"
+        v2a_lag: "86400"
 
         coupling_time_step: "${oasis3mct.time_step}"
         choose_general.major_version:
@@ -497,15 +496,15 @@ oasis3mct:
                                 conserv:
                                         method: global
                 loc_avg:
-                        time_transformation: average
+                        time_transformation: average #remaping method for LPJ-GUESS LASZLO
                         remapping:
                                 loctrans:
                 loc_min:
-                        time_transformation: minimum
+                        time_transformation: minimum #remaping method for LPJ-GUESS LASZLO
                         remapping:
                                 loctrans:
                 loc_max:
-                        time_transformation: maximum
+                        time_transformation: maximum #remaping method for LPJ-GUESS LASZLO
                         remapping:
                                 loctrans:
                 oyac_1stcon_nnn_stocha:

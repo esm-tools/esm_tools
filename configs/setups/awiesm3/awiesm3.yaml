@@ -149,8 +149,8 @@ oifs:
 
         res_level: ${resolution}${levels}
         atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
-        atm_veg_fields: [TODO] #LASZLO
-        
+        atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg] #LASZLO
+
         coupling_fields:
                 "[[atm_oce_fields-->FIELD]]":
                     grid: atma
@@ -283,8 +283,19 @@ fesom:
 
 lpj_guess:
         comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake .. -DGRID_T159; make -j8"
+        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL] #LASZLO LPJ-GUESS blokk
 
-                        
+        coupling_fields:
+                "[[veg_atm_fields-->FIELD]]":
+                        grid: atma #LASZLO
+        #grids:
+        #        lpjg:
+        #                name: "lpjg"
+        #                nx: "${nx}"
+        #                ny: "${ny}"
+        #                oasis_grid_type: "D"
+        #                oyac_grid_type: "LL"
+        #                oyac_io_per_node: 4
 xios:
         choose_general.version:
                 "*":

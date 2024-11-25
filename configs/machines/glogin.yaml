@@ -164,6 +164,7 @@ launcher_flags: ""
 # Start by clearing all loaded modules
 module_actions:
     - "purge"
+    - "load git-lfs"
 
 choose_compiler_mpi:
    
@@ -402,7 +403,6 @@ choose_iolibraries:
                     # post processing seems ok
                     - "load nco/5.1.6-hdf5-1.10"
                     - "load cdo/2.2.2-hdf5-1.10"
-                    - "load git"
 
                 add_export_vars:
                     # Run module show on the modules to see how 

@@ -4,6 +4,15 @@
 #################################################################################
 # default settings for the variables that can be changed via the command line
 #
+# seb-wahl: The monitoring needs some rework to work on the updated HRLN cluster
+# - test support of apptainer
+# - remove dependency on Willi's 10 year old python2 based code, do the AMOC etc
+#   calculations with XIOS online of based on xorca etc.
+echo
+echo "`date`: The NEMO monitoring needs some re-design before it can be run"
+echo "`date`: on $(hostname) again. Sebastian Wahl 2024-11-26"
+echo
+exit 0
 basedir=~/esm/esm-experiments/  # change via -p
 EXP_ID="test_experiment"        # change via -r
 ncpus=48

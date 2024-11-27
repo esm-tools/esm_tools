@@ -165,6 +165,10 @@ launcher_flags: ""
 module_actions:
     - "purge"
     - "load git-lfs"
+    - "load perl"
+    - "load perl-uri"
+      # cmake is used by OpenIFS and some versions of ECHAM and OASIS
+    - "load cmake/3.27.7"
 
 choose_compiler_mpi:
    
@@ -230,8 +234,6 @@ choose_compiler_mpi:
          - "load intel-oneapi-mpi/2021.10.0"
          # MKL needed for OpenIFS
          - "load intel-oneapi-mkl/2023.2.0" 
-         # required for CMake
-         - "load cmake/3.27.7"
       
       # Note: Intel compilers now have new names: 
       # mpiicc (C) = mpiicx
@@ -299,8 +301,6 @@ choose_compiler_mpi:
          - "load openmpi/4.1.6"
          # MKL needed for OpenIFS
          - "load intel-oneapi-mkl/2023.2.0" 
-         # CMake to compile OASIS etc
-         - "load cmake/3.27.7"
       
       # Note: OpenMPI compilers link to new Intel compilers, e.g.
       # mpicc (C) = icx
@@ -339,7 +339,6 @@ choose_compiler_mpi:
          - "load fftw/3.3.10" 
          # required for CMake
          #- "load curl/8.4.0-5rlmgmu ncurses/6.4-u72r7qn zlib-ng/2.1.4-ftbye2s"
-         - "load cmake/3.27.7"
          # git conflicts
          #- "load git/2.42.0"
       

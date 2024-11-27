@@ -5,15 +5,15 @@
 &master_time_control_nml
  calendar             = 'proleptic gregorian'
  experimentStartDate  = '1979-01-01T00:00:00Z'
- restartTimeIntval    = 'PT16M'
- checkpointTimeIntval = 'PT8M'
+ restartTimeIntval    = 'P1M'
+ checkpointTimeIntval = 'P1M'
  experimentStopDate = '1979-02-01T00:16:00Z'
 /
 &time_nml
  is_relative_time     = .false.
 /
 &master_model_nml
-  model_name="atmo"
+  model_name="atm"
   model_namelist_filename="NAMELIST_atm"
   model_type=1
   model_min_rank=0
@@ -29,8 +29,8 @@
 /
 &jsb_model_nml
  model_id = 1
- model_name = "JSBACH"
- model_shortname = "jsb"
- model_description = 'JSBACH land surface model'
+ model_name = "JSBACH on DOM 1"
+ model_shortname = "jsb_dom01"
+ model_description = 'JSBACH LSM on domain 1'
  model_namelist_filename = "NAMELIST_lnd"
 /

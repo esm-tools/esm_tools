@@ -10,8 +10,7 @@
 #    * ICON-APE - ICON Aquaplanet Experiments
 #
 model: icon 
-version: 2.6.6 
-configuration: aes # ECHAM physics, nwp for NWP physics
+version: 2.6.6-nwp 
 
 metadata:
         Institute: MPI-Met 
@@ -24,17 +23,17 @@ metadata:
 
 # currently https://git.geomar.de/foci/src/icon.git only contains version 2.6.6 as received from MPI
 # via a personal licence.
-git-repository: https://git.geomar.de/foci/src/icon.git
+git-repository: https://gitlab.dkrz.de/icon-geomar/icon-nwp.git 
 branch: master
 # workaround until esm_master becomes more clever
-comp_command: '$ICON_CONFIGURE_COMMAND ; make -j 16' 
+comp_command: 'tar zxf externals.tar.gz ; $ICON_CONFIGURE_COMMAND ; make -j 16' 
 
 clean_command: ${defaults.clean_command}
 executable: icon 
 
 choose_version:
-    2.6.6: 
-        branch: master 
+    2.6.6-nwp: 
+        branch: geomar-swahl 
     default: 
         branch: master 
 
@@ -96,18 +95,19 @@ end_rsttime: ${next_date!syear!smonth!sday}T${next_date!shour!sminute!ssecond}Z
 lresume: false
 
 # parallelization
-nproma: 32
+nproma: 752
+omp_num_threads: 1
 
 # grid settings
-grid_id: '0005'
+grid_id: '0013' 
 grid_label: G
 grid_refinement: R02B04
 grid_name: icon_grid_${grid_id}_${grid_refinement}_${grid_label}
 
 # time step (4min), ICON uses the http://en.wikipedia.org/wiki/ISO_8601 standard
 # for time stamps and time periods
-modelTimeStep: PT4M 
-radTimeStep: PT60M
+dtime: 360 
+#radTimeStep: PT60M
 
 # restart intervals
 checkpoint_interval: P01Y
@@ -125,11 +125,8 @@ operation: mean
 #
 # JSBACH settings
 #
+jsbach_year: 1992 # Trang uses 2000 but I don't have the data on levante
 jsbach_usecase: jsbach_pfts    # jsbach_lite or jsbach_pfts
-jsbach_with_lakes: yes
-jsbach_with_hd: no
-jsbach_with_carbon: no         # yes needs jsbach_pfts usecase
-jsbach_check_wbal: no          # check water balance
 
 # 5 = default prescribed ozone
 # 1 = Cariolle ozone chemistry
@@ -143,39 +140,23 @@ aerosol: 18
 input_dir: ${computer.pool_dir}/ICON
 choose_computer.name:
    levante:
-      choose_configuration:
-         aes:
-            icon_pool: ${input_dir}/grids/private/mpim/icon_preprocessing/source
-            aero_dir: ${input_dir}/grids/private/rene/mpim
-            grid_dir: ${input_dir}/grids
+       icon_pool: ${input_dir}/grids/private/mpim/icon_preprocessing/source
+       aero_dir: ${input_dir}/grids/private/rene/mpim
+       grid_dir: ${input_dir}/grids
 
-llake: .false.
-choose_jsbach_with_lakes:
-   yes:
-      llake: .true.
-
-lcarbon: .false.
-choose_jsbach_with_carbon:
-   yes:
-      lcarbon: .true.
-
-pft_file_tag: ""
-choose_jsbach_usecase:
-   jsbach_pfts:
-      pft_file_tag: 11pfts_
 #
 # namelists and namelist settings/changes
 #
-namelist_dir: "${general.esm_namelist_dir}/icon/${version}/${configuration}/"
+namelist_dir: "${general.esm_namelist_dir}/icon/${version}/"
 namelists:
     - NAMELIST_atm
-    - NAMELIST_lnd
+    - NAMELIST_JSBACH_DOM01
     - icon_master.namelist
 
 config_sources:
    'icon_master.namelist': ${namelist_dir}/icon_master.namelist 
    NAMELIST_atm: ${namelist_dir}/NAMELIST_atm   
-   NAMELIST_lnd: ${namelist_dir}/NAMELIST_lnd   
+   NAMELIST_JSBACH_DOM01: ${namelist_dir}/NAMELIST_JSBACH_DOM01   
 
 # https://esm-tools.readthedocs.io/en/latest/yaml.html#changing-namelists
 namelist_changes:
@@ -194,37 +175,32 @@ namelist_changes:
       grid_nml:
          dynamics_grid_filename: ${grid_name}.nc
       run_nml:
-         modelTimeStep: ${modelTimeStep} 
+         dtime: 360 
          msg_level: 15
          restart_filename: ${expid}_restart_atm_<rsttime>.mfr
-      aes_phy_nml:
-         aes_phy_config(1)%llake: ${llake}
-         aes_phy_config(1)%dt_rad: ${radTimeStep} 
-         aes_phy_config(1)%dt_vdf: ${modelTimeStep} 
-         aes_phy_config(1)%dt_mig: ${modelTimeStep}
-      aes_rad_nml:
-         aes_rad_config(1)%irad_o3: ${with_ozone} 
+      radiation_nml:
+         ecrad_data_path: ${model_dir}/externals/ecrad/data/ 
       output_nml:
+         # TODO: different file names, look at f90nml issue
          output_filename: ${expid}
          output_start: ${start_date}
          output_end: ${next_date}
-         output_interval: ${output_interval}
-         file_interval: ${file_interval}
+         #output_interval: ${output_interval}
+         #file_interval: ${file_interval}
          # TODO: operation = 'mean' not working at least not with
          # my set of output variables
          # operation: ${operation}
                
-   NAMELIST_lnd:
+   NAMELIST_JSBACH_DOM01:
       jsb_model_nml:
          usecase: ${jsbach_usecase}
-         use_lakes: ${llake}
       jsb_fuel_nml:
          active: ${lcarbon}
 
 choose_jsbach_with_hd:
    yes:
       add_namelist_changes:
-         NAMELIST_lnd:
+         NAMELIST_JSBACH_DOM01:
             jsb_hd_nml:
                active: true
                routing_scheme: full
@@ -281,17 +257,23 @@ bin_sources:
 # 
 choose_lresume:
    false:
+      # JSBACH init?
+      init_from_ifs: true
       add_input_files:
          ifs2icon: ifs2icon
 
 input_files:
-   coefficients_sw: coefficients_sw
-   coefficients_lw: coefficients_lw
-   cloud_optics_sw: cloud_optics_sw
-   cloud_optics_lw: cloud_optics_lw
-   vardict: vardict
+   cloud_optics: cloud_optics
+   rrtmg_lw: rrtmg_lw
+   radrrtm: RADRRTM
+   radsrtm: RADSRTM
+   socrates_droplet_rrtm: socrates_droplet_rrtm
+   fu_ice_rrtm: fu_ice_rrtm
+   mcica_gamma: mcica_gamma
+   #vardict: vardict
    atmo_dyn_grid: atmo_dyn_grid 
    atmo_dyn_grid_grfinfo: atmo_dyn_grid_grfinfo 
+   extpar: extpar
    greenhouse_gases: greenhouse_gases
    macv2_sp: macv2_sp
    swflux: swflux
@@ -305,14 +287,25 @@ input_files:
    ic_land_soil: ic_land_soil
 
 forcing_sources:
-   ozone_hist: 
-      "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}//bc_ozone_historical_1850.nc":
+
+   bc_land_frac:
+      "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_1850.nc"
          to: 1850
-      "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}//bc_ozone_historical_@YEAR@.nc":
+      "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_@YEAR@.nc"
          from: 1851
          to: 2014
       # TODO: do proper scenario setup
-      "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}//bc_ozone_historical_2014.nc":
+      "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_2014.nc"
+         from: 2014
+
+   ozone_hist: 
+      "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}/bc_ozone_historical_1850.nc":
+         to: 1850
+      "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}/bc_ozone_historical_@YEAR@.nc":
+         from: 1851
+         to: 2014
+      # TODO: do proper scenario setup
+      "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}/bc_ozone_historical_2014.nc":
          from: 2014
    # Stenchikov stratospheric aerosol
    # see also /pool/data/ICON/grids/private/rene/mpim/independent/CMIP6Forcing, 
@@ -323,46 +316,80 @@ forcing_sources:
          to: 1999 
       "${icon_pool}/aerosol/stenchikov/bc_aeropt_stenchikov_lw_b16_sw_b14_1999.nc": 
          from: 1999
+   # volcanic aerosol
+   volc_hist: 
+      "${input_dir}/grids/public/mpim/independent/CMIP6Forcing/bc_aeropt_cmip6_volc_lw_b16_sw_b14_1850.nc"
+         to: 1850
+      "${input_dir}/grids/public/mpim/independent/CMIP6Forcing/bc_aeropt_cmip6_volc_lw_b16_sw_b14_@YEAR@.nc"
+         from: 1851
+         to: 2014
+      # TODO: do proper scenario setup
+      "${input_dir}/grids/public/mpim/independent/CMIP6Forcing/bc_aeropt_cmip6_volc_lw_b16_sw_b14_2014.nc"
+         from: 2014
+
+   # SST / SEA ICE 
+   #sst_ice: 
+   #   "${input_dir}/buildbot_data/nwp/Checksuite_data/data_bbtest19/*_1979_*DOM01.nc"
+   #      to: 1979
+   #   "${input_dir}/buildbot_data/nwp/Checksuite_data/data_bbtest19/*_@YEAR@_*DOM01.nc"
+   #      from: 1979
+   #      to: 2014
 
 input_sources:
    # input files distributed with the source code
-   coefficients_lw: ${model_dir}/externals/rte-rrtmgp/rrtmgp/data/rrtmgp-data-lw-g128-210809.nc 
-   coefficients_sw: ${model_dir}/externals/rte-rrtmgp/rrtmgp/data/rrtmgp-data-sw-g112-210809.nc 
-   cloud_optics_lw: ${model_dir}/data/ECHAM6_CldOptProps_rrtmgp_lw.nc
-   cloud_optics_sw: ${model_dir}/data/ECHAM6_CldOptProps_rrtmgp_sw.nc
+   cloud_optics: ${model_dir}/data/ECHAM6_CldOptProps.nc
+   rrtmg_lw: ${model_dir}/data/rrtmg_lw.nc
+   radrrtm: ${model_dir}/ecrad/data/RADRRTM
+   radsrtm: ${model_dir}/ecrad/data/RADSRTM
+   socrates_droplet_rrtm: ${model_dir}/ecrad/data/socrates_droplet_scattering_rrtm.nc
+   fu_ice_rrtm: ${model_dir}/ecrad/data/fu_ice_scattering_rrtm.nc
+   mcica_gamma: ${model_dir}/ecrad/data/mcica_gamma.nc
    # "dictionary" describing the translation of user-defined shortnames with names used
    # in ICON's "add_var" call
-   vardict: ${model_dir}/run/dict.iconam.mpim
+   #vardict: ${model_dir}/run/dict.iconam.mpim
+   dictlatbc: ${model_dir}/run/dict.latbc
    # ICON grid description file
    # TODO: implement nested grids correctly
    atmo_dyn_grid: ${icon_pool}/grids/${grid_name}.nc 
    atmo_dyn_grid_grfinfo: ${icon_pool}/grids/${grid_name}-grfinfo.nc 
+
    # initial conditions
-   ifs2icon: ${icon_pool}/initial_condition/ifs2icon_1979010100_${grid_refinement}_${grid_label}.nc
-   ic_land_soil: ${icon_pool}/preliminary_land/r0002/${grid_refinement}_${grid_label}/land/ic_land_soil_1976.nc
+   ifs2icon: ${input_dir}/grids/private/dian/mpim/${grid_id}/initial_condition/r0001/ifs2icon_2000010100_${grid_refinement}_${grid_label}.nc
+   extpar: ${input_dir}/grids/public/mpim/0013/nwp/icon_extpar_${grid_id}_${grid_refinement}_${grid_label}_20180820_tiles.nc
    greenhouse_gases: ${icon_pool}/greenhouse_gases/greenhouse_historical_plus.nc
    ozone_cariolle: ${icon_pool}/greenhouse_gases/bc_ozone_cariolle.nc
    macv2_sp: ${model_dir}/data/MACv2.0-SP_v1.nc
+
    # Kinne background aerosol
    kinne_lw: ${icon_pool}/aerosol_29-06-2018/kinne/${grid_refinement}_${grid_label}/bc_aeropt_kinne_lw_b16_coa.nc
    kinne_sw: ${icon_pool}/aerosol_29-06-2018/kinne/${grid_refinement}_${grid_label}/bc_aeropt_kinne_sw_b14_coa.nc
    kinne_fin: ${icon_pool}/aerosol_29-06-2018/kinne/${grid_refinement}_${grid_label}/bc_aeropt_kinne_sw_b14_fin_1850.nc
+
    # SST / sea ice
-   sic: ${icon_pool}/sst_and_seaice/1.1.2/sic_${grid_refinement}_${grid_label}.nc
-   sst: ${icon_pool}/sst_and_seaice/1.1.2/sst_${grid_refinement}_${grid_label}.nc
    swflux: ${icon_pool}/solar_radiation/3.2/swflux_14band_cmip6_1850-2299-v3.2.nc
-   land_sso: ${icon_pool}/preliminary_land_22-02-2018/${grid_refinement}_${grid_label}/land/bc_land_sso_1976.nc
-   land_frac: ${icon_pool}/preliminary_land/r0002/${grid_refinement}_${grid_label}/land/bc_land_frac_${pft_file_tag}1976.nc 
-   land_phys: ${icon_pool}/preliminary_land/r0002/${grid_refinement}_${grid_label}/land/bc_land_phys_1976.nc
-   land_soil: ${icon_pool}/preliminary_land/r0002/${grid_refinement}_${grid_label}/land/bc_land_soil_1976.nc
+   # TODO: not sure if that works.
+   sic: ${icon_pool}/path/to/data/CI_*_${grid_refinement}_${grid_label}.nc
+   sst: ${icon_pool}/path/to/data/SST_*__${grid_refinement}_${grid_label}.nc
+
+
+   # JSBACH
+   ic_land_soil: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/ic_land_soil_${jsbach_year}.nc
+   land_sso: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/bc_land_sso_${jsbach_year}.nc
+   land_phys: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/bc_land_phys_${jsbach_year}.nc
+   land_soil: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/bc_land_soil_${jsbach_year}.nc
    lctlib: ${model_dir}/externals/jsbach/data/lctlib_nlct21.def
 
 input_in_work:
-   coefficients_sw: coefficients_sw.nc
-   coefficients_lw: coefficients_lw.nc
-   cloud_optics_sw: rrtmgp-cloud-optics-coeffs-sw.nc
-   cloud_optics_lw: rrtmgp-cloud-optics-coeffs-lw.nc
-   vardict: vardict.txt
+   cloud_optics: ECHAM6_CldOptProps.nc
+   rrtmg_lw: rrtmg_lw.nc
+   radrrtm: radrrtm
+   radsrtm: radsrtm
+   socrates_droplet_rrtm: socrates_droplet_scattering_rrtm.nc
+   fu_ice_rrtm: fu_ice_scattering_rrtm.nc
+   mcica_gamma: mcica_gamma.nc
+   dictlatbc: dict.latbc
+   #vardict: vardict.txt
+   extpar: icon_extpar_tiles.nc
    atmo_dyn_grid: ${grid_name}.nc
    atmo_dyn_grid_grfinfo: ${grid_name}-grfinfo.nc
    ifs2icon: ifs2icon.nc
@@ -384,12 +411,13 @@ input_in_work:
 
 forcing_in_work:
    ozone_hist: bc_ozone_@YEAR@.nc
-   stenchikov_sw: bc_aeropt_stenchikov_lw_b16_sw_b14_@YEAR@.nc 
+   #stenchikov_sw: bc_aeropt_stenchikov_lw_b16_sw_b14_@YEAR@.nc 
+   volc_hist: bc_aeropt_cmip6_volc_lw_b16_sw_b14_@YEAR@.nc
 
-forcing_additional_information:
-   ozone_hist:
-      - need_year_before
-      - need_year_after
-   stenchikov_sw:
-      - need_year_before
-      - need_year_after
+#forcing_additional_information:
+   #ozone_hist:
+      #- need_year_before
+      #- need_year_after
+   #stenchikov_sw:
+      #- need_year_before
+      #- need_year_after

@@ -183,9 +183,11 @@ class Slurm:
             for heterogeneous parallelization in SLURM.
         """
         # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
-        if config["computer"].get(
-            "heterogeneous_parallelization", False
-        ) and not config["computer"].get("taskset", False):
+        if (
+            config["computer"].get("heterogeneous_parallelization", False)
+            and not config["computer"].get("taskset", False)
+            and config["computer"].get("hetjob_flag")
+        ):
             this_batch_system = config["computer"]
             # Get the variables to be modified for the headers
             nodes_flag = this_batch_system["nodes_flag"].split("=")[0]

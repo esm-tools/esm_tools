@@ -22,7 +22,6 @@ awicm3:
 fesom:
     resolution: "CORE2"
     pool_dir: "/albedo/work/user/mandresm/test_pool/clidyn/FESOM2/"
-    climate_data_dir: "${pool_dir}/hydrography/phc3.0/"
     mesh_dir: "${pool_dir}/meshes/core2/"
     restart_rate: 1
     restart_unit: "m"

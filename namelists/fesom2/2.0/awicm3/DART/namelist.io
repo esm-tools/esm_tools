@@ -9,6 +9,10 @@ ldiag_DVD        =.false.
 ldiag_forc       =.true.
 /
 
+&nml_output_settings
+    keep_nth_level = 1
+/
+
 &nml_listsize
 io_listsize=100 !number of streams to allocate. shallbe large or equal to the number of streams in &nml_list
 /

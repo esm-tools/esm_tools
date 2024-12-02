@@ -28,7 +28,7 @@ general:
             add_include_models:
             - xios
             add_add_environment_changes:
-                levante:
+                levante:        
                     iolibraries: system_gnu_libs
             oasis_with_yac: False
             xios_interp_order: 1
@@ -149,7 +149,7 @@ oifs:
 
         res_level: ${resolution}${levels}
         atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
-        atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg] #LASZLO
+        atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2M_LPJG, TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ, SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ, TMIN_LPJ, TMAX_LPJ] #LASZLO
 
         coupling_fields:
                 "[[atm_oce_fields-->FIELD]]":
@@ -282,20 +282,30 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
-        comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake .. -DGRID_T159; make -j8"
-        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL] #LASZLO LPJ-GUESS blokk
+        #comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake .. -DGRID_T159; make -j8" LASZLO put it back when i solved the T159 resolution problem
+        comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"  
+       
+        #model_dir: ${general.model_dir}/lpj-guess/sources/LPJ-GUESS-lpjg_v4p1/
+        
+        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2MVeg, TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004, SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg, SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg] #LASZLO LPJ-GUESS blokk
 
         coupling_fields:
                 "[[veg_atm_fields-->FIELD]]":
-                        grid: atma #LASZLO
-        #grids:
-        #        lpjg:
-        #                name: "lpjg"
-        #                nx: "${nx}"
-        #                ny: "${ny}"
-        #                oasis_grid_type: "D"
-        #                oyac_grid_type: "LL"
-        #                oyac_io_per_node: 4
+                        #grid: atma #LASZLO
+                        grid: lpjg #LASZLO
+        grids:
+                #atma:
+                #        add_grids: ${oifs.grids.atma}
+                lpjg:
+                        add_grids: ${oifs.grids.atma}                
+                        #name: lpjg
+                        #nx: "${nx}"
+                        #ny: "${ny}"
+                        #nx: 259200 
+                        #ny: 1
+                        #oasis_grid_type: "D"
+                        #oyac_grid_type: "LL"
+                        #oyac_io_per_node: 4
 xios:
         choose_general.version:
                 "*":

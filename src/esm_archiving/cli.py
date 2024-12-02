@@ -71,25 +71,17 @@ tape server without password authentication can be found here:
 https://www.dkrz.de/up/help/faq/hpss/how-can-i-use-the-hpss-tape-archive-without-typing-my-password-every-time-e-g-in-scripts-or-jobs
 """
 
-import sys
 import os
 import pprint
+import sys
 
-import click
 import emoji
-
-from .esm_archiving import (
-    archive_mistral,
-    check_tar_lists,
-    group_files,
-    pack_tarfile,
-    sort_files_to_tarlists,
-    stamp_files,
-    sum_tar_lists_human_readable,
-)
-
+import rich_click as click
 
 from .config import load_config, write_config_yaml
+from .esm_archiving import (archive_mistral, check_tar_lists, group_files,
+                            pack_tarfile, sort_files_to_tarlists, stamp_files,
+                            sum_tar_lists_human_readable)
 
 pp = pprint.PrettyPrinter(width=41, compact=True)
 config = load_config()

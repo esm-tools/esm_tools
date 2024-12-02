@@ -268,6 +268,9 @@ class Task:
             if task.todo in ["get"]:
                 if task.package.command_list[task.todo] is not None:
                     for command in task.package.command_list[task.todo]:
+                        # Fix #1236: avoid repeated get commands
+                        if command in command_list:
+                            continue
                         command_list.append(command)
                         real_command_list.append(command)
 

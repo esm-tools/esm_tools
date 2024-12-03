@@ -23,7 +23,7 @@ mistral:
 
 levante:
         login_nodes: 'levante*'
-        compute_nodes: '^l[A-Za-z0-9]+\.lvt\.dkrz.de$'
+        compute_nodes: '^l[A-Za-z0-9]+\.lvt\.dkrz\.de$'
 #        post_nodes: ''
 
 juwels:

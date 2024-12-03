@@ -126,7 +126,7 @@ class MessageOfTheDayHandler:
                 print()
                 print(self.message_dict[message]["message"])
                 if mypackage == "esm_tools":
-                    esm_tools_path = esm_tools._get_real_dir_from_pth_file('')
+                    esm_tools_path = esm_tools._get_real_dir_from_pth_file("")
                     print(
                         f"Upgrade ESM-Tools to the version contianing this fix (\x1b[96m{version}\x1b[0m) by:\n"
                         f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"
@@ -167,16 +167,31 @@ def check_all_esm_packages():
     motd.motd_handler("esm_tools", esm_tools.__version__)
 
 
-if __name__ == "__main__":
+def check_esm_package_with_version_and_local_options(
+    package, myversion="1.0.0", local=False
+):
+    """
+    Method to check the message of the day for a specific package, version and with an
+    option to use a local MOTD file. To be called from the ``esm_tools`` CLI.
+
+    Parameters
+    ----------
+    package : str
+        Name of the package to check the MOTD for.
+    myversion : str
+        Version of the package to check the MOTD for.
+    local : bool
+        Option to use the local MOTD file. The default is ``False``.
+    """
     mypackage = "esm_tools"
-    myversion = "1.0.0"
 
     motd = MessageOfTheDayHandler()
-    # Uncomment the following lines For testing using the local motd.yaml
-    #import os
-    #local_motd = f"{os.path.dirname(__file__)}/../../esm_tools/motd/motd.yaml"
-    #print(local_motd)
-    #with open(local_motd, "r") as motdfile:
-    #    motd.message_dict = yaml.load(motdfile, Loader=yaml.FullLoader)
+    # For testing using the local motd.yaml
+    if local:
+        import os
+
+        local_motd = f"{os.path.dirname(__file__)}/../../esm_tools/motd/motd.yaml"
+        with open(local_motd, "r") as motdfile:
+            motd.message_dict = yaml.load(motdfile, Loader=yaml.FullLoader)
     motd.motd_handler(mypackage, myversion)
     sys.exit(0)

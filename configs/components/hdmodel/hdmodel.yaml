@@ -54,6 +54,7 @@ restart_in_in_work:
 
 restart_in_sources:
         hdrestart: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart.nc
+        hdrestart_wiso: restart_${parent_expid}_${parent_date!syear!smonth!sday}_hdrestart_wiso.nc
 
 restart_in_files:
         hdrestart: hdrestart
@@ -67,6 +68,16 @@ restart_out_in_work:
 
 restart_out_sources:
         hdrestart: restart_${general.expid}_${other_date!syear!smonth!sday}_hdrestart.nc
+        hdrestart_wiso: restart_${general.expid}_${other_date!syear!smonth!sday}_hdrestart_wiso.nc
+
+choose_general.with_wiso:
+        True:
+            add_restart_in_files:
+                    hdrestart_wiso: hdrestart_wiso
+            add_restart_out_files:
+                    hdrestart_wiso: hdrestart_wiso
+        "*":
+            from_general_with_wiso_choose: <NOT_SPECIFIED>
 
 log_in_work:
         outflow: hd_outflow_*.log # DIBA muss noch rausfinden was * in diesem Fall ist

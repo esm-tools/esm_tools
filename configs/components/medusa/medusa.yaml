@@ -1,0 +1,239 @@
+# MEDUSA-2.0 YAML CONFIGURATION FILE
+#
+model: medusa
+version: '2.0'
+apps: 'medusa_recom_awiesm'
+
+metadata:
+        Institute: University Liege
+        Description:
+                MEDUSA is Model of Early Diagenesis in the Upper Sediment with Adatable complexity.
+        Authors: Guy Munhoven
+        Publications:
+                - "Model of Early Diagenesis in the Upper Sediment with Adaptable complexity – MEDUSA (v. 2): a time-dependent biogeochemical sediment module for Earth system models, process analysis
+and teaching <https://doi.org/10.5194/gmd-14-3603-2021>"
+        License:
+                Please make sure you have a licence to use MEDUSA. In case you are unsure,
+                please contact Guy Munhoven (guy.munhoven@uliege.be)
+
+choose_version:
+    '2.0':
+      branch: main #coupled with awiesm-2.1-recom
+
+git-repository: https://gitlab.dkrz.de/modular_esm/medusa2.git
+# directory for code and libraries
+model_dir: "${general.esm_master.dir}/medusa-${version}"
+
+environment_changes:
+    choose_computer.name:
+        levante:
+            add_module_actions:
+                - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
+                - "load intel-oneapi-mpi"
+                - "unload netcdf-fortran"
+                - "load netcdf-fortran/4.5.3-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"
+#            add_export_vars:
+#                ...
+
+clean_command: ${defaults.clean_command}
+#Ying: makefiles exist for ollie and levante (src-med, src-mcg and appa)
+#to be chosen by choose_computer.name?
+comp_command: "mkdir -p lib; mkdir -p include;
+    cd ${model_dir}/libthdyct/trunk; cp Makefile_mpiifort ./Makefile; make;
+    mv libthdyct.a ${model_dir}/lib;
+    cd ${model_dir}/muxml/trunk/src; cp Makefile_mpiifort ./Makefile;
+    make libmodmxm.a; mv libmodmxm.a ${model_dir}/lib;
+    cp modmxm.h *.mod ${model_dir}/include;
+    cd ${model_dir}/medmbm/trunk4mcg/src-mcg;
+    cp Makefile_mpiifort ./Makefile; make;
+    cd ${model_dir}/medmbm/trunk4mcg/src-med;
+    cp Makefile_mpiifort_levante ./Makefile; make;
+    make usetemplates;
+    make libmedusa.a;
+    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm_mpi;
+    cp Makefile_mpiifort_levante ./Makefile; make;"
+#    cd ${model_dir}/medmbm/trunk4mcg/apps/medusa_recom_awiesm; cp Makefile.nompi ./Makefile; make;
+
+install_bins: medmbm/trunk4mcg/work/medusa_recom_paleo
+executable: medusa_recom_paleo
+
+# Defaults
+lresume: false
+with_ciso: true
+forcing_dir: ${experiment_outdata_dir}/../fesom/
+input_dir: ""
+forcing_name: "fesom.ave"
+namelist_dir: ${model_dir}/medmbm/trunk4mcg/nml/
+n_time_steps: 1
+
+# Input
+variables:
+    - Alk
+    - DIC
+    - DIN
+    - DSi
+    - O2
+    - salt
+    - temp
+
+fluxes:
+    - Calc
+    - Opal
+    - POC
+    - PON
+
+C_fluxes: []
+
+# Find if it's part of an offline coupled system
+ave_start_year: "${start_date!year}"
+ave_end_year: "${end_date!year}"
+choose_general.iterative_coupling:
+    True:
+        ave_start_year: "${prev_chunk_awiesm.general.chunk_start_date}"
+        ave_end_year: "${prev_chunk_awiesm.general.chunk_end_date}"
+#        choose_run_number:
+#                1:
+#                        add_input_sources:
+#                                flux2fesom: ${data_path}/medusa_flux2fesom.init.nc
+#                "*":
+#                        add_input_sources:
+#                                flux2fesom: ${experiment_outdata_dir}/medusa/medusa_flux2fesom.${ave_end_year}.nc
+    "*":
+        pass: ""
+
+choose_with_ciso:
+    true:
+        add_variables:
+            - DIC_13
+            - DIC_14
+        add_fluxes:
+            - Cal13
+            - Cal14
+        add_C_fluxes:
+            - C13
+            - C14
+        add_namelist_changes:
+            medusa_recom_paleo_forcing.nml:
+                recom_file_list:
+                    cfn_sinkPOC13: sinkC13.${forcing_name}.${ave_start_year}-${ave_end_year}.nc
+                    cfn_sinkPOC14: sinkC14.${forcing_name}.${ave_start_year}-${ave_end_year}.nc
+
+choose_lresume:
+    true:
+        cfn_ncin_init: "medusa_reaclay_restart.nc"
+        cfn_ncin_flx: "medusa_flx_restart.nc"
+    false:
+        cfn_ncin_init: "remove_from_namelist"
+        cfn_ncin_flx: "remove_from_namelist"
+
+fesom_resolution: CORE2
+
+choose_fesom_resolution:
+    CORE2:
+        dust_file: ${input_dir}/DustClimYearlyAlbani_core2mesh.nc
+    pi:
+        dust_file: ${input_dir}/DustClimYearlyAlbani_pi-mesh.nc
+
+input_sources:
+    fesom.mesh.diag: ${input_dir}/fesom.mesh.diag.nc
+
+forcing_files:
+    "[[variables-->VAR]]": "VAR"
+    "[[fluxes-->FLX]]": "FLX"
+    "[[C_fluxes-->POC]]": "POC"
+    dust: dust
+forcing_sources:
+    "[[variables-->VAR]]": "${forcing_dir}/VAR.${forcing_name}.${ave_start_year}-${ave_end_year}.nc"
+    "[[fluxes-->FLX]]": "${forcing_dir}/sinkFLX.${forcing_name}.${ave_start_year}-${ave_end_year}.nc"
+    "[[C_fluxes-->POC]]": "${forcing_dir}/sinkPOC.${forcing_name}.${ave_start_year}-${ave_end_year}.nc"
+    dust: ${dust_file}
+
+config_files:
+    recom_paleo_files: recom_paleo_files
+    recom_paleo_forcing: recom_paleo_forcing
+    seafloor_init: seafloor_init
+    rrp: rrp
+config_sources:
+    recom_paleo_files: ${namelist_dir}/medusa_recom_paleo_files.nml
+    recom_paleo_forcing: ${namelist_dir}/medusa_recom_paleo_forcing.nml
+    seafloor_init: ${namelist_dir}/medusa_seafloor_init.nml
+    rrp: ${namelist_dir}/medusa.rrp
+
+create_config:
+    medusa.tsi:
+        - "<--append-- ${start_date!year}   ! atime"
+        - "<--append-- ${general.nyear}    ! datimte"
+        - "<--append-- ${n_time_steps}    ! number of steps to perform"
+
+bin_sources:
+    medusa: ${model_dir}/bin/${executable}
+
+namelists:
+    - medusa_recom_paleo_files.nml
+    - medusa_recom_paleo_forcing.nml
+    - medusa_seafloor_init.nml
+    - medusa.rrp
+    #- medusa.tsi # medusa time step, will be changed after each medusa run (like 'fesom.clock')
+
+namelist_changes:
+    medusa_recom_paleo_files.nml:
+        nml_cfg:
+            cfn_ncin_init: ${cfn_ncin_init}
+            cfn_ncin_flx: ${cfn_ncin_flx}
+            cfn_ncout_reaclay: 'medusa_reaclay.${start_date!year}.nc'
+            cfn_ncout_reaction: 'medusa_reaction.${start_date!year}.nc'
+            cfn_ncout_procrate: 'medusa_procrate.${start_date!year}.nc'
+            cfn_ncout_bc: 'medusa_bc.${start_date!year}.nc'
+            cfn_ncout_flx: 'medusa_flx.${start_date!year}.nc'
+            cfn_ncout_fesom: 'medusa_flux2fesom.${start_date!year}.nc'
+            #cfn_ncout_sedcore: 'medusa_sedcore.$year.nc'
+    medusa_recom_paleo_forcing.nml:
+        recom_file_list:
+            cfn_[[variables-->VAL]]: VAL.${forcing_name}.${start_date!year}-${end_date!year}.nc
+            cfn_sink[[fluxes-->FLX]]: sinkFLX.${forcing_name}.${start_date!year}-${end_date!year}.nc
+
+outdata_sources:
+    aux: "medusa_aux.nc"
+    bc: "medusa_bc.${end_date!year}.nc"
+    procrate: "medusa_procrate.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
+    reaction: "medusa_reaction.${end_date!year}.nc"
+    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
+
+outdata_in_work:
+    aux: "medusa_aux.nc"
+    bc: "medusa_bc.${end_date!year}.nc"
+    procrate: "medusa_procrate.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
+    reaction: "medusa_reaction.${end_date!year}.nc"
+    fluxes: "medusa_flux2fesom.${end_date!year}.nc"
+
+restart_in_sources:
+    flx: "medusa_flx.${prev_date!year}.nc"
+    reaclay: "medusa_reaclay.${prev_date!year}.nc"
+
+restart_in_in_work:
+    flx: "medusa_flx_restart.nc"
+    reaclay: 'medusa_reaclay_restart.nc'
+
+restart_out_sources:
+    flx: "medusa_flx.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
+
+restart_out_in_work:
+    flx: "medusa_flx.${end_date!year}.nc"
+    reaclay: "medusa_reaclay.${end_date!year}.nc"
+
+log_sources:
+    log: "medusa.log"
+    convergence: "medusa-convergence.log"
+    dbg: "medusa.dbg"
+    err: "medusa.err"
+    tsi: "medusa.tsi"
+
+log_in_work:
+    log: "medusa.log"
+    convergence: "medusa-convergence.log"
+    dbg: "medusa.dbg"
+    err: "medusa.err"
+    tsi: "medusa.tsi"

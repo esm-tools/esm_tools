@@ -1,0 +1,37 @@
+outdata_size: "small"
+
+outdata_files:
+    ts_file: "${expid}_pismr_ts_${run_datestamp}.nc"
+    ex_file: "${expid}_pismr_extra_${run_datestamp}.nc"
+outdata_sources:
+    "${expid}_pismr_ts_${run_datestamp}.nc": "${expid}_pismr_ts_${run_datestamp}.nc"
+    "${expid}_pismr_extra_${run_datestamp}.nc": "${expid}_pismr_extra_${run_datestamp}.nc"
+
+    #ts_times: "${current_date!syear}-${current_date!smonth}-${current_date!sday}:${ts_interval}:${end_date!syear}-${end_date!smonth}-${end_date!sday}"
+ts_times: ${ts_interval}
+ts_interval: 1
+#ex_times: "${current_date!syear}:${ex_interval}:${end_date!syear}"
+#ex_times: "${current_date!syear}-${current_date!smonth}-${current_date!sday}:${ex_interval}:${end_date!syear}-${end_date!smonth}-${end_date!sday}"
+ex_times: "${ex_interval}"
+ex_interval: 10
+
+choose_version:
+    # FIXME(PG): Ask CR what version 0.0 is...?
+    "0.0":
+        ts_vars: [ice_mass,limnsw,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux]
+        ex_vars: [bmelt, climatic_mass_balance, diffusivity, hardav, mask, tauc, tempicethk_basal, temppabase, thk, tillwat, topg, usurf, velbase_mag, velsurf_mag]
+    "snowflake0.7":
+        ts_vars: [ice_mass,limnsw,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux]
+        ex_vars: [basal_mass_balance_average,bheatflx,bmelt,climatic_mass_balance,climatic_mass_balance_cumulative,dHdt,discharge_flux_cumulative,floating_basal_flux_cumulative,grounded_basal_flux_cumulative,hfgeoubed,Href,ice_surface_temp,lat,lon,mask,surface_mass_balance_average,taub,taub_mag,tempbase,tempsurf,thk,topg,usurf,velbar,velbase,velsurf,wvelbase,wvelsurf]
+    "snowflake1.0":
+        ts_vars: [ice_mass,limnsw,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux]
+        ex_vars: [basal_mass_flux_floating,basal_mass_flux_grounded,bheatflx,bmelt,cell_area,climatic_mass_balance,dHdt,dbdt,flux_mag,hfgeoubed,ice_surface_temp,lat,lon,mask,shelfbmassflux,shelfbtemp,taub,taub_mag,tempbase,tempsurf,tendency_of_ice_amount,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow,tendency_of_ice_amount_due_to_surface_mass_flux,thk,topg,usurf,velbar,velbase,velsurf,wvelbase,wvelsurf]
+    "index1.1":
+        ts_vars: [ice_mass,limnsw,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux]
+        ex_vars: [basal_mass_flux_floating,basal_mass_flux_grounded,bheatflx,bmelt,climatic_mass_balance,dHdt,dbdt,flux_mag,hfgeoubed,ice_surface_temp,lat,lon,mask,shelfbmassflux,shelfbtemp,taub,taub_mag,tempbase,tempsurf,tendency_of_ice_amount,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow,tendency_of_ice_amount_due_to_surface_mass_flux,thk,topg,usurf,velbar,velbase,velsurf,wvelbase,wvelsurf]
+    "github1.2":
+        ts_vars: [ice_mass,limnsw,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux]
+        ex_vars: [basal_mass_flux_floating,basal_mass_flux_grounded,bheatflx,bmelt,climatic_mass_balance,dHdt,dbdt,flux_mag,hfgeoubed,ice_surface_temp,lat,lon,mask,shelfbmassflux,shelfbtemp,taub,taub_mag,tempbase,tempsurf,tendency_of_ice_amount,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow,tendency_of_ice_amount_due_to_surface_mass_flux,thk,topg,usurf,velbar,velbase,velsurf,wvelbase,wvelsurf]
+    "github1.2.1":
+        ts_vars: [ice_mass,limnsw,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux]
+        ex_vars: [basal_mass_flux_floating,basal_mass_flux_grounded,bheatflx,bmelt,climatic_mass_balance,dHdt,dbdt,flux_mag,ice_surface_temp,lat,lon,mask,shelfbmassflux,shelfbtemp,taub,taub_mag,tempbase,tempsurf,tendency_of_ice_amount,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow,tendency_of_ice_amount_due_to_surface_mass_flux,thk,topg,usurf,velbar,velbase,velsurf,wvelbase,wvelsurf]

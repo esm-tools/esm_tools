@@ -1,0 +1,99 @@
+general:
+    account: "ab0995"
+    setup_name: "awiesm"
+    version: "2.1-recom"
+    compute_time: "00:30:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-02-01"
+    base_dir: !ENV ${WORKCD}
+#    nday: 1
+    nmonth: 1
+    nyear: 0
+    use_venv: False
+
+    # clean_old_rundirs_except: 2
+#    clean_old_rundirs_keep_every: 20
+#    clean_runs: 5
+    
+awiesm:
+    version: "2.1-recom"
+    postprocessing: false
+    scenario: "PALEO"
+    model_dir: "/work/ab0995/a270152/model_codes/awiesm-2.1-recom/"
+
+echam:
+    restart_rate: 1
+    restart_unit: "months"
+    nproca: 32
+    nprocb: 16
+    lresume: 0
+    disturbance_years: [3491, 3491]
+    disturbace: 1.000001
+    lrad_async: False
+    ini_parent_exp_id: "pi_ciso_mpi"
+    ini_parent_date: "35051231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/pi_ciso_mpi/restart/echam/"    
+    #    ini_parent_exp_id: "pi_final"
+    #ini_parent_date: "31001231"
+    #ini_parent_dir: "/home/a/a270105/awiesm_input/echam/"
+    default_output: False
+#    namelist_changes:
+#            namelist.echam:
+#                    runctl:
+#                            default_output: True
+
+hdmodel:
+    lresume: 0
+    ini_parent_exp_id: "pi_ciso_mpi"
+    ini_parent_date: "35051231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/pi_ciso_mpi/restart/hdmodel/"
+    #    ini_parent_exp_id: "PI_echamcold"
+    #ini_parent_date: "31001231"
+    #ini_parent_dir: "/home/a/a270105/awiesm_input/hdmodel/"
+
+fesom:
+    model_dir: "/work/ab0995/a270105/esm_code/awiesm-2.1-recom-par-tracers/fesom-2.1/" 
+    res: "CORE2"
+    mesh_dir: "/work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/"
+    nproc: 1024
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: 0
+    ini_parent_exp_id: "pi_ciso_mpi"
+    ini_parent_date: "35051231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/pi_ciso_mpi/restart/fesom/"
+    climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
+    #    ini_parent_exp_id: "PI_echamcold"
+    #ini_parent_date: "20011231"
+    #ini_parent_dir: "/home/a/a270105/awiesm_input/fesom/"
+    mpi_num_groups: 2
+
+recom:
+# default scenario is pi
+#    scenario: "preindustrial"
+    lresume: 0
+    ini_parent_exp_id: "pi_ciso_mpi"
+    ini_parent_date: "35051231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/pi_ciso_mpi/restart/recom/"
+#    ini_parent_exp_id: "PI_echamcold"
+#    ini_parent_date: "20011231"
+#    ini_parent_dir: "/home/a/a270105/awiesm_input/recom/"
+    use_ciso: true
+    use_atbox: true
+#                DIC_PI: false
+#                REcoMDataPath: "/home/a/a270105/initial_files/pi_init/dust_coremesh/"
+
+jsbach:
+    input_sources:
+        # NOTE: This will be incorporated into the pool at a later stage
+           jsbach_1850: "/home/a/a270105/awiesm_input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+
+oasis3mct:
+    lresume: 0
+    ini_parent_exp_id: "pi_ciso_mpi"
+    ini_parent_date: "35051231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/pi_ciso_mpi/restart/oasis3mct/"
+    #    ini_parent_exp_id: "pi_final"
+    #ini_parent_date: "31001231"
+    #ini_parent_dir: "/home/a/a270105/awiesm_input/oasis3mct/"

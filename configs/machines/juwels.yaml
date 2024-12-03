@@ -12,7 +12,7 @@ accounting: true
 #compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-compiler_mpi: intel2019_impi2019
+compiler_mpi: intel2022_ompi2022
 iolibraries: none
 useMPI: intelmpi
 
@@ -94,6 +94,27 @@ export_vars:
 
 # choose compiler and MPI implementation
 choose_compiler_mpi:
+
+   gnu2023_ompi2023:
+      add_module_actions:
+        - "--force purge"
+        - "load Stages/2023"
+        - "load GCC/11.3.0"
+        - "load OpenMPI/4.1.4"
+        - "load CMake/3.26.3"
+        - "load Python/3.10.4"
+        - "load imkl/2022.1.0"
+        - "load Perl/5.34.1"
+        - "load git"
+      add_export_vars:
+        FC: mpifort
+        F77: mpifort
+        MPIFC: mpifort
+        FCFLAGS: -free
+        CC: mpicc
+        CXX: mpic++
+        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
    intel2022_psmpi2022:
       add_module_actions:
@@ -256,8 +277,14 @@ choose_iolibraries:
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
-         - "load netCDF netCDF-Fortran"
-         - "load git"
+         - "load libaec FFTW imkl cURL netCDF netCDF-Fortran"
+         - "list"
+       add_export_vars:
+            AEC_ROOT: /p/software/juwels/stages/2022/software/libaec/1.0.6-GCCcore-11.2.0
+            PERL5LIB: /p/software/juwels/stages/2022/software/Perl/5.34.0-GCCcore-11.2.0/lib/perl5/site_perl/5.34.0/
+            PERL5_PATH: /p/software/juwels/stages/2022/software/Perl/5.34.1-GCCcore-11.3.0/lib/perl5/site_perl/5.34.1/
+            MKL_CBWR: AUTO,STRICT
+            LD_RUN_PATH: $LD_LIBRARY_PATH
 
     # AWI LIBS
     awi_libs:

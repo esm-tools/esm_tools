@@ -12,6 +12,7 @@ general:
            - "assemble"
            - "log_used_files"
            - "_write_finalized_config"
+           - "wait_for_iterative_coupling"
            - "copy_files_to_thisrun"
            - "write_env"
            - "preprocess"
@@ -19,6 +20,7 @@ general:
            - "modify_files"
            - "copy_files_to_work"
            - "report_missing_files"
+           - "compute_and_log_file_checksums"
            # not working, bug already reported at https://github.com/esm-tools/esm_tools/discussions/774
            # - "add_vcs_info"
            # - "check_vcs_info_against_last_run"

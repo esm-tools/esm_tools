@@ -4,6 +4,9 @@
 function pism2ocean {
     echo " *** S T A R T I N G    pism2ocean *** (PISM version ${VERSION_pism})"
 
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+
     echo "PISM_TO_OCEAN=${PISM_TO_OCEAN:-0}"
     if [[ $PISM_TO_OCEAN -le 0 ]]; then
         echo " NOT generating ice forcing for ocean model"
@@ -26,11 +29,11 @@ function pism2ocean {
     #             5) FESOM Names
     #
     CHUNK_DATE_TAG_pism="${CURRENT_YEAR_pism}-${END_YEAR_pism}"
-    CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_awicm}-${CHUNK_END_DATE_awicm}"
+    #CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_awicm}-${CHUNK_END_DATE_awicm}"
 
 #TODO Get the right file names for the forcing/extra and restart/output file names
-    PISM_FORCING_EXTRA_FILE=../pism_standalone/outdata/pism/${EXP_ID}_pismr_extra_${CHUNK_DATE_TAG_pism}.nc
-    PISM_RESTART_OUTPUT_FILE=../pism_standalone/restart/pism/${EXP_ID}_pismr_out_${CHUNK_DATE_TAG_pism}.nc
+    PISM_FORCING_EXTRA_FILE=../outdata/pism/${EXP_ID}_pismr_extra_${CHUNK_DATE_TAG_pism}.nc
+    PISM_RESTART_OUTPUT_FILE=../restart/pism/${EXP_ID}_pismr_out_${CHUNK_DATE_TAG_pism}.nc
     COMBINED_OUTPUT=ice_file_at_ocean.combined.nc
 
     # TODO Are these sensible choices?
@@ -45,7 +48,7 @@ function pism2ocean {
     NOCOLOR='\033[0m'
     GREEN='\033[32m'
 
-    mecho "Interaction (ocean) : ${iter_coup_interact_method_ice2oce}"
+    echo "Interaction (ocean) : ${iter_coup_interact_method_ice2oce}"
     echo -e "   --> Interaction >>> ${GREEN}${iter_coup_interact_method_ice2oce}${NOCOLOR} <<< ocean"
     case $iter_coup_interact_method_ice2oce in
         "BASALSHELF_WATER_ICEBERG_WATER")
@@ -71,7 +74,7 @@ function pism2ocean {
             iterative_coupling_pism_ocean_prepare_ocean_iceberg_pdf_forcing
 	    ;;
 	"BASALSHELF_WATER_ICEBERG_MODEL")
-            iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
+            #iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing
             iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
 	    ;;
         *)
@@ -130,12 +133,12 @@ function iterative_coupling_pism_ocean_write_names {
 	    _pism_iceberg_freshwater_flux_varn="discharge_flux_cumulative"
 	    _pism_iceberg_freshwater_flux_unit="Gt"
 	    ;;
-#	"1.0"|"1.1")
-#	    _pism_basalshelf_freshwater_flux_varn="floating_basal_flux_cumulative"
-#	    _pism_basalshelf_freshwater_flux_unit="Gt/m2/s"
-#	    _pism_iceberg_freshwater_flux_varn="discharge_flux_cumulative"
-#	    _pism_iceberg_freshwater_flux_unit="Gt/m2/s"
-#	    ;;
+	"1.0"|"1.1"|"1.2")
+	    _pism_basalshelf_freshwater_flux_varn="basal_mass_flux_floating" #"floating_basal_flux_cumulative"
+	    _pism_basalshelf_freshwater_flux_unit="kg/m2/year"
+	    _pism_iceberg_freshwater_flux_varn="tendency_of_ice_amount_due_to_discharge" #"discharge_flux_cumulative"
+	    _pism_iceberg_freshwater_flux_unit="kg/m2/year"
+	    ;;
 	*)
 	    echo "NOT DEFINED PISM version >${VERSION_pism}<"
 	    echo "Please adjust function >iterative_coupling_pism_ocean_write_names<"
@@ -207,20 +210,65 @@ function iterative_coupling_pism_ocean_prepare_ocean_iceberg_pdf_forcing {
 }
 
 
+########################################################################
+########################################################################
+# Lars Ackermann 07.09.2020
+########################################################################
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
-    echo " WE DOT NOT have yet an ICEBERG MODEL"
-    echo " Please replace iter_coup_interact_method_ice2oce=${iter_coup_interact_method_ice2oce} with something else"
-    echo " S T O P  4"
-    exit 4
+    # iceberg coupling LA
+    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+    if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
+        pism_discharge_file=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+    elif [[ -f ${SPINUP_FILE_pism} ]]; then
+        pism_discharge_file=${SPINUP_FILE_pism}
+    fi
 
-    #
-    # Please add after this comment the commands that are specific for
-    # running the iceberg model.
-    # -> Convert ice berg calving rate into a release of lagrange
-    #    particles that are consistent with a given ice berg size
-    #    distribution.
-    #
+    ICEBERG_DIR=${COUPLE_DIR}/../icb/
+    echo "ICEBERG_DIR: ${ICEBERG_DIR}"
+    echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
+    if [[ -d ${ICEBERG_DIR} ]]; then
+        mv ${ICEBERG_DIR}/LON.dat ${ICEBERG_DIR}/LON.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/LAT.dat ${ICEBERG_DIR}/LAT.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/LENGTH.dat ${ICEBERG_DIR}/LENGTH.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/HEIGHT.dat ${ICEBERG_DIR}/HEIGHT.dat.${CURRENT_YEAR_pism}
+        mv ${ICEBERG_DIR}/buoys_track.nc ${ICEBERG_DIR}/buoys_track.nc.${CURRENT_YEAR_pism}
+    fi
+
+    cdo mulc,${CHUNK_SIZE_pism_standalone} \
+            -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+    
+    module unload python
+    #module load python3
+    module load python3/3.7.7_intel2020u2
+    
+    if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
+        if [[ ! -f ${ICEBERG_DIR}/nod2d.out.rot ]]; then
+            python ${FUNCTION_PATH}/../utils/rotate_mesh.py ${MESH_DIR_fesom} ${ICEBERG_DIR}
+            cp ${MESH_DIR_fesom}/elem2d.out ${ICEBERG_DIR}/elem2d.out
+        fi
+        python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${ICEBERG_DIR} ${ICEBERG_DIR}
+    else
+        python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${ICEBERG_DIR}
+    fi
+
+    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
+    use_icesheet_coupling=1
+
+#    get_ib_num_after_ice_sheet_coupling
 }
+
+#function get_ib_num_after_ice_sheet_coupling {
+#    _a="$( wc -l icb/LON.dat | awk '{ print $1 }' )"
+#    _b="$( cat ../icb/num_non_melted_icb_file )"
+#
+#    ib_num=$(( $_a + $_b ))
+#    general_replace_namelist_value namelist.config icebergs ib_num $ib_num
+#    general_replace_namelist_value namelist.config icebergs use_icesheet_coupling ".true."
+#}
+############################################################################
+############################################################################
+
 
 
 function iterative_coupling_pism_ocean_prepare_ocean_basalshelf_water_forcing {
@@ -263,7 +311,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_iceberg_water_forcing {
 	"0.7")
 	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} water_abs
 	    ;;
-	"1.0"|"1.1")
+	"1.0"|"1.1"|"1.2")
 	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} water_loss
 	    ;;
 	*)
@@ -302,7 +350,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_iceberg_heat_forcing {
 	"0.7")
 	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} heat_abs
 	    ;;
-	"1.0"|"1.1")
+	"1.0"|"1.1"|"1.2")
 	    iterative_coupling_pism_ocean_convert_mass_loss_to_mass_flux ${_out_file} heat_loss
 	    ;;
 	*)
@@ -322,7 +370,7 @@ function iterative_coupling_pism_ocean_prepare_iceshelf_temperature_gradient_for
 	"0.7")
 	    __varname="shelfbtemp"
 	    ;;
-	"1.0"|"1.1")
+	"1.0"|"1.1"|"1.2")
 	    __varname="shelfbtemp"
 	    ;;
 	*)
@@ -348,7 +396,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_update_mask_forcing {
 	"0.7")
 	    __varname="mask"
 	    ;;
-	"1.0"|"1.1")
+	"1.0"|"1.1"|"1.2")
 	    __varname="mask"
 	    ;;
 	*)
@@ -715,4 +763,7 @@ EOFcdo
     unset _fesom_basalshelf_freshwater_flux_varn _fesom_basalshelf_freshwater_flux_unit
     unset _fesom_iceberg_freshwater_flux_varn _fesom_iceberg_freshwater_flux_unit
 }
+
+
+
 # -- last line

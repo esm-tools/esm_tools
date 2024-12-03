@@ -1,11 +1,12 @@
 import os
 import sys
-import yaml
 
 import questionary
+import yaml
 
 import esm_parser
-from esm_calendar import Date, Calendar
+from esm_calendar import Calendar, Date
+from loguru import logger
 
 
 class PrevRunInfo(dict):
@@ -62,6 +63,7 @@ class PrevRunInfo(dict):
         self.components_with_prev_run()
         # Counter for debuggin
         self._prev_config_count = 0
+
 
     def components_with_prev_run(self):
         """
@@ -258,7 +260,7 @@ class PrevRunInfo(dict):
                             elif answer == "n":
                                 sys.exit(0)
                             else:
-                                print("Incorrect answer.")
+                                logger.error("Incorrect answer.")
 
                 # Load the component info into the self._prev_config dictionary
                 if not self._prev_config:

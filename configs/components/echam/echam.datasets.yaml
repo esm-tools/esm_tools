@@ -10,6 +10,8 @@ input_sources:
         "vltclim": "${adj_input_dir}/${resolution}${ocean_resolution}_VLTCLIM.nc"
 
 # forcings
+# Note: The variable ``ozone_source_file_scenario`` is set to ${scenario} by default.
+ozone_source_file_scenario: ${scenario}
 forcing_sources:
         # sst
         "pisst": "${forcing_dir}/${resolution}${ocean_resolution}_piControl-LR_sst_1880-2379.nc"

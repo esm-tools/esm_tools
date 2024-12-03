@@ -42,34 +42,37 @@ with open("Supported_Models.rst", "w") as rst:
     rst.write("Supported Models\n")
     rst.write("================\n")
 configs.sort()
+ignore_models = ["sample"]
 for config in configs:
-    with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
-        d = yaml.load(f, Loader=yaml.FullLoader)
-        metadata = d.get("metadata")
-        name = config.upper()
-        with open("metadata/"+config+".csv", "w") as table:
-            if metadata:
-                for key in metadata:
-                    if key=="Publications":
-                        if type(metadata[key]) is list:
-                            public_string = key + '; "\n'
-                            for publication in metadata[key]:
-                                public_string = public_string + "`{0}`_\n\n".format(publication.replace('"', '""'))
-                            table.write(public_string+'"\n')
+    if not config in ignore_models:
+        with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
+            d = yaml.load(f, Loader=yaml.FullLoader)
+            metadata = d.get("metadata")
+            name = config.upper()
+            with open("metadata/"+config+".csv", "w") as table:
+                if metadata:
+                    for key in metadata:
+                        if key=="Publications":
+                            if type(metadata[key]) is list:
+                                public_string = key + '; "\n'
+                                for publication in metadata[key]:
+                                    public_string = public_string + "`{0}`_\n\n".format(publication.replace('"', '""'))
+                                table.write(public_string+'"\n')
+                            else:
+                                if metadata[key]:
+                                    table.write("%s; `%s`_\n" % (key, metadata[key]))
+                        elif key=="Name" or key=="name":
+                            name = metadata[key]
                         else:
-                            table.write("%s; `%s`_\n" % (key, metadata[key]))
-                    elif key=="Name" or key=="name":
-                        name = metadata[key]
-                    else:
-                        table.write("%s; %s\n" % (key, metadata[key]))
-        with open("Supported_Models.rst", "a") as rst:
-            rst.write("%s\n" % name)
-            rst.write("-"*len(name) + "\n")
-            rst.write(".. csv-table::\n")
-            rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
-            rst.write("   :delim: ;\n")
-            rst.write("   :widths: 20, 80\n")
-            rst.write("   :stub-columns: 1\n\n")
+                            table.write("%s; %s\n" % (key, metadata[key]))
+            with open("Supported_Models.rst", "a") as rst:
+                rst.write("%s\n" % name)
+                rst.write("-"*len(name) + "\n")
+                rst.write(".. csv-table::\n")
+                rst.write("   :file: %s\n" % ("metadata/"+config+".csv"))
+                rst.write("   :delim: ;\n")
+                rst.write("   :widths: 20, 80\n")
+                rst.write("   :stub-columns: 1\n\n")
 
 # -- Unified API of subpackages ----------------------------------------
 
@@ -194,7 +197,7 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_logo = "_static/ESM-TOOLS_LOGO_RGB_72dpi.jpg"
+html_logo = "_static/logo_canvas_fit_to_logo_BlueDots.png"
 
 # Add custom css (to disable the horizontal scrolling in tables).
 def setup(app):

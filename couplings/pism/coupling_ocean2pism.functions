@@ -3,13 +3,18 @@
 function ocean2pism {
     echo " *** S T A R T I N G    ocean2pism *** (PISM version ${VERSION_pism})"
 
-    CHUNK_DATE_TAG_pism="${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}"
+    echo $(module list)
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+
+    #CHUNK_DATE_TAG_pism="${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}"
+    CHUNK_DATE_TAG_pism="${CURRENT_YEAR_pism}-${END_YEAR_pism}"
 
     INTERPOL_TYPE_OCE=${INTERPOL_TYPE_OCE:-"dis"} #Standard=dis : "bil" "con" "dis" "nn", "bil" doesn't work for FESOM
     WEIGHTS_OCE2ICE=${WEIGHTS_OCE2ICE:-weights_oce2ice.${INTERPOL_TYPE_OCE}.nc}
     GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
     GRIDDES_OCE=${GRIDDES_OCE:-ocean.griddes}
-    PISM_OCEAN_FORCING_FILE="ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc"
+    PISM_OCEAN_FORCING_FILE=${COUPLE_DIR}/"ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc"
 
     OCEAN_3EQN_ICE_FORCE_PY_SCRIPT=${FUNCTION_PATH:-${FPATH}}/ocean_3eqn_ismforce.py
 
@@ -25,7 +30,7 @@ function ocean2pism {
     NOCOLOR='\033[0m'
     GREEN='\033[32m'
 
-    mecho "Interaction (ocean) : ${iter_coup_interact_method_oce2ice} (1/2)"
+    echo "Interaction (ocean) : ${iter_coup_interact_method_oce2ice} (1/2)"
     echo -e "   --> Interaction >>> ${GREEN}${iter_coup_interact_method_oce2ice}${NOCOLOR} <<< ocean (Step 1/2: names)"
     case $iter_coup_interact_method_oce2ice in
         "DIRECT")
@@ -33,7 +38,7 @@ function ocean2pism {
 	    # Take DIRECTly the forcing coming from the ocean model
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_direct_forcing
             ;;
         "MIXED"|"TS_RESCALED2FLUX")
@@ -43,7 +48,7 @@ function ocean2pism {
 	    #  fluxes -- NOT YET IMPLEMENTED
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing
             ;;
 	"OCEANTEMP")
@@ -53,7 +58,7 @@ function ocean2pism {
 	    # basal ice shelf conditions
 	    #
 	    PISM_OCEAN_SWITCH="-ocean o3d"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_o3d_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_o3d_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_temp_forcing
 	    ;;
 	"OCEANTEMPSALT")
@@ -63,7 +68,7 @@ function ocean2pism {
 	    # computes the basal ice shelf conditions
 	    #
 	    PISM_OCEAN_SWITCH="-ocean th"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_th_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_th_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_tempsalt_forcing
 	    ;;
 	"PICO_OCEAN")
@@ -73,10 +78,18 @@ function ocean2pism {
 	    # ice shelf conditions
 	    #
 	    #PISM_OCEAN_SWITCH="-ocean pico -ocean.pico.continental_shelf_depth 700"
-	    PISM_OCEAN_SWITCH="-ocean pico"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_pico_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
-            iterative_coupling_ocean_pism_prepare_ocean_tempsalt_forcing
-	    ;;
+            
+            PISM_OCEAN_SWITCH="-ocean pico"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_pico_file ${PISM_OCEAN_FORCING_FILE}"
+            PISM_OCEAN_PICO_BASINS_FILE=${PISM_OCEAN_PICO_BASINS_FILE:-${PISM_OCEAN_FORCING_FILE}}
+            echo " * Doing iterative_coupling_ocean_pism_prepare_ocean_tempsalt_forcing ..."
+            iterative_coupling_ocean_pism_prepare_ocean_tempsalt_forcing 	
+            echo "      ...done."
+            
+            #echo " * Doing iterative_coupling_ocean_pism_prepare_pico_ocean_forcing ..."
+            #iterative_coupling_ocean_pism_prepare_pico_ocean_forcing ${PISM_OCEAN_PICO_BASINS_FILE} ${PISM_OCEAN_FORCING_FILE}
+            #echo "      ...done."
+            ;;
 	"TEMP2FLUX")
 	    #
 	    # Use the python script `ocean_3eqn_iceforce.py` and
@@ -84,7 +97,7 @@ function ocean2pism {
 	    # only on the 3dim oceanic temperature distribution
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_temp2flux_forcing
 	    ;;
 	"TEMPSALT2FLUX")
@@ -94,7 +107,7 @@ function ocean2pism {
 	    # 3dim oceanic temperature and salinity distributions
 	    #
 	    PISM_OCEAN_SWITCH="-ocean given"
-	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file $(pwd)/${PISM_OCEAN_FORCING_FILE}"
+	    PISM_OCEAN_FILE_SWITCH="-ocean_given_file ${PISM_OCEAN_FORCING_FILE}"
             iterative_coupling_ocean_pism_prepare_ocean_tempsalt2flux_forcing
 	    ;;
         *)
@@ -104,7 +117,7 @@ function ocean2pism {
             exit 1
     esac
 
-    mecho "Grid method (ocean) : ${iter_coup_regrid_method_oce2ice}"
+    echo "Grid method (ocean) : ${iter_coup_regrid_method_oce2ice}"
     echo -e "   --> Grid method >>> ${GREEN}${iter_coup_regrid_method_oce2ice}${NOCOLOR} <<< ocean"
     case $iter_coup_regrid_method_oce2ice in
         "INTERPOLATE"|"REMAP")
@@ -117,7 +130,7 @@ function ocean2pism {
         "NONE")
 	    # Ocean and ice sheet grid are identical !!
 	    INTERPOL_TYPE_OCE=none
-            iterative_coupling_ocean_pism_regrid_none
+    SM_OCEAN_FORCING_FILE3        iterative_coupling_ocean_pism_regrid_none
             ;;
         *)
             echo " UNKNOWN regrid method selected!"
@@ -126,7 +139,7 @@ function ocean2pism {
             exit 2
     esac
 
-    mecho "Interaction (ocean) : ${iter_coup_interact_method_oce2ice} (2/2)"
+    echo "Interaction (ocean) : ${iter_coup_interact_method_oce2ice} (2/2)"
     echo -e "   --> Interaction >>> ${GREEN}${iter_coup_interact_method_oce2ice}${NOCOLOR} <<< ocean (Step 2/2: final file)"
     case $iter_coup_interact_method_oce2ice in
         "DIRECT")
@@ -138,8 +151,15 @@ function ocean2pism {
 	"OCEANTEMP")
             iterative_coupling_ocean_pism_compute_ocean_temp_forcing ${PISM_OCEAN_FORCING_FILE}
 	    ;;
-	"OCEANTEMPSALT" | "PICO_OCEAN")
+	"OCEANTEMPSALT")
             iterative_coupling_ocean_pism_compute_ocean_tempsalt_forcing ${PISM_OCEAN_FORCING_FILE}
+            ;; 
+        "PICO_OCEAN")
+            iterative_coupling_ocean_pism_compute_ocean_tempsalt_forcing ${PISM_OCEAN_FORCING_FILE}
+            PISM_OCEAN_PICO_BASINS_FILE=${PISM_OCEAN_PICO_BASINS_FILE:-${PISM_OCEAN_FORCING_FILE}}
+            echo " * Doing iterative_coupling_ocean_pism_prepare_pico_ocean_forcing ..."
+            iterative_coupling_ocean_pism_prepare_pico_ocean_forcing ${PISM_OCEAN_PICO_BASINS_FILE} ${PISM_OCEAN_FORCING_FILE}
+            echo "      ...done."
 	    ;;
 	"TEMP2FLUX")
             iterative_coupling_ocean_pism_compute_ocean_temp2flux_forcing ${PISM_OCEAN_FORCING_FILE}
@@ -154,16 +174,34 @@ function ocean2pism {
             exit 3
     esac
 
-    iterative_coupling_ocean_pism_set_options
+    #iterative_coupling_ocean_pism_set_options
     iterative_coupling_ocean_pism_regrid_set_time_axis ${PISM_OCEAN_FORCING_FILE}
     iterative_coupling_pism_regrid_add_xy_array ${PISM_OCEAN_FORCING_FILE} "ocean"
 
+    ln -sf "${COUPLE_DIR}/ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc" "${COUPLE_DIR}/latest_ocean_forcing_file.nc"
+    
     for file in ${cleanup_list} ; do test -f $file && rm $file ; done
+    
     unset cleanup_list file
 
     unset NOCOLOR GREEN
     unset PISM_OCEAN_SWITCH PISM_OCEAN_FILE_SWITCH PISM_OCEAN_FORCING_FILE
 
+    max_retry=12
+    retry=0
+    sleep 10 # Minimum time for st_new.sh to finish
+        
+    while [ ${retry} -lt ${max_retry} ]; do
+        if [ -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+            break # call results.sh outside loop
+        else
+            (( retry = retry + 1 ))
+            sleep 1
+        fi
+    done
+    if [ ! -f ${COUPLE_DIR}/latest_ocean_forcing_file.nc ]; then
+        echo "Something wrong after waiting for 120 seconds!"
+    fi
     echo "     ...done."
 }
 
@@ -181,7 +219,7 @@ function save_griddes {
 	    exit 4
         fi
     else
-	mecho "${model_type}.griddes is in place"
+	echo "${model_type}.griddes is in place"
     fi
 }
 
@@ -228,7 +266,7 @@ EOF
 #	${PISM_OCEAN_FORCING_FILE}
 
     $cdo setpartabn,${cdo_table_file},convert \
-	ocean_file_for_ice.nc \
+	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_for_ice.pism_names.nc
     
     echo "     ...done."
@@ -271,7 +309,7 @@ function iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing {
 #EOF
 
     $cdo setpartabn,${cdo_table_file},convert \
-	ocean_file_for_ice.nc \
+	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_for_ice.pism_names.nc
 
     echo "     ...done."
@@ -320,7 +358,7 @@ delete = 1
 EOF
 
     $cdo setpartabn,${cdo_table_file},convert \
-	ocean_file_for_ice.nc \
+	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_for_ice.pism_names.nc
 
     # This method allows only one time step
@@ -364,7 +402,7 @@ delete = 1
 EOF
 
     $cdo setpartabn,${cdo_table_file},convert \
-	ocean_file_for_ice.nc \
+	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_for_ice.pism_names.nc
 
     # This method allows only one time step
@@ -406,7 +444,7 @@ delete = 1
 EOF
 
     $cdo setpartabn,${cdo_table_file},convert \
-	ocean_file_for_ice.nc \
+	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_for_ice.pism_names.nc
 
     echo "     ...done."
@@ -445,10 +483,28 @@ delete = 1
 EOF
 
     $cdo setpartabn,${cdo_table_file},convert \
-	ocean_file_for_ice.nc \
+	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_for_ice.pism_names.nc
 
     echo "     ...done."
+}
+
+function iterative_coupling_ocean_pism_prepare_pico_ocean_forcing {
+    _bfile=$1
+    _ofile=$2
+
+    for _file in $_ofile $_bfile ; do
+        if [ ! -f $_file ] ; then
+            echo " Missing file $_file"
+            echo exit 99
+        fi
+    done
+
+    echo "Wrting basins from $_bfile to $_ofile"
+    ncks -Av basins $_bfile $_ofile
+    ncpdq -a time,x,y $_ofile tmp.pico.nc
+    mv tmp.pico.nc $_ofile
+    echo "      ...done."
 }
 
 function iterative_coupling_ocean_pism_fesom2pism_names {
@@ -470,7 +526,7 @@ function iterative_coupling_ocean_pism_fesom2pism_names {
     # Maximal salinity of 474 g/kg : "Don Juan Pond", Antarctica
 cat > ${_file:-cdo_partable.txt} <<EOFcdo
 &parameter
-name = thetao
+name = temp
 out_name = ${_oce_temp3D_varn}
 units = "${_oce_temp3D_unit}"
 long_name = "potential ocean temperature"
@@ -481,7 +537,7 @@ valid_max = 373
 /
 
 &parameter
-name = so
+name = salt
 out_name = ${_oce_salt3D_varn}
 units = "${_oce_salt3D_unit}"
 long_name = "ocean salinity"
@@ -511,7 +567,7 @@ valid_max = 474
 /
 
 &parameter
-name = wnet
+name = fw
 out_name = ${_oce_massflux_varn}
 units = "${_oce_massflux_unit}"
 long_name = "shelf basal mass flux"
@@ -519,7 +575,7 @@ standard_name = shelf_basal_mass_flux
 /
 
 &parameter
-name = qnet
+name = fh
 out_name = ${_oce_heatflux_varn}
 units = "${_oce_heatflux_unit}"
 long_name = "shelf basal heat flux"
@@ -549,14 +605,14 @@ function iterative_coupling_ocean_pism_regrid_interpolate {
     echo " *   Interpolate GCM forcing..."
 
     ierr=10
-    for file in $GRIDDES_ICE $GRIDDES_OCE ocean_file_for_ice.nc ; do
+    for file in $GRIDDES_ICE ${COUPLE_DIR}/$GRIDDES_OCE ${COUPLE_DIR}/ocean_file_for_ice.nc ; do
 	ierr=$(( ierr + 1 ))
-	test_file_or_exit $input $ierr
+	test_file_or_exit $file $ierr
     done
 
     test_file_or_exit ocean_file_for_ice.pism_names.nc 5
     build_weights4remap \
-	ocean_file_for_ice.nc \
+	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	${GRIDDES_ICE:?Missing variable}   \
 	${WEIGHTS_OCE2ICE:?Missing variable} \
 	${INTERPOL_TYPE_OCE:?Missing variable} \
@@ -568,7 +624,7 @@ function iterative_coupling_ocean_pism_regrid_interpolate {
 	ocean_file_for_ice.pism_names.nc \
 	ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc
 
-    cleanup_list="${cleanup_list} $(pwd)/ocean_file_for_ice.nc $(pwd)/ocean_file_for_ice.pism_names.nc"
+    cleanup_list="${cleanup_list}" # $(pwd)/ocean_file_for_ice.nc $(pwd)/ocean_file_for_ice.pism_names.nc"
 }
 
 function iterative_coupling_ocean_pism_regrid_extrapolate {
@@ -596,12 +652,12 @@ function iterative_coupling_ocean_pism_regrid_extrapolate {
 function iterative_coupling_ocean_pism_regrid_none {
     echo " *   Grid-identical GCM forcing (no interpolation)..."
 
-    test_file_or_exit ocean_file_for_ice.nc 7
+    test_file_or_exit ${COUPLE_DIR}/ocean_file_for_ice.nc 7
 
-    mv ocean_file_for_ice.nc \
+    mv ${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc
 
-    cleanup_list="${cleanup_list} $(pwd)/ocean_file_for_ice.nc"
+    cleanup_list="${cleanup_list}" # $(pwd)/ocean_file_for_ice.nc"
 }
 
 #
@@ -759,7 +815,7 @@ function iterative_coupling_ocean_pism_set_options {
 function iterative_coupling_ocean_pism_regrid_set_time_axis {
     _file_name_add_timeaxis=$1
     echo ""; echo " *   setting time axis >>${_file_name_add_timeaxis}<<"
-    _script2build_time_axis=${FUNCTION_PATH}/utils/CreateTimeAxisNC.bash
+    _script2build_time_axis=${FUNCTION_PATH}/../utils/CreateTimeAxisNC.bash
 
     test_file_or_exit ${_file_name_add_timeaxis} 8
     # Number of timesteps in file

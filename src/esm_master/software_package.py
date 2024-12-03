@@ -10,7 +10,7 @@ def replace_var(var, tag, value):
         if isinstance(var, (str, int, float)):
             var = str(var)
             return var.replace("${" + tag + "}", value)
-        elif type(var) == list:
+        elif isinstance(var, list):
             newlist = []
             for entry in var:
                 newlist.append(replace_var(entry, tag, value))
@@ -24,7 +24,7 @@ class software_package:
     def __init__(
         self, raw, setup_info, vcs, general, no_infos=False
     ):  # model_and_version):
-        if type(raw) == str:
+        if isinstance(raw, str):
             (
                 dummy,
                 self.kind,
@@ -221,12 +221,12 @@ class software_package:
     def get_comp_type(self, setup_info):
         exec_names = setup_info.get_config_entry(self, "install_bins")
         if exec_names:
-            if type(exec_names) == str:
+            if isinstance(exec_names, str):
                 exec_names = [exec_names]
             return "bin", exec_names
         exec_names = setup_info.get_config_entry(self, "install_libs")
         if exec_names:
-            if type(exec_names) == str:
+            if isinstance(exec_names, str):
                 exec_names = [exec_names]
             return "lib", exec_names
         return "bin", []
@@ -252,7 +252,7 @@ class software_package:
             else:
                 commands = setup_info.get_config_entry(self, todo + "_command")
             if commands:
-                if type(commands) == str:
+                if isinstance(commands, str):
                     commands = [commands]
                 if not todo == "get":
                     commands.insert(0, "cd " + self.destination)

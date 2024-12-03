@@ -1,0 +1,32 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "oifs"
+    version: "48r1"
+    account: "ab0246"
+    compute_time: "01:00:00"
+    initial_date: "2001-01-01"
+    final_date: "2001-01-04"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+computer:
+    taskset: true
+
+oifs:
+    pool_dir: "/work/ab0246/a270092/input/oifs-48r1/${resolution}${levels}/"
+    prepifs_dir: "${pool_dir}"
+    icmcl_dir: "${pool_dir}"
+    #rtables_dir: "${pool_dir}/rtables"
+    #vtables_dir: "${pool_dir}/vtables"
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 128
+    omp_num_threads: 1

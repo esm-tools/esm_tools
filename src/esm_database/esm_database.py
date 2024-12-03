@@ -64,7 +64,7 @@ class DisplayDatabase:
         self.session = database.session
         query = database.session.query(self.entry_type)
         results = query.all()
-        if not type(results) == list:
+        if not isinstance(results, list):
             results = [results]
 
         self.query = query

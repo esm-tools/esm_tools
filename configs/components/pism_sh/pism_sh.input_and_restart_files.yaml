@@ -1,0 +1,52 @@
+choose_general.run_number:
+    1:
+        choose_lresume:
+            false:
+                cli_input_file_pism: ${cold_start_file}
+            true:
+                cli_input_file_pism: ${spinup_file}
+    "*":
+        cli_input_file_pism: "${general.base_dir}/${general.expid}/restart/pism_sh/${general.expid}_pismr_restart_${last_run_datestamp}.nc"
+
+input_files:
+    input: input
+input_sources:
+    input: ${cli_input_file_pism}
+input_in_work:
+    input: ${general.expid}_pismr_input_${run_datestamp}.nc
+
+choose_general.iterative_coupling:
+    True:
+        input_files:
+            atmo_forcing: atmo_forcing
+            ocean_forcing: ocean_forcing
+        input_sources:
+            atmo_forcing: "${general.experiment_couple_dir}/pism_sh/latest_atmo_forcing_file.nc"
+            ocean_forcing: "${general.experiment_couple_dir}/pism_sh/latest_ocean_forcing_file.nc"
+        input_in_work:
+            atmo_forcing: "latest_atmo_forcing_file.nc"
+            ocean_forcing: "latest_ocean_forcing_file.nc"
+    "*":
+        input_files:
+            atmo_forcing: atmo_forcing
+            ocean_forcing: ocean_forcing
+        input_sources:
+            atmo_forcing: "latest_atmo_forcing_file.nc"
+            ocean_forcing: "latest_ocean_forcing_file.nc"
+        input_in_work:
+            atmo_forcing: "latest_atmo_forcing_file.nc"
+            ocean_forcing: "latest_ocean_forcing_file.nc"
+
+restart_in_files:
+    restart: restart
+restart_in_sources:
+    restart: "${general.expid}_pismr_restart_${last_run_datestamp}.nc"
+restart_in_in_work:
+    restart: "${general.expid}_pismr_restart_${last_run_datestamp}.nc"
+
+restart_out_files:
+    restart: restart
+restart_out_in_work:
+    restart: "${general.expid}_pismr_restart_${run_datestamp}.nc"
+restart_out_sources:
+    restart: "${general.expid}_pismr_restart_${run_datestamp}.nc"

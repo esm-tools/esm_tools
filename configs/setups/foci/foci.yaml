@@ -52,36 +52,51 @@ general:
         - agrif_oasismct4 
         - agrif_mops_oasismct4 
         choose_version:
+          # default version, uses OASIS3MCT2.8 as MPIESM
           default:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
+          # same as above but compilation of ECHAM6 with autotools as in 
+          # old mkexp based environment. Included as test setup when I (Sebastian)
+          # tried (without success) to debug why FOCI within ESM-Tools is ~20% slower
           default_autotools:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_autotools+echam-6.3.05p2-foci_autotools
+          # same as default but using the nonlinear free surface (key_vvl)
           fs:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_FS+echam-6.3.05p2-foci
+          # same as above but coupler updated to OASISMCT4. IMPORTANT: uses different coupling
+          # setings and interpolation methods
           fs_oasismct4:
             couplings:
-            - nemo-ORCA05_LIM2_KCM_AOW_FS_OASISMCT4+echam-6.3.05p2-foci_oasismct4
+            - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT4+echam-6.3.05p2-foci_oasismct4
+          # same as default but coupler updated to OASISMCT4. IMPORTANT: uses different coupling
+          # setings and interpolation methods
           default_oasismct4:
             couplings:
-            - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct4
+            - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT4+echam-6.3.05p2-foci_oasismct4
+          # exactly the same as default_oasismct4 but uses OASISMCT5 instead OASISMCT4
           default_oasismct5:
             couplings:
-            - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci_oasismct5
+            - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT5+echam-6.3.05p2-foci_oasismct5
+          # includes MOPS in the ocean, uses OASISMCT4. IMPORTANT: uses different coupling
+          # settings and interpolation methods w.r.t mops with OASISMCT2.8 (only available in old
+          # mkexp based setup of FOCI)
           mops_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_oasismct4
-          agrif_noaow:
-            couplings:
-            - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
+          # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, no AOW tracer    
           agrif:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF+echam-6.3.05p2-foci
+          # FOCI using direct coupling via OASISMCT4, IMPORTANT: uses different coupling
+          # settings and interpolation methods
           agrif_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AGRIF_OASISMCT4+echam-6.3.05p2-foci_oasismct4
+          # FOCI with MOPS using direct coupling via OASISMCT4, IMPORTANT: uses different coupling
+          # settings and interpolation methods
           agrif_mops_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4+echam-6.3.05p2-foci_oasismct4
@@ -564,6 +579,25 @@ nemo:
                         version: "ORCA05_LIM2_KCM_AOW_FS"
                 fs_oasismct4:
                         version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+                # the default coupling settings all branches of ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
+                # are the ones used with FOCIOIFS
+                # to be able to use the same branches as FOCIOIFS, we just need to change two 
+                # coupling settings in namsbc_cpl. With this we avoid using a separate branch
+                # just for the two settings below
+                default_oasismct4:
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+                        add_namelist_changes:
+                          namelist_cfg:
+                            namsbc_cpl:
+                              sn_rcv_emp: ['kcm_lim_2','no','','','']
+                              sn_rcv_rnf: ['none','no','','','']
+                default_oasismct5:
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+                        add_namelist_changes:
+                          namelist_cfg:
+                            namsbc_cpl:
+                              sn_rcv_emp: ['kcm_lim_2','no','','','']
+                              sn_rcv_rnf: ['none','no','','','']
                 agrif_aow:
                         version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
                 agrif:

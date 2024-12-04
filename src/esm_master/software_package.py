@@ -255,8 +255,13 @@ class software_package:
                 if isinstance(commands, str):
                     commands = [commands]
                 if not todo == "get":
+                    directories_up = self.destination.split("/")
+                    dir_up = ""
+                    for directory in directories_up:
+                        if len(directory) > 0:
+                            dir_up = f"{dir_up}../"
                     commands.insert(0, "cd " + self.destination)
-                    commands.append("cd ..")
+                    commands.append(f"cd {dir_up}")
             if todo == "get":
                 if self.coupling_changes:
                     commands = []

@@ -52,7 +52,7 @@ choose_version:
                 OASIS_ANCHOR: ../../../oasis  
                 NETCDF_C_DIR: $NETCDFROOT
                 NETCDF_F_DIR: $NETCDFFROOT
-                #NETCDF_DIR: $NETCDF_PATH
+                OASIS_DIR: ../../../oasis/arch_ecearth/
                  
 # ``model_dir`` let's ESM-Tools know where is the source code of your component (must
 # be an absolute path). Normally, changed via the runscript. We recommend you leave it

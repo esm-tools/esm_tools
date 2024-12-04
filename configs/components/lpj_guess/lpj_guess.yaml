@@ -44,7 +44,16 @@ choose_version:
         git-repository: https://git.smhi.se/marlin/ec-earth-4-lpjgv-4-p-1-novelty.git
         branch: main
         model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/
-
+        destination: lpj-guess/sources/LPJ-GUESS-lpjg_v4p1/
+        environment_changes:
+            add_add_add_add_add_export_vars:
+                myfortrancompiler: $FC
+                mygrid: T159
+                OASIS_ANCHOR: ../../../oasis  
+                NETCDF_C_DIR: $NETCDFROOT
+                NETCDF_F_DIR: $NETCDFFROOT
+                #NETCDF_DIR: $NETCDF_PATH
+                 
 # ``model_dir`` let's ESM-Tools know where is the source code of your component (must
 # be an absolute path). Normally, changed via the runscript. We recommend you leave it
 # as below, changing only the ``name_of_your_model`` part to whatever you defined as 

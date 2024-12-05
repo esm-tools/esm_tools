@@ -25,7 +25,9 @@ metadata:
 git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
 destination: lpj-guess
 branch: main
-comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
+#comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
+comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
+
 install_bins: "build/guess"
 clean_command: "rm -rf build"
 executable: guess
@@ -45,10 +47,16 @@ choose_version:
         branch: main
         model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/
         destination: lpj-guess/sources/LPJ-GUESS-lpjg_v4p1/
+        mygrid: T159
+        install_bins: build/guess_T159
+        #install_bins: build/guess_${mygrid}
+        executable: guess
+
         environment_changes:
             add_add_add_add_add_export_vars:
                 myfortrancompiler: $FC
                 mygrid: T159
+                #mygrid: ${lpj_guess.mygrid}
                 OASIS_ANCHOR: ../../../oasis  
                 NETCDF_C_DIR: $NETCDFROOT
                 NETCDF_F_DIR: $NETCDFFROOT

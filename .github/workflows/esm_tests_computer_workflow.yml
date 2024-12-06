@@ -30,6 +30,7 @@ jobs:
       LC_ALL: en_US.UTF-8
       LANG: en_US.UTF-8
     container:
+      # TODO (PG): Change to ghcr hosting at some point in the future.
       image: mandresm/ubuntu-miniforge-esm_tests:v1.0
       options: --hostname ${{ inputs.computer }}
     strategy:

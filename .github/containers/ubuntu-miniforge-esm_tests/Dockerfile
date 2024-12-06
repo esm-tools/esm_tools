@@ -1,6 +1,6 @@
-# Use Ubuntu 25 as the base image
-
 # TODO (PG): Change to ghcr hosting at some point in the future.
+
+# Use Ubuntu 25 as the base image
 FROM ubuntu:25.04
 
 # Set non-interactive mode for apt

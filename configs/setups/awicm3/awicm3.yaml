@@ -142,7 +142,6 @@ general:
                 levante:
                     iolibraries: system_gnu_libs
             oasis_with_yac: False
-            xios_interp_order: 1
           master:
             major_version: master
             couplings:
@@ -153,7 +152,6 @@ general:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
-            xios_interp_order: 2
           frontiers-xios:
             major_version: frontiers-xios
             couplings:
@@ -164,7 +162,6 @@ general:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
-            xios_interp_order: 2
 
         version: "v3.2"
         scenario: "piControl"
@@ -676,9 +673,14 @@ fesom:
 
 xios:
         xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
+        interpolation_order: 1
+        compression_level: 1
+        regular_res_lat: 192 
+        regular_res_lon: 400
         choose_general.major_version:
                 "master":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/master/"
+                        interpolation_order: 2
+                        compression_level: 0
                         config_sources:
                                 domain_def: ${xml_dir}/domain_def_oifs.xml
                                 field_def_raw: ${xml_dir}/field_def_oifs_raw.xml
@@ -709,13 +711,17 @@ xios:
                                 - file_def
                                 - field_def
                 "frontiers-xios":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                        interpolation_order: 2
+                        compression_level: 0
                 "v3.0":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                        interpolation_order: 2
+                        compression_level: 0
                 "v3.1":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                        interpolation_order: 2
+                        compression_level: 0
                 "v3.2":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                        interpolation_order: 2
+                        compression_level: 1
 
 
 

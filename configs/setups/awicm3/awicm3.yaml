@@ -675,7 +675,8 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 xios:
-        choose_general.version:
+        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
+        choose_general.major_version:
                 "master":
                         xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/master/"
                         config_sources:
@@ -707,7 +708,13 @@ xios:
                         remove_config_files:
                                 - file_def
                                 - field_def
-                "*":
+                "frontiers-xios":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                "v3.0":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                "v3.1":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                "v3.2":
                         xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
 
 

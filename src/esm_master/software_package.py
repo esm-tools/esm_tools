@@ -256,7 +256,7 @@ class software_package:
                     commands = [commands]
                 if not todo == "get":
                     commands.insert(0, "cd " + self.destination)
-                    commands.append("cd ..")
+                    commands.append(f"cd -")
             if todo == "get":
                 if self.coupling_changes:
                     commands = []

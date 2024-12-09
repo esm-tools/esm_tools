@@ -677,6 +677,9 @@ xios:
         compression_level: 1
         regular_res_lat: 192 
         regular_res_lon: 400
+        config_sources:
+                domain_def: ${xml_dir}/domain_def.xml.j2
+                file_def: ${xml_dir}/file_def.xml.j2
         choose_general.major_version:
                 "master":
                         interpolation_order: 2

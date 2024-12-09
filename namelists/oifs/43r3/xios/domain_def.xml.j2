@@ -6,7 +6,7 @@
   <domain_group id="regular_domains" type="rectilinear" >
     <domain id="regular" long_name="regular grid" ni_glo="{{xios.regular_res_lon}}" nj_glo="{{xios.regular_res_lat}}" >
       <generate_rectilinear_domain />
-      <interpolate_domain order="{{xios.xios_interp_order}}" write_weight="true" />
+      <interpolate_domain order="{{xios.interpolation_order}}" write_weight="true" />
     </domain>
   </domain_group>
 </domain_definition>

@@ -597,19 +597,6 @@ fesom:
                                                 surf_relax_s: "${surf_relax_s}"
                                                 use_momix: false
                                                 kv0_const: false
-                                namelist.oce:
-                                        oce_dyn:
-                                                SPP: true
-                                                k_gm_max: 3000
-                                                k_gm_rampmax: 40.0
-                                                k_gm_rampmin: 30
-                                                scaling_ferreira: true
-                                                scaling_fesom14: true
-                                namelist.tra:
-                                        tracer_phys:
-                                                surf_relax_s: "${surf_relax_s}"
-                                                use_momix: false
-                                                kv0_const: false
 
                 "master":
                         namelist_dir: "${model_dir}/config/"

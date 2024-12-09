@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <simulation>
-  <context id="oifs" src="./context_ifs.xml" />
+  <context id="ifs" src="./context_ifs.xml" />
 
   <context id="xios">
     <variable_definition>
@@ -20,7 +20,7 @@
       <variable_group id="parameters" >
         <variable id="using_server" type="bool"> true              </variable>
         <variable id="using_oasis"  type="bool"> true              </variable>
-        <variable id="oasis_codes_id" type="string"> OpenIFS          </variable>
+        <variable id="oasis_codes_id" type="string"> oifs          </variable>
         <variable id="info_level"   type="int" > 50                </variable>
         <variable id="print_file"   type="bool"> true              </variable>
       </variable_group>

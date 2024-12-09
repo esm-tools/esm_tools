@@ -886,7 +886,6 @@ oasis3mct:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
-                                        - 'A_CurX:A_CurY <--oyac_gauswgt_i-- u_feom:v_feom'
                 'v3.4':
                         mct_version: 5.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/

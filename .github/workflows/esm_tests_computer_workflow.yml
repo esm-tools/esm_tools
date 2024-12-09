@@ -30,46 +30,33 @@ jobs:
       LC_ALL: en_US.UTF-8
       LANG: en_US.UTF-8
     container:
-      image: koldunovn/esm_test:latest
+      # TODO (PG): Change to ghcr hosting at some point in the future.
+      image: mandresm/ubuntu-miniforge-esm_tests:v1.0
       options: --hostname ${{ inputs.computer }}
-    
-    steps:
-    # Checkout PR-branch (I could not find an easier way to do this and it seems
-    # many people are struggling with the same problem when your event is triggered
-    # by `issue_comment`)
-    - name: PR branch
-      run: |
-        apt install -y jq;
-        PR_URL="${{ github.event.issue.pull_request.url }}";
-        BRANCH=$(wget -qO - ${PR_URL} | jq .head.ref | xargs);
-        echo "::set-output name=this_branch::${BRANCH}"
-      id: this_branch
-      
-    - name: deleteme
-      run: |
-        echo ${THIS_BRANCH}
-      env:
-        THIS_BRANCH: ${{ steps.this_branch.outputs.this_branch }}
+    strategy:
+      fail-fast: false
 
-    # Service containers to run with `gfortran_ubuntu`
+    steps:
     - uses: actions/checkout@v3
       with:
         submodules: true
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
-        ref: ${{ steps.this_branch.outputs.this_branch }}
-
-    - name: add to the path
-      run: |
-        echo "$HOME/.local/bin" >> $GITHUB_PATH
+        ref: ${{ github.event.pull_request.head.ref }}
     - name: install esm-tools
       run: |
-        ./install.sh
+        source /opt/conda/etc/profile.d/conda.sh;
+        conda activate esm_tools;
+        ./install.sh;
+        echo "/opt/conda/envs/esm_tools/bin" >> $GITHUB_PATH;
+      shell: bash
+
     - name: run esm_tests
       run: |
+        git config --global --add safe.directory /__w/esm_tools/esm_tools;
+        git config --global --add safe.directory /__w/esm_tools/esm_tools/src/esm_tests/resources;
         git status;
         yes Y | esm_tests ${{ inputs.test_flags }}
-        
 #    - name: store last tested in a different directory
 #      if: ${{ inputs.update_esm_tests_info }}
 #      run: |

@@ -45,7 +45,6 @@ class oasis:
         exec_entry = str(len(coupled_execs)) + exec_entry
         self.namcouple += [" $NBMODEL", "            " + str(exec_entry), " $END"]
         self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
-        # seb-wahl: add lucia support
         if lucia:
             if mct_version >= (5, 0):
                 self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1", " $END"]

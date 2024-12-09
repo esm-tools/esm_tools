@@ -78,7 +78,6 @@ iolibraries: system_libs
 
 module_actions:
         - "purge"
-        - "load python3"
         - "load git/2.31.1-gcc-11.2.0"
         - "load cdo/2.0.5-gcc-11.2.0"
         - "load nco/5.0.6-gcc-11.2.0"
@@ -263,12 +262,70 @@ choose_iolibraries:
             - "load ${mod_netcdf_c}"
             - "load ${mod_netcdf_f}"
             - "load ${mod_hdf5}"
+
+        add_export_vars:
+            IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
+            # NOTE: Could be set by the module
+            HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-tvymb5"
+            HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+            HDF5_ROOT: $HDF5ROOT
+            NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
+            NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
+            NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+            NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+            NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+            # flags required for ECHAM6 (and possibly other models)
+            # compilation with cmake if parastationMPI or openMPI is used
+            # contact seb-wahl for details
+            PSMPIFLAGS: '"-lrt -lm -ldl"'
+
+            # Linear Algebra (LAPACK)
+            LAPACK_LIB: "'-mkl=sequential'"
+
+            # SZIPROOT: TODO
+            ZLIBROOT: /usr
+
+            # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
+            # it's used by other models it stays in levante.yaml for now
+            OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+            # kh 17.02.22 orig mistral, not yet tested on levante (but should work)
+            PERL5LIB: /usr/lib64/perl5
+
+            LD_LIBRARY_PATH[(0)]: $HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH
+
+            # avoid GLIBCXX_3.4.15 not found error
+            # MA: This solves nothing for AWICM3
+            #LD_LIBRARY_PATH[(1)]: /sw/spack-levante/gcc-11.2.0-bcn7mb/lib64:$LD_LIBRARY_PATH
+
+            # kh 01.03.22 current philosophy on levante regarding the modules
+            # concept is to avoid LD_LIBRARY_PATH as far as possible to make
+            # everything clearer
+
+            # kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
+            #       LD_LIBRARY_PATH[(1)]: ...
+
+            # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
+            # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
+
+            # kh 17.02.22 currently required to use mkl
+            LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+
+            # kh 07.03.22 currently required to use Intel MPI
+            LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
+
+
+    system_intel_libs: # Attempt to make intel work for OpenIFS 48r1, currently disfunctional
+        add_module_actions:
+            - "load ${mod_netcdf_c}"
+            - "load ${mod_netcdf_f}"
+            - "load ${mod_hdf5}"
             - "load libaec/1.0.5-intel-2021.5.0"
             - "load fftw/3.3.10-gcc-11.2.0"
 
         add_export_vars:
             IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
-            # NOTE: Could be set by the module
             PATH: /sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
             MPI_HOME: $MPI_ROOT
             mpi_ROOT: $MPI_ROOT
@@ -294,45 +351,13 @@ choose_iolibraries:
             TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
             TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
             CPU_MODEL: AMD_EPYC_ZEN3
-            # flags required for ECHAM6 (and possibly other models)
-            # compilation with cmake if parastationMPI or openMPI is used
-            # contact seb-wahl for details
             PSMPIFLAGS: '"-lrt -lm -ldl"'
-
-            # Linear Algebra (LAPACK)
             LAPACK_LIB: "'-mkl=sequential'"
-
             # SZIPROOT: TODO
             ZLIBROOT: /usr
-
-            # seb-wahl: OASIS3MCT_FC_LIB is used by ECHAM, since it's unclear whether
-            # it's used by other models it stays in levante.yaml for now
             OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-            # kh 17.02.22 orig mistral, not yet tested on levante (but should work)
             PERL5LIB: /usr/lib64/perl5
-
             LD_LIBRARY_PATH[(0)]: $TBBMALLOC_DIR/lib:$MPI_ROOT/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$AEC_ROOT/lib:$LD_LIBRARY_PATH
-
-            # avoid GLIBCXX_3.4.15 not found error
-            # MA: This solves nothing for AWICM3
-            #LD_LIBRARY_PATH[(1)]: /sw/spack-levante/gcc-11.2.0-bcn7mb/lib64:$LD_LIBRARY_PATH
-
-            # kh 01.03.22 current philosophy on levante regarding the modules
-            # concept is to avoid LD_LIBRARY_PATH as far as possible to make
-            # everything clearer
-
-            # kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
-            #       LD_LIBRARY_PATH[(1)]: ...
-
-            # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
-            # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-
-            # kh 17.02.22 currently required to use mkl
-            #LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
-
-            # kh 07.03.22 currently required to use Intel MPI
-            #LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
 
     # Work done on self-compiled libraries by Jan Streffing, currently in progress and untested.
     awi_paleodyn_libs:

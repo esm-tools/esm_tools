@@ -48,6 +48,7 @@ general:
         - default_oasismct4
         - default_oasismct5
         - mops_oasismct4
+        - mops_lmu
         - agrif 
         - agrif_oasismct4 
         - agrif_mops_oasismct4 
@@ -73,6 +74,9 @@ general:
           mops_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_oasismct4
+          mops_lmu:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_lmu
           agrif_noaow:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
@@ -134,6 +138,7 @@ echam:
                 #compiler_mpi: intel2019_impi2019_nemo4
                 add_module_actions:
                    - "source $I_MPI_ROOT/../../setvars.sh"
+                     # - "source $HOME/miniforge3/bin/activate esm-tools"
                         #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              nesh:
                 compiler_mpi: intel2019_impi2019
@@ -162,6 +167,24 @@ echam:
 
                 mops_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              runctl:   
+                                 lcouple_co2: true
+                              submodelctl:
+                                 lco2: true
+                              radctl:
+                                 ico2: 1
+
+                        add_restartstreams:
+                           - tracer
+
+                        add_streams:
+                           - tracer
+
+                mops_lmu:
+                        version: "6.3.05p2-foci_lmu"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
                            namelist.echam:
@@ -574,6 +597,8 @@ nemo:
                         version: "ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4"
                 mops_oasismct4:
                         version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
+                mops_lmu:
+                        version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
         setup_dir: ${general.model_dir}
@@ -897,6 +922,45 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
                               - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
                               - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+
+                mops_lmu:
+
+                        norestart: "T"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
+                              - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
+                              - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+
+                           flxatmos:
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+                              - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
+                              - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+
 
                 agrif_oasismct4:
 

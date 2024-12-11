@@ -167,6 +167,8 @@ fesom:
         - diags3d04
         - diags3d24
         - diags3d25
+	- diags3d29
+	- diags3d30
         - dpCO2s
         - GNAd
         - GNAn

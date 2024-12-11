@@ -104,6 +104,9 @@ choose_version:
             - diags3d04
             - diags3d24
             - diags3d25
+            - diags3d29
+            - diags3d30
+            - diags3d31
             - GPPc
             - HCO3
             - kspc
@@ -113,6 +116,7 @@ choose_version:
             - pCO2
             - pH
             - rhoSW
+            - BetaD
             - aAlk
             - DICremoval
     2.0-r:

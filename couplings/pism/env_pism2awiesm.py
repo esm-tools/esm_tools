@@ -27,7 +27,7 @@ def prepare_environment(config):
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "END_MONTH_pism": config["general"]["end_date"].smonth,
             "END_DAY_pism": config["general"]["end_date"].sday,
-            "MIN_MON_SELECT": int(config["pism"].get("select_min_glacial_depth", True)),
+            "MIN_MON_SELECT": int(config["pism"].get("select_min_glacial_depth", 1)),
 
             "CRITICAL_THK_FOR_MASK_pism": config["pism"].get("thk_threshold", 5.0), 
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
@@ -36,10 +36,11 @@ def prepare_environment(config):
             "SPINUP_FILE_pism": config[config["general"]["setup_name"]]["spinup_file"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
-            
-            "PISM_TO_OCEAN": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False)),
+            "first_year_in_chunk_input": config[config["general"]["setup_name"]]["experiment_input_dir"] + "/" + config["general"]["expid"] + "_pismr_input_"  + config["general"]["chunk_start_date"].syear + "0101-" + str(int( config["general"]["chunk_start_date"].syear ) + int( config["general"]["nyear"] - 1 )) + "1231.nc", 
+            "last_year_in_chunk_restart": config[config["general"]["setup_name"]]["restart_out_targets"]["restart"],
+            "PISM_TO_OCEAN": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False).__bool__()),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
-            "fesom_use_iceberg": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False)), 
+            "fesom_use_iceberg": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False).__bool__()),
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "EXP_ID": config["general"]["command_line_config"]["expid"],
@@ -51,6 +52,8 @@ def prepare_environment(config):
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],
+            "account_all_fw_input": config[config["general"]["setup_name"]].get("account_all_fw_input", 0), 
+            "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             }
     print (environment_dict)
     return environment_dict

@@ -353,7 +353,7 @@ class Namelist:
                         header=None,
                     )
                     co2, n2o, ch4, cecc, cobld, clonp = forcing_table.loc[
-                        str(config["general"]["current_date"].year)
+                        config["general"]["current_date"].year
                     ]
                     radctl["co2vmr"] = co2
                     radctl["n2ovmr"] = n2o

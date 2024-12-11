@@ -90,5 +90,21 @@ def check_transient_forcing(file_name=None, current_year=None):
     print(f"CLONP: {clonp}")
 
 
+@main.command()
+@click.argument("version", nargs=1, required=False)
+@click.option("--local", default=False, help="Use the local MOTD file", is_flag=True)
+def motd(version=None, local=False):
+    """Prints the message of the day."""
+    import esm_motd
+
+    if version is None:
+        version = esm_tools.__version__
+
+    esm_motd.check_esm_package_with_version_and_local_options(
+        "esm_tools", version, local
+    )
+    return 0
+
+
 if __name__ == "__main__":
     sys.exit(main())

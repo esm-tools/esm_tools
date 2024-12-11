@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<simulation>
+  <context id="ifs" src="./context_ifs.xml" />
+
+  <context id="xios">
+    <variable_definition>
+      <variable_group id="server" > <!-- Tune 2-level servers for performance purposes -->
+        <variable id="using_server2"        type="bool"> true </variable>
+        <variable id="ratio_server2"        type="int" > 50   </variable>
+        <variable id="number_pools_server2" type="int" > 1    </variable>
+        <variable id="server2_dist_file_memory"       type="bool"  > false </variable>
+        <variable id="server2_dist_file_memory_ratio" type="double"> 0.5   </variable>
+      </variable_group>
+
+      <variable_group id="buffer" > <!-- Tune both "buffer" variables for performance purposes -->
+        <variable id="optimal_buffer_size" type="string"> performance </variable>
+        <variable id="buffer_size_factor"  type="double"> 2.0         </variable>
+      </variable_group>
+
+      <variable_group id="parameters" >
+        <variable id="using_server" type="bool"> true              </variable>
+        <variable id="using_oasis"  type="bool"> true              </variable>
+        <variable id="oasis_codes_id" type="string"> oifs          </variable>
+        <variable id="info_level"   type="int" > 50                </variable>
+        <variable id="print_file"   type="bool"> true              </variable>
+      </variable_group>
+    </variable_definition>
+  </context>
+</simulation>

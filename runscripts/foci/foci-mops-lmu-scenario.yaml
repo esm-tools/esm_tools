@@ -39,7 +39,38 @@ general:
 foci:
    model_dir: ${general.homedir}/esm/models/foci-mops_lmu/
 
+jsbach:
+   cdr_measure: hbp
+   cdr_frac: 5
+
+      #add_input_sources:
+      # TODO: add correct path
+      #lctlib_foci: "/home/m/m301080/Models/mpiesm/afresh/beccs_test4/util/running/adjunct_files/jsbach/lctlib_nlct23_HBP_med.def"
+
+   add_forcing_files:
+        LU: LU_scenario_cdr
+        cover_fract: cover_fract_ssp_cdr
+
+   add_forcing_sources:
+      "LU_scenario_cdr":
+           "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc":
+              to: 1850
+           "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
+              from: 1851
+              to: 2014
+           # TODO: add the correct files after reply from Shradda
+           "${computer.pool_dir}/STEPSEC/input/land_use/LU_transitions/no_LUH_transitions_${echam.resolution}_hbp.nc":
+              from: 2015
+
+      "cover_fract_ssp_cdr":
+          "${computer.pool_dir}/STEPSEC/input/land_use/idealized/maps_${cdr_measure}_${cdr_frac}/cover_fract_${echam.resolution}_12tiles_${echam.resolution}_hbp_2015.nc":
+              to: 2014
+          "${computer.pool_dir}/STEPSEC/input/land_use/idealized/maps_${cdr_measure}_${cdr_frac}/cover_fract_${echam.resolution}_12tiles_${echam.resolution}_hbp_@YEAR@.nc":
+              from: 2015
+              to: 2099
+
 echam:
+   lresume: False
    # all ssp* scenarios use historical forcing before 2015, i.e. the setting
    # scenario: "cmip6hist" and # scenario: "ssp???" produce the same results 
    # until year 2014

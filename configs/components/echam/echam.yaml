@@ -78,7 +78,7 @@ compile_infos:
             branch: feature/couple_to_nemo3.6_mops
             clean_command: cd src/echam; rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
             comp_command: cd src/echam; 
-               git submodule init ; git submodule update cdi 
+               git submodule init; git submodule update cdi; 
                mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
                ./config/createMakefiles.pl; autoreconf -i --force;
                unset FCFLAGS; unset FFLAGS; 

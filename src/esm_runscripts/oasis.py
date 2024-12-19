@@ -324,6 +324,10 @@ class oasis:
                             sys.exit(2)
                         detail_line += " " + normalization.upper() + " " + order.upper()
                     trafo_details += [detail_line.strip()]
+                elif trans.lower() in [
+                    "loctrans",
+                ]:
+                    continue
 
         allpost = transformation.get("postprocessing", "bla")
         if not isinstance(allpost, list):

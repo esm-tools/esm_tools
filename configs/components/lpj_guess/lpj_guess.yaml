@@ -32,6 +32,7 @@ install_bins: "build/guess"
 clean_command: "rm -rf build"
 executable: guess
 execution_command: ${executable} ${runscript_name}
+resolution: TL159 #if it's not set i dosen't work! 
 
 choose_version:
     # Here you can place all the variables you would want to control via the version
@@ -103,4 +104,104 @@ config_in_work:
 
 bin_sources:
     bin_tag: ${model_dir}/build/${executable}
+
+choose_resolution:
+        # Note:
+        # Tco grids only work with version 43r3.
+        TCO95:
+                nx: 40320
+                ny: 1
+                time_step: 3600
+                oasis_grid_name: "096"
+                res_number: 95
+                res_number_tl: "95_4"
+                truncation: "TCO"
+        TL159:
+                nx: 35718
+                ny: 1
+                time_step: 3600
+                oasis_grid_name: "080"
+                res_number: 159
+                res_number_tl: "159l_2"
+                truncation: "TL"
+        TCO159:
+                nx: 108160
+                ny: 1
+                time_step: 3600
+                oasis_grid_name: "160"
+                res_number: 159
+                res_number_tl: "159_4"
+                truncation: "TCO"
+        TCO199:
+                nx: 167200
+                ny: 1
+                time_step: 1800
+                oasis_grid_name: "200"
+                res_number: 199
+                res_number_tl: "199_4"
+                truncation: "TCO"
+        TL255:
+                nx: 88838
+                ny: 1
+                time_step: 2700
+                oasis_grid_name: "128"
+                res_number: 255
+                res_number_tl: "255l_2"
+                truncation: "TL"
+        TCO319:
+                nx: 421120
+                ny: 1
+                time_step: 1200
+                oasis_grid_name: 320
+                res_number: 319
+                res_number_tl: "319_4"
+                truncation: "TCO"
+        TCO399:
+                nx: 654400
+                ny: 1
+                time_step: 1200
+                oasis_grid_name: 400
+                res_number: 399
+                res_number_tl: "399_4"
+                truncation: "TCO"
+        TCO639:
+                nx: 1661440
+                ny: 1
+                time_step: 600
+                oasis_grid_name: 640
+                res_number: 639
+                res_number_tl: "639_4"
+                truncation: "TCO"
+        TCO1279:
+                nx: 6599680
+                ny: 1
+                time_step: 300
+                oasis_grid_name: 128
+                res_number: 1279
+                res_number_tl: "1279_4"
+                truncation: "TCO"
+        TL511:
+                nx: 348528
+                ny: 1
+                time_step: 900
+                oasis_grid_name: "256"
+                res_number: 511
+                res_number_tl: "511l_2"
+                truncation: "TL"
+        TL799:
+                nx: 843490
+                ny: 1
+                time_step: 600
+                oasis_grid_name: "400"
+                res_number: 799
+                res_number_tl: "799l_2"
+                truncation: "TL"
+        TL1279:
+                nx: 2140702
+                ny: 1
+                time_step: 600
+                oasis_grid_name: "640"
+                res_number: 799
+                res_number_tl: "1279l_2"
+                truncation: "TL"
 

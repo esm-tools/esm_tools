@@ -295,15 +295,13 @@ lpj_guess:
                 #atma:
                 #        add_grids: ${oifs.grids.atma}
                 lpjg:
-                        add_grids: ${oifs.grids.atma}                
-                        #name: lpjg
-                        #nx: "${nx}"
-                        #ny: "${ny}"
-                        #nx: 259200 
-                        #ny: 1
-                        #oasis_grid_type: "D"
-                        #oyac_grid_type: "LL"
-                        #oyac_io_per_node: 4
+                        #add_grids: ${oifs.grids.atma}              
+                        name: lpjg
+                        nx: "${nx}"
+                        ny: "${ny}" 
+                        oasis_grid_type: "D"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
 xios:
         choose_general.version:
                 "*":

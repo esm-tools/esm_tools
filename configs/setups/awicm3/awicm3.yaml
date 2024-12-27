@@ -25,6 +25,7 @@ general:
         - 'v3.2'
         - 'v3.2.1'
         - 'v3.2.2'
+        - 'v3.3'
         - 'v3.4'
         - 'master'
         - 'frontiers-xios'
@@ -118,14 +119,14 @@ general:
           v3.3:
             major_version: v3.3
             couplings:
-            - fesom-2.6+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
+            - fesom-2.6+oifs-43r3-awicm-3.2.1+xios-2.5
             add_include_models:
             - xios
             add_further_reading:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
-            oasis_with_yac: True
+            oasis_with_yac: False
             xios_interp_order: 1
           v3.4:
             major_version: v3.4
@@ -141,7 +142,6 @@ general:
                 levante:
                     iolibraries: system_gnu_libs
             oasis_with_yac: False
-            xios_interp_order: 1
           master:
             major_version: master
             couplings:
@@ -152,7 +152,6 @@ general:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
-            xios_interp_order: 2
           frontiers-xios:
             major_version: frontiers-xios
             couplings:
@@ -163,7 +162,6 @@ general:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             oasis_with_yac: False
-            xios_interp_order: 2
 
         version: "v3.2"
         scenario: "piControl"
@@ -565,9 +563,6 @@ fesom:
                                                 k_gm_rampmin: 30
                                                 scaling_ferreira: true
                                                 scaling_fesom14: true
-                                        oce_tra:
-                                                surf_relax_s: "${surf_relax_s}"
-
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: "${surf_relax_s}"
@@ -594,20 +589,12 @@ fesom:
                                                 k_gm_rampmin: 30
                                                 scaling_ferreira: true
                                                 scaling_fesom14: true
-                                        oce_tra:
-                                                surf_relax_s: "${surf_relax_s}"
-
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: "${surf_relax_s}"
                                                 use_momix: false
                                                 kv0_const: false
-                                namelist.ice:
-                                        ice_therm:
-                                                albsn: 0.81
-                                                albsnm: 0.77
-                                                albi: 0.6
-                                                albim: 0.43
+
                 "master":
                         namelist_dir: "${model_dir}/config/"
                         add_namelists:
@@ -685,9 +672,18 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 xios:
-        choose_general.version:
+        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
+        interpolation_order: 1
+        compression_level: 1
+        regular_res_lat: 192 
+        regular_res_lon: 400
+        config_sources:
+                domain_def: ${xml_dir}/domain_def.xml.j2
+                file_def: ${xml_dir}/file_def.xml.j2
+        choose_general.major_version:
                 "master":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/43r3/xios/master/"
+                        interpolation_order: 2
+                        compression_level: 0
                         config_sources:
                                 domain_def: ${xml_dir}/domain_def_oifs.xml
                                 field_def_raw: ${xml_dir}/field_def_oifs_raw.xml
@@ -717,8 +713,18 @@ xios:
                         remove_config_files:
                                 - file_def
                                 - field_def
-                "*":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                "frontiers-xios":
+                        interpolation_order: 2
+                        compression_level: 0
+                "v3.0":
+                        interpolation_order: 2
+                        compression_level: 0
+                "v3.1":
+                        interpolation_order: 2
+                        compression_level: 0
+                "v3.2":
+                        interpolation_order: 2
+                        compression_level: 1
 
 
 
@@ -863,24 +869,23 @@ oasis3mct:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.3':
-                        version: 6.0-YAC
-                        mct_version: 6.0
+                        mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
-                        rstos_file_name: 'rstos_oyac'
-                        rstas_file_name: 'rstas_oyac'
+                        rstos_file_name: 'rstos_uv'
+                        rstas_file_name: 'rstas_uv'
                         add_process_ordering:
                                 - xios
                         coupling_target_fields:
                                 rstas.nc:
-                                        - 'heat_oce:heat_swo <--oyac_gauswgt_c-- A_Qns_oce:A_Qs_all'
-                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--oyac_gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--oyac_gauswgt_c-- A_Q_ice'
+                                        - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'R_Runoff_atm:R_Calving_atm <--oyac_gauswgt_c-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:enth_oce <--oyac_gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                                 rstos.nc:
-                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--oyac_gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
-                                        - 'A_CurX:A_CurY <--oyac_gauswgt_i-- u_feom:v_feom'
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.4':
                         mct_version: 5.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/

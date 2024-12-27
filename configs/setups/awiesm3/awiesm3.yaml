@@ -305,7 +305,7 @@ lpj_guess:
 xios:
         choose_general.version:
                 "*":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/order_${xios_interp_order}/${general.resolution}"
+                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
 
 
 

@@ -45,12 +45,11 @@ choose_version:
     4.1.2:
         runscript_name: run_coupled_4_1_2.ins
         git-repository: https://git.smhi.se/marlin/ec-earth-4-lpjgv-4-p-1-novelty.git
-        branch: main
+        branch: compiles_with_oasis_and_netcdf_on_levante
         model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/
-        destination: lpj-guess/sources/LPJ-GUESS-lpjg_v4p1/
+        destination: lpj-guess
         mygrid: T159
-        install_bins: build/guess_T159
-        #install_bins: build/guess_${mygrid}
+        install_bins: sources/LPJ-GUESS-lpjg_v4p1/build/guess_T159
         executable: guess
 
         environment_changes:

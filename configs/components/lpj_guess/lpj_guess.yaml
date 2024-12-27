@@ -7,7 +7,7 @@
 # https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
 
 model: lpj_guess
-version: 4.1.1
+version: 4.1.2
 
 metadata:
         Institute: Lund Universitiy
@@ -23,7 +23,7 @@ metadata:
                 
 
 git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
-destination: lpj-guess
+destination: lpj_guess
 branch: main
 #comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
 comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
@@ -47,17 +47,15 @@ choose_version:
         git-repository: https://git.smhi.se/marlin/ec-earth-4-lpjgv-4-p-1-novelty.git
         branch: compiles_with_oasis_and_netcdf_on_levante
         model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/
-        destination: lpj-guess
+        destination: lpj_guess
         mygrid: T159
         install_bins: sources/LPJ-GUESS-lpjg_v4p1/build/guess_T159
-        executable: guess
-        #executable: guess_${mygrid} 
+        executable: guess_T159
 
         environment_changes:
             add_add_add_add_add_export_vars:
                 myfortrancompiler: $FC
                 mygrid: T159
-                #mygrid: ${lpj_guess.mygrid}
                 OASIS_ANCHOR: ../../../oasis  
                 NETCDF_C_DIR: $NETCDFROOT
                 NETCDF_F_DIR: $NETCDFFROOT

@@ -52,6 +52,7 @@ choose_version:
         install_bins: build/guess_T159
         #install_bins: build/guess_${mygrid}
         executable: guess
+        #executable: guess_${mygrid} 
 
         environment_changes:
             add_add_add_add_add_export_vars:

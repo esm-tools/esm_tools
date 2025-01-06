@@ -219,7 +219,7 @@ fesom:
 
         choose_general.major_version:
                 "v3.4":
-                        version: "2.5"
+                        version: "2.6"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
                         add_namelist_changes:
                                 namelist.config:
@@ -297,6 +297,10 @@ lpj_guess:
                         oasis_grid_type: "D"
                         oyac_grid_type: "LL"
                         oyac_io_per_node: 4
+        choose_general.major_version:
+                "v3.4":
+                        version: "4.1.2"
+
 xios:
         choose_general.version:
                 "*":

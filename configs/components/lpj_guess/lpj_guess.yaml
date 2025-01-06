@@ -7,7 +7,7 @@
 # https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
 
 model: lpj_guess
-version: 4.1.2
+version: 4.1.1
 
 metadata:
         Institute: Lund Universitiy

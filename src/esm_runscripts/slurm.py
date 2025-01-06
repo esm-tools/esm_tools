@@ -7,8 +7,9 @@ import shutil
 import subprocess
 import sys
 
-import esm_parser
 from loguru import logger
+
+import esm_parser
 
 
 class Slurm:
@@ -260,8 +261,20 @@ class Slurm:
 
                 progname = "prog_" + model + ".sh"
 
-                start_core = config[model]["start_core"]
-                end_core = config[model]["end_core"]
+                try:
+                    start_core = config[model]["start_core"]
+                except KeyError:
+                    esm_parser.user_error(
+                        "Heterogeneous Parallelization: Start Core",
+                        f"Please ensure you have ``start_core`` defined in {model}",
+                    )
+                try:
+                    end_core = config[model]["end_core"]
+                except KeyError:
+                    esm_parser.user_error(
+                        "Heterogeneous Parallelization: End Core",
+                        f"Please ensure you have ``start_core`` defined in {model}",
+                    )
 
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")

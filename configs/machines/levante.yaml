@@ -78,6 +78,7 @@ iolibraries: system_libs
 
 module_actions:
         - "purge"
+        - "load python3"
         - "load git/2.31.1-gcc-11.2.0"
         - "load cdo/2.0.5-gcc-11.2.0"
         - "load nco/5.0.6-gcc-11.2.0"

@@ -37,15 +37,32 @@ class BatchSystem:
         self.bs = KNOWN_BATCH_SYSTEMS[self.name](config)
 
     def check_if_submitted(self):
+        """Checks if a job has been submitted"""
+        # NOTE(PG): How does this know which job ID to check? Unclear...
         return self.bs.check_if_submitted()
 
     def get_jobid(self):
+        """Get the jobid of the submitted job."""
         return self.bs.get_jobid()
 
     def get_job_state(self, jobid):
+        """Get the state of the job with the given jobid.
+
+        Parameters
+        ----------
+        jobid : str
+            The jobid of the job.
+        """
         return self.bs.get_job_state(jobid)
 
     def job_is_still_running(self, jobid):
+        """Check if the job with the given jobid is still running.
+
+        Parameters
+        ----------
+        jobid : str
+            The jobid of the job to check
+        """
         return self.bs.job_is_still_running(jobid)
 
     def add_pre_launcher_lines(self, config, cluster, runfile):

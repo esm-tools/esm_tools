@@ -66,8 +66,6 @@ class BatchSystem:
     def get_run_filename(config, cluster):
         folder = config["general"]["thisrun_scripts_dir"]
         expid = config["general"]["expid"]
-        startdate = config["general"]["current_date"]
-        enddate = config["general"]["end_date"]
         run_filename = (
             f"{folder}/{expid}_{cluster}" f"_{config['general']['run_datestamp']}.run"
         )

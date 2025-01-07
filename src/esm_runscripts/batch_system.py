@@ -15,8 +15,8 @@ from .cleanup_deprecations import deprecated_class
 from .pbs import Pbs
 from .slurm import Slurm
 
-KNOWN_BATCH_SYSTEMS = set("slurm", "pbs")
-"""set: The supported batch systems"""
+KNOWN_BATCH_SYSTEMS = {"slurm": Slurm, "pbs": Pbs}
+"""dict: The supported batch systems"""
 RESERVED_JOBTYPES = set("prepcompute", "compute", "prepare", "tidy", "inspect")
 
 
@@ -34,12 +34,9 @@ class BatchSystem:
     # should be written independent of actual batch system
     def __init__(self, config, name):
         self.name = name
-        if name == "slurm":
-            self.bs = Slurm(config)
-        elif name == "pbs":
-            self.bs = Pbs(config)
-        else:
-            raise UnknownBatchSystemError(name)
+        if self.name not in KNOWN_BATCH_SYSTEMS:
+            raise UnknownBatchSystemError(f"Unknown batch system {self.name}")
+        self.bs = KNOWN_BATCH_SYSTEMS[self.name](config)
 
     def check_if_submitted(self):
         return self.bs.check_if_submitted()
@@ -194,7 +191,7 @@ class BatchSystem:
         if not cluster:
             cluster = config["general"]["jobtype"]
 
-        if cluster in reserved_jobtypes:
+        if cluster in RESERVED_JOBTYPES:
             for model in config["general"]["valid_model_names"]:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
@@ -291,7 +288,7 @@ class BatchSystem:
 
         env = esm_environment.environment_infos("runtime", config)
         commands = env.commands
-        if not subjob.replace("_general", "") in reserved_jobtypes:  # ??? fishy
+        if not subjob.replace("_general", "") in RESERVED_JOBTYPES:  # ??? fishy
             commands += dataprocess.subjob_environment(config, subjob)
         commands += [""]
 
@@ -467,7 +464,7 @@ class BatchSystem:
 
                 config = batch_system.calculate_requirements(config, cluster)
                 # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if cluster in reserved_jobtypes and config["computer"].get(
+                if cluster in RESERVED_JOBTYPES and config["computer"].get(
                     "taskset", False
                 ):
                     config = config["general"]["batch"].write_het_par_wrappers(config)
@@ -509,7 +506,7 @@ class BatchSystem:
                     runfile.write(self.append_start_statement(config, subjob) + "\n")
                     runfile.write("\n")
                     runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
-                    if cluster in reserved_jobtypes:
+                    if cluster in RESERVED_JOBTYPES:
                         config["general"]["batch"].add_pre_launcher_lines(
                             config, cluster, runfile
                         )

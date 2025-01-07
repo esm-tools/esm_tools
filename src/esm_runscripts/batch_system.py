@@ -169,9 +169,38 @@ class batch_system:
 
     @staticmethod
     def calculate_requirements(config, cluster=None):
-        # get number of tasks for the whole job to be submitted,
-        # as well as number of start process and end process for each
-        # component (in case a hostfile needs to be written)
+        """
+        Gets the number of tasks for the whole job.
+
+        This function calculates the number of tasks, nodes, start process, and
+        end process for each component of the job to be submitted. It also adjusts
+        the configuration based on the cluster type and model-specific settings.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing job and model settings.
+        cluster : str, optional
+            The cluster type for which the requirements are being calculated. If not
+            provided, it defaults to the job type specified in the configuration.
+
+        Returns
+        -------
+        dict
+            Updated configuration dictionary with calculated tasks, nodes, start
+            process, and end process for each component.
+
+        Notes
+        -----
+        - If the cluster is not explicitly stated, the function calculates the
+          requirements for the current job type.
+        - Supports multi-group MPI processes and parallel I/O features for specific
+          models.
+        - Adjusts the total number of MPI processes via `mpi_num_groups` at the
+          lowest level (`nproc`).
+        - Handles user-defined job types for data processing with pre-prepared
+          task numbers.
+        """
 
         tasks = 0
         nodes = 0

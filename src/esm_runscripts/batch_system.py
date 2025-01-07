@@ -3,24 +3,32 @@ import os
 import stat
 import sys
 import textwrap
+import warnings
+from typing import Any
 
 import esm_environment
 from esm_parser import find_variable, user_error, user_note
 from loguru import logger
 
 from . import dataprocess, helpers, prepare
+from .cleanup_deprecations import deprecated_class
 from .pbs import Pbs
 from .slurm import Slurm
 
-known_batch_systems = ["slurm", "pbs"]
-reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect"]
+KNOWN_BATCH_SYSTEMS = set("slurm", "pbs")
+"""set: The supported batch systems"""
+RESERVED_JOBTYPES = set("prepcompute", "compute", "prepare", "tidy", "inspect")
 
 
 class UnknownBatchSystemError(Exception):
     """Raise this exception when an unknown batch system is encountered"""
 
 
-class batch_system:
+class UnknownClusterError(Exception):
+    """Raise this exception when an unknown cluster is encountered"""
+
+
+class BatchSystem:
 
     # all wrappers to slurm, pbs and co as esm_runscript
     # should be written independent of actual batch system
@@ -864,6 +872,11 @@ class batch_system:
         launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
 
         return launcher_flags
+
+
+@deprecated_class
+class batch_system(BatchSystem):
+    """Legacy class name. Please use BatchSystem instead!"""
 
 
 def submits_another_job(config, cluster):

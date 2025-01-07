@@ -58,7 +58,7 @@ setup(
         "sebastian.wahl@geomar.de",
         "kai.himstedt@dkrz.de",
     ],
-    python_requires=">=3.6, <=3.11",
+    python_requires=">=3.6, <3.12",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",

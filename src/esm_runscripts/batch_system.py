@@ -4,9 +4,10 @@ import stat
 import sys
 import textwrap
 
+from loguru import logger
+
 import esm_environment
 from esm_parser import find_variable, user_error, user_note
-from loguru import logger
 
 from . import dataprocess, helpers, prepare
 from .pbs import Pbs

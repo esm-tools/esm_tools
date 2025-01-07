@@ -250,6 +250,7 @@ class batch_system:
                         )
 
                 else:
+                    # FIXME(PG): ...what? Just continue???
                     continue
 
                 # seb-wahl: add support for ECHAM6's parallel I/O feature

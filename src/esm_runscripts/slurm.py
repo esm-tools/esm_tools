@@ -261,21 +261,6 @@ class Slurm:
 
                 progname = "prog_" + model + ".sh"
 
-                try:
-                    start_core = config[model]["start_core"]
-                except KeyError:
-                    esm_parser.user_error(
-                        "Heterogeneous Parallelization: Start Core",
-                        f"Please ensure you have ``start_core`` defined in {model}",
-                    )
-                try:
-                    end_core = config[model]["end_core"]
-                except KeyError:
-                    esm_parser.user_error(
-                        "Heterogeneous Parallelization: End Core",
-                        f"Please ensure you have ``start_core`` defined in {model}",
-                    )
-
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")
                     f.write(

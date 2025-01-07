@@ -12,13 +12,13 @@ jobs:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
     strategy:
+      fail-fast: false
       matrix:
         python-version: 
             - "3.8"
             - "3.9"
             - "3.10"
             - "3.11"
-        fail-fast: false
     name: Python ${{ matrix.python-version }} sample
     steps:
       - uses: actions/checkout@v2

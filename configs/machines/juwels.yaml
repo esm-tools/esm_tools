@@ -126,6 +126,7 @@ choose_compiler_mpi:
         - "load Python/"
         - "load imkl/2023.2.0"
         - "load Perl/5.36.1"
+        - "load Perl-bundle-CPAN/5.36.1"
         - "unload zlib"
         - "load git"
       add_export_vars:

@@ -1854,12 +1854,20 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
         fi
         # select air_temperature
         #LA: change timmean to ymonmean
-        cdo -s \
-                -ymonmean \
-                -selvar,tsurf \
-                ${COUPLE_DIR}/temperature_below_firn.nc \
-                tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                #${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+        if [[ "x${MULTI_YEAR_MEAN_SMB}" == "x1" ]]; then
+                cdo -s \
+                        -ymonmean \
+                        -selvar,tsurf \
+                        ${COUPLE_DIR}/temperature_below_firn.nc \
+                        tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                        #${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+        else
+                cdo -s \
+                        -selvar,tsurf \
+                        ${COUPLE_DIR}/temperature_below_firn.nc \
+                        tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                        #${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+        fi
 
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Determining temperature scale Kelvin vs Celsius" 
@@ -1896,7 +1904,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
                 echo -e "\t\t@ DEBUG: Setting time axis" 
         fi
         cdo -s \
-                -settaxis,1000-01-16,12:00:00,1mon \
+                -settaxis,${CHUNK_START_YEAR_pism}-01-16,23:55:55,1mon \
                 tmp12 \
                 ${COUPLE_DIR}/air_temp_copy.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         #rm tmp0 tmp tmp1 tmp6 tmp12 
@@ -1908,11 +1916,18 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
         # merge air_temp with debm output files
         # & set time axies
         # PG: Why is this set to noon on the year 1000? Does that have any reason?
-        cdo -s \
-                -ymonmean \
-                -settaxis,1000-01-16,12:00:00,1mon \
-                surface_mass_balance.nc \
-                tmp 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        if [[ "x${MULTI_YEAR_MEAN_SMB}" == "x1" ]]; then
+                cdo -s \
+                        -ymonmean \
+                        -settaxis,${CHUNK_START_YEAR_pism}-01-16,23:55:55,1mon \
+                        surface_mass_balance.nc \
+                        tmp 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        else
+                cdo -s \
+                        -settaxis,${CHUNK_START_YEAR_pism}-01-16,23:55:55,1mon \
+                        surface_mass_balance.nc \
+                        tmp 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        fi
 
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Merge and clean up" 

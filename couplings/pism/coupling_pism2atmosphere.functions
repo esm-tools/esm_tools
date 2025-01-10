@@ -478,7 +478,7 @@ function generate_runoff_combine_fields {
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
                     echo " * substratiing discharge from runoff ${ifile}"
-                    cdo -s -add -selname,runoff ${ifile} -selname,tendency_of_ice_amount_due_to_discharge ${ifile} ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm 
+                    cdo -s -chname,tendency_of_ice_amount_due_to_discharge,runoff -sub -selname,tendency_of_ice_amount_due_to_discharge ${ifile} -selname,runoff ${ifile} ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm 
                     #cdo -s -splitname $ifile ${COUPLE_DIR}/ice_runoff_flux_
                     ##PISM_MASS_LOSS_ARRAY=$(echo $PISM_MASS_LOSS_VARS | sed s/,/\ /g )
                     #echo " * assign these variables to an array: ${PISM_MASS_LOSS_ARRAY}"

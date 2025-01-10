@@ -7,8 +7,9 @@ import shutil
 import subprocess
 import sys
 
-import esm_parser
 from loguru import logger
+
+import esm_parser
 
 
 class Slurm:
@@ -259,9 +260,6 @@ class Slurm:
                 os.chmod(scriptfolder + scriptname, 0o755)
 
                 progname = "prog_" + model + ".sh"
-
-                start_core = config[model]["start_core"]
-                end_core = config[model]["end_core"]
 
                 with open(scriptfolder + progname, "w") as f:
                     f.write("#!/bin/sh" + "\n")

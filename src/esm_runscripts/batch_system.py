@@ -15,7 +15,9 @@ from .slurm import Slurm
 
 KNOWN_BATCH_SYSTEMS = {"slurm": Slurm, "pbs": Pbs}
 """dict: The supported batch systems"""
-RESERVED_JOBTYPES = set("prepcompute", "compute", "prepare", "tidy", "inspect")
+# FIXME(PG): The definition for this probably belongs somewhere else
+RESERVED_JOBTYPES = set(["prepcompute", "compute", "prepare", "tidy", "inspect"])
+"""set: The jobtypes reserved for use only in esm-runscripts"""
 
 
 class UnknownBatchSystemError(Exception):

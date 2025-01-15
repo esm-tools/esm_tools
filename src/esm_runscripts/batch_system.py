@@ -2,47 +2,69 @@ import copy
 import os
 import stat
 import sys
-import textwrap
+
+from loguru import logger
 
 import esm_environment
 from esm_parser import find_variable, user_error, user_note
-from loguru import logger
 
 from . import dataprocess, helpers, prepare
+from .cleanup_deprecations import deprecated_class
 from .pbs import Pbs
 from .slurm import Slurm
 
-known_batch_systems = ["slurm", "pbs"]
-reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect"]
+KNOWN_BATCH_SYSTEMS = {"slurm": Slurm, "pbs": Pbs}
+"""dict: The supported batch systems"""
+# FIXME(PG): The definition for this probably belongs somewhere else
+RESERVED_JOBTYPES = set(["prepcompute", "compute", "prepare", "tidy", "inspect"])
+"""set: The jobtypes reserved for use only in esm-runscripts"""
 
 
 class UnknownBatchSystemError(Exception):
     """Raise this exception when an unknown batch system is encountered"""
 
 
-class batch_system:
+class UnknownClusterError(Exception):
+    """Raise this exception when an unknown cluster is encountered"""
+
+
+class BatchSystem:
 
     # all wrappers to slurm, pbs and co as esm_runscript
     # should be written independent of actual batch system
     def __init__(self, config, name):
         self.name = name
-        if name == "slurm":
-            self.bs = Slurm(config)
-        elif name == "pbs":
-            self.bs = Pbs(config)
-        else:
-            raise UnknownBatchSystemError(name)
+        if self.name not in KNOWN_BATCH_SYSTEMS:
+            raise UnknownBatchSystemError(f"Unknown batch system {self.name}")
+        self.bs = KNOWN_BATCH_SYSTEMS[self.name](config)
 
     def check_if_submitted(self):
+        """Checks if a job has been submitted"""
+        # NOTE(PG): How does this know which job ID to check? Unclear...
         return self.bs.check_if_submitted()
 
     def get_jobid(self):
+        """Get the jobid of the submitted job."""
         return self.bs.get_jobid()
 
     def get_job_state(self, jobid):
+        """Get the state of the job with the given jobid.
+
+        Parameters
+        ----------
+        jobid : str
+            The jobid of the job.
+        """
         return self.bs.get_job_state(jobid)
 
     def job_is_still_running(self, jobid):
+        """Check if the job with the given jobid is still running.
+
+        Parameters
+        ----------
+        jobid : str
+            The jobid of the job to check
+        """
         return self.bs.job_is_still_running(jobid)
 
     def add_pre_launcher_lines(self, config, cluster, runfile):
@@ -63,8 +85,6 @@ class batch_system:
     def get_run_filename(config, cluster):
         folder = config["general"]["thisrun_scripts_dir"]
         expid = config["general"]["expid"]
-        startdate = config["general"]["current_date"]
-        enddate = config["general"]["end_date"]
         run_filename = (
             f"{folder}/{expid}_{cluster}" f"_{config['general']['run_datestamp']}.run"
         )
@@ -186,18 +206,20 @@ class batch_system:
         if not cluster:
             cluster = config["general"]["jobtype"]
 
-        if cluster in reserved_jobtypes:
+        if cluster in RESERVED_JOBTYPES:
             for model in config["general"]["valid_model_names"]:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
                 if "nproc" in config[model]:
                     logger.info(f"nproc: {config[model]['nproc']}")
 
-                    # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI processes to start a program multiple times
+                    # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI
+                    # processes to start a program multiple times
                     # (used for FESOM-REcoM tracer loop parallelization (MPI based))
                     mpi_num_groups = config[model].get("mpi_num_groups", 1)
 
-                    # kh 22.06.22 adjust total number of MPI processes via mpi_num_groups at lowest level (nproc)
+                    # kh 22.06.22 adjust total number of MPI processes via mpi_num_groups at
+                    # lowest level (nproc)
                     config[model]["nproc"] *= mpi_num_groups
                     config[model]["tasks"] = config[model]["nproc"]
 
@@ -256,7 +278,7 @@ class batch_system:
                 start_core = end_core + 1
 
         else:
-            # dataprocessing job with user definded name
+            # dataprocessing job with user defined name
             # number of tasks are actually already prepared in
             # workflow
 
@@ -279,11 +301,9 @@ class batch_system:
 
     @staticmethod
     def get_environment(config, subjob):
-        environment = []
-
         env = esm_environment.environment_infos("runtime", config)
         commands = env.commands
-        if not subjob.replace("_general", "") in reserved_jobtypes:  # ??? fishy
+        if subjob.replace("_general", "") not in RESERVED_JOBTYPES:  # ??? fishy
             commands += dataprocess.subjob_environment(config, subjob)
         commands += [""]
 
@@ -316,14 +336,14 @@ class batch_system:
                             'Invalid type for "pre_run_commands"',
                             (
                                 f'"{type(pr_command)}" type is not supported for '
-                                + f'elements of the "pre_run_commands", defined in '
+                                + 'elements of the "pre_run_commands", defined in '
                                 + f'"{component}". Please, define '
                                 + '"pre_run_commands" as a "list" of "strings" or a "list".'
                             ),
                         )
             elif isinstance(pre_run_commands, str):
                 extras.append(pre_run_commands)
-            elif pre_run_commands == None:
+            elif pre_run_commands is None:
                 continue
             else:
                 user_error(
@@ -368,8 +388,7 @@ class batch_system:
         doneline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
         return doneline
 
-    @staticmethod
-    def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
+    def get_run_commands(self, config, subjob, batch_or_shell):  # here or in compute.py?
 
         commands = []
         if subjob.startswith("compute"):
@@ -459,7 +478,7 @@ class batch_system:
 
                 config = batch_system.calculate_requirements(config, cluster)
                 # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if cluster in reserved_jobtypes and config["computer"].get(
+                if cluster in RESERVED_JOBTYPES and config["computer"].get(
                     "taskset", False
                 ):
                     config = config["general"]["batch"].write_het_par_wrappers(config)
@@ -501,7 +520,7 @@ class batch_system:
                     runfile.write(self.append_start_statement(config, subjob) + "\n")
                     runfile.write("\n")
                     runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
-                    if cluster in reserved_jobtypes:
+                    if cluster in RESERVED_JOBTYPES:
                         config["general"]["batch"].add_pre_launcher_lines(
                             config, cluster, runfile
                         )
@@ -512,7 +531,7 @@ class batch_system:
             # elif multisrun_stuff: # pauls stuff maybe here? or matching to clusterconf possible?
             #    dummy = 0
             else:  # "normal" case
-                dummy = 0
+                pass
 
             if submits_another_job(config, cluster):  # and batch_or_shell == "batch":
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
@@ -666,7 +685,7 @@ class batch_system:
                     "is larger than 1. To get rid of this error, remove "
                     "``heterogeneous_parallelization`` from your yaml files. "
                     "``heterogeneous_parallelization`` can still be used from a "
-                    "``choose_`` block to decice the case."
+                    "``choose_`` block to device the case."
                 ),
             )
         # Set ``heterogeneous_parallelization`` false, overriding whatever the user
@@ -732,7 +751,6 @@ class batch_system:
 
             # kh 24.06.22 workaround: filter hdmodel
             if command and (command != "NONE"):
-                launcher = config["computer"].get("launcher")
                 launcher_flags = self.calc_launcher_flags(config, model, cluster)
                 component_lines.append(f"{launcher_flags} ./{command} ")
 
@@ -791,7 +809,6 @@ class batch_system:
             Launcher flags string with the calculated numbers for the ``model`` already
             substituted in the tags.
         """
-        launcher = config["computer"]["launcher"]
         launcher_flags = config["computer"]["launcher_flags_per_component"]
         # Cores per node
         # cores_per_node = config["computer"]["cores_per_node"]
@@ -814,7 +831,7 @@ class batch_system:
             cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
             # Check for CPUs and OpenMP threads
             if omp_num_threads > cpus_per_proc:
-                esm_parser.user_error(
+                user_error(
                     "OpenMP configuration",
                     (
                         "The number of OpenMP threads cannot be larger than the number"
@@ -826,7 +843,7 @@ class batch_system:
         elif "nproca" in config[model] and "nprocb" in config[model]:
             # ``nproca``/``nprocb`` not compatible with ``omp_num_threads``
             if omp_num_threads > 1:
-                esm_parser.user_note(
+                user_note(
                     "nproc",
                     "``nproca``/``nprocb`` not compatible with ``omp_num_threads``",
                 )
@@ -849,7 +866,7 @@ class batch_system:
         # PEs (MPI-ranks) per compute node (e.g. aprun -N)
         nproc_per_node = int(nproc / nodes)
 
-        # Replace tags in the laucher flags
+        # Replace tags in the launcher flags
         replacement_tags = [
             ("@nnodes@", nodes),
             ("@nproc@", nproc),
@@ -864,6 +881,11 @@ class batch_system:
         launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
 
         return launcher_flags
+
+
+@deprecated_class
+class batch_system(BatchSystem):
+    """Legacy class name. Please use BatchSystem instead!"""
 
 
 def submits_another_job(config, cluster):

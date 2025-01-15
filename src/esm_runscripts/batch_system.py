@@ -303,7 +303,7 @@ class BatchSystem:
 
         env = esm_environment.environment_infos("runtime", config)
         commands = env.commands
-        if not subjob.replace("_general", "") in RESERVED_JOBTYPES:  # ??? fishy
+        if subjob.replace("_general", "") not in RESERVED_JOBTYPES:  # ??? fishy
             commands += dataprocess.subjob_environment(config, subjob)
         commands += [""]
 

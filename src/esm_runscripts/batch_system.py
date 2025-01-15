@@ -6,7 +6,7 @@ import sys
 from loguru import logger
 
 import esm_environment
-from esm_parser import find_variable, user_error
+from esm_parser import find_variable, user_error, user_note
 
 from . import dataprocess, helpers, prepare
 from .cleanup_deprecations import deprecated_class
@@ -213,11 +213,13 @@ class BatchSystem:
                 if "nproc" in config[model]:
                     logger.info(f"nproc: {config[model]['nproc']}")
 
-                    # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI processes to start a program multiple times
+                    # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI
+                    # processes to start a program multiple times
                     # (used for FESOM-REcoM tracer loop parallelization (MPI based))
                     mpi_num_groups = config[model].get("mpi_num_groups", 1)
 
-                    # kh 22.06.22 adjust total number of MPI processes via mpi_num_groups at lowest level (nproc)
+                    # kh 22.06.22 adjust total number of MPI processes via mpi_num_groups at
+                    # lowest level (nproc)
                     config[model]["nproc"] *= mpi_num_groups
                     config[model]["tasks"] = config[model]["nproc"]
 
@@ -276,7 +278,7 @@ class BatchSystem:
                 start_core = end_core + 1
 
         else:
-            # dataprocessing job with user definded name
+            # dataprocessing job with user defined name
             # number of tasks are actually already prepared in
             # workflow
 
@@ -299,8 +301,6 @@ class BatchSystem:
 
     @staticmethod
     def get_environment(config, subjob):
-        environment = []
-
         env = esm_environment.environment_infos("runtime", config)
         commands = env.commands
         if subjob.replace("_general", "") not in RESERVED_JOBTYPES:  # ??? fishy
@@ -336,14 +336,14 @@ class BatchSystem:
                             'Invalid type for "pre_run_commands"',
                             (
                                 f'"{type(pr_command)}" type is not supported for '
-                                + f'elements of the "pre_run_commands", defined in '
+                                + 'elements of the "pre_run_commands", defined in '
                                 + f'"{component}". Please, define '
                                 + '"pre_run_commands" as a "list" of "strings" or a "list".'
                             ),
                         )
             elif isinstance(pre_run_commands, str):
                 extras.append(pre_run_commands)
-            elif pre_run_commands == None:
+            elif pre_run_commands is None:
                 continue
             else:
                 user_error(
@@ -388,8 +388,7 @@ class BatchSystem:
         doneline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
         return doneline
 
-    @staticmethod
-    def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
+    def get_run_commands(self, config, subjob, batch_or_shell):  # here or in compute.py?
 
         commands = []
         if subjob.startswith("compute"):
@@ -532,7 +531,7 @@ class BatchSystem:
             # elif multisrun_stuff: # pauls stuff maybe here? or matching to clusterconf possible?
             #    dummy = 0
             else:  # "normal" case
-                dummy = 0
+                pass
 
             if submits_another_job(config, cluster):  # and batch_or_shell == "batch":
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
@@ -686,7 +685,7 @@ class BatchSystem:
                     "is larger than 1. To get rid of this error, remove "
                     "``heterogeneous_parallelization`` from your yaml files. "
                     "``heterogeneous_parallelization`` can still be used from a "
-                    "``choose_`` block to decice the case."
+                    "``choose_`` block to device the case."
                 ),
             )
         # Set ``heterogeneous_parallelization`` false, overriding whatever the user
@@ -752,7 +751,6 @@ class BatchSystem:
 
             # kh 24.06.22 workaround: filter hdmodel
             if command and (command != "NONE"):
-                launcher = config["computer"].get("launcher")
                 launcher_flags = self.calc_launcher_flags(config, model, cluster)
                 component_lines.append(f"{launcher_flags} ./{command} ")
 
@@ -811,7 +809,6 @@ class BatchSystem:
             Launcher flags string with the calculated numbers for the ``model`` already
             substituted in the tags.
         """
-        launcher = config["computer"]["launcher"]
         launcher_flags = config["computer"]["launcher_flags_per_component"]
         # Cores per node
         # cores_per_node = config["computer"]["cores_per_node"]
@@ -834,7 +831,7 @@ class BatchSystem:
             cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
             # Check for CPUs and OpenMP threads
             if omp_num_threads > cpus_per_proc:
-                esm_parser.user_error(
+                user_error(
                     "OpenMP configuration",
                     (
                         "The number of OpenMP threads cannot be larger than the number"
@@ -846,7 +843,7 @@ class BatchSystem:
         elif "nproca" in config[model] and "nprocb" in config[model]:
             # ``nproca``/``nprocb`` not compatible with ``omp_num_threads``
             if omp_num_threads > 1:
-                esm_parser.user_note(
+                user_note(
                     "nproc",
                     "``nproca``/``nprocb`` not compatible with ``omp_num_threads``",
                 )
@@ -869,7 +866,7 @@ class BatchSystem:
         # PEs (MPI-ranks) per compute node (e.g. aprun -N)
         nproc_per_node = int(nproc / nodes)
 
-        # Replace tags in the laucher flags
+        # Replace tags in the launcher flags
         replacement_tags = [
             ("@nnodes@", nodes),
             ("@nproc@", nproc),

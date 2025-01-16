@@ -301,6 +301,15 @@ lpj_guess:
                 "v3.4":
                         version: "4.1.2"
 
+forcing_sources:
+        soil_layer_type: ${input_dir}/slt/slt_${mgrid}.nc
+        CO2: ${input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        tmp_rc_file: ${input_dir}/lpjg_steps.rc
+forcing_in_work:
+        soil_layer_type: slt_${mgrid}.nc
+        CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        tmp_rc_file: lpjg_steps.rc
+
 xios:
         choose_general.version:
                 "*":

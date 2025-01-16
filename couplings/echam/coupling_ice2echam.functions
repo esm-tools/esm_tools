@@ -389,9 +389,43 @@ update_orography_generate_target_orography_file() {
                         ${ifile} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
                         ${ofile} 2>>cdo_stderr_ice2echam
-                 #
                 
                 cdo -s replace ${ofile} ${INIT_DIR_echam}/unit.24 tmp_replace; mv tmp_replace ${ofile}
+                 #
+        
+        elif [ "x${oro_update_mod}" == "x5" ]; then # masked: new coupling scheme: OROMEA and GEOSP from high-res input
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        tmp 2>>cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                
+                for VAR in "GEOSP" "OROMEA" "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
+                do
+                    cdo -s ifthenelse ${COUPLE_DIR}/ice_mask_current_T63grid.nc \
+                            -selname,${VAR} ${ofile} \
+                            -selname,${VAR} ${INIT_DIR_echam}/unit.24 ${VAR}.orotmp
+
+                done
+                cdo -s merge *.orotmp ORO_merged; mv ORO_merged ${ofile}; rm *.orotmp
+                 #
         fi
         ln -sf ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_target_orography.nc
         # Destroy# the time dimension; just in case

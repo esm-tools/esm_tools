@@ -46,16 +46,17 @@ choose_version:
         runscript_name: run_coupled_4_1_2.ins
         git-repository: https://git.smhi.se/marlin/ec-earth-4-lpjgv-4-p-1-novelty.git
         branch: compiles_with_oasis_and_netcdf_on_levante
-        model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/
+        model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/ #temporarily commented out wrong model_dir?
+        #model_dir: ${general.model_dir}/lpj_guess/sources/LPJ-GUESS-lpjg_v4p1/
         destination: lpj_guess
-        mygrid: T159
-        install_bins: sources/LPJ-GUESS-lpjg_v4p1/build/guess_T159
-        executable: guess_T159
+        mygrid: TL159
+        install_bins: sources/LPJ-GUESS-lpjg_v4p1/build/guess_TL159
+        executable: guess_TL159
 
         environment_changes:
             add_add_add_add_add_export_vars:
                 myfortrancompiler: $FC
-                mygrid: T159
+                mygrid: TL159
                 OASIS_ANCHOR: ../../../oasis  
                 NETCDF_C_DIR: $NETCDFROOT
                 NETCDF_F_DIR: $NETCDFFROOT
@@ -85,8 +86,9 @@ namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
 gridlist_dir: ${input_dir}/gridlists/
 forcing_dir: ${input_dir}/climate_forcing_data/
 
-gridlist: "full_global" # sets up grid cell list =/ setup_name!!
-setup_name: "global" # sets up all the model parameters
+#gridlist: "full_global" # sets up grid cell list =/ setup_name!!
+gridlist: "home" # sets up grid cell list =/ setup_name!!
+setup_name: global # sets up all the model parameters
 
 
 # File dictionaries to control the copying/moving/linking of all files associated to

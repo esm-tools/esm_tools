@@ -2,10 +2,10 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "v3.4"
-    account: "ba0989"
-    compute_time: "01:00:00"
+    account: "ab0995"
+    compute_time: "00:20:00"
     initial_date: "2000-01-01"
-    final_date: "2020-01-01"
+    final_date: "2001-01-01"
     base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
     nmonth: 0
@@ -25,14 +25,15 @@ fesom:
     restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 768
+    nproc: 128
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0995/a270092/model_codes/awicm3-v3.4/fesom-2.6/config/"
+    namelist_dir: "/work/ab0995/a270270/model_codes/awiesm3-v3.4/fesom-2.6/config"
 
 lpj_guess:
     resolution: "TL159"
     lresume: false
-
+    nproc: 128
+    omp_num_threads: 1 
 
 oifs:
     resolution: "TL159"
@@ -42,8 +43,8 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 384
-    omp_num_threads: 4
+    nproc: 128
+    omp_num_threads: 1
 
 oasis3mct:
     use_lucia: True
@@ -54,5 +55,3 @@ xios:
     with_model: oifs
     nproc: 4
     omp_num_threads: 32
-
-

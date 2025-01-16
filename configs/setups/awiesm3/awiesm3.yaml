@@ -288,7 +288,7 @@ lpj_guess:
 
         coupling_fields:
                 "[[veg_atm_fields-->FIELD]]":
-                        grid: lpjg
+                        grid: ${lpj_guess.mygrid}-land
         grids:
                 lpjg:
                         name: lpjg
@@ -297,18 +297,26 @@ lpj_guess:
                         oasis_grid_type: "D"
                         oyac_grid_type: "LL"
                         oyac_io_per_node: 4
+                TL159-land:
+                        name: TL159-land
+                        nx: "${nx}"
+                        ny: "${ny}" 
+                        oasis_grid_type: "D"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4 
         choose_general.major_version:
                 "v3.4":
                         version: "4.1.2"
-
-forcing_sources:
-        soil_layer_type: ${input_dir}/slt/slt_${mgrid}.nc
-        CO2: ${input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-        tmp_rc_file: ${input_dir}/lpjg_steps.rc
-forcing_in_work:
-        soil_layer_type: slt_${mgrid}.nc
-        CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-        tmp_rc_file: lpjg_steps.rc
+        
+        forcing_sources:
+                soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+                tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc
+                CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        
+        forcing_in_work:
+                soil_layer_type: slt_${mygrid}.nc
+                tmp_rc_file: lpjg_steps.rc
+                CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
 
 xios:
         choose_general.version:

@@ -288,7 +288,7 @@ lpj_guess:
 
         coupling_fields:
                 "[[veg_atm_fields-->FIELD]]":
-                        grid: ${lpj_guess.mygrid}-land
+                        grid: lpjg
         grids:
                 lpjg:
                         name: lpjg
@@ -297,13 +297,6 @@ lpj_guess:
                         oasis_grid_type: "D"
                         oyac_grid_type: "LL"
                         oyac_io_per_node: 4
-                TL159-land:
-                        name: TL159-land
-                        nx: "${nx}"
-                        ny: "${ny}" 
-                        oasis_grid_type: "D"
-                        oyac_grid_type: "LL"
-                        oyac_io_per_node: 4 
         choose_general.major_version:
                 "v3.4":
                         version: "4.1.2"

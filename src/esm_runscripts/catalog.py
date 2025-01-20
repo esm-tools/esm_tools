@@ -1,4 +1,6 @@
 import datetime
+import getpass
+import hashlib
 import pathlib
 
 import dpath
@@ -78,8 +80,12 @@ def create_intake_esm_catalog(config):
             },
         ],
     }
-    catalog["id"] = "testcat"
-    catalog["description"] = f"Test Catalog for Experiment {config['general']['expid']}"
+    catalog["id"] = hashlib.sha256(
+        f"{config['general']['expid']}_{datetime.datetime.now()}_{getpass.getuser()}".encode()
+    ).hexdigest()
+    catalog[
+        "description"
+    ] = f"Intake-ESM Catalog for Experiment {config['general']['expid']}"
     catalog["title"] = None
     catalog["last_updated"] = str(datetime.datetime.now())
     catalog_dict = catalog["catalog_dict"] = []
@@ -112,12 +118,13 @@ def create_intake_esm_catalog(config):
                 project=config["general"].get("project", "esm_tools"),
                 institution_id="AWI",
                 source_id=f"{config['general']['model']}-{config['general']['version']}",
-                experiment_id=config["general"]["expid"],
-                realm=mconfig.get("type", "UNKNOWN"),
-                time_min=config["general"]["start_date"],
-                time_max=config["general"]["end_date"],
+                experiment_id=str(config["general"]["expid"]),
+                realm=str(mconfig.get("type", "UNKNOWN")),
+                time_min=str(config["general"]["start_date"]),
+                time_max=str(config["general"]["end_date"]),
                 uri=f"file://{output_file}",
-                _data_format_=xarray_engine,  # NOTE(PG): I don't like needing this...
+                # _data_format_=xarray_engine,  # NOTE(PG): I don't like needing this...
+                format=xarray_engine,
                 variable_id=var_list,
             )
             catalog_dict.append(this_asset)

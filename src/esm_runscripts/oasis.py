@@ -140,7 +140,7 @@ class oasis:
             if time.lower() in [
                 "stocha",
                 "instant",
-                "accumul",-f nc4ccd
+                "accumul",
                 "average",
                 "t_min",
                 "t_max",

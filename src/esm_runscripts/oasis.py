@@ -140,7 +140,7 @@ class oasis:
             if time.lower() in [
                 "stocha",
                 "instant",
-                "accumul",
+                "accumul",-f nc4ccd
                 "average",
                 "t_min",
                 "t_max",
@@ -665,8 +665,8 @@ class oasis:
         # before (i.e. when using LOCTRANS)
         if os.path.isfile(restart_file):
             logger.debug(f"{restart_file} already exits, overwriting")
-        logger.info("cdo -O merge " + filelist + " " + restart_file)
-        os.system("cdo -O merge " + filelist + " " + restart_file)  # + enddate)
+        logger.info("cdo -O -f nc4c merge " + filelist + " " + restart_file)
+        os.system("cdo -O -f nc4c merge " + filelist + " " + restart_file)  # + enddate)
         rmlist = glob.glob("notimestep*")
         rmlist.append("onlyonetimestep.nc")
         for rmfile in rmlist:

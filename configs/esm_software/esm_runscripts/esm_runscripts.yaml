@@ -72,6 +72,8 @@ choose_job_type:
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
                         - "clean_run_dir"
+                        - "create_intake_esm_catalog"
+                        - "write_intake_esm_catalog"
 
         prepcompute:
                 recipe:

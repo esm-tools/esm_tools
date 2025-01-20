@@ -83,10 +83,8 @@ def create_intake_esm_catalog(config):
     catalog["id"] = hashlib.sha256(
         f"{config['general']['expid']}_{datetime.datetime.now()}_{getpass.getuser()}".encode()
     ).hexdigest()
-    catalog[
-        "description"
-    ] = f"Intake-ESM Catalog for Experiment {config['general']['expid']}"
-    catalog["title"] = None
+    catalog["description"] = config["general"].get("description")
+    catalog["title"] = f"Intake-ESM Catalog for Experiment {config['general']['expid']}"
     catalog["last_updated"] = str(datetime.datetime.now())
     catalog_dict = catalog["catalog_dict"] = []
     # Each entry in catalog_dict should correspond to the schema provided

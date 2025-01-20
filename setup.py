@@ -22,6 +22,8 @@ requirements = [
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
     "gitpython==3.1.41",  # Maximum version for Python 3.6 support
+    "intake",
+    "intake-esm",
     "jinja2==3.1.4",
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support

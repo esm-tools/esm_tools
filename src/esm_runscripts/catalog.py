@@ -1,11 +1,14 @@
 import datetime
 import getpass
 import hashlib
+import json
 import pathlib
 
 import dpath
+import intake
+import intake_esm  # noqa: F401, import only needed to register intake-esm driver
+import pandas as pd
 import xarray as xr
-import yaml
 from loguru import logger
 
 
@@ -83,7 +86,7 @@ def create_intake_esm_catalog(config):
     catalog["id"] = hashlib.sha256(
         f"{config['general']['expid']}_{datetime.datetime.now()}_{getpass.getuser()}".encode()
     ).hexdigest()
-    catalog["description"] = config["general"].get("description")
+    catalog["description"] = str(config["general"].get("description"))
     catalog["title"] = f"Intake-ESM Catalog for Experiment {config['general']['expid']}"
     catalog["last_updated"] = str(datetime.datetime.now())
     catalog_dict = catalog["catalog_dict"] = []
@@ -127,6 +130,11 @@ def create_intake_esm_catalog(config):
             )
             catalog_dict.append(this_asset)
 
+    catalog_dict = catalog["catalog_dict"]
+    catalog_df = pd.DataFrame(catalog_dict)
+    # Try to construct the esm_datastore object:
+    validated_cat = intake.open_esm_datastore(obj=dict(esmcat=catalog, df=catalog_df))
+    config["intake"] = validated_cat
     return config
 
 
@@ -156,17 +164,35 @@ def write_intake_esm_catalog(config):
     """
     if not config["general"].get("write_catalog", True):
         return config
-    save_cat_to_disk = config["general"].get("save_intake_esm_catalog_to_disk", True)
-    cat_fname = pathlib.Path(
-        f'{config["general"]["experiment_dir"]}/{config["general"]["expid"]}_intake_catalog.yaml'
+
+    cat_file = pathlib.Path(
+        f'{config["general"]["experiment_dir"]}/{config["general"]["expid"]}_intake_catalog.json'
     )
-    if cat_fname.exists():
-        prev_cat = yaml.safe_load(cat_fname.read_text())
+    catalog = config["intake"]
+
+    if cat_file.exists():
+        with open(cat_file, "r") as f:
+            prev_cat = json.load(f)
     else:
         prev_cat = {}
-    # Full catalog:
-    dpath.merge(prev_cat, config.get("intake", {}))
-    config["intake"] = prev_cat
-    with open(cat_fname, "w") as f:
-        yaml.dump(config.get("intake", {}), f)
+
+    catalog_name = cat_file.stem
+    catalog.serialize(catalog_name, directory=cat_file.parent)
+    # catalog.serialize("paul", directory=cat_file.parent)
+
+    backup_file = cat_file.with_suffix(".json_backup")
+    if cat_file.exists():
+        with open(cat_file, "r") as f:
+            with open(backup_file, "w") as backup:
+                backup.write(f.read())
+
+    # Merge the new catalog into the previous one
+    with open(cat_file, "r") as f:
+        new_cat = json.load(f)
+    dpath.merge(prev_cat, new_cat)
+
+    # Save the merged catalog back to disk
+    with open(cat_file, "w") as f:
+        json.dump(prev_cat, f, indent=4)
+
     return config

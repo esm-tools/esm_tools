@@ -159,14 +159,29 @@ class coupler_class:
                             sys.exit(0)
 
                     direction_info = None
-                    if "coupling_directions" in full_config[self.name]:
-                        if (
-                            right_grid + "->" + left_grid
-                            in full_config[self.name]["coupling_directions"]
-                        ):
-                            direction_info = full_config[self.name][
-                                "coupling_directions"
-                            ][right_grid + "->" + left_grid]
+                    coupling_directions = full_config[self.name].get(
+                        "coupling_directions"
+                    )
+                    if coupling_directions:
+                        direction = f"{right_grid}->{left_grid}"
+                        direction_info = coupling_directions.get(direction)
+                        if not direction_info:
+                            first_provenance = (
+                                coupling_directions.get_first_provenance()
+                            )
+                            location_hint = ""
+                            if first_provenance:
+                                yaml_file = first_provenance.get("yaml_file")
+                                line = first_provenance.get("line")
+                                location_hint = (
+                                    f" (for example near ``{yaml_file},line:{line}``)"
+                                )
+                            esm_parser.user_error(
+                                "Missing coupling direction",
+                                f"The ``{direction}`` does not exist in "
+                                f"``{self.name}.coupling_directions``. You can solve "
+                                f"this by defining it there{location_hint}."
+                            )
                     transf_info = None
                     if "coupling_methods" in full_config[self.name]:
                         if interpolation in full_config[self.name]["coupling_methods"]:

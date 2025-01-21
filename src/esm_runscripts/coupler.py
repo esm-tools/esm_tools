@@ -166,21 +166,18 @@ class coupler_class:
                         direction = f"{right_grid}->{left_grid}"
                         direction_info = coupling_directions.get(direction)
                         if not direction_info:
-                            first_provenance = (
-                                coupling_directions.get_first_provenance()
-                            )
-                            location_hint = ""
-                            if first_provenance:
-                                yaml_file = first_provenance.get("yaml_file")
-                                line = first_provenance.get("line")
-                                location_hint = (
-                                    f" (for example near ``{yaml_file},line:{line}``)"
-                                )
                             esm_parser.user_error(
                                 "Missing coupling direction",
                                 f"The ``{direction}`` does not exist in "
                                 f"``{self.name}.coupling_directions``. You can solve "
-                                f"this by defining it there{location_hint}."
+                                f"this by defining it there<HINT_0>.",
+                                hints=[
+                                    {
+                                        "type": "prov",
+                                        "object": coupling_directions,
+                                        "text": " (for example near <HINT>)",
+                                    },
+                                ],
                             )
                     transf_info = None
                     if "coupling_methods" in full_config[self.name]:

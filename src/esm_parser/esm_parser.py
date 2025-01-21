@@ -2860,6 +2860,11 @@ def user_note_hints(note_text, hints):
         - text: The text of the hint. This text can contain a placeholder "<HINT>"
           which will be replaced with the actual hint corresponding to its index.
         - object: The object to which the hint applies
+
+    Returns
+    -------
+    note_text : str
+        The note text with the placeholders replaced with the hints.
     """
 
     # Find all hints matching r"<HINT_(\d+)>" in the note_text

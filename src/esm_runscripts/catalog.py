@@ -8,6 +8,7 @@ import dpath
 import intake
 import intake_esm  # noqa: F401, import only needed to register intake-esm driver
 import pandas as pd
+import tiled.client
 import xarray as xr
 from loguru import logger
 
@@ -199,4 +200,23 @@ def write_intake_esm_catalog(config):
     with open(cat_file, "w") as f:
         json.dump(prev_cat, f, indent=4)
     config["intake"]["catalog_json"] = prev_cat
+    return config
+
+
+def upload_intake_esm_catalog(config):
+    if not config.get("intake", {}).get("upload_catalog", True):
+        return config
+    catalog_server_uri = config["general"].get(
+        "catalog_server_uri", "http://134.1.7.6:8000"
+    )
+    # TODO(PG): Figure out a clean way to handle authentication
+    catalog_password = "secret"
+    try:
+        client = tiled.client.from_uri(catalog_server_uri, api_key=catalog_password)
+    except ConnectError as e:
+        logger.error(f"Unable to connect to {catalog_server_uri}: {e}")
+        return config
+
+    catalog_json = config["intake"]["catalog_json"]
+
     return config

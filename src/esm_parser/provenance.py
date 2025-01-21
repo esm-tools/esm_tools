@@ -523,6 +523,23 @@ class DictWithProvenance(dict):
 
         return provenance_dict
 
+    def get_first_provenance(self):
+        """
+        Recursively loops through the dictionary keys and returns the first provenance
+        found in the nested values.
+
+        Returns
+        -------
+        first_provenance : esm_parser.provenance.Provenance
+            The first provenance found in the nested values
+        """
+        first_provenance = None
+        for key, val in self.items():
+            if isinstance(val, PROVENANCE_MAPPINGS):
+                return val.get_first_provenance()
+            elif hasattr(val, "provenance"):
+                return val.provenance[-1]
+
     def __setitem__(self, key, val):
         """
         Any time an item in a DictWithProvenance is set, extend the old provenance of
@@ -772,6 +789,23 @@ class ListWithProvenance(list):
                 provenance_list.append(None)
 
         return provenance_list
+
+    def get_first_provenance(self):
+        """
+        Recursively loops through the list elements and returns the first provenance
+        found in the nested values.
+
+        Returns
+        -------
+        first_provenance : esm_parser.provenance.Provenance
+            The first provenance found in the nested values
+        """
+        first_provenance = None
+        for elem in self:
+            if isinstance(elem, PROVENANCE_MAPPINGS):
+                return elem.get_first_provenance()
+            elif hasattr(elem, "provenance"):
+                return elem.provenance[-1]
 
     def __setitem__(self, indx, val):
         """

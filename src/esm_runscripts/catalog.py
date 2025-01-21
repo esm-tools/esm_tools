@@ -47,9 +47,9 @@ def create_intake_esm_catalog(config):
     * https://github.com/NCAR/esm-collection-spec/blob/master/collection-spec/collection-spec.md
     * https://tutorials.dkrz.de/tutorial_intake-5-create-esm-collection.html
     """
-    if not config["general"].get("create_catalog", True):
+    if not config.get("intake", {}).get("create_catalog", True):
         return config
-    catalog = config["intake"] = {}
+    catalog = config.get("intake", {}).get("catalog", {})
     catalog["esmcat_version"] = "0.1.0"
     attributes = catalog["attributes"] = []
     catalog_attrs = [
@@ -93,20 +93,23 @@ def create_intake_esm_catalog(config):
     # Each entry in catalog_dict should correspond to the schema provided
     # in catalog_attrs plus assets
     for model in config["general"]["valid_model_names"]:
-        print(f"Cataloguing output of model {model}")
+        logger.info(f"Cataloguing output of model {model}")
         mconfig = config[model]
         # FIXME(PG): This is not how we should determine which files are in the experiment outdata
         #            since this will list **all** files, not just the ones added during this run.
         for output_file in pathlib.Path(mconfig["experiment_outdata_dir"]).iterdir():
+            # TODO(PG): @JanStreffing, how does OIFS output look like? GRIB, NetCDF?
+            # Known GRIB output models:
             if mconfig["model"] in ["echam", "jsbach"]:
                 if "codes" in output_file.suffix or "idx" in output_file.suffix:
                     logger.debug(
                         "Skipping codes file or already processed grib outputfile"
                     )
                     continue
-            # print(f"Cataloguing {output_file}...")
+            # TODO(PG): Add zarr support later on
             xarray_engine = "netcdf4" if "nc" in output_file.suffix else "cfgrib"
-            # NOTE(PG): Determine which variables are contained in the file, this could be better...
+            # NOTE(PG): Determine which variables are contained in the file, I don't know
+            #           but this could be better...
             try:
                 var_list = list(
                     xr.open_dataset(output_file, engine=xarray_engine).variables.keys()
@@ -134,7 +137,8 @@ def create_intake_esm_catalog(config):
     catalog_df = pd.DataFrame(catalog_dict)
     # Try to construct the esm_datastore object:
     validated_cat = intake.open_esm_datastore(obj=dict(esmcat=catalog, df=catalog_df))
-    config["intake"] = validated_cat
+    config["intake"] = config.get("intake", {})
+    config["intake"]["catalog"] = validated_cat
     return config
 
 
@@ -147,7 +151,7 @@ def write_intake_esm_catalog(config):
 
     Saving of the catalog can be controlled via the configuration key::
 
-        config["general"]["write_catalog"] = True
+        config["intake"]["write_catalog"] = True
 
     Default is ``True``.
 
@@ -162,13 +166,13 @@ def write_intake_esm_catalog(config):
     dict
         The updated configuration dictionary with the merged intake catalog.
     """
-    if not config["general"].get("write_catalog", True):
+    if not config.get("intake", {}).get("write_catalog", True):
         return config
 
     cat_file = pathlib.Path(
         f'{config["general"]["experiment_dir"]}/{config["general"]["expid"]}_intake_catalog.json'
     )
-    catalog = config["intake"]
+    catalog = config["intake"]["catalog"]
 
     if cat_file.exists():
         with open(cat_file, "r") as f:
@@ -194,5 +198,5 @@ def write_intake_esm_catalog(config):
     # Save the merged catalog back to disk
     with open(cat_file, "w") as f:
         json.dump(prev_cat, f, indent=4)
-
+    config["intake"]["catalog_json"] = prev_cat
     return config

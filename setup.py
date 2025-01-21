@@ -14,13 +14,17 @@ with open("HISTORY.rst") as history_file:
 
 requirements = [
     "Click>=8.0.4",  # Maximum version for Python 3.6 support
+    "cfgrib",
     "PyGithub==1.55",
     "colorama==0.4.5",
     "coloredlogs==15.0.1",  # NOTE(PG): Should be removed during cleanup for loguru instead
+    "dpath",
     "emoji==1.7.0",
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
     "gitpython==3.1.41",  # Maximum version for Python 3.6 support
+    "intake",
+    "intake-esm",
     "jinja2==3.1.4",
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support
@@ -34,6 +38,7 @@ requirements = [
     "semver==2.13.0",
     "sqlalchemy>=1.4.39",
     "tabulate==0.8.10",
+    "tiled[client]",
     "tqdm==4.66.3",
     "typing_extensions>=4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",

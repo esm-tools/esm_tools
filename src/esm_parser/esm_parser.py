@@ -2846,18 +2846,18 @@ def user_error(error_type, error_text, exit_code=1, dsymbols=["``"], hints=[]):
 def user_note_hints(note_text, hints):
     """
     Add hints to the note text. The hints are added to the note text by replacing
-    the placeholders "<HINT_#>" with the actual hints from the hints list.
+    the placeholders "@HINT_#@" with the actual hints from the hints list.
 
     Parameters
     ----------
     note_text : str
         The note text with placeholders for the hints. The placeholders are in the
-        form "<HINT_#>", where # is the index of the hint in the hints list.
+        form "@HINT_#@", where # is the index of the hint in the hints list.
     hints : list
         A list of hints to be added to the note text. Each hint is a dictionary with
         the following keys:
         - type: The type of the hint (e.g., "prov" for provenance)
-        - text: The text of the hint. This text can contain a placeholder "<HINT>"
+        - text: The text of the hint. This text can contain a placeholder "@HINT@"
           which will be replaced with the actual hint corresponding to its index.
         - object: The object to which the hint applies
 
@@ -2867,8 +2867,8 @@ def user_note_hints(note_text, hints):
         The note text with the placeholders replaced with the hints.
     """
 
-    # Find all hints matching r"<HINT_(\d+)>" in the note_text
-    pattern = r"<HINT_(\d+)>"
+    # Find all hints matching r"@HINT_(\d+)@" in the note_text
+    pattern = r"@HINT_(\d+)@"
     hint_indexes = [int(x) for x in list(set(re.findall(pattern, note_text)))]
     hint_indexes.sort()
 
@@ -2900,11 +2900,11 @@ def user_note_hints(note_text, hints):
                     f"col:``{provenance['col']}``"
                 )
                 # Replace the HINT placeholder of the hint with the provenance string
-                hint_text = hint["text"].replace("<HINT>", prov_string)
+                hint_text = hint["text"].replace("@HINT@", prov_string)
                 # Replace the HINT placeholder on the note message with the final hint
-                note_text = note_text.replace(f"<HINT_{indx}>", hint_text)
+                note_text = note_text.replace(f"@HINT_{indx}@", hint_text)
             else:
-                note_text = note_text.replace(f"<HINT_{indx}>", "")
+                note_text = note_text.replace(f"@HINT_{indx}@", "")
         else:
             raise NotImplementedError(
                 f"Hint type {hint['type']} is not implemented yet."

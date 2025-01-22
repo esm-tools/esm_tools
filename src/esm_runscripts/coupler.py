@@ -170,12 +170,12 @@ class coupler_class:
                                 "Missing coupling direction",
                                 f"The ``{direction}`` does not exist in "
                                 f"``{self.name}.coupling_directions``. You can solve "
-                                f"this by defining it there<HINT_0>.",
+                                f"this by defining it there@HINT_0@.",
                                 hints=[
                                     {
                                         "type": "prov",
                                         "object": coupling_directions,
-                                        "text": " (for example near <HINT>)",
+                                        "text": " (for example near @HINT@)",
                                     },
                                 ],
                             )

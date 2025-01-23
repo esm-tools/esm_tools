@@ -2328,6 +2328,11 @@ def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
     entry = rhs
+    if isinstance(entry, str) and entry.endswith("_keep_list"):
+        keep_list = True
+        entry = entry.replace("_keep_list", "")
+    else:
+        keep_list = False
     if isinstance(entry, Date):
         return entry
     if "${" in str(entry):
@@ -2416,6 +2421,8 @@ def do_math_in_entry(tree, rhs, config):
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
         result = eval(math)
+        if keep_list:
+            return ListWithProvenance(result, []) 
         if isinstance(result, list):
             result = result[
                 -1

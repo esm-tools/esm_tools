@@ -2324,11 +2324,6 @@ def do_math_in_entry(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
-    if str(entry).endswith("_keep_list"):
-        keep_list = True
-        entry = str(entry).replace("_keep_list", "")
-    else:
-        keep_list = False
     entry = " " + str(entry) + " "
     date_operation = False
     while "$((" in entry:

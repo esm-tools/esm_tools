@@ -45,7 +45,6 @@ class oasis:
         exec_entry = str(len(coupled_execs)) + exec_entry
         self.namcouple += [" $NBMODEL", "            " + str(exec_entry), " $END"]
         self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
-        # seb-wahl: add lucia support
         if lucia:
             # LUCIA (load balancing) is done differently in MCT 5.0
             if mct_version >= (5,0):

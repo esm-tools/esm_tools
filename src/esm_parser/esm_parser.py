@@ -2324,6 +2324,11 @@ def do_math_in_entry(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
+    if str(entry).endswith("_keep_list"):
+        keep_list = True
+        entry = str(entry).replace("_keep_list", "")
+    else:
+        keep_list = False
     entry = " " + str(entry) + " "
     while "$((" in entry:
         math, after_math = entry.split("))", 1)
@@ -2409,6 +2414,8 @@ def do_math_in_entry(tree, rhs, config):
                     index += 1
         result = eval(math)
         if isinstance(result, list):
+            if keep_list:
+                return ListWithProvenance(result, [])
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds

@@ -11,6 +11,7 @@ from ruamel.yaml.nodes import ScalarNode
 
 import esm_parser
 import esm_tools
+from esm_tools import user_error
 
 from .provenance import *
 
@@ -135,7 +136,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
                 for env_var in envvar_matches:
                     # first check if the variable exists in the shell environment
                     if not os.getenv(env_var):
-                        esm_parser.user_error(
+                        user_error(
                             f"{env_var} is not defined",
                             f"{env_var} is not an environment variable. Exiting",
                         )
@@ -227,10 +228,10 @@ def yaml_file_to_dict(filepath):
         except yaml.scanner.ScannerError as yaml_error:
             logger.debug(f"Your file {filepath + extension} has syntax issues!")
             error = EsmConfigFileError(filepath + extension, yaml_error)
-            esm_parser.user_error("Yaml syntax", f"{error}")
+            user_error("Yaml syntax", f"{error}")
         except Exception as error:
             logger.exception(error)
-            esm_parser.user_error(
+            user_error(
                 "Yaml syntax",
                 f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}",
             )
@@ -331,7 +332,7 @@ def check_changes_duplicates(yamldict_all, fpath):
             # If more than one ``_changes`` without ``choose_`` return error
             if len(changes_no_choose) > 1:
                 changes_no_choose = [x.replace(",", ".") for x in changes_no_choose]
-                esm_parser.user_error(
+                user_error(
                     "YAML syntax",
                     "More than one ``_changes`` out of a ``choose_`` in "
                     + fpath
@@ -347,7 +348,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                 changes_group.remove(changes_no_choose[0])
                 if len(changes_group) > 0:
                     changes_group = [x.replace(",", ".") for x in changes_group]
-                    esm_parser.user_error(
+                    user_error(
                         "YAML syntax",
                         "The general ``"
                         + changes_no_choose[0]
@@ -394,7 +395,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                                 ","
                             )[0]
                         if case == sub_case:
-                            esm_parser.user_error(
+                            user_error(
                                 "YAML syntax",
                                 "The following ``_changes`` can be accessed "
                                 + "simultaneously in "
@@ -413,7 +414,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                     else:
                         # If these ``choose_`` are different they can be accessed
                         # simultaneously, then it returns an error
-                        esm_parser.user_error(
+                        user_error(
                             "YAML syntax",
                             "The following ``_changes`` can be accessed "
                             + "simultaneously in "
@@ -452,7 +453,7 @@ def check_changes_duplicates(yamldict_all, fpath):
                 add_group.remove(add_no_choose[0])
                 if len(add_group) > 0:
                     add_group = [x.replace(",", ".") for x in add_group]
-                    esm_parser.user_error(
+                    user_error(
                         "YAML syntax",
                         "The general ``"
                         + add_no_choose[0]
@@ -469,7 +470,7 @@ def check_changes_duplicates(yamldict_all, fpath):
 def check_for_empty_components(yaml_load, fpath):
     for key, value in yaml_load.items():
         if not value:
-            esm_parser.user_error(
+            user_error(
                 "YAML syntax",
                 f"The component ``{key}`` is empty in the file ``{fpath}``. ESM-Tools does"
                 + " not support empty components, either add some variables to the "
@@ -540,7 +541,7 @@ def check_duplicates(src):
             value = loader.construct_object(value_node, deep=deep)
 
             if key in mapping:
-                esm_parser.user_error(
+                user_error(
                     "Duplicated variables",
                     "Key ``{0}`` is duplicated {1}\n\n".format(
                         key, str(key_node.start_mark).replace("  ", "").split(",")[0]
@@ -623,7 +624,7 @@ class EnvironmentConstructor(RoundTripConstructor):
                         self.env_variables.append((env_var, rval))
                         return rval
                     else:
-                        esm_parser.user_error(
+                        user_error(
                             f"{env_var} is not defined",
                             f"{env_var} is not an environment variable. Exiting",
                         )

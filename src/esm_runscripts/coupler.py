@@ -1,7 +1,8 @@
 import sys
 
-import esm_parser
 from loguru import logger
+
+from esm_tools import user_error
 
 known_couplers = ["oasis3mct", "yac"]
 
@@ -166,7 +167,7 @@ class coupler_class:
                         direction = f"{right_grid}->{left_grid}"
                         direction_info = coupling_directions.get(direction)
                         if not direction_info:
-                            esm_parser.user_error(
+                            user_error(
                                 "Missing coupling direction",
                                 f"The ``{direction}`` does not exist in "
                                 f"``{self.name}.coupling_directions``. You can solve "
@@ -186,7 +187,7 @@ class coupler_class:
                                 interpolation
                             ]
                         else:
-                            esm_parser.user_error(
+                            user_error(
                                 "Missing coupling method",
                                 f"The coupling method ``{interpolation}`` defined in "
                                 f"the ``{self.name}.coupling_target_fields`` is not "

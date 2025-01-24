@@ -313,7 +313,8 @@ lpj_guess:
                         version: "4.1.2"
         
         #proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
-        proc_list_entry: '[str(x) for x in range(1,${nproc})]' 
+        nproc: 128
+        proc_list_entry: '[str(x) for x in range(0,${nproc}+1)]' 
         proc_list: $(( ${proc_list_entry} ))
    
         forcing_sources:                
@@ -323,6 +324,7 @@ lpj_guess:
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
                  
         
         forcing_in_work:
@@ -332,6 +334,8 @@ lpj_guess:
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/mock.rc
+                 
 
 xios:
         

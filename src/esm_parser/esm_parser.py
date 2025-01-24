@@ -2324,18 +2324,15 @@ def do_math_in_entry(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
-    if str(entry).endswith("_keep_list"):
-        keep_list = True
-        entry = str(entry).replace("_keep_list", "")
-    else:
-        keep_list = False
     entry = " " + str(entry) + " "
+    date_operation = False
     while "$((" in entry:
         math, after_math = entry.split("))", 1)
         math, before_math = math[::-1].split("(($", 1)
         math = math[::-1]
         before_math = before_math[::-1]
         if DATE_MARKER in math:
+            date_operation = True
             all_dates = []
             steps = math.split(" ")
             steps = [step for step in steps if step]
@@ -2413,14 +2410,18 @@ def do_math_in_entry(tree, rhs, config):
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
         result = eval(math)
-        if isinstance(result, list):
-            if keep_list:
-                return ListWithProvenance(result, [])
+        if isinstance(result, list) and date_operation:
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
+        elif isinstance(result, list):
+            entry = ListWithProvenance(result, None)
+            entry.set_provenance(rhs.provenance)
+            return entry
+
         result = str(result)
         entry = before_math + result + after_math
+
     # TODO MA: this is a provisional dirty fix for release. Get rid of this once a more
     # general solution is worked out
     # ORIGINAL LINE: return convert(entry.strip())

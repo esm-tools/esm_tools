@@ -12,7 +12,7 @@ general:
     nyear: 1
 
 computer:
-    taskset: true
+    taskset: false
 
 awiesm3:
     postprocessing: false

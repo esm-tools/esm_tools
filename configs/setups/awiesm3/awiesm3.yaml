@@ -142,10 +142,10 @@ oifs:
         add_namelist_changes:
                 fort.4:
                         NAMECECFG:
-                                ECE_CPL_NEMO_LIM: '"false"'
-                                ECE_CPL_AMIP: '"false"'
-                                ECE_CPL_FESOM_FESIM: '"true"'
-                                ECE_CPL_LPJG: '"true"' #coupling switch LASZLO
+                                 ECE_CPL_NEMO_LIM: .false.
+                                 ECE_CPL_AMIP: .false.
+                                 ECE_CPL_FESOM_FESIM: .true.
+                                 ECE_CPL_LPJG: .true.
 
         res_level: ${resolution}${levels}
         atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
@@ -283,12 +283,14 @@ fesom:
 
 lpj_guess:
         comp_command: "mkdir -p sources/LPJ-GUESS-lpjg_v4p1/build; cd sources/LPJ-GUESS-lpjg_v4p1/build; cmake .. -DOASIS=ON; make -j8; cd ../../.."
-       
+        
+        execution_command: ${executable} -parallel ${runscript_name}
+
         veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2MVeg, TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004, SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg, SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg] #LASZLO LPJ-GUESS blokk
 
         coupling_fields:
                 "[[veg_atm_fields-->FIELD]]":
-                        grid: lpjg
+                        grid: ${lpj_guess.mygrid}-land
         grids:
                 lpjg:
                         name: lpjg
@@ -297,26 +299,58 @@ lpj_guess:
                         oasis_grid_type: "D"
                         oyac_grid_type: "LL"
                         oyac_io_per_node: 4
+
+                TL159-land:
+                        name: TL159-land
+                        nx: "${nx}"
+                        ny: "${ny}" 
+                        oasis_grid_type: "D"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
+
         choose_general.major_version:
                 "v3.4":
                         version: "4.1.2"
         
-        forcing_sources:
+        #proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
+        proc_list_entry: '[str(x) for x in range(1,${nproc})]' 
+        proc_list: $(( ${proc_list_entry} ))
+   
+        forcing_sources:                
                 soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
                 tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc
                 CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+                "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc
+                "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                 
         
         forcing_in_work:
                 soil_layer_type: slt_${mygrid}.nc
                 tmp_rc_file: lpjg_steps.rc
                 CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
+                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
+                "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
 
 xios:
-        choose_general.version:
-                "*":
-                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
-
-
+        
+        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"     
+        interpolation_order: 1
+        compression_level: 1
+        regular_res_lat: 192 
+        regular_res_lon: 400
+        config_sources:
+                domain_def: ${xml_dir}/domain_def.xml.j2
+                file_def: ${xml_dir}/file_def.xml.j2
+        add_config_files:
+                context_ifs: context_ifs
+                ifs_xml: ifs_xml
+                domain_def: domain_def
+                field_def: field_def
+                file_def: file_def
+                axis_def: axis_def
+                grid_def: grid_def
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -442,10 +476,10 @@ oasis3mct:
                 'feom->atma':
                         lag: ${o2a_lag}
                         seq: ${o2a_seq}
-                'lpjg->atma':
+                '${lpj_guess.mygrid}-land->atma':
                         lag: ${v2a_lag}
                         seq: ${v2a_seq}
-                'atma->lpjg':
+                'atma->${lpj_guess.mygrid}-land': 
                         lag: ${a2v_lag}
                         seq: ${a2v_seq}
 
@@ -522,15 +556,15 @@ oasis3mct:
                                 conserv:
                                         method: global
                 loctrans_avg:
-                        time_transformation: average #remaping method for LPJ-GUESS LASZLO
+                        time_transformation: average
                         remapping:
                                 loctrans:
                 loctrans_min:
-                        time_transformation: t_min #remaping method for LPJ-GUESS LASZLO
+                        time_transformation: t_min
                         remapping:
                                 loctrans:
                 loctrans_max:
-                        time_transformation: t_max #remaping method for LPJ-GUESS LASZLO
+                        time_transformation: t_max
                         remapping:
                                 loctrans:
                 oyac_1stcon_nnn_stocha:

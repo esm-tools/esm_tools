@@ -31,6 +31,10 @@ choose_version:
     wiso_code: true
     icb_code: true
     namelist_dir: "${model_dir}/config/"
+
+  "2.6-5":
+    branch: "2.6.5"
+
 destination: "fesom-2.6"
 install_bins: bin/fesom.x
 git-repository:

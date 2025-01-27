@@ -328,7 +328,8 @@ oifs:
                 iolibraries: awi_libs
                 choose_computer.name:
                         juwels:
-                                compiler_mpi: intel2022_ompi2022
+                                compiler_mpi: gnu2023_ompi2023
+                                iolibraries: system_libs
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:
@@ -345,8 +346,9 @@ oifs:
         compiletime_environment_changes:
                 iolibraries: awi_libs
                 choose_computer.name:
-                        juwels:
-                                compiler_mpi: intel2022_ompi2022
+                        juwels: 
+                                compiler_mpi: gnu2023_ompi2023
+                                iolibraries: system_libs
                         blogin:
                                 iolibraries: geomar_libs
                         glogin:

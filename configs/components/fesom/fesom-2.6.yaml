@@ -193,7 +193,7 @@ restart_out_sources:
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
-        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+        fesom: "*.fesom.*.nc"
 
 choose_icb_code:
         True:

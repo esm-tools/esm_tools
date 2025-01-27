@@ -8,11 +8,9 @@ accounting: true
 
 # default settings for compiler, mpi and I/O libs
 
-#compiler_mpi: intel_2019a_impi2019
-#compiler_mpi: intel_2019a_psmpi2019
 #iolibraries: system_libs
 # for FOCI/FOCIOIFS use
-compiler_mpi: intel2022_ompi2022
+compiler_mpi: intel2024_psmpi2024
 iolibraries: none
 useMPI: intelmpi
 
@@ -105,6 +103,31 @@ choose_compiler_mpi:
         - "load Python/3.10.4"
         - "load imkl/2022.1.0"
         - "load Perl/5.34.1"
+        - "load git"
+      add_export_vars:
+        FC: mpifort
+        F77: mpifort
+        MPIFC: mpifort
+        FCFLAGS: -free
+        CC: mpicc
+        CXX: mpic++
+        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+
+   intel2024_psmpi2024:
+      add_module_actions:
+        - "--force purge"
+        - "use /gpfs/software/juwels/otherstages"
+        - "load Stages/2024"
+        - "load Intel/2023.2.1"
+        - "load ParaStationMPI/5.9.2-1-mt"
+        - "load CMake/3.26.3"
+        - "load Python/"
+        - "load imkl/2023.2.0"
+        - "load Perl/5.36.1"
+        - "load Perl-bundle-CPAN/5.36.1"
+        - "unload zlib"
         - "load git"
       add_export_vars:
         FC: mpifort
@@ -308,6 +331,9 @@ choose_iolibraries:
             PATH: $IO_LIB_ROOT/bin:$PATH
 
         choose_compiler_mpi:
+            intel2024_ompi2024:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
             intel2022_ompi2022:
                 add_export_vars:
                     IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
@@ -320,6 +346,10 @@ choose_iolibraries:
             intel_2019a_psmpi2019:
                 add_export_vars:
                     IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
+            intel2024_psmpi2024:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/chhb19/HPC_libraries/intel-2023.2.1_ParaStationMPI-5.9.2-1-mt_20240408
+                    PSMPIFLAGS: '"-lrt -lm -ldl"'
 
     # GEOMAR LIBS
     geomar_libs:
@@ -357,6 +387,10 @@ choose_iolibraries:
             intel2022_psmpi2022:
                 add_export_vars:
                     IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2021.4.0_parastation_5.5.0-1-mt_20220222
+                    PSMPIFLAGS: '"-lrt -lm -ldl"'
+            intel2024_psmpi2024:
+                add_export_vars:
+                    IO_LIB_ROOT: /p/project/chhb19/HPC_libraries/intel-2023.2.1_ParaStationMPI-5.9.2-1-mt_20240408
                     PSMPIFLAGS: '"-lrt -lm -ldl"'
 
 # some yamls use computer.fc, etc to identify the compiler, so we need to add them

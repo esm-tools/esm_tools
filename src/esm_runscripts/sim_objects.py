@@ -210,15 +210,7 @@ class SimulationSetup(object):
 
     ###################################     PREPCOMPUTE      #############################################################
     def prepcompute(self):
-        """
-        All steps needed for a model computation.
-
-        Parameters
-        ----------
-        kill_after_submit : bool
-            Default ``True``. If set, the entire Python instance is killed with
-            a ``sys.exit()`` as the very last after job submission.
-        """
+        """ All steps needed for a model computation. """
         from . import prepcompute
 
         self.config = prepcompute.run_job(self.config)
@@ -226,18 +218,19 @@ class SimulationSetup(object):
     ###################################     VIZ     #############################################################
 
     def viz(self):
-        """
-        Starts the Viz job.
-
-        Parameters
-        ----------
-        kill_after_submit: bool
-            Default ``True``. If set, the entire Python instance is killed with ``sys.exit()``.
-        """
+        """Starts the Viz job."""
         # NOTE(PG): Local import, not everyone will have viz yet...
         import esm_viz as viz
 
         self.config = viz.run_job(self.config)
+
+    ###################################     POST     #############################################################
+
+    def post(self):
+        """Starts the Post job."""
+        from . import postprocess
+
+        self.config = postprocess.run_job(self.config)
 
     #########################     HELPERS      #############################################################
 

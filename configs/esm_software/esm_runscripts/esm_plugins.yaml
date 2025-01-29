@@ -111,3 +111,6 @@ core:
                 workflow:
                         - "assemble_workflow"
 
+                postprocess:
+                        - "convert_to_zarr"
+

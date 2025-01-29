@@ -98,7 +98,6 @@ def prepend_newrun_job(config):
     first_cluster = gw_config["subjob_clusters"][first_cluster_name]
 
     if not first_cluster.get("batch_or_shell", "Error") == "Simulation":
-
         last_cluster_name = gw_config["last_task_in_queue"]
         last_cluster = gw_config["subjob_clusters"][last_cluster_name]
 
@@ -178,7 +177,9 @@ def validate_run_after(cluster_config, subjob_cluster, gw_config):
 
     calling_cluster = cluster_config["run_after"]
     if calling_cluster not in gw_config["subjob_clusters"]:
-        log_and_exit(f"Unknown cluster {calling_cluster}.", gw_config)
+        log_and_exit(
+            f"Validate run after -- Unknown cluster {calling_cluster}.", gw_config
+        )
 
     append_to_next_submit(gw_config, calling_cluster, subjob_cluster)
     cluster_config["called_from"] = calling_cluster
@@ -190,7 +191,9 @@ def validate_run_after(cluster_config, subjob_cluster, gw_config):
 def validate_run_before(cluster_config, subjob_cluster, gw_config):
     called_cluster = cluster_config["run_before"]
     if called_cluster not in gw_config["subjob_clusters"]:
-        log_and_exit(f"Unknown cluster {called_cluster}.", gw_config)
+        log_and_exit(
+            f"Validate run before -- Unknown cluster {called_cluster}.", gw_config
+        )
 
     append_to_next_submit(gw_config, subjob_cluster, called_cluster)
     gw_config["subjob_clusters"][called_cluster]["called_from"] = subjob_cluster
@@ -228,7 +231,7 @@ def ensure_first_and_last_clusters_linked(gw_config):
 
 def log_and_exit(message, gw_config):
     logger.error(message)
-    logger.error(gw_config)
+    esm_parser.pprint_config(gw_config)
     sys.exit(-1)
 
 

@@ -175,7 +175,7 @@ def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in
         ):
             nextrun = True
         else:
-            if not workflow.skip_cluster(cluster, config):
+            if not workflow.should_skip_cluster(cluster, config):
                 submission_type = get_submission_type(cluster, config)
                 if submission_type == "Simulation":
                     resubmit_Simulation(config, cluster)

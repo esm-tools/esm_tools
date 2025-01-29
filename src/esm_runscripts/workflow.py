@@ -1,5 +1,4 @@
 import copy
-import os
 import sys
 
 from loguru import logger
@@ -7,35 +6,54 @@ from loguru import logger
 import esm_parser
 
 
-def skip_cluster(cluster, config):
-    gw_config = config["general"]["workflow"]
-    clusterconf = gw_config["subjob_clusters"][cluster]
-
+def should_skip_cluster(cluster, config):
     """
-    print(f"run_only {clusterconf.get('run_only', 'Error') }")
-    print(f"skip_chunk_number {clusterconf.get('skip_chunk_number', -999)}")
-    print(f"skip_run_number {clusterconf.get('skip_run_number', -999)}")
-    print(f"chunk_number {config['general'].get('chunk_number', -998)}")
-    print(f"run_number {config['general'].get('run_number', -998)}")
-    print(f"last_run_in_chunk {config['general']['last_run_in_chunk']}")
-    print(f"first_run_in_chunk {config['general']['first_run_in_chunk']}")
-    """
+    Determine whether a specific cluster should be skipped based on the provided configuration.
 
-    if clusterconf.get("run_only", "Error") == "last_run_in_chunk" and not config[
-        "general"
-    ].get("last_run_in_chunk", False):
-        return True
-    if clusterconf.get("run_only", "Error") == "first_run_in_chunk" and not config[
-        "general"
-    ].get("first_run_in_chunk", False):
-        return True
-    if clusterconf.get("skip_chunk_number", -999) == config["general"].get(
-        "chunk_number", -998
+    Parameters
+    ----------
+    cluster : str
+        The name of the cluster to check.
+    config : dict
+        A dictionary containing various configuration settings.
+
+    Returns
+    -------
+    bool
+        True if the cluster should be skipped, False otherwise.
+
+    Notes
+    -----
+    The function evaluates several conditions to decide if the cluster should be skipped:
+    1. If `run_only` in the cluster configuration is set to "last_run_in_chunk" and `last_run_in_chunk` in the general configuration is not True.
+    2. If `run_only` in the cluster configuration is set to "first_run_in_chunk" and `first_run_in_chunk` in the general configuration is not True.
+    3. If `skip_chunk_number` in the cluster configuration matches `chunk_number` in the general configuration.
+    4. If `skip_run_number` in the cluster configuration matches `run_number` in the general configuration.
+
+    If none of these conditions are met, the function returns False, indicating that the cluster should not be skipped.
+    """
+    general_config = config["general"]
+    workflow_config = general_config["workflow"]
+    cluster_config = workflow_config["subjob_clusters"][cluster]
+
+    run_only_on = cluster_config.get("run_only")
+
+    if run_only_on == "last_run_in_chunk" and not general_config.get(
+        "last_run_in_chunk", False
     ):
         return True
-    if clusterconf.get("skip_run_number", -999) == config["general"].get(
-        "run_number", -998
+
+    if run_only_on == "first_run_in_chunk" and not general_config.get(
+        "first_run_in_chunk", False
     ):
+        return True
+
+    skip_chunk_number = cluster_config.get("skip_chunk_number")
+    if skip_chunk_number == general_config.get("chunk_number"):
+        return True
+
+    skip_run_number = cluster_config.get("skip_run_number")
+    if skip_run_number == general_config.get("run_number"):
         return True
 
     return False
@@ -198,11 +216,31 @@ def order_clusters(config):
     return config
 
 
+# -----------------------------------------------------------------------------
 def complete_clusters(config):
     gw_config = config["general"]["workflow"]
 
-    # First, complete the matching subjobs <-> clusters
+    complete_subjob_cluster_assignments(gw_config)
+    complete_resource_information(gw_config)
 
+    return config
+
+
+def complete_subjob_cluster_assignments(gw_config):
+    """
+    Assigns subjobs to their respective subjob clusters in the workflow configuration.
+
+    Parameters
+    ----------
+    gw_config : dict
+        The general workflow configuration dictionary containing subjobs and subjob clusters.
+
+    Notes
+    -----
+    This function iterates over all subjobs in the workflow configuration and assigns each subjob
+    to its specified subjob cluster. If the subjob cluster does not already exist in the configuration,
+    it is created. Each subjob is then appended to the list of subjobs within its respective subjob cluster.
+    """
     for subjob in gw_config["subjobs"]:
         subjob_cluster = gw_config["subjobs"][subjob]["subjob_cluster"]
         if subjob_cluster not in gw_config["subjob_clusters"]:
@@ -213,71 +251,117 @@ def complete_clusters(config):
 
         gw_config["subjob_clusters"][subjob_cluster]["subjobs"].append(subjob)
 
-    # Then, complete the resource information per cluster
-    # determine whether a cluster is to be submitted to a batch system
 
+def complete_resource_information(gw_config):
+    """
+    Completes the resource information for each subjob cluster in the workflow configuration.
+
+    Parameters
+    ----------
+    gw_config : dict
+        The general workflow configuration dictionary containing subjobs and subjob clusters.
+
+    Notes
+    -----
+    This function iterates over all subjob clusters in the workflow configuration and performs the following tasks:
+    - Merges individual configuration entries from subjobs into their respective subjob clusters.
+    - Determines whether each subjob cluster should be submitted to a batch system or run as a shell script.
+    - Ensures that necessary information such as target queue and order in cluster is present.
+    - Calculates the total number of processors required for each subjob cluster based on the order in cluster.
+    - Sets default values for missing configuration entries.
+    """
     for subjob_cluster in gw_config["subjob_clusters"]:
-        nproc_sum = nproc_max = 0
         clusterconf = gw_config["subjob_clusters"][subjob_cluster]
-        for subjob in clusterconf["subjobs"]:
-            subjobconf = gw_config["subjobs"][subjob]
+        nproc_sum, nproc_max = calculate_nproc(clusterconf, gw_config)
+        set_default_subjob_values(clusterconf)
+        clusterconf["nproc"] = (
+            nproc_sum if clusterconf["order_in_cluster"] == "concurrent" else nproc_max
+        )
 
-            clusterconf = merge_single_entry_if_possible(
-                "submit_to_batch_system", subjobconf, clusterconf
+
+def calculate_nproc(clusterconf, gw_config):
+    """
+    Calculates the total and maximum number of processors required for a subjob cluster.
+
+    Parameters
+    ----------
+    clusterconf : dict
+        The configuration dictionary for a specific subjob cluster.
+    gw_config : dict
+        The general workflow configuration dictionary containing subjobs and subjob clusters.
+
+    Returns
+    -------
+    nproc_sum : int
+        The sum of processors required for all subjobs in the cluster.
+    nproc_max : int
+        The maximum number of processors required for any single subjob in the cluster.
+    """
+    nproc_sum = nproc_max = 0
+    for subjob in clusterconf["subjobs"]:
+        subjobconf = gw_config["subjobs"][subjob]
+        merge_subjob_entries(clusterconf, subjobconf)
+        nproc_sum += subjobconf.get("nproc", 1)
+        nproc_max = max(subjobconf.get("nproc", 1), nproc_max)
+    return nproc_sum, nproc_max
+
+
+def merge_subjob_entries(clusterconf, subjobconf):
+    """
+    Merges individual configuration entries from a subjob into its respective subjob cluster.
+
+    Parameters
+    ----------
+    clusterconf : dict
+        The configuration dictionary for a specific subjob cluster.
+    subjobconf : dict
+        The configuration dictionary for a specific subjob.
+    """
+    keys_to_merge = [
+        "submit_to_batch_system",
+        "order_in_cluster",
+        "run_on_queue",
+        "run_after",
+        "run_before",
+        "run_only",
+        "skip_run_number",
+        "skip_chunk_number",
+    ]
+    for key in keys_to_merge:
+        clusterconf = merge_single_entry_if_possible(key, subjobconf, clusterconf)
+
+    if subjobconf.get("submit_to_batch_system", False):
+        clusterconf["batch_or_shell"] = "batch"
+    elif subjobconf.get("script", False):
+        clusterconf["batch_or_shell"] = "shell"
+
+
+def set_default_subjob_values(clusterconf):
+    """
+    Sets default values for missing configuration entries in a subjob cluster.
+
+    Parameters
+    ----------
+    clusterconf : dict
+        The configuration dictionary for a specific subjob cluster.
+    """
+    if "submit_to_batch_system" not in clusterconf:
+        clusterconf["submit_to_batch_system"] = False
+    else:
+        if "run_on_queue" not in clusterconf:
+            logger.error(
+                f"Information on target queue is missing in cluster {clusterconf}."
             )
-            clusterconf = merge_single_entry_if_possible(
-                "order_in_cluster", subjobconf, clusterconf
-            )
+            sys.exit(-1)
 
-            if subjobconf.get("submit_to_batch_system", False):
-                clusterconf["batch_or_shell"] = "batch"
-            elif subjobconf.get("script", False):
-                clusterconf["batch_or_shell"] = "shell"
+    if not clusterconf.get("batch_or_shell", False):
+        clusterconf["batch_or_shell"] = "Simulation"
 
-            clusterconf = merge_single_entry_if_possible(
-                "run_on_queue", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_after", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_before", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_only", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "skip_run_number", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "skip_chunk_number", subjobconf, clusterconf
-            )
+    if "order_in_cluster" not in clusterconf:
+        clusterconf["order_in_cluster"] = "sequential"
 
-            nproc_sum += subjobconf.get("nproc", 1)
-            nproc_max = max(subjobconf.get("nproc", 1), nproc_max)
 
-        if "submit_to_batch_system" not in clusterconf:
-            clusterconf["submit_to_batch_system"] = False
-        else:
-            if "run_on_queue" not in clusterconf:
-                logger.error(
-                    f"Information on target queue is missing in cluster {clusterconf}."
-                )
-                sys.exit(-1)
-
-        if not clusterconf.get("batch_or_shell", False):
-            clusterconf["batch_or_shell"] = "Simulation"
-
-        if "order_in_cluster" not in clusterconf:
-            clusterconf["order_in_cluster"] = "sequential"
-
-        if clusterconf["order_in_cluster"] == "concurrent":
-            nproc = nproc_sum
-        else:
-            nproc = nproc_max
-        clusterconf["nproc"] = nproc
-
-    return config
+# -----------------------------------------------------------------------------
 
 
 def merge_single_entry_if_possible(entry, sourceconf, targetconf):
@@ -289,9 +373,20 @@ def merge_single_entry_if_possible(entry, sourceconf, targetconf):
     return targetconf
 
 
-def init_total_workflow(config):
-    # add compute, tidy etc information already here!
+def calculate_tasks(config):
+    """
+    Calculate the total number of tasks based on the configuration.
 
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing model information.
+
+    Returns
+    -------
+    int
+        The total number of tasks calculated from the model configurations.
+    """
     tasks = 0
     for model in config["general"]["valid_model_names"]:
         if "nproc" in config[model]:
@@ -304,15 +399,43 @@ def init_total_workflow(config):
                     and config[model]["nprocbr"] != "remove_from_namelist"
                 ):
                     tasks += config[model]["nprocar"] * config[model]["nprocbr"]
+    return tasks
 
-    prepcompute = {
+
+def create_prepcompute_stage():
+    """
+    Create the prepcompute stage configuration for the workflow manager.
+
+    Returns
+    -------
+    dict
+        The configuration dictionary for the prepcompute stage.
+    """
+    return {
         "prepcompute": {
             "nproc": 1,
             "run_before": "compute",
         }
     }
 
-    compute = {
+
+def create_compute_stage(tasks, config):
+    """
+    Create the compute stage configuration for the workflow manager
+
+    Parameters
+    ----------
+    tasks : int
+        The total number of tasks to be used in the compute stage.
+    config : dict
+        The configuration dictionary containing general settings.
+
+    Returns
+    -------
+    dict
+        The configuration dictionary for the compute stage.
+    """
+    return {
         "compute": {
             "nproc": tasks,
             "run_before": "tidy",
@@ -323,122 +446,218 @@ def init_total_workflow(config):
         }
     }
 
-    # das ist nur vorübergehend
-    tidy = {
+
+def create_tidy_stage():
+    """
+    Create the tidy stage configuration for the workflow manager
+
+    Returns
+    -------
+    dict
+        The configuration dictionary for the tidy stage.
+    """
+    return {
         "tidy": {
             "nproc": 1,
             "run_after": "compute",
         }
     }
 
-    if "workflow" not in config["general"]:
-        config["general"]["workflow"] = {}
-    if "subjob_clusters" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["subjob_clusters"] = {}
-    if "subjobs" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["subjobs"] = prepcompute
-        config["general"]["workflow"]["subjobs"].update(compute)
-        config["general"]["workflow"]["subjobs"].update(tidy)
-    else:
-        if "prepcompute" not in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(prepcompute)
-        if "compute" not in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(compute)
-        if "tidy" not in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(tidy)
-    if "last_task_in_queue" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["last_task_in_queue"] = "tidy"
-    if "first_task_in_queue" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["first_task_in_queue"] = "prepcompute"
 
-    if "next_run_triggered_by" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["next_run_triggered_by"] = "tidy"
+def init_total_workflow(config):
+    """
+    Initialize and configure the total workflow based on the given configuration.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing workflow settings.
+
+    Returns
+    -------
+    dict
+        The updated configuration dictionary with the initialized workflow.
+    """
+    tasks = calculate_tasks(config)
+
+    prepcompute = create_prepcompute_stage()
+    compute = create_compute_stage(tasks, config)
+    tidy = create_tidy_stage()
+
+    workflow = config["general"].setdefault("workflow", {})
+    workflow.setdefault("subjob_clusters", {})
+    subjobs = workflow.setdefault("subjobs", {})
+
+    subjobs.update(prepcompute)
+    subjobs.update(compute)
+    subjobs.update(tidy)
+
+    workflow.setdefault("last_task_in_queue", "tidy")
+    workflow.setdefault("first_task_in_queue", "prepcompute")
+    workflow.setdefault("next_run_triggered_by", "tidy")
 
     return config
 
 
-def collect_all_workflow_information(config):
+def merge_subjob_clusters(w_config, gw_config):
+    """
+    Merge subjob clusters from model-specific workflow configuration into the general workflow configuration.
 
+    Parameters
+    ----------
+    w_config : dict
+        The model-specific workflow configuration.
+    gw_config : dict
+        The general workflow configuration.
+    """
+    if "subjob_clusters" in w_config:
+        for cluster in w_config["subjob_clusters"]:
+            if cluster in gw_config["subjob_clusters"]:
+                gw_config["subjob_clusters"][cluster] = merge_if_possible(
+                    w_config["subjob_clusters"][cluster],
+                    gw_config["subjob_clusters"][cluster],
+                )
+            else:
+                gw_config["subjob_clusters"][cluster] = copy.deepcopy(
+                    w_config["subjob_clusters"][cluster],
+                )
+
+
+def merge_subjobs(w_config, gw_config, model):
+    """
+    Merge subjobs from model-specific workflow configuration into the general workflow configuration.
+
+    Parameters
+    ----------
+    w_config : dict
+        The model-specific workflow configuration.
+    gw_config : dict
+        The general workflow configuration.
+    model : str
+        The name of the model.
+    """
+    if "subjobs" in w_config:
+        for subjob in list(copy.deepcopy(w_config["subjobs"])):
+            gw_config["subjobs"][subjob + "_" + model] = copy.deepcopy(
+                w_config["subjobs"][subjob]
+            )
+            if subjob in gw_config["subjobs"]:
+                del gw_config["subjobs"][subjob]
+            update_run_references(gw_config, subjob, model)
+            assign_subjob_cluster(gw_config, subjob, model)
+
+
+def update_run_references(gw_config, subjob, model):
+    """
+    Update run_after and run_before references to be model-specific.
+
+    Parameters
+    ----------
+    gw_config : dict
+        The general workflow configuration.
+    subjob : str
+        The name of the subjob.
+    model : str
+        The name of the model.
+    """
+    for other_subjob in gw_config["subjobs"]:
+        if "run_after" in gw_config["subjobs"][other_subjob]:
+            if gw_config["subjobs"][other_subjob]["run_after"] == subjob:
+                gw_config["subjobs"][other_subjob]["run_after"] = f"{subjob}_{model}"
+        if "run_before" in gw_config["subjobs"][other_subjob]:
+            if gw_config["subjobs"][other_subjob]["run_before"] == subjob:
+                gw_config["subjobs"][other_subjob]["run_before"] = f"{subjob}_{model}"
+
+
+def assign_subjob_cluster(gw_config, subjob, model):
+    """
+    Assign each subjob to a subjob cluster if not already assigned.
+
+    Parameters
+    ----------
+    gw_config : dict
+        The general workflow configuration.
+    subjob : str
+        The name of the subjob.
+    model : str
+        The name of the model.
+    """
+    if "subjob_cluster" not in gw_config["subjobs"][f"{subjob}_{model}"]:
+        gw_config["subjobs"][f"{subjob}_{model}"]["subjob_cluster"] = subjob
+
+
+def handle_next_run_triggered_by(w_config, gw_config):
+    """
+    Handle the next_run_triggered_by key in the workflow configuration.
+
+    Parameters
+    ----------
+    w_config : dict
+        The model-specific workflow configuration.
+    gw_config : dict
+        The general workflow configuration.
+    """
+    if "next_run_triggered_by" in w_config:
+        if not gw_config["next_run_triggered_by"] in [
+            "tidy",
+            w_config["next_run_triggered_by"],
+        ]:
+            logger.error("Mismatch found setting next_run_triggered_by for workflow.")
+            sys.exit(1)
+        else:
+            gw_config["next_run_triggered_by"] = w_config["next_run_triggered_by"]
+
+
+def collect_all_workflow_information(config):
+    """
+    Aggregate and merge workflow configurations from individual models into a general workflow configuration.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration dictionary containing both model-specific and general workflow settings.
+
+    Returns
+    -------
+    dict
+        The updated configuration dictionary with the aggregated and merged workflow configurations.
+    """
     for model in config:
         if "workflow" in config[model]:
             w_config = config[model]["workflow"]
             gw_config = config["general"]["workflow"]
 
-            if "subjob_clusters" in w_config:
-                for cluster in w_config["subjob_clusters"]:
-                    if cluster in gw_config["subjob_clusters"]:
-                        gw_config["subjob_clusters"][cluster] = merge_if_possible(
-                            w_config["subjob_clusters"][cluster],
-                            gw_config["subjob_clusters"][cluster],
-                        )
-                    else:
-                        gw_config["subjob_clusters"][cluster] = copy.deepcopy(
-                            w_config["subjob_clusters"][cluster],
-                        )
-
-            if "subjobs" in w_config:
-                ref_config = copy.deepcopy(w_config)
-                for subjob in list(copy.deepcopy(w_config["subjobs"])):
-
-                    # subjobs (other than clusters) should be model specific
-                    gw_config["subjobs"][subjob + "_" + model] = copy.deepcopy(
-                        w_config["subjobs"][subjob]
-                    )
-                    if subjob in gw_config["subjobs"]:
-                        del gw_config["subjobs"][subjob]
-                    # make sure that the run_after and run_before refer to that cluster
-                    for other_subjob in gw_config["subjobs"]:
-                        if "run_after" in gw_config["subjobs"][other_subjob]:
-                            if (
-                                gw_config["subjobs"][other_subjob]["run_after"]
-                                == subjob
-                            ):
-                                gw_config["subjobs"][other_subjob][
-                                    "run_after"
-                                ] == subjob + "_" + model
-                        if "run_before" in gw_config["subjobs"][other_subjob]:
-                            if (
-                                gw_config["subjobs"][other_subjob]["run_before"]
-                                == subjob
-                            ):
-                                gw_config["subjobs"][other_subjob][
-                                    "run_before"
-                                ] == subjob + "_" + model
-
-                    # if not in another cluster, each subjob gets its own
-                    if (
-                        "subjob_cluster"
-                        not in gw_config["subjobs"][subjob + "_" + model]
-                    ):
-                        gw_config["subjobs"][subjob + "_" + model][
-                            "subjob_cluster"
-                        ] = subjob  # + "_" + model
-
-            if "next_run_triggered_by" in w_config:
-                if not gw_config["next_run_triggered_by"] in [
-                    "tidy",
-                    w_config["next_run_triggered_by"],
-                ]:
-                    logger.error(
-                        f"Mismatch found setting next_run_triggered_by for workflow."
-                    )
-                    sys.exit(-1)
-                else:
-                    gw_config["next_run_triggered_by"] = w_config[
-                        "next_run_triggered_by"
-                    ]
+            merge_subjob_clusters(w_config, gw_config)
+            merge_subjobs(w_config, gw_config, model)
+            handle_next_run_triggered_by(w_config, gw_config)
 
     return config
 
 
-def merge_if_possible(source, target):
-    for entry in source:
-        if entry in target:
-            if not source[entry] == target[entry]:
-                logger.error(
-                    f"Mismatch while trying to merge subjob_clusters {source} into {target}"
-                )
-                sys.exit(-1)
-        else:
-            target[entry] = source[entry]
+def merge_if_possible(source, target, exit_on_mismatch=True):
+    """
+    Merge source dictionary into target dictionary, ensuring no conflicts.
+
+    Parameters
+    ----------
+    source : dict
+        The source dictionary to merge from.
+    target : dict
+        The target dictionary to merge into.
+    exit_on_mismatch : bool, optional
+        Whether to exit if a mismatch is found, by default True
+
+    Returns
+    -------
+    dict
+        The updated target dictionary with merged entries from the source.
+    """
+    for key, value in source.items():
+        if key in target and target[key] != value:
+            logger.error(
+                f"Mismatch while trying to merge subjob_clusters {source} into {target}"
+            )
+            if exit_on_mismatch:
+                sys.exit(1)
+        target[key] = value
     return target

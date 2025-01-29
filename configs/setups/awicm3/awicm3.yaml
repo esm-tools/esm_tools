@@ -119,7 +119,7 @@ general:
           v3.3:
             major_version: v3.3
             couplings:
-            - fesom-2.6+oifs-43r3-awicm-3.2.1+xios-2.5
+            - fesom-2.6+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
             add_further_reading:

@@ -435,6 +435,8 @@ class Task:
     def execute(self, ignore_errors=False):
         # Calculate the number of get commands for this esm_master operation
         self.num_of_get_commands()
+        # Initialize the dirstack for imitating pushd popd
+        dirstack = []
         # Loop through the commands
         for command in self.command_list:
             repo = self.get_repo_properties_from_command(command)
@@ -481,6 +483,16 @@ class Task:
                     command_spl = shlex.split(command)
                     if "cd" == command_spl[0]:
                         os.chdir(command_spl[1])
+                    elif "pushd" == command_spl[0]:
+                        # Emulates pushd (MA): yes it is horrible, but I don't
+                        # have time to rewrite esm_master right now
+                        dirstack.append(os.getcwd())
+                        os.chdir(command_spl[1])
+                    elif "popd" == command_spl[0]:
+                        # Emulates popd (MA): yes it is horrible, but I don't
+                        # have time to rewrite esm_master right now
+                        target_dir = target_dir = dirstack.pop(-1)
+                        os.chdir(target_dir)
                     else:
                         subprocess.run(
                             command_spl,

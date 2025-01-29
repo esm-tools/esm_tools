@@ -5,12 +5,12 @@ import sys
 
 import questionary
 import yaml
+from loguru import logger
 
 import esm_parser
 import esm_utilities
 from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
-from loguru import logger
 
 from . import batch_system, helpers
 
@@ -471,23 +471,24 @@ def _add_all_folders(config):
     all_filetypes = [
         "analysis",
         "config",
+        "couple",
+        "ignore",
         "log",
         "mon",
-        "couple",
+        "post",
         "scripts",
-        "ignore",
-        "unknown",
         "src",
+        "unknown",
     ]
     config["general"]["out_filetypes"] = [
         "analysis",
+        "ignore",
         "log",
         "mon",
-        "scripts",
-        "ignore",
-        "unknown",
         "outdata",
         "restart_out",
+        "scripts",
+        "unknown",
     ]
     config["general"]["in_filetypes"] = [
         "scripts",
@@ -500,7 +501,7 @@ def _add_all_folders(config):
     config["general"]["reusable_filetypes"] = config["general"].get(
         "reusable_filetypes", ["bin", "src"]
     )
-    # Define the files that could be reusable accross runs (external files)
+    # Define the files that could be reusable across runs (external files)
     config["general"]["potentially_reusable_filetypes"] = (
         all_filetypes + config["general"]["in_filetypes"]
     )
@@ -533,16 +534,16 @@ def _add_all_folders(config):
         "analysis",
         "bin",
         "config",
-        "forcing",
-        "input",
         "couple",
+        "forcing",
+        "ignore",
+        "input",
         "log",
         "mon",
         "outdata",
         "restart_in",
         "restart_out",
         "viz",
-        "ignore",
     ]
 
     config["general"]["all_model_filetypes"] = all_model_filetypes

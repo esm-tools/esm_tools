@@ -1,6 +1,7 @@
 import copy
 import sys
 
+import yaml
 from loguru import logger
 
 import esm_parser
@@ -83,7 +84,6 @@ def handle_unknown_jobtype(config):
         first_task = config["general"]["workflow"]["first_task_in_queue"]
         config["general"]["command_line_config"]["jobtype"] = first_task
         config["general"]["jobtype"] = first_task
-
     return config
 
 
@@ -142,7 +142,7 @@ def order_clusters(config):
 
     initialize_next_submit(gw_config)
     validate_and_set_dependencies(gw_config)
-    handle_next_run_triggered_by(gw_config)
+    handle_next_run_triggered_by_and_last_task_in_queue(gw_config)
     ensure_first_and_last_clusters_linked(gw_config)
 
     return config
@@ -210,11 +210,6 @@ def append_to_next_submit(gw_config, source_cluster, target_cluster):
         gw_config["subjob_clusters"][source_cluster]["next_submit"].append(
             target_cluster
         )
-
-
-def handle_next_run_triggered_by(gw_config):
-    if "next_run_triggered_by" in gw_config:
-        gw_config["last_task_in_queue"] = gw_config["next_run_triggered_by"]
 
 
 def ensure_first_and_last_clusters_linked(gw_config):
@@ -518,30 +513,6 @@ def init_total_workflow(config):
     return config
 
 
-def merge_subjob_clusters(w_config, gw_config):
-    """
-    Merge subjob clusters from model-specific workflow configuration into the general workflow configuration.
-
-    Parameters
-    ----------
-    w_config : dict
-        The model-specific workflow configuration.
-    gw_config : dict
-        The general workflow configuration.
-    """
-    if "subjob_clusters" in w_config:
-        for cluster in w_config["subjob_clusters"]:
-            if cluster in gw_config["subjob_clusters"]:
-                gw_config["subjob_clusters"][cluster] = merge_if_possible(
-                    w_config["subjob_clusters"][cluster],
-                    gw_config["subjob_clusters"][cluster],
-                )
-            else:
-                gw_config["subjob_clusters"][cluster] = copy.deepcopy(
-                    w_config["subjob_clusters"][cluster],
-                )
-
-
 def merge_subjobs(w_config, gw_config, model):
     """
     Merge subjobs from model-specific workflow configuration into the general workflow configuration.
@@ -555,8 +526,10 @@ def merge_subjobs(w_config, gw_config, model):
     model : str
         The name of the model.
     """
+    logger.critical(f"{model=}")
     if "subjobs" in w_config:
         for subjob in list(copy.deepcopy(w_config["subjobs"])):
+            logger.critical(subjob)
             gw_config["subjobs"][subjob + "_" + model] = copy.deepcopy(
                 w_config["subjobs"][subjob]
             )
@@ -582,10 +555,22 @@ def update_run_references(gw_config, subjob, model):
     for other_subjob in gw_config["subjobs"]:
         if "run_after" in gw_config["subjobs"][other_subjob]:
             if gw_config["subjobs"][other_subjob]["run_after"] == subjob:
+                logger.critical("Updating run_after 001")
+                logger.critical("Old value: ")
+                logger.critical(gw_config["subjobs"][other_subjob]["run_after"])
                 gw_config["subjobs"][other_subjob]["run_after"] = f"{subjob}_{model}"
+                logger.critical(
+                    f"gw_config['subjobs']['{other_subjob}']['run_after'] = {subjob}_{model}"
+                )
         if "run_before" in gw_config["subjobs"][other_subjob]:
             if gw_config["subjobs"][other_subjob]["run_before"] == subjob:
+                logger.critical("Updating run_before 001")
+                logger.critical("Old value: ")
+                logger.critical(gw_config["subjobs"][other_subjob]["run_before"])
                 gw_config["subjobs"][other_subjob]["run_before"] = f"{subjob}_{model}"
+                logger.critical(
+                    f"gw_config['subjobs']['{other_subjob}']['run_before'] = {subjob}_{model}"
+                )
 
 
 def assign_subjob_cluster(gw_config, subjob, model):
@@ -605,52 +590,160 @@ def assign_subjob_cluster(gw_config, subjob, model):
         gw_config["subjobs"][f"{subjob}_{model}"]["subjob_cluster"] = subjob
 
 
-def handle_next_run_triggered_by(w_config, gw_config):
+def handle_next_run_triggered_by_and_last_task_in_queue(gw_config):
     """
     Handle the next_run_triggered_by key in the workflow configuration.
 
     Parameters
     ----------
-    w_config : dict
-        The model-specific workflow configuration.
     gw_config : dict
         The general workflow configuration.
     """
-    if "next_run_triggered_by" in w_config:
-        if not gw_config["next_run_triggered_by"] in [
-            "tidy",
-            w_config["next_run_triggered_by"],
-        ]:
-            logger.error("Mismatch found setting next_run_triggered_by for workflow.")
-            sys.exit(1)
-        else:
-            gw_config["next_run_triggered_by"] = w_config["next_run_triggered_by"]
+    if "next_run_triggered_by" in gw_config:
+        gw_config["last_task_in_queue"] = gw_config["next_run_triggered_by"]
 
 
+# --------------------------------------------------------------------------------
 def collect_all_workflow_information(config):
     """
-    Aggregate and merge workflow configurations from individual models into a general workflow configuration.
-
-    Parameters
-    ----------
-    config : dict
-        The configuration dictionary containing both model-specific and general workflow settings.
-
-    Returns
-    -------
-    dict
-        The updated configuration dictionary with the aggregated and merged workflow configurations.
+    Aggregates workflow configurations from all models into the general workflow config,
+    handling subjob renaming and reference updates.
     """
-    for model in config:
-        if "workflow" in config[model]:
-            w_config = config[model]["workflow"]
-            gw_config = config["general"]["workflow"]
+    for model_name in config:
+        if "workflow" not in config[model_name]:
+            continue
 
-            merge_subjob_clusters(w_config, gw_config)
-            merge_subjobs(w_config, gw_config, model)
-            handle_next_run_triggered_by(w_config, gw_config)
+        model_wf = config[model_name]["workflow"]
+        general_wf = config["general"]["workflow"]
+
+        # Merge clusters first as subjobs might depend on them
+        merge_subjob_clusters(model_wf, general_wf)
+        process_model_subjobs(model_wf, general_wf, model_name)
+        handle_next_run_trigger(model_wf, general_wf)
 
     return config
+
+
+def merge_subjob_clusters(source_wf, target_wf):
+    """Merge subjob clusters from model workflow into general workflow"""
+    for cluster_name, cluster_config in source_wf.get("subjob_clusters", {}).items():
+        if cluster_name in target_wf["subjob_clusters"]:
+            target_wf["subjob_clusters"][cluster_name] = safe_merge(
+                cluster_config, target_wf["subjob_clusters"][cluster_name]
+            )
+        else:
+            target_wf["subjob_clusters"][cluster_name] = copy.deepcopy(cluster_config)
+
+
+def process_model_subjobs(source_wf, target_wf, model_name):
+    """Process and merge subjobs with model-specific naming and references"""
+    if "subjobs" not in source_wf:
+        return
+
+    rename_map = create_rename_mapping(source_wf["subjobs"], model_name)
+    create_model_specific_subjobs(source_wf, target_wf, model_name, rename_map)
+    update_workflow_references(target_wf, rename_map)
+    resolve_references_to_clusters(target_wf)
+
+
+def resolve_references_to_clusters(workflow_config):
+    """Convert subjob references in dependencies to their parent clusters"""
+    subjob_to_cluster = {
+        subjob: conf["subjob_cluster"]
+        for subjob, conf in workflow_config["subjobs"].items()
+    }
+
+    # Update references in ALL SUBJOBS
+    for subjob_conf in workflow_config["subjobs"].values():
+        for ref_type in ["run_after", "run_before"]:
+            if ref_type in subjob_conf:
+                subjob_conf[ref_type] = subjob_to_cluster.get(
+                    subjob_conf[ref_type], subjob_conf[ref_type]
+                )
+
+    # Update references in CLUSTERS
+    for cluster_conf in workflow_config["subjob_clusters"].values():
+        for ref_type in ["run_after", "run_before", "next_submit"]:
+            if ref_type in cluster_conf:
+                if isinstance(cluster_conf[ref_type], list):
+                    cluster_conf[ref_type] = [
+                        subjob_to_cluster.get(name, name)
+                        for name in cluster_conf[ref_type]
+                    ]
+                else:
+                    cluster_conf[ref_type] = subjob_to_cluster.get(
+                        cluster_conf[ref_type], cluster_conf[ref_type]
+                    )
+
+
+def create_rename_mapping(subjobs, model_name):
+    """Create mapping from original subjob names to model-specific names"""
+    return {orig: f"{orig}_{model_name}" for orig in subjobs}
+
+
+def create_model_specific_subjobs(source_wf, target_wf, model_name, rename_map):
+    """Create renamed subjob entries in general workflow"""
+    for orig_name, new_name in rename_map.items():
+        target_wf["subjobs"][new_name] = copy.deepcopy(source_wf["subjobs"][orig_name])
+
+        # Remove original entry if present in general workflow
+        if orig_name in target_wf["subjobs"]:
+            del target_wf["subjobs"][orig_name]
+
+        # Ensure cluster assignment
+        if "subjob_cluster" not in target_wf["subjobs"][new_name]:
+            target_wf["subjobs"][new_name]["subjob_cluster"] = orig_name
+
+
+def update_workflow_references(target_wf, rename_map):
+    """Update references throughout workflow to use renamed subjobs"""
+    # Update references in all subjobs
+    for subjob_config in target_wf["subjobs"].values():
+        update_references_in_config(subjob_config, rename_map)
+
+    # Update references in clusters
+    for cluster_config in target_wf["subjob_clusters"].values():
+        update_references_in_config(cluster_config, rename_map)
+
+
+def update_references_in_config(config, rename_map):
+    """Update references in a single configuration block"""
+    for ref_type in ["run_after", "run_before", "called_from"]:
+        if ref_type in config:
+            config[ref_type] = rename_map.get(config[ref_type], config[ref_type])
+
+
+def handle_next_run_trigger(source_wf, target_wf):
+    """Handle next_run_triggered_by inheritance with validation"""
+    if "next_run_triggered_by" in source_wf:
+        new_trigger = source_wf["next_run_triggered_by"]
+        current_trigger = target_wf.get("next_run_triggered_by", "tidy")
+
+        if new_trigger != current_trigger and current_trigger != "tidy":
+            raise WorkflowMergeError(
+                f"Conflicting next_run_triggered_by: {current_trigger} vs {new_trigger}"
+            )
+
+        target_wf["next_run_triggered_by"] = new_trigger
+
+
+class WorkflowMergeError(Exception):
+    """Exception for workflow configuration merge conflicts"""
+
+
+def safe_merge(source, target):
+    """Safely merge two configurations with conflict checking"""
+    merged = copy.deepcopy(target)
+    for key, value in source.items():
+        if key in merged and merged[key] != value:
+            raise WorkflowMergeError(
+                f"Conflict in key '{key}': {merged[key]} vs {value}"
+            )
+        merged[key] = copy.deepcopy(value)
+    return merged
+
+
+# --------------------------------------------------------------------------------
 
 
 def merge_if_possible(source, target, exit_on_mismatch=True):

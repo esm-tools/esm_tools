@@ -18,3 +18,18 @@ per_model_defaults:
                         run_to_work:    copy
                         work_to_run:    copy
 
+# Default workflows if not specified by users
+flows: 
+        workflow:
+                next_run_triggered_by: tidy
+                subjobs:
+                        postprocessing:
+                                batch_or_shell: batch
+                                order_in_cluster: concurrent
+                                run_on_queue: ${computer.partitions.pp.name}
+                                run_after: tidy
+                                script_dir: </path/to/the/directory/containing/your/script/>
+                                submit_to_batch_system: True
+                                script: "<name_of_your_script>.sh/.py <whatever input variables you want to give>"
+                                # for the python script use this: ${general.experiment_config_dir}/${general.expid}_finished_config.yaml_${run_datestamp}
+                                nproc: 1

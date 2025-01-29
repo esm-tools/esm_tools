@@ -1,6 +1,6 @@
 # Mappings of functions/methods to parent ESM python libraries:
 # tells ESM-Tools in which library and file/sublibrary can find the functions
-# of the recipies
+# of the recipes
 # (prescribed in configs/esm_software/esm_runscripts/esm_runscripts.yaml).
 #
 # Core (not an external plugin)

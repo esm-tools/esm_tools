@@ -3,16 +3,16 @@ import sys
 
 import questionary
 import yaml
+from loguru import logger
 
 import esm_parser
 from esm_calendar import Calendar, Date
-from loguru import logger
 
 
 class PrevRunInfo(dict):
     """
     A dictionary subclass to access information from the previous run. The object is
-    created in the ``SimulationSetup`` class in ``self.config["prev_run"]``. The idea
+    created in the ``Simulation`` class in ``self.config["prev_run"]``. The idea
     behind this class is that variables from the previous run can be called from the
     yaml files with the same syntax as one would do for the current run.
 
@@ -63,7 +63,6 @@ class PrevRunInfo(dict):
         self.components_with_prev_run()
         # Counter for debuggin
         self._prev_config_count = 0
-
 
     def components_with_prev_run(self):
         """

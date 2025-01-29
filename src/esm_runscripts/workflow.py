@@ -2,8 +2,9 @@ import copy
 import os
 import sys
 
-import esm_parser
 from loguru import logger
+
+import esm_parser
 
 
 def skip_cluster(cluster, config):
@@ -69,7 +70,7 @@ def prepend_newrun_job(config):
     first_cluster_name = gw_config["first_task_in_queue"]
     first_cluster = gw_config["subjob_clusters"][first_cluster_name]
 
-    if not first_cluster.get("batch_or_shell", "Error") == "SimulationSetup":
+    if not first_cluster.get("batch_or_shell", "Error") == "Simulation":
 
         last_cluster_name = gw_config["last_task_in_queue"]
         last_cluster = gw_config["subjob_clusters"][last_cluster_name]
@@ -81,7 +82,7 @@ def prepend_newrun_job(config):
                 "run_before": first_cluster_name,
                 "next_submit": [first_cluster_name],
                 "subjobs": ["newrun_general"],
-                "batch_or_shell": "SimulationSetup",
+                "batch_or_shell": "Simulation",
             }
         }
 
@@ -265,7 +266,7 @@ def complete_clusters(config):
                 sys.exit(-1)
 
         if not clusterconf.get("batch_or_shell", False):
-            clusterconf["batch_or_shell"] = "SimulationSetup"
+            clusterconf["batch_or_shell"] = "Simulation"
 
         if "order_in_cluster" not in clusterconf:
             clusterconf["order_in_cluster"] = "sequential"

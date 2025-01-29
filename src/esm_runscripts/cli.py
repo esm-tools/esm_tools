@@ -18,7 +18,7 @@ from esm_motd import check_all_esm_packages
 from esm_parser import user_error
 
 from .helpers import SmartSink
-from .sim_objects import *
+from .sim_objects import Simulation
 
 
 def parse_shargs():
@@ -282,8 +282,7 @@ def main():
     else:
         logger.add(sys.stdout, level="INFO", format="{message}")
 
-    setup = SimulationSetup(command_line_config=command_line_config)
-    # if not Setup.config['general']['submitted']:
-    if not setup.config["general"]["submitted"] and not no_motd:
+    this_sim = Simulation(command_line_config=command_line_config)
+    if not this_sim.config["general"]["submitted"] and not no_motd:
         check_all_esm_packages()
-    setup()
+    this_sim.run()

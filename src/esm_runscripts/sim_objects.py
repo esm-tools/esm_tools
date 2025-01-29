@@ -6,17 +6,16 @@ import sys
 
 from loguru import logger
 
-import esm_parser
 from esm_tools import __version__
 
 from . import (config_initialization, helpers, logfiles, prepare, prepexp,
-               prev_run, resubmit, workflow)
+               prev_run, resubmit)
 
 
-class SimulationSetup(object):
+class Simulation:
     def __init__(self, command_line_config=None, user_config=None):
         """
-        Initializes the ``SimulationSetup`` object, and prepares the ``self.config`` by
+        Initializes the ``Simulation`` object, and prepares the ``self.config`` by
         taking the information from the ``command_line_config`` and/or the
         ``user_config`` and expanding it with the configuration files from `ESM-Tools`
         (in `esm_tools/configs`), and then running the ``prepare`` recipe. In essence,
@@ -56,7 +55,7 @@ class SimulationSetup(object):
         # 1. Check that at least one input is given
         if not command_line_config and not user_config:
             raise ValueError(
-                "SimulationSetup needs to be initialized with either "
+                "Simulation needs to be initialized with either "
                 "command_line_config or user_config."
             )
 
@@ -166,6 +165,9 @@ class SimulationSetup(object):
 
         return self.config["general"].get("experiment_over", False)
 
+    # NOTE(PG): Alias for __call__ as run, since I find sim.run() more readable than sim()
+    run = __call__
+
     #########################     OBSERVE      #############################################################
 
     def observe(self):
@@ -210,13 +212,12 @@ class SimulationSetup(object):
 
     ###################################     PREPCOMPUTE      #############################################################
     def prepcompute(self):
-        """ All steps needed for a model computation. """
+        """Prepares for a compute job"""
         from . import prepcompute
 
         self.config = prepcompute.run_job(self.config)
 
     ###################################     VIZ     #############################################################
-
     def viz(self):
         """Starts the Viz job."""
         # NOTE(PG): Local import, not everyone will have viz yet...
@@ -225,7 +226,6 @@ class SimulationSetup(object):
         self.config = viz.run_job(self.config)
 
     ###################################     POST     #############################################################
-
     def post(self):
         """Starts the Post job."""
         from . import postprocess
@@ -233,7 +233,6 @@ class SimulationSetup(object):
         self.config = postprocess.run_job(self.config)
 
     #########################     HELPERS      #############################################################
-
     def store_prev_objects(self):
         self.config.prev_objects = ["prev_run"]
         self.config.prev_objects.extend(

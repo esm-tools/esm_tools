@@ -26,7 +26,7 @@ def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
     return config
 
 
-def resubmit_SimulationSetup(config, cluster=None):
+def resubmit_Simulation(config, cluster=None):
     monitor_file = logfiles.logfile_handle
     # Jobs that should be started directly from the compute job:
 
@@ -41,9 +41,9 @@ def resubmit_SimulationSetup(config, cluster=None):
     # NOTE(PG) Non top level import to avoid circular dependency:
 
     os.chdir(config["general"]["started_from"])
-    from .sim_objects import SimulationSetup
+    from .sim_objects import Simulation
 
-    cluster_obj = SimulationSetup(command_line_config)
+    cluster_obj = Simulation(command_line_config)
 
     monitor_file.write(f"{cluster} object built....\n")
 
@@ -65,7 +65,7 @@ def resubmit_SimulationSetup(config, cluster=None):
 
 def get_submission_type(cluster, config):
     # Figure out if next job is resubmitted to batch system,
-    # just executed in shell or invoked as new SimulationSetup
+    # just executed in shell or invoked as new Simulation
     # object
 
     clusterconf = config["general"]["workflow"]["subjob_clusters"][cluster]
@@ -73,7 +73,7 @@ def get_submission_type(cluster, config):
     if clusterconf.get("submit_to_batch_system", False):
         submission_type = "batch"
     elif cluster in ["newrun", "prepcompute", "tidy", "inspect", "viz"]:
-        submission_type = "SimulationSetup"
+        submission_type = "Simulation"
     else:
         submission_type = "shell"
 
@@ -177,8 +177,8 @@ def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in
         else:
             if not workflow.skip_cluster(cluster, config):
                 submission_type = get_submission_type(cluster, config)
-                if submission_type == "SimulationSetup":
-                    resubmit_SimulationSetup(config, cluster)
+                if submission_type == "Simulation":
+                    resubmit_Simulation(config, cluster)
                 elif submission_type in ["batch", "shell"]:
                     resubmit_batch_or_shell(config, submission_type, cluster)
             else:

@@ -6,10 +6,10 @@ import sys
 
 import questionary
 from colorama import Fore
+from loguru import logger
 
 import esm_parser
 import esm_tools
-from loguru import logger
 
 from . import filelists
 from .helpers import end_it_all, evaluate, write_to_log

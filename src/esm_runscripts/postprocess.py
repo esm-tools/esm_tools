@@ -10,9 +10,7 @@ def run_job(config):
 
 
 def convert_to_zarr(config):
-    """
-    Converts the output to zarr format using xarray
-    """
+    """Converts the output to zarr format using xarray"""
     if not config["general"].get("convert_to_zarr", False):
         logger.info("Skipping conversion to zarr")
         return config

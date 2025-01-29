@@ -1,0 +1,25 @@
+general:
+    user: !ENV ${USER}
+    account: "computing.computing"
+    setup_name: fesom
+    compute_time: "08:00:00"
+    initial_date: "1958-01-01"
+    final_date: "1958-03-31"
+    project_base: !ENV ${PROJECT_BASE}
+    base_dir: "${general.project_base}/experiments"
+    nyear: 0
+    nmonth: 1
+    use_venv: False
+
+fesom:
+    version: 2.6
+    model_dir: "${general.project_base}/model-codes/fesom-2.6/"
+    mesh_dir: /albedo/pool/FESOM2/core2/
+    restart_rate: 1
+    restart_first: 1
+    restart_unit: "m"
+    resolution: "CORE2"
+    lresume: false
+    time_step: 1800
+    # FIXME(@pgierz, @hpc-team): We have FESOM and FESOM2 in the albedo pool, this should be unified...
+    forcing_data_dir: "/albedo/pool/FESOM/forcing/"

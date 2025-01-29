@@ -1,4 +1,4 @@
-# Default recipies
+# Default recipes
 # ESM-Tools uses config/esm_software/esm_runscripts/esm_plugins.yaml to understand
 # where to look for each of this function/methods (the steps within each recipy, e.g.
 # "_read_date_file").
@@ -49,7 +49,7 @@ choose_job_type:
                         - "copy_tools_to_thisrun"
                         # The next step will call esm_runscripts again from the experiment folder,
                         # if the current folder is not the experiment folder already.
-                        # If esm_runscripts will be excuted, the following step will be skipped, since
+                        # If esm_runscripts will be executed, the following step will be skipped, since
                         # there is a sys.exit() after the esm_runscripts call.
                         - "call_esm_runscripts_from_prepexp"
                         # The following step will be skipped, if not in experiment folder.

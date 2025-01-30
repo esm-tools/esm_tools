@@ -1,7 +1,6 @@
 import copy
 import sys
 
-import yaml
 from loguru import logger
 
 import esm_parser

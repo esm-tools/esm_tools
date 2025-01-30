@@ -192,7 +192,7 @@ restart_out_sources:
 outdata_sources:
         fesom: "*.fesom.*.nc"
 outdata_targets:
-        fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+        fesom: "*.fesom.*.nc"
 
 choose_icb_code:
         True:
@@ -640,4 +640,15 @@ tidy_recipe:
 - "copy_stuff_back_from_work"
 - "copy_all_results_to_exp"
 - "clean_run_dir"
-
+workflow: 
+    next_run_triggered_by: tidy 
+    subjobs: 
+          Tripy_Fesom: 
+                  batch_or_shell: batch 
+                  order_in_cluster: concurrent 
+                  run_on_queue: ${computer.partitions.pp.name} 
+                  run_after: tidy 
+                  script_dir: /work/ab0995/a270275/runconfig 
+                  submit_to_batch_system: true 
+                  script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir}" 
+                  nproc: 1     

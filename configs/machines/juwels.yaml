@@ -140,7 +140,7 @@ choose_iolibraries:
     system_libs:
        # TODO: find the correct libraries and dependencies
        add_module_actions:
-         - "load libaec FFTW cURL netCDF netCDF-Fortran ecCodes"
+         - "load libaec FFTW cURL netCDF netCDF-Fortran ecCodes CDO NCO"
          - "list"
        add_export_vars:
             AEC_ROOT: $EBROOTLIBAEC

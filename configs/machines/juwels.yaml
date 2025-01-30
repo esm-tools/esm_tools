@@ -156,7 +156,7 @@ choose_iolibraries:
             NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
             OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-            PERL5LIB: ~/perl5/lib/perl5
+            PERL5LIB: /p/project/chhb19/HPC_libraries/perl5/lib/perl5
             PERL5_PATH: $PERL5LIB
             PERL5OPT: '-Mwarnings=FATAL,uninitialized'
             MKL_CBWR: AUTO,STRICT

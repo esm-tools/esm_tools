@@ -24,7 +24,8 @@ def create_intake_esm_catalog(config):
 
         config["general"]["create_catalog"] = True
 
-    Default is ``True``.
+    Default is ``False`` during the testing phase. To enable catalog creation, please
+    use your run configuration file.
 
 
     Parameters
@@ -47,7 +48,7 @@ def create_intake_esm_catalog(config):
     * https://github.com/NCAR/esm-collection-spec/blob/master/collection-spec/collection-spec.md
     * https://tutorials.dkrz.de/tutorial_intake-5-create-esm-collection.html
     """
-    if not config.get("intake", {}).get("create_catalog", True):
+    if not config.get("intake", {}).get("create_catalog", False):
         return config
     catalog = config.get("intake", {}).get("catalog", {})
     catalog["esmcat_version"] = "0.1.0"
@@ -153,7 +154,7 @@ def write_intake_esm_catalog(config):
 
         config["intake"]["write_catalog"] = True
 
-    Default is ``True``.
+    Default is ``False`` during the testing phase. Please enable this in your run configuration.
 
     Parameters
     ----------
@@ -166,7 +167,7 @@ def write_intake_esm_catalog(config):
     dict
         The updated configuration dictionary with the merged intake catalog.
     """
-    if not config.get("intake", {}).get("write_catalog", True):
+    if not config.get("intake", {}).get("write_catalog", False):
         return config
 
     cat_file = pathlib.Path(

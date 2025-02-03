@@ -1,5 +1,6 @@
 import copy
 import os
+import pdb
 import sys
 
 import esm_parser
@@ -47,7 +48,6 @@ def init_iterative_coupling(command_line_config, user_config):
             ][0]
 
         scriptname = user_config["general"]["original_config"][next_model]["runscript"]
-        # command_line_config["scriptname"] = os.path.join(user_config["general"]["started_from"], scriptname)
         new_command_line_config = copy.deepcopy(command_line_config)
         new_command_line_config["scriptname"] = scriptname
         new_command_line_config["runscript_abspath"] = os.path.join(
@@ -58,7 +58,7 @@ def init_iterative_coupling(command_line_config, user_config):
         user_config = esm_parser.new_deep_update(user_config, model_config)
 
         # Set the ``iterative_coupled_model`` string, to add the model name to the
-        # run_ folder, finished_config.yaml, etc., to avoid overwritting with the
+        # run_ folder, finished_config.yaml, etc., to avoid overwriting with the
         # files of other offline coupled models
         user_config["general"][
             "iterative_coupled_model"
@@ -151,7 +151,7 @@ def get_user_config_from_command_line(command_line_config):
         If there is a problem with the parsing of the runscript
     """
 
-    # Read the content of the runscrip
+    # Read the content of the runscript
     try:
         user_config = esm_parser.initialize_from_yaml(
             command_line_config["runscript_abspath"]
@@ -160,7 +160,7 @@ def get_user_config_from_command_line(command_line_config):
     # ``check_for_empty_components`` in ``yaml_to_dict.py``) catch the sys.exit.
     except SystemExit as sysexit:
         sys.exit(sysexit)
-    except:
+    except Exception:  # any other exception
         esm_parser.user_error(
             "Syntax error",
             f"An error occurred while reading the config file "
@@ -221,7 +221,7 @@ def init_interactive_info(config, command_line_config):
 
 def get_total_config_from_user_config(user_config):
     """
-    Finds the version of the setup in ``user_config`` instanciates the ``config`` with
+    Finds the version of the setup in ``user_config`` instantiates the ``config`` with
     ``esm_parser.ConfigSetup`` which appends all the information from the config files
     required for this simulation and stores it in ``config``.
 

@@ -1,0 +1,15 @@
+version: 2
+data: {}
+user_parameters: {}
+aliases: {}
+metadata: {}
+entries:
+  topo:
+    user_parameters: {}
+    description: "Specific NetCDF file from remote Zip"
+    driver: netcdf
+    args:
+      urlpath: "zip://Supp/herold_etal_eocene_topo_1x1.nc::https://gmd.copernicus.org/articles/7/2077/2014/gmd-7-2077-2014-supplement.zip"
+    metadata:
+      file_in_zip: "Supp/herold_etal_eocene_topo_1x1.nc"
+      origin: "Remote Zip"

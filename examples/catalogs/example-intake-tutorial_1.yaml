@@ -1,0 +1,90 @@
+aliases:
+  capitals: capitals
+  inverted: inverted
+  multi: multi
+  tute: tute
+data:
+  7e0b327a50eef58d:
+    datatype: intake.readers.datatypes:CSV
+    kwargs:
+      metadata: {}
+      storage_options:
+        anon: true
+      url: '{CATALOG_DIR}/intake_1.csv'
+    metadata: {}
+    user_parameters: {}
+entries:
+ capitals:
+    kwargs:
+      out_instances:
+      - pandas:DataFrame
+      - pandas:DataFrame
+      - pandas:DataFrame
+      - pandas:DataFrame
+      steps:
+      - - '{data(tute)}'
+        - []
+        - {}
+      - - '{func(intake.readers.transform:Method)}'
+        - []
+        - method_name: a
+      - - '{func(intake.readers.transform:Method)}'
+        - []
+        - method_name: str
+      - - '{func(intake.readers.transform:Method)}'
+        - []
+        - method_name: capitalize
+    metadata: {}
+    output_instance: pandas:DataFrame
+    reader: intake.readers.convert:Pipeline
+    user_parameters: {}
+  inverted:
+    kwargs:
+      out_instances:
+      - pandas:DataFrame
+      - pandas:DataFrame
+      steps:
+      - - '{data(tute)}'
+        - []
+        - {}
+      - - '{func(intake.readers.transform:Method)}'
+        - []
+        - args:
+          - b
+          ascending: false
+          method_name: sort_values
+    metadata: {}
+    output_instance: pandas:DataFrame
+    reader: intake.readers.convert:Pipeline
+    user_parameters: {}
+  multi:
+    kwargs:
+      out_instances:
+      - pandas:DataFrame
+      - pandas:DataFrame
+      steps:
+      - - '{data(tute)}'
+        - []
+        - {}
+      - - '{func(intake.readers.transform:Method)}'
+        - []
+        - c: '{data(capitals)}'
+          method_name: assign
+    metadata: {}
+    output_instance: pandas:DataFrame
+    reader: intake.readers.convert:Pipeline
+    user_parameters: {}
+  tute:
+    kwargs:
+      data: '{data(7e0b327a50eef58d)}'
+    metadata: {}
+    output_instance: pandas:DataFrame
+    reader: intake.readers.readers:PandasCSV
+    user_parameters: {}
+metadata: {}
+user_parameters:
+  CATALOG_DIR: s3://mymdtemp
+  CATALOG_PATH: s3://mymdtemp/intake_1.yaml
+  STORAGE_OPTIONS:
+    anon: true
+version: 2

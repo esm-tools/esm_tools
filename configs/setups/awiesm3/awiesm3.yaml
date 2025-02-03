@@ -27,9 +27,6 @@ general:
             - fesom-2.6+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
             - xios
-            add_add_environment_changes:
-                levante:        
-                    iolibraries: system_gnu_libs
             oasis_with_yac: False
             xios_interp_order: 1
 
@@ -57,8 +54,6 @@ general:
         prepcompute_recipe: ${oifs.prepcompute_recipe}
         tidy_recipe: ${fesom.tidy_recipe}
 
-
-
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
         further_reading:
@@ -67,10 +62,6 @@ general:
                 - xios/xios.env.yaml
                 - rnfmap/rnfmap.env.yaml
 
- #       add_environment_changes:
-            #    choose_computer.name:
-            #            levante:
-            #                    compiler_mpi: intel2022_openmpi
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -135,7 +126,18 @@ oifs:
         resolution: TCO95
         levels: L91
 
-        environment_changes: # MA: Only used for JUWELS right now
+        environment_changes:
+                iolibraries: awi_libs
+                choose_computer.name:
+                        juwels:
+                                compiler_mpi: intel2022_ompi2022
+                        blogin:
+                                iolibraries: geomar_libs
+                        glogin:
+                                iolibraries: geomar_libs
+                        levante:
+                                compiler_mpi: gnu11_ompi4
+                                iolibraries: system_gnu_libs 
                 OpenMP_flag: "-qopenmp"
                 OpenMP_CCDEFS: "_OPENMP"
 
@@ -282,7 +284,7 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
-        comp_command: "mkdir -p sources/LPJ-GUESS-lpjg_v4p1/build; cd sources/LPJ-GUESS-lpjg_v4p1/build; cmake .. -DOASIS=ON; make -j8; cd ../../.."
+        comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON; make -j8; cd .."
         
         execution_command: ${executable} -parallel ${runscript_name}
 
@@ -717,3 +719,4 @@ computer:
         # since hetjob approach doesn't seem to work (second run showing mpi/pmix
         # problems)
         taskset: true
+

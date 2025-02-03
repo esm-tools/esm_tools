@@ -44,13 +44,10 @@ choose_version:
         branch: main
     4.1.2:
         runscript_name: run_coupled_4_1_2.ins
-        git-repository: https://git.smhi.se/marlin/ec-earth-4-lpjgv-4-p-1-novelty.git
-        branch: compiles_with_oasis_and_netcdf_on_levante
-        #model_dir: ${general.model_dir}/sources/LPJ-GUESS-lpjg_v4p1/ #temporarily commented out wrong model_dir?
-        model_dir: ${general.model_dir}/lpj_guess/sources/LPJ-GUESS-lpjg_v4p1/
-        destination: lpj_guess
+        git-repository: https://git.smhi.se/ec-earth/vendor/lpjg/lpjg-4.1.git
+        branch: main
         mygrid: TL159
-        install_bins: sources/LPJ-GUESS-lpjg_v4p1/build/guess_TL159
+        install_bins: build/guess_TL159
         executable: guess_TL159
 
         environment_changes:

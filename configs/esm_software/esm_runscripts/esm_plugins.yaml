@@ -111,3 +111,7 @@ core:
                 workflow:
                         - "assemble_workflow"
 
+                catalog:
+                        - "create_intake_esm_catalog"
+                        - "write_intake_esm_catalog"
+

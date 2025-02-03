@@ -323,9 +323,14 @@ lpj_guess:
                 soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
                 tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc
                 CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL159.nc 
+                dir_landuse: ${lpj_guess.input_dir}/dirmaker
+                dir_fire: ${lpj_guess.input_dir}/dirmaker
+                ins_files: ${namelist_dir}/*.ins
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
                 "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
                  
         
@@ -333,10 +338,15 @@ lpj_guess:
                 soil_layer_type: slt_${mygrid}.nc
                 tmp_rc_file: lpjg_steps.rc
                 CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                VegInit: vegin.nc
+                dir_landuse: /landuse/dirmaker
+                dir_fire: /fire/dirmaker
+                ins_files: /*.ins 
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/mock.rc
+                "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc 
+                "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/dirmaker
                  
 
 xios:

@@ -1,10 +1,11 @@
 import os
-import questionary
 
+import questionary
 from loguru import logger
 
+from esm_tools import user_error
+
 from .test_utilities import sh
-from esm_parser import user_error
 
 
 def update_resources_submodule(info, verbose=True):

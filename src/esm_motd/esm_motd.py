@@ -3,11 +3,12 @@ import urllib
 import urllib.request
 from time import sleep
 
-import esm_parser
-import esm_utilities
 import yaml
 
+import esm_parser
 import esm_tools
+import esm_utilities
+from esm_tools import user_error
 
 
 class MessageOfTheDayError(Exception):
@@ -83,7 +84,7 @@ class MessageOfTheDayHandler:
             if action == "sleep":
                 sleep(time)
             elif action == "error":
-                esm_parser.user_error(
+                user_error(
                     "Version",
                     (
                         f"Version {version} of '{package}' package has been tagged as "

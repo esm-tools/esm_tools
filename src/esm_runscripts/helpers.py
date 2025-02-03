@@ -8,8 +8,8 @@ from loguru import logger
 import esm_parser
 import esm_plugin_manager
 import esm_tools
-from loguru import logger
 from esm_profile import print_profile_summary
+from esm_tools import user_error
 
 
 def vprint(message, config):
@@ -206,7 +206,7 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     for update_filetype in update_filetypes:
         # Check if that file type exists/makes sense. Otherwise, through an error
         if update_filetype not in potentially_reusable_filetypes:
-            esm_parser.user_error(
+            user_error(
                 "update-filetypes",
                 f"``{update_filetype}`` specified by you in ``--update-filetypes`` is "
                 + "not a ESM-Tools file type. Please, select one (or more) of the "

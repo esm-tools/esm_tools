@@ -5,4 +5,3 @@ __email__ = "dirk.barbi@awi.de"
 __version__ = "6.46.0"
 
 from .esm_plugin_manager import *
-from .plugin_registry import *

@@ -1271,12 +1271,18 @@ def avoid_overwriting(config, source, target):
 
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
-            user_error(
+            if config["general"]["force_overwrite_in_file_movements"]:
+                os.remove(date_stamped_target)
+                warning_function = user_note
+            else:
+                # This will exit(1) (default in configs/defaults/general.yaml)
+                warning_function = user_error
+
+            warning_function(
                 "File movement conflict",
                 f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
                 f"{source} -> {date_stamped_target}",
             )
-            return target
 
         if os.path.islink(target):
             os.remove(target)

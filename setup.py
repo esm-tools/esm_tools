@@ -1,7 +1,16 @@
 #!/usr/bin/env python
 """The setup script."""
+import sys
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    print("PyYAML is not installed. Installing it now...", file=sys.stderr)
+    import subprocess
+
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "PyYAML"])
+    import yaml  # Try again after installation
+
 from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:

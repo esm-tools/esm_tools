@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 
+import pkg_resources
 from loguru import logger
 
 import esm_parser
@@ -24,64 +25,34 @@ def read_recipe(recipe, additional_dict, needs_parse=True):
 
 
 def read_plugin_information(plugins_bare, recipe, needs_parse=True):
-    # pluginfile = esm_plugins.yaml
-    if needs_parse:
-        plugins_bare = yaml_file_to_dict(plugins_bare)
-    extra_info = ["location", "git-url"]
-    plugins = {}
-    for workitem in recipe["recipe"]:
-        found = False
-        for module_type in ["core", "plugins"]:
-            if module_type in plugins_bare:
-                for module in plugins_bare[module_type]:
-                    for submodule in plugins_bare[module_type][module]:
-                        if submodule in extra_info:
-                            continue
-                        functionlist = plugins_bare[module_type][module][submodule]
-                        if workitem in functionlist:
-                            plugins[workitem] = {
-                                "module": module,
-                                "submodule": submodule,
-                                "type": module_type,
-                            }
-                            for extra in extra_info:
-                                if extra in plugins_bare[module_type][module]:
-                                    plugins[workitem].update(
-                                        {
-                                            extra: plugins_bare[module_type][module][
-                                                extra
-                                            ]
-                                        }
-                                    )
-                            found = True
-                            break
-                    if found:
-                        break
-                if found:
-                    break
-            if found:
-                break
-
-    attach_installed_plugins_to_all(plugins)
+    plugins = find_installed_plugins(category="core")
+    plugins.update(find_installed_plugins(category="external"))
     return plugins
 
 
-def find_installed_plugins():
-    import pkg_resources
-
-    discovered_plugins = {
-        entry_point.name: {
-            "plugin_name": entry_point.module_name.split(".")[0],
-            "callable": entry_point.load(),
-            "type": "installed",
+def find_installed_plugins(category="external"):
+    if category == "external":
+        discovered_plugins = {
+            entry_point.name: {
+                "plugin_name": entry_point.module_name.split(".")[0],
+                "callable": entry_point.load(),
+                "type": "installed",
+            }
+            for entry_point in pkg_resources.iter_entry_points("esm_tools.plugins")
         }
-        for entry_point in pkg_resources.iter_entry_points("esm_tools.plugins")
-    }
-    return discovered_plugins
-
-
-def attach_installed_plugins_to_all(plugins):
-    plugins.update(find_installed_plugins())
+        return discovered_plugins
+    if category == "core":
+        discovered_plugins = {
+            entry_point.name: {
+                "module": entry_point.module_name.split(".")[0],
+                "submodule": entry_point.module_name.split(".")[1],
+                "callable": entry_point.load(),
+                "type": "core",
+            }
+            for entry_point in pkg_resources.iter_entry_points("esm_tools.core_plugins")
+        }
+        return discovered_plugins
+    raise ValueError("Please provide a category of 'external' or 'core'")
 
 
 def check_plugin_availability(plugins):
@@ -123,7 +94,7 @@ def check_plugin_availability(plugins):
                 )
                 something_missing = True
     if something_missing:
-        sys.exit(-1)
+        sys.exit(1)
 
 
 def work_through_recipe(recipe, plugins, config):
@@ -146,26 +117,15 @@ def work_through_recipe(recipe, plugins, config):
             logger.info("=" * len(message))
             logger.info(message)
             logger.info("=" * len(message))
-        if plugins[workitem]["type"] == "core":
-            thismodule = __import__(plugins[workitem]["module"])
-            submodule = getattr(thismodule, plugins[workitem]["submodule"])
+        if plugins[workitem]["type"] in ["core", "installed"]:
+            workitem_callable = plugins[workitem]["callable"]
             if config["general"].get("profile", False):
-                workitem_callable = getattr(submodule, workitem)
                 timed_workitem_callable = esm_profile.timing(
                     workitem_callable, recipe_name
                 )
                 config = timed_workitem_callable(config)
             else:
-                config = getattr(submodule, workitem)(config)
-        elif plugins[workitem]["type"] == "installed":
-            if config["general"].get("profile", False):
-                workitem_callable = plugins[workitem]["callable"]
-                timed_workitem_callable = esm_profile.timing(
-                    workitem_callable, recipe_name
-                )
-                config = timed_workitem_callable(config)
-            else:
-                config = plugins[workitem]["callable"](config)
+                config = workitem_callable(config)
         else:
             if sys.version_info >= (3, 5):
                 import importlib.util

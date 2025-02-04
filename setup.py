@@ -1,9 +1,7 @@
 #!/usr/bin/env python
-
 """The setup script."""
 
-from os import getenv
-
+import yaml
 from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
@@ -41,11 +39,20 @@ requirements = [
     "h5netcdf>=0.8.1",
 ]
 
-setup_requirements = []
+setup_requirements = ["pyyaml==6.0.1"]
 
 test_requirements = [
     "pyfakefs==4.6.0",
 ]
+
+with open("configs/esm_software/esm_runscripts/esm_plugins.yaml", "r") as f:
+    plugin_name_path_list = []
+    core_plugins = yaml.safe_load(f)
+    for package in core_plugins["core"]:
+        for module in core_plugins["core"][package]:
+            for func in core_plugins["core"][package][module]:
+                plugin_name_path_list.append(f"{func}={package}.{module}:{func}")
+
 
 setup(
     author="The ESM Tools Team",
@@ -85,6 +92,7 @@ setup(
             "esm_tools=esm_tools.cli:main",
             "esm_utilities=esm_utilities.cli:main",
         ],
+        "esm_tools.core_plugins": plugin_name_path_list,
     },
     install_requires=requirements,
     license="GNU General Public License v2",

@@ -1250,7 +1250,9 @@ def avoid_overwriting(config, source, target):
     Function that appends the date stamp to ``target`` if the target already exists.
     Additionally, if the target exists, it renames it with the previous run time stamp,
     and creates a link named ``target`` that points at the target with the current time
-    stamp.
+    stamp. If the target exists and is not identical to the source then it will raise
+    a user friendly error, unless the ``force_overwrite_in_file_movements`` is set to
+    ``True`` in the general configuration (which will enforce the overwrite).
 
     Note
     ----
@@ -1264,6 +1266,11 @@ def avoid_overwriting(config, source, target):
         Path of the source of the file that will be copied/moved/linked
     target : src
         Path of the target of the file that will be copied/moved/linked
+
+    Raises
+    ------
+    user_error : esm_tools.helpers.user_error
+        If the target file exists and is not identical to the source file
     """
     if os.path.isfile(target):
         if filecmp.cmp(source, target):
@@ -1271,7 +1278,12 @@ def avoid_overwriting(config, source, target):
 
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
-            if config["general"]["force_overwrite_in_file_movements"]:
+            if filecmp.cmp(source, date_stamped_target):
+                logger.info(
+                    f"File {date_stamped_target} already exists and is identical to "
+                    f"the source ({source}). Skipping copying"
+                )
+            elif config["general"]["force_overwrite_in_file_movements"]:
                 os.remove(date_stamped_target)
                 warning_function = user_note
             else:

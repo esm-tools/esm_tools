@@ -31,11 +31,11 @@ ice2echam() {
         
         read_names ice atmosphere
         define_echam_names
-        if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
-                iterative_coupling_ice_echam6_update_orography
-        fi
         if [ "$ISM_TO_ECHAM_update_glacial_mask" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_glacial_mask
+        fi
+        if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
+                iterative_coupling_ice_echam6_update_orography
         fi
         if [ "$ISM_TO_ECHAM_update_land_runoff" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_land_runoff
@@ -296,15 +296,17 @@ update_orography_generate_target_orography_file() {
         ## Ensure that we use the OROMEA from the "raw" PISM-corrected orography,
         ## not what is given from the calnoro program
 
-        if [ "x${oro_update_mod}" == "x1" ]; then # according to Martins script: OROMEA from calnoro; GEOSP from input
-                #cdo -s -replace \
-                #        ${ifile} \
-                #        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
-                #        tmp 2>>cdo_stderr_ice2echam
-                #mv tmp ${ifile}
 
-                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
-                # what is given from the calnoro program 
+        ############################################################
+        # Define the method for orography update (oro_update_mod):
+        #   1: use low-resolution reference; take all sub-grid scale parameters from CALNORO; take GEOSP from low-res input
+        #   2: use low-resolution reference; take all sub-grid scale parameters from CALNORO; take OROMEA and GEOSP from low-res input
+        #                                                                                     (like it has been done before)
+        #   3: use high-resolution reference; take all sub-grid scale parameterds from CALNORO; take OROMEA and GEOSP from high-res input
+        #   4: update orography but keep sub-grid scale parameters from unit.24
+        #   5: update orography but change sub-grid scale parameters only in ice domain where ice mask or change of ice mask (ice loss/ice gain) 
+
+        if [ "x${oro_update_mod}" == "x1" ]; then # according to Martins script: OROMEA from calnoro; GEOSP from input
                 
                 ECHAM_g=9.80665
                 cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
@@ -366,7 +368,7 @@ update_orography_generate_target_orography_file() {
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
                         ${ofile} 2>>cdo_stderr_ice2echam
                  #
-        elif [ "x${oro_update_mod}" == "x4" ]; then # new coupling scheme: OROMEA and GEOSP from high-res input
+        elif [ "x${oro_update_mod}" == "x4" ]; then # new coupling scheme: OROMEA and GEOSP from high-res input but overwrite with unit.24 sub-grid parameters
                 cdo -s -replace \
                         ${ifile} \
                         -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
@@ -417,16 +419,28 @@ update_orography_generate_target_orography_file() {
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
                         ${ofile} 2>>cdo_stderr_ice2echam
                 
-                for VAR in "GEOSP" "OROMEA" "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
+                if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                        rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+                else
+                        rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+                fi
+                
+                cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_T63grid.nc -gtc,0 \
+                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \ #${COUPLE_DIR}/ice_mask_before_T63grid.nc \
+                        ${COUPLE_DIR}/mask_oro_update.nc
+#                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
+                for VAR in "OROMEA" "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
                 do
-                    cdo -s ifthenelse ${COUPLE_DIR}/ice_mask_current_T63grid.nc \
+                    cdo -s ifthenelse -setmisstoc,0 ${COUPLE_DIR}/mask_oro_update.nc \
                             -selname,${VAR} ${ofile} \
                             -selname,${VAR} ${INIT_DIR_echam}/unit.24 ${VAR}.orotmp
 
                 done
-                cdo -s merge *.orotmp ORO_merged; mv ORO_merged ${ofile}; rm *.orotmp
+                cdo -s merge *.orotmp ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
+                cdo -s replace ${ofile} ORO_merged tmp; mv tmp ${ofile}
                  #
         fi
+        ############################################################
         ln -sf ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_target_orography.nc
         # Destroy# the time dimension; just in case
 	#if ncdump -h# $ofile | grep -q "time"; then

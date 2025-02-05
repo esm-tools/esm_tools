@@ -5,12 +5,13 @@ import sys
 
 import questionary
 import yaml
+from loguru import logger
 
 import esm_parser
 import esm_utilities
 from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
-from loguru import logger
+from esm_tools import user_error, user_note
 
 from . import batch_system, helpers
 
@@ -222,7 +223,7 @@ def model_env_into_computer(config):
                     model0 = env_vars[key][1]
                     while True:
                         # Warn the user about the overwriting of the variable
-                        esm_parser.user_note("Environment conflict", f"In '{model0}':")
+                        user_note("Environment conflict", f"In '{model0}':")
                         esm_parser.pprint_config({key: env_vars[key][0]})
                         logging.info("\nIn '" + model + "':")
                         esm_parser.pprint_config({key: value})
@@ -248,7 +249,7 @@ def model_env_into_computer(config):
                         # If the user selects ``n`` raise a user error with recommendations
                         elif user_answer == "n":
                             config[model]["env_overwrite"] = False
-                            esm_parser.user_error(
+                            user_error(
                                 "Environment conflict",
                                 "You were not happy with the environment variable "
                                 + f"'{key}' in '{model0}' being overwritten by the same "
@@ -719,7 +720,7 @@ def add_vcs_info(config):
         vcs_versions["esm_tools"] = helpers.get_all_git_info(f"{esm_tools_repo}/../")
     else:
         # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
-        esm_parser.user_error(
+        user_error(
             "esm_tools doesn't know where it's own install location is. Something is very seriously wrong."
         )
     with open(exp_vcs_info_file, "w") as f:
@@ -775,7 +776,7 @@ def check_vcs_info_against_last_run(config):
         not config["general"].get("allow_vcs_differences", False)
         and current_vcs_info != last_vcs_info
     ):
-        esm_parser.user_error(
+        user_error(
             "VCS Differences",
             """
             You have differences in either the model code or in the esm-tools between two runs!
@@ -871,7 +872,7 @@ def check_config_for_warnings_errors(config):
     """
 
     # Initialize the trigger variables (i.e. ``error`` and ``warning``))
-    triggers = {"error": {"note_function": esm_parser.user_error}}
+    triggers = {"error": {"note_function": user_error}}
 
     # Find conditions to warn (avoid warning more than once)
     last_jobtype = config["general"].get("last_jobtype", "")
@@ -880,7 +881,7 @@ def check_config_for_warnings_errors(config):
 
     # Only warn if it is an interactive session or while submitted
     if not isresubmitted or isinteractive:
-        triggers["warning"] = {"note_function": esm_parser.user_note}
+        triggers["warning"] = {"note_function": user_note}
 
     # Loop through the triggers
     for trigger, trigger_info in triggers.items():

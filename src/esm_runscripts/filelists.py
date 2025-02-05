@@ -11,12 +11,12 @@ import sys
 
 import f90nml
 import yaml
-
-import esm_parser
 from loguru import logger
 
-from . import helpers
-from . import jinja
+import esm_parser
+from esm_tools import user_error
+
+from . import helpers, jinja
 
 
 def rename_sources_to_targets(config):
@@ -146,7 +146,7 @@ def complete_targets(config):
                                 f"The input file variable {category} of {filetype}_sources can not be fully resolved:\n\n"
                                 + yaml.dump(file_source, indent=4)
                             )
-                            esm_parser.user_error(error_type, error_text)
+                            user_error(error_type, error_text)
                         else:
                             config[model][filetype + "_targets"][
                                 category
@@ -306,7 +306,7 @@ def target_subfolders(config):
                     # * only in targets if denotes subfolder
                     # TODO: change with user_error()
                     if not descr in config[model][filetype + "_sources"]:
-                        esm_parser.user_error(
+                        user_error(
                             "Filelists",
                             f"No source found for target ``{name}`` in model "
                             f"``{model}``\n",
@@ -390,7 +390,7 @@ def get_target_name_from_wildcard(config, model, filename, filetype, descr):
 
     Raises
     ------
-    user_error : esm_parser.user_error
+    user_error : user_error
         If source and target wildcard patterns do not match (different number of ``*``
         in the patterns), raises a user friendly error
     """
@@ -407,7 +407,7 @@ def get_target_name_from_wildcard(config, model, filename, filetype, descr):
     wild_card_target = target_filename.split("*")
     # Check for syntax mistakes
     if len(wild_card_target) != len(wild_card_source):
-        esm_parser.user_error(
+        user_error(
             "Wild card",
             (
                 "The wild card pattern of the source "
@@ -502,7 +502,7 @@ def find_valid_year(config, year):
 
     error_type = "Year Error"
     error_text = f"Sorry, no entry found for year {year} in config {config}"
-    esm_parser.user_error(error_type, error_text)
+    user_error(error_type, error_text)
 
 
 def replace_year_placeholder(config):
@@ -1271,7 +1271,7 @@ def avoid_overwriting(config, source, target):
 
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
-            esm_parser.user_error(
+            user_error(
                 "File movement conflict",
                 f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
                 f"{source} -> {date_stamped_target}",
@@ -1287,7 +1287,7 @@ def avoid_overwriting(config, source, target):
         target = date_stamped_target
 
     elif os.path.isdir(target):
-        esm_parser.user_error(
+        user_error(
             "File operation not supported",
             f"The target ``{target}`` is a folder, and this should not be happening "
             "here. Please, open an issue in www.github.com/esm-tools/esm_tools",
@@ -1531,7 +1531,7 @@ def complete_all_file_movements(config):
                     if file_in_fm in mconfig.get(
                         "restart_in_files", {}
                     ) or file_in_fm in mconfig.get("restart_out_files", {}):
-                        esm_parser.user_error(
+                        user_error(
                             "Movement direction not specified",
                             f"'{model}.file_movements.{file_in_fm}' refers to a "
                             + "restart file which can be moved/copied/link in two "

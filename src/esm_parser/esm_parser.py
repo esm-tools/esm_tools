@@ -53,19 +53,15 @@ until nothing is left.
 Specific documentation for classes and functions are given below:
 """
 # Python 2 and 3 version agnostic compatiability:
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-
-import pdb
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 # Python Standard Library imports
 import collections
 import copy
 import logging
 import os
-import re
+import pdb
 import shutil
 import socket
 import subprocess
@@ -79,21 +75,20 @@ else:
 
 # Always import externals before any non standard library imports
 
+import coloredlogs
 # Third-Party Imports
 import numpy
-import coloredlogs
-import colorama
 import yaml
-
-# functions reading in dict from file
-from .yaml_to_dict import *
-from .provenance import *
-
-# Date class
-from esm_calendar import Date
 
 # Loader for package yamls
 import esm_tools
+# Date class
+from esm_calendar import Date
+from esm_tools import user_error, user_note
+
+from .provenance import *
+# functions reading in dict from file
+from .yaml_to_dict import *
 
 # Logger and related constants
 logger = logging.getLogger("root")
@@ -2325,12 +2320,14 @@ def do_math_in_entry(tree, rhs, config):
     if "${" in str(entry):
         return entry
     entry = " " + str(entry) + " "
+    date_operation = False
     while "$((" in entry:
         math, after_math = entry.split("))", 1)
         math, before_math = math[::-1].split("(($", 1)
         math = math[::-1]
         before_math = before_math[::-1]
         if DATE_MARKER in math:
+            date_operation = True
             all_dates = []
             steps = math.split(" ")
             steps = [step for step in steps if step]
@@ -2408,12 +2405,18 @@ def do_math_in_entry(tree, rhs, config):
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
         result = eval(math)
-        if isinstance(result, list):
+        if isinstance(result, list) and date_operation:
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
+        elif isinstance(result, list):
+            entry = ListWithProvenance(result, None)
+            entry.set_provenance(rhs.provenance)
+            return entry
+
         result = str(result)
         entry = before_math + result + after_math
+
     # TODO MA: this is a provisional dirty fix for release. Get rid of this once a more
     # general solution is worked out
     # ORIGINAL LINE: return convert(entry.strip())
@@ -2787,51 +2790,6 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
             )
 
     return paths2finds
-
-
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
-    """
-    Notify the user about something. In the future this should also write in the log.
-
-    Parameters
-    ----------
-    note_heading : str
-        Note type used for the heading.
-    text : str
-        Text clarifying the note.
-    """
-    reset_s = colorama.Style.RESET_ALL
-
-    if isinstance(note_text, list):
-        new_note_text = ""
-        for item in note_text:
-            new_note_text = f"{new_note_text}- {item}\n"
-        note_text = new_note_text
-
-    for dsymbol in dsymbols:
-        note_text = re.sub(
-            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
-        )
-    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
-    print(f"{note_text}\n")
-
-
-def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
-    """
-    User-friendly error using ``sys.exit()`` instead of an ``Exception``.
-
-    Parameters
-    ----------
-    error_type : str
-        Error type used for the error heading.
-    text : str
-        Text clarifying the error.
-    exit_code : int
-        The exit code to send back to the parent process (default to 1)
-    """
-    error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
-    sys.exit(exit_code)
 
 
 class GeneralConfig(dict):  # pragma: no cover

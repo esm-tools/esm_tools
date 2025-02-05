@@ -1,18 +1,16 @@
 import os
-import sys
-import subprocess
-import shlex  # contains shlex.split that respects quoted strings
-
 # deniz: it is better to use more pathlib in the future so that dir/path
 # operations will be more portable (supported since Python 3.4, 2014)
 import pathlib
-
-from .software_package import software_package
-from esm_parser import user_error
+import shlex  # contains shlex.split that respects quoted strings
+import subprocess
+import sys
 
 import esm_environment
 import esm_plugin_manager
+from esm_tools import user_error
 
+from .software_package import software_package
 
 ######################################################################################
 ################################# class "task" #######################################
@@ -268,6 +266,9 @@ class Task:
             if task.todo in ["get"]:
                 if task.package.command_list[task.todo] is not None:
                     for command in task.package.command_list[task.todo]:
+                        # Fix #1236: avoid repeated get commands
+                        if command in command_list:
+                            continue
                         command_list.append(command)
                         real_command_list.append(command)
 
@@ -432,6 +433,8 @@ class Task:
     def execute(self, ignore_errors=False):
         # Calculate the number of get commands for this esm_master operation
         self.num_of_get_commands()
+        # Initialize the dirstack for imitating pushd popd
+        dirstack = []
         # Loop through the commands
         for command in self.command_list:
             repo = self.get_repo_properties_from_command(command)
@@ -478,6 +481,16 @@ class Task:
                     command_spl = shlex.split(command)
                     if "cd" == command_spl[0]:
                         os.chdir(command_spl[1])
+                    elif "pushd" == command_spl[0]:
+                        # Emulates pushd (MA): yes it is horrible, but I don't
+                        # have time to rewrite esm_master right now
+                        dirstack.append(os.getcwd())
+                        os.chdir(command_spl[1])
+                    elif "popd" == command_spl[0]:
+                        # Emulates popd (MA): yes it is horrible, but I don't
+                        # have time to rewrite esm_master right now
+                        target_dir = target_dir = dirstack.pop(-1)
+                        os.chdir(target_dir)
                     else:
                         subprocess.run(
                             command_spl,

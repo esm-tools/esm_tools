@@ -3,7 +3,7 @@ import os
 from jinja2 import StrictUndefined, Template, UndefinedError
 from loguru import logger
 
-import esm_parser
+from esm_tools import user_error
 
 
 def render_template(config, source, target):
@@ -40,7 +40,7 @@ def render_template(config, source, target):
         content = template.render(config)
     except UndefinedError as e:
         missing_variable = e.message.split("'")[3]
-        esm_parser.user_error(
+        user_error(
             "Jinja",
             f"Error rendering template from ``{source}`` to ``{target}``. Variable "
             f"``{missing_variable}`` is not defined in any configuration file.",

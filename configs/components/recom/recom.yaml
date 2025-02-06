@@ -169,7 +169,6 @@ choose_scenario:
                 lastyearoffesomcycle: "${l_year_fesom_cycle}"
                 numofCO2cycles: "${num_CO2_cycles}"
                 currentCO2cycle: "${current_CO2_cycle}"
-#4.7.22 Ying: to use a different namelist.recom for LGM
         lgm:
                 namelist_sce: ".lgm"
         "*":
@@ -236,22 +235,22 @@ config_in_work:
 restart_name: ""
 
 restart_in_files:
-        bio_restart: bio_restart
+        par_oce_restart: par_bio_restart        
 
 restart_in_in_work:
-        bio_restart: fesom.${parent_date!syear}.bio.${restart_name}nc
+        par_bio_restart: fesom.${parent_date!syear}.bio.restart/*.nc
 
 restart_in_sources:
-        bio_restart: fesom.${parent_date!syear}.bio.nc
+        par_bio_restart: fesom.${parent_date!syear}.bio.restart/*.nc
 
 restart_out_files:
-        bio_restart: bio_restart
+        par_bio_restart: par_bio_restart
 
 restart_out_in_work:
-        bio_restart: fesom.${end_date!syear}.bio.${restart_name}nc
+        par_bio_restart: fesom.${end_date!syear}.bio.restart/*.nc
 
 restart_out_sources:
-        bio_restart: fesom.${end_date!syear}.bio.nc
+        par_bio_restart: fesom.${end_date!syear}.bio.restart/*.nc
 
 choose_computer.name:
         blogin:

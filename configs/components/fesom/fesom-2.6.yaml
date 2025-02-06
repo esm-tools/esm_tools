@@ -31,6 +31,21 @@ choose_version:
     wiso_code: true
     icb_code: true
     namelist_dir: "${model_dir}/config/"
+
+  "2.6-recom":
+    branch: "fesom2.6_recom_tp"
+    choose_general.setup_name:
+        fesom:
+            destination: "fesom-2.6-recom"
+    wiso_code: false
+    icb_code: false
+    namelist_dir: "${model_dir}/config/"
+    nproc: 1024
+    with_recom: true
+    include_models: ["recom"]
+    fesom_Dflags: "-DRECOM_COUPLED=ON"
+    #    mpi_num_groups: 1 #YY: only needed if using tracer parallelisation (usetp)
+
 destination: "fesom-2.6"
 install_bins: bin/fesom.x
 git-repository:
@@ -612,6 +627,31 @@ choose_with_wiso:
                         "[[wiso_fields-->FIELD]]":
                                 grid: feom
 
+choose_fesom.with_recom:
+    True:
+        add_config_sources:
+            tra:    "${namelist_dir}/namelist.tra.recom${namelist_ciso_sufix}"
+            io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+        remove_namelist_changes.namelist.config: [inout]
+        add_namelist_changes:
+            namelist.config:
+                restart_log:
+                    restart_length: "${restart_rate}"
+                    restart_length_unit: "${restart_unit}"
+                #run_config: #YY:TODO: new flag use_tp to switch on tracer parallelisation needed
+                    #num_fesom_groups: "${mpi_num_groups}"
+
+        # use_ciso switch
+        # ---------------
+        # num_tracers only changed if ``with_recom: true``, i.e. indentation)
+        #YY: ciso currently only combined with 2p1z1d, num_tracers not needed anymore
+        choose_recom.use_ciso:
+                True:
+                        namelist_ciso_sufix: ".ciso"
+                        #num_tracers: 33
+                False:
+                        namelist_ciso_sufix: ""
+                        #num_tracers: 24
 
 grids:
         feom:

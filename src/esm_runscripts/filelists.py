@@ -839,15 +839,16 @@ def log_used_files(config):
     return config
 
 
-def compute_and_log_file_checksums(config):
+def log_files_in_target_to_yaml(config):
     """
-    This function computes the checksums of the files in the ``work`` directory and
-    logs them to a YAML file in the ``thisrun_log_dir`` directory. The file is named
-    as follows: ``{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml``
-    and contains the following information:
+    This function logs the files in the target directory to a YAML file in the
+    ``thisrun_log_dir`` directory. The file is named as follows:
+    ``{expid}_{it_coupled_model_name}filelist_{datestamp}`` and contains the
+    following information:
 
     - The source, intermediate, and target files for each file category
-    - The checksum of each file
+    - The checksum of each file if the ``general.compute_file_checksums`` flag is set
+      to ``True``
 
     Files are grouped by component/model and file category as a dictionary of
     dictionaries.
@@ -864,26 +865,29 @@ def compute_and_log_file_checksums(config):
     Returns
     -------
     config : dict
-        The experiment configuration with the file checksums computed and logged
+        The experiment configuration
     """
-    compute_file_checksums = config["general"].get("compute_file_checksums", False)
     target = config["general"]["files_target"]
+    compute_file_checksums = config["general"].get("compute_file_checksums", False)
 
-    logger.debug("\n::: Computing file checksums in ``{target}``")
+    logger.debug("\n::: Computing file log for ``{target}``")
     jobtype = config["general"].get("jobtype", "unknown")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    # Name of the yaml file log to be written
     flist_file_yaml = f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
     all_files = {}
 
     # List all the files in the target directory
     files_in_dir = _list_files_in_dir(config, target)
     files_not_handled_by_filelists = copy.deepcopy(files_in_dir)
+
     # Compute checksums of all files in a the target directory
     if compute_file_checksums:
+        logger.debug("\n::: Computing checksums for files in ``{target}``")
         checksums = _compute_checksums_for_dir(files_in_dir)
     else:
         checksums = {}
@@ -898,11 +902,12 @@ def compute_and_log_file_checksums(config):
                 target_file = component_config[f"{filetype}_targets"][f]
                 p_target_file = str(pathlib.Path(target_file).absolute())
 
-                # Load the corresponding checksum and remove the file from the
-                # files_not_handled_by_filelists if it is found
-                checksum = checksums.get(p_target_file, None)
-                if checksum and files_not_handled_by_filelists.get(p_target_file):
-                    del files_not_handled_by_filelists[p_target_file]
+                # Remove the file from the files_not_handled_by_filelists if it is found
+                if p_target_file in files_not_handled_by_filelists:
+                    exists = True
+                    files_not_handled_by_filelists.remove(p_target_file)
+                else:
+                    exists = False
 
                 # Add all the file information to the component_files dictionary
                 component_files[f] = {
@@ -910,7 +915,8 @@ def compute_and_log_file_checksums(config):
                     "intermediate": component_config[f"{filetype}_intermediate"][f],
                     "target": target_file,
                     "kind": filetype,
-                    "checksum": checksum,
+                    "checksum": checksums.get(p_target_file, None),
+                    "exists": exists,
                 }
 
                 # Log the file information
@@ -924,13 +930,13 @@ def compute_and_log_file_checksums(config):
     # Add the files not handled by the filelists to the all_files dictionary
     all_files["not_handled_by_filelists"] = {}
     for file_path in files_not_handled_by_filelists:
-        checksum = checksums.get(file_path, None)
         all_files["not_handled_by_filelists"][os.path.basename(f)] = {
             "source": "unknown",
             "intermediate": "unknown",
             "target": file_path,
             "kind": "not_handled_by_filelists",
-            "checksum": checksum,
+            "checksum": checksums.get(file_path, None),
+            "exists": True,
         }
 
     # Dump the all_files dictionary to a yaml file
@@ -940,6 +946,22 @@ def compute_and_log_file_checksums(config):
 
 
 def _list_files_in_dir(config, target):
+    """
+    List all the files in the target directory. Currently only the ``work`` directory
+    is supported.
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+    target : str
+        The target directory to list the files for
+
+    Returns
+    -------
+    file_paths : list
+        A list of absolute paths of all the files in the target directory
+    """
 
     if target == "work":
         dir_path = pathlib.Path(config["general"]["thisrun_work_dir"])
@@ -960,14 +982,12 @@ def _list_files_in_dir(config, target):
 
 def _compute_checksums_for_dir(file_paths):
     """
-    Compute the checksums of all files in the ``work`` directory.
+    Compute the checksums of all files listed in ``file_paths``.
 
     Parameters
     ----------
-    config : dict
-        The experiment configuration
-    target : str
-        The target directory to compute the checksums for
+    file_paths : list
+        A list of absolute paths of all the files in the target directory
 
     Returns
     -------

@@ -253,7 +253,7 @@ choose_with_icb:
             - "modify_files"
             - "copy_files_to_work"
             - "report_missing_files"
-            - "compute_and_log_file_checksums"
+            - "log_files_in_target_to_yaml"
             - "_write_finalized_config"
             - "database_entry"
 

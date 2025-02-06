@@ -868,8 +868,6 @@ def compute_and_log_file_checksums(config):
     """
     compute_file_checksums = config["general"].get("compute_file_checksums", False)
     target = config["general"]["files_target"]
-    if not compute_file_checksums:
-        return config
 
     logger.debug("\n::: Computing file checksums in ``{target}``")
     jobtype = config["general"].get("jobtype", "unknown")
@@ -881,9 +879,14 @@ def compute_and_log_file_checksums(config):
     flist_file_yaml = f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
     all_files = {}
 
+    # List all the files in the target directory
+    files_in_dir = _list_files_in_dir(config, target)
+    files_not_handled_by_filelists = copy.deepcopy(files_in_dir)
     # Compute checksums of all files in a the target directory
-    checksums = _compute_checksums_for_dir(config, target)
-    files_not_handled_by_filelists = copy.deepcopy(checksums)
+    if compute_file_checksums:
+        checksums = _compute_checksums_for_dir(files_in_dir)
+    else:
+        checksums = {}
 
     # Loop over all components, file types, and files
     for component in config["general"]["valid_model_names"] + ["general"]:
@@ -920,11 +923,12 @@ def compute_and_log_file_checksums(config):
 
     # Add the files not handled by the filelists to the all_files dictionary
     all_files["not_handled_by_filelists"] = {}
-    for f, checksum in files_not_handled_by_filelists.items():
+    for file_path in files_not_handled_by_filelists:
+        checksum = checksums.get(file_path, None)
         all_files["not_handled_by_filelists"][os.path.basename(f)] = {
             "source": "unknown",
             "intermediate": "unknown",
-            "target": f,
+            "target": file_path,
             "kind": "not_handled_by_filelists",
             "checksum": checksum,
         }
@@ -935,7 +939,26 @@ def compute_and_log_file_checksums(config):
     return config
 
 
-def _compute_checksums_for_dir(config, target):
+def _list_files_in_dir(config, target):
+
+    if target == "work":
+        dir_path = pathlib.Path(config["general"]["thisrun_work_dir"])
+        # Get all the absolute paths of the files in the work directory, including
+        # files in all subdirectories
+        file_paths = [
+            str(file.absolute()) for file in dir_path.rglob("*") if file.is_file()
+        ]
+    else:
+        logger.error(
+            f"Listing files in ``{target}`` directory types are not yet supported. "
+            "Only files in the ``work`` directory currently supported. "
+        )
+        exit(1)
+
+    return file_paths
+
+
+def _compute_checksums_for_dir(file_paths):
     """
     Compute the checksums of all files in the ``work`` directory.
 
@@ -951,20 +974,6 @@ def _compute_checksums_for_dir(config, target):
     checksums : dict
         A dictionary containing the checksums of all files in the target directory
     """
-
-    if target == "work":
-        dir_path = pathlib.Path(config["general"]["thisrun_work_dir"])
-        # Get all the absolute paths of the files in the work directory, including
-        # files in all subdirectories
-        file_paths = [
-            str(file.absolute()) for file in dir_path.rglob("*") if file.is_file()
-        ]
-    else:
-        logger.error(
-            f"Checksums of files in ``{target}`` directory types are not yet "
-            "supported. Only files in the ``work`` directory currently supported. "
-        )
-        exit(1)
 
     # Compute the checksums of all files in the target directory
     # TODO: parallelize this

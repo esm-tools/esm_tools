@@ -664,8 +664,15 @@ class oasis:
         # before (i.e. when using LOCTRANS)
         if os.path.isfile(restart_file):
             logger.debug(f"{restart_file} already exits, overwriting")
-        logger.info("cdo -O merge " + filelist + " " + restart_file)
-        os.system("cdo -O merge " + filelist + " " + restart_file)  # + enddate)
+
+        cdo_merge_command = f"cdo -O -f nc4c merge {filelist} {restart_file}" # {enddate}"
+        logger.info(cdo_merge_command)
+        exit_code = os.system(cdo_merge_command)
+        if exit_code != 0:
+            cdo_merge_command = f"cdo -O merge {filelist} {restart_file}" # {enddate}"
+            logger.warning("nc4c merge failed, trying without it...")
+            logger.info(cdo_merge_command)
+            os.system(cdo_merge_command)
         rmlist = glob.glob("notimestep*")
         rmlist.append("onlyonetimestep.nc")
         for rmfile in rmlist:

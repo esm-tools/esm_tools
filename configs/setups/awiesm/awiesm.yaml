@@ -93,8 +93,16 @@ general:
         - '2.1-recom'
         - '2.1-paleodyn-2.5'
         - '2.6'
+        - '2.6-recom'
 
         choose_version:
+          '2.6-recom':
+            couplings:
+            - fesom2.6_recom_tp+echam-6.3.05p2-awiesm-2.1+recom-2.0
+            add_include_models:
+            - recom
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
+            with_recom: true
           '2.6':
             couplings:
             - fesom-2.6+echam-6.3.05p2-awiesm-2.1
@@ -205,6 +213,10 @@ echam:
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
+                "2.6-recom":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
 
         # --- icebergs ---
         choose_general.with_icb:
@@ -271,7 +283,7 @@ echam:
         # Settings for running with REcoM
         choose_general.with_recom:
             True:
-                wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
+                    wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed # YY: it is only needed for awiesm-2.1-recom. Is the merge already done?
                 add_coupling_fields:
                     "[[wiso_fields-->FIELD]]":
                         grid: atmo
@@ -329,6 +341,16 @@ fesom:
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
         choose_general.version:
+                "2.6-recom":
+                        version: "2.6-recom"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: 0.0
+                        outdata_targets:
+                                fesom: "*.fesom.*.nc"
                 "2.6":
                         version: "2.6-paleodyn"
                         ALE_scheme: 'zstar'
@@ -447,7 +469,7 @@ fesom:
             True:
                 # Set fesom.with_recom: true when general.with_recom: true
                 with_recom: true
-                wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
+                wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed # YY: it is only needed for awiesm-2.1-recom. Is the merge already done?
                 add_coupling_fields:
                     "[[wiso_fields-->FIELD]]":
                         grid: feom
@@ -460,16 +482,15 @@ recom:
                 True:
                         version: "2.0"
 
-                        #5.7.22 Ying: par-tracers only with ciso
-                        use_ciso: true
+                        use_ciso: false
 
                         add_choose_computer.name:
                             levante:
                                 data_path: /home/a/a270105/initial_files/pi_init/dust_coremesh/
-                            ollie:
-                                data_path: /work/ollie/mbutzin/fesom2/input/dust/
+                            albedo:
+                                data_path: /albedo/work/user/yye/fesom2/initial_files/pi_init/dust_coremesh/
 
-                        restart_name: "restart."
+                        restart_name: "restart." #YY: not needed, always the same format of filename as fesom 
 
                         remove_namelist_changes.namelist.recom.pavariables:
                             - constant_CO2

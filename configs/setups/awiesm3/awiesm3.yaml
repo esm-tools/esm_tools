@@ -27,9 +27,6 @@ general:
             - fesom-2.6+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
             - xios
-            add_add_environment_changes:
-                levante:        
-                    iolibraries: system_gnu_libs
             oasis_with_yac: False
             xios_interp_order: 1
 
@@ -67,10 +64,13 @@ general:
                 - xios/xios.env.yaml
                 - rnfmap/rnfmap.env.yaml
 
- #       add_environment_changes:
-            #    choose_computer.name:
-            #            levante:
-            #                    compiler_mpi: intel2022_openmpi
+        add_add_environment_changes:
+            levante:        
+                iolibraries: system_gnu_libs
+            juwels:
+                compiler_mpi: gnu2023_ompi2023
+                iolibraries: awi_libs
+
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -434,7 +434,6 @@ oasis3mct:
         v2a_seq: 2
         v2a_lag: "86400"
 
-        coupling_time_step: "${oasis3mct.time_step}"
         choose_general.major_version:
                 'v3.4':
                         add_process_ordering:
@@ -466,6 +465,8 @@ oasis3mct:
                         rstas_file_name: 'rstas'
                         vegin_file_name: 'vegin'
 
+        coupling_time_step: "${oasis3mct.time_step}"
+        land_atmo_coupling_time_step: 86400
 
         coupling_directions:
                 'atma->feom':
@@ -483,9 +484,11 @@ oasis3mct:
                 '${lpj_guess.mygrid}-land->atma':
                         lag: ${v2a_lag}
                         seq: ${v2a_seq}
+                        coupling_time_step: ${land_atmo_coupling_time_step}
                 'atma->${lpj_guess.mygrid}-land': 
                         lag: ${a2v_lag}
                         seq: ${a2v_seq}
+                        coupling_time_step: ${land_atmo_coupling_time_step}
 
 
         coupling_methods:

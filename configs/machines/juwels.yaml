@@ -7,8 +7,9 @@ jobtype: compute
 accounting: true
 
 # default settings for compiler, mpi and I/O libs
-compiler_mpi: intel2025_psmpi
-iolibraries: none
+compiler_mpi: gnu2023_ompi2023
+
+iolibraries: system_libs
 useMPI: intelmpi
 
 # slurm setup

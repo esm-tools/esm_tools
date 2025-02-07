@@ -178,6 +178,12 @@ def get_user_config_from_command_line(command_line_config):
             del command_line_config[var]
     user_config["general"].update(command_line_config)
 
+    # Append the file specified by ``--modify-config`` option into the additional
+    # files, so that it's also copied to the ``scripts`` directory
+    modify_config_file = command_line_config.get("modify_config_file")
+    if modify_config_file:
+        user_config["general"]["additional_files"].append(modify_config_file)
+
     return user_config
 
 

@@ -1,7 +1,8 @@
 import sys
 
-import esm_parser
 from loguru import logger
+
+from esm_tools import user_error
 
 known_couplers = ["oasis3mct", "yac"]
 
@@ -159,14 +160,26 @@ class coupler_class:
                             sys.exit(0)
 
                     direction_info = None
-                    if "coupling_directions" in full_config[self.name]:
-                        if (
-                            right_grid + "->" + left_grid
-                            in full_config[self.name]["coupling_directions"]
-                        ):
-                            direction_info = full_config[self.name][
-                                "coupling_directions"
-                            ][right_grid + "->" + left_grid]
+                    coupling_directions = full_config[self.name].get(
+                        "coupling_directions"
+                    )
+                    if coupling_directions:
+                        direction = f"{right_grid}->{left_grid}"
+                        direction_info = coupling_directions.get(direction)
+                        if not direction_info:
+                            user_error(
+                                "Missing coupling direction",
+                                f"The ``{direction}`` does not exist in "
+                                f"``{self.name}.coupling_directions``. You can solve "
+                                f"this by defining it there@HINT_0@.",
+                                hints=[
+                                    {
+                                        "type": "prov",
+                                        "object": coupling_directions,
+                                        "text": " (for example near @HINT@)",
+                                    },
+                                ],
+                            )
                     transf_info = None
                     if "coupling_methods" in full_config[self.name]:
                         if interpolation in full_config[self.name]["coupling_methods"]:
@@ -174,7 +187,7 @@ class coupler_class:
                                 interpolation
                             ]
                         else:
-                            esm_parser.user_error(
+                            user_error(
                                 "Missing coupling method",
                                 f"The coupling method ``{interpolation}`` defined in "
                                 f"the ``{self.name}.coupling_target_fields`` is not "

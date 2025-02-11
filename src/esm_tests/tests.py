@@ -112,8 +112,9 @@ def comp_test(info):
     user_info = info["user"]
     this_computer = info["this_computer"]
 
-    # Set the regex format for check compilations
+    # Set the regex formats for check compilations
     cd_format = re.compile("         cd (.*)")
+    pushd_format = re.compile("         pushd (.*)")
 
     # Set the counter to 0
     c = 0
@@ -212,14 +213,17 @@ def comp_test(info):
                     folders = []
                     # Search for the folders to be created
                     for line in out.split("\n"):
+                        found_format = ""
                         if "cd" in line and "cd .." not in line:
                             found_format = cd_format.findall(line)
-                            if len(found_format) > 0:
-                                if (
-                                    ";" not in found_format[0]
-                                    and "/" not in found_format[0]
-                                ):
-                                    folders.append(found_format[0])
+                        elif "pushd" in line and "popd" not in line:
+                            found_format = pushd_format.findall(line)
+                        if len(found_format) > 0:
+                            if (
+                                ";" not in found_format[0]
+                                and "/" not in found_format[0]
+                            ):
+                                folders.append(found_format[0])
                     if len(folders) == 0:
                         logger.warning(
                             f'NOT TESTING {model}{version}: "cd" command not found'

@@ -409,7 +409,7 @@ rnfmap:
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${general.pool_dir}/oasis/
-        norestart: "F"
+        norestart: "T"
 
         process_ordering:
                 - fesom
@@ -430,7 +430,7 @@ oasis3mct:
 
         output_exchanged_vars: false
 
-        time_step: 86400 #separate timestep needed for atmosphere-ocean in the future LASZLO
+        time_step: 7200 #separate timestep needed for atmosphere-ocean in the future LASZLO
 
         a2o_lag: "${lag}"
         a2v_lag: "86400"
@@ -478,7 +478,7 @@ oasis3mct:
                         rstas_file_name: 'rstas'
                         vegin_file_name: 'vegin'
 
-
+        land_atmo_coupling_time_step: 86400
         coupling_directions:
                 'atma->feom':
                         lag: ${a2o_lag}
@@ -495,6 +495,7 @@ oasis3mct:
                 '${lpj_guess.mygrid}-land->atma':
                         lag: ${v2a_lag}
                         seq: ${v2a_seq}
+                        coupling_time_step: ${land_atmo_coupling_time_step}
                 'atma->${lpj_guess.mygrid}-land': 
                         lag: ${a2v_lag}
                         seq: ${a2v_seq}

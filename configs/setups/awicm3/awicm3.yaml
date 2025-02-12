@@ -804,7 +804,7 @@ oasis3mct:
                         seq: ${o2a_seq}
                 'OMIP->feom':
                         lag: ${om2o_lag}
-                        seq: ${a2o_seq}
+                        seq: ${om2o_seq}
 
 
         coupling_methods:

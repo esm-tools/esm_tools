@@ -417,6 +417,10 @@ coupling_fields:
                 grid: feom
         enth_oce:
                 grid: feom
+        enth_for:
+                grid: feom
+        calv_for:
+                grid: feom
 
 grids:
         feom:

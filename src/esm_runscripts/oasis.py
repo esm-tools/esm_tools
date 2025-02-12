@@ -122,7 +122,7 @@ class oasis:
         seq = int(direction.get("seq", "2"))
         # if transformation.get("postprocessing", {}).get("conserv", {}).get("method"):
         #    seq += 1
-        coupling_time_step = direction.get("coupling_time_step", time_step)
+        time_step = direction.get("coupling_time_step", time_step)
 
         p_rgrid = p_lgrid = "0"
         if "number_of_overlapping_points" in rgrid:

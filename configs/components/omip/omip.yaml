@@ -1,0 +1,118 @@
+#
+# OMIP Reader YAML file
+#
+
+model: omip
+executable: omip
+execution_command: omip
+
+description: |
+        OMIP forcing reader taken from Tido Semmler
+version: v1
+destination: omip-forcing
+
+##
+## Compile information 
+##
+clean_command: rm -rf bin; cd src; make clean; cd ..
+comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/omip-reader.exe ./bin/omip
+git-repository: https://gitlab.dkrz.de/ec-earth/omip-reader.git
+install_bins: bin/omip
+##
+## Directories
+##
+model_dir: ${general.model_dir}
+bin_dir: ${model_dir}/bin
+pool_dir: "${computer.pool_directories.pool}"
+input_dir: "${pool_dir}/omip-forcing/"
+namelist_dir: ${general.esm_namelist_dir}/omip/
+
+parent_expid: "test" 
+
+resolution: 1440x720
+
+generate_namelist: 1
+
+restart: 1
+restart_rate: 1
+restart_unit: 'months'
+
+namelists:
+        - "namelist.omip"
+
+choose_resolution:
+        360x180:
+                nx: 1440
+                ny: 720
+
+nproca: 1
+nprocb: 1
+                         
+runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+
+lresume: false
+
+bin_sources: 
+        bin: ${bin_dir}/${executable}
+
+config_sources:
+        namelist.omip: "${namelist_dir}/namelist.omip"
+
+input_in_work:
+        sst_forcing: "comb_input4MIPs_SSTsAndSeaIce_POMIP_pdSST_pdSIC_gn.nc"
+        sic_forcing: "comb_input4MIPs_SSTsAndSeaIce_POMIP_pdSST_pdSIC_gn.nc"
+
+input_files:
+        sst_forcing: sst_forcing
+        sic_forcing: sic_forcing
+
+input_sources:
+        sst_forcing: "${input_dir}/comb_input4MIPs_SSTsAndSeaIce_POMIP_pdSST_pdSIC_gn.nc"
+        sic_forcing: "${input_dir}/comb_input4MIPs_SSTsAndSeaIce_POMIP_pdSST_pdSIC_gn.nc"
+
+coupling_fields:
+        "[[omip_fields_send-->FIELD]]":
+                grid: OMIP
+
+namelist_changes:
+        namelist.omip:
+                NAMOMIP:
+                        RunLengthSec: "${runtime_seconds}"
+                        TimeStepSec: "84600"
+                        FixYear: "0"
+                        StartYear: "1850"
+                        FileListSST: ${input_in_work.sst_forcing}
+                        FileListSIC: ${input_in_work.sic_forcing}
+
+grids:
+        OMIP:
+                name: OMIP
+                nx: 1440
+                ny: 720
+                oasis_grid_type: "LR"
+
+omip_fields_send: [OMIP_calv,OMIP_enth]
+#
+# Setup up compile and runtime environment i.e. what needs
+# to be changed w.r.t the default config/machines/<computer>.yaml
+#
+compiletime_environment_changes:
+   add_export_vars:
+      # OASIS
+      - 'OIFS_OASIS_BASE=$(pwd)/oasis'
+      - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+      - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
+      # NetCDF
+      - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
+      - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
+      - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
+      - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
+      # compiler and compiler flags
+      - 'OIFS_FC=$FC'
+      - 'OIFS_FFLAGS="-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"'
+      - 'OIFS_FFIXED=""'
+      - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
+      - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
+      - 'OIFS_CC=$CC'
+      - 'OIFS_CFLAGS="-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"'
+      - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'

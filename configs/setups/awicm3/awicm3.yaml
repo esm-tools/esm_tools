@@ -15,6 +15,7 @@ general:
                 - oifs
                 - rnfmap
                 - oasis3mct
+                - omip
 
         available_versions:
         - 'v3.0'
@@ -663,6 +664,7 @@ oasis3mct:
         norestart: "F"
 
         process_ordering:
+                - omip
                 - fesom
                 - oifs
                 - rnfmap
@@ -726,6 +728,7 @@ oasis3mct:
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
                                         - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
+                                        - 'calv_for,enth_for <--gauswgt_gss-- OMIP_calv:OMIP_enth'
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'

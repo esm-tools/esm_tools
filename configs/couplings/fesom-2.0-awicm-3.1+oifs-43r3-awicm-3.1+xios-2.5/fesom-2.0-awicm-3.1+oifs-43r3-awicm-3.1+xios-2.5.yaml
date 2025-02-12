@@ -3,6 +3,7 @@ components:
 - rnfmap-awicm-3.1
 - oifs-43r3-awicm-3.1
 - fesom-2.0-awicm-3.1
+- omip-v1
 - oasis3mct-4.0-awicm-3.1
 coupling_changes:
 - sed -i '/COUPLENEMOECE = /s/.TRUE./.FALSE./g' oifs-43r3/src/ifs/module/yommcc.F90

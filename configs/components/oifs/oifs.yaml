@@ -1415,6 +1415,7 @@ prepcompute_recipe:
    - "modify_files"
    - "copy_files_to_work"
    - "report_missing_files"
+   - "compute_and_log_file_checksums"
    # see https://github.com/esm-tools/esm_tools/discussions/774
    # - "add_vcs_info"
    #- "check_vcs_info_against_last_run"

@@ -6,10 +6,11 @@ import sys
 
 import questionary
 from colorama import Fore
+from loguru import logger
 
 import esm_parser
 import esm_tools
-from loguru import logger
+from esm_tools import user_error, user_note
 
 from . import filelists
 from .helpers import end_it_all, evaluate, write_to_log
@@ -121,7 +122,7 @@ def copy_tools_to_thisrun(config):
         # exit right away to prevent further recursion. There might still be
         # running instances of esmr_runscripts and something like
         # `killall esm_runscripts` might be required
-        esm_parser.user_error(error_type, error_text)
+        user_error(error_type, error_text)
 
     # If ``fromdir`` and ``scriptsdir`` are different, we are not in the experiment.
     # In this case, update the runscript if necessary.
@@ -194,7 +195,7 @@ def _call_esm_runscripts_internally(config, command, exedir):
     else:
         error_type = "runtime error in function ``_call_esm_runscripts_internally``"
         error_text = f"{exedir} does not exists. Aborting."
-        esm_parser.user_error(error_type, error_text)
+        user_error(error_type, error_text)
 
     logger.debug(command)
 
@@ -447,7 +448,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
             # If the --update flag is used, notify that the target script will
             # be updated and do update it
             if gconfig["update"]:
-                esm_parser.user_note(
+                user_note(
                     f"Original {file_type} different from target",
                     f"{differences}\n{scriptsdir}/{tfile} will be updated!",
                 )
@@ -457,7 +458,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
             # If the --update flag is not called, exit with an error showing the
             # user how to proceed
             else:
-                esm_parser.user_note(
+                user_note(
                     f"Original {file_type} different from target",
                     differences
                     + "\n"
@@ -519,6 +520,6 @@ def _copy_preliminary_files_from_experiment_to_thisrun(config):
         method = filelists.get_method(copy_or_link)
 
         if os.path.isfile(f"{source}/{filename}"):
-            method(f"{source}/{filename}", f"{dest}/{filename}")
+            method(config, f"{source}/{filename}", f"{dest}/{filename}")
 
     return config

@@ -15,7 +15,7 @@ import warnings
 import f90nml
 from loguru import logger
 
-from esm_parser import user_error
+from esm_tools import user_error
 
 
 class Namelist:

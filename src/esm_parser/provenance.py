@@ -37,8 +37,23 @@ This module contains:
 
 import copy
 
+from loguru import logger
+from ruamel.yaml import YAML
+
 import esm_parser
+import esm_tools
 from esm_calendar import Date
+
+CATEGORY_HIERARCHY = [
+    "defaults",  # Lowest in the hierarchy
+    "other_software",
+    "machines",
+    "components",
+    "setups",
+    "couplings",
+    "runscript",
+    "backend",  # Highest in the hierarchy (no category means it is a change
+]               # from ESM-Tools functions)
 
 
 # =================
@@ -415,6 +430,7 @@ class DictWithProvenance(dict):
         self.custom_setitem = False
         self.put_provenance(provenance)
         self.custom_setitem = True
+        self.respect_hierarchy_in_setitem = True
 
     def put_provenance(self, provenance):
         """
@@ -507,11 +523,30 @@ class DictWithProvenance(dict):
 
         return provenance_dict
 
+    def extract_first_nested_values_provenance(self):
+        """
+        Recursively loops through the dictionary keys and returns the first provenance
+        found in the nested values.
+
+        Returns
+        -------
+        first_provenance : esm_parser.provenance.Provenance
+            The first provenance found in the nested values
+        """
+        first_provenance = None
+        for key, val in self.items():
+            if isinstance(val, PROVENANCE_MAPPINGS):
+                return val.extract_first_nested_values_provenance()
+            elif hasattr(val, "provenance"):
+                return val.provenance[-1]
+
     def __setitem__(self, key, val):
         """
         Any time an item in a DictWithProvenance is set, extend the old provenance of
         the old value with the provenance of the new ``val`` and make that be the new
-        extended provenance history of the value.
+        extended provenance history of the value. Does not set the new value if the old
+        value comes from a yaml file with higher category hierarchy as defined in
+        ``CATEGORY_HIERARCHY``.
 
         Parameters
         ----------
@@ -520,23 +555,63 @@ class DictWithProvenance(dict):
         val : any
             Value of the item
         """
-        val_new = val
+        # Initialize values. final_val is the variable that will be used in
+        # super().__setitem__
+        new_val = val
+        old_val = self.get(key, None)
+        final_val = new_val
         if (
             key in self
-            and not isinstance(self[key], (dict, list))
-            and hasattr(self[key], "provenance")
+            and not isinstance(old_val, (dict, list))
+            and hasattr(old_val, "provenance")
             and hasattr(self, "custom_setitem")
             and self.custom_setitem
         ):
-            new_provenance = self[key].provenance
-            if hasattr(val, "provenance"):
-                new_provenance.extend_and_modified_by(
-                    val.provenance, "dict.__setitem__"
-                )
-                val_new = copy.deepcopy(val)
-                val_new.provenance = new_provenance
+            # Define the category of the old value (components, setups, machines, ...)
+            if old_val.provenance[-1]:
+                old_category = old_val.provenance[-1].get("category", None)
+            else:
+                old_category = "backend"
 
-        super().__setitem__(key, val_new)
+            # Initialize new provenance with the old provenance
+            new_provenance = copy.deepcopy(old_val.provenance)
+
+            # If the new value has provenance extend its provenance with the old one
+            if hasattr(new_val, "provenance"):
+                new_provenance.extend_and_modified_by(
+                    new_val.provenance, "dict.__setitem__"
+                )
+
+                # Define the category of the new value
+                if new_provenance[-1]:
+                    new_category = new_provenance[-1].get("category", None)
+                else:
+                    new_category = "backend"
+
+                # Obtain category indexes (numerical hierarcgy))
+                old_category_index = CATEGORY_HIERARCHY.index(old_category)
+                new_category_index = CATEGORY_HIERARCHY.index(new_category)
+
+                # Assign the new value if the new category is higher in the hierarchy
+                if old_category_index <= new_category_index or old_val == None:
+                    final_val = copy.deepcopy(new_val)
+                # Keep the old value if the new category is lower in the hierarchy
+                elif self.respect_hierarchy_in_setitem:
+                    final_val = copy.deepcopy(old_val)
+                    new_provenance.extend_and_modified_by(
+                        Provenance(old_val.provenance[-1]),
+                        "dict.__setitem__->reverted_by_hierarchy",
+                    )
+                    logger.debug(
+                        f"Value {new_val} won't be assigned to the key {key}, because "
+                        f"the old value {old_val} comes from a category higher in the "
+                        f"hierarchy ({old_val}:{old_category} > "
+                        f"{new_val}:{new_category})"
+                    )
+
+                final_val.provenance = new_provenance
+
+        super().__setitem__(key, final_val)
 
     def update(self, dictionary, *args, **kwargs):
         """
@@ -567,6 +642,7 @@ class DictWithProvenance(dict):
 
         for key, val in new_provs.items():
             self[key].provenance = val
+
 
 DictWithProvenance.yaml_dump = esm_parser.yaml_dump
 
@@ -714,6 +790,23 @@ class ListWithProvenance(list):
 
         return provenance_list
 
+    def extract_first_nested_values_provenance(self):
+        """
+        Recursively loops through the list elements and returns the first provenance
+        found in the nested values.
+
+        Returns
+        -------
+        first_provenance : esm_parser.provenance.Provenance
+            The first provenance found in the nested values
+        """
+        first_provenance = None
+        for elem in self:
+            if isinstance(elem, PROVENANCE_MAPPINGS):
+                return elem.extract_first_nested_values_provenance()
+            elif hasattr(elem, "provenance"):
+                return elem.provenance[-1]
+
     def __setitem__(self, indx, val):
         """
         Any time an item in a ListWithProvenance is set, extend the old provenance of
@@ -744,6 +837,7 @@ class ListWithProvenance(list):
                 val_new.provenance = new_provenance
 
         super().__setitem__(indx, val_new)
+
 
 ListWithProvenance.yaml_dump = esm_parser.yaml_dump
 

@@ -7,8 +7,10 @@ import textwrap
 
 from loguru import logger
 
+
 import esm_environment
-from esm_parser import find_variable, user_error, user_note
+from esm_parser import find_variable
+from esm_tools import user_error, user_note
 
 from . import dataprocess, helpers, prepare
 from .pbs import Pbs
@@ -812,7 +814,7 @@ class batch_system:
             cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
             # Check for CPUs and OpenMP threads
             if omp_num_threads > cpus_per_proc:
-                esm_parser.user_error(
+                user_error(
                     "OpenMP configuration",
                     (
                         "The number of OpenMP threads cannot be larger than the number"
@@ -824,7 +826,7 @@ class batch_system:
         elif "nproca" in config[model] and "nprocb" in config[model]:
             # ``nproca``/``nprocb`` not compatible with ``omp_num_threads``
             if omp_num_threads > 1:
-                esm_parser.user_note(
+                user_note(
                     "nproc",
                     "``nproca``/``nprocb`` not compatible with ``omp_num_threads``",
                 )

@@ -4,3 +4,6 @@ intermediate_movements:
 - "config"
 - "bin"
 - "input"
+compute_file_checksums: False
+parallel_file_movements: False
+force_overwrite_in_file_movements: False

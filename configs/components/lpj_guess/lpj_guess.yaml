@@ -32,7 +32,8 @@ install_bins: "build/guess"
 clean_command: "rm -rf build"
 executable: guess
 execution_command: ${executable} ${runscript_name}
-resolution: TL159 #if it's not set i dosen't work! 
+#resolution: TL159 #if it's not set i dosen't work! 
+resolution: TL255 #if it's not set i dosen't work!
 
 choose_version:
     # Here you can place all the variables you would want to control via the version
@@ -44,16 +45,20 @@ choose_version:
         branch: main
     4.1.2:
         runscript_name: run_coupled_4_1_2.ins
-        git-repository: https://git.smhi.se/ec-earth/vendor/lpjg/lpjg-4.1.git
+        git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
         branch: main
-        mygrid: TL159
-        install_bins: build/guess_TL159
-        executable: guess_TL159
+        #mygrid: TL159
+        mygrid: TL255
+        #install_bins: build/guess_TL159
+        install_bins: build/guess_TL255
+        #executable: guess_TL159
+        executable: guess_TL255
 
         environment_changes:
             add_add_add_add_add_export_vars:
                 myfortrancompiler: $FC
-                mygrid: TL159
+                #mygrid: TL159
+                mygrid: TL255
                 OASIS_ANCHOR: ../../../oasis  
                 NETCDF_C_DIR: $NETCDFROOT
                 NETCDF_F_DIR: $NETCDFFROOT

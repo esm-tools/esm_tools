@@ -309,6 +309,13 @@ lpj_guess:
                         oasis_grid_type: "D"
                         oyac_grid_type: "LL"
                         oyac_io_per_node: 4
+                TL255-land:
+                        name: TL255-land
+                        nx: "${nx}"
+                        ny: "${ny}" 
+                        oasis_grid_type: "D"
+                        oyac_grid_type: "LL"
+                        oyac_io_per_node: 4
 
         choose_general.major_version:
                 "v3.4":
@@ -323,15 +330,29 @@ lpj_guess:
                 soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
                 tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc
                 CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL159.nc 
+                #VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
+                VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL255.nc 
                 dir_landuse: ${lpj_guess.input_dir}/dirmaker
                 dir_fire: ${lpj_guess.input_dir}/dirmaker
                 ins_files: ${namelist_dir}/*.ins
+                #ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_TL159_CORE2.txt #is this the correct file for ece_gridlist.txt?
+                ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_TL255_CORE2.txt #is this the correct file for ece_gridlist.txt? 
+                lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
+                "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins 
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                "VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
+                #"VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL255.nc
+                "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins
+                "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
+                "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
+                "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
+                #"ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_TL159_CORE2.txt #is this the correct file for ece_gridlist.txt?
+                "ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_TL255_CORE2.txt #is this the correct file for ece_gridlist.txt?
+                temp_namcouple: /home/a/a270270/temp_confiles/namcouple 
                 "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
+
                  
         
         forcing_in_work:
@@ -339,13 +360,22 @@ lpj_guess:
                 tmp_rc_file: lpjg_steps.rc
                 CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 VegInit: vegin.nc
+                temp_namcouple: namcouple
                 dir_landuse: /landuse/dirmaker
                 dir_fire: /fire/dirmaker
-                ins_files: /*.ins 
+                ins_files: /*.ins
+                ece_gridlist: ece_gridlist.txt #is this the correct file?
+                lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
+                "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins 
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc 
+                "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
+                "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins 
+                "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins  
+                "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
+                "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt #is this the correct file?  
                 "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/dirmaker
                  
 
@@ -393,13 +423,15 @@ rnfmap:
                         oasis_grid_type: "LR"
                         oyac_grid_type: "LL"
                         oyac_io_per_node: 4
+                
                 rnfo:
-                        name: RnfO
+                        name: RnfO 
                         nx: 512
                         ny: 256
                         oasis_grid_type: "LR"
                         oyac_grid_type: "LL"
                         oyac_io_per_node: 4
+                
         input_files:
                 runoff_maps: runoff_maps
 
@@ -411,7 +443,7 @@ oasis3mct:
         pool_dir: ${general.pool_dir}/oasis/
         norestart: "F"
 
-        process_ordering:
+        process_ordering: #look into it.....
                 - fesom
                 - lpj_guess
                 - oifs
@@ -486,8 +518,8 @@ oasis3mct:
                 'atmr->rnfa':
                         lag: ${r2a_lag}
                         seq: ${r2a_seq}
-                'rnfo->feom':
-                        lag: ${o2r_lag}
+                'rnfo->feom':                   
+                        lag: ${o2r_lag}         
                         seq: ${o2r_seq}
                 'feom->atma':
                         lag: ${o2a_lag}

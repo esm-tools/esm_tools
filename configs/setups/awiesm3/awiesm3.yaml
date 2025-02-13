@@ -331,7 +331,7 @@ lpj_guess:
                 tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc
                 CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
-                VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL255.nc 
+                #VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL255.nc 
                 dir_landuse: ${lpj_guess.input_dir}/dirmaker
                 dir_fire: ${lpj_guess.input_dir}/dirmaker
                 ins_files: ${namelist_dir}/*.ins
@@ -343,7 +343,7 @@ lpj_guess:
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #"VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
-                "VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL255.nc
+                #"VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL255.nc
                 "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins
                 "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
                 "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
@@ -359,7 +359,7 @@ lpj_guess:
                 soil_layer_type: slt_${mygrid}.nc
                 tmp_rc_file: lpjg_steps.rc
                 CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                VegInit: vegin.nc
+                #VegInit: vegin.nc
                 temp_namcouple: namcouple
                 dir_landuse: /landuse/dirmaker
                 dir_fire: /fire/dirmaker
@@ -370,7 +370,7 @@ lpj_guess:
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc 
+                #"VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc 
                 "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
                 "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins 
                 "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins  
@@ -445,8 +445,8 @@ oasis3mct:
 
         process_ordering: #look into it.....
                 - fesom
-                - lpj_guess
                 - oifs
+                - lpj_guess
                 - rnfmap
 
         required_plugins:

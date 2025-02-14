@@ -1481,9 +1481,6 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
-                #choose_eternal_run_number:
-                #        0:
-                #                branchoff: true
 
 
 choose_general.standalone:

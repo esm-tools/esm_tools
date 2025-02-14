@@ -397,7 +397,6 @@ choose_resolution:
                 # This has 2x computer cost but reduces
                 # biases by a lot, so it is worth it
                 # Savita et al. (2024) 10.5194/gmd-2023-101 
-                #time_step: 3600
                 time_step: 1800
                 oasis_grid_name: "096"
                 res_number: 95

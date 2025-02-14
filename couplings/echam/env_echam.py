@@ -31,6 +31,7 @@ def prepare_environment(config):
             "CELL_AREA_FESOM_FILE": config["fesom"].get("fesom_cell_area_file", "fesom.mesh.diag.nc"),
             "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
             "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
+            "oro_update_mod": config["echam"].get("oro_update_mod", 2),
             }
     
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:

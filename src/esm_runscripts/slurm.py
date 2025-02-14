@@ -7,8 +7,10 @@ import shutil
 import subprocess
 import sys
 
-import esm_parser
 from loguru import logger
+
+import esm_parser
+from esm_tools import user_note
 
 
 class Slurm:
@@ -292,7 +294,7 @@ class Slurm:
                 elif not config[model].get("execution_command") and not config[
                     model
                 ].get("executable"):
-                    esm_parser.user_note(
+                    user_note(
                         "Execution command",
                         f"Execution command for ``{model}`` not found. This is okay "
                         "if this component has no binary to be called, but if it does"

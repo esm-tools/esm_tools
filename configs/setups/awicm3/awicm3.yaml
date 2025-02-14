@@ -202,14 +202,6 @@ general:
         further_reading:
                 - oasis3mct/oasis3mct.env.yaml
 
-        add_environment_changes:
-                choose_computer.name:
-                        blogin:
-                                compiler_mpi: intel2019_ompi
-                        glogin:
-                                compiler_mpi: intel2019_ompi
-                        levante:
-                                compiler_mpi: intel2022_openmpi
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

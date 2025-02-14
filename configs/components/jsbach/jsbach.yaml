@@ -348,6 +348,7 @@ choose_scenario_is_ssp:
         False:
                 ssp_num: null
                 Ndepo_sufix: ""
+                cover_fract_cmip6: cover_fract_hist_scenario
 
 choose_echam.with_wiso:
         True:

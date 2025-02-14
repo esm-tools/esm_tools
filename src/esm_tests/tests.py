@@ -356,6 +356,7 @@ def run_test(info):
                 ]
                 run_command = (
                     f"esm_runscripts {v['path']} -e {script} --open-run "
+                    f"--modify-config {info['script_dir']}/modify_runscripts_config.yaml "
                     f"{check_flag}{additional_actions}"
                 )
                 out = sh(run_command, env_vars)

@@ -1,0 +1,2 @@
+general:
+    compute_file_checksums: True

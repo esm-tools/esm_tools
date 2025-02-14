@@ -1509,10 +1509,6 @@ preprocess:
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script
 # not working as expected as there is no "wait" after submit in the compute recipe below
-#postprocess:
-#        postprocess_shell:
-#                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-#                type: shell
 
 choose_oifs.post_processing:
         True:

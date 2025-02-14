@@ -37,11 +37,6 @@ blogin:
         compute_nodes: '^b[A-Za-z0-9]+\.usr\.hlrn\.de$'
         post_nodes: 'blogin*'
 
-#gloginp3:
-#        login_nodes: 'glogin1[1-3]'
-#        compute_nodes: '^g[A-Za-z0-9]+\.usr\.hlrn\.de$'
-#        post_nodes: 'glogin1[1-3]'
-
 glogin:
         login_nodes: 'glogin[1-9]'
         compute_nodes: 'g[A-Za-z0-9]+'

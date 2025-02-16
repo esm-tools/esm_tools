@@ -949,7 +949,7 @@ class Date:
         me = list(self._as_tuple())
         result = [me[i] - to_sub[i] for i in range(6)]
         result = self._normalize_date(result)
-        return result
+        return self.from_list(result)
 
     def _normalize_date(self, comps: List[int]) -> List[int]:
         """

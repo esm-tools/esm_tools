@@ -16,9 +16,12 @@ Functions:
 
 import copy
 import sys
+from typing import Generator, Union
+
+from deprecated import deprecated
 
 
-def find_remaining_minutes(seconds):
+def find_remaining_minutes(seconds: int) -> int:
     """
     Finds the remaining full minutes of a given number of seconds.
 
@@ -50,7 +53,12 @@ def find_remaining_minutes(seconds):
 find_remaining_hours = find_remaining_minutes
 
 
-def date_range(start_date, stop_date, frequency):
+# NOTE(PG): A grep -i "date_range" doesn't seem to use this anywhere. For now, I'm deprecating it, and it
+#          should be removed soon.
+@deprecated(reason="This function is not used anywhere, and will be removed!")
+def date_range(
+    start_date: Union[str, "Date"], stop_date: Union[str, "Date"], frequency: str
+) -> Generator["Date", None, None]:
     """
     Yields dates from start_date to stop_date with a given frequency.
 
@@ -67,11 +75,6 @@ def date_range(start_date, stop_date, frequency):
     ------
     Date
         The next date in the range.
-
-    Examples
-    --------
-    >>> list(date_range("2025-01-01", "2025-01-10", "1 day"))
-    [Date(2025-01-01T00:00:00), Date(2025-01-02T00:00:00), ..., Date(2025-01-10T00:00:00)]
     """
     if isinstance(start_date, str):
         start_date = Date(start_date)
@@ -83,27 +86,6 @@ def date_range(start_date, stop_date, frequency):
     while current_date <= stop_date:
         yield current_date
         current_date += frequency
-
-
-# FIXME(PG): Find out if this is used anywhere!
-class DateFormat:
-    DATE_SEPARATORS = ["", "-", "-", "-", " ", " ", "", "-", "", "", "/"]
-    TIME_SEPARATORS = ["", ":", ":", ":", " ", ":", ":", "", "", "", ":"]
-    DATETIME_SEPARATORS = ["_", "_", "T", " ", " ", " ", "_", "_", "", "_", " "]
-
-    def __init__(
-        self, form=1, print_hours=True, print_minutes=True, print_seconds=True
-    ):
-        self.form = form
-        self.print_hours = print_hours
-        self.print_minutes = print_minutes
-        self.print_seconds = print_seconds
-
-    def __repr__(self):
-        return (
-            f"DateFormat(form={self.form}, print_hours={self.print_hours}, "
-            f"print_minutes={self.print_minutes}, print_seconds={self.print_seconds})"
-        )
 
 
 class Calendar:
@@ -161,44 +143,61 @@ class Calendar:
         "Dec",
     ]
 
+    # NOTE(PG): This is for backwards compatibility with old code, and will be removed!
+    @staticmethod
+    @deprecated(
+        reason="Using 'calendar_type = 1' is deprecated, use 'calendar_type = \"gregorian\"' instead."
+    )
+    def _set_gregorian():
+        return "gregorian"
+
+    @staticmethod
+    @deprecated(
+        reason="Using 'calendar_type = 0' is deprecated, use 'calendar_type = \"no_leap\"' instead."
+    )
+    def _set_no_leap():
+        return "no_leap"
+
     def __init__(self, calendar_type="gregorian"):
         # NOTE(PG): This is for backwards compatibility with old code, this
         #           should throw a deprecation warning when triggered!
-		if calendar_type == 1:
-            calendar_type = "gregorian"
+        if calendar_type == 1:
+            calendar_type = self._set_gregorian()
         if calendar_type == 0:
-            calendar_type = "no_leap"
+            calendar_type = self._set_no_leap()
         self.calendar_type = calendar_type
 
     def is_leap_year(self, year):
         """
-        Checks if a year is a leap year.
+         Checks if a year is a leap year.
 
-        Parameters
-        ----------
-        year : int
-            The year to check.
+         Parameters
+         ----------
+         year : int
+             The year to check.
 
-        Returns
-        -------
-        bool
-            True if the given year is a leap year.
+         Returns
+         -------
+         bool
+             True if the given year is a leap year.
 
-        Examples
-        --------
-        >>> cal = Calendar("gregorian")
-        >>> cal.is_leap_year(2024)
+         Examples
+         --------
+         >>> cal = Calendar("gregorian")
+         >>> cal.is_leap_year(2024)
+         True
+        >>> cal.is_leap_year(1900)
+        False
+        >>> cal.is_leap_year(2000)
         True
+        >>> cal.is_leap_year(2023)
+        False
         """
-        if self.calendar_type == "gregorian":
-            if (year % 4) == 0:
-                if (year % 100) == 0:
-                    if (year % 400) == 0:
-                        return True
-                    return False
-                return True
-            return False
-        return False
+        return (
+            self.calendar_type == "gregorian"
+            and (year % 4 == 0)
+            and (year % 100 != 0 or year % 400 == 0)
+        )
 
     def days_in_year(self, year):
         """
@@ -277,16 +276,40 @@ class Calendar:
         return f"Calendar object with equal-length months of {self.calendar_type} days"
 
 
-class Date(object):
+class DateFormat:
+    """A class to represent and format Date objects as strings"""
+
+    _DATE_SEPARATORS = ["", "-", "-", "-", " ", " ", "", "-", "", "", "/"]
+    _TIME_SEPARATORS = ["", ":", ":", ":", " ", ":", ":", "", "", "", ":"]
+    _DATETIME_SEPARATORS = ["_", "_", "T", " ", " ", " ", "_", "_", "", "_", " "]
+
+    def __init__(
+        self, form=1, print_hours=True, print_minutes=True, print_seconds=True
+    ):
+        self.form = form
+        self.print_hours = print_hours
+        self.print_minutes = print_minutes
+        self.print_seconds = print_seconds
+
+    def __call__(self, date: "Date") -> str: ...
+
+    def __repr__(self):
+        return (
+            f"DateFormat(form={self.form}, print_hours={self.print_hours}, "
+            f"print_minutes={self.print_minutes}, print_seconds={self.print_seconds})"
+        )
+
+
+class Date:
     """
-    A class to contain dates, also compatiable with paleo (negative dates)
+    A class to contain dates, also compatible with paleo (negative dates)
 
     Parameters
     ----------
     indate : str
         The date to use.
 
-        See `pyesm.core.time_control.esm_calendar.Dateformat` for available
+        See ``esm_calendar.DateFormat`` for available
         formatters.
 
     calendar : ~`pyesm.core.time_control.esm_calendar.Calendar`, optional
@@ -399,7 +422,7 @@ class Date(object):
         self.doy = self.day_of_year()
         self.sdoy = str(self.day_of_year())
 
-        self._date_format = Dateformat(form, printhours, printminutes, printseconds)
+        self._date_format = DateFormat(form, printhours, printminutes, printseconds)
 
     def _init_from_date(self, indate, calendar=Calendar()):
         self.year, self.month, self.day, self.hour, self.minute, self.second = (

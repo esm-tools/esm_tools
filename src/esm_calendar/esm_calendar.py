@@ -41,7 +41,6 @@ Creating a date and formatting it:
     '2024-02-16T11:30:00'
 """
 
-import copy
 import sys
 from typing import Generator, List, Optional, Tuple, Union
 
@@ -343,6 +342,7 @@ class DateFormat:
         self.print_minutes = print_minutes
         self.print_seconds = print_seconds
         self.datesep = {
+            0: "-",
             1: "-",
             2: "-",
             3: "-",
@@ -355,6 +355,7 @@ class DateFormat:
             10: "/",
         }
         self.dtsep = {
+            0: "T",
             1: "_",
             2: "T",
             3: " ",
@@ -367,6 +368,7 @@ class DateFormat:
             10: " ",
         }
         self.timesep = {
+            0: ":",
             1: ":",
             2: ":",
             3: ":",
@@ -453,41 +455,28 @@ class Date:
             )
 
     def _init_from_str(self, indate: str) -> None:
-        """
-        Initialize a Date object from a string.
-
-        Recognizes a date part and an optional time part. The datetime separator "T" is supported.
-
-        Parameters
-        ----------
-        indate : str
-            The input date string.
-
-        Examples
-        --------
-        >>> d = Date("2024-02-16T11:30:00")
-        >>> print(d)
-        2024-02-16T11:30:00
-        """
         printhours = True
         printminutes = True
         printseconds = True
         components: List[str] = ["1900", "01", "01", "00", "00", "00"]
         time_sep_used = ""
-        if "T" in indate:
-            indate = indate.replace("T", "_")
+        original_format = "T" if "T" in indate else "_"
+
+        working_date = indate.replace("T", "_") if "T" in indate else indate
+
+        if "_" in working_date:
+            date_part, time_part = working_date.split("_", 1)
+            time_sep_used = ":" if ":" in time_part else ""
+        elif ":" in working_date and "-" not in working_date:
+            date_part = "0000-00-00"
+            time_part = working_date
             time_sep_used = ":"
         else:
-            time_sep_used = ""
-        if "_" in indate:
-            date_part, time_part = indate.split("_", 1)
-        elif ":" in indate and "-" not in indate:
-            date_part = "0000-00-00"
-            time_part = indate
-        else:
-            date_part = indate
+            date_part = working_date
             time_part = ""
             time_sep_used = ":"
+
+        # Process time components
         time = time_part
         for idx in [3, 4, 5]:
             if len(time) >= 2:
@@ -503,6 +492,8 @@ class Date:
                     printminutes = False
                 elif idx == 5:
                     printseconds = False
+
+        # Process date components
         date = date_part
         date_sep = "-" if "-" in date else ""
         for idx in [2, 1]:
@@ -512,7 +503,10 @@ class Date:
                 if date and date[-1] == "-":
                     date = date[:-1]
         components[0] = date if date else components[0]
-        form = self._determine_format(date_sep, time_sep_used, "T" in indate)
+
+        # Set the format based on the original separators
+        form = self._determine_format(date_sep, time_sep_used, original_format == "T")
+
         self.year, self.month, self.day, self.hour, self.minute, self.second = map(
             int, components
         )
@@ -651,10 +645,18 @@ class Date:
         >>> d.day_of_year()
         47
         """
-        if self.month == 1 and self.day == 1:
-            return 1
-        jan_first = Date("{}-01-01T00:00:00".format(self.year), self.calendar)
-        return self.time_between(jan_first, "days") + 1
+        if self.month == 1:
+            return self.day
+
+        # Sum days in all completed months
+        days = 0
+        for month in range(1, self.month):
+            days += self.calendar.days_in_month(self.year, month)
+
+        # Add days in current month
+        days += self.day
+
+        return days
 
     def time_between(self, other: "Date", unit: str = "seconds") -> Optional[int]:
         """
@@ -672,12 +674,33 @@ class Date:
         Optional[int]
             The time difference in the specified unit, or None if the unit is invalid.
         """
-        diff = (other - self) if other > self else (self - other)
-        try:
-            unit_index = self.calendar.TIME_UNITS.index(unit)
-            return diff[unit_index]
-        except ValueError:
+        if unit not in self.calendar.TIME_UNITS:
             return None
+
+        diff = self - other if self > other else other - self
+
+        # Convert to the requested unit
+        if unit == "seconds":
+            return (
+                (diff[0] * 365 + diff[1] * 30 + diff[2]) * 86400
+                + diff[3] * 3600
+                + diff[4] * 60
+                + diff[5]
+            )
+        elif unit == "minutes":
+            return (
+                (diff[0] * 365 + diff[1] * 30 + diff[2]) * 1440 + diff[3] * 60 + diff[4]
+            )
+        elif unit == "hours":
+            return (diff[0] * 365 + diff[1] * 30 + diff[2]) * 24 + diff[3]
+        elif unit == "days":
+            return diff[0] * 365 + diff[1] * 30 + diff[2]
+        elif unit == "months":
+            return diff[0] * 12 + diff[1]
+        elif unit == "years":
+            return diff[0]
+
+        return None
 
     def format(
         self,
@@ -850,6 +873,7 @@ class Date:
         else:
             sys.exit("No known combination for subtraction")
 
+    ################################################################################
     def _sub_date(self, other: "Date") -> List[int]:
         """
         Subtract one Date from another component-wise.
@@ -864,40 +888,48 @@ class Date:
         list of int
             Differences as [years, months, days, hours, minutes, seconds].
         """
-        d2 = copy.deepcopy(list(self._as_tuple()))
-        d1 = copy.deepcopy(list(other._as_tuple()))
+        d1 = list(other._as_tuple())  # The earlier date
+        d2 = list(self._as_tuple())  # The later date
+
+        # Initialize the difference list
         diff = [0, 0, 0, 0, 0, 0]
 
-        while d1[1] > 1:
-            diff[1] -= 1
-            d1[1] -= 1
-            diff[2] -= self.calendar.days_in_month(d1[0], d1[1])
-        while d2[1] > 1:
-            diff[1] += 1
-            d2[1] -= 1
-            diff[2] += self.calendar.days_in_month(d2[0], d2[1])
-        while d1[2] > 1:
-            diff[2] -= 1
-            d1[2] -= 1
-        while d2[2] > 1:
-            diff[2] += 1
+        # Handle seconds
+        if d2[5] < d1[5]:
+            d2[4] -= 1
+            d2[5] += 60
+        diff[5] = d2[5] - d1[5]
+
+        # Handle minutes
+        if d2[4] < d1[4]:
+            d2[3] -= 1
+            d2[4] += 60
+        diff[4] = d2[4] - d1[4]
+
+        # Handle hours
+        if d2[3] < d1[3]:
             d2[2] -= 1
-        if diff[1] < 0:
-            diff[0] -= 1
-        while d2[0] > d1[0]:
-            diff[0] += 1
-            diff[1] += 12
-            diff[2] += self.calendar.days_in_year(d1[0])
-            d1[0] += 1
-        diff[3] += diff[2] * 24
-        if diff[3] < 0:
-            diff[3] += 24
-        diff[4] += diff[3] * 60
-        if diff[4] < 0:
-            diff[4] += 60
-        diff[5] += diff[4] * 60
-        if diff[5] < 0:
-            diff[5] += 60
+            d2[3] += 24
+        diff[3] = d2[3] - d1[3]
+
+        # Handle days
+        if d2[2] < d1[2]:
+            d2[1] -= 1
+            if d2[1] == 0:
+                d2[0] -= 1
+                d2[1] = 12
+            d2[2] += self.calendar.days_in_month(d2[0], d2[1])
+        diff[2] = d2[2] - d1[2]
+
+        # Handle months
+        if d2[1] < d1[1]:
+            d2[0] -= 1
+            d2[1] += 12
+        diff[1] = d2[1] - d1[1]
+
+        # Handle years
+        diff[0] = d2[0] - d1[0]
+
         return diff
 
     def _sub_tuple(self, to_sub: Tuple[int, int, int, int, int, int]) -> List[int]:
@@ -977,13 +1009,11 @@ class Date:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> d1 = Date("2024-02-16T11:30:00")
-            >>> d2 = Date("0000-00-00T01:00:00")
-            >>> d3 = d1 + d2
-            >>> print(d3)
-            2024-02-16T12:30:00
+        >>> d1 = Date("2024-02-16T11:30:00")
+        >>> d2 = Date("0000-00-00T01:00:00")
+        >>> d3 = d1 + d2
+        >>> print(d3)
+        2024-02-16T12:30:00
         """
         my_comps = list(self._as_tuple())
         other_comps = [other[i] for i in range(6)]

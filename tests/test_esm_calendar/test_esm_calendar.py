@@ -189,7 +189,27 @@ def test_date_format_self():
     assert d.format() == "2024-02-16T11:30:00"
 
 
-def test_date_format_custom():
+def test_date_format_1():
+    d = Date("2024-02-16T11:30:00")
+    assert d.format(form=1) == "2024-02-16_11:30:00"
+
+
+def test_date_format_2():
+    d = Date("2024-02-16T11:30:00")
+    assert d.format(form=2) == "2024-02-16T11:30:00"
+
+
+def test_date_format_3():
+    d = Date("2024-02-16T11:30:00")
+    assert d.format(form=3) == "2024-02-16 11:30:00"
+
+
+def test_date_format_4():
+    d = Date("2024-02-16T11:30:00")
+    assert d.format(form=4) == "2024 02 16 11 30 00"
+
+
+def test_date_format_5():
     d = Date("2024-02-16T11:30:00")
     assert d.format(form=5) == "16 Feb 2024 11:30:00"
 

@@ -1,6 +1,6 @@
 import pytest
 
-from esm_calendar import Calendar, find_remaining_minutes
+from esm_calendar import Calendar, Date, DateFormat, find_remaining_minutes
 
 
 def test_find_remaining_minutes_typical_value():
@@ -44,27 +44,27 @@ def test_find_remaining_minutes_negative_value():
 
 def test_is_leap_year_gregorian_true():
     cal = Calendar("gregorian")
-    assert cal.is_leap_year(2024) == True
+    assert cal.is_leap_year(2024) is True
 
 
 def test_is_leap_year_gregorian_false():
     cal = Calendar("gregorian")
-    assert cal.is_leap_year(2023) == False
+    assert cal.is_leap_year(2023) is False
 
 
 def test_is_leap_year_gregorian_century_false():
     cal = Calendar("gregorian")
-    assert cal.is_leap_year(1900) == False
+    assert cal.is_leap_year(1900) is False
 
 
 def test_is_leap_year_gregorian_century_true():
     cal = Calendar("gregorian")
-    assert cal.is_leap_year(2000) == True
+    assert cal.is_leap_year(2000) is True
 
 
 def test_is_leap_year_no_leap():
     cal = Calendar("no_leap")
-    assert cal.is_leap_year(2024) == False
+    assert cal.is_leap_year(2024) is False
 
 
 def test_days_in_year_gregorian_leap():
@@ -136,3 +136,149 @@ def test_str_gregorian():
 def test_str_equal_months():
     cal = Calendar(30)
     assert str(cal) == "Calendar object with equal-length months of 30 days"
+
+
+def test_date_initialization_from_string():
+    d = Date("2024-02-16T11:30:00")
+    assert str(d) == "2024-02-16T11:30:00"
+
+
+def test_date_initialization_from_date():
+    d1 = Date("2024-02-16T11:30:00")
+    d2 = Date(d1)
+    assert str(d2) == "2024-02-16T11:30:00"
+
+
+def test_date_year_component():
+    d = Date("2024-02-16T11:30:00")
+    assert d.year == 2024
+
+
+def test_date_month_component():
+    d = Date("2024-02-16T11:30:00")
+    assert d.month == 2
+
+
+def test_date_day_component():
+    d = Date("2024-02-16T11:30:00")
+    assert d.day == 16
+
+
+def test_date_hour_component():
+    d = Date("2024-02-16T11:30:00")
+    assert d.hour == 11
+
+
+def test_date_minute_component():
+    d = Date("2024-02-16T11:30:00")
+    assert d.minute == 30
+
+
+def test_date_second_component():
+    d = Date("2024-02-16T11:30:00")
+    assert d.second == 0
+
+
+def test_date_day_of_year():
+    d = Date("2024-02-16T00:00:00")
+    assert d.day_of_year() == 47
+
+
+def test_date_format_self():
+    d = Date("2024-02-16T11:30:00")
+    assert d.format() == "2024-02-16T11:30:00"
+
+
+def test_date_format_custom():
+    d = Date("2024-02-16T11:30:00")
+    assert d.format(form=5) == "16 Feb 2024 11:30:00"
+
+
+def test_date_syear():
+    d = Date("2024-02-16T11:30:00")
+    assert d.syear == "2024"
+
+
+def test_date_smonth():
+    d = Date("2024-02-16T11:30:00")
+    assert d.smonth == "02"
+
+
+def test_date_sday():
+    d = Date("2024-02-16T11:30:00")
+    assert d.sday == "16"
+
+
+def test_date_shour():
+    d = Date("2024-02-16T11:30:00")
+    assert d.shour == "11"
+
+
+def test_date_sminute():
+    d = Date("2024-02-16T11:30:00")
+    assert d.sminute == "30"
+
+
+def test_date_ssecond():
+    d = Date("2024-02-16T11:30:00")
+    assert d.ssecond == "00"
+
+
+def test_date_time_between():
+    d1 = Date("2024-02-16T12:30:00")
+    d2 = Date("2024-02-16T11:30:00")
+    assert d1.time_between(d2, "hours") == 1
+
+
+def test_date_subtraction():
+    d1 = Date("2024-02-16T12:30:00")
+    d2 = Date("2024-02-16T11:30:00")
+    assert d1 - d2 == [0, 0, 0, 1, 0, 0]
+
+
+def test_date_addition():
+    d1 = Date("2024-02-16T11:30:00")
+    d2 = Date("0000-00-00T01:00:00")
+    d3 = d1 + d2
+    assert str(d3) == "2024-02-16T12:30:00"
+
+
+def test_date_from_list():
+    d = Date.from_list([2024, 2, 16, 11, 30, 0])
+    assert str(d) == "2024-02-16T11:30:00"
+
+
+def test_date_comparison_lt():
+    d1 = Date("2024-02-16T11:30:00")
+    d2 = Date("2024-02-17T11:30:00")
+    assert d1 < d2
+
+
+def test_date_comparison_le():
+    d1 = Date("2024-02-16T11:30:00")
+    d2 = Date("2024-02-16T11:30:00")
+    assert d1 <= d2
+
+
+def test_date_comparison_eq():
+    d1 = Date("2024-02-16T11:30:00")
+    d2 = Date("2024-02-16T11:30:00")
+    assert d1 == d2
+
+
+def test_date_comparison_ne():
+    d1 = Date("2024-02-16T11:30:00")
+    d2 = Date("2024-02-17T11:30:00")
+    assert d1 != d2
+
+
+def test_date_comparison_gt():
+    d1 = Date("2024-02-17T11:30:00")
+    d2 = Date("2024-02-16T11:30:00")
+    assert d1 > d2
+
+
+def test_date_comparison_ge():
+    d1 = Date("2024-02-16T11:30:00")
+    d2 = Date("2024-02-16T11:30:00")
+    assert d1 >= d2

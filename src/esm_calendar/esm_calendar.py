@@ -704,6 +704,10 @@ class Date:
 
         return None
 
+    def output(self, form="SELF") -> str:
+        """Shortcut method to nicely print a Date"""
+        return self.format(form)
+
     def format(
         self,
         form: Union[str, int] = "SELF",

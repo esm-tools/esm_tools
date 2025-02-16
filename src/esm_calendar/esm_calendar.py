@@ -68,14 +68,10 @@ def find_remaining_minutes(seconds: int) -> int:
     """
     if not isinstance(seconds, int):
         raise TypeError(
-            "You must provide an integer, instead got: {} of type {}".format(
-                seconds, type(seconds)
-            )
+            f"You must provide an integer, instead got: {seconds} of type {type(seconds)}"
         )
     if seconds < 0:
-        raise ValueError(
-            "You must provide a positive integer, instead got {}".format(seconds)
-        )
+        raise ValueError(f"You must provide a positive integer, instead got {seconds}")
     return seconds % 60
 
 
@@ -297,16 +293,14 @@ class Calendar:
         return int(self.calendar_type)
 
     def __repr__(self) -> str:
-        return "Calendar(calendar_type={})".format(self.calendar_type)
+        return f"Calendar(calendar_type={self.calendar_type})"
 
     def __str__(self) -> str:
         if self.calendar_type == "no_leap":
             return "Calendar object with no leap years allowed"
         if self.calendar_type == "gregorian":
             return "Calendar object with allowed leap years"
-        return "Calendar object with equal-length months of {} days".format(
-            self.calendar_type
-        )
+        return f"Calendar object with equal-length months of {self.calendar_type} days"
 
 
 class DateFormat:
@@ -382,9 +376,7 @@ class DateFormat:
         }
 
     def __repr__(self) -> str:
-        return "DateFormat(form={}, print_hours={}, print_minutes={}, print_seconds={})".format(
-            self.form, self.print_hours, self.print_minutes, self.print_seconds
-        )
+        return f"DateFormat(form={self.form}, print_hours={self.print_hours}, print_minutes={self.print_minutes}, print_seconds={self.print_seconds})"
 
 
 class Date:
@@ -449,9 +441,7 @@ class Date:
             self._init_from_date(indate)
         else:
             raise TypeError(
-                "{} is not valid to initialize a Date object (valid types: str, Date)".format(
-                    type(indate)
-                )
+                f"{type(indate)} is not valid to initialize a Date object (valid types: str, Date)"
             )
 
     def _init_from_str(self, indate: str) -> None:
@@ -568,7 +558,7 @@ class Date:
         str
             The year as a 4-digit string.
         """
-        return "{:04d}".format(self.year)
+        return f"{self.year:04d}"
 
     @property
     def sdoy(self) -> str:
@@ -580,7 +570,7 @@ class Date:
         str
             The day of the year as a 3-digit string.
         """
-        return "{:03d}".format(self.day_of_year())
+        return f"{self.day_of_year():03d}"
 
     @property
     def smonth(self) -> str:
@@ -592,7 +582,7 @@ class Date:
         str
             The month as a 2-digit string.
         """
-        return "{:02d}".format(self.month)
+        return f"{self.month:02d}"
 
     @property
     def sday(self) -> str:
@@ -604,7 +594,7 @@ class Date:
         str
             The day as a 2-digit string.
         """
-        return "{:02d}".format(self.day)
+        return f"{self.day:02d}"
 
     @property
     def shour(self) -> str:
@@ -616,7 +606,7 @@ class Date:
         str
             The hour as a 2-digit string.
         """
-        return "{:02d}".format(self.hour)
+        return f"{self.hour:02d}"
 
     @property
     def sminute(self) -> str:
@@ -628,7 +618,7 @@ class Date:
         str
             The minute as a 2-digit string.
         """
-        return "{:02d}".format(self.minute)
+        return f"{self.minute:02d}"
 
     @property
     def ssecond(self) -> str:
@@ -640,7 +630,7 @@ class Date:
         str
             The second as a 2-digit string.
         """
-        return "{:02d}".format(self.second)
+        return f"{self.second:02d}"
 
     def day_of_year(self) -> int:
         """
@@ -808,12 +798,10 @@ class Date:
         str
             A string in the form 'YYYY-MM-DDTHH:MM:SS'.
         """
-        return "{:04d}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}".format(
-            self.year, self.month, self.day, self.hour, self.minute, self.second
-        )
+        return f"{self.year:04d}-{self.month:02d}-{self.day:02d}T{self.hour:02d}:{self.minute:02d}:{self.second:02d}"
 
     def __repr__(self) -> str:
-        return "Date({})".format(self)
+        return f"Date({self.format()})"
 
     def _as_tuple(self) -> Tuple[int, int, int, int, int, int]:
         """
@@ -883,7 +871,7 @@ class Date:
         elif isinstance(other, tuple):
             return self._sub_tuple(other)
         else:
-            raise TypeError(f"Unsupported type for subtraction: {type(other)}"))
+            raise TypeError(f"Unsupported type for subtraction: {type(other)}")
 
     ################################################################################
     def _sub_date(self, other: "Date") -> List[int]:

@@ -563,14 +563,14 @@ class Date:
     @property
     def sdoy(self) -> str:
         """
-        Returns a zero-padded string of the day of the year.
+        Returns a string of the day of the year.
 
         Returns
         -------
         str
             The day of the year as a 3-digit string.
         """
-        return f"{self.day_of_year():03d}"
+        return f"{self.day_of_year()}"
 
     @property
     def smonth(self) -> str:

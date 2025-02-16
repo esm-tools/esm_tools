@@ -8,12 +8,11 @@ from loguru import logger
 
 import esm_parser
 import esm_profile
-from esm_parser import yaml_file_to_dict
 
 
 def read_recipe(recipe, additional_dict, needs_parse=True):
     if needs_parse:
-        recipe = yaml_file_to_dict(recipe)
+        recipe = esm_parser.yaml_file_to_dict(recipe)
     recipe.update(additional_dict)
     esm_parser.basic_choose_blocks(recipe, recipe)
     esm_parser.recursive_run_function(
@@ -26,7 +25,7 @@ def read_recipe(recipe, additional_dict, needs_parse=True):
 def read_plugin_information(plugins_bare, recipe, needs_parse=True):
     # pluginfile = esm_plugins.yaml
     if needs_parse:
-        plugins_bare = yaml_file_to_dict(plugins_bare)
+        plugins_bare = esm_parser.yaml_file_to_dict(plugins_bare)
     extra_info = ["location", "git-url"]
     plugins = {}
     for workitem in recipe["recipe"]:
@@ -62,6 +61,7 @@ def read_plugin_information(plugins_bare, recipe, needs_parse=True):
             if found:
                 break
 
+    breakpoint()
     attach_installed_plugins_to_all(plugins)
     return plugins
 

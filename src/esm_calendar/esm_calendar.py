@@ -1,5 +1,5 @@
 """
-Module for handling date and calendar functionalities.
+Module for handling date and calendar functionalities in the esm-tools framework.
 
 This module provides classes and functions to handle various date operations,
 including date manipulation, calendar handling with different types of calendars,
@@ -48,9 +48,6 @@ from typing import Generator, List, Optional, Tuple, Union
 from deprecated import deprecated
 
 
-# ---------------------------------------------------------------------------
-# Utility Functions
-# ---------------------------------------------------------------------------
 def find_remaining_minutes(seconds: int) -> int:
     """
     Finds the remaining full minutes given a number of seconds.
@@ -67,10 +64,8 @@ def find_remaining_minutes(seconds: int) -> int:
 
     Examples
     --------
-    .. code-block:: python
-
-        >>> find_remaining_minutes(125)
-        5
+    >>> find_remaining_minutes(125)
+    5
     """
     if not isinstance(seconds, int):
         raise TypeError(
@@ -114,13 +109,11 @@ def date_range(
 
     Examples
     --------
-    .. code-block:: python
-
-        >>> for d in date_range("2024-01-01T00:00:00", "2024-01-03T00:00:00", "0000-00-01T00:00:00"):
-        ...     print(d)
-        2024-01-01T00:00:00
-        2024-01-02T00:00:00
-        2024-01-03T00:00:00
+    >>> for d in date_range("2024-01-01T00:00:00", "2024-01-03T00:00:00", "0000-00-01T00:00:00"):
+    ...     print(d)
+    2024-01-01T00:00:00
+    2024-01-02T00:00:00
+    2024-01-03T00:00:00
     """
     if isinstance(start_date, str):
         start_date = Date(start_date)
@@ -134,9 +127,6 @@ def date_range(
         current_date += frequency
 
 
-# ---------------------------------------------------------------------------
-# Calendar Class
-# ---------------------------------------------------------------------------
 class Calendar:
     """
     A class to handle various calendar systems.
@@ -226,13 +216,11 @@ class Calendar:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> cal = Calendar("gregorian")
-            >>> cal.is_leap_year(2024)
-            True
-            >>> cal.is_leap_year(1900)
-            False
+        >>> cal = Calendar("gregorian")
+        >>> cal.is_leap_year(2024)
+        True
+        >>> cal.is_leap_year(1900)
+        False
         """
         if self.calendar_type == "gregorian":
             return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
@@ -255,11 +243,9 @@ class Calendar:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> cal = Calendar("gregorian")
-            >>> cal.days_in_year(2024)
-            366
+        >>> cal = Calendar("gregorian")
+        >>> cal.days_in_year(2024)
+        366
         """
         if self.calendar_type == "no_leap":
             return 365
@@ -291,11 +277,9 @@ class Calendar:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> cal = Calendar("gregorian")
-            >>> cal.days_in_month(2024, 2)
-            29
+        >>> cal = Calendar("gregorian")
+        >>> cal.days_in_month(2024, 2)
+        29
         """
         if isinstance(month, str):
             try:
@@ -326,9 +310,6 @@ class Calendar:
         )
 
 
-# ---------------------------------------------------------------------------
-# DateFormat Class
-# ---------------------------------------------------------------------------
 class DateFormat:
     """
     Class for handling date formatting configuration.
@@ -404,9 +385,6 @@ class DateFormat:
         )
 
 
-# ---------------------------------------------------------------------------
-# Date Class
-# ---------------------------------------------------------------------------
 class Date:
     """
     Class for handling dates and times, including support for paleo (negative) dates.
@@ -487,11 +465,9 @@ class Date:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> d = Date("2024-02-16T11:30:00")
-            >>> print(d)
-            2024-02-16T11:30:00
+        >>> d = Date("2024-02-16T11:30:00")
+        >>> print(d)
+        2024-02-16T11:30:00
         """
         printhours = True
         printminutes = True
@@ -671,11 +647,9 @@ class Date:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> d = Date("2024-02-16T00:00:00")
-            >>> d.day_of_year()
-            47
+        >>> d = Date("2024-02-16T00:00:00")
+        >>> d.day_of_year()
+        47
         """
         if self.month == 1 and self.day == 1:
             return 1
@@ -733,13 +707,11 @@ class Date:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> d = Date("2024-02-16T11:30:00")
-            >>> d.format(form=2)
-            '2024-02-16T11:30:00'
-            >>> d.format(form=5)
-            '16 Feb 2024 11:30:00'
+        >>> d = Date("2024-02-16T11:30:00")
+        >>> d.format(form=2)
+        '2024-02-16T11:30:00'
+        >>> d.format(form=5)
+        '16 Feb 2024 11:30:00'
         """
         if form == "SELF":
             form = self._date_format.form
@@ -866,21 +838,19 @@ class Date:
 
         Examples
         --------
-        .. code-block:: python
-
-            >>> d1 = Date("2024-02-16T12:30:00")
-            >>> d2 = Date("2024-02-16T11:30:00")
-            >>> d1 - d2
-            [0, 0, 0, 1, 0, 0]
+        >>> d1 = Date("2024-02-16T12:30:00")
+        >>> d2 = Date("2024-02-16T11:30:00")
+        >>> d1 - d2
+        [0, 0, 0, 1, 0, 0]
         """
         if isinstance(other, Date):
-            return self.sub_date(other)
+            return self._sub_date(other)
         elif isinstance(other, tuple):
-            return self.sub_tuple(other)
+            return self._sub_tuple(other)
         else:
             sys.exit("No known combination for subtraction")
 
-    def sub_date(self, other: "Date") -> List[int]:
+    def _sub_date(self, other: "Date") -> List[int]:
         """
         Subtract one Date from another component-wise.
 
@@ -930,7 +900,7 @@ class Date:
             diff[5] += 60
         return diff
 
-    def sub_tuple(self, to_sub: Tuple[int, int, int, int, int, int]) -> List[int]:
+    def _sub_tuple(self, to_sub: Tuple[int, int, int, int, int, int]) -> List[int]:
         """
         Subtract a tuple of time components from this Date.
 
@@ -1072,3 +1042,4 @@ class Date:
         return cls(date_str)
 
     fromlist = from_list
+    """Alias for :meth:`from_list`."""

@@ -760,7 +760,7 @@ class Date:
             diff = self - date
 
         for index in range(0, 6):
-            if outformat == self._calendar.timeunits[index]:
+            if outformat == self._calendar.TIME_UNITS[index]:
                 # FIXME: Wouldn't this stop after the very first index that matches?
                 # I think that is the point, but I'm not sure.
                 return diff[index]
@@ -885,7 +885,7 @@ class Date:
             temp = ndate[0]
             ndate[0] = ndate[2]
             ndate[2] = temp
-            ndate[1] = self._calendar.monthnames[int(ndate[1]) - 1]
+            ndate[1] = self._calendar.MONTH_NAMES[int(ndate[1]) - 1]
         elif form == 8:
             if len(ndate[0]) < 4:
                 print("Format 8 clear with 4 digit year only")

@@ -1,63 +1,99 @@
 """
 Module for handling date and calendar functionalities.
 
-This module provides classes and functions to handle various date and calendar operations,
-such as date manipulation, calendar handling with different types of calendars, and date formatting.
+This module provides classes and functions to handle various date operations,
+including date manipulation, calendar handling with different types of calendars,
+and date formatting.
 
-Classes:
-    DateFormat: Class for handling date formatting options.
-    Calendar: Class to contain various types of calendars and their functionalities.
-    Date: Class to handle date operations and manipulations.
+Classes
+-------
+DateFormat
+    Handles date formatting options.
+Calendar
+    Contains various types of calendars and their functionalities.
+Date
+    Handles date operations and manipulations.
 
-Functions:
-    find_remaining_minutes(seconds): Finds the remaining full minutes of a given number of seconds.
-    date_range(start_date, stop_date, frequency): Yields dates from start_date to stop_date with a given frequency.
+Functions
+---------
+find_remaining_minutes(seconds)
+    Finds the leftover seconds after full minutes are subtracted.
+date_range(start_date, stop_date, frequency)
+    (Deprecated) Yields dates from start_date to stop_date with a given frequency.
+
+Examples
+--------
+Using ``find_remaining_minutes``:
+
+.. code-block:: python
+
+    >>> find_remaining_minutes(125)
+    5
+
+Creating a date and formatting it:
+
+.. code-block:: python
+
+    >>> d = Date("2024-02-16T11:30:00")
+    >>> print(d)
+    2024-02-16T11:30:00
+    >>> d.format(form=2)
+    '2024-02-16T11:30:00'
 """
 
 import copy
 import sys
-from typing import Generator, Union
+from typing import Generator, List, Optional, Tuple, Union
 
 from deprecated import deprecated
 
 
+# ---------------------------------------------------------------------------
+# Utility Functions
+# ---------------------------------------------------------------------------
 def find_remaining_minutes(seconds: int) -> int:
     """
-    Finds the remaining full minutes of a given number of seconds.
+    Finds the remaining full minutes given a number of seconds.
 
     Parameters
     ----------
     seconds : int
-        The number of seconds to allocate.
+        The number of seconds to evaluate.
 
     Returns
     -------
     int
-        The leftover seconds once new minutes have been filled.
+        The leftover seconds after full minutes have been allocated.
 
     Examples
     --------
-    >>> find_remaining_minutes(125)
-    5
+    .. code-block:: python
+
+        >>> find_remaining_minutes(125)
+        5
     """
     if not isinstance(seconds, int):
         raise TypeError(
-            f"You must provide an integer, instead got: {seconds} of type {type(seconds)}"
+            "You must provide an integer, instead got: {} of type {}".format(
+                seconds, type(seconds)
+            )
         )
     if seconds < 0:
-        raise ValueError(f"You must provide a positive integer, instead got {seconds}")
+        raise ValueError(
+            "You must provide a positive integer, instead got {}".format(seconds)
+        )
     return seconds % 60
 
 
-# Alias find_remaining_hours to find_remaining_minutes
+# Alias remaining hours to the same as remaining minutes for now.
 find_remaining_hours = find_remaining_minutes
 
 
-# NOTE(PG): A grep -i "date_range" doesn't seem to use this anywhere. For now, I'm deprecating it, and it
-#          should be removed soon.
 @deprecated(reason="This function is not used anywhere, and will be removed!")
 def date_range(
-    start_date: Union[str, "Date"], stop_date: Union[str, "Date"], frequency: str
+    start_date: Union[str, "Date"],
+    stop_date: Union[str, "Date"],
+    frequency: Union[str, "Date"],
 ) -> Generator["Date", None, None]:
     """
     Yields dates from start_date to stop_date with a given frequency.
@@ -65,16 +101,26 @@ def date_range(
     Parameters
     ----------
     start_date : str or Date
-        The start date.
+        The starting date.
     stop_date : str or Date
-        The stop date.
+        The ending date.
     frequency : str or Date
-        The frequency of the date range.
+        A date representing the frequency interval.
 
     Yields
     ------
     Date
         The next date in the range.
+
+    Examples
+    --------
+    .. code-block:: python
+
+        >>> for d in date_range("2024-01-01T00:00:00", "2024-01-03T00:00:00", "0000-00-01T00:00:00"):
+        ...     print(d)
+        2024-01-01T00:00:00
+        2024-01-02T00:00:00
+        2024-01-03T00:00:00
     """
     if isinstance(start_date, str):
         start_date = Date(start_date)
@@ -88,47 +134,40 @@ def date_range(
         current_date += frequency
 
 
+# ---------------------------------------------------------------------------
+# Calendar Class
+# ---------------------------------------------------------------------------
 class Calendar:
     """
-    Class to contain various types of calendars.
+    A class to handle various calendar systems.
 
     Parameters
     ----------
-    calendar_type : str
-        The type of calendar to use. Options are:
-        - "no_leap" : No leap years, or integer 0
-        - "gregorian" : Proleptic Gregorian calendar (default), or integer 1.
-        - "equal_months" : Equal months of `n` days (provide an integer instead of `n`).
+    calendar_type : Union[str, int], optional
+        The type of calendar to use. Acceptable values:
+          - "no_leap" or 0: No leap years.
+          - "gregorian" or 1: Proleptic Gregorian calendar (default).
+          - Any integer value: Represents a calendar with equal months of given days.
 
     Attributes
     ----------
-    time_units : list of str
-        A list of accepted time units.
-    month_names : list of str
-        A list of valid month names, using 3 letter English abbreviation.
+    TIME_UNITS : List[str]
+        List of accepted time units: years, months, days, hours, minutes, and seconds.
+    MONTH_NAMES : List[str]
+        List of month names as 3-letter English abbreviations.
 
     Methods
     -------
-    is_leap_year(year)
-        Returns a boolean testing if the given year is a leap year.
-    days_in_year(year)
-        Returns the total number of days in a given year.
-    days_in_month(year, month)
-        Returns the total number of days in a given month for a given year (considering leap years).
-
-    Examples
-    --------
-    >>> cal = Calendar("gregorian")
-    >>> cal.is_leap_year(2024)
-    True
-    >>> cal.days_in_year(2024)
-    366
-    >>> cal.days_in_month(2024, 2)
-    29
+    is_leap_year(year: int) -> bool
+        Returns True if the specified year is a leap year.
+    days_in_year(year: int) -> int
+        Returns the total number of days in the specified year.
+    days_in_month(year: int, month: Union[int, str]) -> int
+        Returns the number of days in a given month for a given year.
     """
 
-    TIME_UNITS = ["years", "months", "days", "hours", "minutes", "seconds"]
-    MONTH_NAMES = [
+    TIME_UNITS: List[str] = ["years", "months", "days", "hours", "minutes", "seconds"]
+    MONTH_NAMES: List[str] = [
         "Jan",
         "Feb",
         "Mar",
@@ -143,117 +182,126 @@ class Calendar:
         "Dec",
     ]
 
-    # NOTE(PG): This is for backwards compatibility with old code, and will be removed!
     @staticmethod
     @deprecated(
         reason="Using 'calendar_type = 1' is deprecated, use 'calendar_type = \"gregorian\"' instead."
     )
-    def _set_gregorian():
+    def _set_gregorian() -> str:
+        """
+        (Deprecated) Returns the Gregorian calendar type.
+        """
         return "gregorian"
 
     @staticmethod
     @deprecated(
         reason="Using 'calendar_type = 0' is deprecated, use 'calendar_type = \"no_leap\"' instead."
     )
-    def _set_no_leap():
+    def _set_no_leap() -> str:
+        """
+        (Deprecated) Returns the no-leap calendar type.
+        """
         return "no_leap"
 
-    def __init__(self, calendar_type="gregorian"):
-        # NOTE(PG): This is for backwards compatibility with old code, this
-        #           should throw a deprecation warning when triggered!
+    def __init__(self, calendar_type: Union[str, int] = "gregorian") -> None:
+        # Support deprecated integer values for backwards compatibility.
         if calendar_type == 1:
             calendar_type = self._set_gregorian()
         if calendar_type == 0:
             calendar_type = self._set_no_leap()
         self.calendar_type = calendar_type
 
-    def is_leap_year(self, year):
+    def is_leap_year(self, year: int) -> bool:
         """
-         Checks if a year is a leap year.
-
-         Parameters
-         ----------
-         year : int
-             The year to check.
-
-         Returns
-         -------
-         bool
-             True if the given year is a leap year.
-
-         Examples
-         --------
-         >>> cal = Calendar("gregorian")
-         >>> cal.is_leap_year(2024)
-         True
-        >>> cal.is_leap_year(1900)
-        False
-        >>> cal.is_leap_year(2000)
-        True
-        >>> cal.is_leap_year(2023)
-        False
-        """
-        return (
-            self.calendar_type == "gregorian"
-            and (year % 4 == 0)
-            and (year % 100 != 0 or year % 400 == 0)
-        )
-
-    def days_in_year(self, year):
-        """
-        Finds total number of days in a year, considering leap years if the calendar type allows for them.
+        Checks if a year is a leap year based on the calendar type.
 
         Parameters
         ----------
         year : int
-            The year to check.
+            The year to evaluate.
+
+        Returns
+        -------
+        bool
+            True if the year is a leap year (for Gregorian), False otherwise.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            >>> cal = Calendar("gregorian")
+            >>> cal.is_leap_year(2024)
+            True
+            >>> cal.is_leap_year(1900)
+            False
+        """
+        if self.calendar_type == "gregorian":
+            return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+        # For 'no_leap' and other calendar types, adjust accordingly.
+        return False
+
+    def days_in_year(self, year: int) -> int:
+        """
+        Returns the total number of days in a given year.
+
+        Parameters
+        ----------
+        year : int
+            The year to evaluate.
 
         Returns
         -------
         int
-            The total number of days for this specific calendar type.
+            Total number of days in the year (366 for leap years in the Gregorian calendar).
 
         Examples
         --------
-        >>> cal = Calendar("gregorian")
-        >>> cal.days_in_year(2024)
-        366
+        .. code-block:: python
+
+            >>> cal = Calendar("gregorian")
+            >>> cal.days_in_year(2024)
+            366
         """
         if self.calendar_type == "no_leap":
             return 365
         elif self.calendar_type == "gregorian":
             return 365 + int(self.is_leap_year(year))
+        # For equal-month calendars, assume the provided integer indicates days per month.
         return int(self.calendar_type) * 12
 
-    def days_in_month(self, year, month):
+    def days_in_month(self, year: int, month: Union[int, str]) -> int:
         """
-        Finds the number of days in a given month.
+        Returns the number of days in a specific month for a given year.
 
         Parameters
         ----------
         year : int
-            The year to check.
+            The year.
         month : int or str
-            The month number or short name.
+            The month (either as an integer 1-12 or a 3-letter month name).
 
         Returns
         -------
         int
-            The number of days in this month, considering leap years if needed.
+            Number of days in the month.
 
         Raises
         ------
         ValueError
-            Raised when you give an incorrect month.
+            If the month is invalid.
 
         Examples
         --------
-        >>> cal = Calendar("gregorian")
-        >>> cal.days_in_month(2024, 2)
-        29
+        .. code-block:: python
+
+            >>> cal = Calendar("gregorian")
+            >>> cal.days_in_month(2024, 2)
+            29
         """
         if isinstance(month, str):
-            month = self.MONTH_NAMES.index(month.capitalize()) + 1
+            try:
+                month = self.MONTH_NAMES.index(month.capitalize()) + 1
+            except ValueError:
+                raise ValueError("Invalid month name provided.")
         if not 1 <= month <= 12:
             raise ValueError("Invalid month. Must be between 1 and 12.")
 
@@ -265,470 +313,612 @@ class Calendar:
             return 28 + int(self.is_leap_year(year))
         return int(self.calendar_type)
 
-    def __repr__(self):
-        return f"Calendar(calendar_type={self.calendar_type})"
+    def __repr__(self) -> str:
+        return "Calendar(calendar_type={})".format(self.calendar_type)
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.calendar_type == "no_leap":
             return "Calendar object with no leap years allowed"
         if self.calendar_type == "gregorian":
             return "Calendar object with allowed leap years"
-        return f"Calendar object with equal-length months of {self.calendar_type} days"
+        return "Calendar object with equal-length months of {} days".format(
+            self.calendar_type
+        )
 
 
+# ---------------------------------------------------------------------------
+# DateFormat Class
+# ---------------------------------------------------------------------------
 class DateFormat:
-    """A class to represent and format Date objects as strings"""
+    """
+    Class for handling date formatting configuration.
 
-    _DATE_SEPARATORS = ["", "-", "-", "-", " ", " ", "", "-", "", "", "/"]
-    _TIME_SEPARATORS = ["", ":", ":", ":", " ", ":", ":", "", "", "", ":"]
-    _DATETIME_SEPARATORS = ["_", "_", "T", " ", " ", " ", "_", "_", "", "_", " "]
+    Parameters
+    ----------
+    form : int
+        The format code determining the output layout.
+    print_hours : bool
+        Whether hours are printed.
+    print_minutes : bool
+        Whether minutes are printed.
+    print_seconds : bool
+        Whether seconds are printed.
+
+    Attributes
+    ----------
+    datesep : dict
+        Mapping between format codes and date separators.
+    dtsep : dict
+        Mapping between format codes and datetime separators.
+    timesep : dict
+        Mapping between format codes and time separators.
+    """
 
     def __init__(
-        self, form=1, print_hours=True, print_minutes=True, print_seconds=True
-    ):
+        self, form: int, print_hours: bool, print_minutes: bool, print_seconds: bool
+    ) -> None:
         self.form = form
         self.print_hours = print_hours
         self.print_minutes = print_minutes
         self.print_seconds = print_seconds
+        self.datesep = {
+            1: "-",
+            2: "-",
+            3: "-",
+            4: " ",
+            5: " ",
+            6: "",
+            7: "-",
+            8: "",
+            9: "",
+            10: "/",
+        }
+        self.dtsep = {
+            1: "_",
+            2: "T",
+            3: " ",
+            4: " ",
+            5: " ",
+            6: "_",
+            7: "_",
+            8: "",
+            9: "_",
+            10: " ",
+        }
+        self.timesep = {
+            1: ":",
+            2: ":",
+            3: ":",
+            4: " ",
+            5: ":",
+            6: ":",
+            7: "",
+            8: "",
+            9: "",
+            10: ":",
+        }
 
-    def __call__(self, date: "Date") -> str: ...
-
-    def __repr__(self):
-        return (
-            f"DateFormat(form={self.form}, print_hours={self.print_hours}, "
-            f"print_minutes={self.print_minutes}, print_seconds={self.print_seconds})"
+    def __repr__(self) -> str:
+        return "DateFormat(form={}, print_hours={}, print_minutes={}, print_seconds={})".format(
+            self.form, self.print_hours, self.print_minutes, self.print_seconds
         )
 
 
+# ---------------------------------------------------------------------------
+# Date Class
+# ---------------------------------------------------------------------------
 class Date:
     """
-    A class to contain dates, also compatible with paleo (negative dates)
+    Class for handling dates and times, including support for paleo (negative) dates.
 
     Parameters
     ----------
-    indate : str
-        The date to use.
-
-        See ``esm_calendar.DateFormat`` for available
-        formatters.
-
-    calendar : ~`pyesm.core.time_control.esm_calendar.Calendar`, optional
-        The type of calendar to use. Defaults to a greogrian proleptic calendar
-        if nothing is specified.
+    indate : Union[str, Date]
+        A string representation of the date or another Date object.
+    calendar : Optional[Calendar], optional
+         Calendar system to use. Defaults to a Gregorian calendar.
 
     Attributes
     ----------
     year : int
-        The year
+        Year component.
     month : int
-        The month
+        Month component.
     day : int
-        The day
+        Day component.
     hour : int
-        The hour
+        Hour component.
     minute : int
-        The minute
+        Minute component.
     second : int
-        The second
-    _calendar : ~`pyesm.core.time_control.esm_calendar.Calendar`
-        The type of calendar to use
+        Second component.
+    calendar : Calendar
+        The calendar system.
+    doy : int
+        Day of the year.
+    _date_format : DateFormat
+        Date formatting configuration.
 
-    Methods
-    -------
+    Examples
+    --------
+    .. code-block:: python
+
+        >>> d = Date("2024-02-16T11:30:00")
+        >>> print(d)
+        2024-02-16T11:30:00
+        >>> d.day_of_year()
+        47
     """
 
-    def __init__(self, indate, calendar=Calendar()):
+    def __init__(
+        self, indate: Union[str, "Date"], calendar: Optional[Calendar] = None
+    ) -> None:
+        self.calendar: Calendar = calendar or Calendar("gregorian")
+        self.year: int = 0
+        self.month: int = 0
+        self.day: int = 0
+        self.hour: int = 0
+        self.minute: int = 0
+        self.second: int = 0
+        self.doy: int = 0
+        self._date_format: DateFormat = DateFormat(0, True, True, True)
+
         if isinstance(indate, str):
-            self._init_from_str(indate, calendar=Calendar())
+            self._init_from_str(indate)
         elif isinstance(indate, Date):
-            self._init_from_date(indate, calendar=Calendar())
+            self._init_from_date(indate)
         else:
             raise TypeError(
-                f"{type(indate)} is not a valid type to initialize a Date object "
-                "(valid types: str, Date)"
+                "{} is not valid to initialize a Date object (valid types: str, Date)".format(
+                    type(indate)
+                )
             )
 
-    def _init_from_str(self, indate, calendar=Calendar()):
+    def _init_from_str(self, indate: str) -> None:
+        """
+        Initialize a Date object from a string.
+
+        Recognizes a date part and an optional time part. The datetime separator "T" is supported.
+
+        Parameters
+        ----------
+        indate : str
+            The input date string.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            >>> d = Date("2024-02-16T11:30:00")
+            >>> print(d)
+            2024-02-16T11:30:00
+        """
         printhours = True
         printminutes = True
         printseconds = True
-        ndate = ["1900", "01", "01", "00", "00", "00"]
-        ds = ""
-        ts = ""
+        components: List[str] = ["1900", "01", "01", "00", "00", "00"]
+        time_sep_used = ""
         if "T" in indate:
-            indate2 = indate.replace("T", "_")
-            ts = ":"
+            indate = indate.replace("T", "_")
+            time_sep_used = ":"
         else:
-            indate2 = indate
-        if "_" in indate2:
-            date, time = indate2.split("_")
-        elif ":" in indate2 and not "-" in indate2:
-            date = "0000-00-00"
-            time = indate2
+            time_sep_used = ""
+        if "_" in indate:
+            date_part, time_part = indate.split("_", 1)
+        elif ":" in indate and "-" not in indate:
+            date_part = "0000-00-00"
+            time_part = indate
         else:
-            date = indate2
-            time = ""
-            ts = ":"
-        for index in [3, 4, 5]:
-            if len(time) == 2:
-                ndate[index] = time
+            date_part = indate
+            time_part = ""
+            time_sep_used = ":"
+        time = time_part
+        for idx in [3, 4, 5]:
+            if len(time) >= 2:
+                components[idx] = time[:2]
                 time = time[2:]
-            elif len(time) > 2:
-                ndate[index] = time[:2]
-                if len(time) > 2:
-                    time = time[2:]
-                    if time[0] == ":":
-                        time = time[1:]
-                        ts = ":"
+                if time and time[0] == ":":
+                    time = time[1:]
             else:
-                ndate[index] = "00"
-                if index == 3:
+                components[idx] = "00"
+                if idx == 3:
                     printhours = False
-                elif index == 4:
+                elif idx == 4:
                     printminutes = False
-                elif index == 5:
+                elif idx == 5:
                     printseconds = False
-        for index in [2, 1]:
-            ndate[index] = date[-2:]
-            date = date[:-2]
-            if len(date) > 0 and date[-1] == "-":
-                date = date[:-1]
-                ds = "-"
-        ndate[0] = date
-        if ds == "-" and ts == ":":
-            if "T" not in indate:
-                form = 1
-            else:
-                form = 2
-        elif ds == "-" and ts == "":
-            form = 7
-        elif ds == "" and ts == ":":
-            form = 6
-        elif ds == "" and ts == "":
-            form = 9
+        date = date_part
+        date_sep = "-" if "-" in date else ""
+        for idx in [2, 1]:
+            if date:
+                components[idx] = date[-2:]
+                date = date[:-2]
+                if date and date[-1] == "-":
+                    date = date[:-1]
+        components[0] = date if date else components[0]
+        form = self._determine_format(date_sep, time_sep_used, "T" in indate)
         self.year, self.month, self.day, self.hour, self.minute, self.second = map(
-            int, ndate
+            int, components
         )
-        (
-            self.syear,
+        self.doy = self.day_of_year()
+        self._date_format = DateFormat(form, printhours, printminutes, printseconds)
+
+    def _determine_format(self, date_sep: str, time_sep: str, has_t: bool) -> int:
+        """
+        Determines a format code based on the separators in the input string.
+
+        Parameters
+        ----------
+        date_sep : str
+            The date separator used.
+        time_sep : str
+            The time separator used.
+        has_t : bool
+            Flag indicating whether 'T' was in the original string.
+
+        Returns
+        -------
+        int
+            The determined format code.
+        """
+        if date_sep == "-" and time_sep == ":":
+            return 2 if has_t else 1
+        elif date_sep == "-" and not time_sep:
+            return 7
+        elif not date_sep and time_sep == ":":
+            return 6
+        return 9
+
+    def _init_from_date(self, other: "Date") -> None:
+        """
+        Initialize a Date object from another Date instance.
+
+        Parameters
+        ----------
+        other : Date
+            The source Date object.
+        """
+        self.year = other.year
+        self.month = other.month
+        self.day = other.day
+        self.hour = other.hour
+        self.minute = other.minute
+        self.second = other.second
+        self.calendar = other.calendar
+        self.doy = other.day_of_year()
+        self._date_format = other._date_format
+
+    @property
+    def syear(self) -> str:
+        """
+        Returns a zero-padded string of the year.
+
+        Returns
+        -------
+        str
+            The year as a 4-digit string.
+        """
+        return "{:04d}".format(self.year)
+
+    @property
+    def smonth(self) -> str:
+        """
+        Returns a zero-padded string of the month.
+
+        Returns
+        -------
+        str
+            The month as a 2-digit string.
+        """
+        return "{:02d}".format(self.month)
+
+    @property
+    def sday(self) -> str:
+        """
+        Returns a zero-padded string of the day.
+
+        Returns
+        -------
+        str
+            The day as a 2-digit string.
+        """
+        return "{:02d}".format(self.day)
+
+    @property
+    def shour(self) -> str:
+        """
+        Returns a zero-padded string of the hour.
+
+        Returns
+        -------
+        str
+            The hour as a 2-digit string.
+        """
+        return "{:02d}".format(self.hour)
+
+    @property
+    def sminute(self) -> str:
+        """
+        Returns a zero-padded string of the minute.
+
+        Returns
+        -------
+        str
+            The minute as a 2-digit string.
+        """
+        return "{:02d}".format(self.minute)
+
+    @property
+    def ssecond(self) -> str:
+        """
+        Returns a zero-padded string of the second.
+
+        Returns
+        -------
+        str
+            The second as a 2-digit string.
+        """
+        return "{:02d}".format(self.second)
+
+    def day_of_year(self) -> int:
+        """
+        Compute the day of the year.
+
+        Returns
+        -------
+        int
+            The day number (1 through 366).
+
+        Examples
+        --------
+        .. code-block:: python
+
+            >>> d = Date("2024-02-16T00:00:00")
+            >>> d.day_of_year()
+            47
+        """
+        if self.month == 1 and self.day == 1:
+            return 1
+        jan_first = Date("{}-01-01T00:00:00".format(self.year), self.calendar)
+        return self.time_between(jan_first, "days") + 1
+
+    def time_between(self, other: "Date", unit: str = "seconds") -> Optional[int]:
+        """
+        Compute the time difference between two dates in a specified unit.
+
+        Parameters
+        ----------
+        other : Date
+            The date to compare against.
+        unit : str, optional
+            The unit of time (years, months, days, hours, minutes, seconds).
+
+        Returns
+        -------
+        Optional[int]
+            The time difference in the specified unit, or None if the unit is invalid.
+        """
+        diff = (other - self) if other > self else (self - other)
+        try:
+            unit_index = self.calendar.TIME_UNITS.index(unit)
+            return diff[unit_index]
+        except ValueError:
+            return None
+
+    def format(
+        self,
+        form: Union[str, int] = "SELF",
+        print_hours: Optional[bool] = None,
+        print_minutes: Optional[bool] = None,
+        print_seconds: Optional[bool] = None,
+    ) -> str:
+        """
+        Format the Date into a string representation.
+
+        Parameters
+        ----------
+        form : Union[str, int]
+            Format style ("SELF" to use the original format or an int code, e.g. 0-10).
+        print_hours : bool, optional
+            Override printing of hours.
+        print_minutes : bool, optional
+            Override printing of minutes.
+        print_seconds : bool, optional
+            Override printing of seconds.
+
+        Returns
+        -------
+        str
+            The formatted date string.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            >>> d = Date("2024-02-16T11:30:00")
+            >>> d.format(form=2)
+            '2024-02-16T11:30:00'
+            >>> d.format(form=5)
+            '16 Feb 2024 11:30:00'
+        """
+        if form == "SELF":
+            form = self._date_format.form
+
+        ph = print_hours if print_hours is not None else self._date_format.print_hours
+        pm = (
+            print_minutes
+            if print_minutes is not None
+            else self._date_format.print_minutes
+        )
+        ps = (
+            print_seconds
+            if print_seconds is not None
+            else self._date_format.print_seconds
+        )
+
+        components = [
+            str(self.year),
             self.smonth,
             self.sday,
             self.shour,
             self.sminute,
             self.ssecond,
-        ) = map(str, ndate)
+        ]
 
-        self._calendar = calendar
-        self.doy = self.day_of_year()
-        self.sdoy = str(self.day_of_year())
+        if form == 0 and len(components[0]) < 4:
+            components[0] = components[0].zfill(4)
+        elif form == 5:
+            # Swap day and year, use month name.
+            components[0], components[2] = components[2], components[0]
+            components[1] = self.calendar.MONTH_NAMES[int(components[1]) - 1]
+        elif form == 10:
+            # Rotate date components.
+            components[0], components[1], components[2] = (
+                components[1],
+                components[2],
+                components[0],
+            )
 
-        self._date_format = DateFormat(form, printhours, printminutes, printseconds)
+        date_sep = self._date_format.datesep.get(form, "")
+        dt_sep = self._date_format.dtsep.get(form, "")
+        time_sep = self._date_format.timesep.get(form, "")
 
-    def _init_from_date(self, indate, calendar=Calendar()):
-        self.year, self.month, self.day, self.hour, self.minute, self.second = (
-            indate.year,
-            indate.month,
-            indate.day,
-            indate.hour,
-            indate.minute,
-            indate.second,
-        )
+        result = components[0] + date_sep + components[1] + date_sep + components[2]
+        if ph:
+            result += dt_sep + components[3]
+            if pm:
+                result += time_sep + components[4]
+                if ps:
+                    result += time_sep + components[5]
+        return result
 
-    @property
-    def sdoy(self):
-        return self.__sdoy
-
-    @sdoy.setter
-    def sdoy(self, sdoy):
-        self.__sdoy = str(self.doy)
-
-    @property
-    def syear(self):
-        return self.__syear
-
-    @syear.setter
-    def syear(self, syear):
-        self.__syear = str(self.year)
-
-    @property
-    def smonth(self):
-        return self.__smonth
-
-    @smonth.setter
-    def smonth(self, smonth):
-        self.__smonth = str(self.month).zfill(2)
-
-    @property
-    def sday(self):
-        return self.__sday
-
-    @sday.setter
-    def sday(self, sday):
-        self.__sday = str(self.day).zfill(2)
-
-    @property
-    def shour(self):
-        return self.__shour
-
-    @shour.setter
-    def shour(self, shour):
-        self.__shour = str(self.hour).zfill(2)
-
-    @property
-    def sminute(self):
-        return self.__sminute
-
-    @sminute.setter
-    def sminute(self, sminute):
-        self.__sminute = str(self.minute).zfill(2)
-
-    @property
-    def ssecond(self):
-        return self.__ssecond
-
-    @ssecond.setter
-    def ssecond(self, ssecond):
-        self.__ssecond = str(self.second).zfill(2)
-
-    def output(self, form="SELF"):
-        return self.format(form)
-
-    @classmethod
-    def from_list(cls, _list):
+    def __str__(self) -> str:
         """
-        Creates a new Date from a list
-
-        Parameters
-        ----------
-        _list : list of ints
-            A list of [year, month, day, hour, minute, second]
+        Return the ISO-like string representation of the Date.
 
         Returns
         -------
-        date : ~`pyesm.core.time_control.esm_calendar.Date`
-            A new date of year month day, hour minute, second
+        str
+            A string in the form 'YYYY-MM-DDTHH:MM:SS'.
         """
-
-        negative = ["-" if _list[i] < 0 else "" for i in range(6)]
-        _list = [str(abs(element)) for element in _list]
-
-        if len(_list[0]) < 4:
-            _list[0] = _list[0].zfill(4)
-        _list[1:6] = [
-            element.zfill(2) if len(element) < 2 else element for element in _list[1:6]
-        ]
-
-        _list = [negative[i] + _list[i] for i in range(6)]
-
-        indate = (
-            _list[0]
-            + "-"
-            + _list[1]
-            + "-"
-            + _list[2]
-            + "_"
-            + _list[3]
-            + ":"
-            + _list[4]
-            + ":"
-            + _list[5]
+        return "{:04d}-{:02d}-{:02d}T{:02d}:{:02d}:{:02d}".format(
+            self.year, self.month, self.day, self.hour, self.minute, self.second
         )
 
-        return cls(indate)
+    def __repr__(self) -> str:
+        return "Date({})".format(self)
 
-    fromlist = from_list
+    def _as_tuple(self) -> Tuple[int, int, int, int, int, int]:
+        """
+        Return the date components as a tuple.
 
-    def __repr__(self):
-        return f"Date({self.year:02}-{self.month:02}-{self.day:02}T{self.hour:02}:{self.minute:02}:{self.second:02})"
+        Returns
+        -------
+        tuple
+            A tuple of (year, month, day, hour, minute, second).
+        """
+        return (self.year, self.month, self.day, self.hour, self.minute, self.second)
 
-    def __getitem__(self, item):
-        return (self.year, self.month, self.day, self.hour, self.minute, self.second)[
-            item
-        ]
+    def __getitem__(self, index: int) -> int:
+        return self._as_tuple()[index]
 
-    def __setitem__(self, item, value):
-        value = int(value)
-        if item == 0:
-            self.year = value
-        elif item == 1:
-            self.month = value
-        elif item == 2:
-            self.day = value
-        elif item == 3:
-            self.hour = value
-        elif item == 4:
-            self.minute = value
-        elif item == 5:
-            self.second = value
-        else:
-            raise IndexError("You can only assign up to 5!")
+    def __setitem__(self, index: int, value: int) -> None:
+        if not 0 <= index <= 5:
+            raise IndexError("Index must be between 0 and 5")
+        attrs = ["year", "month", "day", "hour", "minute", "second"]
+        setattr(self, attrs[index], int(value))
 
-    def __lt__(self, other):
-        self_tup = (
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-        )
-        other_tup = (
-            other.year,
-            other.month,
-            other.day,
-            other.hour,
-            other.minute,
-            other.second,
-        )
-        return self_tup < other_tup
+    def __lt__(self, other: "Date") -> bool:
+        return self._as_tuple() < other._as_tuple()
 
-    def __le__(self, other):
-        self_tup = (
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-        )
-        other_tup = (
-            other.year,
-            other.month,
-            other.day,
-            other.hour,
-            other.minute,
-            other.second,
-        )
-        return self_tup <= other_tup
+    def __le__(self, other: "Date") -> bool:
+        return self._as_tuple() <= other._as_tuple()
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Date):
             return False
+        return self._as_tuple() == other._as_tuple()
 
-        self_tup = (
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-        )
-        other_tup = (
-            other.year,
-            other.month,
-            other.day,
-            other.hour,
-            other.minute,
-            other.second,
-        )
-        return self_tup == other_tup
+    def __ne__(self, other: object) -> bool:
+        return not self.__eq__(other)
 
-    def __ne__(self, other):
-        if not isinstance(other, Date):
-            return True
+    def __gt__(self, other: "Date") -> bool:
+        return self._as_tuple() > other._as_tuple()
 
-        self_tup = (
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-        )
-        other_tup = (
-            other.year,
-            other.month,
-            other.day,
-            other.hour,
-            other.minute,
-            other.second,
-        )
-        return self_tup != other_tup
+    def __ge__(self, other: "Date") -> bool:
+        return self._as_tuple() >= other._as_tuple()
 
-    def __ge__(self, other):
-        self_tup = (
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-        )
-        other_tup = (
-            other.year,
-            other.month,
-            other.day,
-            other.hour,
-            other.minute,
-            other.second,
-        )
-        return self_tup >= other_tup
+    def __sub__(
+        self, other: Union["Date", Tuple[int, int, int, int, int, int]]
+    ) -> List[int]:
+        """
+        Subtract another Date or a tuple of time components from this Date.
 
-    def __gt__(self, other):
-        self_tup = (
-            self.year,
-            self.month,
-            self.day,
-            self.hour,
-            self.minute,
-            self.second,
-        )
-        other_tup = (
-            other.year,
-            other.month,
-            other.day,
-            other.hour,
-            other.minute,
-            other.second,
-        )
-        return self_tup > other_tup
+        Parameters
+        ----------
+        other : Date or tuple of int
+            The Date or tuple to subtract.
 
-    def __sub__(self, other):
+        Returns
+        -------
+        list of int
+            Differences as [years, months, days, hours, minutes, seconds].
+
+        Examples
+        --------
+        .. code-block:: python
+
+            >>> d1 = Date("2024-02-16T12:30:00")
+            >>> d2 = Date("2024-02-16T11:30:00")
+            >>> d1 - d2
+            [0, 0, 0, 1, 0, 0]
+        """
         if isinstance(other, Date):
             return self.sub_date(other)
         elif isinstance(other, tuple):
             return self.sub_tuple(other)
         else:
-            print("No known combination for subtraction")
-            sys.exit(1)
+            sys.exit("No known combination for subtraction")
 
-    def sub_date(self, other):
-        d2 = copy.deepcopy(
-            [self.year, self.month, self.day, self.hour, self.minute, self.second]
-        )
-        d1 = copy.deepcopy(
-            [other.year, other.month, other.day, other.hour, other.minute, other.second]
-        )
+    def sub_date(self, other: "Date") -> List[int]:
+        """
+        Subtract one Date from another component-wise.
 
+        Parameters
+        ----------
+        other : Date
+            The Date to subtract from this Date.
+
+        Returns
+        -------
+        list of int
+            Differences as [years, months, days, hours, minutes, seconds].
+        """
+        d2 = copy.deepcopy(list(self._as_tuple()))
+        d1 = copy.deepcopy(list(other._as_tuple()))
         diff = [0, 0, 0, 0, 0, 0]
 
         while d1[1] > 1:
             diff[1] -= 1
             d1[1] -= 1
-            diff[2] -= self._calendar.days_in_month(d1[0], d1[1])
-
+            diff[2] -= self.calendar.days_in_month(d1[0], d1[1])
         while d2[1] > 1:
             diff[1] += 1
             d2[1] -= 1
-            diff[2] += self._calendar.days_in_month(d2[0], d2[1])
-
+            diff[2] += self.calendar.days_in_month(d2[0], d2[1])
         while d1[2] > 1:
             diff[2] -= 1
             d1[2] -= 1
-
         while d2[2] > 1:
             diff[2] += 1
             d2[2] -= 1
-
         if diff[1] < 0:
-            diff[0] = diff[0] - 1
-
+            diff[0] -= 1
         while d2[0] > d1[0]:
             diff[0] += 1
             diff[1] += 12
-            diff[2] += self._calendar.days_in_year(d1[0])
+            diff[2] += self.calendar.days_in_year(d1[0])
             d1[0] += 1
-
         diff[3] += diff[2] * 24
         if diff[3] < 0:
             diff[3] += 24
@@ -738,275 +928,147 @@ class Date:
         diff[5] += diff[4] * 60
         if diff[5] < 0:
             diff[5] += 60
-
         return diff
 
-    def time_between(self, date, outformat="seconds"):
+    def sub_tuple(self, to_sub: Tuple[int, int, int, int, int, int]) -> List[int]:
         """
-        Computes the time between two dates
+        Subtract a tuple of time components from this Date.
 
         Parameters
         ----------
-        date : ~`pyesm.core.time_control.date`
-            The date to compare against.
+        to_sub : tuple of int
+            A tuple in the form (years, months, days, hours, minutes, seconds).
 
         Returns
         -------
-        ??
+        list of int
+            Normalized differences as [years, months, days, hours, minutes, seconds].
         """
-        if date > self:
-            diff = date - self
-        else:
-            diff = self - date
+        me = list(self._as_tuple())
+        result = [me[i] - to_sub[i] for i in range(6)]
+        result = self._normalize_date(result)
+        return result
 
-        for index in range(0, 6):
-            if outformat == self._calendar.TIME_UNITS[index]:
-                # FIXME: Wouldn't this stop after the very first index that matches?
-                # I think that is the point, but I'm not sure.
-                return diff[index]
-        return None  # ...? Or raise an error?
-
-    def day_of_year(self):
+    def _normalize_date(self, comps: List[int]) -> List[int]:
         """
-        Gets the day of the year, counting from Jan. 1
-
-        Returns
-        -------
-        int
-            The day of the current year.
-        """
-        if self[1] == self[2] == 1:
-            return 1
-        else:
-            date2 = Date(str(self[0]) + "-01-01T00:00:00", self._calendar)
-            return self.time_between(date2, "days") + 1
-
-    def __str__(self):
-        return (
-            "-".join([str(self.year), str(self.month).zfill(2), str(self.day).zfill(2)])
-            + "T"
-            + ":".join(
-                [
-                    str(self.hour).zfill(2),
-                    str(self.minute).zfill(2),
-                    str(self.second).zfill(2),
-                ]
-            )
-        )
-
-    def format(
-        self, form="SELF", givenph=None, givenpm=None, givenps=None
-    ):  # basically format_date
-        """
-        Beautifully returns a ``Date`` object as a string.
+        Normalize the time components, cascading overflows correctly.
 
         Parameters
         ----------
-        form : str or int
-            Logic taken from from MPI-Met
-        givenph : bool-ish
-            Print hours
-        givenpm : bool-ish
-            Print minutes
-        givenps : bool-ish
-            Print seconds
-
-        Note
-        ----
-        **How to use the ``form`` argument**
-            The following forms are accepted:
-            + SELF: uses the format which was given when constructing the date
-            + 0: A Date formatted as YYYY
-
-            In [5]: test.format(form=1)
-            Out[5]: '1850-01-01_00:00:00'
-
-            In [6]: test.format(form=2)
-            Out[6]: '1850-01-01T00:00:00'
-
-            In [7]: test.format(form=3)
-            Out[7]: '1850-01-01 00:00:00'
-
-            In [8]: test.format(form=4)
-            Out[8]: '1850 01 01 00 00 00'
-
-            In [9]: test.format(form=5)
-            Out[9]: '01 Jan 1850 00:00:00'
-
-            In [10]: test.format(form=6)
-            Out[10]: '18500101_00:00:00'
-
-            In [11]: test.format(form=7)
-            Out[11]: '1850-01-01_000000'
-
-            In [12]: test.format(form=8)
-            Out[12]: '18500101000000'
-
-            In [13]: test.format(form=9)
-            Out[13]: '18500101_000000'
-
-            In [14]: test.format(form=10)
-            Out[14]: '01/01/1850 00:00:00'
-        """
-        # Programmer notes to not be ever included in the doc-string: Paul really, Really, REALLY
-        # dislikes this function. It rubs me in the wrong way.
-        if form == "SELF":
-            form = self._date_format.form
-
-        ph = self._date_format.printhours
-        pm = self._date_format.printminutes
-        ps = self._date_format.printseconds
-
-        # These variables are....utterly pointless
-        if givenph is not None:
-            ph = givenph
-        if givenpm is not None:
-            pm = givenpm
-        if givenps is not None:
-            ps = givenps
-        ndate = list(
-            map(
-                str,
-                (
-                    self.year,
-                    self.smonth,
-                    self.sday,
-                    self.shour,
-                    self.sminute,
-                    self.ssecond,
-                ),
-            )
-        )
-        if form == 0:
-            if len(ndate[0]) < 4:
-                for _ in range(1, 4 - len(ndate[0])):
-                    ndate[0] = "0" + ndate[0]
-        elif form == 5:
-            temp = ndate[0]
-            ndate[0] = ndate[2]
-            ndate[2] = temp
-            ndate[1] = self._calendar.MONTH_NAMES[int(ndate[1]) - 1]
-        elif form == 8:
-            if len(ndate[0]) < 4:
-                print("Format 8 clear with 4 digit year only")
-                sys.exit(2)
-        elif form == 10:
-            temp = ndate[0]
-            ndate[0] = ndate[1]
-            ndate[1] = ndate[2]
-            ndate[2] = temp
-
-        for index in range(0, 6):
-            if len(ndate[index]) < 2:
-                ndate[index] = "0" + ndate[index]
-
-        ndate[1] = self._date_format.datesep[form] + ndate[1]
-        ndate[2] = self._date_format.datesep[form] + ndate[2]
-        ndate[3] = self._date_format.dtsep[form] + ndate[3]
-        ndate[4] = self._date_format.timesep[form] + ndate[4]
-        ndate[5] = self._date_format.timesep[form] + ndate[5]
-
-        if not ps:
-            ndate[5] = ""
-        if not pm and ndate[5] == "":
-            ndate[4] = ""
-        if not ph and ndate[4] == "":
-            ndate[3] = ""
-
-        return ndate[0] + ndate[1] + ndate[2] + ndate[3] + ndate[4] + ndate[5]
-
-    def makesense(self, ndate):
-        """
-        Puts overflowed time back into the correct unit.
-
-        When manipulating the date, it might be that you have "70 seconds", or
-        something similar. Here, we put the overflowed time into the
-        appropriate unit.
-        """
-        # ndate = copy.deepcopy(self)
-        ndate[4] = ndate[4] + ndate[5] // 60
-        ndate[5] = ndate[5] % 60
-
-        ndate[3] = ndate[3] + ndate[4] // 60
-        ndate[4] = ndate[4] % 60
-
-        ndate[2] = ndate[2] + ndate[3] // 24
-        ndate[3] = ndate[3] % 24
-
-        ndate[0] = ndate[0] + (ndate[1] - 1) // 12
-        ndate[1] = (ndate[1] - 1) % 12 + 1
-
-        while ndate[2] > self._calendar.days_in_month(ndate[0], ndate[1]):
-            ndate[2] = ndate[2] - self._calendar.days_in_month(ndate[0], ndate[1])
-            ndate[1] = ndate[1] + 1
-            ndate[0] = ndate[0] + (ndate[1] - 1) // 12
-            ndate[1] = (ndate[1] - 1) % 12 + 1
-
-        ndate[0] = ndate[0] + (ndate[1] - 1) // 12
-        ndate[1] = (ndate[1] - 1) % 12 + 1
-
-        while ndate[2] <= 0:
-            ndate[1] = ndate[1] - 1
-            if ndate[1] == 0:
-                ndate[1] = 12
-                ndate[0] = ndate[0] - 1
-            ndate[2] = ndate[2] + self._calendar.days_in_month(ndate[0], ndate[1])
-
-        if ndate[1] == 0:
-            ndate[1] = 12
-            ndate[0] = ndate[0] - 1
-
-        return ndate
-
-        # self.year, self.month, self.day, self.hour, self.minute, self.second = map(
-        #    int, ndate
-        # )
-        # self.syear, self.smonth, self.sday, self.shour, self.sminute, self.ssecond = map(
-        #    str, ndate
-        # )
-
-    def add(self, to_add):
-        """
-        Adds another date to this one.
-
-        Parameters
-        ----------
-        to_add : ~`pyesm.core.time_control.Date`
-            The other date to add to this one.
+        comps : list of int
+            A list of date components [year, month, day, hour, minute, second].
 
         Returns
         -------
-        new_date : ~`pyesm.core.time_control.Date`
-            A new date object with the added dates
+        list of int
+            The normalized date components.
         """
+        comps[4] += comps[5] // 60
+        comps[5] %= 60
 
-        me = [self.year, self.month, self.day, self.hour, self.minute, self.second]
-        result = [me[i] + to_add[i] for i in range(6)]
-        result = self.makesense(result)
+        comps[3] += comps[4] // 60
+        comps[4] %= 60
 
-        new_date = self.from_list(result)
-        return new_date
+        comps[2] += comps[3] // 24
+        comps[3] %= 24
+
+        comps[0] += (comps[1] - 1) // 12
+        comps[1] = (comps[1] - 1) % 12 + 1
+
+        while comps[2] > self.calendar.days_in_month(comps[0], comps[1]):
+            comps[2] -= self.calendar.days_in_month(comps[0], comps[1])
+            comps[1] += 1
+            if comps[1] > 12:
+                comps[1] = 1
+                comps[0] += 1
+
+        while comps[2] <= 0:
+            comps[1] -= 1
+            if comps[1] == 0:
+                comps[1] = 12
+                comps[0] -= 1
+            comps[2] += self.calendar.days_in_month(comps[0], comps[1])
+
+        return comps
+
+    def add(self, other: "Date") -> "Date":
+        """
+        Add another Date's components to this Date.
+
+        Parameters
+        ----------
+        other : Date
+            The Date whose components will be added.
+
+        Returns
+        -------
+        Date
+            A new Date with added components.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            >>> d1 = Date("2024-02-16T11:30:00")
+            >>> d2 = Date("0000-00-00T01:00:00")
+            >>> d3 = d1 + d2
+            >>> print(d3)
+            2024-02-16T12:30:00
+        """
+        my_comps = list(self._as_tuple())
+        other_comps = [other[i] for i in range(6)]
+        result = [my_comps[i] + other_comps[i] for i in range(6)]
+        result = self._normalize_date(result)
+        return Date.from_list(result)
 
     __add__ = add
 
-    def sub_tuple(self, to_sub):
+    @classmethod
+    def from_list(cls, components: List[int]) -> "Date":
         """
-        Adds another date to from one.
+        Create a Date from a list of integer components.
 
         Parameters
         ----------
-        to_sub : ~`pyesm.core.time_control.Date`
-            The other date to sub from this one.
+        components : list of int
+            List in the order [year, month, day, hour, minute, second].
 
         Returns
         -------
-        new_date : ~`pyesm.core.time_control.Date`
-            A new date object with the subtracted dates
+        Date
+            A new Date instance.
+
+        Examples
+        --------
+        .. code-block:: python
+
+            >>> Date.from_list([2024, 2, 16, 11, 30, 0])
+            Date(2024-02-16T11:30:00)
         """
+        signs = ["-" if n < 0 else "" for n in components]
+        str_components = [str(abs(n)) for n in components]
+        str_components[0] = str_components[0].zfill(4)
+        for i in range(1, 6):
+            str_components[i] = str_components[i].zfill(2)
+        date_str = (
+            signs[0]
+            + str_components[0]
+            + "-"
+            + signs[1]
+            + str_components[1]
+            + "-"
+            + signs[2]
+            + str_components[2]
+            + "_"
+            + signs[3]
+            + str_components[3]
+            + ":"
+            + signs[4]
+            + str_components[4]
+            + ":"
+            + signs[5]
+            + str_components[5]
+        )
+        return cls(date_str)
 
-        me = [self.year, self.month, self.day, self.hour, self.minute, self.second]
-        result = [me[i] - to_sub[i] for i in range(6)]
-        result = self.makesense(result)
-
-        new_date = self.from_list(result)
-        return new_date
+    fromlist = from_list

@@ -1043,7 +1043,7 @@ class Date:
         .. code-block:: python
 
             >>> Date.from_list([2024, 2, 16, 11, 30, 0])
-            Date(2024-02-16T11:30:00)
+            Date(2024-02-16_11:30:00)
         """
         signs = ["-" if n < 0 else "" for n in components]
         str_components = [str(abs(n)) for n in components]

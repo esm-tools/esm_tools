@@ -269,10 +269,10 @@ class yac:
         # enddate = "_" + str(gconfig["end_date"].year) + str(gconfig["end_date"].month) + str(gconfig["end_date"].day)
         # parentdate = "_" + str(config["parent_date"].year) + str(config["parent_date"].month) + str(config["parent_date"].day)
         enddate = "_" + gconfig["end_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
         parentdate = "_" + config["parent_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
 
         if "restart_out_files" not in config:
@@ -307,7 +307,7 @@ class yac:
 
     def prepare_restarts(self, restart_file, all_fields, model, config):
         enddate = "_" + config["general"]["end_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
         # enddate = "_" + str(config["general"]["end_date"].year) + str(config["general"]["end_date"].month) + str(config["general"]["end_date"].day)
         import glob

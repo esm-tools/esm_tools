@@ -530,7 +530,10 @@ class batch_system:
                     + " -p ${process}"
                     + " -s "
                     + config["general"]["current_date"].format(
-                        form=9, givenph=False, givenpm=False, givenps=False
+                        form=9,
+                        print_hours=False,
+                        print_minutes=False,
+                        print_seconds=False,
                     )
                     + " -r "
                     + str(config["general"]["run_number"])

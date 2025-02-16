@@ -46,7 +46,11 @@ class oasis:
         self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
         if lucia:
             if mct_version >= (5, 0):
-                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1", " $END"]
+                self.namcouple += [
+                    " $NLOGPRT",
+                    "           " + str(debug_level) + " 0 1",
+                    " $END",
+                ]
             else:
                 self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
@@ -242,9 +246,7 @@ class oasis:
                     )
                     trafo_details += [stack_line.strip()]
                 elif trans.upper() == "HCSBB":
-                    stack_line = (
-                        trans.upper()
-                    )
+                    stack_line = trans.upper()
                     trafo_details += [stack_line.strip()]
 
         else:  # OASIS with SCRIP interpolation library
@@ -491,10 +493,10 @@ class oasis:
         gconfig = fconfig["general"]
         is_runtime = gconfig["run_or_compile"] == "runtime"
         enddate = "_" + gconfig["end_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
         parentdate = "_" + config["parent_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
 
         if "restart_out_files" not in config:
@@ -608,7 +610,7 @@ class oasis:
 
     def prepare_restarts(self, restart_file, all_fields, models, config):
         enddate = "_" + config["general"]["end_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
         # enddate = "_" + str(config["general"]["end_date"].year) + str(config["general"]["end_date"].month) + str(config["general"]["end_date"].day)
 
@@ -665,11 +667,13 @@ class oasis:
         if os.path.isfile(restart_file):
             logger.debug(f"{restart_file} already exits, overwriting")
 
-        cdo_merge_command = f"cdo -O -f nc4c merge {filelist} {restart_file}" # {enddate}"
+        cdo_merge_command = (
+            f"cdo -O -f nc4c merge {filelist} {restart_file}"  # {enddate}"
+        )
         logger.info(cdo_merge_command)
         exit_code = os.system(cdo_merge_command)
         if exit_code != 0:
-            cdo_merge_command = f"cdo -O merge {filelist} {restart_file}" # {enddate}"
+            cdo_merge_command = f"cdo -O merge {filelist} {restart_file}"  # {enddate}"
             logger.warning("nc4c merge failed, trying without it...")
             logger.info(cdo_merge_command)
             os.system(cdo_merge_command)

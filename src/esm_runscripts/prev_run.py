@@ -6,7 +6,7 @@ import yaml
 from loguru import logger
 
 import esm_parser
-from esm_calendar import Calendar, Date
+from esm_calendar import Date
 from esm_tools import user_error, user_note
 
 
@@ -64,7 +64,6 @@ class PrevRunInfo(dict):
         self.components_with_prev_run()
         # Counter for debuggin
         self._prev_config_count = 0
-
 
     def components_with_prev_run(self):
         """
@@ -235,10 +234,10 @@ class PrevRunInfo(dict):
                 # Check that the data really comes from the previous run
                 prev_date = prev_config["general"]["end_date"]
                 prev_date_stamp = Date(prev_date).format(
-                    form=9, givenph=False, givenpm=False, givenps=False
+                    form=9, print_hours=False, print_minutes=False, print_seconds=False
                 )
                 calc_prev_date_stamp = calc_prev_date.format(
-                    form=9, givenph=False, givenpm=False, givenps=False
+                    form=9, print_hours=False, print_minutes=False, print_seconds=False
                 )
                 # Dates don't match
                 if calc_prev_date_stamp != prev_date_stamp and self.warn:
@@ -392,7 +391,7 @@ class PrevRunInfo(dict):
 
         # Calculate end date for the previous run
         prev_datestamp = prev_date.format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
 
         # List all the config files in the config folder

@@ -705,12 +705,12 @@ class Date:
         while d1[1] > 1:
             diff[1] -= 1
             d1[1] -= 1
-            diff[2] -= self._calendar.day_in_month(d1[0], d1[1])
+            diff[2] -= self._calendar.days_in_month(d1[0], d1[1])
 
         while d2[1] > 1:
             diff[1] += 1
             d2[1] -= 1
-            diff[2] += self._calendar.day_in_month(d2[0], d2[1])
+            diff[2] += self._calendar.days_in_month(d2[0], d2[1])
 
         while d1[2] > 1:
             diff[2] -= 1
@@ -726,7 +726,7 @@ class Date:
         while d2[0] > d1[0]:
             diff[0] += 1
             diff[1] += 12
-            diff[2] += self._calendar.day_in_year(d1[0])
+            diff[2] += self._calendar.days_in_year(d1[0])
             d1[0] += 1
 
         diff[3] += diff[2] * 24
@@ -936,8 +936,8 @@ class Date:
         ndate[0] = ndate[0] + (ndate[1] - 1) // 12
         ndate[1] = (ndate[1] - 1) % 12 + 1
 
-        while ndate[2] > self._calendar.day_in_month(ndate[0], ndate[1]):
-            ndate[2] = ndate[2] - self._calendar.day_in_month(ndate[0], ndate[1])
+        while ndate[2] > self._calendar.days_in_month(ndate[0], ndate[1]):
+            ndate[2] = ndate[2] - self._calendar.days_in_month(ndate[0], ndate[1])
             ndate[1] = ndate[1] + 1
             ndate[0] = ndate[0] + (ndate[1] - 1) // 12
             ndate[1] = (ndate[1] - 1) % 12 + 1
@@ -950,7 +950,7 @@ class Date:
             if ndate[1] == 0:
                 ndate[1] = 12
                 ndate[0] = ndate[0] - 1
-            ndate[2] = ndate[2] + self._calendar.day_in_month(ndate[0], ndate[1])
+            ndate[2] = ndate[2] + self._calendar.days_in_month(ndate[0], ndate[1])
 
         if ndate[1] == 0:
             ndate[1] = 12

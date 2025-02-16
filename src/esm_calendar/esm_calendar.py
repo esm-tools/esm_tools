@@ -1,34 +1,78 @@
 """
-Module Docstring.,..?
+Module for handling date and calendar functionalities.
+
+This module provides classes and functions to handle various date and calendar operations,
+such as date manipulation, calendar handling with different types of calendars, and date formatting.
+
+Classes:
+    DateFormat: Class for handling date formatting options.
+    Calendar: Class to contain various types of calendars and their functionalities.
+    Date: Class to handle date operations and manipulations.
+
+Functions:
+    find_remaining_minutes(seconds): Finds the remaining full minutes of a given number of seconds.
+    date_range(start_date, stop_date, frequency): Yields dates from start_date to stop_date with a given frequency.
 """
+
 import copy
-import logging
 import sys
 
 
 def find_remaining_minutes(seconds):
     """
-    Finds the remaining full minutes of a given number of seconds
+    Finds the remaining full minutes of a given number of seconds.
 
     Parameters
     ----------
     seconds : int
-        The number of seconds to allocate
+        The number of seconds to allocate.
 
     Returns
     -------
     int
         The leftover seconds once new minutes have been filled.
+
+    Examples
+    --------
+    >>> find_remaining_minutes(125)
+    5
     """
+    if not isinstance(seconds, int):
+        raise TypeError(
+            f"You must provide an integer, instead got: {seconds} of type {type(seconds)}"
+        )
+    if seconds < 0:
+        raise ValueError(f"You must provide a positive integer, instead got {seconds}")
     return seconds % 60
 
 
-# NOTE: This actually kills the docstring, but minutes and seconds are the
-# same...
+# Alias find_remaining_hours to find_remaining_minutes
 find_remaining_hours = find_remaining_minutes
 
 
 def date_range(start_date, stop_date, frequency):
+    """
+    Yields dates from start_date to stop_date with a given frequency.
+
+    Parameters
+    ----------
+    start_date : str or Date
+        The start date.
+    stop_date : str or Date
+        The stop date.
+    frequency : str or Date
+        The frequency of the date range.
+
+    Yields
+    ------
+    Date
+        The next date in the range.
+
+    Examples
+    --------
+    >>> list(date_range("2025-01-01", "2025-01-10", "1 day"))
+    [Date(2025-01-01T00:00:00), Date(2025-01-02T00:00:00), ..., Date(2025-01-10T00:00:00)]
+    """
     if isinstance(start_date, str):
         start_date = Date(start_date)
     if isinstance(stop_date, str):
@@ -41,63 +85,68 @@ def date_range(start_date, stop_date, frequency):
         current_date += frequency
 
 
-class Dateformat(object):
-    datesep = ["", "-", "-", "-", " ", " ", "", "-", "", "", "/"]
-    timesep = ["", ":", ":", ":", " ", ":", ":", "", "", "", ":"]
-    dtsep = ["_", "_", "T", " ", " ", " ", "_", "_", "", "_", " "]
+# FIXME(PG): Find out if this is used anywhere!
+class DateFormat:
+    DATE_SEPARATORS = ["", "-", "-", "-", " ", " ", "", "-", "", "", "/"]
+    TIME_SEPARATORS = ["", ":", ":", ":", " ", ":", ":", "", "", "", ":"]
+    DATETIME_SEPARATORS = ["_", "_", "T", " ", " ", " ", "_", "_", "", "_", " "]
 
-    def __init__(self, form=1, printhours=True, printminutes=True, printseconds=True):
+    def __init__(
+        self, form=1, print_hours=True, print_minutes=True, print_seconds=True
+    ):
         self.form = form
-        self.printseconds = printseconds
-        self.printminutes = printminutes
-        self.printhours = printhours
+        self.print_hours = print_hours
+        self.print_minutes = print_minutes
+        self.print_seconds = print_seconds
 
     def __repr__(self):
         return (
-            "Dateformat(form=%s, printhours=%s, printminutes=%s, printseconds=%s)"
-            % (self.form, self.printhours, self.printminutes, self.printseconds)
+            f"DateFormat(form={self.form}, print_hours={self.print_hours}, "
+            f"print_minutes={self.print_minutes}, print_seconds={self.print_seconds})"
         )
 
 
-class Calendar(object):
+class Calendar:
     """
     Class to contain various types of calendars.
 
     Parameters
     ----------
-    calendar_type : int
-        The type of calendar to use.
-
-        Supported calendar types:
-        0
-            no leap years
-        1
-            proleptic greogrian calendar (default)
-        ``n``
-            equal months of ``n`` days
+    calendar_type : str
+        The type of calendar to use. Options are:
+        - "no_leap" : No leap years, or integer 0
+        - "gregorian" : Proleptic Gregorian calendar (default), or integer 1.
+        - "equal_months" : Equal months of `n` days (provide an integer instead of `n`).
 
     Attributes
     ----------
-    timeunits : list of str
+    time_units : list of str
         A list of accepted time units.
-    monthnames : list of str
+    month_names : list of str
         A list of valid month names, using 3 letter English abbreviation.
 
     Methods
     -------
-    isleapyear(year)
-        Returns a boolean testing if the given year is a leapyear
+    is_leap_year(year)
+        Returns a boolean testing if the given year is a leap year.
+    days_in_year(year)
+        Returns the total number of days in a given year.
+    days_in_month(year, month)
+        Returns the total number of days in a given month for a given year (considering leap years).
 
-    day_in_year(year)
-        Returns the total number of days in a given year
-
-    day_in_month(year, month)
-        Returns the total number of days in a given month for a given year
-        (considering leapyears)
+    Examples
+    --------
+    >>> cal = Calendar("gregorian")
+    >>> cal.is_leap_year(2024)
+    True
+    >>> cal.days_in_year(2024)
+    366
+    >>> cal.days_in_month(2024, 2)
+    29
     """
 
-    timeunits = ["years", "months", "days", "hours", "minutes", "seconds"]
-    monthnames = [
+    TIME_UNITS = ["years", "months", "days", "hours", "minutes", "seconds"]
+    MONTH_NAMES = [
         "Jan",
         "Feb",
         "Mar",
@@ -112,115 +161,120 @@ class Calendar(object):
         "Dec",
     ]
 
-    def __init__(self, calendar_type=1):
+    def __init__(self, calendar_type="gregorian"):
+        # NOTE(PG): This is for backwards compatibility with old code, this
+        #           should throw a deprecation warning when triggered!
+		if calendar_type == 1:
+            calendar_type = "gregorian"
+        if calendar_type == 0:
+            calendar_type = "no_leap"
         self.calendar_type = calendar_type
 
-    def isleapyear(self, year):
+    def is_leap_year(self, year):
         """
-        Checks if a year is a leapyear
+        Checks if a year is a leap year.
 
         Parameters
         ----------
         year : int
-            The year to check
+            The year to check.
 
         Returns
         -------
         bool
-            True if the given year is a leapyear
+            True if the given year is a leap year.
+
+        Examples
+        --------
+        >>> cal = Calendar("gregorian")
+        >>> cal.is_leap_year(2024)
+        True
         """
-        if self.calendar_type == 1:
+        if self.calendar_type == "gregorian":
             if (year % 4) == 0:
                 if (year % 100) == 0:
                     if (year % 400) == 0:
-                        leapyear = True
-                    else:
-                        leapyear = False
-                else:
-                    leapyear = True
-            else:
-                leapyear = False
-        else:
-            leapyear = False
-        return leapyear
+                        return True
+                    return False
+                return True
+            return False
+        return False
 
-    def day_in_year(self, year):
+    def days_in_year(self, year):
         """
-        Finds total number of days in a year, considering leapyears if the
-        calendar type allows for them.
+        Finds total number of days in a year, considering leap years if the calendar type allows for them.
 
         Parameters
         ----------
         year : int
-            The year to check
+            The year to check.
 
         Returns
         -------
         int
-            The total number of days for this specific calendar type
-        """
-        if self.calendar_type == 0:
-            number_of_days = 365
-        elif self.calendar_type == 1:
-            number_of_days = 365 + int(self.isleapyear(year))
-        else:
-            number_of_days = self.calendar_type * 12
-        return number_of_days
+            The total number of days for this specific calendar type.
 
-    def day_in_month(self, year, month):
+        Examples
+        --------
+        >>> cal = Calendar("gregorian")
+        >>> cal.days_in_year(2024)
+        366
         """
-        Finds the number of days in a given month
+        if self.calendar_type == "no_leap":
+            return 365
+        elif self.calendar_type == "gregorian":
+            return 365 + int(self.is_leap_year(year))
+        return int(self.calendar_type) * 12
+
+    def days_in_month(self, year, month):
+        """
+        Finds the number of days in a given month.
 
         Parameters
         ----------
         year : int
-            The year to check
+            The year to check.
         month : int or str
             The month number or short name.
 
         Returns
         -------
         int
-            The number of days in this month, considering leapyears if needed.
+            The number of days in this month, considering leap years if needed.
 
         Raises
         ------
-        TypeError
-            Raised when you give an incorrect type for month
-        """
+        ValueError
+            Raised when you give an incorrect month.
 
+        Examples
+        --------
+        >>> cal = Calendar("gregorian")
+        >>> cal.days_in_month(2024, 2)
+        29
+        """
         if isinstance(month, str):
-            month = month.capitalize()  # Clean up possible badly formated month
-            month = self.monthnames.index(month) + 1  # Remember, python is 0 indexed
-        # Make sure you gave a month from 1 to 12
-        if month > 12:
-            raise TypeError("You have given an idiotic month, please reconsider")
-        elif not isinstance(month, int):
-            raise TypeError(
-                "You must supply either a str with short month name, or an int!"
-            )
-        if self.calendar_type == 0 or self.calendar_type == 1:
+            month = self.MONTH_NAMES.index(month.capitalize()) + 1
+        if not 1 <= month <= 12:
+            raise ValueError("Invalid month. Must be between 1 and 12.")
+
+        if self.calendar_type in ["no_leap", "gregorian"]:
             if month in [1, 3, 5, 7, 8, 10, 12]:
                 return 31
             if month in [4, 6, 9, 11]:
                 return 30
-            return 28 + int(self.isleapyear(year))
-        # I don't really like this, but if the calendar type is not 1 or 0, it
-        # is ``n``, with n being the number of days in equal-length months...
-        return self.calendar_type
+            return 28 + int(self.is_leap_year(year))
+        return int(self.calendar_type)
 
     def __repr__(self):
-        return "esm_calendar(calendar_type=%s)" % self.calendar_type
+        return f"Calendar(calendar_type={self.calendar_type})"
 
     def __str__(self):
-        if self.calendar_type == 0:
-            return "esm_calender object with no leap years allowed"
-        if self.calendar_type == 1:
-            return "esm_calendar object with allowed leap years"
-        return (
-            "esm_calendar object with equal-length months of %s days"
-            % self.calendar_type
-        )
+        if self.calendar_type == "no_leap":
+            return "Calendar object with no leap years allowed"
+        if self.calendar_type == "gregorian":
+            return "Calendar object with allowed leap years"
+        return f"Calendar object with equal-length months of {self.calendar_type} days"
 
 
 class Date(object):
@@ -349,7 +403,12 @@ class Date(object):
 
     def _init_from_date(self, indate, calendar=Calendar()):
         self.year, self.month, self.day, self.hour, self.minute, self.second = (
-            indate.year, indate.month, indate.day, indate.hour, indate.minute, indate.second
+            indate.year,
+            indate.month,
+            indate.day,
+            indate.hour,
+            indate.minute,
+            indate.second,
         )
 
     @property

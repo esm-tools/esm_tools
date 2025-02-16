@@ -571,6 +571,18 @@ class Date:
         return "{:04d}".format(self.year)
 
     @property
+    def sdoy(self) -> str:
+        """
+        Returns a zero-padded string of the day of the year.
+
+        Returns
+        -------
+        str
+            The day of the year as a 3-digit string.
+        """
+        return "{:03d}".format(self.day_of_year())
+
+    @property
     def smonth(self) -> str:
         """
         Returns a zero-padded string of the month.
@@ -871,7 +883,7 @@ class Date:
         elif isinstance(other, tuple):
             return self._sub_tuple(other)
         else:
-            sys.exit("No known combination for subtraction")
+            raise TypeError(f"Unsupported type for subtraction: {type(other)}"))
 
     ################################################################################
     def _sub_date(self, other: "Date") -> List[int]:

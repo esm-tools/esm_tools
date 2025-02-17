@@ -3,7 +3,7 @@
 
 model: fesom
 branch: "2.6"
-version: "2.6"
+version: "2.6-7"
 type: ocean
 
 comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
@@ -24,13 +24,16 @@ required_plugins:
 
 choose_version:
   "2.6":
+    branch: "2.6.6"
+
+  "2.6-7":
     branch: "2.6.7"
 
-  "2.6-paleodyn":
-    branch: "2.6.7"
-    wiso_code: true
-    icb_code: true
-    namelist_dir: "${model_dir}/config/"
+#  "2.6-paleodyn":
+#    branch: "2.6.6"
+#    wiso_code: true
+#    icb_code: true
+#    namelist_dir: "${model_dir}/config/"
 destination: "fesom-2.6"
 install_bins: bin/fesom.x
 git-repository:

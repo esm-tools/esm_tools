@@ -1074,14 +1074,15 @@ class Date:
         Returns
         -------
         list of int
-            Differences as [years, months, days, hours, minutes, seconds].
+            Differences as [years, months, days, hours, minutes, seconds]. These diffs
+            represent the cumulative time between the two dates in each of the units.
 
         Examples
         --------
         >>> d1 = Date("2024-02-16T12:30:00")
         >>> d2 = Date("2024-02-16T11:30:00")
         >>> d1 - d2
-        [0, 0, 0, 1, 0, 0]
+        [0, 0, 0, 1, 60, 3600]
         """
         if isinstance(other, Date):
             return self._sub_date(other)

@@ -20,6 +20,7 @@ from .compile_info import setup_and_model_infos
 
 from .task import Task
 
+from esm_parser import yaml_dump
 
 def main_flow(parsed_args, target):
 
@@ -91,15 +92,10 @@ def main_flow(parsed_args, target):
     user_task.validate()
     user_task.generate_task_script()
 
-    if parsed_args.get("check", False):
-        # deniz: if the environment variable ESM_MASTER_DEBUG is also set dump
-        # the contents of the current config to stdout for more investigation
-        if os.environ.get("ESM_MASTER_DEBUG", None):
-            print()
-            print("Contents of the complete_config:")
-            print("--------------------------------")
-            print(yaml.dump(complete_config, default_flow_style=False, indent=4))
+    # Print config
+    yaml_dump(complete_config, config_file_path=f"{complete_config['general']['model_dir']}/finished_config.yaml")
 
+    if parsed_args.get("check", False):
         print("esm_master: check mode is activated. Not executing the actions above")
         return 0
 

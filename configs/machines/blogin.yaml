@@ -91,13 +91,16 @@ export_vars:
    # removed by seb-wahl as it slows down ECHAM6 by 50% 
    #SLURM_CPU_BIND: none
 
-choose_compiler_mpi:
-   intel2024_impi2021:
-      add_module_actions:
-         - "load intel/2024.2"
-         - "load impi/2021.13"
+module_actions:
+    - "load ${compiler}"
+    - "load ${mpi}"
          # TODO: check whether loading gcc is still required
          #- "load gcc/13.3.0"
+
+choose_compiler_mpi:
+   intel2024_impi2021:
+      compiler: intel/2024.2
+      mpi: impi/2021.13
       add_export_vars:
          FC: mpiifx
          F77: mpiifx
@@ -119,7 +122,7 @@ choose_iolibraries:
              # Use system HDF5 and netCDF
              # ecCodes will be installed, but is not a priority now
              add_module_actions:
-                - "load hdf5-parallel/impi/intel/1.14.4" 
+                - "load hdf5-parallel/impi/intel/1.14.4"
                 - "load netcdf-parallel/impi/intel/4.9.2"
              # We dont have ecCodes, so we need to compile it ourselves for now
              add_export_vars:

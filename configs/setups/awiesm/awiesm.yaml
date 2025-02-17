@@ -266,15 +266,6 @@ echam:
                                         submodelctl:
                                             lupdate_orog: True
 
-        # with_recom switch
-        # -----------------
-        # Settings for running with REcoM
-        choose_general.with_recom:
-            True:
-                wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed
-                add_coupling_fields:
-                    "[[wiso_fields-->FIELD]]":
-                        grid: atmo
 
 
 
@@ -440,17 +431,6 @@ fesom:
             "*":
                 is: invalid
 
-        # with_recom switch
-        # -----------------
-        # Settings for running with REcoM
-        choose_general.with_recom:
-            True:
-                # Set fesom.with_recom: true when general.with_recom: true
-                with_recom: true
-                wiso_fields: [o18_feom, hdo_feom, o16_feom, w1_oce, w2_oce, w3_oce, i1_oce, i2_oce, i3_oce] # MA: after merging in FESOM by Martin B. this can be removed
-                add_coupling_fields:
-                    "[[wiso_fields-->FIELD]]":
-                        grid: feom
 
 #########################################################################################
 
@@ -549,20 +529,6 @@ oasis3mct:
                                 add_a2o_flux:
                                         - 'u10w_oce <--distwgt-- u10_atmo'
                                         - 'v10w_oce <--distwgt-- v10_atmo'
-        choose_general.with_recom:
-                True: # MA: after merging in FESOM by Martin B. this can be removed
-                        add_coupling_target_fields:
-                                add_o2a_flux:
-                                        - 'o18_atmo <--distwgt-- o18_feom'
-                                        - 'hdo_atmo <--distwgt-- hdo_feom'
-                                        - 'o16_atmo <--distwgt-- o16_feom'
-                                add_a2o_flux:
-                                        - 'w1_oce <--distwgt-- w1_atm'
-                                        - 'w2_oce <--distwgt-- w2_atm'
-                                        - 'w3_oce <--distwgt-- w3_atm'
-                                        - 'i1_oce <--distwgt-- i1_atm'
-                                        - 'i2_oce <--distwgt-- i2_atm'
-                                        - 'i3_oce <--distwgt-- i3_atm'
 
 
         coupling_directions:

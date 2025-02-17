@@ -41,7 +41,6 @@ Creating a date and formatting it:
     '2024-02-16T11:30:00'
 """
 
-import sys
 from typing import Generator, List, Optional, Tuple, Union
 
 from deprecated import deprecated
@@ -326,6 +325,22 @@ class DateFormat:
         Mapping between format codes and datetime separators.
     timesep : dict
         Mapping between format codes and time separators.
+
+    Examples
+    --------
+    Using the date 2001-11-03 12:34:56, the formats would be:
+
+    Format 0: 2001-11-03T12:34:56
+    Format 1: 2001-11-03_12:34:56
+    Format 2: 2001-11-03T12:34:56
+    Format 3: 2001-11-03 12:34:56
+    Format 4: 2001 11 03 12 34 56
+    Format 5: 2001 11 03 12:34:56
+    Format 6: 20011103_12:34:56
+    Format 7: 2001-11-03_123456
+    Format 8: 20011103 123456
+    Format 9: 20011103_123456
+    Format 10: 2001/11/03 12:34:56
     """
 
     def __init__(
@@ -377,6 +392,199 @@ class DateFormat:
 
     def __repr__(self) -> str:
         return f"DateFormat(form={self.form}, print_hours={self.print_hours}, print_minutes={self.print_minutes}, print_seconds={self.print_seconds})"
+
+
+class DateDelta:
+    """
+    A class to represent the difference between two dates.
+
+    Attributes
+    ----------
+    years : int
+        The difference in years.
+    months : int
+        The difference in months.
+    days : int
+        The difference in days.
+    hours : int
+        The difference in hours.
+    minutes : int
+        The difference in minutes.
+    seconds : int
+        The difference in seconds.
+    number_leap_years : int
+        The number of leap years between the two dates.
+    """
+
+    def __init__(
+        self,
+        years: int,
+        months: int,
+        days: int,
+        hours: int,
+        minutes: int,
+        seconds: int,
+        number_leap_years: int = 0,
+    ):
+        self.years = years
+        self.months = months
+        self.days = days
+        self.hours = hours
+        self.minutes = minutes
+        self.seconds = seconds
+        self.number_leap_years = number_leap_years
+
+    # Support for indexing and transforming to tuple
+
+    def _as_tuple(self) -> Tuple[int, int, int, int, int, int]:
+        """
+        Return the date components as a tuple.
+
+        Returns
+        -------
+        tuple
+            A tuple of (years, months, days, hours, minutes, seconds).
+        """
+        return (
+            self.years,
+            self.months,
+            self.days,
+            self.hours,
+            self.minutes,
+            self.seconds,
+        )
+
+    def __iter__(self):
+        return iter(self._as_tuple())
+
+    def __getitem__(self, index: int) -> int:
+        return self._as_tuple()[index]
+
+    @classmethod
+    def from_dates(
+        cls, date1: "Date", date2: "Date", calendar: Optional[Calendar] = None
+    ) -> "DateDelta":
+        """
+        Create a DateDelta object from two Date objects.
+
+        Parameters
+        ----------
+        date1 : Date
+            The first Date object.
+        date2 : Date
+            The second Date object.
+        calendar : Calendar, optional
+            An object that provides methods `days_in_year` and `is_leap_year`. Defaults
+            to a gregorian calendar.
+
+        Returns
+        -------
+        DateDelta
+            The difference between the two dates.
+        """
+        if calendar is None:
+            calendar = Calendar("gregorian")
+
+        # Swap dates if necessary
+        date1, date2 = (date1, date2) if date1 > date2 else (date2, date1)
+        diff = date1 - date2
+
+        # Count the number of leap years between date1 and date2
+        leap_years = sum(
+            1
+            for year in range(date2.year, date1.year + 1)
+            if calendar.is_leap_year(year)
+        )
+
+        return cls(*diff, number_leap_years=leap_years)
+
+    def __repr__(self):
+        return (
+            f"DateDelta(years={self.years}, months={self.months}, days={self.days}, "
+            f"hours={self.hours}, minutes={self.minutes}, seconds={self.seconds}, "
+            f"number_leap_years={self.number_leap_years})"
+        )
+
+    def accumulate(
+        self,
+        start_date: "Date",
+        end_date: "Date",
+        calendar: Optional[Calendar] = None,
+        rtype: type = dict,
+    ):
+        """
+        Accumulate the differences into total months, days, hours, minutes, and seconds if it
+        is applied from start_date to end_date.
+
+        Parameters
+        ----------
+        start_date : Date
+            The starting date.
+        end_date : Date
+            The ending date.
+        calendar : Calendar, optional
+            An object that provides methods `days_in_year` and `days_in_month`. Defaults
+            to a gregorian calendar.
+        rtype : type, optional
+            The return type. Defaults to dict.
+
+        Returns
+        -------
+        obj:
+            The accumulated differences, as either dict, list, or tuple.
+
+        Raises
+        ------
+        ValueError
+            If an unsupported return type is provided.
+        """
+        if calendar is None:
+            calendar = Calendar("gregorian")
+
+        # Determine the number of days in a year and a month using the start_date
+        days_in_year = calendar.days_in_year(start_date.year)
+        days_in_month = calendar.days_in_month(start_date.year, start_date.month)
+
+        total_months = self.years * 12 + self.months
+        total_days = (
+            self.years * days_in_year
+            + self.months * days_in_month
+            + self.days
+            + self.number_leap_years  # Adjust for leap years
+        )
+        total_hours = total_days * 24 + self.hours
+        total_minutes = total_hours * 60 + self.minutes
+        total_seconds = total_minutes * 60 + self.seconds
+
+        if rtype == dict:
+            return {
+                "total_years": self.years,
+                "total_months": total_months,
+                "total_days": total_days,
+                "total_hours": total_hours,
+                "total_minutes": total_minutes,
+                "total_seconds": total_seconds,
+            }
+        elif rtype == list:
+            return [
+                self.years,
+                total_months,
+                total_days,
+                total_hours,
+                total_minutes,
+                total_seconds,
+            ]
+        elif rtype == tuple:
+            return (
+                self.years,
+                total_months,
+                total_days,
+                total_hours,
+                total_minutes,
+                total_seconds,
+            )
+        else:
+            raise ValueError(f"Unsupported return type: {rtype}")
 
 
 class Date:
@@ -673,8 +881,13 @@ class Date:
 
         Returns
         -------
-        Optional[int]
-            The time difference in the specified unit, or None if the unit is invalid.
+        int:
+            The time difference in the specified unit.
+
+        Raises
+        ------
+        ValueError
+            If an unsupported time unit is provided.
         """
         if unit not in self.calendar.TIME_UNITS:
             return None
@@ -702,7 +915,7 @@ class Date:
         elif unit == "years":
             return diff[0]
 
-        return None
+        raise ValueError(f"Unsupported time unit: {unit}")
 
     def output(self, form="SELF") -> str:
         """Shortcut method to nicely print a Date"""
@@ -934,7 +1147,13 @@ class Date:
         # Handle years
         diff[0] = d2[0] - d1[0]
 
-        return diff
+        # FIXME(PG): Mimic old behavior with the accumulated differences
+        return DateDelta(*diff).accumulate(
+            start_date=other,
+            end_date=self,
+            calendar=self.calendar,
+            rtype=list,
+        )
 
     def _sub_tuple(self, to_sub: Tuple[int, int, int, int, int, int]) -> List[int]:
         """

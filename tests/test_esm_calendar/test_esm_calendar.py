@@ -253,7 +253,7 @@ def test_date_time_between():
 def test_date_subtraction():
     d1 = Date("2024-02-16T12:30:00")
     d2 = Date("2024-02-16T11:30:00")
-    assert d1 - d2 == [0, 0, 0, 1, 0, 0]
+    assert d1 - d2 == [0, 0, 0, 1, 60, 3600]
 
 
 def test_date_addition():

@@ -1,19 +1,7 @@
-{% if export_vars is defined and export_vars %}
+{% if export_vars is defined %}
 {% for key, value in export_vars.items() %}
-{% if value is not none %}
-{% if value is mapping %}
-export {{ key }}='{{ value|tojson }}'
-{% else %}
-{% if key.endswith('[(list)]') %}
 {% if value %}
-export {{ value }}
-{% endif %}
-{% else %}
-{% if value|string %}
 export {{ key|clean_env_var }}={{ value }}
-{% endif %}
-{% endif %}
-{% endif %}
 {% endif %}
 {% endfor %}
 {% endif %}

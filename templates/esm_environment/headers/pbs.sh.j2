@@ -1,0 +1,22 @@
+{# PBS Header Template #}
+{% if job %}
+#PBS -N {{ job.name }}
+{% if job.tasks %}
+#PBS -l nodes=1:ppn={{ job.tasks }}
+{% endif %}
+{% if job.time %}
+#PBS -l walltime={{ job.time }}
+{% endif %}
+{% if job.partition %}
+#PBS -q {{ job.partition }}
+{% endif %}
+{% if job.account %}
+#PBS -A {{ job.account }}
+{% endif %}
+{% if job.mail_type %}
+#PBS -m {{ 'abe' if job.mail_type == 'ALL' else job.mail_type }}
+{% endif %}
+{% if job.mail_user %}
+#PBS -M {{ job.mail_user }}
+{% endif %}
+{% endif %}

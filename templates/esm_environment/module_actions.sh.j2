@@ -1,0 +1,22 @@
+{# Handle module loading #}
+{% if general_actions is defined %}
+{% for action in general_actions %}
+{{ action }}
+{% endfor %}
+{% endif %}
+
+{% if module_actions is defined %}
+{% for action in module_actions %}
+{% if action.startswith('source') %}
+{{ action }}
+{% else %}
+module {{ action }}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if spack_actions is defined %}
+{% for action in spack_actions %}
+spack {{ action }}
+{% endfor %}
+{% endif %}

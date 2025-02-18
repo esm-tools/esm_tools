@@ -1,0 +1,9 @@
+#!{{ sh_interpreter }} -l
+{% if include_set_e %}
+set -e
+{% endif %}
+
+{# Include other template components #}
+{% include 'module_actions.sh.j2' %}
+{% include 'exports.sh.j2' %}
+{% include 'unset.sh.j2' %}

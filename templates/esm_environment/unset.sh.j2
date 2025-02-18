@@ -1,0 +1,5 @@
+{% if unset_vars is defined %}
+{% for var in unset_vars %}
+unset {{ var }}
+{% endfor %}
+{% endif %}

@@ -1,0 +1,13 @@
+{% if export_vars is defined %}
+{% for key, value in export_vars.items() %}
+{% if value is mapping %}
+export {{ key }}='{{ value|tojson }}'
+{% else %}
+{% if key.endswith('[(list)]') %}
+export {{ value }}
+{% else %}
+export {{ key|replace(r'\[\(\d+\)\]', '')|replace('[(list)]', '') }}={{ value }}
+{% endif %}
+{% endif %}
+{% endfor %}
+{% endif %}

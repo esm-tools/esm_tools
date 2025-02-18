@@ -1,0 +1,22 @@
+{# SLURM Header Template #}
+{% if job %}
+#SBATCH --job-name={{ job.name }}
+{% if job.tasks %}
+#SBATCH --ntasks={{ job.tasks }}
+{% endif %}
+{% if job.time %}
+#SBATCH --time={{ job.time }}
+{% endif %}
+{% if job.partition %}
+#SBATCH --partition={{ job.partition }}
+{% endif %}
+{% if job.account %}
+#SBATCH --account={{ job.account }}
+{% endif %}
+{% if job.mail_type %}
+#SBATCH --mail-type={{ job.mail_type }}
+{% endif %}
+{% if job.mail_user %}
+#SBATCH --mail-user={{ job.mail_user }}
+{% endif %}
+{% endif %}

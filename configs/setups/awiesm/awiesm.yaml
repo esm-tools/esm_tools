@@ -335,6 +335,9 @@ fesom:
         # --- icebergs ---
         with_icb: ${general.with_icb}
         # --- icebergs ---
+                        
+        outdata_targets:
+                fesom: "*.fesom.*.nc"
 
         # Variables depending on the general version of AWIESM
         # ----------------------------------------------------
@@ -347,8 +350,6 @@ fesom:
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: 0.0
-                        outdata_targets:
-                                fesom: "*.fesom.*.nc"
                 "2.6-1":
                         version: "2.6-7"
                         ALE_scheme: 'zstar'
@@ -357,8 +358,6 @@ fesom:
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: 0.0
-                        outdata_targets:
-                                fesom: "*.fesom.*.nc"
                 "2.1-paleodyn-2.5":
                         version: "2.5-paleodyn"
                         ALE_scheme: 'zstar'
@@ -367,8 +366,6 @@ fesom:
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: 0.0
-                        outdata_targets:
-                                fesom: "*.fesom.*.nc"
                 "2.1":
                         version: "2.1-awiesm-2.1"
                         ALE_scheme: 'zstar'

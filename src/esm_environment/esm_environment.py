@@ -366,7 +366,6 @@ class BatchScriptTemplate:
         for tail_command in tail_commands:
             script_parts.append(tail_command)
 
-        breakpoint()
         return "\n".join(script_parts)
 
     def update_config(self, new_config: Dict[str, Any], separator: str = "/") -> None:

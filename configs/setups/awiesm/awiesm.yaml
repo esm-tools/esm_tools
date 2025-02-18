@@ -431,6 +431,10 @@ fesom:
             "*":
                 is: invalid
 
+        choose_general.with_recom:
+            True:
+                # Set fesom.with_recom: true when general.with_recom: true
+                with_recom: true
 
 #########################################################################################
 

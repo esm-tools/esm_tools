@@ -69,8 +69,8 @@ class Task:
             )
 
         if kind == "components":
-            self.env = esm_environment.esm_environment.EnvironmentInfos(
-                "compiletime", complete_config, model
+            self.env = esm_environment.esm_environment.BatchScriptTemplate(
+                complete_config
             )
         else:
             self.env = None
@@ -429,10 +429,13 @@ class Task:
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 if task.package.kind == "components":
-                    task.env.write_dummy_script()
-                    newfile = task.env.add_commands(
-                        task.package.command_list[task.todo], task.raw_name
-                    )
+                    with open(f"{task.raw_name}_script.sh", "w") as newfile:
+                        newfile.write(
+                            task.env.render(
+                                tail_commands=task.package.command_list[task.todo]
+                            )
+                        )
+                    newfile = f"{task.raw_name}_script.sh"
                     if os.path.isfile(newfile):
                         os.chmod(newfile, 0o755)
 

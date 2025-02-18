@@ -177,7 +177,9 @@ class BatchScriptTemplate:
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
         )
 
-    def render(self, include_set_e: bool = True) -> str:
+    def render(
+        self, include_set_e: bool = True, tail_commands: Optional[list] = None
+    ) -> str:
         """
         Render a complete script, optionally including batch system headers.
 
@@ -185,6 +187,8 @@ class BatchScriptTemplate:
         ----------
         include_set_e : bool, optional
             Whether to include 'set -e' in the script (default: True)
+        tail_commands : list, optional
+            Commands to add at the end of the rendered template
 
         Returns
         -------
@@ -217,6 +221,8 @@ class BatchScriptTemplate:
         jinja2.TemplateError
             If there are syntax errors in the templates
         """
+        if tail_commands is None:
+            tail_commands = []
         script_parts = []
 
         # Add batch system header if specified
@@ -247,6 +253,9 @@ class BatchScriptTemplate:
 
         # Add shell interpreter line at the beginning
         script_parts.insert(0, shell_interpreter)
+
+        for tail_command in tail_commands:
+            script_parts.append(tail_command)
 
         return "\n".join(script_parts)
 

@@ -1,6 +1,6 @@
 """
 ESM-Tools Batch Script Template Module
-====================================
+======================================
 
 A template-based script generation system for HPC environments using Jinja2.
 Supports generation of both simple shell scripts and batch job scripts
@@ -40,12 +40,75 @@ Path : Python's pathlib.Path used for template directory management
 dpath : Deep dictionary utilities for nested updates
 """
 
-import importlib.resources as pkg_resources
+# NOTE(PG): I'm not sure exactly, but pkg_resources is outdated
+#           Instead, it is recommended to use importlib!
+import importlib.resources
+# import importlib.resources as pkg_resources
 from pathlib import Path
 from typing import Any, Dict, Optional
 
 import dpath
 from jinja2 import Environment, FileSystemLoader
+
+
+def clean_env_var_name(name: str) -> str:
+    """
+    Remove numbered suffixes from environment variable names.
+
+    Removes suffixes of the form [(number)] from environment variable names.
+    This is useful when dealing with duplicate environment variables that
+    have been numbered for uniqueness but need to be exported without the suffix.
+
+    Parameters
+    ----------
+    name : str
+        The environment variable name to clean
+
+    Returns
+    -------
+    str
+        The cleaned environment variable name
+
+    Examples
+    --------
+    >>> clean_env_var_name("PATH[(1)]")
+    'PATH'
+    >>> clean_env_var_name("PYTHONPATH[(42)]")
+    'PYTHONPATH'
+    >>> clean_env_var_name("NORMAL_VAR")
+    'NORMAL_VAR'
+    >>> clean_env_var_name("MY_LIST[(list)]")
+    'MY_LIST'
+
+    Notes
+    -----
+    This function specifically handles:
+    - Environment variables with numeric suffixes: VAR[(number)]
+    - Environment variables with list suffix: VAR[(list)]
+    - Regular environment variables (returns unchanged)
+
+    The template that uses this function will skip empty or ``None`` values::
+
+        >>> config = {
+        ...     "export_vars": {
+        ...         "PATH[(1)]": "/usr/bin",
+        ...         "EMPTY_VAR": "",
+        ...         "NONE_VAR": None,
+        ...         "ZERO_VAR": 0,
+        ...         "LIST_VAR[(list)]": "",
+        ...         "VALID_VAR": "value"
+        ...     }
+        ... }
+
+    Will generate::
+
+        export PATH=/usr/bin
+        export ZERO_VAR=0
+        export VALID_VAR=value
+    """
+    if "[(" in name and ")]" in name:
+        return name.split("[(")[0]
+    return name
 
 
 class BatchScriptTemplate:
@@ -67,9 +130,6 @@ class BatchScriptTemplate:
             - batch_system : str, optional
                 Either 'slurm' or 'pbs'. If not provided, generates a simple
                 shell script without batch headers.
-            - job : dict, optional
-                Job-specific settings (name, tasks, time, etc.).
-                Required if batch_system is specified.
             - module_actions : list
                 List of module commands to execute
             - export_vars : dict
@@ -163,19 +223,67 @@ class BatchScriptTemplate:
                 "batch_system, if specified, must be either 'slurm' or 'pbs'"
             )
 
-        if self.batch_system and "job" not in config:
-            raise ValueError(
-                "job configuration is required when batch_system is specified"
-            )
+        # FIXME(PG): This is a nice idea, but it doesn't fit here...
+        # if self.batch_system and "job" not in config:
+        #     raise ValueError(
+        #         "job configuration is required when batch_system is specified"
+        #     )
 
         if template_dir is None:
             # Use the package's default templates
-            with pkg_resources.path("esm_tools.templates", "") as template_path:
-                template_dir = template_path / "esm_environment"
+            # NOTE(PG): Old implementation with pkg_resources is outdated!
+            # with pkg_resources.path("esm_tools.templates", "") as template_path:
+            #     template_dir = template_path / "esm_environment"
+            with importlib.resources.as_file(
+                importlib.resources.files("esm_environment")
+            ) as template_path:
+                template_dir = template_path / "templates"
 
         self.env = Environment(
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
         )
+        # Add custom jinja2 filters:
+        self.env.filters["clean_env_var"] = clean_env_var_name
+
+        # Post inits: clean up and finialize the configuration:
+        self._post_init_add_esm_var()
+
+    @classmethod
+    def from_complete_config(
+        cls, config: dict, template_dir: Optional[Path] = None
+    ) -> "BatchScriptTemplate":
+        """Initializes a BatchScriptTemplate from a full simulation config
+
+        This extracts only the computer key of a complete simulation config
+        and uses it to create the BatchScriptTemplate. Mirrors old behaviour.
+
+        Raises
+        ------
+        KeyError :
+            If you don't have a computer in your complete config, this
+            constructor won't work!
+        """
+        if "computer" in config:
+            return cls(config["computer"], template_dir=template_dir)
+        raise KeyError(
+            "Must give a complete simulation config containing a ``computer`` key!"
+        )
+
+    def _post_init_add_esm_var(self):
+        """
+        Adds the ENVIRONMENT_SET_BY_ESMTOOLS=TRUE to the config, for later
+        dumping to the shell script.
+
+        Mutates
+        -------
+        self.config :
+            A key "export_vars" is either initialized as a dictionary, or extended
+            by ENVIRONMENT_SET_BY_ESMTOOLS=True.
+        """
+        if "export_vars" in self.config:
+            self.config["export_vars"]["ENVIRONMENT_SET_BY_ESMTOOLS"] = "TRUE"
+        else:
+            self.config["export_vars"] = {"ENVIRONMENT_SET_BY_ESMTOOLS": "TRUE"}
 
     def render(
         self, include_set_e: bool = True, tail_commands: Optional[list] = None
@@ -249,7 +357,8 @@ class BatchScriptTemplate:
         # that the shell interpreter line is still at the top:
         environment = environment.split("\n")
         shell_interpreter = environment.pop(0)  # Remove shell interpreter line
-        script_parts.append(environment)
+        for env_statement in environment:
+            script_parts.append(env_statement)
 
         # Add shell interpreter line at the beginning
         script_parts.insert(0, shell_interpreter)
@@ -257,6 +366,7 @@ class BatchScriptTemplate:
         for tail_command in tail_commands:
             script_parts.append(tail_command)
 
+        breakpoint()
         return "\n".join(script_parts)
 
     def update_config(self, new_config: Dict[str, Any], separator: str = "/") -> None:
@@ -324,3 +434,19 @@ class BatchScriptTemplate:
                 raise ValueError(
                     "batch_system, if specified, must be either 'slurm' or 'pbs'"
                 )
+
+    def write_dummy_script(self, include_set_e: bool = True) -> None:
+        """
+        Writes a dummy script containing only the header information, module
+        commands, and export variables. The actual compile/configure commands
+        are added later.
+
+        Parameters
+        ----------
+        include_set_e : bool
+            Default to True, whether or not to include a ``set -e`` at the
+            beginning of the script. This causes the shell to stop as soon as
+            an error is encountered.
+        """
+        with open("dummy_script.sh", "w") as script_file:
+            script_file.write(self.render(include_set_e=include_set_e))

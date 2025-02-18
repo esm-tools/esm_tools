@@ -59,7 +59,7 @@ class Task:
             self.package = software_package(
                 (kind, model, version), setup_info, vcs, general
             )
-        else:  # tupel:
+        elif isinstance(raw, tuple):
             (self.todo, kind, model, version, self.only_subtask) = raw
             self.package = software_package(
                 (kind, model, version), setup_info, vcs, general
@@ -67,14 +67,16 @@ class Task:
             self.raw_name = setup_info.assemble_raw_name(
                 self.todo, kind, model, version
             )
+        else:
+            raise TypeError(f"Unsupported type {type(raw)}")
 
         if kind == "components":
-            self.env = esm_environment.esm_environment.BatchScriptTemplate(
+            self.env = esm_environment.BatchScriptTemplate.from_complete_config(
                 complete_config
             )
         else:
             self.env = None
-        if not self.todo in setup_info.meta_todos:
+        if self.todo not in setup_info.meta_todos:
             self.check_if_target(setup_info)
 
         self.subtasks = self.get_subtasks(
@@ -558,7 +560,7 @@ class Task:
                 if command in subtask.package.command_list.get("get", []):
                     self.num_get_commands += 1
                     break
-        return self.num_get_commands # (Not strictly needed, but might be nice?)
+        return self.num_get_commands  # (Not strictly needed, but might be nice?)
 
     def get_repo_properties_from_command(self, command):
         """
@@ -597,7 +599,7 @@ class Task:
             for subtask in self.subtasks:
                 get_commands = subtask.package.command_list.get("get")
                 if command in get_commands:
-                    repo ["package"]= subtask.package
+                    repo["package"] = subtask.package
                     repo["is_repo_operation"] = True
                     self.executed_repo_commands.append(command)
                     if self.num_get_commands == len(self.executed_repo_commands):
@@ -622,7 +624,7 @@ class Task:
           of the ``error`` parameter if it the destination does not exist
 
         Note
-        ---- 
+        ----
         Since the ``error`` is caught from an ``except`` of a ``subprocess``
         command, the actual error that occurred during the execution of the ``command``
         by ``subprocess.run`` is not caught. That means that we cannot evaluate which
@@ -697,7 +699,7 @@ class Task:
                 "access and reading permissions to the repositories listed below. If "
                 "you don't, contact the person in charge of that particular repository "
                 "(see ``contact`` in the repository list below).\n\n"
-                f"Repositories with problems:\n{problematic_repos}"
+                f"Repositories with problems:\n{problematic_repos}",
             )
 
     def report_destination_path_errors(self):
@@ -723,5 +725,5 @@ class Task:
                 "model consider deleting that folder. If instead, you want to keep "
                 "that, you can use other esm_master commands (e.g. esm_master "
                 "comp-<model>-<version>). Destinations already present:\n"
-                f"{problematic_destinations}\n"
+                f"{problematic_destinations}\n",
             )

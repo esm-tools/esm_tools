@@ -100,6 +100,7 @@ setup(
         "esm_tools.namelists",
         "esm_tools.runscripts",
         "esm_tools.couplings",
+        "esm_tools.templates",
     ],
     package_dir={
         "": "src",

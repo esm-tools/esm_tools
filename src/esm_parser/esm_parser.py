@@ -488,9 +488,6 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    import ipdb
-    if attach_value == "oifs48.env.yaml":
-        ipdb.set_trace()
     deep_update_further_reading(config, attachable_config) #, **kwargs)
     # config.update(attachable_config)
 
@@ -507,8 +504,6 @@ def deep_update_further_reading(config, further_reading_config):
             if isinstance(config.get(key, None), list):
                 config[key] += value
             elif not isinstance(config.get(key, None), list) and config.get(key, None) is not None:
-                import ipdb
-                ipdb.set_trace()
                 raise TypeError("meep meep, the roadrunner wins, silly cayote")
             else:
                 config[key] = value
@@ -539,8 +534,9 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     The ``config`` is modified **in place**!
     """
     if attach_key != "further_reading":
-        import ipdb
-        ipdb.set_trace()
+        #import ipdb
+        #ipdb.set_trace()
+        pass
     if attach_key in config:
         attach_values = config[attach_key]
         del config[attach_key]

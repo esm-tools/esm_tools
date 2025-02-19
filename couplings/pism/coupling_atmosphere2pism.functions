@@ -499,7 +499,8 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                 echo ""; echo "                *  using INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
                 ${cdo} -s -selvar,usurf ${INPUT_FILE_pism} usurf.tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                ${cdo} -s -seltimestep,-1 usurf.tmp.nc ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                ${cdo} -s -seltimestep,-1 usurf.tmp.nc ${COUPLE_DIR}/elev_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                #${cdo} -s -seltimestep,-1 usurf.tmp.nc ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 #${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         else
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
@@ -511,6 +512,7 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                         ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 	        ncrename -v thk,usurf ${COUPLE_DIR}/${elev_hi_file} ${COUPLE_DIR}/elev_hi.nc
         fi
+	    cp ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_hi_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
         #mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
         cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
 	ncrename -v $atmosphere_name_elevation,usurf ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/tmp.nc
@@ -680,8 +682,8 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
                 echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 echo " * LA DEBUG: INPUT_FILE_NAME_BASE_pism = ${INPUT_FILE_NAME_BASE_pism%.*}"
                 ${cdo} -s \
-                        -add \
                         -setrtoc,-10000,0,0 \
+                        -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -selvar,topg ${INPUT_FILE_pism} \
                         ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism

@@ -11,6 +11,8 @@ import sys
 
 import esm_parser
 
+import ipdb
+
 ######################################################################################
 ########################### class "environment_infos" ################################
 ######################################################################################
@@ -154,7 +156,8 @@ class EnvironmentInfos:
 
             # Perform the merging of the environment dictionaries
             if "environment_changes" in modelconfig:
-                modelconfig["environment_changes"].update(modelconfig[thesechanges])
+                #ipdb.set_trace()
+                esm_parser.dict_merge(modelconfig["environment_changes"], modelconfig[thesechanges])
             else:
                 modelconfig["environment_changes"] = modelconfig[thesechanges]
 
@@ -175,7 +178,8 @@ class EnvironmentInfos:
                     self.turn_add_export_vars_to_dict(modelconfig, entry)
 
             # Merge the ``environment_changes`` into the general ``config``
-            self.config.update(modelconfig["environment_changes"])
+            #ipdb.set_trace()
+            esm_parser.dict_merge(self.config, modelconfig["environment_changes"])
             # Change any ``choose_computer.*`` block in ``config`` to ``choose_*``
             self.remove_computer_from_choose(self.config)
 

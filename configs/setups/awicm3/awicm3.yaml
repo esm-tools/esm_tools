@@ -138,7 +138,7 @@ general:
             - oifs/oifs48.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
-            add_add_environment_changes:
+            add_environment_changes:
                 levante:
                     iolibraries: system_gnu_libs
             oasis_with_yac: False
@@ -199,14 +199,14 @@ general:
         further_reading:
                 - oasis3mct/oasis3mct.env.yaml
 
-        add_environment_changes:
+        environment_changes:
                 choose_computer.name:
                         blogin:
                                 compiler_mpi: intel2019_ompi
                         glogin:
                                 compiler_mpi: intel2019_ompi
-                        levante:
-                                compiler_mpi: intel2022_openmpi
+                        #levante:
+                        #        compiler_mpi: intel2022_openmpi
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -401,7 +401,7 @@ oifs:
         resolution: TCO159
         levels: L91
 
-        environment_changes: # MA: Only used for JUWELS right now
+        add_environment_changes: # MA: Only used for JUWELS right now
                 OpenMP_flag: "-qopenmp"
                 OpenMP_CCDEFS: "_OPENMP"
 

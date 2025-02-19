@@ -40,12 +40,13 @@ Path : Python's pathlib.Path used for template directory management
 dpath : Deep dictionary utilities for nested updates
 """
 
+import copy
 # NOTE(PG): I'm not sure exactly, but pkg_resources is outdated
 #           Instead, it is recommended to use importlib!
 import importlib.resources
 # import importlib.resources as pkg_resources
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import dpath
 from jinja2 import Environment, FileSystemLoader
@@ -53,11 +54,13 @@ from jinja2 import Environment, FileSystemLoader
 
 def clean_env_var_name(name: str) -> str:
     """
-    Remove numbered suffixes from environment variable names.
+    Remove enclosed suffixes from environment variable names.
 
-    Removes suffixes of the form [(number)] from environment variable names.
+    Removes suffixes of the form [(ANYTHING)] from environment variable names.
     This is useful when dealing with duplicate environment variables that
-    have been numbered for uniqueness but need to be exported without the suffix.
+    have been numbered for uniqueness but need to be exported without the suffix,
+    and has most often been used in the form [(1)], numbering certain export variables
+    to avoid overriding them.
 
     Parameters
     ----------
@@ -109,6 +112,57 @@ def clean_env_var_name(name: str) -> str:
     if "[(" in name and ")]" in name:
         return name.split("[(")[0]
     return name
+
+
+def _find_keys_with_substring(d: dict[Any, Any], substring: str) -> list[str]:
+    """Find pahs to keys containing a given substring in a nested dictionary using dpath
+
+    Parameters
+    ----------
+    d : dict
+        The dictionary to search in
+    substring : str
+        What to look for
+
+    Returns
+    -------
+    list[str] :
+        List of keys
+    """
+    matches = []
+    for path in dpath.search(d, "**", yielded=True):
+        key_path, _ = path
+        if substring in key_path.split("/")[-1]:  # Check the last part of the path
+            matches.append(key_path)
+    return matches
+
+
+def finialize_config_with_env_changes(
+    config: dict, setting: Optional[str] = None
+) -> dict:
+    if setting not in ["runtime", "compiletime"]:
+        raise ValueError(
+            f"Can only finialize a configuration for ``runtime`` or ``compiletime``, got {setting=}!"
+        )
+    config = copy.deepcopy(config)
+    environment_changes_keys = _find_keys_with_substring(config, "environment_changes")
+    xtime_keys = _find_keys_with_substring(config, f"{setting}_environment_changes")
+    all_change_keys = set((environment_changes_keys, xtime_keys))
+    if all_change_keys:
+        breakpoint()
+    return config
+
+
+class EnvironmentChangeManager:
+    _VALID_PHASES: Tuple(str, ...) = (
+        "runtime",
+        "compiletime",
+    )
+    """tuple : The phases which the EnvironmentChangeManager can be usefully applied to"""
+
+    def __init__(self, execution_phase: str):
+        if execution_phase not in self._SUPPORTED_JOB_TIMES:
+            raise TypeError(f"Please use one of {_VALID_PHASES} for the {__class__}")
 
 
 class BatchScriptTemplate:
@@ -170,7 +224,7 @@ class BatchScriptTemplate:
     ... }
     >>> batch = BatchScriptTemplate(config)
     >>> print(batch.render())
-    #!/bin/bash -l
+    #!/bin/bash
 
     module load intel
     export OMP_NUM_THREADS=4

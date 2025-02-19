@@ -71,6 +71,11 @@ class Task:
             raise TypeError(f"Unsupported type {type(raw)}")
 
         if kind == "components":
+            # Find environment changes for compiletime
+            complete_config = esm_environment.finialize_config_with_env_changes(
+                complete_config, "compiletime"
+            )
+            breakpoint()
             self.env = esm_environment.BatchScriptTemplate.from_complete_config(
                 complete_config
             )

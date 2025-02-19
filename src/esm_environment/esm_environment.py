@@ -225,7 +225,10 @@ class ScriptTemplate:
     """str: The name of the default template file to use when rendering a script"""
 
     def __init__(
-            self, config: Dict[str, Any], template_dir: Optional[Path] = None, template_name: Optional[str] = None
+        self,
+        config: Dict[str, Any],
+        template_dir: Optional[Path] = None,
+        template_name: Optional[str] = None,
     ) -> None:
         """
         Initialize the BatchScriptTemplate with configuration and optional templates.
@@ -264,12 +267,24 @@ class ScriptTemplate:
 
     @classmethod
     def from_complete_config(
-        cls, config: dict, template_dir: Optional[Path] = None
-    ) -> "BatchScriptTemplate":
+        cls,
+        config: dict,
+        template_dir: Optional[Path] = None,
+        template_name: Optional[str] = None,
+    ) -> "ScriptTemplate":
         """Initializes a BatchScriptTemplate from a full simulation config
 
         This extracts only the computer key of a complete simulation config
         and uses it to create the BatchScriptTemplate. Mirrors old behaviour.
+
+        Parameters
+        ----------
+        config : Dict[str, Any]
+            The complete configuration dictionary.
+        template_dir : Path, optional
+            Path to custom template directory. If None, uses package defaults.
+        template_name : str, optional
+            The name of the template to use within the template_dir.
 
         Raises
         ------
@@ -278,7 +293,11 @@ class ScriptTemplate:
             constructor won't work!
         """
         if "computer" in config:
-            return cls(config["computer"], template_dir=template_dir)
+            return cls(
+                config["computer"],
+                template_dir=template_dir,
+                template_name=template_name,
+            )
         raise KeyError(
             "Must give a complete simulation config containing a ``computer`` key!"
         )
@@ -300,7 +319,7 @@ class ScriptTemplate:
             self.config["export_vars"] = {"ENVIRONMENT_SET_BY_ESMTOOLS": "TRUE"}
 
     def render(
-            self, include_set_e: bool = True, commands: Optional[list] = None
+        self, include_set_e: bool = True, commands: Optional[list] = None
     ) -> str:
         """
         Render a complete script, optionally including batch system headers.
@@ -447,7 +466,7 @@ class BatchScriptTemplate(ScriptTemplate):
         super().__init__(config)
         self.batch_system = config.get("batch_system", "").lower() or None
 
-    def update_config(self, new_config: Dict [str, Any], separator: str ="/"):
+    def update_config(self, new_config: Dict[str, Any], separator: str = "/"):
         super().update_config(new_config, separator)
         # Update batch_system if it was changed
         if "batch_system" in new_config:
@@ -456,6 +475,7 @@ class BatchScriptTemplate(ScriptTemplate):
                 raise ValueError(
                     "batch_system, if specified, must be either 'slurm' or 'pbs'"
                 )
+
 
 class SLURMBatchScriptTemplate(BatchScriptTemplate):
     DEFAULT_TEMPLATE = "slurm.sh.j2"
@@ -467,7 +487,8 @@ class SLURMBatchScriptTemplate(BatchScriptTemplate):
         if self.batch_system and self.batch_system != "slurm":
             raise ValueError("batch_system, if specified, must be 'slurm'")
 
-class PBSBatchScriptTemplate(BatchScriptTemplate)
+
+class PBSBatchScriptTemplate(BatchScriptTemplate):
     DEFAULT_TEMPLATE = "pbs.sh.j2"
     """str: The name of the default template file to use when rendering a script"""
 

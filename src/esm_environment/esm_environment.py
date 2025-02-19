@@ -1,5 +1,5 @@
 """
-ESM-Tools Batch Script Template Module
+ESM-Environment Script Template Module
 ======================================
 
 A template-based script generation system for HPC environments using Jinja2.
@@ -12,25 +12,13 @@ previous string-based generation with a more maintainable and flexible template 
 
 Examples
 --------
->>> from batch_script_template import BatchScriptTemplate
+>>> from esm_environment import ScriptTemplate
 >>> config = {
 ...     "sh_interpreter": "/bin/bash",
 ...     "module_actions": ["load python", "load netcdf"],
 ...     "export_vars": {"PATH": "/usr/local/bin:$PATH"}
 ... }
->>> batch = BatchScriptTemplate(config)
->>> script = batch.render()
-
->>> # Batch job script
->>> config.update({
-...     "batch_system": "slurm",
-...     "job": {
-...         "name": "test_job",
-...         "tasks": 4,
-...         "time": "01:00:00",
-...     }
-... })
->>> batch = BatchScriptTemplate(config)
+>>> batch = ScriptTemplate(config)
 >>> script = batch.render()
 
 See Also
@@ -46,13 +34,13 @@ import copy
 import importlib.resources
 # import importlib.resources as pkg_resources
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Set
 
 import dpath
 from jinja2 import Environment, FileSystemLoader
 
 
-def clean_env_var_name(name: str) -> str:
+def _clean_env_export_vars_name(name: str) -> str:
     """
     Remove enclosed suffixes from environment variable names.
 
@@ -74,13 +62,13 @@ def clean_env_var_name(name: str) -> str:
 
     Examples
     --------
-    >>> clean_env_var_name("PATH[(1)]")
+    >>> _clean_env_export_vars_name("PATH[(1)]")
     'PATH'
-    >>> clean_env_var_name("PYTHONPATH[(42)]")
+    >>> _clean_env_export_vars_name("PYTHONPATH[(42)]")
     'PYTHONPATH'
-    >>> clean_env_var_name("NORMAL_VAR")
+    >>> _clean_env_export_vars_name("NORMAL_VAR")
     'NORMAL_VAR'
-    >>> clean_env_var_name("MY_LIST[(list)]")
+    >>> _clean_env_export_vars_name("MY_LIST[(list)]")
     'MY_LIST'
 
     Notes
@@ -137,35 +125,35 @@ def _find_keys_with_substring(d: dict[Any, Any], substring: str) -> list[str]:
     return matches
 
 
-def finialize_config_with_env_changes(
-    config: dict, setting: Optional[str] = None
-) -> dict:
-    if setting not in ["runtime", "compiletime"]:
-        raise ValueError(
-            f"Can only finialize a configuration for ``runtime`` or ``compiletime``, got {setting=}!"
-        )
-    config = copy.deepcopy(config)
-    environment_changes_keys = _find_keys_with_substring(config, "environment_changes")
-    xtime_keys = _find_keys_with_substring(config, f"{setting}_environment_changes")
-    all_change_keys = set((environment_changes_keys, xtime_keys))
-    if all_change_keys:
-        breakpoint()
-    return config
-
-
 class EnvironmentChangeManager:
-    _VALID_PHASES: Tuple(str, ...) = (
+    _VALID_PHASES: Set[str] = {
         "runtime",
         "compiletime",
-    )
-    """tuple : The phases which the EnvironmentChangeManager can be usefully applied to"""
+    }
+    """set : The phases which the EnvironmentChangeManager can be usefully applied to"""
 
     def __init__(self, execution_phase: str):
-        if execution_phase not in self._SUPPORTED_JOB_TIMES:
-            raise TypeError(f"Please use one of {_VALID_PHASES} for the {__class__}")
+        if execution_phase not in self._VALID_PHASES:
+            raise TypeError(
+                f"Please use one of {self._VALID_PHASES} for the {__class__.__name__}"
+            )
+        self.execution_phase = execution_phase
+
+    def finialize_config_with_env_changes(self, config: dict) -> dict:
+        config = copy.deepcopy(config)
+        environment_changes_keys = _find_keys_with_substring(
+            config, "environment_changes"
+        )
+        xtime_keys = _find_keys_with_substring(
+            config, f"{self.execution_phase}_environment_changes"
+        )
+        all_change_keys = set((environment_changes_keys, xtime_keys))
+        if all_change_keys:
+            breakpoint()
+        return config
 
 
-class BatchScriptTemplate:
+class ScriptTemplate:
     """
     A template engine for generating shell and batch job scripts.
 
@@ -181,9 +169,6 @@ class BatchScriptTemplate:
         Expected keys include:
             - sh_interpreter : str
                 Shell interpreter to use (default: /bin/bash)
-            - batch_system : str, optional
-                Either 'slurm' or 'pbs'. If not provided, generates a simple
-                shell script without batch headers.
             - module_actions : list
                 List of module commands to execute
             - export_vars : dict
@@ -193,6 +178,8 @@ class BatchScriptTemplate:
     template_dir : Path, optional
         Directory containing custom Jinja2 templates for script generation.
         If not provided, uses the default templates from the package.
+    template_name : str, optional
+        The default template name to use when creating new scripts.
 
     Attributes
     ----------
@@ -207,13 +194,12 @@ class BatchScriptTemplate:
     -----
     The template directory should contain the following structure:
         templates/
-        ├── base.sh.j2           # Base shell script template
-        ├── headers/
-        │   ├── slurm.sh.j2     # SLURM header template
-        │   └── pbs.sh.j2       # PBS header template
-        ├── module_actions.sh.j2 # Module loading template
-        ├── exports.sh.j2       # Environment exports template
-        └── unset.sh.j2         # Unset variables template
+        ├── base.sh.j2            # Base shell script template
+        ├── slurm.sh.j2           # Base shell script template for SLURM scripts
+        ├── pbs.sh.j2             # Base shell script template for PBS scripts
+        ├── module_actions.sh.j2  # Module loading template
+        ├── exports.sh.j2         # Environment exports template
+        └── unset.sh.j2           # Unset variables template
 
     Examples
     --------
@@ -222,30 +208,9 @@ class BatchScriptTemplate:
     ...     "module_actions": ["load intel"],
     ...     "export_vars": {"OMP_NUM_THREADS": "4"}
     ... }
-    >>> batch = BatchScriptTemplate(config)
+    >>> batch = ScriptTemplate(config)
     >>> print(batch.render())
     #!/bin/bash
-
-    module load intel
-    export OMP_NUM_THREADS=4
-
-    SLURM job script:
-    >>> config.update({
-    ...     "batch_system": "slurm",
-    ...     "job": {
-    ...         "name": "test_job",
-    ...         "tasks": 4,
-    ...         "time": "01:00:00",
-    ...         "partition": "compute"
-    ...     }
-    ... })
-    >>> batch = BatchScriptTemplate(config)
-    >>> print(batch.render())
-    #!/bin/bash -l
-    #SBATCH --job-name=test_job
-    #SBATCH --ntasks=4
-    #SBATCH --time=01:00:00
-    #SBATCH --partition=compute
 
     module load intel
     export OMP_NUM_THREADS=4
@@ -256,8 +221,11 @@ class BatchScriptTemplate:
     dpath : Library used for deep dictionary updates
     """
 
+    DEFAULT_TEMPLATE = "base.sh.j2"
+    """str: The name of the default template file to use when rendering a script"""
+
     def __init__(
-        self, config: Dict[str, Any], template_dir: Optional[Path] = None
+            self, config: Dict[str, Any], template_dir: Optional[Path] = None, template_name: Optional[str] = None
     ) -> None:
         """
         Initialize the BatchScriptTemplate with configuration and optional templates.
@@ -268,20 +236,10 @@ class BatchScriptTemplate:
             Configuration dictionary for script setup.
         template_dir : Path, optional
             Path to custom template directory. If None, uses package defaults.
+        template_name : str, optional
+            The name of the template to use within the template_dir.
         """
         self.config = config
-        self.batch_system = config.get("batch_system", "").lower() or None
-
-        if self.batch_system and self.batch_system not in ["slurm", "pbs"]:
-            raise ValueError(
-                "batch_system, if specified, must be either 'slurm' or 'pbs'"
-            )
-
-        # FIXME(PG): This is a nice idea, but it doesn't fit here...
-        # if self.batch_system and "job" not in config:
-        #     raise ValueError(
-        #         "job configuration is required when batch_system is specified"
-        #     )
 
         if template_dir is None:
             # Use the package's default templates
@@ -292,12 +250,14 @@ class BatchScriptTemplate:
                 importlib.resources.files("esm_environment")
             ) as template_path:
                 template_dir = template_path / "templates"
+        if template_name is None:
+            self.template_name = self.DEFAULT_TEMPLATE
 
         self.env = Environment(
             loader=FileSystemLoader(template_dir), trim_blocks=True, lstrip_blocks=True
         )
         # Add custom jinja2 filters:
-        self.env.filters["clean_env_var"] = clean_env_var_name
+        self.env.filters["clean_env_var"] = _clean_env_export_vars_name
 
         # Post inits: clean up and finialize the configuration:
         self._post_init_add_esm_var()
@@ -340,7 +300,7 @@ class BatchScriptTemplate:
             self.config["export_vars"] = {"ENVIRONMENT_SET_BY_ESMTOOLS": "TRUE"}
 
     def render(
-        self, include_set_e: bool = True, tail_commands: Optional[list] = None
+            self, include_set_e: bool = True, commands: Optional[list] = None
     ) -> str:
         """
         Render a complete script, optionally including batch system headers.
@@ -364,11 +324,15 @@ class BatchScriptTemplate:
         ...     "module_actions": ["load intel/2020"],
         ...     "export_vars": {"MPI_ROOT": "/opt/mpi"}
         ... }
-        >>> script_template = BatchScriptTemplate(config)
+        >>> script_template = ScriptTemplate(config)
         >>> script = script_template.render()
 
         Notes
         -----
+        All keys in the configuration are passed into Jinja to be used for
+        rendering the script. Unused keys in the configuration will not
+        raise errors.
+
         The rendered script will include sections for:
             1. Shell interpreter specification
             2. Batch system headers (if batch_system is specified)
@@ -383,42 +347,18 @@ class BatchScriptTemplate:
         jinja2.TemplateError
             If there are syntax errors in the templates
         """
-        if tail_commands is None:
-            tail_commands = []
-        script_parts = []
+        if commands is None:
+            commands = []
 
-        # Add batch system header if specified
-        if self.batch_system:
-            header_template = self.env.get_template(
-                f"headers/{self.batch_system}.sh.j2"
-            )
-            header = header_template.render(job=self.config.get("job", {}))
-            script_parts.append(header)
-
-        # Add environment setup
-        env_template = self.env.get_template("base.sh.j2")
-        environment = env_template.render(
-            sh_interpreter=self.config.get("sh_interpreter", "/bin/bash"),
+        script_template = self.env.get_template(self.template_name)
+        script = script_template.render(
             include_set_e=include_set_e,
-            module_actions=self.config.get("module_actions", []),
-            export_vars=self.config.get("export_vars", {}),
-            unset_vars=self.config.get("unset_vars", []),
-            general_actions=self.config.get("general_actions", []),
-            spack_actions=self.config.get("spack_actions", []),
+            **self.config,
         )
+        script_parts = script.split("\n")
 
-        # Since batch system was added at the very beginning, we need to make sure
-        # that the shell interpreter line is still at the top:
-        environment = environment.split("\n")
-        shell_interpreter = environment.pop(0)  # Remove shell interpreter line
-        for env_statement in environment:
-            script_parts.append(env_statement)
-
-        # Add shell interpreter line at the beginning
-        script_parts.insert(0, shell_interpreter)
-
-        for tail_command in tail_commands:
-            script_parts.append(tail_command)
+        for command in commands:
+            script_parts.append(command)
 
         return "\n".join(script_parts)
 
@@ -437,7 +377,7 @@ class BatchScriptTemplate:
         Examples
         --------
         Simple update:
-        >>> batch = BatchScriptTemplate({"sh_interpreter": "/bin/bash"})
+        >>> batch = ScriptTemplate({"sh_interpreter": "/bin/bash"})
         >>> batch.update_config({"module_actions": ["load intel"]})
 
         Nested update:
@@ -448,7 +388,7 @@ class BatchScriptTemplate:
         ...         "nested": {"key": "old_value"}
         ...     }
         ... }
-        >>> batch = BatchScriptTemplate(initial_config)
+        >>> batch = ScriptTemplate(initial_config)
         >>> print("Initial config:", batch.config)
         Initial config: {
             'export_vars': {
@@ -479,20 +419,14 @@ class BatchScriptTemplate:
         --------
         dpath : Library used for the deep dictionary updates
         """
-        dpath.util.merge(self.config, new_config, separator=separator)
-        # Update batch_system if it was changed
-        if "batch_system" in new_config:
-            self.batch_system = self.config.get("batch_system", "").lower() or None
-            if self.batch_system and self.batch_system not in ["slurm", "pbs"]:
-                raise ValueError(
-                    "batch_system, if specified, must be either 'slurm' or 'pbs'"
-                )
+        dpath.merge(self.config, new_config, separator=separator)
 
+    # NOTE(PG): This method is mostly for backwards-compatability...
     def write_dummy_script(self, include_set_e: bool = True) -> None:
         """
         Writes a dummy script containing only the header information, module
         commands, and export variables. The actual compile/configure commands
-        are added later.
+        are not included and can be added later by re-opening the file.
 
         Parameters
         ----------
@@ -503,3 +437,42 @@ class BatchScriptTemplate:
         """
         with open("dummy_script.sh", "w") as script_file:
             script_file.write(self.render(include_set_e=include_set_e))
+
+
+class BatchScriptTemplate(ScriptTemplate):
+    DEFAULT_TEMPLATE = "batch_system.sh.j2"
+    """str: The name of the default template file to use when rendering a script"""
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.batch_system = config.get("batch_system", "").lower() or None
+
+    def update_config(self, new_config: Dict [str, Any], separator: str ="/"):
+        super().update_config(new_config, separator)
+        # Update batch_system if it was changed
+        if "batch_system" in new_config:
+            self.batch_system = self.config.get("batch_system", "").lower() or None
+            if self.batch_system and self.batch_system not in ["slurm", "pbs"]:
+                raise ValueError(
+                    "batch_system, if specified, must be either 'slurm' or 'pbs'"
+                )
+
+class SLURMBatchScriptTemplate(BatchScriptTemplate):
+    DEFAULT_TEMPLATE = "slurm.sh.j2"
+    """str: The name of the default template file to use when rendering a script"""
+
+    def __init__(self, config):
+        super().__init__(config)
+
+        if self.batch_system and self.batch_system != "slurm":
+            raise ValueError("batch_system, if specified, must be 'slurm'")
+
+class PBSBatchScriptTemplate(BatchScriptTemplate)
+    DEFAULT_TEMPLATE = "pbs.sh.j2"
+    """str: The name of the default template file to use when rendering a script"""
+
+    def __init__(self, config):
+        super().__init__(config)
+
+        if self.batch_system and self.batch_system != "pbs":
+            raise ValueError("batch_system, if specified, must be 'pbs'")

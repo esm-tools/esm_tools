@@ -3,7 +3,6 @@
 # boolean variable to exit the program on error
 shall_exit=false
 
-
 # prints the error message as the first argument and exits the program with non-zero status
 function quit_install () {
     echo ""
@@ -60,6 +59,16 @@ fi
 if [ ! -z ${VIRTUAL_ENV+x} ]; then
     echo "Detected virtual environment $VIRTUAL_ENV"
     pip install -e .
+elif [ ! -z ${TYKKY_PREFIX+x} ]; then
+    echo "======================="
+    echo "Using TYKKY environment"
+    echo "======================="
+    echo "WARNING: The use of a tykky environment for using ESM-Tools is currently not supported Use at your own risk"
+    ESM_TOOLS_SRC_PATH="$(dirname "$(realpath "$0")")"
+    echo $ESM_TOOLS_SRC_PATH
+    echo "pip install -e ${ESM_TOOLS_SRC_PATH}" > esm_tools_tikky_install.sh
+    conda-containerize update ${TYKKY_PREFIX} --post-install esm_tools_tikky_install.sh
+    rm esm_tools_tikky_install.sh
 elif [ ! -z ${CONDA_PREFIX+x} ]; then
     echo "======================="
     echo "Using CONDA environment"

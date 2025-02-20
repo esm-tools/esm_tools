@@ -51,8 +51,7 @@ A possible (default) output can be ``~/.local/bin/esm_tools``.
 Installing in a conda environment
 -----------------------------------
 
-Work in progress. We are still testing it.
-
+First create a conda environment using
 
 Installing in an encapsulated environment using ``direnv``
 ----------------------------------------------------------
@@ -107,6 +106,28 @@ It enables us now to install `ESM-Tools` within this specific environment (see a
 .. note::
 
     Please note, that all calls of `ESM-Tools` commands for this particular installed version needs to be done within the folder that holds the ``direnv`` environment.
+
+
+Installing using Tykky (in ecmwf-atos)
+--------------------------------------
+
+In The ECMWF machine you are encourage to use ``tykky``, a container wrapper for installations. To install `ESM-Tools` in a `tykky` environment first load the module::
+
+    module load tykky
+
+Then build the containerize environment using the ``utils/tykky_env.yaml`` distributed inside the ``esm_tools`` source::
+
+    conda-containerize new --mamba --prefix $TYKKY_PATH/esm_tools utils/tykky_env.yaml
+
+After this, a new `tykky` environment would have been created with the name ``esm_tools``. Activate that environment by running::
+
+    tykky activate esm_tools
+
+Now, you can use the standard ``install.sh`` script to install `ESM-Tools`::
+
+    ./install.sh
+
+Remember to ``module load tykky`` and ``tykky activate esm_tools`` every time you make a new login into the machine so that you can use `ESM-Tools`.
 
 
 Update ESM-Tools

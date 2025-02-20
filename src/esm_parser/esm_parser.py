@@ -1498,6 +1498,85 @@ def resolve_choose(model_with_choose, choose_key, config):
         logging.debug("key=%s", key)
 
 
+def resolve_early_var(
+    var, config, current_model=None, user_config={}, model_config={}, setup_config={}
+):
+
+    #import ipdb
+    if not current_model:
+        logger.error(
+            "Please define a ``current_model`` for ``resolve_early_var`` method"
+        )
+        sys.exit(1)
+    elif current_model in config:
+        this_config = config
+    elif current_model == config.get("model"):
+        this_config = {current_model: config}
+    else:
+        logger.error(f"``current_model: {current_model}`` and ``config`` do not correspond!")
+        return
+
+    resolve_choose_with_var(
+        var,
+        this_config,
+        current_model=current_model,
+        user_config=user_config,
+        model_config=model_config,
+        setup_config=setup_config,
+    )
+
+    if var not in this_config[current_model]:
+        logger.debug(f"``{var}`` not found in this config (resolve_early_var)")
+        return
+
+    value = this_config[current_model].get(var)
+
+    #if value==['xios']:
+        #ipdb.set_trace()
+
+    if isinstance(value, str) and "${" in value:
+        value_pattern = r'\${(.*?)}'
+        subvars = re.findall(value_pattern, value)
+        for subvar in subvars:
+            path_to_var = subvar.split(".")
+            if len(path_to_var) > 1:
+                subvar_component = path_to_var[0]
+                subvar = ",".join(path_to_var[1:])
+            else:
+                subvar_component = current_model
+            #if var == "version" and var in config[current_model] and current_model=="fesom":
+                #ipdb.set_trace()
+            resolve_early_var(subvar, config, current_model=subvar_component, user_config=user_config, model_config=model_config, setup_config=setup_config)
+
+            config_to_search_into = None
+            if subvar in user_config.get(subvar_component, []):
+                config_to_search_into = user_config
+            elif subvar in setup_config.get(subvar_component, []):
+                config_to_search_into = setup_config
+            elif subvar in model_config.get(subvar_component, []):
+                config_to_search_into = model_config
+            else:
+                return
+
+            try:
+                new_value = find_variable([current_model], this_config[current_model][var], config_to_search_into, [], True)
+            except esm_parser.esm_parser.EsmParserError as error:
+                not_found_variable = str(error).split("was not resolved: ")[1].split(" not found")[0]
+                if "." in not_found_variable:
+                    cm = not_found_variable.split(".")[0]
+                    v = ".".join(not_found_variable.split(".")[1:])
+                resolve_early_var(v, config, current_model=cm, user_config=user_config, model_config=model_config, setup_config=setup_config)
+                new_value = find_variable([current_model], this_config[current_model][var], this_config, [], True)
+
+            new_value = do_math_in_entry([current_model], new_value, this_config)
+
+            this_config[current_model][var] = new_value
+
+    elif isinstance(value, list):
+        for elem in value:
+            resolve_early_var(elem, config, current_model=current_model, user_config=user_config, model_config=model_config, setup_config=setup_config)
+
+
 def resolve_choose_with_var(
     var, config, current_model=None, user_config={}, model_config={}, setup_config={}
 ):
@@ -1526,10 +1605,12 @@ def resolve_choose_with_var(
     sep = ","
     # Find the path to the variable ``var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_var = get_chooses_with_var(config, var, sep=sep)
+    choose_with_var = get_chooses_with_var(config[current_model], var, sep=sep)
     # Find the path to the variable ``add_var`` in the given ``config``, inside a
     # ``choose_``
-    choose_with_add_var = get_chooses_with_var(config, f"add_{var}", sep=sep)
+    choose_with_add_var = get_chooses_with_var(
+        config[current_model], f"add_{var}", sep=sep
+    )
 
     # Resolve first for ``<var>`` and then for ``add_<var>``
     for choose_with_var, lvar in [
@@ -1553,7 +1634,7 @@ def resolve_choose_with_var(
             choose_key = choose_with_var.replace("choose_", "")
             # Deep copy here avoids the other variables in the case to be updated
             # now. We want to update now ONLY the ``lvar``.
-            config_copy = copy.deepcopy(config)
+            this_section_copy = copy.deepcopy(config[current_model])
             # If the key includes the absolute path
             if "." in choose_key:
                 # Get the component to search for the key
@@ -1571,17 +1652,17 @@ def resolve_choose_with_var(
                 choose_with_var_new = choose_with_var.replace(
                     "choose_", f"choose_{component_with_key}."
                 )
-                config_copy[choose_with_var_new] = config_copy[choose_with_var]
-                del config_copy[choose_with_var]
+                this_section_copy[choose_with_var_new] = this_section_copy[choose_with_var]
+                del this_section_copy[choose_with_var]
                 choose_with_var = choose_with_var_new
 
             # Resolve choose_key in case it is defined within another choose_block
             for conf in [user_config, setup_config, model_config]:
                 component_config = conf.get(component_with_key, [])
                 if component_config:
-                    resolve_choose_with_var(
+                    resolve_early_var(
                         choose_key,
-                        component_config,
+                        conf,
                         current_model=component_with_key,
                         user_config=user_config,
                         model_config=model_config,
@@ -1601,12 +1682,12 @@ def resolve_choose_with_var(
             if config_to_search_into:
                 # Resolve the case
                 resolve_basic_choose(
-                    config_to_search_into, config_copy, choose_with_var
+                    config_to_search_into, this_section_copy, choose_with_var
                 )
                 # If ``var`` was defined through the resolution of the ``choose_``, add
                 # the ``var`` value to the ``config``.
-                if config_copy.get(var):
-                    config[var] = config_copy.get(var)
+                if this_section_copy.get(var) is not None:
+                    config[current_model][var] = this_section_copy.get(var)
 
 
 def get_chooses_with_var(component_config, var, sep=","):
@@ -2845,9 +2926,10 @@ class GeneralConfig(dict):  # pragma: no cover
         else:
             self.config = include_path
 
-        resolve_choose_with_var(
+        resolve_early_var(
             "further_reading",
             self.config,
+            current_model=model,
             model_config={model: self.config},
             user_config=user_config,
         )
@@ -2922,7 +3004,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         if "general" in self.config and "coupled_setup" in self.config["general"]:
             setup_config["general"].update({"standalone": False})
             # Resolve choose with include_models
-            resolve_choose_with_var(
+            resolve_early_var(
                 "include_models",
                 self.config["general"],
                 current_model="general",
@@ -2949,7 +3031,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             # Resolve the chooses including versions of the components to be able to
             # later load the correct yaml files
             for component in setup_config:
-                resolve_choose_with_var(
+                resolve_early_var(
                     "version",
                     setup_config[component],
                     current_model=component,
@@ -2960,7 +3042,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             setup_config["general"].update({"models": [self.config["model"]]})
 
             # Resolve choose with include_models
-            resolve_choose_with_var(
+            resolve_early_var(
                 "include_models",
                 self.config,
                 user_config=user_config,
@@ -3037,9 +3119,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     if model in this_config:
                         # Resolve the target variable
                         for var in early_choose_vars:
-                            resolve_choose_with_var(
+                            resolve_early_var(
                                 var,
-                                this_config.get(model),
+                                this_config,
+                                current_model=model,
                                 user_config=user_config,
                                 model_config=model_config,
                                 setup_config=setup_config,

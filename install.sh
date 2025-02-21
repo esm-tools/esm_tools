@@ -63,7 +63,7 @@ elif [ ! -z ${TYKKY_PREFIX+x} ]; then
     echo "======================="
     echo "Using TYKKY environment"
     echo "======================="
-    echo "WARNING: The use of a tykky environment for using ESM-Tools is currently not supported Use at your own risk"
+    echo "WARNING: The use of a tykky environment for using ESM-Tools is currently not supported. Use at your own risk"
     ESM_TOOLS_SRC_PATH="$(dirname "$(realpath "$0")")"
     echo $ESM_TOOLS_SRC_PATH
     echo "pip install -e ${ESM_TOOLS_SRC_PATH}" > esm_tools_tikky_install.sh
@@ -73,7 +73,6 @@ elif [ ! -z ${CONDA_PREFIX+x} ]; then
     echo "======================="
     echo "Using CONDA environment"
     echo "======================="
-    echo "WARNING: The use of a conda environment is currently not recommended. Use only for testing purposes!"
     ${CONDA_PREFIX}/bin/pip install -e .
 else
     echo "Standard install to user directory (likely ${HOME}/.local)"

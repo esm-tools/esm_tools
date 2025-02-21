@@ -74,9 +74,9 @@ To install `ESM-Tools` in a `tykky` environment first load the module::
 
     module load tykky
 
-Then build the containerize environment using the ``utils/tykky_env.yaml`` distributed inside the ``esm_tools`` source::
+Then build the containerize environment using the ``environment.yaml`` distributed inside the ``esm_tools`` source::
 
-    conda-containerize new --mamba --prefix $TYKKY_PATH/esm_tools utils/tykky_env.yaml
+    conda-containerize new --mamba --prefix $TYKKY_PATH/esm_tools environment.yaml
 
 After this, a new `tykky` environment would have been created with the name ``esm_tools``. Activate that environment by running::
 

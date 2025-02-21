@@ -152,3 +152,17 @@ pack
 unpack
 jsbach_init_file
 calnoro
+
+# Ignore directories
+awicm3-frontiers-xios/
+awicm3-v3.1/
+fesom-2.0/
+runscripts/awicm3/frontiers-xios/
+runscripts/awicm3/v3.1/
+
+# Ignore specific scripts and YAML files
+correctcondaenv.sh
+correcttykkyenv.sh
+env.yml
+env.yml_unnecessary
+

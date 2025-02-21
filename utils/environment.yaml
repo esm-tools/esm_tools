@@ -40,4 +40,3 @@ dependencies:
   - tabulate
   - tqdm
   - typing_extensions>=3.10.0.0
-prefix: /Users/mandresm/opt/anaconda3/envs/esm_tools

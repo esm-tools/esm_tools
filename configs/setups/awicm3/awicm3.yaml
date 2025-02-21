@@ -127,9 +127,6 @@ general:
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
             oasis_with_yac: False
-            add_add_environment_changes:
-                levante:
-                    iolibraries: system_libs
             xios_interp_order: 1
           v3.4:
             major_version: v3.4
@@ -141,9 +138,6 @@ general:
             - oifs/oifs48.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
-            add_add_environment_changes:
-                levante:
-                    iolibraries: system_gnu_libs
             oasis_with_yac: False
           master:
             major_version: master

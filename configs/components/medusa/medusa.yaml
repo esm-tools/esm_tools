@@ -36,8 +36,6 @@ environment_changes:
 #                ...
 
 clean_command: ${defaults.clean_command}
-#Ying: makefiles exist for ollie and levante (src-med, src-mcg and appa)
-#to be chosen by choose_computer.name?
 comp_command: "mkdir -p lib; mkdir -p include;
     cd ${model_dir}/libthdyct/trunk; cp Makefile_mpiifort ./Makefile; make;
     mv libthdyct.a ${model_dir}/lib;

@@ -140,7 +140,6 @@ choose_resolution:
                 nx: 830305
         CAVCORE2:
                 nx: 72411
-                mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
                 nproc: 288
         PI_ICEv2:
                 nx: 132273

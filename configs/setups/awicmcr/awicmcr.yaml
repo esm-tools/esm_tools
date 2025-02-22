@@ -116,10 +116,6 @@ jsbach:
                                 puthd: "remove_from_namelist"
         version: "3.20"
 
-        choose_computer.name:
-                ollie:
-                        dynveg_file_ending: ""
-                        no_dynveg_file_ending: ""
 
 #########################################################################################
 

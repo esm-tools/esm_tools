@@ -26,30 +26,6 @@ general:
         post_time: "00:05:00"
         compute_time: "01:30:00"
 
-        environment_changes:
-                choose_computer.name:
-                        mistral:
-                                add_export_vars:
-                                        # (additional) settings used in FOCI up to v1.21
-                                        - 'ECHAM6_THREADS=1'
-                                        - 'NEMO_THREADS=1'
-                                        - 'I_MPI_SLURM_EXT=0'
-                                        #- 'I_MPI_DYNAMIC_CONNECTION=1'
-                                        #- 'I_MPI_CHECK_DAPL_PROVIDER_COMPATIBILITY=0'
-                                        # Intel MPI
-                                        #- 'DAPL_UCM_REP_TIME=8000'
-                                        #- 'DAPL_UCM_RTU_TIME=8000'
-                                        #- 'DAPL_UCM_CQ_SIZE=2000'
-                                        #- 'DAPL_UCM_QP_SIZE=2000'
-                                        #- 'DAPL_UCM_DREQ_RETRY=4'
-                                        #- 'DAPL_UCM_WAIT_TIME=10000'
-                                        # 1 was used in mkexp, but kills the model with esm-tools
-                                        #- 'I_MPI_HARD_FINALIZE=1'
-                                        # Intel OpenMP
-                                        #- 'KMP_STACKSIZE=64m'
-                                        #- 'KMP_AFFINITY=verbose,granularity=fine,compact,1,0'
-                                        # OpenMP
-                                        - 'OMP_NUM_THREADS=1'
 computer:
        additional_flags: "--ntasks-per-core=1"
        launcher: "srun" # default, but set it to make clear what the launcher flags are used for

@@ -10,17 +10,6 @@ albedo:
   fat_nodes: 'fat-*'
   post_nodes: None
 
-ollie:
-        login_nodes:
-                - 'ollie0'
-                - 'ollie1'
-        compute_nodes: 'prod-*'
-
-mistral:
-        login_nodes: 'mlogin*'
-        compute_nodes: '^m[A-Za-z0-9]+\.hpc\.dkrz\.de$'
-        post_nodes: 'mistralpp*'
-
 levante:
         login_nodes: 'levante*'
         compute_nodes: '^l[A-Za-z0-9]+\.lvt\.dkrz\.de$'

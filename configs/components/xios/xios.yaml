@@ -284,6 +284,3 @@ ignore_sources:
 
 bin_sources:
         server: ${bin_dir}/xios.x
-
-further_reading:
-        - xios/xios.env.yaml

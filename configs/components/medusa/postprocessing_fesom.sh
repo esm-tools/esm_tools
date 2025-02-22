@@ -6,7 +6,6 @@
 
 # define directories
 indir=$1     
-#fesom output: /work/ollie/yye/AWIESM_runs/PI_echamcold_nociso/outdata/fesom
 outdir=$2     
 #save postprocessed files: experiment_dir/input/medusa?
 startdate=$3 #date of the first fesom file to be postprocessed

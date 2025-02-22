@@ -41,8 +41,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1.1:
@@ -51,8 +49,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.1+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1.2:
@@ -61,8 +57,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.2+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1.3:
@@ -71,8 +65,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.3+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.2:
@@ -81,8 +73,6 @@ general:
             - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.2.1:
@@ -91,8 +81,6 @@ general:
             - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: True
             xios_interp_order: 2
           v3.2.2:
@@ -101,8 +89,6 @@ general:
             - fesom-2.5.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: True
             xios_interp_order: 1
           master:
@@ -111,8 +97,6 @@ general:
             - fesom-2.0-master+oifs-43r3-master
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           frontiers-xios:
@@ -121,8 +105,6 @@ general:
             - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers-xios+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
 
@@ -138,8 +120,6 @@ general:
         choose_computer.name:
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
-                ollie:
-                        pool_dir: "/work/ollie/jstreffi/input"
                 juwels:
                         pool_dir: "/p/project/chhb19/jstreffi/input"
                 aleph:

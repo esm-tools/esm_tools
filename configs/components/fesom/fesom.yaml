@@ -447,9 +447,6 @@ ignore_sources:
         chloro: Chl_Sweeney.dat
 
 choose_computer.name:
-        ollie:
-                pool_dir: "${computer.pool_directories.pool}/FESOM/"
-                mesh_base_dir: "${pool_dir}/meshes_default/"
         blogin:
                 mesh_base_dir: "${pool_dir}/FESOM1/MESHES/"
         glogin:

@@ -138,6 +138,7 @@ general:
             - oifs/oifs48.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
+            - fesom/fesom.env.yaml
             oasis_with_yac: False
           master:
             major_version: master
@@ -290,8 +291,6 @@ oifs:
                 "v3.4":
                         version: "48r1"
                         with_xios: True
-                        git-repository: https://git.smhi.se/sager/oifs48r1
-                        branch: 'dev/integrate-with-ece4'
                         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --install; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         mip: "cmip6"
@@ -303,6 +302,7 @@ oifs:
                                                 LXIOS: TRUE
                                         NAEPHY:
                                                 LECURR: true
+                                                NALBEDOSCHEME: 3
 
                 "frontiers-xios":
                         with_xios: True

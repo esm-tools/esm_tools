@@ -1,0 +1,12 @@
+&namomip
+    runlengthsec = 86400
+    timestepsec = 86400
+    startyear = 1950
+    startmonth = 1
+    startday = 1
+    fixyear = 0
+    filelistrunoff = 'GL_runoff_1950_2024.nc'
+    filelistdischarge = 'GL_discharge_1950_2024_monthly.nc'
+    ldebug = .true.
+    linterpolate = .true.
+/

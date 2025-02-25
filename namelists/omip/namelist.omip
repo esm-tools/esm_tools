@@ -6,7 +6,7 @@
     startday = 1
     fixyear = 0
     filelistrunoff = 'GL_runoff_1950_2024.nc'
-    filelistdischarge = 'GL_discharge_1950_2024_monthly.nc'
+    filelistcalving = 'GL_discharge_1950_2024_monthly.nc'
     ldebug = .true.
     linterpolate = .true.
 /

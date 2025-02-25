@@ -82,7 +82,7 @@ namelist_changes:
                         FixYear: "0"
                         StartYear: "1950"
                         FileListrunoff: ${input_in_work.runoff_forcing}
-                        FileListdischarge: ${input_in_work.discharge_forcing}
+                        FileListcalving: ${input_in_work.discharge_forcing}
 
 grids:
         OMIP:
@@ -91,7 +91,7 @@ grids:
                 ny: 720
                 oasis_grid_type: "HR"
 
-omip_fields_send: [OMIP_calv,OMIP_enth]
+omip_fields_send: [OMIP_runoff,OMIP_calving]
 #
 # Setup up compile and runtime environment i.e. what needs
 # to be changed w.r.t the default config/machines/<computer>.yaml

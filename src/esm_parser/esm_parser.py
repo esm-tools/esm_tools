@@ -488,9 +488,28 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    # DB this is a try:
-    dict_merge(config, attachable_config, **kwargs)
+    deep_update_further_reading(config, attachable_config) #, **kwargs)
     # config.update(attachable_config)
+
+
+def deep_update_further_reading(config, further_reading_config):
+    for key, value in further_reading_config.items():
+        if isinstance(value, dict) and isinstance(config.get(key, None), dict) and config.get(key, None) is not None:
+            deep_update_further_reading(config[key], value)
+        elif key in config and value != config[key]:
+            raise ValueError(
+                f"Key {key} already exists in config and has a different value."
+            )
+        elif isinstance(value, list):
+            if isinstance(config.get(key, None), list):
+                config[key] += value
+            elif not isinstance(config.get(key, None), list) and config.get(key, None) is not None:
+                raise TypeError("meep meep, the roadrunner wins, silly cayote")
+            else:
+                config[key] = value
+
+        else:
+            config[key] = value
 
 
 def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
@@ -499,6 +518,8 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
 
     Updates the dictionary on ``config`` with values from any file found under
     a listing specified by ``attach_key``.
+
+    Note: Only used currently for the ``further_reading``.
 
     Parameters
     ----------
@@ -512,12 +533,16 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     -------
     The ``config`` is modified **in place**!
     """
+    if attach_key != "further_reading":
+        #import ipdb
+        #ipdb.set_trace()
+        pass
     if attach_key in config:
-        attach_value = config[attach_key]
+        attach_values = config[attach_key]
         del config[attach_key]
-        if isinstance(attach_value, str):
-            attach_value = [attach_value]
-        for attach_value in attach_value:
+        if isinstance(attach_values, str):
+            attach_values = [attach_values]
+        for attach_value in attach_values:
             try:
                 attach_path, attach_value = attach_value.rsplit("/", 1)
             except ValueError:

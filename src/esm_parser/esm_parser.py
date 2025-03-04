@@ -228,8 +228,6 @@ def look_for_file(model, item, all_config=None):
     # a file which name contains the whole item string (e.g. fesom-2.0-jio.yaml).
     # To solve that kind of problem the item's name is reduced to the last "-"
     # (e.g. to fesom-2.0) and then ``look_for_file`` is called recursively
-    import ipdb
-    ipdb.set_trace()
     last_part = item.split("-")[-1]
     if is_version_part(last_part) and "." in last_part:
         # If the last part is version remove the trailing version number

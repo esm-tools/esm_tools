@@ -62,6 +62,7 @@ import copy
 import logging
 import os
 import pdb
+import re
 import shutil
 import socket
 import subprocess
@@ -227,7 +228,16 @@ def look_for_file(model, item, all_config=None):
     # a file which name contains the whole item string (e.g. fesom-2.0-jio.yaml).
     # To solve that kind of problem the item's name is reduced to the last "-"
     # (e.g. to fesom-2.0) and then ``look_for_file`` is called recursively
-    new_item = "-".join(item.split("-")[:-1])
+    #import ipdb
+    #ipdb.set_trace()
+    if is_version_part(item.split("-")[-1]):
+        # If the last part is version remove the trailing version number
+        new_item = ".".join(item.split(".")[:-1])
+        if new_item.endswith("-"):
+            new_item = "-".join(item.split("-")[:-1])
+    else:
+        # If the last part is not version remove last part
+        new_item = "-".join(item.split("-")[:-1])
     if len(new_item) > 0:
         possible_path, needs_loading = look_for_file(model, new_item)
         if possible_path:
@@ -236,6 +246,11 @@ def look_for_file(model, item, all_config=None):
     # The file was not found
     warnings.warn(f'File for "{item}" not found in "{model}"')
     return None, False
+
+
+def is_version_part(part):
+    """Check if a part of the string is a valid version number (digits and dots only)."""
+    return re.fullmatch(r"\d+(\.\d+)*", part) is not None
 
 
 def initialize_from_yaml(filepath):

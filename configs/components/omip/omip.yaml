@@ -29,7 +29,7 @@ namelist_dir: ${general.esm_namelist_dir}/omip/
 
 parent_expid: "test" 
 
-resolution: 1440x720
+resolution: 512x256
 
 generate_namelist: 1
 
@@ -42,8 +42,8 @@ namelists:
 
 choose_resolution:
         360x180:
-                nx: 1440
-                ny: 720
+                nx: 512
+                ny: 256
 
 nproca: 1
 nprocb: 1
@@ -87,9 +87,9 @@ namelist_changes:
 grids:
         OMIP:
                 name: OMIP
-                nx: 1440
-                ny: 720
-                oasis_grid_type: "HR"
+                nx: 512
+                ny: 256
+                oasis_grid_type: "LR"
 
 omip_fields_send: [OMIP_runoff,OMIP_calving]
 #

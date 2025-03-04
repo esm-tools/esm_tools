@@ -91,7 +91,6 @@ from .provenance import *
 # functions reading in dict from file
 from .yaml_to_dict import *
 
-
 # Logger and related constants
 logger = logging.getLogger("root")
 DEBUG_MODE = logger.level == logging.DEBUG

@@ -228,15 +228,14 @@ def look_for_file(model, item, all_config=None):
     # a file which name contains the whole item string (e.g. fesom-2.0-jio.yaml).
     # To solve that kind of problem the item's name is reduced to the last "-"
     # (e.g. to fesom-2.0) and then ``look_for_file`` is called recursively
-    #import ipdb
-    #ipdb.set_trace()
-    if is_version_part(item.split("-")[-1]):
+    import ipdb
+    ipdb.set_trace()
+    last_part = item.split("-")[-1]
+    if is_version_part(last_part) and "." in last_part:
         # If the last part is version remove the trailing version number
         new_item = ".".join(item.split(".")[:-1])
-        if new_item.endswith("-"):
-            new_item = "-".join(item.split("-")[:-1])
     else:
-        # If the last part is not version remove last part
+        # If the last part is not a minor or patch version remove last part
         new_item = "-".join(item.split("-")[:-1])
     if len(new_item) > 0:
         possible_path, needs_loading = look_for_file(model, new_item, all_config=all_config)

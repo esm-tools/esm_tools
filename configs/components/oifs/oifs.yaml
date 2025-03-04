@@ -279,7 +279,7 @@ choose_version:
     branch: 'main'
     # --build-type Debug
     comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
-    clean_command: rm -rf build
+    clean_command: rm -rf build install
     executable: OpenIFS
     git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
     install_bins: install/bin/OpenIFS
@@ -767,15 +767,6 @@ outdata_sources:
 # IGNORE FILES
 #======================================================================================
 
-ignore_files:
-        drhook: drhook
-        ICMCL: ICMCL
-ignore_in_work:
-        drhook: drhook*
-        ICMCL: ICMCL*
-ignore_sources:
-        drhook: drhook*
-        ICMCL: ICMCL*
 
 
 #======================================================================================
@@ -957,6 +948,15 @@ choose_cloudfixer:
 
 choose_major_version:
         40r1:
+                ignore_files:
+                        drhook: drhook
+                        ICMCL: ICMCL
+                ignore_in_work:
+                        drhook: drhook*
+                        ICMCL: ICMCL*
+                ignore_sources:
+                        drhook: drhook*
+                        ICMCL: ICMCL*
                 append_icmcl: ""
                 add_namelist_changes:
                         fort.4:
@@ -983,6 +983,15 @@ choose_major_version:
                         - oifs/oifs43.env.yaml
                         - oifs/oifs43.cmip.yaml
         43r3:
+                ignore_files:
+                        drhook: drhook
+                        ICMCL: ICMCL
+                ignore_in_work:
+                        drhook: drhook*
+                        ICMCL: ICMCL*
+                ignore_sources:
+                        drhook: drhook*
+                        ICMCL: ICMCL*
                 append_icmcl: ""
                 add_namelist_changes:
                         fort.4:
@@ -1012,16 +1021,18 @@ choose_major_version:
                 o3_scheme: none
                 cloudfixer: none
                 massfixer: 3
-                tl_o3_data_dir: "${pool_dir}/../climate.v020/"
-                slice_icml: "
-                    ${general.esm_function_dir}/components/oifs/link_icmcl_file.sh
-                        ${thisrun_input_dir}/
-                        ${icmcl_dir}/${icmcl_file}
-                        ${oifs.input_expid}
-                        ${start_date!syear!smonth!sday}
-                        ${icmcl_end_date_formatted}
-                        ${work_dir};"
+                ignore_files:
+                        drhook: drhook
+                ignore_in_work:
+                        drhook: drhook*
+                ignore_sources:
+                        drhook: drhook*
+                icmcl_dir: ${input_dir}/climate.v020/${res_number_tl}/
+                icmcl_file: ICMCLawi3INIT
                 append_icmcl: ""
+                add_forcing_files:
+                        ICMCL_INIT: ICMCL_INIT
+                tl_o3_data_dir: "${pool_dir}/../climate.v020/"
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:

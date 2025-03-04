@@ -523,7 +523,7 @@ class DictWithProvenance(dict):
 
         return provenance_dict
 
-    def get_first_provenance(self):
+    def extract_first_nested_values_provenance(self):
         """
         Recursively loops through the dictionary keys and returns the first provenance
         found in the nested values.
@@ -536,7 +536,7 @@ class DictWithProvenance(dict):
         first_provenance = None
         for key, val in self.items():
             if isinstance(val, PROVENANCE_MAPPINGS):
-                return val.get_first_provenance()
+                return val.extract_first_nested_values_provenance()
             elif hasattr(val, "provenance"):
                 return val.provenance[-1]
 
@@ -790,7 +790,7 @@ class ListWithProvenance(list):
 
         return provenance_list
 
-    def get_first_provenance(self):
+    def extract_first_nested_values_provenance(self):
         """
         Recursively loops through the list elements and returns the first provenance
         found in the nested values.
@@ -803,7 +803,7 @@ class ListWithProvenance(list):
         first_provenance = None
         for elem in self:
             if isinstance(elem, PROVENANCE_MAPPINGS):
-                return elem.get_first_provenance()
+                return elem.extract_first_nested_values_provenance()
             elif hasattr(elem, "provenance"):
                 return elem.provenance[-1]
 

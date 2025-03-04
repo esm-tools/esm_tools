@@ -9,12 +9,13 @@ import f90nml
 import questionary
 import yaml
 from colorama import Back, Fore, Style, init
+from loguru import logger
 
 import esm_calendar
 import esm_parser
 import esm_runscripts
 import esm_tools
-from loguru import logger
+from esm_tools import user_error, user_note
 
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
@@ -444,7 +445,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
             # If the --update flag is used, notify that the target script will
             # be updated and do update it
             if gconfig["update"]:
-                esm_parser.user_note(
+                user_note(
                     f"Original {file_type} different from target",
                     differences + "\n" + f"{scriptsdir + '/' + tfile} will be updated!",
                 )
@@ -454,7 +455,7 @@ def update_runscript(fromdir, scriptsdir, tfile, gconfig, file_type):
             # If the --update flag is not called, exit with an error showing the
             # user how to proceed
             else:
-                esm_parser.user_note(
+                user_note(
                     f"Original {file_type} different from target",
                     differences
                     + "\n"
@@ -546,7 +547,7 @@ def copy_tools_to_thisrun(config):
         # exit right away to prevent further recursion. There might still be
         # running instances of esmr_runscripts and something like
         # `killall esm_runscripts` might be required
-        esm_parser.user_error(error_type, error_text)
+        user_error(error_type, error_text)
 
     # If ``fromdir`` and ``scriptsdir`` are the same, this is already a computing
     # simulation which means we want to use the script in the experiment folder,

@@ -2,6 +2,8 @@
 ECE_CPL_AMIP=.false.
 ECE_CPL_NEMO_LIM=.false.
 ECE_CPL_FESOM_FESIM=.true.
+ECE_CPL_NEMO_WEIGHTED_ICE = .false.
+ECE_CPL_NEMO_CONSERVATIVE_HEATFLUX = .false.
 /
 &NAMECECMIP6
 /
@@ -26,10 +28,9 @@ NDLNPR=0,
 /
 &NAMMCC
 LMCCEC=true,
-LMCCIEC=false,
-LMCC_COMPO=false,
-LMCC04=false,
+NFRCPL = 0
 LMCCDYNSEAICE = .true.
+LMCC_COMPO=false,
 LNEMOLIMCUR = true
 /
 &NAMTRANS
@@ -41,6 +42,7 @@ LFFTW=true,
 &NAERAD
 CRTABLEDIR='./rtables/',
 NRPROMA=0,
+CSOLARIRRADIANCEFILE = './ifsdata/total_solar_irradiance_CMIP6_49r1.nc'
 LECOMPGRID=true,
 /
 &NAEPHY
@@ -61,6 +63,7 @@ LEOZOC=true,
 LEQNGT=true,
 LERADI=true,
 LERADS=true,
+LELAIV=false,
 LESICE=true,
 LEO3CH=true,
 LO3CH_HLO=true,
@@ -76,12 +79,14 @@ LWCOURNW=false,
 NSTPW=1,
 LSLPHY=true,
 LESNML=true,
-NSNMLWS=4,
+NSNMLWS=2,
 LEFARQUHAR=true,
 LEOPTSURF=false,
 LEAIRCO2COUP=false,
 LEC4MAP=true,
 LEAGS=false,
+RCIMIN = 0.0
+NALBEDOSCHEME = 3
 /
 &NAMPAR1
 NOUTTYPE=1,

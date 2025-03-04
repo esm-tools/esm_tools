@@ -53,19 +53,15 @@ until nothing is left.
 Specific documentation for classes and functions are given below:
 """
 # Python 2 and 3 version agnostic compatiability:
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-
-import pdb
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 # Python Standard Library imports
 import collections
 import copy
 import logging
 import os
-import re
+import pdb
 import shutil
 import socket
 import subprocess
@@ -79,21 +75,20 @@ else:
 
 # Always import externals before any non standard library imports
 
+import coloredlogs
 # Third-Party Imports
 import numpy
-import coloredlogs
-import colorama
 import yaml
-
-# functions reading in dict from file
-from .yaml_to_dict import *
-from .provenance import *
-
-# Date class
-from esm_calendar import Date
 
 # Loader for package yamls
 import esm_tools
+# Date class
+from esm_calendar import Date
+from esm_tools import user_error, user_note
+
+from .provenance import *
+# functions reading in dict from file
+from .yaml_to_dict import *
 
 # Logger and related constants
 logger = logging.getLogger("root")
@@ -501,9 +496,28 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    # DB this is a try:
-    dict_merge(config, attachable_config, **kwargs)
+    deep_update_further_reading(config, attachable_config) #, **kwargs)
     # config.update(attachable_config)
+
+
+def deep_update_further_reading(config, further_reading_config):
+    for key, value in further_reading_config.items():
+        if isinstance(value, dict) and isinstance(config.get(key, None), dict) and config.get(key, None) is not None:
+            deep_update_further_reading(config[key], value)
+        elif key in config and value != config[key]:
+            raise ValueError(
+                f"Key {key} already exists in config and has a different value."
+            )
+        elif isinstance(value, list):
+            if isinstance(config.get(key, None), list):
+                config[key] += value
+            elif not isinstance(config.get(key, None), list) and config.get(key, None) is not None:
+                raise TypeError("meep meep, the roadrunner wins, silly cayote")
+            else:
+                config[key] = value
+
+        else:
+            config[key] = value
 
 
 def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
@@ -512,6 +526,8 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
 
     Updates the dictionary on ``config`` with values from any file found under
     a listing specified by ``attach_key``.
+
+    Note: Only used currently for the ``further_reading``.
 
     Parameters
     ----------
@@ -525,12 +541,16 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     -------
     The ``config`` is modified **in place**!
     """
+    if attach_key != "further_reading":
+        #import ipdb
+        #ipdb.set_trace()
+        pass
     if attach_key in config:
-        attach_value = config[attach_key]
+        attach_values = config[attach_key]
         del config[attach_key]
-        if isinstance(attach_value, str):
-            attach_value = [attach_value]
-        for attach_value in attach_value:
+        if isinstance(attach_values, str):
+            attach_values = [attach_values]
+        for attach_value in attach_values:
             try:
                 attach_path, attach_value = attach_value.rsplit("/", 1)
             except ValueError:
@@ -2808,51 +2828,6 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
             )
 
     return paths2finds
-
-
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
-    """
-    Notify the user about something. In the future this should also write in the log.
-
-    Parameters
-    ----------
-    note_heading : str
-        Note type used for the heading.
-    text : str
-        Text clarifying the note.
-    """
-    reset_s = colorama.Style.RESET_ALL
-
-    if isinstance(note_text, list):
-        new_note_text = ""
-        for item in note_text:
-            new_note_text = f"{new_note_text}- {item}\n"
-        note_text = new_note_text
-
-    for dsymbol in dsymbols:
-        note_text = re.sub(
-            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
-        )
-    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
-    print(f"{note_text}\n")
-
-
-def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
-    """
-    User-friendly error using ``sys.exit()`` instead of an ``Exception``.
-
-    Parameters
-    ----------
-    error_type : str
-        Error type used for the error heading.
-    text : str
-        Text clarifying the error.
-    exit_code : int
-        The exit code to send back to the parent process (default to 1)
-    """
-    error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
-    sys.exit(exit_code)
 
 
 class GeneralConfig(dict):  # pragma: no cover

@@ -24,10 +24,10 @@ required_plugins:
 
 choose_version:
   "2.6":
-    branch: "2.6.4"
+    branch: "2.6.7"
 
   "2.6-paleodyn":
-    branch: "2.6.4"
+    branch: "2.6.7"
     wiso_code: true
     icb_code: true
     namelist_dir: "${model_dir}/config/"
@@ -96,6 +96,7 @@ namelists:
         - namelist.io
         - namelist.oce
         - namelist.tra
+        - namelist.transit
 
 choose_resolution:
         CORE2:
@@ -517,6 +518,7 @@ config_files:
         io:      io
         oce:     oce
         tra:     tra
+        transit: transit
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -528,6 +530,7 @@ config_sources:
         io:      "${namelist_dir}/namelist.io"
         oce:     "${namelist_dir}/namelist.oce"
         tra:     "${namelist_dir}/namelist.tra"
+        transit: "${namelist_dir}/namelist.transit"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -543,6 +546,7 @@ config_in_work:
         io:      "namelist.io"
         oce:     "namelist.oce"
         tra:     "namelist.tra"
+        transit: "namelist.transit"
 
 coupling_fields:
         sst_feom:

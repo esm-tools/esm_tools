@@ -1,18 +1,16 @@
 import os
-import sys
-import subprocess
-import shlex  # contains shlex.split that respects quoted strings
-
 # deniz: it is better to use more pathlib in the future so that dir/path
 # operations will be more portable (supported since Python 3.4, 2014)
 import pathlib
-
-from .software_package import software_package
-from esm_parser import user_error
+import shlex  # contains shlex.split that respects quoted strings
+import subprocess
+import sys
 
 import esm_environment
 import esm_plugin_manager
+from esm_tools import user_error
 
+from .software_package import software_package
 
 ######################################################################################
 ################################# class "task" #######################################
@@ -386,6 +384,12 @@ class Task:
             os.remove("./dummy_script.sh")
         except OSError:
             print("No dummy script to remove!")
+        try:
+            source_fc = f"./{self.package.destination}-finished_config.yaml"
+            target_fc = f"./{self.package.destination}/finished_config.yaml"
+            os.rename(source_fc, target_fc)
+        except OSError:
+            print(f"Problems moving ``{source_fc}`` to ``{target_fc}``")
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 try:

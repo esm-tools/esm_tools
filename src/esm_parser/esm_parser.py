@@ -239,7 +239,7 @@ def look_for_file(model, item, all_config=None):
         # If the last part is not version remove last part
         new_item = "-".join(item.split("-")[:-1])
     if len(new_item) > 0:
-        possible_path, needs_loading = look_for_file(model, new_item)
+        possible_path, needs_loading = look_for_file(model, new_item, all_config=all_config)
         if possible_path:
             return possible_path, needs_loading
 

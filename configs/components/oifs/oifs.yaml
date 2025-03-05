@@ -1033,6 +1033,8 @@ choose_major_version:
                 add_forcing_files:
                         ICMCL_INIT: ICMCL_INIT
                 tl_o3_data_dir: "${pool_dir}/../climate.v020/"
+                add_config_sources:
+                        "wam_namelist": "${prepifs_dir}/ecmwf/wam_namelist"
                 add_namelist_changes:
                         fort.4:
                                 NAMRES:

@@ -500,8 +500,6 @@ bin_sources:
         bin: "${bin_dir}/${comp_executable}"
         lib: "${fesom.model_dir}/build/lib/*"
 
-
-
 config_files:
         config:  config
         cvmix:   cvmix
@@ -512,6 +510,8 @@ config_files:
         io:      io
         oce:     oce
         tra:     tra
+        Tripy1:  Tripy1
+        Tripy2:  Tripy2
 
 config_sources:
         config:  "${namelist_dir}/namelist.config"
@@ -523,6 +523,8 @@ config_sources:
         io:      "${namelist_dir}/namelist.io"
         oce:     "${namelist_dir}/namelist.oce"
         tra:     "${namelist_dir}/namelist.tra"
+        Tripy1: "${esm_function_dir}/components/fesom/Subjob_tripy.sh"
+        Tripy2: "${esm_function_dir}/components/fesom/ESM_auto_tripy.yaml"
 
 compiletime_environment_changes:
         add_export_vars:
@@ -538,6 +540,8 @@ config_in_work:
         io:      "namelist.io"
         oce:     "namelist.oce"
         tra:     "namelist.tra"
+        Tripy1: "Subjob_tripy.sh"
+        Tripy2: "ESM_auto_tripy.yaml"
 
 coupling_fields:
         sst_feom:
@@ -640,6 +644,7 @@ tidy_recipe:
 - "copy_stuff_back_from_work"
 - "copy_all_results_to_exp"
 - "clean_run_dir"
+
 workflow: 
     next_run_triggered_by: tidy 
     subjobs: 
@@ -648,7 +653,7 @@ workflow:
                   order_in_cluster: concurrent 
                   run_on_queue: ${computer.partitions.pp.name} 
                   run_after: tidy 
-                  script_dir: /work/ab0995/a270275/runconfig 
+                  script_dir: ${base_dir}/${expid}/config/fesom 
                   submit_to_batch_system: true 
-                  script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir}" 
+                  script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir} ${general.base_dir} ${general.expid}" 
                   nproc: 1     

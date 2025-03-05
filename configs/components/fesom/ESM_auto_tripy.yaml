@@ -1,18 +1,18 @@
 #___i1lvl Parameter___
-tripyrun_name: "${start_year} ${output_file} "
+tripyrun_name: "${output_file} "
 do_papermill: True
 do_parallel: false
 input_paths:
     - ${outdata_path}
 input_names:
-    - "${start_year} ${output_file}"
+    - "${output_file}"
    
     
 #ref_path: /albedo/work/projects/p_fesom/pscholz/project_TRR181/trr181_tke_ctrl_ck0.1/5/
 #ref_name: $TKE$' 
     
 mesh_path: ${mesh_dir}
-save_path: "${outdata_path}/Tripyview"
+save_path: "${base_dir}/${expid}/analysis/Tripyview"
 
 which_clim: 'phc3'
 clim_path: '/work/ab0246/a270092/input/fesom2/hydrography/phc3.0/phc3.0_annual.nc'

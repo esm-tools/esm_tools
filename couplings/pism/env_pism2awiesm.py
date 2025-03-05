@@ -11,7 +11,7 @@ def prepare_environment(config):
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "DOWNSCALE_TEMP": 1, 
             "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
-            "DOWNSCALE_PRECIP": 1, 
+            "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1), 
             "VERSION_pism": config[config["general"]["setup_name"]]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],
             "POOL_DIR_pism": config[config["general"]["setup_name"]]["pool_dir"],
             "DOMAIN_pism": config[config["general"]["setup_name"]]["domain"],

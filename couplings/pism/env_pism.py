@@ -66,6 +66,8 @@ def prepare_environment(config):
             #"restart_file_pism": config[config["general"]["setup_name"]]["restart_in_in_work"]["restart"],
             #"RUN_DATE_STAMP": config["general"]["run_datestamp"],
             #"LAST_RUN_DATE_STAMP": config["general"]["last_run_datestamp"],
+            "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
+            "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1), 
             }
     print (environment_dict)
     return environment_dict

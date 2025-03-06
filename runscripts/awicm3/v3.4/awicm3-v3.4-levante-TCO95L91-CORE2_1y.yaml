@@ -2,11 +2,13 @@ general:
     user: !ENV ${USER}
     setup_name: "awicm3"
     version: "v3.4"
-    account: "ba0989"
+    account: "ab0995"
     compute_time: "01:00:00"
     initial_date: "2000-01-01"
     final_date: "2020-01-01"
-    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+
+    #base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
     nmonth: 0
     nyear: 1
@@ -16,7 +18,8 @@ computer:
 
 awicm3:
     postprocessing: false
-    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    #model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"
@@ -27,7 +30,9 @@ fesom:
     time_step: 1800
     nproc: 768
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.4/fesom-2.6/config/"
+    #namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.4/fesom-2.6/config/"
+    namelist_dir: "/work/0270270/a270270/model_codes/awicm3-v3.4/fesom-2.6/config/"
+
 
 oifs:
     resolution: "TCO95"

@@ -478,6 +478,7 @@ class EnvironmentInfos:
                 environment.append(action)
         # Write module actions
         if self.config.get("module_actions") is not None:
+            self.sort_env_vars("module_actions", esm_parser.CATEGORY_HIERARCHY)
             for action in self.config["module_actions"]:
                 # seb-wahl: workaround to allow source ... to be added to the batch header
                 # until a proper solution is available. Required with FOCI
@@ -492,6 +493,7 @@ class EnvironmentInfos:
         # Add an empty string as a newline:
         environment.append("")
         if self.config.get("export_vars") is not None:
+            self.sort_env_vars("export_vars", esm_parser.CATEGORY_HIERARCHY)
             for var in self.config["export_vars"]:
                 # If export_vars is a dictionary
                 if isinstance(self.config["export_vars"], dict):
@@ -528,10 +530,58 @@ class EnvironmentInfos:
         environment.append("")
         # Write the unset commands
         if self.config.get("unset_vars") is not None:
+            self.sort_env_vars("unset_vars", esm_parser.CATEGORY_HIERARCHY)
             for var in self.config["unset_vars"]:
                 environment.append(f"unset {var}")
 
         return environment
+
+    def sort_env_vars(self, env_var_key, category_order):
+        import ipdb
+        env_vars = self.config[env_var_key]
+
+        if isinstance(env_vars, dict):
+            items = env_vars.items()
+            env_vars_type = "dict"
+            new_env_vars = esm_parser.DictWithProvenance({}, None)
+        elif isinstance(env_vars, list):
+            items = enumerate(env_vars)
+            env_vars_type = "list"
+            new_env_vars = esm_parser.ListWithProvenance([], None)
+        else:
+            raise ValueError("env_vars must be an instance of dict or list")
+
+        ordering_dict = {}
+        for key, value in items:
+            if hasattr(value, "provenance"):
+                category_found = False
+                for category in category_order:
+                    for prov in value.provenance:
+                        if category == prov["category"]:
+                            ordering_dict[category] = ordering_dict.get(category, [])
+                            ordering_dict[category].append(
+                                (prov["line"], prov["col"], key, value)
+                            )
+                            category_found = True
+                            break
+                    if category_found:
+                        break
+            else:
+                ordering_dict["backend"] = ordering_dict.get("backend", [])
+                ordering_dict["backend"].append((None, None, key, value))
+
+        for category in category_order:
+            if category not in ordering_dict:
+                continue
+            ii, jj, keys, values = zip(*sorted(ordering_dict[category], key=lambda x: (x[0], x[1])))
+            if env_vars_type == "dict":
+                for key, value in zip(keys, values):
+                    new_env_vars[key] = value
+            elif env_vars_type == "list":
+                for value in values:
+                    new_env_vars.append(value)
+
+        self.config[env_var_key] = new_env_vars
 
     def write_dummy_script(self, include_set_e=True):
         """

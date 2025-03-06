@@ -124,7 +124,7 @@ def resolve_some_choose_blocks(config):
 
     # Component-specific environment variables into ``computer``
     # before ``computer`` ``choose_`` blocks are resolved
-    model_env_into_computer(config)
+    #model_env_into_computer(config)
 
     esm_parser.choose_blocks(config, blackdict=config._blackdict)
     return config

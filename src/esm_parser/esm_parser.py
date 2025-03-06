@@ -195,7 +195,7 @@ def look_for_file(model, item, all_config=None):
     # look at the directory where yaml runscript is found. This is an absolute
     # path
     runscript_path = ""
-    if all_config and all_config["general"].get("runscript_abspath"):
+    if all_config and all_config.get("general", {}).get("runscript_abspath"):
         runscript_path = os.path.dirname(all_config["general"]["runscript_abspath"])
 
     # Loop through all possible path combinations
@@ -400,7 +400,7 @@ def attach_to_config_and_reduce_keyword(
     -------
     Both ``config_to_read_from`` and ``config_to_write_to`` are modified **in place**!
     """
-    if full_keyword in config_to_read_from:
+    if config_to_read_from.get(full_keyword):
 
         if level_to_write_to:
             if reduced_keyword in config_to_read_from[level_to_write_to]:
@@ -452,15 +452,33 @@ def attach_to_config_and_reduce_keyword(
                 else:
                     tmp_config = include_path
 
-                config_to_write_to[tmp_config["model"]] = tmp_config
+                # TODO: remove this if and always do merging after component keys in all yamls
+                # old ways...
+                if "model" in tmp_config:
+                    config_to_write_to[tmp_config["model"]] = tmp_config
+                # new way!
+                else:
+                    # TODO: add an if if computer changes are to be ignored for the standalone files
+                    dict_merge(config_to_write_to, tmp_config)
 
+                #import ipdb
+                #ipdb.set_trace()
                 for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
                     logger.debug("Attaching: %s", attachment)
-                    attach_to_config_and_remove(
-                        config_to_write_to[tmp_config["model"]],
-                        attachment,
-                        all_config=None,
-                    )
+                    # TODO: remove this if and always do the loop after component keys in all yamls
+                    if "model" in tmp_config:
+                        attach_to_config_and_remove(
+                            config_to_write_to[tmp_config["model"]],
+                            attachment,
+                            all_config=None,
+                        )
+                    else:
+                        for component in config_to_write_to:
+                            attach_to_config_and_remove(
+                                config_to_write_to[component],
+                                attachment,
+                                all_config=copy.deepcopy(config_to_write_to),
+                            )
 
         else:
             raise TypeError("The entries in %s must be a list!!" % full_keyword)
@@ -477,6 +495,12 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     all_config : dict
         main configuration
     """
+    import ipdb
+    if attach_value == "fesom.env.yaml":
+        ipdb.set_trace()
+    if not all_config:
+        all_config = config
+
     include_path, needs_load = look_for_file(path, attach_value, all_config=all_config)
     if include_path:
         if needs_load:
@@ -488,7 +512,7 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    deep_update_further_reading(config, attachable_config) #, **kwargs)
+    deep_update_further_reading(all_config, attachable_config) #, **kwargs)
     # config.update(attachable_config)
 
 
@@ -537,6 +561,12 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
         #import ipdb
         #ipdb.set_trace()
         pass
+
+    #import ipdb
+    #ipdb.set_trace()
+    if not all_config:
+        all_config = config
+
     if attach_key in config:
         attach_values = config[attach_key]
         del config[attach_key]
@@ -717,12 +747,21 @@ def deep_update(chapter, entries, config, blackdict={}):
             # Trying to update a dictionary from the same file (in blackdict)
             # an ``add_`` returns an error
             if isinstance(blackdict[chapter], dict):
+                # Keys don't have provenance. In this case we know we are dealing with a
+                # choose block so the line of the conflicting choose is the line of the
+                # first value -3.
+                provenance = entries.extract_first_nested_values_provenance()
+                prov_string = (
+                    f"``{provenance['yaml_file']}``,"
+                    f"line:``{provenance['line']-3}``"
+                )
                 user_error(
                     "Missing 'add_'",
                     (
-                        f"Not possible to update the '{config['model']}.{chapter}' "
-                        + f"dictionary. Please, use 'add_{chapter}' inside the "
-                        + f"'choose_' block, instead of just '{chapter}'."
+                        f"Not possible to update the ``{config['model']}.{chapter}`` "
+                        + f"dictionary with {prov_string}. Please, use ``add_{chapter}`` "
+                        + f"inside the ``choose_`` block, instead of just "
+                        + f"``{chapter}``."
                     ),
                 )
 
@@ -2850,6 +2889,9 @@ class GeneralConfig(dict):  # pragma: no cover
             user_config=user_config,
         )
 
+        #import ipdb
+        #ipdb.set_trace()
+        # Attach top level further_reading key (config["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
@@ -2896,19 +2938,26 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         computer_config = yaml_file_to_dict(computer_file)
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):
-            general_config = yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
+            general_config = {
+                "general": yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
+            }
         else:
-            general_config = {}
+            general_config = {"general": {}}
 
-        setup_config = {
-            "computer": computer_config,
-            "general": general_config,
-        }
+        setup_config = copy.deepcopy(general_config)
+
+        # Computer config takes precedence over general config (order in dict_merge)
+        dict_merge(setup_config, computer_config)
+        #import ipdb
+        #ipdb.set_trace()
+        # TODO: substitute this by slurm not been a further_reading but a file that has a lower hierarchy
+        # than computer
+        # Attach computer further_reading key (config["computer"]["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(
                 setup_config["computer"],
                 attachment,
-                all_config=None,
+                all_config=setup_config,
                 dont_overwrite_with_empty_value=True,
             )
         # Add the fake "model" name to the computer:
@@ -2916,8 +2965,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         logger.info("setup config is being updated with setup_relevant_configs")
 
         # distribute self.config into setup_config
-
-        if "general" in self.config and "coupled_setup" in self.config["general"]:
+        coupled_setup = self.config.get("general", {}).get("coupled_setup", False)
+        setup_name = user_config["general"]["setup_name"]
+        if coupled_setup:
             setup_config["general"].update({"standalone": False})
             # Resolve choose with include_models
             resolve_choose_with_var(
@@ -2953,6 +3003,50 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     current_model=component,
                     user_config=user_config,
                     setup_config=setup_config)
+        # New organization of the standalone files
+        elif setup_name in self.config:
+            #import ipdb
+            #ipdb.set_trace()
+            standalone_model_config = self.config[setup_name]
+            setup_config["general"].update({"standalone": True})
+            setup_config["general"].update({"models": [standalone_model_config["model"]]})
+
+            resolve_choose_with_var(
+                "include_models",
+                standalone_model_config,
+                user_config=user_config,
+                setup_config=setup_config,
+            )
+
+            setup_config["general"]["include_models"] = standalone_model_config.get(
+                "include_models", []
+            )
+
+            import ipdb
+            ipdb.set_trace()
+
+            # If there is a key with name the coupled setup name, merge it with the
+            # general section and remove it
+            if coupled_setup and user_config["general"]["setup_name"] in user_config:
+                user_config["general"].update(
+                    user_config[user_config["general"]["setup_name"]]
+                )
+                del user_config[user_config["general"]["setup_name"]]
+
+            dict_merge(setup_config, self.config)
+
+            # TODO: this block below is absolutely nuts, remove it when cleaning
+            setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
+                setup_config
+            )
+            setup_config["general"]["valid_setup_names"].remove(setup_name)
+            setup_config["general"]["valid_model_names"] = valid_model_names = [
+                setup_name
+            ]
+
+        # TODO: Remove this block below when the component sections are implemented in all
+        # yaml files. The elif above should be substituted by the else with a checking for
+        # the model section
         else:
             setup_config["general"].update({"standalone": True})
             setup_config["general"].update({"models": [self.config["model"]]})
@@ -3017,7 +3111,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     new_model_list.append(model)
             setup_config["general"]["include_models"] = new_model_list
 
+        import ipdb
+        ipdb.set_trace()
         model_config = {}
+        # This function changes both the setup_config and the model_config
         attach_to_config_and_reduce_keyword(
             setup_config["general"], model_config, "include_models", "models"
         )
@@ -3046,17 +3143,21 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                         attach_to_config_and_reduce_keyword(
                             this_config[model], model_config, "include_models", "models"
                         )
-            for model in list(model_config):
-                for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-                    attach_to_config_and_remove(
-                        model_config[model], attachment, all_config=None
-                    )
+            import ipdb
+            ipdb.set_trace()
+            for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
+                attach_to_config_and_remove(
+                    setup_config.get(model, {}), attachment, all_config=setup_config
+                )
 
         # Allows the ``general`` section to be able to handle attachable files (e.g.
         # ``further_reading``)
+        #import ipdb
+        #ipdb.set_trace()
+        # Attach general further_reading key (config["general"]["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(
-                setup_config["general"], attachment, all_config=None
+                setup_config["general"], attachment, all_config=setup_config
             )
 
         # if "models" in setup_config["general"]:

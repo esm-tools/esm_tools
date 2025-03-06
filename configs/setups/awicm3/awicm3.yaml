@@ -155,7 +155,8 @@ general:
         prepcompute_recipe: ${oifs.prepcompute_recipe}
         tidy_recipe: ${fesom.tidy_recipe}
 
-
+        environment_changes:
+            hello: world
 
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1

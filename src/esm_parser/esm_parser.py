@@ -465,20 +465,15 @@ def attach_to_config_and_reduce_keyword(
                 #ipdb.set_trace()
                 for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
                     logger.debug("Attaching: %s", attachment)
-                    # TODO: remove this if and always do the loop after component keys in all yamls
-                    if "model" in tmp_config:
+                    #import ipdb
+                    #ipdb.set_trace()
+                    config_for_loop = copy.deepcopy(config_to_write_to)
+                    for component, component_config in config_for_loop.items():
                         attach_to_config_and_remove(
-                            config_to_write_to[tmp_config["model"]],
+                            component_config,
                             attachment,
-                            all_config=None,
+                            all_config=config_to_write_to,
                         )
-                    else:
-                        for component in config_to_write_to:
-                            attach_to_config_and_remove(
-                                config_to_write_to[component],
-                                attachment,
-                                all_config=copy.deepcopy(config_to_write_to),
-                            )
 
         else:
             raise TypeError("The entries in %s must be a list!!" % full_keyword)
@@ -517,13 +512,11 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
 
 
 def deep_update_further_reading(config, further_reading_config):
+    #import ipdb
+    #ipdb.set_trace()
     for key, value in further_reading_config.items():
         if isinstance(value, dict) and isinstance(config.get(key, None), dict) and config.get(key, None) is not None:
             deep_update_further_reading(config[key], value)
-        elif key in config and value != config[key]:
-            raise ValueError(
-                f"Key {key} already exists in config and has a different value."
-            )
         elif isinstance(value, list):
             if isinstance(config.get(key, None), list):
                 config[key] += value
@@ -531,7 +524,12 @@ def deep_update_further_reading(config, further_reading_config):
                 raise TypeError("meep meep, the roadrunner wins, silly cayote")
             else:
                 config[key] = value
-
+        elif key in config and value != config[key]:
+            user_error(
+                "further_reading conflict",
+                f"Key ``{key}`` exists in two different further_reading at the same ",
+                f"hierarchical level (``{value.provenance[-1]['category']}``:``{config[key].provenance[-1]['category']}``)"
+            )
         else:
             config[key] = value
 
@@ -3022,8 +3020,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 "include_models", []
             )
 
-            import ipdb
-            ipdb.set_trace()
+            #import ipdb
+            #ipdb.set_trace()
 
             # If there is a key with name the coupled setup name, merge it with the
             # general section and remove it
@@ -3111,8 +3109,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     new_model_list.append(model)
             setup_config["general"]["include_models"] = new_model_list
 
-        import ipdb
-        ipdb.set_trace()
+        #import ipdb
+        #ipdb.set_trace()
         model_config = {}
         # This function changes both the setup_config and the model_config
         attach_to_config_and_reduce_keyword(
@@ -3143,12 +3141,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                         attach_to_config_and_reduce_keyword(
                             this_config[model], model_config, "include_models", "models"
                         )
-            import ipdb
-            ipdb.set_trace()
-            for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-                attach_to_config_and_remove(
-                    setup_config.get(model, {}), attachment, all_config=setup_config
-                )
+                        for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
+                            attach_to_config_and_remove(
+                                this_config[model], attachment, all_config=this_config
+                            )
 
         # Allows the ``general`` section to be able to handle attachable files (e.g.
         # ``further_reading``)

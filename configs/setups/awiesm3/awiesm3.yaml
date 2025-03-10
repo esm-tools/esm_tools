@@ -325,10 +325,21 @@ lpj_guess:
         nproc: 128
         proc_list_entry: '[str(x) for x in range(0,${nproc}+1)]' 
         proc_list: $(( ${proc_list_entry} ))
+
+        run_year: {initial_date!syear}
+        run_month: 1
+        run_day: 1
+        ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+        TM5: 0
+        4xCO2: f
+        1pcCO2: f
+        fixed_CO2: -1
+        fixed_ndep: -1
+        fixed_LU: -1
    
         forcing_sources:                
                 soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-                tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc
+                tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
                 CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
                 #VegInit: ${lpj_guess.input_dir}/vegin/vegin_TL255.nc 
@@ -340,7 +351,7 @@ lpj_guess:
                 lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
                 "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins 
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-                "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc
+                "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
                 "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #"VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL159.nc
                 #"VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_TL255.nc
@@ -357,7 +368,7 @@ lpj_guess:
         
         forcing_in_work:
                 soil_layer_type: slt_${mygrid}.nc
-                tmp_rc_file: lpjg_steps.rc
+                tmp_rc_file: lpjg_steps.rc.j2
                 CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #VegInit: vegin.nc
                 temp_namcouple: namcouple
@@ -368,7 +379,7 @@ lpj_guess:
                 lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
                 "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins 
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
-                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
+                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc.j2
                 "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #"VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc 
                 "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins

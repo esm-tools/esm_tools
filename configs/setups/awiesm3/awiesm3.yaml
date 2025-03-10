@@ -61,6 +61,7 @@ general:
                 - oifs/oifs48.env.yaml
                 - xios/xios.env.yaml
                 - rnfmap/rnfmap.env.yaml
+                - fesom/fesom.env.yaml
 
 
 #########################################################################################
@@ -70,6 +71,10 @@ general:
 oifs:
         version: "48r1"
 
+        # added 05.03.2025
+        git-repository: 'https://git.smhi.se/sager/oifs48r1'
+        branch: 'invert_lpjg_recv_send+main' #use this branch if you want to use without the vegin.nc At the first timestep LPJG will recieve the data from the OIFS. 
+        #
         add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
         pool_dir: ${general.pool_dir}
@@ -151,7 +156,7 @@ oifs:
 
         res_level: ${resolution}${levels}
         atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
-        atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2M_LPJG, TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ, SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ, TMIN_LPJ, TMAX_LPJ] #LASZLO
+        atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg, TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004, SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg, SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg] #LASZLO OIFS block
 
         coupling_fields:
                 "[[atm_oce_fields-->FIELD]]":
@@ -288,7 +293,7 @@ lpj_guess:
         
         execution_command: ${executable} -parallel ${runscript_name}
 
-        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2MVeg, TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004, SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg, SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg] #LASZLO LPJ-GUESS blokk
+        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG, TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ, SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ, TMIN_LPJ, TMAX_LPJ] #LASZLO LPJ-GUESS block 
 
         coupling_fields:
                 "[[veg_atm_fields-->FIELD]]":

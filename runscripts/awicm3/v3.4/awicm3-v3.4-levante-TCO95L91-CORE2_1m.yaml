@@ -2,11 +2,11 @@ general:
     user: !ENV ${USER}
     setup_name: "awicm3"
     version: "v3.4"
-    account: "ba0989"
+    account: "ab0995"
     compute_time: "01:00:00"
     initial_date: "2000-01-01"
     final_date: "2000-02-01"
-    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
     nmonth: 1
     nyear: 0
@@ -16,7 +16,7 @@ computer:
 
 awicm3:
     postprocessing: false
-    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"
@@ -28,7 +28,7 @@ fesom:
     nproc: 768
     omp_num_threads: 2
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.4/fesom-2.6/config/"
+    namelist_dir: "/work/ab0995/a270270/model_codes/awicm3-v3.4/fesom-2.6/config/"
 
 oifs:
     resolution: "TCO95"

@@ -1,0 +1,26 @@
+!
+! Instruction file with European species to be used with the
+! CRU I/O module.
+!
+
+import "europe.ins"
+
+!///////////////////////////////////////////////////////////////////////////////////////
+! Forcing Data & gridlists
+!
+
+param "file_gridlist" (str "gridlist.txt")
+
+param "file_co2"      (str "c:/co2/co2_1901_2018.txt")
+param "file_cru"      (str "c:/cru/cruncep_1901_2015.bin")
+param "file_cru_misc" (str "c:/cru/cruncep_1901_2015misc.bin")
+
+! N deposition (blank string to use constant pre-industrial level of 2 kgN/ha/year)
+param "file_ndep"     (str "c:/ndep/GlobalNitrogenDeposition.bin")
+
+! SIMFIRE-BLAZE related files
+param "file_simfire"  (str "c:/fire/SimfireInput.bin")
+
+! Soil map
+param "file_soildata" (str "c:/soil/WISE/soilmap_center_interpolated.dat")
+!param "file_soildata" (str "../env/soils_lpj.dat")

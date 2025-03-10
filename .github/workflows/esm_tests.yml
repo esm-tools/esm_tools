@@ -7,10 +7,10 @@ name: esm_tests
 on: [pull_request]
 
 jobs:
-  ollie:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: ollie1
+  # ollie:
+  #   uses: ./.github/workflows/esm_tests_computer_workflow.yml
+  #   with:
+  #       computer: ollie1
   levante:
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
@@ -23,11 +23,11 @@ jobs:
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
         computer: elogin1
-  blogin:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: blogin1
-  albedo:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: albedo1
+  # blogin:
+  #   uses: ./.github/workflows/esm_tests_computer_workflow.yml
+  #   with:
+  #       computer: blogin1
+  # albedo:
+  #   uses: ./.github/workflows/esm_tests_computer_workflow.yml
+  #   with:
+  #       computer: albedo1

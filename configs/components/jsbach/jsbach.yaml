@@ -20,7 +20,7 @@ cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
 # TODO: Unify pools
 pool_dir_couple: "${computer.pool_directories.pool}/AWICM/JSBACH"
-add_choose_computer.name:
+choose_computer.name:
     albedo:
         pool_dir_couple: "${computer.pool_directories.pool}/JSBACH"
 input_dir_couple: "${pool_dir_couple}/input/${dataset}"

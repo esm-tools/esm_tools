@@ -1,9 +1,10 @@
-import os
 import copy
+import os
 import sys
 
 import esm_parser
 import esm_tools
+from esm_tools import user_error
 
 from . import chunky_parts
 
@@ -35,7 +36,9 @@ def init_iterative_coupling(command_line_config, user_config):
             next_model = user_config["general"]["original_config"]["general"][
                 "model_queue"
             ][-1]
-        elif len(user_config["general"]["original_config"]["general"]["model_queue"]) > 1:
+        elif (
+            len(user_config["general"]["original_config"]["general"]["model_queue"]) > 1
+        ):
             next_model = user_config["general"]["original_config"]["general"][
                 "model_queue"
             ][1]
@@ -159,12 +162,20 @@ def get_user_config_from_command_line(command_line_config):
     except SystemExit as sysexit:
         sys.exit(sysexit)
     except:
-        esm_parser.user_error(
+        user_error(
             "Syntax error",
             f"An error occurred while reading the config file "
             f"``{command_line_config['runscript_abspath']}`` from the command line.",
         )
 
+    # If the variables defined by the command line are None, delete them so that
+    # the definition from the runscript prevails after the user_config.update
+    # If it's not None (True or False) the definition of the command line wins
+    # over the runscript as is the case for all the other variables
+    command_line_overwrite_vars = ["use_venv", "profile"]
+    for var in command_line_overwrite_vars:
+        if command_line_config.get(var, "Var does not exist") is None:
+            del command_line_config[var]
     user_config["general"].update(command_line_config)
 
     return user_config
@@ -274,7 +285,7 @@ def check_account(config):
     # Check if the 'account' variable is needed and missing
     if config["computer"].get("accounting", False):
         if "account" not in config["general"]:
-            esm_parser.user_error(
+            user_error(
                 "Missing account info",
                 f"You cannot run simulations in '{config['computer']['name']}' "
                 "without providing an 'account' variable in the 'general' section, whose "

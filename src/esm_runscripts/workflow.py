@@ -1,5 +1,9 @@
-import sys, copy, os
+import copy
+import os
+import sys
+
 import esm_parser
+from loguru import logger
 
 
 def skip_cluster(cluster, config):
@@ -110,36 +114,38 @@ def order_clusters(config):
     gw_config = config["general"]["workflow"]
 
     for subjob_cluster in gw_config["subjob_clusters"]:
-        if not "next_submit" in gw_config["subjob_clusters"][subjob_cluster]:
+        if "next_submit" not in gw_config["subjob_clusters"][subjob_cluster]:
             gw_config["subjob_clusters"][subjob_cluster]["next_submit"] = []
 
     for subjob_cluster in gw_config["subjob_clusters"]:
-        if not "run_after" in gw_config["subjob_clusters"][subjob_cluster]:
+        if "run_after" not in gw_config["subjob_clusters"][subjob_cluster]:
             if not ("run_before" in gw_config["subjob_clusters"][subjob_cluster]):
 
-                print(f"Don't know when to execute cluster {subjob_cluster}.")
-                print(gw_config)
+                logger.error(f"Don't know when to execute cluster {subjob_cluster}.")
+                logger.error(gw_config)
                 sys.exit(-1)
 
         if "run_after" in gw_config["subjob_clusters"][subjob_cluster]:
             if "run_before" in gw_config["subjob_clusters"][subjob_cluster]:
-                print(
+                logger.error(
                     f"Specifying both run_after and run_before for cluster {subjob_cluster} may lead to problems."
                 )
-                print(f"Please choose.")
+                logger.error(f"Please choose.")
                 sys.exit(-1)
             if (
                 not gw_config["subjob_clusters"][subjob_cluster]["run_after"]
                 in gw_config["subjob_clusters"]
             ):
-                print(f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_after']}.")
+                logger.error(
+                    f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_after']}."
+                )
                 sys.exit(-1)
 
             calling_cluster = gw_config["subjob_clusters"][subjob_cluster]["run_after"]
 
             if (
-                not subjob_cluster
-                in gw_config["subjob_clusters"][calling_cluster]["next_submit"]
+                subjob_cluster
+                not in gw_config["subjob_clusters"][calling_cluster]["next_submit"]
             ):
                 gw_config["subjob_clusters"][calling_cluster]["next_submit"].append(
                     subjob_cluster
@@ -156,14 +162,16 @@ def order_clusters(config):
                 not gw_config["subjob_clusters"][subjob_cluster]["run_before"]
                 in gw_config["subjob_clusters"]
             ):
-                print(f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_before']}.")
+                logger.error(
+                    f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_before']}."
+                )
                 sys.exit(-1)
 
             called_cluster = gw_config["subjob_clusters"][subjob_cluster]["run_before"]
 
             if (
-                not called_cluster
-                in gw_config["subjob_clusters"][subjob_cluster]["next_submit"]
+                called_cluster
+                not in gw_config["subjob_clusters"][subjob_cluster]["next_submit"]
             ):
                 gw_config["subjob_clusters"][subjob_cluster]["next_submit"].append(
                     called_cluster
@@ -181,9 +189,9 @@ def order_clusters(config):
     last_cluster_name = gw_config["last_task_in_queue"]
     last_cluster = gw_config["subjob_clusters"][last_cluster_name]
 
-    if not first_cluster_name in last_cluster.get("next_submit", ["Error"]):
+    if first_cluster_name not in last_cluster.get("next_submit", ["Error"]):
         last_cluster["next_submit"].append(first_cluster_name)
-    if not last_cluster_name in first_cluster.get("called_from", ["Error"]):
+    if last_cluster_name not in first_cluster.get("called_from", ["Error"]):
         first_cluster["called_from"] = last_cluster_name
 
     return config
@@ -196,10 +204,10 @@ def complete_clusters(config):
 
     for subjob in gw_config["subjobs"]:
         subjob_cluster = gw_config["subjobs"][subjob]["subjob_cluster"]
-        if not subjob_cluster in gw_config["subjob_clusters"]:
+        if subjob_cluster not in gw_config["subjob_clusters"]:
             gw_config["subjob_clusters"][subjob_cluster] = {}
 
-        if not "subjobs" in gw_config["subjob_clusters"][subjob_cluster]:
+        if "subjobs" not in gw_config["subjob_clusters"][subjob_cluster]:
             gw_config["subjob_clusters"][subjob_cluster]["subjobs"] = []
 
         gw_config["subjob_clusters"][subjob_cluster]["subjobs"].append(subjob)
@@ -247,11 +255,11 @@ def complete_clusters(config):
             nproc_sum += subjobconf.get("nproc", 1)
             nproc_max = max(subjobconf.get("nproc", 1), nproc_max)
 
-        if not "submit_to_batch_system" in clusterconf:
+        if "submit_to_batch_system" not in clusterconf:
             clusterconf["submit_to_batch_system"] = False
         else:
-            if not "run_on_queue" in clusterconf:
-                print(
+            if "run_on_queue" not in clusterconf:
+                logger.error(
                     f"Information on target queue is missing in cluster {clusterconf}."
                 )
                 sys.exit(-1)
@@ -259,7 +267,7 @@ def complete_clusters(config):
         if not clusterconf.get("batch_or_shell", False):
             clusterconf["batch_or_shell"] = "SimulationSetup"
 
-        if not "order_in_cluster" in clusterconf:
+        if "order_in_cluster" not in clusterconf:
             clusterconf["order_in_cluster"] = "sequential"
 
         if clusterconf["order_in_cluster"] == "concurrent":
@@ -274,7 +282,7 @@ def complete_clusters(config):
 def merge_single_entry_if_possible(entry, sourceconf, targetconf):
     if entry in sourceconf:
         if entry in targetconf and not sourceconf[entry] == targetconf[entry]:
-            print(f"Mismatch found in {entry} for cluster {targetconf}")
+            logger.error(f"Mismatch found in {entry} for cluster {targetconf}")
             sys.exit(-1)
         targetconf[entry] = sourceconf[entry]
     return targetconf
@@ -322,27 +330,27 @@ def init_total_workflow(config):
         }
     }
 
-    if not "workflow" in config["general"]:
+    if "workflow" not in config["general"]:
         config["general"]["workflow"] = {}
-    if not "subjob_clusters" in config["general"]["workflow"]:
+    if "subjob_clusters" not in config["general"]["workflow"]:
         config["general"]["workflow"]["subjob_clusters"] = {}
-    if not "subjobs" in config["general"]["workflow"]:
+    if "subjobs" not in config["general"]["workflow"]:
         config["general"]["workflow"]["subjobs"] = prepcompute
         config["general"]["workflow"]["subjobs"].update(compute)
         config["general"]["workflow"]["subjobs"].update(tidy)
     else:
-        if not "prepcompute" in config["general"]["workflow"]["subjobs"]:
+        if "prepcompute" not in config["general"]["workflow"]["subjobs"]:
             config["general"]["workflow"]["subjobs"].update(prepcompute)
-        if not "compute" in config["general"]["workflow"]["subjobs"]:
+        if "compute" not in config["general"]["workflow"]["subjobs"]:
             config["general"]["workflow"]["subjobs"].update(compute)
-        if not "tidy" in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(tidy)    
-    if not "last_task_in_queue" in config["general"]["workflow"]:
+        if "tidy" not in config["general"]["workflow"]["subjobs"]:
+            config["general"]["workflow"]["subjobs"].update(tidy)
+    if "last_task_in_queue" not in config["general"]["workflow"]:
         config["general"]["workflow"]["last_task_in_queue"] = "tidy"
-    if not "first_task_in_queue" in config["general"]["workflow"]:
+    if "first_task_in_queue" not in config["general"]["workflow"]:
         config["general"]["workflow"]["first_task_in_queue"] = "prepcompute"
 
-    if not "next_run_triggered_by" in config["general"]["workflow"]:
+    if "next_run_triggered_by" not in config["general"]["workflow"]:
         config["general"]["workflow"]["next_run_triggered_by"] = "tidy"
 
     return config
@@ -398,8 +406,8 @@ def collect_all_workflow_information(config):
 
                     # if not in another cluster, each subjob gets its own
                     if (
-                        not "subjob_cluster"
-                        in gw_config["subjobs"][subjob + "_" + model]
+                        "subjob_cluster"
+                        not in gw_config["subjobs"][subjob + "_" + model]
                     ):
                         gw_config["subjobs"][subjob + "_" + model][
                             "subjob_cluster"
@@ -410,7 +418,9 @@ def collect_all_workflow_information(config):
                     "tidy",
                     w_config["next_run_triggered_by"],
                 ]:
-                    print(f"Mismatch found setting next_run_triggered_by for workflow.")
+                    logger.error(
+                        f"Mismatch found setting next_run_triggered_by for workflow."
+                    )
                     sys.exit(-1)
                 else:
                     gw_config["next_run_triggered_by"] = w_config[
@@ -424,7 +434,7 @@ def merge_if_possible(source, target):
     for entry in source:
         if entry in target:
             if not source[entry] == target[entry]:
-                print(
+                logger.error(
                     f"Mismatch while trying to merge subjob_clusters {source} into {target}"
                 )
                 sys.exit(-1)

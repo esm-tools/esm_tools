@@ -1,6 +1,6 @@
 def prepare_environment(config):
     environment_dict = {
-            "ICE_TO_FESOM": config["fesom"].get("use_icebergs", False),
+            "ICE_TO_FESOM": int(config["fesom"].get("use_icebergs", False).__bool__()),
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
@@ -15,6 +15,7 @@ def prepare_environment(config):
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "iter_coup_regrid_method_ice2oce": "INTERPOLATE",
             "fesom_use_icebergs": config["fesom"].get("use_icebergs", ""), 
+            #"BASIN_FILE": config["fesom"].get("basin_file"),
             "MACHINE": config["computer"]["name"],
             "ICEBERG_DIR": config["fesom"].get("iceberg_dir", ""),
     print(environment_dict)

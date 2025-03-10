@@ -1,21 +1,17 @@
 import os
 
-from . import logfiles
-from . import helpers
-from . import chunky_parts
-from . import workflow
+from loguru import logger
+
+from . import chunky_parts, helpers, logfiles, workflow
 
 
 def submit(config):
-    if config["general"]["verbose"]:
-        print("\n", 40 * "+ ")
-    print("Submitting jobscript to batch system...")
-    print()
-    print(f"Output written by {config['computer']['batch_system']}:")
-    if config["general"]["verbose"]:
-        print("\n", 40 * "+ ")
-        for command in config["general"]["submit_command"]:
-            print(command)
+    logger.debug("\n", 40 * "+ ")
+    logger.info("Submitting jobscript to batch system...")
+    logger.info(f"Output written by {config['computer']['batch_system']}:")
+    logger.debug("\n", 40 * "+ ")
+    for command in config["general"]["submit_command"]:
+        logger.debug(command)
     for command in config["general"]["submit_command"]:
         os.system(command)
     return config
@@ -61,7 +57,6 @@ def resubmit_SimulationSetup(config, cluster=None):
         )
 
     if not check_if_check(config):
-
         monitor_file.write(f"Calling {cluster} job:\n")
         config["general"]["experiment_over"] = cluster_obj(kill_after_submit=False)
 
@@ -105,7 +100,7 @@ def end_of_experiment_all_models(config):
         ):
             experiment_done = False
             setup_name = config["model" + str(index)]["setup_name"]
-            print(f"Testing if {setup_name} is already done...")
+            logger.info(f"Testing if {setup_name} is already done...")
             logfile = (
                 config["general"]["experiment_log_dir"]
                 + "/"
@@ -119,36 +114,33 @@ def end_of_experiment_all_models(config):
                     logfile_array = open_logfile.readlines()
                     for line in logfile_array:
                         if "# Experiment over" in line:
-                            print(f"    ...{setup_name} is done.")
+                            logger.info(f"    ...{setup_name} is done.")
                             experiment_done = True
                             break
             if not experiment_done:
-                print("Still something left to do...")
+                logger.info("Still something left to do...")
                 return False
         index += 1
-    print("Nothing left to do...")
+    logger.info("Nothing left to do...")
     return True
 
 
 def check_if_check(config):
     if config["general"]["check"]:
-        print(
+        logger.info(
             "Actually not submitting anything, this job preparation was launched in 'check' mode (-c)."
         )
-        print()
         return True
     else:
         return False
 
 
 def maybe_resubmit(config):
-
     jobtype = config["general"]["jobtype"]
 
     nextrun = resubmit_recursively(config, jobtype=jobtype)
 
     if nextrun:  # submit list contains stuff from next run
-
         config = _increment_date_and_run_number(config)
         config = _write_date_file(config)
 
@@ -190,7 +182,7 @@ def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in
                 elif submission_type in ["batch", "shell"]:
                     resubmit_batch_or_shell(config, submission_type, cluster)
             else:
-                print(f"Skipping {cluster}")
+                logger.info(f"Skipping {cluster}")
                 nextrun = (
                     resubmit_recursively(config, jobtype=cluster, nextrun_in=nextrun_in)
                     or nextrun

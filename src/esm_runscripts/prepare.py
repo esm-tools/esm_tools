@@ -1,15 +1,17 @@
 import copy
 import logging
 import os
-import questionary
 import sys
 
-import esm_parser
+import questionary
 import yaml
+from loguru import logger
+
+import esm_parser
 import esm_utilities
 from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
-from loguru import logger
+from esm_tools import user_error, user_note
 
 from . import batch_system, helpers
 
@@ -36,10 +38,10 @@ def mini_resolve_variable_date_file(date_file, config):
                             "general."
                         )
                     except AssertionError:
-                        print(
+                        logger.error(
                             "The date file contains a variable which is not in the >>env<< or >>general<< section. This is not allowed!"
                         )
-                        print(f"date_file = {date_file}")
+                        logger.error(f"date_file = {date_file}")
                         sys.exit(1)
         date_file = f"{pre}{answer}{post}"
     return date_file
@@ -91,7 +93,7 @@ def check_model_lresume(config):
                 user_lresume = esm_parser.find_variable(
                     model, user_lresume, config, [], []
                 )
-            if type(user_lresume) == str:
+            if isinstance(user_lresume, str):
 
                 if user_lresume == "0" or user_lresume.upper() == "FALSE":
                     user_lresume = False
@@ -221,7 +223,7 @@ def model_env_into_computer(config):
                     model0 = env_vars[key][1]
                     while True:
                         # Warn the user about the overwriting of the variable
-                        esm_parser.user_note("Environment conflict", f"In '{model0}':")
+                        user_note("Environment conflict", f"In '{model0}':")
                         esm_parser.pprint_config({key: env_vars[key][0]})
                         logging.info("\nIn '" + model + "':")
                         esm_parser.pprint_config({key: value})
@@ -247,7 +249,7 @@ def model_env_into_computer(config):
                         # If the user selects ``n`` raise a user error with recommendations
                         elif user_answer == "n":
                             config[model]["env_overwrite"] = False
-                            esm_parser.user_error(
+                            user_error(
                                 "Environment conflict",
                                 "You were not happy with the environment variable "
                                 + f"'{key}' in '{model0}' being overwritten by the same "
@@ -333,7 +335,7 @@ def set_leapyear(config):
                             not config[other_model]["leapyear"]
                             == config[model]["leapyear"]
                         ):
-                            print(
+                            logger.error(
                                 "Models "
                                 + model
                                 + " and "
@@ -397,15 +399,13 @@ def find_last_prepared_run(config):
         expid = config["general"]["expid"]
         it_coupled_model_name = config["general"]["iterative_coupled_model"]
 
-        if os.path.isdir(
-            f"{base_dir}/{expid}/run_{it_coupled_model_name}{datestamp}"
-        ):
+        if os.path.isdir(f"{base_dir}/{expid}/run_{it_coupled_model_name}{datestamp}"):
             config["general"]["current_date"] = current_date
             return config
 
         current_date = current_date - delta_date
 
-    print("ERROR: Could not find a prepared run.")
+    logger.error("ERROR: Could not find a prepared run.")
     sys.exit(42)
 
 
@@ -511,9 +511,9 @@ def _add_all_folders(config):
     experiment_dir = config["general"]["experiment_dir"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
-    config["general"]["thisrun_dir"] = (
-        f"{experiment_dir}/run_{it_coupled_model_name}{datestamp}"
-    )
+    config["general"][
+        "thisrun_dir"
+    ] = f"{experiment_dir}/run_{it_coupled_model_name}{datestamp}"
 
     for filetype in all_filetypes:
         config["general"]["experiment_" + filetype + "_dir"] = (
@@ -624,7 +624,6 @@ def set_prev_date(config):
 
 
 def set_parent_info(config):
-
     """Sets several variables relevant for the previous date. Loops over all models in ``valid_model_names``, and sets model variables for:
     * ``parent_expid``
     * ``parent_date``
@@ -721,10 +720,13 @@ def add_vcs_info(config):
         vcs_versions["esm_tools"] = helpers.get_all_git_info(f"{esm_tools_repo}/../")
     else:
         # FIXME(PG): This should absolutely never happen. The error message could use a better wording though...
-        esm_parser.user_error("esm_tools doesn't know where it's own install location is. Something is very seriously wrong.")
+        user_error(
+            "esm_tools doesn't know where it's own install location is. Something is very seriously wrong."
+        )
     with open(exp_vcs_info_file, "w") as f:
         yaml.dump(vcs_versions, f)
     return config
+
 
 def check_vcs_info_against_last_run(config):
     """
@@ -752,7 +754,7 @@ def check_vcs_info_against_last_run(config):
     # FIXME(PG): Sometimes general.run_number is None (shows up as null in the
     # config), so this check is absolutely the worst way of doing it, but
     # whatever...
-    if config['general']['run_number'] == 1 or config["general"]["run_number"] is None:
+    if config["general"]["run_number"] == 1 or config["general"]["run_number"] is None:
         return config  # No check needed on the very first run
     exp_vcs_info_file = f"{config['general']['thisrun_log_dir']}/{config['general']['expid']}_vcs_info.yaml"
     # FIXME(PG): This file might not exist if people erase every run folder...
@@ -770,13 +772,18 @@ def check_vcs_info_against_last_run(config):
     except IOError:
         logger.warning(f"Unable to open {last_exp_vcs_info_file}, skipping_check...")
         return config
-    if not config["general"].get("allow_vcs_differences", False) and current_vcs_info != last_vcs_info:
-        esm_parser.user_error("VCS Differences", """
-            You have differences in either the model code or in the esm-tools between two runs! 
+    if (
+        not config["general"].get("allow_vcs_differences", False)
+        and current_vcs_info != last_vcs_info
+    ):
+        user_error(
+            "VCS Differences",
+            """
+            You have differences in either the model code or in the esm-tools between two runs!
 
             If you are **sure** that this is OK, you can set 'general.allow_vcs_differences' to True to avoid this check.
-            """)
-
+            """,
+        )
 
     return config
 
@@ -865,7 +872,7 @@ def check_config_for_warnings_errors(config):
     """
 
     # Initialize the trigger variables (i.e. ``error`` and ``warning``))
-    triggers = {"error": {"note_function": esm_parser.user_error}}
+    triggers = {"error": {"note_function": user_error}}
 
     # Find conditions to warn (avoid warning more than once)
     last_jobtype = config["general"].get("last_jobtype", "")
@@ -874,13 +881,14 @@ def check_config_for_warnings_errors(config):
 
     # Only warn if it is an interactive session or while submitted
     if not isresubmitted or isinteractive:
-        triggers["warning"] = {"note_function": esm_parser.user_note}
+        triggers["warning"] = {"note_function": user_note}
 
     # Loop through the triggers
     for trigger, trigger_info in triggers.items():
         warn_error(config, trigger, trigger_info["note_function"])
 
     return config
+
 
 def warn_error(config, trigger, note_function):
     """
@@ -940,7 +948,7 @@ def warn_error(config, trigger, note_function):
         Method to report the note
     """
     # Sufixes for the warning special case
-    if trigger=="warning":
+    if trigger == "warning":
         sufix_name = f" WARNING"
     else:
         sufix_name = f""
@@ -959,7 +967,7 @@ def warn_error(config, trigger, note_function):
                     # ``user_note`` for warnings))
                     note_function(
                         f"{action_name}{sufix_name}",
-                        f'Section: ``{section}``\n\n{action_info.get("message", "")}'
+                        f'Section: ``{section}``\n\n{action_info.get("message", "")}',
                     )
 
                     # Check if the warning should halt execution and ask the user if
@@ -967,7 +975,7 @@ def warn_error(config, trigger, note_function):
                     # needs to halt, and the user has not defined the
                     # ``--ignore-config-warnings`` flag in the ``esm_runscripts`` call
                     if (
-                        trigger=="warning"
+                        trigger == "warning"
                         and config["general"].get("isinteractive")
                         and action_info.get("ask_user_to_continue", False)
                         and not config["general"].get("ignore_config_warnings", False)

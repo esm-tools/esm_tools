@@ -75,7 +75,6 @@ jsbach:
     dynamic_vegetations: True
 
 fesom:
-    version: "2.5"
     nproc: 384
     restart_rate: 1
     restart_unit: "y"

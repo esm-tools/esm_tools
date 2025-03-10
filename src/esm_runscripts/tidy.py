@@ -1,16 +1,16 @@
 import filecmp
 import os
-import sys
-import re
-import time
 import pathlib
+import re
+import shutil
+import sys
+import time
 
 import psutil
-import shutil
+from loguru import logger
 
-from . import coupler, database_actions, helpers
+from . import coupler, database_actions, helpers, logfiles
 from .filelists import copy_files, resolve_symlinks
-from . import logfiles
 
 
 def run_job(config):
@@ -147,46 +147,47 @@ def _clean_run_determine_user_choice(config):
         if "clean_this_rundir" not in config["general"]:
             config["general"]["clean_this_rundir"] = user_clean
         else:
-            print("------------------------------------------")
-            print("You have set both in your config:")
-            print()
-            print("general:")
-            print("    clean_this_rundir: ", config["general"]["clean_this_rundir"])
-            print("    clean_runs: ", user_clean)
-            print()
-            print("Please only use one of these!")
-            print("------------------------------------------")
+            logger.error("------------------------------------------")
+            logger.error("You have set both in your config:")
+            logger.error("")
+            logger.error("general:")
+            logger.error(
+                f"    clean_this_rundir: {config['general']['clean_this_rundir']}"
+            )
+            logger.error(f"    clean_runs: {user_clean}")
+            logger.error("")
+            logger.error("Please only use one of these!")
+            logger.error("------------------------------------------")
             sys.exit(1)
     elif isinstance(user_clean, int):
         if "clean_old_rundirs_except" not in config["general"]:
             config["general"]["clean_old_rundirs_except"] = user_clean
         else:
-            print("------------------------------------------")
-            print("You have set both in your config:")
-            print()
-            print("general:")
-            print(
-                "    clean_old_rundirs_except: ",
-                config["general"]["clean_old_rundirs_except"],
+            logger.error("------------------------------------------")
+            logger.error("You have set both in your config:")
+            logger.error("")
+            logger.error("general:")
+            logger.error(
+                f"    clean_old_rundirs_except: {config['general']['clean_old_rundirs_except']}",
             )
-            print("    clean_runs: ", user_clean)
-            print()
-            print("Please only use one of these!")
-            print("------------------------------------------")
+            logger.error(f"    clean_runs: {user_clean}")
+            logger.error("")
+            logger.error("Please only use one of these!")
+            logger.error("------------------------------------------")
             sys.exit(1)
     else:
-        print("------------------------------------------")
-        print("Type Error!")
-        print("You have set this in your config:")
-        print("general:")
-        print("    clean_runs: ", user_clean)
-        print()
-        print("This is of type: ", type(user_clean))
-        print("However, only the following types are valid:")
-        print("   * boolean")
-        print("   * integer (greater or equal to 0!)")
-        print("Please correct that")
-        print("------------------------------------------")
+        logger.error("------------------------------------------")
+        logger.error("Type Error!")
+        logger.error("You have set this in your config:")
+        logger.error("general:")
+        logger.error(f"    clean_runs: {user_clean}")
+        logger.error("")
+        logger.error(f"This is of type: {type(user_clean)}")
+        logger.error("However, only the following types are valid:")
+        logger.error("   * boolean")
+        logger.error("   * integer (greater or equal to 0!)")
+        logger.error("Please correct that")
+        logger.error("------------------------------------------")
         sys.exit(1)
 
 
@@ -205,14 +206,18 @@ def _clean_old_rundirs_except(config):
             assert isinstance(number_rundirs_keep_every, int)
             assert number_rundirs_keep_every >= 1
         except AssertionError:
-            print("Please ensure that you use an integer in your configuration:")
-            print("-------------------------------------------------------------")
-            print()
-            print("general:")
-            print("   clean_old_rundirs_keep_every: <x>")
-            print()
-            print("-------------------------------------------------------------")
-            print("<x> **MUST** be an integer greater or equal than 1!")
+            logger.error("Please ensure that you use an integer in your configuration:")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
+            logger.error("")
+            logger.error("general:")
+            logger.error("   clean_old_rundirs_keep_every: <x>")
+            logger.error("")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
+            logger.error("<x> **MUST** be an integer greater or equal than 1!")
             sys.exit(1)
         runs_to_keep_via_keepevery = all_run_folders_in_experiment[
             ::number_rundirs_keep_every
@@ -225,14 +230,18 @@ def _clean_old_rundirs_except(config):
             assert isinstance(number_rundirs_to_keep, int)
             assert number_rundirs_to_keep > 1
         except AssertionError:
-            print("Please ensure that you use an integer in your configuration:")
-            print("-------------------------------------------------------------")
-            print()
-            print("general:")
-            print("   clean_old_rundirs_except: <x>")
-            print()
-            print("-------------------------------------------------------------")
-            print("<x> **MUST** be an integer greater than 1!")
+            logger.error("Please ensure that you use an integer in your configuration:")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
+            logger.error("")
+            logger.error("general:")
+            logger.error("   clean_old_rundirs_except: <x>")
+            logger.error("")
+            logger.error(
+                "-------------------------------------------------------------"
+            )
+            logger.error("<x> **MUST** be an integer greater than 1!")
             sys.exit(1)
         runs_to_keep_via_end_select = all_run_folders_in_experiment[
             -number_rundirs_to_keep:
@@ -272,7 +281,7 @@ def throw_away_some_infiles(config):
     monitor_file = logfiles.logfile_handle
     monitor_file.write("throwing away restart_in files \n")
     for model in config["general"]["valid_model_names"]:
-        print(f"{model}")
+        logger.info(f"{model}")
         if "thisrun_restart_in_dir" in config[model]:
             if os.path.isdir(config[model]["thisrun_restart_in_dir"]):
                 for root, dirs, files in os.walk(
@@ -281,7 +290,7 @@ def throw_away_some_infiles(config):
                     for name in files:
                         source = os.path.join(root, name)
                         os.remove(source)
-                        print(f"Removing {source}")
+                        logger.info(f"Removing {source}")
     return config
 
 
@@ -289,13 +298,11 @@ def copy_all_results_to_exp(config):
     monitor_file = logfiles.logfile_handle
     monitor_file.write("Copying stuff to main experiment folder \n")
     for root, dirs, files in os.walk(config["general"]["thisrun_dir"], topdown=False):
-        if config["general"]["verbose"]:
-            print("Working on folder: " + root)
+        logger.debug("Working on folder: " + root)
         if root.startswith(config["general"]["thisrun_work_dir"]) or root.endswith(
             "/work"
         ):
-            if config["general"]["verbose"]:
-                print("Skipping files in work.")
+            logger.debug("Skipping files in work.")
             continue
 
         for name in files:
@@ -304,8 +311,7 @@ def copy_all_results_to_exp(config):
             if not os.stat(source).st_size > 0:  # skip empty files
                 continue
 
-            if config["general"]["verbose"]:
-                print("File: " + source)
+            logger.debug("File: " + source)
             destination = source.replace(
                 config["general"]["thisrun_dir"], config["general"]["experiment_dir"]
             )
@@ -315,14 +321,13 @@ def copy_all_results_to_exp(config):
             if not os.path.islink(source):
                 if os.path.isfile(destination):
                     if filecmp.cmp(source, destination):
-                        if config["general"]["verbose"]:
-                            print("File " + source + " has not changed, skipping.")
+                        logger.debug("File " + source + " has not changed, skipping.")
                         continue
                     else:
                         if os.path.isfile(
                             destination + "_" + config["general"]["run_datestamp"]
                         ):
-                            print(
+                            logger.warning(
                                 "Don't know where to move "
                                 + destination
                                 + ", file exists"
@@ -341,21 +346,21 @@ def copy_all_results_to_exp(config):
                             newdestination = (
                                 destination + "_" + config["general"]["run_datestamp"]
                             )
-                            if config["general"]["verbose"]:
-                                print("Moving file " + source + " to " + newdestination)
+                            logger.debug(
+                                "Moving file " + source + " to " + newdestination
+                            )
                             os.rename(source, newdestination)
                             os.symlink(newdestination, destination)
                             continue
                 try:
-                    if config["general"]["verbose"]:
-                        print("Moving file " + source + " to " + destination)
+                    logger.debug("Moving file " + source + " to " + destination)
                     try:
                         os.rename(source, destination)
                     except:  # Fill is still open... create a hard (!) link instead
                         os.link(source, destination)
 
                 except:
-                    print(
+                    logger.critical(
                         ">>>>>>>>>  Something went wrong moving "
                         + source
                         + " to "

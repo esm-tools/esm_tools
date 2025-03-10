@@ -20,22 +20,22 @@ ice2echam() {
         while [ ${counter} -lt ${COUNT_MAX} ]
         do
             echo "          * inside while loop "
-            if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
+            if [ -f ${COUPLE_DIR}/ice_file_for_atmosphere.nc ]; then
                 break
             fi
 
-            echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
+            echo; echo "        * File ${COUPLE_DIR}/ice_file_for_atmosphere.nc not found. Waiting for 10 seconds ..."
             sleep 10
             counter=$((counter+1))
         done
         
         read_names ice atmosphere
         define_echam_names
-        if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
-                iterative_coupling_ice_echam6_update_orography
-        fi
         if [ "$ISM_TO_ECHAM_update_glacial_mask" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_glacial_mask
+        fi
+        if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
+                iterative_coupling_ice_echam6_update_orography
         fi
         if [ "$ISM_TO_ECHAM_update_land_runoff" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_land_runoff
@@ -54,9 +54,20 @@ define_echam_names() {
 iterative_coupling_ice_echam6_update_orography() { 
         echo "                Updating orography and gravity wave drag parameterization in echam6"
         update_orography_select_field
-        regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil
-        update_orography_apply_orography_anomaly
-        update_orography_prepare_calnoro
+        if [ "$MACHINE" == "levante" ]; then
+            hi_res_init_oro="/pool/data/ECHAM5/T511/T511_jan_surf.nc"
+        fi
+        if [ -f ${hi_res_init_oro} ]
+        then
+            regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil T511
+            regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil 
+            update_orography_apply_orography_anomaly_high_res
+            update_orography_prepare_calnoro_high_res
+        else 
+            regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil 
+            update_orography_apply_orography_anomaly
+            update_orography_prepare_calnoro
+        fi
         update_orography_run_calnoro
         update_orography_generate_target_orography_file
         #set_in_jsbach_restart_file elevation ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc OROMEA unpack
@@ -112,11 +123,74 @@ update_orography_select_field() {
         rmlist="$rmlist ${COUPLE_DIR}/ice_orog_difference.nc"
 }
 
+update_orography_from_martins_script() {
+cdo -L -remapbil,${RES_echam}grid /
+            ${COUPLE_DIR}/ice_orog_difference_T511grid.nc / 
+            ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc
+#cdo -L -setmisstoc,0. -ifthen slf.nc ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc dummy.nc
+#mv dummy.nc ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc
+ECHAM_g=9.80665
+if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+        rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+else
+        rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+fi
+cdo -L -sp2gp -gp2sp -add -selvar,GEOSP ${rfile} -mulc,${ECHAM_g} /
+        ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc /
+        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
+mv geosp.nc ${output_dir}/input/echam6/GEOSP_${paleo_time}_${RES_echam}.nc
+}
+
+update_oromea_from_martins_script() {
+ofile=${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc
+
+cdo -L -remapnn,r720x360 -setgrid,T511grid -selvar,OROMEA ${hi_res_init_oro} oromea_pi_r720x360.nc
+cdo -L -remapnn,r720x360 ${COUPLE_DIR}/ice_orog_difference_T511grid.nc anom_topo_r720x360.nc
+#cdo -L -setmisstoc,0. -ifthen -remapnn,r720x360grid slf.nc anom_topo_r720x360.nc dummy.nc
+#mv dummy.nc anom_topo_r720x360.nc
+cdo -L -add oromea_pi_r720x360.nc anom_topo_r720x360.nc oromea_r720x360.nc
+cdo -L -mul oromea_r720x360.nc -gtc,0. oromea_r720x360.nc dummy.nc; mv dummy.nc oromea_r720x360.nc
+CALNORO_RES=${echam_res:1:3}                       # use defined ECHAM6 grid resolution for calnoro
+cp oromea_r720x360.nc topodata.nc
+echo ${CALNORO_RES} | ${calnoro_dir}/calnoro
+cdo -L -s -f nc -setgrid,${echam_res}grid -invertlat sso_par_fil.srv calnoro_output.nc
+cdo -L -chvar,var51,OROMEA,var52,OROSTD,var53,OROSIG,var54,OROGAM,var55,OROTHE,var56,OROPIC,var57,OROVAL calnoro_output.nc ${ofile}
+cdo -L -mul -selvar,OROMEA ${ofile} -gtc,0. -selvar,OROMEA ${ofile} oromea.tmp
+# save geosp and oro-xxx in different files. why oromea from original file @PG?
+cdo -L -replace ${ofile} oromea.tmp dummy.nc; mv dummy.nc ${ofile}
+rm oromea.tmp
+rm oromea_pi_r720x360.nc anom_topo_r720x360.nc oromea_r720x360.nc topodata.nc sso_par_fil.srv calnoro_output.nc
+}
+
+
+## @fn update_orography_apply_orography_anomaly_high_res() 
+update_orography_apply_orography_anomaly_high_res() {
+        echo; echo "                *   applying surface height changes to high-resolution echam topography"
+        ifile=${COUPLE_DIR}/ice_orog_difference_T511grid.nc
+        ofile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
+        ncrename -v ${ice_orography_difference_name},oromea $ifile
+        cdo -s -setmisstoc,0 $ifile tmp; mv tmp $ifile
+        if [[ -f ${ofile} ]]
+        then
+            rfile=${ofile}
+            ncks -O -v oromea $rfile tmp_oromea
+        else
+            rfile=${hi_res_init_oro}
+            ncks -O -v OROMEA $rfile tmp_oromea
+            ncrename -v OROMEA,oromea tmp_oromea
+        fi
+        change_lonlat $ifile oromea
+        # LA: need to backup echam6_new_orography_before_calnoro!!!
+        ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
+
+        update_orography_apply_orography_anomaly
+}
+
 ## @fn update_orography_apply_orography_anomaly() 
 update_orography_apply_orography_anomaly() {
-        echo; echo "                *   applying surface height changes to echam topography"
+        echo; echo "                *   applying surface height changes to low-resolution echam topography"
         ifile=${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc
-        ofile=${COUPLE_DIR}/echam6_new_orography_before_calnoro.nc
+        ofile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
         ncrename -v ${ice_orography_difference_name},oromea $ifile
         cdo -s -setmisstoc,0 $ifile tmp; mv tmp $ifile
         if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
@@ -129,11 +203,23 @@ update_orography_apply_orography_anomaly() {
         ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
 }
 
+## @fn update_orography_prepare_calnoro_high_res() 
+update_orography_prepare_calnoro_high_res() {
+        echo; echo "                *   preparing for external program CALNORO"
+        ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
+        ofile=topodata.nc
+        cdo -s -P 28 \
+                 -remapnn,r720x360 \
+                 -setgrid,T511grid \
+                 -chname,oromea,OROMEA \
+                 $ifile \
+                 $ofile 2>>cdo_stderr_ice2echam
+}
 
 ## @fn update_orography_prepare_calnoro() 
 update_orography_prepare_calnoro() {
         echo; echo "                *   preparing for external program CALNORO"
-        ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro.nc
+        ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
         ofile=topodata.nc
         cdo -s -P 28 \
                  -remapnn,r720x360 \
@@ -177,7 +263,7 @@ update_orography_run_calnoro() {
 	        tmp_mods=$( module list -t | tail -n +2 )
             module purge
         fi
-        
+
         echo ${RES_echam/T/} | ./calnoro > ${COUPLE_DIR}/calnoro_stdout_stderr 2>&1 
         
         if [ "$MACHINE" == "albedo" ]; then
@@ -207,33 +293,157 @@ update_orography_generate_target_orography_file() {
                 ncrename -v ${varname},${orography_names[$varname]} ${ifile} tmp; mv tmp ${ifile}
         done
 
-        # Ensure that we use the OROMEA from the "raw" PISM-corrected orography,
-        # not what is given from the calnoro program
+        ## Ensure that we use the OROMEA from the "raw" PISM-corrected orography,
+        ## not what is given from the calnoro program
 
-        cdo -s -replace \
-                ${ifile} \
-                -chname,oromea,OROMEA ${COUPLE_DIR}/echam6_new_orography_before_calnoro.nc \
-                tmp 2>>cdo_stderr_ice2echam
-        mv tmp ${ifile}
 
-        # Take the GEOSP field from the "raw" PISM-corrected orography, and not
-        # what is given from the calnoro program 
+        ############################################################
+        # Define the method for orography update (oro_update_mod):
+        #   1: use low-resolution reference; take all sub-grid scale parameters from CALNORO; take GEOSP from low-res input
+        #   2: use low-resolution reference; take all sub-grid scale parameters from CALNORO; take OROMEA and GEOSP from low-res input
+        #                                                                                     (like it has been done before)
+        #   3: use high-resolution reference; take all sub-grid scale parameterds from CALNORO; take OROMEA and GEOSP from high-res input
+        #   4: update orography but keep sub-grid scale parameters from unit.24
+        #   5: update orography but change sub-grid scale parameters only in ice domain where ice mask or change of ice mask (ice loss/ice gain) 
 
-        cdo -s -sp2gp -gp2sp -mulc,9.81 -chname,oromea,GEOSP \
-                ${COUPLE_DIR}/echam6_new_orography_before_calnoro.nc \
-                ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+        if [ "x${oro_update_mod}" == "x1" ]; then # according to Martins script: OROMEA from calnoro; GEOSP from input
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
 
-        # Make sure dimension order is correct:
-        change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
 
-        cdo -s -O merge \
-                ${ifile} \
-                ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
-                ${ofile} 2>>cdo_stderr_ice2echam
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+        elif [ "x${oro_update_mod}" == "x2" ]; then # old coupling scheme: OROMEA and GEOSP from low-res input
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        tmp 2>>cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+        elif [ "x${oro_update_mod}" == "x3" ]; then # new coupling scheme: OROMEA and GEOSP from high-res input
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        tmp 2>>cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                 #
+        elif [ "x${oro_update_mod}" == "x4" ]; then # new coupling scheme: OROMEA and GEOSP from high-res input but overwrite with unit.24 sub-grid parameters
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        tmp 2>>cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                
+                cdo -s replace ${ofile} ${INIT_DIR_echam}/unit.24 tmp_replace; mv tmp_replace ${ofile}
+                 #
         
+        elif [ "x${oro_update_mod}" == "x5" ]; then # masked: new coupling scheme: OROMEA and GEOSP from high-res input
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        tmp 2>>cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                
+                if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                        rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+                else
+                        rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+                fi
+                
+                cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_T63grid.nc -gtc,0 \
+                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \ #${COUPLE_DIR}/ice_mask_before_T63grid.nc \
+                        ${COUPLE_DIR}/mask_oro_update.nc
+#                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
+                for VAR in "OROMEA" "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
+                do
+                    cdo -s ifthenelse -setmisstoc,0 ${COUPLE_DIR}/mask_oro_update.nc \
+                            -selname,${VAR} ${ofile} \
+                            -selname,${VAR} ${INIT_DIR_echam}/unit.24 ${VAR}.orotmp
+
+                done
+                cdo -s merge *.orotmp ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
+                cdo -s replace ${ofile} ORO_merged tmp; mv tmp ${ofile}
+                 #
+        fi
+        ############################################################
         ln -sf ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_target_orography.nc
-        # Destroy the time dimension; just in case
-	#if ncdump -h $ofile | grep -q "time"; then
+        # Destroy# the time dimension; just in case
+	#if ncdump -h# $ofile | grep -q "time"; then
 	#	ncwa -a time $ofile tmp; mv tmp $ofile
 	#fi
         echo; echo -e "\t\t-   finished with target orography generation"
@@ -400,7 +610,7 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
 set_glacial_mask_jsbach_update_init_file() {
         echo; echo "                *   Generating a new JSBACH init file with updated land cover types"
         # Get the Program and required .mod files
-        if [ -f jsbach_init_file ]; then
+        if [ -f ${FUNCTION_PATH}/../utils/jsbach_init_file ]; then
                 cp ${FUNCTION_PATH}/../utils/jsbach_init_file .
         elif [ -f ${FUNCTION_PATH}/../utils/install_jsbach_init_file.sh ]; then
                 echo "                   install_jsbach_init_file.sh found. Running installation ..."
@@ -587,9 +797,9 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
         echo -e "\t\t-   determining where the glacial mask has advanced and retreated"
         echo -e "\t\t-   New JSBACH Init File: ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc"
         echo -e "\t\t-   Old JSBACH Init File: ${FORCING_DIR_jsbach}/jsbach.nc"
-        cdo -s -selvar,glac -sub \
-            ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
-            ${FORCING_DIR_jsbach}/jsbach.nc \
+        cdo -s -sub \
+            -selvar,glac ${COUPLE_DIR}/jsbach_init_file_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc \
+            -selvar,glac ${FORCING_DIR_jsbach}/jsbach.nc \
             ${COUPLE_DIR}/update_land_cover_fractions/jsbach_glac_diff.nc 2>> ${COUPLE_DIR}/update_land_cover_fractions/cdo_stderr_ice2echam
         
         # Make two masks: one for glacial retreat, and one for glacial advance
@@ -1148,14 +1358,15 @@ update_land_runoff_set_namelist_modifications_next_jsbach_run() {
 regrid_to_echam() { 
         FILENAME=$1
         remapper=$2
-	if [[ "x$remapper" == "x" ]]; then
+        RES=${3:-${RES_echam}}
+    if [[ "x$remapper" == "x" ]]; then
 		remapper=remapcon2
 	fi
-	echo "                -   regridding $FILENAME to echam ${RES_echam} grid with $remapper"
+	echo "                -   regridding $FILENAME to echam ${RES} grid with $remapper"
         cdo -s -P 28 \
-                -$remapper,${RES_echam}grid \
+                -$remapper,${RES}grid \
                 -setgrid,${COUPLE_DIR}/ice.griddes \
-                $FILENAME ${FILENAME%.*}_${RES_echam}grid.nc
+                $FILENAME ${FILENAME%.*}_${RES}grid.nc
 }
 
 ## @fn set_in_jsbach_restart_file() 

@@ -16,7 +16,7 @@ computer:
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/a/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "DART"
@@ -25,13 +25,13 @@ fesom:
     restart_rate: 1
     restart_unit: "d"
     restart_first: 1
-    lresume: true
+    lresume: false
     ini_parent_exp_id: "D00"
     ini_parent_date: "2049-12-31"
     ini_parent_dir: "/work/ab0246/a270092/input/fesom2/restart/DART/"
 
     namelist_dir: "${model_dir}/config/"
-    time_step: 240
+    time_step: 30
     nproc: 4320
 
 oifs:

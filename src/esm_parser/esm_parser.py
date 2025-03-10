@@ -53,18 +53,15 @@ until nothing is left.
 Specific documentation for classes and functions are given below:
 """
 # Python 2 and 3 version agnostic compatiability:
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-
-import pdb
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 # Python Standard Library imports
 import collections
 import copy
 import logging
 import os
+import pdb
 import re
 import shutil
 import socket
@@ -79,20 +76,20 @@ else:
 
 # Always import externals before any non standard library imports
 
+import coloredlogs
 # Third-Party Imports
 import numpy
-import coloredlogs
-import colorama
 import yaml
-
-# functions reading in dict from file
-from .yaml_to_dict import *
-
-# Date class
-from esm_calendar import Date
 
 # Loader for package yamls
 import esm_tools
+# Date class
+from esm_calendar import Date
+from esm_tools import user_error, user_note
+
+from .provenance import *
+# functions reading in dict from file
+from .yaml_to_dict import *
 
 # Logger and related constants
 logger = logging.getLogger("root")
@@ -178,7 +175,8 @@ def look_for_file(model, item, all_config=None):
     normally the folder where all the versioned files of that component are contained.
     The ``item`` input can contain information about the version. If the configuration
     file is not found, ``item`` will be reduced one ``-`` back and ``look_for_file``
-    will be called recursively.
+    will be called recursively. Versions with minor or patch numbers will also be
+    reduced recursively until the file is found.
 
     Parameters
     ----------
@@ -229,17 +227,41 @@ def look_for_file(model, item, all_config=None):
     # item = fesom-2.0-jio and model = fesom), the previous lines won't be able
     # to find the versioned file (e.g. fesom-2.0.yaml) cause it is looking for
     # a file which name contains the whole item string (e.g. fesom-2.0-jio.yaml).
-    # To solve that kind of problem the item's name is reduced to the last "-"
-    # (e.g. to fesom-2.0) and then ``look_for_file`` is called recursively
-    new_item = "-".join(item.split("-")[:-1])
+    # The lines below will reduce recursively the name through the '-' separator
+    # and version parts (e.g. fesom-2.0-jio -> fesom-2.0 -> fesom-2 -> fesom) until it
+    # finds the file.
+    last_part = item.split("-")[-1]
+    if is_version(last_part) and "." in last_part:
+        # If the last part is version remove the trailing version number
+        new_item = ".".join(item.split(".")[:-1])
+    else:
+        # If the last part is not a minor or patch version remove last part
+        new_item = "-".join(item.split("-")[:-1])
     if len(new_item) > 0:
-        possible_path, needs_loading = look_for_file(model, new_item)
+        possible_path, needs_loading = look_for_file(model, new_item, all_config=all_config)
         if possible_path:
             return possible_path, needs_loading
 
     # The file was not found
     warnings.warn(f'File for "{item}" not found in "{model}"')
     return None, False
+
+
+def is_version(possible_version):
+    """
+    Check if a string is a valid version number (digits and dots only).
+
+    Parameters
+    ----------
+    possible_version : str
+        The string to check.
+
+    Returns
+    -------
+    bool
+        True if the string is a valid version number, False otherwise.
+    """
+    return re.fullmatch(r"\d+(\.\d+)*", possible_version) is not None
 
 
 def initialize_from_yaml(filepath):
@@ -284,7 +306,7 @@ def complete_config(user_config):
     while True:
         for model in list(user_config):
             if "further_reading" in user_config[model]:
-                if type(user_config[model]["further_reading"]) == list:
+                if isinstance(user_config[model]["further_reading"], list):
                     for additional_file in user_config[model]["further_reading"]:
                         if (
                             not additional_file
@@ -293,7 +315,7 @@ def complete_config(user_config):
                             user_config["general"]["additional_files"].append(
                                 additional_file
                             )
-                elif type(user_config[model]["further_reading"]) == str:
+                elif isinstance(user_config[model]["further_reading"], str):
                     additional_file = user_config[model]["further_reading"]
                     if (
                         not additional_file
@@ -519,7 +541,7 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     if attach_key in config:
         attach_value = config[attach_key]
         del config[attach_key]
-        if type(attach_value) == str:
+        if isinstance(attach_value, str):
             attach_value = [attach_value]
         for attach_value in attach_value:
             try:
@@ -633,6 +655,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
     """
     # option to overwrite a dict value if merge_dict contains empty value. Default
     # is False
+
     dont_overwrite_with_empty_value = kwargs.get(
         "dont_overwrite_with_empty_value", False
     )
@@ -643,38 +666,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             and isinstance(v, dict)
             and isinstance(merge_dct[k], Mapping)
         ):
-            # NOTE(PG): this is a very bad hack and doesn't belong here at all.
-            # Maybe instead the yaml_file_to_dict needs to say something like
-            # "add_debug_info", so everything gets put together, but for right
-            # now you are given ifnromation where your config originally came
-            # from...
-            #
-            # IDEA: It would be great if somehow we knew which key came from
-            # which config file: some are in the user, some are in the setup,
-            # some are in the component. However, I have no idea how to do that
-            # correctly...Turn the keys in the config into named tuples with
-            # the original file? Make a custom "class" for config keys?? That
-            # would then be:
-            #
-            # config['echam'].keys()
-            # * (key_name: namelist_changes, came_from: user, overrides: [setup, component])
-            # Above, the overrides list always gets longer depending on where the value actually came from.
-            # * (another key-tuple)
-            # * and so on...
-            #
-            # An idea...but I have absolutely no clue how to cleanly implement that...
-            if k != "debug_info":
-                dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
-            else:
-                if "debug_info" in dct:
-                    if isinstance(dct["debug_info"]["loaded_from_file"], str):
-                        dct["debug_info"]["loaded_from_file"] = [
-                            dct["debug_info"]["loaded_from_file"]
-                        ]
-                    else:
-                        dct["debug_info"]["loaded_from_file"].append(
-                            merge_dct["debug_info"]["loaded_from_file"]
-                        )
+            dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
         # MA: I'm not super happy about the resolve_nested_adds implementation. Nested
         # adds should probably resolved in a different place, after the first level
         # ones are resolved.
@@ -847,10 +839,10 @@ def remove_entries_from_chapter(config, remove_chapter, remove_entries):
 def add_entries_from_chapter(config, add_chapter, add_entries):
     my_entries = copy.deepcopy(add_entries)
     if add_chapter in config:
-        if type(config[add_chapter]) == list:
+        if isinstance(config[add_chapter], list):
             for entry in my_entries:
                 config[add_chapter].append(entry)
-        elif type(config[add_chapter]) == dict:
+        elif isinstance(config[add_chapter], dict):
             # MA: I'm not supper happy about the resolve_nested_adds implementation
             dict_merge(
                 config[add_chapter],
@@ -1061,7 +1053,7 @@ def add_entry_to_chapter(
     if chapter_to_add not in target_config[model_to_add_to]:
         target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
-        if type(target_config[model_to_add_to][chapter_to_add]) != type(add_entries):
+        if not isinstance(add_entries, type(target_config[model_to_add_to][chapter_to_add])):
             error_type = "Type mismatch"
             error_text = f"Can not add a variable of incompatible type ``{type(add_entries).__name__}`` to ``{chapter_to_add}``"
             user_error(error_type, error_text)
@@ -1073,7 +1065,7 @@ def add_entry_to_chapter(
             mod_list.extend(list(flatten_nested_lists(add_entries)))
 
             # Remove duplicates
-            mod_list_no_dupl = []
+            mod_list_no_dupl = ListWithProvenance([], None)
             for el in mod_list:
                 if not isinstance(el, (dict, tuple, list)):
                     if el not in mod_list_no_dupl:
@@ -1777,6 +1769,7 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
     return task_list
 
 
+@keep_provenance_in_recursive_function
 def recursive_run_function(tree, right, level, func, *args, **kwargs):
     """Recursively runs func on all nested dicts.
 
@@ -1825,15 +1818,15 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logging.debug("Top of function")
     # logging.debug("tree=%s", tree)
     if level == "mappings":
-        do_func_for = [dict, list]
+        do_func_for = (dict, list)
     elif level == "atomic":
-        do_func_for = [str, int, float, Date]
+        do_func_for = (str, int, float, Date)
     elif level == "always":
-        do_func_for = [str, dict, list, int, float, bool]
+        do_func_for = (str, dict, list, int, float, bool, BoolWithProvenance)
     elif level == "keys":
-        do_func_for = []
+        do_func_for = ()
     else:
-        do_func_for = []
+        do_func_for = ()
 
     logging.debug("Type right: %s", type(right))
     logging.debug("Do func for: %s", do_func_for)
@@ -1847,7 +1840,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             right.update({returned_key: old_value})
 
     # logger.debug("right is a %s!", type(right))
-    if type(right) in do_func_for:
+    if isinstance(right, do_func_for):
         if isinstance(right, dict):
             keys = list(right)
             for key in keys:
@@ -1875,7 +1868,10 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
     # logger.debug("finished with do_func_for")
 
     if isinstance(right, list):
-        newright = []
+        if isinstance(right, ListWithProvenance):
+            newright = ListWithProvenance([], None)
+        else:
+            newright = []
         for index, item in enumerate(right):
             new_item = recursive_run_function(
                 tree + [None], item, level, func, *args, **kwargs
@@ -1887,7 +1883,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 extremely undesirable way of solving this
                 Miguels fault
             """
-            if type(item) == str and "[[" in item and func == list_to_multikey:
+            if isinstance(item, str) and "[[" in item and func == list_to_multikey:
                 newright += new_item
             elif isinstance(new_item, list):
                 newright.extend(new_item)
@@ -1914,7 +1910,7 @@ def recursive_get(config_to_search, config_elements):
     Recusively gets entries in a nested dictionary in the form ``outer_key.middle_key.inner_key = value``
 
     Given a list of config elements in the form above (e.g. the result of
-    splitting the string ``"outer_key.middle_key.inner_key".split(".")``` on
+    splitting the string ``"outer_key.middle_key.inner_key".split(".")`` on
     the dot), the value "value" of the innermost nest is returned.
 
     Parameters
@@ -1962,6 +1958,7 @@ def determine_regex_list_match(test_str, regex_list):
     return any(result)
 
 
+@keep_provenance_in_recursive_function
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
@@ -1974,7 +1971,7 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
         ):
             var_result, var_attrs = actually_find_variable(tree, var, full_config)
 
-            if type(var_result) == str:
+            if isinstance(var_result, str):
                 if "${" in var_result:
                     var_result = find_variable(
                         tree,
@@ -2281,7 +2278,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
     return rhs
 
 
-def determine_computer_from_hostname():
+def determine_computer_yaml_from_hostname():
     """
     Determines which yaml config file is needed for this computer
 
@@ -2295,33 +2292,51 @@ def determine_computer_from_hostname():
     str
         A string for the path of the computer specific yaml file.
     """
+    machine, node = determine_computer_and_node_from_hostname()
+    if machine:
+        return CONFIG_PATH + "/machines/" + machine + ".yaml"
+    else:
+        logging.warning(
+            "The yaml file for this computer (%s) could not be determined!"
+            % socket.gethostname()
+        )
+        logging.warning("Continuing with generic settings...")
+        return CONFIG_PATH + "/machines/generic.yaml"
+
+
+def determine_computer_and_node_from_hostname():
+    """
+    Determines the name of the computer and the node from the hostname
+
+    Returns
+    -------
+    tuple
+        A tuple of two strings, the first being the name of the computer and the
+        second being the node.
+    """
     all_computers = yaml_file_to_dict(CONFIG_PATH + "/machines/all_machines.yaml")
-    for this_computer in all_computers:
-        for computer_pattern in all_computers[this_computer].values():
+    for this_computer, nodes in all_computers.items():
+        for node, computer_pattern in nodes.items():
             if isinstance(computer_pattern, str):
                 if re.match(computer_pattern, socket.gethostname()) or re.match(
                     computer_pattern, socket.getfqdn()
                 ):
-                    return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
+                    return this_computer, node
             elif isinstance(computer_pattern, (list, tuple)):
                 # Pluralize to avoid confusion:
                 computer_patterns = computer_pattern
                 for pattern in computer_patterns:
                     if re.match(pattern, socket.gethostname()):
-                        return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
+                        return this_computer, node
+
     logging.warning(
-        "The yaml file for this computer (%s) could not be determined!"
+        "The name and node for this computer (%s) could not be determined!"
         % socket.gethostname()
     )
-    logging.warning("Continuing with generic settings...")
-    return CONFIG_PATH + "/machines/generic.yaml"
-
-    # raise FileNotFoundError(
-    #    "The yaml file for this computer (%s) could not be determined!"
-    #    % socket.gethostname()
-    # )
+    return None, None
 
 
+@keep_provenance_in_recursive_function
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2331,12 +2346,14 @@ def do_math_in_entry(tree, rhs, config):
     if "${" in str(entry):
         return entry
     entry = " " + str(entry) + " "
+    date_operation = False
     while "$((" in entry:
         math, after_math = entry.split("))", 1)
         math, before_math = math[::-1].split("(($", 1)
         math = math[::-1]
         before_math = before_math[::-1]
         if DATE_MARKER in math:
+            date_operation = True
             all_dates = []
             steps = math.split(" ")
             steps = [step for step in steps if step]
@@ -2414,18 +2431,25 @@ def do_math_in_entry(tree, rhs, config):
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
         result = eval(math)
-        if type(result) == list:
+        if isinstance(result, list) and date_operation:
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
+        elif isinstance(result, list):
+            entry = ListWithProvenance(result, None)
+            entry.set_provenance(rhs.provenance)
+            return entry
+
         result = str(result)
         entry = before_math + result + after_math
+
     # TODO MA: this is a provisional dirty fix for release. Get rid of this once a more
     # general solution is worked out
     # ORIGINAL LINE: return convert(entry.strip())
     return convert(entry.strip(), tree)
 
 
+@keep_provenance_in_recursive_function
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
@@ -2435,11 +2459,12 @@ def mark_dates(tree, rhs, config):
     logging.debug(entry)
     # if "${" in str(entry):
     #    return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         entry = str(entry) + DATE_MARKER
     return entry
 
 
+@keep_provenance_in_recursive_function
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2450,7 +2475,7 @@ def marked_date_to_date_object(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         # if isinstance(entry, str) and DATE_MARKER in entry and "<--" not in entry:
         while DATE_MARKER in entry and "${" not in entry:
             entry = entry.replace(DATE_MARKER, "")
@@ -2470,6 +2495,7 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2481,12 +2507,13 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
     lhs = tree[-1]
     entry = rhs
-    if type(entry) == str:
+    if isinstance(entry, str):
         if "[[" in entry:
             return rhs
         if "<--" in entry:
@@ -2531,6 +2558,7 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2545,7 +2573,7 @@ def purify_booleans(tree, rhs, config):
 
 
 def to_boolean(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return value
     elif value in ["True", "true", ".true."]:
         return True
@@ -2554,9 +2582,9 @@ def to_boolean(value):
 
 
 def could_be_bool(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return True
-    elif type(value) == str:
+    elif isinstance(value, str):
         if value.strip() in ["True", "true", "False", "false", ".true.", ".false."]:
             return True
     return False
@@ -2616,8 +2644,6 @@ def convert(value, tree=["NO_KEY"]):
         return int(float(value))
     elif could_be_float(value):
         return float(value)
-    elif could_be_complex(value):
-        return complex(value)
     return value
 
 
@@ -2792,51 +2818,6 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
     return paths2finds
 
 
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
-    """
-    Notify the user about something. In the future this should also write in the log.
-
-    Parameters
-    ----------
-    note_heading : str
-        Note type used for the heading.
-    text : str
-        Text clarifying the note.
-    """
-    reset_s = colorama.Style.RESET_ALL
-
-    if isinstance(note_text, list):
-        new_note_text = ""
-        for item in note_text:
-            new_note_text = f"{new_note_text}- {item}\n"
-        note_text = new_note_text
-
-    for dsymbol in dsymbols:
-        note_text = re.sub(
-            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", str(note_text)
-        )
-    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
-    print(f"{note_text}\n")
-
-
-def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
-    """
-    User-friendly error using ``sys.exit()`` instead of an ``Exception``.
-
-    Parameters
-    ----------
-    error_type : str
-        Error type used for the error heading.
-    text : str
-        Text clarifying the error.
-    exit_code : int
-        The exit code to send back to the parent process (default to 1)
-    """
-    error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
-    sys.exit(exit_code)
-
-
 class GeneralConfig(dict):  # pragma: no cover
     """All configs do this!"""
 
@@ -2883,6 +2864,8 @@ class GeneralConfig(dict):  # pragma: no cover
             "Subclasses of GeneralConfig must define a _config_init!"
         )
 
+GeneralConfig.yaml_dump = esm_parser.yaml_dump
+
 
 class ConfigSetup(GeneralConfig):  # pragma: no cover
     """Config Class for Setups"""
@@ -2910,7 +2893,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # construct the `defaults` section of the configuration
         user_config["defaults"].update(default_infos)
 
-        computer_file = determine_computer_from_hostname()
+        computer_file = determine_computer_yaml_from_hostname()
         computer_config = yaml_file_to_dict(computer_file)
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):
@@ -3114,7 +3097,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             verbose=self.config["general"].get("verbose", False),
         )
 
-        # pprint_config(self.config)
         # sys.exit(0)
 
     def check_user_defined_versions(self, user_config):

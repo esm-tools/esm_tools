@@ -1,0 +1,38 @@
+<context id="ifs">
+  <calendar type="Gregorian" />
+
+  <field_definition  src="./field_def.xml" />
+
+  <file_definition   src="./file_def.xml" />
+
+  <axis_definition   src="./axis_def.xml" />
+
+  <domain_definition src="./domain_def.xml" />
+
+  <grid_definition   src="./grid_def.xml" />
+
+  <variable_definition>
+    <variable_group id="client_server_comm"> <!-- Tune both "client_server_comm" variables for performance purposes -->
+      <variable id="lopt_send"         name="LOPT_SEND"         type="bool"> false </variable>
+      <variable id="lsingle_prec_send" name="LSINGLE_PREC_SEND" type="bool"> false </variable>
+    </variable_group>
+
+    <variable_group id="fullpos_freq">
+      <variable id="nfrhis" name="NFRHIS" type="int"> -6 </variable>
+      <variable id="nfrpos" name="NFRPOS" type="int"> -6 </variable>
+    </variable_group>
+
+    <variable_group id="spectral_fitting">
+      <variable id="nfitp" name="NFITP" type="int"> 2 </variable>
+      <variable id="nfitt" name="NFITT" type="int"> 2 </variable>
+      <variable id="nfitv" name="NFITV" type="int"> 2 </variable>
+    </variable_group>
+
+    <variable_group id="fullpos_other">
+      <variable id="nfpcli"   name="NFPCLI"   type="int"   > 0       </variable>
+      <variable id="lfpq"     name="LFPQ"     type="bool"  > false   </variable>
+      <variable id="ltracefp" name="LTRACEFP" type="bool"  > false   </variable>
+      <variable id="rfpcorr"  name="RFPCORR"  type="double"> 60000.0 </variable>
+    </variable_group>
+  </variable_definition>
+</context>

@@ -563,6 +563,8 @@ function fesom_ice_concatenate_files {
         echo ""; echo " *   concatenating files"
 	# New cdo versions sometimes do not allow to overwrite files for
 	# "collective" commands. Hence delete existing old output file
+    [[ -f temp.tmp.nc ]] && rm temp.tmp.nc
+    [[ -f salt.tmp.nc ]] && rm salt.tmp.nc
 	[[ -f ocean_file_for_ice.nc ]] && rm ocean_file_for_ice.nc
 	${cdo} -s ensmean ${processed_fesom1x_file3D_T_list_for_ice} temp.tmp.nc
 	${cdo} -s ensmean ${processed_fesom1x_file3D_S_list_for_ice} salt.tmp.nc
@@ -573,7 +575,6 @@ function fesom_ice_concatenate_files {
 	#    ${processed_fesom1x_file2D_list_for_ice} \
 	#    ${processed_fesom1x_file2Dstatic_list_for_ice} \
 	#    ocean_file_for_ice.nc
-
 	_flag_extract_depth=1
 	# Extract depth axis and Clean up temporary files
 	for file in \

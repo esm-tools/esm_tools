@@ -334,6 +334,7 @@ lpj_guess:
         run_year: {initial_date!syear}
         run_month: 1
         run_day: 1
+        runtime_seconds: "$(( ${next_date} - ${start_date} ))"
         ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
         TM5: 0
         4xCO2: f

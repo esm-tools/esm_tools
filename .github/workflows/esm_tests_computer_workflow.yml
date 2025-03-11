@@ -41,8 +41,8 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
-        # token: ${{ secrets.GITHUB_TOKEN }}
-        # ref: ${{ github.event.pull_request.head.ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ github.event.pull_request.head.ref }}
     - name: install esm-tools
       run: |
         source /opt/conda/etc/profile.d/conda.sh;

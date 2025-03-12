@@ -503,7 +503,6 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                 #${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         else
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
-		echo "UKK1: elev_hi=" ${elev_hi_file}
                 ${cdo} -s -setrtoc,-10000,0,0 \
 			            -add \
                         -selvar,thk ${INPUT_FILE_pism} \
@@ -681,8 +680,8 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
                 echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 echo " * LA DEBUG: INPUT_FILE_NAME_BASE_pism = ${INPUT_FILE_NAME_BASE_pism%.*}"
                 ${cdo} -s \
-                        -add \
                         -setrtoc,-10000,0,0 \
+                        -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -selvar,topg ${INPUT_FILE_pism} \
                         ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism

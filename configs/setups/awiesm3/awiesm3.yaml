@@ -289,11 +289,21 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
-        comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON; make -j8; cd .."
+        comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command. 
+        #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
         
-        execution_command: ${executable} -parallel ${runscript_name}
+        execution_command: ${executable} -parallel ${runscript_name} #original execution_command 
+        #execution_command: ${executable} -parallel ${runscript_name} &> stdo_stde.log
+        
+        #execution_command: "export PATH=$(dirname $(which mpirun)):$PATH; mpirun --mca mpi_show_mca_params none --mca btl ^openib --mca rmaps_base_schedule policy --mca pml ob1 --mca btl_tcp_if_include eth0 -np ${nproc} gdb -batch -ex 'run' -ex 'bt' --args ${executable} -parallel ${runscript_name} &> gdb_backtrace.log"
+        #execution_command: "export OMP_STACKSIZE=500M; ulimit -c unlimited; export OMPI_MCA_mpi_show_mca_params=none; export OMPI_MCA_btl=^openib; export PATH=$(dirname $(which mpirun)):$PATH; mpirun --mca mpi_show_mca_params none --mca btl ^openib -np ${nproc} gdb -batch -ex 'run' -ex 'bt' --args ${executable} -parallel ${runscript_name} &> gdb_backtrace.log"
+        #execution_command: "/usr/bin/bash -c 'export OMP_STACKSIZE=500M; ulimit -c unlimited; export OMPI_MCA_mpi_show_mca_params=none; export OMPI_MCA_btl=^openib; export OMPI_MCA_rmaps_base_mapping_policy=core; export OMPI_MCA_mpi_show_handle_leaks=0; export OMPI_MCA_orte_base_help_aggregate=0; export PATH=$(dirname $(which mpirun)):$PATH; exec mpirun --mca mpi_show_mca_params none --mca btl ^openib --mca rmaps_base_schedule policy --mca pml ob1 --mca btl_tcp_if_include eth0 --mca orte_base_help_aggregate 0 -np ${nproc} gdb -batch -ex run -ex bt --args ${executable} -parallel ${runscript_name}' &> gdb_backtrace.log"
+        #execution_command: "export OMP_STACKSIZE=500M; ulimit -c unlimited; export OMPI_MCA_mpi_show_mca_params=none; export OMPI_MCA_btl=^openib; export PATH=$(dirname $(which mpirun)):$PATH; /sw/spack-levante/openmpi-4.1.2-mnmady/bin/mpirun --mca mpi_show_mca_params none --mca btl ^openib -np ${nproc} gdb -batch -ex 'run' -ex 'bt' --args ${executable} -parallel ${runscript_name} &> gdb_backtrace.log"
+        #execution_command: "export OMP_STACKSIZE=500M; ulimit -c unlimited; export OMPI_MCA_mpi_show_mca_params=none; export OMPI_MCA_btl=^openib; export PATH=/sw/spack-levante/openmpi-4.1.2-mnmady/bin:$PATH; exec /sw/spack-levante/openmpi-4.1.2-mnmady/bin/mpirun --mca mpi_show_mca_params none --mca btl ^openib -np ${nproc} gdb -batch -ex 'run' -ex 'bt' --args ${executable} -parallel ${runscript_name} &> gdb_backtrace.log"
+        #execution_command: "OMP_STACKSIZE=500M ulimit -c unlimited OMPI_MCA_mpi_show_mca_params=none OMPI_MCA_btl=^openib PATH=/sw/spack-levante/openmpi-4.1.2-mnmady/bin:$PATH exec /sw/spack-levante/openmpi-4.1.2-mnmady/bin/mpirun --mca mpi_show_mca_params none --mca btl ^openib --mca rmaps_base_mapping_policy core --mca pml ob1 --mca btl_tcp_if_include eth0 --mca orte_base_help_aggregate 0 -np ${nproc} gdb -batch -ex 'run' -ex 'bt' --args ${executable} -parallel ${runscript_name} &> gdb_backtrace.log"
+        #execution_command: "usr/bin/bash -c 'export OMP_STACKSIZE=500M; ulimit -c unlimited; export OMPI_MCA_mpi_show_mca_params=none; export OMPI_MCA_btl=^openib; export PATH=/sw/spack-levante/openmpi-4.1.2-mnmady/bin:$PATH; exec /sw/spack-levante/openmpi-4.1.2-mnmady/bin/mpirun --mca mpi_show_mca_params none --mca btl ^openib --mca rmaps_base_mapping_policy core --mca pml ob1 --mca btl_tcp_if_include eth0 --mca orte_base_help_aggregate 0 -np ${nproc} gdb -batch -ex run -ex bt --args ${executable} -parallel ${runscript_name}' &> gdb_backtrace.log"
 
-        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG, TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ, SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ, TMIN_LPJ, TMAX_LPJ] #LASZLO LPJ-GUESS block 
+        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG, TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ, SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ, TMIN_LPJ, TMAX_LPJ]
 
         coupling_fields:
                 "[[veg_atm_fields-->FIELD]]":
@@ -331,14 +341,14 @@ lpj_guess:
         proc_list_entry: '[str(x) for x in range(0,${nproc}+1)]' 
         proc_list: $(( ${proc_list_entry} ))
 
-        run_year: {initial_date!syear}
+        run_year: ${initial_date!syear}
         run_month: 1
         run_day: 1
         runtime_seconds: "$(( ${next_date} - ${start_date} ))"
         ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
         TM5: 0
-        4xCO2: f
-        1pcCO2: f
+        fourxCO2: f
+        onepcCO2: f
         fixed_CO2: -1
         fixed_ndep: -1
         fixed_LU: -1
@@ -374,18 +384,18 @@ lpj_guess:
         
         forcing_in_work:
                 soil_layer_type: slt_${mygrid}.nc
-                tmp_rc_file: lpjg_steps.rc.j2
+                tmp_rc_file: lpjg_steps.rc
                 CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #VegInit: vegin.nc
                 temp_namcouple: namcouple
                 dir_landuse: /landuse/dirmaker
-                dir_fire: /fire/dirmaker
+                dir_fire: /fire/dirmakei
                 ins_files: /*.ins
                 ece_gridlist: ece_gridlist.txt #is this the correct file?
                 lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
                 "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins 
                 "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
-                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc.j2
+                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
                 "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 #"VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc 
                 "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
@@ -393,7 +403,7 @@ lpj_guess:
                 "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins  
                 "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
                 "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt #is this the correct file?  
-                "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/dirmaker
+                "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
                  
 
 xios:

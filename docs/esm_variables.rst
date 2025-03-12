@@ -65,6 +65,7 @@ Runtime variables
    account,             general,                User account of the HPC system to be used to run the experiment.
    base_dir,            general,                Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
    compute_time,        general,                "Estimated computing time for a run, used for submitting a job with the job scheduler."
+   create_folders,      <component>,            "List of absolute paths of the folders to be created. See :ref:`yaml:Create empty folders`."
    executable,          <component>,            "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
    execution_command,   <component>,            "Command for executing the component, including ``${executable}`` and the necessary flags."
    expid,               general,                "ID of the experiment. This variable can also be defined when calling ``esm_runscripts`` with the ``-e`` flag."

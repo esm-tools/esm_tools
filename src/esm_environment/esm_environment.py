@@ -553,11 +553,11 @@ class EnvironmentInfos:
 
         ordering_dict = {}
         for key, value in items:
+            category_found = False
             if hasattr(value, "provenance"):
-                category_found = False
                 for category in category_order:
                     for prov in value.provenance:
-                        if category == prov["category"]:
+                        if prov is not None and category == prov["category"]:
                             ordering_dict[category] = ordering_dict.get(category, [])
                             ordering_dict[category].append(
                                 (prov["line"], prov["col"], key, value)
@@ -566,7 +566,8 @@ class EnvironmentInfos:
                             break
                     if category_found:
                         break
-            else:
+
+            if not category_found:
                 ordering_dict["backend"] = ordering_dict.get("backend", [])
                 ordering_dict["backend"].append((None, None, key, value))
 

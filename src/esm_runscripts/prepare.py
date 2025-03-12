@@ -172,6 +172,8 @@ def model_env_into_computer(config):
     # from esm_parser import basic_choose_blocks, dict_merge, user_note, user_error, pprint_config
 
     # Get which type of changes are to be applied to the environment
+    #import ipdb
+    #ipdb.set_trace()
     run_or_compile = config.get("general", {}).get("run_or_compile", "runtime")
     config["general"]["run_or_compile"] = run_or_compile
     thesechanges = run_or_compile + "_environment_changes"

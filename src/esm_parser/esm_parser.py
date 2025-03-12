@@ -517,8 +517,8 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
         main configuration
     """
     import ipdb
-    if attach_value == "fesom.env.yaml":
-        ipdb.set_trace()
+    #if attach_value == "fesom.env.yaml":
+    #    ipdb.set_trace()
     if not all_config:
         all_config = config
 
@@ -3189,7 +3189,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         #    setup_config["general"]["models"] = new_model_list
 
         for model in list(model_config):
-            setup_config["general"]["valid_model_names"].append(model)
+            if model != "general" and model != "computer":
+                setup_config["general"]["valid_model_names"].append(model)
             # valid_model_names.append(list(model_config)) happens automatically
 
         # model_config should be ok now

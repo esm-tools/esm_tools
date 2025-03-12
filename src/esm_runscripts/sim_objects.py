@@ -76,6 +76,11 @@ class SimulationSetup(object):
             command_line_config, user_config
         )
 
+        # 5. Set execution action
+        run_or_compile = user_config.get("general", {}).get("run_or_compile", "runtime")
+        user_config["general"]["run_or_compile"] = run_or_compile
+        user_config["computer"]["run_or_compile"] = run_or_compile
+
         # 5. Load total config from all the configuration files involved in this
         # simulation
         self.config = config_initialization.get_total_config_from_user_config(

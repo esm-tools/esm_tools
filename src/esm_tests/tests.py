@@ -789,9 +789,9 @@ def exist_files(files, path, version):
         exception_list = find_exceptions(f)
 
         # Command's logic
-        if " except " in f and version in exception_list:
+        if " except " in f and str(version) in exception_list:
             continue
-        elif " in " in f and not version in exception_list:
+        elif " in " in f and not str(version) in exception_list:
             continue
         else:
             f_path = f.split(" ")[0]

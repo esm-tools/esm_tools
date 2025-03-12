@@ -27,9 +27,9 @@ def prepare_environment(config):
             "END_YEAR_pism": config["general"]["end_date"].syear,
             "END_MONTH_pism": config["general"]["end_date"].smonth,
             "END_DAY_pism": config["general"]["end_date"].sday,
-            "MIN_MON_SELECT": int(config["pism"].get("select_min_glacial_depth", 1)),
+            "MIN_MON_SELECT": int(config[config["general"]["setup_name"]].get("select_min_glacial_depth", 1)),
 
-            "CRITICAL_THK_FOR_MASK_pism": config["pism"].get("thk_threshold", 5.0), 
+            "CRITICAL_THK_FOR_MASK_pism": config[config["general"]["setup_name"]].get("thk_threshold", 5.0), 
             "CURRENT_YEAR_pism": config["general"]["current_date"].syear,
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "OUTPUT_DIR_pism": config[config["general"]["setup_name"]]["experiment_outdata_dir"],
@@ -52,7 +52,7 @@ def prepare_environment(config):
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],
-            "PISM_HEMISPHERE": config["general"]["setup_name"]
+            "PISM_HEMISPHERE": config["general"]["setup_name"],
             "account_all_fw_input": config[config["general"]["setup_name"]].get("account_all_fw_input", 0), 
             "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             }

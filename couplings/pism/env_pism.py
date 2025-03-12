@@ -47,6 +47,8 @@ def prepare_environment(config):
 
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),
+            "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
+            "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1),
             }
     print (environment_dict)
     return environment_dict

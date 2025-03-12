@@ -880,6 +880,7 @@ namelist_changes:
                                 - ${restart_firstlast}
                                 - 0
                         out_datapath: '${work_dir}'
+                        pauls_switch: True
                 parctl:
                         nproca: "${nproca}"
                         nprocb: "${nprocb}"

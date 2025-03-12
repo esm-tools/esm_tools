@@ -45,27 +45,8 @@ def prepare_environment(config):
             "MULTI_YEAR_MEAN_SMB": config[config["general"]["setup_name"]].get("multi_year_mean_smb", 1),
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
-            #"RESTART_DIR_pism": config[config["general"]["setup_name"]]["experiment_restart_in_dir"],
-            #"ice_bedrock_change_file": (
-            #    config["general"]["experiment_couple_dir"] +
-            #    "/bedrock_change.nc"
-            #    ),
-            #"DOMAIN_pism": config[config["general"]["setup_name"]]["domain"],
-            #"EXE_pism": config[config["general"]["setup_name"]]["executable"],
-            #"RES_pism": config[config["general"]["setup_name"]]["resolution"],
-            #"RUN_NUMBER_pism" : config["general"]["run_number"],
-            #"pism_solidearth_initialize_method": config[config["general"]["setup_name"]]["solidearth_initialize_method"],
-            #"pism_solidearth_initialize_dummyrun_file": config[config["general"]["setup_name"]].get("solidearth_initialize_dummyrun_file", ""),
-            #"INPUT_GRID_pism": config[config["general"]["setup_name"]].get("input_grid", default_input_grid),
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),
-            #"YR0_INI_pism": config["general"]["initial_date"].syear,
-            #"NYEAR_pism_standalone": config["general"]["nyear"],
-            #"latest_ex_file_pism": config[config["general"]["setup_name"]]["outdata_targets"]["ex_file"],
-            #"latest_restart_file_pism": config[config["general"]["setup_name"]]["restart_in_in_work"]["restart"],
-            #"restart_file_pism": config[config["general"]["setup_name"]]["restart_in_in_work"]["restart"],
-            #"RUN_DATE_STAMP": config["general"]["run_datestamp"],
-            #"LAST_RUN_DATE_STAMP": config["general"]["last_run_datestamp"],
             }
     print (environment_dict)
     return environment_dict

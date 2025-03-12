@@ -241,16 +241,6 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     module unload python
     #module load python3
     module load python3/3.7.7_intel2020u2
-    
-    if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
-        if [[ ! -f ${ICEBERG_DIR}/nod2d.out.rot ]]; then
-            python ${FUNCTION_PATH}/../utils/rotate_mesh.py ${MESH_DIR_fesom} ${ICEBERG_DIR}
-            cp ${MESH_DIR_fesom}/elem2d.out ${ICEBERG_DIR}/elem2d.out
-        fi
-        python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${ICEBERG_DIR} ${ICEBERG_DIR}
-    else
-        python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${ICEBERG_DIR}
-    fi
 
     wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
     use_icesheet_coupling=1

@@ -85,15 +85,6 @@ fesom:
     choose_computer.name:
         ollie:
             pool_dir: "${computer.pool_directories.pool}/../clidyn/"
-        mistral:
-            pool_dir: "${computer.pool_directories.pool}/AWICM/"
-            climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
-            forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
-            mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
-            add_compiletime_environment_changes:
-                add_module_actions:
-                    - "unload gcc"
-                    - "load gcc/4.8.2"
         levante:
             pool_dir: "${computer.pool_directories.pool}/AWICM/"
             climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
@@ -500,24 +491,6 @@ fesom:
             tra:     "${namelist_dir}/namelist.tra"
             dyn:     "${namelist_dir}/namelist.dyn"
 
-    compiletime_environment_changes:
-            add_export_vars:
-                    taken2from:      fesom2_compile
-            choose_computer.name:
-                    juwels:
-                            add_module_actions:
-                                    - "unload ParaStationMPI"
-                                    - "load ParaStationMPI/5.4.4-1"
-                                    - "load netCDF-Fortran/4.4.5"
-
-    runtime_environment_changes:
-            choose_computer.name:
-                    juwels:
-                            add_module_actions:
-                                    - "unload ParaStationMPI"
-                                    - "load ParaStationMPI/5.4.4-1"
-                                    - "load netCDF-Fortran/4.4.5"
-
     config_in_work:
             config:  "namelist.config"
             forcing: "namelist.forcing"
@@ -653,3 +626,11 @@ fesom:
         - "copy_stuff_back_from_work"
         - "copy_all_results_to_exp"
         - "clean_run_dir"
+
+computer:
+    choose_computer.name:
+        juwels:
+            add_module_actions:
+                - "unload ParaStationMPI"
+                - "load ParaStationMPI/5.4.4-1"
+                - "load netCDF-Fortran/4.4.5"

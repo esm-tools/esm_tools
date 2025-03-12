@@ -399,10 +399,10 @@ fesom:
             "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
             "[[12_step_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
 
-    yearly_outputs_for_AWI_FESOM_YAML: ${yearly_outputs}
-    monthly_outputs_for_AWI_FESOM_YAML: ${monthly_outputs}
-    daily_outputs_for_AWI_FESOM_YAML: ${daily_outputs}
-    12_step_outputs_for_AWI_FESOM_YAML: ${12_step_outputs}
+    yearly_outputs_for_AWI_FESOM_YAML: ${fesom.yearly_outputs}
+    monthly_outputs_for_AWI_FESOM_YAML: ${fesom.monthly_outputs}
+    daily_outputs_for_AWI_FESOM_YAML: ${fesom.daily_outputs}
+    12_step_outputs_for_AWI_FESOM_YAML: ${fesom.12_step_outputs}
 
     # export output lists to env variable `AWI_FESOM_YAML`
     # - `AWI_FESOM_YAML` is used by fesom-1.4/fesom_cpl/output_scheduler; check its value in finished_config.yaml
@@ -412,24 +412,24 @@ fesom:
             output_schedules:
                     -
                             vars: [restart]
-                            unit: ${restart_unit}
-                            first: ${restart_first}
-                            rate: ${restart_rate}
+                            unit: ${fesom.restart_unit}
+                            first: ${fesom.restart_first}
+                            rate: ${fesom.restart_rate}
                     -
-                            vars: ${yearly_outputs_for_AWI_FESOM_YAML}
+                            vars: ${fesom.yearly_outputs_for_AWI_FESOM_YAML}
                             unit: y
-                            first: ${yearly_outputs_start}
+                            first: ${fesom.yearly_outputs_start}
                             rate: 1
                     -
-                            vars: ${monthly_outputs_for_AWI_FESOM_YAML}
+                            vars: ${fesom.monthly_outputs_for_AWI_FESOM_YAML}
                             unit: m
                             rate: 1
                     -
-                            vars: ${daily_outputs_for_AWI_FESOM_YAML}
+                            vars: ${fesom.daily_outputs_for_AWI_FESOM_YAML}
                             unit: d
                             rate: 1
                     -
-                            vars: ${12_step_outputs_for_AWI_FESOM_YAML}
+                            vars: ${fesom.12_step_outputs_for_AWI_FESOM_YAML}
                             unit: s
                             rate: 12
 
@@ -509,9 +509,9 @@ fesom:
                     number_of_overlapping_points: 0 # oasis P-value
 
 computer:
-    choose.name:
+    choose_name:
         levante:
-            add_choose.run_or_compile:
+            choose_run_or_compile:
                 compiletime:
                     export_vars:
                         NETCDF_DIR: ${computer.netcdf_cxx_root}
@@ -523,7 +523,7 @@ computer:
             iolibraries: system_libs
         glogin:
             iolibraries: system_libs
-    choose.run_or_compile:
+    choose_run_or_compile:
         runtime:
             export_vars:
                 AWI_FESOM_YAML: ${fesom.AWI_FESOM_YAML}

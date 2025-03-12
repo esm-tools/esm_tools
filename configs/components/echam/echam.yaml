@@ -320,19 +320,6 @@ echam:
     #               lrestart_from_old: false
 
 
-    compiletime_environment_changes:
-        choose_computer.name:
-            albedo:
-                add_export_vars:
-                    configure_opts: "'--without-regard-for-quality'"
-                    FFLAGS: "'-fallow-argument-mismatch -w'"
-                    FCFLAGS: "'-fallow-argument-mismatch -w'"
-                # Unset FFLAGS, they are set in mh-linux in echam (booo this is horrible)
-                add_unset_vars:
-                  - FFLAGS
-                  - FCFLAGS
-
-
     choose_concurrent_radiation_code:
             True:
                     add_namelist_changes:
@@ -964,3 +951,17 @@ echam:
     further_reading:
             - echam/echam.datasets.yaml
             - echam/echam.postprocessing.yaml
+
+computer:
+    choose_run_or_compile:
+        compiletime:
+            choose_computer.name:
+                albedo:
+                    add_export_vars:
+                        configure_opts: "'--without-regard-for-quality'"
+                        FFLAGS: "'-fallow-argument-mismatch -w'"
+                        FCFLAGS: "'-fallow-argument-mismatch -w'"
+                    # Unset FFLAGS, they are set in mh-linux in echam (booo this is horrible)
+                    add_unset_vars:
+                      - FFLAGS
+                      - FCFLAGS

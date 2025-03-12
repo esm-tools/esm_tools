@@ -45,6 +45,8 @@ jobs:
         # ref: ${{ github.event.pull_request.head.ref }}
     - name: Log commit sha
       run: |
+        git config --global --add safe.directory /__w/esm_tools/esm_tools;
+        git config --global --add safe.directory /__w/esm_tools/esm_tools/src/esm_tests/resources;
         git log -1
     - name: Log which submodules are checked out
       run: |

@@ -59,16 +59,16 @@ config_sources:
         namelist.omip: "${namelist_dir}/namelist.omip"
 
 input_in_work:
-        runoff_forcing: "GL_runoff_1950_2024.nc"
-        discharge_forcing: "GL_discharge_1950_2024_monthly.nc"
+        runoff_forcing: "GL_runoff_1950_2022.nc"
+        discharge_forcing: "GL_discharge_1950_2022_monthly.nc"
 
 input_files:
         runoff_forcing: runoff_forcing
         discharge_forcing: discharge_forcing
 
 input_sources:
-        runoff_forcing: "${input_dir}/GL_runoff_1950_2024.nc"
-        discharge_forcing: "${input_dir}/GL_discharge_1950_2024_monthly.nc"
+        runoff_forcing: "${input_dir}/GL_runoff_1950_2022.nc"
+        discharge_forcing: "${input_dir}/GL_discharge_1950_2022_monthly.nc"
 
 coupling_fields:
         "[[omip_fields_send-->FIELD]]":
@@ -78,7 +78,7 @@ namelist_changes:
         namelist.omip:
                 NAMOMIP:
                         RunLengthSec: "${runtime_seconds}"
-                        TimeStepSec: "86400"
+                        TimeStepSec: "3600"
                         FixYear: "0"
                         StartYear: "1950"
                         FileListrunoff: ${input_in_work.runoff_forcing}

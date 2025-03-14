@@ -636,6 +636,22 @@ class EnvironmentInfos:
         self.config[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
 
     def sort_env_vars(self, env_var_key, category_order):
+        """"
+        Sorts environment variables based upon their order in the original configuration files, respecting their provenance.
+        
+        Parameters
+        ----------
+        env_var_key : str
+            The environment variable to be sorted (e.g. ``LD_LIBRARY_PATH``)
+        category_order : list
+            The category priorities to respect, i.e. ``["computer", "component", "setup"].
+            
+        Mutates
+        -------
+        self.config : dict
+           The EnvironmentInfo ``config`` dictionary is modified specifically for
+           ``env_var_key``, with the resorted, provenance-aware order.
+        """
         import ipdb
         env_vars = self.config[env_var_key]
 

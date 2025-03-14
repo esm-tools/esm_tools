@@ -547,11 +547,93 @@ class EnvironmentInfos:
 
         return environment
 
-    def select_env_vars_based_on_provenance(self, env_var_key):
-        pass
+    def _filter_env_vars(self, env_vars, condition_fn):
+        """
+        Helper function to filter environment variables based on a condition.
+        """
+        if isinstance(env_vars, dict):
+            filtered_env_vars = esm_parser.DictWithProvenance({}, None)
+            for key, value in env_vars.items():
+                if condition_fn(value):
+                    filtered_env_vars[key] = value
+        elif isinstance(env_vars, list):
+            filtered_env_vars = esm_parser.ListWithProvenance([], None)
+            for value in env_vars:
+                if condition_fn(value):
+                    filtered_env_vars.append(value)
+        else:
+            raise ValueError("env_vars must be an instance of dict or list")
+        
+        return filtered_env_vars
+    
+    def _flatten_values_with_attrs(self, env_vars):
+        if isinstance(env_vars, dict):
+            new_env_vars = esm_parser.DictWithProvenance({}, None)
+            for key, value in env_vars.items():
+                if isinstance(value, dict) and "_value" in value:
+                    new_env_vars[key] = value["_value"]
+                else:
+                    new_env_vars[key] = value
+        elif isinstance(env_vars, list):
+            new_env_vars = esm_parser.ListWithProvenance([], None)
+            for value in env_vars:
+                if isinstance(value, dict) and "_value" in value:
+                    new_env_vars.append(value["_value"])
+                else:
+                    new_env_vars.append(value)
+        else:
+            raise ValueError("env_vars must be an instance of dict or list")
+
+        return new_env_vars
 
     def select_env_vars_based_on_var_attributes(self, env_var_key):
-        pass
+        env_vars = self.config[env_var_key]
+        model, run_or_compile = self.model, self.run_or_compile
+
+        def condition_fn(value):
+            if isinstance(value, dict) and "_value" in value:
+                return (
+                    value.get("_run_or_compile", run_or_compile) == run_or_compile and
+                    value.get("_component", model) == model
+                )
+            return True
+
+        env_vars = self._filter_env_vars(env_vars, lambda v: condition_fn(v) and ("_value" not in v or v["_value"]))
+
+        self.config[env_var_key] = self._flatten_values_with_attrs(env_vars)
+
+    def select_env_vars_based_on_provenance(self, env_var_key):
+        if self.run_or_compile == "runtime" and not self.config["merge_component_envs"].get("runtime", True):
+            print("Selection of component-specific environment during runtime is not supported yet.")
+            raise SystemExit(1)
+
+        env_vars = self.config[env_var_key]
+        model = self.model
+        merge_component_envs = self.config["merge_component_envs"][self.run_or_compile]
+
+        if merge_component_envs:
+            return
+        
+        def condition_fn(value):
+            provenance = value.provenance[-1] if hasattr(value, "provenance") and value.provenance[-1] else None
+            return provenance is None or provenance["category"] != "components" or provenance["subcategory"] == model
+        
+        self.config[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
+    
+    def remove_env_vars_from_component_files(self, env_var_key):
+        include_component_env_from_computer = self.config.get("include_env_from_component_files", True)
+        env_vars = self.config[env_var_key]
+
+        def condition_fn(value):
+            provenance = value.provenance[-1] if hasattr(value, "provenance") and value.provenance[-1] else None
+            if provenance is None:
+                return True
+            include_component_env = self.complete_config.get(provenance["subcategory"], {}).get(
+                "include_env_from_component_files", include_component_env_from_computer
+            )
+            return provenance["category"] != "components" or include_component_env
+        
+        self.config[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
 
     def sort_env_vars(self, env_var_key, category_order):
         import ipdb

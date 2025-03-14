@@ -91,6 +91,7 @@ export_vars:
         _value: "3"
         _component: "fesom"
 """
+EXP_VARS_WITH_USER_SPEC = DictWithProvenance(yaml.safe_load(EXP_VARS_WITH_USER_SPEC), {})
 
 MODULE_ACTIONS_WITH_USER_SPEC = """
 merge_component_envs:
@@ -99,10 +100,11 @@ merge_component_envs:
 module_actions:
     - _value: "load intel-oneapi-compiler/2021.1.2"
       _run_or_compile: "compiletime"
-      _component: "echam"
+      _component: "fesom"
     - "load netcdf/4.7.4"
     - "load python/3.8.5"
 """
+MODULE_ACTIONS_WITH_USER_SPEC = DictWithProvenance(yaml.safe_load(MODULE_ACTIONS_WITH_USER_SPEC), {})
 
 COMPLETE_CONFIG = """
     echam:
@@ -116,10 +118,14 @@ class FakeEnv(object):
         self.complete_config = yaml.safe_load(complete_config)
         self.model = model
 
+FakeEnv._filter_env_vars = EnvironmentInfos._filter_env_vars
+FakeEnv._flatten_values_with_attrs = EnvironmentInfos._flatten_values_with_attrs
+
 SIMPLE_EXP_VARS_OBJ = FakeEnv(SIMPLE_EXP_VARS, "compiletime", COMPLETE_CONFIG, "echam")
 EXP_VARS_WITH_DIFF_PROV_OBJ = FakeEnv(EXP_VARS_WITH_DIFF_PROV, "compiletime", COMPLETE_CONFIG, "echam")
 MODULE_ACTIONS_WITH_DIFF_PROV_OBJ = FakeEnv(MODULE_ACTIONS_WITH_DIFF_PROV, "compiletime", COMPLETE_CONFIG, "echam")
 EXP_VARS_WITH_USER_SPEC_OBJ = FakeEnv(EXP_VARS_WITH_USER_SPEC, "compiletime", COMPLETE_CONFIG, "echam")
+MODULE_ACTIONS_WITH_USER_SPEC_OBJ = FakeEnv(MODULE_ACTIONS_WITH_USER_SPEC, "compiletime", COMPLETE_CONFIG, "echam")
 
 class Capturing(list):
     """Taken from https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call"""
@@ -144,16 +150,18 @@ class TestEnvironment(unittest.TestCase):
     def test_simple_export_vars(self):
         """Test to check the simple export vars"""
         env = deepcopy(SIMPLE_EXP_VARS_OBJ)
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "export_vars")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "export_vars")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
 
         assert(env.config["export_vars"] == SIMPLE_EXP_VARS["export_vars"])
 
     def test_component_specific_envs(self):
         """Test to check the ignore of component-specific environments"""
         env = deepcopy(EXP_VARS_WITH_DIFF_PROV_OBJ)
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "export_vars")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "export_vars")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
 
         assert(env.config["export_vars"] == {
             "VAR1": "1",
@@ -164,8 +172,9 @@ class TestEnvironment(unittest.TestCase):
         """Test to check the merging of component-specific environments during compilation"""
         env = deepcopy(EXP_VARS_WITH_DIFF_PROV_OBJ)
         env.config["merge_component_envs"]["compiletime"] = True
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "export_vars")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "export_vars")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
 
         assert(env.config["export_vars"] == {
             "VAR1": "1",
@@ -178,8 +187,9 @@ class TestEnvironment(unittest.TestCase):
         env = deepcopy(EXP_VARS_WITH_DIFF_PROV_OBJ)
         env.config["merge_component_envs"]["compiletime"] = True
         env.complete_config["echam"]["include_env_from_component_files"] = False
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "export_vars")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "export_vars")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
 
         assert(env.config["export_vars"] == {
             "VAR2": "2",
@@ -191,8 +201,9 @@ class TestEnvironment(unittest.TestCase):
         env = deepcopy(MODULE_ACTIONS_WITH_DIFF_PROV_OBJ)
         env.config["merge_component_envs"]["compiletime"] = True
         env.complete_config["echam"]["include_env_from_component_files"] = False
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "module_actions")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "module_actions")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "module_actions")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "module_actions")
 
         assert(env.config["module_actions"] == [
             "load netcdf/4.7.4",
@@ -203,10 +214,11 @@ class TestEnvironment(unittest.TestCase):
         """Test to check the ignore of all component-specific environments"""
         env = deepcopy(EXP_VARS_WITH_DIFF_PROV_OBJ)
         env.config["merge_component_envs"]["compiletime"] = True
-        env.complete_config["echam"]["include_env_from_component_files"] = False
+        del env.complete_config["echam"]["include_env_from_component_files"]
         env.config["include_env_from_component_files"] = False
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "export_vars")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "export_vars")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
 
         assert(env.config["export_vars"] == {
             "VAR3": "3",
@@ -215,8 +227,9 @@ class TestEnvironment(unittest.TestCase):
     def test_user_specified_env_attributes_in_export_vars(self):
         """Test to check the selection of component-specific environments for compiling based on user specification"""
         env = deepcopy(EXP_VARS_WITH_USER_SPEC_OBJ)
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "export_vars")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "export_vars")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "export_vars")
 
         assert(env.config["export_vars"] == {
             "VAR1": "1",
@@ -226,11 +239,12 @@ class TestEnvironment(unittest.TestCase):
     def test_user_specified_env_attributes_in_module_actions(self):
         """Test to check the selection of component-specific environments for compiling based on user specification"""
         env = deepcopy(MODULE_ACTIONS_WITH_USER_SPEC_OBJ)
-        EnvironmentInfos.select_env_vars_based_on_provenance(env, "module_actions")
         EnvironmentInfos.select_env_vars_based_on_var_attributes(env, "module_actions")
+        EnvironmentInfos.remove_env_vars_from_component_files(env, "module_actions")
+        EnvironmentInfos.select_env_vars_based_on_provenance(env, "module_actions")
 
         assert(env.config["module_actions"] == [
-            "load intel-oneapi-compiler/2021.1.2",
+            "load netcdf/4.7.4",
             "load python/3.8.5",
         ])
 

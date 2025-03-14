@@ -50,13 +50,16 @@ class EnvironmentInfos:
     """
 
     def __init__(self, run_or_compile, complete_config=None, model=None):
+        self.run_or_compile = run_or_compile
+        self.model = model
         # Ensure local copy of complete config to avoid mutating it... (facepalm)
         complete_config = copy.deepcopy(complete_config)
+        self.complete_config = complete_config
         # Load computer dictionary or initialize it from the correct machine file
         if complete_config and "computer" in complete_config:
             self.config = complete_config["computer"]
         else:
-            self.machine_file = esm_parser.determine_computer_yaml_from_hostname()
+            iself.machine_file = esm_parser.determine_computer_yaml_from_hostname()
             self.config = esm_parser.yaml_file_to_dict(self.machine_file)
             esm_parser.basic_choose_blocks(self.config, self.config)
             esm_parser.recursive_run_function(
@@ -68,6 +71,12 @@ class EnvironmentInfos:
                 [],
                 True,
             )
+        # TODO move to defaults yaml when that is merged:
+        self.config["component_specific_env"] = {
+            "compiletime": self.config.get("merge_component_envs", {}).get("compiletime", False),
+            "runtime": self.config.get("merge_component_envs", {}).get("runtime", True),
+        }
+        self.config["include_env_from_component_files"] = True
 
         # Add_s can only be inside choose_ blocks in the machine file
         for entry in ["add_module_actions", "add_export_vars", "add_unset_vars"]:
@@ -471,6 +480,8 @@ class EnvironmentInfos:
             scripts.
         """
 
+        import ipdb
+        ipdb.set_trace()
         environment = []
         # Fix for seb-wahl's hack via source
         if self.config.get("general_actions") is not None:
@@ -535,6 +546,12 @@ class EnvironmentInfos:
                 environment.append(f"unset {var}")
 
         return environment
+
+    def select_env_vars_based_on_provenance(self, env_var_key):
+        pass
+
+    def select_env_vars_based_on_var_attributes(self, env_var_key):
+        pass
 
     def sort_env_vars(self, env_var_key, category_order):
         import ipdb

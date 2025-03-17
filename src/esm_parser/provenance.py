@@ -11,10 +11,12 @@ And that will return a list of the provenance history of that variable, for exam
 .. code-block:: python
 
     [{'category': 'components',
+      'subcategory': 'fesom',
       'col': 10,
       'line': 6,
       'yaml_file': '/Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml'},
      {'category': 'setups',
+      'subcategory': 'awicm3',
       'col': 18,
       'extended_by': 'dict.__setitem__',
       'line': 321,

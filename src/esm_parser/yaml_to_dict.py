@@ -662,6 +662,7 @@ class ProvenanceConstructor(EnvironmentConstructor):
             provenance[1]: column number
             provenance[2]: file name
             provenance[3]: file category
+            provenance[4]: file subcategory
         """
 
         data = super().construct_object(node, *args, **kwargs)
@@ -750,6 +751,25 @@ class EsmToolsLoader(ruamel.yaml.YAML):
 
         self.category = category
 
+    def set_file_subcategory(self):
+        """
+        Sets the subcategory of the yaml file (e.g. ``awicm3``, ``fesom``, ``levante``).
+        """
+        category_path = pathlib.Path(f"{CONFIG_PATH}/{self.category}")
+        subcategory = None
+        subcategories = []
+        if category_path.exists() and category_path.is_dir():
+            subcategories = os.listdir(category_path)
+        else:
+            logger.info(f"Category path {category_path} does not exist or is not a directory")
+        for subcategory in subcategories:
+            path_to_subcategory_folder = pathlib.Path(f"{category_path}/{subcategory}")
+            if path_to_subcategory_folder in self.filename.parents:
+                subcategory = pathlib.Path(subcategory).stem
+                break
+
+        self.subcategory = subcategory
+
     def load(self, stream):
         """
         Loads the yaml file and returns a dictionary with the values and the provenance
@@ -764,6 +784,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         """
         self.set_filename(stream.name)
         self.set_file_categorty()
+        self.set_file_subcategory()
         mapping_with_tuple_prov = super().load(stream)[0]
 
         config, provenance = self._extract_dict_and_prov(mapping_with_tuple_prov)
@@ -796,6 +817,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
                         prov["line"], prov["col"] = elem_prov
                         prov["yaml_file"] = str(self.filename)
                         prov["category"] = self.category
+                        prov["subcategory"] = self.subcategory
                         config_prov[key].append(prov)
                         config[key].append(elem)
             else:
@@ -803,6 +825,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
                 prov["line"], prov["col"] = value_prov
                 prov["yaml_file"] = str(self.filename)
                 prov["category"] = self.category
+                prov["subcategory"] = self.subcategory
                 config_prov[key] = prov
                 config[key] = value
 

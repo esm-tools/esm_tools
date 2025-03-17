@@ -72,7 +72,7 @@ class EnvironmentInfos:
                 True,
             )
         # TODO move to defaults yaml when that is merged:
-        self.config["component_specific_env"] = {
+        self.config["merge_component_envs"] = {
             "compiletime": self.config.get("merge_component_envs", {}).get("compiletime", False),
             "runtime": self.config.get("merge_component_envs", {}).get("runtime", True),
         }
@@ -480,8 +480,8 @@ class EnvironmentInfos:
             scripts.
         """
 
-        import ipdb
-        ipdb.set_trace()
+        #import ipdb
+        #ipdb.set_trace()
         environment = []
         # Fix for seb-wahl's hack via source
         if self.config.get("general_actions") is not None:
@@ -489,7 +489,7 @@ class EnvironmentInfos:
                 environment.append(action)
         # Write module actions
         if self.config.get("module_actions") is not None:
-            self.sort_env_vars("module_actions", esm_parser.CATEGORY_HIERARCHY)
+            self.process_env_vars("module_actions")
             for action in self.config["module_actions"]:
                 # seb-wahl: workaround to allow source ... to be added to the batch header
                 # until a proper solution is available. Required with FOCI
@@ -504,7 +504,7 @@ class EnvironmentInfos:
         # Add an empty string as a newline:
         environment.append("")
         if self.config.get("export_vars") is not None:
-            self.sort_env_vars("export_vars", esm_parser.CATEGORY_HIERARCHY)
+            self.process_env_vars("export_vars")
             for var in self.config["export_vars"]:
                 # If export_vars is a dictionary
                 if isinstance(self.config["export_vars"], dict):
@@ -541,11 +541,17 @@ class EnvironmentInfos:
         environment.append("")
         # Write the unset commands
         if self.config.get("unset_vars") is not None:
-            self.sort_env_vars("unset_vars", esm_parser.CATEGORY_HIERARCHY)
+            self.process_env_vars("unset_vars")
             for var in self.config["unset_vars"]:
                 environment.append(f"unset {var}")
 
         return environment
+
+    def process_env_vars(self, env_var_key):
+        self.select_env_vars_based_on_var_attributes(env_var_key)
+        self.remove_env_vars_from_component_files(env_var_key)
+        self.select_env_vars_based_on_provenance(env_var_key)
+        self.sort_env_vars(env_var_key, esm_parser.CATEGORY_HIERARCHY)
 
     def _filter_env_vars(self, env_vars, condition_fn):
         """
@@ -563,9 +569,9 @@ class EnvironmentInfos:
                     filtered_env_vars.append(value)
         else:
             raise ValueError("env_vars must be an instance of dict or list")
-        
+
         return filtered_env_vars
-    
+
     def _flatten_values_with_attrs(self, env_vars):
         if isinstance(env_vars, dict):
             new_env_vars = esm_parser.DictWithProvenance({}, None)
@@ -598,7 +604,7 @@ class EnvironmentInfos:
                 )
             return True
 
-        env_vars = self._filter_env_vars(env_vars, lambda v: condition_fn(v) and ("_value" not in v or v["_value"]))
+        env_vars = self._filter_env_vars(env_vars, condition_fn)
 
         self.config[env_var_key] = self._flatten_values_with_attrs(env_vars)
 

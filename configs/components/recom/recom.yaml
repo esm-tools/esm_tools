@@ -255,13 +255,6 @@ recom:
             bio_restart: fesom.${end_date!syear}.bio.nc
 
     choose_computer.name:
-            blogin:
-                    add_compiletime_environment_changes:
-                            add_export_vars:
-                                    - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                    - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                                    - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                                    - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
             levante:
                     data_path: "/work/ba1103/a270094/MarESys/forcing/CORE2mesh/"
 
@@ -353,3 +346,14 @@ recom:
                     method: "kill"
                     message: "REcoM ERROR: CANNOT READ runoff FILE CORRECTLY"
                     file: "stdout"
+
+computer:
+    choose_run_or_compile:
+        compiletime:
+            choose_computer.name:
+                blogin:
+                    add_export_vars:
+                        - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                        - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+                        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
+                        - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"

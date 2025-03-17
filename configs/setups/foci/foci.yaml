@@ -68,51 +68,6 @@ general:
 #########################################################################################
 
 echam:
-        # Ok here's something that's not intuitive and certainly needs improvement in the next version
-        # compiletime and runtime env changes have to be placed within one of the components (does not
-        # matter which one) and then they are valid for all components.
-        compiletime_environment_changes:
-          iolibraries: geomar_libs
-          choose_computer.name:
-             levante:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2022_openmpi 
-                iolibraries: system_libs 
-             juwels:
-                #compiler_mpi: intel2019_impi2019
-                compiler_mpi: intel2022_psmpi2022
-             blogin:
-                compiler_mpi: intel2019_impi2019
-             glogin:
-                compiler_mpi: intel2019_impi2019
-             nesh:
-                compiler_mpi: intel2019_impi2019
-
-        runtime_environment_changes:
-          iolibraries: geomar_libs
-          choose_computer.name:
-             levante:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2022_openmpi 
-                iolibraries: system_libs 
-             juwels:
-                compiler_mpi: intel2022_psmpi2022
-                #compiler_mpi: intel2019_impi2019
-                #add_module_actions:
-                #   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
-             blogin:
-                compiler_mpi: intel2019_impi2019
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-             glogin:
-                compiler_mpi: intel2019_impi2019
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-             nesh:
-                compiler_mpi: intel2019_impi2019
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
@@ -1013,3 +968,34 @@ oasis3mct:
         restart_in_files:
                 sstocean: sstocean
                 flxatmos: flxatmos
+
+computer:
+    iolibraries: geomar_libs
+    choose_computer.name:
+       levante:
+          #compiler_mpi: intel2022_impi2021
+          compiler_mpi: intel2022_openmpi 
+          iolibraries: system_libs 
+       juwels:
+          #compiler_mpi: intel2019_impi2019
+          compiler_mpi: intel2022_psmpi2022
+       blogin:
+          compiler_mpi: intel2019_impi2019
+       glogin:
+          compiler_mpi: intel2019_impi2019
+       nesh:
+          compiler_mpi: intel2019_impi2019
+
+     choose_run_or_compile:
+        runtime:
+            add_choose_computer.name:
+                blogin:
+                    add_module_actions:
+                        - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                glogin:
+                    add_module_actions:
+                        - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                nesh:
+                    add_module_actions:
+                        - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+

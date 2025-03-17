@@ -527,10 +527,6 @@ fesom:
             tra:     "${namelist_dir}/namelist.tra"
             transit: "${namelist_dir}/namelist.transit"
 
-    compiletime_environment_changes:
-            add_export_vars:
-                    taken2from:      fesom2_compile
-
     config_in_work:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"

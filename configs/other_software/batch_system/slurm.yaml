@@ -91,9 +91,8 @@ computer:
                 debugger_flags_prelauncher: ""
             ddt:
                 debugger_flags_prelauncher: "ddt --connect"
-                runtime_environment_changes:
-                    add_module_actions:
-                      - "load arm-forge"
+                add_module_actions:
+                    - "load arm-forge"
 
     submitted: false
     script_name: "<--methods.scriptname--"

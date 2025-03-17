@@ -120,7 +120,6 @@ computer:
 
 
     # Variables needed exclusively during runtime
-    # NOTE: runtime_environment_changes does not work from the machine files
     choose_general.run_or_compile:
         runtime:
             add_export_vars:

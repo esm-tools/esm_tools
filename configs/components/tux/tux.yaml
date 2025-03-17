@@ -9,11 +9,6 @@ tux:
     choose_version:
         "1.0":
             destination: "tux-1.0"
-            choose_computer.name:
-                mistral:
-                    add_compiletime_environment_changes:
-                        add_module_actions:
-                            - "load imagemagick/6.9.1-7-gcc48"
 
     curl-repository: "https://upload.wikimedia.org/wikipedia/commons/a/af/Tux.png"
 
@@ -32,3 +27,11 @@ tux:
                 - " "
             License:
                 GPL
+
+computer:
+    choose_run_or_compile:
+        compiletime:
+            choose_computer.name:
+                mistral:
+                    add_module_actions:
+                        - "load imagemagick/6.9.1-7-gcc48"

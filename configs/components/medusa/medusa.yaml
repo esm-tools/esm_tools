@@ -25,17 +25,6 @@ medusa:
     # directory for code and libraries
     model_dir: "${general.esm_master.dir}/medusa-${version}"
 
-    environment_changes:
-        choose_computer.name:
-            levante:
-                add_module_actions:
-                    - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
-                    - "load intel-oneapi-mpi"
-                    - "unload netcdf-fortran"
-                    - "load netcdf-fortran/4.5.3-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"
-    #            add_export_vars:
-    #                ...
-
     clean_command: ${defaults.clean_command}
     #Ying: makefiles exist for ollie and levante (src-med, src-mcg and appa)
     #to be chosen by choose_computer.name?
@@ -238,3 +227,14 @@ medusa:
         dbg: "medusa.dbg"
         err: "medusa.err"
         tsi: "medusa.tsi"
+
+computer:
+    choose_computer.name:
+        levante:
+            add_module_actions:
+                - "load intel-oneapi-compilers/2022.0.1-gcc-11.2.0"
+                - "load intel-oneapi-mpi"
+                - "unload netcdf-fortran"
+                - "load netcdf-fortran/4.5.3-intel-oneapi-mpi-2021.5.0-intel-2021.5.0"
+#            add_export_vars:
+#                ...

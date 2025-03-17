@@ -34,7 +34,14 @@ def render_template(config, source, target):
 
     # Read the template
     with open(source, "r") as f:
-        template = Template(f.read(), undefined=StrictUndefined)
+        try:
+            template = Template(f.read(), undefined=StrictUndefined)
+        except TemplateSyntaxError as e:
+            user_error(
+                "Jinja",
+                f"Templating Error while loading template from ``{source}``. "
+                f"Syntax error in the template: {e.message}",
+            )
 
     # Try to render the file using the data in ``config``
     try:

@@ -25,8 +25,8 @@ pism2awiesm() {
         rm ${COUPLE_DIR}/latest_target_orography.nc
     fi
     
-    . ${FUNCTION_PATH}/../general/coupling_pism2atmosphere.functions
-    . ${FUNCTION_PATH}/../general/coupling_pism2ocean.functions
+    . ${FUNCTION_PATH}/../pism/coupling_pism2atmosphere.functions
+    . ${FUNCTION_PATH}/../pism/coupling_pism2ocean.functions
 
     echo "*** Starting pism2atmosphere ***"
     pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm

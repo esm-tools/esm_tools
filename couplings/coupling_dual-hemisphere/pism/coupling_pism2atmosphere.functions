@@ -141,13 +141,13 @@ function pism_atmosphere_get_newest_output {
                         -timmin \
                         -selname,thk \
                         ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
-                        ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
+                        ${COUPLE_DIR}//${PISM_HEMISPHERE}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}//${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm 
             else
                 cdo -s \
                         -selmon,${month_to_select} \
                         -ymonmean \
                         ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
-                        ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
+                        ${COUPLE_DIR}//${PISM_HEMISPHERE}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}//${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm 
             fi
             # LA: get SMB as another criterion for glacial mask; glacial cell if positive SMB
             cdo -s \
@@ -203,9 +203,9 @@ function pism_atmosphere_generate_runoff {
 function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
         files_needed="${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_runoff_flux_total.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_runoff_kg_m-2_s-1.nc"
-        cdo -s -O merge $files_needed ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc
+        cdo -s -O merge $files_needed ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
 	    ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc
-        rm $files_needed $rmlist
+#        rm $files_needed $rmlist
         echo; echo "                  ...done"
         unset files_needed
 }
@@ -331,6 +331,7 @@ function generate_orography_anomaly_over_pism_run {
         echo ""; echo "                 *   calculating surface height change over the last pism chunk"
         ifile1=${last_year_in_chunk_restart}
         ifile2=${first_year_in_chunk_input}
+        
         ofile=${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference.nc
         cdo -s -sub \
                 -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
@@ -339,7 +340,7 @@ function generate_orography_anomaly_over_pism_run {
                 -expr,"${OROG_VARNAME_pism}=thk+topg" \
                 $ifile2 \
                 $ofile 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
-
+        
 	    ncks -O -x -v GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
         mv tmp.nc $ofile
 }

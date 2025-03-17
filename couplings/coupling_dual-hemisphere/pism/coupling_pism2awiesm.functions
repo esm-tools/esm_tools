@@ -1,0 +1,36 @@
+#!/usr/bin/ksh
+pism2awiesm() {
+    echo $(module list)
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    . ${FUNCTION_PATH}/../general/general_helpers.functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+
+    if [ -f ${COUPLE_DIR}/latest_gfw_atmo.nc ]; then
+        rm ${COUPLE_DIR}/latest_gfw_atmo.nc
+    fi
+    
+    if [ -f ${COUPLE_DIR}/latest_jsbach_init_file.nc ]; then
+        rm ${COUPLE_DIR}/latest_jsbach_init_file.nc
+    fi
+    
+    if [ -f ${COUPLE_DIR}/latest_jsbach_restart_file.nc ]; then
+        rm ${COUPLE_DIR}/latest_jsbach_restart_file.nc
+    fi
+    
+    if [ -f ${COUPLE_DIR}/latest_veg_restart_file.nc ]; then
+        rm ${COUPLE_DIR}/latest_veg_restart_file.nc
+    fi
+    
+    if [ -f ${COUPLE_DIR}/latest_target_orography.nc ]; then
+        rm ${COUPLE_DIR}/latest_target_orography.nc
+    fi
+    
+    . ${FUNCTION_PATH}/../general/coupling_pism2atmosphere.functions
+    . ${FUNCTION_PATH}/../general/coupling_pism2ocean.functions
+
+    echo "*** Starting pism2atmosphere ***"
+    pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+
+    echo "*** Starting pism2ocean ***"
+    pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+}

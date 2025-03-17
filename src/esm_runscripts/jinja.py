@@ -49,8 +49,15 @@ def render_template(config, source, target):
     except TemplateSyntaxError as e:
         user_error(
             "Jinja",
+            f"Templating Error while rendering template from ``{source}`` to ``{target}``. "
+            f"Syntax error in the template: {e.message}",
+        )
+    except Exception as e:
+        # Any other error
+        user_error(
+            "Jinja",
             f"Error rendering template from ``{source}`` to ``{target}``. "
-            f"Syntax error: {e.message}",
+            f"Error: {e}",
         )
 
     if os.path.isfile(target):

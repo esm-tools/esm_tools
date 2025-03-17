@@ -62,6 +62,7 @@ import copy
 import logging
 import os
 import pdb
+import re
 import shutil
 import socket
 import subprocess
@@ -174,7 +175,8 @@ def look_for_file(model, item, all_config=None):
     normally the folder where all the versioned files of that component are contained.
     The ``item`` input can contain information about the version. If the configuration
     file is not found, ``item`` will be reduced one ``-`` back and ``look_for_file``
-    will be called recursively.
+    will be called recursively. Versions with minor or patch numbers will also be
+    reduced recursively until the file is found.
 
     Parameters
     ----------
@@ -225,17 +227,41 @@ def look_for_file(model, item, all_config=None):
     # item = fesom-2.0-jio and model = fesom), the previous lines won't be able
     # to find the versioned file (e.g. fesom-2.0.yaml) cause it is looking for
     # a file which name contains the whole item string (e.g. fesom-2.0-jio.yaml).
-    # To solve that kind of problem the item's name is reduced to the last "-"
-    # (e.g. to fesom-2.0) and then ``look_for_file`` is called recursively
-    new_item = "-".join(item.split("-")[:-1])
+    # The lines below will reduce recursively the name through the '-' separator
+    # and version parts (e.g. fesom-2.0-jio -> fesom-2.0 -> fesom-2 -> fesom) until it
+    # finds the file.
+    last_part = item.split("-")[-1]
+    if is_version(last_part) and "." in last_part:
+        # If the last part is version remove the trailing version number
+        new_item = ".".join(item.split(".")[:-1])
+    else:
+        # If the last part is not a minor or patch version remove last part
+        new_item = "-".join(item.split("-")[:-1])
     if len(new_item) > 0:
-        possible_path, needs_loading = look_for_file(model, new_item)
+        possible_path, needs_loading = look_for_file(model, new_item, all_config=all_config)
         if possible_path:
             return possible_path, needs_loading
 
     # The file was not found
     warnings.warn(f'File for "{item}" not found in "{model}"')
     return None, False
+
+
+def is_version(possible_version):
+    """
+    Check if a string is a valid version number (digits and dots only).
+
+    Parameters
+    ----------
+    possible_version : str
+        The string to check.
+
+    Returns
+    -------
+    bool
+        True if the string is a valid version number, False otherwise.
+    """
+    return re.fullmatch(r"\d+(\.\d+)*", possible_version) is not None
 
 
 def initialize_from_yaml(filepath):

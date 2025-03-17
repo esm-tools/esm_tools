@@ -189,6 +189,8 @@ oasis3mct:
                 - fesom
                 - echam
 
+        include_env_from_component_files: False
+
         a2o_lag: "${echam.time_step}"
         o2a_lag: "${fesom.time_step}"
         a2o_seq: 2

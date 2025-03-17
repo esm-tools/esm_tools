@@ -545,7 +545,9 @@ def deep_update_further_reading(config, further_reading_config):
             deep_update_further_reading(config[key], value)
         elif isinstance(value, list):
             if isinstance(config.get(key, None), list):
-                config[key] += value
+                for v in value:
+                    if v not in config[key]:
+                        config[key].append(v)
             elif not isinstance(config.get(key, None), list) and config.get(key, None) is not None:
                 raise TypeError("meep meep, the roadrunner wins, silly cayote")
             else:

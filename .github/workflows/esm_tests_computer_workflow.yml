@@ -37,12 +37,20 @@ jobs:
       fail-fast: false
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: recursive
         fetch-depth: 0
-        token: ${{ secrets.GITHUB_TOKEN }}
-        ref: ${{ github.event.pull_request.head.ref }}
+        # token: ${{ secrets.GITHUB_TOKEN }}
+        # ref: ${{ github.event.pull_request.head.ref }}
+    - name: Log commit sha
+      run: |
+        git config --global --add safe.directory /__w/esm_tools/esm_tools;
+        git config --global --add safe.directory /__w/esm_tools/esm_tools/src/esm_tests/resources;
+        git log -1
+    - name: Log which submodules are checked out
+      run: |
+        git submodule status
     - name: install esm-tools
       run: |
         source /opt/conda/etc/profile.d/conda.sh;

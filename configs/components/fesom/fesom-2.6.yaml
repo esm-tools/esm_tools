@@ -3,7 +3,7 @@
 
 model: fesom
 branch: "2.6"
-version: "2.6"
+version: "2.6.7"
 type: ocean
 
 comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
@@ -24,9 +24,9 @@ required_plugins:
 
 choose_version:
   "2.6":
-    branch: "2.6.7"
+    branch: "2.6.6"
 
-  "2.6-paleodyn":
+  "2.6.7":
     branch: "2.6.7"
     wiso_code: true
     icb_code: true
@@ -506,7 +506,15 @@ bin_sources:
         bin: "${bin_dir}/${comp_executable}"
         lib: "${fesom.model_dir}/build/lib/libfesom.so"
 
-
+scripts_files:
+        Tripy1:  Tripy1
+        Tripy2:  Tripy2
+scripts_sources:
+        Tripy1: "${esm_function_dir}/components/fesom/Subjob_tripy.sh"
+        Tripy2: "${esm_function_dir}/components/fesom/ESM_auto_tripy.yaml"
+scripts_targets: 
+        Tripy1: "${general.experiment_scripts_dir}/${model}/Subjob_tripy.sh"
+        Tripy2: "${general.experiment_scripts_dir}/${model}/ESM_auto_tripy.yaml"
 
 config_files:
         config:  config
@@ -650,3 +658,15 @@ tidy_recipe:
 - "copy_all_results_to_exp"
 - "clean_run_dir"
 
+workflow: 
+    next_run_triggered_by: tidy 
+    subjobs: 
+          Tripy_Fesom: 
+                  batch_or_shell: batch 
+                  order_in_cluster: concurrent 
+                  run_on_queue: ${computer.partitions.pp.name} 
+                  run_after: tidy 
+                  script_dir: ${base_dir}/${expid}/scripts/fesom 
+                  submit_to_batch_system: true 
+                  script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir} ${general.base_dir} ${general.expid}" 
+                  nproc: 1     

@@ -1,5 +1,6 @@
 # FESOM2 YAML CONFIGURATION FILE
 #
+
 fesom:
     model: fesom
     branch: "2.6"
@@ -32,8 +33,11 @@ fesom:
         icb_code: true
         namelist_dir: "${model_dir}/config/"
 
-      "2.6-5":
+      "2.6.5":
         branch: "2.6.5"
+
+      "2.6.7":
+        branch: "2.6.7"
 
     destination: "fesom-2.6"
     install_bins: bin/fesom.x
@@ -531,10 +535,6 @@ fesom:
             oce:     "${namelist_dir}/namelist.oce"
             tra:     "${namelist_dir}/namelist.tra"
             transit: "${namelist_dir}/namelist.transit"
-
-    compiletime_environment_changes:
-            add_export_vars:
-                    taken2from:      fesom2_compile
 
     config_in_work:
             config:  "namelist.config"

@@ -45,9 +45,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1.1:
@@ -56,9 +53,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.1+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1.2:
@@ -67,9 +61,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.2+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1.3:
@@ -78,8 +69,6 @@ general:
             - fesom-2.0-awicm-3.1+oifs-43r3-awicm-3.1.3+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.2:
@@ -88,9 +77,6 @@ general:
             - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.2.1:
@@ -99,9 +85,6 @@ general:
             - fesom-2.5-awicm-3.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
             oasis_with_yac: True
             xios_interp_order: 2
           v3.2.2:
@@ -110,10 +93,6 @@ general:
             - fesom-2.5.2+oifs-43r3-awicm-3.2.1+xios-2.5-yac+oasis3mct6
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
-            - rnfmap/rnfmap.env.yaml
             oasis_with_yac: True
             xios_interp_order: 1
           v3.3:
@@ -146,9 +125,6 @@ general:
             - fesom-2.0-master+oifs-43r3-master
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
             oasis_with_yac: False
           frontiers-xios:
             major_version: frontiers-xios
@@ -156,9 +132,6 @@ general:
             - fesom-2.0-frontiers+oifs-43r3-awicm-frontiers-xios+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
             oasis_with_yac: False
 
         version: "v3.2"
@@ -190,12 +163,8 @@ general:
         prepcompute_recipe: ${oifs.prepcompute_recipe}
         tidy_recipe: ${fesom.tidy_recipe}
 
-
-
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
-        further_reading:
-                - oasis3mct/oasis3mct.env.yaml
 
 
 #########################################################################################
@@ -389,18 +358,6 @@ oifs:
 
         resolution: TCO159
         levels: L91
-
-        environment_changes: # MA: Only used for JUWELS right now
-                OpenMP_flag: "-qopenmp"
-                OpenMP_CCDEFS: "_OPENMP"
-
-        runtime_environment_changes:
-                add_export_vars:
-                        # Turn on FESOM coupling
-                        FESOM_USE_CPLNG: '"active"'
-                        ECE_CPL_NEMO_LIM: '"false"'
-                        ECE_CPL_FESOM_FESIM: '"true"'
-                        ECE_AWI_CPL_FESOM: '"true"'
 
         res_level: ${resolution}${levels}
         awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo,A_CurX,A_CurY]
@@ -1146,7 +1103,6 @@ oasis3mct:
                 rstos.nc: rstos.nc
         remove_config_files:
                 - cf
-        
 
 
 computer:
@@ -1154,3 +1110,32 @@ computer:
         # since hetjob approach doesn't seem to work (second run showing mpi/pmix
         # problems)
         taskset: true
+        merge_component_envs:
+            compile: True
+
+        # MA: Only used for JUWELS right now
+        OpenMP_flag: "-qopenmp"
+        OpenMP_CCDEFS: "_OPENMP"
+
+        choose_computer.name:
+            juwels:
+                iolibraries: awi_libs
+                compiler_mpi: intel2022_ompi2022
+            blogin:
+                iolibraries: geomar_libs
+                compiler_mpi: intel2019_ompi
+            glogin:
+                iolibraries: geomar_libs
+                compiler_mpi: intel2019_ompi
+            levante:
+                iolibraries: system_libs
+                compiler_mpi: intel2022_openmpi
+
+        choose_execution_mode:
+            run:
+                add_export_vars:
+                    # Turn on FESOM coupling
+                    FESOM_USE_CPLNG: '"active"'
+                    ECE_CPL_NEMO_LIM: '"false"'
+                    ECE_CPL_FESOM_FESIM: '"true"'
+                    ECE_AWI_CPL_FESOM: '"true"'

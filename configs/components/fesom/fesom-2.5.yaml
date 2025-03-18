@@ -1,5 +1,6 @@
 # FESOM2 YAML CONFIGURATION FILE
 #
+
 fesom:
     model: fesom
     branch: "2.5"
@@ -79,10 +80,6 @@ fesom:
             climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
             forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
             mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
-            add_compiletime_environment_changes:
-                add_module_actions:
-                    - "unload gcc"
-                    - "load gcc/4.8.2"
         levante:
             pool_dir: "${computer.pool_directories.pool}/AWICM/"
             climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
@@ -548,10 +545,6 @@ fesom:
             oce:     "${namelist_dir}/namelist.oce"
             tra:     "${namelist_dir}/namelist.tra"
 
-    compiletime_environment_changes:
-            add_export_vars:
-                    taken2from:      fesom2_compile
-
     config_in_work:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"
@@ -665,3 +658,8 @@ fesom:
     - "copy_all_results_to_exp"
     - "clean_run_dir"
 
+computer:
+    choose_general.execution_mode:
+        compile:
+            add_export_vars:
+                taken2from: fesom2_compile

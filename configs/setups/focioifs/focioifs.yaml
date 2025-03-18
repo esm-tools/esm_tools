@@ -123,48 +123,6 @@ general:
 #########################################################################################
 
 oifs:
-        # Ok here's something that's not intuitive and certainly needs improvement in the next version
-        # compiletime and runtime env changes have to be placed within one of the components (does not
-        # matter which one) and then they are valid for all components.
-        compiletime_environment_changes:
-          iolibraries: geomar_libs
-          choose_computer.name:
-             levante:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2022_openmpi 
-                iolibraries: system_libs 
-             blogin:
-                compiler_mpi: intel2019_impi2019
-             glogin:
-                compiler_mpi: intel2019_impi2019
-             juwels:
-                compiler_mpi: intel2020_psmpi2020
-             nesh:
-                compiler_mpi: intel2020_impi2020
-
-        runtime_environment_changes:
-          iolibraries: geomar_libs
-          add_export_vars:
-             # Turn on FOCI coupling        
-             FOCI_USE_CPLNG: "active"
-             FESOM_USE_CPLNG: "no"
-             ECE_USE_CPLNG: "no"
-          choose_computer.name:
-             levante:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2022_openmpi 
-                iolibraries: system_libs 
-             blogin:
-                compiler_mpi: intel2019_impi2019
-             glogin:
-                compiler_mpi: intel2019_impi2019
-             juwels:
-                compiler_mpi: intel2020_psmpi2020
-             nesh:
-                compiler_mpi: intel2020_impi2020
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-
         version: "43r3"
         
         pool_dir: ${computer.pool_directories.focipool}
@@ -1352,3 +1310,31 @@ choose_partitions.compute.cores_per_node:
                                         nproc: 40
                                 rnfmap:
                                         nproc: 1
+
+computer:
+    iolibraries: geomar_libs
+    choose_computer.name:
+        levante:
+            #compiler_mpi: intel2022_impi2021
+            compiler_mpi: intel2022_openmpi 
+            iolibraries: system_libs 
+        blogin:
+            compiler_mpi: intel2019_impi2019
+        glogin:
+            compiler_mpi: intel2019_impi2019
+        juwels:
+            compiler_mpi: intel2020_psmpi2020
+        nesh:
+            compiler_mpi: intel2020_impi2020
+
+    choose_execution_mode:
+        run:
+            add_export_vars:
+                # Turn on FOCI coupling        
+                FOCI_USE_CPLNG: "active"
+                FESOM_USE_CPLNG: "no"
+                ECE_USE_CPLNG: "no"
+            add_choose_computer.name:
+                nesh:
+                    add_module_actions:
+                        - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"

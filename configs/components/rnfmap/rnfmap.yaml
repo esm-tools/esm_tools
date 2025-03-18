@@ -3,7 +3,6 @@
 #
 
 rnfmap:
-
     model: rnfmap
     executable: rnfma
     execution_command: rnfma
@@ -15,7 +14,7 @@ rnfmap:
             Modified for use in FOCI
 
     ##
-    ## Compile information 
+    ## Compile information
     ##
     available_versions:
     - ec-earth
@@ -76,7 +75,7 @@ rnfmap:
     namelist_dir: ${general.esm_namelist_dir}/rnfmap/
     runoff_maps_name: ""
 
-    parent_expid: "test" 
+    parent_expid: "test"
     parent_dir: "${pool_dir}/RUNOFF_MAPPER/restart/${parent_expid}"
 
     resolution: 512x256
@@ -100,12 +99,12 @@ rnfmap:
     nprocb: 1
 
     runoff_method: "old"
-                             
+
     runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
     lresume: false
 
-    bin_sources: 
+    bin_sources:
             bin: ${bin_dir}/${executable}
 
     config_sources:
@@ -188,7 +187,7 @@ rnfmap:
                                     number_of_overlapping_points: 0
                                     oyac_grid_type: "LL"
                                     oyac_io_per_node: 4
-                            rnfm:   
+                            rnfm:
                                     name: rnfm
                                     nx: 512
                                     ny: 256
@@ -202,15 +201,16 @@ rnfmap:
                                     oasis_grid_type: "LR"
                                     oyac_grid_type: "LL"
                                     oyac_io_per_node: 4
+
+computer:
     #
-    # Setup up compile and runtime environment i.e. what needs
+    # Setup up compile and run environment i.e. what needs
     # to be changed w.r.t the default config/machines/<computer>.yaml
     #
-    environment_changes:
-        choose_computer.name:
-            levante:
-                fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
-                cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
-            "*":
-               fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
-               cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0
+    choose_computer.name:
+        levante:
+            fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
+            cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+        "*":
+           fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
+           cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0

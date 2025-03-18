@@ -76,6 +76,11 @@ class SimulationSetup(object):
             command_line_config, user_config
         )
 
+        # 5. Set execution action
+        execution_mode = user_config.get("general", {}).get("execution_mode", "run")
+        user_config["general"]["execution_mode"] = execution_mode
+        user_config["computer"]["execution_mode"] = execution_mode
+
         # 5. Load total config from all the configuration files involved in this
         # simulation
         self.config = config_initialization.get_total_config_from_user_config(
@@ -103,6 +108,8 @@ class SimulationSetup(object):
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
         self.store_prev_objects()
 
+        #import ipdb
+        #ipdb.set_trace()
         # 11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
         self.config = prepare.run_job(self.config)
 

@@ -14,7 +14,7 @@ class oasis:
         self,
         nb_of_couplings=1,
         coupled_execs=["echam", "fesom"],
-        runtime=1,
+        run=1,
         debug_level=1,
         nnorest="F",
         mct_version="4.0",
@@ -43,7 +43,7 @@ class oasis:
             exec_entry = exec_entry + " " + exe
         exec_entry = str(len(coupled_execs)) + exec_entry
         self.namcouple += [" $NBMODEL", "            " + str(exec_entry), " $END"]
-        self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
+        self.namcouple += [" $RUNTIME", "           " + str(run), " $END"]
         if lucia:
             if mct_version >= (5, 0):
                 self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1", " $END"]
@@ -489,7 +489,7 @@ class oasis:
 
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        is_runtime = gconfig["run_or_compile"] == "runtime"
+        is_run = gconfig["execution_mode"] == "run"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )
@@ -571,7 +571,7 @@ class oasis:
 
             glob_restart_file = glob.glob(glob_search_file)
             glob_restart_file.sort()
-            if restart_file and is_runtime:
+            if restart_file and is_run:
                 # If there are more than one file found let the user decide which one to take
                 if len(glob_restart_file) == 1:
                     restart_file = os.path.basename(glob_restart_file[0])

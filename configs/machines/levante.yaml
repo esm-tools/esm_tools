@@ -140,7 +140,7 @@ computer:
                     # ESM-Tools vars necessary for ``system_libs`` case
                     add_module_actions:
                             - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
-                            - "load openmpi/4.1.2-gcc-11.2.0"                       
+                            - "load openmpi/4.1.2-gcc-11.2.0"
 
                     add_export_vars:
                             FC: mpif90
@@ -151,7 +151,7 @@ computer:
                             CXX: mpic++
                             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-                    
+
            intel2022_impi2021:
                     # ESM-Tools vars necessary for ``system_libs`` case
                     mod_netcdf_c: netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
@@ -401,7 +401,7 @@ computer:
                         NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
                         NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'           
+                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                         # kh 07.03.22 currently required to use Intel MPI
                         LD_LIBRARY_PATH[(2)]: '$I_MPI_ROOT/libfabric/lib:$LD_LIBRARY_PATH'
 
@@ -426,11 +426,11 @@ computer:
            choose_compiler_mpi:
                 intel2022_impi2021:
                     add_export_vars:
-                        IO_LIB_ROOT: /work/bb0519/HPC_libraries/intel2022.0.1_impi2021.5.0_20220318/ 
+                        IO_LIB_ROOT: /work/bb0519/HPC_libraries/intel2022.0.1_impi2021.5.0_20220318/
                         # kh 07.03.22 currently required to use Intel MPI
                         LD_LIBRARY_PATH[(2)]: '$I_MPI_ROOT/libfabric/lib:$LD_LIBRARY_PATH'
                 intel2022_openmpi:
-                        IO_LIB_ROOT: /work/bb0519/HPC_libraries/intel2022.0.1_ompi4.1.2_20220420 
+                        IO_LIB_ROOT: /work/bb0519/HPC_libraries/intel2022.0.1_ompi4.1.2_20220420
 
     fc: "$FC"
     cc: "$CC"
@@ -441,7 +441,7 @@ computer:
     # kh 23.06.22 do not use --distribution=plane=128 for hybrid (MPI + OpenMP) jobs
     # launcher_flags: "-l --distribution=plane=128 --cpu-bind=${cpu_bind}"
 
-    # kh 23.06.22 should be set generally in accordance with 
+    # kh 23.06.22 should be set generally in accordance with
     # the tips from DKRZ-TechTalk "From Mistral to Levante" June 22, 2022
     launcher_flags: "-l" # --distribution=block:cyclic"
 

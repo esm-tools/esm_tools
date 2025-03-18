@@ -11,6 +11,8 @@ import sys
 
 import esm_parser
 
+from esm_tools import user_note
+
 
 ######################################################################################
 ########################### class "environment_infos" ################################
@@ -38,9 +40,9 @@ class EnvironmentInfos:
 
     Parameters
     ----------
-    run_or_compile : str
+    execution_mode : str
         A string indicating whether ``EnvironmentInfos`` was instanced from a
-        compilation operation (``compiletime``) or a run (``runtime``).
+        compilation operation (``compile``) or a run (``run``).
     complete_config : dict
         Dictionary containing all the compiled information from the `yaml` files
         needed for the current `ESM-Tools` operation.
@@ -49,14 +51,17 @@ class EnvironmentInfos:
         will loop through all the available keys in ``complete_config``.
     """
 
-    def __init__(self, run_or_compile, complete_config=None, model=None):
+    def __init__(self, execution_mode, complete_config=None, model=None):
+        self.execution_mode = execution_mode
+        self.model = model
         # Ensure local copy of complete config to avoid mutating it... (facepalm)
         complete_config = copy.deepcopy(complete_config)
+        self.complete_config = complete_config
         # Load computer dictionary or initialize it from the correct machine file
         if complete_config and "computer" in complete_config:
             self.config = complete_config["computer"]
         else:
-            self.machine_file = esm_parser.determine_computer_yaml_from_hostname()
+            iself.machine_file = esm_parser.determine_computer_yaml_from_hostname()
             self.config = esm_parser.yaml_file_to_dict(self.machine_file)
             esm_parser.basic_choose_blocks(self.config, self.config)
             esm_parser.recursive_run_function(
@@ -68,6 +73,12 @@ class EnvironmentInfos:
                 [],
                 True,
             )
+        # TODO move to defaults yaml when that is merged:
+        self.config["merge_component_envs"] = {
+            "compile": self.config.get("merge_component_envs", {}).get("compile", False),
+            "run": self.config.get("merge_component_envs", {}).get("run", True),
+        }
+        self.config["include_env_from_component_files"] = True
 
         # Add_s can only be inside choose_ blocks in the machine file
         for entry in ["add_module_actions", "add_export_vars", "add_unset_vars"]:
@@ -75,16 +86,16 @@ class EnvironmentInfos:
                 del self.config[entry]
 
         # Load the general environments if any
-        self.general_environment(complete_config, run_or_compile)
+        self.general_environment(complete_config, execution_mode)
 
         # If the model is defined during the instantiation of the class (e.g.
         # during esm_master with a coupled setup), get the environment for that
         # model. Otherwise, loop through all the keys of the complete_config dictionary
         if model:
-            self.apply_config_changes(run_or_compile, complete_config, model)
+            self.apply_config_changes(execution_mode, complete_config, model)
         else:
             for model in complete_config:
-                self.apply_config_changes(run_or_compile, complete_config, model)
+                self.apply_config_changes(execution_mode, complete_config, model)
 
         # Add the ENVIRONMENT_SET_BY_ESMTOOLS into the exports
         self.add_esm_var()
@@ -103,20 +114,20 @@ class EnvironmentInfos:
         else:
             self.config["export_vars"] = {"ENVIRONMENT_SET_BY_ESMTOOLS": "TRUE"}
 
-    def apply_config_changes(self, run_or_compile, config, model):
+    def apply_config_changes(self, execution_mode, config, model):
         """
         Calls ``apply_model_changes`` with the selected configuration for the
         ``model``.
         """
 
         self.apply_model_changes(
-            model, run_or_compile=run_or_compile, modelconfig=config[model]
+            model, execution_mode=execution_mode, modelconfig=config[model]
         )
 
-    def apply_model_changes(self, model, run_or_compile="runtime", modelconfig=None):
+    def apply_model_changes(self, model, execution_mode="run", modelconfig=None):
         """
-        Applies the ``environment_changes``, ``compiletime_environment_changes``,
-        and/or ``runtime_environment_changes`` to the environment configuration of the
+        Applies the ``environment_changes``, ``compile_environment_changes``,
+        and/or ``run_environment_changes`` to the environment configuration of the
         ``model`` component. Note that ``model`` can be either a component (e.g.
         ``fesom``) or ``general``.
 
@@ -124,9 +135,9 @@ class EnvironmentInfos:
         ----------
         model : str
             Name of the component for which changes will apply.
-        run_or_compile : str
+        execution_mode : str
             A string indicating whether ``EnvironmentInfos`` was instanced from a
-            compilation operation (``compiletime``) or a run (``runtime``).
+            compilation operation (``compile``) or a run (``run``).
         modelconfig : dict
             Information compiled from the `yaml` files for this specific component.
         """
@@ -134,7 +145,7 @@ class EnvironmentInfos:
         # Merge whatever is relevant to this environment operation (either compile or
         # run) to ``environment_changes``, taking care of solving possible ``choose_``
         # blocks
-        thesechanges = run_or_compile + "_environment_changes"
+        thesechanges = execution_mode + "_environment_changes"
         if thesechanges in modelconfig:
             # kh 16.09.20 the machine name is already handled here
             # additionally handle different versions of the model (i.e.
@@ -304,7 +315,7 @@ class EnvironmentInfos:
         # Redefined the transformed dictionary
         export_dict[key] = new_export_vars
 
-    def general_environment(self, complete_config, run_or_compile):
+    def general_environment(self, complete_config, execution_mode):
         """
         Checks if there are ``environment_changes`` inside the ``general`` section, and
         if that is the case, ignore the changes loaded from the component files.
@@ -314,9 +325,9 @@ class EnvironmentInfos:
         complete_config : dict
             Dictionary containing all the compiled information from the `yaml` files
             needed for the current `ESM-Tools` operation.
-        run_or_compile : str
+        execution_mode : str
             A string indicating whether ``EnvironmentInfos`` was instanced from a
-            compilation operation (``compiletime``) or a run (``runtime``).
+            compilation operation (``compile``) or a run (``run``).
         """
 
         # If the general section exists load the general environments
@@ -328,13 +339,13 @@ class EnvironmentInfos:
             # Check if a general setup environment exists that will overwrite the
             # component setups
             if coupled_setup and (
-                "compiletime_environment_changes" in complete_config["general"]
-                or "runtime_environment_changes" in complete_config["general"]
+                "compile_environment_changes" in complete_config["general"]
+                or "run_environment_changes" in complete_config["general"]
                 or "environment_changes" in complete_config["general"]
             ):  # TODO: do this if the model include other models and the environment is
                 # labelled as priority over the other models environment (OIFS case)
                 general_env = True
-                self.apply_config_changes(run_or_compile, complete_config, "general")
+                self.apply_config_changes(execution_mode, complete_config, "general")
 
         # If there is a general environment remove all the model specific environments
         # defined in the model files and preserve only the model specific environments
@@ -401,8 +412,8 @@ class EnvironmentInfos:
         # Define the possible environment variables
         environment_vars = [
             "environment_changes",
-            "compiletime_environment_changes",
-            "runtime_environment_changes",
+            "compile_environment_changes",
+            "run_environment_changes",
         ]
         # Loop through the models
         for model in models:
@@ -471,6 +482,8 @@ class EnvironmentInfos:
             scripts.
         """
 
+        #import ipdb
+        #ipdb.set_trace()
         environment = []
         # Fix for seb-wahl's hack via source
         if self.config.get("general_actions") is not None:
@@ -478,6 +491,7 @@ class EnvironmentInfos:
                 environment.append(action)
         # Write module actions
         if self.config.get("module_actions") is not None:
+            self.process_env_vars("module_actions")
             for action in self.config["module_actions"]:
                 # seb-wahl: workaround to allow source ... to be added to the batch header
                 # until a proper solution is available. Required with FOCI
@@ -492,6 +506,7 @@ class EnvironmentInfos:
         # Add an empty string as a newline:
         environment.append("")
         if self.config.get("export_vars") is not None:
+            self.process_env_vars("export_vars")
             for var in self.config["export_vars"]:
                 # If export_vars is a dictionary
                 if isinstance(self.config["export_vars"], dict):
@@ -528,10 +543,178 @@ class EnvironmentInfos:
         environment.append("")
         # Write the unset commands
         if self.config.get("unset_vars") is not None:
+            self.process_env_vars("unset_vars")
             for var in self.config["unset_vars"]:
                 environment.append(f"unset {var}")
 
         return environment
+
+    def process_env_vars(self, env_var_key):
+        self.select_env_vars_based_on_var_attributes(env_var_key)
+        self.remove_env_vars_from_component_files(env_var_key)
+        self.select_env_vars_based_on_provenance(env_var_key)
+        self.sort_env_vars(env_var_key, esm_parser.CATEGORY_HIERARCHY)
+
+    def _filter_env_vars(self, env_vars, condition_fn):
+        """
+        Helper function to filter environment variables based on a condition.
+        """
+        if isinstance(env_vars, dict):
+            filtered_env_vars = esm_parser.DictWithProvenance({}, None)
+            for key, value in env_vars.items():
+                if condition_fn(value):
+                    filtered_env_vars[key] = value
+        elif isinstance(env_vars, list):
+            filtered_env_vars = esm_parser.ListWithProvenance([], None)
+            for value in env_vars:
+                if condition_fn(value):
+                    filtered_env_vars.append(value)
+        else:
+            raise ValueError("env_vars must be an instance of dict or list")
+
+        return filtered_env_vars
+
+    def _flatten_values_with_attrs(self, env_vars):
+        if isinstance(env_vars, dict):
+            new_env_vars = esm_parser.DictWithProvenance({}, None)
+            for key, value in env_vars.items():
+                if isinstance(value, dict) and "_value" in value:
+                    new_env_vars[key] = value["_value"]
+                else:
+                    new_env_vars[key] = value
+        elif isinstance(env_vars, list):
+            new_env_vars = esm_parser.ListWithProvenance([], None)
+            for value in env_vars:
+                if isinstance(value, dict) and "_value" in value:
+                    new_env_vars.append(value["_value"])
+                else:
+                    new_env_vars.append(value)
+        else:
+            raise ValueError("env_vars must be an instance of dict or list")
+
+        return new_env_vars
+
+    def select_env_vars_based_on_var_attributes(self, env_var_key):
+        env_vars = self.config[env_var_key]
+        model, execution_mode = self.model, self.execution_mode
+
+        def condition_fn(value):
+            if isinstance(value, dict) and "_value" in value:
+                if (
+                    value.get("_execution_mode", execution_mode) == execution_mode and
+                    value.get("_component", model) == model
+                ):
+                    return True
+                elif "_old_value" in value:
+                    # Delete the _value because Provenance will block its reassignment
+                    # otherwise, in some cases
+                    del value["_value"]
+                    value["_value"] = value["_old_value"]
+                    return True
+                else:
+                    return False
+            return True
+
+        env_vars = self._filter_env_vars(env_vars, condition_fn)
+
+        self.config[env_var_key] = self._flatten_values_with_attrs(env_vars)
+
+    def select_env_vars_based_on_provenance(self, env_var_key):
+        if self.execution_mode == "run" and not self.config["merge_component_envs"].get("run", True):
+            print("Selection of component-specific environment during run is not supported yet.")
+            raise SystemExit(1)
+
+        env_vars = self.config[env_var_key]
+        model = self.model
+        merge_component_envs = self.config["merge_component_envs"][self.execution_mode]
+
+        if merge_component_envs:
+            return
+        
+        def condition_fn(value):
+            provenance = value.provenance[-1] if hasattr(value, "provenance") and value.provenance[-1] else None
+            return provenance is None or provenance["category"] != "components" or provenance["subcategory"] == model
+
+        self.config[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
+    
+    def remove_env_vars_from_component_files(self, env_var_key):
+        include_component_env_from_computer = self.config.get("include_env_from_component_files", True)
+        env_vars = self.config[env_var_key]
+
+        def condition_fn(value):
+            provenance = value.provenance[-1] if hasattr(value, "provenance") and value.provenance[-1] else None
+            if provenance is None:
+                return True
+            include_component_env = self.complete_config.get(provenance["subcategory"], {}).get(
+                "include_env_from_component_files", include_component_env_from_computer
+            )
+            return provenance["category"] != "components" or include_component_env
+        
+        self.config[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
+
+    def sort_env_vars(self, env_var_key, category_order):
+        """"
+        Sorts environment variables based upon their order in the original configuration files, respecting their provenance.
+        
+        Parameters
+        ----------
+        env_var_key : str
+            The environment variable to be sorted (e.g. ``LD_LIBRARY_PATH``)
+        category_order : list
+            The category priorities to respect, i.e. ``["computer", "component", "setup"].
+            
+        Mutates
+        -------
+        self.config : dict
+           The EnvironmentInfo ``config`` dictionary is modified specifically for
+           ``env_var_key``, with the resorted, provenance-aware order.
+        """
+        import ipdb
+        env_vars = self.config[env_var_key]
+
+        if isinstance(env_vars, dict):
+            items = env_vars.items()
+            env_vars_type = "dict"
+            new_env_vars = esm_parser.DictWithProvenance({}, None)
+        elif isinstance(env_vars, list):
+            items = enumerate(env_vars)
+            env_vars_type = "list"
+            new_env_vars = esm_parser.ListWithProvenance([], None)
+        else:
+            raise ValueError("env_vars must be an instance of dict or list")
+
+        ordering_dict = {}
+        for key, value in items:
+            category_found = False
+            if hasattr(value, "provenance"):
+                for category in category_order:
+                    for prov in value.provenance:
+                        if prov is not None and category == prov["category"]:
+                            ordering_dict[category] = ordering_dict.get(category, [])
+                            ordering_dict[category].append(
+                                (prov["line"], prov["col"], key, value)
+                            )
+                            category_found = True
+                            break
+                    if category_found:
+                        break
+
+            if not category_found:
+                ordering_dict["backend"] = ordering_dict.get("backend", [])
+                ordering_dict["backend"].append((None, None, key, value))
+
+        for category in category_order:
+            if category not in ordering_dict:
+                continue
+            ii, jj, keys, values = zip(*sorted(ordering_dict[category], key=lambda x: (x[0], x[1])))
+            if env_vars_type == "dict":
+                for key, value in zip(keys, values):
+                    new_env_vars[key] = value
+            elif env_vars_type == "list":
+                for value in values:
+                    new_env_vars.append(value)
+
+        self.config[env_var_key] = new_env_vars
 
     def write_dummy_script(self, include_set_e=True):
         """
@@ -634,3 +817,139 @@ class environment_infos(EnvironmentInfos):
             stacklevel=2,
         )
         super(environment_infos, self).__init__(*args, **kwargs)
+
+
+def turn_export_vars_into_dict(config):
+    """
+    Turns the given ``entry`` in ``modelconfig`` (normally ``add_export_vars``) into
+    a dictionary, if it is not a dictionary yet. This function is necessary for
+    retro-compatibility of configuration files having ``add_export_vars`` defined as
+    list of strings, instead of as dictionaries.
+
+    Parameters
+    ----------
+    modelconfig : dict
+        Information compiled from the `yaml` files for this specific component.
+    entry : str
+        The environment variable (originally developed for ``add_export_vars``) to
+        be turned into a dictionary.
+    """
+    computer = config.get("computer", {})
+    if not computer:
+        return
+
+    # Find the variables whose names contains the entry (e.g. add_export_vars)
+    path_sep = ","
+    entry_paths = esm_parser.find_key(
+        computer,
+        "export_vars",
+        paths2finds=[],
+        sep=path_sep,
+    )
+    # Loop through the variables
+    for entry_path in entry_paths:
+        # Split the path and define the export_dict dictionary that links to the
+        # current entry. Later, if the content of export_dict is a list it will be
+        # turned into a dictionary itself
+        path_to_var = entry_path.split(path_sep)
+        path_to_var = [esm_parser.convert(leaf) for leaf in path_to_var]
+        if len(path_to_var) > 1:
+            export_dict = esm_parser.find_value_for_nested_key(
+                computer,
+                path_to_var[-2],
+                path_to_var[:-2],
+            )
+        else:
+            export_dict = computer
+        # Get the value of export_dict
+        if export_dict is None:
+            import ipdb
+            ipdb.set_trace()
+        export_vars = export_dict[path_to_var[-1]]
+
+        # If export_vars is a list transform it into a dictionary
+        if isinstance(export_vars, list):
+            user_note(
+                "environment behavior deprecated",
+                "The ``export_vars`` been a list is deprecated and it won't be "
+                "supported in the future. You'll need to turn ``export_vars`` in "
+                "@HINT_0@ into a ``dict``. ",
+                hints=[
+                    {
+                        "type": "prov",
+                        "object": export_vars,
+                        "text": "@HINT@",
+                    }
+                ]
+            )
+            env_list_to_dict(export_dict, path_to_var[-1])
+
+
+def env_list_to_dict(export_dict, key):
+    """
+    Transforms lists in ``export_dict`` in dictionaries. This allows to add lists of
+    ``export_vars`` to the machine-defined ``export_vars`` that should always be a
+    dictionary. Note that lists are always added at the end of the ``export_vars``,
+    if you want to edit variables of an already existing dictionary make your
+    ``export_var`` be a dictionary.
+
+    Avoids destroying repetitions of elements by adding indexes to the keys of the
+    newly transformed dictionary, for example:
+
+    .. code-block::yaml
+       your_model:
+           environment_changes:
+               add_export_vars:
+                   - 'SOMETHING=dummy'
+                   - 'somethingelse=dummy'
+                   - 'SOMETHING=dummy'
+
+    The ``export_dict[key]`` (where ``key = add_export_vars``) will be transformed
+    in this function from being a list to be the following dictionary:
+
+    .. code-block::yaml
+       'SOMETHING=dummy[(0)][(list)]': 'SOMETHING=dummy'
+       'somethingelse=dummy[(0)][(list)]': 'somethingelse=dummy'
+       'SOMETHING=dummy[(1)][(list)]': "SOMETHING=dummy'
+
+    Note that, once all the environments are resolved, and before writing the
+    exports in the bash files, the ``export_vars`` dictionary is transformed again
+    into a list and the indexes and ``[(list)]`` strings are removed.
+
+    Parameters
+    ----------
+    export_dict : dict
+        ``export_var`` dictionary which value is a list. This list is transformed
+        into a dictionary.
+    key : str
+        The key to the value.
+    """
+    # Load the value
+    export_vars = export_dict[key]
+    # Check if the value is a list TODO: logging
+    if not isinstance(export_vars, list):
+        print(
+            f"The only reason to use this function is if {key} is a list, and it "
+            + "is not in this case..."
+        )
+        sys.exit(1)
+
+    # Loop through the elements of the list
+    new_export_vars = {}
+    for var in export_vars:
+        # Initialize index
+        index = 0
+        while True:
+            # If the key with the current index already exists move the move the
+            # index forward
+            if var + f"[({index})][(list)]" in new_export_vars:
+                index += 1
+            # If the key with the current index does not exist yet, add the element
+            # to the dictionary
+            else:
+                new_export_vars[f"{var}[({index})][(list)]"] = var
+                break
+
+    # Redefined the transformed dictionary
+    export_dict[key] = new_export_vars
+

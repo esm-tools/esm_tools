@@ -1,8 +1,8 @@
 #
 #OIFS standalone YAML FILE
 #
-oifs:
 
+oifs:
     model: oifs
     executable: oifs
     execution_command: ${executable} -e ${oifs.input_expid}
@@ -114,7 +114,7 @@ oifs:
         major_version: 40r1
       "40r1-agcm":
         compile_command: export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f
-          oifs-agcm.cfg;  chmod -R ${source_code_permissions} .; git config core.fileMode false 
+          oifs-agcm.cfg;  chmod -R ${source_code_permissions} .; git config core.fileMode false
         requires:
         - oasis3mct-4.0
         major_version: 40r1
@@ -592,7 +592,7 @@ oifs:
     bin_sources:
             bin: ${bin_dir}/${executable}
             lib: ${oifs.model_dir}/build/lib/*
-     
+
     bin_in_work:
             lib: lib/oifs/*
 
@@ -1040,7 +1040,7 @@ oifs:
                             fort.4:
                                     NAMRES:
                                             NFRRES: 1
-                                            NRESTS(:): 
+                                            NRESTS(:):
                                                        - -1
                                                        - -${oifs.next_step}
                                     NAMPAR0:

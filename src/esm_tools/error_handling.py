@@ -3,6 +3,7 @@ import sys
 
 import colorama
 
+from loguru import logger
 
 def user_note(
     note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"], hints=[]
@@ -105,7 +106,7 @@ def user_note_hints(note_text, hints):
             if hasattr(mapping_with_provenance, "extract_first_nested_values_provenance"):
                 provenance = mapping_with_provenance.extract_first_nested_values_provenance()
             else:
-                logging.debug("No provenance found for %s", mapping_with_provenance)
+                logger.debug("No provenance found for %s", mapping_with_provenance)
             # If the provenance is found, replace the placeholder with the provenance,
             # otherwise remove the placeholder (provenance might not always exist)
             if provenance:

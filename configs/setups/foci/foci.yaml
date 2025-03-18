@@ -986,7 +986,7 @@ computer:
        nesh:
           compiler_mpi: intel2019_impi2019
 
-     choose_run_or_compile:
+    choose_run_or_compile:
         runtime:
             add_choose_computer.name:
                 blogin:

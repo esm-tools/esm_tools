@@ -553,6 +553,8 @@ rnfmap:
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
 
+        include_env_from_component_files: False
+
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
         time_step: ${oasis3mct.coupling_time_step}
@@ -954,9 +956,9 @@ computer:
         OpenMP_flag: "-qopenmp"
         OpenMP_CCDEFS: "_OPENMP"
 
-        iolibraries: awi_libs
         choose_computer.name:
             juwels:
+                iolibraries: awi_libs
                 compiler_mpi: intel2022_ompi2022
             blogin:
                 iolibraries: geomar_libs

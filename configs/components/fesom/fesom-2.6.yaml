@@ -198,12 +198,6 @@ choose_icb_code:
         True:
             use_icebergs: "${with_icb}"
             use_icesheet_coupling: "${with_icb}"
-            add_namelist_changes:
-                namelist.config:
-                    icebergs:
-                        use_icebergs: "${use_icebergs}"
-                        use_icesheet_coupling: "${use_icesheet_coupling}"
-                        steps_per_ib_step: 8
 
 choose_with_icb:
         True:
@@ -302,6 +296,13 @@ choose_with_icb:
                     scaling: "scaling"
                     felem: "felem"
                     #num_non_melted_icb_file: "num_non_melted_icb_file"
+            
+            add_namelist_changes:
+                namelist.config:
+                    icebergs:
+                        use_icebergs: "${use_icebergs}"
+                        use_icesheet_coupling: "${use_icesheet_coupling}"
+                        steps_per_ib_step: 8
 
 log_files:
         clock: clock

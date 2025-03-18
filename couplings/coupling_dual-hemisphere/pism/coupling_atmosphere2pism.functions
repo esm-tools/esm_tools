@@ -1416,7 +1416,7 @@ ic_atm2pism_ablation_pdd_set_time_axis() {
         ${FUNCTION_PATH}/../utils/CreateTimeAxisNC.bash ${nt} ${COUPLE_DIR}/${PISM_HEMISPHERE}/time_axis_pism.nc 0 classic 365_day #${CHUNK_START_YEAR_pism} 
         #ncks -A ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc  ${COUPLE_DIR}/${PISM_HEMISPHERE}/atmo_given_file.nc
         #ncks -A ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc  ${COUPLE_DIR}/atmo_given_file.nc
-        ncks -A ${COUPLE_DIR}/time_axis_pism.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/atmo_given_file.nc
+        ncks -A ${COUPLE_DIR}/${PISM_HEMISPHERE}/time_axis_pism.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/atmo_given_file.nc
 
         #FAILURE: ncks -A ${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ${COUPLE_DIR}/atmo_given_file.nc
         #         Producesses unrealistic x-/y-arrays with a values like: -8.0e+51, 1.7e+161, 1.e-258

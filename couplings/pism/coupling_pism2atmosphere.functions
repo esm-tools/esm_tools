@@ -372,7 +372,6 @@ function generate_runoff_select_variables {
             #***************************************************************************
             #LA include iceberg model
             if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-            #    cdo -s -merge -selname,"tendency_of_ice_amount_due_to_discharge" ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${ifile} tmp; mv tmp ${ifile}
                 PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_discharge,runoff"} #,tendency_of_ice_amount_due_to_calving"}
                 #PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount"} #,tendency_of_ice_amount_due_to_calving"}
                 PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_discharge" "runoff") # "tendency_of_ice_amount_due_to_calving")

@@ -560,11 +560,11 @@ oifs:
     icmcl_end_date_formatted: "${icmcl_end_date!syear!smonth!sday}"
 
     # Time steps in this run
-    run_seconds: "$(( ${next_date} - ${start_date} ))"
-    timestep_per_run: $((${run_seconds} / ${time_step}))
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    timestep_per_run: $((${runtime_seconds} / ${time_step}))
 
     # Number of days in this run
-    ndays_per_run: "$(( ${run_seconds} / 86400 ))"
+    ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
     ndays_per_run_string: "<--format(%08d)-- ${ndays_per_run}"
 
     # Number of steps since the beginning of the simulation or the "pseudo-beginning"

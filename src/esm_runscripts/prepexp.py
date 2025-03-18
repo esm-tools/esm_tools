@@ -112,7 +112,7 @@ def copy_tools_to_thisrun(config):
     scriptsdir_deep_parents = list(pathlib.Path(scriptsdir).parents)[5:]
     deep_nesting_found = pathlib.Path(expdir) in scriptsdir_deep_parents
     if deep_nesting_found:
-        error_type = "run error"
+        error_type = "runtime error"
         error_text = (
             f"deep recursion is detected in {__file__}:\n"
             f"- scriptsdir:         {scriptsdir}\n"
@@ -193,7 +193,7 @@ def _call_esm_runscripts_internally(config, command, exedir):
     if os.path.exists(exedir):
         subprocess.check_call(command.split(), cwd=exedir)
     else:
-        error_type = "run error in function ``_call_esm_runscripts_internally``"
+        error_type = "runtime error in function ``_call_esm_runscripts_internally``"
         error_text = f"{exedir} does not exists. Aborting."
         user_error(error_type, error_text)
 

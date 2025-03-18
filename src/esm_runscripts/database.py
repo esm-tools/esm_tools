@@ -23,7 +23,7 @@ class experiment(base):
     id = Column(Integer, Sequence("user_id_seq"), primary_key=True)
     expid = Column(String)
     timestamp = Column(DateTime)
-    run = Column(String, default="00:15:00")
+    runtime = Column(String, default="00:15:00")
     run_timestamp = Column(String, default="00000000-00000000")
     setup_name = Column(String)
     outcome = Column(String, default="crashed")
@@ -43,7 +43,7 @@ class experiment(base):
             + "   "
             + "{0: >17}".format("timestamp")
             + "   "
-            + "{0: >15}".format("run")
+            + "{0: >15}".format("runtime")
             + "   "
             + "{0: >15}".format("expid")
             + "   "
@@ -64,7 +64,7 @@ class experiment(base):
     def nicer_output(run):
         logger.info("ID: " + str(run.id) + ", EXPID: " + str(run.expid) + ":")
         logger.info("     Timestamp: " + run.timestamp.strftime("%x %X"))
-        logger.info("     Runtime: " + run.run)
+        logger.info("     Runtime: " + run.runtime)
         logger.info("     Setup: " + run.setup_name)
         logger.info("     Model Run Time: " + str(run.run_timestamp))
         logger.info("     Outcome of run: " + run.outcome)
@@ -80,7 +80,7 @@ class experiment(base):
         return "%4s   %17s   %15s   %15s   %9s   %10s   %7s   %7s   %7s" % (
             str(self.id),
             str(self.timestamp.strftime("%x-%X")),
-            str(self.run),
+            str(self.runtime),
             str(self.expid),
             str(self.run_timestamp),
             setup,

@@ -440,11 +440,11 @@ def set_most_dates(config):
     config["general"]["last_start_date"] = current_date - delta_date
     config["general"]["end_date"] = config["general"]["next_date"] - (0, 0, 1, 0, 0, 0)
 
-    config["general"]["run"] = (
+    config["general"]["runtime"] = (
         config["general"]["next_date"] - config["general"]["current_date"]
     )
 
-    config["general"]["total_run"] = (
+    config["general"]["total_runtime"] = (
         config["general"]["next_date"] - config["general"]["initial_date"]
     )
 

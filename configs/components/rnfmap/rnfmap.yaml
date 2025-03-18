@@ -93,7 +93,7 @@ rnfmap:
 
     runoff_method: "old"
 
-    run_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+    runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
     lresume: false
 
@@ -149,7 +149,7 @@ rnfmap:
     namelist_changes:
             namelist.runoffmapper:
                     NAMRNFMAP:
-                            RunLengthSec: ${run_seconds}
+                            RunLengthSec: ${runtime_seconds}
                             TimeStepSec: ${time_step}
 
     grids:

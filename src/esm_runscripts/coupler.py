@@ -15,7 +15,7 @@ class coupler_class:
         self.coupled_execs = []
         for exe in self.process_ordering:
             self.coupled_execs.append(full_config[exe]["executable"])
-        self.run = full_config["general"]["run"][5]
+        self.runtime = full_config["general"]["runtime"][5]
         self.nb_of_couplings = 0
         if "coupling_target_fields" in full_config[self.name]:
             for restart_file in list(full_config[self.name]["coupling_target_fields"]):
@@ -35,7 +35,7 @@ class coupler_class:
             self.coupler = oasis.oasis(
                 self.nb_of_couplings,
                 self.coupled_execs,
-                self.run,
+                self.runtime,
                 nnorest=self.norestart,
                 mct_version=full_config["oasis3mct"].get("mct_version", "2.8"),
                 debug_level=full_config["oasis3mct"].get("debug_level", 1),
@@ -49,7 +49,7 @@ class coupler_class:
                 self.nb_of_couplings,
                 self.process_ordering,
                 full_config[self.name]["grids"],
-                self.run,
+                self.runtime,
             )
 
         else:

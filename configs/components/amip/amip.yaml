@@ -49,7 +49,7 @@ amip:
     nproca: 1
     nprocb: 1
 
-    run_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+    runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
     lresume: false
 
@@ -78,7 +78,7 @@ amip:
     namelist_changes:
             namelist.amip:
                     NAMAMIP:
-                            RunLengthSec: "${run_seconds}"
+                            RunLengthSec: "${runtime_seconds}"
                             TimeStepSec: "84600"
                             FixYear: "0"
                             StartYear: "1850"

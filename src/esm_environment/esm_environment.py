@@ -11,6 +11,8 @@ import sys
 
 import esm_parser
 
+from esm_tools import user_note
+
 
 ######################################################################################
 ########################### class "environment_infos" ################################
@@ -598,10 +600,19 @@ class EnvironmentInfos:
 
         def condition_fn(value):
             if isinstance(value, dict) and "_value" in value:
-                return (
+                if (
                     value.get("_run_or_compile", run_or_compile) == run_or_compile and
                     value.get("_component", model) == model
-                )
+                ):
+                    return True
+                elif "_old_value" in value:
+                    # Delete the _value because Provenance will block its reassignment
+                    # otherwise, in some cases
+                    del value["_value"]
+                    value["_value"] = value["_old_value"]
+                    return True
+                else:
+                    return False
             return True
 
         env_vars = self._filter_env_vars(env_vars, condition_fn)
@@ -623,7 +634,7 @@ class EnvironmentInfos:
         def condition_fn(value):
             provenance = value.provenance[-1] if hasattr(value, "provenance") and value.provenance[-1] else None
             return provenance is None or provenance["category"] != "components" or provenance["subcategory"] == model
-        
+
         self.config[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
     
     def remove_env_vars_from_component_files(self, env_var_key):
@@ -806,3 +817,139 @@ class environment_infos(EnvironmentInfos):
             stacklevel=2,
         )
         super(environment_infos, self).__init__(*args, **kwargs)
+
+
+def turn_export_vars_into_dict(config):
+    """
+    Turns the given ``entry`` in ``modelconfig`` (normally ``add_export_vars``) into
+    a dictionary, if it is not a dictionary yet. This function is necessary for
+    retro-compatibility of configuration files having ``add_export_vars`` defined as
+    list of strings, instead of as dictionaries.
+
+    Parameters
+    ----------
+    modelconfig : dict
+        Information compiled from the `yaml` files for this specific component.
+    entry : str
+        The environment variable (originally developed for ``add_export_vars``) to
+        be turned into a dictionary.
+    """
+    computer = config.get("computer", {})
+    if not computer:
+        return
+
+    # Find the variables whose names contains the entry (e.g. add_export_vars)
+    path_sep = ","
+    entry_paths = esm_parser.find_key(
+        computer,
+        "export_vars",
+        paths2finds=[],
+        sep=path_sep,
+    )
+    # Loop through the variables
+    for entry_path in entry_paths:
+        # Split the path and define the export_dict dictionary that links to the
+        # current entry. Later, if the content of export_dict is a list it will be
+        # turned into a dictionary itself
+        path_to_var = entry_path.split(path_sep)
+        path_to_var = [esm_parser.convert(leaf) for leaf in path_to_var]
+        if len(path_to_var) > 1:
+            export_dict = esm_parser.find_value_for_nested_key(
+                computer,
+                path_to_var[-2],
+                path_to_var[:-2],
+            )
+        else:
+            export_dict = computer
+        # Get the value of export_dict
+        if export_dict is None:
+            import ipdb
+            ipdb.set_trace()
+        export_vars = export_dict[path_to_var[-1]]
+
+        # If export_vars is a list transform it into a dictionary
+        if isinstance(export_vars, list):
+            user_note(
+                "environment behavior deprecated",
+                "The ``export_vars`` been a list is deprecated and it won't be "
+                "supported in the future. You'll need to turn ``export_vars`` in "
+                "@HINT_0@ into a ``dict``. ",
+                hints=[
+                    {
+                        "type": "prov",
+                        "object": export_vars,
+                        "text": "@HINT@",
+                    }
+                ]
+            )
+            env_list_to_dict(export_dict, path_to_var[-1])
+
+
+def env_list_to_dict(export_dict, key):
+    """
+    Transforms lists in ``export_dict`` in dictionaries. This allows to add lists of
+    ``export_vars`` to the machine-defined ``export_vars`` that should always be a
+    dictionary. Note that lists are always added at the end of the ``export_vars``,
+    if you want to edit variables of an already existing dictionary make your
+    ``export_var`` be a dictionary.
+
+    Avoids destroying repetitions of elements by adding indexes to the keys of the
+    newly transformed dictionary, for example:
+
+    .. code-block::yaml
+       your_model:
+           environment_changes:
+               add_export_vars:
+                   - 'SOMETHING=dummy'
+                   - 'somethingelse=dummy'
+                   - 'SOMETHING=dummy'
+
+    The ``export_dict[key]`` (where ``key = add_export_vars``) will be transformed
+    in this function from being a list to be the following dictionary:
+
+    .. code-block::yaml
+       'SOMETHING=dummy[(0)][(list)]': 'SOMETHING=dummy'
+       'somethingelse=dummy[(0)][(list)]': 'somethingelse=dummy'
+       'SOMETHING=dummy[(1)][(list)]': "SOMETHING=dummy'
+
+    Note that, once all the environments are resolved, and before writing the
+    exports in the bash files, the ``export_vars`` dictionary is transformed again
+    into a list and the indexes and ``[(list)]`` strings are removed.
+
+    Parameters
+    ----------
+    export_dict : dict
+        ``export_var`` dictionary which value is a list. This list is transformed
+        into a dictionary.
+    key : str
+        The key to the value.
+    """
+    # Load the value
+    export_vars = export_dict[key]
+    # Check if the value is a list TODO: logging
+    if not isinstance(export_vars, list):
+        print(
+            f"The only reason to use this function is if {key} is a list, and it "
+            + "is not in this case..."
+        )
+        sys.exit(1)
+
+    # Loop through the elements of the list
+    new_export_vars = {}
+    for var in export_vars:
+        # Initialize index
+        index = 0
+        while True:
+            # If the key with the current index already exists move the move the
+            # index forward
+            if var + f"[({index})][(list)]" in new_export_vars:
+                index += 1
+            # If the key with the current index does not exist yet, add the element
+            # to the dictionary
+            else:
+                new_export_vars[f"{var}[({index})][(list)]"] = var
+                break
+
+    # Redefined the transformed dictionary
+    export_dict[key] = new_export_vars
+

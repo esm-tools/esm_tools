@@ -11,6 +11,7 @@ from ruamel.yaml.nodes import ScalarNode
 
 import esm_parser
 import esm_tools
+import esm_environment
 from esm_tools import user_error
 
 from .provenance import *
@@ -202,22 +203,23 @@ def yaml_file_to_dict(filepath):
                 # type should be accessible simultaneously)
                 check_changes_duplicates(yaml_load, filepath + extension)
                 if esm_tools_loader.env_variables:
-                    runtime_env_changes = yaml_load.get("computer", {}).get(
-                        "runtime_environment_changes", {}
-                    )
-                    add_export_vars = runtime_env_changes.get("add_export_vars", {})
+                    computer = yaml_load.get("computer", {})
+                    add_export_vars = computer.get("add_export_vars", {})
                     for env_var_name, env_var_value in esm_tools_loader.env_variables:
                         add_export_vars[env_var_name] = env_var_value
                     # TODO(PG): There is probably a more elegant way of doing this:
-                    yaml_load["computer"] = yaml_load.get("computer") or {}
-                    yaml_load["computer"]["runtime_environment_changes"] = (
-                        yaml_load["computer"].get("runtime_environment_changes") or {}
-                    )
-                    yaml_load["computer"]["runtime_environment_changes"][
-                        "add_export_vars"
-                    ] = add_export_vars
+                    yaml_load["computer"] = computer
+                    yaml_load["computer"]["add_export_vars"] = add_export_vars
 
             yaml_load = DictWithProvenance(yaml_load, provenance)
+
+            for component, parameters in yaml_load.items():
+                # TODO: Check for environment variables and through error if in component other than computer
+                pass
+
+            # Turn list export_vars into dictionaries
+            # TODO: environment checkers
+            esm_environment.turn_export_vars_into_dict(yaml_load)
 
             return yaml_load
 

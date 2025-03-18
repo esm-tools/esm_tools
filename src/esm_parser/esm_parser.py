@@ -538,8 +538,6 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
 
 
 def deep_update_further_reading(config, further_reading_config):
-    #import ipdb
-    #ipdb.set_trace()
     for key, value in further_reading_config.items():
         if isinstance(value, dict) and isinstance(config.get(key, None), dict) and config.get(key, None) is not None:
             deep_update_further_reading(config[key], value)
@@ -721,7 +719,16 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             and isinstance(v, dict)
             and isinstance(merge_dct[k], Mapping)
         ):
-            dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
+            if isinstance(dct[k], dict):
+                dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
+            elif isinstance(dct[k], list):
+                logger.error("Cannot merge a dict into a list")
+                raise TypeError("Cannot merge a dict into a list")
+            else:
+                logger.debug(f"Overwriting {k} in {dct} with {v}")
+                if "_value" in v:
+                    v["_old_value"] = dct[k]
+                dct[k] = v
         # MA: I'm not super happy about the resolve_nested_adds implementation. Nested
         # adds should probably resolved in a different place, after the first level
         # ones are resolved.
@@ -1363,7 +1370,7 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
                 old_key = key
                 key = "choose_" + model_name + "." + key.split("choose_")[-1]
                 del mapping[old_key]
-                mapping[key] = value
+                deep_update(key, value, mapping)
             all_chooses.append((key, value))
     logging.debug("Will return %s", all_chooses)
     return all_chooses

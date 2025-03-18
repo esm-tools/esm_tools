@@ -62,7 +62,7 @@ function pism_atmosphere_get_newest_output {
         # Define list of variables selected from PISM output depending on whether icebergs are used or not
         if [ "x${fesom_use_iceberg}" == "x1" ]; then
             echo " * use iceberg coupling and exclude iceberg discharge from mass balance"
-            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount_due_to_flow"
+            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_discharge"
         else 
             echo " * no iceberg coupling"
             CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount"
@@ -367,26 +367,26 @@ function generate_runoff_select_variables {
 	    #PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"basal_melt_rate_grounded,tendency_of_ice_amount_due_to_discharge"}
 		# Only use "tendency_of_ice_amount"; Unit: kg m-2 year-1; for both v1.0 and v1.1
 
-                #***************************************************************************
-                #LA include iceberg model
-                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_surface_mass_flux,tendency_of_ice_amount_due_to_basal_mass_flux,tendency_of_ice_amount_due_to_conservation_error,tendency_of_ice_amount_due_to_flow"}
-                    #PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_surface_mass_flux" "tendency_of_ice_amount_due_to_basal_mass_flux" "tendency_of_ice_amount_due_to_conservation_error" "tendency_of_ice_amount_due_to_flow")
-                    PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_discharge" "runoff") # "tendency_of_ice_amount_due_to_calving")
-                #***************************************************************************
-                else
-                    PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"runoff"}
-	        fi
-            ;;
+        #***************************************************************************
+        #LA include iceberg model
+        if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+            PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_discharge,runoff"} #,tendency_of_ice_amount_due_to_calving"}
+            #PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_surface_mass_flux" "tendency_of_ice_amount_due_to_basal_mass_flux" "tendency_of_ice_amount_due_to_conservation_error" "tendency_of_ice_amount_due_to_flow")
+            PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_discharge" "runoff") # "tendency_of_ice_amount_due_to_calving")
+        #***************************************************************************
+        else
+            PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"runoff"}
+	    fi
+        ;;
 	*)
 		echo "Unknown PISM version=${VERSION_pism} specified, exiting..."
                 exit 42
 	    ;;
     	esac
 
-        cdo -s -selvar,${PISM_MASS_LOSS_VARS} \
-                $ifile \
-                $ofile 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
+    cdo -s -selvar,${PISM_MASS_LOSS_VARS} \
+            $ifile \
+            $ofile 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
 }
 
 function generate_runoff_transform_units {
@@ -471,7 +471,7 @@ function generate_runoff_combine_fields {
                 #***************************************************************************
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-                    echo " * substratiing discharge from runoff ${ifile}"
+                    echo " * substracting discharge from runoff ${ifile}"
                     cdo -s -chname,tendency_of_ice_amount_due_to_discharge,runoff -sub -selname,tendency_of_ice_amount_due_to_discharge ${ifile} -selname,runoff ${ifile} ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm 
                 #***************************************************************************
                 else

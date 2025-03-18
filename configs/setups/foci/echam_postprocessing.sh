@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Postprocessing for FOCI within ESM-Tools
-# based on the Postprocessing from the old mkexp based runtime environment
+# based on the Postprocessing from the old mkexp based run environment
 # Sebastian Wahl 06/2021
 #
 #################################################################################

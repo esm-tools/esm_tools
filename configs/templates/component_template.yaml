@@ -99,14 +99,14 @@ computer:
         VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
         VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
 
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             add_module_actions:
-                - module command only at compiletime (e.g. ``load intel``)
+                - module command only at compile (e.g. ``load intel``)
             add_export_vars:
-                VARIABLE_TO_EXPORT: '"value of the variable you want to export only at compiletime"'
-        runtime:
+                VARIABLE_TO_EXPORT: '"value of the variable you want to export only at compile"'
+        run:
             add_module_actions:
-                - module command only at runtime (e.g. ``load intel``)
+                - module command only at run (e.g. ``load intel``)
             add_export_vars:
-                VARIABLE_TO_EXPORT: '"value of the variable you want to export only at runtime"'
+                VARIABLE_TO_EXPORT: '"value of the variable you want to export only at run"'

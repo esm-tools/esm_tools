@@ -1,6 +1,6 @@
 computer:
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             choose_computer.name:
                 ollie:
                         add_export_vars:

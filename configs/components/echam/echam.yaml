@@ -953,8 +953,8 @@ echam:
             - echam/echam.postprocessing.yaml
 
 computer:
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             choose_computer.name:
                 albedo:
                     add_export_vars:

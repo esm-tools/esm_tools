@@ -13,7 +13,7 @@ class yac:
         nb_of_couplings=1,
         coupled_models=["echam", "fesom"],
         grids=["atmo", "feom"],
-        runtime=1,
+        run=1,
     ):
 
         self.name = "yac"

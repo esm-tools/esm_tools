@@ -277,8 +277,8 @@ computer:
     # Deniz: look at the conf_command. MPI env vars are deleted
     useMPI:
 
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             choose_computer.name:
                 ollie:
                     add_module_actions:

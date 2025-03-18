@@ -3254,7 +3254,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             If something goes wrong with the user's version choices it exits the code
             with a ``esm_parser.user_error``
         """
-        if user_config["general"].get("run_or_compile", "runtime") == "runtime":
+        if user_config["general"].get("execution_mode", "run") == "run":
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]
             version_in_runscript_model = user_config.get(model_name, {}).get("version")

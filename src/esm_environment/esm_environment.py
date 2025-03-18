@@ -40,9 +40,9 @@ class EnvironmentInfos:
 
     Parameters
     ----------
-    run_or_compile : str
+    execution_mode : str
         A string indicating whether ``EnvironmentInfos`` was instanced from a
-        compilation operation (``compiletime``) or a run (``runtime``).
+        compilation operation (``compile``) or a run (``run``).
     complete_config : dict
         Dictionary containing all the compiled information from the `yaml` files
         needed for the current `ESM-Tools` operation.
@@ -51,8 +51,8 @@ class EnvironmentInfos:
         will loop through all the available keys in ``complete_config``.
     """
 
-    def __init__(self, run_or_compile, complete_config=None, model=None):
-        self.run_or_compile = run_or_compile
+    def __init__(self, execution_mode, complete_config=None, model=None):
+        self.execution_mode = execution_mode
         self.model = model
         # Ensure local copy of complete config to avoid mutating it... (facepalm)
         complete_config = copy.deepcopy(complete_config)
@@ -75,8 +75,8 @@ class EnvironmentInfos:
             )
         # TODO move to defaults yaml when that is merged:
         self.config["merge_component_envs"] = {
-            "compiletime": self.config.get("merge_component_envs", {}).get("compiletime", False),
-            "runtime": self.config.get("merge_component_envs", {}).get("runtime", True),
+            "compile": self.config.get("merge_component_envs", {}).get("compile", False),
+            "run": self.config.get("merge_component_envs", {}).get("run", True),
         }
         self.config["include_env_from_component_files"] = True
 
@@ -86,16 +86,16 @@ class EnvironmentInfos:
                 del self.config[entry]
 
         # Load the general environments if any
-        self.general_environment(complete_config, run_or_compile)
+        self.general_environment(complete_config, execution_mode)
 
         # If the model is defined during the instantiation of the class (e.g.
         # during esm_master with a coupled setup), get the environment for that
         # model. Otherwise, loop through all the keys of the complete_config dictionary
         if model:
-            self.apply_config_changes(run_or_compile, complete_config, model)
+            self.apply_config_changes(execution_mode, complete_config, model)
         else:
             for model in complete_config:
-                self.apply_config_changes(run_or_compile, complete_config, model)
+                self.apply_config_changes(execution_mode, complete_config, model)
 
         # Add the ENVIRONMENT_SET_BY_ESMTOOLS into the exports
         self.add_esm_var()
@@ -114,20 +114,20 @@ class EnvironmentInfos:
         else:
             self.config["export_vars"] = {"ENVIRONMENT_SET_BY_ESMTOOLS": "TRUE"}
 
-    def apply_config_changes(self, run_or_compile, config, model):
+    def apply_config_changes(self, execution_mode, config, model):
         """
         Calls ``apply_model_changes`` with the selected configuration for the
         ``model``.
         """
 
         self.apply_model_changes(
-            model, run_or_compile=run_or_compile, modelconfig=config[model]
+            model, execution_mode=execution_mode, modelconfig=config[model]
         )
 
-    def apply_model_changes(self, model, run_or_compile="runtime", modelconfig=None):
+    def apply_model_changes(self, model, execution_mode="run", modelconfig=None):
         """
-        Applies the ``environment_changes``, ``compiletime_environment_changes``,
-        and/or ``runtime_environment_changes`` to the environment configuration of the
+        Applies the ``environment_changes``, ``compile_environment_changes``,
+        and/or ``run_environment_changes`` to the environment configuration of the
         ``model`` component. Note that ``model`` can be either a component (e.g.
         ``fesom``) or ``general``.
 
@@ -135,9 +135,9 @@ class EnvironmentInfos:
         ----------
         model : str
             Name of the component for which changes will apply.
-        run_or_compile : str
+        execution_mode : str
             A string indicating whether ``EnvironmentInfos`` was instanced from a
-            compilation operation (``compiletime``) or a run (``runtime``).
+            compilation operation (``compile``) or a run (``run``).
         modelconfig : dict
             Information compiled from the `yaml` files for this specific component.
         """
@@ -145,7 +145,7 @@ class EnvironmentInfos:
         # Merge whatever is relevant to this environment operation (either compile or
         # run) to ``environment_changes``, taking care of solving possible ``choose_``
         # blocks
-        thesechanges = run_or_compile + "_environment_changes"
+        thesechanges = execution_mode + "_environment_changes"
         if thesechanges in modelconfig:
             # kh 16.09.20 the machine name is already handled here
             # additionally handle different versions of the model (i.e.
@@ -315,7 +315,7 @@ class EnvironmentInfos:
         # Redefined the transformed dictionary
         export_dict[key] = new_export_vars
 
-    def general_environment(self, complete_config, run_or_compile):
+    def general_environment(self, complete_config, execution_mode):
         """
         Checks if there are ``environment_changes`` inside the ``general`` section, and
         if that is the case, ignore the changes loaded from the component files.
@@ -325,9 +325,9 @@ class EnvironmentInfos:
         complete_config : dict
             Dictionary containing all the compiled information from the `yaml` files
             needed for the current `ESM-Tools` operation.
-        run_or_compile : str
+        execution_mode : str
             A string indicating whether ``EnvironmentInfos`` was instanced from a
-            compilation operation (``compiletime``) or a run (``runtime``).
+            compilation operation (``compile``) or a run (``run``).
         """
 
         # If the general section exists load the general environments
@@ -339,13 +339,13 @@ class EnvironmentInfos:
             # Check if a general setup environment exists that will overwrite the
             # component setups
             if coupled_setup and (
-                "compiletime_environment_changes" in complete_config["general"]
-                or "runtime_environment_changes" in complete_config["general"]
+                "compile_environment_changes" in complete_config["general"]
+                or "run_environment_changes" in complete_config["general"]
                 or "environment_changes" in complete_config["general"]
             ):  # TODO: do this if the model include other models and the environment is
                 # labelled as priority over the other models environment (OIFS case)
                 general_env = True
-                self.apply_config_changes(run_or_compile, complete_config, "general")
+                self.apply_config_changes(execution_mode, complete_config, "general")
 
         # If there is a general environment remove all the model specific environments
         # defined in the model files and preserve only the model specific environments
@@ -412,8 +412,8 @@ class EnvironmentInfos:
         # Define the possible environment variables
         environment_vars = [
             "environment_changes",
-            "compiletime_environment_changes",
-            "runtime_environment_changes",
+            "compile_environment_changes",
+            "run_environment_changes",
         ]
         # Loop through the models
         for model in models:
@@ -596,12 +596,12 @@ class EnvironmentInfos:
 
     def select_env_vars_based_on_var_attributes(self, env_var_key):
         env_vars = self.config[env_var_key]
-        model, run_or_compile = self.model, self.run_or_compile
+        model, execution_mode = self.model, self.execution_mode
 
         def condition_fn(value):
             if isinstance(value, dict) and "_value" in value:
                 if (
-                    value.get("_run_or_compile", run_or_compile) == run_or_compile and
+                    value.get("_execution_mode", execution_mode) == execution_mode and
                     value.get("_component", model) == model
                 ):
                     return True
@@ -620,13 +620,13 @@ class EnvironmentInfos:
         self.config[env_var_key] = self._flatten_values_with_attrs(env_vars)
 
     def select_env_vars_based_on_provenance(self, env_var_key):
-        if self.run_or_compile == "runtime" and not self.config["merge_component_envs"].get("runtime", True):
-            print("Selection of component-specific environment during runtime is not supported yet.")
+        if self.execution_mode == "run" and not self.config["merge_component_envs"].get("run", True):
+            print("Selection of component-specific environment during run is not supported yet.")
             raise SystemExit(1)
 
         env_vars = self.config[env_var_key]
         model = self.model
-        merge_component_envs = self.config["merge_component_envs"][self.run_or_compile]
+        merge_component_envs = self.config["merge_component_envs"][self.execution_mode]
 
         if merge_component_envs:
             return

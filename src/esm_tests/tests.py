@@ -520,7 +520,7 @@ def check(info, mode, model, version, out, script, v):
     """
     # Set variables
     success = True
-    mode_name = {"comp": "compilation", "submission": "submission", "run": "runtime"}
+    mode_name = {"comp": "compilation", "submission": "submission", "run": "run"}
     last_tested_dir = info["last_tested_dir"]
     this_computer = info["this_computer"]
     user_info = info["user"]

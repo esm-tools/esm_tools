@@ -662,7 +662,7 @@ fesom:
     - "clean_run_dir"
 
 computer:
-    choose_general.run_or_compile:
-        compiletime:
+    choose_general.execution_mode:
+        compile:
             add_export_vars:
                 taken2from: fesom2_compile

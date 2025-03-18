@@ -70,7 +70,7 @@ class Task:
 
         if kind == "components":
             self.env = esm_environment.esm_environment.EnvironmentInfos(
-                "compiletime", complete_config, model
+                "compile", complete_config, model
             )
         else:
             self.env = None

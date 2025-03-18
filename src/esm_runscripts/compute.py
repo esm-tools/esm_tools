@@ -537,7 +537,7 @@ def copy_tools_to_thisrun(config):
     scriptsdir_deep_parents = list(pathlib.Path(scriptsdir).parents)[5:]
     deep_nesting_found = pathlib.Path(expdir) in scriptsdir_deep_parents
     if deep_nesting_found:
-        error_type = "runtime error"
+        error_type = "run error"
         error_text = (
             f"deep recursion is detected in {__file__}:\n"
             f"- scriptsdir:         {scriptsdir}\n"

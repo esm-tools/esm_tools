@@ -93,7 +93,7 @@ rnfmap:
 
     runoff_method: "old"
 
-    runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+    run_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
     lresume: false
 
@@ -149,7 +149,7 @@ rnfmap:
     namelist_changes:
             namelist.runoffmapper:
                     NAMRNFMAP:
-                            RunLengthSec: ${runtime_seconds}
+                            RunLengthSec: ${run_seconds}
                             TimeStepSec: ${time_step}
 
     grids:
@@ -205,11 +205,11 @@ rnfmap:
 
 computer:
     #
-    # Setup up compile and runtime environment i.e. what needs
+    # Setup up compile and run environment i.e. what needs
     # to be changed w.r.t the default config/machines/<computer>.yaml
     #
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             add_export_vars:
                 # OASIS
                 - 'OIFS_OASIS_BASE=$(pwd)/oasis'

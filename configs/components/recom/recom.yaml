@@ -348,8 +348,8 @@ recom:
                     file: "stdout"
 
 computer:
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             choose_computer.name:
                 blogin:
                     add_export_vars:

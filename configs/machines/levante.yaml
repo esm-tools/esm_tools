@@ -119,9 +119,9 @@ computer:
             KMP_AFFINITY: "granularity=fine,scatter"
 
 
-    # Variables needed exclusively during runtime
-    choose_general.run_or_compile:
-        runtime:
+    # Variables needed exclusively during run
+    choose_general.execution_mode:
+        run:
             add_export_vars:
                 OMPI_MCA_btl: self
                 OMPI_MCA_coll: "^ml"

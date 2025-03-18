@@ -950,7 +950,7 @@ computer:
         # problems)
         taskset: true
         merge_component_envs:
-            compiletime: True
+            compile: True
 
         # MA: Only used for JUWELS right now
         OpenMP_flag: "-qopenmp"
@@ -970,8 +970,8 @@ computer:
                 iolibraries: system_libs
                 compiler_mpi: intel2022_openmpi
 
-        choose_run_or_compile:
-            runtime:
+        choose_execution_mode:
+            run:
                 add_export_vars:
                     # Turn on FESOM coupling
                     FESOM_USE_CPLNG: '"active"'

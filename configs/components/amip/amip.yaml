@@ -49,7 +49,7 @@ amip:
     nproca: 1
     nprocb: 1
 
-    runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+    run_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
     lresume: false
 
@@ -78,7 +78,7 @@ amip:
     namelist_changes:
             namelist.amip:
                     NAMAMIP:
-                            RunLengthSec: "${runtime_seconds}"
+                            RunLengthSec: "${run_seconds}"
                             TimeStepSec: "84600"
                             FixYear: "0"
                             StartYear: "1850"
@@ -96,11 +96,11 @@ amip:
 
 computer:
     #
-    # Setup up compile and runtime environment i.e. what needs
+    # Setup up compile and run environment i.e. what needs
     # to be changed w.r.t the default config/machines/<computer>.yaml
     #
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             add_export_vars:
                 # OASIS
                 - 'OIFS_OASIS_BASE=$(pwd)/oasis'

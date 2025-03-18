@@ -265,21 +265,21 @@ computer:
         # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
         OIFS_OASIS_BASE:
             _value: '$(pwd)/oasis'
-            _run_or_compile: compiletime
+            _execution_mode: compile
             _component: echam
         OIFS_OASIS_INCLUDE:
             _value: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-            _run_or_compile: compiletime
+            _execution_mode: compile
             _component: echam
         OASIS3MCT_FC_LIB:
             _value: "$(pwd)/lib/"
-            _run_or_compile: compiletime
+            _execution_mode: compile
             _component: echam
         OASIS3MCTROOT:
             _value: "$(pwd)/oasis/"
-            _run_or_compile: compiletime
+            _execution_mode: compile
             _component: echam
         configure_opts:
             _value: '--with-coupler=oasis3-mct'
-            _run_or_compile: compiletime
+            _execution_mode: compile
             _component: echam

@@ -133,7 +133,7 @@ def resolve_some_choose_blocks(config):
 def model_env_into_computer(config):
     """
     This function allows to store in the ``computer`` dictionary, variables that were
-    defined inside ``environment_changes`` or ``compile/runtime_environment_changes``
+    defined inside ``environment_changes`` or ``compile/run_environment_changes``
     in the components.
 
     It excludes ``module_actions`` and ``export_vars`` dictionaries as those are
@@ -174,9 +174,9 @@ def model_env_into_computer(config):
     # Get which type of changes are to be applied to the environment
     #import ipdb
     #ipdb.set_trace()
-    run_or_compile = config.get("general", {}).get("run_or_compile", "runtime")
-    config["general"]["run_or_compile"] = run_or_compile
-    thesechanges = run_or_compile + "_environment_changes"
+    execution_mode = config.get("general", {}).get("execution_mode", "run")
+    config["general"]["execution_mode"] = execution_mode
+    thesechanges = execution_mode + "_environment_changes"
     # List the component names
     models = config.get("general", {}).get("models", [])
     # ``env_vars`` stores information about the environment changes to inform
@@ -184,7 +184,7 @@ def model_env_into_computer(config):
     env_vars = {}
     # Loop through the models
     for model in models:
-        # Update the models ``environment_changes`` with the ``compiletime/runtime_
+        # Update the models ``environment_changes`` with the ``compile/run_
         # environment_changes
         modelconfig = copy.deepcopy(config[model])
         modelconfig["environment_changes"] = modelconfig.get("environment_changes", {})
@@ -215,7 +215,7 @@ def model_env_into_computer(config):
                 ]
                 and "computer" in config
                 and not overwrite
-                # and run_or_compile=="runtime"
+                # and execution_mode=="run"
             ):
                 # If the key is already included in ``env_vars``, the key variable has
                 # been already modified by a previous model and a warning needs to be
@@ -440,11 +440,11 @@ def set_most_dates(config):
     config["general"]["last_start_date"] = current_date - delta_date
     config["general"]["end_date"] = config["general"]["next_date"] - (0, 0, 1, 0, 0, 0)
 
-    config["general"]["runtime"] = (
+    config["general"]["run"] = (
         config["general"]["next_date"] - config["general"]["current_date"]
     )
 
-    config["general"]["total_runtime"] = (
+    config["general"]["total_run"] = (
         config["general"]["next_date"] - config["general"]["initial_date"]
     )
 

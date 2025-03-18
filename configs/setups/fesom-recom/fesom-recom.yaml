@@ -115,8 +115,8 @@ recom:
 computer:
     choose_computer.name:
         blogin:
-            choose_run_or_compile:
-                runtime:
+            choose_execution_mode:
+                run:
                     add_export_vars:
                         # MA: Delete in the future, when libraries in blogin.yaml
                         # do the job for fesom-recom-1.4 as well (talk about this

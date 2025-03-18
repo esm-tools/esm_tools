@@ -1327,8 +1327,8 @@ computer:
         nesh:
             compiler_mpi: intel2020_impi2020
 
-    choose_run_or_compile:
-        runtime:
+    choose_execution_mode:
+        run:
             add_export_vars:
                 # Turn on FOCI coupling        
                 FOCI_USE_CPLNG: "active"

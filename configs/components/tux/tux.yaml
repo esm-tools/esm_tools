@@ -29,8 +29,8 @@ tux:
                 GPL
 
 computer:
-    choose_run_or_compile:
-        compiletime:
+    choose_execution_mode:
+        compile:
             choose_computer.name:
                 mistral:
                     add_module_actions:

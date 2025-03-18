@@ -157,7 +157,7 @@ xios:
     install_bins: bin/xios.x
     use_oasis: ''
     #
-    # runtime setup
+    # run setup
     #
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"

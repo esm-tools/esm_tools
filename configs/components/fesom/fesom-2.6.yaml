@@ -11,7 +11,6 @@ clean_command: ${defaults.clean_command}
 
 # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
 # below) whose source code contains the icebergs implementation
-icb_code: false
 with_icb: false
 
 wiso_code: false
@@ -194,11 +193,6 @@ outdata_sources:
 outdata_targets:
         fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
-choose_icb_code:
-        True:
-            use_icebergs: "${with_icb}"
-            use_icesheet_coupling: "${with_icb}"
-
 choose_with_icb:
         True:
             required_plugins:
@@ -297,12 +291,6 @@ choose_with_icb:
                     felem: "felem"
                     #num_non_melted_icb_file: "num_non_melted_icb_file"
             
-            add_namelist_changes:
-                namelist.config:
-                    icebergs:
-                        use_icebergs: "${use_icebergs}"
-                        use_icesheet_coupling: "${use_icesheet_coupling}"
-                        steps_per_ib_step: 8
 
 log_files:
         clock: clock
@@ -385,6 +373,12 @@ namelist_changes:
                         output_length: "${restart_rate}"
                         output_length_unit: "${restart_unit}"
                         restart_length: "${restart_rate}"
+                run_config:
+                        lwiso: "${with_wiso}"
+                icebergs:
+                        use_icebergs: "${use_icebergs}"
+                        use_icesheet_coupling: "${use_icesheet_coupling}"
+                        steps_per_ib_step: 8
 
 
         namelist.forcing:
@@ -598,12 +592,6 @@ wiso_fields:
         - i2_oce
         - i3_oce
 
-choose_wiso_code:
-        True:
-                add_namelist_changes:
-                        namelist.config:
-                                run_config:
-                                        lwiso: "${with_wiso}"
 
 choose_with_wiso:
         True:

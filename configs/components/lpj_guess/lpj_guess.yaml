@@ -46,12 +46,9 @@ choose_version:
     4.1.2:
         runscript_name: run_coupled_4_1_2.ins
         git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
-        branch: main
-        #mygrid: TL159
+        branch: lpj_guess_awiesm3
         mygrid: TL255
-        #install_bins: build/guess_TL159
         install_bins: build/guess_TL255
-        #executable: guess_TL159
         executable: guess_TL255
 
         environment_changes:
@@ -81,6 +78,7 @@ choose_computer.name:
 
 # Some recommended defaults (restart for old experiment yes or no?)
 lresume: false
+time_step: 86400
 
 # Some commonly used variables in other ESM-Tools components (but optional)
 input_dir: ${pool_dir}/lpj-guess/
@@ -113,7 +111,6 @@ choose_resolution:
         TCO95:
                 nx: 40320
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "096"
                 res_number: 95
                 res_number_tl: "95_4"
@@ -121,7 +118,6 @@ choose_resolution:
         TL159:
                 nx: 35718
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "080"
                 res_number: 159
                 res_number_tl: "159l_2"
@@ -129,7 +125,6 @@ choose_resolution:
         TCO159:
                 nx: 108160
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "160"
                 res_number: 159
                 res_number_tl: "159_4"
@@ -137,7 +132,6 @@ choose_resolution:
         TCO199:
                 nx: 167200
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "200"
                 res_number: 199
                 res_number_tl: "199_4"
@@ -145,7 +139,6 @@ choose_resolution:
         TL255:
                 nx: 88838
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "128"
                 res_number: 255
                 res_number_tl: "255l_2"
@@ -153,7 +146,6 @@ choose_resolution:
         TCO319:
                 nx: 421120
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: 320
                 res_number: 319
                 res_number_tl: "319_4"
@@ -161,7 +153,6 @@ choose_resolution:
         TCO399:
                 nx: 654400
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: 400
                 res_number: 399
                 res_number_tl: "399_4"
@@ -169,7 +160,6 @@ choose_resolution:
         TCO639:
                 nx: 1661440
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: 640
                 res_number: 639
                 res_number_tl: "639_4"
@@ -177,7 +167,6 @@ choose_resolution:
         TCO1279:
                 nx: 6599680
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: 128
                 res_number: 1279
                 res_number_tl: "1279_4"
@@ -185,7 +174,6 @@ choose_resolution:
         TL511:
                 nx: 348528
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "256"
                 res_number: 511
                 res_number_tl: "511l_2"
@@ -193,7 +181,6 @@ choose_resolution:
         TL799:
                 nx: 843490
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "400"
                 res_number: 799
                 res_number_tl: "799l_2"
@@ -201,7 +188,6 @@ choose_resolution:
         TL1279:
                 nx: 2140702
                 ny: 1
-                time_step: 86400
                 oasis_grid_name: "640"
                 res_number: 799
                 res_number_tl: "1279l_2"

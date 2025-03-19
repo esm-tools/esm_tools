@@ -36,7 +36,7 @@ lpj_guess:
     resolution: TL255
     lresume: false 
     nproc: 128
-    omp_num_threads: 1 
+    omp_num_threads: 4
 
 oifs:
     #resolution: "TL159"

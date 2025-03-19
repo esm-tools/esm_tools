@@ -516,16 +516,6 @@ class EnvironmentInfos:
         self.computer.yaml_dump()
 
 
-class environment_infos(EnvironmentInfos):
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "Please change your code to use EnvironmentInfos!",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        super(environment_infos, self).__init__(*args, **kwargs)
-
-
 def turn_export_vars_into_dict(config):
     """
     Turns the given ``entry`` in ``modelconfig`` (normally ``add_export_vars``) into

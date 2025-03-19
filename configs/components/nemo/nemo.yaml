@@ -958,8 +958,8 @@ nemo:
 
     # start_date_m1: $((${start_date} - ${time_step}seconds))
     end_date_m1: $((${next_date} - ${time_step}seconds))
-    run: $((${next_date} - ${start_date}))
-    timestep_per_run: $(( ${run} / ${time_step} ))
+    runtime: $((${next_date} - ${start_date}))
+    timestep_per_run: $(( ${runtime} / ${time_step} ))
 
     seconds_since_initial: $((${start_date} - ${initial_date}))
     steps_since_initial: $(( ${seconds_since_initial} / ${time_step}))

@@ -30,7 +30,7 @@ requirements = [
     "pytest==7.1.2",
     "pyyaml==6.0.1",
     "questionary==1.10.0",
-    "randomnames==0.2.1",
+    "randomname==0.2.1",
     "ruamel.yaml==0.17.32",
     "semver==2.13.0",
     "sqlalchemy>=1.4.39",

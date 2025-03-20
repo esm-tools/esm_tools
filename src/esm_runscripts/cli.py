@@ -12,6 +12,7 @@ import logging
 import os
 import sys
 
+import randomname
 from loguru import logger
 
 from esm_motd import check_all_esm_packages
@@ -59,7 +60,7 @@ def parse_shargs():
     )
 
     parser.add_argument(
-        "-e", "--expid", help="The experiment ID to use", default="test"
+        "-e", "--expid", help="The experiment ID to use", default=randomname.get_name()
     )
 
     parser.add_argument(

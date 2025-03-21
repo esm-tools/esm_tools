@@ -136,7 +136,6 @@ constant_blacklist = [r"PATH", r"LD_LIBRARY_PATH", r"NETCDFF_ROOT", r"I_MPI_ROOT
 
 constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
-protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
 early_choose_vars = ["include_models", "version", "omp_num_threads", "further_reading"]
 
@@ -738,7 +737,6 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             resolve_nested_adds
             and isinstance(k, str)
             and k.startswith("add_")
-            and k not in protected_adds
             and isinstance(v, (list, dict))
         ):
             add_entries_from_chapter(dct, "".join(k.split("add_")), v)
@@ -753,7 +751,13 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
 
 
 def deep_update(chapter, entries, config, blackdict={}):
+#    if "choose_" in chapter:
+#        add_chapter = chapter.replace("add_", "")
+#        add_entries_from_chapter(config, add_chapter, entries)
     if "add_" in chapter:
+        #if "add_choose_computer.name" in chapter:
+        #    import ipdb
+        #    ipdb.set_trace()
         add_chapter = chapter.replace("add_", "")
         add_entries_from_chapter(config, add_chapter, entries)
         # del config[chapter]

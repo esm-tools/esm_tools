@@ -79,7 +79,7 @@ class EnvironmentInfos:
         #    )
         # TODO move to defaults yaml when that is merged:
         self.computer["merge_component_envs"] = {
-            "compile": self.config.get("merge_component_envs", {}).get(
+            "compile": self.computer.get("merge_component_envs", {}).get(
                 "compile", False
             ),
             "run": self.config.get("merge_component_envs", {}).get("run", True),
@@ -629,7 +629,7 @@ def env_list_to_dict(export_dict, key):
         sys.exit(1)
 
     # Loop through the elements of the list
-    new_export_vars = {}
+    new_export_vars = esm_parser.DictWithProvenance({}, {})
     for var in export_vars:
         # Initialize index
         index = 0

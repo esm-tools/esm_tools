@@ -3085,30 +3085,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # yaml files. The elif above should be substituted by the else with a checking for
         # the model section
         else:
-            setup_config["general"].update({"standalone": True})
-            setup_config["general"].update({"models": [self.config["model"]]})
-
-            # Resolve choose with include_models
-            resolve_choose_with_var(
-                "include_models",
-                self.config,
-                user_config=user_config,
-                setup_config=setup_config,
+            raise NotImplementedError(
+                "The standalone setup is not supported in this fashion anymore!"
             )
-
-            if "include_models" in self.config:
-                setup_config["general"]["include_models"] = self.config[
-                    "include_models"
-                ]
-            setup_config[self.config["model"]] = self.config
-
-            setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
-                setup_config
-            )
-            setup_config["general"]["valid_setup_names"].remove(self.config["model"])
-            setup_config["general"]["valid_model_names"] = valid_model_names = [
-                self.config["model"]
-            ]
 
         del self.config
 

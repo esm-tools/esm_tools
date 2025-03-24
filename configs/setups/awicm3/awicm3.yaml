@@ -126,6 +126,7 @@ general:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
+            - fesom/fesom.env.yaml
             oasis_with_yac: False
             xios_interp_order: 1
           v3.4:
@@ -723,6 +724,9 @@ xios:
 rnfmap:
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
+        choose_general.major_version:
+                "v3.4":
+                      version: v1.0
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}

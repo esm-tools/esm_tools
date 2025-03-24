@@ -1120,20 +1120,31 @@ computer:
         # MA: Only used for JUWELS right now
         OpenMP_flag: "-qopenmp"
         OpenMP_CCDEFS: "_OPENMP"
-
-        choose_computer.name:
-            juwels:
-                iolibraries: awi_libs
-                compiler_mpi: intel2022_ompi2022
-            blogin:
-                iolibraries: geomar_libs
-                compiler_mpi: intel2019_ompi
-            glogin:
-                iolibraries: geomar_libs
-                compiler_mpi: intel2019_ompi
-            levante:
-                iolibraries: system_libs
-                compiler_mpi: intel2022_openmpi
+        
+        choose_general.major_version:
+            v3.4:
+                choose_name:
+                    juwels:
+                        iolibraries: none
+                        compiler_mpi: intel2025_psmpi
+                        useMPI: intelmpi
+                    levante:
+                        iolibraries: system_gnu_libs
+                        compiler_mpi: gnu11_ompi4
+            '*':
+                choose_name:
+                    juwels:
+                        iolibraries: awi_libs
+                        compiler_mpi: intel2022_ompi2022
+                    blogin:
+                        iolibraries: geomar_libs
+                        compiler_mpi: intel2019_ompi
+                    glogin:
+                        iolibraries: geomar_libs
+                        compiler_mpi: intel2019_ompi
+                    levante:
+                        iolibraries: system_libs
+                        compiler_mpi: intel2022_openmpi
 
         choose_execution_mode:
             run:

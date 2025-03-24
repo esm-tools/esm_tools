@@ -353,7 +353,7 @@ computer:
             choose_computer.name:
                 blogin:
                     add_export_vars:
-                        - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                        - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                        - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                        - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
+                        NETCDF_DIR: "/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
+                        LD_LIBRARY_PATH: "$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: "$NETCDF_DIR/include"
+                        NETCDF_CXX_LIBRARIES: "$NETCDF_DIR/lib"

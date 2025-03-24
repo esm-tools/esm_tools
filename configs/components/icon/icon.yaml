@@ -294,12 +294,12 @@ computer:
                         - "load intel.mpi"
 
                     add_export_vars:
-                        - 'FC=mpif90'
-                        - 'F77=mpif90'
-                        - 'MPIFC=mpif90'
-                        - 'MPICC=mpigxx'
-                        - 'CC=mpigcc'
-                        - 'CXX=mpigxx'
+                        FC: "mpif90"
+                        F77: "mpif90"
+                        MPIFC: "mpif90"
+                        MPICC: "mpigxx"
+                        CC: "mpigcc"
+                        CXX: "mpigxx"
 
                     choose_icon.version:
                         2.6.2-rc:
@@ -313,21 +313,21 @@ computer:
                                 - "load netcdf/4.6.2_intel"
 
                             add_export_vars:
-                                - "HDF5_ROOT_ICON=/global/AWIsoft/hdf5/hdf5-1.10.2_gnu"
-                                - "HDF5_LIBS_ICON='-lhdf5'"
-                                - "NETCDF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
-                                - "NETCDF_LIBS_ICON='-lnetcdf'"
-                                - "NETCDFF_ROOT_ICON=/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
-                                - "NETCDFF_LIBS_ICON='-lnetcdff'"
-                                - "GRIBAPI_ROOT_ICON=/global/AWIsoft/grib_api/1.12.3_gnu"
-                                - "GRIBAPI_LIBS_ICON='-lgrib_api'"
-                                - "XML2_ROOT='/usr'"
-                                - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --disable-parallel-netcdf'"
-                                - "FC=mpiifort"
-                                - "F77=mpiifort"
-                                - "MPIFC=mpiifort"
-                                - "CC=mpiicc"
-                                - "CXX=mpiicpc"
+                                HDF5_ROOT_ICON: "/global/AWIsoft/hdf5/hdf5-1.10.2_gnu"
+                                HDF5_LIBS_ICON: "-lhdf5"
+                                NETCDF_ROOT_ICON: "/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
+                                NETCDF_LIBS_ICON: "-lnetcdf"
+                                NETCDFF_ROOT_ICON: "/global/AWIsoft/netcdf/4.6.2_intel_18.0.5"
+                                NETCDFF_LIBS_ICON: "-lnetcdff"
+                                GRIBAPI_ROOT_ICON: "/global/AWIsoft/grib_api/1.12.3_gnu"
+                                GRIBAPI_LIBS_ICON: "-lgrib_api"
+                                XML2_ROOT: "/usr"
+                                EXTRA_CONFIG_ARGS: "--enable-intel-consistency --enable-vectorized-lrtm --disable-parallel-netcdf"
+                                FC: "mpiifort"
+                                F77: "mpiifort"
+                                MPIFC: "mpiifort"
+                                CC: "mpiicc"
+                                CXX: "mpiicpc"
 
                 mistral:
                     add_module_actions:
@@ -342,12 +342,12 @@ computer:
                         - "load nco"
 
                     add_export_vars:
-                        - 'FC=mpif90'
-                        - 'F77=mpif90'
-                        - 'MPIFC=mpif90'
-                        - 'MPICC=mpigxx'
-                        - 'CC=mpigcc'
-                        - 'CXX=mpigxx'
+                        FC: "mpif90"
+                        F77: "mpif90"
+                        MPIFC: "mpif90"
+                        MPICC: "mpigxx"
+                        CC: "mpigcc"
+                        CXX: "mpigxx"
 
                     choose_version:
                         2.6.2-rc:
@@ -363,20 +363,19 @@ computer:
                                 - "load openmpi/2.0.2p1_hpcx-intel14"
 
                             add_export_vars:
-                                - "HDF5_ROOT_ICON=/sw/rhel6-x64/hdf5/hdf5-1.8.18-parallel-openmpi2-intel14"
-                                - "HDF5_LIBS_ICON='-lhdf5'"
-                                - "NETCDF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-parallel-openmpi2-intel14"
-                                - "NETCDF_LIBS_ICON='-lnetcdf'"
-                                - "NETCDFF_ROOT_ICON=/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-openmpi2-intel14"
-                                - "NETCDFF_LIBS_ICON='-lnetcdff'"
-                                - "GRIBAPI_ROOT_ICON=/sw/rhel6-x64/grib_api/grib_api-1.15.0-gcc48"
-                                - "GRIBAPI_LIBS_ICON='-lgrib_api'"
-                                - "XML2_ROOT='/usr'"
-                                - "LD_LIBRARY_PATH=$HDF5_ROOT_ICON/lib:$NETCDF_ROOT_ICON/lib:$NETCDFF_ROOT_ICON/lib:$GRIBAPI_ROOT_ICON/lib:$LD_LIBRARY_PATH"
-                                - "EXTRA_CONFIG_ARGS='--enable-intel-consistency --enable-vectorized-lrtm --enable-parallel-netcdf'"
-                                - "FC=mpif90"
-                                - "F77=mpif90"
-                                - "MPIFC=mpif90"
-                                - "CC=mpicc"
-                                - "CXX=mpicxx"
-
+                                HDF5_ROOT_ICON: "/sw/rhel6-x64/hdf5/hdf5-1.8.18-parallel-openmpi2-intel14"
+                                HDF5_LIBS_ICON: "-lhdf5"
+                                NETCDF_ROOT_ICON: "/sw/rhel6-x64/netcdf/netcdf_c-4.4.0-parallel-openmpi2-intel14"
+                                NETCDF_LIBS_ICON: "-lnetcdf"
+                                NETCDFF_ROOT_ICON: "/sw/rhel6-x64/netcdf/netcdf_fortran-4.4.3-parallel-openmpi2-intel14"
+                                NETCDFF_LIBS_ICON: "-lnetcdff"
+                                GRIBAPI_ROOT_ICON: "/sw/rhel6-x64/grib_api/grib_api-1.15.0-gcc48"
+                                GRIBAPI_LIBS_ICON: "-lgrib_api"
+                                XML2_ROOT: "/usr"
+                                LD_LIBRARY_PATH: "$HDF5_ROOT_ICON/lib:$NETCDF_ROOT_ICON/lib:$NETCDFF_ROOT_ICON/lib:$GRIBAPI_ROOT_ICON/lib:$LD_LIBRARY_PATH"
+                                EXTRA_CONFIG_ARGS: "--enable-intel-consistency --enable-vectorized-lrtm --enable-parallel-netcdf"
+                                FC: "mpif90"
+                                F77: "mpif90"
+                                MPIFC: "mpif90"
+                                CC: "mpicc"
+                                CXX: "mpicxx"

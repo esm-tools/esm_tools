@@ -283,7 +283,7 @@ class batch_system:
     def get_environment(config, subjob):
         environment = []
 
-        env = esm_environment.environment_infos("run", config)
+        env = esm_environment.EnvironmentInfos(config, "run")
         commands = env.commands
         if not subjob.replace("_general", "") in reserved_jobtypes:  # ??? fishy
             commands += dataprocess.subjob_environment(config, subjob)

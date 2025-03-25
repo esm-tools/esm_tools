@@ -552,8 +552,22 @@ def deep_update_further_reading(config, further_reading_config):
         elif key in config and value != config[key]:
             user_error(
                 "further_reading conflict",
-                f"Key ``{key}`` exists in two different further_reading at the same ",
-                f"hierarchical level (``{value.provenance[-1]['category']}``:``{config[key].provenance[-1]['category']}``)"
+                f"Key ``{key}`` exists in two different files at the same "
+                f"hierarchical level (``{value.provenance[-1]['category']}``:"
+                f"``{config[key].provenance[-1]['category']}``)"
+                "\n- @HINT_0@\n- @HINT_1@",
+                hints = [
+                    {
+                        "type": "prov",
+                        "object": config[key],
+                        "text": "@HINT@",
+                    },
+                    {
+                        "type": "prov",
+                        "object": value,
+                        "text": "@HINT@",
+                    },
+                ]
             )
         else:
             config[key] = value
@@ -754,7 +768,7 @@ def deep_update(chapter, entries, config, blackdict={}):
 #    if "choose_" in chapter:
 #        add_chapter = chapter.replace("add_", "")
 #        add_entries_from_chapter(config, add_chapter, entries)
-    if "add_" in chapter:
+    if "add_" in chapter or "choose_" in chapter:
         #if "add_choose_computer.name" in chapter:
         #    import ipdb
         #    ipdb.set_trace()
@@ -922,7 +936,7 @@ def add_entries_from_chapter(config, add_chapter, add_entries):
             dict_merge(
                 config[add_chapter],
                 add_entries,
-                resolve_nested_adds=True,
+                resolve_nested_adds=False,
             )
     else:
         config[add_chapter] = add_entries
@@ -2919,10 +2933,11 @@ class GeneralConfig(dict):  # pragma: no cover
         else:
             self.config = include_path
 
+        # Resolve futher_readings in "general"
         resolve_choose_with_var(
             "further_reading",
-            self.config,
-            model_config={model: self.config},
+            self.config["general"],
+            current_model="general",
             user_config=user_config,
         )
 

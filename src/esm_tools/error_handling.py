@@ -105,6 +105,8 @@ def user_note_hints(note_text, hints):
             provenance = None
             if hasattr(mapping_with_provenance, "extract_first_nested_values_provenance"):
                 provenance = mapping_with_provenance.extract_first_nested_values_provenance()
+            elif hasattr(mapping_with_provenance, "provenance"):
+                provenance = mapping_with_provenance.provenance[-1]
             else:
                 logger.debug("No provenance found for %s", mapping_with_provenance)
             # If the provenance is found, replace the placeholder with the provenance,

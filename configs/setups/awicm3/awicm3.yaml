@@ -1117,10 +1117,6 @@ computer:
         merge_component_envs:
             compile: True
 
-        # MA: Only used for JUWELS right now
-        OpenMP_flag: "-qopenmp"
-        OpenMP_CCDEFS: "_OPENMP"
-        
         choose_general.major_version:
             v3.4:
                 choose_name:

@@ -1508,6 +1508,9 @@ def find_one_independent_choose(all_set_variables):
 
 
 def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}):
+    #if "name" in choose_key and "levante" == config_to_replace_in.get("name"):
+    #    import ipdb
+    #    ipdb.set_trace()
     path_to_key = choose_key.replace("choose_", "").split(".")
     try:
         choice = recursive_get(config, path_to_key)

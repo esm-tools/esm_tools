@@ -554,6 +554,9 @@ config_sources:
 compiletime_environment_changes:
         add_export_vars:
                 taken2from:      fesom2_compile
+        choose_computer.name:
+            blogin:
+                iolibraries: geomar_libs
 
 config_in_work:
         config:  "namelist.config"

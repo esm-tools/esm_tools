@@ -182,7 +182,7 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${resolution}"
 forcing_dir: "${input_dir}/${resolution}"
 greenhouse_dir: "${pool_dir}"
-namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario_type}"
+namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${scenario}"
 
 switch: 1
 value : "echam default"
@@ -198,6 +198,8 @@ icb_code: false
 with_wiso: false
 wiso_code: false
 with_lco2_emis: false
+allow_hist2ssp_transition: False # allow transition historical up to year 2014 --> ssp from year 2015 onwards
+transition_hist2ssp_name: ssp370 # which ssp data should be used for year+1 interpolation
 
 # kh 30.04.20 nprocrad is replaced by more flexible partitioning using nprocar and nprocbr
 #nprocrad: 0
@@ -398,24 +400,14 @@ choose_scenario:
                         aerocoarse: piaerocoarse
                         aerofarir: piaerofarir
                         aerofin: piaerofin
-                        #
                         ozone: 1950ozone
                         swflux: 1950swflux
                         volcir: 1950volcir
                         volcsw: 1950volcsw
-        # old hist settings --> need to discuss with deniz whether this is
-        # still needed
         HIST:
-                # NOTE: r0007 (default dataset) has upto 2014 but r0008 has
-                # upto 2024 (used by FOCI)
                 dataset: r0008
                 greenhouse_dir: "${input_dir}"
                 forcing_files:
-                        # aerocoarse: piaerocoarse
-                        # aerofarir: piaerofarir
-                        # aerofin: histaerofin
-                        sst: amipsst
-                        sic: amipsic
                         aerocoarse_1849: piaerocoarse
                         aerocoarse_1850: piaerocoarse
                         aerocoarse_1851: piaerocoarse
@@ -425,86 +417,82 @@ choose_scenario:
                         aerofin_1849: piaerofin
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
-                        ozone: ozone_hist_scenario
-                        greenhouse: greenhouse_hist_scenario
+                        greenhouse: greenhouse_hist
+                        MAC-SP: MAC-SP_hist
+                        ozone: ozone_hist
+                        swflux: histswflux
                         volcir: histvolcir
                         volcsw: histvolcsw
-                        swflux: histswflux
-                        MAC-SP: MAC-SP_hist_scenario
-                # For the last year of the hisotical period echam needs an ozone file
-                # of the next year and the ssp370 is given by default
-                ozone_source_file_scenario: ssp370
-
-        # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
-        # under the choose_scenario_type block
-        cmip6hist:
-                scenario_type: cmip6
-        ssp126:
-                scenario_type: cmip6
-        ssp245:
-                scenario_type: cmip6
-        ssp370:
-                scenario_type: cmip6
-        ssp534os:
-                scenario_type: cmip6
-        ssp585:
-                scenario_type: cmip6
-
-# Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
-# under the choose_scenario_type block
-scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
-allow_hist2ssp_transition: False
-choose_scenario_is_ssp:
-    True:
-        scenario_type: cmip6
-        after_2014: "$(( ${start_date!year} > 2014 ))"
-        initial_date_non_ssp: "$((
-            ${initial_date!year} < 2015 and not ${allow_hist2ssp_transition}
-        ))"
-        choose_initial_date_non_ssp:
-            True:
-                add_error:
-                    "Initial date out of the ssp period":
-                        message: "
-                            You are trying to run a ``ssp`` scenario (``${scenario}``)
-                            with an initial date that does not correspond to a ssp
-                            period (``${initial_date}``). Consider running a historical
-                            scenario until the end of 2014, and then branch off a new
-                            experiment for the ssp period. Alternatively, you can set
-                            ``echam.allow_hist2ssp_transition`` to ``True`` (we advice
-                            against that!)."
-            # Automatic switching of iaero if simulations are allowed to run from
-            # historical to ssp periods
-            False:
-                choose_after_2014:
+                choose_allow_hist2ssp_transition:
                     True:
-                        iaero: 9
-                    False:
-                        iaero: 8
-                add_namelist_changes:
-                    namelist.echam:
-                        radctl:
-                            iaero: "${iaero}"
+                        after_2014: "$(( ${start_date!year} > 2014 ))"
+                        choose_after_2014:
+                            True:
+                                add_namelist_changes:
+                                    namelist.echam:
+                                        radctl:
+                                            iaero: 9
+        ssp119:
+                scenario_type: ssp
+        ssp126:
+                scenario_type: ssp
+        ssp245:
+                scenario_type: ssp
+        ssp370:
+                scenario_type: ssp
+        ssp534os:
+                scenario_type: ssp
+                pool_dir: "/work/bb0519/foci_input2/ECHAM6_GENERAL/ECHAM6" # ssp534os forcing files not in default pool
+        ssp585:
+                scenario_type: ssp
 
+# check forcing files of common scenarios
 choose_scenario_type:
-        cmip6:
-                greenhouse_dir: "${input_dir}"
-                forcing_files:
-                        aerocoarse_1849: piaerocoarse
-                        aerocoarse_1850: piaerocoarse
-                        aerocoarse_1851: piaerocoarse
-                        aerofarir_1849: piaerofarir
-                        aerofarir_1850: piaerofarir
-                        aerofarir_1851: piaerofarir
-                        aerofin_1849: piaerofin
-                        aerofin_1850: piaerofin
-                        aerofin_1851: piaerofin
-                        ozone: ozone_hist_scenario
-                        greenhouse: greenhouse_hist_scenario
-                        volcir: histvolcir
-                        volcsw: histvolcsw
-                        swflux: histswflux
-                        MAC-SP: MAC-SP_hist_scenario
+    ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
+        greenhouse_dir: "${input_dir}"
+        forcing_files:
+                aerocoarse_1849: piaerocoarse
+                aerocoarse_1850: piaerocoarse
+                aerocoarse_1851: piaerocoarse
+                aerofarir_1849: piaerofarir
+                aerofarir_1850: piaerofarir
+                aerofarir_1851: piaerofarir
+                aerofin_1849: piaerofin
+                aerofin_1850: piaerofin
+                aerofin_1851: piaerofin
+                greenhouse: greenhouse_scenario
+                MAC-SP: MAC-SP_scenario
+                ozone: ozone_scenario
+                swflux: histswflux
+                volcir: histvolcir
+                volcsw: histvolcsw
+        #initial_date_non_ssp: "$((
+        #    ${initial_date!year} < 2015 and not ${allow_hist2ssp_transition}
+        #))"
+        #choose_initial_date_non_ssp:
+        #    True:
+        #        add_error:
+        #            "Initial date out of the ssp period":
+        #                message: "
+        #                    You are trying to run a ``ssp`` scenario (``${scenario}``)
+        #                    with an initial date that does not correspond to a ssp
+        #                    period (``${initial_date}``). Consider running a historical
+        #                    scenario until the end of 2014, and then branch off a new
+        #                    experiment for the ssp period. Alternatively, you can set
+        #                    ``echam.allow_hist2ssp_transition`` to ``True`` (we advice
+        #                    against that!)."
+        #    # Automatic switching of iaero if simulations are allowed to run from
+        #    # historical to ssp periods
+        #    False:
+        #        choose_after_2014:
+        #            True:
+        #                iaero: 9
+        #            False:
+        #                iaero: 8
+        #        add_namelist_changes:
+        #            namelist.echam:
+        #                radctl:
+        #                    iaero: "${iaero}"
 
 choose_lresume:
         False:
@@ -573,9 +561,9 @@ choose_yr_perp_off:
 
 choose_with_lco2_emis:
     True:
-        # Run "emission-driven" echam experiment (in cmip6 context e.g. `esm-piControl` or `esm-hist`) where
-        # atmosheric CO2 concentration is not prescribed but calculated by the model setup.
-        # CO2 emissions need to be provided as forcing file (`carbon_emissions.nc`).
+        # - run emission-driven and not concentration-driven experiment, e.g. `esm-piControl` or `esm-hist` and not `piControl` or `historical`
+        # - atmosheric CO2 concentration is not prescribed but calculated by the model setup
+        # - CO2 emissions need to be provided as `carbon_emissions.nc`, not CO2 concentrations as `greenhouse_gases.nc`
         add_namelist_changes:
             namelist.echam:
                 submodelctl:
@@ -583,33 +571,46 @@ choose_with_lco2_emis:
                 radctl:
                     ico2: 1 # 1 = interactively calculated co2 for emission-driven (lco2=true)
                 co2ctl:
-                    lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
                     lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
-        add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
-            HIST:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_hist
-            ssp126:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp126
-            ssp245:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp245
-            ssp370:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp370
-            ssp534os:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp534os
-            ssp585:
-                add_forcing_files:
-                    carbon_emissions: carbon_emissions_ssp585
+        add_choose_scenario: # loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+            # set namelist.echam:&co2ctl:lco2_emis
+            PI-CTRL:
+                lco2_emis: false # TODO: mpi-esm namelist.echam:&co2ctl:lco2_emis is false for piControl but there are non-zero emissions for 1850 in pool
             "*":
-                add_error:
-                    "missing_scenario":
-                        message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
-        add_forcing_in_work:
-            carbon_emissions: "carbon_emissions.nc"
+                lco2_emis: true # use carbon emissions from forcing file -> needs carbon_emissions.nc in work
+                add_namelist_changes:
+                    namelist.echam:
+                        co2ctl:
+                            lco2_emis: true
+                add_choose_scenario:
+                    HIST:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_hist
+                    ssp119:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp119
+                    ssp126:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp126
+                    ssp245:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp245
+                    ssp370:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp370
+                    ssp534os:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp534os
+                    ssp585:
+                        add_forcing_files:
+                            carbon_emissions: carbon_emissions_ssp585
+                    "*":
+                        add_error:
+                            "missing_scenario":
+                                message: "echam scenario ${echam.scenario} not implemented for `echam:with_lco2_emis` = true"
+                add_forcing_in_work:
+                    carbon_emissions: "carbon_emissions.nc"
+
 choose_icb_code:
         True:
                 licb: "${with_icb}"
@@ -617,7 +618,6 @@ choose_icb_code:
                         namelist.echam:
                                 submodelctl:
                                         licb: "${licb}"
-                
 
 choose_wiso_code:
         True:
@@ -684,39 +684,29 @@ input_in_work:
         "target_oro": "target_orography_echam6.nc"
 
 forcing_in_work:
-        sic: "unit.96"
-        sst: "unit.20"
-        # ok this is another crazy ECHAM6 speciality
-        # every year the background aerosol files for 1849 to 1851 
-        # need to be linked to the same file for historical/scenario runs
-        # don't blame me (seb-wahl), blame the MAC-SP developers at MPI
-        # MAC-SP describes aerosol w.r.t. piControl conditions.
+        aerocoarse: "aero_coarse_@YEAR@.nc"
         aerocoarse_1849: "aero_coarse_1849.nc"
         aerocoarse_1850: "aero_coarse_1850.nc"
         aerocoarse_1851: "aero_coarse_1851.nc"
-        aerofin_1849: "aero_fine_1849.nc"
-        aerofin_1850: "aero_fine_1850.nc"
-        aerofin_1851: "aero_fine_1851.nc"
+        aerofarir: "aero_farir_@YEAR@.nc"
         aerofarir_1849: "aero_farir_1849.nc"
         aerofarir_1850: "aero_farir_1850.nc"
         aerofarir_1851: "aero_farir_1851.nc"
-        aerocoarse: "aero_coarse_@YEAR@.nc"
         aerofin: "aero_fine_@YEAR@.nc"
-        aerofarir: "aero_farir_@YEAR@.nc"
-        ozone: "ozon@YEAR@"
+        aerofin_1849: "aero_fine_1849.nc"
+        aerofin_1850: "aero_fine_1850.nc"
+        aerofin_1851: "aero_fine_1851.nc"
         greenhouse: "greenhouse_gases.nc"
+        "MAC-SP": "MAC-SP.nc"
+        ozone: "ozon@YEAR@"
+        sic: "unit.96"
+        sst: "unit.20"
+        swflux: "swflux_@YEAR@.nc"
         volcir: "strat_aerosol_ir_@YEAR@.nc"
         volcsw: "strat_aerosol_sw_@YEAR@.nc"
-        swflux: "swflux_@YEAR@.nc"
-        "MAC-SP": "MAC-SP.nc"
 
 forcing_additional_information:
         aerocoarse:
-                - need_year_before
-                - need_year_after
-                - need_2years_before
-                - need_2years_after
-        aerofin:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
@@ -726,13 +716,15 @@ forcing_additional_information:
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        ozone:
+        aerofin:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        # deniz: added these 3 variables. They were present in the esm-tools r4
-        volcsw:
+        ozone:
+                - need_year_before
+                - need_year_after
+        swflux:
                 - need_year_before
                 - need_year_after
                 - need_2years_before
@@ -742,7 +734,7 @@ forcing_additional_information:
                 - need_year_after
                 - need_2years_before
                 - need_2years_after
-        swflux:
+        volcsw:
                 - need_year_before
                 - need_year_after
                 - need_2years_before

@@ -29,8 +29,8 @@ dynamic_vegetations: False
 
 version: "3.20"
 dataset: r0009
-scenario: ${echam.scenario}
-scenario_type: ${scenario}
+scenario: ${echam.scenario} # e.g. hist or ssp126
+scenario_type: ${scenario}  # e.g. hist or ssp
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -94,22 +94,18 @@ choose_version:
 
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
-                        cmip6hist:
-                                scenario_type: cmip6
-
-                        ssp370:
-                                scenario_type: cmip6
-
+                        ssp119:
+                                scenario_type: ssp
                         ssp126:
-                                scenario_type: cmip6
-
+                                scenario_type: ssp
                         ssp245:
-                                scenario_type: cmip6
-
+                                scenario_type: ssp
+                        ssp370:
+                                scenario_type: ssp
                         ssp534os:
-                                scenario_type: cmip6
+                                scenario_type: ssp
                         ssp585:
-                                scenario_type: cmip6
+                                scenario_type: ssp
 
 
         "3.20":
@@ -186,12 +182,11 @@ choose_version:
                                 forcing_files:
                                         LU: LU_HIST
                                         LU_trans: LU_trans_hist
-                                        cover_fract: cover_fract_HIST
                                         Ndepo: Ndepo_1850
                                         a_nd_file: a_nd_file
                                         lightning: lightning
                                         popdens: popdens
-
+                        
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
@@ -205,23 +200,18 @@ choose_version:
 
                         # SSP scenarios share common paths. They are grouped under cmip6 and
                         # further options are given under `choose_scenario_type` section
-                        cmip6hist:
-                                scenario_type: cmip6
-
+                        ssp119:
+                                scenario_type: ssp
                         ssp126:
-                                scenario_type: cmip6
-
+                                scenario_type: ssp
                         ssp245:
-                                scenario_type: cmip6
-
+                                scenario_type: ssp
                         ssp370:
-                                scenario_type: cmip6
-
+                                scenario_type: ssp
                         ssp534os:
-                                scenario_type: cmip6
-
+                                scenario_type: ssp
                         ssp585:
-                                scenario_type: cmip6
+                                scenario_type: ssp
 
                 choose_general.iterative_coupling:
                         True:
@@ -307,7 +297,6 @@ choose_version:
                                 forcing_files:
                                         LU: LU_HIST
                                         LU_trans: LU_trans_none
-                                        cover_fract: cover_fract_HIST
                         1950:
                                 add_input_files:
                                         jsbach: jsbach_1976
@@ -315,43 +304,30 @@ choose_version:
                                         LU: LU_1950
                                         LU_trans: LU_trans_none
 
-# common options for scenarios, eg. CMIP6
-Ndepo_cmip6: Ndepo_hist_scenario
-Ndepo_path: ""
-popdens_cmip6: popdens
-cover_fract_cmip6: cover_fract.@YEAR@.nc
-
-choose_scenario_type:
-        cmip6:
-                Ndepo_path: "${echam.resolution}/Ndepo/${echam.scenario}/${echam.resolution}_ndepo.input4MIPs_surfaceFluxes_ScenarioMIP-NCAR-CCMI-${echam.scenario}_"
+# check forcing files of common scenarios
+add_choose_dynamic_vegetations:
+        false:
+                choose_echam.scenario: # TODO: not needed for piControl?
+                        HIST:
+                                add_forcing_files:
+                                        cover_fract: cover_fract_HIST
+ssp_num: null
+add_choose_scenario_type:
+        ssp: # Shared Socioeconomic Pathways (SSPs) scenarios
+                ssp_num: "$(( '${scenario}'[:4] ))" # first 4 characters, e.g. 'ssp1' in case of 'ssp126'
                 add_input_files:
                         jsbach: jsbach_1850
                 forcing_files:
                         LU: LU_hist_scenario
                         LU_trans: LU_trans_hist_scenario
-                        Ndepo: ${Ndepo_cmip6}
+                        Ndepo: Ndepo_ssp # Ndepo_hist_scenario
                         a_nd_file: a_nd_file
                         lightning: lightning
-                        popdens: ${popdens_cmip6}
-                        cover_fract: ${cover_fract_cmip6}
-
-
-# For ssp scenarios find the pathway first 4 characters
-scenario_is_ssp: "$(( 'ssp' in '${echam.scenario}' ))"
-choose_scenario_is_ssp:
-        True:
-                ssp_num: "$(( '${scenario}'[:4] ))"
-                # SSP scenarios share common paths. They are grouped under cmip6 and
-                # further options are given under `choose_scenario_type` section
-                scenario_type: cmip6
-                Ndepo_cmip6: Ndepo_ssp
-                popdens_cmip6: popdens_ssp
-                cover_fract_cmip6: cover_fract_ssp
-                Ndepo_sufix: "_${echam.scenario}"
-
-        False:
-                ssp_num: null
-                Ndepo_sufix: ""
+                        popdens: popdens_ssp
+                add_choose_dynamic_vegetations:
+                        false:
+                                add_forcing_files:
+                                        cover_fract: cover_fract_ssp
 
 choose_echam.with_wiso:
         True:

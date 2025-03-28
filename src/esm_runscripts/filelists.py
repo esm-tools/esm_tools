@@ -14,7 +14,7 @@ import yaml
 from loguru import logger
 
 import esm_parser
-from esm_tools import user_error
+from esm_tools import user_error, user_note
 
 from . import helpers, jinja
 

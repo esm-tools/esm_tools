@@ -173,6 +173,11 @@ class Slurm:
                 runfile.write(f"source {path}/bin/activate\n")
             runfile.write(f"conda activate {conda_env}\n")
 
+        tykky_env = config["computer"].get("tykky", {}).get("env", False)
+        if tykky_env:
+            path = config["computer"].get("tykky", {}).get("path", None)
+            runfile.write(f"tykky activate {tykky_env}\n")
+
     @staticmethod
     def het_par_headers(config, cluster, headers):
         """

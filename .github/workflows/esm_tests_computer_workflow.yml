@@ -41,8 +41,8 @@ jobs:
       with:
         submodules: recursive
         fetch-depth: 0
-        # token: ${{ secrets.GITHUB_TOKEN }}
-        # ref: ${{ github.event.pull_request.head.ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+        ref: ${{ github.event.pull_request.head.ref }}
     - name: Log commit sha
       run: |
         git config --global --add safe.directory /__w/esm_tools/esm_tools;

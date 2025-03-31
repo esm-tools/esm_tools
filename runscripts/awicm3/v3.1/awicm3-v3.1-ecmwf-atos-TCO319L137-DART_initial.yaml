@@ -12,7 +12,9 @@ general:
     nyear: 0
 
 computer:
-    taskset: true
+    hetpar_type: "hostfile_srun"
+    tykky:
+        env: "/hpcperm/duts/tykky/esm_tools"
 
 awicm3:
     postprocessing: false

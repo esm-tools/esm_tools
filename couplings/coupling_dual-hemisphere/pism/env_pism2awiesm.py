@@ -50,7 +50,7 @@ def prepare_environment(config):
             #"MESH_DIR_fesom": config["general"]["mesh_dir"],
             "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
-            #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
+            "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],
             "PISM_HEMISPHERE": config["general"]["setup_name"],
             "account_all_fw_input": config[config["general"]["setup_name"]].get("account_all_fw_input", 0), 

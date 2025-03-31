@@ -225,6 +225,15 @@ echam:
         nproca: 24
         nprocb: 24
 
+        add_compile_infos:
+            add_choose_version:
+                6.3.05p2-foci_oasismct4:
+                    add_export_vars:
+                        MPEU_Fortran_INCLUDE_DIRECTORIES: "${oasis3mct.model_dir}/INSTALL_OASIS.ESMTOOLS/include"
+                        MPEU_Fortran_LIBRARIES: "${oasis3mct.model_dir}/INSTALL_OASIS.ESMTOOLS/lib"
+                        #MPEU_Fortran_INCLUDE_DIRECTORIES: "/home/shktkeme/esm/models/foci-agrif_mops_oasismct4/oasis/INSTALL_OASIS.ESMTOOLS/include"
+                        #MPEU_Fortran_LIBRARIES: "/home/shktkeme/esm/models/foci-agrif_mops_oasismct4/oasis/INSTALL_OASIS.ESMTOOLS/lib"
+
         # do we want to link files or copy. For ECHAM6 we can't link the restart file
         # as hdrestart.nc is named the same for input and output. Another crazy habbit of ECHAM6
         file_movements:

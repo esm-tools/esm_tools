@@ -1,0 +1,142 @@
+#!/usr/bin/ksh
+
+# =========================================================
+# FESOM-specific functions for ice sheet to ocean coupling
+# =========================================================
+
+# Constants
+MIN_CAVITY_THICKNESS=20.0  # Minimum cavity thickness [m]
+
+function coupling_ice_sheet2fesom {
+    # FESOM-specific function to transform generic ice sheet data for FESOM
+    # Parameters:
+    # - GENERIC_ICE_FILE: Generic ice sheet output
+    # - FESOM_MESH: FESOM mesh file
+    # - OUT_FORCING: Output forcing file for FESOM
+    # - OUT_CAVITY: Output cavity file for FESOM
+    
+    GENERIC_ICE_FILE=$1
+    FESOM_MESH=$2
+    OUT_FORCING=$3
+    OUT_CAVITY=$4
+    
+    echo " * Moving Cavity: Processing ice sheet data for FESOM"
+    
+    # Create Python command for FESOM-specific processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+from scipy.interpolate import griddata
+
+# Process generic ice data to FESOM format
+# Load generic ice data
+with nc.Dataset('$GENERIC_ICE_FILE', 'r') as ds:
+    ice_x = ds.variables['x'][:]
+    ice_y = ds.variables['y'][:]
+    ice_mask = ds.variables['ice_shelf_mask'][:]
+    ice_draft = ds.variables['ice_draft'][:]
+    basal_melt = ds.variables['basal_melt_rate'][:]
+    
+    # Create grid coordinates for interpolation
+    grid_x, grid_y = np.meshgrid(ice_x, ice_y)
+    points = np.column_stack((grid_x.flatten(), grid_y.flatten()))
+    draft_values = ice_draft.flatten()
+    mask_values = ice_mask.flatten()
+    bmelt_values = basal_melt.flatten()
+
+# Load FESOM mesh
+with nc.Dataset('$FESOM_MESH', 'r') as ds:
+    # Extract node coordinates
+    fesom_x = ds.variables['x'][:]
+    fesom_y = ds.variables['y'][:]
+    fesom_nodes = np.column_stack((fesom_x, fesom_y))
+    
+    # Get depth and other mesh properties
+    fesom_depth = ds.variables['depth'][:]
+    if 'cavity_flag' in ds.variables:
+        cavity_flag = ds.variables['cavity_flag'][:]
+    else:
+        # If not present, create default cavity flag based on depth
+        cavity_flag = np.zeros_like(fesom_depth, dtype=int)
+
+# Interpolate ice data to FESOM mesh
+interp_draft = griddata(points, draft_values, fesom_nodes, method='linear', fill_value=0)
+interp_mask = griddata(points, mask_values, fesom_nodes, method='nearest', fill_value=0)
+interp_bmelt = griddata(points, bmelt_values, fesom_nodes, method='linear', fill_value=0)
+
+# Create cavity file for FESOM
+with nc.Dataset('$OUT_CAVITY', 'w') as out:
+    # Define dimensions
+    out.createDimension('nodes', len(fesom_x))
+    
+    # Create variables
+    vx = out.createVariable('x', 'f8', ('nodes',))
+    vy = out.createVariable('y', 'f8', ('nodes',))
+    vdraft = out.createVariable('ice_draft', 'f8', ('nodes',))
+    vflag = out.createVariable('cavity_flag', 'i4', ('nodes',))
+    
+    # Determine new cavity geometry
+    new_cavity_flag = np.zeros_like(cavity_flag)
+    
+    # Mark cells underneath floating ice as cavity points
+    new_cavity_flag[interp_mask > 0] = 1
+    
+    # Ensure cavity thickness constraints
+    # Minimum cavity thickness check
+    cavity_thickness = fesom_depth - interp_draft
+    min_thickness_mask = (new_cavity_flag == 1) & (cavity_thickness < $MIN_CAVITY_THICKNESS)
+    
+    # Adjust draft to maintain minimum thickness
+    interp_draft[min_thickness_mask] = fesom_depth[min_thickness_mask] - $MIN_CAVITY_THICKNESS
+    
+    # Set values
+    vx[:] = fesom_x
+    vy[:] = fesom_y
+    vdraft[:] = interp_draft
+    vflag[:] = new_cavity_flag
+    
+    # Add metadata
+    out.description = "Ice shelf cavity geometry for FESOM based on ice sheet model"
+    vdraft.long_name = "Ice shelf draft"
+    vdraft.units = "m"
+    vflag.long_name = "Cavity flag (1=cavity point, 0=open ocean)"
+    vflag.units = "1"
+
+# Create forcing file for FESOM
+with nc.Dataset('$OUT_FORCING', 'w') as out:
+    # Define dimensions
+    out.createDimension('nodes', len(fesom_x))
+    
+    # Create variables
+    vx = out.createVariable('x', 'f8', ('nodes',))
+    vy = out.createVariable('y', 'f8', ('nodes',))
+    vbmelt = out.createVariable('basal_melt_rate', 'f8', ('nodes',))
+    
+    # Set values
+    vx[:] = fesom_x
+    vy[:] = fesom_y
+    vbmelt[:] = interp_bmelt
+    
+    # Add metadata
+    out.description = "Ice shelf forcing for FESOM based on ice sheet model"
+    vbmelt.long_name = "Basal melt rate from ice sheet model"
+    vbmelt.units = "m/yr"
+
+print(f"FESOM cavity file created: {os.path.basename('$OUT_CAVITY')}")
+print(f"FESOM forcing file created: {os.path.basename('$OUT_FORCING')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to process ice sheet data for FESOM"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Ice sheet to FESOM processing complete"
+    return 0
+}

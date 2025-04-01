@@ -1,0 +1,177 @@
+####################################################################
+# PISM-FESOM Coupled Runscript with Moving Cavity Support
+# Author: ESM Tools Team, 2025
+####################################################################
+
+general:
+    # Basic configuration
+    setup_name: "pism-fesom-moving-cavity"
+    account: "ab0246"  # Adjust account as needed
+    compute_time: "08:00:00"
+    initial_date: "2000-01-01"      # Starting date
+    final_date: "2100-01-01"        # End date
+    base_dir: "${WORK_DIR}/pism-fesom-moving-cavity"
+    
+    # Coupling interval
+    nyear: 1                        # Run for 1 year per chunk
+    nmonth: 0
+    nday: 0
+    
+    # Coupling configuration
+    iterative_coupling: True        # Enable sequential coupling
+    use_venv: False                 # Don't use virtual environment
+    
+    # Verbosity
+    verbose: True
+    
+    # Moving cavity configuration
+    enable_moving_cavity: True      # Enable moving cavity support
+    cavity_update_freq: 1           # Update cavity every year
+    visualize_cavity: True          # Generate visualizations
+    change_threshold: 0.05          # 5% threshold for significant changes
+
+# PISM ice sheet model configuration
+pism:
+    version: "2.0"
+    model_dir: "${HOME}/pism"       # Path to PISM installation
+    
+    # Coupling flags
+    coupled_to_fesom: True
+    
+    # Computational resources
+    nproc: 96                       # Number of processors for PISM
+    
+    # Initial setup
+    lresume: False                  # Start from scratch (set to True for restart)
+    resolution: "15km"
+    
+    # Input directories
+    input_dir: "${general.base_dir}/input/pism/"
+    forcing_dir: "${general.base_dir}/forcing/pism/"
+    
+    # Output configuration
+    output_dir: "${general.base_dir}/output/pism/"
+    restart_dir: "${general.base_dir}/restart/pism/"
+    restart_rate: 1
+    restart_unit: "years"
+    restart_first: True
+    
+    # Post-processing
+    postprocessing: True
+    
+    # Model physics settings
+    stress_balance: "ssa+sia"
+    calving: "thickness_calving"
+    ocean: "pico"
+    
+    # Output fields needed for coupling
+    extra_vars: "mask,thickness,surface_altitude,bedrock_altitude,basal_melt_rate_grounded,basal_melt_rate_floating"
+    ts_vars: "ice_volume,ice_volume_glacierized,tendency_of_ice_mass,tendencyoficeareagrlnd,tendencyoficeareafltng"
+    
+    # Coupling workflow
+    workflow:
+        next_run_triggered_by: couple_out
+        
+        subjobs:
+            couple_out:
+                batch_or_shell: shell
+                run_after: tidy
+                script: "coupling_pism2fesom_moving_cavity"
+                script_dir: "${general.esm_function_dir}/couplings/pism_moving_cavity"
+                run_only: last_run_in_chunk
+                nproc: 1
+
+# FESOM ocean model configuration
+fesom:
+    version: "2.0"
+    model_dir: "${HOME}/fesom"      # Path to FESOM installation
+    
+    # Coupling flags
+    coupled_to_pism: True
+    
+    # Computational resources
+    nproc: 288                      # Number of processors for FESOM
+    
+    # Initial setup
+    lresume: False                  # Start from scratch (set to True for restart)
+    mesh: "CORE2"
+    mesh_dir: "${general.base_dir}/mesh/fesom/"
+    
+    # Input directories
+    input_dir: "${general.base_dir}/input/fesom/"
+    forcing_dir: "${general.base_dir}/forcing/fesom/"
+    
+    # Output configuration
+    output_dir: "${general.base_dir}/output/fesom/"
+    restart_dir: "${general.base_dir}/restart/fesom/"
+    restart_rate: 1
+    restart_unit: "years"
+    restart_first: True
+    
+    # Enable moving cavity functionality in FESOM
+    use_cavity: True
+    allow_moving_cavity: True
+    
+    # Ocean physics settings
+    which_ale: linfs              # Linear free surface
+    which_oce_adv: MPDCD          # Flux corrected transport scheme
+    which_vb: HV_const            # Constant vertical diffusion
+    which_cv: HV_const            # Constant vertical viscosity
+    
+    # Output variables
+    output_vars: "temp,salt,ssh,u,v,w"
+    
+    # Coupling workflow
+    workflow:
+        next_run_triggered_by: couple_out
+        
+        subjobs:
+            couple_out:
+                batch_or_shell: shell
+                run_after: tidy
+                script: "coupling_fesom2pism_moving_cavity"
+                script_dir: "${general.esm_function_dir}/couplings/pism_moving_cavity"
+                run_only: last_run_in_chunk
+                nproc: 1
+
+# Environment variables
+environment:
+    PYTHONPATH: "${FUNCTION_PATH}/couplings/pism_moving_cavity/:${PYTHONPATH}"
+    PISM_TO_FESOM: 1               # Enable PISM to FESOM coupling
+    FESOM_TO_PISM: 1               # Enable FESOM to PISM coupling
+    ENABLE_MOVING_CAVITY: "true"   # Enable moving cavity support
+    VISUALIZE_CAVITY: "true"       # Generate cavity visualizations
+    CAVITY_UPDATE_FREQ: 1          # Update cavity every coupling step
+    CHANGE_THRESHOLD: 0.05         # 5% threshold for significant changes
+    WORK_DIR: "${general.base_dir}"
+
+# Coupling files configuration
+coupling:
+    couple_dir: "${general.base_dir}/coupling_files"
+    
+    # Initial setup (setup phase)
+    setup:
+        script: "setup_moving_cavity"
+        script_dir: "${general.esm_function_dir}/couplings/pism_moving_cavity"
+        batch_or_shell: shell
+        nproc: 1
+    
+    # File naming conventions
+    file_names:
+        pism_to_fesom:
+            cavity_file: "fesom.cavity.${date}.nc"
+            forcing_file: "pism_forcing4ocean_${date}.nc"
+        fesom_to_pism:
+            forcing_file: "ocean_forcing4pism_${date}.nc"
+
+# Post-processing configuration
+postprocessing:
+    cavity_metrics:
+        script: "cavity_metrics.py"
+        script_dir: "${general.esm_function_dir}/couplings/pism_moving_cavity"
+        output_dir: "${general.base_dir}/analysis/cavity_metrics"
+        
+    visualize:
+        script: "visualize_cavity.py"
+        script_dir: "${general.esm_function_dir}/couplings/pism_moving_cavity"
+        output_dir: "${general.base_dir}/analysis/cavity_viz"

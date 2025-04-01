@@ -1,0 +1,701 @@
+#!/usr/bin/ksh
+
+function pism2fesom_moving_cavity {
+    echo " *** S T A R T I N G    pism2fesom_moving_cavity ***"
+    
+    # Load general coupling functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    
+    # Load our utilities
+    . ${FUNCTION_PATH}/coupling_movingcavity_utils.functions
+    
+    # Environment settings
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    
+    # Define paths for coupling data exchange
+    if [ -z "$COUPLE_DIR" ]; then
+        COUPLE_DIR=${WORK_DIR}/coupling_files
+        mkdir -p $COUPLE_DIR
+    fi
+    
+    # Set environment variables needed for the config
+    export WORK_DIR=${WORK_DIR:-$(pwd)}
+    
+    # Check if coupling is enabled
+    PISM_TO_FESOM=${PISM_TO_FESOM:-1}
+    if [[ $PISM_TO_FESOM -le 0 ]]; then
+        echo " NOT generating ice forcing for ocean model"
+        echo "   since PISM_TO_FESOM=${PISM_TO_FESOM}"
+        return
+    fi
+    
+    # Set coupling parameters
+    CHUNK_DATE_TAG_pism="${CURRENT_YEAR_pism}-${END_YEAR_pism}"
+    ENABLE_MOVING_CAVITY=${ENABLE_MOVING_CAVITY:-true}
+    CAVITY_UPDATE_FREQ=${CAVITY_UPDATE_FREQ:-1}
+    
+    # Define coupling files
+    PISM_FORCING_EXTRA_FILE=${PISM_FORCING_EXTRA_FILE:-../outdata/pism/${EXP_ID}_pismr_extra_${CHUNK_DATE_TAG_pism}.nc}
+    PISM_RESTART_OUTPUT_FILE=${PISM_RESTART_OUTPUT_FILE:-../restart/pism/${EXP_ID}_pismr_out_${CHUNK_DATE_TAG_pism}.nc}
+    FESOM_MESH_FILE=${FESOM_MESH_FILE:-../fesom_data/fesom.mesh.diag.nc}
+    FESOM_CAVITY_FILE=${COUPLE_DIR}/fesom.cavity.${CHUNK_DATE_TAG_pism}.nc
+    OCEAN_PISM_FORCING_FILE=${COUPLE_DIR}/pism_forcing4ocean_${CHUNK_DATE_TAG_pism}.nc
+    
+    # Define previous cavity file for change detection
+    PREVIOUS_CAVITY_FILE=${COUPLE_DIR}/fesom.cavity.previous.nc
+    CHANGE_THRESHOLD=${CHANGE_THRESHOLD:-0.1}  # 10% change threshold
+    
+    # Check dependencies
+    movingcavity_check_dependencies
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Missing dependencies for moving cavity coupling"
+        return 1
+    fi
+    
+    echo "Processing PISM output for FESOM with moving cavity support..."
+    
+    # Create Python command for the PISM to FESOM coupling
+    PYTHON_CMD=$(cat <<EOF
+import os
+import sys
+import numpy as np
+import netCDF4 as nc
+from scipy.interpolate import griddata
+import matplotlib.pyplot as plt
+
+# Add the cavity_utils module path
+module_dir = os.path.dirname(os.path.abspath('${FUNCTION_PATH}/cavity_utils.py'))
+sys.path.append(module_dir)
+
+try:
+    import cavity_utils as cu
+except ImportError:
+    print(f"ERROR: Could not import cavity_utils module from {module_dir}")
+    print("Make sure cavity_utils.py exists and is importable")
+    sys.exit(1)
+
+print("Running PISM to FESOM coupling with advanced cavity handling...")
+
+# Load PISM file and extract latest time step
+pism_file = '$PISM_RESTART_OUTPUT_FILE'
+print(f"Loading PISM data from: {pism_file}")
+
+try:
+    # Extract time series data
+    thk_data, thk_time = cu.handle_time_series(pism_file, 'thickness')
+    bed_data, _ = cu.handle_time_series(pism_file, 'bedrock_altitude')
+    mask_data, _ = cu.handle_time_series(pism_file, 'mask')
+    
+    # Also try to get melt rates if available
+    try:
+        bmelt_g, _ = cu.handle_time_series(pism_file, 'basal_melt_rate_grounded')
+        bmelt_f, _ = cu.handle_time_series(pism_file, 'basal_melt_rate_floating')
+        has_bmelt = True
+    except:
+        print("WARNING: Could not find basal melt rate variables in PISM output")
+        has_bmelt = False
+    
+    # Get coordinate information
+    with nc.Dataset(pism_file, 'r') as ds:
+        ice_x = ds.variables['x'][:]
+        ice_y = ds.variables['y'][:]
+        
+except Exception as e:
+    print(f"ERROR: Failed to load PISM data: {e}")
+    sys.exit(1)
+
+# Identify ice shelf cells (mask=3 in PISM convention)
+ice_shelf_mask = (mask_data == 3)
+grounded_ice_mask = (mask_data == 2)
+
+# Calculate ice draft (negative z-coordinate, below sea level)
+rho_ice = 910.0
+rho_ocean = 1028.0
+min_cavity_thickness = 20.0
+
+draft = np.zeros_like(thk_data)
+draft[ice_shelf_mask] = -thk_data[ice_shelf_mask] * (rho_ice / rho_ocean)
+
+# Smooth the ice shelf draft to avoid numerical issues
+smoothed_draft = cu.smooth_cavity_geometry(draft, ice_shelf_mask, iterations=2)
+
+# Validate cavity geometry to ensure minimum water column
+valid_cavity = cu.validate_cavity_geometry(smoothed_draft, bed_data, min_water_column=min_cavity_thickness)
+
+# For areas with insufficient water column, adjust the draft
+smoothed_draft[ice_shelf_mask & ~valid_cavity] = bed_data[ice_shelf_mask & ~valid_cavity] + min_cavity_thickness
+
+# Set up basal melt rate
+if has_bmelt:
+    # Use PISM's melt rate
+    bmelt = np.zeros_like(thk_data)
+    bmelt[grounded_ice_mask] = bmelt_g[grounded_ice_mask]
+    bmelt[ice_shelf_mask] = bmelt_f[ice_shelf_mask]
+else:
+    # Create placeholder melt rate (zero for now)
+    bmelt = np.zeros_like(thk_data)
+
+# Calculate cavity metrics for reporting
+metrics = cu.compute_cavity_metrics(smoothed_draft, bed_data, ice_shelf_mask)
+print(f"Ice shelf cavity metrics:")
+print(f"  Area: {metrics['area']:.2f} km²")
+print(f"  Volume: {metrics['volume']:.2f} km³")
+print(f"  Mean draft: {metrics['mean_draft']:.2f} m")
+print(f"  Mean water column: {metrics['mean_water_column']:.2f} m")
+
+# Load FESOM mesh
+fesom_mesh_file = '$FESOM_MESH_FILE'
+print(f"Loading FESOM mesh from: {fesom_mesh_file}")
+
+try:
+    with nc.Dataset(fesom_mesh_file, 'r') as ds:
+        # Extract node coordinates
+        fesom_x = ds.variables['x'][:]
+        fesom_y = ds.variables['y'][:]
+        fesom_nodes = np.column_stack((fesom_x, fesom_y))
+        
+        # Get depth and other mesh properties
+        fesom_depth = ds.variables['depth'][:]
+        
+        # Try to get connectivity information for conservative remapping
+        try:
+            fesom_elements = ds.variables['elem'][:]
+            # Convert to 0-based indexing if needed
+            if np.min(fesom_elements) == 1:
+                fesom_elements -= 1
+            has_elements = True
+        except:
+            print("WARNING: Could not find element connectivity in FESOM mesh")
+            has_elements = False
+            fesom_elements = None
+        
+        # Get current cavity flag if it exists
+        if 'cavity_flag' in ds.variables:
+            cavity_flag = ds.variables['cavity_flag'][:]
+        else:
+            # If not present, create default cavity flag based on depth
+            cavity_flag = np.zeros_like(fesom_depth, dtype=int)
+            
+except Exception as e:
+    print(f"ERROR: Failed to load FESOM mesh: {e}")
+    sys.exit(1)
+
+# Create 2D grid for PISM data
+grid_x, grid_y = np.meshgrid(ice_x, ice_y)
+
+# Use conservative remapping if elements available
+print("Remapping PISM data to FESOM mesh...")
+if has_elements:
+    print("Using conservative remapping with element information")
+    fesom_draft = cu.conservative_remap_pism_to_fesom(
+        smoothed_draft, ice_x, ice_y, fesom_x, fesom_y, fesom_elements
+    )
+    
+    # Create ice shelf mask on FESOM grid using conservative remapping
+    shelf_indicator = np.zeros_like(mask_data, dtype=float)
+    shelf_indicator[ice_shelf_mask] = 1.0
+    fesom_shelf_mask_values = cu.conservative_remap_pism_to_fesom(
+        shelf_indicator, ice_x, ice_y, fesom_x, fesom_y, fesom_elements
+    )
+    fesom_shelf_mask = (fesom_shelf_mask_values > 0.5)
+    
+    # Remap basal melt rate
+    fesom_bmelt = cu.conservative_remap_pism_to_fesom(
+        bmelt, ice_x, ice_y, fesom_x, fesom_y, fesom_elements
+    )
+else:
+    print("Using simple interpolation (conservative remapping not available)")
+    # Points for interpolation
+    pism_points = np.column_stack((grid_x.flatten(), grid_y.flatten()))
+    
+    # Simple interpolation as fallback
+    fesom_draft = griddata(
+        pism_points, 
+        smoothed_draft.flatten(),
+        fesom_nodes,
+        method='linear',
+        fill_value=0.0
+    )
+    
+    # Create ice shelf mask on FESOM grid
+    shelf_indicator = np.zeros_like(mask_data.flatten(), dtype=float)
+    shelf_indicator[ice_shelf_mask.flatten()] = 1.0
+    
+    fesom_shelf_mask_values = griddata(
+        pism_points,
+        shelf_indicator,
+        fesom_nodes,
+        method='linear',
+        fill_value=0.0
+    )
+    fesom_shelf_mask = (fesom_shelf_mask_values > 0.5)
+    
+    # Interpolate basal melt rate
+    fesom_bmelt = griddata(
+        pism_points,
+        bmelt.flatten(),
+        fesom_nodes,
+        method='linear',
+        fill_value=0.0
+    )
+
+# Ensure cavity thickness constraints
+cavity_thickness = fesom_depth - fesom_draft
+min_thickness_mask = (fesom_shelf_mask) & (cavity_thickness < min_cavity_thickness)
+
+# Adjust draft to maintain minimum thickness
+fesom_draft[min_thickness_mask] = fesom_depth[min_thickness_mask] - min_cavity_thickness
+
+# Create cavity file for FESOM
+fesom_cavity_file = '$FESOM_CAVITY_FILE'
+previous_cavity_file = '$PREVIOUS_CAVITY_FILE'
+
+print(f"Creating FESOM cavity file: {fesom_cavity_file}")
+try:
+    with nc.Dataset(fesom_cavity_file, 'w') as out:
+        # Define dimensions
+        out.createDimension('nodes', len(fesom_x))
+        
+        # Create variables
+        vx = out.createVariable('x', 'f8', ('nodes',))
+        vy = out.createVariable('y', 'f8', ('nodes',))
+        vdraft = out.createVariable('ice_draft', 'f8', ('nodes',))
+        vflag = out.createVariable('cavity_flag', 'i4', ('nodes',))
+        
+        # Determine new cavity geometry
+        new_cavity_flag = np.zeros_like(cavity_flag)
+        
+        # Mark cells underneath floating ice as cavity points
+        new_cavity_flag[fesom_shelf_mask] = 1
+        
+        # Set values
+        vx[:] = fesom_x
+        vy[:] = fesom_y
+        vdraft[:] = fesom_draft
+        vflag[:] = new_cavity_flag
+        
+        # Add metadata
+        out.description = "Ice shelf cavity geometry for FESOM based on ice sheet model"
+        out.history = f"Created from PISM output {os.path.basename(pism_file)}"
+        out.source = "PISM ice sheet model"
+        vdraft.long_name = "Ice shelf draft"
+        vdraft.units = "m"
+        vflag.long_name = "Cavity flag (1=cavity point, 0=open ocean)"
+        vflag.units = "1"
+        
+except Exception as e:
+    print(f"ERROR: Failed to create FESOM cavity file: {e}")
+    sys.exit(1)
+
+# Detect cavity changes if previous cavity file exists
+if os.path.exists(previous_cavity_file):
+    print(f"Detecting changes from previous cavity geometry...")
+    change_metrics = cu.detect_cavity_changes(previous_cavity_file, fesom_cavity_file, threshold=${CHANGE_THRESHOLD})
+    
+    if change_metrics and change_metrics.get('significant_change'):
+        print("SIGNIFICANT CAVITY CHANGES DETECTED!")
+        print(f"  Area change: {change_metrics['area_change_fraction']*100:.2f}%")
+        print(f"  Mean draft change: {change_metrics['draft_change_fraction']*100:.2f}%")
+        print(f"  Cavity advance: {change_metrics['advance_area']} nodes")
+        print(f"  Cavity retreat: {change_metrics['retreat_area']} nodes")
+    else:
+        print("No significant cavity changes detected")
+        
+    # Create visualization of changes if needed
+    if "${VISUALIZE_CAVITY}" == "true":
+        out_png = '${COUPLE_DIR}/cavity_changes_${CHUNK_DATE_TAG_pism}.png'
+        with nc.Dataset(previous_cavity_file, 'r') as old:
+            old_mask = old.variables['cavity_flag'][:] > 0
+            old_draft = old.variables['ice_draft'][:]
+        
+        with nc.Dataset(fesom_cavity_file, 'r') as new:
+            new_mask = new.variables['cavity_flag'][:] > 0
+            new_draft = new.variables['ice_draft'][:]
+            
+        cu.visualize_cavity_changes(old_mask, new_mask, old_draft, new_draft, out_png)
+        print(f"Cavity change visualization created: {out_png}")
+
+# Create backup of current cavity file for next time step
+import shutil
+shutil.copy(fesom_cavity_file, previous_cavity_file)
+print(f"Created backup of cavity file for next time step: {previous_cavity_file}")
+
+# Create forcing file for FESOM
+forcing_file = '$OCEAN_PISM_FORCING_FILE'
+print(f"Creating FESOM forcing file: {forcing_file}")
+
+try:
+    with nc.Dataset(forcing_file, 'w') as out:
+        # Define dimensions
+        out.createDimension('nodes', len(fesom_x))
+        
+        # Create variables
+        vx = out.createVariable('x', 'f8', ('nodes',))
+        vy = out.createVariable('y', 'f8', ('nodes',))
+        vbmelt = out.createVariable('basal_melt_rate', 'f8', ('nodes',))
+        
+        # Set values
+        vx[:] = fesom_x
+        vy[:] = fesom_y
+        vbmelt[:] = fesom_bmelt
+        
+        # Add metadata
+        out.description = "Ice shelf forcing for FESOM based on ice sheet model"
+        out.history = f"Created from PISM output {os.path.basename(pism_file)}"
+        out.source = "PISM ice sheet model"
+        vbmelt.long_name = "Basal melt rate from ice sheet model"
+        vbmelt.units = "m/yr"
+        
+except Exception as e:
+    print(f"ERROR: Failed to create FESOM forcing file: {e}")
+    sys.exit(1)
+
+print(f"PISM to FESOM coupling completed successfully")
+print(f"FESOM cavity file created: {os.path.basename(fesom_cavity_file)}")
+print(f"FESOM forcing file created: {os.path.basename(forcing_file)}")
+EOF
+)
+    
+    # Run the Python script
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: PISM to FESOM coupling failed"
+        return 1
+    fi
+    
+    # Display cavity status
+    movingcavity_check_status "$FESOM_CAVITY_FILE"
+    
+    echo "PISM to FESOM coupling with moving cavity support completed"
+    return 0
+}
+
+function fesom2pism_moving_cavity {
+    echo " *** S T A R T I N G    fesom2pism_moving_cavity ***"
+    
+    # Load general coupling functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    
+    # Load our utilities
+    . ${FUNCTION_PATH}/coupling_movingcavity_utils.functions
+    
+    # Environment settings
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    
+    # Define paths for coupling data exchange
+    if [ -z "$COUPLE_DIR" ]; then
+        COUPLE_DIR=${WORK_DIR}/coupling_files
+        mkdir -p $COUPLE_DIR
+    fi
+    
+    # Set environment variables needed for the config
+    export WORK_DIR=${WORK_DIR:-$(pwd)}
+    
+    # Check if coupling is enabled
+    FESOM_TO_PISM=${FESOM_TO_PISM:-1}
+    if [[ $FESOM_TO_PISM -le 0 ]]; then
+        echo " NOT generating ocean forcing for ice model"
+        echo "   since FESOM_TO_PISM=${FESOM_TO_PISM}"
+        return
+    fi
+    
+    # Set coupling parameters
+    CHUNK_DATE_TAG_fesom="${CURRENT_YEAR_fesom}-${END_YEAR_fesom}"
+    
+    # Define coupling files
+    FESOM_OUTPUT_FILE=${FESOM_OUTPUT_FILE:-../outdata/fesom/${EXP_ID}_fesom_output_${CHUNK_DATE_TAG_fesom}.nc}
+    FESOM_CAVITY_FILE=${COUPLE_DIR}/fesom.cavity.${CHUNK_DATE_TAG_fesom}.nc
+    PISM_OCEAN_FORCING_FILE=${COUPLE_DIR}/ocean_forcing4pism_${CHUNK_DATE_TAG_fesom}.nc
+    
+    # Check if cavity file exists (it should have been created in the previous coupling step)
+    if [ ! -f "$FESOM_CAVITY_FILE" ]; then
+        echo "WARNING: Cavity file not found, using default cavity approach"
+        # Fall back to non-moving cavity approach
+        FESOM_CAVITY_FILE=""
+    fi
+    
+    # Check dependencies
+    movingcavity_check_dependencies
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Missing dependencies for moving cavity coupling"
+        return 1
+    fi
+    
+    echo "Processing FESOM output for PISM with moving cavity support..."
+    
+    # Create Python command for FESOM to PISM coupling
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+from scipy.interpolate import griddata
+
+# Define output grid parameters (regular grid for PISM)
+# We use a reasonable resolution - this should be configurable in practice
+x_min, x_max = -3000000, 3000000  # meters
+y_min, y_max = -3000000, 3000000  # meters
+resolution = 5000  # meters
+x_grid = np.arange(x_min, x_max, resolution)
+y_grid = np.arange(y_min, y_max, resolution)
+
+# Load FESOM output
+with nc.Dataset('$FESOM_OUTPUT_FILE', 'r') as ds:
+    # Extract node coordinates
+    fesom_x = ds.variables['x'][:]
+    fesom_y = ds.variables['y'][:]
+    
+    # Get temperature and salinity
+    # Note: In FESOM, the 3D fields have dimensions (time, layers, nodes)
+    # We need to get the top layer for PISM
+    time_idx = 0  # Use the first/last time step
+    
+    # Get temperature (may be 'temp' or 'temperature' depending on FESOM output)
+    if 'temp' in ds.variables:
+        temp_var = 'temp'
+    else:
+        temp_var = 'temperature'
+    
+    # Get top layer temperature (closest to ice-ocean interface)
+    # In FESOM, layer 0 is typically at the surface, we need the bottom layer
+    # This may need adjustment depending on FESOM's vertical coordinate system
+    if len(ds.variables[temp_var].shape) == 3:
+        # 3D field (time, layers, nodes)
+        bottom_layer = ds.variables[temp_var].shape[1] - 1
+        temp = ds.variables[temp_var][time_idx, bottom_layer, :]
+    else:
+        # 2D field (time, nodes) - surface only
+        temp = ds.variables[temp_var][time_idx, :]
+    
+    # Get salinity
+    if 'salt' in ds.variables:
+        salt_var = 'salt'
+    else:
+        salt_var = 'salinity'
+    
+    if len(ds.variables[salt_var].shape) == 3:
+        # 3D field
+        bottom_layer = ds.variables[salt_var].shape[1] - 1
+        salt = ds.variables[salt_var][time_idx, bottom_layer, :]
+    else:
+        # 2D field
+        salt = ds.variables[salt_var][time_idx, :]
+
+# If cavity file exists, use it to identify cavity nodes
+if os.path.isfile('$FESOM_CAVITY_FILE'):
+    with nc.Dataset('$FESOM_CAVITY_FILE', 'r') as ds:
+        cavity_flag = ds.variables['cavity_flag'][:]
+        # Limit extraction to cavity points
+        cavity_mask = (cavity_flag == 1)
+        # For non-cavity points, use default T/S values
+        temp[~cavity_mask] = -1.9  # Default temperature for open ocean
+        salt[~cavity_mask] = 34.5  # Default salinity for open ocean
+
+# Create points array for interpolation
+fesom_nodes = np.column_stack((fesom_x, fesom_y))
+temp_values = temp
+salt_values = salt
+
+# Create target grid for interpolation
+grid_x, grid_y = np.meshgrid(x_grid, y_grid)
+target_points = np.column_stack((grid_x.flatten(), grid_y.flatten()))
+
+# Interpolate FESOM data to regular grid
+interp_temp = griddata(fesom_nodes, temp_values, target_points, method='linear', fill_value=-1.9)
+interp_salt = griddata(fesom_nodes, salt_values, target_points, method='linear', fill_value=34.5)
+
+# Reshape to 2D arrays
+temp_grid = interp_temp.reshape(grid_y.shape)
+salt_grid = interp_salt.reshape(grid_y.shape)
+
+# Create output file with ocean state for PISM
+with nc.Dataset('$PISM_OCEAN_FORCING_FILE', 'w') as out:
+    # Create dimensions
+    out.createDimension('x', len(x_grid))
+    out.createDimension('y', len(y_grid))
+    
+    # Create coordinate variables
+    vx = out.createVariable('x', 'f8', ('x',))
+    vy = out.createVariable('y', 'f8', ('y',))
+    vx[:] = x_grid
+    vy[:] = y_grid
+    
+    # Create forcing variables
+    vtemp = out.createVariable('theta_ocean', 'f8', ('y', 'x'))
+    vsalt = out.createVariable('salinity_ocean', 'f8', ('y', 'x'))
+    
+    # Set attributes
+    vtemp.long_name = 'Potential temperature of ocean at ice-ocean interface'
+    vtemp.units = 'Celsius'
+    vsalt.long_name = 'Salinity of ocean at ice-ocean interface'
+    vsalt.units = 'g/kg'
+    
+    # Write data
+    vtemp[:] = temp_grid
+    vsalt[:] = salt_grid
+
+print(f"PISM forcing file created: {os.path.basename('$PISM_OCEAN_FORCING_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: FESOM to PISM coupling failed"
+        return 1
+    fi
+    
+    echo "FESOM to PISM coupling with moving cavity completed successfully"
+    return 0
+}
+
+function setup_moving_cavity {
+    echo " *** S T A R T I N G    setup_moving_cavity ***"
+    
+    # Load our utilities
+    . ${FUNCTION_PATH}/coupling_movingcavity_utils.functions
+    
+    # Define paths and files
+    PISM_INIT_FILE=$1
+    FESOM_MESH_FILE=$2
+    OUT_CAVITY_FILE=$3
+    
+    if [ -z "$PISM_INIT_FILE" ] || [ -z "$FESOM_MESH_FILE" ] || [ -z "$OUT_CAVITY_FILE" ]; then
+        echo "ERROR: Missing required parameters"
+        echo "Usage: setup_moving_cavity PISM_INIT_FILE FESOM_MESH_FILE OUT_CAVITY_FILE"
+        return 1
+    fi
+    
+    # Check if files exist
+    if [ ! -f "$PISM_INIT_FILE" ]; then
+        echo "ERROR: PISM initial file not found: $PISM_INIT_FILE"
+        return 1
+    fi
+    
+    if [ ! -f "$FESOM_MESH_FILE" ]; then
+        echo "ERROR: FESOM mesh file not found: $FESOM_MESH_FILE"
+        return 1
+    fi
+    
+    # Define constants for the Python script
+    RHOICE=910.0          # Ice density [kg/m^3]
+    RHOSW=1028.0          # Seawater density [kg/m^3]
+    MIN_CAVITY_THICKNESS=20.0  # Minimum cavity thickness [m]
+    
+    # Create Python command for setup
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+from scipy.interpolate import griddata
+
+# Constants
+rho_ice = $RHOICE
+rho_ocean = $RHOSW
+min_cavity_thickness = $MIN_CAVITY_THICKNESS
+
+# Load PISM file
+with nc.Dataset('$PISM_INIT_FILE', 'r') as ds:
+    # Extract grid and data
+    ice_x = ds.variables['x'][:]
+    ice_y = ds.variables['y'][:]
+    thk = ds.variables['thickness'][:]
+    bed = ds.variables['bedrock_altitude'][:]
+    mask = ds.variables['mask'][:]
+    
+    # Identify ice shelf cells (mask=3 in PISM convention)
+    ice_shelf_mask = (mask == 3)
+    
+    # Calculate draft depth (negative z-coordinate, below sea level)
+    draft = np.zeros_like(thk)
+    draft[ice_shelf_mask] = -thk[ice_shelf_mask] * (rho_ice / rho_ocean)
+    
+    # Create grid coordinates for interpolation
+    grid_x, grid_y = np.meshgrid(ice_x, ice_y)
+    points = np.column_stack((grid_x.flatten(), grid_y.flatten()))
+    draft_values = draft.flatten()
+    mask_values = ice_shelf_mask.astype(int).flatten()
+
+# Load FESOM mesh
+with nc.Dataset('$FESOM_MESH_FILE', 'r') as ds:
+    # Extract node coordinates
+    fesom_x = ds.variables['x'][:]
+    fesom_y = ds.variables['y'][:]
+    fesom_nodes = np.column_stack((fesom_x, fesom_y))
+    
+    # Get depth and other mesh properties
+    fesom_depth = ds.variables['depth'][:]
+    if 'cavity_flag' in ds.variables:
+        cavity_flag = ds.variables['cavity_flag'][:]
+    else:
+        # If not present, create default cavity flag
+        cavity_flag = np.zeros_like(fesom_depth, dtype=int)
+
+# Interpolate ice data to FESOM mesh
+interp_draft = griddata(points, draft_values, fesom_nodes, method='linear', fill_value=0)
+interp_mask = griddata(points, mask_values, fesom_nodes, method='nearest', fill_value=0)
+
+# Create cavity file for FESOM
+with nc.Dataset('$OUT_CAVITY_FILE', 'w') as out:
+    # Define dimensions
+    out.createDimension('nodes', len(fesom_x))
+    
+    # Create variables
+    vx = out.createVariable('x', 'f8', ('nodes',))
+    vy = out.createVariable('y', 'f8', ('nodes',))
+    vdraft = out.createVariable('ice_draft', 'f8', ('nodes',))
+    vflag = out.createVariable('cavity_flag', 'i4', ('nodes',))
+    
+    # Determine new cavity geometry
+    new_cavity_flag = np.zeros_like(cavity_flag)
+    
+    # Mark cells underneath floating ice as cavity points
+    new_cavity_flag[interp_mask > 0] = 1
+    
+    # Ensure cavity thickness constraints
+    # Minimum cavity thickness check
+    cavity_thickness = fesom_depth - interp_draft
+    min_thickness_mask = (new_cavity_flag == 1) & (cavity_thickness < min_cavity_thickness)
+    
+    # Adjust draft to maintain minimum thickness
+    interp_draft[min_thickness_mask] = fesom_depth[min_thickness_mask] - min_cavity_thickness
+    
+    # Set values
+    vx[:] = fesom_x
+    vy[:] = fesom_y
+    vdraft[:] = interp_draft
+    vflag[:] = new_cavity_flag
+    
+    # Add metadata
+    out.description = "Initial ice shelf cavity geometry for FESOM"
+    vdraft.long_name = "Ice shelf draft"
+    vdraft.units = "m"
+    vflag.long_name = "Cavity flag (1=cavity point, 0=open ocean)"
+    vflag.units = "1"
+
+print(f"Initial cavity file created: {os.path.basename('$OUT_CAVITY_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Initial cavity setup failed"
+        return 1
+    fi
+    
+    # Generate visualization
+    OUT_PNG="${OUT_CAVITY_FILE%.nc}_initial.png"
+    movingcavity_visualize_cavity "$OUT_CAVITY_FILE" "$OUT_PNG"
+    
+    # Show status
+    movingcavity_check_status "$OUT_CAVITY_FILE"
+    
+    echo "Initial moving cavity setup completed successfully"
+    return 0
+}

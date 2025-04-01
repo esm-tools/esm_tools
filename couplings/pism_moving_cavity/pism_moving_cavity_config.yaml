@@ -1,0 +1,153 @@
+# PISM-FESOM Coupling Configuration with Moving Cavity Support
+# =======================================================
+#
+# This configuration file defines the parameters for coupling PISM (ice sheet model)
+# with FESOM (ocean model) including support for dynamically evolving ice shelf cavities.
+#
+# Features:
+# - Moving cavity support similar to ISSM-FESOM coupling
+# - Python-based implementation following ESM-Tools conventions
+# - Bidirectional coupling between ice sheet and ocean models
+
+# Paths for input/output
+paths:
+  pism_data: ${WORK_DIR}/pism_data                 # PISM input/output directory
+  fesom_data: ${WORK_DIR}/fesom_data               # FESOM input/output directory
+  output: ${WORK_DIR}/coupled_output               # Output directory for coupling products
+  log: ${WORK_DIR}/logs                            # Log directory
+
+# PISM model settings
+pism:
+  version: "2.0"                                   # PISM version
+  executable: "pismr"                              # PISM executable name
+  input_file: "pism_input.nc"                      # Initial input file
+  output_prefix: "pism_out"                        # Prefix for output files
+  geometry_vars:                                   # Variables needed for cavity geometry
+    - "thickness"
+    - "bedrock_altitude"
+    - "mask"
+  ocean_forcing_vars:                              # Ocean variables needed by PISM
+    - "shelfbtemp"                                 # Shelf base temperature
+    - "shelfbmassflux"                             # Shelf base mass flux
+  extra_vars:                                      # Additional diagnostic variables
+    - "thk"                                        # Ice thickness 
+    - "velsurf_mag"                                # Surface velocity magnitude
+    - "mask"                                       # Ice mask
+    - "tendency_of_ice_mass_due_to_basal_melt"     # Basal melt rate
+    - "ice_area_specific_volume_at_node_below_flotation" # Volume below flotation
+  grid:
+    resolution: 5000                               # Grid resolution in meters
+    dimensions:                                    # Grid dimensions
+      x: 200
+      y: 200
+
+# FESOM model settings
+fesom:
+  version: "2.0"                                   # FESOM version
+  mesh_file: "fesom.mesh.diag.nc"                  # FESOM mesh file
+  initial_state_file: "fesom.initial.nc"           # Initial FESOM state
+  cavity_file: "fesom.cavity.nc"                   # File for cavity updates
+  output_prefix: "fesom_out"                       # Prefix for output files
+  ocean_vars:                                      # Ocean variables needed for coupling
+    - name: "temp"                                 # Temperature
+      unit: "degC"
+      long_name: "Potential Temperature"
+    - name: "salt"                                 # Salinity
+      unit: "psu"
+      long_name: "Salinity"
+    - name: "u"                                    # Zonal velocity
+      unit: "m/s"
+      long_name: "Zonal Velocity"
+    - name: "v"                                    # Meridional velocity
+      unit: "m/s"
+      long_name: "Meridional Velocity"
+  mask_vars:                                       # Mask variables
+    - name: "cavity_mask"                          # Ice shelf cavity mask
+      long_name: "Cavity Mask (1=cavity, 0=open ocean)"
+    - name: "wet_mask"                             # Wet mask (for active nodes)
+      long_name: "Wet Mask (1=wet, 0=dry)"
+
+# Coupling settings
+coupling:
+  enable_moving_cavity: true                       # Enable moving cavity support
+  start_date: "2000-01-01T00:00:00"                # Start date
+  end_date: "2100-01-01T00:00:00"                  # End date
+  coupling_freq_months: 12                         # Coupling frequency in months
+  cavity_update_freq: 1                            # Update cavity every N coupling steps
+  spinup_years: 0                                  # Years of spinup before coupling
+  
+  # Physical parameters
+  physical_constants:
+    rho_ice: 910.0                                 # Ice density (kg/m^3)
+    rho_ocean: 1028.0                              # Ocean density (kg/m^3)
+    rho_fw: 1000.0                                 # Freshwater density (kg/m^3)
+    cp_ocean: 3974.0                               # Specific heat capacity of ocean (J/kg/K)
+    latent_heat_fusion: 3.34e5                     # Latent heat of fusion (J/kg)
+    gravity: 9.81                                  # Gravitational acceleration (m/s^2)
+    
+  # Regridding settings for PISM to FESOM
+  regrid_pism_to_fesom:
+    method: "conservative"                         # Regridding method (conservative, bilinear, nearest)
+    weights_file: "weights_pism2fesom.nc"          # Pre-computed weights file (optional)
+    extrapolation: true                            # Enable extrapolation for missing values
+    mask_value: -9999.0                            # Value for masked areas
+    
+  # Regridding settings for FESOM to PISM
+  regrid_fesom_to_pism:
+    method: "bilinear"                             # Regridding method
+    weights_file: "weights_fesom2pism.nc"          # Pre-computed weights file (optional)
+    vertical_interp: "nearest"                     # Method for vertical interpolation
+    cavity_temp_gradient: "linear"                 # Temperature gradient in cavity (linear, constant)
+    
+  # Moving cavity implementation
+  moving_cavity:
+    smoothing_iterations: 2                        # Smooth ice draft this many times
+    min_water_column: 20.0                         # Minimum water column thickness (m)
+    remove_isolated_cavities: true                 # Remove isolated cavity cells
+    relax_iterations: 5                            # Relaxation iterations for ocean after geometry change
+    extrapolate_into_new_cavities: true            # Extrapolate T/S into newly opened cavities
+    fesom_cavity_update_method: "restart"          # How to update FESOM cavity (restart or online)
+    
+  # Melt parameterization
+  melt_parameterization:
+    type: "3equation"                              # Type of melt parameterization (3equation, simple)
+    gamma_t: 1.0e-4                                # Thermal exchange velocity (m/s)
+    gamma_s: 5.05e-7                               # Salinity exchange velocity (m/s)
+    
+  # Calving and discharge
+  calving:
+    enable: true                                   # Enable iceberg calving and discharge
+    method: "thickness_threshold"                  # Calving method
+    threshold: 200.0                               # Threshold for calving (m)
+    
+# Visualization settings
+visualization:
+  enable: true                                     # Enable visualization
+  output_dir: "${WORK_DIR}/figures"                # Output directory for figures
+  formats:                                         # Output formats
+    - "png"
+    - "pdf"
+  plots:                                           # Plot types
+    - "cavity_geometry"                            # Cavity geometry
+    - "melt_rates"                                 # Melt rates
+    - "temperature_cross_section"                  # Temperature cross-section
+    - "salinity_cross_section"                     # Salinity cross-section
+    
+# Parallel execution settings
+parallel:
+  mpi_tasks_pism: 16                               # MPI tasks for PISM
+  mpi_tasks_fesom: 64                              # MPI tasks for FESOM
+  omp_threads_pism: 1                              # OpenMP threads for PISM
+  omp_threads_fesom: 1                             # OpenMP threads for FESOM
+  
+# Monitoring and diagnostics
+monitoring:
+  log_level: "INFO"                                # Logging level (DEBUG, INFO, WARNING, ERROR)
+  plot_diagnostics: true                           # Create diagnostic plots
+  save_frequency: 1                                # Save diagnostics every N coupling steps
+  variables:                                       # Diagnostic variables to track
+    - "total_melt_flux"                            # Total melt flux
+    - "mean_melt_rate"                             # Mean melt rate
+    - "max_melt_rate"                              # Maximum melt rate
+    - "cavity_volume"                              # Cavity volume
+    - "grounding_line_flux"                        # Grounding line flux

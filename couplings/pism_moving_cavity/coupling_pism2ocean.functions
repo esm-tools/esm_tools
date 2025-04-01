@@ -1,0 +1,103 @@
+#!/usr/bin/ksh
+
+# =========================================================
+# Generic functions for PISM to any ocean model
+# =========================================================
+
+# Constants
+RHOICE=910.0          # Ice density [kg/m^3]
+RHOSW=1028.0          # Seawater density [kg/m^3]
+MIN_CAVITY_THICKNESS=20.0  # Minimum cavity thickness [m]
+
+function coupling_pism2ocean {
+    # Generic function for processing PISM output for any ocean model
+    # Parameters:
+    # - PISM_FILE: PISM output file
+    # - OUT_FILE: Generic ice forcing file for ocean models
+    
+    PISM_FILE=$1
+    OUT_FILE=$2
+    
+    echo " * Moving Cavity: Processing generic PISM to ocean exchange"
+    
+    # Create Python command for processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+
+# Load PISM file
+with nc.Dataset('$PISM_FILE', 'r') as ds:
+    # Extract grid and data
+    x = ds.variables['x'][:]
+    y = ds.variables['y'][:]
+    thk = ds.variables['thickness'][:]
+    bed = ds.variables['bedrock_altitude'][:]
+    mask = ds.variables['mask'][:]
+    
+    # Calculate ice draft for floating ice (ice shelves)
+    rho_ice = $RHOICE
+    rho_ocean = $RHOSW
+    
+    # Identify ice shelf cells (mask=3 in PISM convention)
+    ice_shelf_mask = (mask == 3)
+    
+    # Calculate draft depth (negative z-coordinate, below sea level)
+    draft = np.zeros_like(thk)
+    draft[ice_shelf_mask] = -thk[ice_shelf_mask] * (rho_ice / rho_ocean)
+    
+    # Calculate freshwater flux from basal melting
+    # For now, just placeholder - in a real setup, this would come from PISM's energy balance
+    bmelt = np.zeros_like(thk)
+    if 'basal_melt_rate_grounded' in ds.variables:
+        bmelt_g = ds.variables['basal_melt_rate_grounded'][:]
+        bmelt_f = ds.variables['basal_melt_rate_floating'][:]
+        bmelt[mask == 2] = bmelt_g[mask == 2]  # grounded ice
+        bmelt[mask == 3] = bmelt_f[mask == 3]  # floating ice
+    
+    # Create output file with ice sheet state for ocean models
+    with nc.Dataset('$OUT_FILE', 'w') as out:
+        # Create dimensions
+        out.createDimension('x', len(x))
+        out.createDimension('y', len(y))
+        
+        # Create coordinate variables
+        vx = out.createVariable('x', 'f8', ('x',))
+        vy = out.createVariable('y', 'f8', ('y',))
+        vx[:] = x
+        vy[:] = y
+        
+        # Create other variables
+        vmask = out.createVariable('ice_shelf_mask', 'i4', ('y', 'x'))
+        vdraft = out.createVariable('ice_draft', 'f8', ('y', 'x'))
+        vbmelt = out.createVariable('basal_melt_rate', 'f8', ('y', 'x'))
+        
+        # Set attributes
+        vmask.long_name = 'Ice shelf mask (1=ice shelf)'
+        vmask.units = '1'
+        vdraft.long_name = 'Ice shelf draft depth'
+        vdraft.units = 'm'
+        vbmelt.long_name = 'Basal melt rate'
+        vbmelt.units = 'm/yr'
+        
+        # Write data
+        vmask[:] = ice_shelf_mask.astype(int)
+        vdraft[:] = draft
+        vbmelt[:] = bmelt
+    
+    print(f"Generic ice output created: {os.path.basename('$OUT_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to process PISM output"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Generic ice-to-ocean processing complete"
+    return 0
+}

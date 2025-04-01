@@ -1,0 +1,629 @@
+#!/usr/bin/ksh
+
+# =========================================================
+# Core functions for PISM-FESOM coupling with moving cavity
+# =========================================================
+
+. ${FUNCTION_PATH}/../general/general_lists.functions
+. ${FUNCTION_PATH}/../general/coupling_general.functions
+
+# Global constants for cavity operations
+RHOICE=910.0          # Ice density [kg/m^3]
+RHOSW=1028.0          # Seawater density [kg/m^3]
+MIN_CAVITY_THICKNESS=20.0  # Minimum cavity thickness [m]
+
+# -----------------------------------------------------
+# Generic ice sheet to ocean functions (model-independent)
+# -----------------------------------------------------
+
+function coupling_pism2ocean {
+    # Generic function for processing PISM output for any ocean model
+    # Parameters:
+    # - PISM_FILE: PISM output file
+    # - OUT_FILE: Generic ice forcing file for ocean models
+    
+    PISM_FILE=$1
+    OUT_FILE=$2
+    
+    echo " * Moving Cavity: Processing generic PISM to ocean exchange"
+    
+    # Create Python command for processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+
+# Load PISM file
+with nc.Dataset('$PISM_FILE', 'r') as ds:
+    # Extract grid and data
+    x = ds.variables['x'][:]
+    y = ds.variables['y'][:]
+    thk = ds.variables['thickness'][:]
+    bed = ds.variables['bedrock_altitude'][:]
+    mask = ds.variables['mask'][:]
+    
+    # Calculate ice draft for floating ice (ice shelves)
+    rho_ice = $RHOICE
+    rho_ocean = $RHOSW
+    
+    # Identify ice shelf cells (mask=3 in PISM convention)
+    ice_shelf_mask = (mask == 3)
+    
+    # Calculate draft depth (negative z-coordinate, below sea level)
+    draft = np.zeros_like(thk)
+    draft[ice_shelf_mask] = -thk[ice_shelf_mask] * (rho_ice / rho_ocean)
+    
+    # Calculate freshwater flux from basal melting
+    # For now, just placeholder - in a real setup, this would come from PISM's energy balance
+    bmelt = np.zeros_like(thk)
+    if 'basal_melt_rate_grounded' in ds.variables:
+        bmelt_g = ds.variables['basal_melt_rate_grounded'][:]
+        bmelt_f = ds.variables['basal_melt_rate_floating'][:]
+        bmelt[mask == 2] = bmelt_g[mask == 2]  # grounded ice
+        bmelt[mask == 3] = bmelt_f[mask == 3]  # floating ice
+    
+    # Create output file with ice sheet state for ocean models
+    with nc.Dataset('$OUT_FILE', 'w') as out:
+        # Create dimensions
+        out.createDimension('x', len(x))
+        out.createDimension('y', len(y))
+        
+        # Create coordinate variables
+        vx = out.createVariable('x', 'f8', ('x',))
+        vy = out.createVariable('y', 'f8', ('y',))
+        vx[:] = x
+        vy[:] = y
+        
+        # Create other variables
+        vmask = out.createVariable('ice_shelf_mask', 'i4', ('y', 'x'))
+        vdraft = out.createVariable('ice_draft', 'f8', ('y', 'x'))
+        vbmelt = out.createVariable('basal_melt_rate', 'f8', ('y', 'x'))
+        
+        # Set attributes
+        vmask.long_name = 'Ice shelf mask (1=ice shelf)'
+        vmask.units = '1'
+        vdraft.long_name = 'Ice shelf draft depth'
+        vdraft.units = 'm'
+        vbmelt.long_name = 'Basal melt rate'
+        vbmelt.units = 'm/yr'
+        
+        # Write data
+        vmask[:] = ice_shelf_mask.astype(int)
+        vdraft[:] = draft
+        vbmelt[:] = bmelt
+    
+    print(f"Generic ice output created: {os.path.basename('$OUT_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to process PISM output"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Generic ice-to-ocean processing complete"
+    return 0
+}
+
+# -----------------------------------------------------
+# Generic ocean to ice sheet functions (model-independent)
+# -----------------------------------------------------
+
+function coupling_ocean2pism {
+    # Generic function for processing ocean output for PISM
+    # Parameters:
+    # - OCEAN_FILE: Generic ocean output file
+    # - OUT_FILE: Ocean forcing file for PISM
+    
+    OCEAN_FILE=$1
+    OUT_FILE=$2
+    
+    echo " * Moving Cavity: Processing generic ocean to PISM exchange"
+    
+    # Create Python command for processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+
+# Load generic ocean file
+with nc.Dataset('$OCEAN_FILE', 'r') as ds:
+    # Extract grid and data
+    x = ds.variables['x'][:]
+    y = ds.variables['y'][:]
+    
+    # Get temperature and salinity
+    temp = ds.variables['temperature'][:]
+    salt = ds.variables['salinity'][:]
+    
+    # Create output forcing file for PISM
+    with nc.Dataset('$OUT_FILE', 'w') as out:
+        # Create dimensions
+        out.createDimension('x', len(x))
+        out.createDimension('y', len(y))
+        
+        # Create coordinate variables
+        vx = out.createVariable('x', 'f8', ('x',))
+        vy = out.createVariable('y', 'f8', ('y',))
+        vx[:] = x
+        vy[:] = y
+        
+        # Create forcing variables
+        vtemp = out.createVariable('theta_ocean', 'f8', ('y', 'x'))
+        vsalt = out.createVariable('salinity_ocean', 'f8', ('y', 'x'))
+        
+        # Set attributes
+        vtemp.long_name = 'Potential temperature of ocean at ice-ocean interface'
+        vtemp.units = 'Celsius'
+        vsalt.long_name = 'Salinity of ocean at ice-ocean interface'
+        vsalt.units = 'g/kg'
+        
+        # Write data
+        vtemp[:] = temp
+        vsalt[:] = salt
+    
+    print(f"PISM forcing file created: {os.path.basename('$OUT_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to process ocean output for PISM"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Generic ocean-to-ice processing complete"
+    return 0
+}
+
+# -----------------------------------------------------
+# FESOM-specific functions
+# -----------------------------------------------------
+
+function coupling_ice_sheet2fesom {
+    # FESOM-specific function to transform generic ice sheet data for FESOM
+    # Parameters:
+    # - GENERIC_ICE_FILE: Generic ice sheet output
+    # - FESOM_MESH: FESOM mesh file
+    # - OUT_FORCING: Output forcing file for FESOM
+    # - OUT_CAVITY: Output cavity file for FESOM
+    
+    GENERIC_ICE_FILE=$1
+    FESOM_MESH=$2
+    OUT_FORCING=$3
+    OUT_CAVITY=$4
+    
+    echo " * Moving Cavity: Processing ice sheet data for FESOM"
+    
+    # Create Python command for FESOM-specific processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+from scipy.interpolate import griddata
+
+# Load generic ice sheet output
+with nc.Dataset('$GENERIC_ICE_FILE', 'r') as ds:
+    # Extract grid and data
+    x_ice = ds.variables['x'][:]
+    y_ice = ds.variables['y'][:]
+    ice_shelf_mask = ds.variables['ice_shelf_mask'][:]
+    ice_draft = ds.variables['ice_draft'][:]
+    basal_melt = ds.variables['basal_melt_rate'][:]
+    
+    # Create 2D grid for interpolation
+    xx_ice, yy_ice = np.meshgrid(x_ice, y_ice)
+    
+# Load FESOM mesh
+with nc.Dataset('$FESOM_MESH', 'r') as mesh:
+    fesom_x = mesh.variables['x'][:]
+    fesom_y = mesh.variables['y'][:]
+    fesom_nodes_2d = mesh.variables['nod2d'][:] - 1
+    
+    if 'elem2d' in mesh.variables:
+        elem2d = mesh.variables['elem2d'][:,:] - 1
+    else:
+        elem2d = None
+    
+# Prepare interpolation points
+fesom_points = np.column_stack((fesom_x, fesom_y))
+
+# Create 2D grid for interpolation output
+xx_grid, yy_grid = np.meshgrid(x_ice, y_ice)
+
+# Interpolate ice draft to FESOM grid
+fesom_draft = griddata(
+    np.column_stack((xx_ice.flatten(), yy_ice.flatten())), 
+    ice_draft.flatten(),
+    fesom_points,
+    method='linear',
+    fill_value=0.0
+)
+
+# Interpolate ice shelf mask to FESOM grid
+shelf_indicator = ice_shelf_mask.flatten().astype(float)
+fesom_shelf_mask = griddata(
+    np.column_stack((xx_ice.flatten(), yy_ice.flatten())),
+    shelf_indicator,
+    fesom_points,
+    method='linear',
+    fill_value=0.0
+)
+
+# Threshold to get binary mask
+fesom_shelf_mask = (fesom_shelf_mask > 0.5).astype(int)
+
+# Interpolate basal melt rate to FESOM grid
+fesom_melt = griddata(
+    np.column_stack((xx_ice.flatten(), yy_ice.flatten())),
+    basal_melt.flatten(),
+    fesom_points,
+    method='linear',
+    fill_value=0.0
+)
+
+# Apply mask to ensure zero melt outside ice shelf
+fesom_melt = fesom_melt * fesom_shelf_mask
+
+# Write cavity geometry file
+with nc.Dataset('$OUT_CAVITY', 'w') as out:
+    # Create dimensions
+    out.createDimension('nod2d', len(fesom_x))
+    
+    # Create variables
+    v_draft = out.createVariable('ice_draft', 'f8', ('nod2d',))
+    v_mask = out.createVariable('cavity_mask', 'i4', ('nod2d',))
+    
+    # Set attributes
+    v_draft.long_name = 'Ice shelf draft depth'
+    v_draft.units = 'm'
+    v_mask.long_name = 'Ice shelf cavity mask'
+    v_mask.units = '1'
+    
+    # Write data
+    v_draft[:] = fesom_draft
+    v_mask[:] = fesom_shelf_mask
+
+# Write forcing file for FESOM
+with nc.Dataset('$OUT_FORCING', 'w') as out:
+    # Create dimensions
+    out.createDimension('nod2d', len(fesom_x))
+    
+    # Create variables
+    v_melt = out.createVariable('basal_melt_rate', 'f8', ('nod2d',))
+    v_draft = out.createVariable('ice_draft', 'f8', ('nod2d',))
+    v_mask = out.createVariable('cavity_mask', 'i4', ('nod2d',))
+    
+    # Set attributes
+    v_melt.long_name = 'Ice shelf basal melt rate'
+    v_melt.units = 'm/yr'
+    
+    # Write data
+    v_melt[:] = fesom_melt
+    v_draft[:] = fesom_draft
+    v_mask[:] = fesom_shelf_mask
+
+print(f"FESOM forcing file created: {os.path.basename('$OUT_FORCING')}")
+print(f"FESOM cavity file created: {os.path.basename('$OUT_CAVITY')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to process ice sheet data for FESOM"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Ice sheet to FESOM processing complete"
+    return 0
+}
+
+function coupling_fesom2ice_sheet {
+    # FESOM-specific function to extract ocean data for ice sheet models
+    # Parameters:
+    # - FESOM_FILE: FESOM output file
+    # - CAVITY_FILE: Current cavity geometry file
+    # - OUT_FILE: Output generic ocean file
+    
+    FESOM_FILE=$1
+    CAVITY_FILE=$2
+    OUT_FILE=$3
+    
+    echo " * Moving Cavity: Extracting FESOM data for ice sheet model"
+    
+    # Create Python command for FESOM-specific processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+from scipy.interpolate import griddata
+
+# Define regular grid parameters for output
+x_min, x_max = -3000e3, 3000e3  # Adjust based on domain
+y_min, y_max = -3000e3, 3000e3  # Adjust based on domain
+grid_spacing = 5e3  # 5 km resolution
+x_grid = np.arange(x_min, x_max + grid_spacing, grid_spacing)
+y_grid = np.arange(y_min, y_max + grid_spacing, grid_spacing)
+
+# Load FESOM data
+with nc.Dataset('$FESOM_FILE', 'r') as ds:
+    # Extract node coordinates
+    if 'x' in ds.variables and 'y' in ds.variables:
+        fesom_x = ds.variables['x'][:]
+        fesom_y = ds.variables['y'][:]
+    else:
+        # Try alternative coordinate variable names
+        fesom_x = ds.variables['lon'][:]
+        fesom_y = ds.variables['lat'][:]
+    
+    # Extract ocean temperature and salinity
+    # Note: FESOM typically has 3D variables with levels
+    # We'll extract the bottom layer or the layer at ice-ocean interface
+    if 'temp' in ds.variables:
+        temp_name = 'temp'
+        salt_name = 'salt'
+    else:
+        temp_name = 'temperature'
+        salt_name = 'salinity'
+    
+    temp_3d = ds.variables[temp_name][:]
+    salt_3d = ds.variables[salt_name][:]
+    
+    # For simplicity, we'll use the top layer here
+    # In a real setup, we would use the layer at the ice-ocean interface
+    temp_fesom = temp_3d[0, :]  # Assuming time, level, node ordering
+    salt_fesom = salt_3d[0, :]
+
+# Load cavity information to identify ice-ocean interface
+with nc.Dataset('$CAVITY_FILE', 'r') as cavity:
+    cavity_mask = cavity.variables['cavity_mask'][:]
+
+# Create points for interpolation
+fesom_points = np.column_stack((fesom_x, fesom_y))
+
+# Create 2D grid for interpolation output
+xx_grid, yy_grid = np.meshgrid(x_grid, y_grid)
+
+# Interpolate to regular grid
+temp_grid = griddata(
+    fesom_points,
+    temp_fesom,
+    (xx_grid, yy_grid),
+    method='linear',
+    fill_value=0.0
+)
+
+salt_grid = griddata(
+    fesom_points,
+    salt_fesom,
+    (xx_grid, yy_grid),
+    method='linear',
+    fill_value=0.0
+)
+
+# Create output file with generic ocean data
+with nc.Dataset('$OUT_FILE', 'w') as out:
+    # Create dimensions
+    out.createDimension('x', len(x_grid))
+    out.createDimension('y', len(y_grid))
+    
+    # Create coordinate variables
+    vx = out.createVariable('x', 'f8', ('x',))
+    vy = out.createVariable('y', 'f8', ('y',))
+    vx[:] = x_grid
+    vy[:] = y_grid
+    
+    # Create data variables
+    vtemp = out.createVariable('temperature', 'f8', ('y', 'x'))
+    vsalt = out.createVariable('salinity', 'f8', ('y', 'x'))
+    
+    # Set attributes
+    vtemp.long_name = 'Ocean potential temperature'
+    vtemp.units = 'Celsius'
+    vsalt.long_name = 'Ocean salinity'
+    vsalt.units = 'g/kg'
+    
+    # Write data
+    vtemp[:] = temp_grid
+    vsalt[:] = salt_grid
+
+print(f"Generic ocean file created: {os.path.basename('$OUT_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to process FESOM data for ice sheet model"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: FESOM to ice sheet processing complete"
+    return 0
+}
+
+# -----------------------------------------------------
+# Utility functions for cavity visualization and checks
+# -----------------------------------------------------
+
+function movingcavity_visualize_cavity {
+    # Generate visualization of cavity geometry
+    # Parameters:
+    # - CAVITY_FILE: Cavity geometry file
+    # - OUT_PNG: Output PNG file for visualization
+    
+    CAVITY_FILE=$1
+    OUT_PNG=$2
+    
+    echo " * Moving Cavity: Generating visualization"
+    
+    # Create Python command for visualization
+    PYTHON_CMD=$(cat <<EOF
+import netCDF4 as nc
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.tri import Triangulation
+
+# Load cavity file
+with nc.Dataset('$CAVITY_FILE', 'r') as ds:
+    if 'cavity_mask' not in ds.variables or 'ice_draft' not in ds.variables:
+        print("ERROR: Required variables not found in cavity file")
+        exit(1)
+    
+    cavity_mask = ds.variables['cavity_mask'][:]
+    ice_draft = ds.variables['ice_draft'][:]
+
+# Load FESOM mesh for plotting
+mesh_file = '$CAVITY_FILE'  # We'll use the same file, assuming it has coordinates
+with nc.Dataset(mesh_file, 'r') as mesh:
+    if 'x' in mesh.variables and 'y' in mesh.variables:
+        x = mesh.variables['x'][:]
+        y = mesh.variables['y'][:]
+    else:
+        print("ERROR: Missing coordinates in mesh file")
+        exit(1)
+    
+    # Try to get element connectivity if available
+    elem = None
+    if 'elem' in mesh.variables:
+        elem = mesh.variables['elem'][:] - 1  # Convert to 0-based indexing
+
+# Create figure
+plt.figure(figsize=(10, 8))
+
+# Plot cavity mask
+plt.subplot(2, 1, 1)
+if elem is not None:
+    # Create triangulation for proper mesh visualization
+    triang = Triangulation(x, y, elem)
+    plt.tripcolor(triang, cavity_mask, cmap='Blues')
+else:
+    # Fallback to scatter plot if no connectivity info
+    plt.scatter(x, y, c=cavity_mask, cmap='Blues', s=1)
+plt.colorbar(label='Cavity Mask')
+plt.title('Ice Shelf Cavity Mask')
+plt.xlabel('X coordinate')
+plt.ylabel('Y coordinate')
+
+# Plot ice draft (only in cavity regions)
+plt.subplot(2, 1, 2)
+draft_plot = np.where(cavity_mask > 0, ice_draft, np.nan)
+if elem is not None:
+    plt.tripcolor(triang, draft_plot, cmap='viridis')
+else:
+    valid = ~np.isnan(draft_plot)
+    plt.scatter(x[valid], y[valid], c=draft_plot[valid], cmap='viridis', s=1)
+plt.colorbar(label='Depth (m)')
+plt.title('Ice Shelf Draft')
+plt.xlabel('X coordinate')
+plt.ylabel('Y coordinate')
+
+plt.tight_layout()
+plt.savefig('$OUT_PNG', dpi=150)
+plt.close()
+
+print(f"Cavity visualization saved to {os.path.basename('$OUT_PNG')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to generate cavity visualization"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Visualization generated successfully"
+    return 0
+}
+
+function movingcavity_check_status {
+    # Check status of cavity geometry
+    # Parameters:
+    # - CAVITY_FILE: Current cavity geometry file
+    
+    CAVITY_FILE=$1
+    
+    if [ ! -f "$CAVITY_FILE" ]; then
+        echo "ERROR: Cavity file not found: $CAVITY_FILE"
+        return 1
+    fi
+    
+    # Create Python command for status check
+    PYTHON_CMD=$(cat <<EOF
+import netCDF4 as nc
+import numpy as np
+
+with nc.Dataset('$CAVITY_FILE', 'r') as ds:
+    if 'cavity_mask' in ds.variables:
+        cavity_mask = ds.variables['cavity_mask'][:]
+        n_cavity = np.sum(cavity_mask > 0)
+        print(f"Cavity status: {n_cavity} nodes under ice shelf")
+    else:
+        print("No cavity mask found in file")
+    
+    if 'ice_draft' in ds.variables:
+        ice_draft = ds.variables['ice_draft'][:]
+        cavity_depth = ice_draft[cavity_mask > 0] if 'cavity_mask' in ds.variables else ice_draft
+        if len(cavity_depth) > 0:
+            print(f"Mean draft depth: {np.mean(cavity_depth):.2f} m")
+            print(f"Min draft depth: {np.min(cavity_depth):.2f} m")
+            print(f"Max draft depth: {np.max(cavity_depth):.2f} m")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    return 0
+}
+
+# -----------------------------------------------------
+# Dependencies check
+# -----------------------------------------------------
+
+function movingcavity_check_dependencies {
+    # Check if required dependencies are installed
+    echo " * Moving Cavity: Checking dependencies"
+    
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    
+    # Check if Python is available
+    which $PYTHON_EXECUTABLE > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Python executable not found: $PYTHON_EXECUTABLE"
+        return 1
+    fi
+    
+    # Check if required Python packages are available
+    $PYTHON_EXECUTABLE -c "import numpy, netCDF4, matplotlib, scipy" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Required Python packages not found. Please install: numpy, netCDF4, matplotlib, scipy"
+        return 1
+    fi
+    
+    # Check if NCO tools are available
+    which ncks > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        echo "ERROR: NCO tools not found. Please install NCO."
+        return 1
+    fi
+    
+    echo " * Moving Cavity: All dependencies satisfied"
+    return 0
+}

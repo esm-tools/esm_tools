@@ -1,0 +1,166 @@
+#!/usr/bin/ksh
+
+# =========================================================
+# Utility functions for moving cavity coupling
+# =========================================================
+
+function movingcavity_check_dependencies {
+    # Check for required dependencies
+    
+    # Check for Python and required modules
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    
+    echo "Checking Python dependencies..."
+    $PYTHON_EXECUTABLE -c "import numpy, netCDF4, matplotlib" 2>/dev/null
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Required Python modules not found."
+        echo "Please install: numpy, netCDF4, matplotlib"
+        return 1
+    fi
+    
+    # Check for NCO tools
+    which ncks >/dev/null 2>&1
+    
+    if [ $? -ne 0 ]; then
+        echo "WARNING: NCO tools (ncks) not found."
+        echo "Some operations may fail."
+    fi
+    
+    return 0
+}
+
+function movingcavity_visualize_cavity {
+    # Generate visualization of cavity geometry
+    # Parameters:
+    # - CAVITY_FILE: Cavity geometry file
+    # - OUT_PNG: Output PNG file
+    
+    CAVITY_FILE=$1
+    OUT_PNG=$2
+    
+    echo " * Moving Cavity: Generating cavity visualization"
+    
+    # Create Python command for visualization
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+import matplotlib.pyplot as plt
+from matplotlib.colors import LinearSegmentedColormap
+
+# Load cavity geometry
+with nc.Dataset('$CAVITY_FILE', 'r') as ds:
+    x = ds.variables['x'][:]
+    y = ds.variables['y'][:]
+    draft = ds.variables['ice_draft'][:]
+    cavity_flag = ds.variables['cavity_flag'][:]
+
+# Create a custom colormap for ice draft
+cmap = LinearSegmentedColormap.from_list(
+    'draft_cmap', ['darkblue', 'lightblue', 'white'], N=100)
+
+# Create figure
+plt.figure(figsize=(12, 10))
+
+# Plot cavity points
+cavity_mask = cavity_flag == 1
+x_cavity = x[cavity_mask]
+y_cavity = y[cavity_mask]
+draft_cavity = draft[cavity_mask]
+
+# Create a scatter plot colored by draft depth
+scatter = plt.scatter(x_cavity, y_cavity, c=draft_cavity, 
+                     cmap=cmap, s=1, alpha=0.8)
+
+# Add colorbar
+cbar = plt.colorbar(scatter)
+cbar.set_label('Ice Draft (m)')
+
+# Add title and labels
+plt.title('Ice Shelf Cavity Geometry')
+plt.xlabel('X (m)')
+plt.ylabel('Y (m)')
+
+# Add grid
+plt.grid(alpha=0.3)
+
+# Save figure
+plt.savefig('$OUT_PNG', dpi=150, bbox_inches='tight')
+plt.close()
+
+print(f"Cavity visualization saved to: {os.path.basename('$OUT_PNG')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "WARNING: Failed to generate cavity visualization"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Visualization complete"
+    return 0
+}
+
+function movingcavity_check_status {
+    # Check the status of the cavity geometry
+    # Parameters:
+    # - CAVITY_FILE: Cavity geometry file
+    
+    CAVITY_FILE=$1
+    
+    echo " * Moving Cavity: Checking cavity status"
+    
+    # Create Python command for checking cavity status
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+
+# Load cavity geometry
+with nc.Dataset('$CAVITY_FILE', 'r') as ds:
+    cavity_flag = ds.variables['cavity_flag'][:]
+    draft = ds.variables['ice_draft'][:]
+
+# Calculate cavity statistics
+cavity_mask = cavity_flag == 1
+num_cavity_points = np.sum(cavity_mask)
+total_points = len(cavity_flag)
+cavity_percentage = 100.0 * num_cavity_points / total_points if total_points > 0 else 0
+
+# Calculate draft statistics
+if num_cavity_points > 0:
+    cavity_draft = draft[cavity_mask]
+    mean_draft = np.mean(cavity_draft)
+    min_draft = np.min(cavity_draft)
+    max_draft = np.max(cavity_draft)
+else:
+    mean_draft = 0
+    min_draft = 0
+    max_draft = 0
+
+# Print summary
+print(f"Cavity Status:")
+print(f"  - Cavity Points: {num_cavity_points} ({cavity_percentage:.2f}% of domain)")
+print(f"  - Draft Statistics:")
+print(f"    * Mean: {mean_draft:.2f} m")
+print(f"    * Min: {min_draft:.2f} m")
+print(f"    * Max: {max_draft:.2f} m")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "WARNING: Failed to check cavity status"
+        return 1
+    fi
+    
+    return 0
+}

@@ -1,0 +1,145 @@
+#!/usr/bin/ksh
+
+# =========================================================
+# FESOM-specific functions for ocean to ice sheet coupling
+# =========================================================
+
+function coupling_fesom2ice_sheet {
+    # FESOM-specific function to extract ocean data for ice sheet models
+    # Parameters:
+    # - FESOM_FILE: FESOM output file
+    # - CAVITY_FILE: Cavity geometry file
+    # - OUT_FILE: Generic ocean forcing file for ice sheet models
+    
+    FESOM_FILE=$1
+    CAVITY_FILE=$2
+    OUT_FILE=$3
+    
+    echo " * Moving Cavity: Extracting FESOM data for ice sheet model"
+    
+    # Create Python command for FESOM-specific processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+from scipy.interpolate import griddata
+
+# Define output grid parameters (regular grid for PISM)
+# We use a reasonable resolution - this should be configurable in practice
+x_min, x_max = -3000000, 3000000  # meters
+y_min, y_max = -3000000, 3000000  # meters
+resolution = 5000  # meters
+x_grid = np.arange(x_min, x_max, resolution)
+y_grid = np.arange(y_min, y_max, resolution)
+
+# Load FESOM output
+with nc.Dataset('$FESOM_FILE', 'r') as ds:
+    # Extract node coordinates
+    fesom_x = ds.variables['x'][:]
+    fesom_y = ds.variables['y'][:]
+    
+    # Get temperature and salinity
+    # Note: In FESOM, the 3D fields have dimensions (time, layers, nodes)
+    # We need to get the top layer for PISM
+    time_idx = 0  # Use the first/last time step
+    
+    # Get temperature (may be 'temp' or 'temperature' depending on FESOM output)
+    if 'temp' in ds.variables:
+        temp_var = 'temp'
+    else:
+        temp_var = 'temperature'
+    
+    # Get top layer temperature (closest to ice-ocean interface)
+    # In FESOM, layer 0 is typically at the surface, we need the bottom layer
+    # This may need adjustment depending on FESOM's vertical coordinate system
+    if len(ds.variables[temp_var].shape) == 3:
+        # 3D field (time, layers, nodes)
+        bottom_layer = ds.variables[temp_var].shape[1] - 1
+        temp = ds.variables[temp_var][time_idx, bottom_layer, :]
+    else:
+        # 2D field (time, nodes) - surface only
+        temp = ds.variables[temp_var][time_idx, :]
+    
+    # Get salinity
+    if 'salt' in ds.variables:
+        salt_var = 'salt'
+    else:
+        salt_var = 'salinity'
+    
+    if len(ds.variables[salt_var].shape) == 3:
+        # 3D field
+        bottom_layer = ds.variables[salt_var].shape[1] - 1
+        salt = ds.variables[salt_var][time_idx, bottom_layer, :]
+    else:
+        # 2D field
+        salt = ds.variables[salt_var][time_idx, :]
+
+# If cavity file exists, use it to identify cavity nodes
+if os.path.isfile('$CAVITY_FILE'):
+    with nc.Dataset('$CAVITY_FILE', 'r') as ds:
+        cavity_flag = ds.variables['cavity_flag'][:]
+        # Limit extraction to cavity points
+        cavity_mask = (cavity_flag == 1)
+        # For non-cavity points, use default T/S values
+        temp[~cavity_mask] = -1.9  # Default temperature for open ocean
+        salt[~cavity_mask] = 34.5  # Default salinity for open ocean
+
+# Create points array for interpolation
+fesom_nodes = np.column_stack((fesom_x, fesom_y))
+temp_values = temp
+salt_values = salt
+
+# Create target grid for interpolation
+grid_x, grid_y = np.meshgrid(x_grid, y_grid)
+target_points = np.column_stack((grid_x.flatten(), grid_y.flatten()))
+
+# Interpolate FESOM data to regular grid
+interp_temp = griddata(fesom_nodes, temp_values, target_points, method='linear', fill_value=-1.9)
+interp_salt = griddata(fesom_nodes, salt_values, target_points, method='linear', fill_value=34.5)
+
+# Reshape to 2D arrays
+temp_grid = interp_temp.reshape(grid_y.shape)
+salt_grid = interp_salt.reshape(grid_y.shape)
+
+# Create output file with ocean state for ice sheet model
+with nc.Dataset('$OUT_FILE', 'w') as out:
+    # Create dimensions
+    out.createDimension('x', len(x_grid))
+    out.createDimension('y', len(y_grid))
+    
+    # Create coordinate variables
+    vx = out.createVariable('x', 'f8', ('x',))
+    vy = out.createVariable('y', 'f8', ('y',))
+    vx[:] = x_grid
+    vy[:] = y_grid
+    
+    # Create variables
+    vtemp = out.createVariable('temperature', 'f8', ('y', 'x'))
+    vsalt = out.createVariable('salinity', 'f8', ('y', 'x'))
+    
+    # Set attributes
+    vtemp.long_name = 'Ocean temperature at ice-ocean interface'
+    vtemp.units = 'Celsius'
+    vsalt.long_name = 'Ocean salinity at ice-ocean interface'
+    vsalt.units = 'g/kg'
+    
+    # Write data
+    vtemp[:] = temp_grid
+    vsalt[:] = salt_grid
+
+print(f"Generic ocean output created: {os.path.basename('$OUT_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to extract FESOM data for ice sheet"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: FESOM to ice sheet extraction complete"
+    return 0
+}

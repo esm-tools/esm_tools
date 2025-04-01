@@ -1,0 +1,75 @@
+#!/usr/bin/ksh
+
+# =========================================================
+# Generic functions for Ocean to PISM coupling
+# =========================================================
+
+function coupling_ocean2pism {
+    # Generic function for processing ocean output for PISM
+    # Parameters:
+    # - OCEAN_FILE: Generic ocean output file
+    # - OUT_FILE: Ocean forcing file for PISM
+    
+    OCEAN_FILE=$1
+    OUT_FILE=$2
+    
+    echo " * Moving Cavity: Processing generic ocean to PISM exchange"
+    
+    # Create Python command for processing
+    PYTHON_CMD=$(cat <<EOF
+import os
+import numpy as np
+import netCDF4 as nc
+
+# Load generic ocean file
+with nc.Dataset('$OCEAN_FILE', 'r') as ds:
+    # Extract grid and data
+    x = ds.variables['x'][:]
+    y = ds.variables['y'][:]
+    
+    # Get temperature and salinity
+    temp = ds.variables['temperature'][:]
+    salt = ds.variables['salinity'][:]
+    
+    # Create output forcing file for PISM
+    with nc.Dataset('$OUT_FILE', 'w') as out:
+        # Create dimensions
+        out.createDimension('x', len(x))
+        out.createDimension('y', len(y))
+        
+        # Create coordinate variables
+        vx = out.createVariable('x', 'f8', ('x',))
+        vy = out.createVariable('y', 'f8', ('y',))
+        vx[:] = x
+        vy[:] = y
+        
+        # Create forcing variables
+        vtemp = out.createVariable('theta_ocean', 'f8', ('y', 'x'))
+        vsalt = out.createVariable('salinity_ocean', 'f8', ('y', 'x'))
+        
+        # Set attributes
+        vtemp.long_name = 'Potential temperature of ocean at ice-ocean interface'
+        vtemp.units = 'Celsius'
+        vsalt.long_name = 'Salinity of ocean at ice-ocean interface'
+        vsalt.units = 'g/kg'
+        
+        # Write data
+        vtemp[:] = temp
+        vsalt[:] = salt
+    
+    print(f"PISM forcing file created: {os.path.basename('$OUT_FILE')}")
+EOF
+)
+    
+    # Run the Python script
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE:-python3}
+    echo "$PYTHON_CMD" | $PYTHON_EXECUTABLE
+    
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to process ocean output for PISM"
+        return 1
+    fi
+    
+    echo " * Moving Cavity: Generic ocean-to-ice processing complete"
+    return 0
+}

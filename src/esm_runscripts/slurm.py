@@ -176,7 +176,11 @@ class Slurm:
         tykky_env = config["computer"].get("tykky", {}).get("env", False)
         if tykky_env:
             path = config["computer"].get("tykky", {}).get("path", None)
+            folder = config["general"]["thisrun_scripts_dir"]
+            runfile.write(f"module load tykky\n")
             runfile.write(f"tykky activate {tykky_env}\n")
+            runfile.write(f"source {folder}/env.sh\n")
+           
 
     @staticmethod
     def het_par_headers(config, cluster, headers):

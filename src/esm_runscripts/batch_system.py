@@ -571,7 +571,7 @@ class batch_system:
                 tykky_env = config["computer"].get("tykky", {}).get("env", False)
                 if tykky_env:
                     runfile.write("module load tykky\n")
-                    runfile.write("tykky activate {tykky_env}\n")
+                    runfile.write("tykky activate /hpcperm/duts/tyyky/esm_tools\n")
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )

@@ -290,7 +290,8 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
-        comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command. 
+        #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command. 
+        comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .." #without debug. 
         #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
         execution_command: ${executable} -parallel ${runscript_name}
         
@@ -374,7 +375,6 @@ lpj_guess:
                 soil_layer_type: slt_${mygrid}.nc
                 tmp_rc_file: lpjg_steps.rc
                 CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                #VegInit: vegin.nc
                 temp_namcouple: namcouple
                 dir_landuse: /landuse/dirmaker
                 dir_fire: /fire/dirmakei

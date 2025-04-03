@@ -28,7 +28,7 @@ jobs:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   levante:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: levante1
@@ -38,7 +38,7 @@ jobs:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   juwels:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: jwlogin01.juwels
@@ -48,7 +48,7 @@ jobs:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   aleph:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: elogin1
@@ -58,10 +58,20 @@ jobs:
           ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
   blogin:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: blogin1
+          update_esm_tests_info: true
+          test_flags: -cngu -s True
+        secrets:
+          ESM_TOOLS_BOT: ${{ secrets.ESM_TOOLS_BOT }}
+  albedo:
+        # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
+        uses: ./.github/workflows/esm_tests_computer_workflow.yml
+        with:
+          computer: albedo1
           update_esm_tests_info: true
           test_flags: -cngu -s True
         secrets:

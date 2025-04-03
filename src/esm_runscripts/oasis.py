@@ -109,10 +109,10 @@ class oasis:
             else:
                 export_mode = "EXPORTED"
 
-        if bool(lresume) and not direction.get("oasis_copy_restart_overwrite"):
-            lag = str(0)
+        if not lresume and not direction.get('lag_overwrite'):
+            lag = 0
         else:
-            lag = direction.get("lag", "0")
+            lag = direction.get('lag')
 
         # if a transformation method for CONSERV (e.g. GLOBAL) is set below,
         # increase seq (=number of lines describing the transformation) by 1

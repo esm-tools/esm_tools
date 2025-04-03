@@ -8,8 +8,8 @@ name: approve esm_tests changes
 
 # Triggers the workflow on an issue comment
 on:
-  issue_comment:
-    types: [created]
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
     
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

@@ -6,11 +6,11 @@ import os
 import shutil
 import subprocess
 import sys
-
-from loguru import logger
+from pathlib import Path
 
 import esm_parser
 from esm_tools import user_note
+from loguru import logger
 
 
 class Slurm:
@@ -176,10 +176,11 @@ class Slurm:
         tykky_env = config["computer"].get("tykky", {}).get("env", False)
         if tykky_env:
             path = config["computer"].get("tykky", {}).get("path", None)
-            folder = config["general"]["thisrun_scripts_dir"]
-            runfile.write(f"module load tykky\n")
-            runfile.write(f"tykky activate {tykky_env}\n")
-            runfile.write(f"source {folder}/env.sh\n")
+            if path and Path(path) / "bin":
+                runfile.write("# Add tykky environment bins to PATH\n")
+                runfile.write(f"export PATH={path}/bin:$PATH\n\n")
+            else:
+                logger.warning(f"Tykky bin dir ({path}/bin)  not found")
            
 
     @staticmethod

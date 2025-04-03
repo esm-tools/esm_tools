@@ -109,7 +109,7 @@ class oasis:
             else:
                 export_mode = "EXPORTED"
 
-        if bool(lresume) and not oasis_copy_restart_overwrite:
+        if bool(lresume) and not gconfig["oasis_copy_restart_overwrite"]:
             lag = str(0)
         else:
             lag = direction.get("lag", "0")

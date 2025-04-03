@@ -18,7 +18,7 @@ jobs:
   # Sequence of tasks that will be executed as part of the job
   ollie:
         # Run this workflow ONLY if the `issue_comment` is in a pull-request and the comment text contains `#approve-changes`
-        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') }}
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '#approve-changes') || github.event_name == 'workflow_dispatch' }}
         uses: ./.github/workflows/esm_tests_computer_workflow.yml
         with:
           computer: ollie1

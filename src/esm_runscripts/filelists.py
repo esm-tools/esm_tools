@@ -14,7 +14,7 @@ import yaml
 from loguru import logger
 
 import esm_parser
-from esm_tools import user_error
+from esm_tools import user_error, user_note
 
 from . import helpers, jinja
 
@@ -1276,6 +1276,15 @@ def avoid_overwriting(config, source, target):
         if filecmp.cmp(source, target):
             return target
 
+        warning_function = user_error
+        action = "Skipping movement"
+        hint = (
+            "\n\nNote: if you are rerunning a given run and you want to enforce "
+            "overwriting the output files, you can define "
+            "'general.force_overwrite_in_file_movements: True'. Use it at your own "
+            "risk and only if you understand why are you doing this. You should never "
+            "run with it set True as a default."
+        )
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
             if filecmp.cmp(source, date_stamped_target):
@@ -1286,14 +1295,17 @@ def avoid_overwriting(config, source, target):
             elif config["general"]["force_overwrite_in_file_movements"]:
                 os.remove(date_stamped_target)
                 warning_function = user_note
+                action = "Overwriting the file"
+                hint = ""
             else:
                 # This will exit(1) (default in configs/defaults/general.yaml)
                 warning_function = user_error
 
             warning_function(
                 "File movement conflict",
-                f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
-                f"{source} -> {date_stamped_target}",
+                f"The file ``{date_stamped_target}`` already exists. {action}:\n"
+                f"{source} -> {date_stamped_target}"
+                f"{hint}",
             )
 
         if os.path.islink(target):

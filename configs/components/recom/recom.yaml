@@ -3,7 +3,6 @@
 # =============================================================================
 
 model: recom
-git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
 metadata:
     Institute: Alfred Wegener Institute for Polar and Marine Research (AWI)
     Description:
@@ -14,24 +13,32 @@ metadata:
         - "Arctic Ocean biogeochemistry in the high resolution FESOM 1.4-REcoM2 model <https://doi.org/10.1016/j.pocean.2018.09.006>"
     License:
         https://recom.readthedocs.io/en/latest/index.html
+contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
 
-# default branch and version
-branch: master
-destination: recom
+# defaults
 version: '2.0'
+use_ciso: false
+use_medusa: false
+scenario: "PI-CTRL"
 
 available_versions:
     - '2.0'
-    - 2.0-r
-    - 2.0-recom-awicm
+    - '2.0-awicm'
+    - '3.0'
 
 choose_version:
     '2.0':
+        git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
         branch: oxygen
-        # additional recom output if fesom runs standalone
-        # (see default output at the bottom)
-        # 1. variable names are case sensitive
-        # 2. please keep alphabetic order
+        destination: recom
+        namelist_dir: "${general.model_dir}/recom/"
+        comp_strategy: "lib"
+        out_strategy: "fesom1"
+        # - additional recom output in ocean-only fesom1+recom2 setup
+        # - necessary for fesom1 output schedular (env variable `AWI_FESOM_YAML`)
+        # - see default recom output at the bottom of this file
+        # - variable names are case sensitive
+        # - please keep alphabetic order
         add_yearly_outputs:
             - AGGdia3d
             - AGGphy3d
@@ -78,42 +85,54 @@ choose_version:
             - diags3d18
             - diags3d19
             - diags3d20
-    2.0-r:
-        # OG: This will be the master branch for fesom-recom-2.0. We rename it later.
-        branch: recom-update
-    2.0-recom-awicm:
+    2.0-awicm:
+        git-repository: https://gitlab.dkrz.de/modular_esm/recom.git
         branch: oxygen
-        use_medusa: "without_medusa"
-
-clean_command: ${defaults.clean_command}
-comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
-install_libs:
-  - build/librecom.a
-contact: "miguel.andres-martinez(at)awi.de, ozgur.gurses(at)awi.de"
+        destination: recom
+        namelist_dir: "${general.model_dir}/recom/"
+        comp_strategy: "lib"
+        out_strategy: "fesom1"
+    "3.0":
+        comp_strategy: "flag"
+        pzd_case: "3p3z2d" # 2p1z1d, 3p1z1d, 2p3z2d, 3p3z2d
+        namelist_dir: "${fesom.model_dir}/${fesom.destination}/config/case_${pzd_case}/"
+        out_strategy: "fesom2" # output is handled via fesom2 namelist.io(.recom); see respective fesom and awicm yamls
 
 model_dir: "NONE"
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
+namelist_dir: "NONE"
 data_path: ""
+time_step: 1800 # todo(cd): recom gets its time step always from fesom. its misleading to define it here. should be removed
+#chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds ))
 
-scenario: "PI-CTRL"
+choose_comp_strategy:
+    "lib": # recom2 is compiled individually and added as library to fesom (similarly as a binary)
+        clean_command: ${defaults.clean_command}
+        comp_command: mkdir -p build; cd build; cmake ..;  make -j `nproc --all`
+        install_libs: build/librecom.a
+    #"flag": # recom3 is part of fesom2; compiler flag needs to be added to fesom comp cmd
+             # commented out since its not possible to have an empty block
+        # necessary compiling flag is defined in respective setup yaml --> nothing to do here
+# keeping for reference:
+#fesom2_standalone: "$((
+#        '${general.setup_name}' == 'fesom' and
+#        '2.' in '${fesom.version}'
+#    ))"
 
-time_step: 1800
-
-use_ciso: false
-use_medusa: false
+namelists:
+        - namelist.recom
+namelist_sce: ""
 
 choose_use_ciso:
         true:
-                recom_namelist:  "namelist.recom.ciso"
+                recom_namelist: "namelist.recom.ciso"
                 add_namelist_changes:
                         namelist.recom:
                                 pavariables:
                                         ciso: true
         false:
-                recom_namelist:  "namelist.recom"
-
-#chunk_prev_date: $(( ${chunk_start_date} - ${fesom.time_step}seconds )) 
+                recom_namelist: "namelist.recom"
 
 choose_use_medusa:
         true:
@@ -192,21 +211,6 @@ choose_scenario:
                             \n- numofCO2cycles\n- currentCO2cycle"
                         ask_user_to_continue: True
 
-namelist_sce: ""
-namelist_dir: "${general.model_dir}/recom/"
-
-# FESOM-2 standalone + REcoM options
-fesom2_standalone: "$((
-        '${general.setup_name}' == 'fesom' and
-        '2.' in '${fesom.version}'
-    ))"
-choose_fesom2_standalone:
-    True:
-        namelist_dir: "${fesom.model_dir}/config/"
-
-namelists:
-        - namelist.recom
-
 use_atbox: "remove_from_namelist"
 namelist_changes:
         namelist.recom:
@@ -225,10 +229,10 @@ namelist_changes:
 
 
 config_files:
-        recom:  recom
+        recom: recom
 
 config_sources:
-        recom:  "${namelist_dir}/${recom_namelist}${namelist_sce}"
+        recom: "${namelist_dir}/${recom_namelist}${namelist_sce}"
 
 config_in_work:
         recom: "namelist.recom"
@@ -264,87 +268,92 @@ choose_computer.name:
         levante:
                 data_path: "/work/ba1103/a270094/MarESys/forcing/CORE2mesh/"
 
-# default recom output, common to all versions
-# 1. variable names are case sensitive
-# 2. please keep alphabetic order
-yearly_outputs:
-    - alphaCO2
-    - benC
-    - benCalc
-    - benN
-    - benSi
-    - denb
-    - GNAd
-    - GNAn
-    - Hp
-    - Kw
-    - NNAd
-    - NNAn
-    - rDIN
-    - rDOC
-    - rDON
-    - rDSi
-monthly_outputs:
-    - aCO2
-    - aFe
-    - aN
-    - bgc01
-    - bgc02
-    - bgc03
-    - bgc04
-    - bgc05
-    - bgc06
-    - bgc07
-    - bgc08
-    - bgc09
-    - bgc10
-    - bgc11
-    - bgc12
-    - bgc13
-    - bgc14
-    - bgc15
-    - bgc16
-    - bgc17
-    - bgc18
-    - bgc19
-    - bgc20
-    - bgc21
-    - bgc22
-    - CO2f
-    - CO2y
-    - diags3d01
-    - diags3d02
-    - dpCO2s
-    - GPPd
-    - GPPn
-    - NPPd
-    - NPPn
-    - O2f
-    - PAR
-    - pCO2s
-    - slp
-    - virtual_alk
-    - virtual_dfe
-    - virtual_dic
-    - virtual_din
-    - virtual_dsi
-    - virtual_oxy
-    - w10w
-daily_outputs: []
-12_step_outputs: []
-
-outdata_files:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT
-        "[[daily_outputs-->OUTPUT]]": OUTPUT
-outdata_in_work:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-outdata_sources:
-        "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
-        "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+choose_out_strategy:
+    "fesom1":
+        # - default recom output, common to all setups with fesom1
+        # - necessary for fesom1 output schedular (env variable `AWI_FESOM_YAML`)
+        # - variable names are case sensitive
+        # - please keep alphabetic order
+        yearly_outputs:
+            - alphaCO2
+            - benC
+            - benCalc
+            - benN
+            - benSi
+            - denb
+            - GNAd
+            - GNAn
+            - Hp
+            - Kw
+            - NNAd
+            - NNAn
+            - rDIN
+            - rDOC
+            - rDON
+            - rDSi
+        monthly_outputs:
+            - aCO2
+            - aFe
+            - aN
+            - bgc01
+            - bgc02
+            - bgc03
+            - bgc04
+            - bgc05
+            - bgc06
+            - bgc07
+            - bgc08
+            - bgc09
+            - bgc10
+            - bgc11
+            - bgc12
+            - bgc13
+            - bgc14
+            - bgc15
+            - bgc16
+            - bgc17
+            - bgc18
+            - bgc19
+            - bgc20
+            - bgc21
+            - bgc22
+            - CO2f
+            - CO2y
+            - diags3d01
+            - diags3d02
+            - dpCO2s
+            - GPPd
+            - GPPn
+            - NPPd
+            - NPPn
+            - O2f
+            - PAR
+            - pCO2s
+            - slp
+            - virtual_alk
+            - virtual_dfe
+            - virtual_dic
+            - virtual_din
+            - virtual_dsi
+            - virtual_oxy
+            - w10w
+        daily_outputs: []
+        12_step_outputs: []
+        outdata_files:
+                "[[yearly_outputs-->OUTPUT]]": OUTPUT
+                "[[monthly_outputs-->OUTPUT]]": OUTPUT
+                "[[daily_outputs-->OUTPUT]]": OUTPUT
+        outdata_in_work:
+                "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+        outdata_sources:
+                "[[yearly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[monthly_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+                "[[daily_outputs-->OUTPUT]]": OUTPUT_fesom_${start_date!syear!smonth!sday}.nc
+    "fesom2":
+        # output is handled via fesom2 namelist.io(.recom); see respective fesom and awicm yamls
+        not_used: ""
 
 check_error:
         "ERROR: CANNOT READ runoff FILE CORRECTLY":

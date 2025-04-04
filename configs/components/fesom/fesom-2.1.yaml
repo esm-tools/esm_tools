@@ -6,7 +6,7 @@ branch: master
 version: "2.1"
 type: ocean
 
-comp_command: ${defaults.comp_command}
+comp_command: "${fesom.conf_command} && ${defaults.comp_command}"
 clean_command: ${defaults.clean_command}
 
 required_plugins:
@@ -17,11 +17,17 @@ use_icebergs: False                 # turns on icebergs
 use_icesheet_coupling: False        # initializes new icebergs every restart
 # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
 # below) whose source code contains the icebergs implementation
+
+
+# Whether or not the version includes code for a particular embedded subcomponent
+recom_code: False
+wiso_code: False
 icb_code: False
 
-with_wiso: false
-with_recom: false
-wiso_code: false
+# Whether or not to use a particular embedded subcomponent at runtime
+with_wiso: False
+with_recom: False
+conf_command: ""  # For everything that isn't recom...
 
 choose_version:
   2.1-unstable:
@@ -49,11 +55,35 @@ choose_version:
     asforcing: CORE2
     nproc: 1024
     with_recom: true
+    recom_code: true
     include_models: ["recom"]
     fesom_Dflags: "-DRECOM_COUPLED=ON"
     mpi_num_groups: 1
-
-
+  2.1-recom-3.0:
+    git-repository: "https://github.com/mseifert93/fesom2.git"
+    branch: "fesom2_final_4versions"
+    destination: "fesom-2.1-recom-3.0"
+    with_recom: true
+    recom_code: true
+    include_models: ["recom"]
+    requires: ["recom-3.0"]
+    namelist_dir: "${model_dir}/${destination}/config/case_${recom.pzd_case}/"
+    # fesom_Dflags: "-DRECOM_COUPLED=ON" # not necessary since fesom2 branch with recom3 already has `RECOM_COUPLED ON`
+    mpi_num_groups: 1
+    choose_recom.pzd_case:
+        "2p1z1d":
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2)/s/^#//g' src/CMakeLists.txt"
+        "3p1z1d":
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos)/s/^#//g' src/CMakeLists.txt"
+        "2p3z2d":
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __3Zoo2Det)/s/^#//g' src/CMakeLists.txt"
+        "3p3z2d":
+            conf_command: "sed -i '/ PRIVATE __recom / s/^#*/#/' src/CMakeLists.txt && sed -i '/ PRIVATE __recom USE_PRECISION=2 __coccos __3Zoo2Det)/s/^#//g' src/CMakeLists.txt"
+        "*":
+            add_error:
+                "`recom.pzd_case` (number of _p_hytoplankton, _z_ooplankton and _d_etritus groups) not defined":
+                    message:
+                        "`recom.pzd_case` (number of _p_hytoplankton, _z_ooplankton and _d_etritus groups) not defined"
 destination: "fesom-2.1"
 install_bins: bin/fesom.x
 git-repository:
@@ -434,9 +464,9 @@ choose_general.iterative_coupling:
                                 use_landice_water: False
                         "*":
                                 use_landice_water: True
-                
-                fwf_path: "${general.experiment_couple_dir}" 
-                
+
+                fwf_path: "${general.experiment_couple_dir}"
+
                 #choose_echam.hosing_correction:
                 #        true:
                 add_namelist_changes:
@@ -445,7 +475,7 @@ choose_general.iterative_coupling:
                                             use_landice_water: "${use_landice_water}"
                                             landice_start_mon: 1
                                             landice_end_mon: 12
-                                            fwf_path: "${fwf_path}" 
+                                            fwf_path: "${fwf_path}"
         '*':
                 use_landice_water: False
 
@@ -597,12 +627,18 @@ choose_with_wiso:
 # with_recom switch
 # -----------------
 # Settings for running with REcoM
-choose_fesom.with_recom:
+choose_with_recom:
     True:
+        add_namelists: # todo(cd): recom people need to decide namelist.io.recom strategy
+            - namelist.io.recom
+        add_config_files:
+            io_recom: io_recom
         add_config_sources:
-            oce:    "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
-            io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
-        remove_namelist_changes.namelist.config: [inout]
+            oce:      "${namelist_dir}/namelist.oce.recom${namelist_ciso_sufix}"
+            io:       "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+            io_recom: "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+        add_config_in_work:
+            io_recom: "namelist.io.recom"
         add_namelist_changes:
             namelist.config:
                 restart_log:
@@ -613,7 +649,10 @@ choose_fesom.with_recom:
             namelist.oce:
                 oce_tra:
                     num_tracers: "${num_tracers}"
+        remove_namelist_changes.namelist.config:
+             - inout
 
+        # Doesn't this belong in recom.yaml?
         # use_ciso switch
         # ---------------
         # num_tracers only changed if ``with_recom: true``, i.e. indentation)
@@ -624,6 +663,7 @@ choose_fesom.with_recom:
                 False:
                         namelist_ciso_sufix: ""
                         num_tracers: 24
+
 
 grids:
         feom:

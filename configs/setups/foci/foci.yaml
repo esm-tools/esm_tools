@@ -194,12 +194,22 @@ echam:
                                  lco2: true
                               radctl:
                                  ico2: 1
+                        # due to the setup in jsbach.yaml all output streams are added to the restart
+                        # streams as well, hence we have to remove them here, I'm sure there are better
+                        # ways to do this, but hey, it works and I don't need to touch jsbach.yaml
+                        remove_streams:
+                           - echamday
+                           - co2day
 
                         add_restartstreams:
                            - tracer
 
                         add_streams:
                            - tracer
+                           - echamday
+                           - co2day
+
+
                 agrif:
                         version: "6.3.05p2-foci"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
@@ -382,14 +392,17 @@ echam:
                      - need_year_before
                      - need_year_after
 
+        restart_in_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_in_sources:
-              #"[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
               "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        restart_in_in_work:
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
+        restart_out_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_out_sources:
-              #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
               "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
-
         restart_out_in_work:
               "[[restartstreams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
@@ -560,22 +573,54 @@ jsbach:
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
 
+        restart_in_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_in_sources:
-              "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+              "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        restart_in_in_work:
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
+        restart_out_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_out_sources:
-              "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
-
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
         restart_out_in_work:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+      
+        # due to the setup in jsbach.yaml all output streams are added to the restart
+        # streams as well, hence we have to remove them here, I'm sure there are better
+        # ways to do this, but hey, it works and I don't need to touch jsbach.yaml
+        remove_streams:
+          - land
+          - jsbachday
+          - nitroday
+          - vegday
+          - yassoday
+          - landday
 
         streams:
-              - jsbach
-              - nitro
-              - veg
-              - yasso
-              - surf
-              - land
+          - jsbach
+          - nitro
+          - veg
+          - yasso
+          - surf
+          - land
+
+        restartstreams:
+          - jsbach
+          - nitro
+          - veg
+          - yasso
+          - surf
+
+        choose_general.version:
+            mops_lmu:
+                add_streams:
+                  - jsbachday
+                  - nitroday
+                  - vegday
+                  - yassoday
+                  - landday
 
 nemo:
         choose_general.version:
@@ -657,7 +702,8 @@ xios:
 #########################################################################################
 
 oasis3mct:
-        
+        remove_config_files:
+          - cf
         model_dir: ${general.model_dir}/oasis
         input_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
@@ -923,6 +969,11 @@ oasis3mct:
                               - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
                               - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
 
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+
                 mops_lmu:
 
                         norestart: "T"
@@ -960,6 +1011,11 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
                               - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
                               - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
 
 
                 agrif_oasismct4:

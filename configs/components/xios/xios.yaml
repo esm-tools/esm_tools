@@ -242,6 +242,12 @@ choose_general.setup_name:
                     domain_def: domain_def
                     field_def: field_def
                     file_def: file_def
+              mops_lmu: 
+                 xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
+                 add_config_files:
+                    domain_def: domain_def
+                    field_def: field_def
+                    file_def: file_def
               agrif: 
                  xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
                  add_config_files:

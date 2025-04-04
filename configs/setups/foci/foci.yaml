@@ -48,6 +48,7 @@ general:
         - default_oasismct4
         - default_oasismct5
         - mops_oasismct4
+        - mops_lmu
         - agrif 
         - agrif_oasismct4 
         - agrif_mops_oasismct4 
@@ -86,7 +87,15 @@ general:
           mops_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_oasismct4
+          # includes MOPS in the ocean, changes to JSBACH from LMU Munich, 12 tiles for JSBACH, uses OASISMCT5 
+          mops_lmu:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_lmu
           # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, no AOW tracer    
+          agrif_noaow:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
+          # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, with AOW tracer    
           agrif:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF+echam-6.3.05p2-foci
@@ -149,6 +158,7 @@ echam:
                 #compiler_mpi: intel2019_impi2019_nemo4
                 add_module_actions:
                    - "source $I_MPI_ROOT/../../setvars.sh"
+                     # - "source $HOME/miniforge3/bin/activate esm-tools"
                         #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
              nesh:
                 compiler_mpi: intel2019_impi2019
@@ -192,6 +202,34 @@ echam:
 
                         add_streams:
                            - tracer
+
+                mops_lmu:
+                        version: "6.3.05p2-foci_lmu"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              runctl:   
+                                 lcouple_co2: true
+                              submodelctl:
+                                 lco2: true
+                              radctl:
+                                 ico2: 1
+                        # due to the setup in jsbach.yaml all output streams are added to the restart
+                        # streams as well, hence we have to remove them here, I'm sure there are better
+                        # ways to do this, but hey, it works and I don't need to touch jsbach.yaml
+                        remove_streams:
+                           - echamday
+                           - co2day
+
+                        add_restartstreams:
+                           - tracer
+
+                        add_streams:
+                           - tracer
+                           - echamday
+                           - co2day
+
+
                 agrif:
                         version: "6.3.05p2-foci"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
@@ -383,14 +421,17 @@ echam:
                      - need_year_before
                      - need_year_after
 
+        restart_in_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_in_sources:
-              #"[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
               "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        restart_in_in_work:
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
+        restart_out_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_out_sources:
-              #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
               "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
-
         restart_out_in_work:
               "[[restartstreams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
@@ -561,22 +602,54 @@ jsbach:
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
 
+        restart_in_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_in_sources:
-              "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+              "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        restart_in_in_work:
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
+        restart_out_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_out_sources:
-              "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
-
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
         restart_out_in_work:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+      
+        # due to the setup in jsbach.yaml all output streams are added to the restart
+        # streams as well, hence we have to remove them here, I'm sure there are better
+        # ways to do this, but hey, it works and I don't need to touch jsbach.yaml
+        remove_streams:
+          - land
+          - jsbachday
+          - nitroday
+          - vegday
+          - yassoday
+          - landday
 
         streams:
-              - jsbach
-              - nitro
-              - veg
-              - yasso
-              - surf
-              - land
+          - jsbach
+          - nitro
+          - veg
+          - yasso
+          - surf
+          - land
+
+        restartstreams:
+          - jsbach
+          - nitro
+          - veg
+          - yasso
+          - surf
+
+        choose_general.version:
+            mops_lmu:
+                add_streams:
+                  - jsbachday
+                  - nitroday
+                  - vegday
+                  - yassoday
+                  - landday
 
 nemo:
         choose_general.version:
@@ -616,6 +689,8 @@ nemo:
                 agrif_mops_oasismct4:
                         version: "ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4"
                 mops_oasismct4:
+                        version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
+                mops_lmu:
                         version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
@@ -675,7 +750,8 @@ xios:
 #########################################################################################
 
 oasis3mct:
-        
+        remove_config_files:
+          - cf
         model_dir: ${general.model_dir}/oasis
         input_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
@@ -940,6 +1016,55 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
                               - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
                               - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+
+                mops_lmu:
+
+                        norestart: "T"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
+                              - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
+                              - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+
+                           flxatmos:
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+                              - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
+                              - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+
 
                 agrif_oasismct4:
 

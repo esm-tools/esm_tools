@@ -26,11 +26,13 @@ choose_computer.name:
 input_dir_couple: "${pool_dir_couple}/input/${dataset}"
 
 dynamic_vegetations: False
-
+tiles: 11
 version: "3.20"
 dataset: r0009
 scenario: ${echam.scenario}
 scenario_type: ${scenario}
+#cdr_measure: ""
+#cdr_frac: ""
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -57,7 +59,7 @@ choose_version:
                         false:
                                 namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg"
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
-                                dynveg: "_no_dynveg"
+                                dynveg: "_no-dynveg"
                 choose_echam.scenario:
                         PI-CTRL:
                                 add_input_files:

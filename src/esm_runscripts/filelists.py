@@ -1277,6 +1277,7 @@ def avoid_overwriting(config, source, target):
             return target
 
         warning_function = user_error
+        action = "Skipping movement"
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
             if filecmp.cmp(source, date_stamped_target):
@@ -1287,12 +1288,15 @@ def avoid_overwriting(config, source, target):
                 return date_stamped_target
             if config["general"]["force_overwrite_in_file_movements"]:
                 os.remove(date_stamped_target)
-                # Change to user_note, the default was user_error (above)
                 warning_function = user_note
+                action = "Overwriting the file"
+            else:
+                # This will exit(1) (default in configs/defaults/general.yaml)
+                warning_function = user_error
 
             warning_function(
                 "File movement conflict",
-                f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
+                f"The file ``{date_stamped_target}`` already exists. {action}:\n"
                 f"{source} -> {date_stamped_target}",
             )
 

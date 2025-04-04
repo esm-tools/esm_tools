@@ -1285,8 +1285,7 @@ def avoid_overwriting(config, source, target):
                     f"File {date_stamped_target} already exists and is identical to "
                     f"the source ({source}). Skipping copying"
                 )
-                return date_stamped_target
-            if config["general"]["force_overwrite_in_file_movements"]:
+            elif config["general"]["force_overwrite_in_file_movements"]:
                 os.remove(date_stamped_target)
                 warning_function = user_note
                 action = "Overwriting the file"

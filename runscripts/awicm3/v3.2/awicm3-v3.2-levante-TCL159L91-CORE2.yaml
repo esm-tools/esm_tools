@@ -3,30 +3,29 @@ general:
     setup_name: "awicm3"
     version: "v3.2"
     account: "ab0246"
-    compute_time: "08:00:00"
-    initial_date: "1990-01-01"
-    final_date: "2040-01-02"
-
+    compute_time: "00:20:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-01-02"
     base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-    nday: 0
+    nday: 1
     nmonth: 0
-    nyear: 25
+    nyear: 0
 
 computer:
     taskset: true
 
 awicm3:
     postprocessing: false
-    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/home/a/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"
-    restart_rate: 25
-    restart_unit: "y"
-    restart_first: 25
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 768
+    nproc: 128
     tar_binary_restarts: true
 
 oifs:
@@ -37,11 +36,11 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 384
-    omp_num_threads: 8
+    nproc: 128
+    omp_num_threads: 1
 
 oasis3mct:
-    lresume: true # Set to false to generate the rst files for first leg
+    lresume: false # Set to false to generate the rst files for first leg
     time_step: 7200
 
 xios:

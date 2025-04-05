@@ -147,7 +147,7 @@ general:
                 blogin:
                         pool_dir: "/scratch/usr/hbkawi/AWICM3_INPUT/input"
                 albedo:
-                        pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+                        pool_dir: "/albedo/pool"
                 "*":
                         pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -174,7 +174,14 @@ oifs:
         add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
-        pool_dir: ${general.pool_dir}
+        # Recommended new structure to support more versions under the same OpenIFS
+        # folder. Make it the default after generalization in all pools
+        choose_computer.name:
+            albedo:
+                pool_dir: ${general.pool_dir}/OpenIFS
+            "*":
+                pool_dir: ${general.pool_dir}
+
         model_dir: ${general.model_dir}/oifs-${version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
@@ -429,7 +436,12 @@ fesom:
         model_dir: ${general.model_dir}/fesom-${fesom.version}
         setup_dir: ${general.model_dir}
 
-        pool_dir: "${general.pool_dir}/fesom2/"
+        # Remove this when the pools are unified
+        choose_computer.name:
+            albedo:
+                pool_dir: "${general.pool_dir}/FESOM2/awicm3/"
+            "*":
+                pool_dir: "${general.pool_dir}/fesom2/"
         climate_data_dir: "${pool_dir}/hydrography/"
 
         restart_unit: "d"

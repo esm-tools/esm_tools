@@ -91,11 +91,12 @@ with_part_format: false
 time_dimension: "time"
 
 pool_dir: ${computer.pool_directories.pool}
-#model_dir: "${esm_master_dir}/fesom-${version}/"
+
 setup_dir: "${model_dir}"
 bin_dir: "${setup_dir}/bin"
 climate_data_dir: "${pool_dir}/hydrography/"
 forcing_data_dir: "${pool_dir}/forcing/"
+mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
 ini_data_dir: "${pool_dir}/pool-data/"
 namelist_dir: "${esm_namelist_dir}/fesom2/2.0/"
 

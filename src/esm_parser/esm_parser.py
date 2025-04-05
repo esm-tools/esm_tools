@@ -936,7 +936,7 @@ def add_entries_from_chapter(config, add_chapter, add_entries):
             dict_merge(
                 config[add_chapter],
                 add_entries,
-                resolve_nested_adds=False,
+                resolve_nested_adds=True,
             )
     else:
         config[add_chapter] = add_entries
@@ -1508,6 +1508,9 @@ def find_one_independent_choose(all_set_variables):
 
 
 def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}):
+    #if "name" in choose_key and "levante" == config_to_replace_in.get("name"):
+    #    import ipdb
+    #    ipdb.set_trace()
     path_to_key = choose_key.replace("choose_", "").split(".")
     try:
         choice = recursive_get(config, path_to_key)
@@ -2934,12 +2937,13 @@ class GeneralConfig(dict):  # pragma: no cover
             self.config = include_path
 
         # Resolve futher_readings in "general"
-        resolve_choose_with_var(
-            "further_reading",
-            self.config["general"],
-            current_model="general",
-            user_config=user_config,
-        )
+        if "general" in self.config:
+            resolve_choose_with_var(
+                "further_reading",
+                self.config["general"],
+                current_model="general",
+                user_config=user_config,
+            )
 
         #import ipdb
         #ipdb.set_trace()

@@ -515,8 +515,8 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     all_config : dict
         main configuration
     """
-    import ipdb
     #if attach_value == "fesom.env.yaml":
+    #    import ipdb
     #    ipdb.set_trace()
     if not all_config:
         all_config = config
@@ -753,6 +753,8 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             and k.startswith("add_")
             and isinstance(v, (list, dict))
         ):
+            #import ipdb
+            #ipdb.set_trace()
             add_entries_from_chapter(dct, "".join(k.split("add_")), v)
         else:
             # keep the value of dct[k] if dct[k] is already set but merge_dct[k]
@@ -765,15 +767,18 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
 
 
 def deep_update(chapter, entries, config, blackdict={}):
-#    if "choose_" in chapter:
-#        add_chapter = chapter.replace("add_", "")
-#        add_entries_from_chapter(config, add_chapter, entries)
-    if "add_" in chapter or "choose_" in chapter:
-        #if "add_choose_computer.name" in chapter:
+    if "choose_" in chapter:
+        chapter_with_no_add = chapter.replace("add_", "")
+        if chapter_with_no_add in config:
+            dict_merge(config.get(chapter_with_no_add, {}), entries, resolve_nested_adds=False)
+        else:
+            config[chapter_with_no_add] = entries
+    elif "add_" in chapter:
+        #if "_execution_mode" in chapter:
         #    import ipdb
         #    ipdb.set_trace()
-        add_chapter = chapter.replace("add_", "")
-        add_entries_from_chapter(config, add_chapter, entries)
+        chapter_with_no_add = chapter.replace("add_", "")
+        add_entries_from_chapter(config, chapter_with_no_add, entries)
         # del config[chapter]
     else:
         if chapter not in blackdict:
@@ -1508,7 +1513,7 @@ def find_one_independent_choose(all_set_variables):
 
 
 def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}):
-    #if "name" in choose_key and "levante" == config_to_replace_in.get("name"):
+    #if "_computer.name" in choose_key:
     #    import ipdb
     #    ipdb.set_trace()
     path_to_key = choose_key.replace("choose_", "").split(".")

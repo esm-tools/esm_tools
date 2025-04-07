@@ -1,0 +1,7 @@
+computer:
+  name: levante
+  export_vars:
+    CPU_MODEL: AMD_EPYC_ZEN3
+    NETCDF_DIR: ${computer.netcdf_cxx_root}
+  execution_mode: compile
+  model: computer

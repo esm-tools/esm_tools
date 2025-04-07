@@ -15,7 +15,9 @@ echo "   | || '_| |  _/ || \ V /| / -_) V  V /                                  
 echo "   |_||_| |_|_|  \_, |\_/ |_\___|\_/\_/                                         "
 echo "                 |__/                                                           "
 echo "################################################################################"
+echo ""
 echo "$(date):: Starting Tripyview Job"
+echo ""
 
 outdata_path=$1
 start_date=$2
@@ -89,7 +91,7 @@ function activate_or_install_tripyview_environment() {
         echo "$(date):: esm-tools_auto_tripyview already exists. Activating now..."
         activate_env
     else
-        echo "$(date):: esm-tools_auto_tripyview env DOES NOT exist installing..."
+        echo "$(date):: esm-tools_auto_tripyview env DOES NOT exist. Installing..."
         source "$(conda info --base)/etc/profile.d/conda.sh"
         conda create -y --name esm-tools_auto_tripyview python=3.9
         activate_env

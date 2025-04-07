@@ -60,7 +60,3 @@ def test_reg_choose_1():
 # Test in comp-AWICM1-recom: NETCDF_CXX_ vars are removed from all
 # models except for fesom because there is an specific one in fesom.
 # Expected behaviour: keep the one from levante in the other models
-
-# Find why some choose blocks are still kept in the finished_config.yaml
-# see levante exm_tests -c finished config (already approved in the info
-# repo)

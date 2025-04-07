@@ -773,6 +773,8 @@ def deep_update(chapter, entries, config, blackdict={}):
             dict_merge(config.get(chapter_with_no_add, {}), entries, resolve_nested_adds=False)
         else:
             config[chapter_with_no_add] = entries
+        if chapter != chapter_with_no_add and chapter in config:
+            del config[chapter]
     elif "add_" in chapter:
         #if "_execution_mode" in chapter:
         #    import ipdb
@@ -1382,7 +1384,7 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
         value = mapping[key]
         if (
             isinstance(key, str)
-            and key.startswith("choose_")
+            and "choose_" in key
             and (
                 (not isblacklist)
                 or (isblacklist and not determine_regex_list_match(key, ignore_list))

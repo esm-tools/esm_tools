@@ -35,6 +35,7 @@ def check_provenance(example_path2):
                 "col": 11,
                 "yaml_file": example_path2,
                 "category": "runscript",
+                "subcategory": None,
             },
             "files": {
                 "greenhouse": {
@@ -43,12 +44,14 @@ def check_provenance(example_path2):
                         "col": 19,
                         "yaml_file": example_path2,
                         "category": "runscript",
+                        "subcategory": None,
                     },
                     "path_in_computer": {
                         "line": 6,
                         "col": 31,
                         "yaml_file": example_path2,
                         "category": "runscript",
+                        "subcategory": None,
                     },
                     "a_list": [
                         {
@@ -56,18 +59,21 @@ def check_provenance(example_path2):
                             "col": 19,
                             "yaml_file": example_path2,
                             "category": "runscript",
+                            "subcategory": None,
                         },
                         {
                             "line": 9,
                             "col": 19,
                             "yaml_file": example_path2,
                             "category": "runscript",
+                            "subcategory": None,
                         },
                         {
                             "line": 10,
                             "col": 19,
                             "yaml_file": example_path2,
                             "category": "runscript",
+                            "subcategory": None,
                         },
                     ],
                 }
@@ -222,6 +228,7 @@ def test_provenance_update(config, check_provenance):
             "col": 11,
             "yaml_file": example_path2,
             "category": "runscript",
+            "subcategory": None,
         },
         None,
         {
@@ -230,6 +237,7 @@ def test_provenance_update(config, check_provenance):
             "extended_by": "dict.update",
             "yaml_file": "someother.yaml",
             "category": "set_for_unknown_leaf",
+            "subcategory": None,
         },
     ]
 
@@ -244,6 +252,7 @@ def test_set_provenance_for_a_list_leaf(config, check_provenance):
         "col": 11,
         "yaml_file": "someother.yaml",
         "category": "this_is_for_a_list",
+        "subcategory": None,
     }
     config["fesom"] = {"asd": 0}
     config["fesom"]["list"] = [30, 19]
@@ -296,9 +305,27 @@ def test_check_provenance_list(example_path1):
     os.environ["USER"] = "some_user"
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
     check_prov = [
-        {"line": 15, "col": 19, "yaml_file": example_path1, "category": "runscript"},
-        {"line": 15, "col": 22, "yaml_file": example_path1, "category": "runscript"},
-        {"line": 15, "col": 25, "yaml_file": example_path1, "category": "runscript"},
+        {
+            "line": 15,
+            "col": 19,
+            "yaml_file": example_path1,
+            "category": "runscript",
+            "subcategory": None,
+        },
+        {
+            "line": 15,
+            "col": 22,
+            "yaml_file": example_path1,
+            "category": "runscript",
+            "subcategory": None,
+        },
+        {
+            "line": 15,
+            "col": 25,
+            "yaml_file": example_path1,
+            "category": "runscript",
+            "subcategory": None,
+        },
     ]
 
     with open(example_path1, "r") as file:
@@ -321,6 +348,7 @@ def test_check_set_provenance_list(example_path1):
         "col": 25,
         "yaml_file": "example.yaml",
         "category": "from_a_list",
+        "subcategory": None,
     }
     check_prov = [new_prov, new_prov, new_prov]
 
@@ -345,18 +373,21 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
         "col": 19,
         "yaml_file": example_path1,
         "category": "runscript",
+        "subcategory": None,
     }
     old_prov2 = {
         "line": 15,
         "col": 22,
         "yaml_file": example_path1,
         "category": "runscript",
+        "subcategory": None,
     }
     new_prov = {
         "line": 15,
         "col": 25,
         "yaml_file": "example.yaml",
         "category": "from_a_second_list",
+        "subcategory": None,
     }
     check_prov = [old_prov1, old_prov2, new_prov]
 
@@ -382,6 +413,7 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
         "col": 25,
         "yaml_file": "example.yaml",
         "category": "from_a_list",
+        "subcategory": None,
     }
 
     with open(example_path1, "r") as file:
@@ -415,6 +447,7 @@ def test_keep_provenance_in_recursive_function(config):
             "col": 11,
             "yaml_file": example_path2,
             "category": "runscript",
+            "subcategory": None,
         },
         {
             "modified": True,
@@ -427,6 +460,7 @@ def test_keep_provenance_in_recursive_function(config):
             "col": 19,
             "yaml_file": example_path2,
             "category": "runscript",
+            "subcategory": None,
         },
         {
             "modified": True,

@@ -24,7 +24,7 @@ required_plugins:
 
 choose_version:
   "2.6":
-    branch: "2.6.7"
+    branch: "new_awicm3_calving_logic"
 
   "2.6-paleodyn":
     branch: "2.6.7"
@@ -584,6 +584,8 @@ coupling_fields:
         heat_swo:
                 grid: feom
         hydr_oce:
+                grid: feom
+        calv_oce:
                 grid: feom
         enth_oce:
                 grid: feom

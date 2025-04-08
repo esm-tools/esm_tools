@@ -94,7 +94,7 @@ general:
           # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, no AOW tracer    
           agrif_noaow:
             couplings:
-            - nemo-ORCA05_LIM2_FOCI_AGRIF_AOW+echam-6.3.05p2-foci
+            - nemo-ORCA05_LIM2_FOCI_AGRIF+echam-6.3.05p2-foci
           # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, with AOW tracer    
           agrif:
             couplings:

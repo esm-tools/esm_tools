@@ -22,7 +22,7 @@ mistral:
         post_nodes: 'mistralpp*'
 
 levante:
-        login_nodes: 'levante*'
+        login_nodes: 'binf02m085*|vpn-172-26-3-202*'
         compute_nodes: '^l[A-Za-z0-9]+\.lvt\.dkrz\.de$'
 #        post_nodes: ''
 

@@ -159,6 +159,9 @@ async def get_one_package_info(
 
     package_dir = cat_dir + package + "/"
 
+    #if "oifs" in package_dir:
+    #    import ipdb
+    #    ipdb.set_trace()
     default_file = package_dir + package + ".yaml"
     # TODO(PG): Better logging (see GH Issue #116)
     if os.getenv("ESM_MASTER_DEBUG"):
@@ -175,6 +178,7 @@ async def get_one_package_info(
         print(f"versioned_files={versioned_files}")
 
     comp_config = esm_parser.yaml_file_to_dict(default_file)
+    comp_config = comp_config.get(package, comp_config)
     # TODO(PG): Better logging (see GH Issue #116)
     if os.getenv("ESM_MASTER_DEBUG"):
         if not comp_config:
@@ -193,6 +197,7 @@ async def get_one_package_info(
         if os.getenv("ESM_MASTER_DEBUG"):
             print(f"...reading file {conf_file}")
         add_config = esm_parser.yaml_file_to_dict(conf_file)
+        add_config = add_config.get(package, add_config)
         if get_correct_entry(add_config, {}, "version") == {}:
             if os.getenv("ESM_MASTER_DEBUG"):
                 print(f'Var "version" is missing in yaml file for package {package}. ')
@@ -589,6 +594,9 @@ class setup_and_model_infos:
         return False
 
     def split_raw_target(self, rawtarget, setup_info):
+        #if "oifs-43r3" in rawtarget:
+        #    import ipdb
+        #    ipdb.set_trace()
         todo = kind = only_subtarget = None
         model = version = ""
         if "/" in rawtarget:
@@ -656,6 +664,8 @@ class setup_and_model_infos:
         return kind_of_model
 
     def output_available_targets(self, search_keyword):
+        #import ipdb
+        #ipdb.set_trace()
         colorama.init(autoreset=True)
         display_info = []
         if search_keyword == "":

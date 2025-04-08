@@ -1,216 +1,217 @@
 # BLOGIN YAML CONFIGURATION FILES
 
-name: glogin
-account: None
+computer:
+    name: glogin
+    account: None
 
-# set default for hyperthreading_flag
-use_hyperthreading: False
-# seb-wahl: use old heterogeneous parallelization on HLRN4, the new approach does not work yet
-taskset: true
-choose_use_hyperthreading:
-        "1":
-                hyperthreading_flag: ""
-        True:
-                hyperthreading_flag: ""
-        "0":
-                choose_heterogeneous_parallelization:
-                        False:
-                                hyperthreading_flag: "--ntasks-per-core=1"
-                        True:
-                                hyperthreading_flag: ""
-                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
-                                add_export_vars:
-                                        I_MPI_SLURM_EXT: 0
-                                add_unset_vars:
-                                        - "SLURM_DISTRIBUTION"
-                                        - "SLURM_NTASKS"
-                                        - "SLURM_NPROCS"
-                                        - "SLURM_ARBITRARY_NODELIST"
-        False:
-                choose_heterogeneous_parallelization:
-                        False:
-                                hyperthreading_flag: "--ntasks-per-core=1"
-                        True:
-                                hyperthreading_flag: ""
-                                launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
-                                add_export_vars:
-                                        I_MPI_SLURM_EXT: 0
-                                add_unset_vars:
-                                        - "SLURM_DISTRIBUTION"
-                                        - "SLURM_NTASKS"
-                                        - "SLURM_NPROCS"
-                                        - "SLURM_ARBITRARY_NODELIST"
+    # set default for hyperthreading_flag
+    use_hyperthreading: False
+    # seb-wahl: use old heterogeneous parallelization on HLRN4, the new approach does not work yet
+    taskset: true
+    choose_use_hyperthreading:
+            "1":
+                    hyperthreading_flag: ""
+            True:
+                    hyperthreading_flag: ""
+            "0":
+                    choose_heterogeneous_parallelization:
+                            False:
+                                    hyperthreading_flag: "--ntasks-per-core=1"
+                            True:
+                                    hyperthreading_flag: ""
+                                    launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                    add_export_vars:
+                                            I_MPI_SLURM_EXT: 0
+                                    add_unset_vars:
+                                            - "SLURM_DISTRIBUTION"
+                                            - "SLURM_NTASKS"
+                                            - "SLURM_NPROCS"
+                                            - "SLURM_ARBITRARY_NODELIST"
+            False:
+                    choose_heterogeneous_parallelization:
+                            False:
+                                    hyperthreading_flag: "--ntasks-per-core=1"
+                            True:
+                                    hyperthreading_flag: ""
+                                    launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                                    add_export_vars:
+                                            I_MPI_SLURM_EXT: 0
+                                    add_unset_vars:
+                                            - "SLURM_DISTRIBUTION"
+                                            - "SLURM_NTASKS"
+                                            - "SLURM_NPROCS"
+                                            - "SLURM_ARBITRARY_NODELIST"
 
-accounting: true
+    accounting: true
 
-batch_system: "slurm"
+    batch_system: "slurm"
 
-jobtype: compute
-sh_interpreter: "/bin/bash"
-
-
-partition: standard96
-
-choose_partition:
-        standard96:
-                partition_name: standard96
-                partition_cpn: 96
-
-partitions:
-        compute:
-                name: ${computer.partition_name}
-                cores_per_node: ${computer.partition_cpn}
-        pp:
-                name: ${computer.partition_name}
-                cores_per_node: ${computer.partition_cpn}
+    jobtype: compute
+    sh_interpreter: "/bin/bash"
 
 
-logical_cpus_per_core: 2
+    partition: standard96
 
-threads_per_core: 1
-hetjob_flag: hetjob
+    choose_partition:
+            standard96:
+                    partition_name: standard96
+                    partition_cpn: 96
 
-pool_directories:
-        pool: "/scratch/usr/hbkawi"
-        focipool: "/scratch/usr/shkifmsw/foci_input2"
+    partitions:
+            compute:
+                    name: ${computer.partition_name}
+                    cores_per_node: ${computer.partition_cpn}
+            pp:
+                    name: ${computer.partition_name}
+                    cores_per_node: ${computer.partition_cpn}
 
-pool_dir:  "/scratch/usr/hbkawi"
 
-# default settings for compiler, mpi and I/O libs
-# TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
-compiler_mpi: intel2019_impi2019
-# to compile nemo standalone, comment the line above and uncomment the one below
-#compiler_mpi: intel2019_impi2019_nemo4 
-#iolibraries: system_libs
-#
-# for FOCIOIFS use
-# compiler_mpi: intel2019_ompi
-# for FOCI use
-# compiler_mpi: intel2019_impi2019
-# for both FOCI and FOCIOIFS use
-iolibraries: geomar_libs
+    logical_cpus_per_core: 2
 
-# basic modules and export vars needed
-# for all compiler and I/O settings
-module_actions:
-   - "purge"
-   - "load slurm"
-   - "load HLRNenv"
-   - "load sw.skl"
-   - "load cmake"
-   - "load cdo nco"
-   - "load git"
+    threads_per_core: 1
+    hetjob_flag: hetjob
 
-export_vars:
-   LC_ALL: en_US.UTF-8
-   # Recommended by HLNR support when using an MPI binary and srun
-   # removed by seb-wahl as it slows down ECHAM6 by 50% 
-   #SLURM_CPU_BIND: none
+    pool_directories:
+            pool: "/scratch/usr/hbkawi"
+            focipool: "/scratch/usr/shkifmsw/foci_input2"
 
-choose_compiler_mpi:
+    pool_dir:  "/scratch/usr/hbkawi"
 
-   intel2019_impi2019_nemo4:
-      add_module_actions:
-         - "load intel/19.0.5"
-         - "load impi/2019.5"
-         - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-         - "load gcc/9.3.0"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+    # default settings for compiler, mpi and I/O libs
+    # TODO: system_libs not yet properly configured as I (seb-wahl) don't use them
+    compiler_mpi: intel2019_impi2019
+    # to compile nemo standalone, comment the line above and uncomment the one below
+    #compiler_mpi: intel2019_impi2019_nemo4
+    #iolibraries: system_libs
+    #
+    # for FOCIOIFS use
+    # compiler_mpi: intel2019_ompi
+    # for FOCI use
+    # compiler_mpi: intel2019_impi2019
+    # for both FOCI and FOCIOIFS use
+    iolibraries: geomar_libs
 
-   intel2019_impi2019:
-      add_module_actions:
-         - "load intel/19.0.5"
-         - "load impi/2019.5"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+    # basic modules and export vars needed
+    # for all compiler and I/O settings
+    module_actions:
+       - "purge"
+       - "load slurm"
+       - "load HLRNenv"
+       - "load sw.skl"
+       - "load cmake"
+       - "load cdo nco"
+       - "load git"
 
-   intel2019_ompi:
-      add_module_actions:
-         - "load intel/19.0.5"
-         - "load openmpi/intel/3.1.6"
-      add_export_vars:
-         FC: mpifort
-         F77: mpifort
-         MPIFC: mpifort
-         FCFLAGS: -free
-         CC: mpicc
-         CXX: mpic++
-         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+    export_vars:
+       LC_ALL: en_US.UTF-8
+       # Recommended by HLNR support when using an MPI binary and srun
+       # removed by seb-wahl as it slows down ECHAM6 by 50%
+       #SLURM_CPU_BIND: none
 
-choose_iolibraries:
+    choose_compiler_mpi:
 
-    system_libs:
-       # TODO: find the correct libraries and dependencies
-       add_module_actions:
-         - "load netcdf/intel/4.7.3"
-       # TODO: find the correct libraries and dependencies
-       add_export_vars:
-         NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
-         LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
-         NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
-         NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+       intel2019_impi2019_nemo4:
+          add_module_actions:
+             - "load intel/19.0.5"
+             - "load impi/2019.5"
+             - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+             - "load gcc/9.3.0"
+          add_export_vars:
+             FC: mpiifort
+             F77: mpiifort
+             MPIFC: mpiifort
+             FCFLAGS: -free
+             CC: mpiicc
+             CXX: mpiicpc
+             MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-    geomar_libs:
-       add_export_vars:
-          IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
-          PATH: $IO_LIB_ROOT/bin:$PATH
-          LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+       intel2019_impi2019:
+          add_module_actions:
+             - "load intel/19.0.5"
+             - "load impi/2019.5"
+          add_export_vars:
+             FC: mpiifort
+             F77: mpiifort
+             MPIFC: mpiifort
+             FCFLAGS: -free
+             CC: mpiicc
+             CXX: mpiicpc
+             MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-          SZIPROOT: $IO_LIB_ROOT
-          HDF5ROOT: $IO_LIB_ROOT
-          HDF5_ROOT: $HDF5ROOT
-          NETCDFROOT: $IO_LIB_ROOT
-          NETCDFFROOT: $IO_LIB_ROOT
-          ECCODESROOT: $IO_LIB_ROOT
+       intel2019_ompi:
+          add_module_actions:
+             - "load intel/19.0.5"
+             - "load openmpi/intel/3.1.6"
+          add_export_vars:
+             FC: mpifort
+             F77: mpifort
+             MPIFC: mpifort
+             FCFLAGS: -free
+             CC: mpicc
+             CXX: mpic++
+             MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-          HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-          NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-          NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-          NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-          OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+    choose_iolibraries:
 
-       choose_compiler_mpi:
+        system_libs:
+           # TODO: find the correct libraries and dependencies
+           add_module_actions:
+             - "load netcdf/intel/4.7.3"
+           # TODO: find the correct libraries and dependencies
+           add_export_vars:
+             NETCDF_DIR: /sw/dataformats/netcdf/intel.18/4.7.3/skl/
+             LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+             NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDF_DIR/include
+             NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
 
-          intel2019_impi2019_nemo4:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+        geomar_libs:
+           add_export_vars:
+              IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+              PATH: $IO_LIB_ROOT/bin:$PATH
+              LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
-          intel2021_impi2021:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkjocke/sw/HPC_libraries/intel2021.2_impi2021.2_20211007
+              SZIPROOT: $IO_LIB_ROOT
+              HDF5ROOT: $IO_LIB_ROOT
+              HDF5_ROOT: $HDF5ROOT
+              NETCDFROOT: $IO_LIB_ROOT
+              NETCDFFROOT: $IO_LIB_ROOT
+              ECCODESROOT: $IO_LIB_ROOT
 
-          intel2019_impi2019:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+              HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+              NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+              NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+              NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+              OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
-          intel2019_ompi:
-             add_export_vars:
-                IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_ompi3.1.6_20201117
+           choose_compiler_mpi:
 
-# some yamls use computer.fc, etc to identify the compiler, so we need to add them
-fc: "$FC"
-cc: "$CC"
-mpifc: "$MPIFC"
-mpicc: "$MPICC"
-cxx: "$CXX"
+              intel2019_impi2019_nemo4:
+                 add_export_vars:
+                    IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
 
-launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
+              intel2021_impi2021:
+                 add_export_vars:
+                    IO_LIB_ROOT: /home/shkjocke/sw/HPC_libraries/intel2021.2_impi2021.2_20211007
 
-further_reading:
-        - batch_system/slurm.yaml
+              intel2019_impi2019:
+                 add_export_vars:
+                    IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_impi2019.5_20200811
+
+              intel2019_ompi:
+                 add_export_vars:
+                    IO_LIB_ROOT: /home/shkifmsw/sw/HPC_libraries/intel2019.0.5_ompi3.1.6_20201117
+
+    # some yamls use computer.fc, etc to identify the compiler, so we need to add them
+    fc: "$FC"
+    cc: "$CC"
+    mpifc: "$MPIFC"
+    mpicc: "$MPICC"
+    cxx: "$CXX"
+
+    launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind} --distribution=cyclic:cyclic --export=ALL"
+
+    further_reading:
+            - batch_system/slurm.yaml

@@ -124,16 +124,16 @@ def resolve_some_choose_blocks(config):
 
     # Component-specific environment variables into ``computer``
     # before ``computer`` ``choose_`` blocks are resolved
-    model_env_into_computer(config)
+    #model_env_into_computer(config)
 
-    esm_parser.choose_blocks(config, blackdict=config._blackdict)
+    esm_parser.choose_blocks(config)
     return config
 
 
 def model_env_into_computer(config):
     """
     This function allows to store in the ``computer`` dictionary, variables that were
-    defined inside ``environment_changes`` or ``compile/runtime_environment_changes``
+    defined inside ``environment_changes`` or ``compile/run_environment_changes``
     in the components.
 
     It excludes ``module_actions`` and ``export_vars`` dictionaries as those are
@@ -172,9 +172,11 @@ def model_env_into_computer(config):
     # from esm_parser import basic_choose_blocks, dict_merge, user_note, user_error, pprint_config
 
     # Get which type of changes are to be applied to the environment
-    run_or_compile = config.get("general", {}).get("run_or_compile", "runtime")
-    config["general"]["run_or_compile"] = run_or_compile
-    thesechanges = run_or_compile + "_environment_changes"
+    #import ipdb
+    #ipdb.set_trace()
+    execution_mode = config.get("general", {}).get("execution_mode", "run")
+    config["general"]["execution_mode"] = execution_mode
+    thesechanges = execution_mode + "_environment_changes"
     # List the component names
     models = config.get("general", {}).get("models", [])
     # ``env_vars`` stores information about the environment changes to inform
@@ -182,7 +184,7 @@ def model_env_into_computer(config):
     env_vars = {}
     # Loop through the models
     for model in models:
-        # Update the models ``environment_changes`` with the ``compiletime/runtime_
+        # Update the models ``environment_changes`` with the ``compile/run_
         # environment_changes
         modelconfig = copy.deepcopy(config[model])
         modelconfig["environment_changes"] = modelconfig.get("environment_changes", {})
@@ -213,7 +215,7 @@ def model_env_into_computer(config):
                 ]
                 and "computer" in config
                 and not overwrite
-                # and run_or_compile=="runtime"
+                # and execution_mode=="run"
             ):
                 # If the key is already included in ``env_vars``, the key variable has
                 # been already modified by a previous model and a warning needs to be

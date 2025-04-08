@@ -491,7 +491,10 @@ class DictWithProvenance(dict):
                 if update_method == "extend":
                     self[key].provenance.extend(provenance)
                 elif update_method == "update":
-                    self[key].provenance[-1].update(provenance[-1])
+                    if self[key].provenance[-1]:
+                        self[key].provenance[-1].update(provenance[-1])
+                    else:
+                        self[key].provenance[-1] = provenance[-1]
                 else:
                     raise ValueError(
                         f"Unknown update method {update}. Use either 'extend' or 'update'"
@@ -823,7 +826,10 @@ class ListWithProvenance(list):
                 if update_method == "extend":
                     self[c].provenance.extend(provenance)
                 elif update_method == "update":
-                    self[c].provenance[-1].update(provenance[-1])
+                    if self[c].provenance[-1]:
+                        self[c].provenance[-1].update(provenance[-1])
+                    else:
+                        self[c].provenance[-1] = provenance[-1]
                 else:
                     raise ValueError(
                         f"Unknown update method {update_method}. Use either 'extend' "

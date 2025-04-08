@@ -12,19 +12,14 @@ from utils import Capturing
 
 ESM_PARSER_TESTS_DIR = os.path.dirname(__file__)
 
-class FakeConfig(DictWithProvenance):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._blackdict = self.get("_blackdict", {})
-        if "_blackdict" in self:
-            del self["_blackdict"]
 
 def prepare_config(config):
-    if isinstance(config, DictWithProvenance):
-        provenance = config.get_provenance()
-    else:
-        provenance = {}
-    config = FakeConfig(config, provenance)
+    if not isinstance(config, DictWithProvenance):
+        config = DictWithProvenance(config, {})
+
+    config._blackdict = config.get("_blackdict", {})
+    if "_blackdict" in config:
+        del config["_blackdict"]
 
     return config
 

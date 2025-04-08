@@ -126,6 +126,7 @@ general:
             - oifs/oifs43.env.yaml
             - xios/xios.env.yaml
             - rnfmap/rnfmap.env.yaml
+            - fesom/fesom.env.yaml
             oasis_with_yac: False
             xios_interp_order: 1
           v3.4:
@@ -723,6 +724,9 @@ xios:
 rnfmap:
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
+        choose_general.major_version:
+                "v3.4":
+                      version: v1.1
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -888,8 +892,8 @@ oasis3mct:
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
                                         - 'heat_ico <--gauswgt_gss-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_glo-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'

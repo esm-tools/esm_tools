@@ -34,8 +34,8 @@ next_year=$(date -d "$next_date" +%Y)
 initial_year=$(date -d "$initial_date" +%Y)
 final_year=$(date -d "$final_date" +%Y)
 
-output_file="tripyrun_${start_year}.yaml"
-target_dir="${base_dir}/${expid}/analysis/Tripyview/config"
+output_file="${expid}_tripyrun_${start_year}.yaml"
+target_dir="${base_dir}/${expid}/config/fesom"
 
 export mesh_dir
 export outdata_path

@@ -1580,9 +1580,10 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
     # Resolve the choose variables
     if choice in choices_available:
         # Include from_choose into the provenance of all entries
-        choices_available[choice].set_provenance(
-            {"from_choose": {"choose_key": choose_key, "choice": choice}},
-            update_method="update",
+        add_from_choose_info_to_provenance(
+            choices_available[choice],
+            choose_key,
+            choice,
         )
         # Update entries
         for update_key, update_value in choices_available[choice].items():
@@ -1590,9 +1591,10 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     elif "*" in config_to_replace_in.get(choose_key):
         # Include from_choose into the provenance of all entries
-        choices_available["*"].set_provenance(
-            {"from_choose": {"choose_key": choose_key, "choice": choice}},
-            update_method="update",
+        add_from_choose_info_to_provenance(
+            choices_available["*"],
+            choose_key,
+            "*",
         )
         # Update entries
         logging.debug("Found a * case!")
@@ -1605,6 +1607,14 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         pass
 
     del config_to_replace_in[choose_key]
+
+
+def add_from_choose_info_to_provenance(entries, choose_key, choice):
+    if isinstance(entries, DictWithProvenance):
+        entries.set_provenance(
+            {"from_choose": {"choose_key": choose_key, "choice": choice}},
+            update_method = "update",
+        )
 
 
 def resolve_choose(model_with_choose, choose_key, config):

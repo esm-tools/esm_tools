@@ -4,7 +4,7 @@ Unit tests for the choose functionality
 import os
 import pytest
 
-from esm_parser import yaml_file_to_dict
+from esm_parser import yaml_file_to_dict, DictWithProvenance
 from esm_runscripts import resolve_some_choose_blocks
 from fixtures_choose import simple_choose_config, conflict_choose_config
 from utils import Capturing
@@ -12,7 +12,7 @@ from utils import Capturing
 
 ESM_PARSER_TESTS_DIR = os.path.dirname(__file__)
 
-class FakeConfig(dict):
+class FakeConfig(DictWithProvenance):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._blackdict = self.get("_blackdict", {})
@@ -20,7 +20,11 @@ class FakeConfig(dict):
             del self["_blackdict"]
 
 def prepare_config(config):
-    config = FakeConfig(config)
+    if isinstance(config, DictWithProvenance):
+        provenance = config.get_provenance()
+    else:
+        provenance = {}
+    config = FakeConfig(config, provenance)
 
     return config
 
@@ -33,7 +37,20 @@ def test_simple_choose(simple_choose_config):
 
     resolve_some_choose_blocks(config)
 
-    assert config["general"]["version"] == "3.1.1"
+    assert config["general"]["major_version"] == 3.1
+
+def test_simple_choose_with_from_choose(simple_choose_config):
+    """
+    Test the most basic choose functionality with from_choose in the provenance
+    """
+    config = prepare_config(simple_choose_config)
+
+    resolve_some_choose_blocks(config)
+
+    assert config["general"]["major_version"].provenance[-1]["from_choose"] == {
+        "choose_key": "choose_general.version",
+        "choice": "3.1.1",
+    }
 
 def test_detect_conflict_in_choose(conflict_choose_config):
     """

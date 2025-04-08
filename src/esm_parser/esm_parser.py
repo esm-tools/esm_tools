@@ -532,8 +532,9 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    deep_update_further_reading(all_config, attachable_config) #, **kwargs)
-    # config.update(attachable_config)
+    #deep_update_further_reading(all_config, attachable_config) #, **kwargs)
+    dict_merge(all_config, attachable_config)
+    #config.update(attachable_config)
 
 
 def deep_update_further_reading(config, further_reading_config):
@@ -1578,10 +1579,22 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     # Resolve the choose variables
     if choice in choices_available:
+        # Include from_choose into the provenance of all entries
+        choices_available[choice].set_provenance(
+            {"from_choose": {"choose_key": choose_key, "choice": choice}},
+            update_method="update",
+        )
+        # Update entries
         for update_key, update_value in choices_available[choice].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):
+        # Include from_choose into the provenance of all entries
+        choices_available["*"].set_provenance(
+            {"from_choose": {"choose_key": choose_key, "choice": choice}},
+            update_method="update",
+        )
+        # Update entries
         logging.debug("Found a * case!")
         for update_key, update_value in config_to_replace_in[choose_key]["*"].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)

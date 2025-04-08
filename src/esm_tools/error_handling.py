@@ -113,9 +113,9 @@ def user_note_hints(note_text, hints):
             # otherwise remove the placeholder (provenance might not always exist)
             if provenance:
                 prov_string = (
-                    f"``{provenance['yaml_file']}``,"
-                    f"line:``{provenance['line']}``,"
-                    f"col:``{provenance['col']}``"
+                    f"``{provenance.get('yaml_file')}``,"
+                    f"line:``{provenance.get('line')}``,"
+                    f"col:``{provenance.get('col')}``"
                 )
                 # Replace the HINT placeholder of the hint with the provenance string
                 hint_text = hint["text"].replace("@HINT@", prov_string)

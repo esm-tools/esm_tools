@@ -627,6 +627,21 @@ class setup_and_model_infos:
                     package.version.provenance.extend_and_modified_by(
                         rawtarget.provenance, "esm_master.compile_info.split_raw_target"
                     )
+                # Enforce version's provenance defined by the command input
+                elif (
+                    not hasattr(rawtarget, "provenance")
+                    and hasattr(package.version, "provenance")
+                ):
+                    package.version.provenance.extend_and_modified_by(
+                        esm_parser.Provenance({
+                            "category": "command_line",
+                            "subcategory": None,
+                            "line": None,
+                            "col": None,
+                            "yaml_file": None,
+                        }),
+                        "esm_master.compile_info.split_raw_target",
+                    )
                 # Returns the selected package data
                 return (
                     todo,

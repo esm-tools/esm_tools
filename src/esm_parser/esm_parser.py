@@ -532,8 +532,9 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    deep_update_further_reading(all_config, attachable_config) #, **kwargs)
-    # config.update(attachable_config)
+    #deep_update_further_reading(all_config, attachable_config) #, **kwargs)
+    dict_merge(all_config, attachable_config)
+    #config.update(attachable_config)
 
 
 def deep_update_further_reading(config, further_reading_config):
@@ -1578,10 +1579,24 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     # Resolve the choose variables
     if choice in choices_available:
+        # Include from_choose into the provenance of all entries
+        add_from_choose_info_to_provenance(
+            choices_available[choice],
+            choose_key,
+            choice,
+        )
+        # Update entries
         for update_key, update_value in choices_available[choice].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):
+        # Include from_choose into the provenance of all entries
+        add_from_choose_info_to_provenance(
+            choices_available["*"],
+            choose_key,
+            "*",
+        )
+        # Update entries
         logging.debug("Found a * case!")
         for update_key, update_value in config_to_replace_in[choose_key]["*"].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
@@ -1592,6 +1607,22 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         pass
 
     del config_to_replace_in[choose_key]
+
+
+def add_from_choose_info_to_provenance(entries, choose_key, choice):
+    if isinstance(entries, DictWithProvenance):
+        if hasattr(choose_key, "value"):
+            choose_key_for_prov = choose_key.value
+        else:
+            choose_key_for_prov = choose_key
+        if hasattr(choice, "value") and hasattr(choice, "provenance"):
+            choice_for_prov = choice.value
+        else:
+            choice_for_prov = choice
+        entries.set_provenance(
+            {"from_choose": {"choose_key": choose_key_for_prov, "choice": choice_for_prov}},
+            update_method = "update",
+        )
 
 
 def resolve_choose(model_with_choose, choose_key, config):
@@ -3030,90 +3061,62 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # distribute self.config into setup_config
         coupled_setup = self.config.get("general", {}).get("coupled_setup", False)
         setup_name = user_config["general"]["setup_name"]
-        if coupled_setup:
-            setup_config["general"].update({"standalone": False})
-            # Resolve choose with include_models
-            resolve_choose_with_var(
-                "include_models",
-                self.config["general"],
-                current_model="general",
-                user_config=user_config,
-                setup_config=setup_config,
-            )
-            setup_config["general"]["include_models"] = self.config["general"][
-                "include_models"
-            ]
 
-            # that should happen in Shell2Yaml
+        # Define keys and components to search for include_models
+        setup_config["general"].update({"standalone": not coupled_setup})
+        if coupled_setup:
+            key_with_includes = "general"
+        else:
+            key_with_includes = setup_name
+            setup_config["general"].update({
+                "models": [self.config[key_with_includes]["model"]],
+            })
+        # Resolve choose with include_models
+        component_with_includes = self.config[key_with_includes]
+        resolve_choose_with_var(
+            "include_models",
+            component_with_includes,
+            current_model=key_with_includes,
+            user_config=user_config,
+            setup_config=setup_config,
+        )
+
+        # Attach the include_models to the general's setup_config
+        setup_config["general"]["include_models"] = component_with_includes.get(
+            "include_models", []
+        )
+        # If there is a setup name in the user_config, merge it with the general section
+        if coupled_setup:
             if user_config["general"]["setup_name"] in user_config:
                 user_config["general"].update(
                     user_config[user_config["general"]["setup_name"]]
                 )
                 del user_config[user_config["general"]["setup_name"]]
-            dict_merge(setup_config, self.config)
 
-            setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
-                setup_config
-            )
+        # Merge self.config into setup_config
+        dict_merge(setup_config, self.config)
+
+        # Set valid_setup_names and valid_model_names in general
+        setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
+            setup_config
+        )
+        if coupled_setup:
             setup_config["general"]["valid_model_names"] = valid_model_names = []
-
-            # Resolve the chooses including versions of the components to be able to
-            # later load the correct yaml files
-            for component in setup_config:
-                resolve_choose_with_var(
-                    "version",
-                    setup_config[component],
-                    current_model=component,
-                    user_config=user_config,
-                    setup_config=setup_config)
-        # New organization of the standalone files
-        elif setup_name in self.config:
-            #import ipdb
-            #ipdb.set_trace()
-            standalone_model_config = self.config[setup_name]
-            setup_config["general"].update({"standalone": True})
-            setup_config["general"].update({"models": [standalone_model_config["model"]]})
-
-            resolve_choose_with_var(
-                "include_models",
-                standalone_model_config,
-                user_config=user_config,
-                setup_config=setup_config,
-            )
-
-            setup_config["general"]["include_models"] = standalone_model_config.get(
-                "include_models", []
-            )
-
-            #import ipdb
-            #ipdb.set_trace()
-
-            # If there is a key with name the coupled setup name, merge it with the
-            # general section and remove it
-            if coupled_setup and user_config["general"]["setup_name"] in user_config:
-                user_config["general"].update(
-                    user_config[user_config["general"]["setup_name"]]
-                )
-                del user_config[user_config["general"]["setup_name"]]
-
-            dict_merge(setup_config, self.config)
-
-            # TODO: this block below is absolutely nuts, remove it when cleaning
-            setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
-                setup_config
-            )
+        else:
             setup_config["general"]["valid_setup_names"].remove(setup_name)
             setup_config["general"]["valid_model_names"] = valid_model_names = [
                 setup_name
             ]
 
-        # TODO: Remove this block below when the component sections are implemented in all
-        # yaml files. The elif above should be substituted by the else with a checking for
-        # the model section
-        else:
-            raise NotImplementedError(
-                "The standalone setup is not supported in this fashion anymore!"
-            )
+        # Resolve the chooses including versions of the components to be able to
+        # later load the correct yaml files
+        for component in setup_config:
+            resolve_choose_with_var(
+                "version",
+                setup_config[component],
+                current_model=component,
+                user_config=user_config,
+                setup_config=setup_config)
 
         del self.config
 

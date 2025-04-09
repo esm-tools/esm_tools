@@ -43,10 +43,11 @@ from loguru import logger
 from ruamel.yaml import YAML
 
 import esm_parser
-import esm_tools
 from esm_calendar import Date
+from esm_tools import user_error
 
 CATEGORY_HIERARCHY = [
+    None,
     "defaults",  # Lowest in the hierarchy
     "other_software",
     "machines",
@@ -54,6 +55,7 @@ CATEGORY_HIERARCHY = [
     "setups",
     "couplings",
     "runscript",
+    "command_line",
     "backend",  # Highest in the hierarchy (no category means it is a change
 ]               # from ESM-Tools functions)
 
@@ -463,7 +465,7 @@ class DictWithProvenance(dict):
                     val, provenance.get(key, None)
                 )
 
-    def set_provenance(self, provenance):
+    def set_provenance(self, provenance, update_method="extend"):
         """
         Recursively transforms every value in ``DictWithProvenance`` into its
         corresponding WithProvenance object and appends the same ``provenance`` to it.
@@ -481,12 +483,22 @@ class DictWithProvenance(dict):
         for key, val in self.items():
             if isinstance(val, dict):
                 self[key] = DictWithProvenance(val, {})
-                self[key].set_provenance(provenance)
+                self[key].set_provenance(provenance, update_method=update_method)
             elif isinstance(val, list):
                 self[key] = ListWithProvenance(val, [])
-                self[key].set_provenance(provenance)
+                self[key].set_provenance(provenance, update_method=update_method)
             elif hasattr(val, "provenance"):
-                self[key].provenance.extend(provenance)
+                if update_method == "extend":
+                    self[key].provenance.extend(provenance)
+                elif update_method == "update":
+                    if self[key].provenance[-1]:
+                        self[key].provenance[-1].update(provenance[-1])
+                    else:
+                        self[key].provenance[-1] = provenance[-1]
+                else:
+                    raise ValueError(
+                        f"Unknown update method {update}. Use either 'extend' or 'update'"
+                    )
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
 
@@ -570,13 +582,14 @@ class DictWithProvenance(dict):
             and self.custom_setitem
         ):
             # Define the category of the old value (components, setups, machines, ...)
-            if old_val.provenance[-1]:
-                old_category = old_val.provenance[-1].get("category", None)
+            old_provenance = old_val.provenance
+            if old_provenance[-1]:
+                old_category = old_provenance[-1].get("category", None)
             else:
                 old_category = "backend"
 
             # Initialize new provenance with the old provenance
-            new_provenance = copy.deepcopy(old_val.provenance)
+            new_provenance = copy.deepcopy(old_provenance)
 
             # If the new value has provenance extend its provenance with the old one
             if hasattr(new_val, "provenance"):
@@ -594,8 +607,64 @@ class DictWithProvenance(dict):
                 old_category_index = CATEGORY_HIERARCHY.index(old_category)
                 new_category_index = CATEGORY_HIERARCHY.index(new_category)
 
+                # Raise an error if the categories are the same
+                if old_category_index == new_category_index and old_val != new_val:
+                    old_val_comes_from_choose = old_provenance[-1].get("from_choose")
+                    new_val_comes_from_choose = new_provenance[-1].get("from_choose")
+                    # If both values come from a choose, raise a choose conflict
+                    # user_error
+                    if old_val_comes_from_choose and new_val_comes_from_choose:
+                        user_error(
+                            "Choose conflict",
+                            f"Two ``choose_`` blocks ("
+                            f"``{old_provenance[-1]['from_choose']['choose_key']}`` and "
+                            f"``{new_provenance[-1]['from_choose']['choose_key']}``) define "
+                            f"the same key ``{key}`` with different values and belong "
+                            f"to the same hierarchy level ``{old_category}``. This is "
+                            f"not allowed. To solve this rethink the logic of these "
+                            f"choose blocks and make sure their parameters are "
+                            f"independent/non-conflicting. Conflicting values defined "
+                            f"in:\n- @HINT_0@\n- @HINT_1@",
+                            hints = [
+                                {
+                                    "type": "prov",
+                                    "object": old_val,
+                                    "text": "@HINT@",
+                                },
+                                {
+                                    "type": "prov",
+                                    "object": new_val,
+                                    "text": "@HINT@",
+                                },
+                            ]
+                        )
+                    # If the new value comes from a choose, it can overwrite
+                    elif new_val_comes_from_choose:
+                        final_val = copy.deepcopy(new_val)
+                    else:
+                        user_error(
+                            "Category conflict",
+                            f"Key ``{key}`` exists in two different yaml files at the same "
+                            f"hierarchical level (``{old_category}``) and have different "
+                            f"values (``{old_val}``:``{new_val}``). To solve this remove "
+                            f" one of the these two values, or include them into a choose "
+                            f"block that avoids the conflict."
+                            "\n- @HINT_0@\n- @HINT_1@",
+                            hints = [
+                                {
+                                    "type": "prov",
+                                    "object": old_val,
+                                    "text": "@HINT@",
+                                },
+                                {
+                                    "type": "prov",
+                                    "object": new_val,
+                                    "text": "@HINT@",
+                                },
+                            ]
+                        )
                 # Assign the new value if the new category is higher in the hierarchy
-                if old_category_index <= new_category_index or old_val == None:
+                elif old_category_index < new_category_index or old_val == None:
                     final_val = copy.deepcopy(new_val)
                 # Keep the old value if the new category is lower in the hierarchy
                 elif self.respect_hierarchy_in_setitem:
@@ -731,7 +800,7 @@ class ListWithProvenance(list):
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance[c])
 
-    def set_provenance(self, provenance):
+    def set_provenance(self, provenance, update_method="extend"):
         """
         Recursively transforms every value in ``ListWithProvenance`` into its
         corresponding WithProvenance object and appends the same ``provenance`` to it.
@@ -749,12 +818,23 @@ class ListWithProvenance(list):
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, {})
-                self[c].set_provenance(provenance)
+                self[c].set_provenance(provenance, update_method=update_method)
             elif isinstance(elem, list):
                 self[c] = ListWithProvenance(elem, [])
-                self[c].set_provenance(provenance)
+                self[c].set_provenance(provenance, update_method=update_method)
             elif hasattr(elem, "provenance"):
-                self[c].provenance.extend(provenance)
+                if update_method == "extend":
+                    self[c].provenance.extend(provenance)
+                elif update_method == "update":
+                    if self[c].provenance[-1]:
+                        self[c].provenance[-1].update(provenance[-1])
+                    else:
+                        self[c].provenance[-1] = provenance[-1]
+                else:
+                    raise ValueError(
+                        f"Unknown update method {update_method}. Use either 'extend' "
+                        f"or 'update'"
+                    )
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
 

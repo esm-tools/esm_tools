@@ -1611,8 +1611,16 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
 def add_from_choose_info_to_provenance(entries, choose_key, choice):
     if isinstance(entries, DictWithProvenance):
+        if hasattr(choose_key, "value"):
+            choose_key_for_prov = choose_key.value
+        else:
+            choose_key_for_prov = choose_key
+        if hasattr(choice, "value") and hasattr(choice, "provenance"):
+            choice_for_prov = choice.value
+        else:
+            choice_for_prov = choice
         entries.set_provenance(
-            {"from_choose": {"choose_key": choose_key, "choice": choice}},
+            {"from_choose": {"choose_key": choose_key_for_prov, "choice": choice_for_prov}},
             update_method = "update",
         )
 

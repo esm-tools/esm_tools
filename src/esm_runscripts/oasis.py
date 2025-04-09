@@ -570,6 +570,12 @@ class oasis:
             else:
                 glob_search_file = restart_file_path
 
+            # add support for oasis_date_stamp (which for some reason does
+            # not work anymore after awi-geomar merge in 2025 without the two lines below)
+            # reason unknown, but the entire section here should be revised soon anyways 
+            if config.get('oasis_date_stamp'):
+                glob_search_file = restart_file_path
+
             glob_restart_file = glob.glob(glob_search_file)
             glob_restart_file.sort()
             if restart_file and is_runtime:

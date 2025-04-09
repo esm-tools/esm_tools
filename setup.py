@@ -39,6 +39,7 @@ requirements = [
     "xdgenvpy==2.3.5",
     "pydantic>=1.10.13",
     "h5netcdf>=0.8.1",
+    "setuptools==67.6.1"
 ]
 
 setup_requirements = []

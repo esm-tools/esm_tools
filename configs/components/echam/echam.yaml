@@ -362,6 +362,8 @@ choose_concurrent_radiation_code:
                                         lrad_async: "${lrad_async}"
                 add_streams:
                     - rad
+                add_restartstreams:
+                    - rad
         "*":
                 from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
 
@@ -526,7 +528,7 @@ choose_scenario_type:
 choose_lresume:
         False:
                 restart_in_modifications:
-                        "[[streams-->STREAM]]":
+                        "[[restartstreams-->STREAM]]":
                                 - "vdate <--set_global_attr-- ${start_date!syear!smonth!sday}"
                                   # - fdate "<--set_dim--" ${year_before_date}
                                   # - ndate "<--set_dim--" ${steps_in_year_before}
@@ -655,6 +657,9 @@ choose_wiso_code:
                                 add_streams:
                                         - wiso
                                         - accw_wiso
+                                add_restartstreams:
+                                        - wiso
+                                        - accw_wiso
 
                                 # The following lines take care of the renaming of the
                                 # ozon files, and their copying
@@ -780,6 +785,21 @@ streams:
         - spim
         - ism
 
+restartstreams:
+        - echam
+        - accw
+        - co2
+        - g3bid
+        - g3bim
+        - g3bday
+        - g3b1hi
+        - glday
+        - aclcim
+        - sp6h
+        - glim
+        - spim
+        - ism
+
 streamsnc:
         - aclcim
         - g3b1hi
@@ -836,23 +856,23 @@ outdata_sources:
         #"[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}_STREAM.nc
 
 restart_in_files:
-        "[[streams-->STREAM]]": STREAM
+        "[[restartstreams-->STREAM]]": STREAM
 
 restart_in_sources:
-        "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
 
 restart_in_in_work:
-        "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
+        "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
 
 restart_out_files:
-        "[[streams-->STREAM]]": STREAM
+        "[[restartstreams-->STREAM]]": STREAM
 
 restart_out_sources:
-        "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
+        "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
 
 restart_out_in_work:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[restartstreams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
 log_files:
         atmout: atmout

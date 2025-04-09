@@ -217,9 +217,9 @@ echam:
                         # due to the setup in jsbach.yaml all output streams are added to the restart
                         # streams as well, hence we have to remove them here, I'm sure there are better
                         # ways to do this, but hey, it works and I don't need to touch jsbach.yaml
-                        remove_streams:
-                           - echamday
-                           - co2day
+                        #remove_streams:
+                        #   - echamday
+                        #   - co2day
 
                         add_restartstreams:
                            - tracer
@@ -619,13 +619,13 @@ jsbach:
         # due to the setup in jsbach.yaml all output streams are added to the restart
         # streams as well, hence we have to remove them here, I'm sure there are better
         # ways to do this, but hey, it works and I don't need to touch jsbach.yaml
-        remove_streams:
-          - land
-          - jsbachday
-          - nitroday
-          - vegday
-          - yassoday
-          - landday
+        #remove_streams:
+        #  - land
+        #  - jsbachday
+        #  - nitroday
+        #  - vegday
+        #  - yassoday
+        #  - landday
 
         streams:
           - jsbach

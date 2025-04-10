@@ -477,14 +477,7 @@ def attach_to_config_and_reduce_keyword(
                 else:
                     tmp_config = include_path
 
-                # TODO: remove this if and always do merging after component keys in all yamls
-                # old ways...
-                if "model" in tmp_config:
-                    config_to_write_to[tmp_config["model"]] = tmp_config
-                # new way!
-                else:
-                    # TODO: add an if if computer changes are to be ignored for the standalone files
-                    dict_merge(config_to_write_to, tmp_config)
+                dict_merge(config_to_write_to, tmp_config)
 
                 for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
                     logger.debug("Attaching: %s", attachment)

@@ -61,7 +61,6 @@ xios:
         contact: "swahl(at)geomar.de"
       "2.5":
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
-        archfile: ESMTOOLS_generic_oasis_intel
         choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
           cray_mpich:
             archfile: ESMTOOLS_generic_oasis_cray
@@ -70,7 +69,7 @@ xios:
           parastationmpi:
             archfile: ESMTOOLS_generic_oasis_intel
           "*":
-            foo: bar
+            archfile: ESMTOOLS_generic_oasis_intel
         # MA: yet another block, this time for albedo. We cannot fix this now, but in the
         # future we should adopt the compiler suite logic for the other computers. Already
         # included in ESM-Tools clickup
@@ -80,10 +79,12 @@ xios:
             intel-oneapi:
                 archfile: ESMTOOLS_levante_oasis_intel
             "*":
-                foo: bar
+                archfile: ESMTOOLS_generic_oasis_intel
         choose_computer.name:
             levante:
                 archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: master
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x

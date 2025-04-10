@@ -1,4 +1,5 @@
-choose_mip:
+oifs:
+    choose_mip:
         "cmip5":
                 add_namelist_changes:
                         fort.4:

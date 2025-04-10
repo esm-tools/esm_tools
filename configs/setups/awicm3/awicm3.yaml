@@ -179,7 +179,7 @@ oifs:
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
-        model_dir: ${general.model_dir}/oifs-${version}
+        model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12

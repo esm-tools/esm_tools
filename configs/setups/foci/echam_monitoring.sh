@@ -63,9 +63,8 @@ else
 fi
 
 cd $(dirname $0)
-papermill echam_monitoring.ipynb echam_monitoring_${expid}.ipynb -k jupyter_mon -p expid $expid -p iniyear $iniyear -p exproot $basedir -p obsroot $obsroot
-jupyter-nbconvert --no-input --to html echam_monitoring_${expid}.ipynb
-mv -v *.html $basedir/$expid/mon/echam/
+papermill echam_monitoring.ipynb $basedir/$expid/mon/echam/echam_monitoring_${expid}.ipynb -k jupyter_mon -p expid $expid -p iniyear $iniyear -p exproot $basedir -p obsroot $obsroot
+jupyter-nbconvert --no-input --to html $basedir/$expid/mon/echam/echam_monitoring_${expid}.ipynb
 
 echo "`date`: ECHAM6 monitoring finished"
 exit 0

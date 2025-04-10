@@ -486,12 +486,8 @@ def attach_to_config_and_reduce_keyword(
                     # TODO: add an if if computer changes are to be ignored for the standalone files
                     dict_merge(config_to_write_to, tmp_config)
 
-                #import ipdb
-                #ipdb.set_trace()
                 for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
                     logger.debug("Attaching: %s", attachment)
-                    #import ipdb
-                    #ipdb.set_trace()
                     config_for_loop = copy.deepcopy(config_to_write_to)
                     for component, component_config in config_for_loop.items():
                         attach_to_config_and_remove(
@@ -515,9 +511,6 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     all_config : dict
         main configuration
     """
-    #if attach_value == "fesom.env.yaml":
-    #    import ipdb
-    #    ipdb.set_trace()
     if not all_config:
         all_config = config
 
@@ -532,46 +525,7 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    #deep_update_further_reading(all_config, attachable_config) #, **kwargs)
     dict_merge(all_config, attachable_config)
-    #config.update(attachable_config)
-
-
-def deep_update_further_reading(config, further_reading_config):
-    for key, value in further_reading_config.items():
-        if isinstance(value, dict) and isinstance(config.get(key, None), dict) and config.get(key, None) is not None:
-            deep_update_further_reading(config[key], value)
-        elif isinstance(value, list):
-            if isinstance(config.get(key, None), list):
-                for v in value:
-                    if v not in config[key]:
-                        config[key].append(v)
-            elif not isinstance(config.get(key, None), list) and config.get(key, None) is not None:
-                raise TypeError("meep meep, the roadrunner wins, silly cayote")
-            else:
-                config[key] = value
-        elif key in config and value != config[key]:
-            user_error(
-                "further_reading conflict",
-                f"Key ``{key}`` exists in two different files at the same "
-                f"hierarchical level (``{value.provenance[-1]['category']}``:"
-                f"``{config[key].provenance[-1]['category']}``)"
-                "\n- @HINT_0@\n- @HINT_1@",
-                hints = [
-                    {
-                        "type": "prov",
-                        "object": config[key],
-                        "text": "@HINT@",
-                    },
-                    {
-                        "type": "prov",
-                        "object": value,
-                        "text": "@HINT@",
-                    },
-                ]
-            )
-        else:
-            config[key] = value
 
 
 def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
@@ -595,13 +549,6 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     -------
     The ``config`` is modified **in place**!
     """
-    if attach_key != "further_reading":
-        #import ipdb
-        #ipdb.set_trace()
-        pass
-
-    #import ipdb
-    #ipdb.set_trace()
     if not all_config:
         all_config = config
 
@@ -754,8 +701,6 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             and k.startswith("add_")
             and isinstance(v, (list, dict))
         ):
-            #import ipdb
-            #ipdb.set_trace()
             add_entries_from_chapter(dct, "".join(k.split("add_")), v)
         else:
             # keep the value of dct[k] if dct[k] is already set but merge_dct[k]
@@ -777,9 +722,6 @@ def deep_update(chapter, entries, config, blackdict={}):
         if chapter != chapter_with_no_add and chapter in config:
             del config[chapter]
     elif "add_" in chapter:
-        #if "_execution_mode" in chapter:
-        #    import ipdb
-        #    ipdb.set_trace()
         chapter_with_no_add = chapter.replace("add_", "")
         add_entries_from_chapter(config, chapter_with_no_add, entries)
         # del config[chapter]
@@ -1516,9 +1458,6 @@ def find_one_independent_choose(all_set_variables):
 
 
 def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}):
-    #if "_computer.name" in choose_key:
-    #    import ipdb
-    #    ipdb.set_trace()
     path_to_key = choose_key.replace("choose_", "").split(".")
     try:
         choice = recursive_get(config, path_to_key)
@@ -2983,8 +2922,6 @@ class GeneralConfig(dict):  # pragma: no cover
                 user_config=user_config,
             )
 
-        #import ipdb
-        #ipdb.set_trace()
         # Attach top level further_reading key (config["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
@@ -3042,8 +2979,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         # Computer config takes precedence over general config (order in dict_merge)
         dict_merge(setup_config, computer_config)
-        #import ipdb
-        #ipdb.set_trace()
         # TODO: substitute this by slurm not been a further_reading but a file that has a lower hierarchy
         # than computer
         # Attach computer further_reading key (config["computer"]["further_reading"])
@@ -3156,8 +3091,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                     new_model_list.append(model)
             setup_config["general"]["include_models"] = new_model_list
 
-        #import ipdb
-        #ipdb.set_trace()
         model_config = {}
         # This function changes both the setup_config and the model_config
         attach_to_config_and_reduce_keyword(
@@ -3195,8 +3128,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         # Allows the ``general`` section to be able to handle attachable files (e.g.
         # ``further_reading``)
-        #import ipdb
-        #ipdb.set_trace()
         # Attach general further_reading key (config["general"]["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(

@@ -108,8 +108,6 @@ class SimulationSetup(object):
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
         self.store_prev_objects()
 
-        #import ipdb
-        #ipdb.set_trace()
         # 11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
         self.config = prepare.run_job(self.config)
 

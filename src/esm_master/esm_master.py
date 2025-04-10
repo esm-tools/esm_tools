@@ -94,9 +94,12 @@ def main_flow(parsed_args, target):
     user_task.generate_task_script()
 
     # Print config
-    model_nested_dirs = complete_config["general"]["model_dir"].split("/")
-    model_name = model_nested_dirs.pop(-1)
-    finished_config_path = f'{"/".join(model_nested_dirs)}/{model_name}-finished_config.yaml'
+    current_path = os.getcwd()
+    model_dir_rel_pwd = complete_config["general"]["model_dir"].replace(
+        f"{current_path}/", ""
+    )
+    model_name = model_dir_rel_pwd.split("/")[0]
+    finished_config_path = f"{current_path}/{model_name}-finished_config.yaml"
     yaml_dump(complete_config, config_file_path=finished_config_path)
 
     if parsed_args.get("check", False):

@@ -1,0 +1,45 @@
+#!/bin/ksh
+
+## @fn ice2echam() 
+ice2echam() {
+        echo "                =================================================================="
+        echo "                 *** S T A R T I N G    ice2echam *** "; echo
+
+        . ${FUNCTION_PATH}/../echam/coupling_ice2echam.functions
+        . ${FUNCTION_PATH}/../general/general_lists.functions
+        . ${FUNCTION_PATH}/../general/coupling_general.functions
+
+        echo " * working on the northern hemisphere first ..."
+        export PISM_HEMISPHERE="pism_nh"
+        ice2echam_1st
+        wait
+        for FILE in "echam6_new_orography_before_calnoro_high_res.nc" "echam6_new_orography_before_calnoro_low_res.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
+            if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/${FILE} ]]
+            then
+                cdo -s sellonlatbox,0,360,0,90 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_ice2echam 
+                ncecat -O ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+                ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+                ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+            fi
+        done
+        
+        echo " * ... now switching to the southern hemisphere"
+        export PISM_HEMISPHERE="pism_sh"
+        ice2echam_1st
+        wait
+        for FILE in "echam6_new_orography_before_calnoro_high_res.nc" "echam6_new_orography_before_calnoro_low_res.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
+            if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/${FILE} ]]
+            then
+                cdo -s sellonlatbox,0,360,-90,0 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_ice2echam
+                ncecat -O ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+                ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+                ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+        
+                ncrcat -O "${COUPLE_DIR}/pism_nh/sellonlatbox.$FILE" "${COUPLE_DIR}/pism_sh/sellonlatbox.$FILE" "${COUPLE_DIR}/$FILE" 2>>${COUPLE_DIR}/nco_ice2echam
+                ncpdq -O -a record,lat,lon ${COUPLE_DIR}/$FILE tmp 2>>${COUPLE_DIR}/nco_ice2echam; mv tmp ${COUPLE_DIR}/$FILE
+                ncwa -O -a record ${COUPLE_DIR}/$FILE tmp 2>>${COUPLE_DIR}/nco_ice2echam; mv tmp ${COUPLE_DIR}/$FILE
+            fi
+        done
+
+        ice2echam_2nd
+}

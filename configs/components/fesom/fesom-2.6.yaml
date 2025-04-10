@@ -12,7 +12,6 @@ fesom:
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
     # below) whose source code contains the icebergs implementation
-    icb_code: false
     with_icb: false
 
     wiso_code: false
@@ -195,16 +194,6 @@ fesom:
     outdata_targets:
             fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
-    choose_icb_code:
-            True:
-                use_icebergs: "${with_icb}"
-                use_icesheet_coupling: "${with_icb}"
-                add_namelist_changes:
-                    namelist.config:
-                        icebergs:
-                            use_icebergs: "${use_icebergs}"
-                            use_icesheet_coupling: "${use_icesheet_coupling}"
-                            steps_per_ib_step: 8
 
     choose_with_icb:
             True:
@@ -385,6 +374,12 @@ fesom:
                             output_length: "${restart_rate}"
                             output_length_unit: "${restart_unit}"
                             restart_length: "${restart_rate}"
+                    run_config:
+                            lwiso: "${with_wiso}"
+                    icebergs:
+                            use_icebergs: "${use_icebergs}"
+                            use_icesheet_coupling: "${use_icesheet_coupling}"
+                            steps_per_ib_step: 8
 
 
             namelist.forcing:
@@ -594,12 +589,6 @@ fesom:
             - i2_oce
             - i3_oce
 
-    choose_wiso_code:
-            True:
-                    add_namelist_changes:
-                            namelist.config:
-                                    run_config:
-                                            lwiso: "${with_wiso}"
 
     choose_with_wiso:
             True:

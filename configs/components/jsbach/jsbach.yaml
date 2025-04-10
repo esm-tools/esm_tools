@@ -19,6 +19,11 @@ jsbach:
     adj_input_dir: "${input_dir}/${echam.resolution}"
     cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
+    # TODO: Unify pools
+    pool_dir_couple: "${computer.pool_directories.pool}/AWICM/JSBACH"
+    choose_computer.name:
+        albedo:
+            pool_dir_couple: "${computer.pool_directories.pool}/JSBACH"
     pool_dir_couple: "${computer.pool_directories.pool}/AWICM/JSBACH"
     input_dir_couple: "${pool_dir_couple}/input/${dataset}"
 
@@ -349,6 +354,7 @@ jsbach:
             False:
                     ssp_num: null
                     Ndepo_sufix: ""
+                    cover_fract_cmip6: cover_fract_hist_scenario
 
     choose_echam.with_wiso:
             True:

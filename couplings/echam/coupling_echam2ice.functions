@@ -209,24 +209,43 @@ echam_ice_select_relevant_variables() {
         echo ""; echo "                *   selecting relevant variables"
 
         processed_echam6_file_list_for_ice=""
-        for file in ${echam6_file_list_for_ice}; do
-                filename=$(basename $file)
-                ${cdo} -s -f nc \
-                        -expr,"orog=geosp/9.81; aprt=aprl+aprc; temp2=temp2; tsurf=tsurf; swd=srads-sradsu; cc=aclcov; \
-                               emiss=(trads-tradsu)/(5.6703744e-8*temp2^4); \
-                               tau=((srad0d<5)? 0.5 : ((srads-sradsu)/srad0d)); TOAswd=srad0d; q2m=q2m; 
-                               uv=(u10^2+v10^2)^(1/2)" \
-                        -setcodetab,${file}.codes \
-                        -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
-                        $file \
-                        "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
-                        #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \
-                        #-setcodetab,echam \
-                        #-selcode,169,143,142,129,176,204,177,205,164 \
-
-                processed_echam6_file_list_for_ice="$processed_echam6_file_list_for_ice ${filename%.*}_for_ice.nc"
-        done
         
+        if [[ "x${oro_update_var}" == "xgeosp" ]]; then
+            for file in ${echam6_file_list_for_ice}; do
+                    filename=$(basename $file)
+                    ${cdo} -s -f nc \
+                            -expr,"orog=geosp/9.81; aprt=aprl+aprc; temp2=temp2; tsurf=tsurf; swd=srads-sradsu; cc=aclcov; \
+                                   emiss=(trads-tradsu)/(5.6703744e-8*temp2^4); \
+                                   tau=((srad0d<5)? 0.5 : ((srads-sradsu)/srad0d)); TOAswd=srad0d; q2m=q2m; 
+                                   uv=(u10^2+v10^2)^(1/2)" \
+                            -setcodetab,${file}.codes \
+                            -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
+                            $file \
+                            "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
+                            #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \
+                            #-setcodetab,echam \
+                            #-selcode,169,143,142,129,176,204,177,205,164 \
+
+                    processed_echam6_file_list_for_ice="$processed_echam6_file_list_for_ice ${filename%.*}_for_ice.nc"
+            done
+       else 
+            for file in ${echam6_file_list_for_ice}; do
+                    filename=$(basename $file)
+                    ${cdo} -s -f nc \
+                            -expr,"aprt=aprl+aprc; temp2=temp2; tsurf=tsurf; swd=srads-sradsu; cc=aclcov; \
+                                   emiss=(trads-tradsu)/(5.6703744e-8*temp2^4); \
+                                   tau=((srad0d<5)? 0.5 : ((srads-sradsu)/srad0d)); TOAswd=srad0d; q2m=q2m; 
+                                   uv=(u10^2+v10^2)^(1/2)" \
+                            -setcodetab,${file}.codes \
+                            -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
+                            $file \
+                            "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
+                            #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \
+                            #-setcodetab,echam \
+                            #-selcode,169,143,142,129,176,204,177,205,164 \
+                    processed_echam6_file_list_for_ice="$processed_echam6_file_list_for_ice ${filename%.*}_for_ice.nc"
+            done
+        fi
         unset echam6_file_list_for_ice 
 }
 
@@ -240,6 +259,16 @@ echam_ice_concatenate_files() {
 
         test -f atmosphere_file_for_ice.nc && rm atmosphere_file_for_ice.nc
         ${cdo} -s cat ${processed_echam6_file_list_for_ice} atmosphere_file_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
+        if [[ ! "x${oro_update_var}" == "xgeosp" ]]; then
+
+            latest_restart_file="${RESTART_DIR_echam}/restart_${EXP_ID}_echam_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc"
+            echo " * latest_restart_file=${latest_restart_file}"
+          
+            cdo -s chname,oromea,orog -selname,oromea ${latest_restart_file} orog_tmp
+            ncks -A -v orog orog_tmp atmosphere_file_for_ice.nc  2>> ${COUPLE_DIR}/nco_stderr_echam2ice
+            rm orog_tmp
+        fi
+        
         #rm ${processed_echam6_file_list_for_ice}
         unset processed_echam6_file_list_for_ice
 }

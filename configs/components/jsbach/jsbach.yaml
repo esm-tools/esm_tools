@@ -24,7 +24,6 @@ jsbach:
     choose_computer.name:
         albedo:
             pool_dir_couple: "${computer.pool_directories.pool}/JSBACH"
-    pool_dir_couple: "${computer.pool_directories.pool}/AWICM/JSBACH"
     input_dir_couple: "${pool_dir_couple}/input/${dataset}"
 
     dynamic_vegetations: False

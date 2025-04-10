@@ -13,6 +13,8 @@ fesom:
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
     # below) whose source code contains the icebergs implementation
     with_icb: false
+    use_icebergs: false
+    use_icesheet_coupling: false
 
     wiso_code: false
     with_wiso: false
@@ -194,7 +196,6 @@ fesom:
     outdata_targets:
             fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
-
     choose_with_icb:
             True:
                 required_plugins:
@@ -292,6 +293,7 @@ fesom:
                         scaling: "scaling"
                         felem: "felem"
                         #num_non_melted_icb_file: "num_non_melted_icb_file"
+
 
     log_files:
             clock: clock

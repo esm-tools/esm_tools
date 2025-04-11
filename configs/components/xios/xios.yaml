@@ -62,7 +62,6 @@ xios:
         contact: "swahl(at)geomar.de"
       "2.5":
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
-        archfile: ESMTOOLS_generic_oasis_intel
         choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
           cray_mpich:
             archfile: ESMTOOLS_generic_oasis_cray
@@ -101,7 +100,6 @@ xios:
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
       2.5-ece:
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
-        archfile: ESMTOOLS_generic_oasis_intel
         choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
           cray_mpich:
             archfile: ESMTOOLS_generic_oasis_cray
@@ -141,7 +139,6 @@ xios:
       # XIOS with oasis dependencies and oasis support
       "2.5-yac":
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
-        archfile: ESMTOOLS_generic_oasis_intel
         choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
           cray_mpich:
             archfile: ESMTOOLS_generic_oasisyac_cray

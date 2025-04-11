@@ -275,6 +275,7 @@ computer:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+                ECCODESROOT: $IO_LIB_ROOT
                 # flags required for ECHAM6 (and possibly other models)
                 # compilation with cmake if parastationMPI or openMPI is used
                 # contact seb-wahl for details

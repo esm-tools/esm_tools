@@ -102,21 +102,31 @@ computer:
     choose_execution_mode:
         compile:
             add_export_vars:
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
                 # OASIS
                 OIFS_OASIS_BASE: "$(pwd)/oasis"
-                OIFS_OASIS_INCLUDE: "-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"
-                OIFS_OASIS_LIB: "-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"
-                # NetCDF
-                OIFS_NETCDF_INCLUDE: "-I$NETCDFROOT/include"
-                OIFS_NETCDF_LIB: "-L$NETCDFROOT/lib -lnetcdf"
-                OIFS_NETCDFF_INCLUDE: "-I$NETCDFFROOT/include"
-                OIFS_NETCDFF_LIB: "-L$NETCDFFROOT/lib -lnetcdff"
-                # Compiler and compiler flags
-                OIFS_FC: "$FC"
-                OIFS_FFLAGS: "-r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0"
-                OIFS_FFIXED: ""
-                OIFS_FCDEFS: "BLAS LITTLE LINUX INTEGER_IS_INT"
-                OIFS_LFLAGS: "$OIFS_MPI_LIB"
-                OIFS_CC: "$CC"
-                OIFS_CFLAGS: "-fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0"
-                OIFS_CCDEFS: "LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"
+                OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu ${oasis3mct.yac_inc_path}"'
+                OIFS_OASIS_LIB: '"-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu ${oasis3mct.yac_lib_path} -lpsmile -lmct -lmpeu -lscrip ${oasis3mct.yac_libs}"'
+                # netcdf
+                OIFS_NETCDF_INCLUDE: '"-I$NETCDFROOT/include"'
+                OIFS_NETCDF_LIB: '"-L$NETCDFROOT/lib -lnetcdf"'
+                OIFS_NETCDFF_INCLUDE: '"-I$NETCDFFROOT/include"'
+                OIFS_NETCDFF_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                # compilers and compile switches
+                OIFS_FC: '$FC'
+                OIFS_FFIXED: '""'
+                OIFS_FCDEFS: '"BLAS LITTLE LINUX INTEGER_IS_INT"'
+                OIFS_MPI_LIB: '"$MPI_LIB"'
+                OIFS_CC: '$CC'
+                OIFS_CCDEFS: '"LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS _OPENMP"'
+
+            choose_computer.compiler_mpi:
+                gnu11_ompi4:
+                    add_export_vars:
+                        OIFS_FFLAGS: '"-fdefault-real-8 -march=core-avx2 -mtune=core-avx2 -O3 -fopenmp -g -fbacktrace -fconvert=big-endian"'
+                        OIFS_CFLAGS: '"-march=core-avx2 -mtune=core-avx2 -O3 -fopenmp -g -fbacktrace"'
+                intel2022_openmpi:
+                    add_export_vars:
+                        OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
+                        OIFS_CFLAGS: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
+                        OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'

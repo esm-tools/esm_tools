@@ -300,6 +300,16 @@ xios:
                             file_def: file_def
                             axis_def: axis_def
                             grid_def: grid_def
+            oifsamip:
+                    xml_dir: "${general.pool_dir}"
+                    add_config_files:
+                            context_ifs: context_ifs
+                            ifs_xml: ifs_xml
+                            domain_def: domain_def
+                            field_def: field_def
+                            file_def: file_def
+                            axis_def: axis_def
+                            grid_def: grid_def
 
 
     config_sources:

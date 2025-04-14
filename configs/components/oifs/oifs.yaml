@@ -12,7 +12,6 @@ oifs:
     type: atmosphere
     with_xios: false # TODO: Change to true when the run bug is fixed (compile bug was fixed)
     with_nest1: false
-    xml_dir: ''
 
     required_plugins:
             - "git+https://github.com/esm-tools-plugins/postprocess"

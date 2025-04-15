@@ -98,15 +98,26 @@ oifs:
                                                 ECE_AWI_CPL_FESOM: ".false."
                         # Microphysics switch: 0 for off, 1 for light version and 2 for full
                         sclct_switch: 2
+                        # Remove ICMCL_INIT forcing, which is only required for standalone simulations
+                        remove_forcing_files:
+                                - ICMCL_INIT
                 "cy48":
                         version: "48r1"
+                        append_icmcl: ""
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         add_namelist_changes:
                                 fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
                                         NAMECECFG:
                                                 ECE_CPL_NEMO_LIM: ".false."
                                                 ECE_CPL_FESOM_FESIM: ".false."
                                                 ECE_CPL_AMIP: ".true."
+                                        NAMMCC:
+                                                LNEMOLIMCUR: ".false."
+                                        NAEPHY:
+                                                LECURR: ".false."
+                                                #NALBEDOSCHEME: 3
 
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
@@ -153,9 +164,6 @@ oifs:
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: ""
 
-        # Remove ICMCL_INIT forcing, which is only required for standalone simulations
-        remove_forcing_files:
-                - ICMCL_INIT
 
 
 amip:
@@ -183,7 +191,7 @@ xios:
         xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
         regular_res_lat: 192
         regular_res_lon: 400
-        interpolation_order: 2
+        interpolation_order: 1
         compression_level: 1
 
         add_config_sources:
@@ -314,6 +322,7 @@ computer:
                 ECE_CPL_NEMO_LIM: '"false"'
                 ECE_CPL_FESOM_FESIM: '"false"'
                 ECE_AWI_CPL_FESOM: '"false"'
+            
         compile:
             choose_computer.compiler_mpi:
                 gnu11_ompi4:

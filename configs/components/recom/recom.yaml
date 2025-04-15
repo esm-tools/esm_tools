@@ -192,7 +192,7 @@ choose_scenario:
                         ask_user_to_continue: True
 
 namelist_sce: ""
-namelist_dir: "${general.model_dir}/recom/"
+namelist_dir: "${fesom.model_dir}/config/"
 
 # FESOM-2 standalone + REcoM options
 fesom2_standalone: "$((

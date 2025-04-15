@@ -1,0 +1,95 @@
+general:
+    account: "bm1030"
+    setup_name: "awiesm"
+    version: "2.6-recom"
+    compute_time: "00:30:00"
+    initial_date: "2000-01-01"
+    final_date: "2000-02-01"
+    base_dir: "/work/bm1030/a270105/awiesm-output"
+    nmonth: 1
+    nyear: 0
+    use_venv: False
+
+    with_wiso: False
+    with_icb: False
+    clean_old_rundirs_except: 2
+    clean_old_rundirs_keep_every: 20
+    description: >
+      PI_dynveg for PlioMIP3; with dynamic vegetation, without momix, with spp, no stable water isotopes; new model version by Lars; for spinup, stream definitions not yet optimized for production
+
+computer:
+    mail_type: "FAIL"
+    mail_user: "ying.ye@awi.de"
+
+awiesm:
+    model_dir: "/work/ab0995/a270105/esm_code/awiesm-2.6-recom"
+
+echam:
+    lresume: 0
+    ini_parent_exp_id: "PI_251_wiso_c"
+    #fake_initial_date: "5001-01-01"
+    #ini_parent_date:  "$(( ${fake_initial_date} - ${echam.time_step}seconds ))"
+    ini_parent_date: "50001231"
+    ini_parent_dir: "/albedo/work/projects/p_paleo_compute/stepanek/esm_tools_6_PlioMIP3_production/initial_conditions/PI_251_wiso_c_from_Yuchen/echam/"
+    restart_rate: 1
+    restart_unit: "months"
+    nproca: 24
+    nprocb: 24 
+    nprocar: 0 
+    nprocbr: 0 
+    use_transient_forcing: False
+    #    namelist_dir: ""
+
+jsbach:
+#    namelist_dir: "/albedo/work/projects/p_paleo_compute/stepanek/esm_tools_6_PlioMIP3_production/namelists/namelist_spinup/jsbach/"
+    input_sources:
+        jsbach_1850: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+
+fesom:
+    res: "CORE2"
+    nproc: 1536
+    mesh_dir: "/home/a/a270105/fesom_meshes/mesh_core2"
+    namelist_dir: "/work/ab0995/a270105/esm_code/awiesm-2.6-recom/fesom-2.6/config/bin_2p1z1d/"
+    lresume: 0
+    ini_parent_exp_id: "PI_251_wiso_c"
+    ini_parent_date: "5000-12-31"
+    ini_parent_dir: "/albedo/work/projects/p_paleo_compute/stepanek/esm_tools_6_PlioMIP3_production/initial_conditions/PI_251_wiso_c_from_Yuchen/fesom/"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    steps_per_day: 48
+    namelist_changes:
+        namelist.io:
+            diag_list: 
+                ldiag_Ri: remove_from_namelist
+                ldiag_turbflux: remove_from_namelist
+        namelist.tra:
+            tracer_phys: 
+                use_momix: false
+        namelist.oce:
+            oce_dyn: 
+                spp: true
+        namelist.config:
+            paths:
+                ClimateDataPath: "/home/a/a270105/initial_files/pi_init/"
+
+recom:
+#    scenario: ""
+    lresume: 0
+    ini_parent_exp_id: "pi_ciso_mpi"
+    ini_parent_date: "39001231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/pi_ciso_mpi/restart/recom/"
+    use_ciso: false
+    data_path: "/home/a/a270105/initial_files/pi_init/dust_coremesh/"
+    CO2_for_spinup: 284.3 
+    namelist_dir: "/work/ab0995/a270105/esm_code/awiesm-2.6-recom/fesom-2.6/config/bin_2p1z1d/"
+    namelist_changes:
+        namelist.recom:
+            pavariables:
+                use_atbox: false
+
+oasis3mct:
+    lresume: 0
+    ini_parent_exp_id: "PI_251_wiso_c"
+    ini_parent_date: "50001231"
+    ini_parent_dir: "/albedo/work/projects/p_paleo_compute/stepanek/esm_tools_6_PlioMIP3_production/initial_conditions/PI_251_wiso_c_from_Yuchen/oasis3mct/"

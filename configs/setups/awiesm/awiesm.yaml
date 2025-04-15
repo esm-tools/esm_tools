@@ -282,13 +282,11 @@ echam:
         # -----------------
         # Settings for running with REcoM
         choose_general.with_recom:
-                True:
-                    wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed # YY: it is only needed for awiesm-2.1-recom. Is the merge already done?
+            True:
+                wiso_fields: [o18_atmo, hdo_atmo, o16_atmo, w1_atm, w2_atm, w3_atm, i1_atm, i2_atm, i3_atm] # MA: after merging in FESOM by Martin B. this can be removed # YY: it is only needed for awiesm-2.1-recom. Is the merge already done?
                 add_coupling_fields:
                     "[[wiso_fields-->FIELD]]":
                         grid: atmo
-
-
 
 
 
@@ -344,7 +342,7 @@ fesom:
                 "2.6-recom":
                         version: "2.6-recom"
                         ALE_scheme: 'zstar'
-                        namelist_dir: ${fesom.model_dir}/config/
+                        namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d
                         add_namelist_changes:
                                 namelist.tra:
                                         tracer_phys:
@@ -502,7 +500,7 @@ recom:
                         remove_namelist_changes.namelist.recom.paco2_flux_param:
                             - CO2_for_spinup
 
-                        namelist_dir: ${fesom.model_dir}/config/
+                        namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d/
 
                 "*":
                         not_used: ""

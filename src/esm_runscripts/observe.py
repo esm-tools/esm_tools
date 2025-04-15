@@ -153,16 +153,25 @@ def assemble_error_list(config):
                         set_config_value = config[model]["check_error"][trigger][
                             "set_config_value"
                         ]
-                        dpath.util.set(
-                            config, set_config_key, set_config_value, separator="."
-                        )
+                    else:
+                        set_config_key = None
+                        set_config_value = None
 
                 elif isinstance(config[model]["check_error"][trigger], str):
                     pass
                 else:
                     continue
                 error_list.append(
-                    (trigger, search_file, method, frequency, frequency, message)
+                    (
+                        trigger,
+                        search_file,
+                        method,
+                        frequency,
+                        frequency,
+                        message,
+                        set_config_key,
+                        set_config_value,
+                    )
                 )
     config["general"]["error_list"] = error_list
     return config
@@ -185,6 +194,8 @@ def check_for_errors(config):
         next_check,
         frequency,
         message,
+        set_config_key,
+        set_config_value,
     ) in error_check_list:
         warned = 0
         if next_check <= time:
@@ -195,8 +206,31 @@ def check_for_errors(config):
                             if method == "warn":
                                 warned = 1
                                 monitor_file.write("WARNING: " + message + "\n")
+                                if (
+                                    set_config_key is not None
+                                    and set_config_value is not None
+                                ):
+                                    dpath.util.set(
+                                        config,
+                                        set_config_key,
+                                        set_config_value,
+                                        separator=".",
+                                    )
+                                    logger.info(
+                                        f"Set {set_config_key}={set_config_value} in check_for_errors"
+                                    )
                                 break
                             elif method == "kill":
+                                if (
+                                    set_config_key is not None
+                                    and set_config_value is not None
+                                ):
+                                    dpath.util.set(
+                                        config,
+                                        set_config_key,
+                                        set_config_value,
+                                        separator=".",
+                                    )
                                 cancel_job = f"scancel {config['general']['jobid']}"
                                 monitor_file.write("ERROR: " + message + "\n")
                                 monitor_file.write("Will kill the run now..." + "\n")
@@ -209,7 +243,16 @@ def check_for_errors(config):
             next_check += frequency
         if warned == 0:
             new_list.append(
-                (trigger, search_file, method, next_check, frequency, message)
+                (
+                    trigger,
+                    search_file,
+                    method,
+                    next_check,
+                    frequency,
+                    message,
+                    set_config_key,
+                    set_config_value,
+                )
             )
     config["general"]["error_list"] = new_list
     return config

@@ -2,8 +2,8 @@ import os
 import sys
 import time
 
+import dpath.util
 import psutil
-
 from loguru import logger
 
 from . import database_actions, helpers, logfiles
@@ -143,6 +143,20 @@ def assemble_error_list(config):
                             frequency = int(frequency)
                         except:
                             frequency = 60
+                    if (
+                        "set_config_key" in config[model]["check_error"][trigger]
+                        and "set_config_value" in config[model]["check_error"][trigger]
+                    ):
+                        set_config_key = config[model]["check_error"][trigger][
+                            "set_config_key"
+                        ]
+                        set_config_value = config[model]["check_error"][trigger][
+                            "set_config_value"
+                        ]
+                        dpath.util.set(
+                            config, set_config_key, set_config_value, separator="."
+                        )
+
                 elif isinstance(config[model]["check_error"][trigger], str):
                     pass
                 else:

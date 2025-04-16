@@ -16,7 +16,7 @@ from io import StringIO
 
 from esm_parser.provenance import Provenance, DictWithProvenance, ListWithProvenance
 from esm_environment import EnvironmentInfos
-
+from utils import Capturing
 
 SIMPLE_EXP_VARS = """
 merge_component_envs:
@@ -188,20 +188,6 @@ MODULE_ACTIONS_WITH_USER_SPEC_OBJ = FakeEnv(
 DEPRECATED_CONFIG_OBJ = FakeEnv(DEPRECATED_CONFIG, "compile", "awiesm")
 
 
-class Capturing(list):
-    """Taken from https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call"""
-
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
-        return self
-
-    def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio  # free up some memory
-        sys.stdout = self._stdout
-
-
 class TestEnvironment(unittest.TestCase):
     """Tests for ``esm_environment``"""
 
@@ -310,7 +296,7 @@ class TestEnvironment(unittest.TestCase):
             "load python/3.8.5",
         ]
 
-    def tests_component_specific_environment_for_run_not_supported(self):
+    def test_component_specific_environment_for_run_not_supported(self):
         """Test to check the component-specific environment for run not supported"""
         env = deepcopy(SIMPLE_EXP_VARS_OBJ)
         env.execution_mode = "run"
@@ -328,7 +314,7 @@ class TestEnvironment(unittest.TestCase):
 
     # TODO: Sorting testing
 
-    def tests_report_deprecated_environment_changes(self):
+    def test_report_deprecated_environment_changes(self):
         """Test to check the reporting of deprecated environment changes"""
         with Capturing() as output:
             try:

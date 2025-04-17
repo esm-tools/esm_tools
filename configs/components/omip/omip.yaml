@@ -80,7 +80,7 @@ namelist_changes:
                         RunLengthSec: "${runtime_seconds}"
                         TimeStepSec: "3600"
                         FixYear: "0"
-                        StartYear: "1950"
+                        StartYear: "${current_date!syear}"
                         FileListrunoff: ${input_in_work.runoff_forcing}
                         FileListcalving: ${input_in_work.discharge_forcing}
 

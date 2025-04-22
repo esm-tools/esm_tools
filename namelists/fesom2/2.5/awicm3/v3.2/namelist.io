@@ -47,4 +47,6 @@ io_list =  'ssh       ',1, 'm', 4,
            'iceoce_y  ',1, 'm', 4,
            'strength_ice ',1, 'm', 4,
            'thdgr     ',1, 'm', 4,
+           'uwind     ',1, 'm', 4,
+           'vwind     ',1, 'm', 4,
 /

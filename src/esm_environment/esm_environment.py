@@ -31,25 +31,25 @@ class EnvironmentInfos:
 
     By instancing the ``EnvironmentInfos`` class, the environment information for
     the specified model or coupled setup is compiled and stored in
-    ``self.commands``. If there are environment variables inside the ``general``
-    section, ``__init__`` will ignore the environment variables from the standalone
-    component files, and it will define the ``general.environment_changes`` for
-    each component of the setup.
-
-    Parameters
-    ----------
-    execution_mode : str
-        A string indicating whether ``EnvironmentInfos`` was instanced from a
-        compilation operation (``compile``) or a run (``run``).
-    config : dict
-        Dictionary containing all the compiled information from the `yaml` files
-        needed for the current `ESM-Tools` operation.
-    model : string
-        Model for which the environment is required. If not defined, this method
-        will loop through all the available keys in ``config``.
+    ``self.commands``.
     """
 
     def __init__(self, config, execution_mode, model=None):
+        """
+        Initializes the environment object and default attributes.
+
+        Parameters
+        ----------
+        config : dict
+            Dictionary containing all the compiled information from the `yaml` files
+            needed for the current `ESM-Tools` operation.
+        execution_mode : str
+            A string indicating whether ``EnvironmentInfos`` was instanced from a
+            compilation operation (``compile``) or a run (``run``).
+        model : str, optional
+            Model for which the environment is required. If not defined, this method
+            will loop through all the available keys in ``config``.
+        """
         # Ensure local copy of config to avoid mutating it... (facepalm)
         self.config = copy.deepcopy(config)
         self.execution_mode = execution_mode
@@ -60,24 +60,7 @@ class EnvironmentInfos:
             logger.error("No computer dictionary found in config")
             raise ValueError("No computer dictionary found in config")
 
-        # The lines below should not be needed anymore as we always expect to have a computer
-        # section in the config
-        # if config and "computer" in config:
-        #    self.computer = config["computer"]
-        # else:
-        #    self.machine_file = esm_parser.determine_computer_yaml_from_hostname()
-        #    self.computer = esm_parser.yaml_file_to_dict(self.machine_file)
-        #    esm_parser.basic_choose_blocks(self.computer, self.computer)
-        #    esm_parser.recursive_run_function(
-        #        [],
-        #        self.computer,
-        #        "atomic",
-        #        esm_parser.find_variable,
-        #        self.computer,
-        #        [],
-        #        True,
-        #    )
-        # TODO move to defaults yaml when that is merged:
+        # TODO: add thhis to defaults yaml when that is merged
         self.computer["merge_component_envs"] = {
             "compile": self.computer.get("merge_component_envs", {}).get(
                 "compile", False
@@ -86,6 +69,7 @@ class EnvironmentInfos:
         }
         self.computer["include_env_from_component_files"] = True
 
+        # Check for deprecated environment commands
         self.report_deprecated_environment_changes(self.config)
 
         # Add the ENVIRONMENT_SET_BY_ESMTOOLS into the exports
@@ -108,7 +92,25 @@ class EnvironmentInfos:
     def report_deprecated_environment_changes(
         self, mapping={}, deprecation_list=[], is_recursion=False
     ):
-        """ """
+        """
+        Report deprecated environment changes in the configuration (e.g.
+        ``environment_changes``, ``compiletime_environment_changes``,
+        ``runtime_environment_changes``).
+
+        Parameters
+        ----------
+        mapping : dict or list
+            The mapping to check for deprecated keys.
+        deprecation_list : list
+            A list to store deprecated keys.
+        is_recursion : bool
+            A flag to indicate if the function is being called recursively.
+
+        Raises
+        ------
+        esm_tools.user_error
+            If deprecated keys are found, an error is raised with hints.
+        """
         env_changes_keys = [
             "environment_changes",
             "compiletime_environment_changes",
@@ -127,6 +129,8 @@ class EnvironmentInfos:
                     mapping=item, deprecation_list=deprecation_list, is_recursion=True
                 )
 
+        # After recursion, check if any deprecated keys were found and report them
+        # with an error
         if not is_recursion and len(deprecation_list) > 0:
             hints = []
             for item in deprecation_list:
@@ -151,32 +155,13 @@ class EnvironmentInfos:
                 hints=hints,
             )
 
-    def replace_model_dir(self, model_dir):
-        """
-        Replaces any instances of ${model_dir} in the computer section
-        "export_vars" with the argument
-
-        Parameters
-        ----------
-        model_dir : str
-            The replacement string for ${model_dir}
-        """
-        for entry in ["export_vars"]:
-            if entry in self.computer:
-                newlist = []
-                for line in self.computer[entry]:
-                    newline = line.replace("${model_dir}", model_dir)
-                    newlist.append(newline)
-                self.computer[entry] = newlist
-
     def get_shell_commands(self):
         """
-        Gathers module actions and export variables from the computer to a list,
+        Gathers module actions and export variables from the computer into a list,
         prepending appropriate shell command words (e.g. module and export).
 
-        If the ``export_vars`` dictionary contains variables with repetition
-        indexes (``[(int)]``) or ``[(list)]``, those are removed before returning the
-        command list.
+        If the ``export_vars`` dictionary contains variables with indexes (``[(int)]``)
+        or ``[(list)]``, those are removed before returning the command list.
 
         Returns
         -------
@@ -188,6 +173,7 @@ class EnvironmentInfos:
         environment = []
         # Fix for seb-wahl's hack via source
         if self.computer.get("general_actions") is not None:
+            self.process_env_vars("general_actions")
             for action in self.computer["general_actions"]:
                 environment.append(action)
         # Write module actions
@@ -202,6 +188,7 @@ class EnvironmentInfos:
                     environment.append(f"module {action}")
         # Write Spack actions
         if self.computer.get("spack_actions") is not None:
+            self.process_env_vars("spack_actions")
             for action in self.computer["spack_actions"]:
                 environment.append(f"spack {action}")
         # Add an empty string as a newline:
@@ -251,6 +238,27 @@ class EnvironmentInfos:
         return environment
 
     def process_env_vars(self, env_var_key):
+        """
+        Processes the environment variables for the given key ``env_var_key`` in the
+        ``self.computer`` dictionary. This function handles:
+        - selecting environment variables based on their attributes (if any)
+        - removing environment variables from component files if specified
+        - selecting environment variables based on their provenance
+        - sorting the environment variables based on their original order in the
+          configuration files
+
+        Parameters
+        ----------
+        env_var_key : str
+            The name of the set of environment variables to process (e.g.
+            ``module_actions``, ``export_vars``, ``unset_vars``).
+
+        Mutates
+        -------
+        self.computer : dict
+            The EnvironmentInfo ``computer`` dictionary is modified specifically for
+            ``env_var_key``, with the selected and sorted environment variables.
+        """
         self.select_env_vars_based_on_var_attributes(env_var_key)
         self.remove_env_vars_from_component_files(env_var_key)
         self.select_env_vars_based_on_provenance(env_var_key)
@@ -259,6 +267,19 @@ class EnvironmentInfos:
     def _filter_env_vars(self, env_vars, condition_fn):
         """
         Helper function to filter environment variables based on a condition.
+
+        Parameters
+        ----------
+        env_vars : dict or list
+            The environment variables to filter.
+        condition_fn : function
+            A function that takes a value and returns True if the value should be
+            included in the filtered result.
+
+        Returns
+        -------
+        filtered_env_vars : dict or list
+            The filtered environment variables.
         """
         if isinstance(env_vars, dict):
             filtered_env_vars = esm_parser.DictWithProvenance({}, None)
@@ -276,6 +297,38 @@ class EnvironmentInfos:
         return filtered_env_vars
 
     def _flatten_values_with_attrs(self, env_vars):
+        """
+        Helper function to flatten environment variables with attributes. Loops through
+        the given ``env_vars`` dictionary (``export_vars``, ``module_actions``, or
+        ``unset_vars``) and flattens the values of their nested dictionaries and lists
+        recursively, if those values are dictionaries containing the ``_value`` key.
+
+        For example:
+
+        .. code-block::python3
+
+           export_vars = {
+               "OIFS_OASIS_BASE": {"_value": "/a/path"},
+           }
+
+        would be flattened to:
+
+        .. code-block::python3
+
+           export_vars = {
+               "OIFS_OASIS_BASE": "/a/path",
+           }
+
+        Parameters
+        ----------
+        env_vars : dict or list
+            The environment variables to flatten.
+
+        Returns
+        -------
+        new_env_vars : dict or list
+            The flattened environment variables.
+        """
         if isinstance(env_vars, dict):
             new_env_vars = esm_parser.DictWithProvenance({}, None)
             for key, value in env_vars.items():
@@ -296,6 +349,48 @@ class EnvironmentInfos:
         return new_env_vars
 
     def select_env_vars_based_on_var_attributes(self, env_var_key):
+        """
+        Selects environment variables based on their attributes (if any) and the
+        current execution mode and model. The attributes are not truly class attributes,
+        but rather keys in the environment variable dictionaries that are defined in the
+        config yaml files, for example as:
+
+        .. code-block::yaml
+
+            export_vars:
+                OIFS_OASIS_BASE:
+                    _value: /a/path
+                    _execution_mode: compile
+                    _component: oifs
+
+        Each environment variable can have the following keys (attributes):
+        - ``_value``: The value of the environment variable once flattened
+        - ``_execution_mode``: The execution mode for which the variable will take
+          the value defined in ``_value``. If not defined, the variable will take
+          the value defined in ``_value`` for all execution modes.
+        - ``_component``: The component for which the variable will take the value
+          defined in ``_value``. If not defined, the variable will take the value
+          defined in ``_value`` for all components.
+        - ``_old_value``: The value of the environment variable before it was
+          overwritten with a env_var with attributes. This is set by
+          ``esm_parser.dict_merge`` if a given dictionary is been merged with another
+          and has an ``_old_value`` key.
+
+        If the ``_component`` and/or ``_execution_mode`` keys are not matched to the
+        current model and execution mode, the variable will take the value defined in
+        ``_old_value`` (if it exists) instead of the value defined in ``_value``.
+
+        Parameters
+        ----------
+        env_var_key : str
+            The environment variable to be filtered (e.g. ``export_vars``).
+
+        Mutates
+        -------
+        self.computer : dict
+            The EnvironmentInfo ``computer`` dictionary is modified specifically for
+            ``env_var_key``, with the selected environment variables.
+        """
         env_vars = self.computer[env_var_key]
         model, execution_mode = self.model, self.execution_mode
 
@@ -321,13 +416,29 @@ class EnvironmentInfos:
         self.computer[env_var_key] = self._flatten_values_with_attrs(env_vars)
 
     def select_env_vars_based_on_provenance(self, env_var_key):
+        """
+        If ``merge_component_envs`` is set to ``False``, filters out environment
+        variables that do not match the current model using the provenance information.
+
+        Parameters
+        ----------
+        env_var_key : str
+            The environment variable to be filtered (e.g. ``export_vars``).
+
+        Mutates
+        -------
+        self.computer : dict
+            The EnvironmentInfo ``computer`` dictionary is modified specifically for
+            ``env_var_key``, with the selected environment variables.
+        """
         if self.execution_mode == "run" and not self.computer[
             "merge_component_envs"
         ].get("run", True):
-            print(
-                "Selection of component-specific environment during run is not supported yet."
+            user_error(
+                "Not supported",
+                "Selection of component-specific environment during run is not "
+                "supported yet.",
             )
-            raise SystemExit(1)
 
         env_vars = self.computer[env_var_key]
         model = self.model
@@ -353,6 +464,22 @@ class EnvironmentInfos:
         self.computer[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
 
     def remove_env_vars_from_component_files(self, env_var_key):
+        """
+        If ``include_env_from_component_files`` is set to ``False``, filters out
+        environment variables defined in files in the ``config/components`` directory
+        that do not match the current component, using the provenance information.
+
+        Parameters
+        ----------
+        env_var_key : str
+            The environment variable to be filtered (e.g. ``export_vars``).
+
+        Mutates
+        -------
+        self.computer : dict
+            The EnvironmentInfo ``computer`` dictionary is modified specifically for
+            ``env_var_key``, with the selected environment variables.
+        """
         include_component_env_from_computer = self.computer.get(
             "include_env_from_component_files", True
         )

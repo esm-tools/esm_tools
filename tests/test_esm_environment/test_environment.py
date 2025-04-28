@@ -159,11 +159,11 @@ def config_gen(computer, config=COMPLETE_CONFIG):
 
 
 class FakeEnv(object):
-    def __init__(self, config, execution_mode, model):
+    def __init__(self, config, execution_mode, component):
         self.config = config
         self.computer = config["computer"]
         self.execution_mode = execution_mode
-        self.model = model
+        self.component = component
 
 
 FakeEnv._filter_env_vars = EnvironmentInfos._filter_env_vars

@@ -27,14 +27,14 @@ class EnvironmentInfos:
     system needs to be included inside the ``esm_tools`` package inside the
     ``configs/machines/`` folder (e.g. ``ollie.yaml``). This file should contain all
     the required preset variables for that system and the environment variables
-    ``module_actions`` and ``export_vars``.
+    ``module_actions``, ``export_vars`` and ``unset_vars``.
 
     By instancing the ``EnvironmentInfos`` class, the environment information for
-    the specified model or coupled setup is compiled and stored in
+    the specified component or coupled setup is compiled and stored in
     ``self.commands``.
     """
 
-    def __init__(self, config, execution_mode, model=None):
+    def __init__(self, config, execution_mode, component=None):
         """
         Initializes the environment object and default attributes.
 
@@ -45,22 +45,21 @@ class EnvironmentInfos:
             needed for the current `ESM-Tools` operation.
         execution_mode : str
             A string indicating whether ``EnvironmentInfos`` was instanced from a
-            compilation operation (``compile``) or a run (``run``).
-        model : str, optional
-            Model for which the environment is required. If not defined, this method
-            will loop through all the available keys in ``config``.
+            compilation operation (``compile``) or a run operarion (``run``).
+        component : str, optional
+            Component for which the environment is required.
         """
         # Ensure local copy of config to avoid mutating it... (facepalm)
         self.config = copy.deepcopy(config)
         self.execution_mode = execution_mode
-        self.model = model
-        # Load computer dictionary or initialize it from the correct machine file
+        self.component = component
+        # Load computer dictionary
         self.computer = self.config.get("computer", {})
         if not self.computer:
             logger.error("No computer dictionary found in config")
             raise ValueError("No computer dictionary found in config")
 
-        # TODO: add thhis to defaults yaml when that is merged
+        # [TODO] add this to defaults yaml when that is merged
         self.computer["merge_component_envs"] = {
             "compile": self.computer.get("merge_component_envs", {}).get(
                 "compile", False
@@ -102,7 +101,7 @@ class EnvironmentInfos:
         mapping : dict or list
             The mapping to check for deprecated keys.
         deprecation_list : list
-            A list to store deprecated keys.
+            A list to store deprecated keys through recursions.
         is_recursion : bool
             A flag to indicate if the function is being called recursively.
 
@@ -243,7 +242,8 @@ class EnvironmentInfos:
         ``self.computer`` dictionary. This function handles:
         - selecting environment variables based on their attributes (if any)
         - removing environment variables from component files if specified
-        - selecting environment variables based on their provenance
+        - selecting environment variables based on their provenance of the files
+          (if required by the user)
         - sorting the environment variables based on their original order in the
           configuration files
 
@@ -273,7 +273,7 @@ class EnvironmentInfos:
         env_vars : dict or list
             The environment variables to filter.
         condition_fn : function
-            A function that takes a value and returns True if the value should be
+            A function that takes a value and returns ``True`` if the value should be
             included in the filtered result.
 
         Returns
@@ -351,7 +351,7 @@ class EnvironmentInfos:
     def select_env_vars_based_on_var_attributes(self, env_var_key):
         """
         Selects environment variables based on their attributes (if any) and the
-        current execution mode and model. The attributes are not truly class attributes,
+        current execution mode and component. The attributes are not truly class attributes,
         but rather keys in the environment variable dictionaries that are defined in the
         config yaml files, for example as:
 
@@ -377,7 +377,7 @@ class EnvironmentInfos:
           and has an ``_old_value`` key.
 
         If the ``_component`` and/or ``_execution_mode`` keys are not matched to the
-        current model and execution mode, the variable will take the value defined in
+        current component and execution mode, the variable will take the value defined in
         ``_old_value`` (if it exists) instead of the value defined in ``_value``.
 
         Parameters
@@ -392,13 +392,13 @@ class EnvironmentInfos:
             ``env_var_key``, with the selected environment variables.
         """
         env_vars = self.computer[env_var_key]
-        model, execution_mode = self.model, self.execution_mode
+        component, execution_mode = self.component, self.execution_mode
 
         def condition_fn(value):
             if isinstance(value, dict) and "_value" in value:
                 if (
                     value.get("_execution_mode", execution_mode) == execution_mode
-                    and value.get("_component", model) == model
+                    and value.get("_component", component) == component
                 ):
                     return True
                 elif "_old_value" in value:
@@ -418,7 +418,7 @@ class EnvironmentInfos:
     def select_env_vars_based_on_provenance(self, env_var_key):
         """
         If ``merge_component_envs`` is set to ``False``, filters out environment
-        variables that do not match the current model using the provenance information.
+        variables that do not match the current component using the provenance information.
 
         Parameters
         ----------
@@ -441,7 +441,7 @@ class EnvironmentInfos:
             )
 
         env_vars = self.computer[env_var_key]
-        model = self.model
+        component = self.component
         merge_component_envs = self.computer["merge_component_envs"][
             self.execution_mode
         ]
@@ -458,7 +458,7 @@ class EnvironmentInfos:
             return (
                 provenance is None
                 or provenance["category"] != "components"
-                or provenance["subcategory"] == model
+                or provenance["subcategory"] == component
             )
 
         self.computer[env_var_key] = self._filter_env_vars(env_vars, condition_fn)
@@ -643,14 +643,14 @@ class EnvironmentInfos:
 
 def turn_export_vars_into_dict(config):
     """
-    Turns the given ``entry`` in ``modelconfig`` (normally ``add_export_vars``) into
+    Turns the given ``entry`` in ``componentconfig`` (normally ``add_export_vars``) into
     a dictionary, if it is not a dictionary yet. This function is necessary for
     retro-compatibility of configuration files having ``add_export_vars`` defined as
     list of strings, instead of as dictionaries.
 
     Parameters
     ----------
-    modelconfig : dict
+    componentconfig : dict
         Information compiled from the `yaml` files for this specific component.
     entry : str
         The environment variable (originally developed for ``add_export_vars``) to
@@ -716,7 +716,7 @@ def env_list_to_dict(export_dict, key):
     newly transformed dictionary, for example:
 
     .. code-block::yaml
-       your_model:
+       your_component:
            environment_changes:
                add_export_vars:
                    - 'SOMETHING=dummy'

@@ -476,6 +476,10 @@ class DictWithProvenance(dict):
         ----------
         provenance : any
             New `provenance value` to be set
+        update_method : str, optional
+            Method to use when updating provenance of existing values. Can be either
+            ``extend`` to append the new provenance to the existing one, or ``update``
+            to update the last provenance entry with new values. Default is ``extend``.
         """
         if not isinstance(provenance, list):
             provenance = [provenance]
@@ -811,6 +815,10 @@ class ListWithProvenance(list):
         ----------
         provenance : any
             New `provenance value` to be set
+        update_method : str, optional
+            Method to use when updating provenance of existing values. Can be either
+            ``extend`` to append the new provenance to the existing one, or ``update``
+            to update the last provenance entry with new values. Default is ``extend``.
         """
         if not isinstance(provenance, list):
             provenance = [provenance]

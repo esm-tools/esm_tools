@@ -1,5 +1,5 @@
 #######################################################################################
-# The dummy yaml machine config file for esm-tools
+# The dummy yaml machine config file for ESM-Tools
 #
 # This is a dummy machine file. It is intend to be used for creating a new config file
 # for a new machine setup. It provides a minimal structure to be filled in with
@@ -7,7 +7,7 @@
 #
 # Usage:
 #     - Please replace the placeholder indicated by <...>
-#       with your PHC specific values
+#       with your HPC specific values
 #     - Please uncomment sections of this yaml file if appropriate.
 #       Possible sections are indicating this (see below).
 #     - See also files for other machines that are already implemented in esm-tools.

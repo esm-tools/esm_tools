@@ -528,7 +528,8 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     Updates the dictionary on ``config`` with values from any file found under
     a listing specified by ``attach_key``.
 
-    Note: Only used currently for the ``further_reading``.
+    Note: Only used currently for the ``further_reading`` key. This function looks for yaml
+    files referenced in the ``attach_key`` field and merges their contents into the config.
 
     Parameters
     ----------

@@ -756,6 +756,16 @@ class EsmToolsLoader(ruamel.yaml.YAML):
     def set_file_subcategory(self):
         """
         Sets the subcategory of the yaml file (e.g. ``awicm3``, ``fesom``, ``levante``).
+
+        This method determines the subcategory by examining the file path structure.
+        For example, if a file is located in configs/components/fesom/fesom.yaml,
+        the subcategory would be 'fesom'. The subcategory information is stored
+        in the provenance data and is used for tracking the source of configuration
+        values and for determining precedence in conflict resolution.
+
+        The subcategory is determined by finding which subdirectory of the category
+        directory contains the current file. If no matching subcategory is found,
+        subcategory will be set to None.
         """
         category_path = pathlib.Path(f"{CONFIG_PATH}/{self.category}")
         subcategory = None
@@ -763,7 +773,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         if category_path.exists() and category_path.is_dir():
             subcategories = os.listdir(category_path)
         else:
-            logger.info(f"Category path {category_path} does not exist or is not a directory")
+            logger.debug(f"Category path {category_path} does not exist or is not a directory")
         for subcategory in subcategories:
             path_to_subcategory_folder = pathlib.Path(f"{category_path}/{subcategory}")
             if path_to_subcategory_folder in self.filename.parents:

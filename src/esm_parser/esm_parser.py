@@ -1452,7 +1452,44 @@ def find_one_independent_choose(all_set_variables):
 
 
 def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}):
+    """
+    Resolves the ``choose_`` block with key ``choose_key`` in the configuration
+    ``config_to_replace_in`` using the information in the ``config``. The switch
+    variable can be a string, a number or a boolean. In case it is a string,
+    variable calls (e.g. ``"${var}"``) and mathematical expressions (e.g.
+    ``"$((1+2))"``) are resolved. It also handles complicated cases where booleans
+    and 0/1 are used as switches and/or cases.
+
+    Parameters
+    ----------
+    config : dict
+        The full configuration to use for resolving the ``choose_`` block.
+    config_to_replace_in : dict
+        The configuration for which the choose block should be resolved in.
+    choose_key : str
+        The key of the ``choose_`` block to resolve. The key should be a string
+        starting with ``"choose_"`` where nested keys are separated by ``"."``.
+        The value of the key that is used for resolving the choose can contain
+        variables (e.g. ``"${var}"``) and mathematical expressions (e.g.
+        ``"$((1+2))"``).
+    blackdict : dict
+        A dictionary of keys to ignore when resolving the choose block.
+
+    Mutates
+    -------
+    config_to_replace_in : dict
+        The configuration is mutated to include the resolved ``choose_`` block.
+
+    Raises
+    ------
+    KeyError
+        If the ``choose_key`` is not defined in the configuration.
+    ValueError
+        If the choice is not found in the configuration.
+    """
     path_to_key = choose_key.replace("choose_", "").split(".")
+
+    # Extract the value of the choice
     try:
         choice = recursive_get(config, path_to_key)
     except ValueError:
@@ -1461,6 +1498,8 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         else:
             del config_to_replace_in[choose_key]
             return
+
+    # If the choice is a string and contains a variable, try to resolve it
     if isinstance(choice, str) and "${" in choice:
         try:
             choice = find_variable(
@@ -1473,12 +1512,13 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             # del config_to_replace_in[choose_key]
             gray_list.append(re.compile(choose_key))
             return
+
     # Evaluates the mathematical expressions in the choose_ blocks
     if isinstance(choice, str) and "$((" in choice:
         choice = do_math_in_entry([False], choice, config)
     logging.debug(choice)
 
-    # This allows users to use version numbers (floats) and integers as choices inside
+    # Allows users to use version numbers (floats) and integers as choices inside
     # the choose_blocks, instead of having to specify the choices as strings
     if isinstance(choice, (int, float)) and not isinstance(choice, bool):
         choice = str(choice)
@@ -1534,15 +1574,31 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         for update_key, update_value in config_to_replace_in[choose_key]["*"].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
     else:
-        # Those two are too noisy
-        # logging.warning("Choice %s could not be resolved", choice)
-        # logging.warning("Key was key=%s", choose_key)
-        pass
+        logging.debug("Choice %s could not be resolved", choice)
+        logging.debug("Key was key=%s", choose_key)
 
     del config_to_replace_in[choose_key]
 
 
 def add_from_choose_info_to_provenance(entries, choose_key, choice):
+    """
+    Add the ``choose_key`` and ``choice`` to the provenance information of a set of
+    ``choose_`` block ``entries``.
+
+    Parameters
+    ----------
+    entries : esm_parser.DictWithProvenance
+        The entries to which the provenance information should be added.
+    choose_key : str
+        The path to the variable that the ``choose_<path.to.var>`` block evaluates.
+    choice : str
+        The value of the variable that is evaluated.
+
+    Mutates
+    -------
+    entries : esm_parser.DictWithProvenance
+        The entries are mutated to include the provenance information.
+    """
     if isinstance(entries, DictWithProvenance):
         if hasattr(choose_key, "value"):
             choose_key_for_prov = choose_key.value

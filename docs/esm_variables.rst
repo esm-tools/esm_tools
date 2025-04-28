@@ -38,26 +38,27 @@ The following keys should/can be provided inside configuration files for models
 (``<PATH>/esm_tools/configs/setups/<name>/<name>.yaml``) and runscripts. You can find
 runscript templates in ``esm_tools/runscripts/templates/``).
 
-Installation variables
+Compile time variables
 ----------------------
 
 .. csv-table::
    :header: Key, Description
    :widths: 15, 85
 
-   model,                   "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
-   setup_name,              Name of the coupled setup.
-   version,                 "Version of the model/setup (one of the available options in the ``available_versions`` list)."
-   available_versions,      List of supported versions of the component or coupled setup.
-   git-repository,          Address of the model's git repository.
-   branch,                  Branch from where to clone.
-   destination,             "Name of the folder where the model is downloaded and compiled, in a coupled setup."
-   comp_command,            Command used to compile the component.
-   install_bins,            "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
-   source_code_permissions, "Sets the file permisions for the source code using `chmod <source_code_permissions> -R <source_code_folder>."
+   execution_mode,     general,             "Takes the value ``compile`` during compile time. Can be used in ``choose_`` blocks with ``choose_general.execution_mode``."
+   model,              general,             "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
+   setup_name,         general,             Name of the coupled setup.
+   version,            general,             "Version of the model/setup (one of the available options in the ``available_versions`` list)."
+   available_versions, <component>,         List of supported versions of the component or coupled setup.
+   git-repository,     <component>,         Address of the model's git repository.
+   branch,             <component>,         Branch from where to clone.
+   destination,        <component>,         "Name of the folder where the model is downloaded and compiled, in a coupled setup."
+   comp_command,       <component>,         Command used to compile the component.
+   install_bins,       <component>,         "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
+   source_code_permissions,     <component>,    "Sets the file permisions for the source code using `chmod <source_code_permissions> -R <source_code_folder>."
 
-Runtime variables
------------------
+Runi time variables
+-------------------
 .. csv-table::
    :header: Key, Section, Description
    :widths: 10, 10, 80
@@ -68,6 +69,7 @@ Runtime variables
    create_folders,      <component>,            "List of absolute paths of the folders to be created. See :ref:`yaml:Create empty folders`."
    executable,          <component>,            "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
    execution_command,   <component>,            "Command for executing the component, including ``${executable}`` and the necessary flags."
+   execution_mode,      general,                "Takes the value ``run`` during run time. Can be used in ``choose_`` blocks with ``choose_general.execution_mode``."
    expid,               general,                "ID of the experiment. This variable can also be defined when calling ``esm_runscripts`` with the ``-e`` flag."
    ":ref:`yaml:File Dictionaries`",     <component>,    "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files (see :ref:`yaml:File Dictionaries`)."
    force_overwrite_in_file_movements, general   "A boolean to indicate whether the file movements should overwrite existing files or not. If ``False`` (default), the file movements will not overwrite existing files. Only set to ``True`` if you know why you would want to do that (e.g to overwrite files in a failed tidy task)."

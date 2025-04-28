@@ -42,8 +42,8 @@ Compile time variables
 ----------------------
 
 .. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
+   :header: Key, Section, Description
+   :widths: 10, 10, 80
 
    execution_mode,     general,             "Takes the value ``compile`` during compile time. Can be used in ``choose_`` blocks with ``choose_general.execution_mode``."
    model,              general,             "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."

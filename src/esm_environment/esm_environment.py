@@ -12,6 +12,19 @@ import warnings
 import esm_parser
 from esm_tools import user_error, user_note
 
+ENVIRONMENT_VARIABLES = [
+    "module_actions",
+    "add_module_actions",
+    "spack_actions",
+    "add_spack_actions",
+    "export_vars",
+    "add_export_vars",
+    "unset_vars",
+    "add_unset_vars",
+    "general_actions",
+    "add_general_actions",
+]
+
 ######################################################################################
 ########################### class "environment_infos" ################################
 ######################################################################################

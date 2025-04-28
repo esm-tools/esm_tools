@@ -572,6 +572,12 @@ class DictWithProvenance(dict):
             Key of the item
         val : any
             Value of the item
+
+        Raises
+        ------
+        user_error :
+            If the new value comes from a choose and the old value comes from a choose
+            within the same category
         """
         # Initialize values. final_val is the variable that will be used in
         # super().__setitem__

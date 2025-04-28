@@ -100,7 +100,7 @@ computer:
         VARIABLE_TO_EXPORT: '"value of the variable you want to export"'
 
     # Choose between compile and run time for the module actions and export variables
-    choose_execution_mode:
+    choose_general.execution_mode:
         compile:
             # The environment set here will be used only during compilation
             add_module_actions:

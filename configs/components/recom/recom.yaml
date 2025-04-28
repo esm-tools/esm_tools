@@ -348,7 +348,7 @@ recom:
                     file: "stdout"
 
 computer:
-    choose_execution_mode:
+    choose_general.execution_mode:
         compile:
             choose_computer.name:
                 blogin:

@@ -277,7 +277,7 @@ oasis3mct:
 
 
 computer:
-    choose_execution_mode:
+    choose_general.execution_mode:
         run:
             add_export_vars:
                 # Turn on AMIP coupling through the FESOM interface in OpenIFS

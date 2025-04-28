@@ -2009,7 +2009,7 @@ choose_partitions.compute.cores_per_node:
 
 computer:
     iolibraries: geomar_libs
-    choose_execution_mode:
+    choose_general.execution_mode:
         compile:
             choose_computer.name:
                levante:

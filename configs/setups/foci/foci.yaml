@@ -1320,7 +1320,7 @@ computer:
                 - 'ECHAM6_THREADS=1'
                 - 'NEMO_THREADS=1'
                 - 'I_MPI_DEBUG=1'
-    choose_execution_mode:
+    choose_general.execution_mode:
         compile:
             choose_computer.name:
                levante:

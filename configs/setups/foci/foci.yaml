@@ -463,6 +463,7 @@ echam:
                 grid: atmo
 
         # Postprocessing
+        postprocessingscript: "echam_postprocessing.sh"
         choose_general.postprocessing:
                 True:
                         workflow:
@@ -476,7 +477,7 @@ echam:
                                                 script_dir: ${general.esm_function_dir}/setups/foci
                                                 submit_to_batch_system: True
                                                 script: "
-                                                    echam_postprocessing.sh
+                                                    ${echam.postprocessingscript} 
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
                                                     -e ${end_date!syear}

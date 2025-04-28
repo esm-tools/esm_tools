@@ -605,6 +605,9 @@ choose_with_lco2_emis:
                     lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
                     lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
         add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work 
+            cmip6hist:
+                add_forcing_files:
+                    carbon_emissions: carbon_emissions_hist
             HIST:
                 add_forcing_files:
                     carbon_emissions: carbon_emissions_hist

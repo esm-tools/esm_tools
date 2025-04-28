@@ -1,3 +1,7 @@
+computer:
+   pool_dir: "/mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/"
+   partition: "standard96"
+   launcher: "srun"
 general:
    use_venv: False
    verbose: True 

@@ -483,10 +483,11 @@ srf_files_to_remove=
 
 echo 0 > $post_dir/status
 
-rename_files $prefix "$stamps" "$filetags"
+#rename_files $prefix "$stamps" "$filetags"
 wait
 
 remove_list=
+stamps=""
 for stamp in $stamps
 do
 
@@ -546,7 +547,8 @@ print 'JSBACH concatenation started'
 
 echo 0 > $post_dir/status
 
-filetags=${LAND_FILE_TAGS2}
+#filetags=${LAND_FILE_TAGS2}
+filetags=""
 
 remove_list=
 for ((year=startyear; year<=endyear; ++year))

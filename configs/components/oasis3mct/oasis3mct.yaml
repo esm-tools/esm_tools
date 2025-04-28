@@ -9,6 +9,21 @@ oasis3mct:
     git-repository: https://gitlab.dkrz.de/modular_esm/oasis3-mct.git
     contact: "miguel.andres-martinez(at)awi.de, paul.gierz(at)awi.de"
 
+    metadata:
+        Name: OASIS3-MCT
+        Institute:
+            CERFACS (Toulouse, France) and Centre National de la Recherche
+            Scientifique (Paris, France)
+        Description:
+            The OASIS coupler is a software allowing synchronized exchanges of coupling
+            information between numerical codes representing different components of
+            the climate system.
+        Author: OASIS team
+        Website: https://oasis.cerfacs.fr
+        Publications:
+            - "Craig A., Valcke S., Coquart L., 2017: Development and performance of a new version of the OASIS coupler, OASIS3-MCT_3.0, Geoscientific Model Development, 10, pp. 3297-3308. <https://doi.org/10.5194/gmd-10-3297-2017>"
+        License: https://oasis.cerfacs.fr/en/oasis3-mct-copyright
+
     config_files:
             cf: cf
 

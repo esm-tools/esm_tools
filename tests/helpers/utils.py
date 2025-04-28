@@ -2,7 +2,11 @@ import sys
 from io import StringIO
 
 class Capturing(list):
-    """Taken from https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call"""
+    """
+    A context manager that captures stdout output for the pytests in ``tests``.
+
+    Taken from https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call
+    """
 
     def __enter__(self):
         self._stdout = sys.stdout

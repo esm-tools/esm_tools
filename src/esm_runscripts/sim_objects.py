@@ -79,7 +79,6 @@ class SimulationSetup(object):
         # 5. Set execution action
         execution_mode = user_config.get("general", {}).get("execution_mode", "run")
         user_config["general"]["execution_mode"] = execution_mode
-        user_config["computer"]["execution_mode"] = execution_mode
 
         # 5. Load total config from all the configuration files involved in this
         # simulation

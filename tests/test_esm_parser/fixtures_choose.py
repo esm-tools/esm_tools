@@ -1,6 +1,7 @@
 """
 Fixtures for testing choose functionality in ESM-Tools
 """
+
 import pytest
 
 
@@ -20,6 +21,7 @@ def simple_choose_config():
     """
     return yaml.safe_load(simple_choose_yaml)
 
+
 @pytest.fixture
 def conflict_choose_config():
     """Conflict between nested choose blocks"""
@@ -38,6 +40,7 @@ def conflict_choose_config():
     """
     return yaml.safe_load(conflict_choose_yaml)
 
+
 @pytest.fixture
 def no_conflict_in_nested_choose_config():
     """Conflict between nested choose blocks"""
@@ -50,8 +53,8 @@ def no_conflict_in_nested_choose_config():
         choose_version:
             3.2.1:
                 major_version: 3.2
-            choose_scenario:
-                pi:
-                    major_version: 3.3
+                choose_scenario:
+                    pi:
+                        major_version: 3.3
     """
     return yaml.safe_load(conflict_choose_yaml)

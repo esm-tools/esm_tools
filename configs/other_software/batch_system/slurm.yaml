@@ -2,144 +2,144 @@
 #
 #
 
-header_start: "#SBATCH"
-submit: sbatch
-launcher: srun
-debugger: None
-mail_type: NONE
-account: None
+computer:
+    header_start: "#SBATCH"
+    submit: sbatch
+    launcher: srun
+    debugger: None
+    mail_type: NONE
+    account: None
 
 
 
-# intermediate vars
+    # intermediate vars
 
-mail1: ""
-mail2: ""
+    mail1: ""
+    mail2: ""
 
-exclusive_flag: "--exclusive"
+    exclusive_flag: "--exclusive"
 
-choose_accounting:
-        True:
-                accounting_flag: "--account=${general.account}"
+    choose_accounting:
+            True:
+                    accounting_flag: "--account=${general.account}"
 
-choose_mail_type:
-        "*":
-                mail1:  "--mail-type=${mail_type}"
-choose_general.mail_type:
-        "*":
-                mail1:  "--mail-type=${general.mail_type}"
-choose_mail_user:
-        "*":
-                mail2:  "--mail-user=${mail_user}"
-choose_general.mail_user:
-        "*":
-                mail2:  "--mail-user=${general.mail_user}"
+    choose_mail_type:
+            "*":
+                    mail1:  "--mail-type=${mail_type}"
+    choose_general.mail_type:
+            "*":
+                    mail1:  "--mail-type=${general.mail_type}"
+    choose_mail_user:
+            "*":
+                    mail2:  "--mail-user=${mail_user}"
+    choose_general.mail_user:
+            "*":
+                    mail2:  "--mail-user=${general.mail_user}"
 
-notification_flag: "${mail1} ${mail2}"
-single_proc_submit_flag: "--ntasks-per-node=1"
-tasks_flag: "--ntasks=@tasks@"
-partition_flag: "--partition=@partition@"
-nodes_flag: "--nodes=@nodes@"
-time_flag: "--time=${compute_time}"
-additional_flags: []
-output_path: "${experiment_dir}/log/"
-thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
-output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
-name_flag: "--job-name=${expid}"
+    notification_flag: "${mail1} ${mail2}"
+    single_proc_submit_flag: "--ntasks-per-node=1"
+    tasks_flag: "--ntasks=@tasks@"
+    partition_flag: "--partition=@partition@"
+    nodes_flag: "--nodes=@nodes@"
+    time_flag: "--time=${compute_time}"
+    additional_flags: []
+    output_path: "${experiment_dir}/log/"
+    thisrun_logfile: "${output_path}${expid}_${general.setup_name}_@jobtype@_${general.current_date!syear!smonth!sday}-${general.end_date!syear!smonth!sday}_%j.log"
+    output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
+    name_flag: "--job-name=${expid}"
 
-taskset: false
-mt_launcher_flag: ""
+    taskset: false
+    mt_launcher_flag: ""
 
-add_choose_heterogeneous_parallelization:
-    true:
-        cpu_bind: "none"
-        choose_taskset:
-            # Support for old taskset heterogeneous parallelization approach
-            true:
-                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
-            # Support for new packjob heterogeneous parallelization approach
-            false:
+    add_choose_heterogeneous_parallelization:
+        true:
+            cpu_bind: "none"
+            choose_taskset:
+                # Support for old taskset heterogeneous parallelization approach
+                true:
+                    srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
+                # Support for new packjob heterogeneous parallelization approach
+                false:
 
- # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
-                launcher_flags_per_component: "
-                    ${mt_launcher_flag}
-                    --nodes=@nnodes@
-                    --ntasks=@nproc@
-                    --ntasks-per-node=@nproc_per_node@
-                    --cpus-per-task=@cpus_per_proc@
-                    --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
-                srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
-                launcher_comp_sep: " \\\n:"
-    false:
-        cpu_bind: "cores"
-        srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
+     # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
+                    launcher_flags_per_component: "
+                        ${mt_launcher_flag}
+                        --nodes=@nnodes@
+                        --ntasks=@nproc@
+                        --ntasks-per-node=@nproc_per_node@
+                        --cpus-per-task=@cpus_per_proc@
+                        --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
+                    srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
+                    launcher_comp_sep: " \\\n:"
+        false:
+            cpu_bind: "cores"
+            srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
 
-choose_launcher:
-        srun:
-                launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
-                execution_command: ${srun_execution_command}
-        mpiexec.hydra:
-                launcher_flags: "-bootstrap slurm"
-                execution_command: "echo mpiexec.hydra as launcher not yet available"
-        mpirun:
-                launcher_flags: ""
-                execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} $(cat ${config_files.hostfile})"
+    choose_launcher:
+            srun:
+                    launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
+                    execution_command: ${srun_execution_command}
+            mpiexec.hydra:
+                    launcher_flags: "-bootstrap slurm"
+                    execution_command: "echo mpiexec.hydra as launcher not yet available"
+            mpirun:
+                    launcher_flags: ""
+                    execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} $(cat ${config_files.hostfile})"
 
-choose_debugger:
-        None:
-            debugger_flags_prelauncher: ""
-        ddt:
-            debugger_flags_prelauncher: "ddt --connect"
-            runtime_environment_changes:
+    choose_debugger:
+            None:
+                debugger_flags_prelauncher: ""
+            ddt:
+                debugger_flags_prelauncher: "ddt --connect"
                 add_module_actions:
-                  - "load arm-forge"
+                    - "load arm-forge"
 
-submitted: false
-script_name: "<--methods.scriptname--"
-actual_script_dir: "<--methods.script_dir--"
-hostname_list: "DUMMY_HOST1 DUMMY_HOST2"
+    submitted: false
+    script_name: "<--methods.scriptname--"
+    actual_script_dir: "<--methods.script_dir--"
+    hostname_list: "DUMMY_HOST1 DUMMY_HOST2"
 
-choose_SLURM_NNODES:
+    choose_SLURM_NNODES:
+            "*":
+                    submitted: true
+                    script_name: "<--scriptname--"
+                    actual_script_dir: "<--script_dir--"
+                    total_nnodes: ${SLURM_NNODES}
+                    hostname_list: "<--show_hostnames--"
+
+                    #"<--scriptname--":
+                    #method: "squeue --job ${JOB_ID} -o '%o' | cut -f1 -d' ' | basename | cut -f1 -d' '"
+                    #"<--scriptdir--":
+                    #method: "squeue --job ${JOB_ID} --format '%Z' squeue --job ${JOB_ID} --format '%Z'"
+                    #"<--show_hostnames--":
+                    #method: "scontrol show hostnames"
+
+    config_files:
+            # don't change the name at the moment, it's currently hardcoded in esm_runscripts/slurm.py
+            hostfile: hostfile_srun
+
+    check_error:
+            "srun: error:" :
+                    frequency: 30
+                    method: "kill"
+                    message: "SLURM ERROR: slurm ended with an error, exiting."
+                    file: "stdout"
+
+            "slurmstepd: error: execve():" :
+                    frequency: 600
+                    method: "kill"
+                    message: "SLURM ERROR: slurm probably didn't find executable"
+                    file: "stdout"
+
+    # possibility to use less cores than processes. Useful for test runs / debugging
+    # can be specified in user runscript
+    overcommit_nodes: None
+    overcommit_rule: ""
+
+    choose_overcommit_nodes:
+        None:
+            overcommit_rule: ""
         "*":
-                submitted: true
-                script_name: "<--scriptname--"
-                actual_script_dir: "<--script_dir--"
-                total_nnodes: ${SLURM_NNODES}
-                hostname_list: "<--show_hostnames--"
+            overcommit_rule:  "--overcommit --nodes=${overcommit_nodes}"
 
-                #"<--scriptname--":
-                #method: "squeue --job ${JOB_ID} -o '%o' | cut -f1 -d' ' | basename | cut -f1 -d' '"
-                #"<--scriptdir--":
-                #method: "squeue --job ${JOB_ID} --format '%Z' squeue --job ${JOB_ID} --format '%Z'"
-                #"<--show_hostnames--":
-                #method: "scontrol show hostnames"
-
-config_files:
-        # don't change the name at the moment, it's currently hardcoded in esm_runscripts/slurm.py
-        hostfile: hostfile_srun
-
-check_error:
-        "srun: error:" :
-                frequency: 30
-                method: "kill"
-                message: "SLURM ERROR: slurm ended with an error, exiting."
-                file: "stdout"
-
-        "slurmstepd: error: execve():" :
-                frequency: 600
-                method: "kill"
-                message: "SLURM ERROR: slurm probably didn't find executable"
-                file: "stdout"
-
-# possibility to use less cores than processes. Useful for test runs / debugging
-# can be specified in user runscript
-overcommit_nodes: None
-overcommit_rule: ""
-
-choose_overcommit_nodes:
-    None:
-        overcommit_rule: ""
-    "*":
-        overcommit_rule:  "--overcommit --nodes=${overcommit_nodes}"
-
-overcommit_flag: "${overcommit_rule}"
+    overcommit_flag: "${overcommit_rule}"

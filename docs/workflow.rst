@@ -18,15 +18,15 @@ Release 6.0, these subjobs were:
 
 ::
 
-        compute --> tidy_and_resubmit (incl. wait_and_observe + resubmit next run)
+        compute --> tidy (incl. wait_and_observe + resubmit next run)
 
-Technically, ``wait_and_observe`` was part of the tidy_and_resubmit job, as was the resubmission, including above only for the purpose of demonstrating the difference to the 
+Technically, ``wait_and_observe`` was part of the tidy job, as was the resubmission, including above only for the purpose of demonstrating the difference to the 
 new standard workflow, which is now (post-Release 6.0)::
 
         newrun --> prepcompute --> compute --> observe_compute --> tidy (+ resubmit next run)
 
 Other than before adding the workflow manager, these standard subjobs are all separated and independant subjobs, each submitted (or started) by the previous subjob in one of three
-ways (see below). The splitting of the old compute job into newrun, prepcompute and compute on one side, and tidy_and_resubmit into observe and tidy, was necessary to enable
+ways (see below). The splitting of the old compute job into newrun, prepcompute and compute on one side, and tidy into observe and tidy, was necessary to enable
 the user to insert coupling subjobs for iterative coupling at the correct places. Here is what each of the standard subjobs does:
 
 

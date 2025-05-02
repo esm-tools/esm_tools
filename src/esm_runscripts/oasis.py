@@ -489,7 +489,7 @@ class oasis:
 
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        is_runtime = gconfig["run_or_compile"] == "runtime"
+        is_runtime = gconfig["execution_mode"] == "run"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )

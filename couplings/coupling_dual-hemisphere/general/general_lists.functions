@@ -1,0 +1,324 @@
+#!/bin/ksh -l
+
+
+
+assemble_total_list() {
+	totallistname=$1_TOTAL_$2_FILES
+	inlistname=$1_$3_$2_FILES
+
+	eval totallist=\$\{${totallistname}\}
+	eval inlist=\$\{${inlistname}\}
+
+	incounter=1
+	for inentry in $inlist; do
+		case $incounter in
+			1)
+				incounter=2
+				infrom=$inentry
+				;;
+			2)
+				incounter=3
+				totalcounter=1
+				into=$inentry
+				alreadyexists=0
+				for totalentry in $totallist; do
+					case $totalcounter in
+						1)
+							totalcounter=2
+							;;
+						2)
+							totalcounter=3
+							if [[ "x${into}" = "x${totalentry}" ]]; then
+								alreadyexists=1
+								break
+							fi
+							;;
+						3) 	totalcounter=1
+							;;
+					esac
+				done
+				;;
+			3)
+				incounter=1
+				inwarning=$inentry
+				if [[ "x${alreadyexists}" = "x0" ]]; then
+					if ! [[ "x$3" = "xDEFAULT" ]]; then
+						echo "			$infrom $into $inwarning"
+					fi
+					totallist="${totallist} $infrom $into $inwarning"
+				fi
+		esac
+	done
+	eval ${totallistname}=\"${totallist}\"
+
+	unset $inlistname
+	unset totallistname inlistname totallist inlist incounter inentry infrom into totalcounter alreadyexists totalentry	
+}
+
+
+
+general_get_file_info() {
+	echo "		=================================================================="
+	for model in ${setup_name} $coupled_setup_component_list; do
+		for filetype in $autofiletypes; do
+			call_if_exists ${model}_prepare_${filetype}
+		done
+		echo "		=================================================================="
+	done
+}
+
+general_assemble_file_info() {
+	for model in ${setup_name} $coupled_setup_component_list; do
+		for filetype in $autofiletypes; do
+			typeset -u ft_uc; ft_uc=${filetype}
+			list_of_all_vars=`set | awk -v pat="${model}_.*_${ft_uc}_FILES" ' BEGIN { FS = "=" } ; $1 ~ pat {print $1}'`			
+			default=0
+			for var in $list_of_all_vars
+			do
+				name=`echo $var | cut -d_ -f2`
+				case $name in
+					DEFAULT )
+						default=1
+						;;
+					* )
+						echo "		Processing user defined file list $var"
+						call_if_exists assemble_total_list $model ${ft_uc} $name
+						;;
+				esac
+			done
+			if [[ "x${default}" = "x1" ]]; then	
+				call_if_exists assemble_total_list $model ${ft_uc} DEFAULT
+			fi
+		done
+	done
+}
+
+
+add_to() {
+	datatype=${3:-${filetype}}
+	thismodel=${4:-${model}}
+	withwarning=${5:-warn}
+
+	if [[ "x${datatype}" = "xno_warning" ]]; then
+            withwarning="no_warning"; datatype=${filetype}
+        fi 
+	if [[ "x${thismodel}" = "xno_warning" ]]; then
+            withwarning="no_warning"; thismodel=${model}
+        fi 
+
+	typeset -u dt_uc; dt_uc=${datatype}
+	from=$1
+	to=$2
+	listname=${thismodel}_DEFAULT_${dt_uc}_FILES
+	eval list=\$\{${listname}\}
+	eval $listname=\"$list $from $to $withwarning\"
+
+	unset list to from datatype dt_uc thismodel listname
+}
+
+add_file() {
+	add_to $@ 
+}
+
+remove_old_setups_and_missings() {
+	pd_model=$1
+	datatype=$2
+	typeset -u dt_uc; dt_uc=${datatype}
+	eval list=\$\{${pd_model}_TOTAL_${dt_uc}_FILES\}
+	eval destdir=\$\{${dt_uc}_DIR_${pd_model}\}
+
+	eval thisdate=\$\{START_DATE_${pd_model}\}
+	setupfile=$destdir/${pd_model}_${datatype}_setup_${thisdate}.txt
+	missingfile=$destdir/${pd_model}_${datatype}_missing_${thisdate}.txt
+	
+	if [[ -e $setupfile ]]; then
+            $rm $setupfile >> $dumpfile
+        fi
+	if [[ -e $missingfile ]]; then
+            $rm $missingfile >> $dumpfile
+        fi
+}
+
+
+general_remove_old_files() {
+	forall_models_and_filetypes remove_old_setups_and_missings
+	if [[ -e $totalsetupfile ]]; then
+            $rm $totalsetupfile >> $dumpfile
+        fi
+	if [[ -e $totalmissingfile ]]; then
+            $rm $totalmissingfile >> $dumpfile
+        fi
+
+}
+
+prepare_data()
+{
+	pd_model=$1
+	datatype=$2
+	typeset -u dt_uc; dt_uc=${datatype}
+	eval list=\$\{${pd_model}_TOTAL_${dt_uc}_FILES\}
+	eval destdir=\$\{${dt_uc}_DIR_${pd_model}\}
+
+	eval run_number=\$\{RUN_NUMBER_${pd_model}\}
+	eval thisdate=\$\{START_DATE_${pd_model}\}
+	eval thisenddate=\$\{END_DATE_${pd_model}\}
+	copy=1
+	create_softlink=0
+
+	eval lresume=\$\{LRESUME_${pd_model}\}
+
+	if [[ "x${lresume}" = "x0" && "x${dt_uc}" = "xRESTART_IN" ]]; then
+		echo "		Restart files not needed for initial runs for ${pd_model} (LRESUME_${pd_model}=$lresume), skipping..."
+	else
+	cp_bckp=${cp}
+	case $datatype in
+		init | exe | restart_in )
+			if [[ ! "x${run_number}" = "x1" ]]; then
+				copy=0
+			fi
+			;;
+		output | restart_out )
+			cp="mv"
+			create_softlink=1
+			;;
+	esac
+
+	if [[ "x${before_simulation}" = "x1" ]]; then
+		setupfile=$destdir/${model}_${datatype}_setup_${thisdate}.txt
+	else
+		setupfile=$destdir/${model}_${datatype}_results_${enddate}.txt
+	fi
+	missingfile=$destdir/${model}_${datatype}_missing_${thisdate}.txt
+
+	counter=1
+	for entry in $list; do
+		case $counter in 
+			1)
+				counter=2	
+				from=$entry
+				filename=`basename $from`
+				;;
+			2)	
+				counter=3
+				to=$entry
+				todir=`dirname $to`
+                                toname=`basename $to`
+                                if ! [[ "x$todir" = "x." ]]; then
+                                        mkdir -p ${destdir}/$todir
+                                        todir=${todir}/
+                                else
+                                        todir=""
+                                fi				
+				;;
+			3) 
+				counter=1
+				warning=$entry 
+
+				if [[ "x${copy}" = "x1" ]]; then
+					if [[ -e $from ]]; then
+						if [[ ! "x${filename}" = "x${toname}" ]]; then
+                                                        [[ -e ${destdir}/${to} ]] && rm -rf ${destdir}/${to}
+                                                        echo "$from -> $to" >> $setupfile
+                                                else
+                                                        echo "$from -> ${todir}$filename" >> $setupfile
+                                                fi
+                                                [[ -e ${destdir}/${todir}${filename} ]] && rm -rf ${destdir}/${todir}${filename}
+                                                ${cp} ${from} ${destdir}/${todir}${filename} >> $dumpfile
+                                                [[ "x${create_softlink}" = "x1" ]] && ln -svf ${destdir}/${todir}${filename} ${from} >> $dumpfile
+                                        else
+                                                if ! [[ "x${warning}" = "xno_warning" ]]; then
+                                                if [[ ! "x${filename}" = "x${toname}" ]]; then
+                                                        echo "$from -> $to" >> $missingfile
+                                                else
+                                                        echo "$from -> ${todir}$filename" >> $missingfile
+                                                fi
+                                                fi
+                                        fi
+                                        if [[ ! "x${filename}" = "x${toname}" ]]; then
+                                                ${ln} ${destdir}/${todir}${filename} ${destdir}/${to} 2>/dev/null >> $dumpfile
+                                        fi
+
+                                fi
+		esac				
+	done
+
+	if [[ -e $setupfile ]]; then
+		if [[ "x${before_simulation}" = "x1" ]]; then
+			echo "SETUP used for $model $datatype for run starting at ${thisdate}:" >> $totalsetupfile
+		else
+			echo "RESULTS obtained for $model $datatype for run ending at ${enddate}:" >> $totalsetupfile
+		fi
+		cat $setupfile >> $totalsetupfile
+		echo >> $totalsetupfile
+	fi
+	if [[ -e $missingfile ]]; then
+		echo "WARNING: THESE FILES WERE MISSING for $model $datatype for run starting at ${thisdate}:" >> $totalmissingfile
+		cat $missingfile >> $totalmissingfile
+		echo >> $totalmissingfile
+	fi
+	cp=$cp_bckp
+	fi
+	unset cp_bckp datatype dt_uc list create_softlink from to destdir filename missingfile setupfile  entry thisdate
+	unset pd_model run_number counter
+}
+
+
+
+prepare_work()
+{
+	pw_model=$1
+	datatype=$2
+	typeset -u dt_uc; dt_uc=${datatype}
+	eval list=\$\{${model}_TOTAL_${dt_uc}_FILES\}
+	eval destdir=\$\{${dt_uc}_DIR_${model}\}
+	eval lresume=\$\{LRESUME_${pw_model}\}
+	counter=1
+	for entry in $list; do
+		case $counter in 
+			1)
+                                counter=2
+                                ;;
+                        2)
+                                counter=3
+                                to=$entry
+                                todir=`dirname $to`
+                                toname=`basename $to`
+                                if ! [[ "x$todir" = "x." ]]; then
+                                        mkdir -p ${WORK_DIR}/$todir
+                                        todir=${todir}/
+                                else
+                                        todir=""
+                                fi
+                                ;;
+                        3)
+                                counter=1
+                                case $datatype in
+                                        forcing | init | exe | config)
+                                                if [[ -e ${destdir}/${to} ]]; then
+                                                        ${ln} ${destdir}/${to} ${WORK_DIR}/${to} >> $dumpfile
+                                                        if [[ "x$dt_uc" = "xCONFIG" ]]; then
+                                                                echo "          ${to}:"
+                                                                echo "==========================================================================================================="
+                                                                if [[ "x${to##*.}" == "xnc" ]]; then
+                                                                        ncdump -h ${WORK_DIR}/${to}|grep -v "_doc ="|grep -v "_option ="|grep -v "_type ="|grep -v "_choices ="
+								else
+                                                                        cat ${WORK_DIR}/${to}
+                                                                fi
+                                                                echo; echo "==========================================================================================================="
+                                                        fi
+                                                fi
+                                                ;;
+                                        restart_in)
+                                                if  [[ "x${lresume}" = "x1" ]]; then
+                                                        [[ -e ${destdir}/${toname} ]] && ${cp} ${destdir}/${toname} ${WORK_DIR}/${todir}$toname >> $dumpfile
+                                                fi
+                                                ;;
+                                        *)
+                                                ;;
+                                esac
+                esac
+        done
+        unset ${model}_TOTAL_${dt_uc}_FILES
+        unset pw_model datatype dt_uc list to destdir entry counter
+}
+

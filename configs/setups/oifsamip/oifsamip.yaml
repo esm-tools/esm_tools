@@ -120,15 +120,6 @@ oifs:
         resolution: TCO159
         levels: L91
 
-
-        runtime_environment_changes:
-                add_export_vars:
-                        # Turn on AMIP coupling through the FESOM interface in OpenIFS
-                        FESOM_USE_CPLNG: '"active"'
-                        ECE_CPL_NEMO_LIM: '"false"'
-                        ECE_CPL_FESOM_FESIM: '"false"'
-                        ECE_AWI_CPL_FESOM: '"false"'
-
         res_level: ${resolution}${levels}
         oifsamip_fields: [A_SST, A_Ice_frac]
 
@@ -285,3 +276,12 @@ oasis3mct:
                 rstos.nc: rstos.nc
 
 
+computer:
+    choose_general.execution_mode:
+        run:
+            add_export_vars:
+                # Turn on AMIP coupling through the FESOM interface in OpenIFS
+                FESOM_USE_CPLNG: '"active"'
+                ECE_CPL_NEMO_LIM: '"false"'
+                ECE_CPL_FESOM_FESIM: '"false"'
+                ECE_AWI_CPL_FESOM: '"false"'

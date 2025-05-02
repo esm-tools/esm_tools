@@ -169,6 +169,41 @@ provenance_feature:
         action: DELAY(1)
         announcement: true
 
+esm_environment_refactoring:
+        package: "esm_tools"
+        versions: "<6.54.0"
+        message: "\x1b[1m\x1b[96mENVIRONMENT HANDLING UPGRADED!\x1b[0m\n
+
+            The \x1b[96mesm_environment\x1b[0m module has been completely \x1b[1mrefactored\x1b[0m with new powerful\n
+            features:\n
+            \x1b[96m→\x1b[0m More \x1b[1mmodular design\x1b[0m with improved error handling\n
+            \x1b[96m→\x1b[0m \x1b[1mAll components now have sections\x1b[0m for standardized configuration!\n
+            \x1b[96m→\x1b[0m \x1b[1mDeprecated \x1b[35menvironment_changes\x1b[0m\x1b[1m removed\x1b[0m - now all files (including components)\n
+            \ \ use the \x1b[35mcomputer\x1b[0m section for environment modifications.\n
+            \x1b[96m→\x1b[0m Smarter \x1b[1m\x1b[35mchoose blocks\x1b[0m\x1b[1m with conflict detection\x1b[0m and better error handling\n
+            \x1b[96m→\x1b[0m Improved \x1b[1mvariable merging\x1b[0m with hierarchy-level conflict detection\n
+            \x1b[96m→\x1b[0m Advanced \x1b[1mcomponent-specific control\x1b[0m with attribute-based selection and order\n
+            \ \ preservation\n
+
+            \ \ \ \ \x1b[31mBEFORE:\x1b[0m\n
+            \ \ \ \ \ \ \x1b[35mfesom\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \x1b[96mtype\x1b[0m: \x1b[31m'ocean'\x1b[0m\n
+            \ \ \ \ \ \ \ \ \x1b[96menvironment_changes\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \ \ \x1b[96madd_export_vars\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \ \ \ \ \x1b[96mNETCDF_DIR\x1b[0m: \x1b[31m'/path/to/netcdf'\x1b[0m\n
+            \ \ \ \ \x1b[32mNOW:\x1b[0m\n
+            \ \ \ \ \ \ \x1b[35mfesom\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \x1b[96mtype\x1b[0m: \x1b[31m'ocean'\x1b[0m\n
+            \ \ \ \ \ \ \x1b[35mcomputer\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \x1b[96madd_export_vars\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \ \ \x1b[96mNETCDF_DIR\x1b[0m: \x1b[31m'/path/to/netcdf'\x1b[0m\n
+
+            Check out the full documentation of the newly refactored \x1b[96mesm_environment\x1b[0m at:\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/esm_environment.html\x1b[0m\n
+            "
+        action: DELAY(1)
+        announcement: true
+
 #online_workshops:
 #        package: "esm_tools"
 #        versions: "<7.0.0"

@@ -9,6 +9,7 @@ general:
         version: "1.4"
 
         coupled_setup: False
+        pseudo_coupled_setup: True
         standalone: True
 
         include_models:

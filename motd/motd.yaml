@@ -191,7 +191,7 @@ esm_environment_refactoring:
             \ \ \ \ \ \ \ \ \x1b[96menvironment_changes\x1b[0m:\n
             \ \ \ \ \ \ \ \ \ \ \x1b[96madd_export_vars\x1b[0m:\n
             \ \ \ \ \ \ \ \ \ \ \ \ \x1b[96mNETCDF_DIR\x1b[0m: \x1b[31m'/path/to/netcdf'\x1b[0m\n
-            \ \ \ \ \x1b[32mNOW:\x1b[0m\n
+            \ \ \ \x1b[32mNOW:\x1b[0m\n
             \ \ \ \ \ \ \x1b[35mfesom\x1b[0m:\n
             \ \ \ \ \ \ \ \ \x1b[96mtype\x1b[0m: \x1b[31m'ocean'\x1b[0m\n
             \ \ \ \ \ \ \x1b[35mcomputer\x1b[0m:\n

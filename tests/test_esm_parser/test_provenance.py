@@ -1,14 +1,17 @@
 """
 Unit tests for the new provenance feature
 """
+
+import copy
 import os
 import pathlib
+
 import pytest
 
-import esm_parser.provenance as provenance
 import esm_parser
-
+import esm_parser.provenance as provenance
 from esm_parser import yaml_to_dict
+from utils import Capturing
 
 
 @pytest.fixture()
@@ -244,7 +247,7 @@ def test_provenance_update(config, check_provenance):
 
 def test_set_provenance_for_a_list_leaf(config, check_provenance):
     """
-    Test 9: Reset the provenance of a list")
+    Test 10: Reset the provenance of a list")
     """
 
     new_prov = {
@@ -266,7 +269,7 @@ def test_set_provenance_for_a_list_leaf(config, check_provenance):
 
 def test_extract_dict_config(example_path1):
     """
-    Test 10: Test the extraction of config for all allowed variable types.
+    Test 11: Test the extraction of config for all allowed variable types.
     """
 
     esm_tools_loader = yaml_to_dict.EsmToolsLoader()
@@ -299,7 +302,7 @@ def test_extract_dict_config(example_path1):
 
 def test_check_provenance_list(example_path1):
     """
-    Test 11: Check provenance of a list entry
+    Test 12: Check provenance of a list entry
     """
 
     os.environ["USER"] = "some_user"
@@ -338,7 +341,7 @@ def test_check_provenance_list(example_path1):
 
 def test_check_set_provenance_list(example_path1):
     """
-    Test 12: Check set_provenance of a list entry
+    Test 13: Check set_provenance of a list entry
     """
 
     os.environ["USER"] = "some_user"
@@ -363,7 +366,7 @@ def test_check_set_provenance_list(example_path1):
 
 def test_check_set_provenance_of_single_list_entry(example_path1):
     """
-    Test 13: Check set_provenance of a single list entry
+    Test 14: Check set_provenance of a single list entry
     """
 
     os.environ["USER"] = "some_user"
@@ -402,7 +405,7 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
 
 def test_check_set_provenance_of_single_list_entry(example_path1):
     """
-    Test 14: Check get_provenance raises the correct error when the provenance of an
+    Test 15: Check get_provenance raises the correct error when the provenance of an
     item is not of the type provenance.Provenance
     """
 
@@ -429,12 +432,12 @@ def test_check_set_provenance_of_single_list_entry(example_path1):
         config["person"]["my_other_list"][2].provenance = new_prov
 
 
-@pytest.fixture()
-def test_keep_provenance_in_recursive_function(config):
+def test_keep_provenance_in_recursive_function(config, example_path2):
     """
-    Test 15: Test that provenance is not modified in a method when it has the
+    Test 16: Test that provenance is not modified in a method when it has the
     keep_provenance_in_recursive_function decorator
     """
+
     @provenance.keep_provenance_in_recursive_function
     def change_elem(tree, rhs):
         return provenance.wrapper_with_provenance_factory("new_val", {"modified": True})
@@ -473,3 +476,46 @@ def test_keep_provenance_in_recursive_function(config):
 
     assert rhs1 == "new_val" and rhs1.provenance[0] == check_provenance1[0]
     assert rhs2 == "new_val" and rhs2.provenance[0] == check_provenance2[0]
+
+
+def test_error_in_setitem_if_same_subcategory_but_different_value(config):
+    """
+    Check that setting a new value with the same subcategory but different value raises
+    an error. This error is to flag users about conflicting variables between the main
+    file and a further reading.
+    """
+    echam = copy.deepcopy(config["echam"])
+    # Set subcategory
+    echam["type"].provenance[-1]["subcategory"] = "echam"
+
+    # Define conflicting new value
+    new_val = provenance.StrWithProvenance("ocean")
+    new_val.provenance = copy.deepcopy(echam["type"].provenance)
+    new_val.provenance[-1]["yaml_file"] = "further_reading.yaml"
+
+    error = None
+    with Capturing() as output:
+        try:
+            echam["type"] = new_val
+        except SystemExit as e:
+            error = e
+
+    assert isinstance(error, SystemExit)
+    assert any(["ERROR: Category conflict" in line for line in output])
+
+
+def test_no_error_in_setitem_if_same_subcategory_and_same_value(config):
+    """
+    Check that having a variable duplicated accross files of the same subcategory do
+    not raises an error if the value is the same.
+    """
+    echam = copy.deepcopy(config["echam"])
+    # Set subcategory
+    echam["type"].provenance[-1]["subcategory"] = "echam"
+
+    # Define conflicting new value
+    new_val = provenance.StrWithProvenance("atmosphere")
+    new_val.provenance = copy.deepcopy(echam["type"].provenance)
+    new_val.provenance[-1]["yaml_file"] = "further_reading.yaml"
+
+    assert echam["type"] == "atmosphere"

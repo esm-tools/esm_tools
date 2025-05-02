@@ -68,7 +68,6 @@ def test_simple_choose_with_from_choose(simple_choose_config):
     ]
 
 
-
 def test_detect_conflict_in_choose(conflict_choose_config):
     """
     Test the detection of conflicts in choose blocks
@@ -122,10 +121,3 @@ def test_reg_choose_1():
     resolve_some_choose_blocks(config)
 
     assert config == expected_config
-
-
-# TODO:
-
-# Test in comp-AWICM1-recom: NETCDF_CXX_ vars are removed from all
-# models except for fesom because there is an specific one in fesom.
-# Expected behaviour: keep the one from levante in the other models

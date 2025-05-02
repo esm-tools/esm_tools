@@ -3038,7 +3038,10 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         logger.info("setup config is being updated with setup_relevant_configs")
 
         # distribute self.config into setup_config
-        coupled_setup = self.config.get("general", {}).get("coupled_setup", False)
+        coupled_setup = (
+            self.config.get("general", {}).get("coupled_setup", False)
+            or self.config.get("general", {}).get("pseudo_coupled_setup", False)
+        )
         setup_name = user_config["general"]["setup_name"]
 
         # Define keys and components to search for include_models

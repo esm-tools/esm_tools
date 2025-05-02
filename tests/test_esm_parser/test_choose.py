@@ -1,14 +1,19 @@
 """
 Unit tests for the choose functionality
 """
+
 import os
+
 import pytest
+from fixtures_choose import (
+    choose_overwrites_default,
+    conflict_choose_config,
+    simple_choose_config,
+)
 
-from esm_parser import yaml_file_to_dict, DictWithProvenance
+from esm_parser import DictWithProvenance, yaml_file_to_dict
 from esm_runscripts import resolve_some_choose_blocks
-from fixtures_choose import simple_choose_config, conflict_choose_config
 from utils import Capturing
-
 
 ESM_PARSER_TESTS_DIR = os.path.dirname(__file__)
 
@@ -34,6 +39,18 @@ def test_simple_choose(simple_choose_config):
 
     assert config["general"]["major_version"] == 3.1
 
+
+def test_choose_overwrites_default(choose_overwrites_default):
+    """
+    Test the choose functionality overwriting default values
+    """
+    config = prepare_config(choose_overwrites_default)
+
+    resolve_some_choose_blocks(config)
+
+    assert config["general"]["version"] == 3.2
+
+
 def test_simple_choose_with_from_choose(simple_choose_config):
     """
     Test the most basic choose functionality with from_choose in the provenance
@@ -46,6 +63,7 @@ def test_simple_choose_with_from_choose(simple_choose_config):
         "choose_key": "choose_general.version",
         "choice": "3.1.1",
     }
+
 
 def test_detect_conflict_in_choose(conflict_choose_config):
     """
@@ -64,10 +82,10 @@ def test_detect_conflict_in_choose(conflict_choose_config):
     assert any(["ERROR: Choose conflict" in line for line in output])
 
 
-
 # ---------------------------------
 # REGRESSION TESTS
 # ---------------------------------
+
 
 def test_reg_choose_1():
     """
@@ -80,12 +98,15 @@ def test_reg_choose_1():
         `choose_computer.execution_mode`
     """
     config = yaml_file_to_dict(f"{ESM_PARSER_TESTS_DIR}/data/reg_choose_1.yaml")
-    expected_config = yaml_file_to_dict(f"{ESM_PARSER_TESTS_DIR}/data/expected_reg_choose_1.yaml")
+    expected_config = yaml_file_to_dict(
+        f"{ESM_PARSER_TESTS_DIR}/data/expected_reg_choose_1.yaml"
+    )
     config = prepare_config(config)
 
     resolve_some_choose_blocks(config)
 
     assert config == expected_config
+
 
 # TODO:
 

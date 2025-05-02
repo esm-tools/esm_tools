@@ -185,8 +185,6 @@ class EnvironmentInfos:
             scripts.
         """
 
-        # import ipdb
-        # ipdb.set_trace()
         environment = []
         # Fix for seb-wahl's hack via source
         if self.computer.get("general_actions") is not None:
@@ -392,8 +390,6 @@ class EnvironmentInfos:
            The EnvironmentInfo ``computer`` dictionary is modified specifically for
            ``env_var_key``, with the resorted, provenance-aware order.
         """
-        import ipdb
-
         env_vars = self.computer[env_var_key]
 
         if isinstance(env_vars, dict):

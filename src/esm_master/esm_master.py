@@ -33,8 +33,9 @@ def main_flow(parsed_args, target):
     setups2models.config = setups2models.reduce(target)
 
     user_config = write_minimal_user_config(setups2models.config)
-    # Miguel: Move this somewhere else after talking to Paul and Dirk
-    user_config["general"]["run_or_compile"] = "compiletime"
+
+    user_config["computer"] = user_config.get("computer", {})
+    user_config["general"]["execution_mode"] = "compile"
 
     # deniz: verbose is supposed to be a boolean right? It is initialized as
     # 0 in cli.py. Is it then a debug_level?

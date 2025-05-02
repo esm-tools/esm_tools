@@ -1,5 +1,6 @@
 # WARNING: To be use only with FESOM 2.1
-choose_asforcing:
+fesom:
+    choose_asforcing:
         CORE2:
                 leapyear: false
                 forcing_folder: "CORE2"

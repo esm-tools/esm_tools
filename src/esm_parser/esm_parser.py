@@ -1609,8 +1609,8 @@ def add_from_choose_info_to_provenance(entries, choose_key, choice):
         else:
             choice_for_prov = choice
         entries.set_provenance(
-            {"from_choose": {"choose_key": choose_key_for_prov, "choice": choice_for_prov}},
-            update_method = "update",
+            {"from_choose": [{"choose_key": choose_key_for_prov, "choice": choice_for_prov}]},
+            update_method = "update_from_choose",
         )
 
 
@@ -2822,15 +2822,9 @@ def choose_blocks(config, blackdict={}, isblacklist=True):
             break
         logging.debug("The task list is: %s", task_list)
         logging.debug("all_set_variables: %s", all_set_variables)
-        if model_with_choose in list(blackdict):
-            resolve_basic_choose(
-                config,
-                config[model_with_choose],
-                choose_key,
-                blackdict[model_with_choose],
-            )
-        else:
-            resolve_basic_choose(config, config[model_with_choose], choose_key, {})
+
+        resolve_basic_choose(config, config[model_with_choose], choose_key, {})
+
         del all_set_variables[model_with_choose][choose_key]
         logging.debug("Remaining all_set_variables=%s", all_set_variables)
 

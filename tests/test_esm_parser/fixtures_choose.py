@@ -49,7 +49,6 @@ def choose_overwrites_default():
 
     return choose_overwrites
 
-
 @pytest.fixture
 def conflict_choose_config():
     """Conflict between nested choose blocks"""
@@ -64,5 +63,24 @@ def conflict_choose_config():
         choose_scenario:
             pi:
                 major_version: 3.3
+    """
+    return yaml.safe_load(conflict_choose_yaml)
+
+
+@pytest.fixture
+def no_conflict_in_nested_choose_config():
+    """Conflict between nested choose blocks"""
+    import yaml
+
+    conflict_choose_yaml = """
+    general:
+        version: 3.2.1
+        scenario: pi
+        choose_version:
+            3.2.1:
+                major_version: 3.2
+                choose_scenario:
+                    pi:
+                        major_version: 3.3
     """
     return yaml.safe_load(conflict_choose_yaml)

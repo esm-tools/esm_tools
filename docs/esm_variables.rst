@@ -121,6 +121,24 @@ Coupling variables
    time_transformation,     "Time transformation used by `oasis3mct`, defined inside ``coupling_methods``."
    remapping,           "Remappings and their parameters, used by `oasis3mct`, defined inside ``coupling_methods``."
 
+Environment variables
+--------------------
+.. csv-table::
+   :header: Key, Section, Description
+   :widths: 15, 15, 70
+
+   general_actions,      computer,            "List of general shell actions to be included in the compilation and run scripts. These are added directly to the script without any prefix."
+   module_actions,       computer,            "List of module actions to be included in the compilation and run scripts. Each entry will be prefixed with ``module`` in the generated script."
+   spack_actions,        computer,            "List of Spack actions to be included in the compilation and run scripts. Each entry will be prefixed with ``spack`` in the generated script."
+   export_vars,          computer,            "Dictionary of environment variables to be exported in the script. Each key-value pair will generate an ``export KEY=VALUE`` line."
+   unset_vars,           computer,            "List of environment variables to be unset in the script. Each entry will generate an ``unset VARIABLE`` line."
+   include_env_from_component_files,  computer/<component>,  "Boolean that controls whether environment variables from component files should be included. Can be set globally in the computer section or per-component. Default: ``True``."
+   merge_component_envs, computer,           "Dictionary with ``compile`` and ``run`` keys that controls whether environments from all components should be merged. For ``compile`` the default is false (each component maintains its own environment), for ``run`` the default is true (environments are merged)."
+
+.. note::
+   For more detailed information on all environment configuration options, including attribute-based selection,
+   coupled setup environment control, and advanced environment management features, please refer to the
+   :ref:`esm_environment:ESM Environment` documentation.
 
 Other variables
 ---------------

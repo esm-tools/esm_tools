@@ -707,7 +707,7 @@ class DictWithProvenance(dict):
                         Provenance(old_val.provenance[-1]),
                         "dict.__setitem__->reverted_by_hierarchy",
                     )
-                    logger.debug(
+                    logger.trace(
                         f"Value {new_val} won't be assigned to the key {key}, because "
                         f"the old value {old_val} comes from a category higher in the "
                         f"hierarchy ({old_val}:{old_category} > "

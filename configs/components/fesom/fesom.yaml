@@ -511,7 +511,7 @@ fesom:
 computer:
     choose_computer.name:
         levante:
-            choose_execution_mode:
+            choose_general.execution_mode:
                 compile:
                     add_export_vars:
                         NETCDF_DIR: ${computer.netcdf_cxx_root}
@@ -523,7 +523,7 @@ computer:
             iolibraries: system_libs
         glogin:
             iolibraries: system_libs
-    choose_execution_mode:
+    choose_general.execution_mode:
         run:
             add_export_vars:
                 AWI_FESOM_YAML: ${fesom.AWI_FESOM_YAML}

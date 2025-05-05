@@ -207,18 +207,14 @@ def yaml_file_to_dict(filepath):
                     add_export_vars = computer.get("add_export_vars", {})
                     for env_var_name, env_var_value in esm_tools_loader.env_variables:
                         add_export_vars[env_var_name] = env_var_value
-                    # TODO(PG): There is probably a more elegant way of doing this:
                     yaml_load["computer"] = computer
                     yaml_load["computer"]["add_export_vars"] = add_export_vars
 
             yaml_load = DictWithProvenance(yaml_load, provenance)
 
-            for component, parameters in yaml_load.items():
-                # TODO: Check for environment variables and through error if in component other than computer
-                pass
+            check_for_env_vars_in_components(yaml_load)
 
             # Turn list export_vars into dictionaries
-            # TODO: environment checkers
             esm_environment.turn_export_vars_into_dict(yaml_load)
 
             return yaml_load
@@ -478,6 +474,42 @@ def check_for_empty_components(yaml_load, fpath):
                 + " not support empty components, either add some variables to the "
                 + f"``{key}`` section, or remove it from this file.",
             )
+
+
+def check_for_env_vars_in_components(config):
+    """
+    Check for environment variables in components.
+
+    Parameters
+    ----------
+    config : dict
+        Dictionary containing the configuration loaded from the yaml files.
+
+    Raises
+    ------
+    user_error :
+        If an environment variable is found in a component other than
+        ``computer``.
+    """
+    for component, parameters in config.items():
+        if component == "computer" or not isinstance(parameters, dict):
+            continue
+        for parameter in parameters:
+            if parameter in esm_environment.ENVIRONMENT_VARIABLES:
+                user_error(
+                    "Environment variables",
+                    f"The variable {parameter} is an environment variable and "
+                    f"can only be defined in the computer section. Please "
+                    f"remove it from the component {component}. The "
+                    "line causing this problem is a few lines above:\n- @HINT_0@",
+                    hints=[
+                        {
+                            "type": "prov",
+                            "object": parameters[parameter],
+                            "text": "@HINT@",
+                        },
+                    ],
+                )
 
 
 def find_last_choose(var_path):
@@ -756,6 +788,16 @@ class EsmToolsLoader(ruamel.yaml.YAML):
     def set_file_subcategory(self):
         """
         Sets the subcategory of the yaml file (e.g. ``awicm3``, ``fesom``, ``levante``).
+
+        This method determines the subcategory by examining the file path structure.
+        For example, if a file is located in configs/components/fesom/fesom.yaml,
+        the subcategory would be 'fesom'. The subcategory information is stored
+        in the provenance data and is used for tracking the source of configuration
+        values and for determining precedence in conflict resolution.
+
+        The subcategory is determined by finding which subdirectory of the category
+        directory contains the current file. If no matching subcategory is found,
+        subcategory will be set to None.
         """
         category_path = pathlib.Path(f"{CONFIG_PATH}/{self.category}")
         subcategory = None
@@ -763,7 +805,7 @@ class EsmToolsLoader(ruamel.yaml.YAML):
         if category_path.exists() and category_path.is_dir():
             subcategories = os.listdir(category_path)
         else:
-            logger.info(f"Category path {category_path} does not exist or is not a directory")
+            logger.debug(f"Category path {category_path} does not exist or is not a directory")
         for subcategory in subcategories:
             path_to_subcategory_folder = pathlib.Path(f"{category_path}/{subcategory}")
             if path_to_subcategory_folder in self.filename.parents:

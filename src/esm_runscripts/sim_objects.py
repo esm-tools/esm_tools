@@ -29,15 +29,17 @@ class SimulationSetup(object):
         2. Initialize user_config (command line arguments + content of the runscript)
         3. Initialize information about interactive sessions
         4. Initialize interactive coupling information (offline coupling)
-        5. Load total config from all the configuration files involved in this
+        5. Set execution action
+        6. Load total config from all the configuration files involved in this
            simulation. Input: user_config -> returns: self.config
-        6. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
+        7. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
            to missing key-values in self.config
-        7. Check if the ``account`` is missing in ``general``
-        8. Complete information for inspect
-        9. Store the ``command_line_config`` in ``general``
-        10. Initialize the ``prev_run`` object
-        11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
+        8. Check if the ``account`` is missing in ``general``
+        9. Complete information for inspect
+        10. Store the ``command_line_config`` in ``general``
+        11. Initialize the ``prev_run`` object
+        12. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
+        13. Store the ESM-Tools version in the config for later reference
 
         Input
         -----
@@ -79,41 +81,38 @@ class SimulationSetup(object):
         # 5. Set execution action
         execution_mode = user_config.get("general", {}).get("execution_mode", "run")
         user_config["general"]["execution_mode"] = execution_mode
-        user_config["computer"]["execution_mode"] = execution_mode
 
-        # 5. Load total config from all the configuration files involved in this
+        # 6. Load total config from all the configuration files involved in this
         # simulation
         self.config = config_initialization.get_total_config_from_user_config(
             user_config
         )
 
-        # 6. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
+        # 7. Add the defaults in ``configs/esm_software/esm_runscripts/defaults.yaml``
         # to missing key-values in self.config
         self.config = config_initialization.add_esm_runscripts_defaults_to_config(
             self.config
         )
 
-        # 7. Check if the ``account`` is missing in ``general``
+        # 8. Check if the ``account`` is missing in ``general``
         self.config = config_initialization.check_account(self.config)
 
-        # 8. Complete information for inspect
+        # 9. Complete information for inspect
         self.config = config_initialization.complete_config_with_inspect(self.config)
 
-        # 9. Store the ``command_line_config`` in ``general``
+        # 10. Store the ``command_line_config`` in ``general``
         self.config = config_initialization.save_command_line_config(
             self.config, command_line_config
         )
 
-        # 10. Initialize the ``prev_run`` object
+        # 11. Initialize the ``prev_run`` object
         self.config["prev_run"] = prev_run.PrevRunInfo(self.config)
         self.store_prev_objects()
 
-        #import ipdb
-        #ipdb.set_trace()
-        # 11. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
+        # 12. Run ``prepare`` recipe (resolve the `ESM-Tools` syntax)
         self.config = prepare.run_job(self.config)
 
-        # 12. Store the ESM-Tools version in the config for later reference
+        # 13. Store the ESM-Tools version in the config for later reference
         self.config["general"]["esm_tools_version"] = __version__
 
     def __call__(self, kill_after_submit=True):

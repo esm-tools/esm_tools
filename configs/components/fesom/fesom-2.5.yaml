@@ -88,6 +88,8 @@ fesom:
         albedo:
             climate_data_dir: "${pool_dir}/FESOM/hydrography/"
             mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+        blogin:
+            comp_command: mkdir -p build; cd build; cmake -DCMAKE_C_FLAGS="-Wno-incompatible-function-pointer-types" ..;   make install -j `nproc --all`
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
@@ -658,8 +660,3 @@ fesom:
     - "copy_all_results_to_exp"
     - "clean_run_dir"
 
-computer:
-    choose_general.execution_mode:
-        compile:
-            add_export_vars:
-                taken2from: fesom2_compile

@@ -683,16 +683,14 @@ rnfmap:
         runoff_maps_name: _${fesom.resolution}
         choose_general.major_version:
                 "v3.3":
-                        version: ${version_for_3.3}
+                        # TODO: change this to a control on the patch version general.version
+                        choose_fesom.version:
+                                "2.6.8":
+                                        version: awicm-3.1
+                                "*":
+                                        version: v1.1
                 "v3.4":
                         version: v1.1
-
-        # TODO: change this to a control on the patch version general.version
-        choose_fesom.version:
-            "2.6.8":
-                version_for_3.3: awicm-3.1
-            "*":
-                version_for_3.3: v1.1
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}

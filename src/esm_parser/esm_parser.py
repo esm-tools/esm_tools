@@ -1691,13 +1691,6 @@ def resolve_choose_with_var(
         if choose_with_var:
             # If ``lvar`` is in multiple ``choose_`` blocks return an error
             chooses = [sep.join(choose_with_var[0].split(sep)[:-2])]
-            for case in choose_with_var:
-                choose = sep.join(case.split(sep)[:-2])
-                if choose not in chooses:
-                    user_error(
-                        f'"{lvar}" in more than one choose_ block', choose_with_var
-                    )
-                chooses.append(choose)
             # Get the first part of the path to the ``lvar``
             choose_with_var = choose_with_var[0].split(sep)[0]
             # Get the key for the ``choose_``
@@ -1754,6 +1747,22 @@ def resolve_choose_with_var(
                 resolve_basic_choose(
                     config_to_search_into, config_copy, choose_with_var
                 )
+
+                # Check for nested chooses with var
+                nested_chooses = (
+                    get_chooses_with_var(config_copy, var, sep=sep)
+                    + get_chooses_with_var(config_copy, f"add_{var}", sep=sep)
+                )
+                if nested_chooses:
+                    resolve_choose_with_var(
+                        var,
+                        config_copy,
+                        current_model=current_model,
+                        user_config=user_config,
+                        model_config=model_config,
+                        setup_config=setup_config
+                )
+
                 # If ``var`` was defined through the resolution of the ``choose_``, add
                 # the ``var`` value to the ``config``.
                 if config_copy.get(var):

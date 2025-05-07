@@ -1,0 +1,128 @@
+[build-system]
+requires = ["setuptools>=67.6.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "esm-tools"
+version = "6.54.2"
+description = "ESM Tools external infrastructure for Earth System Modelling"
+readme = "README.rst"
+requires-python = ">=3.6, <3.12"
+license = {text = "GNU General Public License v2"}
+authors = [
+    {name = "The ESM Tools Team", email = "dirk.barbi@awi.de"},
+]
+maintainers = [
+    {name = "Dirk Barbi", email = "dirk.barbi@awi.de"},
+    {name = "Paul Gierz", email = "paul.gierz@awi.de"},
+    {name = "Miguel Andres-Martinez", email = "miguel.andres-martinez@awi.de"},
+    {name = "Deniz Ural", email = "deniz.ural@awi.de"},
+    {name = "Jan Streffing", email = "jan.streffing@awi.de"},
+    {name = "Sebastian Wahl", email = "sebastian.wahl@geomar.de"},
+    {name = "Kai Himstedt", email = "kai.himstedt@dkrz.de"},
+]
+keywords = ["esm_tools"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+dependencies = [
+    "Click>=8.0.4",
+    "PyGithub==1.55",
+    "colorama==0.4.5",
+    "coloredlogs==15.0.1",
+    "emoji==1.7.0",
+    "f90nml==1.4.2",
+    "gfw-creator==0.2.2",
+    "gitpython==3.1.41",
+    "jinja2==3.1.6",
+    "loguru==0.6.0",
+    "numpy>=1.19.5",
+    "packaging==21.3",
+    "pandas>=1.1.5",
+    "psutil==5.9.1",
+    "pytest==7.1.2",
+    "pyyaml==6.0.1",
+    "questionary==1.10.0",
+    "ruamel.yaml==0.17.32",
+    "semver==2.13.0",
+    "sqlalchemy>=1.4.39",
+    "tabulate==0.8.10",
+    "tqdm==4.66.3",
+    "typing_extensions>=4.1.1",
+    "xdgenvpy==2.3.5",
+    "pydantic>=1.10.13",
+    "h5netcdf>=0.8.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/esm-tools/esm_tools"
+Documentation = "https://esm-tools.readthedocs.io"
+Repository = "https://github.com/esm-tools/esm_tools.git"
+"Bug Tracker" = "https://github.com/esm-tools/esm_tools/issues"
+
+[project.scripts]
+esm_archive = "esm_archiving.cli:main"
+esm_cleanup = "esm_cleanup.cli:main"
+esm_database = "esm_database.cli:main"
+esm_master = "esm_master.cli:main"
+esm_plugins = "esm_plugin_manager.cli:main"
+esm_runscripts = "esm_runscripts.cli:main"
+esm_tests = "esm_tests.cli:main"
+esm_tools = "esm_tools.cli:main"
+esm_utilities = "esm_utilities.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+# Conda-specific configuration - can be loaded by conda-lock
+[tool.conda]
+channels = ["conda-forge"]
+dependencies = [
+    "python=3.9",
+    "Click>=8.0.4",
+    "PyGithub=1.55",
+    "colorama=0.4.5",
+    "coloredlogs=15.0.1",
+    "emoji=1.7.0",
+    "f90nml=1.4.2",
+    "gitpython=3.1.41",
+    "jinja2=3.1.6",
+    "loguru=0.6.0",
+    "numpy>=1.19.5",
+    "packaging=21.3",
+    "pandas>=1.1.5",
+    "pip=23.3",
+    "psutil=5.9.1",
+    "pytest=7.1.2",
+    "pyyaml=6.0.1",
+    "questionary=1.10.0",
+    "ruamel.yaml=0.17.32",
+    "semver=2.13.0",
+    "setuptools=67.6.1",
+    "sqlalchemy=1.4.39",
+    "tabulate=0.8.10",
+    "typing_extensions>=4.1.1",
+    "pydantic>=1.10.13",
+    "h5netcdf>=0.8.1",
+]
+pip = [
+    "gfw-creator==0.2.2",
+    "tqdm==4.66.3",
+    "xdgenvpy==2.3.5",
+]

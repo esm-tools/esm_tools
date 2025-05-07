@@ -140,6 +140,49 @@ def test_resolve_choose_with_var_error():
     assert any(["ERROR: Choose conflict" in line for line in output])
 
 
+def test_resolve_choose_with_var_nested():
+    """
+    Resolve a var in a nested choose. A user error should not take place when resolving
+    it, even when that variable is also defined in another case inside the same parent
+    choose block.
+    """
+    config = yaml_file_to_dict(
+        f"{ESM_PARSER_TESTS_DIR}/data/resolve_choose_with_var.yaml"
+    )
+    expected_config = yaml_file_to_dict(
+        f"{ESM_PARSER_TESTS_DIR}/data/expected_resolve_choose_with_var.yaml"
+    )
+
+    resolve_choose_with_var(
+        "version", config["rnfmap"], current_model="rnfmap", user_config=config
+    )
+
+    assert config["rnfmap"]["version"] == expected_config["rnfmap"]["version"]
+
+
+def test_resolve_choose_with_var_error():
+    """
+    Test to check that a user error is raised when resolving a var in a choose block
+    with resolve_choose_with_var, and there are conflicting definitions of the same var
+    accross different choose blocks.
+    """
+    config = yaml_file_to_dict(
+        f"{ESM_PARSER_TESTS_DIR}/data/resolve_choose_with_var_error.yaml"
+    )
+
+    error = None
+    with Capturing() as output:
+        try:
+            resolve_choose_with_var(
+                "version", config["rnfmap"], current_model="rnfmap", user_config=config
+            )
+        except SystemExit as e:
+            error = e
+
+    assert isinstance(error, SystemExit)
+    assert any(["ERROR: Choose conflict" in line for line in output])
+
+
 # ---------------------------------
 # REGRESSION TESTS
 # ---------------------------------

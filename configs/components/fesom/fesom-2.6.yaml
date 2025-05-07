@@ -40,6 +40,9 @@ fesom:
       "2.6.7":
         branch: "2.6.7"
 
+      "2.6.8":
+        branch: "2.6.8"
+
     destination: "fesom-2.6"
     install_bins: bin/fesom.x
     git-repository:

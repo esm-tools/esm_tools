@@ -417,7 +417,7 @@ fesom:
             True:
                 comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
             False:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DDISABLE_MULTITHREADING=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
                 comp_command: "missing"
 
@@ -432,7 +432,7 @@ fesom:
         opbnd_dir: ""
         tide_forcing_dir: ""
         forcing_data_dir: ""
-        model_dir: ${general.model_dir}/fesom-${fesom.version}
+        model_dir: ${general.model_dir}/${fesom.destination}
         setup_dir: ${general.model_dir}
 
         pool_dir: "${general.pool_dir}/fesom2/"
@@ -496,7 +496,7 @@ fesom:
                                                 albi: 0.6
                                                 albim: 0.43
                 "v3.3":
-                        version: "2.6"
+                        version: "2.6.8"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.6/awicm3/v3.3/"
                         add_namelist_changes:
                                 namelist.config:
@@ -682,8 +682,15 @@ rnfmap:
         pool_dir: ${general.pool_dir}
         runoff_maps_name: _${fesom.resolution}
         choose_general.major_version:
+                "v3.3":
+                        # TODO: change this to a control on the patch version general.version
+                        choose_fesom.version:
+                                "2.6.8":
+                                        version: awicm-3.1
+                                "*":
+                                        version: v1.1
                 "v3.4":
-                      version: v1.1
+                        version: v1.1
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -832,7 +839,7 @@ oasis3mct:
                                         - 'heat_ico <--gauswgt_gss-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                        - ${calving_coupling_mode}
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
@@ -889,6 +896,12 @@ oasis3mct:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
+        # TODO: change this to a control on the patch version general.version
+        choose_fesom.version:
+                "2.6.8":
+                        calving_coupling_mode: 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                "*":
+                        calving_coupling_mode: 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce' 
 
         coupling_directions:
                 'atma->feom':

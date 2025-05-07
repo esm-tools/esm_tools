@@ -1,0 +1,205 @@
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   workdir: !ENV ${WORK}
+   
+   setup_name: "focioifs"      
+   version: "agrif-3.0"
+   resolution: "TCO319_ORCA05"
+
+   compute_time: "12:00:00"
+   initial_date: "2039-01-01T00:00:00"       # Initial exp. date
+   final_date: "2050-01-01T00:00:00"         # Final date of the experiment
+
+   nyear: 1
+   nmonth: 0
+   nday: 0
+   restart_rate: 1
+   restart_unit: days 
+   hours: 0
+  
+   # machine specific setup 
+   account: shk00057 
+   base_dir: ${general.homedir}/esm/esm-experiments/ 
+   
+   postprocessing: 1
+   
+   lresume: True
+   # Name of the run you are starting from
+   ini_parent_exp_id: "FOCI_GJK038"
+   # Where are you starting from in the above run
+   #ini_parent_date: "39991231"
+   ini_string_parent_date: "2039-01-01"
+   # Time step in NEMO from restarts in parent run
+   # NOTE: ESM-Tools looks for a global NEMO restart file 
+   # You must run nocs_combine on restarts first.
+   ini_nemo_restart_steps: 1560336 # 2038-12-31
+   ini_parent_dir: "${homedir}/esm/esm-experiments/${ini_parent_exp_id}/"
+   # Time stamp from OASIS for restarts in parent run
+   oasis_date_stamp: "_20380101-20381231"
+   
+computer: 
+   partition: "standard96" 
+
+focioifs:
+   model_dir: ${general.workdir}/models_p3/focioifs-agrif-3.0/
+   #nemo:  
+   #   remove_choose_general.version.agrif-3.0.add_namelist_changes.namelist_cfg.namtra_ldf:
+   #      - rn_aeiv_scale
+   #   choose_general.version: 
+   #      "agrif-3.0": 
+   #         remove_add_namelist_changes.namelist_cfg.namtra_ldf:
+   #            - rn_aeiv_scale
+   #         remove_namelist_changes.namelist_cfg.namtra_ldf:
+   #            - rn_aeiv_scale
+    
+oifs:
+   
+   lresume: ${general.lresume}
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_date: "${prev_date}"
+
+   # When did OpenIFS start in the parent run
+   ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/"
+   ini_string_parent_date: "2039-01-01"
+   # Config file of last restart
+   prev_run_config_file: "${ini_parent_dir}/../../config/${ini_parent_exp_id}_finished_config.yaml${general.oasis_date_stamp}"
+   # Number of days in OpenIFS restarts (usually 7305 unless leap year)
+   start_ndays_source: 730
+   # Start date of last leg (for annual restarts, one year before the start date)
+   pseudo_initial_date: "2038-01-01"
+   
+   version: "43r3"
+   with_xios: True
+   scenario: "historical"
+   mip: "cmip6"
+   pool_dir: "/scratch/projects/shk00018/foci_input2/"
+   input_dir: "${pool_dir}/openifs_cy43_tco319/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco319/319_4/"
+   ifsdata_dir: "/scratch/projects/shk00018/foci_input2/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy43_tco319/1950010100/"
+   icmcl_file: "ICMCLaazgINIT"
+   prepifs_expid: aazg
+   prepifs_startdate: 19500101
+   resolution: TCO319
+   levels: L137
+   time_step: 900
+   nproc: 576
+   omp_num_threads: 4
+   use_ocean_currents: 1
+   
+   # use CMIP6 ozone
+   o3_scheme: cmip6
+   
+   # new solar spectrum
+   solarspectrum: True
+   
+   with_nest1: true
+   add_namelist_changes:
+      fort.4:
+         NAERAD:
+              NAERANT_SCALE: 1 # turn on aerosol scaling
+              NCMIPFIXYR: 1950 # Fix GHG to 1950                                        
+              LSOLAR1950: ".true." # solar cycle for 1950 as HrMIP
+         NAMCLDP:
+              # diffusion coeff for cloud edges
+              RCLDIFF: 5.e-6 # default 3e-6
+              # for convection, RCLDIFF=RCLDIFF*RCLDIFF_CONVI
+              #RCLDIFF_CONVI: 7 # default 7.0
+         NAMMCC:
+              RALBSEAD_NML: 0.045
+              RALBSCALE_AR: 0.8
+
+oasis3mct:
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/restart/oasis3mct/"
+   
+   norestart: F
+   use_lucia: True
+   c2o_remap_method: "gauswgt"
+   coupling_time_step: 3600
+   mct_version: "5.0"
+   debug_level: 0
+   export_mode: EXPORTED
+   pool_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco319_orca05_viking10/
+   oasis_date_stamp: ""
+      
+nemo:
+   lresume: ${general.lresume}
+   ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   ini_parent_dir: "${general.ini_parent_dir}/restart/nemo/"
+   ini_parent_date: ${prev_date}
+   
+   agrif_dir: /scratch/projects/shk00018/foci_input2/agrif_viking10_jk/
+   input_dir: /scratch/usr/shkifmsw/foci_input2/NEMO_ORCA05/input/ORCA05/
+   resolution: "ORCA05"
+   #time_step: 600      
+   version: "ORCA05_LIM2_KCM_AGRIF_OASISMCT4"
+   jpni: 36
+   jpnj: 24
+   nproca: 36
+   nprocb: 24
+   nproc: 864
+   nest1: viking10
+   
+   add_namelist_changes:
+      namelist_cfg:
+         #namsbc: 
+         #   nn_fsbc: 1
+         namsbc_rnf:
+            rn_rfact: 1.00
+         # Malins visc and diff changes
+         namdyn_ldf:
+            rn_ahm_0_blp: -1.709e12
+         namtra_ldf:
+            rn_aht_0: 600
+            rn_aeiv_scale: "remove_from_namelist"
+      1_namelist_cfg:
+         #namsbc:
+         #   nn_fsbc: 1
+         namlbc:
+            rn_shlat: 0
+         namsbc_rnf:
+            rn_rfact: 1.0
+         namdyn_ldf:
+            rn_ahm_0_blp: -1.37e10
+         namtra_ldf:
+            rn_aht_0: 120
+   
+   #remove_nemo.choose_general.version.agrif-3.0.add_namelist_changes.namelist_cfg.namtra_ldf:
+   #   - rn_aeiv_scale
+   #remove_nemo.namelist_changes.namelist_cfg.namtra_ldf:
+   #   - rn_aeiv_scale
+   
+   #remove_choose_general.version.agrif-3.0.namelist_changes.namelist_cfg.namtra_ldf:
+   #   - rn_aeiv_scale
+   
+   #choose_general.version:
+   #   "agrif-3.0":
+   #      remove_add_namelist_changes.namelist_cfg.namtra_ldf:
+   #         - rn_aeiv_scale
+   #      #remove_namelist_changes.namelist_cfg.namtra_ldf:
+   #      #   - rn_aeiv_scale
+    
+   #remove_namelist_changes:
+   #   namelist_cfg:
+   #      namtra_ldf:
+   #         rn_aeiv_scale: 0.5 
+   #remove_namelist_changes.namelist_cfg.namtra_ldf:
+   #   - rn_aeiv_scale
+   #remove_add_namelist_changes.namelist_cfg.namtra_ldf:
+   #   - rn_aeiv_scale 
+    
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco319_orca05_viking10/output_for_prod/
+   nproc: 6
+   omp_num_threads: 48

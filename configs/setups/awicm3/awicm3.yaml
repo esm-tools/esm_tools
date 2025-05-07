@@ -1142,7 +1142,7 @@ computer:
                         iolibraries: system_libs
                         compiler_mpi: intel2022_openmpi
 
-        choose_execution_mode:
+        choose_general.execution_mode:
             run:
                 add_export_vars:
                     # Turn on FESOM coupling

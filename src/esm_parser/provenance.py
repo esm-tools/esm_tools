@@ -57,7 +57,7 @@ CATEGORY_HIERARCHY = [
     "runscript",
     "command_line",
     "backend",  # Highest in the hierarchy (no category means it is a change
-]               # from ESM-Tools functions)
+]  # from ESM-Tools functions)
 
 
 # =================
@@ -476,6 +476,10 @@ class DictWithProvenance(dict):
         ----------
         provenance : any
             New `provenance value` to be set
+        update_method : str, optional
+            Method to use when updating provenance of existing values. Can be either
+            ``extend`` to append the new provenance to the existing one, or ``update``
+            to update the last provenance entry with new values. Default is ``extend``.
         """
         if not isinstance(provenance, list):
             provenance = [provenance]
@@ -495,9 +499,22 @@ class DictWithProvenance(dict):
                         self[key].provenance[-1].update(provenance[-1])
                     else:
                         self[key].provenance[-1] = provenance[-1]
+                elif update_method == "update_from_choose":
+                    if self[key].provenance[-1]:
+                        old_from_choose = (
+                            self[key].provenance[-1].get("from_choose", [])
+                        )
+                        # Extend the from_choose list with the new entry
+                        if old_from_choose:
+                            provenance[-1]["from_choose"] = (
+                                old_from_choose + provenance[-1].get("from_choose", [])
+                            )
+                        self[key].provenance[-1].update(provenance[-1])
+                    else:
+                        self[key].provenance[-1] = provenance[-1]
                 else:
                     raise ValueError(
-                        f"Unknown update method {update}. Use either 'extend' or 'update'"
+                        f"Unknown update method {update_method}. Use either 'extend' or 'update'"
                     )
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
@@ -568,6 +585,12 @@ class DictWithProvenance(dict):
             Key of the item
         val : any
             Value of the item
+
+        Raises
+        ------
+        user_error :
+            If the new value comes from a choose and the old value comes from a choose
+            within the same category
         """
         # Initialize values. final_val is the variable that will be used in
         # super().__setitem__
@@ -609,23 +632,34 @@ class DictWithProvenance(dict):
 
                 # Raise an error if the categories are the same
                 if old_category_index == new_category_index and old_val != new_val:
-                    old_val_comes_from_choose = old_provenance[-1].get("from_choose")
-                    new_val_comes_from_choose = new_provenance[-1].get("from_choose")
+                    old_val_comes_from_choose = old_provenance[-1].get(
+                        "from_choose", []
+                    )
+                    new_val_comes_from_choose = new_provenance[-1].get(
+                        "from_choose", []
+                    )
                     # If both values come from a choose, raise a choose conflict
                     # user_error
-                    if old_val_comes_from_choose and new_val_comes_from_choose:
+                    both_vals_from_choose = (
+                        old_val_comes_from_choose and new_val_comes_from_choose
+                    )
+                    new_val_is_nested_in_old_choose = (
+                        new_val_comes_from_choose[: len(old_val_comes_from_choose)]
+                        == old_val_comes_from_choose
+                    )
+                    if both_vals_from_choose and not new_val_is_nested_in_old_choose:
                         user_error(
                             "Choose conflict",
                             f"Two ``choose_`` blocks ("
-                            f"``{old_provenance[-1]['from_choose']['choose_key']}`` and "
-                            f"``{new_provenance[-1]['from_choose']['choose_key']}``) define "
+                            f"``{old_provenance[-1]['from_choose'][-1]['choose_key']}`` and "
+                            f"``{new_provenance[-1]['from_choose'][-1]['choose_key']}``) define "
                             f"the same key ``{key}`` with different values and belong "
                             f"to the same hierarchy level ``{old_category}``. This is "
                             f"not allowed. To solve this rethink the logic of these "
                             f"choose blocks and make sure their parameters are "
                             f"independent/non-conflicting. Conflicting values defined "
                             f"in:\n- @HINT_0@\n- @HINT_1@",
-                            hints = [
+                            hints=[
                                 {
                                     "type": "prov",
                                     "object": old_val,
@@ -636,7 +670,7 @@ class DictWithProvenance(dict):
                                     "object": new_val,
                                     "text": "@HINT@",
                                 },
-                            ]
+                            ],
                         )
                     # If the new value comes from a choose, it can overwrite
                     elif new_val_comes_from_choose:
@@ -650,7 +684,7 @@ class DictWithProvenance(dict):
                             f" one of the these two values, or include them into a choose "
                             f"block that avoids the conflict."
                             "\n- @HINT_0@\n- @HINT_1@",
-                            hints = [
+                            hints=[
                                 {
                                     "type": "prov",
                                     "object": old_val,
@@ -661,7 +695,7 @@ class DictWithProvenance(dict):
                                     "object": new_val,
                                     "text": "@HINT@",
                                 },
-                            ]
+                            ],
                         )
                 # Assign the new value if the new category is higher in the hierarchy
                 elif old_category_index < new_category_index or old_val == None:
@@ -811,6 +845,10 @@ class ListWithProvenance(list):
         ----------
         provenance : any
             New `provenance value` to be set
+        update_method : str, optional
+            Method to use when updating provenance of existing values. Can be either
+            ``extend`` to append the new provenance to the existing one, or ``update``
+            to update the last provenance entry with new values. Default is ``extend``.
         """
         if not isinstance(provenance, list):
             provenance = [provenance]
@@ -827,6 +865,17 @@ class ListWithProvenance(list):
                     self[c].provenance.extend(provenance)
                 elif update_method == "update":
                     if self[c].provenance[-1]:
+                        self[c].provenance[-1].update(provenance[-1])
+                    else:
+                        self[c].provenance[-1] = provenance[-1]
+                elif update_method == "update_from_choose":
+                    if self[c].provenance[-1]:
+                        old_from_choose = self[c].provenance[-1].get("from_choose", [])
+                        # Extend the from_choose list with the new entry
+                        if old_from_choose:
+                            provenance[-1]["from_choose"] = (
+                                old_from_choose + provenance[-1].get("from_choose", [])
+                            )
                         self[c].provenance[-1].update(provenance[-1])
                     else:
                         self[c].provenance[-1] = provenance[-1]

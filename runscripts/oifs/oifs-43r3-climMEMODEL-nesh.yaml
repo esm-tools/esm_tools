@@ -1,0 +1,179 @@
+general:
+        # Some general settings
+        use_venv: False
+        verbose: False
+        homedir: !ENV ${HOME}
+
+        setup_name: oifs
+        
+        # Wall time for the job
+        # Should be longer than you think
+        compute_time: "00:45:00"
+        # What date do we start from
+        initial_date: "1979-01-01T00:00:00"
+        # When do we finish
+        final_date: "1979-07-01T00:00:00"
+        
+        # How often do we restart
+        # nyear:0, nmonth: 0, nday:5 means we restart each 5 days
+        # nyear:0, nmonth: 1, nday:0 means we restart each month
+        nyear: 0
+        nmonth: 1
+        nday: 0
+        
+        # Where is your model code (you dont need to change it)
+        model_dir: ${homedir}/esm/models/oifs-43r3-v2/
+        # Where do you want to store model experiments
+        # This should be on WORK or a link to WORK
+        base_dir: ${homedir}/esm/esm-experiments/
+        
+oifs:
+        # General settings we dont need to change
+        version: 43r3
+        with_xios: True  
+        # model time step 
+        time_step: 1800   
+        
+        # where to find input data    
+        input_dir: /gxfs_work1/geomar/smomw352/foci_input2/openifs_cy43_tco95/ 
+        rtables_dir: ${pool_dir}/OPENIFS_CY43_GENERAL/rtables/
+        vtables_dir: ${pool_dir}/OPENIFS_CY43_GENERAL/vtables/
+        clim_dir: ${pool_dir}/OPENIFS43R3-TCO95/95_4/
+        ifsdata_dir: /gxfs_work1/geomar/smomw352/foci_input2/openifs_cy43_general/ifsdata/
+        cmip6_data_dir: /gxfs_work1/geomar/smomw352/foci_input2/openifs_cy43_general/cmip6-data/
+        icmcl_dir: ${pool_dir}/OPENIFS43R3-TCO95-AMIP/
+        icmcl_file: ICMCLhagwINIT_AMIP-1-1-6_19790101_20171231
+        prepifs_expid: hagw
+        prepifs_startdate: 20080101
+
+        # how many MPI tasks to parallelise on
+        nproc: 128 
+        # how many OpenMP threads to use for each task
+        # WARNING: More than 1 not tested on NESH
+        #
+        # cores = nproc x omp_num_threads
+        omp_num_threads: 1
+
+        # run post processing after each job
+        # * compress output to netCDF4 classic zip
+        # * compute annual mean (if job is at least 1 year)
+        post_processing: True
+
+        # activate PEXTRA to run model diagnostics, e.g. 
+        # temperature tendency due to dynamics, physics etc
+        # Useful for some studies, but very expensive
+        pextra: 0  
+
+        # how to restart the model automatically
+        # after each job
+        # Dont use anything else than eternal, unless you are crazy 
+        restart_type: eternal
+        
+        # Which MIP are we following. Probably CMIP6
+        mip: cmip6
+        # What scenario should we take CO2, solar constant
+        # etc from? 
+        scenario: historical
+        # How should we prescribe O3 concentrations
+        o3_scheme: cmip6
+        # What resolution are we using
+        # (Note: If you change this, you also need to change 
+        #  the input data above)
+        resolution: TCO95
+        levels: L91
+        # Are you restarting or starting from scratch
+        lresume: 0
+        # Should we perturb initial SSTs 
+        # (useful to make ensembles)
+        # Perturbation is done by adding 0.1K random noise
+        # to skin temperature at first time step
+        perturb: 1
+        # If perturb: 1, then set a unique ensemble ID here
+        ensemble_id: 1
+        # Re-distribute SW radiation to reduce stratospheric bias
+        # See Coddington (2016) https://doi.org/10.1175/BAMS-D-14-00265.1
+        solarspectrum: 1
+        
+        # Here we can change parameters for the model
+        add_namelist_changes:
+                fort.4:
+                        NAERAD:
+                                # This scales anthropogenic aerosols 
+                                # over time so that aerosol conc increases
+                                # over e.g. south-east Asia and decreases
+                                # over Europe. 
+                                NAERANT_SCALE: 1
+                                # Greenhouse-gas concentrations are taken
+                                # for the year of the run. 
+                                # But you can force the model to take
+                                # gas conc from a specific year here.
+                                # For example, 1850 or 2100. 
+                                NCMIPFIXYR: 0
+                                # You can force the model to quadruple CO2
+                                # concentration from NCMIPFIXYR above.
+                                LA4xCO2: ".false." 
+                        NAMCLDP:
+                                # Diffusion coeff for cloud edges
+                                # This has been tuned to account for the 
+                                # excessive cloud cover in IFS 
+                                # (eq. 7.47, IFS 43r3 doc, part 4)
+                                RCLDIFF: 5.e-6 # default 3e-6
+                                # Diffuson for convective clouds 
+                                # RCLDIFF=RCLDIFF*RCLDIFF_CONVI
+                                RCLDIFF_CONVI: 7 
+                                # Fall speed of ice particles
+                                # (sec 7.2.4i, IFS 43r3 doc, part 4)
+                                RVICE: 0.13
+                                # Critical liquid water concentration needed
+                                # to form rain droplets over sea
+                                # Increasing it makes it harder to form precipitation
+                                # (eq 7.53, 7.54, IFS 43r3 doc, part 4)
+                                RCLCRIT_SEA: 2.5E-4
+                        NAMCUMF:
+                                # Conversion rate of cloud liquid water to precip
+                                RPRCON: 1.4E-3
+                                # Entrainment rate in convective clouds
+                                # (eq 6.7, IFS 43r3 doc, part 4)
+                                ENTRORG: 1.75E-3
+                                # Detrainment in penetrative convection
+                                # (eq 6.8, IFS 43r3 doc, part 4)
+                                DETRPEN: 0.75E-4
+                                # Entrainment rate 
+                                ENTRDD: 3.0E-4
+                        NAMMCC:
+                                # Albedo of ocean surface 
+                                # Probably not relevant for AMIP
+                                RALBSEAD_NML: 0.045
+                                # Scale factor for Arctic sea-ice albedo
+                                # Arctic ice thermodynamics are wrong as 1.5m ice
+                                # thickness is assumed. Some tuning is needed
+                                # to correct Arctic ice in coupled runs
+                                RALBSCALE_AR: 0.8
+                        NAMGWWMS:
+                                # Scale factor for gravity-wave launch flux
+                                # Launch flux at equator is A from 
+                                # Scinocca (2003 eq 25)
+                                # This should be reduced for high-res
+                                # Tco319 used -0.95 (95pct reduction)
+                                # Reducing will weaken QBO etc
+                                GGAUSSB: -0.25
+                        NAMORB:
+                                # Set orbital parameters for Earth
+                                # Settings (for a 1995 orbit) are: 
+                                # ORBOBLIQ (obliquity) = 23.4441
+                                # ORBECCEN (eccentricity) = 0.016715
+                                # ORBMVELP (moving vernal equinox long) = 102.7
+                                # Comment these lines out to use OpenIFS default
+                                LCORBMD: '.false.'
+                                ORBMODE: 'fixed_parameters'
+                                ORBECCEN: 0.016715
+                                ORBOBLIQ: 22. #23.4441
+                                ORBMVELP: 102.7
+        
+
+xios:
+        # Choose settings for model output
+        # This already includes some common variables. If you are looking for something
+        # specific, you can make your own settings file
+        xml_dir: /gxfs_work1/geomar/smomw352/foci_input2/openifs_cy43_tco95/output_for_prod/
+        nproc: 16

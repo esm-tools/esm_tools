@@ -9,6 +9,7 @@ general:
         version: "1.4"
 
         coupled_setup: False
+        pseudo_coupled_setup: True
         standalone: True
 
         include_models:
@@ -115,7 +116,7 @@ recom:
 computer:
     choose_computer.name:
         blogin:
-            choose_execution_mode:
+            choose_general.execution_mode:
                 run:
                     add_export_vars:
                         # MA: Delete in the future, when libraries in blogin.yaml

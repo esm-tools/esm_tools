@@ -4,6 +4,7 @@ nemobasemodel:
     - 3.6ogcm_test
     - 3.6foci
     - 3.6foci_autotools
+    - 4.2.0
     - 4.2.x
 
     choose_version:
@@ -15,6 +16,11 @@ nemobasemodel:
         # 4.2.0 is actually a tag and not a branch, but we agreed
         # to use tag 4.2.0 as a basis for all our developments
         branch: 4.2.0
+        git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
+      4.2.2:
+        # 4.2.2 includes a bug fix for sea-ice drag.
+        # apparently very important
+        branch: 4.2.2
         git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
 
       3.6.3.x:

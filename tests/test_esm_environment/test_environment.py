@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 
-""" Tests for ``esm_environment``"""
+"""Tests for ``esm_environment``"""
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
 import unittest
-import yaml
-
-import esm_tools
-
 from copy import deepcopy
 from io import StringIO
 
-from esm_parser.provenance import Provenance, DictWithProvenance, ListWithProvenance
+import yaml
+
+import esm_tools
 from esm_environment import EnvironmentInfos
+from esm_parser import CATEGORY_HIERARCHY
+from esm_parser.provenance import DictWithProvenance, ListWithProvenance, Provenance
 from utils import Capturing
 
 SIMPLE_EXP_VARS = """
@@ -159,11 +159,11 @@ def config_gen(computer, config=COMPLETE_CONFIG):
 
 
 class FakeEnv(object):
-    def __init__(self, config, execution_mode, model):
+    def __init__(self, config, execution_mode, component):
         self.config = config
         self.computer = config["computer"]
         self.execution_mode = execution_mode
-        self.model = model
+        self.component = component
 
 
 FakeEnv._filter_env_vars = EnvironmentInfos._filter_env_vars
@@ -312,7 +312,27 @@ class TestEnvironment(unittest.TestCase):
         assert isinstance(error, SystemExit)
         assert any(["during run is not supported yet" in line for line in output])
 
-    # TODO: Sorting testing
+    def test_sorting_of_environment_variables(self):
+        """Test to check the sorting of environment variables"""
+        env = deepcopy(EXP_VARS_WITH_DIFF_PROV_OBJ)
+
+        # Change column of VAR3 to force sorting, and change category and subcategory
+        # so that VAR2 and VAR3 are set to come from the same component
+        env.computer["export_vars"]["VAR3"].provenance[-1]["col"] = 40
+        env.computer["export_vars"]["VAR3"].provenance[-1]["category"] = "components"
+        env.computer["export_vars"]["VAR3"].provenance[-1]["subcategory"] = "fesom"
+        EnvironmentInfos.sort_env_vars(env, "export_vars", CATEGORY_HIERARCHY)
+
+        expected_export_vars = {
+            "VAR1": "1",
+            "VAR3": "3",
+            "VAR2": "2",
+        }
+
+        for ekey, key in zip(
+            expected_export_vars.keys(), env.computer["export_vars"].keys()
+        ):
+            assert ekey == key
 
     def test_report_deprecated_environment_changes(self):
         """Test to check the reporting of deprecated environment changes"""

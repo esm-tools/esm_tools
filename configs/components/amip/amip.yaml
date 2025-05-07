@@ -99,7 +99,7 @@ computer:
     # Setup up compile and run environment i.e. what needs
     # to be changed w.r.t the default config/machines/<computer>.yaml
     #
-    choose_execution_mode:
+    choose_general.execution_mode:
         compile:
             add_export_vars:
                 NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include

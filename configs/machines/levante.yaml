@@ -125,7 +125,7 @@ computer:
 
     # Variables needed exclusively during runtime
     # NOTE: runtime_environment_changes does not work from the machine files
-    choose_execution_mode:
+    choose_general.execution_mode:
         run:
             add_export_vars:
                 OMPI_MCA_btl: self

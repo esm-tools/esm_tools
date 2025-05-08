@@ -1763,6 +1763,7 @@ def resolve_choose_with_var(
             resolve_basic_choose(config_to_search_into, config_copy, choose_block)
 
             # Update original config with resolved variable value
+            lvar = lvar.replace("add_", "")
             if lvar in config_copy:
                 config[lvar] = config_copy[lvar]
 

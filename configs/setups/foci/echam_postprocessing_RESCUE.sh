@@ -21,6 +21,7 @@ ATM_FILE_TAGS='echam co2 tracer accw echamday co2day'
 # Other settings
 day="01"
 max_jobs=12
+ftype="nc" # or szip for grb.szip output
 
 #
 ###############################################################################
@@ -202,19 +203,21 @@ function rename_files {
 
         trap 'echo $input:$? >> status' ERR
         if [[ -r $input ]] ; then
-	        mv -v $input $output
-           if [[ ! -r ${basedir}/log/${prefix}_${filetag}.codes ]] ; then
+            mv -v $input $output
+            if [[ $prefix == *jsbach*  ]] && [[ ! -r ${basedir}/log/jsbach/${prefix}_${filetag}.codes ]] ; then
+              cp ${input}.codes ${basedir}/${EXP_ID}/log/jsbach/${prefix}_${filetag}.codes 
+            elif [[ $prefix == *echam*  ]] && [[ ! -r ${basedir}/log/echam/${prefix}_${filetag}.codes ]] ; then
               cp ${input}.codes ${basedir}/${EXP_ID}/log/echam/${prefix}_${filetag}.codes 
            fi
            rm ${input}.codes
         elif [[ -r ${input}.nc ]] ; then
            mv -v ${input}.nc ${output}
         else
-           if ! [[ -f $output ]] ; then
-              echo "$output not available."
-				  missing_output=1
-			  else
-              echo "$output already available."
+            if ! [[ -f $output ]] ; then
+                echo "$output not available."
+                missing_output=1
+			      else
+                echo "$output already available."
            fi
         fi
     done
@@ -351,14 +354,6 @@ EOF
                 ) &
                 ;;
 
-            co2/*)
-                (
-                    trap 'echo $? > $post_dir/status' ERR
-                    cdo $avg_op $input $output
-                ) &
-                [[ " $meantags " != *' co2 '* ]] && meantags="$meantags co2"
-                ;;
-
             */?*)
                 # with averaging, by default, files are left as they are
                 ;;
@@ -410,42 +405,41 @@ do
 done
 
 wait
-# netcdf conversion
-for ((year=startyear; year<=endyear; ++year))
-do
-
-    for filetag in $(echo $meantags | sed 's/\>/_mm/g') 
-    do
-        output=${prefix}_${filetag}_$year$fileext
-
-        # If too many jobs run at the same time, wait
-        while (( $(jobs -pr | wc -l) >=  max_jobs )); do sleep $sleep_time; done
-        (
-            trap 'echo $? > $post_dir/status' ERR
-				# netcdf conversion for mean files, set axis units in days, otherwise
-				# python does not recognize the axis properly.
-				[[ "$fileext" == ".grb" ]] && cdo -t echam6 -r -f nc4c -z zip_1 -settunits,days -settaxis,${year}-01-15,00:00:00,1months $output $(basename $output .grb).nc
-        ) &
-		  [[ "$fileext" == ".grb" ]] && remove_list="$remove_list $output" 
-    done
-done
-
-
-wait
 
 for ((year=startyear; year<=endyear; ++year))
 do
-	# Add szip compression
-	for filetag in $filetags
+	# Add szip compression or netcdf conversion for remaining echam output
+	for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags 
 	do
 		file=${prefix}_${filetag}_$year${fileext}
 		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 		(
 			trap 'echo $? > $post_dir/status' ERR
-			cdo -szip $file ${file}.szip
+      if [[ "$ftype" == "nc" ]] || [[ $meantag == *$filetag* ]]; then
+         codesfile=${basedir}/${EXP_ID}/log/echam/${prefix}_${filetag}.codes 
+         [[ "BOT_mm ATM_mm" == *$filetag* ]] && codesfile="echam6"
+         if [[ -f $codesfile ]] || [[ "$codesfile" == "echam6" ]]; then
+            cdo -r -f nc4c -z zip_1 -t $codesfile copy $file $(basename $file .grb).nc 
+         else
+            echo "$codesfile missing, cannot convert to netCDF, will keep grb file."
+         fi
+      else
+			   cdo -szip $file ${file}.szip
+      fi
 		) &
-		remove_list="$remove_list $file"
 	done
+  wait
+  # check whether files can be removed
+	for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags 
+	do
+		file=${prefix}_${filetag}_$year${fileext}
+    if [[ -f ${file}.szip ]] || [[ -f $(basename $file .grb).nc ]] ; then
+		    remove_list="$remove_list $file"
+    else
+        echo "$file not removed as szip or netCDF step failed".
+    fi
+		remove_list="$remove_list $file"
+  done
 done
 
 wait
@@ -483,62 +477,8 @@ srf_files_to_remove=
 
 echo 0 > $post_dir/status
 
-#rename_files $prefix "$stamps" "$filetags"
+rename_files $prefix "$stamps" "$filetags"
 wait
-
-remove_list=
-stamps=""
-for stamp in $stamps
-do
-
-    make -j $max_jobs -f - all << EOF
-
-#
-# [output.jsbach]
-#
-$(file_name veg_mm $stamp): $(file_name veg $stamp)
-	ln -vf $(file_name veg $stamp) $(file_name veg_mm $stamp)
-$(file_name surf_mm $stamp): $(file_name surf $stamp)
-	ln -vf $(file_name surf $stamp) $(file_name surf_mm $stamp)
-$(file_name yasso_mm $stamp): $(file_name yasso $stamp)
-	ln -vf $(file_name yasso $stamp) $(file_name yasso_mm $stamp)
-$(file_name nitro_mm $stamp): $(file_name nitro $stamp)
-	ln -vf $(file_name nitro $stamp) $(file_name nitro_mm $stamp)
-#
-# [output.jsbach.fapar_mon]
-#
-$post_dir/$(file_name fapar_mon $stamp): $(file_name land $stamp)
-	cdo expr,var125=var148/var149 -monavg $(file_name land $stamp) $post_dir/$(file_name fapar_mon $stamp)
-#
-# [output.jsbach.albedo_mon]
-#
-$post_dir/$(file_name albedo_mon $stamp): $(file_name jsbach $stamp)
-	cdo expr,var13=var22/var21 $(file_name jsbach $stamp) $post_dir/$(file_name albedo_mon $stamp)
-#
-# [output.jsbach.land_mm]
-#
-$(file_name land_mm $stamp): $(file_name land $stamp) $post_dir/$(file_name fapar_mon $stamp)
-	cdo merge $(file_name land $stamp) $post_dir/$(file_name fapar_mon $stamp) $(file_name land_mm $stamp)
-#
-# [output.jsbach.jsbach_mm]
-#
-$(file_name jsbach_mm $stamp): $(file_name jsbach $stamp) $post_dir/$(file_name albedo_mon $stamp) $post_dir/$(file_name fapar_mon $stamp)
-	cdo merge $(file_name jsbach $stamp) $post_dir/$(file_name albedo_mon $stamp) $post_dir/$(file_name fapar_mon $stamp) $(file_name jsbach_mm $stamp)
-#
-# Global targets
-#
-all: $(file_name veg_mm $stamp) $(file_name surf_mm $stamp) $(file_name yasso_mm $stamp) $(file_name nitro_mm $stamp) $(file_name jsbachday $stamp) $(file_name vegday $stamp) $(file_name landday $stamp) $(file_name yassoday $stamp) $(file_name nitroday $stamp) $(file_name land_mm $stamp) $(file_name jsbach_mm $stamp)
-
-EOF
-
-    remove_list="$remove_list $(file_name veg $stamp) $(file_name surf $stamp) $(file_name yasso $stamp) $(file_name nitro $stamp) $(file_name jsbach $stamp) $(file_name land $stamp)"
-
-done # stamps
-
-srf_files_to_remove="$srf_files_to_remove $remove_list"
-
-print 'JSBACH post-processing finished'
-
 #
 # Concatenate monthly to yearly files
 #
@@ -547,8 +487,8 @@ print 'JSBACH concatenation started'
 
 echo 0 > $post_dir/status
 
-#filetags=${LAND_FILE_TAGS2}
-filetags=""
+filetags=${LAND_FILE_TAGS}
+#filetags=""
 
 remove_list=
 for ((year=startyear; year<=endyear; ++year))
@@ -570,6 +510,43 @@ do
         remove_list="$remove_list $inputs"  
     done
 done
+# TODO: hier weiter, check if this would work for JSBACH output as well
+wait
+
+for ((year=startyear; year<=endyear; ++year))
+do
+	# Add szip compression or netcdf conversion for remaining echam output
+	for filetag in $filetags
+	do
+		file=${prefix}_${filetag}_$year${fileext}
+		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
+		(
+			trap 'echo $? > $post_dir/status' ERR
+      if [[ "$ftype" == "nc" ]] || [[ $meantag == *$filetag* ]]; then
+         codesfile=${basedir}/${EXP_ID}/log/jsbach/${prefix}_${filetag}.codes 
+         if [[ -f $codesfile ]] ; then
+            cdo -r -f nc4c -z zip_1 -t $codesfile copy $file $(basename $file .grb).nc 
+         else
+            echo "$codesfile missing, cannot convert to netCDF, will keep grb file."
+         fi
+      else
+			   cdo -szip $file ${file}.szip
+      fi
+		) &
+	done
+  wait
+  # check whether files can be removed
+	for filetag in $filetags
+	do
+		file=${prefix}_${filetag}_$year${fileext}
+    if [[ -f ${file}.szip ]] || [[ -f $(basename $file .grb).nc ]] ; then
+		    remove_list="$remove_list $file"
+    else
+        echo "$file not removed as szip or netCDF step failed".
+    fi
+		remove_list="$remove_list $file"
+  done
+done
 
 wait
 
@@ -587,8 +564,8 @@ if [[ ! -f $DATA_DIR/fx/${EXP_ID}_${atmmod}_fx.nc ]]; then
 	cd $DATA_DIR/fx
 	
 	# select slm, slf from ECHAM6 output, calculated gridareas and add them
-	cdo -r -f nc4c -t echam6 -gridweights $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}${fileext}.szip weight_$startyear.nc
-	cdo -r -f nc4c -t echam6 -gridarea $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}${fileext}.szip area_$startyear.nc
+	cdo -r -f nc4c -t echam6 -gridweights $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}${fileext}.$ftype weight_$startyear.nc
+	cdo -r -f nc4c -t echam6 -gridarea $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}${fileext}.$ftype area_$startyear.nc
 	cdo -r -f nc4c -t echam6 -selname,slm,slf -seltimestep,1 $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_echam_${startyear}${fileext}.szip slm_slf_$startyear.nc
 	cdo merge *_${startyear}.nc ${EXP_ID}_${atmmod}_fx.nc && rm *_${startyear}.nc
 	print 'ECHAM6 storing of static data finished'

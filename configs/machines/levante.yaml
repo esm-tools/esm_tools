@@ -72,14 +72,10 @@ computer:
     pool_dir:  "/pool/data"
 
     # kh 15.02.22 preferred on levante (at the moment), on mistral intelmpi was the default
-    compiler_mpi: gnu11_ompi4
-    #compiler_mpi: intel2022_openmpi
-    #compiler_mpi: intel2022_impi2021
+    compiler_mpi: intel2022_openmpi
 
     # seb-wahl: choose libaries below, default is the system libs via modules
-    iolibraries: system_gnu_libs
-    #iolibraries: system_intel_libs
-    #iolibraries: system_intel_impi_libs
+    iolibraries: system_libs
 
     module_actions:
             - "purge"
@@ -110,6 +106,7 @@ computer:
 
     #       I_MPI_HYDRA_BOOTSTRAP: slurm
     #       I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS: "--ntasks-per-node=1"
+
     # kh 18.02.22 also see https://gitlab.dkrz.de/levante/early-access/-/wikis/home
             HCOLL_ENABLE_MCAST_ALL: "1"
             HCOLL_MAIN_IB: mlx5_0:1
@@ -123,8 +120,7 @@ computer:
             KMP_AFFINITY: "granularity=fine,scatter"
 
 
-    # Variables needed exclusively during runtime
-    # NOTE: runtime_environment_changes does not work from the machine files
+    # Variables needed exclusively during run time
     choose_general.execution_mode:
         run:
             add_export_vars:

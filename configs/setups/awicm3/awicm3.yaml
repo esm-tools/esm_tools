@@ -35,8 +35,6 @@ general:
             major_version: v3.0
             couplings:
             - fesom-2.0-awicm-3.0+oifs-43r3-awicm-3.0
-            add_further_reading:
-            - oifs/oifs43.env.yaml
             oasis_with_yac: False
             xios_interp_order: 2
           v3.1:
@@ -101,11 +99,6 @@ general:
             - fesom-2.6+oifs-43r3-awicm-3.2+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs43.env.yaml
-            - xios/xios.env.yaml
-            - rnfmap/rnfmap.env.yaml
-            - fesom/fesom.env.yaml
             oasis_with_yac: False
             xios_interp_order: 1
           v3.4:
@@ -114,11 +107,6 @@ general:
             - fesom-2.6+oifs-48r1+xios-2.5
             add_include_models:
             - xios
-            add_further_reading:
-            - oifs/oifs48.env.yaml
-            - xios/xios.env.yaml
-            - rnfmap/rnfmap.env.yaml
-            - fesom/fesom.env.yaml
             oasis_with_yac: False
           master:
             major_version: master

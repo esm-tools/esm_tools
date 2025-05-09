@@ -880,7 +880,7 @@ def add_entries_from_chapter(config, add_chapter, add_entries):
             dict_merge(
                 config[add_chapter],
                 add_entries,
-                resolve_nested_adds=False,
+                resolve_nested_adds=True,
             )
     else:
         config[add_chapter] = add_entries

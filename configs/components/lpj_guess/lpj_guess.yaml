@@ -80,6 +80,12 @@ choose_computer.name:
 lresume: false
 time_step: 86400
 
+choose_lresume:
+    false:
+        restart_num: 0
+    true:
+        restart_num: 1
+
 # Some commonly used variables in other ESM-Tools components (but optional)
 input_dir: ${pool_dir}/lpj-guess/
 namelist_dir: ${general.esm_namelist_dir}/lpj_guess/

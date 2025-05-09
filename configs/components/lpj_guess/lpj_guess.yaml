@@ -9,6 +9,13 @@
 model: lpj_guess
 version: 4.1.1
 
+# Enable automatic lpjg2nc2 post-processing (default is disabled)
+auto_lpjg2nc: False
+
+# Include the lpjg2nc2 configuration
+further_reading:
+    - auto_lpjg2nc.yaml
+
 metadata:
         Institute: Lund Universitiy
         Description:

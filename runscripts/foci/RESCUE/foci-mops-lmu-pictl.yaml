@@ -1,3 +1,6 @@
+# TODO:
+# land use harvest and land use transitions still wrong links wit piCtl
+# check namelist.echam and namelist.jsbach
 computer:
    pool_dir: "/mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/" 
    # partition: "standard96:test"
@@ -13,10 +16,10 @@ general:
 
    # operational settings: yearly restarts
    compute_time: "02:15:00"
-   initial_date: "1999-01-01T00:00:00"       # Initial exp. date
-   final_date: "2035-01-01T00:00:00"         # Final date of the experiment
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1900-01-01T00:00:00"         # Final date of the experiment
    nmonth: 12
-   clean_runs: 2
+   clean_runs: 5
    # test settings, daily restarts
    #compute_time: "00:15:00"
    #initial_date: "2015-01-01T00:00:00"       # Initial exp. date
@@ -29,9 +32,9 @@ general:
    base_dir: ${homedir}/esm/esm-experiments/
 
    lresume: True
-   ini_parent_exp_id: "FOCI1.20.0-CC105_RCP_ESM_spinup2099"
-   ini_parent_date: "19991231" 
-   ini_nemo_restart_steps: 2191440 
+   ini_parent_exp_id: "FOCI1.20.0-CC103_piControl_ESM_250y_spinup2099"
+   ini_parent_date: "20491231" 
+   ini_nemo_restart_steps: 2921960 
    ini_parent_dir: "/mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
    # ini_parent_dir: "/scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
    check_error:
@@ -48,6 +51,11 @@ general:
        "SIGTERM":
               method: "kill"
               message: "SIGTERM found in stdout"
+              file: stdout 
+              frequency: 15 
+       "FINISH called":
+              method: "kill"
+              message: "netcdf error found in stdout"
               file: stdout 
               frequency: 15 
        "netcdf error":
@@ -98,50 +106,24 @@ jsbach:
             debug_Cconservation: true
             debug_Nconservation: true
 
-   #add_input_sources:
-   # TODO: add correct path
    add_input_sources:
       lctlib_foci: "${model_dir}/util/running/adjunct_files/jsbach/lctlib_nlct23_HBP_med.def"
 
    add_forcing_files:
-        LU_trans: LU_trans_cdr
-        LU: LU_scenario_cdr
         cover_fract: cover_fract_ssp_cdr
 
    add_forcing_sources:
-      # Shradda uses no LUH transitions from 
-      # ${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_T63.nc
-      "LU_trans_cdr":
-         #"${input_dir}/${echam.resolution}/New_Hampshire_LCC/no_LUH_transitions_T63.nc"
-         "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist${dynveg}/LUH_scaled_transitions_${echam.resolution}_@YEAR@.nc": 
-             to: 2014
-         "${computer.pool_dir}/STEPSEC/input/land_use/LUH2/${echam.scenario}/LUH_scaled_transitions_${echam.scenario}_${echam.resolution}_hbp_@YEAR@.nc":
-             from: 2015
-
-      # TODO: according to Shradda's runscript, we always use 2014 harvest settings. Is that correct?
-      # changed to normal ${scenario}_harvest, Sebastian Wahl, 2025-04-14
-      "LU_scenario_cdr":
-           "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_1850.nc":
-              to: 1850
-           "${input_dir}/${echam.resolution}/New_Hampshire_LCC/hist_harvest/LUH_harvest_${echam.resolution}_@YEAR@.nc":
-              from: 1851
-              to: 2014
-           "${input_dir}/${echam.resolution}/New_Hampshire_LCC/${echam.scenario}_harvest/LUH_harvest_${echam.resolution}_2014.nc":
-              from: 2015
-
       "cover_fract_ssp_cdr":
-          "${computer.pool_dir}/STEPSEC/input/land_use/LUH2/historical_maps/cover_fract_${echam.resolution}_12tiles_${echam.resolution}_hbp_@YEAR@.nc":
-              to: 2014
-          "${computer.pool_dir}/STEPSEC/input/land_use/idealized/maps_${cdr_measure}_${cdr_frac}/cover_fract_${echam.resolution}_12tiles_${echam.resolution}_hbp_@YEAR@.nc":
-              from: 2015
-              to: 2099
+          "${computer.pool_dir}/STEPSEC/input/land_use/LUH2/historical_maps/cover_fract_${echam.resolution}_12tiles_${echam.resolution}_hbp_1850.nc":
+             from: 1850
+             to: 2299
 
 echam:
    # the brute-force approach to the hostfile_srun missing / empty file
    pre_run_commands: "cp -f ~/FOCILMU-SW231_hostfile_srun ${work_dir}/hostfile_srun"
    #
    postprocessingscript: "echam_postprocessing_RESCUE.sh"
-   namelist_dir: "${general.esm_namelist_dir}/echam/${version}/cmip6"
+   namelist_dir: "${general.esm_namelist_dir}/echam/${version}/PI-CTRL"
    # all ssp* scenarios use historical forcing before 2015, i.e. the setting
    # scenario: "cmip6hist" and # scenario: "ssp???" produce the same results 
    # until year 2014
@@ -149,7 +131,8 @@ echam:
    # technically tested: cmip6hist, ssp370 and ssp585
    # seb-wahl, 2021-08-11t
    allow_hist2ssp_transition: True
-   scenario: "cmip6hist"
+   scenario: "PI-CTRL"
+   #scenario: "cmip6hist"
    #scenario: "ssp126"
    resolution: "T63"
    # operational settings: yearly restarts
@@ -163,7 +146,7 @@ echam:
    nprocio: 12
    # set's the namelist parameters, and links the correct 
    # carbon_emission.nc file
-   with_lco2_emis: True
+   with_lco2_emis: False
    namelist_changes:
       namelist.echam:
          parctl:

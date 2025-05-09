@@ -1638,6 +1638,37 @@ def resolve_choose(model_with_choose, choose_key, config):
         logging.debug("key=%s", key)
 
 
+def _resolve_choose_key_in_configs(
+    choose_key, component_with_key, user_config, setup_config, model_config
+):
+    """Resolve choose_key if it's defined within another choose block."""
+    for conf in [user_config, setup_config, model_config]:
+        component_config = conf.get(component_with_key, {})
+        if component_config:
+            resolve_choose_with_var(
+                choose_key,
+                component_config,
+                current_model=component_with_key,
+                user_config=user_config,
+                model_config=model_config,
+                setup_config=setup_config,
+            )
+
+
+def _find_config_with_key(
+    choose_key, component_with_key, user_config, setup_config, model_config
+):
+    """Find the config with the highest priority containing the choose key."""
+    # Priority order: user_config > setup_config > model_config
+    if choose_key in user_config.get(component_with_key, {}):
+        return user_config
+    if choose_key in setup_config.get(component_with_key, {}):
+        return setup_config
+    if choose_key in model_config.get(component_with_key, {}):
+        return model_config
+    return None
+
+
 def resolve_choose_with_var(
     var, config, current_model=None, user_config={}, model_config={}, setup_config={}
 ):
@@ -1654,108 +1685,87 @@ def resolve_choose_with_var(
         Name of the variable to be searched inside ``choose_`` blocks.
     config : dict
         Component configuration to be changed if the ``var`` is resolved by the ``choose_``.
-    user_config : dict
+    current_model : str, optional
+        The name of the current model being evaluated.
+    user_config : dict, optional
         User configuration, used to search for the selected case of the ``choose_``.
-    model_config : dict
-        Component configuration, used to search for the selected case of the
-        ``choose_``.
-    setup_config : dict
+    model_config : dict, optional
+        Component configuration, used to search for the selected case of the ``choose_``.
+    setup_config : dict, optional
         Setup configuration, used to search for the selected case of the ``choose_``.
     """
 
+    # Early return if no config provided
+    if not config:
+        return
+
     sep = ","
-    # Find the path to the variable ``var`` in the given ``config``, inside a
-    # ``choose_``
-    choose_with_var = get_chooses_with_var(config, var, sep=sep)
-    # Find the path to the variable ``add_var`` in the given ``config``, inside a
-    # ``choose_``
-    choose_with_add_var = get_chooses_with_var(config, f"add_{var}", sep=sep)
+    if not current_model:
+        current_model = config.get("model")
 
-    # Resolve first for ``<var>`` and then for ``add_<var>``
-    for choose_with_var, lvar in [
-        (choose_with_var, var),
-        (choose_with_add_var, f"add_{var}"),
-    ]:
-        # If the path is found
-        if choose_with_var:
-            # If ``lvar`` is in multiple ``choose_`` blocks return an error
-            chooses = [sep.join(choose_with_var[0].split(sep)[:-2])]
-            # Get the first part of the path to the ``lvar``
-            choose_with_var = choose_with_var[0].split(sep)[0]
-            # Get the key for the ``choose_``
-            choose_key = choose_with_var.replace("choose_", "")
-            # Deep copy here avoids the other variables in the case to be updated
-            # now. We want to update now ONLY the ``lvar``.
-            config_copy = copy.deepcopy(config)
-            # If the key includes the absolute path
-            if "." in choose_key:
-                # Get the component to search for the key
-                component_with_key = choose_key.split(".")[0]
-                # Remove the chapter from the key
-                choose_key = choose_key.split(".")[1]
-            else:
-                # Name of the evaluated model
-                if not current_model:
-                    current_model = config.get("model")
-                # Get the component to search for the key
-                component_with_key = current_model
-                # Rename the whole choose_ block in the copied configuration to include
-                # the chapter
-                choose_with_var_new = choose_with_var.replace(
-                    "choose_", f"choose_{component_with_key}."
-                )
-                config_copy[choose_with_var_new] = config_copy[choose_with_var]
-                del config_copy[choose_with_var]
-                choose_with_var = choose_with_var_new
+    # First check if we have any choose blocks containing our variables
+    variables_to_find = [var, f"add_{var}"]
+    all_choose_paths = []
+    for v in variables_to_find:
+        choose_paths = get_chooses_with_var(config, v, sep=sep)
+        if choose_paths:
+            all_choose_paths.extend([(p, v) for p in choose_paths])
 
-            # Resolve choose_key in case it is defined within another choose_block
-            for conf in [user_config, setup_config, model_config]:
-                component_config = conf.get(component_with_key, [])
-                if component_config:
-                    resolve_choose_with_var(
-                        choose_key,
-                        component_config,
-                        current_model=component_with_key,
-                        user_config=user_config,
-                        model_config=model_config,
-                        setup_config=setup_config
-                    )
+    if not all_choose_paths:
+        return
 
-            # Find where the case for the ``choose_`` is defined, with priority: user ->
-            # setup -> model
-            config_to_search_into = None
-            if choose_key in user_config.get(component_with_key, []):
-                config_to_search_into = user_config
-            elif choose_key in setup_config.get(component_with_key, []):
-                config_to_search_into = setup_config
-            elif choose_key in model_config.get(component_with_key, []):
-                config_to_search_into = model_config
-            # If the case was found
-            if config_to_search_into:
-                # Resolve the case
-                resolve_basic_choose(
-                    config_to_search_into, config_copy, choose_with_var
-                )
+    # If we have choose blocks to process, create a working copy
+    config_copy = copy.deepcopy(config)
 
-                # Check for nested chooses with var
-                nested_chooses = (
-                    get_chooses_with_var(config_copy, var, sep=sep)
-                    + get_chooses_with_var(config_copy, f"add_{var}", sep=sep)
-                )
-                if nested_chooses:
-                    resolve_choose_with_var(
-                        var,
-                        config_copy,
-                        current_model=current_model,
-                        user_config=user_config,
-                        model_config=model_config,
-                        setup_config=setup_config
-                )
+    # Process each choose path until we've handled all of them
+    while all_choose_paths:
+        # Re-scan for choose paths after each resolution as the structure may change
+        all_choose_paths = []
+        for v in variables_to_find:
+            choose_paths = get_chooses_with_var(config_copy, v, sep=sep)
+            if choose_paths:
+                all_choose_paths.extend([(p, v) for p in choose_paths])
 
-                # If ``var`` was defined through the resolution of the ``choose_``, add
-                # the ``var`` value to the ``config``.
-                if config_copy.get(var):
-                    config[var] = config_copy.get(var)
+        if not all_choose_paths:
+            break
+
+        choose_with_var, lvar = all_choose_paths[0]
+
+        # Extract the choose block name and key
+        choose_block = choose_with_var.split(sep)[0]
+        choose_key = choose_block.replace("choose_", "")
+
+        # Handle absolute vs relative paths in choose keys
+        if "." in choose_key:
+            component_with_key = choose_key.split(".")[0]
+            choose_key = choose_key.split(".")[1]
+        else:
+            component_with_key = current_model
+            # Add component name to choose block for proper resolution
+            choose_block_with_component = f"choose_{component_with_key}.{choose_key}"
+            if choose_block in config_copy:
+                config_copy[choose_block_with_component] = config_copy[choose_block]
+                del config_copy[choose_block]
+                choose_block = choose_block_with_component
+
+        # Recursively resolve choose_key if it's in another choose block
+        _resolve_choose_key_in_configs(
+            choose_key, component_with_key, user_config, setup_config, model_config
+        )
+
+        # Find config with the highest priority containing the choose key
+        config_to_search_into = _find_config_with_key(
+            choose_key, component_with_key, user_config, setup_config, model_config
+        )
+
+        # Resolve the choose block if a config with the key was found
+        if config_to_search_into:
+            resolve_basic_choose(config_to_search_into, config_copy, choose_block)
+
+            # Update original config with resolved variable value
+            lvar = lvar.replace("add_", "")
+            if lvar in config_copy:
+                config[lvar] = config_copy[lvar]
 
 
 def get_chooses_with_var(component_config, var, sep=","):

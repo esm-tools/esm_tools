@@ -1121,7 +1121,7 @@ computer:
             v3.4:
                 choose_name:
                     juwels:
-                        iolibraries: none
+                        iolibraries: system_libs
                         compiler_mpi: intel2025_psmpi
                         useMPI: intelmpi
                     levante:

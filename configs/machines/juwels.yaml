@@ -9,7 +9,7 @@ computer:
 
     # default settings for compiler, mpi and I/O libs
     compiler_mpi: intel2025_psmpi
-    iolibraries: none
+    iolibraries: system_libs
     useMPI: intelmpi
 
     # slurm setup
@@ -81,7 +81,6 @@ computer:
     # basic modules and export vars needed
     # for all compiler and I/O settings
     module_actions:
-            - "--force purge"
             - "use $OTHERSTAGES"
 
     export_vars:
@@ -115,7 +114,6 @@ computer:
 
        gnu2023_ompi2023:
           add_module_actions:
-            - "--force purge"
             - "load Stages/2023"
             - "load GCC/11.3.0"
             - "load OpenMPI/4.1.4"

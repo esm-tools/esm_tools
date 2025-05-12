@@ -261,6 +261,10 @@ computer:
                 OASIS_NETCDFF: $NETCDF_ROOT
 
         system_libs:
+            add_module_actions:
+                - "load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0"
+                - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
+                - "load hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0"
 
             add_export_vars:
                 IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"

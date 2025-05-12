@@ -58,7 +58,7 @@ setup(
         "sebastian.wahl@geomar.de",
         "kai.himstedt@dkrz.de",
     ],
-    python_requires=">=3.6, <3.12",
+    python_requires=">=3.6, <3.13",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
@@ -71,6 +71,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     description="ESM Tools external infrastructure for Earth System Modelling",
     entry_points={

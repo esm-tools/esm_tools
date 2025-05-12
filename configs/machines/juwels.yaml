@@ -10,7 +10,6 @@ computer:
     # default settings for compiler, mpi and I/O libs
     compiler_mpi: intel2025_psmpi
     iolibraries: system_libs
-    useMPI: intelmpi
 
     # slurm setup
     batch_system: slurm
@@ -186,20 +185,6 @@ computer:
                 OASIS_NETCDF: $NETCDFROOT
                 OASIS_NETCDFF: $NETCDFFROOT
 
-            choose_compiler_mpi:
-                intel2022_ompi2022:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
-                intel2020_ompi2020:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
-                intel2020_psmpi2020:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
-                intel_2019a_psmpi2019:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
-
         # GEOMAR LIBS
         geomar_libs:
             add_export_vars:
@@ -223,12 +208,6 @@ computer:
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-            choose_compiler_mpi:
-                intel2022_psmpi2022:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2021.4.0_parastation_5.5.0-1-mt_20220222
-                        PSMPIFLAGS: '"-lrt -lm -ldl"'
 
     # some yamls use computer.fc, etc to identify the compiler, so we need to add them
     fc: "$FC"

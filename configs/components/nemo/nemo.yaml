@@ -199,14 +199,8 @@ choose_version:
 
     input_dir: ${pool_dir}/NEMO4_${resolution}/input
     # forcing for uncoupled setups
-    jra55_forcing_dir: ${pool_dir}/JRA55-do_drowned
-    jra55_runoff_dir: ${pool_dir}/eORCA025-nemo4
-
-    # override hardcoded path to runoff forcing
-    add_namelist_changes:
-       namelist_cfg:
-          namsbc_blk:
-             cn_dir: "./"
+    jra55_forcing_dir: ${pool_dir}/NEMO_JRA55-do_drowned_test
+    #jra55_runoff_dir: ${pool_dir}/eORCA025-nemo4
     
     add_input_sources:
         namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
@@ -253,22 +247,22 @@ choose_version:
        # so no 1_data_tem etc is needed. 
        1_domain_cfg: 1_domain_cfg.nc 
        1_subbasins: 1_subbasins.nc 
-       
-    # surface forcing for uncoupled NEMO4
+    
+    # surface forcing (v1.4) for uncoupled NEMO4
     forcing_files:
-      # forcing data
-      sn_wndi: sn_wndi
-      sn_wndj: sn_wndj
-      sn_qsr: sn_qsr
-      sn_qlw: sn_qlw
-      sn_tair: sn_tair
-      sn_humi: sn_humi
-      sn_prec: sn_prec
-      sn_snow: sn_snow
-      sn_slp: sn_slp
-      #sn_rnf: sn_rnf
-
-    # only required if we need the link name does not match the source file name
+       # forcing data
+       sn_wndi: sn_wndi
+       sn_wndj: sn_wndj
+       sn_qsr: sn_qsr
+       sn_qlw: sn_qlw
+       sn_tair: sn_tair
+       sn_humi: sn_humi
+       sn_prec: sn_prec
+       sn_snow: sn_snow
+       sn_slp: sn_slp
+       #sn_rnf: sn_rnf
+ 
+     # only required if we need the link name does not match the source file name
     forcing_in_work:
         sn_wndi: "uas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc"
         sn_wndj: "vas-drowned_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc"
@@ -280,7 +274,7 @@ choose_version:
         sn_snow: "prsn_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc"
         sn_slp: "psl_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc"
         #sn_rnf: "sorunoff_JRA55-do-1-4-0_gr_orca05_y@YEAR@.nc"
-
+ 
     forcing_sources:
         # JRA55-do drowned forcing
         sn_wndi:
@@ -319,10 +313,10 @@ choose_version:
           "${jra55_forcing_dir}/psl_input4MIPs_atmosphericState_OMIP_MRI-JRA55-do-1-4-0_gr_y@YEAR@.nc":
              from: 1958
              to: 2019
-        sn_rnf:
-          "${jra55_runoff_dir}/sorunoff_JRA55-do-1-5-0_gr_eorca025_y@YEAR@.nc":
-             from: 1958
-             to: 2019
+#        sn_rnf:
+#          "${jra55_runoff_dir}/sorunoff_JRA55-do-1-5-0_gr_eorca025_y@YEAR@.nc":
+#             from: 1958
+#             to: 2019
 
   'eORCA025_Z75_SI3_COUPLED':
     # coupled eORCA025 set up with SI3 sea ice model

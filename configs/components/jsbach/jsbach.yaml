@@ -18,15 +18,21 @@ input_dir: "${pool_dir}/input/${dataset}"
 adj_input_dir: "${input_dir}/${echam.resolution}"
 cover_fract_dir: "${input_dir}/${echam.resolution}/land_use_maps/"
 
+# TODO: Unify pools
 pool_dir_couple: "${computer.pool_directories.pool}/AWICM/JSBACH"
+choose_computer.name:
+    albedo:
+        pool_dir_couple: "${computer.pool_directories.pool}/JSBACH"
 input_dir_couple: "${pool_dir_couple}/input/${dataset}"
 
 dynamic_vegetations: False
-
+tiles: 11
 version: "3.20"
 dataset: r0009
 scenario: ${echam.scenario}
 scenario_type: ${scenario}
+#cdr_measure: ""
+#cdr_frac: ""
 
 config_sources:
         'namelist.jsbach': "${namelist_dir}/namelist.jsbach"
@@ -53,7 +59,7 @@ choose_version:
                         false:
                                 namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg"
                                 jsbachnc_file_ending: "${no_dynveg_file_ending}"
-                                dynveg: "_no_dynveg"
+                                dynveg: "_no-dynveg"
                 choose_echam.scenario:
                         PI-CTRL:
                                 add_input_files:
@@ -353,10 +359,14 @@ choose_scenario_is_ssp:
 choose_echam.with_wiso:
         True:
                 restart_in_sources:
-                        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
+                        "[[restartstreams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
                 restart_out_sources:
-                        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
+                        "[[restartstreams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
                 add_streams:
+                        - js_wiso
+                        - la_wiso
+                        - sf_wiso
+                add_restartstreams:
                         - js_wiso
                         - la_wiso
                         - sf_wiso
@@ -403,6 +413,14 @@ streams:
         - nitro
         - veg
         - land
+restartstreams:
+        - jsbach
+        - jsbid
+        - yasso
+        - surf
+        - nitro
+        - veg
+        - land
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
 
@@ -436,20 +454,20 @@ outdata_in_work:
         "[[streams-->STREAM]]_codes": ${general.expid}_${start_date!syear}*.${start_date!sday}_STREAM.codes
 
 restart_in_files:
-        "[[streams-->STREAM]]": STREAM
+        "[[restartstreams-->STREAM]]": STREAM
 
 restart_in_sources:
         # deniz: removed hour, minute, second information. Now it is compatible with ECHAM
         # INFO: for continuous restarts it is fine but branch-off restarts fail
         # since esm-tools is looking for YYYYMMDDHHMMSS.nc data instead
         # "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
-        "[[streams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
+        "[[restartstreams-->STREAM]]": restart_${parent_expid}_${parent_date!syear!smonth!sday}_STREAM.nc
 
 restart_in_in_work:
-        "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
+        "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
 restart_out_files:
-        "[[streams-->STREAM]]": STREAM
+        "[[restartstreams-->STREAM]]": STREAM
 
 restart_out_sources:
         # deniz: removed hour, minute, second information. Now it is compatible with ECHAM
@@ -457,10 +475,10 @@ restart_out_sources:
         # since esm-tools is looking for YYYYMMDDHHMMSS.nc data instead
         # Same as the problem we have in `restart_in_sources`
         # "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
+        "[[restartstreams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday}_STREAM.nc
 
 restart_out_in_work:
-        "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+        "[[restartstreams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
 namelists:
         - "namelist.jsbach"

@@ -295,6 +295,8 @@ choose_version:
     git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
     comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
     install_bins: make/esm/oifs/bin/oifs
+    add_include_models:
+    - oasis3mct
     requires:
     - oasis3mct-4.0
     - xios-2.5_r1910_oifs
@@ -399,7 +401,6 @@ choose_resolution:
                 # This has 2x computer cost but reduces
                 # biases by a lot, so it is worth it
                 # Savita et al. (2024) 10.5194/gmd-2023-101 
-                #time_step: 3600
                 time_step: 1800
                 oasis_grid_name: "096"
                 res_number: 95
@@ -1484,9 +1485,6 @@ choose_eternal_run_number:
                     ${append_icmcl}
                     echo 'Long OpenIFS run. Number for internal OpenIFS timekeeping: ${eternal_run_number}'"
                 # If this is run 1 or 2 of an experiment, lable it as branchoff
-                #choose_eternal_run_number:
-                #        0:
-                #                branchoff: true
 
 
 choose_general.standalone:
@@ -1515,10 +1513,6 @@ preprocess:
 # the postprocessing is at the moment essentially the same as the preprocessing plugin
 # it just executes a shell script
 # not working as expected as there is no "wait" after submit in the compute recipe below
-#postprocess:
-#        postprocess_shell:
-#                method: "${general.esm_function_dir}/components/oifs/oifs-43r3-postprocess.sh ${work_dir} ECE3 ${start_date!syear!smonth!sday} ${end_date!syear!smonth!sday}"
-#                type: shell
 
 choose_oifs.post_processing:
         True:

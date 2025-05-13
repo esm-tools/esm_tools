@@ -7,8 +7,10 @@ import shutil
 import subprocess
 import sys
 
-import esm_parser
 from loguru import logger
+
+import esm_parser
+from esm_tools import user_note
 
 
 class Slurm:
@@ -65,8 +67,8 @@ class Slurm:
         launcher = config["computer"].get("launcher",None)
         # friendly check that you are using a launcher that we support
         if launcher not in ["srun", "mpirun"]:
-            print(" The launcher %s is not compatible with ESM-Tools in SLURM " % (launcher,))
-            print(" Supported launchers for SLURM are srun and mpirun ")
+            logger.error(" The launcher %s is not compatible with ESM-Tools in SLURM " % (launcher,))
+            logger.error(" Supported launchers for SLURM are srun and mpirun ")
         
         # MA: not sure how this will play with heterogeneous parallelization
         if "multi_srun" in config["general"]:
@@ -292,7 +294,7 @@ class Slurm:
                 elif not config[model].get("execution_command") and not config[
                     model
                 ].get("executable"):
-                    esm_parser.user_note(
+                    user_note(
                         "Execution command",
                         f"Execution command for ``{model}`` not found. This is okay "
                         "if this component has no binary to be called, but if it does"

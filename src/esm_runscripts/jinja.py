@@ -1,9 +1,10 @@
 import os
 
-from jinja2 import StrictUndefined, Template, UndefinedError
+from jinja2 import (StrictUndefined, Template, TemplateSyntaxError,
+                    UndefinedError)
 from loguru import logger
 
-import esm_parser
+from esm_tools import user_error
 
 
 def render_template(config, source, target):
@@ -33,17 +34,37 @@ def render_template(config, source, target):
 
     # Read the template
     with open(source, "r") as f:
-        template = Template(f.read(), undefined=StrictUndefined)
+        try:
+            template = Template(f.read(), undefined=StrictUndefined)
+        except TemplateSyntaxError as e:
+            user_error(
+                "Jinja",
+                f"Templating Error while loading template from ``{source}``. "
+                f"Syntax error in the template: {e.message}",
+            )
 
     # Try to render the file using the data in ``config``
     try:
         content = template.render(config)
     except UndefinedError as e:
         missing_variable = e.message.split("'")[3]
-        esm_parser.user_error(
+        user_error(
             "Jinja",
             f"Error rendering template from ``{source}`` to ``{target}``. Variable "
             f"``{missing_variable}`` is not defined in any configuration file.",
+        )
+    except TemplateSyntaxError as e:
+        user_error(
+            "Jinja",
+            f"Templating Error while rendering template from ``{source}`` to ``{target}``. "
+            f"Syntax error in the template: {e.message}",
+        )
+    except Exception as e:
+        # Any other error
+        user_error(
+            "Jinja",
+            f"Error rendering template from ``{source}`` to ``{target}``. "
+            f"Error: {e}",
         )
 
     if os.path.isfile(target):

@@ -4,10 +4,9 @@ import subprocess
 import sys
 
 import questionary
-
-from esm_parser import user_error
 from loguru import logger
 
+from esm_tools import user_error
 
 
 class oasis:
@@ -46,11 +45,8 @@ class oasis:
         self.namcouple += [" $NBMODEL", "            " + str(exec_entry), " $END"]
         self.namcouple += [" $RUNTIME", "           " + str(runtime), " $END"]
         if lucia:
-            # LUCIA (load balancing) is done differently in MCT 5.0
-            if mct_version >= (5,0):
-                # In MCT5 you set X Y Z, where X refers to verbosity, Y to timing info and Z to load balancing
-                # Here: Set X = debug_level, Y = 0 (no info), Z = 1 (activate load balancing)
-                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1 ", " $END"]
+            if mct_version >= (5, 0):
+                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 1", " $END"]
             else:
                 self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
@@ -544,9 +540,13 @@ class oasis:
         config["restart_in_in_work"][restart_file_label] = restart_file
 
         # In case of a branch-off experiment -> use the correct oasis restart files:
-        # Not the rstas.nc soft link to the last, but the actual one for the
-        # branch-off date
-        if gconfig["run_number"] == 1 and config["lresume"] and gconfig["jobtype"] == "prepcompute" and config.get("norestart", "F") == "F":
+        # Not the soft link to the last, but the actual one for the branch-off date
+        if (
+            gconfig["run_number"] == 1
+            and config["lresume"]
+            and gconfig["jobtype"] == "prepcompute"
+            and config.get("norestart", "F") == "F"
+        ):
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
             if "ini_parent_date" in config and "ini_restart_date" not in config:
@@ -568,6 +568,12 @@ class oasis:
                     f"{config['ini_restart_date'].day:02}"
                 )
             else:
+                glob_search_file = restart_file_path
+
+            # add support for oasis_date_stamp (which for some reason does
+            # not work anymore after awi-geomar merge in 2025 without the two lines below)
+            # reason unknown, but the entire section here should be revised soon anyways 
+            if config.get('oasis_date_stamp'):
                 glob_search_file = restart_file_path
 
             glob_restart_file = glob.glob(glob_search_file)
@@ -671,8 +677,15 @@ class oasis:
         # before (i.e. when using LOCTRANS)
         if os.path.isfile(restart_file):
             logger.debug(f"{restart_file} already exits, overwriting")
-        logger.info("cdo -O merge " + filelist + " " + restart_file)
-        os.system("cdo -O merge " + filelist + " " + restart_file)  # + enddate)
+
+        cdo_merge_command = f"cdo -O -f nc4c merge {filelist} {restart_file}" # {enddate}"
+        logger.info(cdo_merge_command)
+        exit_code = os.system(cdo_merge_command)
+        if exit_code != 0:
+            cdo_merge_command = f"cdo -O merge {filelist} {restart_file}" # {enddate}"
+            logger.warning("nc4c merge failed, trying without it...")
+            logger.info(cdo_merge_command)
+            os.system(cdo_merge_command)
         rmlist = glob.glob("notimestep*")
         rmlist.append("onlyonetimestep.nc")
         for rmfile in rmlist:

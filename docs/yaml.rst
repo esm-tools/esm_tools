@@ -940,6 +940,21 @@ Movements specific to files are still compatible with the ``file_type`` option, 
 only the moves specifically defined for files in the ``file_movements`` will differ
 from those defined using the ``file_type``.
 
+Create empty folders
+--------------------
+
+File dictionaries create the necessary folders that are not present in the target path
+when copying files. However, some times you might need to create just an empty folder,
+without copying any files. This can be done by including ``create_folders`` in one of
+the component sections of the desired yaml:
+
+.. code-block:: yaml
+
+   lpj_guess:
+       create_folders:
+           - ${work_dir}/folder1
+           - ${work_dir}/folder2
+
 Accessing Variables from the Previous Run (``prev_run``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -967,6 +982,7 @@ of a `FESOM` simulation and store it in a variable called `prev_time_step`:
    information needed. Note that, for example, dates of the previous run are
    already available in the current run, under variables such as
    ``last_start_date``, ``parent_start_date``, etc.
+
 
 Branchoff experiments with ``prev_run``
 ---------------------------------------

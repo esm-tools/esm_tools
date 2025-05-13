@@ -3,6 +3,26 @@ lz: 5750
 lbz: 2000
 
 choose_domain:
+        "antarct_cr":
+                choose_resolution:
+                        16km:
+                            nx: 381
+                            ny: 381
+                            nz: 75
+                            bz: 21
+                            grid_edge: 16
+                        8km:
+                            nx: 761
+                            ny: 761
+                            nz: 166
+                            bz: 21
+                            grid_edge: 8
+                        08km:
+                            nx: 761
+                            ny: 761
+                            nz: 166
+                            bz: 21
+                            grid_edge: 8
         "antarctica":
                 choose_resolution:
                         32km:

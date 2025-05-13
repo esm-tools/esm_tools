@@ -1021,11 +1021,11 @@ oasis3mct:
                                 rmp_r2agr_R1: rmp_r2agr_R1
                                 rmp_c2agr_R1: rmp_c2agr_R1
 
-                                sstocean1: sstocean1
-                                flxatmos1: flxatmos1
-                                rnrunoff1: rnrunoff1
-                                atmtau1: atmtau1
-                                atmflx1: atmflx1
+                                sstocean_1: sstocean_1
+                                flxatmos_1: flxatmos_1
+                                rnrunoff_1: rnrunoff_1
+                                atmtau_1: atmtau_1
+                                atmflx_1: atmflx_1
                                 agrifspg: agrifspg
 
                         add_restart_out_files:
@@ -1037,11 +1037,11 @@ oasis3mct:
                                 rmp_r2agr_R1: rmp_r2agr_R1
                                 rmp_c2agr_R1: rmp_c2agr_R1
 
-                                sstocean1: sstocean1
-                                flxatmos1: flxatmos1
-                                rnrunoff1: rnrunoff1
-                                atmtau1: atmtau1
-                                atmflx1: atmflx1
+                                sstocean_1: sstocean_1
+                                flxatmos_1: flxatmos_1
+                                rnrunoff_1: rnrunoff_1
+                                atmtau_1: atmtau_1
+                                atmflx_1: atmflx_1
                                 agrifspg: agrifspg
 
                         add_coupling_target_fields:
@@ -1798,11 +1798,11 @@ oasis3mct:
                 atmtau: atmtau
                 atmflx: atmflx
 
-                sstocean1: sstocean_1
-                flxatmos1: flxatmos_1
-                atmtau1: atmtau_1
-                atmflx1: atmflx_1
-                rnrunoff1: rnrunoff_1
+                sstocean_1: sstocean_1
+                flxatmos_1: flxatmos_1
+                atmtau_1: atmtau_1
+                atmflx_1: atmflx_1
+                rnrunoff_1: rnrunoff_1
                 agrifspg: agrifspg
 
         restart_out_sources:
@@ -1830,11 +1830,11 @@ oasis3mct:
                 atmtau: atmtau
                 atmflx: atmflx
 
-                sstocean1: sstocean_1
-                flxatmos1: flxatmos_1
-                atmtau1: atmtau_1
-                atmflx1: atmflx_1
-                rnrunoff1: rnrunoff_1
+                sstocean_1: sstocean_1
+                flxatmos_1: flxatmos_1
+                atmtau_1: atmtau_1
+                atmflx_1: atmflx_1
+                rnrunoff_1: rnrunoff_1
                 agrifspg: agrifspg
 
         restart_in_files:
@@ -1878,11 +1878,11 @@ oasis3mct:
                 atmtau: atmtau
                 atmflx: atmflx
 
-                sstocean1: sstocean_1
-                flxatmos1: flxatmos_1
-                atmtau1: atmtau_1
-                atmflx1: atmflx_1
-                rnrunoff1: rnrunoff_1
+                sstocean_1: sstocean_1
+                flxatmos_1: flxatmos_1
+                atmtau_1: atmtau_1
+                atmflx_1: atmflx_1
+                rnrunoff_1: rnrunoff_1
                 agrifspg: agrifspg
 
         restart_in_sources:
@@ -1910,11 +1910,11 @@ oasis3mct:
                 atmtau: atmtau${this_oasis_date_stamp}
                 atmflx: atmflx${this_oasis_date_stamp}
 
-                sstocean1: sstocean_1${this_oasis_date_stamp}
-                flxatmos1: flxatmos_1${this_oasis_date_stamp}
-                atmtau1: atmtau_1${this_oasis_date_stamp}
-                atmflx1: atmflx_1${this_oasis_date_stamp}
-                rnrunoff1: rnrunoff_1${this_oasis_date_stamp}
+                sstocean_1: sstocean_1${this_oasis_date_stamp}
+                flxatmos_1: flxatmos_1${this_oasis_date_stamp}
+                atmtau_1: atmtau_1${this_oasis_date_stamp}
+                atmflx_1: atmflx_1${this_oasis_date_stamp}
+                rnrunoff_1: rnrunoff_1${this_oasis_date_stamp}
                 agrifspg: agrifspg${this_oasis_date_stamp}
 
 # Set up CPU layout

@@ -10,11 +10,57 @@ model: lpj_guess
 version: 4.1.1
 
 # Enable automatic lpjg2nc2 post-processing (default is disabled)
-auto_lpjg2nc: False
+auto_lpjg2nc: True
 
-# Include the lpjg2nc2 configuration
-further_reading:
-    - auto_lpjg2nc.yaml
+# lpjg2nc2 configuration - integrated directly in lpj_guess.yaml for compatibility
+
+# Plugin requirements for lpjg2nc2
+required_python_packages:
+    - numpy>=1.20.0
+    - pandas>=1.3.0
+    - xarray>=0.19.0
+    - netCDF4>=1.5.7
+    - tqdm>=4.61.0
+
+# Default configuration for lpjg2nc2
+lpjg2nc_settings:
+    # Output directory for NetCDF files (relative to experiment directory)
+    output_dir: "${experiment_dir}/outdata/lpjg_netcdf"
+    
+    # Parameters for lpjg2nc2 processing
+    parallel_jobs: 8       # Number of parallel jobs (outer parallelization)
+    inner_jobs: 16         # Inner parallelization
+    chunk_size: 50000      # Chunk size for processing arrays
+    remap: "1"            # Set to "1" for 1-degree grid or specify dimensions like "360x180"
+    verbose: True          # Enable verbose output
+
+# Environment setup required before running lpjg2nc2
+pre_run_commands:
+    - "module load python3"
+    - "python -m pip install --user git+https://github.com/JanStreffing/lpjg2nc2.git"
+
+# Conditional configurations based on whether auto_lpjg2nc is enabled
+choose_auto_lpjg2nc:
+    True:
+        # Documentation in a comment rather than further_reading to avoid errors
+        # lpjg2nc2 tool: https://github.com/JanStreffing/lpjg2nc2
+        
+        # Enable post-processing when this feature is active
+        add_post_processing:
+            post_run_scripts:
+                lpjg2nc_convert:
+                    command: >-
+                        python -m lpjg2nc.lpjg2nc -p ${experiment_dir} 
+                        -o ${lpjg2nc_settings.output_dir} 
+                        -j ${lpjg2nc_settings.parallel_jobs} 
+                        --inner-jobs ${lpjg2nc_settings.inner_jobs} 
+                        --chunk-size ${lpjg2nc_settings.chunk_size} 
+                        --remap ${lpjg2nc_settings.remap} 
+                        -v
+                    description: "Converting LPJ-GUESS output files to NetCDF format"
+                    exit_if_failed: False  # Continue even if this post-processing fails
+                    log_output: True       # Log the output of the post-processing
+                    output_path: "${experiment_dir}/log/lpjg2nc.log"
 
 metadata:
         Institute: Lund Universitiy

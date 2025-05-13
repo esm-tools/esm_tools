@@ -25,8 +25,8 @@ general:
         - 'v3.2'
         - 'v3.2.1'
         - 'v3.2.2'
-        - 'v3.3'
-        - 'v3.4'
+        - 'v3.3.0'
+        - 'v3.4.0'
         - 'master'
         - 'frontiers-xios'
 
@@ -93,18 +93,18 @@ general:
             - xios
             oasis_with_yac: True
             xios_interp_order: 1
-          v3.3:
+          v3.3.0:
             major_version: v3.3
             couplings:
-            - fesom-2.6+oifs-43r3-awicm-3.2+xios-2.5
+            - fesom-2.6.8+oifs-43r3-awicm-3.2.4+xios-2.5
             add_include_models:
             - xios
             oasis_with_yac: False
             xios_interp_order: 1
-          v3.4:
+          v3.4.0:
             major_version: v3.4
             couplings:
-            - fesom-2.6+oifs-48r1+xios-2.5
+            - fesom-2.6.9+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -510,7 +510,7 @@ fesom:
                                                 albi: 0.6
                                                 albim: 0.43
                 "v3.4":
-                        version: "2.6"
+                        version: "2.6.9"
                         append_icmcl: ""
                         add_namelist_changes:
                                 namelist.config:

@@ -404,7 +404,7 @@ jsbach:
                     - need_timestep_before
                     - need_timestep_after
 
-        streams:
+    streams:
             - jsbach
             - jsbid
             - yasso
@@ -412,7 +412,7 @@ jsbach:
             - nitro
             - veg
             - land
-        restartstreams:
+    restartstreams:
             - jsbach
             - jsbid
             - yasso

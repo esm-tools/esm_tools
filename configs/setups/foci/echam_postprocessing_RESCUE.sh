@@ -419,7 +419,7 @@ do
          codesfile=${basedir}/${EXP_ID}/log/echam/${prefix}_${filetag}.codes 
          [[ "BOT_mm ATM_mm" == *$filetag* ]] && codesfile="echam6"
          if [[ -f $codesfile ]] || [[ "$codesfile" == "echam6" ]]; then
-            cdo -r -f nc4c -z zip_1 -t $codesfile copy $file $(basename $file .grb).nc 
+            cdo -r -f nc4c -z zip_3 -t $codesfile copy $file $(basename $file .grb).nc 
          else
             echo "$codesfile missing, cannot convert to netCDF, will keep grb file."
          fi
@@ -525,7 +525,7 @@ do
       if [[ "$ftype" == "nc" ]] || [[ $meantag == *$filetag* ]]; then
          codesfile=${basedir}/${EXP_ID}/log/jsbach/${prefix}_${filetag}.codes 
          if [[ -f $codesfile ]] ; then
-            cdo -r -f nc4c -z zip_1 -t $codesfile copy $file $(basename $file .grb).nc 
+            cdo -r -f nc4c -z zip_3 -t $codesfile copy $file $(basename $file .grb).nc 
          else
             echo "$codesfile missing, cannot convert to netCDF, will keep grb file."
          fi

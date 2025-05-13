@@ -36,7 +36,10 @@ ESM-Environment
 A visible tool, like esm-environment used to be, doesn't exist anymore. The information about the environment needed for compiling / running a model is contained:
 
 * in the machine yaml file (e.g. ``esm_tools/configs/machines/ollie.yaml``): This contains a default environment that we know works for a number of models / setups, but maybe not in an optimal way,
-* in the model yaml file (e.g. ``esm_tools/configs/fesom/fesom-2.0.yaml``): The model files are allowed to contain deviations from the default environment defined in the machine file, indicated by the keywords ``environment_changes``, ``compiletime_environment_changes`` or ``runtime_environment_changes``.
+* in the model yaml file (e.g. ``esm_tools/configs/fesom/fesom-2.0.yaml``): The model files can contain deviations from the default environment defined in the machine file, specified in the ``computer`` section of the configuration file.
+
+.. note::
+   The previously used keywords ``environment_changes``, ``compiletime_environment_changes``, and ``runtime_environment_changes`` are now deprecated. Instead, use the ``computer`` section for all environment configurations.
 
 Please note that even though there still is a python package called ``esm_environment``, this is just the collection of python routines used to assemble the environment. It does not contain anything to be configured by the user.
 

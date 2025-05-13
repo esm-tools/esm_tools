@@ -1,3 +1,4 @@
-metadata:
-    Description:
+fesom_mesh_part:
+    metadata:
+        Description:
             The FESOM Mesh Partioner (METIS)

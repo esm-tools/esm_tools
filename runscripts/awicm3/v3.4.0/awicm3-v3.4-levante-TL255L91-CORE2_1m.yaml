@@ -28,7 +28,6 @@ fesom:
     nproc: 128
     omp_num_threads: 4
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.4.0/fesom-2.6/config/"
 
 oifs:
     resolution: "TL255"

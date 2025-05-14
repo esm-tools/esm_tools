@@ -28,7 +28,6 @@ fesom:
     nproc: 1280
     omp_num_threads: 1
     tar_binary_restarts: true
-    namelist_dir: "/home/a/a270092/esm_tools/namelists/fesom2/2.6/awicm3/high_res/"
 
 oifs:
     resolution: "TCO319"

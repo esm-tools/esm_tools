@@ -18,7 +18,7 @@
     trage     = 0           ! set to 1 for ice age tracer
     trfy      = 0           ! set to 1 for first-year ice area tracer
     trlvl     = 0           ! set to 1 for level and deformed ice tracers
-    trpnd     = 1           ! set to 1 for melt pond tracers
+    trpnd     = 0           ! set to 1 for melt pond tracers
     trbgcs    = 0           ! set to 1 for skeletal layer tracers (needs TRBGCZ = 0)
     ndtd      = 1           ! dynamic time steps per thermodynamic time step
 /
@@ -31,7 +31,7 @@
     tr_iage      = .false.
     tr_FY        = .false.
     tr_lvl       = .false.
-    tr_pond_cesm = .true.
+    tr_pond_cesm = .false.
     tr_pond_topo = .false.
     tr_pond_lvl  = .false.
     tr_aero      = .false.
@@ -48,15 +48,17 @@
     dSdt_slow_mode    = -5.0e-8
     phi_c_slow_mode   =    0.05
     phi_i_mushy       =    0.85
+    ksno              = 0.3
 /
 
 &shortwave_nml
-    shortwave       = 'dEdd'
+    shortwave       = 'ccsm3'
     albedo_type     = 'ccsm3'
     albicev         = 0.78
     albicei         = 0.36
     albsnowv        = 0.98
     albsnowi        = 0.70
+    albocn          = 0.1
     ahmax           = 0.3
     R_ice           = 0.
     R_pnd           = 0.

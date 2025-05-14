@@ -26,7 +26,7 @@ general:
         - 'v3.2.1'
         - 'v3.2.2'
         - 'v3.3.0'
-        - 'v3.4.0'
+        - 'develop'
         - 'frontiers-xios'
 
         choose_version:
@@ -100,7 +100,7 @@ general:
             - xios
             oasis_with_yac: False
             xios_interp_order: 1
-          v3.4.0:
+          develop:
             major_version: v3.4
             couplings:
             - fesom-2.6.9+oifs-48r1+xios-2.5

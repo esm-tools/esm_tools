@@ -1,7 +1,7 @@
 general:
     user: !ENV ${USER}
     setup_name: "awicm3"
-    version: "v3.4.0"
+    version: "develop"
     account: "ba0989"
     compute_time: "01:00:00"
     initial_date: "2000-01-01"
@@ -27,7 +27,6 @@ fesom:
     time_step: 1800
     nproc: 768
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.4/fesom-2.6/config/"
 
 oifs:
     resolution: "TCO95"

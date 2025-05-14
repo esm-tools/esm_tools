@@ -1,6 +1,0 @@
-Note: 
-The master branch experiments yaml scripts follow the latest developments of FESOM2 and OpenIFS.
-New commits may come in multiple times a day. These scripts are not tested in any way shape of form. 
-Use these if you wish to test-drive the latest master branch changes. 
-
-For scientific work it is recommended you stick to v3.1.

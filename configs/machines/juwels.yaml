@@ -22,6 +22,7 @@ computer:
     hyperthreading_flag: ""
 
     use_hyperthreading: False
+    taskset: False
     choose_use_hyperthreading:
             "1":
                     hyperthreading_flag: ""

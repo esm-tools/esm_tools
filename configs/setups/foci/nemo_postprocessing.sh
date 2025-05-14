@@ -456,7 +456,8 @@ rm -r $post_dir
 print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
-
+# required for interactive use
+cd $(dirname $0)
 if [[ "$endmonth" == "12" ]] && [[ "$run_monitoring" == "yes" ]] ; then
     print "will now run NEMO monitoring until $enddate"
    $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 

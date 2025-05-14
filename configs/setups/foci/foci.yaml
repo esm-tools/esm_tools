@@ -679,6 +679,7 @@ nemo:
 
 
 xios:
+        version: 2.5_r1910
         nproc: ${computer.partitions.compute.cores_per_node}
 
 #########################################################################################

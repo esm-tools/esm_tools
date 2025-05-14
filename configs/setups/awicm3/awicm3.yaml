@@ -747,9 +747,9 @@ oasis3mct:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
 
-        # TODO: change this to a control on the patch version general.version
-        choose_fesom.version:
-                "2.6.8":
+        # This variable is only used for major versions of v3.3
+        choose_general.version:
+                "v3.3.0":
                         calving_coupling_mode: 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                 "*":
                         calving_coupling_mode: 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce' 

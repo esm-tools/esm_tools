@@ -565,9 +565,8 @@ rnfmap:
         runoff_maps_name: _${fesom.resolution}
         choose_general.major_version:
                 "v3.3":
-                        # TODO: change this to a control on the patch version general.version
-                        choose_fesom.version:
-                                "2.6.8":
+                        choose_general.version:
+                                "v3.3.0":
                                         version: awicm-3.1
                                 "*":
                                         version: v1.1

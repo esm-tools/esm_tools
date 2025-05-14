@@ -348,8 +348,8 @@ echam:
                      time_step: 450
                      _nx: 192
                      _ny: 96
-                     nproca: ${nproca}
-                     nprocb: ${nprocb}
+                     nproca: 24 
+                     nprocb: 24 
 
         forcing_additional_information:
                 aerocoarse:

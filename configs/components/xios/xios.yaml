@@ -4,7 +4,6 @@
 
 xios:
     model: xios
-    version: 2.5_r1910
     executable: xios.x
     xml_dir: ""
 

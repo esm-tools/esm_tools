@@ -50,10 +50,12 @@ oifs:
     forcing_dir: ${input_dir}/../${version}/ifsdata/
     ifsdata_dir: ${input_dir}/../${version}/ifsdata/
     namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
-    cmip6_data_dir: ${input_dir}/../cmip6_data
     cmip5_data_dir: ${input_dir}/../cmip5_data
-    cmip6_data_dir_nml: ${cmip6_data_dir}
+    cmip6_data_dir: ${input_dir}/../cmip6_data
+    cmip7_data_dir: ${input_dir}/../cmip7_data
     cmip5_data_dir_nml: ${cmip5_data_dir}
+    cmip6_data_dir_nml: ${cmip6_data_dir}
+    cmip7_data_dir_nml: ${cmip7_data_dir}
     restart_dir: ""
     in_date_folder: "${parent_date!syear!smonth!sday}"
     out_date_folder: "${end_date!syear!smonth!sday}"

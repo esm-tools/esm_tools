@@ -95,7 +95,8 @@ def main_flow(parsed_args, target):
 
     # Print config
     current_path = os.getcwd()
-    model_dir_rel_pwd = complete_config["general"]["model_dir"].replace(
+    
+    model_dir_rel_pwd = os.path.realpath(complete_config["general"]["model_dir"]).replace(
         f"{current_path}/", ""
     )
     model_name = model_dir_rel_pwd.split("/")[0]

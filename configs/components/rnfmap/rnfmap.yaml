@@ -27,6 +27,8 @@ rnfmap:
     - focioifs1
     - focioifs21
     - foci211
+    - v1.0
+    - v1.1
 
     runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -53,6 +55,18 @@ rnfmap:
         branch: runoff
       foci211:
         branch: foci211
+      v1.0:
+        branch: rnfmap_compile_vars
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
+      v1.1:
+        branch: enthalpy_on_ocean_side
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
       agrif:
         branch: agrif
 
@@ -216,6 +230,11 @@ rnfmap:
                                     oyac_grid_type: "LL"
                                     oyac_io_per_node: 4
 
+computer:
+    #
+    # Setup up compile and run environment i.e. what needs
+    # to be changed w.r.t the default config/machines/<computer>.yaml
+    #
     choose_computer.name:
         levante:
             fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
@@ -230,30 +249,4 @@ rnfmap:
                  cflags: -fp-model precise -O3 -g -traceback -qopt-report=0
         "*":
            fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
-           cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0
-computer:
-    #
-    # Setup up compile and run environment i.e. what needs
-    # to be changed w.r.t the default config/machines/<computer>.yaml
-    #
-    choose_general.execution_mode:
-        compile:
-            add_export_vars:
-                # OASIS
-                OIFS_OASIS_BASE: '$(pwd)/oasis'
-                OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                OIFS_OASIS_LIB: '"-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-                # NetCDF
-                OIFS_NETCDF_INCLUDE: '"-I$NETCDFROOT/include"'
-                OIFS_NETCDF_LIB: '"-L$NETCDFROOT/lib -lnetcdf"'
-                OIFS_NETCDFF_INCLUDE: '"-I$NETCDFFROOT/include"'
-                OIFS_NETCDFF_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-                # compiler and compiler flags
-                OIFS_FC: '$FC'
-                OIFS_FFLAGS: '"${rnfmap.fflags}"'
-                OIFS_FFIXED: '""'
-                OIFS_FCDEFS: '"BLAS LITTLE LINUX INTEGER_IS_INT"'
-                OIFS_LFLAGS: '$OIFS_MPI_LIB'
-                OIFS_CC: '$CC'
-                OIFS_CFLAGS: '"${rnfmap.cflags}"'
-                OIFS_CCDEFS: '"LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+           cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0

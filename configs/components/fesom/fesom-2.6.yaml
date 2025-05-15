@@ -4,7 +4,7 @@
 fesom:
     model: fesom
     branch: "2.6"
-    version: "2.6.7"
+    version: "2.6"
     type: ocean
 
     comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
@@ -28,8 +28,23 @@ fesom:
       "2.6":
         branch: "2.6.6"
 
+      "2.6-paleodyn":
+        branch: "2.6.7"
+        wiso_code: true
+        icb_code: true
+        namelist_dir: "${model_dir}/config/"
+
+      "2.6.5":
+        branch: "2.6.5"
+
       "2.6.7":
         branch: "2.6.7"
+
+      "2.6.8":
+        branch: "2.6.8"
+
+      "2.6.9":
+        branch: "2.6.9"
 
     destination: "fesom-2.6"
     install_bins: bin/fesom.x
@@ -194,7 +209,7 @@ fesom:
     outdata_sources:
             fesom: "*.fesom.*.nc"
     outdata_targets:
-            fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+            fesom: "*.fesom.*.nc"
 
     choose_with_icb:
             True:
@@ -492,11 +507,11 @@ fesom:
 
     bin_in_work:
             bin: "${executable}"
-            lib: "lib/fesom/*"
+            lib: "lib/fesom/libfesom.so"
 
     bin_sources:
             bin: "${bin_dir}/${comp_executable}"
-            lib: "${fesom.model_dir}/build/lib/*"
+            lib: "${fesom.model_dir}/build/lib/libfesom.so"
 
 
 
@@ -572,6 +587,8 @@ fesom:
             heat_swo:
                     grid: feom
             hydr_oce:
+                    grid: feom
+            calv_oce:
                     grid: feom
             enth_oce:
                     grid: feom

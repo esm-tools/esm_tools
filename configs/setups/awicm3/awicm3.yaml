@@ -130,7 +130,7 @@ general:
                 ollie:
                         pool_dir: "/work/ollie/jstreffi/input"
                 juwels:
-                        pool_dir: "/p/project/chhb19/jstreffi/input"
+                        pool_dir: "/p/project/chhb19/streffing1/input"
                 aleph:
                         pool_dir: "/proj/awi/input"
                 blogin:
@@ -973,9 +973,6 @@ oasis3mct:
 
 
 computer:
-        # Activates the taskset approach for heterogeneous parallelization, by default
-        # since hetjob approach doesn't seem to work (second run showing mpi/pmix
-        # problems)
         taskset: true
         merge_component_envs:
             compile: True
@@ -984,8 +981,9 @@ computer:
             v3.4:
                 choose_name:
                     juwels:
+                        taskset: false
                         iolibraries: system_libs
-                        compiler_mpi: gnu2023_ompi2023
+                        compiler_mpi: gnu2024_ompi2024
                     levante:
                         iolibraries: system_gnu_libs
                         compiler_mpi: gnu11_ompi4

@@ -97,6 +97,8 @@ xios:
                 choose_computer.compiler_mpi:
                     gnu2023_ompi2023:
                         archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
@@ -134,6 +136,8 @@ xios:
             juwels:
                 choose_computer.compiler_mpi:
                     gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         foo: bar

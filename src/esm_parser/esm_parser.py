@@ -1576,11 +1576,6 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
     else:
         logging.debug("Choice %s could not be resolved", choice)
         logging.debug("Key was key=%s", choose_key)
-        user_error(
-            "choose_ block",
-            f"The choice ``{choice}`` was not found in the ``choose_`` block "
-            f"``{choose_key}``:",
-        )
 
     del config_to_replace_in[choose_key]
 

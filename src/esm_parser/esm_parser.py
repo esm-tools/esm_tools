@@ -1576,6 +1576,11 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
     else:
         logging.debug("Choice %s could not be resolved", choice)
         logging.debug("Key was key=%s", choose_key)
+        user_error(
+            "choose_ block",
+            f"The choice ``{choice}`` was not found in the ``choose_`` block "
+            f"``{choose_key}``:",
+        )
 
     del config_to_replace_in[choose_key]
 
@@ -1766,6 +1771,9 @@ def resolve_choose_with_var(
             lvar = lvar.replace("add_", "")
             if lvar in config_copy:
                 config[lvar] = config_copy[lvar]
+        else:
+            # If no config with the key was found, remove the choose block
+            del config_copy[choose_block]
 
 
 def get_chooses_with_var(component_config, var, sep=","):

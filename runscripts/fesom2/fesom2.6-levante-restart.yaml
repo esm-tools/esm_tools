@@ -1,0 +1,36 @@
+general:
+    user: !ENV ${USER}
+    account: "ab0995"
+    setup_name: fesom
+    compute_time: "08:00:00"
+    initial_date: '2001-01-01'
+    final_date: '2001-03-31'
+    base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/"
+    nyear: 0
+    nmonth: 3
+    use_venv: False
+
+fesom:
+    version: 2.6
+    lresume: True
+    ini_parent_exp_id: "core_spinup"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/core_spinup/restart/fesom/"
+    choose_general.run_number:
+        1:
+            lasttime:
+                84600
+            restart_in_sources:
+                par_oce_restart: /${ini_parent_dir}/fesom.2000.oce.restart/*.nc
+                par_ice_restart: /${ini_parent_dir}/fesom.2000.ice.restart/*.nc
+    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}/"
+    # model_dir: "/work/ab0246/${user}/model_codes/fesom-2.6/"
+    namelist_dir: "/work/ab0995/a270133/model_codes/fesom-2.6/config/"
+    pool_dir: "/work/ab0246/a270092/input/"
+    mesh_dir: "/work/ab0246/a270092/input/fesom2/core2/"
+    restart_rate: 3
+    restart_first: 3
+    restart_unit: 'm'
+    resolution: "CORE2"
+    time_step: 1800
+    nproc: 768

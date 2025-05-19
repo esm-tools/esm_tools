@@ -131,6 +131,8 @@ choose_resolution:
                 nx: 11087062
         Arc01_fesom2:
                 nx: 753179
+        FORCA20:
+                nx: 2127871 
 
 
 restart_in_files:

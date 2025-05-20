@@ -334,7 +334,7 @@ lpj_guess:
         proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]' 
         proc_list: $(( ${proc_list_entry} ))
 
-        run_year: ${initial_date!syear}
+        run_year: ${start_date!syear}
         run_month: 1
         run_day: 1
         runtime_seconds: "$(( ${next_date} - ${start_date} ))"

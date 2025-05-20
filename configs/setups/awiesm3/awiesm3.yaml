@@ -331,7 +331,7 @@ lpj_guess:
         
         #proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
         nproc: 128
-        proc_list_entry: '[str(x) for x in range(0,${nproc}+1)]' 
+        proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]' 
         proc_list: $(( ${proc_list_entry} ))
 
         run_year: ${initial_date!syear}
@@ -369,8 +369,6 @@ lpj_guess:
                 temp_namcouple: /home/a/a270270/temp_confiles/namcouple 
                 "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
-                 
-        
         forcing_in_work:
                 soil_layer_type: slt_${mygrid}.nc
                 tmp_rc_file: lpjg_steps.rc

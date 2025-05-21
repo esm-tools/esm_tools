@@ -2,11 +2,11 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "v3.4"
-    account: "ab0995"
-    #account: "bb1469"
+    #account: "ab0995"
+    account: "bb1469"
     compute_time: "08:00:00"
     initial_date: "2000-01-01"
-    final_date: "2001-01-01"
+    final_date: "2004-01-01"
     #base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"  
     nday: 0
@@ -18,7 +18,7 @@ computer:
 
 awiesm3:
     postprocessing: false
-    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"
@@ -28,15 +28,16 @@ fesom:
     lresume: false
     time_step: 1800
     nproc: 128
+    omp_num_threads: 2
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0995/a270270/model_codes/awiesm3-v3.4/fesom-2.6/config"
+    namelist_dir: "/work/ab0246/a270092/model_codes/awiesm3-v3.4/fesom-2.6/config"
 
 lpj_guess:
-    #resolution: "TL159"
-    resolution: TL255
+    resolution: "TL159"
+    #resolution: TL255
     lresume: false 
     nproc: 128
-    omp_num_threads: 4
+    omp_num_threads: 8
 
 oifs:
     #resolution: "TL159"
@@ -49,7 +50,7 @@ oifs:
     #time_step: 3600 //this one worked
     lresume: false
     time_step: 2400
-    nproc: 128
+    nproc: 512
     omp_num_threads: 4
     #add_namelist_changes: #this turns XIOS off
     #    fort.4:
@@ -65,4 +66,4 @@ oasis3mct:
 xios:
     with_model: oifs
     nproc: 4
-    omp_num_threads: 1
+    omp_num_threads: 32

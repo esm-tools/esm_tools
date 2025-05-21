@@ -223,37 +223,15 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         pism_discharge_file=${SPINUP_FILE_pism}
     fi
 
-    ICEBERG_DIR=${COUPLE_DIR}/../icb/
-    echo "ICEBERG_DIR: ${ICEBERG_DIR}"
+    echo " * generating latest_discharge.nc"
     echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
-    if [[ -d ${ICEBERG_DIR} ]]; then
-        mv ${ICEBERG_DIR}/LON.dat ${ICEBERG_DIR}/LON.dat.${CURRENT_YEAR_pism}
-        mv ${ICEBERG_DIR}/LAT.dat ${ICEBERG_DIR}/LAT.dat.${CURRENT_YEAR_pism}
-        mv ${ICEBERG_DIR}/LENGTH.dat ${ICEBERG_DIR}/LENGTH.dat.${CURRENT_YEAR_pism}
-        mv ${ICEBERG_DIR}/HEIGHT.dat ${ICEBERG_DIR}/HEIGHT.dat.${CURRENT_YEAR_pism}
-        mv ${ICEBERG_DIR}/buoys_track.nc ${ICEBERG_DIR}/buoys_track.nc.${CURRENT_YEAR_pism}
-    fi
 
     cdo mulc,${CHUNK_SIZE_pism_standalone} \
             -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
-    
-    module unload python
-    #module load python3
-    module load python3/3.7.7_intel2020u2
-    
-    if [[ "xMESH_ROTATED_fesom"=="x1" ]]; then
-        if [[ ! -f ${ICEBERG_DIR}/nod2d.out.rot ]]; then
-            python ${FUNCTION_PATH}/../utils/rotate_mesh.py ${MESH_DIR_fesom} ${ICEBERG_DIR}
-            cp ${MESH_DIR_fesom}/elem2d.out ${ICEBERG_DIR}/elem2d.out
-        fi
-        python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${ICEBERG_DIR} ${ICEBERG_DIR}
-    else
-        python ${FUNCTION_PATH}/../utils/icb_apply_distribution.py ${COUPLE_DIR}/latest_discharge.nc ${MESH_DIR_fesom} ${ICEBERG_DIR}
-    fi
 
-    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
-    use_icesheet_coupling=1
+#    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
+#    use_icesheet_coupling=1
 
 #    get_ib_num_after_ice_sheet_coupling
 }

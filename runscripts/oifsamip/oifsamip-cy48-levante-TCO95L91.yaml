@@ -1,0 +1,47 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "oifsamip"
+    version: "cy48"
+    compute_time: "00:30:00"
+    initial_date: "1990-01-01"
+    final_date: "2015-01-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    account: "bb1469"
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    use_venv: true
+    install_esm_tools_branch: "feat/awicm3_v3.3_and_v3.4_test_venv_building"
+
+oifsamip:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP6:
+                LCMIP6: True
+                CMIP6DATADIR: '/work/ab0246/a270092/input/oifs-48r1/cmip6-data/'
+                NCMIPFIXYR: 1990
+                SSPNAME: 'historical'
+            NAMECETUNING:
+                TMPRALBSEAD: 0.075
+
+oasis3mct:
+    lresume: false # Set to false to generate the rst files for first leg
+    time_step: 84600
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32

@@ -3,7 +3,7 @@
 fesom:
     model: fesom
     branch: "2.6"
-    version: "2.6.7"
+    version: "2.6"
     type: ocean
 
     comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
@@ -11,8 +11,9 @@ fesom:
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
     # below) whose source code contains the icebergs implementation
-    icb_code: false
     with_icb: false
+    use_icebergs: false
+    use_icesheet_coupling: false
 
     wiso_code: false
     with_wiso: false
@@ -24,16 +25,25 @@ fesom:
 
     choose_version:
       "2.6":
-        branch: "2.6.8"
+        branch: "2.6.6"
 
-      "2.6.7":
+      "2.6-paleodyn":
         branch: "2.6.7"
         wiso_code: true
         icb_code: true
         namelist_dir: "${model_dir}/config/"
 
-      "2.6-5":
+      "2.6.5":
         branch: "2.6.5"
+
+      "2.6.7":
+        branch: "2.6.7"
+
+      "2.6.8":
+        branch: "2.6.8"
+
+      "2.6.9":
+        branch: "2.6.9"
 
     destination: "fesom-2.6"
     install_bins: bin/fesom.x
@@ -199,17 +209,6 @@ fesom:
             fesom: "*.fesom.*.nc"
     outdata_targets:
             fesom: "*.fesom.*.nc"
-
-    choose_icb_code:
-            True:
-                use_icebergs: "${with_icb}"
-                use_icesheet_coupling: "${with_icb}"
-                add_namelist_changes:
-                    namelist.config:
-                        icebergs:
-                            use_icebergs: "${use_icebergs}"
-                            use_icesheet_coupling: "${use_icesheet_coupling}"
-                            steps_per_ib_step: 8
 
     choose_with_icb:
             True:
@@ -390,6 +389,12 @@ fesom:
                             output_length: "${restart_rate}"
                             output_length_unit: "${restart_unit}"
                             restart_length: "${restart_rate}"
+                    run_config:
+                            lwiso: "${with_wiso}"
+                    icebergs:
+                            use_icebergs: "${use_icebergs}"
+                            use_icesheet_coupling: "${use_icesheet_coupling}"
+                            steps_per_ib_step: 8
 
 
             namelist.forcing:
@@ -532,10 +537,6 @@ fesom:
             tra:     "${namelist_dir}/namelist.tra"
             transit: "${namelist_dir}/namelist.transit"
 
-    compiletime_environment_changes:
-            add_export_vars:
-                    taken2from:      fesom2_compile
-
     config_in_work:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"
@@ -585,6 +586,8 @@ fesom:
                     grid: feom
             hydr_oce:
                     grid: feom
+            calv_oce:
+                    grid: feom
             enth_oce:
                     grid: feom
 
@@ -603,12 +606,6 @@ fesom:
             - i2_oce
             - i3_oce
 
-    choose_wiso_code:
-            True:
-                    add_namelist_changes:
-                            namelist.config:
-                                    run_config:
-                                            lwiso: "${with_wiso}"
 
     choose_with_wiso:
             True:

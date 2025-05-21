@@ -1,23 +1,24 @@
-choose_mip:
+oifs:
+    choose_mip:
         "cmip5":
-                add_namelist_changes:
-                        fort.4:
-                                NAERAD:
-                                        CMIP5DATADIR: "${cmip5_data_dir_nml}"
+            add_namelist_changes:
+                fort.4:
+                    NAERAD:
+                        CMIP5DATADIR: "${oifs.cmip5_data_dir_nml}"
         "cmip6":
-                add_namelist_changes:
+            add_namelist_changes:
+                fort.4:
+                    NAERAD:
+                        LCMIP6: ".true."
+                        CMIP6DATADIR: "${oifs.cmip6_data_dir_nml}"
+            choose_scenario:
+                "piControl":
+                    add_namelist_changes:
                         fort.4:
-                                NAERAD:
-                                        LCMIP6: ".true."
-                                        CMIP6DATADIR: "${cmip6_data_dir_nml}"
-                choose_scenario:
-                        "piControl":
-                                add_namelist_changes:
-                                        fort.4:
-                                                NAERAD:
-                                                        NCMIPFIXYR: 1850
-                        "SSP5-8.5":
-                                add_namelist_changes:
-                                        fort.4:
-                                                NAERAD:
-                                                        SSPNAME: "SSP5-8.5"
+                            NAERAD:
+                                NCMIPFIXYR: 1850
+                "SSP5-8.5":
+                    add_namelist_changes:
+                        fort.4:
+                            NAERAD:
+                                SSPNAME: "SSP5-8.5"

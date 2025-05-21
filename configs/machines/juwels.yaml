@@ -9,8 +9,7 @@ computer:
 
     # default settings for compiler, mpi and I/O libs
     compiler_mpi: intel2025_psmpi
-    iolibraries: none
-    useMPI: intelmpi
+    iolibraries: system_libs
 
     # slurm setup
     batch_system: slurm
@@ -23,6 +22,7 @@ computer:
     hyperthreading_flag: ""
 
     use_hyperthreading: False
+    taskset: False
     choose_use_hyperthreading:
             "1":
                     hyperthreading_flag: ""
@@ -81,7 +81,6 @@ computer:
     # basic modules and export vars needed
     # for all compiler and I/O settings
     module_actions:
-            - "--force purge"
             - "use $OTHERSTAGES"
 
     export_vars:
@@ -115,7 +114,6 @@ computer:
 
        gnu2023_ompi2023:
           add_module_actions:
-            - "--force purge"
             - "load Stages/2023"
             - "load GCC/11.3.0"
             - "load OpenMPI/4.1.4"
@@ -184,26 +182,9 @@ computer:
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                 PATH: $IO_LIB_ROOT/bin:$PATH
 
-            choose_compiler_mpi:
-                intel2024_ompi2024:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
-                intel2022_ompi2022:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
-                intel2020_ompi2020:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
-                intel2020_psmpi2020:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
-                intel_2019a_psmpi2019:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
-                intel2024_psmpi2024:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/chhb19/HPC_libraries/intel-2023.2.1_ParaStationMPI-5.9.2-1-mt_20240408
-                        PSMPIFLAGS: '"-lrt -lm -ldl"'
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
 
         # GEOMAR LIBS
         geomar_libs:
@@ -219,21 +200,15 @@ computer:
                 NETCDFFROOT: $IO_LIB_ROOT
                 ECCODESROOT: $IO_LIB_ROOT
 
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
+
                 HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
                 NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-            choose_compiler_mpi:
-                intel2022_psmpi2022:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2021.4.0_parastation_5.5.0-1-mt_20220222
-                        PSMPIFLAGS: '"-lrt -lm -ldl"'
-                intel2024_psmpi2024:
-                    add_export_vars:
-                        IO_LIB_ROOT: /p/project/chhb19/HPC_libraries/intel-2023.2.1_ParaStationMPI-5.9.2-1-mt_20240408
-                        PSMPIFLAGS: '"-lrt -lm -ldl"'
 
     # some yamls use computer.fc, etc to identify the compiler, so we need to add them
     fc: "$FC"

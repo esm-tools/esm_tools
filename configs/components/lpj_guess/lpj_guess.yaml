@@ -6,196 +6,198 @@
 # For more information about the ESM-Tools feature variables available, please consult:
 # https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
 
-model: lpj_guess
-version: 4.1.1
+lpj_guess:
+    model: lpj_guess
+    version: 4.1.1
 
-metadata:
-        Institute: Lund Universitiy
-        Description:
-                Dynamic vegetation model
-        Authors: Ben Smith
-        Publications:
-                - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637."
-                - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185."
-                - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development - Preprint"
-                - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. https://doi.org/10.5281/zenodo.8065737"
-        License: Mozilla Public License Version 2.0
-                
+    metadata:
+            Institute: Lund Universitiy
+            Description:
+                    Dynamic vegetation model
+            Authors: Ben Smith
+            Publications:
+                    - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637."
+                    - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185."
+                    - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development - Preprint"
+                    - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. https://doi.org/10.5281/zenodo.8065737"
+            License: Mozilla Public License Version 2.0
+                    
 
-git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
-destination: lpj_guess
-branch: main
-#comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
-comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
+    git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
+    destination: lpj_guess
+    branch: main
+    #comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
+    comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
 
-install_bins: "build/guess"
-clean_command: "rm -rf build"
-executable: guess
-execution_command: ${executable} ${runscript_name}
-#resolution: TL159 #if it's not set i dosen't work! 
-resolution: TL255 #if it's not set i dosen't work!
+    install_bins: "build/guess"
+    clean_command: "rm -rf build"
+    executable: guess
+    execution_command: ${executable} ${runscript_name}
+    #resolution: TL159 #if it's not set i dosen't work! 
+    resolution: TL255 #if it's not set i dosen't work!
 
-choose_version:
-    # Here you can place all the variables you would want to control via the version
-    # variable above (for example, you could also add ``git-repository``,
-    # ``comp_command``, ``destination``, ...) 
-    4.1.1:
-        runscript_name: run_trunk_4_1.ins
-        git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
-        branch: main
-    4.1.2:
-        runscript_name: run_coupled_4_1_2.ins
-        git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
-        branch: lpj_guess_awiesm3
+    choose_version:
+        # Here you can place all the variables you would want to control via the version
+        # variable above (for example, you could also add ``git-repository``,
+        # ``comp_command``, ``destination``, ...) 
+        4.1.1:
+            runscript_name: run_trunk_4_1.ins
+            git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
+            branch: main
+        4.1.2:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
+            branch: lpj_guess_awiesm3
+            mygrid: TL255
+            install_bins: build/guess_TL255
+            executable: guess_TL255
+
+                     
+    # ``model_dir`` let's ESM-Tools know where is the source code of your component (must
+    # be an absolute path). Normally, changed via the runscript. We recommend you leave it
+    # as below, changing only the ``name_of_your_model`` part to whatever you defined as 
+    # the ``model`` var. This will automatically select the source code for esm_master if
+    # the command is operating with a coupled setup
+    model_dir: ${general.model_dir}
+
+    # This section takes care of dealing with environment changes you might want to do, to
+    # deviated from the defaults define for the specific machine
+    # (``configs/machine/<the_machine_used>.yaml``). For more information consult:
+    # https://esm-tools.readthedocs.io/en/latest/esm_environment.html#esm-environment
+    choose_computer.name:
+        levante:
+            pool_dir: "/work/ab0246/a270092/input/"
+
+    # Some recommended defaults (restart for old experiment yes or no?)
+    lresume: false
+    time_step: 86400
+
+    choose_lresume:
+        false:
+            restart_num: 0
+        true:
+            restart_num: 1
+
+    # Some commonly used variables in other ESM-Tools components (but optional)
+    input_dir: ${pool_dir}/lpj-guess/
+    namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
+    gridlist_dir: ${input_dir}/gridlists/
+    forcing_dir: ${input_dir}/climate_forcing_data/
+
+    #gridlist: "full_global" # sets up grid cell list =/ setup_name!!
+    gridlist: "home" # sets up grid cell list =/ setup_name!!
+    setup_name: global # sets up all the model parameters
+
+
+    # File dictionaries to control the copying/moving/linking of all files associated to
+    # the simulation. This syntax will change for something better soon. For more details
+    # about this syntax consult:
+    # https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
+    config_sources:
+        runscript: ${namelist_dir}/run_trunk_4_1.j2
+        forcing_path_file: ${namelist_dir}/paths_forcing.j2
+    config_in_work:
+        runscript: ${runscript_name}
+        forcing_path_file: paths_forcing.ins
+
+    bin_sources:
+        bin_tag: ${model_dir}/build/${executable}
+
+    choose_resolution:
+            # Note:
+            # Tco grids only work with version 43r3.
+            TCO95:
+                    nx: 40320
+                    ny: 1
+                    oasis_grid_name: "096"
+                    res_number: 95
+                    res_number_tl: "95_4"
+                    truncation: "TCO"
+            TL159:
+                    nx: 35718
+                    ny: 1
+                    oasis_grid_name: "080"
+                    res_number: 159
+                    res_number_tl: "159l_2"
+                    truncation: "TL"
+            TCO159:
+                    nx: 108160
+                    ny: 1
+                    oasis_grid_name: "160"
+                    res_number: 159
+                    res_number_tl: "159_4"
+                    truncation: "TCO"
+            TCO199:
+                    nx: 167200
+                    ny: 1
+                    oasis_grid_name: "200"
+                    res_number: 199
+                    res_number_tl: "199_4"
+                    truncation: "TCO"
+            TL255:
+                    nx: 88838
+                    ny: 1
+                    oasis_grid_name: "128"
+                    res_number: 255
+                    res_number_tl: "255l_2"
+                    truncation: "TL"
+            TCO319:
+                    nx: 421120
+                    ny: 1
+                    oasis_grid_name: 320
+                    res_number: 319
+                    res_number_tl: "319_4"
+                    truncation: "TCO"
+            TCO399:
+                    nx: 654400
+                    ny: 1
+                    oasis_grid_name: 400
+                    res_number: 399
+                    res_number_tl: "399_4"
+                    truncation: "TCO"
+            TCO639:
+                    nx: 1661440
+                    ny: 1
+                    oasis_grid_name: 640
+                    res_number: 639
+                    res_number_tl: "639_4"
+                    truncation: "TCO"
+            TCO1279:
+                    nx: 6599680
+                    ny: 1
+                    oasis_grid_name: 128
+                    res_number: 1279
+                    res_number_tl: "1279_4"
+                    truncation: "TCO"
+            TL511:
+                    nx: 348528
+                    ny: 1
+                    oasis_grid_name: "256"
+                    res_number: 511
+                    res_number_tl: "511l_2"
+                    truncation: "TL"
+            TL799:
+                    nx: 843490
+                    ny: 1
+                    oasis_grid_name: "400"
+                    res_number: 799
+                    res_number_tl: "799l_2"
+                    truncation: "TL"
+            TL1279:
+                    nx: 2140702
+                    ny: 1
+                    oasis_grid_name: "640"
+                    res_number: 799
+                    res_number_tl: "1279l_2"
+                    truncation: "TL"
+
+
+computer:
+    add_export_vars:
+        myfortrancompiler: $FC
+        #mygrid: TL159
         mygrid: TL255
-        install_bins: build/guess_TL255
-        executable: guess_TL255
-
-        environment_changes:
-            add_add_add_add_add_export_vars:
-                myfortrancompiler: $FC
-                #mygrid: TL159
-                mygrid: TL255
-                OASIS_ANCHOR: ../../../oasis  
-                NETCDF_C_DIR: $NETCDFROOT
-                NETCDF_F_DIR: $NETCDFFROOT
-                OASIS_DIR: ../../../oasis/arch_ecearth/
-                 
-# ``model_dir`` let's ESM-Tools know where is the source code of your component (must
-# be an absolute path). Normally, changed via the runscript. We recommend you leave it
-# as below, changing only the ``name_of_your_model`` part to whatever you defined as 
-# the ``model`` var. This will automatically select the source code for esm_master if
-# the command is operating with a coupled setup
-model_dir: ${general.model_dir}
-
-# This section takes care of dealing with environment changes you might want to do, to
-# deviated from the defaults define for the specific machine
-# (``configs/machine/<the_machine_used>.yaml``). For more information consult:
-# https://esm-tools.readthedocs.io/en/latest/esm_environment.html#esm-environment
-choose_computer.name:
-    levante:
-        pool_dir: "/work/ab0246/a270092/input/"
-
-# Some recommended defaults (restart for old experiment yes or no?)
-lresume: false
-time_step: 86400
-
-choose_lresume:
-    false:
-        restart_num: 0
-    true:
-        restart_num: 1
-
-# Some commonly used variables in other ESM-Tools components (but optional)
-input_dir: ${pool_dir}/lpj-guess/
-namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
-gridlist_dir: ${input_dir}/gridlists/
-forcing_dir: ${input_dir}/climate_forcing_data/
-
-#gridlist: "full_global" # sets up grid cell list =/ setup_name!!
-gridlist: "home" # sets up grid cell list =/ setup_name!!
-setup_name: global # sets up all the model parameters
-
-
-# File dictionaries to control the copying/moving/linking of all files associated to
-# the simulation. This syntax will change for something better soon. For more details
-# about this syntax consult:
-# https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
-config_sources:
-    runscript: ${namelist_dir}/run_trunk_4_1.j2
-    forcing_path_file: ${namelist_dir}/paths_forcing.j2
-config_in_work:
-    runscript: ${runscript_name}
-    forcing_path_file: paths_forcing.ins
-
-bin_sources:
-    bin_tag: ${model_dir}/build/${executable}
-
-choose_resolution:
-        # Note:
-        # Tco grids only work with version 43r3.
-        TCO95:
-                nx: 40320
-                ny: 1
-                oasis_grid_name: "096"
-                res_number: 95
-                res_number_tl: "95_4"
-                truncation: "TCO"
-        TL159:
-                nx: 35718
-                ny: 1
-                oasis_grid_name: "080"
-                res_number: 159
-                res_number_tl: "159l_2"
-                truncation: "TL"
-        TCO159:
-                nx: 108160
-                ny: 1
-                oasis_grid_name: "160"
-                res_number: 159
-                res_number_tl: "159_4"
-                truncation: "TCO"
-        TCO199:
-                nx: 167200
-                ny: 1
-                oasis_grid_name: "200"
-                res_number: 199
-                res_number_tl: "199_4"
-                truncation: "TCO"
-        TL255:
-                nx: 88838
-                ny: 1
-                oasis_grid_name: "128"
-                res_number: 255
-                res_number_tl: "255l_2"
-                truncation: "TL"
-        TCO319:
-                nx: 421120
-                ny: 1
-                oasis_grid_name: 320
-                res_number: 319
-                res_number_tl: "319_4"
-                truncation: "TCO"
-        TCO399:
-                nx: 654400
-                ny: 1
-                oasis_grid_name: 400
-                res_number: 399
-                res_number_tl: "399_4"
-                truncation: "TCO"
-        TCO639:
-                nx: 1661440
-                ny: 1
-                oasis_grid_name: 640
-                res_number: 639
-                res_number_tl: "639_4"
-                truncation: "TCO"
-        TCO1279:
-                nx: 6599680
-                ny: 1
-                oasis_grid_name: 128
-                res_number: 1279
-                res_number_tl: "1279_4"
-                truncation: "TCO"
-        TL511:
-                nx: 348528
-                ny: 1
-                oasis_grid_name: "256"
-                res_number: 511
-                res_number_tl: "511l_2"
-                truncation: "TL"
-        TL799:
-                nx: 843490
-                ny: 1
-                oasis_grid_name: "400"
-                res_number: 799
-                res_number_tl: "799l_2"
-                truncation: "TL"
-        TL1279:
-                nx: 2140702
-                ny: 1
-                oasis_grid_name: "640"
-                res_number: 799
-                res_number_tl: "1279l_2"
-                truncation: "TL"
-
+        OASIS_ANCHOR: ../../../oasis  
+        NETCDF_C_DIR: $NETCDFROOT
+        NETCDF_F_DIR: $NETCDFFROOT
+        OASIS_DIR: ../../../oasis/arch_ecearth/

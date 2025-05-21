@@ -167,9 +167,9 @@ fesom:
         omp_num_threads: 1
         choose_general.oasis_with_yac:
             True:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
             False:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DDISABLE_MULTITHREADING=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
                 comp_command: "missing"
 

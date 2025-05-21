@@ -5,7 +5,7 @@ general:
 
         model: awiesm3
 
-        model_dir: ${esm_master_dir}/awiesm3-${version}
+        model_dir: ${esm_master_dir}/awiesm3-${general.version}
 
         lresume: False
         coupled_setup: True
@@ -18,10 +18,10 @@ general:
                 - oasis3mct
 
         available_versions:
-        - 'v3.4'
+        - 'develop'
 
         choose_version:
-          v3.4:
+          develop:
             major_version: v3.4
             couplings:
             - fesom-2.6+oifs-48r1+xios-2.5+lpj_guess-4.1.2
@@ -63,7 +63,7 @@ general:
 #########################################################################################
 
 oifs:
-        version: "48r1"
+        version: "48r1_lpjg_branch"
 
         # added 05.03.2025
         git-repository: 'https://git.smhi.se/sager/oifs48r1'
@@ -73,7 +73,7 @@ oifs:
         add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
         pool_dir: ${general.pool_dir}
-        model_dir: ${general.model_dir}/oifs-${version}
+        model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
@@ -159,7 +159,7 @@ oifs:
 
 
 fesom:
-        version: "2.0"
+        version: "2.6.8"
         time_step: 1800
         resolution: CORE2
         lresume: false
@@ -183,7 +183,7 @@ fesom:
 
         tide_forcing_dir: ""
         forcing_data_dir: ""
-        model_dir: ${general.model_dir}/fesom-${fesom.version}
+        model_dir: ${general.model_dir}/${fesom.destination}
         setup_dir: ${general.model_dir}
 
         pool_dir: "${general.pool_dir}/fesom2/"
@@ -206,8 +206,8 @@ fesom:
 
         choose_general.major_version:
                 "v3.4":
-                        version: "2.6"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/2.5/awicm3/v3.2/"
+                        version: "2.6.8"
+                        namelist_dir: "${esm_namelist_dir}/fesom2/2.6/awicm3/v3.4/"
                         add_namelist_changes:
                                 namelist.config:
                                         ale_def:

@@ -1,7 +1,7 @@
 general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
-    version: "v3.4"
+    version: "develop"
     #account: "ab0995"
     account: "bb1469"
     compute_time: "08:00:00"
@@ -30,7 +30,6 @@ fesom:
     nproc: 128
     omp_num_threads: 16
     tar_binary_restarts: true
-    namelist_dir: "/work/ab0246/a270092/model_codes/awiesm3-v3.4/fesom-2.6/config"
 
 lpj_guess:
     resolution: "TL159"

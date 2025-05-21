@@ -101,7 +101,7 @@ lpj_guess:
         forcing_path_file: paths_forcing.ins
 
     bin_sources:
-        bin_tag: ${model_dir}/build/${executable}
+        bin_tag: ${model_dir}/bin/${executable}
 
     choose_resolution:
             # Note:

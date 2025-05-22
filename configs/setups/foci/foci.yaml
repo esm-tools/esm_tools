@@ -1435,6 +1435,7 @@ computer:
                 ECHAM6_THREADS: 1
                 NEMO_THREADS: 1
                 I_MPI_DEBUG: 1
+                IO_LIB_ROOT: /mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/HPC_libraries
     choose_general.execution_mode:
         compile:
             choose_computer.name:

@@ -245,8 +245,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 				input=${s}_${currdate1}_${currdate2}_${filetag}.nc3
 		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
-      	  	 echo " Looking for $output " 
-                 if [[ -f $output ]] ; then
+            echo " Looking for $output " 
+            if [[ -f $output ]] && ! [[ $(ncdump -k $output) =~ "netCDF-4" ]]; then
 					mv $output $input
                
 					# If too many jobs run at the same time, wait
@@ -287,6 +287,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 							mv -v $input nc3/                    
 						fi
 					) &
+            else
+                echo "NOTE: $output already in netCDF-4 format, no ncks treatment done"
 				fi
 			done #steps
 		done #filetags

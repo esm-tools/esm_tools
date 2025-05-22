@@ -1581,8 +1581,8 @@ nemo:
                 grid: agr1
             "[[agr1_c_fields-->FIELD]]":
                 grid: agr1
-            "[[agr1_r_fields-->FIELD]]":
-                grid: agr1r
+            #"[[agr1_r_fields-->FIELD]]":
+               #grid: agr1r
             "[[agr1_rc_fields-->FIELD]]":
                 grid: agrc
             "[[agr2_t_fields-->FIELD]]":

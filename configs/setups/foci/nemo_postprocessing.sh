@@ -405,7 +405,7 @@ do
 		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 		(
 			trap 'echo $? > $post_dir/status' ERR
-			print "Processing year $year"
+			print "Processing restart date $currdate2"
 			tar czf ${EXP_ID}_restart_${currdate2}.tar.gz *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 		) &

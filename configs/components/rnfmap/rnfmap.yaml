@@ -55,6 +55,8 @@ rnfmap:
         branch: runoff
       foci211:
         branch: foci211
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
       v1.0:
         branch: rnfmap_compile_vars
         further_reading:

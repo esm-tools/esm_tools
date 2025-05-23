@@ -86,8 +86,8 @@ oasis3mct:
       4.0-awicm-frontiers:
         branch: awicm-3-frontiers
       5.0-smhi:
-        branch: main_dkrz
-        git-repository: https://gitlab.dkrz.de/ec-earth/oasis3mct5-ece
+        branch: cmake_build_option
+        git-repository: https://git.smhi.se/jan.streffing/oasis3-mct-5.git
         comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
       5.0-geomar:
         # this version is taken directly from the CERFACS gitlab

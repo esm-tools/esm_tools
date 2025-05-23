@@ -192,7 +192,7 @@ computer:
              - "load spack"
              - "source $SPACK_ROOT/share/spack/setup-env.sh"
              # we load system intel compilers and mpi. Needed for spack, but wont be used.
-             - "load intel-oneapi-compilers/2023.2.4"
+             - "load intel-oneapi-compilers/2023.2.1"
              #- "load intel-oneapi-mpi/2021.10.0"
              #- "load intel-oneapi-mkl/2023.2.0"
 
@@ -231,7 +231,7 @@ computer:
           # Here we load compiler and MPI
           # netCDF etc is done later
           add_module_actions:
-             - "load intel-oneapi-compilers/2023.2.4"
+             - "load intel-oneapi-compilers/2023.2.1"
              - "load intel-oneapi-mpi/2021.10.0"
              # MKL needed for OpenIFS
              - "load intel-oneapi-mkl/2023.2.0"
@@ -275,7 +275,7 @@ computer:
        # by Joakim (intel2023_impi2021) seems cleaner
        intel2023_impi2021_tk:
           add_module_actions:
-             - "load intel-oneapi-compilers/2023.2.4"
+             - "load intel-oneapi-compilers/2023.2.1"
              - "load intel-oneapi-mpi/2021.10.0"
                #- "load intel/2022.2"
                #- "load impi/2021.6"
@@ -298,7 +298,7 @@ computer:
           # Here we load compiler and MPI
           # netCDF etc is done later
           add_module_actions:
-             - "load intel-oneapi-compilers/2023.2.4"
+             - "load intel-oneapi-compilers/2023.2.1"
              - "load openmpi/4.1.6"
              # MKL needed for OpenIFS
              - "load intel-oneapi-mkl/2023.2.0"
@@ -444,7 +444,7 @@ computer:
                 intel2023_impi2021_tk:
                    # TODO: find the correct libraries and dependencies
                    add_module_actions:
-                     - "load intel-oneapi-compilers/2023.2.4"
+                     - "load intel-oneapi-compilers/2023.2.1"
                      - "load intel-oneapi-mpi/2021.10.0"
                      - "load netcdf-fortran/4.6.1-mpi"
                    # TODO: find the correct libraries and dependencies

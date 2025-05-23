@@ -280,6 +280,8 @@ lpj_guess:
         coupling_fields:
                 "[[veg_atm_fields-->FIELD]]":
                         grid: ${lpj_guess.mygrid}-land
+
+        resolution: ${oifs.resolution}
         grids:
                 lpjg:
                         name: lpjg

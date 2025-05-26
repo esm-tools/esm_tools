@@ -134,6 +134,8 @@ fesom:
                     nx: 3160340
             orca25:
                     nx: 912469
+            DARS:
+                    nx: 3160340
             DART:
                     nx: 3160340
             ROS2:

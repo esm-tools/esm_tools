@@ -113,6 +113,14 @@
     <field id="tco3"   long_name="total column ozone"                                         standard_name="atmosphere_mass_content_of_ozone"                         unit="kg m-2" />
     <!--TODO: convert to W m-2-->
     <field id="tsrc"   long_name="top net clear sky solar radiation"                          standard_name="toa_net_downward_shortwave_flux_assuming_clear_sky"       unit="J m-2" />
+    <field id="aod550" long_name="Total Aerosol Optical Depth at 550nm"                       standard_name="total_aerosol_optical_depth_at_550nm"                     unit="1" />
+    <field id="aod550ss" long_name="Total Aerosol Optical Depth at 550nm sea salt"            standard_name="total_aerosol_optical_depth_at_550nm_seasalt"             unit="1" />
+    <field id="aod550du" long_name="Total Aerosol Optical Depth at 550nm dust"                standard_name="total_aerosol_optical_depth_at_550nm_dust"                unit="1" />
+    <field id="aod550om" long_name="Total Aerosol Optical Depth at 550nm organic"             standard_name="total_aerosol_optical_depth_at_550nm_organic"             unit="1" />
+    <field id="aod550bc" long_name="Total Aerosol Optical Depth at 550nm black-carbon"        standard_name="total_aerosol_optical_depth_at_550nm_black_carbon"        unit="1" />
+    <field id="aod550su" long_name="Total Aerosol Optical Depth at 550nm sulphate"            standard_name="total_aerosol_optical_depth_at_550nm_sulphate"            unit="1" />
+    <field id="mytaod550" long_name="Total Aerosol Optical Depth at 550nm from MACV2SP"       standard_name="total_aerosol_optical_depth_at_550nm_from_MACV2SP"        unit="1" />
+    <field id="mycdncfactor" long_name="Cloud condensation factor from MACV2SP"               standard_name="cloud_condensation_factor_from_MACV2SP"                   unit="1" />
     <!--TODO: convert to W m-2-->
     <field id="ttrc"   long_name="top net clear sky thermal radiation"                        standard_name="toa_net_downward_longwave_flux_assuming_clear_sky"        unit="J m-2" />
     <!--TODO: convert to W m-2-->

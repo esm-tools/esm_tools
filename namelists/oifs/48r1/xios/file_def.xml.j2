@@ -120,7 +120,7 @@
 
         <!-- Example: model level output -->
         <file
-            enabled="false"
+            enabled="true"
 	          timeseries="only"
 	          output_freq="6h"
             name_suffix="_6h_ml"
@@ -201,6 +201,17 @@
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+                <field field_ref="aod550" name="aod550" long_name="Total Aerosol Optical Depth at 550nm"/>
+                <field field_ref="aod550ss" name="aod550ss" long_name="Total Aerosol Optical Depth at 550nm sea-salt"/>
+                <field field_ref="aod550du" name="aod550du" long_name="Total Aerosol Optical Depth at 550nm dust"/>
+                <field field_ref="aod550om" name="aod550om" long_name="Total Aerosol Optical Depth at 550nm organic matter"/>
+                <field field_ref="aod550bc" name="aod550bc" long_name="Total Aerosol Optical Depth at 550nm black carbon"/>
+                <field field_ref="aod550su" name="aod550su" long_name="Total Aerosol Optical Depth at 550nm sulfate"/>
+                <field field_ref="mytaod550" name="mytaod550" long_name="Total Aerosol Optical Depth at 550nm from MACV2SP"/>
+                <field field_ref="mycdncfactor" name="mycdncfactor" long_name="Cloud condensation factor from MACV2SP"/>
+                <!-- <field field_ref="lcc" name="lcc" long_name="Low cloud cover"/> -->
+                <!-- <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/> -->
+                <!-- <field field_ref="hcc" name="hcc" long_name="High cloud cover"/> -->
             </field_group>
         </file>
 

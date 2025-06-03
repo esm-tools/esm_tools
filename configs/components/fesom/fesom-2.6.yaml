@@ -1,6 +1,5 @@
 # FESOM2 YAML CONFIGURATION FILE
 #
-
 fesom:
     model: fesom
     branch: "2.6"
@@ -109,45 +108,77 @@ fesom:
             - namelist.tra
             - namelist.transit
 
+    whichEVP: 0 # 0=EVP, 1=mEVP, 2=aEVP
+                # See: Kimmritz et. al 2015 & 2016: https://doi.org/10.1016/j.jcp.2015.04.051, https://doi.org/10.1016/j.ocemod.2016.03.004
     choose_resolution:
             CORE2:
                     nx: 126858
                     mesh_dir: "${fesom.mesh_base_dir}/core2/"
                     nproc: 288
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             pi:
                     nx: 3140
                     mesh_dir: "${fesom.mesh_base_dir}/pi/"
                     nproc: 4
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             LGM:
                     nx: 95239
                     mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_glac1d_m1_512/"
                     nproc: 1024
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             GLOB:
                     nx: 830305
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             CAVCORE2:
                     nx: 72411
                     mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
                     nproc: 288
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             PI_ICEv2:
                     nx: 132273
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             D3:
                     nx: 3160340
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             orca25:
                     nx: 912469
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             DARS:
                     nx: 3160340
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             DART:
                     nx: 3160340
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             ROS2:
                     nx: 26306560
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
             HR:
                     nx: 1306775
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             jane:
                     nx: 33348172
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
             SO3:
                     nx: 11087062
+                    alpha_evp: 800          # constant that control numerical stability of mEVP.
+                    beta_evp: 8900           # constant that control numerical stability of mEVP.
             Arc01_fesom2:
                     nx: 753179
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
 
 
     restart_in_files:
@@ -311,7 +342,6 @@ fesom:
                         felem: "felem"
                         #num_non_melted_icb_file: "num_non_melted_icb_file"
 
-
     log_files:
             clock: clock
             mesh_diag: mesh_diag
@@ -460,6 +490,11 @@ fesom:
 
                             runoff_data_source: ${runoff_data_source}
                             sss_data_source: ${sss_data_source}
+            namelist.ice:
+                    ice_dyn:
+                            whichEVP: ${whichEVP}
+                            alpha_evp: ${alpha_evp}
+                            beta_evp: ${beta_evp}
 
     use_landice_water: False
     choose_general.iterative_coupling:

@@ -1,7 +1,6 @@
 #
 #OIFS standalone YAML FILE
 #
-
 oifs:
     model: oifs
     executable: oifs
@@ -12,6 +11,7 @@ oifs:
     type: atmosphere
     with_xios: false # TODO: Change to true when the run bug is fixed (compile bug was fixed)
     with_nest1: false
+    xml_dir: ''
 
     required_plugins:
             - "git+https://github.com/esm-tools-plugins/postprocess"
@@ -325,20 +325,27 @@ oifs:
         add_include_models:
         - oasis3mct
         requires:
-        #- oasis3mct-4.0
-        #- xios-2.5_r1910_oifs
         - oasis3mct-5.0-geomar
         - xios-trunk
         major_version: 43r3
       48r1:
-        #branch: 'main'
-        branch: 'macv2sp_cmip7'
-        # --build-type Debug
+        #branch: 'macv2sp_cmip7'
+        branch: 'main'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS
-        #git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
-        git-repository: https://git.smhi.se/e7845/oifs48r1
+        git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
+        #git-repository: https://git.smhi.se/e7845/oifs48r1
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+      48r1_lpjg_branch:
+        branch: 'lpj_guess_implementation'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository: https://git.smhi.se/sager/oifs48r1
         install_bins: install/bin/OpenIFS
         destination: oifs-48r1
         with_xios: false
@@ -582,7 +589,8 @@ oifs:
                     NAMCT0:
                             LFDBOP: "${lfdbop}"
                             LSMSSIG: "${lsmssig}"
-
+                            NFRPOS: "${output_step_freq}"
+                            NFRHIS: "${output_step_freq}"
 
     lresume: false
     restart_rate: 1
@@ -1121,8 +1129,8 @@ oifs:
                                     NAMRES:
                                             NFRRES: 1
                                             NRESTS(:):
-                                                       - -1
-                                                       - -${oifs.next_step}
+                                                       - 1
+                                                       - ${oifs.next_step}
                                     NAMPAR0:
                                             NPROC: ${oifs.nproc}
                                     NAMRIP:
@@ -1342,26 +1350,15 @@ oifs:
     #======================================================================================
 
     choose_output:
-            "default":
-                    add_namelist_changes:
-                            fort.4:
-                                    NAMCT0:
-                                            NFRPOS: "$(( 3600 / ${time_step} * 6 ))"
-                                            NFRHIS: "$(( 3600 / ${time_step} * 6 ))"
-
-            "12hr":
-                    add_namelist_changes:
-                            fort.4:
-                                    NAMCT0:
-                                            NFRPOS: 12
-                                            NFRHIS: 12
-
+            "default": #6hr
+                     output_step_freq: $(( 3600 / ${time_step} * 6 ))
             "1hr":
-                     add_namelist_changes:
-                            fort.4:
-                                    NAMCT0:
-                                            NFRPOS: "$(( 3600 / ${time_step} * 1 ))"
-                                            NFRHIS: "$(( 3600 / ${time_step} * 1 ))"
+                     output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "3hr":
+                     output_step_freq: $(( 3600 / ${time_step} * 3 ))
+            "12hr":
+                     output_step_freq: $(( 3600 / ${time_step} * 12 ))
+
     #======================================================================================
     # PREPROCESS: eternal runs
     #======================================================================================

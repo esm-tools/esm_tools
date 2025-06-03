@@ -147,7 +147,6 @@ general:
         # Load general environment for the whole coupled setup
         dr_hook_ignore_signals: -1
 
-
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
@@ -351,6 +350,7 @@ fesom:
         lresume: false
         nproc: 72
         omp_num_threads: 1
+        whichEVP: 1
         choose_general.resolution:
                 TCO159_CORE2:
                         nproc: 144
@@ -358,9 +358,9 @@ fesom:
                         nproc: 72
         choose_general.oasis_with_yac:
             True:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON OPENMP_REPRODUCIBLE=ON -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
             False:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DDISABLE_MULTITHREADING=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON OPENMP_REPRODUCIBLE=ON -DDISABLE_MULTITHREADING=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
                 comp_command: "missing"
 
@@ -539,6 +539,7 @@ xios:
         regular_res_lat: 192 
         regular_res_lon: 400
         config_sources:
+                context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2
                 file_def: ${xml_dir}/file_def.xml.j2
         choose_general.major_version:
@@ -712,7 +713,7 @@ oasis3mct:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.4':
-                        mct_version: 5.0
+                        mct_version: 4.0
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'
@@ -724,7 +725,7 @@ oasis3mct:
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
                                         - 'heat_ico <--gauswgt_c-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_glo-- A_Runoff:A_Calving'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
                                         - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'

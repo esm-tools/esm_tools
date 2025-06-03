@@ -2249,7 +2249,6 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
 
                 if isinstance(entries_of_key, str):
                     entries_of_key = [entries_of_key]
-
                 if isinstance(rhs, str):
                     return_dict2 = {}
                     for key in entries_of_key:
@@ -2258,6 +2257,14 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                                 value_in_list, str(key)
                             )
                         ] = rhs.replace(value_in_list, str(key))
+                    if re.findall(r'eval\((.*?)\)', rhs):
+                        for key, value in return_dict2.items():
+                            evals = re.findall(r'eval\((.*?)\)', value)
+                            for _eval in evals:
+                                return_dict2[key] = value.replace(
+                                    f"eval({_eval})",
+                                    str(eval(_eval)),
+                                )
 
                 if isinstance(rhs, list):
                     replaced_list = []
@@ -2479,6 +2486,11 @@ def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
     entry = rhs
+    if isinstance(entry, str) and entry.endswith("_keep_list"):
+        keep_list = True
+        entry = entry.replace("_keep_list", "")
+    else:
+        keep_list = False
     if isinstance(entry, Date):
         return entry
     if "${" in str(entry):
@@ -2568,7 +2580,14 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
-        result = eval(math)
+        if len(tree) > 0:
+            list_expansion_pattern = re.search(r"^.*?\[\[.*-->(.*)\]\].*?", tree[-1])
+        else:
+            list_expansion_pattern = None
+        if list_expansion_pattern and list_expansion_pattern.group(1) in math:
+            result = f"eval({math})"
+        else:
+            result = eval(math)
         if isinstance(result, list) and date_operation:
             result = result[
                 -1

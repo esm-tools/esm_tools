@@ -350,7 +350,6 @@ fesom:
         lresume: false
         nproc: 72
         omp_num_threads: 1
-        whichEVP: 1
         choose_general.resolution:
                 TCO159_CORE2:
                         nproc: 144

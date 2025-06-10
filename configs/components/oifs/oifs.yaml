@@ -329,13 +329,13 @@ oifs:
         - xios-trunk
         major_version: 43r3
       48r1:
-        #branch: 'macv2sp_cmip7'
-        branch: 'main'
+        branch: 'macv2sp_cmip7'
+        #branch: 'main'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS
-        git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
-        #git-repository: https://git.smhi.se/e7845/oifs48r1
+        #git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
+        git-repository: https://git.smhi.se/e7845/oifs48r1
         install_bins: install/bin/OpenIFS
         destination: oifs-48r1
         with_xios: false

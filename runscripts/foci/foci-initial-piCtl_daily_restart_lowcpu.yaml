@@ -1,5 +1,5 @@
 computer:
-   pool_dir: "/mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/"
+   pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/"
    partition: "standard96:test"
 general:
    use_venv: False

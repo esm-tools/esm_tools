@@ -71,6 +71,8 @@ rnfmap:
         runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
       agrif:
         branch: agrif
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
 
     clean_command: rm -rf bin; cd src; make clean; cd ..
     comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma

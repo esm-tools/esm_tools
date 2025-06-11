@@ -2,7 +2,7 @@
 # land use harvest and land use transitions still wrong links wit piCtl
 # check namelist.echam and namelist.jsbach
 computer:
-   pool_dir: "/mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/" 
+   pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/" 
    # partition: "standard96:test"
    launcher: "mpirun"
    launcher_flags: "" 
@@ -35,7 +35,7 @@ general:
    ini_parent_exp_id: "FOCI1.20.0-CC103_piControl_ESM_250y_spinup2099"
    ini_parent_date: "20491231" 
    ini_nemo_restart_steps: 2921960 
-   ini_parent_dir: "/mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+   ini_parent_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
    # ini_parent_dir: "/scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
    check_error:
        "check_exit_codes":
@@ -88,7 +88,7 @@ jsbach:
    lresume: ${general.lresume} 
    ini_parent_exp_id: ${general.ini_parent_exp_id}
    ini_parent_date:  ${general.ini_parent_date}
-   ini_parent_dir: "/mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/FOCI_RESTART/${ini_parent_exp_id}/jsbach_12tiles/"
+   ini_parent_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/FOCI_RESTART/${ini_parent_exp_id}/jsbach_12tiles/"
 
    dynamic_vegetations: false
    tiles: 12

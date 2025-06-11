@@ -21,7 +21,7 @@ requirements = [
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
     "gitpython==3.1.41",  # Maximum version for Python 3.6 support
-    "jinja2==3.1.4",
+    "jinja2==3.1.6",
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
@@ -58,7 +58,7 @@ setup(
         "sebastian.wahl@geomar.de",
         "kai.himstedt@dkrz.de",
     ],
-    python_requires=">=3.6, <3.12",
+    python_requires=">=3.6, <3.13",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
@@ -71,6 +71,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     description="ESM Tools external infrastructure for Earth System Modelling",
     entry_points={
@@ -117,6 +118,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.53.1",
+    version="6.55.1",
     zip_safe=False,
 )

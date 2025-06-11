@@ -1,0 +1,29 @@
+choose_oifs.mip:
+    "cmip5":
+        add_namelist_changes:
+            fort.4:
+                NAMECECMIP:
+                    CMIP5DATADIR: "${cmip5_data_dir_nml}"
+    "cmip6":
+        add_namelist_changes:
+            fort.4:
+                NAMECECMIP:
+                    LCMIP6: ".true."
+                    CMIP6DATADIR: "${cmip6_data_dir_nml}"
+        choose_scenario:
+            "piControl":
+                add_namelist_changes:
+                    fort.4:
+                        NAMECECMIP:
+                            NCMIPFIXYR: 1850
+            "SSP5-8.5":
+                add_namelist_changes:
+                    fort.4:
+                        NAMECECMIP:
+                            SCENARIONAME: "SSP5-8.5"
+    "cmip7":
+        add_namelist_changes:
+            fort.4:
+                NAMECECMIP:
+                    LCMIP7: ".true."
+                    CMIP7DATADIR: "${cmip7_data_dir_nml}"

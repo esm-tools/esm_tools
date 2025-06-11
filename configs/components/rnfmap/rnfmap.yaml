@@ -2,255 +2,253 @@
 # Runoff mapper YAML file
 #
 
-model: rnfmap
-executable: rnfma
-execution_command: rnfma
-version: focioifs1
-type: river
+rnfmap:
+    model: rnfmap
+    executable: rnfma
+    execution_command: rnfma
+    version: focioifs1
+    type: river
 
-description: |
-        River routing scheme taken from EC-Earth
-        Modified for use in FOCI
+    description: |
+            River routing scheme taken from EC-Earth
+            Modified for use in FOCI
 
-##
-## Compile information 
-##
-available_versions:
-- ec-earth
-- agrif
-- awicm-3.0
-- awicm-3.1
-- awicm-frontiers
-- smhi
-- focioifs
-- focioifs1
-- focioifs21
-- foci211
+    ##
+    ## Compile information
+    ##
+    available_versions:
+    - ec-earth
+    - agrif
+    - awicm-3.0
+    - awicm-3.1
+    - awicm-frontiers
+    - smhi
+    - focioifs
+    - focioifs1
+    - focioifs21
+    - foci211
+    - v1.0
+    - v1.1
 
-runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
+    runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
-choose_version:
-  ec-earth:
-    branch: esm-tools
-  awicm-frontiers:
-    branch: awicm-3-frontiers
-    destination: rnfmap
-  awicm-3.0:
-    branch: awicm3-frontiers-freeze-candidate-1
-    destination: rnfmap
-  awicm-3.1:
-    branch: awicm3-frontiers-freeze-candidate-1
-    destination: rnfmap
-    runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
-  focioifs:
-    branch: esm-tools-focioifs
-  focioifs1:
-    branch: esm-tools-focioifs
-  smhi:
-    branch: smhi
-  focioifs21:
-    branch: runoff
-  foci211:
-    branch: foci211
-  agrif:
-    branch: agrif 
-  
-clean_command: rm -rf bin; cd src; make clean; cd ..
-comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
-git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
-contact: "jan.streffing(at)awi.de, miguel.andres-martinez(at)awi.de"
-install_bins: bin/rnfma
-##
-## Directories
-##
-model_dir: ${general.model_dir}
-bin_dir: ${model_dir}/bin
-pool_dir: "${computer.pool_directories.pool}"
-input_dir: "${pool_dir}/runoff-mapper"
-namelist_dir: ${general.esm_namelist_dir}/rnfmap/
-runoff_maps_name: ""
+    choose_version:
+      ec-earth:
+        branch: esm-tools
+      awicm-frontiers:
+        branch: awicm-3-frontiers
+        destination: rnfmap
+      awicm-3.0:
+        branch: awicm3-frontiers-freeze-candidate-1
+        destination: rnfmap
+      awicm-3.1:
+        branch: awicm3-frontiers-freeze-candidate-1
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
+      focioifs:
+        branch: esm-tools-focioifs
+      focioifs1:
+        branch: esm-tools-focioifs
+      smhi:
+        branch: smhi
+      focioifs21:
+        branch: runoff
+      foci211:
+        branch: foci211
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+      v1.0:
+        branch: rnfmap_compile_vars
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
+      v1.1:
+        branch: enthalpy_on_ocean_side
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+      agrif:
+        branch: agrif
 
-parent_expid: "test" 
-parent_dir: "${pool_dir}/RUNOFF_MAPPER/restart/${parent_expid}"
+    clean_command: rm -rf bin; cd src; make clean; cd ..
+    comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
+    git-repository: https://gitlab.dkrz.de/ec-earth/runoff-mapper.git
+    contact: "jan.streffing(at)awi.de, miguel.andres-martinez(at)awi.de"
+    install_bins: bin/rnfma
+    ##
+    ## Directories
+    ##
+    model_dir: ${general.model_dir}
+    bin_dir: ${model_dir}/bin
+    pool_dir: "${computer.pool_directories.pool}"
+    input_dir: "${pool_dir}/runoff-mapper"
+    namelist_dir: ${general.esm_namelist_dir}/rnfmap/
+    runoff_maps_name: ""
 
-resolution: 512x256
+    parent_expid: "test"
+    parent_dir: "${pool_dir}/RUNOFF_MAPPER/restart/${parent_expid}"
 
-generate_namelist: 1
+    resolution: 512x256
 
-restart: 1
-restart_rate: 1
-restart_unit: 'months'
+    generate_namelist: 1
 
-namelists:
-        - "namelist.runoffmapper"
+    restart: 1
+    restart_rate: 1
+    restart_unit: 'months'
 
-choose_resolution:
-        512x256:
-                nx: 512
-                ny: 256
-                time_step: ${oasis3mct.time_step}
+    namelists:
+            - "namelist.runoffmapper"
 
-nproca: 1
-nprocb: 1
+    choose_resolution:
+            512x256:
+                    nx: 512
+                    ny: 256
+                    time_step: ${oasis3mct.time_step}
 
-runoff_method: "old"
-with_agrif: False
-                         
-runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
+    nproca: 1
+    nprocb: 1
 
-lresume: false
+    runoff_method: "old"
+    with_agrif: False
 
-bin_sources: 
-        bin: ${bin_dir}/${executable}
+    runtime_seconds: "$(( $((${end_date} + 1days)) - ${start_date} ))"
 
-config_sources:
-        namelist.runoffmapper: "${namelist_dir}/namelist.runoffmapper"
+    lresume: false
 
-input_files: {}
+    bin_sources:
+            bin: ${bin_dir}/${executable}
 
-input_in_work:
-        runoff_maps: runoff_maps.nc
+    config_sources:
+            namelist.runoffmapper: "${namelist_dir}/namelist.runoffmapper"
 
-input_sources:
-        runoff_maps: ${runoff_file}
+    input_files: {}
 
-coupling_fields:
-        "[[runoff_fields_recv-->FIELD]]":
-                grid: rnfa
-        "[[runoff_fields_send-->FIELD]]":
-                grid: opaf
+    input_in_work:
+            runoff_maps: runoff_maps.nc
 
-# If we run FOCI-OpenIFS with AGRIF, 
-# then AGRIF needs to send its mask 
-# to rnfmap
-# Rnfmap then computes runoff and calving fields
-# for AGRIF
-choose_with_agrif:
-        True:
-                runoff_agrif_fields_recv: [1_R_AgrSpg]
-                runoff_agrif_fields_send: [1_R_Runoff_oce]
-                calving_agrif_fields_send: [1_R_Calving_oce]
-                add_coupling_fields:
-                        "[[runoff_agrif_fields_send-->FIELD]]":
-                                grid: rnfm
-                        "[[calving_agrif_fields_send-->FIELD]]":
-                                grid: rnfs 
-                        "[[runoff_agrif_fields_recv-->FIELD]]":
-                                grid: rnfm 
-choose_runoff_method:
-        'EM21':
-                runoff_fields_recv: [R_Runoff_atm]
-                runoff_fields_send: [R_Runoff_oce]
-                calving_fields_send: [R_Calving_oce]
-                add_coupling_fields:
-                        "[[runoff_fields_send-->FIELD]]":
-                                grid: rnfm
-                        "[[calving_fields_send-->FIELD]]":
-                                grid: rnfs
-        'JK22':
-                runoff_fields_recv: [R_Runoff_atm, R_Calving_atm]
-                runoff_fields_send: [R_Runoff_oce]
-                calving_fields_send: [R_Calving_oce]
-                add_coupling_fields:
-                        "[[runoff_fields_send-->FIELD]]":
-                                grid: rnfm
-                        "[[calving_fields_send-->FIELD]]":
-                                grid: rnfs
-        '*':
-                runoff_fields_recv: [R_Runoff_atm]
-                runoff_fields_send: [R_Runoff_oce]
-                add_coupling_fields:
-                        "[[runoff_fields_send-->FIELD]]":
-                                grid: rnfo
-        'awicm3-default':
-                runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
-                runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
+    input_sources:
+            runoff_maps: ${runoff_file}
 
-namelist_changes:
-        namelist.runoffmapper:
-                NAMRNFMAP:
-                        RunLengthSec: ${runtime_seconds}
-                        TimeStepSec: ${time_step}
+    coupling_fields:
+            "[[runoff_fields_recv-->FIELD]]":
+                    grid: rnfa
+            "[[runoff_fields_send-->FIELD]]":
+                    grid: opaf
 
-grids:
-        rnfa:
-                name: rnfa
-                nx: 512
-                ny: 256
-                oasis_grid_type: "LR"
-                oyac_grid_type: "LL"
-                oyac_io_per_node: 4
+    # If we run FOCI-OpenIFS with AGRIF,
+    # then AGRIF needs to send its mask
+    # to rnfmap
+    # Rnfmap then computes runoff and calving fields
+    # for AGRIF
+    choose_with_agrif:
+            True:
+                    runoff_agrif_fields_recv: [1_R_AgrSpg]
+                    runoff_agrif_fields_send: [1_R_Runoff_oce]
+                    calving_agrif_fields_send: [1_R_Calving_oce]
+                    add_coupling_fields:
+                            "[[runoff_agrif_fields_send-->FIELD]]":
+                                    grid: rnfm
+                            "[[calving_agrif_fields_send-->FIELD]]":
+                                    grid: rnfs
+                            "[[runoff_agrif_fields_recv-->FIELD]]":
+                                    grid: rnfm
+    choose_runoff_method:
+            'EM21':
+                    runoff_fields_recv: [R_Runoff_atm]
+                    runoff_fields_send: [R_Runoff_oce]
+                    calving_fields_send: [R_Calving_oce]
+                    add_coupling_fields:
+                            "[[runoff_fields_send-->FIELD]]":
+                                    grid: rnfm
+                            "[[calving_fields_send-->FIELD]]":
+                                    grid: rnfs
+            'JK22':
+                    runoff_fields_recv: [R_Runoff_atm, R_Calving_atm]
+                    runoff_fields_send: [R_Runoff_oce]
+                    calving_fields_send: [R_Calving_oce]
+                    add_coupling_fields:
+                            "[[runoff_fields_send-->FIELD]]":
+                                    grid: rnfm
+                            "[[calving_fields_send-->FIELD]]":
+                                    grid: rnfs
+            '*':
+                    runoff_fields_recv: [R_Runoff_atm]
+                    runoff_fields_send: [R_Runoff_oce]
+                    add_coupling_fields:
+                            "[[runoff_fields_send-->FIELD]]":
+                                    grid: rnfo
+            'awicm3-default':
+                    runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
+                    runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
 
-choose_general.setup_name:
-        focioifs:
-                add_grids:
-                        opaf:
-                                name: opaf
-                                nx: "${nemo._nx}"
-                                ny: "${nemo._ny}"
-                                oasis_grid_type: "LR"
-                                number_of_overlapping_points: 2
-                                oyac_grid_type: "LL"
-                                oyac_io_per_node: 4
-                        rnfo:
-                                name: rnfo
-                                nx: "${nemo._nx}"
-                                ny: "${nemo._ny}"
-                                oasis_grid_type: "LR"
-                                number_of_overlapping_points: 0
-                                oyac_grid_type: "LL"
-                                oyac_io_per_node: 4
-                        rnfm:   
-                                name: rnfm
-                                nx: 512
-                                ny: 256
-                                oasis_grid_type: "LR"
-                                oyac_grid_type: "LL"
-                                oyac_io_per_node: 4
-                        rnfs:
-                                name: rnfs
-                                nx: 512
-                                ny: 256
-                                oasis_grid_type: "LR"
-                                oyac_grid_type: "LL"
-                                oyac_io_per_node: 4
-#
-# Setup up compile and runtime environment i.e. what needs
-# to be changed w.r.t the default config/machines/<computer>.yaml
-#
-compiletime_environment_changes:
-   add_export_vars:
-      # OASIS
-      - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-      - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-      - 'OIFS_OASIS_LIB="-L$OIFS_OASIS_BASE/build/lib/psmile -L$OIFS_OASIS_BASE/build/lib/psmile/scrip -L$OIFS_OASIS_BASE/build/lib/psmile/mct -L$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu -lpsmile -lmct -lmpeu -lscrip"'
-      # NetCDF
-      - 'OIFS_NETCDF_INCLUDE="-I$NETCDFROOT/include"'
-      - 'OIFS_NETCDF_LIB="-L$NETCDFROOT/lib -lnetcdf"'
-      - 'OIFS_NETCDFF_INCLUDE="-I$NETCDFFROOT/include"'
-      - 'OIFS_NETCDFF_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
-      # compiler and compiler flags
-      - 'OIFS_FC=$FC'
-      - 'OIFS_FFLAGS="${rnfmap.fflags}"'
-      - 'OIFS_FFIXED=""'
-      - 'OIFS_FCDEFS="BLAS LITTLE LINUX INTEGER_IS_INT"'
-      - 'OIFS_LFLAGS=$OIFS_MPI_LIB'
-      - 'OIFS_CC=$CC'
-      - 'OIFS_CFLAGS="${rnfmap.cflags}"'
-      - 'OIFS_CCDEFS="LINUX LITTLE INTEGER_IS_INT _ABI64 BLAS"'
+    namelist_changes:
+            namelist.runoffmapper:
+                    NAMRNFMAP:
+                            RunLengthSec: ${runtime_seconds}
+                            TimeStepSec: ${time_step}
 
-choose_computer.name:
-    levante:
-        fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
-        cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
-    glogin:
-       choose_computer.compiler_mpi:
-          gcc11_ompi416:
-             fflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
-             cflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz 
-          '*':
-             fflags: -r8 -fp-model precise -align array32byte -O3 -g -traceback -convert big_endian -fpe0 
-             cflags: -fp-model precise -O3 -g -traceback -qopt-report=0     
-    "*":
-       fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
-       cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0
+    grids:
+            rnfa:
+                    name: rnfa
+                    nx: 512
+                    ny: 256
+                    oasis_grid_type: "LR"
+                    oyac_grid_type: "LL"
+                    oyac_io_per_node: 4
+
+    choose_general.setup_name:
+            focioifs:
+                    add_grids:
+                            opaf:
+                                    name: opaf
+                                    nx: "${nemo._nx}"
+                                    ny: "${nemo._ny}"
+                                    oasis_grid_type: "LR"
+                                    number_of_overlapping_points: 2
+                                    oyac_grid_type: "LL"
+                                    oyac_io_per_node: 4
+                            rnfo:
+                                    name: rnfo
+                                    nx: "${nemo._nx}"
+                                    ny: "${nemo._ny}"
+                                    oasis_grid_type: "LR"
+                                    number_of_overlapping_points: 0
+                                    oyac_grid_type: "LL"
+                                    oyac_io_per_node: 4
+                            rnfm:
+                                    name: rnfm
+                                    nx: 512
+                                    ny: 256
+                                    oasis_grid_type: "LR"
+                                    oyac_grid_type: "LL"
+                                    oyac_io_per_node: 4
+                            rnfs:
+                                    name: rnfs
+                                    nx: 512
+                                    ny: 256
+                                    oasis_grid_type: "LR"
+                                    oyac_grid_type: "LL"
+                                    oyac_io_per_node: 4
+
+computer:
+    #
+    # Setup up compile and run environment i.e. what needs
+    # to be changed w.r.t the default config/machines/<computer>.yaml
+    #
+    choose_computer.name:
+        levante:
+            fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
+            cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+        glogin:
+           choose_computer.compiler_mpi:
+              gcc11_ompi416:
+                 fflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz
+                 cflags: -fdefault-real-8 -O3 -g -fbacktrace -fconvert=big-endian -fallow-argument-mismatch -fallow-invalid-boz
+              '*':
+                 fflags: -r8 -fp-model precise -align array32byte -O3 -g -traceback -convert big_endian -fpe0
+                 cflags: -fp-model precise -O3 -g -traceback -qopt-report=0
+        "*":
+           fflags: -r8 -fp-model precise -align array32byte -O3 -xCORE_AVX2 -g -traceback -convert big_endian -fpe0
+           cflags: -fp-model precise -O3 -xCORE_AVX2 -g -traceback -qopt-report=0 -fpe0

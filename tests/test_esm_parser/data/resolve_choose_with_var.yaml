@@ -1,0 +1,26 @@
+# REGRESSION TEST DATA
+# model: rnfmap
+# type: choose block
+# function: resol_choose_with_var
+# issue: -
+# description: in the past this was returning
+#   user_error: f'"{lvar}" in more than one choose_ block'
+#   so, nested choose where not allowed for the function
+#   resol_choose_with_var if the parent choose also defined the same variable
+#   in a different case
+
+general:
+    major_version: 3.3
+fesom:
+    version: 2.6.8
+rnfmap:
+  version: focioifs
+  choose_general.major_version:
+    3.3:
+        choose_fesom.version: # nested choose with var to be resolved
+            2.6.8:
+                version: awicm3-v1
+            "*":
+                version: v1.1
+    3.4: # different case in the parent choose with var to be resolved
+        version: v1.1

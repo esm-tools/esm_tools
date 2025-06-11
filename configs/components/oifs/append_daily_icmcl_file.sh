@@ -41,6 +41,7 @@ mkdir -p $outdir/icmcl/
 mkdir -p $outdir/icmcl/out/
 
 echo " *Using grib_ls to extract the dataDates of original ICMCL file"
+echo "grib_copy -w shortName=lai_lv ${icmcl_file} $outdir/icmcl/ICMCL_for_dataDate_list"
 grib_copy -w shortName=lai_lv ${icmcl_file} $outdir/icmcl/ICMCL_for_dataDate_list
 dataDate_list=$(grib_ls -p dataDate $outdir/icmcl/ICMCL_for_dataDate_list | tail -n +3 | head -n -3)
 

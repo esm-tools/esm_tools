@@ -1,44 +1,45 @@
-available_versions:
-- 3.6.3.x
-- 3.6ogcm_test
-- 3.6foci
-- 3.6foci_autotools
-- 4.2.0
-- 4.2.x 
+nemobasemodel:
+    available_versions:
+    - 3.6.3.x
+    - 3.6ogcm_test
+    - 3.6foci
+    - 3.6foci_autotools
+    - 4.2.0
+    - 4.2.x
 
-choose_version:
-  4.2.x:
-    branch: branch_4.2
-    git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git 
+    choose_version:
+      4.2.x:
+        branch: branch_4.2
+        git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
 
-  4.2.0:
-    # 4.2.0 is actually a tag and not a branch, but we agreed
-    # to use tag 4.2.0 as a basis for all our developments
-    branch: 4.2.0
-    git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
-  4.2.2:
-    # 4.2.2 includes a bug fix for sea-ice drag. 
-    # apparently very important
-    branch: 4.2.2
-    git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
-     
-  3.6.3.x:
-    branch: release-3.6.3.x
-    git-repository: https://git.geomar.de/NEMO/NEMOGCM.git
-  3.6foci:
-    branch: esm-tools
-    git-repository: https://git.geomar.de/foci/src/nemo.git
-  3.6foci_autotools:
-    branch: esm-tools-autotools
-    git-repository: https://git.geomar.de/foci/src/nemo.git
-  3.6foci_agrif:
-    branch: esm-tools
-    git-repository: https://git.geomar.de/foci/src/nemo.git
-  # Test using Jan-Klaus Rieck's OMIP configuration
-  3.6ogcm_test:
-    branch: release-3.6.3.x-berlin-omip
-    git-repository: https://git.geomar.de/jan-klaus-rieck/NEMOGCM.git 
+      4.2.0:
+        # 4.2.0 is actually a tag and not a branch, but we agreed
+        # to use tag 4.2.0 as a basis for all our developments
+        branch: 4.2.0
+        git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
+      4.2.2:
+        # 4.2.2 includes a bug fix for sea-ice drag.
+        # apparently very important
+        branch: 4.2.2
+        git-repository: https://forge.nemo-ocean.eu/nemo/nemo.git
 
-destination: nemo-${nemo.version}
+      3.6.3.x:
+        branch: release-3.6.3.x
+        git-repository: https://git.geomar.de/NEMO/NEMOGCM.git
+      3.6foci:
+        branch: esm-tools
+        git-repository: https://git.geomar.de/foci/src/nemo.git
+      3.6foci_autotools:
+        branch: esm-tools-autotools
+        git-repository: https://git.geomar.de/foci/src/nemo.git
+      3.6foci_agrif:
+        branch: esm-tools
+        git-repository: https://git.geomar.de/foci/src/nemo.git
+      # Test using Jan-Klaus Rieck's OMIP configuration
+      3.6ogcm_test:
+        branch: release-3.6.3.x-berlin-omip
+        git-repository: https://git.geomar.de/jan-klaus-rieck/NEMOGCM.git
 
-contact: "swahl(at)geomar.de"
+    destination: nemo-${nemo.version}
+
+    contact: "swahl(at)geomar.de"

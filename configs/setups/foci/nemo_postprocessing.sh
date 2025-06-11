@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Postprocessing for FOCI within ESM-Tools
-# based on the Postprocessing from the old mkexp based runtime environment
+# based on the Postprocessing from the old mkexp based run environment
 # Sebastian Wahl 06/2021
 #
 
@@ -245,8 +245,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 				input=${s}_${currdate1}_${currdate2}_${filetag}.nc3
 		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
-      	  	 echo " Looking for $output " 
-                 if [[ -f $output ]] ; then
+            echo " Looking for $output " 
+            if [[ -f $output ]] && ! [[ $(ncdump -k $output) =~ "netCDF-4" ]]; then
 					mv $output $input
                
 					# If too many jobs run at the same time, wait
@@ -287,6 +287,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 							mv -v $input nc3/                    
 						fi
 					) &
+            else
+                echo "NOTE: $output already in netCDF-4 format, no ncks treatment done"
 				fi
 			done #steps
 		done #filetags
@@ -403,7 +405,7 @@ do
 		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 		(
 			trap 'echo $? > $post_dir/status' ERR
-			print "Processing year $year"
+			print "Processing restart date $currdate2"
 			tar czf ${EXP_ID}_restart_${currdate2}.tar.gz *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 		) &
@@ -456,7 +458,8 @@ rm -r $post_dir
 print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
-
+# required for interactive use
+cd $(dirname $0)
 if [[ "$endmonth" == "12" ]] && [[ "$run_monitoring" == "yes" ]] ; then
     print "will now run NEMO monitoring until $enddate"
    $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 

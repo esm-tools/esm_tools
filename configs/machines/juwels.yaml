@@ -1,379 +1,222 @@
 # JUWELS YAML CONFIGURATION FILE
 
-# basic setup
-name: juwels
-account: esmtst
-jobtype: compute
-accounting: true
+computer:
+    # basic setup
+    name: juwels
+    account: esmtst
+    jobtype: compute
+    accounting: true
 
-# default settings for compiler, mpi and I/O libs
+    # default settings for compiler, mpi and I/O libs
+    compiler_mpi: intel2025_psmpi
+    iolibraries: system_libs
 
-#compiler_mpi: intel_2019a_impi2019
-#compiler_mpi: intel_2019a_psmpi2019
-#iolibraries: system_libs
-# for FOCI/FOCIOIFS use
-compiler_mpi: intel2022_ompi2022
-iolibraries: none
-useMPI: intelmpi
+    # slurm setup
+    batch_system: slurm
+    logical_cpus_per_core: 2
+    threads_per_core: 1
+    launcher_flags: "-l "
+    hetjob_flag: packjob
 
-# slurm setup
-batch_system: slurm
-logical_cpus_per_core: 2
-threads_per_core: 1
-launcher_flags: "-l "
-hetjob_flag: packjob
+    # set default for hyperthreading_flag
+    hyperthreading_flag: ""
 
-# set default for hyperthreading_flag
-hyperthreading_flag: ""
+    use_hyperthreading: False
+    taskset: False
+    choose_use_hyperthreading:
+            "1":
+                    hyperthreading_flag: ""
+            True:
+                    hyperthreading_flag: ""
+            "0":
+                    choose_heterogeneous_parallelization:
+                            False:
+                                    hyperthreading_flag: "--ntasks-per-core=1"
+                            True:
+                                    hyperthreading_flag: ""
+                                    add_unset_vars:
+                                            - "SLURM_DISTRIBUTION"
+                                            - "SLURM_NTASKS"
+                                            - "SLURM_NPROCS"
+                                            - "SLURM_ARBITRARY_NODELIST"
+            False:
+                    choose_heterogeneous_parallelization:
+                            False:
+                                    hyperthreading_flag: "--ntasks-per-core=1"
+                            True:
+                                    hyperthreading_flag: ""
+                                    add_unset_vars:
+                                            - "SLURM_DISTRIBUTION"
+                                            - "SLURM_NTASKS"
+                                            - "SLURM_NPROCS"
+                                            - "SLURM_ARBITRARY_NODELIST"
 
-use_hyperthreading: False
-choose_use_hyperthreading:
-        "1":
-                hyperthreading_flag: ""
-        True:
-                hyperthreading_flag: ""
-        "0":
-                choose_heterogeneous_parallelization:
-                        False:
-                                hyperthreading_flag: "--ntasks-per-core=1"
-                        True:
-                                hyperthreading_flag: ""
-                                add_unset_vars:
-                                        - "SLURM_DISTRIBUTION"
-                                        - "SLURM_NTASKS"
-                                        - "SLURM_NPROCS"
-                                        - "SLURM_ARBITRARY_NODELIST"
-        False:
-                choose_heterogeneous_parallelization:
-                        False:
-                                hyperthreading_flag: "--ntasks-per-core=1"
-                        True:
-                                hyperthreading_flag: ""
-                                add_unset_vars:
-                                        - "SLURM_DISTRIBUTION"
-                                        - "SLURM_NTASKS"
-                                        - "SLURM_NPROCS"
-                                        - "SLURM_ARBITRARY_NODELIST"
+    sh_interpreter: "/usr/bin/bash"
 
-sh_interpreter: "/usr/bin/bash"
+    # pool directories
+    # TODO: cleanup the pool / focipool logic
+    pool_dir:  "/pool/data/not/available/on/juwels"
+    pool_directories:
+            pool: "/pool/data/not/available/on/juwels"
+            focipool: "/p/project/hirace/foci_input2"
 
-# pool directories
-# TODO: cleanup the pool / focipool logic
-pool_dir:  "/pool/data/not/available/on/juwels"
-pool_directories:
-        pool: "/pool/data/not/available/on/juwels"
-        focipool: "/p/project/hirace/foci_input2"
+    partition: batch
 
-partition: batch
+    choose_partition:
+            batch:
+                    partition_name: batch
+                    partition_cpn: 48
+            devel:
+                    partition_name: devel
+                    partition_cpn: 48
 
-choose_partition:
-        batch:
-                partition_name: batch
-                partition_cpn: 48
-        devel:
-                partition_name: devel
-                partition_cpn: 48
+    partitions:
+            compute:
+                    name: ${computer.partition_name}
+                    cores_per_node: ${computer.partition_cpn}
+            pp:
+                    name: ${computer.partition_name}
+                    cores_per_node: ${computer.partition_cpn}
 
-partitions:
-        compute:
-                name: ${computer.partition_name}
-                cores_per_node: ${computer.partition_cpn}
-        pp:
-                name: ${computer.partition_name}
-                cores_per_node: ${computer.partition_cpn}
+    # basic modules and export vars needed
+    # for all compiler and I/O settings
+    module_actions:
+            - "use $OTHERSTAGES"
 
-# basic modules and export vars needed
-# for all compiler and I/O settings
-module_actions:
-        - "--force purge"
-        - "use $OTHERSTAGES"
+    export_vars:
+            LC_ALL: en_US.UTF-8
+            TMPDIR: /tmp
 
-export_vars:
-        LC_ALL: en_US.UTF-8
-        TMPDIR: /tmp
+    # choose compiler and MPI implementation
+    choose_compiler_mpi:
 
-# choose compiler and MPI implementation
-choose_compiler_mpi:
+       intel2025_psmpi:
+          add_module_actions:
+            - "purge"
+            - "load Stages/2025"
+            - "load Intel/2024.2.0"
+            - "load ParaStationMPI/5.10.0-1"
+            - "load CMake/3.29.3"
+            - "load Python/3.12.3"
+            - "load imkl/2024.2.0"
+            - "load Perl/5.38.2"
+            - "load Perl-bundle-CPAN/5.38.2"
+            - "load git/2.45.1"
+          add_export_vars:
+            FC: mpifort
+            F77: mpifort
+            MPIFC: mpifort
+            FCFLAGS: -free
+            CC: mpicc
+            CXX: mpic++
+            MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+            MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-   gnu2023_ompi2023:
-      add_module_actions:
-        - "--force purge"
-        - "load Stages/2023"
-        - "load GCC/11.3.0"
-        - "load OpenMPI/4.1.4"
-        - "load CMake/3.26.3"
-        - "load Python/3.10.4"
-        - "load imkl/2022.1.0"
-        - "load Perl/5.34.1"
-        - "load git"
-      add_export_vars:
-        FC: mpifort
-        F77: mpifort
-        MPIFC: mpifort
-        FCFLAGS: -free
-        CC: mpicc
-        CXX: mpic++
-        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+       gnu2023_ompi2023:
+          add_module_actions:
+            - "load Stages/2023"
+            - "load GCC/11.3.0"
+            - "load OpenMPI/4.1.4"
+            - "load CMake/3.26.3"
+            - "load Python/3.10.4"
+            - "load imkl/2022.1.0"
+            - "load Perl/5.34.1"
+            - "load git"
+          add_export_vars:
+            FC: mpifort
+            F77: mpifort
+            MPIFC: mpifort
+            FCFLAGS: -free
+            CC: mpicc
+            CXX: mpic++
+            MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+            MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-   intel2022_psmpi2022:
-      add_module_actions:
-        - "--force purge"
-        - "use /gpfs/software/juwels/otherstages"
-        - "load Stages/2022"
-        - "load Intel/2021.4.0"
-        - "load ParaStationMPI/5.5.0-1-mt"
-        - "load CMake/3.21.1"
-        - "load Python/3.9.6"
-        - "load imkl/2021.4.0"
-        - "load Perl/5.34.0"
-        - "load git"
-      add_export_vars:
-        FC: mpifort
-        F77: mpifort
-        MPIFC: mpifort
-        FCFLAGS: -free
-        CC: mpicc
-        CXX: mpic++
-        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-   intel2022_ompi2022:
-      add_module_actions:
-        - "--force purge"
-        - "use /gpfs/software/juwels/otherstages"
-        - "load Stages/2022"
-        - "load Intel/2021.4.0"
-        - "load OpenMPI/4.1.2"
-        - "load CMake/3.21.1"
-        - "load Python/3.9.6"
-        - "load imkl/2021.4.0"
-        - "load Perl/5.34.0"
-        - "load git"
-      add_export_vars:
-        FC: mpifort
-        F77: mpifort
-        MPIFC: mpifort
-        FCFLAGS: -free
-        CC: mpicc
-        CXX: mpic++
-        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+    choose_iolibraries:
 
-   intel2020_ompi2020:
-      add_module_actions:
-        - "--force purge"
-        - "use /gpfs/software/juwels/otherstages"
-        - "load Stages/2020"
-        - "load Intel/2020.2.254-GCC-9.3.0"
-        - "load OpenMPI/4.1.0rc1"
-        - "load CMake/3.18.0"
-        - "load Python/3.8.5"
-        - "load imkl/2020.2.254"
-        - "load Perl/5.32.0"
-        - "load UCX/1.10.1"
-        - "load git"
-      add_export_vars:
-        FC: mpifort
-        F77: mpifort
-        MPIFC: mpifort
-        FCFLAGS: -free
-        CC: mpicc
-        CXX: mpic++
-        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+        # DEFAULT LIBS
+        system_libs:
+           # TODO: find the correct libraries and dependencies
+           add_module_actions:
+             - "load libaec FFTW cURL netCDF netCDF-Fortran ecCodes CDO NCO"
+             - "list"
+           add_export_vars:
+                AEC_ROOT: $EBROOTLIBAEC
+                SZIPROOT: $EBROOTLIBAEC
+                HDF5ROOT: $EBROOTHDF5
+                HDF5_ROOT: $EBROOTHDF5
+                NETCDFROOT: $EBROOTNETCDF
+                NETCDFFROOT: $EBROOTNETCDFMINFORTRAN
+                ECCODESROOT: $EBROOTECCODES
 
-   intel2020_impi2020: #AWICM3, potentially used by Dima, if not delete this block
-      add_module_actions:
-        - "load Stages/2020"
-        - "load Intel/2020.2.254-GCC-9.3.0"
-        - "load IntelMPI/2019.8.254"
-        - "load CMake/3.18.0"
-        - "load Python/3.8.5"
-        - "load imkl/2020.2.254"
-        - "load Perl/5.32.0"
-        - "load git"
-      add_export_vars:
-        FC: mpiifort
-        F77: mpiifort
-        MPIFC: mpiifort
-        FCFLAGS: -free
-        CC: mpiicc
-        CXX: mpiicpc
-        MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
-        PATH: /p/scratch/chhb19/hhb193/miniconda3/bin/:$PATH
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                PERL5LIB: /p/project/chhb19/HPC_libraries/perl5/lib/perl5
+                PERL5_PATH: $PERL5LIB
+                PERL5OPT: '-Mwarnings=FATAL,uninitialized'
+                MKL_CBWR: AUTO,STRICT
+                LD_RUN_PATH: $LD_LIBRARY_PATH
 
-   intel2020_psmpi2020:
-      add_module_actions:
-        - "load Stages/2020"
-        - "load Intel/2020.2.254-GCC-9.3.0"
-        - "load ParaStationMPI/5.4.7-1-mt"
-        - "load CMake/3.18.0"
-        - "load Python/3.8.5"
-        - "load ASE/3.19.2-Python-3.8.5"
-        - "load imkl/2020.2.254"
-        - "load Perl/5.32.0"
-        - "load UCX/1.10.1"
-        - "unload netCDF-Fortran"
-        - "unload netCDF"
-        - "unload grib_api"
-        - "load git"
-      add_export_vars:
-        FC: mpifort
-        F77: mpifort
-        MPIFC: mpifort
-        FCFLAGS: -free
-        CC: mpicc
-        CXX: mpic++
-        MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-        MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+        # AWI LIBS
+        awi_libs:
+            add_export_vars:
+                PROJECT_ID: '$(for i in $(id -Gn $whoami);do echo "  - $i" ;done | grep chhb | head -1 | cut -c 5-10)'
+                IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
-   intel2019_impi2019:
-      add_module_actions:
-         - "load Stages/2019a"
-         - "load Intel/2019.5.281-GCC-8.3.0"
-         - "load IntelMPI/2019.6.154"
-         - "load CMake"
-         - "load Python/3.6.8"
-         - "load imkl/2019.3.199"
-         - "load git"
-      add_export_vars:
-         FC: mpiifort
-         F77: mpiifort
-         MPIFC: mpiifort
-         FCFLAGS: -free
-         CC: mpiicc
-         CXX: mpiicpc
-         MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
 
-   intel_2019a_psmpi2019: #AWIMC3
-      add_module_actions:
-         - "load Stages/2019a"
-         - "load Intel/2019.5.281-GCC-8.3.0"
-         - "load ParaStationMPI/5.4.4-1-mt"
-         - "load CMake"
-         - "load Python/3.6.8"
-         - "load imkl/2019.3.199"
-         - "load Perl/5.28.1"
-         - "unload netCDF-Fortran"
-         - "unload netCDF"
-         - "unload grib_api"
-         - "load git"
-      add_export_vars:
-         FC: mpifort
-         F77: mpifort
-         MPIFC: mpifort
-         FCFLAGS: -free
-         CC: mpicc
-         CXX: mpic++
-         MPIROOT: "\"$(mpifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-         MPI_LIB: "\"$(mpifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+                PATH: $IO_LIB_ROOT/bin:$PATH
 
-choose_iolibraries:
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
 
-    # DEFAULT LIBS
-    system_libs:
-       # TODO: find the correct libraries and dependencies
-       add_module_actions:
-         - "load libaec FFTW imkl cURL netCDF netCDF-Fortran"
-         - "list"
-       add_export_vars:
-            AEC_ROOT: /p/software/juwels/stages/2022/software/libaec/1.0.6-GCCcore-11.2.0
-            PERL5LIB: /p/software/juwels/stages/2022/software/Perl/5.34.0-GCCcore-11.2.0/lib/perl5/site_perl/5.34.0/
-            PERL5_PATH: /p/software/juwels/stages/2022/software/Perl/5.34.1-GCCcore-11.3.0/lib/perl5/site_perl/5.34.1/
-            MKL_CBWR: AUTO,STRICT
-            LD_RUN_PATH: $LD_LIBRARY_PATH
+        # GEOMAR LIBS
+        geomar_libs:
+            add_export_vars:
+                IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
+                PATH: $IO_LIB_ROOT/bin:$PATH
+                LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
 
-    # AWI LIBS
-    awi_libs:
-        add_export_vars:
-            PROJECT_ID: '$(for i in $(id -Gn $whoami);do echo "  - $i" ;done | grep chhb | head -1 | cut -c 5-10)'
-            IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
-            LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
+                SZIPROOT: $IO_LIB_ROOT
+                HDF5ROOT: $IO_LIB_ROOT
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFROOT: $IO_LIB_ROOT
+                NETCDFFROOT: $IO_LIB_ROOT
+                ECCODESROOT: $IO_LIB_ROOT
 
-            SZIPROOT: $IO_LIB_ROOT
-            HDF5ROOT: $IO_LIB_ROOT
-            HDF5_ROOT: $HDF5ROOT
-            NETCDFROOT: $IO_LIB_ROOT
-            NETCDFFROOT: $IO_LIB_ROOT
-            ECCODESROOT: $IO_LIB_ROOT
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
 
-            HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-            NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-            NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-            NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-            OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-            PATH: $IO_LIB_ROOT/bin:$PATH
-            
-            # For OASIS3-MCT5 from CERFACS
-            OASIS_NETCDF: $NETCDFROOT
-            OASIS_NETCDFF: $NETCDFFROOT
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
 
-        choose_compiler_mpi:
-            intel2022_ompi2022:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2021.4.0_openmpi-4.1.2_20220129
-            intel2020_ompi2020:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2020.2.254_OpenMPI_4.1.0rc1_20210920
-            intel2020_psmpi2020:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel-2020.2.254-GCC-9.3.0_parastation-5.4.7-1-mt_20220111
-            intel_2019a_psmpi2019:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/$PROJECT_ID/HPC_libraries/intel2019.3.199_parastation_5.4.4-1-mt_20210802
+    # some yamls use computer.fc, etc to identify the compiler, so we need to add them
+    fc: "$FC"
+    cc: "$CC"
+    mpifc: "$MPIFC"
+    mpicc: "$MPICC"
+    cxx: "$CXX"
 
-    # GEOMAR LIBS
-    geomar_libs:
-        add_export_vars:
-            IO_LIB_ROOT: "<WILL_BE_OVERWERITTEN>"
-            PATH: $IO_LIB_ROOT/bin:$PATH
-            LD_LIBRARY_PATH: $IO_LIB_ROOT/lib:$LD_LIBRARY_PATH
-
-            SZIPROOT: $IO_LIB_ROOT
-            HDF5ROOT: $IO_LIB_ROOT
-            HDF5_ROOT: $HDF5ROOT
-            NETCDFROOT: $IO_LIB_ROOT
-            NETCDFFROOT: $IO_LIB_ROOT
-            ECCODESROOT: $IO_LIB_ROOT
-            
-            # For OASIS3-MCT5 from CERFACS
-            OASIS_NETCDF: $NETCDFROOT
-            OASIS_NETCDFF: $NETCDFFROOT
-
-            HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
-            NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-            NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-            NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
-            OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
-
-        choose_compiler_mpi:
-            intel2019_impi2019:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2019.3.199_impi2019.6.154_20200703
-            intel2020_impi2020:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2020.2.254_impi2019.8.254_20210427
-            intel_2019a_psmpi2019:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2019.5.281_parastation_5.4.4-1-mt_20201113
-            intel2020_psmpi2020:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2020.2.254_parastation_5.4.7-1_20210427
-            intel2022_psmpi2022:
-                add_export_vars:
-                    IO_LIB_ROOT: /p/project/hirace/HPC_libraries/intel2021.4.0_parastation_5.5.0-1-mt_20220222
-                    PSMPIFLAGS: '"-lrt -lm -ldl"'
-
-# some yamls use computer.fc, etc to identify the compiler, so we need to add them
-fc: "$FC"
-cc: "$CC"
-mpifc: "$MPIFC"
-mpicc: "$MPICC"
-cxx: "$CXX"
-
-further_reading:
-        - batch_system/slurm.yaml
+    further_reading:
+            - batch_system/slurm.yaml
 

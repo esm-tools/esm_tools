@@ -198,7 +198,7 @@ export_vars:
 
         ################################################
         # This needs to be moved into OIFS
-        # MPI environent variables important at runtime
+        # MPI environent variables important at run
         I_MPI_FABRICS: shm:dapl
         I_MPI_FALLBACK: disable
         I_MPI_SLURM_EXT: 1

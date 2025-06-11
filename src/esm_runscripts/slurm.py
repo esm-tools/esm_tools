@@ -10,7 +10,7 @@ import sys
 from loguru import logger
 
 import esm_parser
-from esm_tools import user_note
+from esm_tools import user_note, user_error
 
 
 class Slurm:
@@ -69,12 +69,11 @@ class Slurm:
                 current_hostfile = self.path + "_" + run_type
                 write_one_hostfile(current_hostfile, config)
 
-        if config["computer"].get(
+        heterogeneous_parallelization = config["computer"].get(
             "heterogeneous_parallelization", False
-        ) and not config["computer"].get("taskset", False):
-            # Prepare heterogeneous parallelization call
-            config["general"]["batch"].het_par_launcher_lines(config, cluster)
-        else:
+        )
+        hetjob_strategy = config["computer"].get("hetjob_strategy", "hetjob")
+        if not heterogeneous_parallelization or hetjob_strategy == "taskset":
             # Standard/old way of running jobs with slurm
             self.write_one_hostfile(self.path, config)
 
@@ -82,6 +81,19 @@ class Slurm:
                 config["general"]["work_dir"] + "/" + os.path.basename(self.path)
             )
             shutil.copyfile(self.path, hostfile_in_work)
+        elif hetjob_strategy == "hetjob":
+            # Prepare heterogeneous parallelization call for hetjob (one srun command
+            # per binary)
+            config["general"]["batch"].hetjob_concurrent_launcher_lines(config, cluster)
+        elif hetjob_strategy == "srunmix":
+            # Prepare heterogeneous parallelization call for srunmix
+            config["general"]["batch"].hetjob_single_launcher_line(config, cluster)
+        else:
+            user_error(
+                "hetjob strategy",
+                f"``{hetjob_strategy}`` is not a valid one. Choose one among "
+                f"``hetjob`` (default), ``srunmix`` or ``taskset``.",
+            )
 
         return config
 
@@ -157,9 +169,8 @@ class Slurm:
             (``runfile.write("<your_line_here>")``).
         """
 
-        # TODO: remove it once it's not needed anymore (substituted by packjob)
         if config["computer"].get("heterogeneous_parallelization", False):
-            if config["computer"].get("taskset", False):
+            if config["computer"].get("hetjob_strategy") == "taskset":
                 self.add_hostlist_file_gen_lines(config, runfile)
 
     @staticmethod
@@ -185,9 +196,10 @@ class Slurm:
             for heterogeneous parallelization in SLURM.
         """
         # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
+        hetjob_strategy = config["computer"].get("hetjob_strategy", "hetjob")
         if config["computer"].get(
             "heterogeneous_parallelization", False
-        ) and not config["computer"].get("taskset", False):
+        ) and hetjob_strategy not in ["taskset", "srunmix"]:
             this_batch_system = config["computer"]
             # Get the variables to be modified for the headers
             nodes_flag = this_batch_system["nodes_flag"].split("=")[0]
@@ -223,7 +235,6 @@ class Slurm:
 
         return headers
 
-    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def write_het_par_wrappers(config):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
@@ -300,7 +311,6 @@ class Slurm:
                 config[model]["execution_command_het_par"] = execution_command_het_par
         return config
 
-    # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
     def add_hostlist_file_gen_lines(config, runfile):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]

@@ -60,16 +60,16 @@ amip:
             namelist.amip: "${namelist_dir}/namelist.amip"
 
     input_in_work:
-            sst_forcing: "comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
-            sic_forcing: "comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
+            sst_forcing: "tosbcs_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-0_gs1x1_187001-201512.nc"
+            sic_forcing: "siconcbcs_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-0_gs1x1_187001-201512.nc"
 
     input_files:
             sst_forcing: sst_forcing
             sic_forcing: sic_forcing
 
     input_sources:
-            sst_forcing: "${input_dir}/comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
-            sic_forcing: "${input_dir}/comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc"
+            sst_forcing: "${input_dir}/tosbcs_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-0_gs1x1_187001-201512.nc"
+            sic_forcing: "${input_dir}/siconcbcs_input4MIPs_SSTsAndSeaIce_CMIP_PCMDI-AMIP-1-1-0_gs1x1_187001-201512.nc"
 
     coupling_fields:
             "[[amip_fields_send-->FIELD]]":

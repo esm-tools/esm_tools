@@ -115,6 +115,7 @@ oifs:
                                                 ECE_CPL_AMIP: ".true."
                                         NAMMCC:
                                                 LNEMOLIMCUR: ".false."
+                                                LNEMOSICOUP: ".false."
                                         NAEPHY:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3

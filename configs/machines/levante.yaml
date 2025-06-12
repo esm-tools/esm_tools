@@ -72,7 +72,8 @@ computer:
     pool_dir:  "/pool/data"
 
     # kh 15.02.22 preferred on levante (at the moment), on mistral intelmpi was the default
-    compiler_mpi: intel2022_openmpi
+    #compiler_mpi: intel2022_openmpi
+    compiler_mpi: gnu11_ompi4 
 
     # seb-wahl: choose libaries below, default is the system libs via modules
     iolibraries: system_libs
@@ -143,6 +144,7 @@ computer:
                     python_version: "python3/2023.01-gcc-11.2.0"
                     # ESM-Tools vars necessary for ``system_libs`` case
                     add_module_actions:
+                            - "load gcc/11.2.0-gcc-11.2.0"
                             - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
                             - "load openmpi/4.1.2-gcc-11.2.0"
 
@@ -194,7 +196,6 @@ computer:
                             MPIFC: mpif90
                             CC: mpicc
                             CXX: mpicxx
-    # kh 15.02.22 todo: check
                             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
@@ -255,6 +256,7 @@ computer:
                 NETCDF_ROOT: $NetCDF_Fortran_ROOT
                 NETCDFROOT: $NetCDF_C_ROOT
                 NETCDFFROOT: $NetCDF_Fortran_ROOT
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
                 TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
                 TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
                 MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
@@ -264,7 +266,7 @@ computer:
                 mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
                 LD_LIBRARY_PATH: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:$AEC_ROOT/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
                 LD_LIBRARY_PATH[(0)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
-                # For OASIS3-MCT5 from CERFACS
+                # For OASIS3-MCT5 from CERFACS      
                 OASIS_NETCDF: $NETCDF_PATH
                 OASIS_NETCDFF: $NETCDF_ROOT
 
@@ -310,26 +312,11 @@ computer:
 
                 LD_LIBRARY_PATH[(0)]: $HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH
 
-                # avoid GLIBCXX_3.4.15 not found error
-                # MA: This solves nothing for AWICM3
-                #LD_LIBRARY_PATH[(1)]: /sw/spack-levante/gcc-11.2.0-bcn7mb/lib64:$LD_LIBRARY_PATH
-
-                # kh 01.03.22 current philosophy on levante regarding the modules
-                # concept is to avoid LD_LIBRARY_PATH as far as possible to make
-                # everything clearer
-
-                # kh 17.02.22 todo (not yet required for component fesom-2.1-recom-par_tracers)
-                #       LD_LIBRARY_PATH[(1)]: ...
-
-                # The following line is also moved to echam.yaml, only active for mistral and paleodyn echam6:
-                # - "LD_LIBRARY_PATH=/sw/rhel6-x64/netcdf/parallel_netcdf-1.6.1-impi-intel14/lib/:$LD_LIBRARY_PATH"
-
                 # kh 17.02.22 currently required to use mkl
                 LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
 
                 # kh 07.03.22 currently required to use Intel MPI
                 LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
-
 
         system_intel_libs: # Attempt to make intel work for OpenIFS 48r1, currently disfunctional
             add_module_actions:

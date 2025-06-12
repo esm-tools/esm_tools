@@ -67,6 +67,7 @@ general:
         - '4.0'
         - '4.1'
         - '4.1.1'
+        - '5.0'
 
         # Version descriptions:
         #
@@ -219,7 +220,7 @@ general:
 
 oifs:
 
-        version: "43r3"
+        version: "48r1"
 
         # This is 0 (off) by default in oifs.yaml
         # but should always be 2 for coupled runs
@@ -228,8 +229,10 @@ oifs:
 
         # By default (in oifs.yaml) the Cariolle scheme is used
         # But to be CMIP6 compliant we should use the O3
-        # prescribed by O3
-        o3_scheme: cmip6
+        # prescribed by O3 
+        o3_scheme: default
+        mip: "cmip6"
+        scenario: "piControl"
 
         # From 43r3v2 we have the option to use
         # a new solar spectrum
@@ -302,9 +305,9 @@ oifs:
                                              # Tco319 where time step is 900s.
                                              # For now, increase RCLDIFF, but this should be investigated
                                              RCLDIFF: 5.e-6 # default 3e-6
-                                     NAMMCC:
+                                             #NAMMCC:
                                              # Lower ocean albedo to increase global surface temp
-                                             RALBSEAD_NML: 0.045
+                                             #RALBSEAD_NML: 0.045
                 TCO399:
                      nproc: 862
 
@@ -330,6 +333,9 @@ oifs:
            "4.2":
               foci_fields_l: [A_AlbIce, AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
                         A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, A_dQnsdT]
+           "5.0":
+              foci_fields_l: [A_AlbIce, AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1,
+                        A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QnsIce, A_dQnsdT]
 
         #foci_fields_r: [A_Runoff, A_Calving]
 
@@ -343,6 +349,20 @@ oifs:
 
         # add coupling fields for AGRIF
         choose_general.version:
+           "5.0":
+              # Turn on wave model
+              wam: True
+              # Namelist changes
+              # Flags for WAM are controlled by the variable above
+              add_namelist_changes:
+                 fort.4:
+                    NAMECECFG:
+                       ECE_CPL_NEMO_LIM: true
+                       # this will set LNEMOLIMTEMP etc in OpenIFS
+                 wam_namelist:
+                    NALINE:
+                       # turn off cap on Charnock
+                       LLCAPCHNK: true
            "4.1.1":
               # Turn on wave model
               wam: True
@@ -503,6 +523,12 @@ oifs:
                                                                M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
                                                                M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
                                                                M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
+                                "5.0":
+                                          fociagrif_fields_l: [M01_A_AlbIce, M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
+                                                               M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
+                                                               M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
+                                                               M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
+
                         fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                         fociagrif_fields_n: [M01_A_AgrSpg]
                         add_namelist_changes:
@@ -560,6 +586,9 @@ nemo:
 
         # See nemo.yaml for description of versions
         choose_general.version:
+                "5.0":
+                        version: "eORCA_SI3_COUPLED_NEMO5"
+                        resolution: eORCA025
                 "4.1.1":
                         version: "ORCA05_Z46_SI3_COUPLED"
                         resolution: ORCA05
@@ -774,6 +803,9 @@ rnfmap:
         time_step: ${oasis3mct.coupling_time_step}
 
         choose_general.version:
+                "5.0":
+                        version: foci211
+                        runoff_method: "JK22"
                 "4.1.1":
                         version: foci211
                         runoff_method: "JK22"
@@ -973,6 +1005,11 @@ oasis3mct:
               add_coupling_target_fields:
                  sstocean:
                     - 'A_AlbIce:AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2a_nc-- O_AlbIce:OIceFrc:O_SSTSST:O_TepIce:OIceTck:OSnwTck:O_OCurx1:O_OCury1'
+           "5.0":
+              add_coupling_target_fields:
+                 sstocean:
+                    - 'A_AlbIce:AIceFrac:A_SSTSST:A_TepIce:A_IceTck:A_SnwTck:A_OCurx1:A_OCury1 <--o2a_nc-- O_AlbIce:OIceFrc:O_SSTSST:O_TepIce:OIceTck:OSnwTck:O_OCurx1:O_OCury1'
+
 
         #choose_general.version:
         choose_nemo.nest1:
@@ -1069,6 +1106,10 @@ oasis3mct:
                                                 sstocean_1:
                                                         - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1 <--agr2a_nc-- 1_OIceFrac:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1'
                                 "4.2":
+                                        add_coupling_target_fields:
+                                                sstocean_1:
+                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
+                                "5.0":
                                         add_coupling_target_fields:
                                                 sstocean_1:
                                                         - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
@@ -2013,9 +2054,8 @@ computer:
         compile:
             choose_computer.name:
                levante:
-                  #compiler_mpi: intel2022_impi2021
-                  compiler_mpi: intel2022_openmpi
-                  iolibraries: system_libs
+                  compiler_mpi: gnu11_ompi4 
+                  iolibraries: system_gnu_libs 
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:
@@ -2038,9 +2078,8 @@ computer:
                ECE_USE_CPLNG: "no"
             choose_computer.name:
                levante:
-                  #compiler_mpi: intel2022_impi2021
-                  compiler_mpi: intel2022_openmpi
-                  iolibraries: system_libs
+                  compiler_mpi: gnu11_ompi4 
+                  iolibraries: system_gnu_libs 
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:

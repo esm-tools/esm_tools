@@ -4,12 +4,12 @@ general:
    homedir: !ENV ${HOME}
    
    setup_name: "focioifs"      
-   resolution: "TCO95_ORCA05"
-   version: "4.0"
+   resolution: "TCO95_eORCA05"
+   version: "4.1.1"
    
    compute_time: "01:00:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1950-04-01T00:00:00"         # Final date of the experiment
+   final_date: "1950-02-01T00:00:00"         # Final date of the experiment
    
    nyear: 0
    nmonth: 1
@@ -40,14 +40,14 @@ general:
    # (should be general enough)
    prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
 
-#computer:
+   #computer:
    # partition_name: "standard96"
    # additional_flags: '--qos=preempt'
    # taskset: false
    # hetjob_flag: hetjob 
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/focioifs-4.0/
+   model_dir: ${general.homedir}/esm/models/focioifs-4.1.1/
    
 oifs:
    
@@ -68,7 +68,6 @@ oifs:
       # DONE:
       # cd /home/b/b383098/_work/foci_input2 
       # git clone https://git.geomar.de/foci/foci_input2/openifs_cy43_general.git
-      # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git
    pool_dir: /work/bb1460/foci_input2/
    input_dir: "${pool_dir}/openifs_cy43_tco95/"
    rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
@@ -109,8 +108,12 @@ oifs:
             RVICE: 0.13 # default 0.13 
 
 oasis3mct:
+   # DONE
+   # cd /home/b/b383098/_work/foci_input2
+   # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git
+   # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05.git
    lresume: True
-   pool_dir: "/work/bb1460/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/"
+   pool_dir: "/work/bb1460/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05/"
    # This would be for a cold start (SST = 0C,etc)
    ini_parent_dir: "${pool_dir}" 
    # for a real restart you would use
@@ -121,6 +124,7 @@ oasis3mct:
    norestart: F
    use_lucia: False
    #export_mode: EXPOUT
+   #standard debug_level = 1, 20 for debugging
    debug_level: 1
    mct_version: "5.0"
    # in FOCIOIFS all oasis input files are treated as restarts.
@@ -133,22 +137,23 @@ nemo:
    # DONE: 
    # cd /home/b/b383098/_work/foci_input2
    # git clone https://git.geomar.de/foci/foci_input2/nemo4_orca05.git 
+   # git clone https://git.geomar.de/foci/foci_input2/nemo4_eorca05.git
    lresume: ${general.lresume}
    #ini_parent_exp_id: "${general.ini_parent_exp_id}"
    #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
    #ini_parent_date: "${prev_date}"
    #input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
-   input_dir: "/work/bb1460/foci_input2/nemo4_orca05/"
+   input_dir: "/work/bb1460/foci_input2/nemo4_eorca05/L75/"
 
-   resolution: "ORCA05"
-   #version: "ORCA05_Z46_SI3_COUPLED" 
+   resolution: "eORCA05"
+   version: "eORCA05_Z75_SI3_COUPLED" 
    # 64x51 = 3264 
    # 48x48 = 2304
    # 36x36 = 1296
    # 36x24 = 864
    # 24x24 = 576
    _nx: 720
-   _ny: 510 
+   _ny: 603 
    jpni: 24
    jpnj: 18
    #nproca: ${nemo.jpni}
@@ -178,6 +183,6 @@ rnfmap:
 
 xios: 
    with_model: focioifs 
-   xml_dir: "/work/bb1460/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/output_for_diag/"
-   nproc: 20
+   xml_dir: "/work/bb1460/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05/output_for_diag/"
+   nproc: 8
    omp_num_threads: 1

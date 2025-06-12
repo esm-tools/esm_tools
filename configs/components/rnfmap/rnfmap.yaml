@@ -241,8 +241,13 @@ computer:
     #
     choose_computer.name:
         levante:
-            fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
-            cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+            choose_computer.compiler_mpi:
+                gnu11_ompi4:
+                    fflags: -fdefault-real-8 -fdefault-double-8 -O3 -g -march=core-avx2 -mtune=core-avx2
+                    cflags: -g
+              "*":
+                    fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
+                    cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
         glogin:
            choose_computer.compiler_mpi:
               gcc11_ompi416:

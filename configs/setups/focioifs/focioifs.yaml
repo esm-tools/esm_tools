@@ -83,11 +83,19 @@ general:
         # 4.1 - with eORCA05.L75
         # 4.1.1 - with ECWAM (and backported Charnock cap)
         # agrif-4.0
+        # 5.0 Using NEMO 5
         #
         # 2.1 also comes with O12 (ORCA12)
         # 3.0 comes with AGRIF
         #
         choose_version:
+          # Using NEMO 5.0.0
+          '5.0':
+            runoff_method: "EM21"
+            calving_method: "JS"
+            couplings:
+            - nemo5-eORCA_SI3_COUPLED+oifs48r1-foci5
+
           # Backport Charnock cap from cy47
           # From Jean Bidlot
           '4.1.1':

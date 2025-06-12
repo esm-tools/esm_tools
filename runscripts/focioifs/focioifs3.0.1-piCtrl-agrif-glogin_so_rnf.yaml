@@ -123,6 +123,7 @@ rnfmap:
    nproc: 1
 
 xios: 
+   version: 2.5_r1910
    with_model: focioifs 
    xml_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/output_for_prod/
    # This should make 4 XIOS cores spread over 2 nodes (on HLRN standard96(

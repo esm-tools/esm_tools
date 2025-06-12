@@ -155,6 +155,7 @@ rnfmap:
    nproc: 1
 
 xios: 
+   version: 2.5_r1910
    with_model: focioifs 
    xml_dir: "${general.pool_dir}/oasis3_openifs43r3-tco95_nemo4-eorca05/output_for_diag/"
    nproc: 8

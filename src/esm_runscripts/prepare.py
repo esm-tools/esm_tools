@@ -688,7 +688,8 @@ def initialize_coupler(config):
                 )
                 config["general"]["coupler"] = coupler.coupler_class(config, model)
                 break
-        config["general"]["coupler"].add_files(config)
+        if config["general"]["coupler"].name == 'oasis3mct':
+            config["general"]["coupler"].add_files(config)
     return config
 
 

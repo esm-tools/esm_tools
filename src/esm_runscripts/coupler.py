@@ -11,23 +11,23 @@ class coupler_class:
     def __init__(self, full_config, name):
         self.name = name
 
-        self.process_ordering = full_config[name]["process_ordering"]
-        self.coupled_execs = []
-        for exe in self.process_ordering:
-            self.coupled_execs.append(full_config[exe]["executable"])
-        self.runtime = full_config["general"]["runtime"][5]
-        self.nb_of_couplings = 0
-        if "coupling_target_fields" in full_config[self.name]:
-            for restart_file in list(full_config[self.name]["coupling_target_fields"]):
-                self.nb_of_couplings += len(
-                    list(full_config[self.name]["coupling_target_fields"][restart_file])
-                )
-        if "coupling_input_fields" in full_config[self.name]:
-            for restart_file in list(full_config[self.name]["coupling_input_fields"]):
-                self.nb_of_couplings += len(
-                    list(full_config[self.name]["coupling_input_fields"])
-                )
         if name == "oasis3mct":
+            self.process_ordering = full_config[name]["process_ordering"]
+            self.coupled_execs = []
+            for exe in self.process_ordering:
+                self.coupled_execs.append(full_config[exe]["executable"])
+            self.runtime = full_config["general"]["runtime"][5]
+            self.nb_of_couplings = 0
+            if "coupling_target_fields" in full_config[self.name]:
+                for restart_file in list(full_config[self.name]["coupling_target_fields"]):
+                    self.nb_of_couplings += len(
+                        list(full_config[self.name]["coupling_target_fields"][restart_file])
+                    )
+            if "coupling_input_fields" in full_config[self.name]:
+                for restart_file in list(full_config[self.name]["coupling_input_fields"]):
+                    self.nb_of_couplings += len(
+                        list(full_config[self.name]["coupling_input_fields"])
+                    )
             from . import oasis
 
             # seb-wahl: manual merge from 'oifs' branch as oifs branch contains many whitespace changes
@@ -42,29 +42,23 @@ class coupler_class:
                 lucia=full_config["oasis3mct"].get("use_lucia", False),
             )
         elif name == "yac":
-            from . import yac
-
-            self.coupler = yac.yac(
-                full_config,
-                self.nb_of_couplings,
-                self.process_ordering,
-                full_config[self.name]["grids"],
-                self.runtime,
-            )
+            logger.info(f"coupler : {name} is used.")
 
         else:
             logger.error(f"Unknown coupler : {name}")
             sys.exit(0)
 
     def prepare(self, full_config, destination_dir):
-        self.add_couplings(full_config)
-        self.finalize(destination_dir)
-        if full_config["general"]["verbose"]:
-            self.print_config_files()
+
+        if coupler_name == "oasis3mct":
+            self.add_couplings(full_config)
+            self.finalize(destination_dir)
+            if full_config["general"]["verbose"]:
+                self.print_config_files()
 
         coupler_name = self.name
         if coupler_name == "yac":
-            couplingfile = "coupling.xml"
+            couplingfile = "coupling.yaml"
         else:
             couplingfile = "namcouple"
         return couplingfile

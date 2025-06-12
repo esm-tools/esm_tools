@@ -1,0 +1,19 @@
+#########################################################################################
+######################### NAME_VERSION YAML CONFIGURATION FILE ##########################
+#########################################################################################
+
+general:
+    model: icon-fesom 
+    version: "v1.0"
+    coupled_setup: True
+
+    include_models: # List of models, couplers and componentes of the setup.
+    - icon 
+    - fesom 
+    - yac
+    choose_version:
+        v1.0:
+            couplings:
+            - fesom-2.6.2-yac+icon-2025.04-public
+
+#yac:

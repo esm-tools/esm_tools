@@ -710,7 +710,7 @@ class batch_system:
                     config[model]["nproc"] = 1
         return config
 
-    def hetjob_single_launcher_line(self, config, cluster):
+    def hetjob_single_launcher_command(self, config, cluster):
         """
         Loops through the components to generate job launcher flags and execution
         commands, to be appended in substitution to the ``@components@`` tag, in
@@ -754,7 +754,7 @@ class batch_system:
             .replace("@jobtype@", cluster)
         )
 
-    def hetjob_concurrent_launcher_lines(self, config, cluster):
+    def hetjob_concurrent_launcher_commands(self, config, cluster):
         """
         Loops through the components to generate job launcher flags and execution
         commands, to be appended in substitution to the ``@components@`` tag, in

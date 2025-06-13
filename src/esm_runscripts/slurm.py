@@ -81,18 +81,15 @@ class Slurm:
                 config["general"]["work_dir"] + "/" + os.path.basename(self.path)
             )
             shutil.copyfile(self.path, hostfile_in_work)
-        elif hetjob_strategy == "hetjob":
+        elif hetjob_strategy == "hetjob" or hetjob_strategy == "srunsteps":
             # Prepare heterogeneous parallelization call for hetjob (one srun command
             # per binary)
-            config["general"]["batch"].hetjob_concurrent_launcher_lines(config, cluster)
-        elif hetjob_strategy == "srunmix":
-            # Prepare heterogeneous parallelization call for srunmix
-            config["general"]["batch"].hetjob_single_launcher_line(config, cluster)
+            config["general"]["batch"].hetjob_single_launcher_command(config, cluster)
         else:
             user_error(
                 "hetjob strategy",
                 f"``{hetjob_strategy}`` is not a valid one. Choose one among "
-                f"``hetjob`` (default), ``srunmix`` or ``taskset``.",
+                f"``hetjob`` (default), ``srunsteps`` or ``taskset``.",
             )
 
         return config
@@ -199,7 +196,7 @@ class Slurm:
         hetjob_strategy = config["computer"].get("hetjob_strategy", "hetjob")
         if config["computer"].get(
             "heterogeneous_parallelization", False
-        ) and hetjob_strategy not in ["taskset", "srunmix"]:
+        ) and hetjob_strategy not in ["taskset", "srunsteps"]:
             this_batch_system = config["computer"]
             # Get the variables to be modified for the headers
             nodes_flag = this_batch_system["nodes_flag"].split("=")[0]

@@ -57,7 +57,7 @@ computer:
                 # Support for old taskset heterogeneous parallelization approach
                 taskset:
                     srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
-                # Support for hetjob parallelization approach (heterogeneity handled with heterogeneous slurm job)
+                # Support for hetjob parallelization approach (heterogeneity handled with heterogeneous slurm job + srun steps, allows for heterogeneous resources)
                 hetjob:
                     launcher_flags_per_component: "
                         ${mt_launcher_flag}
@@ -66,9 +66,10 @@ computer:
                         --ntasks-per-node=@nproc_per_node@
                         --cpus-per-task=@cpus_per_proc@
                         --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
-                    srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} @components@"
-                # Support for srun mix approach (heterogeneity handled in the srun command)
-                srunmix:
+                    srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
+                    launcher_comp_sep: " \\\n:"
+                # Support for srun steps approach (heterogeneity handled in the srun command)
+                srunsteps:
                     # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
                     launcher_flags_per_component: "
                         ${mt_launcher_flag}

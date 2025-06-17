@@ -639,6 +639,10 @@ fesom:
                     grid: feom
             enth_oce:
                     grid: feom
+            u10w_oce:
+                    grid: feom
+            v10w_oce:
+                    grid: feom
 
 
     wiso_fields:

@@ -52,9 +52,9 @@ A possible (default) output can be ``~/.local/bin/esm_tools``.
 Installing in a conda environment
 -----------------------------------
 
-First create a conda environment using the provided ``environment.yml`` file::
+First create a conda environment using the provided ``environment.yaml`` file::
 
-    conda env create -f environment.yml -n esm_tools
+    conda env create -f environment.yaml -n esm_tools
 
 Then activate the environment::
 

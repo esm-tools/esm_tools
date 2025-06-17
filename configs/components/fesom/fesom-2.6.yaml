@@ -164,6 +164,11 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
                     beta_evp: 500           # constant that control numerical stability of mEVP.
+            DARS:
+                    nx: 3160340
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             ROS2:
                     nx: 26306560
                     whichEVP: 1

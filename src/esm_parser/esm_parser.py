@@ -1766,6 +1766,9 @@ def resolve_choose_with_var(
             lvar = lvar.replace("add_", "")
             if lvar in config_copy:
                 config[lvar] = config_copy[lvar]
+        else:
+            # If no config with the key was found, remove the choose block
+            del config_copy[choose_block]
 
 
 def get_chooses_with_var(component_config, var, sep=","):

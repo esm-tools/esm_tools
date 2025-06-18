@@ -1,7 +1,11 @@
 #########################################################################################
 ######################### NAME_VERSION YAML CONFIGURATION FILE ##########################
 #########################################################################################
-
+computer:
+   choose_computer.name:
+      levante:
+         foo: bar
+   
 general:
     model: icon-fesom 
     version: "v1.0"
@@ -13,6 +17,9 @@ general:
     - yac
     choose_version:
         v1.0:
+            couplings:
+            - fesom-2.6.2-yac+icon-2024.10-public
+        v2.0:
             couplings:
             - fesom-2.6.2-yac+icon-2025.04-public
 

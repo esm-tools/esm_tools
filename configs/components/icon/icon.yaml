@@ -10,9 +10,9 @@
 #    * ICON-APE - ICON Aquaplanet Experiments
 #
 icon:
+
    model: icon 
    version: 2025.04-public 
-   git-repository: https://gitlab.dkrz.de/icon/icon-model.git 
 
    metadata:
         Institute: MPI-Met 
@@ -25,27 +25,31 @@ icon:
 
 
    clean_command: ${defaults.clean_command}
-   executable: icon 
+   executable: icon   
+   # TODO: decide whether we wan't to treat jsbach and hd
+   # as separate models as we do it with ECHAM6
+   #include_models:
+   #- jsbach
+   #- hdmodel
+   #
+   scenario: 'PI-CTRL'
+   
+   compile_infos:
+      choose_version:
+         2.6.6-nwp: 
+            git-repository: https://gitlab.dkrz.de/icon-geomar/icon-nwp.git 
+            branch: geomar-swahl 
+            comp_command: 'tar zxf externals.tar.gz ; ./config/dkrz/levante.intel --enable-openmp ; make -j 16' 
 
-   choose_version:
-      2.6.6-nwp: 
-         git-repository: https://gitlab.dkrz.de/icon-geomar/icon-nwp.git 
-         branch: geomar-swahl 
-         # workaround until esm_master becomes more clever
-         comp_command: 'tar zxf externals.tar.gz ; ./$ICON_CONFIGURE_COMMAND --enable-openmp ; make -j 16' 
-      2025.04-public: 
-         git-repository: https://gitlab.dkrz.de/icon/icon-model.git 
-         repo_options: --recursive
-         # TODO: Either go back to 2025.04 or rename
-         # to 2024.10 everywhere if we stick with 2024.10
-         # 2025.04 does not work yet and Nils Dreier also used 2024.10
-         #branch: release-${icon.version} 
-         branch: release-2024.10-public
-         destination: icon
-         # workaround until esm_master becomes more clever
-         comp_command: 'mkdir -p build ; cd build ; 
-             ../$ICON_CONFIGURE_COMMAND ICON_BUNDLED_CFLAGS="$ICON_BUNDLED_CFLAGS -fpic" ICON_BUNDLED_FCFLAGS="$ICON_BUNDLED_FCFLAGS -fpic" ;
-             make -j32' 
+      # default settings 
+      git-repository: https://gitlab.dkrz.de/icon/icon-model.git 
+      repo_options: --recursive
+      branch: release-${icon.version} 
+      destination: icon
+      install_bins: build/bin/icon
+      comp_command: 'mkdir -p build ; cd build ; 
+         ../config/dkrz/levante.gcc ICON_BUNDLED_CFLAGS="$ICON_BUNDLED_CFLAGS -fpic" ICON_BUNDLED_FCFLAGS="$ICON_BUNDLED_FCFLAGS -fpic" ;
+         make -j32' 
 
    file_movements:
       input:
@@ -61,10 +65,13 @@ icon:
       unknown:
          all_directions: move
 
-   input_dir: 
-   icon_pool: 
-   aero_dir: 
-   grid_dir: 
+   input_dir: ${computer.input_dir} 
+   icon_pool: ${computer.icon_pool} 
+   aerosol_dir: ${computer.aerosol_dir} 
+   ic_dir: ${computer.ic_dir} 
+   grid_dir: ${computer.grid_dir} 
+   jsbach_ic_dir: ${computer.jsbach_ic_dir} 
+   jsbach_forcing_dir: ${computer.jsbach_forcing_dir} 
 
    # format start_date/end_date according to ISO_8601 standard used by ICON
    start_rsttime: ${start_date!syear!smonth!sday}T${start_date!shour!sminute!ssecond}Z
@@ -77,10 +84,10 @@ icon:
    omp_num_threads: 1
 
    # grid settings
-   grid_id: '0013' 
+   grid_id: '0012' 
    grid_label: G
-   grid_refinement: R02B04
-   grid_name: icon_grid_${grid_id}_${grid_refinement}_${grid_label}
+   resolution: R02B04
+   grid_name: icon_grid_${grid_id}_${resolution}_${grid_label}
 
    # time step (4min), ICON uses the http://en.wikipedia.org/wiki/ISO_8601 standard
    # for time stamps and time periods
@@ -104,7 +111,7 @@ icon:
    # JSBACH settings
    #
    jsbach_with_hd: no
-   jsbach_year: 1992 # Trang uses 2000 but I don't have the data on levante
+   jsbach_year: 1850 # Trang uses 2000 but I don't have the data on levante
    jsbach_usecase: jsbach_pfts    # jsbach_lite or jsbach_pfts
    lcarbon: false
 
@@ -120,7 +127,7 @@ icon:
    #
    # namelists and namelist settings/changes
    #
-   namelist_dir: "${general.esm_namelist_dir}/icon/${version}/"
+   namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/"
    namelists:
        - NAMELIST_atm
        - NAMELIST_JSBACH_DOM01
@@ -152,7 +159,7 @@ icon:
             msg_level: 15
             restart_filename: ${expid}_restart_atm_<rsttime>.mfr
          radiation_nml:
-            ecrad_data_path: ${model_dir}/externals/ecrad/data/ 
+            ecrad_data_path: ${model_dir}/icon/externals/ecrad/data/ 
          output_nml:
             # TODO: different file names, look at f90nml issue
             output_filename: ${expid}
@@ -187,8 +194,13 @@ icon:
          add_input_files:
             ozone_cariolle: ozone_cariolle
       5:
-         add_forcing_files:
-            ozone_hist: ozone_hist
+         choose_scenario:
+            'PI-CTRL':
+               add_forcing_files:
+                  ozone_hist: ozone_1850
+            'cmip6hist':
+               add_forcing_files:
+                  ozone_hist: ozone_hist
 
    choose_aerosol:
       18:
@@ -233,12 +245,12 @@ icon:
          init_from_ifs: true
          add_input_files:
             ifs2icon: ifs2icon
+            initial_state: initial_state
 
    input_files:
       cloud_optics: cloud_optics
-      rrtmg_lw: rrtmg_lw
-      radrrtm: RADRRTM
-      radsrtm: RADSRTM
+      radrrtm: radrrtm
+      radsrtm: radsrtm
       socrates_droplet_rrtm: socrates_droplet_rrtm
       fu_ice_rrtm: fu_ice_rrtm
       mcica_gamma: mcica_gamma
@@ -248,19 +260,30 @@ icon:
       extpar: extpar
       greenhouse_gases: greenhouse_gases
       macv2_sp: macv2_sp
-      swflux: swflux
+      # swflux: swflux
       sst: sst
       sic: sic
       land_sso: land_sso 
-      land_frac: land_frac
       land_phys: land_phys
       land_soil: land_soil
       lctlib: lctlib
       ic_land_soil: ic_land_soil
 
+   choose_scenario:
+      'PI-CTRL':
+         forcing_files:
+            land_frac: land_frac_1850
+      # TODO hist not yet fully configured or tested, e.g. volc and stenchikov missing
+      'cmip6hist':
+         forcing_files:
+            land_frac: land_frac
+
    forcing_sources:
 
-      bc_land_frac:
+      land_frac_1850:
+         "${jsbach_forcing_dir}/bc_land_frac_11pfts_1850.nc"
+
+      land_frac:
          "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_1850.nc":
             to: 1850
          "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_@YEAR@.nc":
@@ -270,14 +293,18 @@ icon:
          "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_2014.nc":
             from: 2014
 
+      # TODO: check which ozone is used in Sveta's setup
+      ozone_1850: 
+         "${icon_pool}/ozone/cmip6/${resolution}_${grid_label}/bc_ozone_historical_1850.nc"
+
       ozone_hist: 
-         "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}/bc_ozone_historical_1850.nc":
+         "${icon_pool}/ozone/cmip6/${resolution}_${grid_label}/bc_ozone_historical_1850.nc":
             to: 1850
-         "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}/bc_ozone_historical_@YEAR@.nc":
+         "${icon_pool}/ozone/cmip6/${resolution}_${grid_label}/bc_ozone_historical_@YEAR@.nc":
             from: 1851
             to: 2014
          # TODO: do proper scenario setup
-         "${icon_pool}/ozone/cmip6/${grid_refinement}_${grid_label}/bc_ozone_historical_2014.nc":
+         "${icon_pool}/ozone/cmip6/${resolution}_${grid_label}/bc_ozone_historical_2014.nc":
             from: 2014
       # Stenchikov stratospheric aerosol
       # see also /pool/data/ICON/grids/private/rene/mpim/independent/CMIP6Forcing, 
@@ -309,50 +336,54 @@ icon:
 
    input_sources:
       # input files distributed with the source code
-      cloud_optics: ${model_dir}/data/ECHAM6_CldOptProps.nc
-      rrtmg_lw: ${model_dir}/data/rrtmg_lw.nc
-      radrrtm: ${model_dir}/ecrad/data/RADRRTM
-      radsrtm: ${model_dir}/ecrad/data/RADSRTM
-      socrates_droplet_rrtm: ${model_dir}/ecrad/data/socrates_droplet_scattering_rrtm.nc
-      fu_ice_rrtm: ${model_dir}/ecrad/data/fu_ice_scattering_rrtm.nc
-      mcica_gamma: ${model_dir}/ecrad/data/mcica_gamma.nc
+      cloud_optics: ${model_dir}/icon/data/ECHAM6_CldOptProps.nc
+      radrrtm: ${model_dir}/icon/externals/ecrad/data/RADRRTM
+      radsrtm: ${model_dir}/icon/externals/ecrad/data/RADSRTM
+      socrates_droplet_rrtm: ${model_dir}/icon/externals/ecrad/data/socrates_droplet_scattering_rrtm.nc
+      fu_ice_rrtm: ${model_dir}/icon/externals/ecrad/data/fu_ice_scattering_rrtm.nc
+      mcica_gamma: ${model_dir}/icon/externals/ecrad/data/mcica_gamma.nc
+      macv2_sp: ${model_dir}/icon/data/MACv2.0-SP_v1.nc
       # "dictionary" describing the translation of user-defined shortnames with names used
       # in ICON's "add_var" call
-      #vardict: ${model_dir}/run/dict.iconam.mpim
-      dictlatbc: ${model_dir}/run/dict.latbc
+      #vardict: ${model_dir}/icon/run/dict.iconam.mpim
+      dictlatbc: ${model_dir}/icon/run/dict.latbc
+
       # ICON grid description file
       # TODO: implement nested grids correctly
       atmo_dyn_grid: ${icon_pool}/grids/${grid_name}.nc 
       atmo_dyn_grid_grfinfo: ${icon_pool}/grids/${grid_name}-grfinfo.nc 
 
       # initial conditions
-      ifs2icon: ${input_dir}/grids/private/dian/mpim/${grid_id}/initial_condition/r0001/ifs2icon_2000010100_${grid_refinement}_${grid_label}.nc
-      extpar: ${input_dir}/grids/public/mpim/0013/nwp/icon_extpar_${grid_id}_${grid_refinement}_${grid_label}_20180820_tiles.nc
+      #ifs2icon: ${input_dir}/grids/private/dian/mpim/${grid_id}/initial_condition/r0001/ifs2icon_2000010100_${resolution}_${grid_label}.nc
+      #extpar: ${input_dir}/grids/public/mpim/0013/nwp/icon_extpar_${grid_id}_${resolution}_${grid_label}_20180820_tiles.nc
+      ifs2icon: ${ic_dir}/ifs2icon_${grid_id}_${resolution}_${grid_label}.nc
+      extpar: ${ic_dir}/icon_extpar_oceLSM_a0012_R02B04_o0035_R02B06_20161124_tiles_jsb.nc
       greenhouse_gases: ${icon_pool}/greenhouse_gases/greenhouse_historical_plus.nc
       ozone_cariolle: ${icon_pool}/greenhouse_gases/bc_ozone_cariolle.nc
-      macv2_sp: ${model_dir}/data/MACv2.0-SP_v1.nc
+      initial_state: ${ic_dir}/ts_phc3.0_annual.L72sml.nc
 
       # Kinne background aerosol
-      kinne_lw: ${icon_pool}/aerosol_29-06-2018/kinne/${grid_refinement}_${grid_label}/bc_aeropt_kinne_lw_b16_coa.nc
-      kinne_sw: ${icon_pool}/aerosol_29-06-2018/kinne/${grid_refinement}_${grid_label}/bc_aeropt_kinne_sw_b14_coa.nc
-      kinne_fin: ${icon_pool}/aerosol_29-06-2018/kinne/${grid_refinement}_${grid_label}/bc_aeropt_kinne_sw_b14_fin_1850.nc
+      kinne_lw: ${aerosol_dir}/bc_aeropt_kinne_lw_b16_coa.nc
+      kinne_sw: ${aerosol_dir}/bc_aeropt_kinne_sw_b14_coa.nc
+      # sveta also links 1851 and 1852 for PI-CTRL...
+      kinne_fin: ${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_1850.nc
 
+      # SW radiative CMIP6 forcing
+      # swflux: ${icon_pool}/solar_radiation/3.2/swflux_14band_cmip6_1850-2299-v3.2.nc
       # SST / sea ice
-      swflux: ${icon_pool}/solar_radiation/3.2/swflux_14band_cmip6_1850-2299-v3.2.nc
       # TODO: not sure if that works.
-      sic: ${icon_pool}/path/to/data/CI_*_${grid_refinement}_${grid_label}.nc
-      sst: ${icon_pool}/path/to/data/SST_*__${grid_refinement}_${grid_label}.nc
+      sic: ${icon_pool}/path/to/data/CI_*_${resolution}_${grid_label}.nc
+      sst: ${icon_pool}/path/to/data/SST_*__${resolution}_${grid_label}.nc
 
       # JSBACH
-      ic_land_soil: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/ic_land_soil_${jsbach_year}.nc
-      land_sso: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/bc_land_sso_${jsbach_year}.nc
-      land_phys: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/bc_land_phys_${jsbach_year}.nc
-      land_soil: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002/bc_land_soil_${jsbach_year}.nc
-      lctlib: ${model_dir}/externals/jsbach/data/lctlib_nlct21.def
+      ic_land_soil: ${jsbach_ic_dir}/bc_land_soil_${jsbach_year}.nc
+      land_sso: ${jsbach_ic_dir}/bc_land_sso_${jsbach_year}.nc
+      land_phys: ${jsbach_ic_dir}/bc_land_phys_${jsbach_year}.nc
+      land_soil: ${jsbach_ic_dir}/bc_land_soil_${jsbach_year}.nc
+      lctlib: ${model_dir}/icon/externals/jsbach/data/lctlib_nlct21.def
 
    input_in_work:
       cloud_optics: ECHAM6_CldOptProps.nc
-      rrtmg_lw: rrtmg_lw.nc
       radrrtm: radrrtm
       radsrtm: radsrtm
       socrates_droplet_rrtm: socrates_droplet_scattering_rrtm.nc
@@ -373,17 +404,17 @@ icon:
       kinne_fin: bc_aeropt_kinne_sw_b14_fin.nc 
       sic: bc_sic.nc
       sst: bc_sst.nc
-      swflux: bc_solar_irradiance_sw_b14.nc
+      # swflux: bc_solar_irradiance_sw_b14.nc
       land_sso: bc_land_sso.nc
-      land_frac: bc_land_frac.nc
       land_phys: bc_land_phys.nc
       land_soil: bc_land_soil.nc
       lctlib: lctlib_nlct21.def
 
    forcing_in_work:
       ozone_hist: bc_ozone_@YEAR@.nc
-      #stenchikov_sw: bc_aeropt_stenchikov_lw_b16_sw_b14_@YEAR@.nc 
+      stenchikov_sw: bc_aeropt_stenchikov_lw_b16_sw_b14_@YEAR@.nc 
       volc_hist: bc_aeropt_cmip6_volc_lw_b16_sw_b14_@YEAR@.nc
+      land_frac: bc_land_frac.nc
 
    #forcing_additional_information:
       #ozone_hist:
@@ -404,31 +435,45 @@ computer:
                compiler_mpi: None
                # this should work but esm_master is still stupid and can't resolve computer.name
                #comp_command: ./config/dkrz/levante.intel --enable-openmp ; make -j 16 
-               add_module_actions:
-                  - purge
-                  - load git
-               choose_compiler_mpi:
-                   intel:
-                        - load intel-oneapi-compilers/2022.0.1-gcc-11.2.0 
-               add_export_vars:
-                  ICON_CONFIGURE_COMMAND: "'./config/dkrz/levante.intel'"
+               #add_module_actions:
+               #   - purge
+               #   - load git
+               #choose_compiler_mpi:
+               #   intel:
+               #      add_export_vars:
+               #         ICON_CONFIGURE_COMMAND: "'./config/dkrz/levante.intel'"
+               #   gcc:
+               #      add_export_vars:
+               #         ICON_CONFIGURE_COMMAND: "'./config/dkrz/levante.gcc'"
       run:
          choose_computer.name:
             levante:
-               input_dir: /pool/data/ICON
-               icon_pool: ${input_dir}/grids/private/mpim/icon_preprocessing/source
-               aero_dir: ${input_dir}/grids/private/rene/mpim
-               grid_dir: ${input_dir}/grids
+               input_dir: /work/bb0519/foci_input2/ICON-FESOM/ICON 
+               icon_pool: ${input_dir} 
+               grid_dir: ${icon_pool}/grids
+               aerosol_dir: ${icon_pool}/${icon.grid_id}/aerosol_kinne/r0001
+               ic_dir: ${icon_pool}/ic
+               jsbach_ic_dir: ${icon_pool}/Coupled/JSBach4ini/vga/0012-0035/r04vg
+               jsbach_forcing_dir: ${jsbach_ic_dir}
 
-               add_module_actions:
-                  - purge
-                  - load git
-                  - load intel-oneapi-compilers/2022.0.1-gcc-11.2.0 
+               choose_icon.version:
+                  2.6.6-nwp:
+                     input_dir: /pool/data/ICON
+                     icon_pool: ${input_dir}/grids/private/mpim/icon_preprocessing/source
+                     grid_dir: ${input_dir}/grids
+                     aerosol_dir: ${icon_pool}/aerosol_29-06-2018/kinne/${resolution}_${icon.grid_label}
+                     jsbach_ic_dir: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002
+                     jsbach_forcing_dir: ${jsbach_ic_dir}
+
+               #add_module_actions:
+               #- purge
+               #- load git
+               #- load intel-oneapi-compilers/2022.0.1-gcc-11.2.0 
 
                add_export_vars:
                   # optimization settings (from DKRZ)
-                  SLURM_DIST_PLANESIZE: ${nproma}
-                  ICON_THREADS: ${omp_num_threads}
+                  SLURM_DIST_PLANESIZE: ${icon.nproma}
+                  ICON_THREADS: ${icon.omp_num_threads}
                   OMP_SCHEDULE: dynamic,1
                   OMP_DYNAMIC: "false"
                   OMP_STACKSIZE: '200M'

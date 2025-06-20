@@ -45,9 +45,10 @@ configs.sort()
 ignore_models = ["sample"]
 for config in configs:
     if not config in ignore_models:
-        with open(os.path.join("../configs/components/", config, config+".yaml")) as f:
+        with open(os.path.join("../configs/components/", config, f"{config}.yaml")) as f:
             d = yaml.load(f, Loader=yaml.FullLoader)
-            metadata = d.get("metadata")
+            component = d[config]
+            metadata = component.get("metadata")
             name = config.upper()
             with open("metadata/"+config+".csv", "w") as table:
                 if metadata:

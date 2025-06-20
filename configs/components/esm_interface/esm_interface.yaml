@@ -1,32 +1,33 @@
-model: esm_interface
+esm_interface:
+    model: esm_interface
 
-version: generic
+    version: generic
 
-available_versions:
-- generic
+    available_versions:
+    - generic
 
-choose_version:
-  generic:
-    branch: generic
-    comp_command: mkdir -p build; cd build; cmake ..; make -j `nproc --all`
+    choose_version:
+      generic:
+        branch: generic
+        comp_command: mkdir -p build; cd build; cmake ..; make -j `nproc --all`
 
-comp_command: ${defaults.comp_command}
-destination: esm-interface
-git-repository: https://gitlab.dkrz.de/modular_esm/esm-interface.git
-namelist_dir: "${esm_namelist_dir}/esm-interface/"
-namelists:
-        - namelist.esmcouple
-contact: nadine.wieters(at)awi.de
+    comp_command: ${defaults.comp_command}
+    destination: esm-interface
+    git-repository: https://gitlab.dkrz.de/modular_esm/esm-interface.git
+    namelist_dir: "${esm_namelist_dir}/esm-interface/"
+    namelists:
+            - namelist.esmcouple
+    contact: nadine.wieters(at)awi.de
 
-config_files:
-        config: config
+    config_files:
+            config: config
 
-config_sources:
-        config: "${namelist_dir}/namelist.esmcouple"
+    config_sources:
+            config: "${namelist_dir}/namelist.esmcouple"
 
-metadata:
-        Institute: Alfred Wegener Institute
-        Description: Coupling interface for a modular coupling approach of ESMs.
-        Authors: Nadine Wieters (nadine.wieters@awi.de)
-        Publications:
-        License:
+    metadata:
+            Institute: Alfred Wegener Institute
+            Description: Coupling interface for a modular coupling approach of ESMs.
+            Authors: Nadine Wieters (nadine.wieters@awi.de)
+            Publications:
+            License:

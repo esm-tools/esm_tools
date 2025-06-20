@@ -33,13 +33,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "01:30:00"
-        environment_changes:
-                choose_computer.name:
-                        glogin:
-                                add_export_vars:
-                                        - 'ECHAM6_THREADS=1'
-                                        - 'NEMO_THREADS=1'
-                                        - 'I_MPI_DEBUG=1'
+
         available_versions:
         - default
         - default_autotools
@@ -48,15 +42,15 @@ general:
         - default_oasismct4
         - default_oasismct5
         - mops_oasismct4
-        - agrif 
-        - agrif_oasismct4 
-        - agrif_mops_oasismct4 
+        - agrif
+        - agrif_oasismct4
+        - agrif_mops_oasismct4
         choose_version:
           # default version, uses OASIS3MCT2.8 as MPIESM
           default:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-foci
-          # same as above but compilation of ECHAM6 with autotools as in 
+          # same as above but compilation of ECHAM6 with autotools as in
           # old mkexp based environment. Included as test setup when I (Sebastian)
           # tried (without success) to debug why FOCI within ESM-Tools is ~20% slower
           default_autotools:
@@ -86,7 +80,7 @@ general:
           mops_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_oasismct4
-          # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, no AOW tracer    
+          # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, no AOW tracer
           agrif:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF+echam-6.3.05p2-foci
@@ -106,55 +100,6 @@ general:
 #########################################################################################
 
 echam:
-        # Ok here's something that's not intuitive and certainly needs improvement in the next version
-        # compiletime and runtime env changes have to be placed within one of the components (does not
-        # matter which one) and then they are valid for all components.
-        compiletime_environment_changes:
-          iolibraries: system_libs
-          choose_computer.name:
-             levante:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2022_openmpi 
-                iolibraries: system_libs 
-             juwels:
-                #compiler_mpi: intel2019_impi2019
-                compiler_mpi: intel2022_psmpi2022
-             blogin:
-                compiler_mpi: intel2024_impi2021
-             glogin:
-                compiler_mpi: intel2023_impi2021
-             nesh:
-                compiler_mpi: intel2019_impi2019
-
-        runtime_environment_changes:
-          iolibraries: system_libs
-          choose_computer.name:
-             levante:
-                #compiler_mpi: intel2022_impi2021
-                compiler_mpi: intel2022_openmpi 
-                iolibraries: system_libs 
-             juwels:
-                compiler_mpi: intel2022_psmpi2022
-                #compiler_mpi: intel2019_impi2019
-                #add_module_actions:
-                #   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
-             blogin:
-                #compiler_mpi: intel2019_impi2019
-                #add_module_actions:
-                #   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-                compiler_mpi: intel2019_impi2019_nemo4
-                #compiler_mpi: intel2021_impi2021
-             glogin:
-                compiler_mpi: intel2023_impi2021
-                #compiler_mpi: intel2019_impi2019_nemo4
-                add_module_actions:
-                   - "source $I_MPI_ROOT/../../setvars.sh"
-                        #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-             nesh:
-                compiler_mpi: intel2019_impi2019
-                add_module_actions:
-                   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
-
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
@@ -180,7 +125,7 @@ echam:
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
                            namelist.echam:
-                              runctl:   
+                              runctl:
                                  lcouple_co2: true
                               submodelctl:
                                  lco2: true
@@ -204,7 +149,7 @@ echam:
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
                            namelist.echam:
-                              runctl:   
+                              runctl:
                                  lcouple_co2: true
                               submodelctl:
                                  lco2: true
@@ -250,11 +195,11 @@ echam:
            input:
               all_directions: link
            outdata:
-              all_directions: move 
+              all_directions: move
            restart_in:
-              all_directions: link 
+              all_directions: link
            restart_out:
-              all_directions: move 
+              all_directions: move
 
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
@@ -302,7 +247,7 @@ echam:
                                     namelist.echam:
                                         runctl:
                                             dt_resume: "remove_from_namelist"
-                                                
+
                 False:
                         add_namelist_changes:
                                 namelist.echam:
@@ -318,16 +263,16 @@ echam:
         namelist_changes:
                 namelist.echam:
                         runctl:
-                                putocean: 
+                                putocean:
                                         - ${echam.coupling_freq_in_steps}
                                         - 'steps'
                                         - 'exact'
                                         - -${echam.time_step}
-                                getocean: 
+                                getocean:
                                         - ${echam.coupling_freq_in_steps}
                                         - 'steps'
                                         - 'exact'
-                                        - 0 
+                                        - 0
 
                                 lcouple: .true.
                                 # if lresume = true, dt_start is removed from namelist
@@ -353,7 +298,7 @@ echam:
                                 #       - ${pseudo_start_date!day}
                                 #       - ${pseudo_start_date!hour}
                                 #       - ${pseudo_start_date!minute}
-                                #       - ${pseudo_start_date!second}        
+                                #       - ${pseudo_start_date!second}
 
         remove_forcing_files:
                 - sst
@@ -443,9 +388,9 @@ echam:
                                                 nproc: 1
                                         echam_monitoring:
                                                 batch_or_shell: shell
-                                                order_in_cluster: sequential 
+                                                order_in_cluster: sequential
                                                 run_on_queue: ${computer.partitions.pp.name}
-                                                run_after: echam_postprocessing 
+                                                run_after: echam_postprocessing
                                                 script_dir: ${general.esm_function_dir}/setups/foci
                                                 submit_to_batch_system: True
                                                 script: "
@@ -480,11 +425,11 @@ hdmodel:
            input:
               all_directions: link
            outdata:
-              all_directions: move 
+              all_directions: move
            restart_in:
-              all_directions: copy 
+              all_directions: copy
            restart_out:
-              all_directions: copy 
+              all_directions: copy
 
 
 jsbach:
@@ -515,17 +460,17 @@ jsbach:
            input:
               all_directions: link
            outdata:
-              all_directions: move 
+              all_directions: move
            restart_in:
-              all_directions: link 
+              all_directions: link
            restart_out:
-              all_directions: move 
+              all_directions: move
 
         # settings for restarting from another run
         lresume: ${general.lresume}
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "${general.ini_parent_date}"
-        ini_parent_dir: "${general.ini_parent_dir}/jsbach/" 
+        ini_parent_dir: "${general.ini_parent_dir}/jsbach/"
 
         # Use initialized carbon and nitrogen pools
         choose_echam.lresume:
@@ -548,16 +493,16 @@ jsbach:
         namelist_changes:
                 namelist.jsbach:
                         hydrology_ctl:
-                                puthd: 
+                                puthd:
                                         - ${echam.coupling_freq_in_steps}
                                         - 'steps'
                                         - 'exact'
                                         - -${echam.time_step}
-                                gethd: 
+                                gethd:
                                         - ${echam.coupling_freq_in_steps}
                                         - 'steps'
                                         - 'exact'
-                                        - 0 
+                                        - 0
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
 
@@ -590,7 +535,7 @@ nemo:
                         version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
                 # the default coupling settings all branches of ORCA05_LIM2_KCM_AOW_FS_OASISMCT4
                 # are the ones used with FOCIOIFS
-                # to be able to use the same branches as FOCIOIFS, we just need to change two 
+                # to be able to use the same branches as FOCIOIFS, we just need to change two
                 # coupling settings in namsbc_cpl. With this we avoid using a separate branch
                 # just for the two settings below
                 default_oasismct4:
@@ -636,7 +581,7 @@ nemo:
            input:
               all_directions: link
            outdata:
-              all_directions: move 
+              all_directions: move
 
         # settings for restarting from another run
         lresume: ${general.lresume}
@@ -661,7 +606,7 @@ nemo:
                                                 script_dir: ${general.esm_function_dir}/setups/foci
                                                 submit_to_batch_system: True
                                                 script: "
-                                                    nemo_postprocessing.sh -m 
+                                                    nemo_postprocessing.sh -m
                                                     -r ${general.expid}
                                                     -s ${start_date}
                                                     -e ${end_date}
@@ -675,7 +620,7 @@ xios:
 #########################################################################################
 
 oasis3mct:
-        
+
         model_dir: ${general.model_dir}/oasis
         input_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
@@ -685,12 +630,12 @@ oasis3mct:
         # settings for restarting from another run
         # lresume: ${general.lresume}
         # for oasis lresume: true always as otherwise a namcouple with LAG=0 is generated
-        # which causes a deadlock in FOCI. Hence sstocean and flxatmos have to be treated 
+        # which causes a deadlock in FOCI. Hence sstocean and flxatmos have to be treated
         # always as restart files
         lresume: true
         ini_parent_exp_id: ${general.ini_parent_exp_id}
         ini_parent_date: "${general.ini_parent_date}"
-        #ini_parent_dir is set below in choose_echam.lresume 
+        #ini_parent_dir is set below in choose_echam.lresume
         #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
         #
         a2o_lag: "${echam.time_step}"
@@ -703,7 +648,7 @@ oasis3mct:
         choose_general.version:
                 default:
                         version: "foci"
-                        export_mode_a2o: EXPORTED     
+                        export_mode_a2o: EXPORTED
 
                         coupling_target_fields:
                            sstocean:
@@ -725,7 +670,7 @@ oasis3mct:
                               - 'O_QnsMix <--conserv3-- A_QnsMix'
                               - 'OTotRain <--conserv4-- ATotRain'
                               - 'OTotSnow <--conserv2-- ATotSnow'
-                              - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'OIceEvap <--conserv2-- AIceEvap'
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
                         add_input_files:
@@ -757,7 +702,7 @@ oasis3mct:
                               - 'O_QnsMix <--conserv3-- A_QnsMix'
                               - 'OTotRain <--conserv4-- ATotRain'
                               - 'OTotSnow <--conserv2-- ATotSnow'
-                              - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'OIceEvap <--conserv2-- AIceEvap'
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
                         add_input_files:
@@ -767,7 +712,7 @@ oasis3mct:
 
                 fs:
                         version: "foci"
-                        export_mode_a2o: EXPORTED     
+                        export_mode_a2o: EXPORTED
 
                         coupling_target_fields:
                            sstocean:
@@ -789,7 +734,7 @@ oasis3mct:
                               - 'O_QnsMix <--conserv3-- A_QnsMix'
                               - 'OTotRain <--conserv4-- ATotRain'
                               - 'OTotSnow <--conserv2-- ATotSnow'
-                              - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'OIceEvap <--conserv2-- AIceEvap'
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
                         add_input_files:
@@ -799,7 +744,7 @@ oasis3mct:
 
                 agrif:
                         version: "foci"
-                        export_mode_a2o: EXPNEST     
+                        export_mode_a2o: EXPNEST
 
                         coupling_target_fields:
                            sstocean:
@@ -821,7 +766,7 @@ oasis3mct:
                               - 'O_QnsMix <--conserv3-- A_QnsMix'
                               - 'OTotRain <--conserv4-- ATotRain'
                               - 'OTotSnow <--conserv2-- ATotSnow'
-                              - 'OIceEvap <--conserv2-- AIceEvap' 
+                              - 'OIceEvap <--conserv2-- AIceEvap'
                               - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
                         add_input_files:
@@ -862,7 +807,7 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
 
                         add_input_files:
-                           rmp_ot2a: rmp_ot2a 
+                           rmp_ot2a: rmp_ot2a
                            rmp_a2oc: rmp_a2oc
                            rmp_a2ot: rmp_a2ot
 
@@ -899,7 +844,7 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
 
                         add_input_files:
-                           rmp_ot2a: rmp_ot2a 
+                           rmp_ot2a: rmp_ot2a
                            rmp_a2oc: rmp_a2oc
                            rmp_a2ot: rmp_a2ot
 
@@ -946,16 +891,16 @@ oasis3mct:
                         norestart: "T"
                         mct_version: "4.0"
                         version: "4.0-geomar"
-                        
-                        export_mode_a2o: EXPORTED     
-                         
+
+                        export_mode_a2o: EXPORTED
+
                         add_restart_in_files:
                            flxatmos1: flxatmos1
                         add_restart_out_files:
                            flxatmos1: flxatmos1
 
                         coupling_target_fields:
-        
+
                            sstocean:
                               - 'AIceFrac <--gauswgt_average-- OIceFrac'
                               - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
@@ -977,7 +922,7 @@ oasis3mct:
                               - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
                               - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
-                           # TODO: test if the naming of the remapping file works 
+                           # TODO: test if the naming of the remapping file works
                            flxatmos_1:
                               - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
                               - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
@@ -991,9 +936,9 @@ oasis3mct:
                               - '1_OTotSnow <--gauswgt-- ATotSnow'
                               - '1_OIceEvap <--gauswgt-- AIceEvap'
                               - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
-                           
+
                         add_input_files:
-                           rmp_ot2a: rmp_ot2a 
+                           rmp_ot2a: rmp_ot2a
                            rmp_a2oc: rmp_a2oc
                            rmp_a2ot: rmp_a2ot
                            rmp_a2agr1: rmp_a2agr1
@@ -1003,11 +948,11 @@ oasis3mct:
                         norestart: "T"
                         mct_version: "4.0"
                         version: "4.0-geomar"
-                        
-                        export_mode_a2o: EXPORTED     
-                         
+
+                        export_mode_a2o: EXPORTED
+
                         coupling_target_fields:
-        
+
                            sstocean:
                               - 'AIceFrac <--gauswgt_average-- OIceFrac'
                               - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
@@ -1031,7 +976,7 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
 
                         add_input_files:
-                           rmp_ot2a: rmp_ot2a 
+                           rmp_ot2a: rmp_ot2a
                            rmp_a2oc: rmp_a2oc
                            rmp_a2ot: rmp_a2ot
 
@@ -1040,9 +985,9 @@ oasis3mct:
                         norestart: "T"
                         mct_version: "4.0"
                         version: "4.0-geomar"
-                        
-                        export_mode_a2o: EXPORTED     
-                         
+
+                        export_mode_a2o: EXPORTED
+
                         add_restart_in_files:
                            flxatmos1: flxatmos1
                         add_restart_out_files:
@@ -1077,7 +1022,7 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
                               - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
                               - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
-        
+
                            flxatmos_1:
                               - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
                               - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
@@ -1176,19 +1121,19 @@ oasis3mct:
                         remapping:
                                 - bilinear:
                                         search_bin: latitude
-                                        nb_of_search_bins: 1 
+                                        nb_of_search_bins: 1
                 bilinear:
                         time_transformation: instant
                         remapping:
                                 - bilinear:
                                         search_bin: latitude
-                                        nb_of_search_bins: 1 
+                                        nb_of_search_bins: 1
                 bilinear_glbpos:
                         time_transformation: instant
                         remapping:
                                 - bilinear:
                                         search_bin: latitude
-                                        nb_of_search_bins: 1 
+                                        nb_of_search_bins: 1
                         postprocessing:
                                 conserv:
                                         method: glbpos
@@ -1197,7 +1142,7 @@ oasis3mct:
                         remapping:
                                 - bilinear:
                                         search_bin: latitude
-                                        nb_of_search_bins: 1 
+                                        nb_of_search_bins: 1
                         postprocessing:
                                 conserv:
                                         method: global
@@ -1310,7 +1255,7 @@ oasis3mct:
                 masks: ${input_dir}/masks_${echam.resolution}_${nemo.resolution}_frac.nc
                 grids: ${input_dir}/grids_${echam.resolution}_${nemo.resolution}_frac.nc
 
-        # choose_general.lresume does not work at the moment, it sets the ini_parent_dir right, but does not 
+        # choose_general.lresume does not work at the moment, it sets the ini_parent_dir right, but does not
         # handle the restart_in_sources correctly, looks like when when the restart_in_sources are handeled by
         # the parser, general.lresume is still false.
         # Sebastian Wahl, 2021-09-10
@@ -1366,3 +1311,58 @@ oasis3mct:
         restart_in_files:
                 sstocean: sstocean
                 flxatmos: flxatmos
+
+computer:
+    iolibraries: system_libs
+    choose_computer.name:
+        glogin:
+            add_export_vars:
+                ECHAM6_THREADS: 1
+                NEMO_THREADS: 1
+                I_MPI_DEBUG: 1
+    choose_general.execution_mode:
+        compile:
+            choose_computer.name:
+               levante:
+                  #compiler_mpi: intel2022_impi2021
+                  compiler_mpi: intel2022_openmpi
+                  iolibraries: system_libs
+               juwels:
+                  #compiler_mpi: intel2019_impi2019
+                  compiler_mpi: intel2022_psmpi2022
+               blogin:
+                  compiler_mpi: intel2024_impi2021
+               glogin:
+                  compiler_mpi: intel2023_impi2021
+               nesh:
+                  compiler_mpi: intel2019_impi2019
+
+        run:
+            add_choose_computer.name:
+               levante:
+                  #compiler_mpi: intel2022_impi2021
+                  compiler_mpi: intel2022_openmpi
+                  iolibraries: system_libs
+               juwels:
+                  compiler_mpi: intel2022_psmpi2022
+                  #compiler_mpi: intel2019_impi2019
+                  #add_module_actions:
+                  #   - "source $EBROOTIMPI/bin/mpivars.sh -ofi_internal=0 release_mt"
+               blogin:
+                  #compiler_mpi: intel2019_impi2019
+                  #add_module_actions:
+                  #   - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+                  compiler_mpi: intel2019_impi2019_nemo4
+                  #compiler_mpi: intel2021_impi2021
+               glogin:
+                  compiler_mpi: intel2023_impi2021
+                  #compiler_mpi: intel2019_impi2019_nemo4
+                  add_module_actions:
+                     - "source $I_MPI_ROOT/../../setvars.sh"
+                          #- "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+               nesh:
+                  compiler_mpi: intel2019_impi2019
+                  add_module_actions:
+                     - "source $I_MPI_ROOT/intel64/bin/mpivars.sh release_mt"
+
+

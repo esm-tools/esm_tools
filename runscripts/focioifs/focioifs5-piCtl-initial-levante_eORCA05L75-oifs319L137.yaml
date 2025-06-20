@@ -16,7 +16,7 @@ general:
    nday: 0
    hours: 0
    account: bb1460
-   base_dir: /work/bb1460/b383098/esm-experiments
+   base_dir: /work/bb1460/b350071/esm-experiments
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: True
@@ -45,7 +45,7 @@ general:
    # hetjob_flag: hetjob 
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/focioifs-5.0/
+   model_dir: /work/bb0519/b350071/models/focioifs-5.0/
    
 oifs:
    
@@ -57,7 +57,7 @@ oifs:
    #ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/18591231/"
    #ini_parent_date: "${prev_date}"
    
-   version: "48r1"
+   version: "48r1-foci5"
    time_step: 900
    with_xios: True
    scenario: "piControl"
@@ -92,12 +92,6 @@ oifs:
    ini_pseudo_initial_date: "1859-01-01"
    #massfixer: 0
    #cloudfixer: 0
-
-   add_export_vars:
-           DATA: "${general.work_dir}"
-           LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/build/lib'
-           GRIB_SAMPLES_PATH: '${model_dir}/build/share/eccodes/ifs_samples/grib1_mlgrib2'
-           OIFS_LOGFILE: '${model_dir}/build/oifs_test_log.txt'
 
 oasis3mct:
    # DONE
@@ -163,6 +157,16 @@ rnfmap:
 
 xios: 
    with_model: focioifs 
+   version: 3.0_trunk
    xml_dir: "/work/bb1460/foci_input2/foci_xios_files/"
    nproc: 8
    omp_num_threads: 1
+
+computer:
+   choose_general.execution_mode:
+      run:
+         add_export_vars:
+           DATA: "${general.work_dir}"
+           LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/oifs-48r1/build/lib:$MPI_LIB:$AEC_ROOT/lib:$HDF5ROOT/lib:$NetCDF_C_ROOT/lib:$NETCDF_ROOT/lib:$LD_LIBRARY_PATH'
+           GRIB_SAMPLES_PATH: '${model_dir}/oifs-48r1/build/share/eccodes/ifs_samples/grib1_mlgrib2'
+           OIFS_LOGFILE: '${model_dir}/oifs-48r1/build/oifs_test_log.txt'

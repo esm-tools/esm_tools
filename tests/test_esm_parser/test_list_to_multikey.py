@@ -1,6 +1,6 @@
 import pytest
 
-from esm_parser.esm_parser import list_to_multikey, do_math_in_entry
+from esm_parser.esm_parser import do_math_in_entry, list_to_multikey
 
 
 @pytest.fixture
@@ -97,32 +97,35 @@ class TestListToMultikey:
 
         assert result == expected
 
-
     def test_multikey_with_eval(self, simple_config):
         """Test evaluation of math expressions within multikey expansion."""
         tree = ["lpj_guess", "input_in_work", "VegInit_[[proc_list-->PROC_NUM]]"]
-        
+
         # First, get the raw value that contains the math expression
-        rhs = simple_config["lpj_guess"]["input_in_work"]["VegInit_[[proc_list-->PROC_NUM]]"]
-        
+        rhs = simple_config["lpj_guess"]["input_in_work"][
+            "VegInit_[[proc_list-->PROC_NUM]]"
+        ]
+
         # Step 1: First evaluate the math expressions in the raw string
         # This should convert '$(( PROC_NUM + 1 ))' to something like 'eval( PROC_NUM + 1 )'
         evaluated_rhs = do_math_in_entry(tree, rhs, simple_config)
-        
+
         # Step 2: Now pass the evaluated string through list_to_multikey
         # Update the config to use the evaluated expression
         updated_config = simple_config.copy()
-        updated_config["lpj_guess"]["input_in_work"]["VegInit_[[proc_list-->PROC_NUM]]"] = evaluated_rhs
-        
+        updated_config["lpj_guess"]["input_in_work"][
+            "VegInit_[[proc_list-->PROC_NUM]]"
+        ] = evaluated_rhs
+
         # Now expand the multikey
         result = list_to_multikey(tree, evaluated_rhs, updated_config, [], False)
-        
+
         # The expected result after both math evaluation and multikey expansion
         expected = {
             "VegInit_0": "run1/vegin.nc",
             "VegInit_1": "run2/vegin.nc",
             "VegInit_2": "run3/vegin.nc",
         }
-        
+
         # Verify the results match the expected values
         assert result == expected

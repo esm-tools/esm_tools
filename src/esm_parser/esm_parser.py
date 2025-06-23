@@ -2269,6 +2269,16 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                                     str(eval(_eval)),
                                 )
 
+                    # If there are evals in the rhs (set on do_math_in_entry), evaluate them
+                    if re.findall(r'eval\((.*?)\)', rhs):
+                        for key, value in return_dict2.items():
+                            evals = re.findall(r'eval\((.*?)\)', value)
+                            for _eval in evals:
+                                return_dict2[key] = value.replace(
+                                    f"eval({_eval})",
+                                    str(eval(_eval)),
+                                )
+
                 if isinstance(rhs, list):
                     replaced_list = []
                     for item in rhs:
@@ -2583,6 +2593,9 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
+
+        # If the math expression is part of a list expansion, wrap it in eval,
+        # otherwise evaluate it directly
         if len(tree) > 0 and isinstance(tree[-1], str) and "-->" in tree[-1]:
             list_expansion_pattern = re.search(r"^.*?\[\[.*-->(.*)\]\].*?", tree[-1])
         else:
@@ -2591,6 +2604,7 @@ def do_math_in_entry(tree, rhs, config):
             result = f"eval({math})"
         else:
             result = eval(math)
+
         if isinstance(result, list) and date_operation:
             result = result[
                 -1

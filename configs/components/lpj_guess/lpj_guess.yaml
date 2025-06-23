@@ -54,10 +54,6 @@ lpj_guess:
     # with a coupled setup
     model_dir: ${general.model_dir}
 
-    # This section takes care of dealing with environment changes you might want to do, to
-    # deviated from the defaults define for the specific machine
-    # (``configs/machine/<the_machine_used>.yaml``). For more information consult:
-    # https://esm-tools.readthedocs.io/en/latest/esm_environment.html#esm-environment
     choose_computer.name:
         levante:
             pool_dir: "/work/ab0246/a270092/input/"

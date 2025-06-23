@@ -17,7 +17,7 @@ general:
    # operational settings: yearly restarts
    compute_time: "02:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1950-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
    nmonth: 12
    clean_runs: 5
    # test settings, daily restarts
@@ -129,7 +129,7 @@ echam:
    # until year 2014
    # available scenarios: 1percCO2, ssp126, ssp245, ssp370, ssp585, ssp585os
    # technically tested: cmip6hist, ssp370 and ssp585
-   # seb-wahl, 2021-08-11t
+   # seb-wahl, 2021-08-11
    allow_hist2ssp_transition: True
    scenario: "PI-CTRL"
    #scenario: "cmip6hist"

@@ -79,10 +79,7 @@ lpj_guess:
     setup_name: global # sets up all the model parameters
 
 
-    # File dictionaries to control the copying/moving/linking of all files associated to
-    # the simulation. This syntax will change for something better soon. For more details
-    # about this syntax consult:
-    # https://esm-tools.readthedocs.io/en/latest/yaml.html#file-dictionaries
+    # File dictionaries
     config_sources:
         runscript: ${namelist_dir}/run_trunk_4_1.j2
         forcing_path_file: ${namelist_dir}/paths_forcing.j2

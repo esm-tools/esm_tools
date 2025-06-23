@@ -37,9 +37,6 @@ lpj_guess:
     resolution: TL255 #if it's not set i dosen't work!
 
     choose_version:
-        # Here you can place all the variables you would want to control via the version
-        # variable above (for example, you could also add ``git-repository``,
-        # ``comp_command``, ``destination``, ...) 
         4.1.1:
             runscript_name: run_trunk_4_1.ins
             git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git

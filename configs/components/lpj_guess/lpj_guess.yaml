@@ -50,11 +50,8 @@ lpj_guess:
             executable: guess_TL255
 
                      
-    # ``model_dir`` let's ESM-Tools know where is the source code of your component (must
-    # be an absolute path). Normally, changed via the runscript. We recommend you leave it
-    # as below, changing only the ``name_of_your_model`` part to whatever you defined as 
-    # the ``model`` var. This will automatically select the source code for esm_master if
-    # the command is operating with a coupled setup
+    # Automatically select the source code for esm_master if the command is operating
+    # with a coupled setup
     model_dir: ${general.model_dir}
 
     # This section takes care of dealing with environment changes you might want to do, to

@@ -2583,7 +2583,7 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
-        if len(tree) > 0:
+        if len(tree) > 0 and isinstance(tree[-1], str) and "-->" in tree[-1]:
             list_expansion_pattern = re.search(r"^.*?\[\[.*-->(.*)\]\].*?", tree[-1])
         else:
             list_expansion_pattern = None

@@ -47,6 +47,8 @@ oifs:
         post_processing: 0
         nproc: 168
         omp_num_threads: 4
+        # only required with omp_num_threads > 1 
+        post_run_commands: "unset SLURM_HOSTFILE"
         perturb: 1
         ensemble_id: 1
         restart_type: eternal
@@ -67,3 +69,4 @@ xios:
         xml_dir: ${general.foci_input2_dir}/openifs_cy43_tco95/output_for_prod/
         with_model: oifs
         nproc: 12
+        version: xios_trunk

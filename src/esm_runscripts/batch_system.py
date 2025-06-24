@@ -339,6 +339,42 @@ class batch_system:
         return extras
 
     @staticmethod
+    def get_post_run_commands(config):
+        extras = []
+
+        # Search for ``post_run_commands``s in the components
+        for component in config.keys():
+            post_run_commands = config[component].get("post_run_commands")
+            if isinstance(post_run_commands, list):
+                for pr_command in post_run_commands:
+                    if isinstance(pr_command, str):
+                        extras.append(pr_command)
+                    else:
+                        user_error(
+                            'Invalid type for "post_run_commands"',
+                            (
+                                f'"{type(pr_command)}" type is not supported for '
+                                + f'elements of the "post_run_commands", defined in '
+                                + f'"{component}". Please, define '
+                                + '"post_run_commands" as a "list" of "strings" or a "list".'
+                            ),
+                        )
+            elif isinstance(post_run_commands, str):
+                extras.append(post_run_commands)
+            elif post_run_commands == None:
+                continue
+            else:
+                user_error(
+                    'Invalid type for "post_run_commands"',
+                    (
+                        f'"{type(post_run_commands)}" type is not supported for '
+                        + f'"post_run_commands" defined in "{component}". Please, define '
+                        + '"post_run_commands" as a "string" or a "list" of "strings".'
+                    ),
+                )
+        return extras
+
+    @staticmethod
     def append_start_statement(config, subjob):
         line = helpers.assemble_log_message(
             config,
@@ -565,6 +601,11 @@ class batch_system:
                 subjobs_to_launch = config["general"]["workflow"]["subjob_clusters"][
                     cluster
                 ]["next_submit"]
+
+                # extra entries for each subjob
+                post_run_commands = batch_system.get_post_run_commands(config)
+                for line in post_run_commands:
+                   runfile.write(line + "\n")
 
                 runfile.write("\n")
                 runfile.write("# Call to esm_runscript to start subjobs:\n")

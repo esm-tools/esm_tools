@@ -206,7 +206,7 @@ fesom:
 
         choose_general.major_version:
                 "v3.4":
-                        version: "2.6.8"
+                        version: "2.6-main"
                         namelist_dir: "${esm_namelist_dir}/fesom2/2.6/awicm3/v3.4/"
                         add_namelist_changes:
                                 namelist.config:

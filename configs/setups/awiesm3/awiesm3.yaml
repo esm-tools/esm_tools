@@ -135,7 +135,7 @@ oifs:
                                  ECE_CPL_LPJG: .true.
 
         res_level: ${resolution}${levels}
-        awicm3_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY]
+        atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY]
         atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg, TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004, SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg, SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg] #LASZLO OIFS block
 
         coupling_fields:
@@ -167,9 +167,9 @@ fesom:
         omp_num_threads: 1
         choose_general.oasis_with_yac:
             True:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=ON -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
             False:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DDISABLE_MULTITHREADING=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=ON -DDISABLE_MULTITHREADING=OFF -DVERBOSE=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
                 comp_command: "missing"
 
@@ -326,50 +326,56 @@ lpj_guess:
         fixed_CO2: -1
         fixed_ndep: -1
         fixed_LU: -1
-   
-        forcing_sources:                
-                soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+ 
+
+        config_sources:
                 tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
-                CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                dir_landuse: ${lpj_guess.input_dir}/dirmaker
-                dir_fire: ${lpj_guess.input_dir}/dirmaker
                 ins_files: ${namelist_dir}/*.ins
-                #ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_TL159_CORE2.txt #is this the correct file for ece_gridlist.txt?
                 ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_TL255_CORE2.txt #is this the correct file for ece_gridlist.txt? 
                 lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
                 "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins 
-                "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-                "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
-                "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
                 "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
                 "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
                 "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
-                #"ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_TL159_CORE2.txt #is this the correct file for ece_gridlist.txt?
                 "ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_TL255_CORE2.txt #is this the correct file for ece_gridlist.txt?
+                "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
+
                 temp_namcouple: /home/a/a270270/temp_confiles/namcouple 
                 "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
-        forcing_in_work:
-                soil_layer_type: slt_${mygrid}.nc
+        config_in_work:
                 tmp_rc_file: lpjg_steps.rc
-                CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                temp_namcouple: namcouple
-                dir_landuse: /landuse/dirmaker
-                dir_fire: /fire/dirmakei
                 ins_files: /*.ins
                 ece_gridlist: ece_gridlist.txt #is this the correct file?
                 lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
                 "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins 
-                "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
-                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
-                "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                 "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
                 "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins 
                 "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins  
                 "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
                 "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt #is this the correct file?  
+                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
+
+                temp_namcouple: namcouple
                 "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
+                
+
+        forcing_sources:                
+                soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+                CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                dir_landuse: ${lpj_guess.input_dir}/dirmaker
+                dir_fire: ${lpj_guess.input_dir}/dirmaker
+                "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+                "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+
+        forcing_in_work:
+                soil_layer_type: slt_${mygrid}.nc
+                CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+                dir_landuse: /landuse/dirmaker
+                dir_fire: /fire/dirmaker
+                "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
+                "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
                  
         choose_general.run_number:
                 1:
@@ -492,7 +498,7 @@ oasis3mct:
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                        - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'

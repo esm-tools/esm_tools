@@ -331,14 +331,14 @@ lpj_guess:
         config_sources:
                 tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
                 ins_files: ${namelist_dir}/*.ins
-                ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_TL255_CORE2.txt #is this the correct file for ece_gridlist.txt? 
+                ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt #is this the correct file for ece_gridlist.txt? 
                 lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
                 "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins 
                 "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
                 "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
                 "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
                 "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
-                "ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_TL255_CORE2.txt #is this the correct file for ece_gridlist.txt?
+                "ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt #is this the correct file for ece_gridlist.txt?
                 "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
 
                 temp_namcouple: /home/a/a270270/temp_confiles/namcouple 

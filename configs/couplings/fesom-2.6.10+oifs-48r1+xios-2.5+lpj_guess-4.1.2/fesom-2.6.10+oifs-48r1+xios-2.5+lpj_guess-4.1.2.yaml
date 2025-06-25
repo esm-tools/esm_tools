@@ -2,7 +2,7 @@ components:
 - xios-2.5-ece
 - rnfmap-v1.0
 - oifs-48r1_lpjg_branch
-- fesom-2.6_main
+- fesom-2.6.10
 - oasis3mct-4.0-awicm-3.2
 - lpj_guess-4.1.2
 coupling_changes:

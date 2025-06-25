@@ -103,7 +103,7 @@ general:
           develop:
             major_version: v3.4
             couplings:
-            - fesom-2.6_main+oifs-48r1+xios-2.5
+            - fesom-2.6.10+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -464,7 +464,7 @@ fesom:
                                                 albi: 0.6
                                                 albim: 0.43
                 "v3.4":
-                        version: "2.6_main"
+                        version: "2.6.10"
                         append_icmcl: ""
                         add_namelist_changes:
                                 namelist.config:

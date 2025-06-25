@@ -159,7 +159,7 @@ oifs:
 
 
 fesom:
-        version: "2.6.8"
+        version: "2.6_main"
         time_step: 1800
         resolution: CORE2
         lresume: false

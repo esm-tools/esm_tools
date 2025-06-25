@@ -464,7 +464,7 @@ fesom:
                                                 albi: 0.6
                                                 albim: 0.43
                 "v3.4":
-                        version: "2.6.9"
+                        version: "2.6_main"
                         append_icmcl: ""
                         add_namelist_changes:
                                 namelist.config:

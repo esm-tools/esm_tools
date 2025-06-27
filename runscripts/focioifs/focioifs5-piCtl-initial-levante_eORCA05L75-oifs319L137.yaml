@@ -2,6 +2,7 @@ general:
    use_venv: False
    verbose: False 
    homedir: !ENV ${HOME}
+   userdir: !ENV ${USER}
    
    setup_name: "focioifs"      
    resolution: "TCO319_eORCA05"
@@ -16,7 +17,7 @@ general:
    nday: 0
    hours: 0
    account: bb1460
-   base_dir: /work/bb1460/b350071/esm-experiments
+   base_dir: /work/bb1460/${general.userdir}/esm-experiments
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: True
@@ -38,14 +39,8 @@ general:
    # (should be general enough)
    prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
 
-   #computer:
-   # partition_name: "standard96"
-   # additional_flags: '--qos=preempt'
-   # taskset: false
-   # hetjob_flag: hetjob 
-
 focioifs:
-   model_dir: /work/bb0519/b350071/models/focioifs-5.0/
+   model_dir: /work/bb1460/${general.userdir}/models/focioifs-5.0/
    
 oifs:
    
@@ -87,7 +82,7 @@ oifs:
    resolution: TCO319
    levels: L137
    nproc: 384
-   omp_num_threads: 4
+   omp_num_threads: 1
    solarspectrum: True 
    ini_pseudo_initial_date: "1859-01-01"
    #massfixer: 0
@@ -151,6 +146,8 @@ nemo:
               ln_timing: ".false."
           namrun:
               nn_istate: 0
+          namsbc:
+              ln_rnf: .true. 
    
 rnfmap:
    nproc: 1
@@ -158,11 +155,15 @@ rnfmap:
 xios: 
    with_model: focioifs 
    version: 3.0_trunk
-   xml_dir: "/work/bb1460/foci_input2/foci_xios_files/"
+   xml_dir: "/work/bb1460/b350071/foci_xios_files/"
    nproc: 8
    omp_num_threads: 1
 
 computer:
+   #additional_flags: '--qos=preempt'
+   launcher: mpirun
+   launcher_flags: "" 
+
    choose_general.execution_mode:
       run:
          add_export_vars:

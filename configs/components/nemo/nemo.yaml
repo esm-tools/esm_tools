@@ -2835,8 +2835,8 @@ nemo:
                    nonlinear:
                       add_namelist_changes:
                          namelist_cfg:
-                            namdom:
-                               ln_linssh: '.false.'
+                            #namdom:
+                            #   ln_linssh: '.false.'
                             namdyn_hpg:
                                ln_hpg_zco: '.false.'
                                ln_hpg_zps: '.false.'

@@ -6,7 +6,7 @@ fesom:
     version: "2.6"
     type: ocean
 
-    comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
     clean_command: ${defaults.clean_command}
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
@@ -50,6 +50,7 @@ fesom:
 
       "2.6-main":
         branch: "main"
+        namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.6"
     install_bins: bin/fesom.x

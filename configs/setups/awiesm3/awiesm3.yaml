@@ -167,9 +167,9 @@ fesom:
         omp_num_threads: 1
         choose_general.oasis_with_yac:
             True:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=ON -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
             False:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=ON -DDISABLE_MULTITHREADING=OFF -DVERBOSE=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DVERBOSE=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
             "*":
                 comp_command: "missing"
 
@@ -207,7 +207,6 @@ fesom:
         choose_general.major_version:
                 "v3.4":
                         version: "2.6-main"
-                        namelist_dir: "${esm_namelist_dir}/fesom2/2.6/awicm3/v3.4/"
                         add_namelist_changes:
                                 namelist.config:
                                         ale_def:

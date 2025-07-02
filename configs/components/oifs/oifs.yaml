@@ -1140,7 +1140,7 @@ oifs:
                                             LRSACC: ".true." # reset accumulation of fluxes
                     further_reading:
                             - oifs/oifs48.env.yaml
-                            #- oifs/oifs48.cmip.yaml
+                            - oifs/oifs48.cmip.yaml
 
 
     # If 1, use Coddington spectrum which reduced stratospheric warm bias

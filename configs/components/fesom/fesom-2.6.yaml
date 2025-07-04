@@ -25,7 +25,7 @@ fesom:
 
     choose_version:
       "2.6":
-        branch: "2.6.6"
+        branch: "2.6.10"
 
       "2.6-paleodyn":
         branch: "2.6.7"

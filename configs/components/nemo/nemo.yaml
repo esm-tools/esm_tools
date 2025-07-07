@@ -1241,7 +1241,11 @@ nemo:
                       ./makenemo -n ${version} -m ${archfile} -r ${version} -j 24 ;
                       cp -p cfgs/${version}/BLD/bin/nemo.exe cfgs/${version}/BLD/bin/oceanx
         clean_command: ./makenemo -n ${nemo.version} -m ${archfile} -r ${version} clean
-        archfile: ESMTOOLS_generic_oasis_intel
+        choose_computer.compiler_mpi: 
+            gnu11_ompi4:
+               archfile: ESMTOOLS_generic_oasis_gnu
+            "*":
+               archfile: ESMTOOLS_generic_oasis_intel
         destination: nemo-${nemo.version}
         install_bins: cfgs/${nemo.version}/BLD/bin/oceanx
 

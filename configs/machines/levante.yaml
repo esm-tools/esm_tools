@@ -159,6 +159,7 @@ computer:
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
            intel2022_impi2021:
+                    python_version: "python3/2023.01-gcc-11.2.0"
                     # ESM-Tools vars necessary for ``system_libs`` case
                     mod_netcdf_c: netcdf-c/4.8.1-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
                     mod_netcdf_f: netcdf-fortran/4.5.3-intel-oneapi-mpi-2021.5.0-intel-2021.5.0
@@ -179,6 +180,7 @@ computer:
                             MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
            intel2022_openmpi:
+                    python_version: "python3/2023.01-gcc-11.2.0"
                     # ESM-Tools vars necessary for ``system_libs`` case
                     mod_netcdf_c: netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0
                     mod_netcdf_f: netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0
@@ -241,6 +243,7 @@ computer:
                 - "load netcdf-fortran/4.5.3-openmpi-4.1.2-gcc-11.2.0"
                 - "load git/2.31.1-gcc-11.2.0"
                 - "load libaec/1.0.5-gcc-11.2.0"
+
             add_export_vars:
                 LD_RUN_PATH: $LD_LIBRARY_PATH
                 #PATH: /work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-gcc-11.2.0/bin:/sw/spack-levante/cmake-3.22.1-5bz6zc/bin:$PATH
@@ -275,19 +278,37 @@ computer:
                 - "load netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0"
                 - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
                 - "load hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0"
-
+                - "load libaec/1.0.5-intel-2021.5.0"
+                  #- "load fftw/3.3.10-gcc-11.2.0"
             add_export_vars:
                 IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
+                MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+                MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+                mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+                MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+                mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
+
+                AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
+                aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
                 # NOTE: Could be set by the module
                 HDF5ROOT: "/sw/spack-levante/hdf5-1.12.1-tvymb5"
                 HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
                 HDF5_ROOT: $HDF5ROOT
+                # netcdf-fortran
                 NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
-                NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
                 NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NetCDF_Fortran_ROOT: $NETCDFFROOT 
+                NETCDF_ROOT: $NETCDFFROOT
+                # netcdf-c   
+                NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+                NetCDF_C_ROOT: $NETCDFROOT
+                NETCDF_PATH: $NETCDFROOT
+
+                TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
+                TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
                 ECCODESROOT: $IO_LIB_ROOT
                 # For OASIS3-MCT5 from CERFACS
                 OASIS_NETCDF: $NETCDFROOT
@@ -310,7 +331,7 @@ computer:
                 # kh 17.02.22 orig mistral, not yet tested on levante (but should work)
                 PERL5LIB: /usr/lib64/perl5
 
-                LD_LIBRARY_PATH[(0)]: $HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$LD_LIBRARY_PATH
+                LD_LIBRARY_PATH[(0)]: $HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$AEC_ROOT/lib:$LD_LIBRARY_PATH
 
                 # kh 17.02.22 currently required to use mkl
                 LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
@@ -340,6 +361,11 @@ computer:
                 NETCDF_ROOT: $NetCDF_Fortran_ROOT
                 NETCDFROOT: $NetCDF_C_ROOT
                 NETCDFFROOT: $NetCDF_Fortran_ROOT
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+
                 TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
                 TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
                 MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t

@@ -2090,8 +2090,15 @@ computer:
         compile:
             choose_computer.name:
                levante:
+                  # gnu11 for focioifs-5.0
+                  # intel2022 does not work currently for 5.0
+                  # type error (int(8) vs int (4) in oifs)
                   compiler_mpi: gnu11_ompi4 
                   iolibraries: system_gnu_libs 
+                  # intel2022 for focioifs-4.1.1
+                  # oifs43r3 has a compile error with gfortran
+                  #compiler_mpi: intel2022_openmpi
+                  #iolibraries: system_libs 
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:

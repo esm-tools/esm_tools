@@ -681,7 +681,7 @@ class DictWithProvenance(dict):
                             f"Key ``{key}`` exists in two different yaml files at the same "
                             f"hierarchical level (``{old_category}``) and have different "
                             f"values (``{old_val}``:``{new_val}``). To solve this remove "
-                            f" one of the these two values, or include them into a choose "
+                            f"one of the these two values, or include them into a choose "
                             f"block that avoids the conflict."
                             "\n- @HINT_0@\n- @HINT_1@",
                             hints=[

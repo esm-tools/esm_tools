@@ -150,7 +150,7 @@ general:
         choose_general.iterative_coupling:
             True:
                 required_plugins:
-                    - "https://github.com/esm-tools-plugins/esm_pism"
+                    - "git+https://github.com/esm-tools-plugins/esm_pism"
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

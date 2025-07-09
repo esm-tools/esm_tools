@@ -3,108 +3,110 @@
 #########################################################################################
 general:
 
-        model: awiesm3
+    model: awiesm3
 
-        model_dir: ${esm_master_dir}/awiesm3-${general.version}
+    model_dir: ${esm_master_dir}/awiesm3-${general.version}
 
-        lresume: False
-        coupled_setup: True
+    lresume: false
+    coupled_setup: true
 
-        include_models:
-                - fesom
-                - oifs
-                - rnfmap
-                - lpj_guess
-                - oasis3mct
+    include_models:
+      - fesom
+      - oifs
+      - rnfmap
+      - lpj_guess
+      - oasis3mct
 
-        available_versions:
-        - 'develop'
+    available_versions:
+      - 'develop'
 
-        choose_version:
-          develop:
+    choose_version:
+        develop:
             major_version: v3.4
             couplings:
-            - fesom-2.6-main+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+              - fesom-2.6-main+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
-            - xios
-            oasis_with_yac: False
+              - xios
+            oasis_with_yac: false
             xios_interp_order: 1
 
-        version: "v3.4"
-        resolution: ${oifs.resolution}_${fesom.resolution}
-        postprocessing: false
-        post_time: "00:05:00"
-        compute_time: "00:30:00"
+    version: "v3.4"
+    resolution: ${oifs.resolution}_${fesom.resolution}
+    postprocessing: false
+    post_time: "00:05:00"
+    compute_time: "00:30:00"
 
-        reusable_filetypes: [input, bin, src]
+    reusable_filetypes: [input, bin, src]
 
-        choose_computer.name:
-                levante:
-                        pool_dir: "/work/ab0246/a270092/input"
-                juwels:
-                        pool_dir: "/p/project/chhb19/jstreffi/input"
-                aleph:
-                        pool_dir: "/proj/awi/input"
-                albedo:
-                        pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
-                "*":
-                        pool_dir: "TO-BE-DEFINED-BY-THE-USER"
+    choose_computer.name:
+        levante:
+            pool_dir: "/work/ab0246/a270092/input"
+        juwels:
+            pool_dir: "/p/project/chhb19/jstreffi/input"
+        aleph:
+            pool_dir: "/proj/awi/input"
+        albedo:
+            pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+        "*":
+            pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
         # Load compute recipe from oifs.yaml
-        prepcompute_recipe: ${oifs.prepcompute_recipe}
-        tidy_recipe: ${fesom.tidy_recipe}
+    prepcompute_recipe: ${oifs.prepcompute_recipe}
+    tidy_recipe: ${fesom.tidy_recipe}
 
         # Load general environment for the whole coupled setup
-        dr_hook_ignore_signals: -1
-
+    dr_hook_ignore_signals: -1
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
 #########################################################################################
 
 oifs:
-        version: "48r1_lpjg_branch"
+    version: "48r1_lpjg_branch"
 
         # added 05.03.2025
-        git-repository: 'https://git.smhi.se/sager/oifs48r1'
-        branch: 'lpj_guess_implementation'
+    git-repository: 'https://git.smhi.se/sager/oifs48r1'
+    branch: 'lpj_guess_implementation'
         #branch: 'invert_lpjg_recv_send+main' #use this branch if you want to use without the vegin.nc At the first timestep LPJG will recieve the data from the OIFS. 
         #
-        add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
+    add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
-        pool_dir: ${general.pool_dir}
-        model_dir: ${general.model_dir}/oifs-${oifs.version}
-        setup_dir: ${general.model_dir}
-        restart_firstlast: "last"
-        restart_rate: 12
-        ocean_resolution: "${fesom.resolution}"
+    pool_dir: ${general.pool_dir}
+    model_dir: ${general.model_dir}/oifs-${oifs.version}
+    setup_dir: ${general.model_dir}
+    restart_firstlast: "last"
+    restart_rate: 12
+    ocean_resolution: "${fesom.resolution}"
 
-        scenario: "historical"
+    scenario: "historical"
 
-        input_expid: awi3   # This cannot be longer than 4 characters
-        input_dir: ${pool_dir}/oifs-${version}
-        rtables_dir: ${input_dir}/rtables/
-        forcing_dir: ${input_dir}/${version}/ifsdata/
-        ifsdata_dir: ${input_dir}/${version}/ifsdata/
+    input_expid: awi3       # This cannot be longer than 4 characters
+    input_dir: ${pool_dir}/oifs-${version}
+    rtables_dir: ${input_dir}/rtables/
+    forcing_dir: ${input_dir}/${version}/ifsdata/
+    ifsdata_dir: ${input_dir}/${version}/ifsdata/
 
-        choose_general.major_version:
-                "v3.4":
-                        version: "48r1"
-                        with_xios: True
-                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
-                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
-                        mip: "cmip6"
-                        wam: true
-                        add_add_namelist_changes:
-                                fort.4:
-                                        NAMCT0:
-                                                LXIOS: TRUE
-                                        NAEPHY:
-                                                LECURR: true
-                                       
+    choose_general.major_version:
+        "v3.4":
+            version: "48r1"
+            with_xios: true
+            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
+                --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios
+                --install; chmod -R ${source_code_permissions} .; git config core.fileMode
+                false; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
+            namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
+            mip: "cmip6"
+            wam: true
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCT0:
+                        LXIOS: true
+                    NAEPHY:
+                        LECURR: true
 
-        cmip6_data_dir_nml: ${input_dir}/cmip6-data
-        cmip5_data_dir_nml: ${input_dir}/cmip5-data
+
+    cmip6_data_dir_nml: ${input_dir}/cmip6-data
+    cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
         # nproc must be not a prime number for OpenIFS parallelisation to work
         # (This is just one of the many mysteries of the IFS...)
@@ -115,151 +117,163 @@ oifs:
         # so that the configuration fills up the compute nodes
         # 575 would also be ok (575 = 23 * 25)
         # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
-        nproc: 36
-        omp_num_threads: 2
+    nproc: 36
+    omp_num_threads: 2
 
-        perturb: 0
-        ensemble_id: 1
+    perturb: 0
+    ensemble_id: 1
 
-        restart_type: "ifs_default"
+    restart_type: "ifs_default"
 
-        resolution: TCO95
-        levels: L91
+    resolution: TCO95
+    levels: L91
 
-        add_namelist_changes:
-                fort.4:
-                        NAMECECFG:
-                                 ECE_CPL_NEMO_LIM: .false.
-                                 ECE_CPL_AMIP: .false.
-                                 ECE_CPL_FESOM_FESIM: .true.
-                                 ECE_CPL_LPJG: .true.
+    add_namelist_changes:
+        fort.4:
+            NAMECECFG:
+                ECE_CPL_NEMO_LIM: .false.
+                ECE_CPL_AMIP: .false.
+                ECE_CPL_FESOM_FESIM: .true.
+                ECE_CPL_LPJG: .true.
 
-        res_level: ${resolution}${levels}
-        atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY]
-        atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg, TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004, SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg, SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg] #LASZLO OIFS block
+    res_level: ${resolution}${levels}
+    atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
+        A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY]
+    atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
+        TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
+        SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
+        SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg]                                                                                                                                                                                                                                                    #LASZLO OIFS block
 
-        coupling_fields:
-                "[[atm_oce_fields-->FIELD]]":
-                    grid: atma
-                "[[atm_veg_fields-->FIELD]]":
-                    grid: atma
-                A_Runoff:
-                    grid: atmr
-                A_Calving:
-                    grid: atmr
+    coupling_fields:
+        "[[atm_oce_fields-->FIELD]]":
+            grid: atma
+        "[[atm_veg_fields-->FIELD]]":
+            grid: atma
+        A_Runoff:
+            grid: atmr
+        A_Calving:
+            grid: atmr
 
-        input_files:
-                ICMGG_INIT: ICMGG_INIT
-                ICMGG_INIUA: ICMGG_INIUA
-                ICMSH_INIT: ICMSH_INIT
+    input_files:
+        ICMGG_INIT: ICMGG_INIT
+        ICMGG_INIUA: ICMGG_INIUA
+        ICMSH_INIT: ICMSH_INIT
 
-        prepifs_dir: ${input_dir}/${res_level}/
-        tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: "_${fesom.resolution}"
+    prepifs_dir: ${input_dir}/${res_level}/
+    tl_o3_data_dir: ${input_dir}/${version}/climate/
+    ICMGG_INIT_name: "_${fesom.resolution}"
 
 
 fesom:
-        version: "2.6-main"
-        time_step: 1800
-        resolution: CORE2
-        lresume: false
-        nproc: 72
-        omp_num_threads: 1
-        choose_general.oasis_with_yac:
-            True:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
-            False:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
-            "*":
-                comp_command: "missing"
+    version: "2.6-main"
+    time_step: 1800
+    resolution: CORE2
+    lresume: false
+    nproc: 72
+    omp_num_threads: 1
+    choose_general.oasis_with_yac:
+        true:
+            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF
+                -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                -j `nproc --all`
+        false:
+            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF
+                -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc
+                --all`
+        "*":
+            comp_command: "missing"
 
-        missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
-        choose_missing_owy:
-            True:
-                error:
-                    "Missing variable":
-                        message: "Please define ``general.oasis_with_yac`` boolean in ``awicm3.yaml``"
-                        ask_user_to_continue: False
+    missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))"     # TODO: move this to the block above when the missing option is included in choose_ blocks
+    choose_missing_owy:
+        true:
+            error:
+                "Missing variable":
+                    message: "Please define ``general.oasis_with_yac`` boolean in
+                        ``awicm3.yaml``"
+                    ask_user_to_continue: false
 
-        tide_forcing_dir: ""
-        forcing_data_dir: ""
-        model_dir: ${general.model_dir}/${fesom.destination}
-        setup_dir: ${general.model_dir}
+    tide_forcing_dir: ""
+    forcing_data_dir: ""
+    model_dir: ${general.model_dir}/${fesom.destination}
+    setup_dir: ${general.model_dir}
 
-        pool_dir: "${general.pool_dir}/fesom2/"
-        climate_data_dir: "${pool_dir}/hydrography/"
+    pool_dir: "${general.pool_dir}/fesom2/"
+    climate_data_dir: "${pool_dir}/hydrography/"
 
-        restart_unit: "d"
-        leapyear: True
+    restart_unit: "d"
+    leapyear: true
 
 
         # Move in the future to fesom-2.0.yaml
-        mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
+    mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
 
-        surf_relax_s: "0.0"
+    surf_relax_s: "0.0"
 
-        namelist_changes:
+    namelist_changes:
+        namelist.config:
+            restart_log:
+                restart_length_unit: "${restart_unit}"
+                restart_length: "${restart_rate}"
+
+    choose_general.major_version:
+        "v3.4":
+            version: "2.6-main"
+            add_namelist_changes:
                 namelist.config:
-                        restart_log:
-                                restart_length_unit: "${restart_unit}"
-                                restart_length: "${restart_rate}"
+                    ale_def:
+                        which_ALE: 'zstar'
+                namelist.oce:
+                    oce_dyn:
+                        SPP: true
+                        k_gm_max: 3000
+                        k_gm_rampmax: 40.0
+                        k_gm_rampmin: 30
+                        scaling_ferreira: true
+                        scaling_fesom14: true
+                    oce_tra:
+                        surf_relax_s: "${surf_relax_s}"
 
-        choose_general.major_version:
-                "v3.4":
-                        version: "2.6-main"
-                        add_namelist_changes:
-                                namelist.config:
-                                        ale_def:
-                                                which_ALE: 'zstar'
-                                namelist.oce:
-                                        oce_dyn:
-                                                SPP: true
-                                                k_gm_max: 3000
-                                                k_gm_rampmax: 40.0
-                                                k_gm_rampmin: 30
-                                                scaling_ferreira: true
-                                                scaling_fesom14: true
-                                        oce_tra:
-                                                surf_relax_s: "${surf_relax_s}"
-
-                                namelist.tra:
-                                        tracer_phys:
-                                                surf_relax_s: "${surf_relax_s}"
-                                                use_momix: false
-                                                kv0_const: false
-                                namelist.ice:
-                                        ice_therm:
-                                                albsn: 0.81
-                                                albsnm: 0.77
-                                                albi: 0.6
-                                                albim: 0.43
+                namelist.tra:
+                    tracer_phys:
+                        surf_relax_s: "${surf_relax_s}"
+                        use_momix: false
+                        kv0_const: false
+                namelist.ice:
+                    ice_therm:
+                        albsn: 0.81
+                        albsnm: 0.77
+                        albi: 0.6
+                        albim: 0.43
 
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
-        remove_forcing_files:
-                - ICMCL_INIT
-        remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
-                - restart_length
-                - restart_length_unit
-        remove_namelist_changes.namelist.config.paths:
-                - ForcingDataPath
-                - OpbndPath
-                - TideForcingPath
+    remove_forcing_files:
+      - ICMCL_INIT
+    remove_namelist_changes.namelist.config.inout:     # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
+      - restart_length
+      - restart_length_unit
+    remove_namelist_changes.namelist.config.paths:
+      - ForcingDataPath
+      - OpbndPath
+      - TideForcingPath
         # Remove all namelist changes for namelist.forcing defined in fesom-2.0.yaml
-        remove_namelist_changes:
-                - namelist.forcing
+    remove_namelist_changes:
+      - namelist.forcing
 
 
-        coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
+    coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
 
-        remove_config_files:
-                - diag
+    remove_config_files:
+      - diag
 
-        atm_oce_fields: [ist_feom, sia_feom]
+    atm_oce_fields: [ist_feom, sia_feom]
 
-        coupling_fields:
-                "[[atm_oce_fields-->FIELD]]":
-                        grid: feom
+    coupling_fields:
+        "[[atm_oce_fields-->FIELD]]":
+            grid: feom
 
 
 # It is possible for the esm_tools to modify the fesom io namelist, in case you don't want to make your own copy and edit that.
@@ -269,520 +283,531 @@ fesom:
 
 lpj_guess:
         #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command. 
-        comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .." #without debug. 
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
+        make -j8; cd .."                                                                                          #without debug. 
         #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
-        execution_command: ${executable} -parallel ${runscript_name}
-        
-        veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG, TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ, SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ, TMIN_LPJ, TMAX_LPJ]
+    execution_command: ${executable} -parallel ${runscript_name}
 
-        parallel_file_movements: True
-        coupling_fields:
-                "[[veg_atm_fields-->FIELD]]":
-                        grid: ${lpj_guess.mygrid}-land
+    veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
+        TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ,
+        SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ,
+        TMIN_LPJ, TMAX_LPJ]
 
-        resolution: ${oifs.resolution}
-        grids:
-                lpjg:
-                        name: lpjg
-                        nx: "${nx}"
-                        ny: "${ny}" 
-                        oasis_grid_type: "D"
-                        oyac_grid_type: "LL"
-                        oyac_io_per_node: 4
+    parallel_file_movements: true
+    coupling_fields:
+        "[[veg_atm_fields-->FIELD]]":
+            grid: ${lpj_guess.mygrid}-land
 
-                TL159-land:
-                        name: TL159-land
-                        nx: "${nx}"
-                        ny: "${ny}" 
-                        oasis_grid_type: "D"
-                        oyac_grid_type: "LL"
-                        oyac_io_per_node: 4
-                TL255-land:
-                        name: TL255-land
-                        nx: "${nx}"
-                        ny: "${ny}" 
-                        oasis_grid_type: "D"
-                        oyac_grid_type: "LL"
-                        oyac_io_per_node: 4
+    resolution: ${oifs.resolution}
+    grids:
+        lpjg:
+            name: lpjg
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
 
-        choose_general.major_version:
-                "v3.4":
-                        version: "4.1.2"
-        
+        TL159-land:
+            name: TL159-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TL255-land:
+            name: TL255-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+
+    choose_general.major_version:
+        "v3.4":
+            version: "4.1.2"
+
         #proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
-        nproc: 128
-        proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]' 
-        proc_list: $(( ${proc_list_entry} ))
+    nproc: 128
+    proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
+    proc_list: $(( ${proc_list_entry} ))
 
-        run_year: ${start_date!syear}
-        run_month: 1
-        run_day: 1
-        runtime_seconds: "$(( ${next_date} - ${start_date} ))"
-        ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
-        TM5: 0
-        fourxCO2: f
-        onepcCO2: f
-        fixed_CO2: -1
-        fixed_ndep: -1
-        fixed_LU: -1
- 
+    run_year: ${start_date!syear}
+    run_month: 1
+    run_day: 1
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+    TM5: 0
+    fourxCO2: f
+    onepcCO2: f
+    fixed_CO2: -1
+    fixed_ndep: -1
+    fixed_LU: -1
 
-        config_sources:
-                tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
-                ins_files: ${namelist_dir}/*.ins
-                ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt #is this the correct file for ece_gridlist.txt? 
-                lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
-                "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins 
-                "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
-                "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
-                "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
-                "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
-                "ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt #is this the correct file for ece_gridlist.txt?
-                "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
 
-                temp_namcouple: /home/a/a270270/temp_confiles/namcouple 
-                "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
+    config_sources:
+        tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
+        ins_files: ${namelist_dir}/*.ins
+        ece_gridlist: 
+            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                   #is this the correct file for ece_gridlist.txt? 
+        lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
+        "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
+        "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
+        "ece_gridlist_[[proc_list-->PROC_NUM]]": 
+            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                                              #is this the correct file for ece_gridlist.txt?
+        "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
 
-        config_in_work:
-                tmp_rc_file: lpjg_steps.rc
-                ins_files: /*.ins
-                ece_gridlist: ece_gridlist.txt #is this the correct file?
-                lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
-                "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins 
-                "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
-                "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins 
-                "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins  
-                "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
-                "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt #is this the correct file?  
-                "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
+        temp_namcouple: /home/a/a270270/temp_confiles/namcouple
+        "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
-                temp_namcouple: namcouple
-                "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
-                
+    config_in_work:
+        tmp_rc_file: lpjg_steps.rc
+        ins_files: /*.ins
+        ece_gridlist: ece_gridlist.txt         #is this the correct file?
+        lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
+        "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
+        "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
+        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?  
+        "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
 
-        forcing_sources:                
-                soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-                CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                dir_landuse: ${lpj_guess.input_dir}/dirmaker
-                dir_fire: ${lpj_guess.input_dir}/dirmaker
-                "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-                "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        temp_namcouple: namcouple
+        "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
 
-        forcing_in_work:
-                soil_layer_type: slt_${mygrid}.nc
-                CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                dir_landuse: /landuse/dirmaker
-                dir_fire: /fire/dirmaker
-                "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
-                "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-                 
-        choose_general.run_number:
-                1:
-                        input_sources:
-                                vegin: ${lpj_guess.input_dir}/vegin/vegin_${mygrid}.nc
-                                "VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_${mygrid}.nc
-                        input_in_work: 
-                                vegin: vegin.nc
-                                "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc 
+
+    forcing_sources:
+        soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+        CO2: 
+            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        dir_landuse: ${lpj_guess.input_dir}/dirmaker
+        dir_fire: ${lpj_guess.input_dir}/dirmaker
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+        "CO2_[[proc_list-->PROC_NUM]]": 
+            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+
+    forcing_in_work:
+        soil_layer_type: slt_${mygrid}.nc
+        CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        dir_landuse: /landuse/dirmaker
+        dir_fire: /fire/dirmaker
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
+        "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+
+    choose_general.run_number:
+        1:
+            input_sources:
+                vegin: ${lpj_guess.input_dir}/vegin/vegin_${mygrid}.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_${mygrid}.nc
+            input_in_work:
+                vegin: vegin.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc
 xios:
-        
-        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"     
-        interpolation_order: 1
-        compression_level: 1
-        regular_res_lat: 192 
-        regular_res_lon: 400
-        config_sources:
-                context_ifs: ${xml_dir}/context_ifs.xml.j2
-                domain_def: ${xml_dir}/domain_def.xml.j2
-                file_def: ${xml_dir}/file_def.xml.j2
-        add_config_files:
-                context_ifs: context_ifs
-                ifs_xml: ifs_xml
-                domain_def: domain_def
-                field_def: field_def
-                file_def: file_def
-                axis_def: axis_def
-                grid_def: grid_def
+    xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
+    interpolation_order: 1
+    compression_level: 1
+    regular_res_lat: 192
+    regular_res_lon: 400
+    config_sources:
+        context_ifs: ${xml_dir}/context_ifs.xml.j2
+        domain_def: ${xml_dir}/domain_def.xml.j2
+        file_def: ${xml_dir}/file_def.xml.j2
+    add_config_files:
+        context_ifs: context_ifs
+        ifs_xml: ifs_xml
+        domain_def: domain_def
+        field_def: field_def
+        file_def: file_def
+        axis_def: axis_def
+        grid_def: grid_def
 
-        nproc: 1
-        omp_num_threads: ${computer.partitions.compute.cores_per_node}
+    nproc: 1
+    omp_num_threads: ${computer.partitions.compute.cores_per_node}
 
 rnfmap:
-        pool_dir: ${general.pool_dir}
-        runoff_maps_name: _${fesom.resolution}
+    pool_dir: ${general.pool_dir}
+    runoff_maps_name: _${fesom.resolution}
 
-        nproc: 1
-        omp_num_threads: ${computer.partitions.compute.cores_per_node}
-        time_step: ${oasis3mct.coupling_time_step}
+    nproc: 1
+    omp_num_threads: ${computer.partitions.compute.cores_per_node}
+    time_step: ${oasis3mct.coupling_time_step}
 
-        runoff_method: awicm3-default
+    runoff_method: awicm3-default
 
-        coupling_fields:
-                "[[runoff_fields_send-->FIELD]]":
-                        grid: rnfo
+    coupling_fields:
+        "[[runoff_fields_send-->FIELD]]":
+            grid: rnfo
 
-        grids:
-                rnfa:
-                        name: RnfA
-                        nx: 512
-                        ny: 256
-                        oasis_grid_type: "LR"
-                        oyac_grid_type: "LL"
-                        oyac_io_per_node: 4
-                
-                rnfo:
-                        name: RnfO 
-                        nx: 512
-                        ny: 256
-                        oasis_grid_type: "LR"
-                        oyac_grid_type: "LL"
-                        oyac_io_per_node: 4
-                
-        input_files:
-                runoff_maps: runoff_maps
+    grids:
+        rnfa:
+            name: RnfA
+            nx: 512
+            ny: 256
+            oasis_grid_type: "LR"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+
+        rnfo:
+            name: RnfO
+            nx: 512
+            ny: 256
+            oasis_grid_type: "LR"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+
+    input_files:
+        runoff_maps: runoff_maps
 
 #########################################################################################
 
 # Settings for OASIS
 oasis3mct:
-        model_dir: ${general.model_dir}/oasis
-        pool_dir: ${general.pool_dir}/oasis/
-        norestart: "T"
+    model_dir: ${general.model_dir}/oasis
+    pool_dir: ${general.pool_dir}/oasis/
+    norestart: "T"
 
-        process_ordering: #look into it.....
-                - fesom
-                - oifs
-                - lpj_guess
-                - rnfmap
+    process_ordering:     #look into it.....
+      - fesom
+      - oifs
+      - lpj_guess
+      - rnfmap
 
-        required_plugins:
-                - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"
+    required_plugins:
+      - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"
 
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
         # but only if the general model setup is a cold start (i.e. general.lresume = false)
-        lresume: True
-        ini_parent_date: "19500101" # not used, but needs to be present
-        ini_parent_exp_id: "khw0030" # not used, but needs to be present
-        ini_restart_dir: "${input_dir}"
+    lresume: true
+    ini_parent_date: "19500101"     # not used, but needs to be present
+    ini_parent_exp_id: "khw0030"     # not used, but needs to be present
+    ini_restart_dir: "${input_dir}"
 
-        output_exchanged_vars: false
+    output_exchanged_vars: false
 
-        time_step: 7200 #separate timestep needed for atmosphere-ocean in the future LASZLO
+    time_step: 7200     #separate timestep needed for atmosphere-ocean in the future LASZLO
 
-        a2o_lag: "${lag}"
-        a2v_lag: "${oifs.time_step}"
-        a2r_lag: "${lag}"
-        o2a_lag: "${lag}"
-        o2r_lag: 0
-        r2a_lag: "${lag}"
-        v2a_lag: "${lpj_guess.time_step}"
-        a2o_seq: 2
-        o2a_seq: 2
-        o2r_seq: 1
-        r2a_seq: 2
-        a2v_seq: 2
-        v2a_seq: 2
+    a2o_lag: "${lag}"
+    a2v_lag: "${oifs.time_step}"
+    a2r_lag: "${lag}"
+    o2a_lag: "${lag}"
+    o2r_lag: 0
+    r2a_lag: "${lag}"
+    v2a_lag: "${lpj_guess.time_step}"
+    a2o_seq: 2
+    o2a_seq: 2
+    o2r_seq: 1
+    r2a_seq: 2
+    a2v_seq: 2
+    v2a_seq: 2
 
-        coupling_time_step: "${oasis3mct.time_step}"
-        choose_general.major_version:
-                'v3.4':
-                        add_process_ordering:
-                                - xios
-                        coupling_target_fields:
-                                rstas.nc:
-                                        - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
-                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
-                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                        - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
-                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
-                                        - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
-                                rstos.nc:
-                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
-                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
-                                vegin.nc:
-                                        - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg-- GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL'
-                                        - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
-                                        - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
-                                        - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
-                                        - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg-- SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
-                                        - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
-                                        - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
-
-
-                        mct_version: 4.0
-                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
-                        rstos_file_name: 'rstos'
-                        rstas_file_name: 'rstas'
-                        vegin_file_name: 'vegin'
-
-        land_atmo_coupling_time_step: 86400
-        coupling_directions:
-                'atma->feom':
-                        lag: ${a2o_lag}
-                        seq: ${a2o_seq}
-                'atmr->rnfa':
-                        lag: ${r2a_lag}
-                        seq: ${r2a_seq}
-                'rnfo->feom':                   
-                        lag: ${o2r_lag}         
-                        seq: ${o2r_seq}
-                'feom->atma':
-                        lag: ${o2a_lag}
-                        seq: ${o2a_seq}
-                '${lpj_guess.mygrid}-land->atma':
-                        lag: ${v2a_lag}
-                        seq: ${v2a_seq}
-                        coupling_time_step: ${land_atmo_coupling_time_step}
-                        lag_overwrite: True
-                'atma->${lpj_guess.mygrid}-land': 
-                        lag: ${a2v_lag}
-                        seq: ${a2v_seq}
-                        coupling_time_step: ${land_atmo_coupling_time_step}
-                        lag_overwrite: True
+    coupling_time_step: "${oasis3mct.time_step}"
+    choose_general.major_version:
+        'v3.4':
+            add_process_ordering:
+              - xios
+            coupling_target_fields:
+                rstas.nc:
+                  - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                  - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                  - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                  - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                  - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
+                  - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                  - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                rstos.nc:
+                  - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i--
+                    sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                  - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                vegin.nc:
+                  - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
+                    GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL'
+                  - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
+                  - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
+                  - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
+                  - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg--
+                    SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
+                  - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
+                  - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
 
 
-        coupling_methods:
+            mct_version: 4.0
+            input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+            rstos_file_name: 'rstos'
+            rstas_file_name: 'rstas'
+            vegin_file_name: 'vegin'
+
+    land_atmo_coupling_time_step: 86400
+    coupling_directions:
+        'atma->feom':
+            lag: ${a2o_lag}
+            seq: ${a2o_seq}
+        'atmr->rnfa':
+            lag: ${r2a_lag}
+            seq: ${r2a_seq}
+        'rnfo->feom':
+            lag: ${o2r_lag}
+            seq: ${o2r_seq}
+        'feom->atma':
+            lag: ${o2a_lag}
+            seq: ${o2a_seq}
+        '${lpj_guess.mygrid}-land->atma':
+            lag: ${v2a_lag}
+            seq: ${v2a_seq}
+            coupling_time_step: ${land_atmo_coupling_time_step}
+            lag_overwrite: true
+        'atma->${lpj_guess.mygrid}-land':
+            lag: ${a2v_lag}
+            seq: ${a2v_seq}
+            coupling_time_step: ${land_atmo_coupling_time_step}
+            lag_overwrite: true
+
+
+    coupling_methods:
+        bicubic:
+            time_transformation: average
+            remapping:
                 bicubic:
-                        time_transformation: average
-                        remapping:
-                                bicubic:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 15
+                    search_bin: latitude
+                    nb_of_search_bins: 15
 
-                bicubic_glb:
-                        time_transformation: average
-                        remapping:
-                                bicubic:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 15
-                        postprocessing:
-                                conserv:
-                                        method: glbpos
-                                        algorithm: opt
-                bicubic_gss:
-                        time_transformation: average
-                        remapping:
-                                bicubic:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 15
-                        postprocessing:
-                                conserv:
-                                        method: gsspos
-                                        algorithm: opt
-                gauswgt_c:
-                        time_transformation: conserv
-                        remapping:
-                                gauswgt:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                        nb_of_neighbours: 25
-                                        weight: "0.1"
-                        postprocessing:
-                                conserv:
-                                        method: glbpos
-                                        algorithm: opt
-                gauswgt_gss:
-                        time_transformation: conserv
-                        remapping:
-                                gauswgt:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                        nb_of_neighbours: 25
-                                        weight: "0.1"
-                        postprocessing:
-                                conserv:
-                                        method: gsspos
-                                        algorithm: opt
-                gauswgt_i:
-                        time_transformation: instant
-                        remapping:
-                                gauswgt:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                        nb_of_neighbours: 25
-                                        weight: "0.1"
-                gauswgt_glo:
-                        time_transformation: conserv
-                        remapping:
-                                gauswgt:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                        nb_of_neighbours: 25
-                                        weight: "0.1"
-                        postprocessing:
-                                conserv:
-                                        method: global
-                loctrans_avg:
-                        time_transformation: average
-                        remapping:
-                                loctrans:
-                loctrans_min:
-                        time_transformation: t_min
-                        remapping:
-                                loctrans:
-                loctrans_max:
-                        time_transformation: t_max
-                        remapping:
-                                loctrans:
-                oyac_1stcon_nnn_stocha:
-                        oyac: true
-                        time_transformation: stocha
-                        remapping:
-                                conserv:
-                                        order: first
-                                        intersect_norm: fracarea
-                                nnn:
-                                        weighting: avg
-                                        nb_of_neighbours: 1
-                oyac_1stcon_nnn_i:
-                        oyac: true
-                        time_transformation: instant
-                        remapping:
-                                conserv:
-                                        order: first
-                                        intersect_norm: fracarea
-                                nnn:
-                                        weighting: avg
-                                        nb_of_neighbours: 1
-                oyac_gauswgt_c:
-                        oyac: true
-                        time_transformation: conserv
-                        remapping:
-                                nnn:
-                                        weighting: gauss
-                                        nb_of_neighbours: 9
-                oyac_avg_c:
-                        oyac: true
-                        time_transformation: conserv
-                        remapping:
-                                nnn:
-                                        weighting: avg
-                                        nb_of_neighbours: 9
-                oyac_gauswgt_i:
-                        oyac: true
-                        time_transformation: instant
-                        remapping:
-                                nnn:
-                                        weighting: gauss
-                                        nb_of_neighbours: 9
-                oyac_hcsbb_nnn_i:
-                        oyac: true
-                        time_transformation: instant
-                        remapping:
-                                hcsbb:
-                                        lorem: ipsum
-                                nnn:
-                                        weighting: avg
-                                        nb_of_neighbours: 1
-                oyac_spmap_nnn_i:
-                        oyac: true
-                        time_transformation: instant
-                        remapping:
-                                spmap:
-                                        weighting: dist
-                                        spread_dist: 3
-                                nnn:
-                                        weighting: avg
-                                        nb_of_neighbours: 1
+        bicubic_glb:
+            time_transformation: average
+            remapping:
+                bicubic:
+                    search_bin: latitude
+                    nb_of_search_bins: 15
+            postprocessing:
+                conserv:
+                    method: glbpos
+                    algorithm: opt
+        bicubic_gss:
+            time_transformation: average
+            remapping:
+                bicubic:
+                    search_bin: latitude
+                    nb_of_search_bins: 15
+            postprocessing:
+                conserv:
+                    method: gsspos
+                    algorithm: opt
+        gauswgt_c:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+            postprocessing:
+                conserv:
+                    method: glbpos
+                    algorithm: opt
+        gauswgt_gss:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+            postprocessing:
+                conserv:
+                    method: gsspos
+                    algorithm: opt
+        gauswgt_i:
+            time_transformation: instant
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+        gauswgt_glo:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+            postprocessing:
+                conserv:
+                    method: global
+        loctrans_avg:
+            time_transformation: average
+            remapping:
+                loctrans:
+        loctrans_min:
+            time_transformation: t_min
+            remapping:
+                loctrans:
+        loctrans_max:
+            time_transformation: t_max
+            remapping:
+                loctrans:
+        oyac_1stcon_nnn_stocha:
+            oyac: true
+            time_transformation: stocha
+            remapping:
+                conserv:
+                    order: first
+                    intersect_norm: fracarea
+                nnn:
+                    weighting: avg
+                    nb_of_neighbours: 1
+        oyac_1stcon_nnn_i:
+            oyac: true
+            time_transformation: instant
+            remapping:
+                conserv:
+                    order: first
+                    intersect_norm: fracarea
+                nnn:
+                    weighting: avg
+                    nb_of_neighbours: 1
+        oyac_gauswgt_c:
+            oyac: true
+            time_transformation: conserv
+            remapping:
+                nnn:
+                    weighting: gauss
+                    nb_of_neighbours: 9
+        oyac_avg_c:
+            oyac: true
+            time_transformation: conserv
+            remapping:
+                nnn:
+                    weighting: avg
+                    nb_of_neighbours: 9
+        oyac_gauswgt_i:
+            oyac: true
+            time_transformation: instant
+            remapping:
+                nnn:
+                    weighting: gauss
+                    nb_of_neighbours: 9
+        oyac_hcsbb_nnn_i:
+            oyac: true
+            time_transformation: instant
+            remapping:
+                hcsbb:
+                    lorem: ipsum
+                nnn:
+                    weighting: avg
+                    nb_of_neighbours: 1
+        oyac_spmap_nnn_i:
+            oyac: true
+            time_transformation: instant
+            remapping:
+                spmap:
+                    weighting: dist
+                    spread_dist: 3
+                nnn:
+                    weighting: avg
+                    nb_of_neighbours: 1
 
 
-        input_files: {}
+    input_files: {}
 
-        input_in_work:
-                rmp: rmp_*.nc
-                areas: areas.nc
-                masks: masks.nc
-                grids: grids.nc
+    input_in_work:
+        rmp: rmp_*.nc
+        areas: areas.nc
+        masks: masks.nc
+        grids: grids.nc
 
-        input_sources:
-                rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                areas: ${input_dir}/areas.nc
-                masks: ${input_dir}/masks.nc
-                grids: ${input_dir}/grids.nc
+    input_sources:
+        rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+        areas: ${input_dir}/areas.nc
+        masks: ${input_dir}/masks.nc
+        grids: ${input_dir}/grids.nc
 
-        restart_in_files:
-                rmp: rmp
-                rstas.nc: rstas.nc
-                rstos.nc: rstos.nc
-                vegin.nc: vegin.nc
+    restart_in_files:
+        rmp: rmp
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
 
-        restart_in_in_work:
-                rmp: rmp_*.nc
-                rstas.nc: rstas.nc
-                rstos.nc: rstos.nc
-                vegin.nc: vegin.nc
+    restart_in_in_work:
+        rmp: rmp_*.nc
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
 
-        choose_lresume:
-                false:
-                        lag: 0
-                        choose_general.run_number:
-                                1:
-                                        add_input_files:
-                                                rmp: rmp
-                                                areas: areas
-                                                masks: masks
-                                                grids: grids
-                true:
-                        lag: "${time_step}"
+    choose_lresume:
+        false:
+            lag: 0
+            choose_general.run_number:
+                1:
+                    add_input_files:
+                        rmp: rmp
+                        areas: areas
+                        masks: masks
+                        grids: grids
+        true:
+            lag: "${time_step}"
                         # If ini_restart_dir is not specified in the runscript and, therefore,
                         # it is not a branched off experiment adds the /fesom.nproc/ to the
                         # sources when the run_number is 1
-                        load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}') and ${general.run_number} == 1 ))"
-                        choose_load_restart_from_pool:
-                                true:
-                                    add_restart_in_sources:
-                                        rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
-                                        rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
-                                        rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
-                                        vegin.nc: ${input_dir}/${fesom.nproc}/${vegin_file_name}.nc
+            load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}')
+                and ${general.run_number} == 1 ))"
+            choose_load_restart_from_pool:
+                true:
+                    add_restart_in_sources:
+                        rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
+                        rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
+                        rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
+                        vegin.nc: ${input_dir}/${fesom.nproc}/${vegin_file_name}.nc
 
-        restart_in_sources:
-                rmp: rmp_*.nc
-                rstas.nc: rstas.nc
-                rstos.nc: rstos.nc
-                vegin.nc: vegin.nc
+    restart_in_sources:
+        rmp: rmp_*.nc
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
 
-        restart_out_files:
-                rmp: rmp
-                rstas.nc: rstas.nc
-                rstos.nc: rstos.nc
-                vegin.nc: vegin.nc
+    restart_out_files:
+        rmp: rmp
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
 
-        restart_out_in_work:
-                rmp: rmp_*.nc
-                rstas.nc: rstas.nc
-                rstos.nc: rstos.nc
-                vegin.nc: vegin.nc
+    restart_out_in_work:
+        rmp: rmp_*.nc
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
 
-        restart_out_sources:
-                rmp: rmp_*.nc
-                rstas.nc: rstas.nc
-                rstos.nc: rstos.nc
-                vegin.nc: vegin.nc
+    restart_out_sources:
+        rmp: rmp_*.nc
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
 
-        remove_config_files:
-                - cf
-        
+    remove_config_files:
+      - cf
+
 
 
 computer:
         # Activates the taskset approach for heterogeneous parallelization, by default
         # since hetjob approach doesn't seem to work (second run showing mpi/pmix
         # problems)
-        taskset: true
-        merge_component_envs:
-            compile: True
+    taskset: true
+    merge_component_envs:
+        compile: true
 
-        choose_general.major_version:
-            v3.4:
-                choose_name:
-                    juwels:
-                        iolibraries: system_libs
-                        compiler_mpi: gnu2023_ompi2023
-                    levante:
-                        iolibraries: system_gnu_libs
-                        compiler_mpi: gnu11_ompi4
-            '*':
-                foo: bar
+    choose_general.major_version:
+        v3.4:
+            choose_name:
+                juwels:
+                    iolibraries: system_libs
+                    compiler_mpi: gnu2023_ompi2023
+                levante:
+                    iolibraries: system_gnu_libs
+                    compiler_mpi: gnu11_ompi4
+        '*':
+            foo: bar

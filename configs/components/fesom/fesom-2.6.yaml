@@ -195,7 +195,7 @@ fesom:
                     nx: 11087062
                     whichEVP: 1
                     alpha_evp: 800          # constant that control numerical stability of mEVP.
-                    beta_evp: 8900           # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
             Arc01_fesom2:
                     nx: 753179
                     whichEVP: 1

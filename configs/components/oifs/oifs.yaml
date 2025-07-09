@@ -1348,7 +1348,7 @@ oifs:
     #======================================================================================
 
     choose_output:
-            "default": #6hr
+            "6hr":
                      output_step_freq: $(( 3600 / ${time_step} * 6 ))
             "1hr":
                      output_step_freq: $(( 3600 / ${time_step} * 1 ))

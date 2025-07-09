@@ -384,8 +384,6 @@ lpj_guess:
         soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
         CO2: 
             ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-        dir_landuse: ${lpj_guess.input_dir}/dirmaker
-        dir_fire: ${lpj_guess.input_dir}/dirmaker
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
         "CO2_[[proc_list-->PROC_NUM]]": 
             ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
@@ -393,10 +391,13 @@ lpj_guess:
     forcing_in_work:
         soil_layer_type: slt_${mygrid}.nc
         CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-        dir_landuse: /landuse/dirmaker
-        dir_fire: /fire/dirmaker
         "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
         "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+
+    # Create empty folders for landuse and fire in work
+    create_folders:
+        - ${work_dir}/landuse
+        - ${work_dir}/fire
 
     choose_general.run_number:
         1:

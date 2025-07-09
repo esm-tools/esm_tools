@@ -2,7 +2,7 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.55.5"
+__version__ = "6.55.6"
 
 
 from .dict_to_yaml import *

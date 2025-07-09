@@ -126,8 +126,10 @@ jsbach:
                                     dynveg: "_no-dynveg"
                     choose_echam.scenario:
                             PI-CTRL:
-                                    add_input_files:
-                                            jsbach: jsbach_1850
+                                    choose_general.iterative_coupling:
+                                            False:
+                                                add_input_files:
+                                                        jsbach: jsbach_1850
                                     forcing_files:
                                             LU: LU_1850
                                             LU_trans: LU_trans_none
@@ -148,8 +150,10 @@ jsbach:
                                             popdens: popdens
 
                             PALEO:
-                                    add_input_files:
-                                            jsbach: jsbach_1850
+                                    choose_general.iterative_coupling:
+                                            False:
+                                                add_input_files:
+                                                        jsbach: jsbach_1850
                                     forcing_files:
                                             LU: LU_1850
                                             LU_trans: LU_trans_none
@@ -230,7 +234,9 @@ jsbach:
                                             "jsbach_ismc": "${general.experiment_couple_dir}/latest_jsbach_init_file.nc"
                                     choose_general.chunk_number:
                                             1:
-                                                    from_chunk_number_choose: <NOT_SPECIFIED>
+                                                    add_input_files:
+                                                            jsbach: jsbach_1850
+                                                    #from_chunk_number_choose: <NOT_SPECIFIED>
                                             "*":
                                                     add_input_files:
                                                             jsbach: jsbach_ismc

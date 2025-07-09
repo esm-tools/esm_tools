@@ -1,7 +1,7 @@
 #!/usr/bin/ksh
 
 function fesom2ice {
-    FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
+    FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ICE:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
     echo " LA DEBUG: MESH_PATH=${MESH_DIR_fesom}"
 

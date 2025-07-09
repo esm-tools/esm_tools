@@ -333,15 +333,34 @@ function convert_ice_thk_diff_to_flux_over_pism_run {
 function generate_orography_anomaly_over_pism_run { 
         echo ""; echo "                 *   calculating surface height change over the last pism chunk"
         ifile1=${last_year_in_chunk_restart}
-        ifile2=${first_year_in_chunk_input}
-        ofile=${COUPLE_DIR}/ice_orog_difference.nc
-        cdo -s -sub \
-                -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
-                -expr,"${OROG_VARNAME_pism}=thk+topg" \
-                $ifile1 \
-                -expr,"${OROG_VARNAME_pism}=thk+topg" \
-                $ifile2 \
-                $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+       
+        # LA: as before use difference between PISM input and PISM restart for orography change 
+        if [[ "x${orog_reference_pism}" == "x0" ]]; then 
+            ifile2=${first_year_in_chunk_input}
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        # LA: now new use difference between elev_lo (ECHAM orography) and PISM restart for orography change 
+        elif [[ "x${orog_reference_pism}" == "x1" ]]; then 
+            ifile2="${COUPLE_DIR}/elev_lo.nc"
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -selname,"orog" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        else
+           echo " * choose 0 or 1"
+           echo " * EXIT "
+           exit 42 
+        fi
 
         ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         mv tmp.nc $ofile

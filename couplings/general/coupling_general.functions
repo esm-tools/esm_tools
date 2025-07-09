@@ -431,6 +431,12 @@ function iterative_coupling_pism_regrid_add_xy_array {
     else
         # This is the standard case: generate both float and double files, just in case something strange happens
 	INITIAL_FILE_pism=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    if [[ -f ${COUPLE_DIR}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ]]
+    then
+	    INITIAL_FILE_pism=${COUPLE_DIR}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    else
+	    INITIAL_FILE_pism=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    fi
 	PISM_GRID_xy_file_double=${PISM_GRID_xy_file_double:-xy_file_double.$(basename ${INITIAL_FILE_pism})}
 	PISM_GRID_xy_file_float=${PISM_GRID_xy_file_float:-xy_file_float.$(basename ${INITIAL_FILE_pism})}
 	pism_helpers_create_xy_axis ${INITIAL_FILE_pism} ${PISM_GRID_xy_file_double} ${PISM_GRID_xy_file_float}

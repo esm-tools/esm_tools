@@ -1347,9 +1347,8 @@ oifs:
     # OUTPUT CONFIG
     #======================================================================================
 
+    output_step_freq: $(( 3600 / ${time_step} * 6 ))
     choose_output:
-            "6hr":
-                     output_step_freq: $(( 3600 / ${time_step} * 6 ))
             "1hr":
                      output_step_freq: $(( 3600 / ${time_step} * 1 ))
             "3hr":

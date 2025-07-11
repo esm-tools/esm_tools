@@ -90,7 +90,10 @@ oifs:
         "v3.4":
             version: "48r1"
             with_xios: true
-            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
+            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
+                --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios
+                --install; chmod -R ${source_code_permissions} .; git config core.fileMode
+                false; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
             mip: "cmip6"
             wam: true
@@ -134,8 +137,13 @@ oifs:
                 ECE_CPL_LPJG: .true.
 
     res_level: ${resolution}${levels}
-    atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap, A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac, A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY]
-    atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg, TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004, SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg, SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg] #LASZLO OIFS block
+    atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
+        A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY]
+    atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
+        TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
+        SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
+        SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg]                                                                                                                                                                                                                                                    #LASZLO OIFS block
 
     coupling_fields:
         "[[atm_oce_fields-->FIELD]]":
@@ -166,9 +174,15 @@ fesom:
     omp_num_threads: 1
     choose_general.oasis_with_yac:
         true:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF
+                -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                -j `nproc --all`
         false:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF
+                -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc
+                --all`
         "*":
             comp_command: "missing"
 
@@ -177,7 +191,8 @@ fesom:
         true:
             error:
                 "Missing variable":
-                    message: "Please define ``general.oasis_with_yac`` boolean in ``awicm3.yaml``"
+                    message: "Please define ``general.oasis_with_yac`` boolean in
+                        ``awicm3.yaml``"
                     ask_user_to_continue: false
 
     tide_forcing_dir: ""
@@ -268,11 +283,15 @@ fesom:
 
 lpj_guess:
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
-    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .." #without debug.
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
+        make -j8; cd .."                                                                                          #without debug.
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
     execution_command: ${executable} -parallel ${runscript_name}
 
-    veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG, TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ, SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ, TMIN_LPJ, TMAX_LPJ]
+    veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
+        TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ,
+        SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ,
+        TMIN_LPJ, TMAX_LPJ]
 
     parallel_file_movements: true
     coupling_fields:
@@ -329,14 +348,16 @@ lpj_guess:
     config_sources:
         tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
         ins_files: ${namelist_dir}/*.ins
-        ece_gridlist: ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt #is this the correct file for ece_gridlist.txt?
+        ece_gridlist:
+            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                   #is this the correct file for ece_gridlist.txt?
         lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
         "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
         "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
-        "ece_gridlist_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt #is this the correct file for ece_gridlist.txt?
+        "ece_gridlist_[[proc_list-->PROC_NUM]]":
+            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                                              #is this the correct file for ece_gridlist.txt?
         "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
 
         temp_namcouple: /home/a/a270270/temp_confiles/namcouple
@@ -345,14 +366,14 @@ lpj_guess:
     config_in_work:
         tmp_rc_file: lpjg_steps.rc
         ins_files: /*.ins
-        ece_gridlist: ece_gridlist.txt #is this the correct file?
+        ece_gridlist: ece_gridlist.txt         #is this the correct file?
         lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
         "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
         "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
         "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
-        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt #is this the correct file?
+        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?
         "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
 
         temp_namcouple: namcouple
@@ -361,9 +382,11 @@ lpj_guess:
 
     forcing_sources:
         soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        CO2:
+            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "CO2_[[proc_list-->PROC_NUM]]":
+            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
 
     forcing_in_work:
         soil_layer_type: slt_${mygrid}.nc
@@ -461,13 +484,13 @@ oasis3mct:
         # "restart" files in initial coupling time step
         # but only if the general model setup is a cold start (i.e. general.lresume = false)
     lresume: true
-    ini_parent_date: "19500101" # not used, but needs to be present
-    ini_parent_exp_id: "khw0030" # not used, but needs to be present
+    ini_parent_date: "19500101"     # not used, but needs to be present
+    ini_parent_exp_id: "khw0030"     # not used, but needs to be present
     ini_restart_dir: "${input_dir}"
 
     output_exchanged_vars: false
 
-    time_step: 7200 #separate timestep needed for atmosphere-ocean in the future LASZLO
+    time_step: 7200     #separate timestep needed for atmosphere-ocean in the future LASZLO
 
     a2o_lag: "${lag}"
     a2v_lag: "${oifs.time_step}"
@@ -498,14 +521,17 @@ oasis3mct:
                     - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
                     - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                 rstos.nc:
-                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i--
+                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                     - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 vegin.nc:
-                    - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg-- GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL'
+                    - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
+                      GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL'
                     - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
                     - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
                     - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
-                    - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg-- SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
+                    - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg--
+                      SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
                     - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
                     - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
 
@@ -728,7 +754,8 @@ oasis3mct:
             # If ini_restart_dir is not specified in the runscript and, therefore,
             # it is not a branched off experiment adds the /fesom.nproc/ to the
             # sources when the run_number is 1
-            load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}') and ${general.run_number} == 1 ))"
+            load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}')
+                and ${general.run_number} == 1 ))"
             choose_load_restart_from_pool:
                 true:
                     add_restart_in_sources:

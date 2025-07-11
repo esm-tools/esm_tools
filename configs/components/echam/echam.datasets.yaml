@@ -154,3 +154,41 @@ echam:
         r0008:
             greenhouse_hist_name: "greenhouse_ssp245"
             MAC-SP_hist_name: "MAC-SP_ssp245"
+
+    choose_use_moz:
+        true:
+            epp_dir: ${input_dir}/HAMMOZ_${echam.resolution}/epp_T63L95
+            photolysis_dir: ${input_dir}/HAMMOZ_${echam.resolution}/photolysis
+            ap_index_dir: ${input_dir}/HAMMOZ_${echam.resolution}/ap_index
+
+            add_input_sources:
+                moz_effxs: "${input_dir}/HAMMOZ/moz_effxs.nc"
+                moz_rsf: "${input_dir}/HAMMOZ/moz_rsf_gt200nm.nc"
+                moz_temp: "${input_dir}/HAMMOZ/moz_temp_prs_GT200nm_JPL10_c130206.nc"
+                moz_xs: "${input_dir}/HAMMOZ/moz_xs_short.nc"
+                moz_uvalbedo: "${input_dir}/HAMMOZ_${echam.resolution}/moz_uvalbedo_${echam.resolution}.nc"
+                moz_xtsoil: "${input_dir}/HAMMOZ_${echam.resolution}/moz_uvalbedo_${echam.resolution}.nc"
+                moz_surface_properties: "${input_dir}/HAMMOZ_${echam.resolution}/xtsurf_v2_${echam.resolution}.nc"
+
+            add_forcing_sources:
+                moz_lbc: 
+                    "${input_dir}/HAMMOZ_${echam.resolution}/hammoz_lbc_17500116-21011216_CMIP6_CCMI2_ssp370_${echam.resolution}.nc":
+                        to: 2014
+                    "${input_dir}/HAMMOZ_${echam.resolution}/hammoz_lbc_17500116-21011216_CMIP6_CCMI2_${echam.scenario}_${echam.resolution}.nc":
+                        from: 2015
+                moz_sad_sulf: "${input_dir}/HAMMOZ_${echam.resolution}/moz_sad_sulf_1849-2100_c080220_${echam.resolution}${echam.levels}.nc"
+                moz_epp: 
+                    "${epp_dir}/ubc_noy_epp_@YEAR@_${echam.resolution}${echam.levels}_20toplevs.nc":
+                        from: 1849
+                        to: 2100
+                moz_photolysis: 
+                    "${photolysis_dir}/etfphot_@YEAR@.nc":
+                        from: 1849
+                        to: 2100
+                moz_ap_index: 
+                    "${ap_index_dir}/apindex_1850.nc":
+                        to: 1849
+                    "${ap_index_dir}/apindex_@YEAR@.nc":
+                        from: 1850
+                        to: 2100
+

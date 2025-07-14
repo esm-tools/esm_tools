@@ -127,7 +127,12 @@ class MessageOfTheDayHandler:
                 print()
                 print(self.message_dict[message]["message"])
                 if mypackage == "esm_tools":
-                    esm_tools_path = esm_tools._get_real_dir_from_pth_file("")
+                    try:
+                        esm_tools_path = esm_tools._get_real_dir_from_pth_file("")
+                    except FileNotFoundError as e:
+                        print(e)
+                        print("Unable to determine esm_tools_path! Message below may be incomplete")
+                        esm_tools_path = "<YOUR_ESM_TOOLS_INSTALL_LOCATION>"
                     print(
                         f"Upgrade ESM-Tools to the version contianing this fix (\x1b[96m{version}\x1b[0m) by:\n"
                         f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"

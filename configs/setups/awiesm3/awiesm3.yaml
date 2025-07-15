@@ -11,22 +11,22 @@ general:
     coupled_setup: true
 
     include_models:
-      - fesom
-      - oifs
-      - rnfmap
-      - lpj_guess
-      - oasis3mct
+        - fesom
+        - oifs
+        - rnfmap
+        - lpj_guess
+        - oasis3mct
 
     available_versions:
-      - 'develop'
+        - 'develop'
 
     choose_version:
         develop:
             major_version: v3.4
             couplings:
-              - fesom-2.6-main+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+                - fesom-2.6-main+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
-              - xios
+                - xios
             oasis_with_yac: false
             xios_interp_order: 1
 
@@ -54,7 +54,7 @@ general:
     prepcompute_recipe: ${oifs.prepcompute_recipe}
     tidy_recipe: ${fesom.tidy_recipe}
 
-        # Load general environment for the whole coupled setup
+    # Load general environment for the whole coupled setup
     dr_hook_ignore_signals: -1
 
 #########################################################################################
@@ -64,11 +64,11 @@ general:
 oifs:
     version: "48r1_lpjg_branch"
 
-        # added 05.03.2025
+    # added 05.03.2025
     git-repository: 'https://git.smhi.se/sager/oifs48r1'
     branch: 'lpj_guess_implementation'
-        #branch: 'invert_lpjg_recv_send+main' #use this branch if you want to use without the vegin.nc At the first timestep LPJG will recieve the data from the OIFS. 
-        #
+    #branch: 'invert_lpjg_recv_send+main' #use this branch if you want to use without the vegin.nc At the first timestep LPJG will recieve the data from the OIFS.
+    #
     add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
     pool_dir: ${general.pool_dir}
@@ -80,7 +80,7 @@ oifs:
 
     scenario: "historical"
 
-    input_expid: awi3       # This cannot be longer than 4 characters
+    input_expid: awi3 # This cannot be longer than 4 characters
     input_dir: ${pool_dir}/oifs-${version}
     rtables_dir: ${input_dir}/rtables/
     forcing_dir: ${input_dir}/${version}/ifsdata/
@@ -108,15 +108,15 @@ oifs:
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
-        # nproc must be not a prime number for OpenIFS parallelisation to work
-        # (This is just one of the many mysteries of the IFS...)
-        #
-        # We want to use 1 CPU for runoff mapper
-        # 287 fulfills this requirement and 288 divides well with 36 and 48
-        # (287 = 41 * 7)
-        # so that the configuration fills up the compute nodes
-        # 575 would also be ok (575 = 23 * 25)
-        # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
+    # nproc must be not a prime number for OpenIFS parallelisation to work
+    # (This is just one of the many mysteries of the IFS...)
+    #
+    # We want to use 1 CPU for runoff mapper
+    # 287 fulfills this requirement and 288 divides well with 36 and 48
+    # (287 = 41 * 7)
+    # so that the configuration fills up the compute nodes
+    # 575 would also be ok (575 = 23 * 25)
+    # Note: If we don't use MPI/OMP we don't need full nodes for oifs.
     nproc: 36
     omp_num_threads: 2
 
@@ -186,7 +186,7 @@ fesom:
         "*":
             comp_command: "missing"
 
-    missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))"     # TODO: move this to the block above when the missing option is included in choose_ blocks
+    missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
     choose_missing_owy:
         true:
             error:
@@ -207,7 +207,7 @@ fesom:
     leapyear: true
 
 
-        # Move in the future to fesom-2.0.yaml
+    # Move in the future to fesom-2.0.yaml
     mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
 
     surf_relax_s: "0.0"
@@ -251,23 +251,23 @@ fesom:
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
     remove_forcing_files:
-      - ICMCL_INIT
-    remove_namelist_changes.namelist.config.inout:     # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
-      - restart_length
-      - restart_length_unit
+        - ICMCL_INIT
+    remove_namelist_changes.namelist.config.inout: # Not present in the fesom-bounded namelist but in the fesom-2.0.yaml
+        - restart_length
+        - restart_length_unit
     remove_namelist_changes.namelist.config.paths:
-      - ForcingDataPath
-      - OpbndPath
-      - TideForcingPath
+        - ForcingDataPath
+        - OpbndPath
+        - TideForcingPath
         # Remove all namelist changes for namelist.forcing defined in fesom-2.0.yaml
     remove_namelist_changes:
-      - namelist.forcing
+        - namelist.forcing
 
 
     coupling_freq_in_steps: $((${oasis3mct.coupling_time_step} / ${fesom.time_step}))
 
     remove_config_files:
-      - diag
+        - diag
 
     atm_oce_fields: [ist_feom, sia_feom]
 
@@ -282,10 +282,10 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
-        #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command. 
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
     comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
-        make -j8; cd .."                                                                                          #without debug. 
-        #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
+        make -j8; cd .."                                                                                          #without debug.
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
     execution_command: ${executable} -parallel ${runscript_name}
 
     veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
@@ -355,15 +355,15 @@ lpj_guess:
     config_sources:
         tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
         ins_files: ${namelist_dir}/*.ins
-        ece_gridlist: 
-            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                   #is this the correct file for ece_gridlist.txt? 
+        ece_gridlist:
+            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                   #is this the correct file for ece_gridlist.txt?
         lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
         "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
         "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
-        "ece_gridlist_[[proc_list-->PROC_NUM]]": 
+        "ece_gridlist_[[proc_list-->PROC_NUM]]":
             ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                                              #is this the correct file for ece_gridlist.txt?
         "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
 
@@ -380,7 +380,7 @@ lpj_guess:
         "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
         "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
-        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?  
+        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?
         "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
 
         temp_namcouple: namcouple
@@ -389,10 +389,10 @@ lpj_guess:
 
     forcing_sources:
         soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        CO2: 
+        CO2:
             ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        "CO2_[[proc_list-->PROC_NUM]]": 
+        "CO2_[[proc_list-->PROC_NUM]]":
             ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
 
     forcing_in_work:
@@ -478,14 +478,14 @@ oasis3mct:
     pool_dir: ${general.pool_dir}/oasis/
     norestart: "T"
 
-    process_ordering:     #look into it.....
-      - fesom
-      - oifs
-      - lpj_guess
-      - rnfmap
+    process_ordering: #look into it.....
+        - fesom
+        - oifs
+        - lpj_guess
+        - rnfmap
 
     required_plugins:
-      - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"
+        - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"
 
         # lresume needs to be true to allow usage of flxatmos and sstocean
         # "restart" files in initial coupling time step
@@ -517,30 +517,30 @@ oasis3mct:
     choose_general.major_version:
         'v3.4':
             add_process_ordering:
-              - xios
+                - xios
             coupling_target_fields:
                 rstas.nc:
-                  - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
-                  - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                  - 'heat_ico <--gauswgt_gss-- A_Q_ice'
-                  - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                  - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
-                  - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
-                  - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                    - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                    - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                    - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                    - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                    - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
+                    - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                    - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                 rstos.nc:
-                  - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i--
-                    sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
-                  - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i--
+                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                    - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 vegin.nc:
-                  - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
-                    GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL'
-                  - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
-                  - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
-                  - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
-                  - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg--
-                    SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
-                  - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
-                  - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
+                    - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
+                      GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL'
+                    - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
+                    - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
+                    - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
+                    - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg--
+                      SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
+                    - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
+                    - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
 
 
             mct_version: 4.0
@@ -758,9 +758,9 @@ oasis3mct:
                         grids: grids
         true:
             lag: "${time_step}"
-                        # If ini_restart_dir is not specified in the runscript and, therefore,
-                        # it is not a branched off experiment adds the /fesom.nproc/ to the
-                        # sources when the run_number is 1
+            # If ini_restart_dir is not specified in the runscript and, therefore,
+            # it is not a branched off experiment adds the /fesom.nproc/ to the
+            # sources when the run_number is 1
             load_restart_from_pool: "$(( os.path.realpath('${input_dir}') == os.path.realpath('${ini_restart_dir}')
                 and ${general.run_number} == 1 ))"
             choose_load_restart_from_pool:
@@ -796,14 +796,14 @@ oasis3mct:
         vegin.nc: vegin.nc
 
     remove_config_files:
-      - cf
+        - cf
 
 
 
 computer:
-        # Activates the taskset approach for heterogeneous parallelization, by default
-        # since hetjob approach doesn't seem to work (second run showing mpi/pmix
-        # problems)
+    # Activates the taskset approach for heterogeneous parallelization, by default
+    # since hetjob approach doesn't seem to work (second run showing mpi/pmix
+    # problems)
     taskset: true
     merge_component_envs:
         compile: true

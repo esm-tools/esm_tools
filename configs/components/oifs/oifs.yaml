@@ -1410,7 +1410,7 @@ oifs:
                             ${oifs.nx}
                             ${oifs.ensemble_id};
                         ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
-                            ${thisrun_restart_in_dir}/
+                            ${thisrun_work_dir}/
                             ${pseudo_initial_date!syear!smonth!sday}
                             ${oifs.time_step}
                             ${oifs.seconds_since_initial}

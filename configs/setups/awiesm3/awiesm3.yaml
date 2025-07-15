@@ -322,6 +322,13 @@ lpj_guess:
             oasis_grid_type: "D"
             oyac_grid_type: "LL"
             oyac_io_per_node: 4
+        TCO95-land:
+            name: TCO95-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
 
     choose_general.major_version:
         "v3.4":
@@ -762,7 +769,7 @@ oasis3mct:
                         rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
                         rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
                         rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
-                        vegin.nc: ${input_dir}/${fesom.nproc}/${vegin_file_name}.nc
+                        vegin.nc: ${lpj_guess.input_dir}/vegin/vegin_${lpj_guess.mygrid}.nc
 
     restart_in_sources:
         rmp: rmp_*.nc

@@ -2,21 +2,22 @@ general:
     user: !ENV ${USER}
     setup_name: "awicm3"
     version: "develop"
-    account: "ba0989"
+    account: "ab0246"
     compute_time: "00:20:00"
     initial_date: "2000-01-01"
     final_date: "2000-01-03"
-    base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 1
     nmonth: 0
     nyear: 0
+    parallel_file_movements: 'threads'
 
 computer:
     taskset: true
 
 awicm3:
     postprocessing: false
-    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"
@@ -25,7 +26,7 @@ fesom:
     restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 128
+    nproc: 768
     tar_binary_restarts: true
 
 oifs:

@@ -48,6 +48,9 @@ fesom:
       "2.6.10":
         branch: "2.6.10"
 
+      "2.6.11":
+        branch: "2.6.11"
+        
       "2.6-main":
         branch: "main"
         namelist_dir: "${model_dir}/config/"
@@ -195,7 +198,7 @@ fesom:
                     nx: 11087062
                     whichEVP: 1
                     alpha_evp: 800          # constant that control numerical stability of mEVP.
-                    beta_evp: 8900           # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
             Arc01_fesom2:
                     nx: 753179
                     whichEVP: 1

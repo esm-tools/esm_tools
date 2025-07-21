@@ -141,7 +141,8 @@ oifs:
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
-        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY]
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY, 
+        A_FCO2_oce, A_XCO2_oce]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
         SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
@@ -166,9 +167,25 @@ oifs:
     tl_o3_data_dir: ${input_dir}/${version}/climate/
     ICMGG_INIT_name: "_${fesom.resolution}"
 
-    choose_with_co2_coupling:
+    # CO2 tracer is turned on, if at least one of the couplings for co2 is active    
+    with_co2_tracer: false
+    with_co2_veg_coupling: false
+    with_co2_oce_coupling: false
+
+    choose_with_co2_veg_coupling:
         true:
+            with_co2_tracer: true
+    choose_with_co2_oce_coupling:
+        true:
+            with_co2_tracer: true
             add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_CPL_FESOM_RECOM: .true.
+
+    choose_with_co2_tracer:
+        true:
+            namelist_changes:
                 fort.4:
                     NAMGFL:
                         NGHG: 1
@@ -565,13 +582,20 @@ oasis3mct:
                       SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
                     - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
                     - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
-            choose_with_co2_coupling:
+            choose_oifs.with_co2_veg_coupling:
                 true:
                     add_coupling_target_fields:
                         co2_a2v.nc:
-                            - 'CO2C_LPJ <--loctrans_avg-- A_CO2_conc'
+                            - 'CO2C_LPJ <--loctrans_avg-- XCO2Veg'
                         co2_v2a.nc:
-                            - 'CO2FF_LPJ:CO2FV_LPJ <--loctrans_avg-- A_CO2_flux_fire:A_CO2_flux_veg'
+                            - 'FCO2Fire:FCO2Land <--loctrans_avg-- CO2FF_LPJ:CO2FV_LPJ'
+            choose_oifs.with_co2_oce_coupling:
+                true:
+                    add_coupling_target_fields:
+                        co2_a2o.nc:
+                            - 'XCO2_feom <--loctrans_avg-- A_XCO2_oce'
+                        co2_o2a.nc:
+                            - 'A_FCO2_oce <--loctrans_avg-- FCO2_feom'
 
             mct_version: 4.0
             input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
@@ -580,6 +604,8 @@ oasis3mct:
             vegin_file_name: 'vegin'
             co2_a2v_name: 'co2_a2v'
             co2_v2a_name: 'co2_v2a'
+            co2_a2o_name: 'co2_a2o'
+            co2_o2a_name: 'co2_o2a'
 
     land_atmo_coupling_time_step: 86400
     coupling_directions:
@@ -754,37 +780,103 @@ oasis3mct:
 
     input_files: {}
 
-    input_in_work:
-        rmp: rmp_*.nc
-        areas: areas.nc
-        masks: masks.nc
-        grids: grids.nc
-
     input_sources:
         rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
         areas: ${input_dir}/areas.nc
         masks: ${input_dir}/masks.nc
         grids: ${input_dir}/grids.nc
 
+    input_in_work:
+        rmp: rmp_*.nc
+        areas: areas.nc
+        masks: masks.nc
+        grids: grids.nc
+
     restart_in_files:
         rmp: rmp
         rstas.nc: rstas.nc
         rstos.nc: rstos.nc
         vegin.nc: vegin.nc
-        choose_with_co2_coupling:
-            true:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v21.nc: co2_v21.nc
 
     restart_in_in_work:
         rmp: rmp_*.nc
         rstas.nc: rstas.nc
         rstos.nc: rstos.nc
         vegin.nc: vegin.nc
-        choose_with_co2_coupling:
-            true:
+
+    restart_in_sources:
+        rmp: rmp_*.nc
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
+
+    restart_out_files:
+        rmp: rmp
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
+
+    restart_out_in_work:
+        rmp: rmp_*.nc
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
+
+    restart_out_sources:
+        rmp: rmp_*.nc
+        rstas.nc: rstas.nc
+        rstos.nc: rstos.nc
+        vegin.nc: vegin.nc
+
+    choose_oifs.with_co2_veg_coupling:
+        true:
+            add_restart_in_files:
                 co2_a2v.nc: co2_a2v.nc
-                co2_v21.nc: co2_v21.nc
+                co2_v2a.nc: co2_v2a.nc
+            add_restart_in_in_work:
+                co2_a2v.nc: co2_a2v.nc
+                co2_v2a.nc: co2_v2a.nc
+            add_restart_in_sources:
+                co2_a2v.nc: co2_a2v.nc
+                co2_v2a.nc: co2_v2a.nc
+            add_restart_out_files:
+                co2_a2v.nc: co2_a2v.nc
+                co2_v2a.nc: co2_v2a.nc
+            add_restart_out_in_work:
+                co2_a2v.nc: co2_a2v.nc
+                co2_v2a.nc: co2_v2a.nc
+            add_restart_out_sources:
+                co2_a2v.nc: co2_a2v.nc
+                co2_v2a.nc: co2_v2a.nc
+            add_input_sources:
+                co2_a2v.nc: ${input_dir}/${fesom.nproc}/co2_a2v.nc
+                co2_v2a.nc: ${input_dir}/${fesom.nproc}/co2_v2a.nc
+    choose_oifs.with_co2_oce_coupling:
+        true:
+            add_restart_in_files:
+                co2_a2o.nc: co2_a2o.nc
+                co2_o2a.nc: co2_o2a.nc
+            add_restart_in_in_work:
+                co2_a2o.nc: co2_a2o.nc
+                co2_o2a.nc: co2_o2a.nc
+            add_restart_in_sources:
+                co2_a2o.nc: co2_a2o.nc
+                co2_o2a.nc: co2_o2a.nc
+            add_restart_out_files:
+                co2_a2o.nc: co2_a2o.nc
+                co2_o2a.nc: co2_o2a.nc
+            add_restart_out_in_work:
+                co2_a2o.nc: co2_a2o.nc
+                co2_o2a.nc: co2_o2a.nc
+            add_restart_out_sources:
+                co2_a2o.nc: co2_a2o.nc
+                co2_o2a.nc: co2_o2a.nc
+            add_input_sources:
+                co2_a2v.nc: ${input_dir}/${fesom.nproc}/co2_a2o.nc
+                co2_v2a.nc: ${input_dir}/${fesom.nproc}/co2_o2a.nc
+
+    remove_config_files:
+        - cf
 
     choose_lresume:
         false:
@@ -810,55 +902,14 @@ oasis3mct:
                         rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
                         rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
                         vegin.nc: ${lpj_guess.input_dir}/vegin/vegin_${lpj_guess.mygrid}.nc
-                        choose_with_co2_coupling:
+                        choose_oifs.with_co2_veg_coupling:
                             true:
                                 co2_a2v.nc: ${input_dir}/${fesom.nproc}/${co2_a2v_name}.nc
                                 co2_v2a.nc: ${input_dir}/${fesom.nproc}/${co2_v2a_name}.nc
-
-    restart_in_sources:
-        rmp: rmp_*.nc
-        rstas.nc: rstas.nc
-        rstos.nc: rstos.nc
-        vegin.nc: vegin.nc
-        choose_with_co2_coupling:
-            true:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v21.nc: co2_v21.nc
-
-    restart_out_files:
-        rmp: rmp
-        rstas.nc: rstas.nc
-        rstos.nc: rstos.nc
-        vegin.nc: vegin.nc
-        choose_with_co2_coupling:
-            true:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v21.nc: co2_v21.nc
-
-    restart_out_in_work:
-        rmp: rmp_*.nc
-        rstas.nc: rstas.nc
-        rstos.nc: rstos.nc
-        vegin.nc: vegin.nc
-        choose_with_co2_coupling:
-            true:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v21.nc: co2_v21.nc
-
-    restart_out_sources:
-        rmp: rmp_*.nc
-        rstas.nc: rstas.nc
-        rstos.nc: rstos.nc
-        vegin.nc: vegin.nc
-        choose_with_co2_coupling:
-            true:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v21.nc: co2_v21.nc
-
-    remove_config_files:
-        - cf
-
-
+                        choose_oifs.with_co2_oce_coupling:
+                            true:
+                                co2_a2o.nc: ${input_dir}/${fesom.nproc}/${co2_a2o_name}.nc
+                                co2_o2a.nc: ${input_dir}/${fesom.nproc}/${co2_o2a_name}.nc
 
 computer:
     # Activates the taskset approach for heterogeneous parallelization, by default

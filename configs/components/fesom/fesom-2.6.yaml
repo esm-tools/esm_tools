@@ -626,6 +626,8 @@ fesom:
                     grid: feom
             v_feom:
                     grid: feom
+            FCO2_feom:
+                    grid: feom
             taux_oce:
                     grid: feom
             tauy_oce:
@@ -658,9 +660,7 @@ fesom:
                     grid: feom
             v10w_oce:
                     grid: feom
-            XCO2_feom:
-                    grid: feom
-            FCO2_feom:
+            XCO2_oce:
                     grid: feom
 
 

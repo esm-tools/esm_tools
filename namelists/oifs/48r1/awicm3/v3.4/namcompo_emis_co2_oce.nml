@@ -1,0 +1,2 @@
+&NAMCOMPO_EMIS THIS%SPECIES='CO2_GHG', THIS%SECTOR='Ocean', THIS%PARAMID=210067, THIS%SCALING=-1.0 /
+&NAMCOMPO_EMIS /          ! ← mandatory empty terminator

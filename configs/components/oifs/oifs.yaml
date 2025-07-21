@@ -16,6 +16,7 @@ oifs:
     required_plugins:
             - "git+https://github.com/esm-tools-plugins/postprocess"
             - "git+https://github.com/esm-tools-plugins/preprocess"
+            - "git+https://github.com/JanStreffing/append_to_namelist"
 
     description: |
             The OpenIFS atmosphere model based on ECMWF IFS
@@ -1493,6 +1494,18 @@ oifs:
                     method: "${preprocess_method}"
                     type: shell
 
+    append_to_namelist:
+            append_to_namelist_shell:
+                    method: "${append_to_namelist_method}"
+                    type: shell
+
+    choose_general.with_co2_oce_coupling:
+            true:
+                    append_to_namelist_method: "${general.esm_function_dir}/components/oifs/append_to_namelist.sh
+                                              ${namelist_dir}/namcompo_emis_co2_oce.nml
+                                              ${thisrun_config_dir}/fort.4"
+            false:
+                    append_to_namelist_method: ""
 
     #======================================================================================
     # POSTPROCESS
@@ -1539,6 +1552,7 @@ oifs:
        - "write_env"
        - "preprocess"
        - "modify_namelists"
+       - "append_to_namelist"
        - "modify_files"
        - "copy_files_to_work"
        - "report_missing_files"

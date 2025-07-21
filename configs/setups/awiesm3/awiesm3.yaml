@@ -19,6 +19,7 @@ general:
 
     available_versions:
         - 'develop'
+        - 'develop_recom'
 
     choose_version:
         develop:
@@ -29,6 +30,21 @@ general:
                 - xios
             oasis_with_yac: false
             xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+            
+        develop-recom:
+            major_version: v3.4
+            couplings:
+                - fesom-2.6-main+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: true
+            with_co2_oce_coupling: true
+            with_co2_veg_coupling: false
 
     version: "v3.4"
     resolution: ${oifs.resolution}_${fesom.resolution}
@@ -168,22 +184,18 @@ oifs:
     ICMGG_INIT_name: "_${fesom.resolution}"
 
     # CO2 tracer is turned on, if at least one of the couplings for co2 is active    
-    with_co2_tracer: false
-    with_co2_veg_coupling: false
-    with_co2_oce_coupling: false
 
-    choose_with_co2_veg_coupling:
+    #choose_with_co2_veg_coupling:
+    #    true:
+    #        with_co2_tracer: true
+    choose_general.with_co2_oce_coupling:
         true:
-            with_co2_tracer: true
-    choose_with_co2_oce_coupling:
-        true:
-            with_co2_tracer: true
-            add_namelist_changes:
+            add_add_add_add_add_namelist_changes:
                 fort.4:
                     NAMECECFG:
-                        ECE_CPL_FESOM_RECOM: .true.
+                        ECE_CPL_FESOM_RECOM: true
 
-    choose_with_co2_tracer:
+    choose_general.with_co2_tracer:
         true:
             namelist_changes:
                 fort.4:
@@ -213,15 +225,21 @@ fesom:
     lresume: false
     nproc: 72
     omp_num_threads: 1
+    choose_general.with_co2_oce_coupling:
+        true:
+            recom_comp_flag: -DRECOM_COUPLED=ON
+        false:
+            recom_comp_flag: -DRECOM_COUPLED=OFF
+
     choose_general.oasis_with_yac:
         true:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DDISABLE_MULTITHREADING=OFF
                 -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                 -j `nproc --all`
         false:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DDISABLE_MULTITHREADING=OFF
                 -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc
                 --all`
         "*":
@@ -582,18 +600,18 @@ oasis3mct:
                       SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
                     - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
                     - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
-            choose_oifs.with_co2_veg_coupling:
+            choose_general.with_co2_veg_coupling:
                 true:
                     add_coupling_target_fields:
                         co2_a2v.nc:
                             - 'CO2C_LPJ <--loctrans_avg-- XCO2Veg'
                         co2_v2a.nc:
                             - 'FCO2Fire:FCO2Land <--loctrans_avg-- CO2FF_LPJ:CO2FV_LPJ'
-            choose_oifs.with_co2_oce_coupling:
+            choose_general.with_co2_oce_coupling:
                 true:
                     add_coupling_target_fields:
                         co2_a2o.nc:
-                            - 'XCO2_feom <--loctrans_avg-- A_XCO2_oce'
+                            - 'XCO2_oce <--loctrans_avg-- A_XCO2_oce'
                         co2_o2a.nc:
                             - 'A_FCO2_oce <--loctrans_avg-- FCO2_feom'
 
@@ -828,7 +846,7 @@ oasis3mct:
         rstos.nc: rstos.nc
         vegin.nc: vegin.nc
 
-    choose_oifs.with_co2_veg_coupling:
+    choose_general.with_co2_veg_coupling:
         true:
             add_restart_in_files:
                 co2_a2v.nc: co2_a2v.nc
@@ -851,7 +869,7 @@ oasis3mct:
             add_input_sources:
                 co2_a2v.nc: ${input_dir}/${fesom.nproc}/co2_a2v.nc
                 co2_v2a.nc: ${input_dir}/${fesom.nproc}/co2_v2a.nc
-    choose_oifs.with_co2_oce_coupling:
+    choose_general.with_co2_oce_coupling:
         true:
             add_restart_in_files:
                 co2_a2o.nc: co2_a2o.nc
@@ -902,11 +920,11 @@ oasis3mct:
                         rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
                         rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
                         vegin.nc: ${lpj_guess.input_dir}/vegin/vegin_${lpj_guess.mygrid}.nc
-                        choose_oifs.with_co2_veg_coupling:
+                        choose_general.with_co2_veg_coupling:
                             true:
                                 co2_a2v.nc: ${input_dir}/${fesom.nproc}/${co2_a2v_name}.nc
                                 co2_v2a.nc: ${input_dir}/${fesom.nproc}/${co2_v2a_name}.nc
-                        choose_oifs.with_co2_oce_coupling:
+                        choose_general.with_co2_oce_coupling:
                             true:
                                 co2_a2o.nc: ${input_dir}/${fesom.nproc}/${co2_a2o_name}.nc
                                 co2_o2a.nc: ${input_dir}/${fesom.nproc}/${co2_o2a_name}.nc

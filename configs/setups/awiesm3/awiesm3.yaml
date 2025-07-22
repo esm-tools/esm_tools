@@ -615,7 +615,7 @@ oasis3mct:
                         co2_o2a.nc:
                             - 'A_FCO2_oce <--loctrans_avg-- FCO2_feom'
 
-            mct_version: 4.0
+            mct_version: 5.0
             input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
             rstos_file_name: 'rstos'
             rstas_file_name: 'rstas'

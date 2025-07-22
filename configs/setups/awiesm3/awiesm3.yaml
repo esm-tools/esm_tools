@@ -543,7 +543,7 @@ oasis3mct:
                     - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
 
 
-            mct_version: 4.0
+            mct_version: 5.0
             input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
             rstos_file_name: 'rstos'
             rstas_file_name: 'rstas'

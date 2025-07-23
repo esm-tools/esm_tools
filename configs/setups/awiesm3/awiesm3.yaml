@@ -19,7 +19,7 @@ general:
 
     available_versions:
         - 'develop'
-        - 'develop_recom'
+        - 'develop_cc'
 
     choose_version:
         develop:
@@ -43,8 +43,8 @@ general:
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: true
-            with_co2_oce_coupling: true
-            with_co2_veg_coupling: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: true
 
     version: "v3.4"
     resolution: ${oifs.resolution}_${fesom.resolution}
@@ -162,8 +162,7 @@ oifs:
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
         SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
-        SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg, A_CO2_conc, A_CO2_flux_fire, 
-        A_CO2_flux_veg]
+        SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg, XCO2Veg, FCO2Land, FCO2Fire]
     coupling_fields:
         "[[atm_oce_fields-->FIELD]]":
             grid: atma
@@ -227,9 +226,30 @@ fesom:
     omp_num_threads: 1
     choose_general.with_co2_oce_coupling:
         true:
+            recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
+            add_namelists:
+                - namelist.recom
+            add_config_files:
+                recom:     recom
+            add_config_sources:
+                recom:     "${namelist_dir}/namelist.recom.${recom_setting}"
+                tra:       "${namelist_dir}/namelist.tra.recom.${recom_setting}"
+            add_config_in_work:
+                recom:     "namelist.recom"
+            recom_input_path: '/work/ba1103/a270073/bc/recom/'
+            add_add_namelist_changes:
+                namelist.recom:
+                    nam_rsbc:
+                        nm_fe_data_file: '${recom_input_path}/${resolution}/DustClimMonthlyAlbani.nc'
+                        nm_aen_data_file: '${recom_input_path}/${resolution}/AeolianNitrogenDep.nc'
+                        nm_river_data_file: '${recom_input_path}/${resolution}/RiverineInput.nc'
+                        nm_erosion_data_file: '${recom_input_path}/${resolution}/ErosionInput.nc'
+                        nm_co2_data_file: '${recom_input_path}/MonthlyAtmCO2_gcb2023.nc' # not used but searched for by bin. TODO: test removing.
+                    pavariables:
+                        REcoMDataPath: '${recom_input_path}/${resolution}' 
         false:
-            recom_comp_flag: -DRECOM_COUPLED=OFF
+            recom_comp_flag: ""
 
     choose_general.oasis_with_yac:
         true:
@@ -238,7 +258,7 @@ fesom:
                 -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                 -j `nproc --all`
         false:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+            comp_command: mkdir -p build; cd build; cmake -DCMAKE_BUILD_TYPE=Debug -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
                 -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DDISABLE_MULTITHREADING=OFF
                 -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc
                 --all`
@@ -611,9 +631,9 @@ oasis3mct:
                 true:
                     add_coupling_target_fields:
                         co2_a2o.nc:
-                            - 'XCO2_oce <--loctrans_avg-- A_XCO2_oce'
+                            - 'XCO2_oce <--gauswgt_c-- A_XCO2_oce'
                         co2_o2a.nc:
-                            - 'A_FCO2_oce <--loctrans_avg-- FCO2_feom'
+                            - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
 
             mct_version: 5.0
             input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/

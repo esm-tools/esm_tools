@@ -158,6 +158,8 @@ choose_resolution:
                 nx: 33348172
         SO3:
                 nx: 11087062
+        Arc01_fesom2:
+                nx: 753179
 
 mesh_dir: "${pool_dir}/${resolution}/"
 

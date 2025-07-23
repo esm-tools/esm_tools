@@ -472,7 +472,11 @@ namelist_changes:
 
                         runoff_data_source: ${runoff_data_source}
                         sss_data_source: ${sss_data_source}
-
+        namelist.ice:
+                ice_therm:
+                        albi: ${albi}
+                        albim: ${albim}
+ 
 use_landice_water: False
 choose_general.iterative_coupling:
         true:

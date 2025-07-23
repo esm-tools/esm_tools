@@ -49,4 +49,6 @@ io_list =  'ssh       ',1, 'm', 4,
            'thdgr     ',1, 'm', 4,
            'uwind     ',1, 'm', 4,
            'vwind     ',1, 'm', 4,
+           'unod      ',1, 'm', 4,
+           'vnod      ',1, 'm', 4,
 /

@@ -1499,13 +1499,18 @@ oifs:
                     method: "${append_to_namelist_method}"
                     type: shell
 
+    append_to_namelist_method: ""
     choose_general.with_co2_oce_coupling:
             true:
                     append_to_namelist_method: "${general.esm_function_dir}/components/oifs/append_to_namelist.sh
                                               ${namelist_dir}/namcompo_emis_co2_oce.nml
                                               ${thisrun_config_dir}/fort.4"
-            false:
-                    append_to_namelist_method: ""
+
+    choose_general.with_co2_veg_coupling:
+            true:
+                    append_to_namelist_method: "${general.esm_function_dir}/components/oifs/append_to_namelist.sh
+                                              ${namelist_dir}/namcompo_emis_co2_veg.nml
+                                              ${thisrun_config_dir}/fort.4"
 
     #======================================================================================
     # POSTPROCESS

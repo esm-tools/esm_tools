@@ -7,7 +7,7 @@ ldiag_turbflux   =.false.
 ldiag_salt3D     =.false.
 ldiag_dMOC       =.false.
 ldiag_DVD        =.false.
-ldiag_forc       =.false.
+ldiag_forc       =.true.
 ldiag_extflds    =.false.
 ldiag_destine    =.false. ! enables computation of heatcontent. (hc300m, hc700m, hc) in io_list
 ldiag_trflx      =.false.
@@ -40,10 +40,18 @@ io_list =  'sst       ',1, 'm', 4,
            'MLD1      ',1, 'm', 4,
            'MLD2      ',1, 'm', 4,
            'MLD3      ',1, 'm', 4,
+           'alb       ',1, 'm', 4,
+           'ist       ',1, 'm', 4,
+           'qsi       ',1, 'm', 4,
+           'qso       ',1, 'm', 4,
+           'enthalpy  ',1, 'm', 4,
+           'qcon      ',1, 'm', 4,
+           'qres      ',1, 'm', 4,
+           'runoff    ',1, 'm', 4,
            'tx_sur    ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
-           'temp      ',1, 'y', 4,
-           'salt      ',1, 'y', 8,
+           'temp      ',1, 'm', 4,
+           'salt      ',1, 'm', 8,
            'N2        ',1, 'y', 4,
            'Kv        ',1, 'y', 4,
            'u         ',1, 'y', 4,

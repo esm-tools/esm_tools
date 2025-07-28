@@ -1,0 +1,7 @@
+# See https://pre-commit.com for more information
+repos:
+- repo: https://github.com/google/yamlfmt
+  rev: v0.17.2
+  hooks:
+  - id: yamlfmt
+    #exclude:

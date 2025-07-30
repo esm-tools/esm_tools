@@ -43,8 +43,8 @@ general:
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: true
-            with_co2_oce_coupling: false
-            with_co2_veg_coupling: true
+            with_co2_oce_coupling: true
+            with_co2_veg_coupling: false
 
     version: "v3.4"
     resolution: ${oifs.resolution}_${fesom.resolution}
@@ -497,6 +497,18 @@ lpj_guess:
             input_in_work:
                 vegin: vegin.nc
                 "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc
+            choose_general.with_co2_veg_coupling:
+                true:
+                    add_input_sources:
+                        co2_v2a: ${lpj_guess.input_dir}/vegin/co2_v2a_${mygrid}.nc
+                        co2_a2v: ${lpj_guess.input_dir}/vegin/co2_a2v_${mygrid}.nc
+                        "co2_v2aInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/co2_v2a_${mygrid}.nc
+                        "co2_a2vInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/co2_a2v_${mygrid}.nc
+                    add_in_work:
+                        co2_v2a: co2_v2a.nc
+                        co2_a2v: co2_a2v.nc
+                        "co2_v2aInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/co2_v2a.nc
+                        "co2_a2vInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/co2_a2v.nc
 
     choose_general.with_co2_veg_coupling:
         true:

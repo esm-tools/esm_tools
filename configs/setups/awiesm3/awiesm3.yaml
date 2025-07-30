@@ -255,15 +255,16 @@ fesom:
         false:
             recom_comp_flag: ""
 
+    build_type: Debug #Debug Release RelWithDebInfo MinSizeRel
     choose_general.oasis_with_yac:
         true:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DDISABLE_MULTITHREADING=OFF
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
                 -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                 -j `nproc --all`
         false:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DDISABLE_MULTITHREADING=OFF
+                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
                 -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc
                 --all`
         "*":

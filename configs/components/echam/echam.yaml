@@ -375,12 +375,11 @@ choose_scenario:
                         aerofin_1850: piaerofin
                         aerofin_1851: piaerofin
                         ozone: ozone_hist_scenario
-                        greenhouse: histgreenh
+                        greenhouse: greenhouse_hist_scenario
                         volcir: histvolcir
                         volcsw: histvolcsw
                         swflux: histswflux
-                        MAC-SP: MAC-SP
-
+                        MAC-SP: MAC-SP_hist_scenario
         # Shared Socioeconomic Pathways (SSPs) scenarios. Forcing data are given
         # under the choose_scenario_type block
         ssp585:
@@ -648,6 +647,8 @@ streamsnc:
         - aeropt
         - co2
         - tdiag
+        - echam
+
 
 
 other_date: $(( ${next_date} - ${time_step}seconds ))
@@ -802,6 +803,10 @@ grids:
 config_sources:
         "namelist.echam": "${namelist_dir}/namelist.echam"
 
+
+file_movements:
+        outdata:
+                all_directions: move
 check_error:
         "mo_exception.f90":
                 method: "kill"

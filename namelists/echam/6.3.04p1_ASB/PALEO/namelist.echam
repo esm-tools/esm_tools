@@ -1,0 +1,103 @@
+&runctl
+    dt_start = 1848, 12, 31, 23, 52, 30
+    dt_stop = 6699, 12, 31, 23, 52, 30
+    putrerun = 12, 'months', 'last', 0
+    lfractional_mask = .false.
+    lresume = .true.
+    out_datapath = './'
+    out_expname = 'PI_400ppm'
+    rerun_filetype = 4
+    delta_time = 450
+    putdata = 1, 'months', 'last', 0
+    nproma = 8
+    lcouple = .true.
+    getocean = 1, 'days', 'last', 0
+    putocean = 1, 'days', 'last', 0
+    lcouple_co2 = .true.
+    default_output = .false.
+    l_orbvsop87 = .false.
+    dt_resume = 1849, 12, 31, 23, 52, 30
+/
+
+&parctl
+    nproca = 24
+    nprocb = 16
+/
+
+&submodelctl
+    lmethox = .true.
+/
+
+&mvstreamctl
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+/
+
+&mvstreamctl
+    filetag = 'co2'
+    source = 'co2'
+/
+
+&mvstreamctl
+    filetag = 'surf'
+    source = 'surf'
+/
+
+&mvstreamctl
+    filetag = 'tracer'
+    source = 'tracer'
+/
+
+&mvstreamctl
+    filetag = 'jsbach'
+    source = 'jsbach'
+/
+
+&mvstreamctl
+    filetag = 'land'
+    source = 'land'
+/
+
+&mvstreamctl
+    filetag = 'veg'
+    source = 'veg'
+/
+
+&mvstreamctl
+    filetag = 'yasso'
+    source = 'yasso'
+/
+
+&set_stream
+    stream = 'jsbach'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'land'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'veg'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'yasso'
+    lpost = 0
+/
+
+&radctl
+    iaero = 3
+    io3 = 4
+    isolrad = 6
+    ich4 = 3
+    in2o = 3
+    co2vmr = 0.000284316986084
+    ch4vmr = 8.082490234375e-07
+    n2ovmr = 2.730210571289e-07
+    cecc = 0.016724
+    cobld = 23.446
+    clonp = 282.04
+/

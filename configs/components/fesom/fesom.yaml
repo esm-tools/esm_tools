@@ -289,7 +289,6 @@ config_sources:
 # 5. a custom variable list can be provided in the runscript via `further_reading` in the fesom section, or in your runscript
 # 6. if fesom1:namelist.oce:use_age_tracer=.true., variables `age01`, `age02`, ... must be added to `fesom_*_outputs`-lists
 yearly_outputs:
-    - flice
     - fsitherm
     - opottemptend
     - pbo
@@ -305,12 +304,6 @@ yearly_outputs:
     - sisnmass
     - sisnthick
     - sispeed
-    - sistrxdtop
-    - sistrxubot
-    - sistrydtop
-    - sistryubot
-    - thdgr
-    - thdgrsn
     - u2o
     - uhice
     - uhsnow
@@ -332,50 +325,57 @@ yearly_outputs:
     - wto
     - zossq
 monthly_outputs:
-    - evap
     - evs
     - hfds
     - lwrd
-    - mlotst
     - olat
     - olwout
-    - omldamax
     - osen
     - prlq
     - prsn
     - rsdo
-    - runoff
     - shum
     - siarean
     - siareas
-    - sic
     - siextentn
     - siextents
-    - sithick
-    - sitimefrac
-    - siu
-    - siv
     - sivol
     - sivoln
     - sivols
-    - so
     - soga
-    - sos
     - tair
-    - tauuo
-    - tauvo
-    - thetao
     - thetaoga
-    - tos
     - tso
     - uo
     - uwind
     - vo
     - vwind
-    - wnet
     - wo
+daily_outputs: 
+    - thetao
+    - mlotst
+    - omldamax
+    - sic
+    - sistrxdtop
+    - sistrxubot
+    - sistrydtop
+    - sistryubot
+    - sithick
+    - sitimefrac
+    - siu
+    - siv
+    - so
+    - sos
+    - tauuo
+    - tauvo
+    - tos
     - zos
-daily_outputs: []
+    - flice
+    - wnet 
+    - evap
+    - runoff
+    - thdgr
+    - thdgrsn
 12_step_outputs: []
 
 # copy fesom model output to outdata/fesom; includes recom data if enabled
@@ -428,6 +428,7 @@ runtime_environment_changes:
                                         vars: ${daily_outputs_for_AWI_FESOM_YAML}
                                         unit: d
                                         rate: 1
+                                        first: 1
                                 -
                                         vars: ${12_step_outputs_for_AWI_FESOM_YAML}
                                         unit: s

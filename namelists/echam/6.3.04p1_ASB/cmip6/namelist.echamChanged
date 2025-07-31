@@ -99,6 +99,42 @@
 	'dew2:mean', 'ws:mean', 'sn:mean', 'wimax:max', 't2min:min', 't2max:max'
 /
 &mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'File1'
+    source = 'sp'
+    variables = 'st:mean', 'svo:mean', 'sd:mean', 'lsp:mean'
+/
+&mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'File2'
+    source = 'gl'
+    variables = 'q:mean'
+/
+&mvstreamctl
+    interval = 3, 'hours', 'last', 0
+    target = 'File3'
+    source = 'g3b'
+    variables = 'tpot:mean'
+/
+&mvstreamctl
+    interval = 1, 'hours', 'last', 0
+    target = 'File4'
+    source = 'g3b'
+    variables = 'geosp:mean', 'rh2m:mean', 'wind10:mean', 'temp2:mean'
+/
+&mvstreamctl
+    interval = 6, 'hours', 'last', 0
+    target = 'File5'
+    source = 'g3b'
+    variables = 'geosp:mean', 'tsw:mean', 'sn:mean', 'ws:mean', 'wl:mean', 'aps:mean', 'u10:mean', 'v10:mean'
+/
+&mvstreamctl
+    interval = 1, 'hours', 'last', 0
+    target = 'File6'
+    source = 'g3b'
+    variables = 'aprc_na', 'aprl_na', 'aprs_na', 'trads_na', 'tradsu_na', 'srads_na', 'sradsu_na', 'friac_na','tsurf_na','wind10_na'
+/
+&mvstreamctl
 	interval = 1, 'days', 'last', 0
 	target = 'jsbid'
 	source = 'jsbach'

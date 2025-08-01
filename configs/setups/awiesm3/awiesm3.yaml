@@ -44,7 +44,7 @@ general:
             xios_interp_order: 1
             with_co2_tracer: true
             with_co2_oce_coupling: true
-            with_co2_veg_coupling: false
+            with_co2_veg_coupling: true
 
     version: "v3.4"
     resolution: ${oifs.resolution}_${fesom.resolution}
@@ -214,6 +214,7 @@ oifs:
                         YGHG_NL(1)%LQM3D: TRUE
                         YGHG_NL(1)%LNEGFIX: FALSE
                         YGHG_NL(1)%BETAMFBC: 2
+                        YGHG_NL(1)%LASSIM: TRUE
                     NAMCOMPO:
                         LCHEM_DIA: .false.
                         LCHEM_DDFLX: .false.
@@ -255,7 +256,7 @@ fesom:
         false:
             recom_comp_flag: ""
 
-    build_type: Debug #Debug Release RelWithDebInfo MinSizeRel
+    build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
     choose_general.oasis_with_yac:
         true:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON

@@ -183,10 +183,10 @@
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
-                <!--   <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/> -->
-                <!--   <field field_ref="cco2nb" name="cco2nb" long_name="Natural biosphere flux of Carbon Dioxide"/> -->
-                <!--   <field field_ref="cco2ap" name="cco2ap" long_name="Anthropogenic emissions of Carbon Dioxide"/> -->
-                <!--   <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/> -->
+                <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
+                <field field_ref="cco2nb" name="cco2nb" long_name="Natural biosphere flux of Carbon Dioxide"/>
+                <field field_ref="cco2ap" name="cco2ap" long_name="Anthropogenic emissions of Carbon Dioxide"/>
+                <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
             </field_group>
         </file>
 
@@ -278,6 +278,10 @@
                 <field field_ref="stl4" name="stl4" long_name="Soil temperature level 4"/>
                 <field field_ref="tsn" name="tsn" long_name="Temperature of snow layer"/>
                 <field field_ref="fal" name="fal" long_name="Forecast albedo"/>
+                <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
+                <field field_ref="cco2nb" name="cco2nb" long_name="Natural biosphere flux of Carbon Dioxide"/>
+                <field field_ref="cco2ap" name="cco2ap" long_name="Anthropogenic emissions of Carbon Dioxide"/>
+                <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
             </field_group>
         </file>
 
@@ -305,8 +309,8 @@
         <file
             enabled="true"
 	          timeseries="only"
-	          output_freq="1mo"
-            name_suffix="_1m_pl"
+	          output_freq="6h"
+            name_suffix="_6h_pl"
             description="ECE4/OIFS 6hourly pressure level fields">
 
             <field_group grid_ref="regular_pl" freq_op="6h" operation="average">
@@ -318,6 +322,7 @@
                 <field field_ref="w_pl" name="w"/>
                 <field field_ref="vo_pl" name="vo"/>
                 <field field_ref="r_pl" name="r"/>
+                <field field_ref="co2" name="co2" long_name="CO2 mass mixing ratio"/>
             </field_group>
         </file>
 

@@ -210,6 +210,7 @@
     <field id="clwc_pl"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
     <field id="ciwc_pl"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
     <field id="cc_pl"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+    <field id="co2"       long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
   </field_group>
 
   <field_group id="3D_th" grid_ref="reduced_th" freq_op="3h" >
@@ -233,6 +234,7 @@
     <field id="clwc_th"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
     <field id="ciwc_th"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
     <field id="cc_th"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+    <field id="co2"       long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
   </field_group>
 
   <field_group id="3D_pv" grid_ref="reduced_pv" freq_op="3h" >
@@ -256,6 +258,7 @@
     <field id="clwc_pv"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
     <field id="ciwc_pv"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
     <field id="cc_pv"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+    <field id="co2"       long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
   </field_group>
 
   <field_group id="pextra" grid_ref="reduced_ml" freq_op="3h" >

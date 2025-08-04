@@ -46,6 +46,12 @@ fesom:
       "2.6.9":
         branch: "2.6.9"
 
+      "2.6.10":
+        branch: "2.6.10"
+      
+      "2.6.11":
+        branch: "2.6.11"
+    
     destination: "fesom-2.6"
     install_bins: bin/fesom.x
     git-repository:
@@ -132,10 +138,12 @@ fesom:
                     nx: 132273
             D3:
                     nx: 3160340
-            orca25:
-                    nx: 912469
+            DARS:
+                    nx: 3160340
             DART:
                     nx: 3160340
+            orca25:
+                    nx: 912469
             ROS2:
                     nx: 26306560
             HR:

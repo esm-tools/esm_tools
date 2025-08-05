@@ -30,7 +30,7 @@ max_jobs=12
 #
 # Read the command line arguments
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "h?d:r:s:e:p:x:" opt; do
+while getopts "h?d:r:s:e:p:x:l:a:" opt; do
     case "$opt" in
     h|\?)
         echo
@@ -40,6 +40,8 @@ while getopts "h?d:r:s:e:p:x:" opt; do
         echo "                   -r experiment / run id              (run,       default is $EXP_ID)"
         echo "                   -s startyear                        (startyear, default is $startyear)"
         echo "                   -e endyear                          (endyear,   default is $endyear)"
+        echo "                   -a atm file tags to process         (ATM_FILE_TAGS, default is $ATM_FILE_TAGS)"
+        echo "                   -l atm file tags to process         (LAND_FILE_TAGS, default is $LAND_FILE_TAGS)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
         #echo "                   -t filetype (nc or grb)             (fileext,   default is $fileext)"
         echo
@@ -52,6 +54,10 @@ while getopts "h?d:r:s:e:p:x:" opt; do
     s)  startyear=$OPTARG
         ;;
     e)  endyear=$OPTARG
+        ;;
+    a)  ATM_FILE_TAGS=$OPTARG
+        ;;
+    l)  LAND_FILE_TAGS=$OPTARG
         ;;
     p)  basedir=$OPTARG
         ;;

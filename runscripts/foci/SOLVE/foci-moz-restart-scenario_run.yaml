@@ -5,75 +5,79 @@
 # uncomment below if you run on nesh at CAU
 #computer:
 #   additional_flags:
+#       - --tasks-per-node=120
 #      - --mem=72000
 #      - --constraint="cascade"
-
 general:
-   
    # machine specific setup 
    # nesh: comment account
    account: bb0519
-   base_dir: /work/bb0519/b350071/esm/esm-experiments/
+   base_dir: /work/bb0519/b350071/esm-experiments/
 
    use_venv: False
    verbose: False
    setup_name: "foci"
    version: "moz"
-   use_moz: true
    homedir: !ENV ${HOME}
 
-   compute_time: "01:30:00"
+   compute_time: "04:10:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2014-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1852-01-01T00:00:00"         # Final date of the experiment
    postprocessing: true
    scenario: "cmip6hist" 
    nmonth: 12
-   clean_runs: 2
+   clean_runs: 3
 
    lresume: True
-   ini_parent_exp_id: "FOCI2.2-SW220"
-   ini_parent_date: "26991231"
-   ini_nemo_restart_steps: 14901888
-   ini_parent_dir: "${base_dir}/${ini_parent_exp_id}/restart"
+   ini_parent_exp_id: "FOCI1.16-SW111"
+   ini_parent_date: "24991231"
+   ini_nemo_restart_steps: 11395584
+   ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+   #ini_parent_exp_id: "FOCI2.2-SW220"
+   #ini_parent_date: "26991231"
+   #ini_nemo_restart_steps: 14901888
+   #ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
 
 foci:
    model_dir: /work/bb0519/b350071/models/foci-moz/
 
+oasis3mct:
+    coupling_time_step: 3600
+
 echam:
    resolution: "T63"
+   use_moz: true
    lresume: ${general.lresume}
    restart_rate: ${general.nmonth}
    restart_unit: "months"
    scenario: ${general.scenario}
    nproca: 24
-   nprocb: 24
+   nprocb: 48
    # parallel I/O, off by default
-   #nprocio: 6
+   nprocio: 0 
    namelist_changes:
       namelist.echam:
           runctl:
              nproma: 8
-   #      parctl:
-   #         iomode: 2 
-   #         nprocio: ${nprocio}
+          parctl:
+            iomode: 0 
+            nprocio: ${nprocio}
    
 nemo:
    #pre_run_commands: "cp -f ~/FOCI2.2-SW221_hostfile ${work_dir}/hostfile_srun"
-   global_tag: ""
-   choose_lresume:
-      true:
-         choose_general.run_number:
-            1:
-               global_tag: ""
+   #global_tag: ""
+   #choose_lresume:
+   #   true:
+   #      choose_general.run_number:
+   #         1:
+   #            global_tag: ""
    resolution: "ORCA05"
-       # tmp fix, need to adjust foci.yaml to be consistent here
-       #version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
    version: "ORCA05_LIM2_KCM_AOW_OASISMCT4"
    jpni: 24
-   jpnj: 24
-   nproca: 24
-   nprocb: 24
-   nproc: 576
+   jpnj: 16
+   nproca: ${jpni} 
+   nprocb: ${jpnj} 
+   nproc: 384 
    add_namelist_changes:
        namelist_cfg:
            namtra_ldf:

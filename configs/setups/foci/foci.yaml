@@ -114,6 +114,8 @@ general:
 #########################################################################################
 
 echam:
+        atm_file_tags: "echam accw co2"
+
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
@@ -144,9 +146,14 @@ echam:
 
                         add_restartstreams:
                            - tracer
-                           - tdiag
+                           - vphysc 
                         add_streams:
                            - tracer
+                           - alltrm
+                           - moz
+                           - tdiag
+
+                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag"
 
                 mops_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
@@ -444,7 +451,9 @@ echam:
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
                                                     -e ${end_date!syear}
-                                                    -p ${general.base_dir}"
+                                                    -p ${general.base_dir}
+                                                    -a '${echam.atm_file_tags}'
+                                                    -l '${jsbach.land_file_tags}' "
                                                 nproc: 1
                                         echam_monitoring:
                                                 batch_or_shell: shell
@@ -496,6 +505,13 @@ jsbach:
         version: "3.20p1"
         # directories
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6_${echam.resolution}/JSBACH/"
+        choose_echam.use_moz:
+            true:
+                choose_dynamic_vegetations:
+                    true:
+                        namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/dynveg-moz"
+                    false:
+                        namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg-moz"
         input_dir_couple: "${pool_dir}/input/"
         choose_computer.name:
                ollie:
@@ -595,6 +611,8 @@ jsbach:
           - yasso
           - surf
 
+        land_file_tags: "jsbach nitro veg yasso surf"
+
         choose_general.version:
             mops_lmu:
                 add_streams:
@@ -603,6 +621,14 @@ jsbach:
                   - vegday
                   - yassoday
                   - landday
+            moz:
+                add_forcing_sources:
+                    lightning_renamed: "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}_renamed.nc"
+                add_forcing_files:
+                    lightning: lightning_renamed
+                remove_streams:
+                    - surf
+                land_file_tags: "jsbach nitro veg yasso"
 
 nemo:
         choose_general.version:
@@ -737,6 +763,7 @@ oasis3mct:
         coupling_time_step: 10800
 
         #export_mode_a2o: EXPORTED
+
         choose_general.version:
                 default:
                         version: "foci"
@@ -1503,7 +1530,8 @@ computer:
         compile:
             choose_computer.name:
                levante:
-                  #compiler_mpi: intel2022_impi2021
+                   #compiler_mpi: intel2022_impi2021
+                   #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
                juwels:
@@ -1520,8 +1548,10 @@ computer:
             add_choose_computer.name:
                levante:
                   #compiler_mpi: intel2022_impi2021
+                  #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
+                  launcher_flags: "-l --cpu-bind=cores --distribution=cyclic:cyclic"
                juwels:
                   compiler_mpi: intel2022_psmpi2022
                   #compiler_mpi: intel2019_impi2019

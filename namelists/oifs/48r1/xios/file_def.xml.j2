@@ -307,10 +307,30 @@
         </file>
 
         <file
-            enabled="true"
+            enabled="false"
 	          timeseries="only"
 	          output_freq="6h"
             name_suffix="_6h_pl"
+            description="ECE4/OIFS 6hourly pressure level fields">
+
+            <field_group grid_ref="regular_pl" freq_op="6h" operation="average">
+                <field field_ref="z_pl" name="z"/>
+                <field field_ref="t_pl" name="t"/>
+                <field field_ref="u_pl" name="u"/>
+                <field field_ref="v_pl" name="v"/>
+                <field field_ref="q_pl" name="q"/>
+                <field field_ref="w_pl" name="w"/>
+                <field field_ref="vo_pl" name="vo"/>
+                <field field_ref="r_pl" name="r"/>
+                <field field_ref="co2" name="co2" long_name="CO2 mass mixing ratio"/>
+            </field_group>
+        </file>
+
+        <file
+            enabled="true"
+	          timeseries="only"
+	          output_freq="1m"
+            name_suffix="_1m_pl"
             description="ECE4/OIFS 6hourly pressure level fields">
 
             <field_group grid_ref="regular_pl" freq_op="6h" operation="average">

@@ -240,6 +240,7 @@ fesom:
             add_config_sources:
                 recom:     "${namelist_dir}/namelist.recom.${recom_setting}"
                 tra:       "${namelist_dir}/namelist.tra.recom.${recom_setting}"
+                io:        "${namelist_dir}/namelist.io.recom.${recom_setting}"
             add_config_in_work:
                 recom:     "namelist.recom"
             recom_input_path: '/work/ba1103/a270073/bc/recom/'
@@ -494,18 +495,18 @@ lpj_guess:
     choose_general.run_number:
         1:
             input_sources:
-                vegin: ${lpj_guess.input_dir}/vegin/vegin_${mygrid}.nc
-                "VegInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/vegin_${mygrid}.nc
+                vegin: ${oasis3mct.input_dir}/vegin.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/vegin.nc
             input_in_work:
                 vegin: vegin.nc
                 "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc
             choose_general.with_co2_veg_coupling:
                 true:
                     add_input_sources:
-                        co2_v2a: ${lpj_guess.input_dir}/vegin/co2_v2a_${mygrid}.nc
-                        co2_a2v: ${lpj_guess.input_dir}/vegin/co2_a2v_${mygrid}.nc
-                        "co2_v2aInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/co2_v2a_${mygrid}.nc
-                        "co2_a2vInit_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/vegin/co2_a2v_${mygrid}.nc
+                        co2_v2a: ${oasis3mct.input_dir}/co2_v2a.nc
+                        co2_a2v: ${oasis3mct.input_dir}/co2_a2v.nc
+                        "co2_v2aInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/co2_v2a.nc
+                        "co2_a2vInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/co2_a2v.nc
                     add_in_work:
                         co2_v2a: co2_v2a.nc
                         co2_a2v: co2_a2v.nc
@@ -660,7 +661,7 @@ oasis3mct:
                             - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
 
             mct_version: 5.0
-            input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+            input_dir: ${oasis3mct.pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
             rstos_file_name: 'rstos'
             rstas_file_name: 'rstas'
             vegin_file_name: 'vegin'
@@ -951,17 +952,11 @@ oasis3mct:
                         rmp: ${input_dir}/${fesom.nproc}/rmp_*.nc
                         rstas.nc: ${input_dir}/${fesom.nproc}/${rstas_file_name}.nc
                         rstos.nc: ${input_dir}/${fesom.nproc}/${rstos_file_name}.nc
-                        vegin.nc: ${lpj_guess.input_dir}/vegin/vegin_${lpj_guess.mygrid}.nc
-                    choose_general.with_co2_veg_coupling:
-                        true:
-                            add_restart_in_sources:
-                                co2_a2v.nc: ${input_dir}/${fesom.nproc}/${co2_a2v_name}.nc
-                                co2_v2a.nc: ${input_dir}/${fesom.nproc}/${co2_v2a_name}.nc
                     choose_general.with_co2_oce_coupling:
                         true:
                             add_restart_in_sources:
-                                co2_a2o.nc: ${input_dir}/${fesom.nproc}/${co2_a2o_name}.nc
-                                co2_o2a.nc: ${input_dir}/${fesom.nproc}/${co2_o2a_name}.nc
+                                co2_a2o.nc: ${input_dir}/${co2_a2o_name}.nc
+                                co2_o2a.nc: ${input_dir}/${co2_o2a_name}.nc
 
 computer:
     # Activates the taskset approach for heterogeneous parallelization, by default

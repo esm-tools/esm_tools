@@ -50,7 +50,10 @@ class oasis:
             else:
                 self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
-            self.namcouple += [" $NLOGPRT", "           " + str(debug_level), " $END"]
+            if mct_version >= (5, 0):
+                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 0", " $END"]
+            else:
+                self.namcouple += [" $NLOGPRT", "           " + "1", " $END"]
         if mct_version >= (4, 0):
             # If true, OASIS can start without restart files
             self.namcouple += [" $NNOREST", "           " + str(nnorest), " $END "]
@@ -489,7 +492,7 @@ class oasis:
 
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        is_runtime = gconfig["run_or_compile"] == "runtime"
+        is_runtime = gconfig["execution_mode"] == "run"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )

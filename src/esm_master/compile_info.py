@@ -175,6 +175,7 @@ async def get_one_package_info(
         print(f"versioned_files={versioned_files}")
 
     comp_config = esm_parser.yaml_file_to_dict(default_file)
+    comp_config = comp_config.get(package, comp_config)
     # TODO(PG): Better logging (see GH Issue #116)
     if os.getenv("ESM_MASTER_DEBUG"):
         if not comp_config:
@@ -193,6 +194,7 @@ async def get_one_package_info(
         if os.getenv("ESM_MASTER_DEBUG"):
             print(f"...reading file {conf_file}")
         add_config = esm_parser.yaml_file_to_dict(conf_file)
+        add_config = add_config.get(package, add_config)
         if get_correct_entry(add_config, {}, "version") == {}:
             if os.getenv("ESM_MASTER_DEBUG"):
                 print(f'Var "version" is missing in yaml file for package {package}. ')
@@ -618,6 +620,21 @@ class setup_and_model_infos:
                 ):
                     package.version.provenance.extend_and_modified_by(
                         rawtarget.provenance, "esm_master.compile_info.split_raw_target"
+                    )
+                # Enforce version's provenance defined by the command input
+                elif (
+                    not hasattr(rawtarget, "provenance")
+                    and hasattr(package.version, "provenance")
+                ):
+                    package.version.provenance.extend_and_modified_by(
+                        esm_parser.Provenance({
+                            "category": "command_line",
+                            "subcategory": None,
+                            "line": None,
+                            "col": None,
+                            "yaml_file": None,
+                        }),
+                        "esm_master.compile_info.split_raw_target",
                     )
                 # Returns the selected package data
                 return (

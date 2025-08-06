@@ -8,6 +8,7 @@ import unittest
 from io import StringIO
 
 from esm_runscripts import jinja
+from utils import Capturing
 
 config = {
     "xios": {
@@ -41,20 +42,6 @@ rendered_file = """<domain_definition>
     </domain>
   </domain_group>
 </domain_definition>"""
-
-
-class Capturing(list):
-    """Taken from https://stackoverflow.com/questions/16571150/how-to-capture-stdout-output-from-a-python-function-call"""
-
-    def __enter__(self):
-        self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
-        return self
-
-    def __exit__(self, *args):
-        self.extend(self._stringio.getvalue().splitlines())
-        del self._stringio  # free up some memory
-        sys.stdout = self._stdout
 
 
 class TestJinja(unittest.TestCase):
@@ -102,6 +89,7 @@ class TestJinja(unittest.TestCase):
         cconfig = copy.deepcopy(self.config)
         del cconfig["xios"]["ni_glo"]
 
+        error = None
         with Capturing() as output:
             try:
                 jinja.render_template(

@@ -1,6 +1,8 @@
-choose_computer.name:
-        ollie:
-                compiletime_environment_changes:
+computer:
+    choose_general.execution_mode:
+        compile:
+            choose_computer.name:
+                ollie:
                         add_export_vars:
                                 - 'CFLAGS="-O2 -DgFortran -std=gnu99 -xHost"'
                                 - 'FCFLAGS="-O3 -fpe0 -i4 -fp-model source -fast-transcendentals -no-prec-sqrt -xHost -heap-arrays -convert big_endian -fpp"'
@@ -10,8 +12,7 @@ choose_computer.name:
                                 - 'OASIS3MCT_FC_LIB="-L$NETCDFFROOT/lib -lnetcdff"'
                                 - 'OASIS3MCTROOT=${general.model_dir}'
                                 - 'LIBS="-Wl,-rpath,$NETCDF_DIR/lib:$NETCDF_DIR/lib:$HDF5ROOT/lib:""/lib:${I_MPI_ROOT}/intel64/lib"'
-        mistral:
-                compiletime_environment_changes:
+                mistral:
                         add_module_actions:
                                 - "unload intel"
                                 - "load intel/17.0.2"

@@ -4,7 +4,7 @@ lcurt_stress_surf=.false.
 ldiag_curl_vel3  =.false.
 ldiag_energy     =.false.
 ldiag_salt3D     =.false.
-ldiag_dMOC       =.false.
+ldiag_dMOC       =.true.
 ldiag_DVD        =.false.
 ldiag_forc       =.true.
 /
@@ -49,6 +49,9 @@ io_list =  'sst       ',1, 'm', 4,
            'flice     ',1, 'm', 4,
            'ist       ',1, 'm', 4,
            'alb       ',1, 'm', 4,
-           'fh       ',1, 'm', 4,
-           'fw       ',1, 'm', 4,
+           'fh        ',1, 'm', 4,
+           'fw        ',1, 'm', 4,
+	   'dMOC      ',1, 'm', 4,
+	   'qsi       ',1, 'm', 4,
+           'qso       ',1, 'm', 4,
 /

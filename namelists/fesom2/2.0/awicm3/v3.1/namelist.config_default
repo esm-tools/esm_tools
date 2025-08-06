@@ -49,8 +49,6 @@ include_fleapyear=.true.
 /
 
 &run_config
-use_modini=.false. !only atmosphere-ocean coupling
-check_modini=.false.   !only atmosphere-ocean coupling
 use_ice=.true.                  ! ocean+ice
 use_cavity=.false.              !
 use_cavity_partial_cell=.false. 

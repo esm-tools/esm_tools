@@ -275,7 +275,8 @@ class SmartSink:
         """
         if self.path:
             self.write_log(message, "a")
-        self.log_record.append(message)
+        else:
+            self.log_record.append(message)
 
     def write_log(self, message, wmode):
         """
@@ -307,6 +308,17 @@ class SmartSink:
         """
         self.path = path
         self.write_log(self.log_record, "w")
+        self.log_record = []  # Clear the log record after writing it to the file
+
+    def flush_to_stdout(self):
+        """
+        Flushes the log record to stdout. This is useful if you want to see the logs
+        immediately after they are written, without waiting for the file to be defined.
+        """
+        if self.log_record:
+            for line in self.log_record:
+                print(line, end="")
+            self.log_record = []
 
 
 ################################################################################

@@ -8,7 +8,6 @@ event_handlers.signal_listener()
 
 # Import from Python Standard Library
 import argparse
-import logging
 import os
 import sys
 
@@ -30,10 +29,8 @@ def parse_shargs():
         "-d",
         "--debug",
         help="Print lots of debugging statements",
-        action="store_const",
-        dest="loglevel",
-        const=logging.DEBUG,
-        default=logging.ERROR,
+        action="store_true",
+        default=False,
     )
 
     parser.add_argument(
@@ -177,6 +174,7 @@ def main():
     run_number = None
     jobtype = "unknown"
     verbose = False
+    debug = False
     inspect = None
     use_venv = None
     modify_config_file = None
@@ -206,6 +204,8 @@ def main():
         jobtype = parsed_args["task"]
     if "verbose" in parsed_args:
         verbose = parsed_args["verbose"]
+    if "debug" in parsed_args:
+        debug = parsed_args["debug"]
     if "inspect" in parsed_args:
         inspect = parsed_args["inspect"]
     if parsed_args["contained_run"] and parsed_args["open_run"]:
@@ -274,13 +274,24 @@ def main():
     logger.remove()
     logger.add(trace_sink.sink, level="TRACE")
 
-    if verbose:
-        logger.add(sys.stdout, level="DEBUG", format="{message}")
+    # Redirect stdout to a SmartSink if the jobtype is observe_compute to avoid printing
+    # in the slurm log at the same time that compute is printing.
+    if command_line_config["jobtype"] in ["observe_compute"]:
+        stdout_sink = SmartSink()
+        logger.stdout_sink = stdout_sink
+        stdout = stdout_sink.sink
+    else:
+        stdout = sys.stdout
+
+    if verbose or debug:
+        logger.add(stdout, level="DEBUG", format="{message}")
+        #import ipdb
+        #ipdb.set_trace()
         logger.debug(f"Started from: {command_line_config['started_from']}")
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)
     else:
-        logger.add(sys.stdout, level="INFO", format="{message}")
+        logger.add(stdout, level="INFO", format="{message}")
 
     setup = SimulationSetup(command_line_config=command_line_config)
     # if not Setup.config['general']['submitted']:

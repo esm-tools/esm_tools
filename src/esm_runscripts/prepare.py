@@ -57,21 +57,19 @@ def _read_date_file(config):
     date_file = mini_resolve_variable_date_file(date_file, config)
 
     if os.path.isfile(date_file):
-        logger.info("Date file read from %s", date_file)
+        logger.debug(f"Date file read from {date_file}")
         with open(date_file) as date_file:
             date, run_number = date_file.readline().strip().split()
             run_number = int(run_number)
         write_file = False
     else:
-        logger.info("No date file found %s", date_file)
-        logger.info("Initializing run_number=1 and date=18500101")
+        logger.debug(f"No date file found {date_file}")
         date = config["general"].get("initial_date", "18500101")
         run_number = 1
         write_file = True
     config["general"]["run_number"] = run_number
     config["general"]["current_date"] = date
-    logger.info("current_date = %s", date)
-    logger.info("run_number = %s", run_number)
+    logger.info(f"Initializing run_number={run_number} and date={date}")
     return config
 
 

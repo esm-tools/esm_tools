@@ -256,10 +256,11 @@ class SmartSink:
     needs to be used.
     """
 
-    def __init__(self):
+    def __init__(self, print_in_stdout=True):
         # Initialise instance variables
         self.log_record = []
         self.path = None
+        self.print_in_stdout = print_in_stdout
 
     def sink(self, message):
         """
@@ -267,6 +268,11 @@ class SmartSink:
         needs to be provided. Standard sinks include file paths, methods, etc.
         Providing this method as a sink (``logger.add(<name_of_the_instance>.sink,
         level="<your_level>", ...)``) enables the functionality of the SmartSink object.
+        This sink will store the log messages in the ``self.log_record`` list until
+        the path is defined using the ``def_path`` method. Once the path is defined,
+        the log messages will be written to the file specified by the path. If
+        ``print_in_stdout`` is set to ``True``, the log messages will also be printed to
+        the standard output (``sys.stdout``).
 
         Parameters
         ----------
@@ -277,6 +283,9 @@ class SmartSink:
             self.write_log(message, "a")
         else:
             self.log_record.append(message)
+
+        if self.print_in_stdout:
+            print(message, end="")
 
     def write_log(self, message, wmode):
         """

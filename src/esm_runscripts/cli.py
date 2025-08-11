@@ -34,6 +34,13 @@ def parse_shargs():
     )
 
     parser.add_argument(
+        "--trace",
+        help="Print even more debugging statements (trace level, most of it for esm_parser)",
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
         "-v",
         "--verbose",
         help="Be verbose",
@@ -174,6 +181,7 @@ def main():
     jobtype = parsed_args["task"]
     verbose = parsed_args["verbose"]
     debug = parsed_args["debug"]
+    trace = parsed_args["trace"]
     motd = parsed_args["motd"]
 
     use_venv = None
@@ -216,25 +224,32 @@ def main():
 
     # Define a sink object to store the logs. Path of the logs can be later specified
     # by using <sink_obj>.def_path(<path>)
-    trace_sink = SmartSink()
-    logger.trace_sink = trace_sink
+    #task_sink = SmartSink() #trace_sink
+    #logger.task_sink = task_sink
 
     logger.remove()
-    logger.add(trace_sink.sink, level="TRACE")
+    #logger.add(task_sink.sink, level="TRACE")
 
     # Redirect stdout to a SmartSink if the jobtype is observe_compute to avoid printing
     # in the slurm log at the same time that compute is printing.
-    if command_line_config["jobtype"] in ["observe_compute"]:
-        stdout_sink = SmartSink()
-        logger.stdout_sink = stdout_sink
-        stdout = stdout_sink.sink
-    else:
-        stdout = sys.stdout
+    #if command_line_config["jobtype"] in ["observe_compute"]:
+    #    stdout_sink = SmartSink()
+    #    logger.stdout_sink = stdout_sink
+    #    stdout = stdout_sink.sink
+    #else:
+    #    stdout = sys.stdout
 
-    if verbose or debug:
+    stdout_sink = SmartSink()
+    logger.stdout_sink = stdout_sink
+    stdout = stdout_sink.sink
+
+    if trace:
+        logger.add(stdout, level="TRACE")
+        logger.trace(f"Started from: {command_line_config['started_from']}")
+        logger.trace(f"starting (jobtype): {jobtype}")
+        logger.trace(command_line_config)
+    elif verbose or debug:
         logger.add(stdout, level="DEBUG", format="{message}")
-        #import ipdb
-        #ipdb.set_trace()
         logger.debug(f"Started from: {command_line_config['started_from']}")
         logger.debug(f"starting (jobtype): {jobtype}")
         logger.debug(command_line_config)

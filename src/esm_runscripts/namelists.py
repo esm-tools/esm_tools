@@ -73,7 +73,7 @@ class Namelist:
         mconfig["namelists"] = dict.fromkeys(nmls)
         for nml in nmls:
             if os.path.isfile(os.path.join(mconfig["thisrun_config_dir"], nml)):
-                logger.debug("Loading %s", nml)
+                logger.debug(f"Loading {nml}")
                 try:
                     mconfig["namelists"][nml] = f90nml.read(
                         os.path.join(mconfig["thisrun_config_dir"], nml)
@@ -200,8 +200,8 @@ class Namelist:
         namelist_removes = []
         for namelist in list(namelist_changes):
             changes = namelist_changes[namelist]
-            logger.debug("Determining remove entires for %s", namelist)
-            logger.debug("All changes: %s", changes)
+            logger.debug(f"Determining remove entires for {namelist}")
+            logger.debug(f"All changes: {changes}")
             for change_chapter in list(changes):
                 change_entries = changes[change_chapter]
                 for key in list(change_entries):
@@ -237,7 +237,7 @@ class Namelist:
 
         for remove in namelist_removes:
             namelist, change_chapter, key = remove
-            logger.debug("Removing from %s: %s, %s", namelist, change_chapter, key)
+            logger.debug(f"Removing from {namelist}: {change_chapter}, {key}")
             if key in mconfig["namelists"][namelist].get(change_chapter, {}):
                 del mconfig["namelists"][namelist][change_chapter][key]
             elif "%" in key:

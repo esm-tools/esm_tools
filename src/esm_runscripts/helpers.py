@@ -256,11 +256,12 @@ class SmartSink:
     needs to be used.
     """
 
-    def __init__(self, print_in_stdout=True):
+    def __init__(self, print_in_stdout=True, task_log_files=True):
         # Initialise instance variables
         self.log_record = []
         self.path = None
         self.print_in_stdout = print_in_stdout
+        self.task_log_files = task_log_files
 
     def sink(self, message):
         """
@@ -279,11 +280,19 @@ class SmartSink:
         message : str
             String containing the logging message.
         """
-        if self.path:
+        # If the path is defined, write the message to the log file
+        if self.path and self.task_log_files:
             self.write_log(message, "a")
-        else:
+        # If the path is not defined, but logging must happen in the task log files
+        # store the message in the log record buffer
+        elif self.task_log_files:
+            self.log_record.append(message)
+        # If printing in stdout is disabled keep a bufer independent of the task_log_files
+        # option
+        elif not self.print_in_stdout:
             self.log_record.append(message)
 
+        # Print the message to stdout if the option is enabled
         if self.print_in_stdout:
             print(message, end="")
 
@@ -315,6 +324,12 @@ class SmartSink:
         path : str
             Path of the logging file.
         """
+        if not self.task_log_files and self.print_in_stdout:
+            logger.debug(
+                "Task log files are disabled. No log file will be written."
+            )
+            return
+
         self.path = path
         self.write_log(self.log_record, "w")
         self.log_record = []  # Clear the log record after writing it to the file
@@ -328,6 +343,10 @@ class SmartSink:
             for line in self.log_record:
                 print(line, end="")
             self.log_record = []
+        elif self.path and os.path.exists(self.path):
+            with open(self.path, "r") as log:
+                for line in log:
+                    print(line, end="")
 
 
 ################################################################################

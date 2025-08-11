@@ -83,8 +83,10 @@ def wait_and_observe(config):
 
 def wake_up_call(config):
     if hasattr(logger, "stdout_sink"):
+        # Flush the content of te stdout sink and set print_in_stdout to True
+        # so that the next messages will be printed in stdout, instead of buffered
         logger.stdout_sink.flush_to_stdout()
-        logger.stdout_sink = sys.stdout
+        logger.stdout_sink.print_in_stdout = True
     monitor_file = logfiles.logfile_handle
     monitor_file.write("job ended, starting to tidy up now \n")
     return config

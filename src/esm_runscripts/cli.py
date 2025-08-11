@@ -41,6 +41,14 @@ def parse_shargs():
     )
 
     parser.add_argument(
+        "--no-task-log-files",
+        help="Do not write task-specific log files",
+        action="store_false",
+        default=True,
+        dest="task_log_files",
+    )
+
+    parser.add_argument(
         "-v",
         "--verbose",
         help="Be verbose",
@@ -182,6 +190,7 @@ def main():
     verbose = parsed_args["verbose"]
     debug = parsed_args["debug"]
     trace = parsed_args["trace"]
+    task_log_files = parsed_args["task_log_files"]
     motd = parsed_args["motd"]
 
     use_venv = None
@@ -232,17 +241,16 @@ def main():
 
     # Redirect stdout to a SmartSink if the jobtype is observe_compute to avoid printing
     # in the slurm log at the same time that compute is printing.
-    #if command_line_config["jobtype"] in ["observe_compute"]:
-    #    stdout_sink = SmartSink()
-    #    logger.stdout_sink = stdout_sink
-    #    stdout = stdout_sink.sink
-    #else:
-    #    stdout = sys.stdout
+    if command_line_config["jobtype"] in ["observe_compute"]:
+        stdout_sink = SmartSink(print_in_stdout=False, task_log_files=task_log_files)
+    else:
+        stdout_sink = SmartSink(print_in_stdout=True, task_log_files=task_log_files)
 
-    stdout_sink = SmartSink()
+    # Store the sink in the logger
     logger.stdout_sink = stdout_sink
     stdout = stdout_sink.sink
 
+    # Set logging level based on the command line arguments
     if trace:
         logger.add(stdout, level="TRACE")
         logger.trace(f"Started from: {command_line_config['started_from']}")

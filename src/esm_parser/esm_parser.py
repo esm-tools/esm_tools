@@ -1977,9 +1977,8 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 value = right[key]
                 logger.trace(f"Deleting key {key}")
                 logger.trace(
-                    f"Start func {func.__name__} with {tree}[{key}], {value} sent "
-                    "from us",
-                    "type_of_sender=dict",
+                    f"Start func {func.__name__} with {tree}[{key}], with value type "
+                    f"{type(value)}"
                 )
                 returned_dict = func(tree + [key], value, *args, **kwargs)
                 del right[key]

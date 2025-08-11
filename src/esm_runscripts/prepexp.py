@@ -374,15 +374,6 @@ def initialize_experiment_logfile(config):
             ],
         )
 
-    # Write trace-log file now that we know where to do that
-    if "trace_sink" in dir(logger):
-        logfile_path = (
-            f"{experiment_dir}/log/"
-            f"{expid}_{it_coupled_model}esm_runscripts_{datestamp}.log"
-        )
-
-        logger.trace_sink.def_path(logfile_path)
-
     return config
 
 

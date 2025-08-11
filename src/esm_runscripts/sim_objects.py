@@ -119,11 +119,12 @@ class SimulationSetup(object):
             task = self.config["general"]["task"]
             experiment_dir = self.config["general"]["experiment_dir"]
             expid = self.config["general"]["expid"]
+            setup_name = self.config["general"]["setup_name"]
             it_coupled_model = self.config["general"]["iterative_coupled_model"]
             datestamp = self.config["general"]["run_datestamp"]
             logfile_path = (
                 f"{experiment_dir}/log/"
-                f"{expid}_{it_coupled_model}{task}_{datestamp}.log"
+                f"{expid}_{setup_name}_{it_coupled_model}{task}_{datestamp}.log"
             )
             logger.stdout_sink.def_path(logfile_path)
 

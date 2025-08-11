@@ -62,7 +62,7 @@ class experiment(base):
 
     @staticmethod
     def nicer_output(run):
-        logger.info("ID: " + str(run.id) + ", EXPID: " + str(run.expid) + ":")
+        logger.info(f"ID: {run.id}, EXPID: {run.expid}:")
         logger.info("     Timestamp: " + run.timestamp.strftime("%x %X"))
         logger.info("     Runtime: " + run.runtime)
         logger.info("     Setup: " + run.setup_name)

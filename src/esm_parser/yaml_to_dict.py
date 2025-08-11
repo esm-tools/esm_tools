@@ -234,7 +234,7 @@ def yaml_file_to_dict(filepath):
                 f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}",
             )
     raise FileNotFoundError(
-        "All file extensions tried and none worked for %s" % filepath
+        f"All file extensions tried and none worked for {filepath}"
     )
 
 

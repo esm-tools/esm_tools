@@ -91,7 +91,7 @@ def load_config():
 def write_config_yaml(path=None):
     if not path:
         path = xdg.XDG_CONFIG_DIRS.split(":")[0] + "/esm_archiving"
-    logging.debug("Opening %s for writing..." % os.path.join(path, CONFIG_FNAME))
+    logging.debug(f"Opening {os.path.join(path, CONFIG_FNAME)} for writing...")
     with open(os.path.join(path, CONFIG_FNAME), "w") as config_file:
         logging.debug("...dumping...")
         yaml.dump(DEFAULT_CONFIG, config_file)

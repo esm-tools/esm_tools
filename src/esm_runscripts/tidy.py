@@ -321,7 +321,7 @@ def copy_all_results_to_exp(config):
             if not os.path.islink(source):
                 if os.path.isfile(destination):
                     if filecmp.cmp(source, destination):
-                        logger.debug("File " + source + " has not changed, skipping.")
+                        logger.debug(f"File {source} has not changed, skipping.")
                         continue
                     else:
                         if os.path.isfile(
@@ -353,7 +353,7 @@ def copy_all_results_to_exp(config):
                             os.symlink(newdestination, destination)
                             continue
                 try:
-                    logger.debug("Moving file " + source + " to " + destination)
+                    logger.debug(f"Moving file {source} to {destination}")
                     try:
                         os.rename(source, destination)
                     except:  # Fill is still open... create a hard (!) link instead
@@ -361,10 +361,8 @@ def copy_all_results_to_exp(config):
 
                 except:
                     logger.critical(
-                        ">>>>>>>>>  Something went wrong moving "
-                        + source
-                        + " to "
-                        + destination
+                        f">>>>>>>>>  Something went wrong moving {source} to "
+                        f"{destination}"
                     )
             else:
                 linkdest = resolve_symlinks(config, source)

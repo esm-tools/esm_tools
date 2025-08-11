@@ -1483,7 +1483,7 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
         choice = recursive_get(config, path_to_key)
     except ValueError:
         if "*" not in config_to_replace_in[choose_key]:
-            raise KeyError(f"Key {'.'join(path_to_key)} was not defined")
+            raise KeyError(f"Key {'.'.join(path_to_key)} was not defined")
         else:
             del config_to_replace_in[choose_key]
             return

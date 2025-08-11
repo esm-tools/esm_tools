@@ -54,7 +54,7 @@ class Dateformat(object):
 
     def __repr__(self):
         return (
-            f"Dateformat({form=self.form}, "
+            f"Dateformat(form={self.form}, "
             f"printhours={self.printhours}, "
             f"printminutes={self.printminutes}, "
             f"printseconds={self.printseconds})"

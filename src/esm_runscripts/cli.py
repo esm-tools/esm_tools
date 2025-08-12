@@ -16,7 +16,7 @@ from loguru import logger
 from esm_motd import check_all_esm_packages
 from esm_tools import user_error
 
-from .helpers import SmartSink
+from .logfiles import SmartSink
 from .sim_objects import *
 
 

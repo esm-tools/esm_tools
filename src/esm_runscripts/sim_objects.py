@@ -115,19 +115,6 @@ class SimulationSetup(object):
         # 13. Store the ESM-Tools version in the config for later reference
         self.config["general"]["esm_tools_version"] = __version__
 
-        if hasattr(logger, "stdout_sink"):
-            task = self.config["general"]["task"]
-            experiment_dir = self.config["general"]["experiment_dir"]
-            expid = self.config["general"]["expid"]
-            setup_name = self.config["general"]["setup_name"]
-            it_coupled_model = self.config["general"]["iterative_coupled_model"]
-            datestamp = self.config["general"]["run_datestamp"]
-            logfile_path = (
-                f"{experiment_dir}/log/"
-                f"{expid}_{setup_name}_{it_coupled_model}{task}_{datestamp}.log"
-            )
-            logger.stdout_sink.def_path(logfile_path)
-
 
     def __call__(self, kill_after_submit=True):
         # Trigger inspect functionalities
@@ -142,6 +129,8 @@ class SimulationSetup(object):
         # call to observe here..
         org_jobtype = str(self.config["general"]["jobtype"])
         self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
+        task_logfile_path = logfiles.get_task_logfile_path(self.config)
+        logger.stdout_sink.def_path(task_logfile_path)
 
         if self.config["general"]["submitted"]:
             old_stdout = sys.stdout

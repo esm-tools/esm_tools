@@ -12,6 +12,63 @@ from . import helpers
 # WORKFLOW STATUS LOG FUNCTIONS
 ###############################
 
+def progress(self, message, *args, **kwargs):
+    """
+    Log a message at the PROGRESS level for loguru.
+    """
+    return self.log("PROGRESS", message, *args, **kwargs)
+
+def set_progress_level(config):
+    """
+    Set the PROGRESS level for loguru logger.
+    """
+    if not hasattr(logger, "progress"):
+        PROGRESS_LEVEL = 15
+        logger.level("PROGRESS", no=PROGRESS_LEVEL)
+        logger.__class__.progress = progress
+
+    experiment_log_file = config["general"]["experiment_log_file"]
+    logger.add(
+        experiment_log_file,
+        format="{time: YYYY-MM-DD HH:mm:ss.SSS} | {level} | {message}",
+        filter=lambda record: record["level"].name == "PROGRESS"
+    )
+
+def initialize_logging(command_line_config):
+    jobtype = command_line_config["jobtype"]
+    verbose = command_line_config["verbose"]
+    debug = command_line_config["debug"]
+    trace = command_line_config["trace"]
+    task_log_files = command_line_config["task_log_files"]
+
+    logger.remove()
+    #logger.add(task_sink.sink, level="TRACE")
+
+    # Redirect stdout to a SmartSink if the jobtype is observe_compute to avoid printing
+    # in the slurm log at the same time that compute is printing.
+    if command_line_config["jobtype"] in ["observe_compute"]:
+        stdout_sink = SmartSink(print_in_stdout=False, task_log_files=task_log_files)
+    else:
+        stdout_sink = SmartSink(print_in_stdout=True, task_log_files=task_log_files)
+
+    # Store the sink in the logger
+    logger.stdout_sink = stdout_sink
+    stdout = stdout_sink.sink
+
+    # Set logging level based on the command line arguments
+    if trace:
+        logger.add(stdout, level="TRACE")
+        logger.trace(f"Started from: {command_line_config['started_from']}")
+        logger.trace(f"starting (jobtype): {jobtype}")
+        logger.trace(command_line_config)
+    elif verbose or debug:
+        logger.add(stdout, level="DEBUG", format="{message}")
+        logger.debug(f"Started from: {command_line_config['started_from']}")
+        logger.debug(f"starting (jobtype): {jobtype}")
+        logger.debug(command_line_config)
+    else:
+        logger.add(stdout, level="INFO", format="{message}")
+
 def initialize_logfiles(config, org_jobtype):
     """
     Initialize the general log file for the experiment.
@@ -23,53 +80,36 @@ def initialize_logfiles(config, org_jobtype):
     org_jobtype: str
         
     """
-    global logfile_run_number
+    # Return if the experiment log dir does not exist or if the job type is "inspect"
+    experiment_log_file = config["general"]["experiment_log_file"]
+    experiment_log_dir = os.path.dirname(experiment_log_file)
+    if not os.path.isdir(experiment_log_dir) or org_jobtype == "inspect":
+        return config
 
-    logfile_run_number = str(config["general"]["run_number"])
-
-    log_stuff = False
-    if os.path.isdir(os.path.dirname(config["general"]["experiment_log_file"])):
-        if not org_jobtype == "inspect":
-            log_stuff = True
-
+    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED ANYMORE")
     config = set_logfile_name(config, "")
 
-    # Add logger.critical here???
-
-    if log_stuff:
-
-        helpers.write_to_log(
-            config,
-            [
-                org_jobtype,
-                logfile_run_number,
-                str(config["general"]["current_date"]),
-                str(config["general"]["jobid"]),
-                "- start",
-            ],
-        )
+    logger.progress(
+        config,
+        [
+            org_jobtype,
+            logfile_run_number,
+            str(config["general"]["current_date"]),
+            str(config["general"]["jobid"]),
+            "- start",
+        ],
+    )
 
     return config
 
 
-def finalize_logfiles(config, org_jobtype):
+def finalize_logfiles(config, task):
 
-    if os.path.isdir(os.path.dirname(config["general"]["experiment_log_file"])):
-        log_stuff = True
+    run_number = str(config["general"]["run_number"])
+    current_date = str(config["general"]["current_date"])
+    jobid = str(config["general"]["jobid"])
 
-    if log_stuff:
-        helpers.write_to_log(
-            config,
-            [
-                org_jobtype,
-                logfile_run_number,
-                str(config["general"]["current_date"]),
-                str(config["general"]["jobid"]),
-                "- done",
-            ],
-        )
-
-    return config
+    logger.progress(f"{task} {run_number} {current_date} {jobid} - done")
 
 
 def set_logfile_name(config, jobtype=None):
@@ -108,7 +148,7 @@ def get_task_logfile_path(config):
     str
         The path to the log file.
     """
-    task = config["general"]["task"]
+    jobtype = config["general"]["jobtype"]
     experiment_dir = config["general"]["experiment_dir"]
     expid = config["general"]["expid"]
     setup_name = config["general"]["setup_name"]
@@ -116,7 +156,7 @@ def get_task_logfile_path(config):
     datestamp = config["general"]["run_datestamp"]
     task_logfile_path = (
         f"{experiment_dir}/log/"
-        f"{expid}_{setup_name}_{it_coupled_model}{task}_{datestamp}.log"
+        f"{expid}_{setup_name}_{it_coupled_model}{jobtype}_{datestamp}.log"
     )
 
     return task_logfile_path

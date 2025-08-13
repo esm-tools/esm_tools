@@ -16,7 +16,7 @@ from loguru import logger
 from esm_motd import check_all_esm_packages
 from esm_tools import user_error
 
-from .logfiles import SmartSink
+from .logfiles import initialize_logging, SmartSink
 from .sim_objects import *
 
 
@@ -236,33 +236,7 @@ def main():
     #task_sink = SmartSink() #trace_sink
     #logger.task_sink = task_sink
 
-    logger.remove()
-    #logger.add(task_sink.sink, level="TRACE")
-
-    # Redirect stdout to a SmartSink if the jobtype is observe_compute to avoid printing
-    # in the slurm log at the same time that compute is printing.
-    if command_line_config["jobtype"] in ["observe_compute"]:
-        stdout_sink = SmartSink(print_in_stdout=False, task_log_files=task_log_files)
-    else:
-        stdout_sink = SmartSink(print_in_stdout=True, task_log_files=task_log_files)
-
-    # Store the sink in the logger
-    logger.stdout_sink = stdout_sink
-    stdout = stdout_sink.sink
-
-    # Set logging level based on the command line arguments
-    if trace:
-        logger.add(stdout, level="TRACE")
-        logger.trace(f"Started from: {command_line_config['started_from']}")
-        logger.trace(f"starting (jobtype): {jobtype}")
-        logger.trace(command_line_config)
-    elif verbose or debug:
-        logger.add(stdout, level="DEBUG", format="{message}")
-        logger.debug(f"Started from: {command_line_config['started_from']}")
-        logger.debug(f"starting (jobtype): {jobtype}")
-        logger.debug(command_line_config)
-    else:
-        logger.add(stdout, level="INFO", format="{message}")
+    initialize_logging(command_line_config)
 
     setup = SimulationSetup(command_line_config=command_line_config)
     # if not Setup.config['general']['submitted']:

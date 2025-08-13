@@ -236,7 +236,7 @@ def venv_bootstrap(config):
     if not config["general"].get("use_venv"):
         if (
             config["general"].get("use_venv") is None
-            and config["general"]["command_line_config"]["use_venv"] is None
+            and config["general"]["command_line_config"].get("use_venv") is None
         ):
             config = _integorate_user_venv(config)
             config["general"]["command_line_config"]["use_venv"] = config["general"][

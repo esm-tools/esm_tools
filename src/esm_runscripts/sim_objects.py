@@ -128,15 +128,14 @@ class SimulationSetup(object):
         # self.pseudocall(kill_after_submit)
         # call to observe here..
         org_jobtype = str(self.config["general"]["jobtype"])
-        self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
         task_logfile_path = logfiles.get_task_logfile_path(self.config)
         logger.stdout_sink.def_path(task_logfile_path)
 
-        if self.config["general"]["submitted"]:
-            old_stdout = sys.stdout
-            old_stderr = sys.stderr
-            sys.stdout = logfiles.logfile_handle
-            sys.stderr = logfiles.logfile_handle
+        #if self.config["general"]["submitted"]:
+        #    old_stdout = sys.stdout
+        #    old_stderr = sys.stderr
+        #    sys.stdout = logfiles.logfile_handle
+        #    sys.stderr = logfiles.logfile_handle
 
         if self.config["general"]["jobtype"] == "prepcompute":
             self.prepcompute()
@@ -162,15 +161,15 @@ class SimulationSetup(object):
 
         resubmit.maybe_resubmit(self.config)
 
-        self.config = logfiles.finalize_logfiles(self.config, org_jobtype)
+        logfiles.finalize_logfiles(self.config, org_jobtype)
 
-        if self.config["general"]["submitted"]:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+        #if self.config["general"]["submitted"]:
+        #    sys.stdout = old_stdout
+        #    sys.stderr = old_stderr
 
         if kill_after_submit:
             if self.config["general"].get("experiment_over", False):
-                helpers.write_to_log(self.config, ["# Experiment over"], message_sep="")
+                logger.progress("Experiment over")
             helpers.end_it_all(self.config)
 
         return self.config["general"].get("experiment_over", False)

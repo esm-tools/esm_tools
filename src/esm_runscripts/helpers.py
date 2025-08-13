@@ -113,6 +113,7 @@ def write_to_log(config, message, message_sep=None):
        programmer passes a ``message_sep`` argument; this one wins over
        the user choice.
     """
+    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED!")
     try:
         with open(config["general"]["experiment_log_file"], "a+") as logfile:
             line = assemble_log_message(config, message, message_sep)
@@ -130,6 +131,7 @@ def write_to_log(config, message, message_sep=None):
 def assemble_log_message(
     config, message, message_sep=None, timestampStr_from_Unix=False
 ):
+    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED!")
     """Assembles message for log file. See doc for write_to_log"""
     message = [str(i) for i in message]
     dateTimeObj = datetime.now()

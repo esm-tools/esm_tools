@@ -278,8 +278,7 @@ def _clean_old_runs_size(config):
 def throw_away_some_infiles(config):
     if config["general"]["run_number"] == 1:
         return config
-    monitor_file = logfiles.logfile_handle
-    monitor_file.write("throwing away restart_in files \n")
+    logger.debug("throwing away restart_in files")
     for model in config["general"]["valid_model_names"]:
         logger.info(f"{model}")
         if "thisrun_restart_in_dir" in config[model]:
@@ -295,8 +294,7 @@ def throw_away_some_infiles(config):
 
 
 def copy_all_results_to_exp(config):
-    monitor_file = logfiles.logfile_handle
-    monitor_file.write("Copying stuff to main experiment folder \n")
+    logger.debug("Copying stuff to main experiment folder")
     for root, dirs, files in os.walk(config["general"]["thisrun_dir"], topdown=False):
         logger.debug("Working on folder: " + root)
         if root.startswith(config["general"]["thisrun_work_dir"]) or root.endswith(

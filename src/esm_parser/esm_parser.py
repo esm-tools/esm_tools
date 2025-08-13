@@ -3063,7 +3063,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             )
         # Add the fake "model" name to the computer:
         setup_config["computer"]["model"] = "computer"
-        logger.info("setup config is being updated with setup_relevant_configs")
+        logger.debug("setup config is being updated with setup_relevant_configs")
 
         # distribute self.config into setup_config
         coupled_setup = (

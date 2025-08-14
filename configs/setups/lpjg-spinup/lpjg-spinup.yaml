@@ -1,0 +1,176 @@
+#########################################################################################
+######################### AWIESM3 YAML CONFIGURATION FILE  ###############################
+#########################################################################################
+general:
+
+    model: lpjg-spinup
+
+    model_dir: ${esm_master_dir}/lpj_guess-${general.version}
+
+    lresume: false
+    coupled_setup: true
+
+    include_models:
+        - lpj_guess
+        - oasis3mct
+
+    available_versions:
+        - 'develop'
+
+    choose_version:
+        develop:
+            couplings:
+                - lpj_guess-4.1.2+oasis
+            major_version: v3.4
+            oasis_with_yac: false
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+            
+    version: "v3.4"
+    resolution: TL255
+    postprocessing: false
+    post_time: "00:05:00"
+    compute_time: "00:30:00"
+
+    reusable_filetypes: [input, bin, src]
+
+    with_co2_coupling: false
+
+    choose_computer.name:
+        levante:
+            pool_dir: "/work/ab0246/a270092/input"
+        juwels:
+            pool_dir: "/p/project/chhb19/jstreffi/input"
+        aleph:
+            pool_dir: "/proj/awi/input"
+        albedo:
+            pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+        "*":
+            pool_dir: "TO-BE-DEFINED-BY-THE-USER"
+
+    # Load general environment for the whole coupled setup
+    dr_hook_ignore_signals: -1
+
+#########################################################################################
+########### necessary changes to submodels compared to standalone setups ################
+#########################################################################################
+
+
+lpj_guess:
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
+        make -j8; cd .."                                                                                          #without debug.
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
+    execution_command: ${executable} -parallel ${runscript_name}
+
+    parallel_file_movements: true
+
+    resolution: TL255
+    fesom_resolution: CORE2
+
+    choose_general.major_version:
+        "v3.4":
+            version: "4.1.2"
+
+    nproc: 128
+    proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
+    proc_list: $(( ${proc_list_entry} ))
+
+    run_year: ${start_date!syear}
+    run_month: 1
+    run_day: 1
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+    co2_coupling: 0
+    fourxCO2: f
+    onepcCO2: f
+    fixed_CO2: -1
+    fixed_ndep: -1
+    fixed_LU: -1
+
+
+
+    config_sources:
+        tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
+        ins_files: ${namelist_dir}/*.ins
+        ece_gridlist:
+            ${lpj_guess.input_dir}/gridlists/gridlist_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.txt                   #is this the correct file for ece_gridlist.txt?
+        lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
+        "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
+        "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
+        "ece_gridlist_[[proc_list-->PROC_NUM]]":
+            ${lpj_guess.input_dir}/gridlists/gridlist_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.txt                                              #is this the correct file for ece_gridlist.txt?
+        "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
+
+        temp_namcouple: /home/a/a270270/temp_confiles/namcouple
+        "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
+
+    config_in_work:
+        tmp_rc_file: lpjg_steps.rc
+        ins_files: /*.ins
+        ece_gridlist: ece_gridlist.txt         #is this the correct file?
+        lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
+        "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
+        "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
+        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?
+        "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
+
+        temp_namcouple: namcouple
+        "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
+
+
+    forcing_sources:
+        soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+        CO2:
+            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+        "CO2_[[proc_list-->PROC_NUM]]":
+            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+
+    forcing_in_work:
+        soil_layer_type: slt_${mygrid}.nc
+        CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
+        "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+
+    # Create empty folders for landuse and fire in work
+    create_folders:
+        - ${work_dir}/landuse
+        - ${work_dir}/fire
+
+
+    choose_general.with_co2_veg_coupling:
+        true:
+            co2_coupling: 1
+
+oasis3mct:
+    input_dir: foo
+    process_ordering:
+        - lpj_guess
+
+computer:
+    # Activates the taskset approach for heterogeneous parallelization, by default
+    # since hetjob approach doesn't seem to work (second run showing mpi/pmix
+    # problems)
+    taskset: true
+    merge_component_envs:
+        compile: true
+
+    choose_general.major_version:
+        v3.4:
+            choose_name:
+                juwels:
+                    iolibraries: system_libs
+                    compiler_mpi: gnu2023_ompi2023
+                levante:
+                    iolibraries: system_gnu_libs
+                    compiler_mpi: gnu11_ompi4
+        '*':
+            foo: bar

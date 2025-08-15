@@ -127,16 +127,20 @@ lpj_guess:
 
 
     forcing_sources:
+        oifs_forcing: ${lpj_guess.input_dir}/oifs_forcing/AM04_atm_cmip6_1d_1990-1999_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
         soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
         CO2:
             ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "oifs_forcing_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/oifs_forcing/AM04_atm_cmip6_1d_1990-1999_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
         "CO2_[[proc_list-->PROC_NUM]]":
             ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
 
     forcing_in_work:
+        oifs_forcing: AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
         soil_layer_type: slt_${mygrid}.nc
         CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "oifs_forcing_[[proc_list-->PROC_NUM]]": runPROC_NUM/AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
         "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
 

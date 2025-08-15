@@ -89,6 +89,22 @@ lpj_guess:
     bin_sources:
         bin_tag: ${model_dir}/bin/${executable}
 
+    lpjg_parent_state: $((${parent_date!syear}+1))
+    lpjg_end_state: $((${end_date!syear}+1))
+
+    restart_in_files:
+        state: state
+    restart_in_in_work:
+        state: lpjg_state_${lpjg_parent_state}/*
+    restart_in_sources:
+        state: lpjg_state_${lpjg_parent_state}/*
+    restart_out_files:
+        state: state
+    restart_out_in_work:
+        state: lpjg_state_${lpjg_end_state}/*
+    restart_out_sources:
+        state: lpjg_state_${lpjg_end_state}/*
+
     choose_resolution:
         # Note:
         # Tco grids only work with version 43r3.

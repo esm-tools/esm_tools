@@ -196,7 +196,7 @@ def _increment_date_and_run_number(config):
 
     config["general"]["command_line_config"]["current_date"] = config["general"][
         "current_date"
-    ].format(form=9, givenph=False, givenpm=False, givenps=False)
+    ].format(form=9, print_hours=False, print_minutes=False, print_seconds=False)
 
     config["general"]["command_line_config"]["run_number"] = config["general"][
         "run_number"

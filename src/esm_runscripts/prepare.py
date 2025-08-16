@@ -242,9 +242,13 @@ def find_last_prepared_run(config):
         end_date = next_date - (0, 0, 1, 0, 0, 0)
 
         datestamp = (
-            current_date.format(form=9, givenph=False, givenpm=False, givenps=False)
+            current_date.format(
+                form=9, print_hours=False, print_minutes=False, print_seconds=False
+            )
             + "-"
-            + end_date.format(form=9, givenph=False, givenpm=False, givenps=False)
+            + end_date.format(
+                form=9, print_hours=False, print_minutes=False, print_seconds=False
+            )
         )
 
         # Solve base_dir with variables
@@ -303,21 +307,21 @@ def set_most_dates(config):
 
     config["general"]["run_datestamp"] = (
         config["general"]["current_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
         + "-"
         + config["general"]["end_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
     )
 
     config["general"]["last_run_datestamp"] = (
         config["general"]["last_start_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
         + "-"
         + config["general"]["prev_date"].format(
-            form=9, givenph=False, givenpm=False, givenps=False
+            form=9, print_hours=False, print_minutes=False, print_seconds=False
         )
     )
     return config

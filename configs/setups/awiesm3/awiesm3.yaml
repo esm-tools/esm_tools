@@ -377,7 +377,7 @@ lpj_guess:
     veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
         TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ,
         SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ,
-        TMIN_LPJ, TMAX_LPJ, GUE_CNPP, GUE_CANT, GUE_CNAT, CO2_LPJG]
+        TMIN_LPJ, TMAX_LPJ, GUE_CFIR, GUE_CANT, GUE_CNAT, CO2_LPJG]
 
     parallel_file_movements: true
     coupling_fields:
@@ -651,7 +651,7 @@ oasis3mct:
                         co2_a2v.nc:
                             - 'CO2_LPJG <--loctrans_avg-- XCO2Veg'
                         co2_v2a.nc:
-                            - 'FCO2Land:FCO2Ant:FCO2Fire <--loctrans_avg-- GUE_CNPP:GUE_CANT:GUE_CNAT'
+                            - 'FCO2Land:FCO2Ant:FCO2Fire <--loctrans_avg-- GUE_CNAT:GUE_CANT:GUE_CFIR'
             choose_general.with_co2_oce_coupling:
                 true:
                     add_coupling_target_fields:

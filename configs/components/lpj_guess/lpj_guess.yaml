@@ -34,6 +34,7 @@ lpj_guess:
     execution_command: ${executable} ${runscript_name}
     #resolution: TL159 #if it's not set i dosen't work!
     resolution: TL255 #if it's not set i dosen't work!
+    TM5: false
 
     choose_version:
         4.1.1:
@@ -45,8 +46,9 @@ lpj_guess:
             git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
             branch: lpj_guess_awiesm3
             mygrid: TL255
-            install_bins: build/guess_TL255
-            executable: guess_TL255
+            maxgrid: 25215
+            install_bins: build/guess
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating

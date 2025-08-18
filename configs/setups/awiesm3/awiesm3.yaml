@@ -345,15 +345,15 @@ lpj_guess:
     runtime_seconds: "$(( ${next_date} - ${start_date} ))"
     ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
     TM5: 0
-    fourxCO2: f
-    onepcCO2: f
+    fourxCO2: false
+    onepcCO2: false
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1
 
 
     config_sources:
-        tmp_rc_file: ${lpj_guess.input_dir}/lpjg_steps.rc.j2
+        tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
         ins_files: ${namelist_dir}/*.ins
         ece_gridlist:
             ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                   #is this the correct file for ece_gridlist.txt?
@@ -365,13 +365,13 @@ lpj_guess:
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
         "ece_gridlist_[[proc_list-->PROC_NUM]]":
             ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                                              #is this the correct file for ece_gridlist.txt?
-        "tmp_rc_file_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/lpjg_steps.rc.j2
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2
 
         temp_namcouple: /home/a/a270270/temp_confiles/namcouple
         "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
     config_in_work:
-        tmp_rc_file: lpjg_steps.rc
+        tmp_yaml_file: lpjg_steps.yaml
         ins_files: /*.ins
         ece_gridlist: ece_gridlist.txt         #is this the correct file?
         lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
@@ -381,7 +381,7 @@ lpj_guess:
         "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
         "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?
-        "tmp_rc_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.rc
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
 
         temp_namcouple: namcouple
         "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log

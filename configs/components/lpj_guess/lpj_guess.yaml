@@ -15,10 +15,10 @@ lpj_guess:
         Description: Dynamic vegetation model
         Authors: Ben Smith
         Publications:
-            - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637. https://doi.org/10.1046/j.1466-822X.2001.t01-1-00256.x"
-            - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185. https://doi.org/10.1046/j.1365-2486.2003.00569.x"
-            - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development: https://doi.org/10.5194/gmd-15-6709-2022"
-            - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. https://doi.org/10.5281/zenodo.8065737"
+            - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637. <https://doi.org/10.1046/j.1466-822X.2001.t01-1-00256.x>"
+            - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185. <https://doi.org/10.1046/j.1365-2486.2003.00569.x>"
+            - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development: <https://doi.org/10.5194/gmd-15-6709-2022>"
+            - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. <https://doi.org/10.5281/zenodo.8065737>"
         License: Mozilla Public License Version 2.0
 
 

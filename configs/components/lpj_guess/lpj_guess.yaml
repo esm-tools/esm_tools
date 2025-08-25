@@ -34,7 +34,7 @@ lpj_guess:
     execution_command: ${executable} ${runscript_name}
     #resolution: TL159 #if it's not set i dosen't work!
     resolution: TL255 #if it's not set i dosen't work!
-    TM5: false
+    TM5: 0
 
     choose_version:
         4.1.1:

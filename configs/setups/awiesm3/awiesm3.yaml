@@ -257,7 +257,7 @@ fesom:
         false:
             recom_comp_flag: ""
 
-    build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
+    build_type: Debug #Available options: Debug Release RelWithDebInfo MinSizeRel
     choose_general.oasis_with_yac:
         true:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
@@ -430,7 +430,7 @@ lpj_guess:
     run_day: 1
     runtime_seconds: "$(( ${next_date} - ${start_date} ))"
     ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
-    TM5: 0
+    co2_coupling: 0
     fourxCO2: false
     onepcCO2: false
     fixed_CO2: -1

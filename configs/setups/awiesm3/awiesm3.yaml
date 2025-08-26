@@ -51,6 +51,7 @@ general:
     postprocessing: false
     post_time: "00:05:00"
     compute_time: "00:30:00"
+    parallel_file_movements: 'threads'
 
     reusable_filetypes: [input, bin, src]
 
@@ -379,7 +380,6 @@ lpj_guess:
         SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ,
         TMIN_LPJ, TMAX_LPJ, GUE_CFIR, GUE_CANT, GUE_CNAT, CO2_LPJG]
 
-    parallel_file_movements: true
     coupling_fields:
         "[[veg_atm_fields-->FIELD]]":
             grid: ${lpj_guess.mygrid}-land

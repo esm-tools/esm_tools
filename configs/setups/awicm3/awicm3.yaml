@@ -123,6 +123,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
+        parallel_file_movements: true
 
         reusable_filetypes: [input, bin, src]
 

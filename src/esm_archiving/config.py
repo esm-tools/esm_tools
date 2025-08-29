@@ -91,6 +91,8 @@ def load_config():
 def write_config_yaml(path=None):
     if not path:
         path = xdg.XDG_CONFIG_DIRS.split(":")[0] + "/esm_archiving"
+    # [FIXME] PG: At some point, I'd like all paths to be ``Path``
+    # [PROJECT] PG: path-refactor
     logging.debug(f"Opening {os.path.join(path, CONFIG_FNAME)} for writing...")
     with open(os.path.join(path, CONFIG_FNAME), "w") as config_file:
         logging.debug("...dumping...")

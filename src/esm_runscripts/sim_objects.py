@@ -158,9 +158,6 @@ class SimulationSetup(object):
 
         logfiles.finalize_logfiles(self.config, org_jobtype)
 
-        #if self.config["general"]["submitted"]:
-        #    sys.stdout = old_stdout
-        #    sys.stderr = old_stderr
 
         if kill_after_submit:
             if self.config["general"].get("experiment_over", False):

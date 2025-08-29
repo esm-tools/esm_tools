@@ -353,7 +353,6 @@ def initialize_experiment_logfile(config):
     """
     experiment_log_file = config["general"]["experiment_log_file"]
     expid = config["general"]["expid"]
-    first_run = config["general"]["run_number"] == 1
     jobtype = config["general"]["jobtype"]
     run_number = config["general"]["run_number"]
     current_date = config["general"]["current_date"]

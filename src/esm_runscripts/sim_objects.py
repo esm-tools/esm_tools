@@ -131,11 +131,6 @@ class SimulationSetup(object):
         task_logfile_path = logfiles.get_task_logfile_path(self.config)
         logger.stdout_sink.def_path(task_logfile_path)
 
-        #if self.config["general"]["submitted"]:
-        #    old_stdout = sys.stdout
-        #    old_stderr = sys.stderr
-        #    sys.stdout = logfiles.logfile_handle
-        #    sys.stderr = logfiles.logfile_handle
 
         if self.config["general"]["jobtype"] == "prepcompute":
             self.prepcompute()

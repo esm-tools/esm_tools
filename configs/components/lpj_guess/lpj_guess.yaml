@@ -73,6 +73,14 @@ lpj_guess:
 
     # Some commonly used variables in other ESM-Tools components (but optional)
     input_dir: ${pool_dir}/lpj-guess/
+
+    # Define files to ignore
+    ignore_files:
+        # Ignore output files with the same name
+        outputs: output/*.out
+        # Ignore log files
+        log: *.log
+
     namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
     gridlist_dir: ${input_dir}/gridlists/
     forcing_dir: ${input_dir}/climate_forcing_data/

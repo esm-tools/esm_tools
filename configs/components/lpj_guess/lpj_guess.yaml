@@ -28,6 +28,8 @@ lpj_guess:
     #comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
     comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
 
+    setup_dir: "${model_dir}"
+    bin_dir: "${setup_dir}/bin"
     install_bins: "build/guess"
     clean_command: "rm -rf build"
     executable: guess

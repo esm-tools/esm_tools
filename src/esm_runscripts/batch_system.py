@@ -514,23 +514,14 @@ class batch_system:
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
                 #   " -j "+ config["general"]["jobtype"]
 
+                rundate = config["general"]["current_date"].format(
+                    form=9, givenph=False, givenpm=False, givenps=False
+                )
                 observe_call = (
-                    "esm_runscripts "
-                    + config["general"]["scriptname"]
-                    + " -e "
-                    + config["general"]["expid"]
-                    + " -t observe_"
-                    + cluster
-                    + " -p ${process}"
-                    + " -s "
-                    + config["general"]["current_date"].format(
-                        form=9, givenph=False, givenpm=False, givenps=False
-                    )
-                    + " -r "
-                    + str(config["general"]["run_number"])
-                    + " -v "
-                    + " --last-jobtype "
-                    + config["general"]["jobtype"]
+                    f'esm_runscripts {config["general"]["scriptname"]} '
+                    f'-e {config["general"]["expid"]} -t observe_{cluster} '
+                    f'-p ${{process}} -s {rundate} -r {config["general"]["run_number"]}'
+                    f' -v --last-jobtype {config["general"]["jobtype"]}'
                 )
 
                 if "--open-run" in config["general"]["original_command"] or not config[
@@ -555,6 +546,9 @@ class batch_system:
                         observe_call += (
                             " -m " + config["general"]["modify_config_file_abspath"]
                         )
+
+                if "--task-log-files" in config["general"]["original_command"]:
+                    observe_call += " --task-log-files"
 
                 subjobs_to_launch = config["general"]["workflow"]["subjob_clusters"][
                     cluster

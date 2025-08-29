@@ -41,10 +41,10 @@ def parse_shargs():
     )
 
     parser.add_argument(
-        "--no-task-log-files",
+        "--task-log-files",
         help="Do not write task-specific log files",
-        action="store_false",
-        default=True,
+        action="store_true",
+        default=False,
         dest="task_log_files",
     )
 

@@ -77,9 +77,9 @@ lpj_guess:
     # Define files to ignore
     ignore_files:
         # Ignore output files with the same name
-        outputs: output/*.out
+        outputs: "output/*.out"
         # Ignore log files
-        log: *.log
+        log: "*.log"
 
     namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
     gridlist_dir: ${input_dir}/gridlists/

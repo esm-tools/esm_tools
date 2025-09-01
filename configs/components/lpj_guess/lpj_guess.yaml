@@ -76,9 +76,15 @@ lpj_guess:
 
     # Define files to ignore
     ignore_files:
+        outputs: outputs
+        log: log
+    ignore_in_work:
         # Ignore output files with the same name
         outputs: "output/*.out"
         # Ignore log files
+        log: "*.log"
+    ignore_sources:
+        outputs: "output/*.out"
         log: "*.log"
 
     namelist_dir: ${general.esm_namelist_dir}/lpj_guess/

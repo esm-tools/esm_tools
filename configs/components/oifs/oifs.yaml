@@ -991,7 +991,7 @@ oifs:
                                             YI_NL%LMASSFIX: ".true."
                                             YL_NL%LMASSFIX: ".true."
                                             YQ_NL%LMASSFIX: ".true."
-            3: #DestinE 48r1 settings
+            3: 
                     add_namelist_changes:
                             fort.4:
                                     NAMDYN:
@@ -1015,6 +1015,11 @@ oifs:
                                             YR_NL%LINTLIN: ".true."
                                             YS_NL%BETAMFBC: -1
                                             YS_NL%LINTLIN: ".true."
+                                            YS_NL%LMASSFIX: ".true."
+                                            YR_NL%LMASSFIX: ".true."
+                                            YI_NL%LMASSFIX: ".true."
+                                            YL_NL%LMASSFIX: ".true."
+                                            YQ_NL%LMASSFIX: ".true."
 
 
     choose_cloudfixer:

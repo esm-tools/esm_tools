@@ -231,11 +231,6 @@ def main():
     # full path including the yaml file: runscript_dir + runscript
     command_line_config["runscript_abspath"] = runscript_full_path
 
-    # Define a sink object to store the logs. Path of the logs can be later specified
-    # by using <sink_obj>.def_path(<path>)
-    #task_sink = SmartSink() #trace_sink
-    #logger.task_sink = task_sink
-
     initialize_logging(command_line_config)
 
     setup = SimulationSetup(command_line_config=command_line_config)

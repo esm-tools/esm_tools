@@ -128,8 +128,8 @@ class SimulationSetup(object):
         # self.pseudocall(kill_after_submit)
         # call to observe here..
         org_jobtype = str(self.config["general"]["jobtype"])
-        task_logfile_path = logfiles.get_task_logfile_path(self.config)
-        logger.stdout_sink.def_path(task_logfile_path)
+        logfiles.set_logfile_name(self.config)
+        logger.stdout_sink.def_path(self.config["general"]["logfile_path"])
 
 
         if self.config["general"]["jobtype"] == "prepcompute":
@@ -156,7 +156,7 @@ class SimulationSetup(object):
 
         resubmit.maybe_resubmit(self.config)
 
-        logfiles.finalize_logfiles(self.config, org_jobtype)
+        logfiles.finalize_experiment_logfile(self.config, org_jobtype)
 
 
         if kill_after_submit:

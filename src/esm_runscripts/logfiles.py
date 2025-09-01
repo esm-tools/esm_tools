@@ -42,7 +42,6 @@ def initialize_logging(command_line_config):
     task_log_files = command_line_config["task_log_files"]
 
     logger.remove()
-    #logger.add(task_sink.sink, level="TRACE")
 
     # Redirect stdout to a SmartSink if the jobtype is observe_compute to avoid printing
     # in the slurm log at the same time that compute is printing.
@@ -69,41 +68,7 @@ def initialize_logging(command_line_config):
     else:
         logger.add(stdout, level="INFO", format="{message}")
 
-def initialize_logfiles(config, org_jobtype):
-    """
-    Initialize the general log file for the experiment.
-
-    Parameters
-    ----------
-    config : dict, esm_parser.DictWithProvenance
-        Configuration dictionary containing general settings for the experiment.
-    org_jobtype: str
-        
-    """
-    # Return if the experiment log dir does not exist or if the job type is "inspect"
-    experiment_log_file = config["general"]["experiment_log_file"]
-    experiment_log_dir = os.path.dirname(experiment_log_file)
-    if not os.path.isdir(experiment_log_dir) or org_jobtype == "inspect":
-        return config
-
-    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED ANYMORE")
-    config = set_logfile_name(config, "")
-
-    logger.progress(
-        config,
-        [
-            org_jobtype,
-            logfile_run_number,
-            str(config["general"]["current_date"]),
-            str(config["general"]["jobid"]),
-            "- start",
-        ],
-    )
-
-    return config
-
-
-def finalize_logfiles(config, task):
+def finalize_experiment_logfile(config, task):
 
     run_number = str(config["general"]["run_number"])
     current_date = str(config["general"]["current_date"])
@@ -113,27 +78,9 @@ def finalize_logfiles(config, task):
 
 
 def set_logfile_name(config, jobtype=None):
-
-    if not jobtype:
-        jobtype = config["general"]["jobtype"]
-
-    expid = config["general"]["expid"]
-    setup_name = config["general"]["setup_name"]
-    filejobtype = jobtype
-    run_datestamp = config["general"]["run_datestamp"]
-    experiment_log_dir = config["general"]["experiment_log_dir"]
-    thisrun_log_dir = config["general"]["thisrun_log_dir"]
-
-    filename = f"{expid}_{setup_name}_{filejobtype}_{run_datestamp}.log"
-
-    config["general"]["logfile_path"] = f"{experiment_log_dir}/{filename}"
-    config["general"]["logfile_path_in_run"] = f"{thisrun_log_dir}/{filename}"
-
-    return config
-
-def get_task_logfile_path(config):
     """
-    Get the path to the log file based on the configuration and job type.
+    Set the paths to the task log file (``general.logfile_path`` and "
+    ``general.logfile_path_in_run``) based on the configuration and job type.
 
     Parameters
     ----------
@@ -142,24 +89,27 @@ def get_task_logfile_path(config):
     jobtype : str, optional
         The type of job for which to get the log file path. If not provided, it uses
         the job type from the configuration.
-
-    Returns
-    -------
-    str
-        The path to the log file.
     """
-    jobtype = config["general"]["jobtype"]
-    experiment_dir = config["general"]["experiment_dir"]
+    if not jobtype:
+        jobtype = config["general"]["jobtype"]
+
     expid = config["general"]["expid"]
     setup_name = config["general"]["setup_name"]
     it_coupled_model = config["general"]["iterative_coupled_model"]
-    datestamp = config["general"]["run_datestamp"]
-    task_logfile_path = (
-        f"{experiment_dir}/log/"
-        f"{expid}_{setup_name}_{it_coupled_model}{jobtype}_{datestamp}.log"
+    run_datestamp = config["general"]["run_datestamp"]
+    experiment_log_dir = config["general"]["experiment_log_dir"]
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    jobid = config["general"]["jobid"]
+
+    filename = (
+        f"{expid}_{setup_name}_{it_coupled_model}{jobtype}_"
+        f"{run_datestamp}_{jobid}.log"
     )
 
-    return task_logfile_path
+    config["general"]["logfile_path"] = f"{experiment_log_dir}/{filename}"
+    config["general"]["logfile_path_in_run"] = f"{thisrun_log_dir}/{filename}"
+
+    return config
 
 ##############################
 # SINK CLASS FOR LOGURU.LOGGER

@@ -628,7 +628,7 @@ jsbach:
                     lightning: lightning_renamed
                 remove_streams:
                     - surf
-                land_file_tags: "jsbach nitro veg yasso"
+                land_file_tags: "land jsbach nitro veg yasso"
 
 nemo:
         choose_general.version:

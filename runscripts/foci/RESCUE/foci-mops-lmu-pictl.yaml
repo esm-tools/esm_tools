@@ -17,7 +17,7 @@ general:
    # operational settings: yearly restarts
    compute_time: "02:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2150-01-01T00:00:00"         # Final date of the experiment
    nmonth: 12
    clean_runs: 5
    # test settings, daily restarts

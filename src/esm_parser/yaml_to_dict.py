@@ -573,16 +573,20 @@ def check_duplicates(src):
         for key_node, value_node in node.value:
             key = loader.construct_object(key_node, deep=deep)
             value = loader.construct_object(value_node, deep=deep)
+            file = str(key_node.start_mark.name)
+            line = key_node.start_mark.line + 1
+            col = key_node.start_mark.column + 1
 
             if key in mapping:
                 user_error(
                     "Duplicated variables",
-                    "Key ``{0}`` is duplicated {1}\n\n".format(
-                        key, str(key_node.start_mark).replace("  ", "").split(",")[0]
-                    ),
+                    f"The key ``{key}`` is duplicated within the same file:\n"
+                    f"- ``{mapping[key]['file']}``,line:``{mapping[key]['line']}``,"
+                    f"col:``{mapping[key]['col']}``\n"
+                    f"- ``{file}``,line:``{line}``,col:``{col}\n``",
                 )
 
-            mapping[key] = value
+            mapping[key] = {"key": key, "file": file, "line": line, "col": col}
 
         return loader.construct_mapping(node, deep)
 

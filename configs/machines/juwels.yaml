@@ -132,6 +132,25 @@ computer:
             MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
             MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
+       gnu2024_ompi2024:
+          add_module_actions:
+            - "load Stages/2024"
+            - "load GCC"
+            - "load OpenMPI"
+            - "load CMake"
+            - "load Python"
+            - "load imkl"
+            - "load Perl"
+            - "load git"
+          add_export_vars:
+            FC: mpifort
+            F77: mpifort
+            MPIFC: mpifort
+            FCFLAGS: -free
+            CC: mpicc
+            CXX: mpic++
+            MPIROOT: "\"$($FC -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+            MPI_LIB: "\"$($FC -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
     choose_iolibraries:
 

@@ -41,6 +41,7 @@ general:
         - fs_oasismct4
         - default_oasismct4
         - default_oasismct5
+        - moz 
         - mops_oasismct4
         - mops_lmu
         - agrif
@@ -75,6 +76,10 @@ general:
           default_oasismct5:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT5+echam-6.3.05p2-foci_oasismct5
+          # includes echam-moz (stratospheric chemistry based on Schmidt et al., 2009 and Schultz et al. 20xx) 
+          moz:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT5+echam-6.3.05p2-moz
           # includes MOPS in the ocean, uses OASISMCT4. IMPORTANT: uses different coupling
           # settings and interpolation methods w.r.t mops with OASISMCT2.8 (only available in old
           # mkexp based setup of FOCI)
@@ -109,6 +114,8 @@ general:
 #########################################################################################
 
 echam:
+        atm_file_tags: "echam accw co2"
+
         choose_general.version:
                 default:
                         version: "6.3.05p2-foci"
@@ -128,6 +135,25 @@ echam:
                 default_oasismct5:
                         version: "6.3.05p2-foci_oasismct4"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+                moz:
+                        version: "6.3.05p2-moz"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              radctl:
+                                 ico2: 1
+                                 io3: 1
+
+                        add_restartstreams:
+                           - tracer
+                           - vphysc 
+                        add_streams:
+                           - tracer
+                           - alltrm
+                           - moz
+                           - tdiag
+
+                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag"
 
                 mops_oasismct4:
                         version: "6.3.05p2-foci_oasismct4"
@@ -425,7 +451,9 @@ echam:
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
                                                     -e ${end_date!syear}
-                                                    -p ${general.base_dir}"
+                                                    -p ${general.base_dir}
+                                                    -a '${echam.atm_file_tags}'
+                                                    -l '${jsbach.land_file_tags}' "
                                                 nproc: 1
                                         echam_monitoring:
                                                 batch_or_shell: shell
@@ -477,6 +505,13 @@ jsbach:
         version: "3.20p1"
         # directories
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6_${echam.resolution}/JSBACH/"
+        choose_echam.use_moz:
+            true:
+                choose_dynamic_vegetations:
+                    true:
+                        namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/dynveg-moz"
+                    false:
+                        namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg-moz"
         input_dir_couple: "${pool_dir}/input/"
         choose_computer.name:
                ollie:
@@ -576,6 +611,8 @@ jsbach:
           - yasso
           - surf
 
+        land_file_tags: "jsbach nitro veg yasso surf"
+
         choose_general.version:
             mops_lmu:
                 add_streams:
@@ -584,6 +621,14 @@ jsbach:
                   - vegday
                   - yassoday
                   - landday
+            moz:
+                add_forcing_sources:
+                    lightning_renamed: "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}_renamed.nc"
+                add_forcing_files:
+                    lightning: lightning_renamed
+                remove_streams:
+                    - surf
+                land_file_tags: "land jsbach nitro veg yasso"
 
 nemo:
         choose_general.version:
@@ -608,6 +653,13 @@ nemo:
                               sn_rcv_emp: ['kcm_lim_2','no','','','']
                               sn_rcv_rnf: ['none','no','','','']
                 default_oasismct5:
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+                        add_namelist_changes:
+                          namelist_cfg:
+                            namsbc_cpl:
+                              sn_rcv_emp: ['kcm_lim_2','no','','','']
+                              sn_rcv_rnf: ['none','no','','','']
+                moz:
                         version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
                         add_namelist_changes:
                           namelist_cfg:
@@ -711,6 +763,7 @@ oasis3mct:
         coupling_time_step: 10800
 
         #export_mode_a2o: EXPORTED
+
         choose_general.version:
                 default:
                         version: "foci"
@@ -878,6 +931,43 @@ oasis3mct:
                            rmp_a2ot: rmp_a2ot
 
                 default_oasismct5:
+
+                        norestart: "T"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+
+                moz:
 
                         norestart: "T"
                         mct_version: "5.0"
@@ -1440,7 +1530,8 @@ computer:
         compile:
             choose_computer.name:
                levante:
-                  #compiler_mpi: intel2022_impi2021
+                   #compiler_mpi: intel2022_impi2021
+                   #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
                juwels:
@@ -1457,8 +1548,10 @@ computer:
             add_choose_computer.name:
                levante:
                   #compiler_mpi: intel2022_impi2021
+                  #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
+                  launcher_flags: "-l --cpu-bind=cores --distribution=cyclic:cyclic"
                juwels:
                   compiler_mpi: intel2022_psmpi2022
                   #compiler_mpi: intel2019_impi2019

@@ -1,0 +1,152 @@
+&parctl
+    nproca = 24
+    nprocb = 48
+    iomode = 0
+    nprocio = 0
+    !lyaxt_transposition = .false.
+/
+&submodelctl
+    lmethox = .true.
+    lchemfeedback = .true.
+    linterh2o = .true.
+    lchemrad = .true.
+    lham = .false.
+    lbioemi_stdalone = .false.
+    lmoz = .true.
+    lhammoz = .false.
+    lhammonia = .false.
+    llght = .true.
+    lburden = .false.
+    lemissions = .false.
+    emi_basepath = ''
+/
+&qboctl
+    i_time = 0
+/
+&runctl
+    dt_start = 1849, 12, 31, 23, 52, 30
+    dt_stop = 2099, 12, 31, 23, 52, 30
+    putrerun = 12, 'months', 'last', 0
+    lfractional_mask = .false.
+    out_datapath = './'
+    out_expname = 'EXP_ID'
+    rerun_filetype = 4
+    delta_time = 450
+    putdata = 6, 'hours', 'first', 0
+    nproma = 16
+    lcouple = .true.
+    getocean = 24, 'steps', 'exact', 0
+    putocean = 24, 'steps', 'exact', -450
+    lcouple_co2 = .false.
+    default_output = .true.
+    ltdiag = .true.
+    lresume = .false.
+/
+&gwsctl
+    rmscon_hi = 0.92 ! default is 1.0
+    rmscon_lo = 1.13
+/
+&tdiagctl
+    puttdiag = 6, 'hours', 'first', 0
+    tdiagnam = 'radheat'
+/
+&set_stream_element ! 'default st'
+    stream = 'tdiag'
+    name = 'st'
+    lpost = 0
+/
+&set_stream_element ! 'default tm1'
+    stream = 'tdiag'
+    name = 'tm1'
+    lpost = 0
+/
+&mvstreamctl ! 'default mozm'
+    filetag = 'moz'
+    source = 'moz'
+    !variables = NOy, Cly, j_o2, j_o3
+    interval = 1, 'days', 'last', 0
+/
+&set_stream ! 'default moz'
+    stream = 'moz'
+    lpost = 0
+/
+&mvstreamctl ! 'default tracerm'
+    filetag = 'tracer'
+    source = 'tracer'
+    variables = 'H2O', 'O3', 'NO', 'NO2', 'HNO3', 'N2O5', 'CLONO2'
+    interval = 1, 'days', 'last', 0
+/
+&mvstreamctl ! 'default alltrm'
+    filetag = 'alltrm'
+    target = 'alltrm'
+    source = 'tracer'
+    interval = 1, 'months', 'last', 0
+/
+&set_stream ! 'default tracer'
+    stream = 'tracer'
+    lpost = 0
+/
+&set_stream ! 'default photo'
+    stream = 'photo'
+    lpost = 0
+/
+&set_stream ! 'default lghtng'
+    stream = 'lghtng'
+    lpost = 0
+/
+&set_stream ! 'default mozh'
+    stream = 'mozh'
+    lpost = 0
+/
+&set_stream ! 'default ma'
+    stream = 'ma'
+    lpost = 0
+/
+&set_stream ! 'default surf'
+    stream = 'surf'
+    lpost = 0
+/
+&radctl
+  iaero   = 8
+  ighg    = 1
+  io3     = 1
+  isolrad = 1
+  ico2    = 1
+  ich4    = 1
+  in2o    = 1
+  icfc    = 1
+/
+&submdiagctl
+    vphysc_lpost = .false.
+    vphyscnam = 'all'
+    wetdep_lpost = .false.
+    wetdepnam = 'all'
+    wetdep_gastrac = 'default'
+    wetdep_keytype = 2
+    drydep_lpost = .false.
+    drydepnam = 'all'
+    drydep_gastrac = 'default'
+    drydep_keytype = 2
+    sedi_lpost = .false.
+    sedinam = 'all'
+    sedi_keytype = 2
+    emi_lpost = .false.
+    emi_lpost_sector = .false.
+    eminam = 'all'
+    emi_gastrac = 'all'
+/
+&mozctl
+    ! use EPP
+    bc_epp%ef_type = 2 ! ef_type: EF_INACTIVE=0, EF_VALUE=1, EF_FILE=2, EF_MODULE=3
+    bc_epp%ef_timedef = 1 ! ef_timedef: EF_TIMERESOLVED=1 , EF_IGNOREYEAR=2 , EF_CONSTANT=3
+    lese = .true.
+    tempthresh = 34.42212
+    out_species = 'default'
+    lbc_species = 'CCL4', 'CFC12', 'CF2CLBR', 'CF3BR', 'CFC113', 'CFC11',
+                  'CH3BR', 'CH3CCL3', 'CH3CL', 'CH4', 'CO2', 'H2', 'HCFC22',
+                  'N2O'
+    burden_species = 'O3', 'NO2', 'NO', 'CO'
+    lfastj = .false.
+    lstrathet = .true.
+    ltrophet = .false.
+/

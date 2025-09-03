@@ -33,6 +33,7 @@ xios:
     - 2.5_r1910_ogcm
     - 2.5_smhi
     - 2.5_ece
+    - 3.0_trunk
 
     branch: esm-tools
 
@@ -57,7 +58,11 @@ xios:
       trunk_oasis:
         git-repository: https://git.geomar.de/foci/src/xios.git
         branch: xios_trunk
-        archfile: ESMTOOLS_generic_oasis_intel
+        choose_computer.compiler_mpi: 
+            gnu11_ompi4:
+               archfile: ESMTOOLS_generic_oasis_gnu
+            "*":
+               archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
         contact: "swahl(at)geomar.de"
@@ -96,6 +101,8 @@ xios:
                 choose_computer.compiler_mpi:
                     gnu2023_ompi2023:
                         archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
@@ -133,6 +140,8 @@ xios:
             juwels:
                 choose_computer.compiler_mpi:
                     gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
                         archfile: ESMTOOLS_generic_oasis_gcc
                     "*":
                         foo: bar
@@ -213,6 +222,13 @@ xios:
                 archfile: ESMTOOLS_levante_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+      3.0_trunk:
+        # Switch arch file if we use GCC on glogin
+        archfile: ESMTOOLS_generic_oasis_gnu
+        use_oasis: --use_oasis oasis3_mct
+        branch: master
+        git-repository: https://git.geomar.de/foci/src/xios3.git
+
     clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
     #destination: xios-${version}
@@ -320,6 +336,12 @@ xios:
                         field_def: field_def
                         file_def: file_def
                         file_def_agrif: file_def_agrif
+                  "*":
+                     xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/${nemo.reference_expid}
+                     add_config_files:
+                        domain_def: domain_def
+                        field_def: field_def
+                        file_def: file_def
             awicm3:
                     xml_dir: "${general.pool_dir}"
                     add_config_files:

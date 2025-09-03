@@ -1,0 +1,25 @@
+# LPJ-GUESS Configuration File (YAML format)
+# This replaces the fragile positional .rc format with named parameters
+
+# Time stepping configuration
+time_step: {{lpj_guess.time_step}}
+run_year: {{lpj_guess.run_year}}
+run_month: {{lpj_guess.run_month}}
+run_day: {{lpj_guess.run_day}}
+ndays_per_run: {{lpj_guess.ndays_per_run}}
+
+# Grid configuration
+mygrid: "{{lpj_guess.mygrid}}"
+maxgrid: {{lpj_guess.maxgrid | default(-1)}}
+
+# Coupling and experiment configuration
+TM5: {{lpj_guess.TM5 | default(false) | lower}}
+
+# Experiment flags (boolean)
+fourxCO2: {{lpj_guess.fourxCO2 | default(false) | lower}}
+onepcCO2: {{lpj_guess.onepcCO2 | default(false) | lower}}
+
+# Fixed year settings (integer, -1 = disabled)
+fixed_CO2: {{lpj_guess.fixed_CO2 | default(-1)}}
+fixed_ndep: {{lpj_guess.fixed_ndep | default(-1)}}
+fixed_LU: {{lpj_guess.fixed_LU | default(-1)}}

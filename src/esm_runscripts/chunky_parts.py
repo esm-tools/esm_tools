@@ -435,15 +435,23 @@ def _is_last_run_in_chunk(config):
 
 def _find_next_model_to_run(config):
     if config["general"]["last_run_in_chunk"]:
-        config["general"]["next_setup_name"] = config["general"]["model_named_queue"][0]
+        config["general"].super_setitem(
+            "next_setup_name", config["general"]["model_named_queue"][0]
+        )
     else:
-        config["general"]["next_setup_name"] = config["general"]["setup_name"]
+        config["general"].super_setitem(
+            "next_setup_name", config["general"]["setup_name"]
+        )
     return config
 
 
 def _find_next_chunk_number(config):
     if config["general"]["last_run_in_chunk"]:
-        config["general"]["next_chunk_number"] = config["general"]["chunk_number"] + 1
+        config["general"].super_setitem(
+            "next_chunk_number", config["general"]["chunk_number"] + 1
+        )
     else:
-        config["general"]["next_chunk_number"] = config["general"]["chunk_number"]
+        config["general"].super_setitem(
+            "next_chunk_number", config["general"]["chunk_number"]
+        )
     return config

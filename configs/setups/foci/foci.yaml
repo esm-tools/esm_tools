@@ -611,7 +611,7 @@ jsbach:
           - yasso
           - surf
 
-        land_file_tags: "land jsbach nitro veg yasso surf"
+        land_file_tags: "jsbach nitro veg yasso surf"
 
         choose_general.version:
             mops_lmu:

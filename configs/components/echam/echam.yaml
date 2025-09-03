@@ -9,6 +9,7 @@ echam:
             available_versions:
             - 6.3.05p2
             - 6.3.05p2-foci
+            - 6.3.05p2-moz
             - 6.3.05p2-foci_autotools
             - 6.3.05p2-foci_lmu
             - 6.3.05p2-foci_oasismct4
@@ -74,6 +75,18 @@ echam:
               6.3.05p2-foci:
                 branch: esm-tools
                 git-repository: https://git.geomar.de/foci/src/echam.git
+              6.3.05p2-moz:
+                branch: oasis-mct5
+                git-repository: https://git.geomar.de/foci/src/echam_hammoz.git
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
+                comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
+                  ./config/createMakefiles.pl; autoreconf -i --force; unset FCFLAGS; unset FFLAGS; 
+                  ./configure --prefix=$(pwd)/../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../oasis/INSTALL_OASIS.ESMTOOLS/ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
+                  make -j `nproc --all`; make install -j `nproc --all`;
+                  #comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps;
+                  #./configure --prefix=$(pwd)/../ --with-coupler=oasis3-mct-nemo --disable-mh-file --enable-cdi-pio --disable-shared CFLAGS="-O2 -DgFortran -std=gnu99" FCFLAGS="-DHAMMOZ -DQBO -I. -O3 -traceback -fp-model source -fast-transcendentals -no-prec-sqrt -no-prec-div -xHost" FFLAGS="-I. -traceback -O3 -xHost -DTREAT_OVERLAY -Duse_netCDF -Duse_comm_MPI1" LAPACK_LIB='-mkl=sequential' OASIS3MCTROOT=$(pwd)/../ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support" ;
+                  #make -j `nproc --all`; make install -j `nproc --all`;
+                install_bins: ''
               6.3.05p2-foci_lmu:
                 git-repository: https://gitlab.dkrz.de/lmu-lus/mpiesm/hbp_mpiesm-landveg.git 
                 branch: feature/couple_to_nemo3.6_mops
@@ -97,6 +110,12 @@ echam:
               6.3.05p2-foci_oasismct4:
                 branch: esm-tools-oasis3mct4
                 git-repository: https://git.geomar.de/foci/src/echam.git
+                clean_command: cd src/echam; rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
+                comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
+                  ./config/createMakefiles.pl; autoreconf -i --force; unset FCFLAGS; unset FFLAGS; 
+                  ./configure --prefix=$(pwd)/../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../oasis/INSTALL_OASIS.ESMTOOLS/ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
+                  make -j `nproc --all`; make install -j `nproc --all`;
+                install_bins: ''
               6.3.05p2-wiso:
                 branch: "wiso"
                 clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
@@ -141,7 +160,7 @@ echam:
     ocean_resolution: 'GR15'
     disturbance: "1.000001"
     lresume: false
-
+    use_moz: false
 
     lgfw: False
     lupdate_orography: False
@@ -283,6 +302,12 @@ echam:
                     dataset: r0008
                     nprocrad: "remove_from_namelist"
                     lrad_async: "remove_from_namelist"
+            6.3.05p2-moz:
+                    repo_tag: not_set
+                    dataset: r0008
+                    nprocrad: "remove_from_namelist"
+                    lrad_async: "remove_from_namelist"
+                    use_moz: true
             6.3.05p2-foci_oasismct4:
                     repo_tag: not_set
                     dataset: r0008
@@ -666,6 +691,37 @@ echam:
                             False:
                                     nwiso: 0
                                     lwiso_rerun: False
+
+    choose_use_moz:
+        true:
+            add_input_files:
+                moz_effxs: moz_effxs 
+                moz_rsf: moz_rsf 
+                moz_temp: moz_temp
+                moz_xs: moz_xs 
+                moz_uvalbedo: moz_uvalbedo
+                moz_xtsoil: moz_xtsoil
+                moz_surface_properties: moz_surface_properties 
+            add_forcing_files:
+                moz_lbc: moz_lbc
+                moz_sad_sulf: moz_sad_sulf
+                moz_epp: moz_epp
+                moz_photolysis: moz_photolysis
+                moz_ap_index: moz_ap_index
+
+            add_input_in_work:
+                moz_temp: "moz_temp_prs_gt200nm.nc"
+                moz_uvalbedo: "moz_uvalbedo.${echam.resolution}.nc"
+                moz_xtsoil: "xtsoil.nc"
+                moz_surface_properties: "surface_properties.nc"
+
+            add_forcing_in_work:
+                moz_lbc: "moz_lbc.${echam.resolution}.nc"            
+                moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"            
+                moz_epp: "moz_epp.${echam.resolution}${echam.levels}.nc"
+                moz_photolysis: etfphot_@YEAR@.nc 
+                moz_ap_index: apindex_@YEAR@.nc 
+
 
     bin_files:
             "echam_bin": "echam_bin"

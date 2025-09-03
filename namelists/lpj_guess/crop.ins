@@ -1,0 +1,578 @@
+!///////////////////////////////////////////////////////////////////////////////////////
+!// CROP-SPECIFIC ADDITIONS TO LPJ-GUESS INSTRUCTION SCRIPT
+!// Mats Lindeskog 2015-10-14
+!// Peter Anthoni, 2017-01-24 added bvoc emission parameter to c3 and c4 crops (using c3 and c4 grass parameter)
+!///////////////////////////////////////////////////////////////////////////////////////
+
+import "landcover.ins"
+
+!///////////////////////////////////////////////////////////////////////////////////////
+
+! Crop management input files
+!
+param "file_sdates" (str "")
+param "file_hdates" (str "")
+param "file_Nfert" (str "")
+
+!///////////////////////////////////////////////////////////////////////////////////////
+
+! Output files
+!
+
+! Prefined yearly output
+! These files may be outcommented if their output is not required. 
+
+file_yield "yield.out"
+!file_yield1 "yield1.out"
+!file_yield2 "yield2.out"
+!file_sdate1 "sdate1.out"
+!file_sdate2 "sdate2.out"
+!file_hdate1 "hdate1.out"
+!file_hdate2 "hdate2.out"
+file_lgp "lgp.out"
+file_phu "phu.out"
+!file_fphu "fphu.out"
+file_fhi "fhi.out"
+file_irrigation "irrigation.out"
+file_seasonality "seasonality.out"
+
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// RUN PARAMETERS AND OPTIONS 
+!
+
+minimizecftlist 0		! Checks st fraction file for st:s with fractions>0.0 at any time or place; other st:s are exluded from the stlist
+frac_fixed_default_crops 0	! Whether to use all active crop stand types (0) or only stand types with suitable rainfed crops
+				! (based on crop pft tb and gridcell latitude) (1) when using fixed crop fractions
+
+nyears_cropland_ramp 0 		! Number of years to increase cropland fraction linearly from 0 to first year's value
+ifintercropgrass 1		! Whether to grow grass as cover crop between growing periods
+iftillage 1			! Whether to simulate tillage by increasing soil respiration
+	
+ifcalcdynamic_phu 1		! Whether to calculate dynamic potential heat units
+ifdyn_phu_limit 0		! Whether to limit dynamic phu calculation to a period specified by nyear_dyn_phu
+nyear_dyn_phu 50		! Number of years to calculate dynamic phu if dynamic_phu_limit is 1
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PARAMETERS FOR STAND TYPES
+
+
+
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PARAMETERS FOR PFTS
+!// Run GUESS with -help option for list of keywords and their meanings
+
+group "crop" (
+
+	! Parameter common to all crops
+
+	include 1
+	phenology "cropgreen"
+	! rootdist 0.9 0.1	! Fraction of fine roots in the upper and lower soil layers.
+	rootdist 0.18 0.18 0.18 0.18 0.18 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 ! Fraction of fine roots in the 15 soil layers.
+	fireresist 0.5
+	respcoeff 1
+	gmin 0.5
+	turnover_leaf 1
+	turnover_root 0.7
+	intc 0.01
+	leaflong 1
+	frootstart 0.40
+	frootend 0.20
+
+	tcmin_surv -1000
+	tcmin_est -1000 
+	tcmax_est 1000 	
+	twmin_est -1000
+	gdd5min_est 0
+
+	parff_min 0
+
+	landcover "cropland"
+	sd_adjust 0
+	ifsdautumn 0
+	tempautumn 12
+	tempspring 12
+	maxtemp_sowing 60
+	vern_lag 0
+	phu_calc_quad 0
+	phu_calc_lin 0
+
+	harv_eff 0.9		! Part of harvestable organs actually harvested
+	harvest_slow_frac 0	! Part of harvest that goes into patchpft.harvested_products_slow, the rest goes into fluxes.acflux_harvest
+	turnover_harv_prod 1 	! Turnover rate for long-lived harvested products (wood) : 1-year turnover time for crops
+	res_outtake 0.75	! Part of residues after harvest removed from stand; goes into fluxes.acflux_harvest
+	aboveground_ho 1 
+	isintercropgrass 0
+)
+
+group "crop_c3" (
+      crop
+      !use C3 grass bvoc parameters
+      eps_iso 16.0
+      seas_iso 1
+      eps_mon 0.37 0.2 0.23 0.1 0.1 0.09 0.1 0.22 0.19
+	  storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+)
+
+group "crop_c4" (
+      crop
+      !use C4 grass bvoc parameters
+      eps_iso 8.0
+      seas_iso 0
+      eps_mon 0.48 0.19 0.67 0.14 0.12 0.13 0.14 0.29 0.24
+	  storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+)
+
+group "CC3G" (
+	C3G
+	landcover "cropland"
+	laimax 4
+	isintercropgrass 0
+	harv_eff 0.5
+	harv_eff_ic 0.0
+	res_outtake 0.0		! not used by crop grass
+)
+
+group "CC4G" (
+	C4G
+	landcover "cropland"
+	laimax 4	
+	isintercropgrass 0
+	harv_eff 0.5		! old value; intensive grazing: 90% grazed, 25-60 % returned to soil as faeces (0.36-0.675 removed, 0.5 OK average)
+	harv_eff_ic 0.0
+	res_outtake 0.0		! not used by crop grass
+)
+
+group "TeW" (
+
+	! Winter cereals, Triticum spp. (wheat), Hordeum vulgare (barley), Secale cereale (rye), Avena sativa (oat)
+	
+	grass
+	crop_c3
+	include 1
+	pathway "c3"
+	phengdd5ramp 500
+	pstemp_min -5	
+	pstemp_low 10	
+	pstemp_high 30	
+	pstemp_max 45	
+
+	sdatenh 330
+	sdatesh 150
+	lgp_def 230
+	tb 0				! base temperature
+	trg 12				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 0.5
+	pb 8
+	ps 20
+	phu 2900
+	phu_calc_quad 1
+	phu_min 1700
+	phu_max 2876.9
+	phu_red_spring_sow 0.8
+	hlimitdatenh 269
+	hlimitdatesh 89
+
+	fphusen 0.7			! SWAT 0.9
+
+	shapesenescencenorm 1
+	flaimaxharvest 0
+	hiopt 0.5			! FAO/IIASA AEZ	
+	himin 0.2
+
+	ifsdautumn 1
+	tempautumn 12
+	tempspring 5
+!	maxtemp_sowing 15
+	forceautumnsowing 0		! 0 No forcing, 1 Autumn, 2 Spring
+)
+
+group "TrRi" (
+
+	! rice, Oryza sativa
+
+	grass
+	crop_c3
+	include 1
+	pathway "c3"
+	pstemp_min -5	
+	pstemp_low 10	
+	pstemp_high 30	
+	pstemp_max 45	
+
+	sdatenh 120			! for initialization, otherwise calculated, possibly several growing seasons in one year
+	sdatesh 300			! idem
+	lgp_def 230
+	tb 10				! base temperature
+	trg 10				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 24
+	ps 0
+	phu 1800
+	hlimitdatenh 60
+	hlimitdatesh 240
+
+	fphusen 0.80			! SWAT 0.9
+
+	shapesenescencenorm 1
+	flaimaxharvest 0
+	hiopt 0.5
+	himin 0.25
+
+	tempspring 18
+)
+
+group "TeCo" (
+
+	! maize; Zea mays
+
+	grass
+	crop_c4
+	include 1
+	pathway "c4"
+	phengdd5ramp 500
+	pstemp_min 6
+	pstemp_low 20
+	pstemp_high 45
+	pstemp_max 55
+
+	respcoeff 0.15			! 110301
+
+	sdatenh 140
+	sdatesh 320
+	lgp_def 220
+	sd_adjust 1
+	sd_adjust_par1 60.0
+	sd_adjust_par2 85.0
+	sd_adjust_par3 29.5
+	tb 8				! SWAT
+	trg 8				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1	
+	pb 0
+	ps 24	
+	phu 1400
+	hlimitdatenh 360 		! for initialization
+	hlimitdatesh 176 		! idem; changed from 175 111115
+
+	fphusen 0.75			! SWAT 0.9
+
+	shapesenescencenorm 1
+	flaimaxharvest 0
+	hiopt 0.5			! SWAT (silage 0.9)
+	himin 0.3
+
+	tempspring 14
+)
+
+group "TrMi" (
+
+	! Tropical cereals; Pennisetum glaucum (pearl millet), Setaria italica (foxtail millet), 
+	! Panicum miliaceum (common millet), Eleucine coracana (finger millet), Sorghum
+
+	grass
+	crop_c4
+	include 1
+	pathway "c4"
+	phengdd5ramp 500
+	pstemp_min 6
+	pstemp_low 20
+	pstemp_high 45
+	pstemp_max 55
+
+	respcoeff 0.15
+
+	sdatenh 150
+	sdatesh 330
+	lgp_def 245
+	tb 10				! base temperature
+	trg 10				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1	
+	pb 0
+	ps 24	
+	phu 2000
+	hlimitdatenh 50	
+	hlimitdatesh 230
+
+	fphusen 0.85			! SWAT 0.9
+
+	shapesenescencenorm 1
+	flaimaxharvest 0
+	hiopt 0.25			! SWAT
+	himin 0.1
+	tempspring 12
+)
+
+group "TePu" (
+
+	! Lentils
+
+	grass
+	crop_c3
+	include 1
+	pathway "c3"
+	phengdd5ramp 500
+	pstemp_min -5	
+	pstemp_low 10	
+	pstemp_high 30	
+	pstemp_max 45	
+
+	sdatenh 100
+	sdatesh 280
+	lgp_def 245
+	tb 3				! base temperature
+	trg 3				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 0
+	ps 24
+	phu 2000
+	hlimitdatenh 364
+	hlimitdatesh 180
+
+	fphusen 0.90
+
+	shapesenescencenorm 2
+	flaimaxharvest 0
+	hiopt 0.6			! SWAT 0.61
+	himin 0.01
+	tempspring 10
+)
+
+group "TeSb" (
+
+	! Sugarbeet   Pascalle; Beta vulgaris
+
+	grass
+	crop_c3
+	include 1
+	pathway "c3"
+	phengdd5ramp 500
+	pstemp_min -5
+	pstemp_low 10
+	pstemp_high 30
+	pstemp_max 45
+
+	sdatenh 90
+	sdatesh 270
+	lgp_def 240
+	tb 3				! base temperature
+	trg 3				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 0
+	ps 24
+	phu 2700
+	hlimitdatenh 330
+	hlimitdatesh 146
+
+	fphusen 0.75	! SWAT 0.9
+
+	shapesenescencenorm 0
+	flaimaxharvest 0.75
+	hiopt 2.0			! SWAT (Achtung below-ground) ! 0.15 AEZ (fraction of total biomass)
+	himin 1.1
+	tempspring 8	
+	aboveground_ho 0
+)
+
+group "TrMa" (
+
+	! Roots and tubers (Africa); Manihot esculenta; aka. cassava, yuka
+
+	grass
+	crop_c3
+	include 1		
+	pathway "c3"
+	phengdd5ramp 500
+	pstemp_min -5							
+	pstemp_low 10
+	pstemp_high 30
+	pstemp_max 45
+
+	sdatenh 100
+	sdatesh 280
+	lgp_def 230
+	tb 15				! base temperature
+	trg 15				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 0
+	ps 24
+	phu 2000
+	hlimitdatenh 330
+	hlimitdatesh 146
+
+
+	fphusen 0.75
+
+	shapesenescencenorm 0
+	flaimaxharvest 0.75
+	hiopt 2.0
+	himin 1.1
+	tempspring 22
+	aboveground_ho 0
+)
+
+group "TeSf" (
+
+	! Sunflower; Helianthus annuus
+
+	grass
+	crop_c3
+	include 1
+	pathway "c3"
+	phengdd5ramp 500
+	pstemp_min -5
+	pstemp_low 10
+	pstemp_high 30
+	pstemp_max 45
+
+	sdatenh 120
+	sdatesh 300
+	lgp_def 180
+	tb 6				! base temperature
+	trg 6				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 0
+	ps 24
+	phu 1500
+	phu_calc_lin 1
+	phu_min 1300
+	phu_max 2000
+	ndays_ramp_phu 90.0
+	phu_interc 2460.0
+	hlimitdatenh 300
+	hlimitdatesh 116
+
+	fphusen 0.7	! SWAT 0.9
+
+	shapesenescencenorm 1
+	flaimaxharvest 0
+	hiopt 0.3	! SWAT
+	himin 0.2	! SWAT 0.18
+	tempspring 15
+!	tempspring 13
+)
+
+group "TeSo" (
+
+	! Soybean;   Glycine max
+
+	grass
+	crop_c3
+	include 1
+	pathway "c3"
+	phengdd5ramp 500
+	pstemp_min -5
+	pstemp_low 10
+	pstemp_high 30
+	pstemp_max 45
+
+	sdatenh 140
+	sdatesh 320
+	lgp_def 190
+	tb 10				! base temperature
+
+	trg 10				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 0
+	ps 24
+	phu 1500
+	hlimitdatenh 330
+	hlimitdatesh 146
+
+	fphusen 0.6			! SWAT 0.9
+
+	shapesenescencenorm 0
+	flaimaxharvest 0
+	hiopt 0.3			! SWAT 0.31
+	himin 0.01
+	tempspring 13
+)
+
+group "TrPe" (
+
+	! Peanut  (groundnut) for part of RIVM's oil crops; Arachis hypogaea
+
+	grass
+	crop_c3
+	include 1			
+	pathway "c3"
+	pstemp_min -5	
+	pstemp_low 10	
+	pstemp_high 30	
+	pstemp_max 45	
+
+	sdatenh 140
+	sdatesh 320
+	lgp_def 190
+	tb 14				! base temperature
+	trg 14				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 0
+	ps 24
+	phu 1500
+	hlimitdatenh 330
+	hlimitdatesh 146 
+
+	fphusen 0.75			! SWAT 0.9
+
+	shapesenescencenorm 0
+	flaimaxharvest 0
+	hiopt 0.4			! SWAT
+	himin 0.3
+	tempspring 15
+)
+
+group "TeRa" (
+
+	! Rape for part of RIVM's oil crops; Brassica napus
+
+	grass
+	crop_c3
+	include 1
+	pathway "c3"
+	phengdd5ramp 500
+	pstemp_min -5	
+	pstemp_low 10	
+	pstemp_high 30	
+	pstemp_max 45	
+
+	sdatenh 300
+	sdatesh 120
+	lgp_def 230
+	tb 0				! base temperature
+	trg 12				! temperatures have a vernalizing effect until trg
+	pvd 0
+	psens 1
+	pb 8
+	ps 20
+	phu 2500
+	phu_calc_quad 1
+	phu_min 2100
+	phu_max 3279.7
+	phu_red_spring_sow 1.0
+	hlimitdatenh 240
+	hlimitdatesh 60
+
+	fphusen 0.85	! SWAT 0.9
+
+	shapesenescencenorm 1
+	flaimaxharvest 0
+	hiopt 0.3			! SWAT Argentina; winter rapeseed 0.4 (Frick et al. 1994)
+	himin 0.15			! SWAT 0.01
+	ifsdautumn 1
+	tempautumn 17
+	tempspring 5
+	vern_lag 20
+	forceautumnsowing 0		! 0 No forcing, 1 Autumn, 2 Spring
+)

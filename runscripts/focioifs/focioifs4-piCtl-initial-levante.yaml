@@ -7,9 +7,9 @@ general:
    resolution: "TCO95_ORCA05"
    version: "4.0"
    
-   compute_time: "12:00:00"
-   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
+   compute_time: "01:00:00"
+   initial_date: "1950-01-01T00:00:00"       # Initial exp. date
+   final_date: "1950-04-01T00:00:00"         # Final date of the experiment
    
    nyear: 0
    nmonth: 1
@@ -18,7 +18,7 @@ general:
    #restart_unit: days 
    hours: 0
    account: bb1460
-   base_dir: /work/bb1460/b350071/esm-experiments
+   base_dir: /work/bb1460/b383098/esm-experiments
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: True
@@ -41,10 +41,10 @@ general:
    prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
 
 #computer:
-   #partition_name: "standard96"
-   #additional_flags: '--qos=preempt'
-   #taskset: false
-   #hetjob_flag: hetjob 
+   # partition_name: "standard96"
+   # additional_flags: '--qos=preempt'
+   # taskset: false
+   # hetjob_flag: hetjob 
 
 focioifs:
    model_dir: ${general.homedir}/esm/models/focioifs-4.0/
@@ -65,9 +65,11 @@ oifs:
    scenario: "piControl"
    mip: "cmip6"
    o3_scheme: cmip6
-      # TODO: clone https://git.geomar.de/foci/foci_input2/openifs_cy43_general.git
-      # https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git
-   pool_dir: /work/bb11460/foci_input2/
+      # DONE:
+      # cd /home/b/b383098/_work/foci_input2 
+      # git clone https://git.geomar.de/foci/foci_input2/openifs_cy43_general.git
+      # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git
+   pool_dir: /work/bb1460/foci_input2/
    input_dir: "${pool_dir}/openifs_cy43_tco95/"
    rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
    vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
@@ -75,7 +77,7 @@ oifs:
    ifsdata_dir: "${pool_dir}/openifs_cy43_general/ifsdata/"
    cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
    cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
-   icmcl_dir: "${pool_dir}/OPENIFS43R3-TCO95/2008010100/"
+   icmcl_dir: "${pool_dir}/openifs_cy43_tco95/2008010100/"
    icmcl_file: "ICMCLhagwINIT"
    # This would use initial conditions from ERA-Interim 2008-01-01
    prepifs_expid: hagw
@@ -108,7 +110,6 @@ oifs:
 
 oasis3mct:
    lresume: True
-   # TODO: clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git to /work/bb1460/foci_input2
    pool_dir: "/work/bb1460/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05/"
    # This would be for a cold start (SST = 0C,etc)
    ini_parent_dir: "${pool_dir}" 
@@ -129,13 +130,16 @@ oasis3mct:
    #oasis_date_stamp: "" 
    
 nemo:
-   # TODO: clone https://git.geomar.de/foci/foci_input2/nemo4_orca05.git 
+   # DONE: 
+   # cd /home/b/b383098/_work/foci_input2
+   # git clone https://git.geomar.de/foci/foci_input2/nemo4_orca05.git 
    lresume: ${general.lresume}
    #ini_parent_exp_id: "${general.ini_parent_exp_id}"
    #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
    #ini_parent_date: "${prev_date}"
-   input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
-   
+   #input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
+   input_dir: "/work/bb1460/foci_input2/nemo4_orca05/"
+
    resolution: "ORCA05"
    #version: "ORCA05_Z46_SI3_COUPLED" 
    # 64x51 = 3264 

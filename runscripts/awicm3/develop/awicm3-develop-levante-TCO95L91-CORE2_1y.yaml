@@ -6,7 +6,9 @@ general:
     compute_time: "01:00:00"
     initial_date: "2000-01-01"
     final_date: "2020-01-01"
-    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+
+    #base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    base_dir: "/work/ab0995/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
     nmonth: 0
     nyear: 1
@@ -16,7 +18,8 @@ computer:
 
 awicm3:
     postprocessing: false
-    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    #model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"

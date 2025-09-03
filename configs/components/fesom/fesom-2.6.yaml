@@ -1,30 +1,12 @@
 # FESOM2 YAML CONFIGURATION FILE
 #
-computer:
-    choose_general.execution_mode:
-        compile:
-            choose_computer.name:
-                levante:
-                    add_export_vars:
-                        CMAKE_SHARED_LINKER_FLAGS: '"-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64"'
-        run:
-            choose_computer.name:
-                levante:
-                    pool_dir: "${computer.pool_directories.pool}/AWICM/"
-                    climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
-                    forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
-                    mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
-                albedo:
-                    climate_data_dir: "${pool_dir}/FESOM/hydrography/"
-                    mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
-
 fesom:
     model: fesom
     branch: "2.6"
     version: "2.6"
     type: ocean
 
-    comp_command: mkdir -p build; cd build; cmake -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
     clean_command: ${defaults.clean_command}
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
@@ -57,7 +39,7 @@ fesom:
 
             #       -DCMAKE_SHARED_LINKER_FLAGS="$CMAKE_SHARED_LINKER_FLAGS";
       "2.6":
-        branch: "2.6.6"
+        branch: "2.6.10"
 
       "2.6-paleodyn":
         branch: "2.6.7"
@@ -76,6 +58,16 @@ fesom:
 
       "2.6.9":
         branch: "2.6.9"
+
+      "2.6.10":
+        branch: "2.6.10"
+
+      "2.6.11":
+        branch: "2.6.11"
+        
+      "2.6-main":
+        branch: "main"
+        namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.6"
     install_bins: bin/fesom.x
@@ -102,6 +94,17 @@ fesom:
     time_dimension: "time"
 
     pool_dir: "${computer.pool_directories.pool}"
+
+    choose_computer.name:
+        levante:
+            pool_dir: "${computer.pool_directories.pool}/AWICM/"
+            climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+            forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
+            mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+        albedo:
+            climate_data_dir: "${pool_dir}/FESOM/hydrography/"
+            mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
     climate_data_dir: "${pool_dir}/FESOM2/hydrography/phc3.0/"
@@ -129,43 +132,92 @@ fesom:
             - namelist.tra
             - namelist.transit
 
+    whichEVP: 0 # 0=EVP, 1=mEVP, 2=aEVP
+                # See: Kimmritz et. al 2015 & 2016: https://doi.org/10.1016/j.jcp.2015.04.051, https://doi.org/10.1016/j.ocemod.2016.03.004
     choose_resolution:
             CORE2:
                     nx: 126858
                     mesh_dir: "${fesom.mesh_base_dir}/core2/"
                     nproc: 288
+                    whichEVP: 0
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             pi:
                     nx: 3140
                     mesh_dir: "${fesom.mesh_base_dir}/pi/"
                     nproc: 4
+                    whichEVP: 0
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             LGM:
                     nx: 95239
                     mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_glac1d_m1_512/"
                     nproc: 1024
+                    whichEVP: 0
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             GLOB:
                     nx: 830305
+                    whichEVP: 1
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             CAVCORE2:
                     nx: 72411
                     mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
                     nproc: 288
+                    whichEVP: 0
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             PI_ICEv2:
                     nx: 132273
+                    whichEVP: 0
+                    alpha_evp: 250          # constant that control numerical stability of mEVP.
+                    beta_evp: 250           # constant that control numerical stability of mEVP.
             D3:
                     nx: 3160340
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             orca25:
                     nx: 912469
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             DART:
                     nx: 3160340
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
+            DARS:
+                    nx: 3160340
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             ROS2:
                     nx: 26306560
+                    whichEVP: 1
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
             HR:
                     nx: 1306775
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             jane:
                     nx: 33348172
+                    whichEVP: 1
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
             SO3:
                     nx: 11087062
+                    whichEVP: 1
+                    alpha_evp: 800          # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
             Arc01_fesom2:
                     nx: 753179
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
 
 
     restart_in_files:
@@ -329,7 +381,6 @@ fesom:
                         felem: "felem"
                         #num_non_melted_icb_file: "num_non_melted_icb_file"
 
-
     log_files:
             clock: clock
             mesh_diag: mesh_diag
@@ -478,6 +529,11 @@ fesom:
 
                             runoff_data_source: ${runoff_data_source}
                             sss_data_source: ${sss_data_source}
+            namelist.ice:
+                    ice_dyn:
+                            whichEVP: ${whichEVP}
+                            alpha_evp: ${alpha_evp}
+                            beta_evp: ${beta_evp}
 
     use_landice_water: False
     choose_general.iterative_coupling:
@@ -611,6 +667,10 @@ fesom:
             calv_oce:
                     grid: feom
             enth_oce:
+                    grid: feom
+            u10w_oce:
+                    grid: feom
+            v10w_oce:
                     grid: feom
 
 

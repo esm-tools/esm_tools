@@ -564,9 +564,9 @@ if [[ ! -f $DATA_DIR/fx/${EXP_ID}_${atmmod}_fx.nc ]]; then
 	cd $DATA_DIR/fx
 	
 	# select slm, slf from ECHAM6 output, calculated gridareas and add them
-	cdo -r -f nc4c -t echam6 -gridweights $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}${fileext}.$ftype weight_$startyear.nc
-	cdo -r -f nc4c -t echam6 -gridarea $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}${fileext}.$ftype area_$startyear.nc
-	cdo -r -f nc4c -t echam6 -selname,slm,slf -seltimestep,1 $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_echam_${startyear}${fileext}.szip slm_slf_$startyear.nc
+	cdo -r -f nc4c -t echam6 -gridweights $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}.$ftype weight_$startyear.nc
+	cdo -r -f nc4c -t echam6 -gridarea $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_co2_${startyear}.$ftype area_$startyear.nc
+	cdo -r -f nc4c -t echam6 -selname,slm,slf -seltimestep,1 $DATA_DIR/$atmmod/${EXP_ID}_${atmmod}_echam_${startyear}.$ftype slm_slf_$startyear.nc
 	cdo merge *_${startyear}.nc ${EXP_ID}_${atmmod}_fx.nc && rm *_${startyear}.nc
 	print 'ECHAM6 storing of static data finished'
 fi	

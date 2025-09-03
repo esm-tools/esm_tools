@@ -29,6 +29,7 @@ computer:
                             False:
                                     hyperthreading_flag: "--ntasks-per-core=1"
                             True:
+                                    launcher: srun
                                     hyperthreading_flag: ""
                                     launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
                                     add_export_vars:
@@ -43,6 +44,7 @@ computer:
                             False:
                                     hyperthreading_flag: "--ntasks-per-core=1"
                             True:
+                                    launcher: srun
                                     hyperthreading_flag: ""
                                     launcher_flags: "--mpi=pmi2 -l --kill-on-bad-exit=1 --cpu_bind=${cpu_bind}"
                                     add_export_vars:

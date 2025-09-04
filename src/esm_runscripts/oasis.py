@@ -122,6 +122,9 @@ class oasis:
         # this part was broke, confused seq with nb of trafo lines
 
         seq = int(direction.get("seq", "2"))
+
+        coupling_time_step = direction.get("coupling_time_step", coupling_time_step)
+
         # if transformation.get("postprocessing", {}).get("conserv", {}).get("method"):
         #    seq += 1
         time_step = direction.get("coupling_time_step", time_step)

@@ -89,8 +89,6 @@ class oasis:
         lresume,
         export_mode="DEFAULT",
     ):
-        # Ensure coupling_time_step is always defined added by LASZLO
-        coupling_time_step = time_step
         self.namcouple += ["#"]
 
         nb = self.next_coupling

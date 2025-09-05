@@ -4,8 +4,8 @@ general:
     version: "develop"
     account: "bb1469"
     compute_time: "02:00:00"
-    initial_date: "1900-01-01"
-    final_date: "2400-01-01"
+    initial_date: "1960-01-01"
+    final_date: "2060-01-01"
     #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-v3.4/" 
     nday: 0

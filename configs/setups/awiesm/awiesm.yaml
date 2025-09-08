@@ -71,6 +71,7 @@ general:
             couplings:
             - fesom-2.1-awiesm-2.1+echam-6.3.05p2-awiesm-2.1
             fesom_Dflags: "-DFESOM_COUPLED=ON"
+            with_recom: false
           '2.1-wiso':
             couplings:
             - fesom-2.1-wiso+echam-6.3.05p2-wiso
@@ -376,12 +377,14 @@ fesom:
                 is: invalid
 
         # use_ciso switch
-        choose_recom.use_ciso:
+        choose_general.with_recom:
                 true:
-                        add_config_sources: 
-                                io: "${namelist_dir}/namelist.io.recom.ciso"
-                                oce: "${namelist_dir}/namelist.oce.recom.ciso"
-                        num_tracers: 33 
+                        choose_recom.use_ciso:
+                                true:
+                                        add_config_sources: 
+                                                io: "${namelist_dir}/namelist.io.recom.ciso"
+                                                oce: "${namelist_dir}/namelist.oce.recom.ciso"
+                                        num_tracers: 33 
 #########################################################################################
 
 

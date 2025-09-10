@@ -121,13 +121,13 @@ ifcalcsla 1			! Whether to calculate SLA from leaf longevity
 				! (PFT-specific value can be specified in this file instead)
 ifcalccton 1			! Whether to calculate leaf C:N min from leaf longevity
 				! (PFT-specific value can be specified in this file instead)
-firemodel "BLAZE"		! BLAZE, GLOBFIRM, NOFIRE
+firemodel "NOFIRE"		! BLAZE, GLOBFIRM, NOFIRE
 weathergenerator "GWGEN"	! GWGEN, INTERP
 npatch 15			! Number of replicate patches to simulate
 patcharea 1000			! Patch area (m2)
 estinterval 5			! Years between establishment events in cohort mode
-ifdisturb 1			! Whether generic patch-destroying disturbances enabled
-distinterval 100		! Average return time for generic patch-destroying disturbances
+ifdisturb 0			! Whether generic patch-destroying disturbances enabled - was 1 LASZLO
+distinterval 500	! Average return time for generic patch-destroying disturbances
 				! Hickler et al. (2011) used 200
 ifbgestab 1			! Whether background establishment enabled
 ifsme 1				! Whether spatial mass effect enabled
@@ -154,8 +154,8 @@ iftreefracca 0			! Whether high vegetation fraction to be calculated from crown 
 !///////////////////////////////////////////////////////////////////////////////////////
 
 ifcentury 1			! Whether to use CENTURY SOM dynamics (mandatory for N cycling)
-ifnlim 1			! Whether plant growth limited by available N
-freenyears 100			! Number of years to spin up without N limitation (needed to build up a N pool)
+ifnlim 0			! Whether plant growth limited by available N - was 1 LASZLO
+freenyears 100		! Number of years to spin up without N limitation (needed to build up a N pool) Was 100 -LASZLO
 nfix_a 0.234			! First term in N fixation eqn (Conservative 0.102, Central 0.234, Upper 0.367)
 nfix_b -0.172			! Second term in N fixation eqn (Conservative 0.524, Central -0.172, Upper -0.754)
 nrelocfrac 0.5			! Fraction of N retranslocated prior to leaf and root shedding

@@ -15,10 +15,10 @@ lpj_guess:
         Description: Dynamic vegetation model
         Authors: Ben Smith
         Publications:
-            - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637. https://doi.org/10.1046/j.1466-822X.2001.t01-1-00256.x"
-            - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185. https://doi.org/10.1046/j.1365-2486.2003.00569.x"
-            - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development: https://doi.org/10.5194/gmd-15-6709-2022"
-            - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. https://doi.org/10.5281/zenodo.8065737"
+            - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637. <https://doi.org/10.1046/j.1466-822X.2001.t01-1-00256.x>"
+            - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185. <https://doi.org/10.1046/j.1365-2486.2003.00569.x>"
+            - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development: <https://doi.org/10.5194/gmd-15-6709-2022>"
+            - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. <https://doi.org/10.5281/zenodo.8065737>"
         License: Mozilla Public License Version 2.0
 
 
@@ -28,12 +28,15 @@ lpj_guess:
     #comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
     comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
 
+    setup_dir: "${model_dir}"
+    bin_dir: "${setup_dir}/bin"
     install_bins: "build/guess"
     clean_command: "rm -rf build"
     executable: guess
     execution_command: ${executable} ${runscript_name}
     #resolution: TL159 #if it's not set i dosen't work!
     resolution: TL255 #if it's not set i dosen't work!
+    TM5: false
 
     choose_version:
         4.1.1:
@@ -45,8 +48,9 @@ lpj_guess:
             git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
             branch: lpj_guess_awiesm3
             mygrid: TL255
-            install_bins: build/guess_TL255
-            executable: guess_TL255
+            maxgrid: 25215
+            install_bins: build/guess
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating
@@ -69,6 +73,20 @@ lpj_guess:
 
     # Some commonly used variables in other ESM-Tools components (but optional)
     input_dir: ${pool_dir}/lpj-guess/
+
+    # Define files to ignore
+    ignore_files:
+        outputs: outputs
+        log: log
+    ignore_in_work:
+        # Ignore output files with the same name
+        outputs: "output/*.out"
+        # Ignore log files
+        log: "*.log"
+    ignore_sources:
+        outputs: "output/*.out"
+        log: "*.log"
+
     namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
     gridlist_dir: ${input_dir}/gridlists/
     forcing_dir: ${input_dir}/climate_forcing_data/

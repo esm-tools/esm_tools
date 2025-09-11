@@ -1,6 +1,7 @@
 """
 Module Docstring.,..?
 """
+
 import copy
 import logging
 import sys
@@ -350,7 +351,12 @@ class Date(object):
 
     def _init_from_date(self, indate, calendar=Calendar()):
         self.year, self.month, self.day, self.hour, self.minute, self.second = (
-            indate.year, indate.month, indate.day, indate.hour, indate.minute, indate.second
+            indate.year,
+            indate.month,
+            indate.day,
+            indate.hour,
+            indate.minute,
+            indate.second,
         )
 
     @property

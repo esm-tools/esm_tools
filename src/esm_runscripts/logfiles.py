@@ -10,11 +10,13 @@ from . import helpers
 # WORKFLOW STATUS LOG FUNCTIONS
 ###############################
 
+
 def progress(self, message, *args, **kwargs):
     """
     Log a message at the PROGRESS level for loguru.
     """
     return self.log("PROGRESS", message, *args, **kwargs)
+
 
 def set_progress_level(config):
     """
@@ -29,8 +31,9 @@ def set_progress_level(config):
     logger.add(
         experiment_log_file,
         format="{time: YYYY-MM-DD HH:mm:ss.SSS} | {level} | {message}",
-        filter=lambda record: record["level"].name == "PROGRESS"
+        filter=lambda record: record["level"].name == "PROGRESS",
     )
+
 
 def initialize_logging(command_line_config):
     jobtype = command_line_config["jobtype"]
@@ -65,6 +68,7 @@ def initialize_logging(command_line_config):
         logger.debug(command_line_config)
     else:
         logger.add(stdout, level="INFO", format="{message}")
+
 
 def finalize_experiment_logfile(config, task):
 
@@ -109,9 +113,11 @@ def set_logfile_name(config, jobtype=None):
 
     return config
 
+
 ##############################
 # SINK CLASS FOR LOGURU.LOGGER
 ##############################
+
 
 class SmartSink:
     """
@@ -201,9 +207,7 @@ class SmartSink:
             self.write_log(self.log_record, "w")
             self.log_record = []  # Clear the log record after writing it to the file
         else:
-            logger.debug(
-                "Task log files are disabled. No log file will be written."
-            )
+            logger.debug("Task log files are disabled. No log file will be written.")
 
     def flush_to_stdout(self):
         """

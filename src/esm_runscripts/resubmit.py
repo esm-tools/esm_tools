@@ -49,9 +49,7 @@ def resubmit_SimulationSetup(config, cluster=None):
     logger.debug(f"{cluster} object built....")
 
     if f"{cluster}_update_{jobtype}_config_before_resubmit" in cluster_obj.config:
-        logger.debug(
-            f"{cluster} object needs to update the calling job config:"
-        )
+        logger.debug(f"{cluster} object needs to update the calling job config:")
         # FIXME(PG): This might need to be a deep update...?
         config.update(
             cluster_obj.config[f"{cluster}_update_{jobtype}_config_before_resubmit"]

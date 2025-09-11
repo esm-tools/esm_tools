@@ -44,6 +44,7 @@ the XDG standard (typically ~/.config/esm_archiving)::
     Writing global (user) configuration...
 
 """
+
 import logging
 import os
 

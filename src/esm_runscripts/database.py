@@ -1,8 +1,7 @@
 import os
 
 from loguru import logger
-from sqlalchemy import (Column, DateTime, Integer, Sequence, String,
-                        create_engine)
+from sqlalchemy import Column, DateTime, Integer, Sequence, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from esm_database import location_database

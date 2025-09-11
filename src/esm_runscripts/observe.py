@@ -54,9 +54,7 @@ def init_observe_logs(config):
     logger.info(exp_log_path)
 
     logger.debug("observing job initialized")
-    logger.debug(
-        f'attaching to process {str(config["general"]["launcher_pid"])}'
-    )
+    logger.debug(f'attaching to process {str(config["general"]["launcher_pid"])}')
     logger.debug(f"Called from a {called_from} job")
     return config
 

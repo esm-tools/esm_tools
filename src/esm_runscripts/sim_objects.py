@@ -115,7 +115,6 @@ class SimulationSetup(object):
         # 13. Store the ESM-Tools version in the config for later reference
         self.config["general"]["esm_tools_version"] = __version__
 
-
     def __call__(self, kill_after_submit=True):
         # Trigger inspect functionalities
         if self.config["general"]["jobtype"] == "inspect":
@@ -128,7 +127,6 @@ class SimulationSetup(object):
         org_jobtype = str(self.config["general"]["jobtype"])
         logfiles.set_logfile_name(self.config)
         logger.stdout_sink.def_path(self.config["general"]["logfile_path"])
-
 
         if self.config["general"]["jobtype"] == "prepcompute":
             self.prepcompute()
@@ -155,7 +153,6 @@ class SimulationSetup(object):
         resubmit.maybe_resubmit(self.config)
 
         logfiles.finalize_experiment_logfile(self.config, org_jobtype)
-
 
         if kill_after_submit:
             if self.config["general"].get("experiment_over", False):

@@ -103,8 +103,12 @@ def user_note_hints(note_text, hints):
 
             # Get the provenance
             provenance = None
-            if hasattr(mapping_with_provenance, "extract_first_nested_values_provenance"):
-                provenance = mapping_with_provenance.extract_first_nested_values_provenance()
+            if hasattr(
+                mapping_with_provenance, "extract_first_nested_values_provenance"
+            ):
+                provenance = (
+                    mapping_with_provenance.extract_first_nested_values_provenance()
+                )
             elif hasattr(mapping_with_provenance, "provenance"):
                 provenance = mapping_with_provenance.provenance[-1]
             else:

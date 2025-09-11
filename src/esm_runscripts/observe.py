@@ -84,6 +84,16 @@ def wake_up_call(config):
         # so that the next messages will be printed in stdout, instead of buffered
         logger.stdout_sink.flush_to_stdout()
         logger.stdout_sink.print_in_stdout = True
+        if (
+            config["general"]["jobtype"] == "observe_compute"
+            and not config["general"]["task_log_files"]
+        ):
+            # Observe log is always created to be used as a buffer while the
+            # compute job is running in parallel to the observe job. If
+            # ``task_log_files`` is ``False`` we delete the observe log file
+            # once the log buffer is not needed anymore, after having flushed
+            # its content to stdout.
+            os.remove(logger.stdout_sink.path)
     logger.debug("job ended, starting to tidy up now \n")
     return config
 

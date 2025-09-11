@@ -125,8 +125,6 @@ class SimulationSetup(object):
         # Run the preexp recipe
         self.config = prepexp.run_job(self.config)
 
-        # self.pseudocall(kill_after_submit)
-        # call to observe here..
         org_jobtype = str(self.config["general"]["jobtype"])
         logfiles.set_logfile_name(self.config)
         logger.stdout_sink.def_path(self.config["general"]["logfile_path"])

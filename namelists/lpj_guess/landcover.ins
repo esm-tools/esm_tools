@@ -1,0 +1,290 @@
+!///////////////////////////////////////////////////////////////////////////////////////
+!// LPJ-GUESS INSTRUCTION SCRIPT FOR COHORT/INDIVIDUAL MODE
+!// Global PFTs
+!//
+!// LPJ-GUESS 4.1
+!//
+!// peter anthoni 2016-05-19 updated for EC-Earth landcover
+!///////////////////////////////////////////////////////////////////////////////////////
+
+!///////////////////////////////////////////////////////////////////////////////////////
+! Input files
+!///////////////////////////////////////////////////////////////////////////////////////
+
+param "file_lu"      (str "")
+param "file_grossLUC" (str "")
+param "file_lucrop"  (str "")
+param "file_lupasture"  (str "")
+param "file_lunatural"  (str "")
+param "file_luforest"  (str "")
+param "file_woodharv_frac"      (str "")
+param "file_woodharv_cmass"      (str "")
+param "file_Nfert_st" (str "")
+param "file_cutinterval_st" (str "")
+param "file_firstmanageyear_st" (str "")
+
+!///////////////////////////////////////////////////////////////////////////////////////
+! Output files
+!///////////////////////////////////////////////////////////////////////////////////////
+
+! Predefined yearly output
+! These files may be outcommented if their output is not required. 
+
+!file_cmass_cropland "cmass_cropland.out"
+!file_cmass_pasture "cmass_pasture.out"
+!file_cmass_natural "cmass_natural.out"
+!file_cmass_forest "cmass_forest.out"
+!file_cmass_peatland "cmass_peatland.out"
+!file_anpp_cropland "anpp_cropland.out"
+!file_anpp_pasture "anpp_pasture.out"
+!file_anpp_natural "anpp_natural.out"
+!file_anpp_forest "anpp_forest.out"
+!file_anpp_peatland "anpp_peatland.out"
+!file_dens_natural "dens_natural.out"
+!file_dens_forest "dens_forest.out"
+!file_aaet_natural "aaet_natural.out"
+!file_aaet_forest "aaet_forest.out"
+!file_fpc_natural "fpc_natural.out"
+!file_fpc_forest "fpc_forest.out"
+!file_lai_natural "lai_natural.out"
+!file_lai_forest "lai_forest.out"
+!file_speciesdiam_natural "diam_natural.out"
+!file_speciesdiam_forest "diam_forest.out"
+!file_speciesheights_natural "height_natural.out"
+!file_speciesheights_forest "height_forest.out"
+
+!file_cmass_landscape "cmass_landscape.out"
+!file_cmass_landscape_forest "cmass_landscape_forest.out"
+!file_anpp_landscape "anpp_landscape.out"
+!file_anpp_landscape_forest "anpp_landscape_forest.out"
+
+!file_cflux_cropland "cflux_cropland.out"
+!file_cflux_pasture "cflux_pasture.out"
+!file_cflux_natural "cflux_natural.out"
+!file_cflux_forest "cflux_forest.out"
+!file_cflux_peatland "cflux_peatland.out"
+!file_cpool_cropland "cpool_cropland.out"
+!file_cpool_pasture "cpool_pasture.out"
+!file_cpool_natural "cpool_natural.out"
+!file_cpool_forest "cpool_forest.out"
+!file_cpool_peatland "cpool_peatland.out"
+!file_nflux_cropland "nflux_cropland.out"
+!file_nflux_pasture "nflux_pasture.out"
+!file_nflux_natural "nflux_natural.out"
+!file_nflux_forest "nflux_forest.out"
+!file_nflux_peatland "nflux_peatland.out"
+!file_npool_cropland "npool_cropland.out"
+!file_npool_pasture "npool_pasture.out"
+!file_npool_natural "npool_natural.out"
+!file_npool_forest "npool_forest.out"
+!file_npool_peatland "npool_peatland.out"
+
+!file_anpp_sts "anpp_sts.out"
+!file_cmass_sts "cmass_sts.out"
+!file_cmass_tree_sts "cmass_tree_sts.out"
+!file_cmass_tree_mort_sts "cmass_tree_mort_sts.out"
+!file_cmass_harv_killed_sts "cmass_harv_killed_sts.out"
+!file_cmass_wood_sts "cmass_wood_sts.out"
+!file_cmass_wood_harv_sts "cmass_wood_harv_sts.out"
+!file_cmass_wood_harv_toprod_sts "cmass_wood_harv_toprod_sts.out"
+!file_dens_sts "dens_sts.out"
+!file_diam_g_sts "diam_g_sts.out"
+!file_cutinterval_sts "cutinterval_sts.out"
+!file_cutinterval_thisyear_sts "cutinterval_thisyear_sts.out"
+!file_csoil_sts "csoil_sts.out"
+!file_clitter_sts "clitter_sts.out"
+!file_csink_sts "csink_sts.out"
+
+!file_agestruct_natural "agestruct_dens_natural.out"
+!file_agestruct_forest "agestruct_dens_forest.out"
+!file_diamstruct_natural "diamstruct_dens_natural.out"
+!file_diamstruct_forest "diamstruct_dens_forest.out"
+!file_diamstruct_cmass_natural "diamstruct_cmass_natural.out"
+!file_diamstruct_cmass_forest "diamstruct_cmass_forest.out"
+
+!file_forest_cmass_harv_killed "forest_cmass_harv_killed.out"
+
+!file_forest_vegc "forest_vegc.out"
+!file_forest_cflux_veg "forest_cflux_veg.out"
+!file_forest_harvest "forest_harvest.out"
+!file_harvest_flux_luc "harvest_flux_luc.out"
+!file_cflux_forestry "cflux_forestry.out"
+!file_cflux_regrowth "cflux_regrowth.out"
+!file_cflux_primary "cflux_primary.out"
+!file_cpool_forestry "cpool_forestry.out"
+!file_cpool_regrowth "cpool_regrowth.out"
+!file_cpool_primary "cpool_primary.out"
+
+printseparatestands 0	! Whether to print multiple stands within a land cover type (except cropland) separately
+
+!print_anpp_stand 0
+!print_lai_stand 1
+!print_cmass_stand 1
+!print_cmass_mort_stand 0
+!print_cmass_wood_stand 0
+!print_cmass_wood_harv_stand 0
+!print_height_stand 0
+!print_diam_stand 0
+!print_dens_stand 0
+!print_agestruct_stand 0
+!print_diamstruct_stand 0
+!print_diamstruct_cmass_stand 0
+
+printstandtypes 0
+!print_cmass_pft_st 1
+!print_diamstruct_cmass_st 1
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PANDCOVER PARAMETERS
+!///////////////////////////////////////////////////////////////////////////////////////
+
+npatch_secondarystand 1			! number of replicate patches to simulate in secondary stands
+reduce_all_stands 0			! Whether to reduce equal percentage of all stands of a stand type at land cover change
+age_limit_reduce 15			! Minimum age of stands to reduce at land cover change
+
+run_landcover 1				! Whether to use (and change) landcover fractions (1) or not (0)
+
+run_urban 1				! Whether to simulate barren land (1) or not (0)
+run_crop 1				! Whether to simulate crop vegetation (1) or not (0)
+run_forest 0				! Whether to simulate managed forest (1) or not (0)
+run_pasture 1				! Whether to simulate pasture (1) or not (0)
+run_natural 1				! Whether to simulate natural vegetation (1) or not (0)
+run_peatland 1				! Whether to simulate peatland (1) or not (0)
+run_barren 1				! Whether to simulate barren land (1) or not (0)
+
+ifslowharvestpool 1			! If a slow harvested product pool is included in patchpft.
+ifprimary_lc_transfer 1			! Whether to use primary/secondary land transition info in landcover transfer input file (1). or not (0)
+ifprimary_to_secondary_transfer 1	! Whether to use primary-to-secondary land transition info (within land cover type) in landcover 
+					! transfer input file (1). or not (0)
+harvest_secondary_to_new_stand 1  	! Whether to create new stands at clearcut of secondary stands when using wood harvest input (LUC functionality) (1). or not (0)
+transfer_level 1			! Pooling level of land cover transitions; 0: one big pool; 1: land cover-level; 2: stand type-level
+iftransfer_to_new_stand 0		! Whether to create new stands in transfer_to_new_stand() according to the rules in copy_stand_type()
+suppress_disturbance_in_forestry_stands 0 ! Whether to suppress disturbance and fire in forestry stands created as NATURAL stands in transfer_to_new_stand_from_stand() 
+					  ! or transfer_to_new_stand_from_st_lc() (eg. LUH2 input)
+
+harvest_burn_thin_trees 0
+
+! ecev3 - specific
+printcmip 1            ! Whether to print CMIP output
+printcmipdaily 1       ! Whether to print daily CMIP output
+
+!LUMIP: parameters for deforest_glob experiment
+deforest_method_type 0  ! LUMIP: deforestation method: 0=disabled, 1=deforest if start<=year<end and in all grid points
+                        ! 2=like 1, but only in gridpoints and years with a primary to secondary transition vs>0
+deforest_start_year  0  ! calendar year the establishment for trees will be turned off (0=disabled)
+deforest_end_year    0  ! calendar  year the establishment for trees will be turned on again (0=disabled)
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PARAMETERS FOR MANAGEMENT TYPES
+!///////////////////////////////////////////////////////////////////////////////////////
+
+group "crop_management" (
+
+	planting_system "monoculture"
+)
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PARAMETERS FOR STAND TYPES
+!///////////////////////////////////////////////////////////////////////////////////////
+
+group "crop_stand" (
+
+	landcover "cropland"
+	intercrop "naturalgrass" ! Use natural grass pft:s as covercrop
+	planting_system "monoculture"
+	hydrology "rainfed"
+	tillage_fact 2.0
+)
+
+st "Urban" (
+
+	common_stand
+	stinclude 1
+	landcover "urban"
+)
+
+st "Peatland" (
+
+	common_stand
+	stinclude 1
+	landcover "peatland"
+)
+
+st "Pasture" (
+
+	common_stand
+	stinclude 1
+	landcover "pasture"
+)
+
+st "Barren" (
+
+	common_stand
+	stinclude 1
+	landcover "barren"
+)
+
+st "Forest" (
+
+	common_stand
+	stinclude 1
+	landcover "forest"
+	naturalveg "all"		! Use natural pft:s
+	harvest_system "continuous"
+	suppress_fire 1
+	suppress_disturbance 1
+	res_outtake_twig_thin 0.4
+	res_outtake_coarse_root_thin 0
+)
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PARAMETERS FOR PFTS
+!// Run GUESS with -help option for list of keywords and their meanings
+!///////////////////////////////////////////////////////////////////////////////////////
+
+pft "C3G_pas" (
+	C3G
+	landcover "pasture"
+	harv_eff 0.5			! old value; intensive grazing: 90% grazed, 25-60 % returned to soil as faeces (0.36-0.675 removed, 0.5 OK average)
+	res_outtake 0.0			! not used by crop grass
+)
+
+pft "C4G_pas" (
+	C4G
+	landcover "pasture"
+	harv_eff 0.5			! old value; intensive grazing: 90% grazed, 25-60 % returned to soil as faeces (0.36-0.675 removed, 0.5 OK average)
+	res_outtake 0.0			! not used by crop grass
+)
+
+!pft "C3G_pea" (
+!	include 0 ! ECEv4.1 - No need when wetlandpfts.ins is used
+!	C3G
+!	landcover "peatland"
+!	harv_eff 0
+!)
+
+! ecev3
+!pft "C4G_pea" (
+!	include 0 ! ECEv4.1 - No need when wetlandpfts.ins is used
+!	C4G
+!	landcover "peatland"
+!	harv_eff 0
+!	res_outtake 0.0
+!)
+
+
+! ecev3
+pft "C3G_urb" (
+	C3G
+	landcover "urban"
+	harv_eff 0
+	res_outtake 0.0
+)
+
+! ecev3
+pft "C4G_urb" (
+	C4G
+	landcover "urban"
+	harv_eff 0
+	res_outtake 0.0
+)

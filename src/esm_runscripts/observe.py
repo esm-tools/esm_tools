@@ -3,7 +3,6 @@ import sys
 import time
 
 import psutil
-
 from loguru import logger
 
 from . import database_actions, helpers, logfiles

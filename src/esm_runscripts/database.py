@@ -1,11 +1,11 @@
 import os
 
+from loguru import logger
 from sqlalchemy import (Column, DateTime, Integer, Sequence, String,
                         create_engine)
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from esm_database import location_database
-from loguru import logger
 
 # database_file = os.path.dirname(os.path.abspath(__file__)) + "/../database/esm_runscripts.db"
 database_file = os.path.expanduser("~") + "/.esm_tools/esm_runscripts.db"

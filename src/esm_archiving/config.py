@@ -47,8 +47,8 @@ the XDG standard (typically ~/.config/esm_archiving)::
 import logging
 import os
 
-from xdgenvpy import XDGPedanticPackage
 import yaml
+from xdgenvpy import XDGPedanticPackage
 
 # Add XDG Standard
 xdg = XDGPedanticPackage("esm_archiving")

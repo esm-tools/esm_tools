@@ -1,12 +1,10 @@
 import os
 import sys
 
+import _io
 from loguru import logger
 
-import _io
-
 from . import helpers
-
 
 ###############################
 # WORKFLOW STATUS LOG FUNCTIONS

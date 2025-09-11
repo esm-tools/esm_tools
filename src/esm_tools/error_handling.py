@@ -2,8 +2,8 @@ import re
 import sys
 
 import colorama
-
 from loguru import logger
+
 
 def user_note(
     note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"], hints=[]

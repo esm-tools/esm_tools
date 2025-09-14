@@ -133,6 +133,16 @@ fesom:
             - namelist.tra
             - namelist.transit
 
+            - namelist.cvmix
+            - namelist.dyn
+            - namelist.forcing
+            - namelist.ice
+            - namelist.icepack
+            - namelist.io
+            - namelist.oce
+            - namelist.tra
+            - namelist.transit
+
     whichEVP: 0 # 0=EVP, 1=mEVP, 2=aEVP
                 # See: Kimmritz et. al 2015 & 2016: https://doi.org/10.1016/j.jcp.2015.04.051, https://doi.org/10.1016/j.ocemod.2016.03.004
     choose_resolution:
@@ -449,8 +459,8 @@ choose_fesom.with_recom:
                 restart_log:
                     restart_length: "${restart_rate}"
                     restart_length_unit: "${restart_unit}"
-                #run_config: #YY:TODO: new flag use_tp to switch on tracer parallelisation needed
-                    #num_fesom_groups: "${mpi_num_groups}"
+                run_config: #YY:TODO: new flag use_tp to switch on tracer parallelisation needed
+                    num_fesom_groups: "${mpi_num_groups}"
 
         # use_ciso switch
         # ---------------
@@ -724,16 +734,6 @@ choose_fesom.with_recom:
                     add_coupling_fields:
                             "[[wiso_fields-->FIELD]]":
                                     grid: feom
-
-
-    grids:
-            feom:
-                    name: feom
-                    nx: ${nx}
-                    ny: 1
-                    oasis_grid_type: "U"
-                    oyac_grid_type: "GC"
-                    oyac_io_per_node: 4
                     number_of_overlapping_points: 0 # oasis P-value
 
 

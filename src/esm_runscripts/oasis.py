@@ -50,7 +50,10 @@ class oasis:
             else:
                 self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
-            self.namcouple += [" $NLOGPRT", "           " + str(debug_level), " $END"]
+            if mct_version >= (5, 0):
+                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 0", " $END"]
+            else:
+                self.namcouple += [" $NLOGPRT", "           " + "1", " $END"]
         if mct_version >= (4, 0):
             # If true, OASIS can start without restart files
             self.namcouple += [" $NNOREST", "           " + str(nnorest), " $END "]
@@ -109,10 +112,10 @@ class oasis:
             else:
                 export_mode = "EXPORTED"
 
-        if bool(lresume) is False:
-            lag = str(0)
+        if not lresume and not direction.get('lag_overwrite'):
+            lag = 0
         else:
-            lag = direction.get("lag", "0")
+            lag = direction.get('lag')
 
         # if a transformation method for CONSERV (e.g. GLOBAL) is set below,
         # increase seq (=number of lines describing the transformation) by 1
@@ -121,6 +124,7 @@ class oasis:
         seq = int(direction.get("seq", "2"))
         # if transformation.get("postprocessing", {}).get("conserv", {}).get("method"):
         #    seq += 1
+        time_step = direction.get("coupling_time_step", time_step)
 
         p_rgrid = p_lgrid = "0"
         if "number_of_overlapping_points" in rgrid:
@@ -323,6 +327,10 @@ class oasis:
                             sys.exit(2)
                         detail_line += " " + normalization.upper() + " " + order.upper()
                     trafo_details += [detail_line.strip()]
+                elif trans.lower() in [
+                    "loctrans",
+                ]:
+                    continue
 
         allpost = transformation.get("postprocessing", "bla")
         if not isinstance(allpost, list):
@@ -489,7 +497,7 @@ class oasis:
 
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        is_runtime = gconfig["run_or_compile"] == "runtime"
+        is_runtime = gconfig["execution_mode"] == "run"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )

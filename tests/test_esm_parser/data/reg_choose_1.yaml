@@ -1,0 +1,32 @@
+# REGRESSION TEST DATA
+# model: awicm-1.0
+# type: choose block
+# issue: -
+# description: conflict between nested choose_execution_mode and
+#   choose_computer.execution_mode
+
+computer:
+  choose_computer.name:
+    levante:
+      choose_execution_mode:
+        compile:
+          add_export_vars:
+            NETCDF_DIR: ${computer.netcdf_cxx_root}  # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom.yaml,line:517,col:37
+  name: levante  # /Users/mandresm/Codes/esm_tools/configs/machines/levante.yaml,line:4,col:11
+  export_vars:
+    CPU_MODEL: AMD_EPYC_ZEN3 # /Users/mandresm/Codes/esm_tools/configs/machines/levante.yaml,line:96,col:24
+  execution_mode: compile # no provenance info
+  model: computer
+  choose_computer.execution_mode:
+    compile:
+      choose_computer.name:
+        albedo:
+          add_export_vars:
+            configure_opts: "'--without-regard-for-quality'"  # /Users/mandresm/Codes/esm_tools/configs/components/echam/echam.yaml,line:961,col:41
+    run:
+      add_export_vars:
+        AWI_FESOM_YAML: ${fesom.AWI_FESOM_YAML}  # /Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom.yaml,line:529,col:33
+_blackdict:
+    computer:
+      export_vars:
+        LC_ALL: en_US.UTF-8  # /Users/mandresm/Codes/esm_tools/configs/machines/levante.yaml,line:93,col:21

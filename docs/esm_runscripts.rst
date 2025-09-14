@@ -25,7 +25,7 @@ Optional arguments                                                  Description
   ``-c``, ``--check``                                               Run in check mode (don't submit job to supercomputer).
   ``-P``, ``--profile``                                             Write profiling information (esm-tools).
   ``-j LAST_JOBTYPE``, ``--last_jobtype LAST_JOBTYPE``              Write the jobtype this run was called from (esm-tools internal).
-  ``-t TASK``, ``--task TASK``                                      The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy_and_resubmit``.
+  ``-t TASK``, ``--task TASK``                                      The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy``.
   ``-p PID``, ``--pid PID``                                         The PID of the task to observe.
   ``-x EXCLUDE``, ``--exclude EXCLUDE``                             E[x]clude this step.
   ``-o ONLY``, ``--only ONLY``                                      [o]nly do this step.
@@ -102,7 +102,7 @@ As an example; let's say you only want to run the ``tidy`` phase of a
 particular job; which will move things from the particular run folder to the
 overall experiment tree. In this example; the experiment will be called ``test001``::
 
-        esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy_and_resubmit
+        esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy
 
 Experiment Directory Structure
 ------------------------------

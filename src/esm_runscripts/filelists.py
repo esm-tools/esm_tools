@@ -14,7 +14,7 @@ import yaml
 from loguru import logger
 
 import esm_parser
-from esm_tools import user_error
+from esm_tools import user_error, user_note
 
 from . import helpers, jinja
 
@@ -1250,7 +1250,9 @@ def avoid_overwriting(config, source, target):
     Function that appends the date stamp to ``target`` if the target already exists.
     Additionally, if the target exists, it renames it with the previous run time stamp,
     and creates a link named ``target`` that points at the target with the current time
-    stamp.
+    stamp. If the target exists and is not identical to the source then it will raise
+    a user friendly error, unless the ``force_overwrite_in_file_movements`` is set to
+    ``True`` in the general configuration (which will enforce the overwrite).
 
     Note
     ----
@@ -1264,19 +1266,47 @@ def avoid_overwriting(config, source, target):
         Path of the source of the file that will be copied/moved/linked
     target : src
         Path of the target of the file that will be copied/moved/linked
+
+    Raises
+    ------
+    user_error : esm_tools.helpers.user_error
+        If the target file exists and is not identical to the source file
     """
     if os.path.isfile(target):
         if filecmp.cmp(source, target):
             return target
 
+        warning_function = user_error
+        action = "Skipping movement"
+        hint = (
+            "\n\nNote: if you are rerunning a given run and you want to enforce "
+            "overwriting the output files, you can define "
+            "'general.force_overwrite_in_file_movements: True'. Use it at your own "
+            "risk and only if you understand why are you doing this. You should never "
+            "run with it set True as a default."
+        )
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
-            user_error(
+            if filecmp.cmp(source, date_stamped_target):
+                logger.info(
+                    f"File {date_stamped_target} already exists and is identical to "
+                    f"the source ({source}). Skipping copying"
+                )
+            elif config["general"]["force_overwrite_in_file_movements"]:
+                os.remove(date_stamped_target)
+                warning_function = user_note
+                action = "Overwriting the file"
+                hint = ""
+            else:
+                # This will exit(1) (default in configs/defaults/general.yaml)
+                warning_function = user_error
+
+            warning_function(
                 "File movement conflict",
-                f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
-                f"{source} -> {date_stamped_target}",
+                f"The file ``{date_stamped_target}`` already exists. {action}:\n"
+                f"{source} -> {date_stamped_target}"
+                f"{hint}",
             )
-            return target
 
         if os.path.islink(target):
             os.remove(target)

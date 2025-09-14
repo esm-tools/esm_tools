@@ -8,12 +8,12 @@ fesom:
         ice_unit: 'm'
         atmice_freq: 1
         atmice_unit: 'm'
-        
+
         # General control of surface output
         surf_freq: 1
         surf_unit: 'd'
 
-        # General control of MLD output 
+        # General control of MLD output
         # MLD1: max buoyancy gradient criterion
         # MLD2: sigma criterion (surf + 0.125 kg.m3)
         mld_freq: 1

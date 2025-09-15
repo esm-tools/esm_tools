@@ -89,6 +89,10 @@ def _transform(nested_list):
 @caller_wrapper
 def _get_real_dir_from_pth_file(subfolder):
     logger.debug(f"Trying to resolve: {subfolder}")
+    if subfolder == "motd_flag":
+        flag_val = "mymotd_flag"
+    else:
+        flag_val = None
     if subfolder.startswith("/"):
         logger.warning("Subfolder is strange!")
         logger.warning(subfolder)
@@ -151,6 +155,8 @@ def _get_real_dir_from_pth_file(subfolder):
                         break  # Break out of the for loop
             logger.debug(f"actual_package_data_dir={actual_package_data_dir}")
             return actual_package_data_dir
+    if flag_val == "mymotd_flag":
+        return None # I am not sure what should be returned here but it seems necessary due to esm_motd/esm_motd.py changes
     raise FileNotFoundError(
         f"Could not determine where {subfolder}'s path is inside the esm-tools installation! These were searched for info: {site_packages_dirs}"
     )

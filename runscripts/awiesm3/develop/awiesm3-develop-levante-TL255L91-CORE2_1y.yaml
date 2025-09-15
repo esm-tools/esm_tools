@@ -1,11 +1,11 @@
 general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
-    version: "develop"
+    version: "develop-cc"
     account: "ab0246"
-    compute_time: "00:30:00"
+    compute_time: "02:00:00"
     initial_date: "1900-01-01"
-    final_date: "1900-01-04"
+    final_date: "1905-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
     nmonth: 0

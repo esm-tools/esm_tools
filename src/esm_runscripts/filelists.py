@@ -1223,7 +1223,7 @@ def copy_files(config, filetypes, source, target):
                             )
 
     for (file_source, file_target), movement_output in futures.items():
-        if config["general"].get("parallel_file_movements", False):
+        if config["general"].get("parallel_file_movements", False) == "threads":
             result = movement_output.result()
         else:
             result = movement_output

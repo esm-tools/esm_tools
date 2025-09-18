@@ -992,6 +992,8 @@ computer:
                     levante:
                         iolibraries: system_gnu_libs
                         compiler_mpi: gnu11_ompi4
+                    albedo:
+                        compiler_suite: gcc
             '*':
                 choose_name:
                     juwels:

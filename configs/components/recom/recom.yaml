@@ -145,7 +145,7 @@ recom:
                                           sedflx_num: 0
                                           add_loopback: false
 
-choose_scenario:
+    choose_scenario:
         PI-CTRL:
                 constant_CO2: true
                 REcoM_PI: true
@@ -192,8 +192,8 @@ choose_scenario:
                             \n- numofCO2cycles\n- currentCO2cycle"
                         ask_user_to_continue: True
 
-namelist_sce: ""
-namelist_dir: "${fesom.model_dir}/config/"
+    namelist_sce: ""
+    namelist_dir: "${fesom.model_dir}/config/"
 
     # FESOM-2 standalone + REcoM options
     fesom2_standalone: "$((
@@ -233,22 +233,22 @@ namelist_dir: "${fesom.model_dir}/config/"
     config_in_work:
             recom: "namelist.recom"
 
-restart_in_files:
+    restart_in_files:
         par_oce_restart: par_bio_restart        
 
-restart_in_in_work:
+    restart_in_in_work:
         par_bio_restart: fesom.${parent_date!syear}.bio.restart/*.nc
 
-restart_in_sources:
+    restart_in_sources:
         par_bio_restart: fesom.${parent_date!syear}.bio.restart/*.nc
 
-restart_out_files:
+    restart_out_files:
         par_bio_restart: par_bio_restart
 
-restart_out_in_work:
+    restart_out_in_work:
         par_bio_restart: fesom.${end_date!syear}.bio.restart/*.nc
 
-restart_out_sources:
+    restart_out_sources:
         par_bio_restart: fesom.${end_date!syear}.bio.restart/*.nc
 
 

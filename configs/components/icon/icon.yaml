@@ -23,7 +23,6 @@ icon:
         License:
            ICON is now open source, see https://www.icon-model.org 
 
-
    clean_command: ${defaults.clean_command}
    executable: icon   
    # TODO: decide whether we wan't to treat jsbach and hd
@@ -80,7 +79,7 @@ icon:
    lresume: false
 
    # parallelization
-   nproma: 752
+   nproma: 8 
    omp_num_threads: 1
 
    # grid settings
@@ -91,7 +90,7 @@ icon:
 
    # time step (4min), ICON uses the http://en.wikipedia.org/wiki/ISO_8601 standard
    # for time stamps and time periods
-   dtime: 360 
+   dtime: 450 
    #radTimeStep: PT60M
 
    # restart intervals
@@ -110,19 +109,20 @@ icon:
    #
    # JSBACH settings
    #
-   jsbach_with_hd: no
+   jsbach_with_hd: yes
    jsbach_year: 1850 # Trang uses 2000 but I don't have the data on levante
    jsbach_usecase: jsbach_pfts    # jsbach_lite or jsbach_pfts
    lcarbon: false
 
+   # 7 = GEMS ozone climatology, no input files needed 
    # 5 = default prescribed ozone
-   # 1 = Cariolle ozone chemistry
-   with_ozone: 5
+   with_ozone: 7
    # 0 = no aerosol in radiation
    # 18 = Kinne background aerosol + Stenchikov volcanic aerosol in the
    #      stratosphere + MacSP V2 simple plumes
    # for other options see doc/Namelist_Overview.pdf in the ICON repository
-   aerosol: 18
+   # 12 tropospheric ’Kinne’ aerosols, constant in time
+   aerosol: 12 
 
    #
    # namelists and namelist settings/changes
@@ -130,13 +130,13 @@ icon:
    namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/"
    namelists:
        - NAMELIST_atm
-       - NAMELIST_JSBACH_DOM01
+       - NAMELIST_lnd
        - icon_master.namelist
 
    config_sources:
       'icon_master.namelist': ${namelist_dir}/icon_master.namelist 
       NAMELIST_atm: ${namelist_dir}/NAMELIST_atm   
-      NAMELIST_JSBACH_DOM01: ${namelist_dir}/NAMELIST_JSBACH_DOM01   
+      NAMELIST_lnd: ${namelist_dir}/NAMELIST_lnd   
 
    # https://esm-tools.readthedocs.io/en/latest/yaml.html#changing-namelists
    namelist_changes:
@@ -153,16 +153,17 @@ icon:
          parallel_nml:
             nproma: ${nproma}
          grid_nml:
-            dynamics_grid_filename: ${grid_name}.nc
+            dynamics_grid_filename: icon${resolution}_DOM01.nc
          run_nml:
-            dtime: 360 
-            msg_level: 15
+            dtime: ${dtime} 
+            modelTimeStep: PT${dtime}S
+            msg_level: 1
             restart_filename: ${expid}_restart_atm_<rsttime>.mfr
          radiation_nml:
             ecrad_data_path: ${model_dir}/icon/externals/ecrad/data/ 
          output_nml:
             # TODO: different file names, look at f90nml issue
-            output_filename: ${expid}
+            # output_filename: ${expid}
             output_start: ${start_date}
             output_end: ${next_date}
             #output_interval: ${output_interval}
@@ -171,7 +172,7 @@ icon:
             # my set of output variables
             # operation: ${operation}
                   
-      NAMELIST_JSBACH_DOM01:
+      NAMELIST_lnd:
          jsb_model_nml:
             usecase: ${jsbach_usecase}
          jsb_fuel_nml:
@@ -180,20 +181,30 @@ icon:
    choose_jsbach_with_hd:
       yes:
          add_namelist_changes:
-            NAMELIST_JSBACH_DOM01:
+            NAMELIST_lnd:
                jsb_hd_nml:
                   active: true
                   routing_scheme: full
                   bc_filename: bc_land_hd.nc
                   diag_water_budget: true 
                   debug_hd: false
-                  enforce_water_budget: true  # True: stop in case of water conservation problem
+                  # enforce_water_budget: true  # True: stop in case of water conservation problem
+         add_input_files:
+             land_hd: land_hd
+
+      no:
+         add_namelist_changes:
+            NAMELIST_lnd:
+               jsb_hd_nml:
+                  active: false
 
    choose_with_ozone:
-      1:
-         add_input_files:
-            ozone_cariolle: ozone_cariolle
       5:
+         add_namelist_changes:
+            NAMELIST_atm:
+                radiation_nml:
+                    irad_o3: 5
+
          choose_scenario:
             'PI-CTRL':
                add_forcing_files:
@@ -201,6 +212,11 @@ icon:
             'cmip6hist':
                add_forcing_files:
                   ozone_hist: ozone_hist
+      7:
+         add_namelist_changes:
+            NAMELIST_atm:
+                radiation_nml:
+                    irad_o3: 7
 
    choose_aerosol:
       18:
@@ -210,6 +226,11 @@ icon:
             kinne_fin: kinne_fin
          add_forcing_files:
             stenchikov_sw: stenchikov_sw
+      12:
+         add_input_files:
+            kinne_sw: kinne_sw
+            kinne_lw: kinne_lw
+            kinne_fin: kinne_fin
    #
    # output data settings
    #
@@ -256,9 +277,9 @@ icon:
       mcica_gamma: mcica_gamma
       #vardict: vardict
       atmo_dyn_grid: atmo_dyn_grid 
-      atmo_dyn_grid_grfinfo: atmo_dyn_grid_grfinfo 
+      #atmo_dyn_grid_grfinfo: atmo_dyn_grid_grfinfo 
       extpar: extpar
-      greenhouse_gases: greenhouse_gases
+     #greenhouse_gases: greenhouse_gases
       macv2_sp: macv2_sp
       # swflux: swflux
       sst: sst
@@ -351,7 +372,7 @@ icon:
       # ICON grid description file
       # TODO: implement nested grids correctly
       atmo_dyn_grid: ${icon_pool}/grids/${grid_name}.nc 
-      atmo_dyn_grid_grfinfo: ${icon_pool}/grids/${grid_name}-grfinfo.nc 
+      #atmo_dyn_grid_grfinfo: ${icon_pool}/grids/${grid_name}-grfinfo.nc 
 
       # initial conditions
       #ifs2icon: ${input_dir}/grids/private/dian/mpim/${grid_id}/initial_condition/r0001/ifs2icon_2000010100_${resolution}_${grid_label}.nc
@@ -376,11 +397,14 @@ icon:
       sst: ${icon_pool}/path/to/data/SST_*__${resolution}_${grid_label}.nc
 
       # JSBACH
-      ic_land_soil: ${jsbach_ic_dir}/bc_land_soil_${jsbach_year}.nc
+      ic_land_soil: ${jsbach_ic_dir}/ic_land_soil_${jsbach_year}_slo1623.nc
       land_sso: ${jsbach_ic_dir}/bc_land_sso_${jsbach_year}.nc
       land_phys: ${jsbach_ic_dir}/bc_land_phys_${jsbach_year}.nc
       land_soil: ${jsbach_ic_dir}/bc_land_soil_${jsbach_year}.nc
       lctlib: ${model_dir}/icon/externals/jsbach/data/lctlib_nlct21.def
+
+      # HD model 
+      land_hd: ${jsbach_ic_dir}/hdpara_r2b4_0012_0035_sc_hfrac_v2.nc
 
    input_in_work:
       cloud_optics: ECHAM6_CldOptProps.nc
@@ -391,12 +415,12 @@ icon:
       mcica_gamma: mcica_gamma.nc
       dictlatbc: dict.latbc
       #vardict: vardict.txt
-      extpar: icon_extpar_tiles.nc
-      atmo_dyn_grid: ${grid_name}.nc
-      atmo_dyn_grid_grfinfo: ${grid_name}-grfinfo.nc
+      extpar: extpar_icon${resolution}_DOM01.nc
+      atmo_dyn_grid: icon${resolution}_DOM01.nc
+      #atmo_dyn_grid_grfinfo: ${grid_name}-grfinfo.nc
       ifs2icon: ifs2icon.nc
       ic_land_soil: ic_land_soil.nc
-      greenhouse_gases: bc_greenhouse_gases.nc
+      #greenhouse_gases: bc_greenhouse_gases.nc
       ozone_cariolle: cariolle_coeff.nc
       macv2_sp: MACv2.0-SP_v1.nc
       kinne_lw: bc_aeropt_kinne_lw_b16_coa.nc 
@@ -409,6 +433,7 @@ icon:
       land_phys: bc_land_phys.nc
       land_soil: bc_land_soil.nc
       lctlib: lctlib_nlct21.def
+      land_hd: bc_land_hd.nc
 
    forcing_in_work:
       ozone_hist: bc_ozone_@YEAR@.nc

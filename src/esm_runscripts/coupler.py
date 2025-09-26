@@ -51,15 +51,13 @@ class coupler_class:
     def prepare(self, full_config, destination_dir):
 
         coupler_name = self.name
+        couplingfile = None
         if coupler_name == "oasis3mct":
             self.add_couplings(full_config)
             self.finalize(destination_dir)
             if full_config["general"]["verbose"]:
                 self.print_config_files()
 
-        if coupler_name == "yac":
-            couplingfile = "coupling.yaml"
-        else:
             couplingfile = "namcouple"
         return couplingfile
 

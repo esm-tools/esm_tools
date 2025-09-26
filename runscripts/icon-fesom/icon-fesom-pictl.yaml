@@ -1,4 +1,6 @@
-#computer:
+computer:
+    use_hyperthreading: True
+    additional_flags: "--threads-per-core=2"
    # launcher_flags: -l --kill-on-bad-exit=1 --nodes=${SLURM_JOB_NUM_NODES:-1} --distribution=plane --hint=nomulti     thread --ntasks=$((no_of_nodes * mpi_procs_pernode)) --ntasks-per-node=${mpi_procs_pernode} --cpus-per-task=${OMP_NUM_THREADS}
    #   launcher_flags: -l --kill-on-bad-exit=1 --distribution=plane 
 general:
@@ -7,8 +9,8 @@ general:
    setup_name: icon-fesom
    compute_time: "00:45:00"
    account: bb0519
-   initial_date: "1980-01-01T00:00:00"       # Initial exp. date
-   final_date: "1980-04-01T00:00:00"         # Final date of the experiment
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-04-01T00:00:00"         # Final date of the experiment
    nmonth: 1
    
    base_dir: ${homedir}/esm/esm-experiments/ 
@@ -17,8 +19,10 @@ general:
 
 icon:
    version: "2024.10-public"
-   nproc: 256
-   omp_num_threads: 8
+   #nproc: 256
+   #omp_num_threads: 8
+   nproc: 1488
+   omp_num_threads: 1
    
    modelTimeStep: PT6M 
    radTimeStep: PT60M
@@ -28,3 +32,4 @@ icon:
 
 fesom:
    version: "2.6.2-yac"
+   nproc: 432 

@@ -88,10 +88,7 @@ def prepare_coupler_files(config):
             config, config["general"]["coupler_config_dir"]
         )
         coupler_name = config["general"]["coupler"].name
-        if coupler_name == "yac":
-            couplingfile = "coupling.xml"
-        else:
-            couplingfile = "namcouple"
+        couplingfile = "namcouple"
 
         all_files_to_copy_append(
             config,

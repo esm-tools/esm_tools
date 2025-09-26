@@ -160,11 +160,17 @@ def add_eol_comments_with_provenance(commented_config, config):
             if isinstance(value, (list, dict)):
                 add_eol_comments_with_provenance(value, config[indx])
             else:
-                provenance = getattr(config[indx], "provenance", [None])[-1]
-                if provenance:
-                    provenance_comment = f"{provenance['yaml_file']},line:{provenance['line']},col:{provenance['col']}"
-                else:
-                    provenance_comment = f"no provenance info"
+                #print(commented_config)
+                #print(config)
+                #print(indx, value)
+                # due to duplicate namelists (occur with ICON) we get an IndexError: list index out of range
+                # workaround by seb-wahl
+                # TODO: find a better solution
+                provenance_comment = f"no provenance info"
+                if 0 <= indx < len(config): 
+                    provenance = getattr(config[indx], "provenance", [None])[-1]
+                    if provenance:
+                        provenance_comment = f"{provenance['yaml_file']},line:{provenance['line']},col:{provenance['col']}"
                 commented_config.yaml_add_eol_comment(provenance_comment, indx)
 
 

@@ -869,9 +869,21 @@ overcome this problem the user needs to specify the **full path** to the
 Error-handling and warning syntax
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This syntax allows for error-handling and raising of warnings from the configuration
-files (i.e. `yaml` files in ``esm_tools/configs``). For including an error or a warning
-under a given condition (e.g. ``choose_`` block for a given selection) use the key
+Catching errors during runtime of models and scripts
+----------------------------------------------------
+
+The `check_error` syntax allows for checking for specific errors and warnings on the log
+files of your computations (model computations for example) and defining which actions
+`esm_runscripts` needs to take, namely, warning, killing the process or asking for input
+from the user. One can configure this behavior from the config files (i.e. `yaml` files in 
+``esm_tools/configs``) or even the runscript yaml.
+
+Raising errors and warnings
+---------------------------
+
+The `error`/`warning` syntax allows for error-handling and raising of warnings from the
+configuration files (i.e. `yaml` files in ``esm_tools/configs``). For including an error
+or a warning under a given condition (e.g. ``choose_`` block for a given selection) use the key
 words ``error`` or ``warning`` respectively (if more than one error/warning is present
 in the section of your file, use ``add_error/warning`` to combine them).
 

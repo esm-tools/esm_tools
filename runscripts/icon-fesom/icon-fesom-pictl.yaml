@@ -3,6 +3,12 @@ computer:
     additional_flags: "--threads-per-core=2"
    # launcher_flags: -l --kill-on-bad-exit=1 --nodes=${SLURM_JOB_NUM_NODES:-1} --distribution=plane --hint=nomulti     thread --ntasks=$((no_of_nodes * mpi_procs_pernode)) --ntasks-per-node=${mpi_procs_pernode} --cpus-per-task=${OMP_NUM_THREADS}
    #   launcher_flags: -l --kill-on-bad-exit=1 --distribution=plane 
+    check_error:
+      "srun: error:" :
+          frequency: 30
+          method: "warn" # default is kill
+          message: "SLURM ERROR: slurm ended with an error, good luck."
+          file: "stdout"
 general:
    use_venv: false
    homedir: !ENV ${HOME}

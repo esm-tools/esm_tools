@@ -888,7 +888,7 @@ These are useful for:
 
 The syntax for defining errors and warnings is as follows:
 
-### Syntax
+**Syntax**
 
 .. code-block:: yaml
 
@@ -903,7 +903,7 @@ Note that you can nest errors and warnings inside other blocks, for example insi
 to trigger them based on the value of a variable, and also use ``add_error`` and ``add_warning``
 to add multiple errors and warnings to the final list of errors and warnings.
 
-### Example
+**Example**
 
 .. code-block:: yaml
 
@@ -942,7 +942,7 @@ specific actions when certain patterns are detected. This is useful for:
 - Monitoring for specific warning messages
 - Taking automated actions based on model output
 
-### Syntax
+**Syntax**
 
 .. code-block:: yaml
 
@@ -954,7 +954,7 @@ specific actions when certain patterns are detected. This is useful for:
                message: "Custom error message"  # Optional custom message
                frequency: 60  # Check interval in seconds (default: 60)
 
-### Parameters
+**Parameters**
 
 * ``<error_pattern>``: Text or regex pattern to search for in log files
 * ``file``: (Optional) Path to log file to monitor (supports variables)
@@ -966,7 +966,7 @@ specific actions when certain patterns are detected. This is useful for:
 * ``message``: Custom message to log when pattern is found
 * ``frequency``: How often to check the log file (in seconds)
 
-### Example
+**Example**
 
 .. code-block:: yaml
 
@@ -980,7 +980,7 @@ specific actions when certain patterns are detected. This is useful for:
                method: "warn"
                message: "Warning detected in ECHAM output"
 
-### Behavior
+**Behavior**
 
 - The monitoring runs in a background process during model execution
 - Log files are checked at the specified frequency
@@ -988,7 +988,7 @@ specific actions when certain patterns are detected. This is useful for:
   - For ``method: warn``: Logs a warning message
   - For ``method: kill``: Terminates the job and logs an error
 
-### Best Practices
+**Best Practices**
 
 1. Use specific patterns to avoid false positives
 2. Include helpful error messages that explain the issue

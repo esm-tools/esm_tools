@@ -32,13 +32,14 @@
     out_expname = 'EXP_ID'
     rerun_filetype = 4
     delta_time = 450
-    putdata = 6, 'hours', 'first', 0
+    putdata = 1, 'days', 'last', 0
+    trigfiles = 1, 'months', 'first', 0
     nproma = 16
     lcouple = .true.
     getocean = 24, 'steps', 'exact', 0
     putocean = 24, 'steps', 'exact', -450
     lcouple_co2 = .false.
-    default_output = .true.
+    default_output = .false.
     ltdiag = .true.
     lresume = .false.
 /
@@ -46,20 +47,85 @@
     rmscon_hi = 0.92 ! default is 1.0
     rmscon_lo = 1.13
 /
-&tdiagctl
-    puttdiag = 6, 'hours', 'first', 0
-    tdiagnam = 'radheat'
+
+&mvstreamctl
+    filetag = 'temraw'
+    source = 'sp','gl','g3b' 
+    target = '*inst'
+    interval = 6, 'hours', 'first', 0
+    variables = 'svo:=inst','sd:=inst','lsp:=inst','geosp:=inst','st:=inst','q:=inst'
 /
-&set_stream_element ! 'default st'
-    stream = 'tdiag'
-    name = 'st'
+
+&mvstreamctl
+    filetag = 'echam'
+    source = 'sp', 'gl', 'g3b'
+!    !target = 'echamday'
+!    interval = 1, 'days', 'last', 0
+!    !variables = '*', 't2max:=max', 't2min:=min'
+/
+
+&mvstreamctl
+    filetag = 'co2'
+    source = 'co2'
+    interval = 1, 'days', 'last', 0
+/
+
+&mvstreamctl
+    filetag = 'tdiag'
+    source = 'tdiag'
+    meannam = 'dtdt_rheat_sw', 'dtdt_rheat_lw', 'geosp', 'aps', 'lsp', 'gboxarea'
+    interval = 1, 'days', 'last', 0
+/
+
+&mvstreamctl
+    filetag = 'jsbach'
+    source = 'jsbach'
+    interval = 1, 'days', 'last', 0
+/
+
+&mvstreamctl
+    filetag = 'land'
+    source = 'land'
+    interval = 1, 'days', 'last', 0
+/
+
+&mvstreamctl
+    filetag = 'veg'
+    source = 'veg'
+    interval = 1, 'days', 'last', 0
+/
+
+&mvstreamctl
+    filetag = 'yasso'
+    source = 'yasso'
+    interval = 1, 'days', 'last', 0
+/
+
+&set_stream
+    stream = 'jsbach'
     lpost = 0
 /
-&set_stream_element ! 'default tm1'
-    stream = 'tdiag'
-    name = 'tm1'
+
+&set_stream
+    stream = 'land'
     lpost = 0
 /
+
+&set_stream
+    stream = 'veg'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'surf'
+    lpost = 0
+/
+
+&set_stream
+    stream = 'yasso'
+    lpost = 0
+/
+
 &mvstreamctl ! 'default mozm'
     filetag = 'moz'
     source = 'moz'
@@ -102,10 +168,10 @@
     stream = 'ma'
     lpost = 0
 /
-&set_stream ! 'default surf'
-    stream = 'surf'
-    lpost = 0
-/
+!&set_stream ! 'default surf'
+!    stream = 'surf'
+!    lpost = 0
+!/
 &radctl
   iaero   = 8
   ighg    = 1

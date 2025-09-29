@@ -34,7 +34,7 @@ icon:
    scenario: 'PI-CTRL'
    
    compile_infos:
-       choose_version:
+      choose_version:
          2.6.6-nwp: 
             git-repository: https://gitlab.dkrz.de/icon-geomar/icon-nwp.git 
             branch: geomar-swahl 

@@ -14,13 +14,35 @@ from . import helpers
 def progress(self, message, *args, **kwargs):
     """
     Log a message at the PROGRESS level for loguru.
+
+    This function provides a custom logging level for tracking experiment progress.
+    It logs messages at the PROGRESS level (15) which is between DEBUG and INFO.
+
+    Parameters
+    ----------
+    message : str
+        The message to log.
+
+    Returns
+    -------
+    The return value of the underlying log method.
     """
     return self.log("PROGRESS", message, *args, **kwargs)
 
 
 def set_progress_level(config):
     """
-    Set the PROGRESS level for loguru logger.
+    Set up the PROGRESS level for loguru logger and configure experiment logging.
+
+    This function creates a custom PROGRESS logging level if it doesn't exist,
+    adds the progress method to the logger class, and sets up a file handler
+    for experiment log files that only captures PROGRESS level messages.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary containing general experiment settings,
+        specifically 'general.experiment_log_file' for the log file path.
     """
     if not hasattr(logger, "progress"):
         PROGRESS_LEVEL = 15
@@ -31,11 +53,25 @@ def set_progress_level(config):
     logger.add(
         experiment_log_file,
         format="{time: YYYY-MM-DD HH:mm:ss.SSS} | {level} | {message}",
+        # Only log PROGRESS level messages to the experiment log file
         filter=lambda record: record["level"].name == "PROGRESS",
     )
 
 
 def initialize_logging(command_line_config):
+    """
+    Initialize the logging system based on command line configuration.
+
+    This function sets up the loguru logger with appropriate sinks and logging levels
+    based on the provided command line configuration. It handles different job types
+    and configures stdout redirection for specific scenarios like ``observe_compute``
+    jobs.
+
+    Parameters
+    ----------
+    command_line_config : dict
+        Dictionary containing command line configuration.
+    """
     jobtype = command_line_config["jobtype"]
     verbose = command_line_config["verbose"]
     debug = command_line_config["debug"]
@@ -71,6 +107,20 @@ def initialize_logging(command_line_config):
 
 
 def finalize_experiment_logfile(config, task):
+    """
+    Finalize the experiment log file by writing completion information.
+
+    This function logs the completion of a task with relevant experiment information
+    including run number, current date, and job ID to the progress log. This information
+    goes to the progress logging file, not the run logging file.
+
+    Parameters
+    ----------
+    config : dict
+        Configuration dictionary containing general experiment settings.
+    task : str
+        The name of the task that has been completed.
+    """
 
     run_number = str(config["general"]["run_number"])
     current_date = str(config["general"]["current_date"])
@@ -133,6 +183,16 @@ class SmartSink:
     """
 
     def __init__(self, print_in_stdout=True, task_log_files=True):
+        """
+        Initialize the SmartSink instance.
+
+        Parameters
+        ----------
+        print_in_stdout : bool, optional
+            Whether to print log messages to standard output. Default is True.
+        task_log_files : bool, optional
+            Whether to enable task log files. Default is True.
+        """
         # Initialise instance variables
         self.log_record = []
         self.path = None
@@ -211,8 +271,16 @@ class SmartSink:
 
     def flush_to_stdout(self):
         """
-        Flushes the log record to stdout. This is useful if you want to see the logs
-        immediately after they are written, without waiting for the file to be defined.
+        Flush the log record to stdout.
+
+        This method outputs all buffered log messages to standard output. If there are
+        messages in the log record buffer, they are printed and the buffer is cleared.
+        If no buffered messages exist but a log file path is defined and exists,
+        the contents of the log file are printed to stdout.
+
+        This is useful when you want to see the logs immediately after they are written,
+        without waiting for the file to be defined or when switching from file logging
+        back to stdout logging.
         """
         if self.log_record:
             for line in self.log_record:

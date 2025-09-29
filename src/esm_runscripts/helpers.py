@@ -13,10 +13,6 @@ from esm_profile import print_profile_summary
 from esm_tools import user_error
 
 
-def vprint(message, config):
-    logger.debug(message)
-
-
 def print_datetime(config):
     """prints the datetime of the operation if `verbose` option is True"""
     logger.debug(datetime.now())

@@ -8,7 +8,6 @@ event_handlers.signal_listener()
 
 # Import from Python Standard Library
 import argparse
-import logging
 import os
 import sys
 
@@ -17,7 +16,7 @@ from loguru import logger
 from esm_motd import check_all_esm_packages
 from esm_tools import user_error
 
-from .helpers import SmartSink
+from .logfiles import SmartSink, initialize_logging
 from .sim_objects import *
 
 
@@ -30,10 +29,23 @@ def parse_shargs():
         "-d",
         "--debug",
         help="Print lots of debugging statements",
-        action="store_const",
-        dest="loglevel",
-        const=logging.DEBUG,
-        default=logging.ERROR,
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--trace",
+        help="Print even more debugging statements (trace level, most of it for esm_parser)",
+        action="store_true",
+        default=False,
+    )
+
+    parser.add_argument(
+        "--task-log-files",
+        help="Do not write task-specific log files",
+        action="store_true",
+        default=False,
+        dest="task_log_files",
     )
 
     parser.add_argument(
@@ -81,9 +93,9 @@ def parse_shargs():
     parser.add_argument(
         "--modify-config",
         "-m",
-        dest="modify",
+        dest="modify_config_file",
         help="[m]odify configuration",
-        default="",  # kh 15.07.20 "usermods.yaml"
+        default=None,  # kh 15.07.20 "usermods.yaml"
     )
 
     parser.add_argument(
@@ -111,6 +123,7 @@ def parse_shargs():
         "-p",
         "--pid",
         help="The PID of the task to observe.",
+        dest="launcher_pid",
         default=-666,
     )
 
@@ -118,6 +131,7 @@ def parse_shargs():
         "-s",
         "--start_date",
         help="The start_date of the run, overwriting settings in the date file.",
+        dest="current_date",
         default=None,
     )
 
@@ -151,8 +165,9 @@ def parse_shargs():
     parser.add_argument(
         "--no-motd",
         help="supress the printing of MOTD",
-        default=False,
-        action="store_true",
+        default=True,
+        dest="motd",
+        action="store_false",
     )
 
     parser.add_argument(
@@ -166,87 +181,37 @@ def parse_shargs():
 
 
 def main():
+    logger.add(sys.stdout, level="WARNING", format="{message}")
+
     ARGS = parse_shargs()
-
-    check = False
-    profile = None
-    update = False
-    expid = "test"
-    pid = -666
-    start_date = None
-    run_number = None
-    jobtype = "unknown"
-    verbose = False
-    inspect = None
-    use_venv = None
-    modify_config_file = None
-    no_motd = False
-
     parsed_args = vars(ARGS)
+
+    jobtype = parsed_args["task"]
+    verbose = parsed_args["verbose"]
+    debug = parsed_args["debug"]
+    trace = parsed_args["trace"]
+    task_log_files = parsed_args["task_log_files"]
+    motd = parsed_args["motd"]
+
+    use_venv = None
+    if parsed_args["contained_run"] is not None:
+        use_venv = parsed_args["contained_run"]
+    if parsed_args["open_run"] is not None:
+        use_venv = not parsed_args["open_run"]
 
     original_command = " ".join(sys.argv[1:])
 
-    if "check" in parsed_args:
-        check = parsed_args["check"]
-    if "profile" in parsed_args:
-        profile = parsed_args["profile"]
-    if "pid" in parsed_args:
-        pid = parsed_args["pid"]
-    if "start_date" in parsed_args:
-        start_date = parsed_args["start_date"]
-    if "run_number" in parsed_args:
-        run_number = parsed_args["run_number"]
-    if "update" in parsed_args:
-        update = parsed_args["update"]
-    if "update_filetypes" in parsed_args:
-        update_filetypes = parsed_args["update_filetypes"]
-    if "expid" in parsed_args:
-        expid = parsed_args["expid"]
-    if "task" in parsed_args:
-        jobtype = parsed_args["task"]
-    if "verbose" in parsed_args:
-        verbose = parsed_args["verbose"]
-    if "inspect" in parsed_args:
-        inspect = parsed_args["inspect"]
     if parsed_args["contained_run"] and parsed_args["open_run"]:
         logger.error(
             "You have set both --contained-run and --open-run, this makes no sense."
         )
         logger.error(parsed_args)
         sys.exit(1)
-    if parsed_args["contained_run"] is not None:
-        use_venv = parsed_args["contained_run"]
-    if parsed_args["open_run"] is not None:
-        use_venv = not parsed_args["open_run"]
-    if "modify" in parsed_args:
-        modify_config_file = parsed_args["modify"]
-    if "no_motd" in parsed_args:
-        no_motd = parsed_args["no_motd"]
-    if "ignore_config_warnings" in parsed_args:
-        ignore_config_warnings = parsed_args["ignore_config_warnings"]
 
-    command_line_config = {}
-    command_line_config["check"] = check
-    command_line_config["profile"] = profile
-    command_line_config["update"] = update
-    command_line_config["update_filetypes"] = update_filetypes
-    command_line_config["expid"] = expid
-    command_line_config["launcher_pid"] = pid
-    command_line_config["current_date"] = start_date
-    command_line_config["run_number"] = run_number
+    command_line_config = parsed_args
     command_line_config["jobtype"] = jobtype
-    command_line_config["last_jobtype"] = ARGS.last_jobtype
-    command_line_config["verbose"] = verbose
-    command_line_config["inspect"] = inspect
     command_line_config["use_venv"] = use_venv
-    command_line_config["no_motd"] = no_motd
-    command_line_config["ignore_config_warnings"] = ignore_config_warnings
-    if modify_config_file:
-        command_line_config["modify_config_file"] = modify_config_file
 
-    # runscript_from_cmdline = filter(lambda x: x.endswith(".yaml"), sys.argv)
-    # runscript_from_cmdline = list(runscript_from_cmdline)[0]
-    # runscript_full_path = os.path.realpath(runscript_from_cmdline)
     runscript_full_path = os.path.realpath(ARGS.runscript)
     runscript_dir, runscript = os.path.split(runscript_full_path)
     runscript_dir += "/"
@@ -266,24 +231,10 @@ def main():
     # full path including the yaml file: runscript_dir + runscript
     command_line_config["runscript_abspath"] = runscript_full_path
 
-    # Define a sink object to store the logs. Path of the logs can be later specified
-    # by using <sink_obj>.def_path(<path>)
-    trace_sink = SmartSink()
-    logger.trace_sink = trace_sink
-
-    logger.remove()
-    logger.add(trace_sink.sink, level="TRACE")
-
-    if verbose:
-        logger.add(sys.stdout, level="DEBUG", format="{message}")
-        logger.debug(f"Started from: {command_line_config['started_from']}")
-        logger.debug(f"starting (jobtype): {jobtype}")
-        logger.debug(command_line_config)
-    else:
-        logger.add(sys.stdout, level="INFO", format="{message}")
+    initialize_logging(command_line_config)
 
     setup = SimulationSetup(command_line_config=command_line_config)
     # if not Setup.config['general']['submitted']:
-    if not setup.config["general"]["submitted"] and not no_motd:
+    if not setup.config["general"]["submitted"] and motd:
         check_all_esm_packages()
     setup()

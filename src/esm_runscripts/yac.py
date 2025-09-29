@@ -321,43 +321,31 @@ class yac:
         os.chdir(config["general"]["thisrun_work_dir"])
         filelist = ""
         for field in all_fields:
-            logger.info(field + "-" + model)
+            logger.info(f"{field}-{model}")
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")
-            logger.info(thesefiles)
+            logger.info(f"{thesefiles}")
             for thisfile in thesefiles:
-                logger.info("cdo showtime " + thisfile + " 2>/dev/null | wc -w")
+                logger.info(f"cdo showtime {thisfile} 2>/dev/null | wc -w")
                 lasttimestep = (
                     subprocess.check_output(
-                        "cdo showtime " + thisfile + " 2>/dev/null | wc -w", shell=True
+                        f"cdo showtime {thisfile} 2>/dev/null | wc -w", shell=True
                     )
                     .decode("utf-8")
                     .rstrip()
                 )
 
                 logger.info(
-                    "cdo -O seltimestep,"
-                    + str(lasttimestep)
-                    + " "
-                    + thisfile
-                    + " onlyonetimestep.nc"
+                    f"cdo -O seltimestep,{lasttimestep} {thisfile} onlyonetimestep.nc"
                 )
                 os.system(
-                    "cdo -O seltimestep,"
-                    + str(lasttimestep)
-                    + " "
-                    + thisfile
-                    + " onlyonetimestep.nc"
+                    f"cdo -O seltimestep,{lasttimestep} {thisfile} onlyonetimestep.nc"
                 )
-                logger.info(
-                    "ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc"
-                )
-                os.system(
-                    "ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc"
-                )
-                filelist += "notimestep_" + field + ".nc "
-                logger.info(filelist)
-        logger.info("cdo merge " + filelist + " " + restart_file)  # + enddate)
-        os.system("cdo merge " + filelist + " " + restart_file)  # + enddate)
+                logger.info(f"ncwa -O -a time onlyonetimestep.nc notimestep_{field}.nc")
+                os.system(f"ncwa -O -a time onlyonetimestep.nc notimestep_{field}.nc")
+                filelist += f" notimestep_{field}.nc"
+                logger.info(f"File list: {filelist}")
+        logger.info(f"cdo merge {filelist} {restart_file}")  # + enddate)
+        os.system(f"cdo merge {filelist} {restart_file}") # + enddate)
         rmlist = glob.glob("notimestep*")
         rmlist.append("onlyonetimestep.nc")
         for rmfile in rmlist:

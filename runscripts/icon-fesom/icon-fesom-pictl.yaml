@@ -24,6 +24,9 @@ general:
    version: "v1.0"
 
 icon:
+   # As icon insist on having the restart files in link that points to a directory
+   # we have to run this pre_run_command, this can hopefully change in the future
+   pre_run_commands: "cd ${work_dir} && test -d ${parent_expid}_restart_atm_${start_rsttime}.mfr && ln -s ${parent_expid}_restart_atm_${start_rsttime}.mfr ${parent_expid}_restart_atm.mfr"
    version: "2024.10-public"
    #nproc: 256
    #omp_num_threads: 8

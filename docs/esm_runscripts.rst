@@ -436,7 +436,7 @@ Logging and verbosity
 ``esm_runscripts`` uses Loguru-based logging with simple flags to control verbosity and
 file logging. Logs are always written in the main run log (
 ``<base_dir>/<expid>/log/<expid>_<model>_<datestamp>_<jobid>.log``). For more log
-granularity is possible to also set ``--task-log-files`` as a flag of
+granularity, it is possible to also set ``--task-log-files`` as a flag of
 ``esm_runscripts``, to  write logs of each task to a separate file. You can use the
 following ``esm_runscripts`` flags to control  the logging behavior:
 

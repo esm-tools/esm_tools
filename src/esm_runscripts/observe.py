@@ -191,7 +191,7 @@ def check_for_errors(config):
                                 break
                             elif method == "kill":
                                 cancel_job = f"scancel {config['general']['jobid']}"
-                                logger.error("ERROR: {message}")
+                                logger.error(f"ERROR: {message}")
                                 logger.error("Will kill the run now...")
                                 logger.stdout_sink.flush_to_stdout()
                                 database_actions.database_entry_crashed(config)

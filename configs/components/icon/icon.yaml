@@ -34,7 +34,7 @@ icon:
    scenario: 'PI-CTRL'
    
    compile_infos:
-      choose_version:
+       choose_version:
          2.6.6-nwp: 
             git-repository: https://gitlab.dkrz.de/icon-geomar/icon-nwp.git 
             branch: geomar-swahl 
@@ -243,13 +243,13 @@ icon:
    # restart settings, ICON uses multifile restarts
    #
    # all restart files are stored in a subdirectory in work at the end of a run
-   restart_in_files:
-      restart_atm_mfr: restart_atm_mfr
-   restart_in_sources: 
-      #restart_atm: /path/to/global/restart_atm_DOM01.nc
-      restart_atm_mfr: ${parent_expid}_restart_atm_${start_rsttime}.mfr/*
+   #restart_in_files:
+   #   restart_atm_mfr: restart_atm_mfr
+   #restart_in_sources: 
+   #   #restart_atm: /path/to/global/restart_atm_DOM01.nc
+   #   restart_atm_mfr: ${parent_expid}_restart_atm_${start_rsttime}.mfr/*
    #restart_in_in_work:
-   #    restart_atm_mfr: multifile_restart_atm.mfr/* 
+   #    restart_atm_mfr: ${parent_expid}_restart_atm_${start_rsttime}.mfr/* 
    restart_out_sources: 
       #restart_atm: /path/to/global/restart_atm_DOM01.nc
       restart_atm_mfr: ${expid}_restart_atm_${end_rsttime}.mfr/*

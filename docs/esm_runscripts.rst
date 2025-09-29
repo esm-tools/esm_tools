@@ -445,7 +445,7 @@ following ``esm_runscripts`` flags to control  the logging behavior:
 * ``-d``, ``--debug``: enable ``DEBUG``-level output to stdout (less detailed than
   ``--trace``) and breakpoints.
 * ``-v``, ``--verbose``: also enables ``DEBUG``-level output to stdout, without
-   breakpoints.
+  breakpoints.
 * ``--task-log-files``: enable per-task log files on disk. When enabled,
   ``esm_runscripts`` writes each task's output to a file in the  experiment's ``log``
   folder (``<base_dir>/<expid>/log/<expid>_<model>_<task>_<datestamp>_<jobid>.log``).

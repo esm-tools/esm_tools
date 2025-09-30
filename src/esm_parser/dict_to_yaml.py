@@ -160,10 +160,8 @@ def add_eol_comments_with_provenance(commented_config, config):
             if isinstance(value, (list, dict)):
                 add_eol_comments_with_provenance(value, config[indx])
             else:
-                #print(commented_config)
-                #print(config)
-                #print(indx, value)
-                # due to duplicate namelists (occur with ICON) we get an IndexError: list index out of range
+                # due to duplicate namelists (occur with ICON) we get an 
+                # IndexError: list index out of range
                 # workaround by seb-wahl
                 # TODO: find a better solution
                 provenance_comment = f"no provenance info"

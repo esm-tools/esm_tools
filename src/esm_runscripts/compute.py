@@ -88,17 +88,19 @@ def prepare_coupler_files(config):
             config, config["general"]["coupler_config_dir"]
         )
         coupler_name = config["general"]["coupler"].name
-        couplingfile = "namcouple"
 
-        all_files_to_copy_append(
-            config,
-            coupler_name,
-            "config",
-            couplingfile,
-            config["general"]["coupler_config_dir"] + "/" + coupler_filename,
-            None,
-            None,
-        )
+        if coupler_name == "oasis3mct" and coupler_filename:
+            couplingfile = "namcouple"
+
+            all_files_to_copy_append(
+                config,
+                coupler_name,
+                "config",
+                couplingfile,
+                config["general"]["coupler_config_dir"] + "/" + coupler_filename,
+                None,
+                None,
+            )
     return config
 
 

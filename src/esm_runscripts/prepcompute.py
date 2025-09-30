@@ -82,12 +82,10 @@ def prepare_coupler_files(config):
             config, config["general"]["coupler_config_dir"]
         )
         coupler_name = config["general"]["coupler"].name
-        if coupler_name == "yac":
-            couplingfile = "coupling.yaml"
-        else:
+
+        if coupler_name == "oasis3mct" and coupler_filename:
             couplingfile = "namcouple"
 
-        if coupler_filename:
             all_files_to_copy_append(
                 config,
                 coupler_name,

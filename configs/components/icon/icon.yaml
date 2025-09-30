@@ -12,7 +12,7 @@
 icon:
 
    model: icon 
-   version: 2025.04-public 
+   version: 2024.10-public 
 
    metadata:
         Institute: MPI-Met 
@@ -39,6 +39,11 @@ icon:
             git-repository: https://gitlab.dkrz.de/icon-geomar/icon-nwp.git 
             branch: geomar-swahl 
             comp_command: 'tar zxf externals.tar.gz ; ./config/dkrz/levante.intel --enable-openmp ; make -j 16' 
+         2024.10-public:
+            branch: release-${icon.version} 
+         2025.04-public:
+            branch: release-${icon.version} 
+
 
       # default settings 
       git-repository: https://gitlab.dkrz.de/icon/icon-model.git 
@@ -459,6 +464,13 @@ computer:
       compile:
          choose_computer.name:
             levante:
+               input_dir: /work/bb0519/foci_input2/ICON-FESOM/ICON 
+               icon_pool: ${input_dir} 
+               grid_dir: ${icon_pool}/grids
+               aerosol_dir: ${icon_pool}/${icon.grid_id}/aerosol_kinne/r0001
+               ic_dir: ${icon_pool}/ic
+               jsbach_ic_dir: ${icon_pool}/Coupled/JSBach4ini/vga/0012-0035/r04vg
+               jsbach_forcing_dir: ${jsbach_ic_dir}
                iolibraries: None 
                compiler_mpi: None
                # this should work but esm_master is still stupid and can't resolve computer.name

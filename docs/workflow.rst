@@ -5,40 +5,28 @@ ESM Runscripts - Using the Workflow Manager
 Introduction
 ------------
 
-Starting with Release 6.0, esm_runscripts allows to define additional phases for e.g. data processing, coupling.
-Such subjobs can be arranged into clusters, and the order of execution can be set in a flexible and short way from the runscript. This is applicable for both pre- and postprocessing, but especially useful for iterative coupling jobs, like e.g. coupling pism to vilma (see below). In this section we explain the basic concept, describe the keywords that have to be set in the runscript in order to make use of this feature, and give some examples on how to integrate pre- and postprocessing jobs and how to set up phases for iterative coupling.
+Starting with Release 6.0, ``esm_runscripts`` allows to define additional `job` for e.g. data processing, coupling.
+Such subjobs can be arranged into job-clusters, and the order of execution can be set in a flexible and short way from the runscript. This is applicable for both pre- and postprocessing, but especially useful for iterative coupling jobs, like e.g. coupling PISM to VILMA (see below). In this section we explain the basic concept, describe the keywords that have to be set in the runscript in order to make use of this feature, and give some examples on how to integrate pre- and postprocessing jobs and how to set up jobs for iterative coupling.
 
-Default phases of a general model simulation run
+Default jobs of a general model simulation run
 --------------------------------------------------------
 
-Even before the addition of the workflow manager, the run jobs of esm_runscript were split into different subjobs, even though that was mostly hidden from the user's view. Before
-Release 6.0, these subjobs were:
-
-::
-
-        compute --> tidy (incl. wait_and_observe + resubmit next run)
-
-Technically, ``wait_and_observe`` was part of the tidy job, as was the resubmission, including above only for the purpose of demonstrating the difference to the 
-new standard workflow, which is now (post-Release 6.0)::
+The task of ``esm_runscript`` is split into different subjobs which are::
 
         newrun --> prepcompute --> compute --> observe_compute --> tidy (+ resubmit next run)
 
-Other than before adding the workflow manager, these standard subjobs are all separated and independant subjobs, each submitted (or started) by the previous subjob in one of three
-ways (see below). The splitting of the old compute job into newrun, prepcompute and compute on one side, and tidy into observe and tidy, was necessary to enable
-the user to insert coupling subjobs for iterative coupling at the correct places. Here is what each of the standard subjobs does:
-
-These standard phases are all separated and independant phases, each submitted (or started) by the previous phase in one of three ways (see below). Here is what each of the standard phases does:
-
-.. The splitting of the old compute job into newrun, prepcompute and compute on one side, and tidy_and_resubmit into observe and tidy, was necessary to enable the user to insert coupling subjobs for iterative coupling at the correct places. Here is what each of the standard subjobs does:
+These standard jobs are all separated and independent, each submitted (or started) by the previous job in one of three
+ways (see below). Here is what each of the standard jobs do:
 
 ====================================================== ============================================================= ========================
-Phase                                                  Function                                                      Started by
+Job                                                    Description                                                   Started by
 ====================================================== ============================================================= ========================
   newrun                                               Initializes a new experiment, only very basic stuff, like
                                                        creating (empty) folders needed by any of the following 
                                                        subjobs/phases. 
-                                                       NEEDS TO BE THE FIRST SUBJOB/PHASE OF ANY 
-                                                       :term:`EXPERIMENT<experiment>`.
+                                                       .. warning:: 
+                                                          It needs to be the first job of any 
+                                                          :term:`experiment<experiment>`.
   prepcompute                                          Prepares the compute job. All the (Python) functionality that
                                                        needs to be run, up to the job submission. Includes copying
                                                        files, editing namelists, write batch scripts, etc.

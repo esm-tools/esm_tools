@@ -16,7 +16,7 @@ computer:
 
 awicm3:
     postprocessing: false
-    model_dir: "/home/a/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"

@@ -118,7 +118,7 @@ runscripts.
 Variable Calls
 ~~~~~~~~~~~~~~
 
-Variables defined in a `YAML` file can be invoked on the same file or in oder files
+Variables defined in a `YAML` file can be invoked on the same file or in other files
 provided that the file where it is defined is read for the given operation.
 The syntax for calling an already defined variable is:
 
@@ -494,106 +494,19 @@ sharing the specified common name around the position of the ``*`` symbol, follo
 used by the Unix shell.
 
 
-Environment and Namelist Changes (``_changes``)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Namelist and Coupling Changes (``_changes``)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The functionality ``_changes`` is used to control environment, namelist and coupling
+The functionality ``_changes`` is used to control namelist and coupling
 changes. This functionality can be used from config files, but also runscripts. If
 the same type of ``_changes`` is used both in config files and a runscript for a
 simulation, the dictionaries are merged following the hierarchy specified in the
 :ref:`yaml_hierarchy:YAML File Hierarchy` chapter.
 
-Environment Changes
--------------------
-
-Environment changes are used to make changes to the default environment defined in the
-machine files (``esm_tools/configs/machines/<name_of_the_machine>.yaml``). There are
-three types of environment changes:
-
-.. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
-
-   ``environment_changes``,             Changes for both the compilation and the runtime environments.
-   ``compiletime_environment_changes``, Changes to the environment applied only during compilation.
-   ``runtime_environment_changes``,     Changes to the environment applied only during runtime.
-
-Two types of `yaml` elements can be nested inside an environment changes:
-``add_module_actions`` and ``add_export_vars``.
-
-* Use ``add_module_actions`` to include one `module` command or a list of them. The
-  shell command ``module`` is already invoked by `ESM-Tools`, therefore you only need to
-  list the options (i.e. ``load/unload <module_name>``).
-
-* Use ``add_export_vars`` to export one or a list of environment variables. Shell
-  command ``export`` is not needed here, just define the variable as
-  ``VAR_NAME: VAR_VALUE`` or as a nested dictionary.
-
-For more information about ``esm_environment`` package, please check
-:ref:`esm_environment:ESM Environment`.
-
-**Example**
-
-.. tabs::
-   .. tab:: fesom.yaml
-
-      The model `FESOM` needs some environment changes for compiling in `Mistral` and
-      `Blogin` HPCs, which are included in `FESOM`'s configuration file
-      (``esm_tools/configs/components/fesom/fesom.yaml``):
-
-      .. code-block:: yaml
-
-         [ ... ]
-
-         compiletime_environment_changes:
-                 add_export_vars:
-                         takenfrom:      fesom1
-         choose_computer.name:
-                 mistral:
-                         add_compiletime_environment_changes:
-                                 add_module_actions:
-                                         - "unload gcc"
-                                         - "load gcc/4.8.2"
-                 blogin:
-                         add_compiletime_environment_changes:
-                                 add_export_vars:
-                                         - "NETCDF_DIR=/sw/dataformats/netcdf/intel.18/4.7.3/skl/"
-                                         - "LD_LIBRARY_PATH=$NETCDF_DIR/lib/:$LD_LIBRARY_PATH"
-                                         - "NETCDF_CXX_INCLUDE_DIRECTORIES=$NETCDF_DIR/include"
-                                         - "NETCDF_CXX_LIBRARIES=$NETCDF_DIR/lib"
-                                         - "takenfrom='fesom1'"
-
-         runtime_environment_changes:
-                 add_export_vars:
-                         AWI_FESOM_YAML:
-                                 output_schedules:
-                                         -
-                                                 vars: [restart]
-                                                 unit: ${restart_unit}
-                                                 first: ${restart_first}
-                                                 rate: ${restart_rate}
-                                         -
-                                                 [ ... ]
-
-      Independently of the computer, ``fesom.yaml`` exports always the ``takenfrom``
-      variable for compiling. Because ``compiletime_environment_changes`` is already
-      defined for that purpose, any ``compiletime_environment_changes`` in a
-      ``choose_`` block needs to have an ``add_`` at the beginning. Here we see that a
-      ``choose_`` block is used to select which changes to apply compile environment
-      (``add_compiletime_environment_changes``) depending on the HPC system we are in
-      (`Mistral` or `Blogin`). For more details on how to use the ``choose_`` and
-      ``add_`` functionalities see :ref:`yaml:Switches (\`\`choose_\`\`)` and
-      :ref:`yaml:Append to an Existing List (\`\`add_\`\`)`.
-
-      We also see here how ``runtime_environment_changes`` is used to add nested
-      information about the output schedules for `FESOM` into an
-      ``AWI_FESOM_YAML`` variable that will be exported to the runtime environment.
-
 Changing Namelists
 ------------------
 
 It is also possible to specify namelist changes to a particular section of a namelist:
-
 
 .. code-block:: yaml
 
@@ -658,6 +571,11 @@ For example, in the ``fesom-1.4+echam-6.3.04p1.yaml`` used in `AWICM-1.0`,
    - sed -i '/FESOM_COUPLED/s/OFF/ON/g' fesom-1.4/CMakeLists.txt
    - sed -i '/ECHAM6_COUPLED/s/OFF/ON/g' echam-6.3.04p1/CMakeLists.txt
 
+Environment Configuration
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+For complete documentation on environment configuration, please refer to:
+:ref:`esm_environment:ESM Environment`
 
 List Loops
 ~~~~~~~~~~
@@ -887,6 +805,21 @@ Movements specific to files are still compatible with the ``file_type`` option, 
 only the moves specifically defined for files in the ``file_movements`` will differ
 from those defined using the ``file_type``.
 
+Create empty folders
+--------------------
+
+File dictionaries create the necessary folders that are not present in the target path
+when copying files. However, some times you might need to create just an empty folder,
+without copying any files. This can be done by including ``create_folders`` in one of
+the component sections of the desired yaml:
+
+.. code-block:: yaml
+
+   lpj_guess:
+       create_folders:
+           - ${work_dir}/folder1
+           - ${work_dir}/folder2
+
 Accessing Variables from the Previous Run (``prev_run``)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -915,6 +848,7 @@ of a `FESOM` simulation and store it in a variable called `prev_time_step`:
    already available in the current run, under variables such as
    ``last_start_date``, ``parent_start_date``, etc.
 
+
 Branchoff experiments with ``prev_run``
 ---------------------------------------
 
@@ -932,33 +866,42 @@ overcome this problem the user needs to specify the **full path** to the
 
     prev_run_config_file: "/<basedir>/<expid>/config/<expid>_finished_config.yaml_<DATE>-<DATE>"
 
-Error-handling and warning syntax
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Error-handling and warnings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This syntax allows for error-handling and raising of warnings from the configuration
-files (i.e. `yaml` files in ``esm_tools/configs``). For including an error or a warning
-under a given condition (e.g. ``choose_`` block for a given selection) use the key
-words ``error`` or ``warning`` respectively (if more than one error/warning is present
-in the section of your file, use ``add_error/warning`` to combine them).
+ESM-Tools provides two distinct mechanisms for handling errors and warnings:
 
-The syntax in the yaml files for triggering warnings or errors is as follows:
+1. **Configuration Errors/Warnings**: For validating configuration during setup
+2. **Runtime Error Detection**: For monitoring model execution and log files
+
+Configuration Errors and Warnings
+---------------------------------
+
+The ``error`` and ``warning`` keys allow you to define validation rules (for example with
+``choose_`` blocks) that are checked during the configuration phase of a simulation.
+These are useful for:
+
+- Validating user input in runscripts
+- Enforcing version requirements
+- Warning about deprecated configurations
+- Preventing invalid combinations of settings
+
+The syntax for defining errors and warnings is as follows:
+
+**Syntax**
 
 .. code-block:: yaml
 
-   warning/error:
-       <name>: # Name for the specific warning or error
-           message: "the message of the warning/error"
-           esm_tools_version: ">/</=/!=/version_number" # trigger it under certain ESM-Tools version conditions
-           ask_user_to_continue: True/False # Ask user about continuing or stopping the process, only for warnings, errors always kill the process
+   # Basic syntax
+   error/warning:
+       <unique_name>:  # A descriptive name for this error/warning. You can use any string you want.
+           message: "Detailed error/warning message"  # The message to be displayed when the error/warning is triggered.
+           esm_tools_version: ">/</=/!=/version_number"  # Optional version constraint for conditional trigerring under certain versions of ESM-Tools.
+           ask_user_to_continue: True/False  # Only for warnings, to ask the user to continue or abort.
 
-* ``<name>``: what is displayed on the title of the error/warning
-* ``message``: the detailed message of the error/warning. You can use `ESM-Tools`
-  variables here (``${<variable>}``)
-* ``esm_tools_version``: only trigger this error/warning under given `ESM-Tools`
-  versions
-* ``ask_user_to_continue``: if true, it asks the user whether they want to continue,
-  after displaying the warning. Only works for warnings as errors halt the simulation
-  without asking
+Note that you can nest errors and warnings inside other blocks, for example inside a ``choose_`` block
+to trigger them based on the value of a variable, and also use ``add_error`` and ``add_warning``
+to add multiple errors and warnings to the final list of errors and warnings.
 
 **Example**
 
@@ -988,3 +931,65 @@ following:
    Wrong scenario, scenario hist does not exist
 
    ? Do you want to continue (set general.ignore_config_warnings: False to avoid quesitoning)?
+
+Runtime Error Detection (``check_error``)
+-----------------------------------------
+
+The ``check_error`` functionality monitors model output files during execution and can take
+specific actions when certain patterns are detected. This is useful for:
+
+- Detecting model crashes or errors in log files
+- Monitoring for specific warning messages
+- Taking automated actions based on model output
+
+**Syntax**
+
+.. code-block:: yaml
+
+   <component_name>:
+       check_error:
+           <error_pattern>:  # Text pattern to search for in log files
+               file: "path/to/logfile"  # Defaults to model's stdout/stderr
+               method: "warn" or "kill"  # Action to take when pattern is found
+               message: "Custom error message"  # Optional custom message
+               frequency: 60  # Check interval in seconds (default: 60)
+
+**Parameters**
+
+* ``<error_pattern>``: Text or regex pattern to search for in log files
+* ``file``: (Optional) Path to log file to monitor (supports variables)
+  - Special values: ``"stdout"`` or ``"stderr"`` for default model output
+  - Can include variables like ``@jobid@`` which will be replaced
+* ``method``: Action to take when pattern is found:
+  - ``warn``: Log a warning message
+  - ``kill``: Terminate the job and log an error
+* ``message``: Custom message to log when pattern is found
+* ``frequency``: How often to check the log file (in seconds)
+
+**Example**
+
+.. code-block:: yaml
+
+   echam:
+       check_error:
+           "ERROR":
+               method: "kill"
+               message: "Fatal error in ECHAM detected"
+               frequency: 30
+           "WARNING":
+               method: "warn"
+               message: "Warning detected in ECHAM output"
+
+**Behavior**
+
+- The monitoring runs in a background process during model execution
+- Log files are checked at the specified frequency
+- When a pattern is found:
+  - For ``method: warn``: Logs a warning message
+  - For ``method: kill``: Terminates the job and logs an error
+
+**Best Practices**
+
+1. Use specific patterns to avoid false positives
+2. Include helpful error messages that explain the issue
+3. Test error conditions to ensure they're properly detected

@@ -15,34 +15,41 @@ Usage
 Arguments
 ---------
 
-====================================================== ==========================================================
-Optional arguments                                     Description
-====================================================== ==========================================================
-  -h, --help                                           Show this help message and exit.
-  -d, --debug                                          Print lots of debugging statements.
-  -v, --verbose                                        Be verbose.
-  -e ``EXPID``, --expid ``EXPID``                      The experiment ID to use. Default ``test``.
-  -c, --check                                          Run in check mode (don't submit job to supercomputer).
-  -P, --profile                                        Write profiling information (esm-tools).
-  -j ``LAST_JOBTYPE``, --last_jobtype ``LAST_JOBTYPE`` Write the jobtype this run was called from (esm-tools internal).
-  -t ``TASK``, --task ``TASK``                         The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy_and_resubmit``.
-  -p ``PID``, --pid ``PID``                            The PID of the task to observe.
-  -x ``EXCLUDE``, --exclude ``EXCLUDE``                E[x]clude this step.
-  -o ``ONLY``, --only ``ONLY``                         [o]nly do this step.
-  -r ``RESUME_FROM``, --resume-from ``RESUME_FROM``    [r]esume from the specified run/step (i.e. to resume a second run you'll need to use ``-r 2``).
-  -U, --update                                         [U]pdate the runscript in the experiment folder and associated files
-  --update-filetypes                                   Updates the requested files from external sources in a currently ongoing simulation. We strongly advise against using this option unless you really know what you are doing.
-  -i, --inspect                                        This option can be used to [i]nspect the results of a previous
-                                                       run, for example one prepared with ``-c``. This argument needs an
-                                                       additional keyword. Choose among: ``overview`` (gives you the
-                                                       same litte message you see at the beginning of each run, ``lastlog``
-                                                       (displays the last log file), ``explog`` (the overall experiment
-                                                       logfile), ``datefile`` (the overall experiment logfile), ``config`` 
-                                                       (the Python dict that contains all information), ``size`` (the size
-                                                       of the experiment folder), a filename or a directory name output 
-                                                       the content of the file /directory if found in the last 
-                                                       ``run_`` folder.)
-====================================================== ==========================================================
+=================================================================== ==========================================================
+Optional arguments                                                  Description
+=================================================================== ==========================================================
+  ``-h``, ``--help``                                                Show this help message and exit.
+  ``-d``, ``--debug``                                               Print lots of debugging statements.
+  ``-v``, ``--verbose``                                             Be verbose.
+  ``-e EXPID``, ``--expid EXPID``                                   The experiment ID to use. Default ``test``.
+  ``-c``, ``--check``                                               Run in check mode (don't submit job to supercomputer).
+  ``-P``, ``--profile``                                             Write profiling information (esm-tools).
+  ``-j LAST_JOBTYPE``, ``--last_jobtype LAST_JOBTYPE``              Write the jobtype this run was called from (esm-tools internal).
+  ``-t TASK``, ``--task TASK``                                      The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy``.
+  ``-p PID``, ``--pid PID``                                         The PID of the task to observe.
+  ``-x EXCLUDE``, ``--exclude EXCLUDE``                             E[x]clude this step.
+  ``-o ONLY``, ``--only ONLY``                                      [o]nly do this step.
+  ``-r RESUME_FROM``, ``--resume-from RESUME_FROM``                 [r]esume from the specified run/step (i.e. to resume a second run you'll need to use ``-r 2``).
+  ``-U``, ``--update``                                              [U]pdate the runscript in the experiment folder and associated files
+  ``--update-filetypes UPDATE_FILETYPES [UPDATE_FILETYPES ...]``    Updates the requested files from external sources in a currently 
+                                                                    ongoing simulation. For example, if you want to update the binaries 
+                                                                    and the configs (namelists) in a resubmission of a experiment you can 
+                                                                    do this by adding ``--update-filetypes bin config`` to your 
+                                                                    ``esm_runscripts`` command. We strongly advise against using this 
+                                                                    option unless you really know what you are doing.
+  ``-i``, ``--inspect``                                             This option can be used to [i]nspect the results of a previous
+                                                                    run, for example one prepared with ``-c``. This argument needs an
+                                                                    additional keyword. Choose among: ``overview`` (gives you the
+                                                                    same litte message you see at the beginning of each run, ``lastlog``
+                                                                    (displays the last log file), ``explog`` (the overall experiment
+                                                                    logfile), ``datefile`` (the overall experiment logfile), ``config`` 
+                                                                    (the Python dict that contains all information), ``size`` (the size
+                                                                    of the experiment folder), a filename or a directory name output 
+                                                                    the content of the file /directory if found in the last 
+                                                                    ``run_`` folder.)
+  ``--trace``                                                       Enable ``TRACE``-level output to stdout.
+  ``--task-log-files``                                              Enable per-task log files on disk.
+=================================================================== ==========================================================
 
 
 Running a Model/Setup
@@ -97,7 +104,7 @@ As an example; let's say you only want to run the ``tidy`` phase of a
 particular job; which will move things from the particular run folder to the
 overall experiment tree. In this example; the experiment will be called ``test001``::
 
-        esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy_and_resubmit
+        esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy
 
 Experiment Directory Structure
 ------------------------------
@@ -319,15 +326,20 @@ in the `general` experiment directory or in the `run` subdirectory:
 
   * The `ESM-Tools` variable space file ``config/<experiment_ID>_finished_config.yaml``.
   * The run log file ``run_YYYYMMDD-YYYYMMDD/<experiment_ID>_compute_YYYYMMDD-YYYYMMDD_<JobID>.log```.
-  
+
 For interactive debugging, you may also add the following to the ``general`` section of your configuration file. 
 This will enable the `pdb Python debugger <https://docs.python.org/3/library/pdb.html#debugger-commands>`_, and allow you to step through the recipe.
 
 .. code-block:: yaml
 
-    general: 
+    general:
         debug_recipe: True
-        
+
+Configuration Provenance
+------------------------
+
+In addition to the hints summarized in the "Debugging an Experiment" section, you will also find that the ``finished_config.yaml`` found in your ``config`` directory contains end-of-line comments detailing where a particular setting came from. You can use this to better track down what is being set and why, but it is **strongly recommended** that the configuration files found in your ``esm-tools`` source directory should **not** be changed unless you know exactly what you are doing. All of the configuration settings can be overridden from the run configuration, which is the prefered location for user changes. For more information see :ref:`yaml_hierarchy:How can I know where a parameter is defined?`.
+
 Setting the file movement method for filetypes in the runscript
 ---------------------------------------------------------------
 
@@ -417,3 +429,30 @@ ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
    folder .venv_esmtools listed above and **not** from your user install directory.
    You should make **all** changes to the namelists and config files via your user
    runscript (:ref:`yaml:Changing Namelists`). This is recommended in all cases!!!
+
+Logging and verbosity
+---------------------
+
+``esm_runscripts`` uses Loguru-based logging with simple flags to control verbosity and
+file logging. Logs are always written in the main run log (
+``<base_dir>/<expid>/log/<expid>_<model>_<datestamp>_<jobid>.log``). For more log
+granularity, it is possible to also set ``--task-log-files`` as a flag of
+``esm_runscripts``, to  write logs of each task to a separate file. You can use the
+following ``esm_runscripts`` flags to control  the logging behavior:
+
+* ``--trace``: enable ``TRACE``-level output to stdout. Prints very detailed
+  diagnostics and the parsed command-line config.
+* ``-d``, ``--debug``: enable ``DEBUG``-level output to stdout (less detailed than
+  ``--trace``) and breakpoints.
+* ``-v``, ``--verbose``: also enables ``DEBUG``-level output to stdout, without
+  breakpoints.
+* ``--task-log-files``: enable per-task log files on disk. When enabled,
+  ``esm_runscripts`` writes each task's output to a file in the  experiment's ``log``
+  folder (``<base_dir>/<expid>/log/<expid>_<model>_<task>_<datestamp>_<jobid>.log``).
+  To reduce the number of files, this option is turned off by default, but the logs
+  are always printed in the run log anyway.
+
+.. note::
+   Because the logging starts before the parsing of the yaml files, it is not possible
+   to control the logging behavior from variables defined in the yamls. Only
+   command-line flags can control the logging behavior.

@@ -13,28 +13,31 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 requirements = [
-    "Click==8.0.4",  # Maximum version for Python 3.6 support
+    "Click>=8.0.4",  # Maximum version for Python 3.6 support
     "PyGithub==1.55",
     "colorama==0.4.5",
     "coloredlogs==15.0.1",  # NOTE(PG): Should be removed during cleanup for loguru instead
     "emoji==1.7.0",
     "f90nml==1.4.2",
     "gfw-creator==0.2.2",
-    "gitpython==3.1.37",  # Maximum version for Python 3.6 support
+    "gitpython==3.1.41",  # Maximum version for Python 3.6 support
+    "jinja2==3.1.6",
     "loguru==0.6.0",
     "numpy>=1.19.5",  # Maximum version for Python 3.6 support
     "packaging==21.3",
     "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
+    "pytest==7.1.2",
     "pyyaml==6.0.1",
     "questionary==1.10.0",
+    "ruamel.yaml==0.17.32",
     "semver==2.13.0",
-    "sqlalchemy==1.4.39",
+    "sqlalchemy>=1.4.39",
     "tabulate==0.8.10",
-    "tqdm==4.64.0",
-    "typing_extensions==4.1.1",  # Maximum number for Python 3.6 support
+    "tqdm==4.66.3",
+    "typing_extensions>=4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",
-    "pydantic==1.10.2",
+    "pydantic>=1.10.13",
     "h5netcdf>=0.8.1",
 ]
 
@@ -53,9 +56,9 @@ setup(
         "deniz.ural@awi.de",
         "jan.streffing@awi.de",
         "sebastian.wahl@geomar.de",
-	      "kai.himstedt@dkrz.de",
+        "kai.himstedt@dkrz.de",
     ],
-    python_requires=">=3.6, <=3.11",
+    python_requires=">=3.6, <3.13",
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Science/Research",
@@ -65,6 +68,10 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     description="ESM Tools external infrastructure for Earth System Modelling",
     entry_points={
@@ -87,22 +94,30 @@ setup(
     keywords="esm_tools",
     name="esm-tools",
     packages=find_packages("src")
-    + ["esm_tools", "esm_tools.configs", "esm_tools.namelists", "esm_tools.runscripts"],
+    + [
+        "esm_tools",
+        "esm_tools.configs",
+        "esm_tools.namelists",
+        "esm_tools.runscripts",
+        "esm_tools.couplings",
+    ],
     package_dir={
         "": "src",
         "esm_tools.configs": "configs",
         "esm_tools.namelists": "namelists",
         "esm_tools.runscripts": "runscripts",
+        "esm_tools.couplings": "couplings",
     },
     package_data={
         "esm_tools.configs": ["../configs/*"],
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
+        "esm_tools.couplings": ["../couplings/*"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.25.5",
+    version="6.59.0",
     zip_safe=False,
 )

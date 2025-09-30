@@ -53,18 +53,14 @@ until nothing is left.
 Specific documentation for classes and functions are given below:
 """
 # Python 2 and 3 version agnostic compatiability:
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import division
-from __future__ import absolute_import
-
-import pdb
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 # Python Standard Library imports
 import collections
 import copy
-import logging
 import os
+import pdb
 import re
 import shutil
 import socket
@@ -79,31 +75,21 @@ else:
 
 # Always import externals before any non standard library imports
 
+import coloredlogs
 # Third-Party Imports
 import numpy
-import coloredlogs
-import colorama
 import yaml
-
-# functions reading in dict from file
-from .yaml_to_dict import *
-
-# Date class
-from esm_calendar import Date
+from loguru import logger
 
 # Loader for package yamls
 import esm_tools
+# Date class
+from esm_calendar import Date
+from esm_tools import user_error, user_note
 
-# Logger and related constants
-logger = logging.getLogger("root")
-DEBUG_MODE = logger.level == logging.DEBUG
-FORMAT = (
-    "[%(asctime)s,%(msecs)03d:%(filename)s:%(lineno)s - %(funcName)20s() ] %(message)s"
-)
-# f_handler = logging.FileHandler("file.log")
-# f_handler.setFormatter(FORMAT)
-# logger.addHandler(f_handler)
-
+from .provenance import *
+# functions reading in dict from file
+from .yaml_to_dict import *
 
 # Module Constants:
 CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE = ["further_reading"]
@@ -116,6 +102,7 @@ DEFAULTS_DIR = CONFIG_PATH + "/defaults"
 COMPONENT_PATH = CONFIG_PATH + "/components"
 NAMELIST_DIR = esm_tools.get_namelist_filepath()
 RUNSCRIPT_DIR = esm_tools.get_runscript_filepath()
+COUPLINGS_DIR = esm_tools.get_coupling_filepath()
 
 # global variables
 list_counter = 0
@@ -138,9 +125,8 @@ constant_blacklist = [r"PATH", r"LD_LIBRARY_PATH", r"NETCDFF_ROOT", r"I_MPI_ROOT
 
 constant_blacklist = [re.compile(entry) for entry in constant_blacklist]
 
-protected_adds = ["add_module_actions", "add_export_vars", "add_unset_vars"]
 keep_as_str = ["branch"]
-early_choose_vars = ["include_models", "version", "omp_num_threads"]
+early_choose_vars = ["include_models", "version", "omp_num_threads", "further_reading"]
 
 
 def flatten_nested_lists(lst):
@@ -177,7 +163,8 @@ def look_for_file(model, item, all_config=None):
     normally the folder where all the versioned files of that component are contained.
     The ``item`` input can contain information about the version. If the configuration
     file is not found, ``item`` will be reduced one ``-`` back and ``look_for_file``
-    will be called recursively.
+    will be called recursively. Versions with minor or patch numbers will also be
+    reduced recursively until the file is found.
 
     Parameters
     ----------
@@ -198,7 +185,7 @@ def look_for_file(model, item, all_config=None):
     # look at the directory where yaml runscript is found. This is an absolute
     # path
     runscript_path = ""
-    if all_config and all_config["general"].get("runscript_abspath"):
+    if all_config and all_config.get("general", {}).get("runscript_abspath"):
         runscript_path = os.path.dirname(all_config["general"]["runscript_abspath"])
 
     # Loop through all possible path combinations
@@ -228,17 +215,41 @@ def look_for_file(model, item, all_config=None):
     # item = fesom-2.0-jio and model = fesom), the previous lines won't be able
     # to find the versioned file (e.g. fesom-2.0.yaml) cause it is looking for
     # a file which name contains the whole item string (e.g. fesom-2.0-jio.yaml).
-    # To solve that kind of problem the item's name is reduced to the last "-"
-    # (e.g. to fesom-2.0) and then ``look_for_file`` is called recursively
-    new_item = "-".join(item.split("-")[:-1])
+    # The lines below will reduce recursively the name through the '-' separator
+    # and version parts (e.g. fesom-2.0-jio -> fesom-2.0 -> fesom-2 -> fesom) until it
+    # finds the file.
+    last_part = item.split("-")[-1]
+    if is_version(last_part) and "." in last_part:
+        # If the last part is version remove the trailing version number
+        new_item = ".".join(item.split(".")[:-1])
+    else:
+        # If the last part is not a minor or patch version remove last part
+        new_item = "-".join(item.split("-")[:-1])
     if len(new_item) > 0:
-        possible_path, needs_loading = look_for_file(model, new_item)
+        possible_path, needs_loading = look_for_file(model, new_item, all_config=all_config)
         if possible_path:
             return possible_path, needs_loading
 
     # The file was not found
     warnings.warn(f'File for "{item}" not found in "{model}"')
     return None, False
+
+
+def is_version(possible_version):
+    """
+    Check if a string is a valid version number (digits and dots only).
+
+    Parameters
+    ----------
+    possible_version : str
+        The string to check.
+
+    Returns
+    -------
+    bool
+        True if the string is a valid version number, False otherwise.
+    """
+    return re.fullmatch(r"\d+(\.\d+)*", possible_version) is not None
 
 
 def initialize_from_yaml(filepath):
@@ -283,7 +294,7 @@ def complete_config(user_config):
     while True:
         for model in list(user_config):
             if "further_reading" in user_config[model]:
-                if type(user_config[model]["further_reading"]) == list:
+                if isinstance(user_config[model]["further_reading"], list):
                     for additional_file in user_config[model]["further_reading"]:
                         if (
                             not additional_file
@@ -292,7 +303,7 @@ def complete_config(user_config):
                             user_config["general"]["additional_files"].append(
                                 additional_file
                             )
-                elif type(user_config[model]["further_reading"]) == str:
+                elif isinstance(user_config[model]["further_reading"], str):
                     additional_file = user_config[model]["further_reading"]
                     if (
                         not additional_file
@@ -403,7 +414,7 @@ def attach_to_config_and_reduce_keyword(
     -------
     Both ``config_to_read_from`` and ``config_to_write_to`` are modified **in place**!
     """
-    if full_keyword in config_to_read_from:
+    if config_to_read_from.get(full_keyword):
 
         if level_to_write_to:
             if reduced_keyword in config_to_read_from[level_to_write_to]:
@@ -433,7 +444,7 @@ def attach_to_config_and_reduce_keyword(
                             item.split(".")[0],
                             ".".join(item.split(".")[1:]),
                         )
-                        logger.debug("Attaching: %s for %s", model_part, model)
+                        logger.trace(f"Attaching: {model_part} for {model}")
                     else:
                         if item in config_to_read_from:
                             if "version" in config_to_read_from[item]:
@@ -449,24 +460,26 @@ def attach_to_config_and_reduce_keyword(
                         f"attach_to_config_and_reduce: File {item} of model {model} could not be found. Sorry."
                     )
                     sys.exit(-1)
-                logger.debug("Reading %s", include_path)
+                logger.trace(f"Reading {include_path}")
                 if needs_load:
                     tmp_config = yaml_file_to_dict(include_path)
                 else:
                     tmp_config = include_path
 
-                config_to_write_to[tmp_config["model"]] = tmp_config
+                dict_merge(config_to_write_to, tmp_config)
 
                 for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-                    logger.debug("Attaching: %s", attachment)
-                    attach_to_config_and_remove(
-                        config_to_write_to[tmp_config["model"]],
-                        attachment,
-                        all_config=None,
-                    )
+                    logger.trace(f"Attaching: {attachment}")
+                    config_for_loop = copy.deepcopy(config_to_write_to)
+                    for component, component_config in config_for_loop.items():
+                        attach_to_config_and_remove(
+                            component_config,
+                            attachment,
+                            all_config=config_to_write_to,
+                        )
 
         else:
-            raise TypeError("The entries in %s must be a list!!" % full_keyword)
+            raise TypeError(f"The entries in {full_keyword} must be a list!!")
         del config_to_read_from[full_keyword]
 
 
@@ -480,6 +493,9 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     all_config : dict
         main configuration
     """
+    if not all_config:
+        all_config = config
+
     include_path, needs_load = look_for_file(path, attach_value, all_config=all_config)
     if include_path:
         if needs_load:
@@ -491,9 +507,7 @@ def attach_single_config(config, path, attach_value, all_config=None, **kwargs):
     else:
         print("Could not find ", path + "/" + attach_value)
         sys.exit(1)
-    # DB this is a try:
-    dict_merge(config, attachable_config, **kwargs)
-    # config.update(attachable_config)
+    dict_merge(all_config, attachable_config)
 
 
 def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
@@ -502,6 +516,9 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
 
     Updates the dictionary on ``config`` with values from any file found under
     a listing specified by ``attach_key``.
+
+    Note: Only used currently for the ``further_reading`` key. This function looks for yaml
+    files referenced in the ``attach_key`` field and merges their contents into the config.
 
     Parameters
     ----------
@@ -515,12 +532,15 @@ def attach_to_config_and_remove(config, attach_key, all_config=None, **kwargs):
     -------
     The ``config`` is modified **in place**!
     """
+    if not all_config:
+        all_config = config
+
     if attach_key in config:
-        attach_value = config[attach_key]
+        attach_values = config[attach_key]
         del config[attach_key]
-        if type(attach_value) == str:
-            attach_value = [attach_value]
-        for attach_value in attach_value:
+        if isinstance(attach_values, str):
+            attach_values = [attach_values]
+        for attach_value in attach_values:
             try:
                 attach_path, attach_value = attach_value.rsplit("/", 1)
             except ValueError:
@@ -632,6 +652,7 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
     """
     # option to overwrite a dict value if merge_dict contains empty value. Default
     # is False
+
     dont_overwrite_with_empty_value = kwargs.get(
         "dont_overwrite_with_empty_value", False
     )
@@ -642,38 +663,16 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             and isinstance(v, dict)
             and isinstance(merge_dct[k], Mapping)
         ):
-            # NOTE(PG): this is a very bad hack and doesn't belong here at all.
-            # Maybe instead the yaml_file_to_dict needs to say something like
-            # "add_debug_info", so everything gets put together, but for right
-            # now you are given ifnromation where your config originally came
-            # from...
-            #
-            # IDEA: It would be great if somehow we knew which key came from
-            # which config file: some are in the user, some are in the setup,
-            # some are in the component. However, I have no idea how to do that
-            # correctly...Turn the keys in the config into named tuples with
-            # the original file? Make a custom "class" for config keys?? That
-            # would then be:
-            #
-            # config['echam'].keys()
-            # * (key_name: namelist_changes, came_from: user, overrides: [setup, component])
-            # Above, the overrides list always gets longer depending on where the value actually came from.
-            # * (another key-tuple)
-            # * and so on...
-            #
-            # An idea...but I have absolutely no clue how to cleanly implement that...
-            if k != "debug_info":
+            if isinstance(dct[k], dict):
                 dict_merge(dct[k], merge_dct[k], resolve_nested_adds)
+            elif isinstance(dct[k], list):
+                logger.error("Cannot merge a dict into a list")
+                raise TypeError("Cannot merge a dict into a list")
             else:
-                if "debug_info" in dct:
-                    if isinstance(dct["debug_info"]["loaded_from_file"], str):
-                        dct["debug_info"]["loaded_from_file"] = [
-                            dct["debug_info"]["loaded_from_file"]
-                        ]
-                    else:
-                        dct["debug_info"]["loaded_from_file"].append(
-                            merge_dct["debug_info"]["loaded_from_file"]
-                        )
+                logger.trace(f"Overwriting {k} in {dct} with {v}")
+                if "_value" in v:
+                    v["_old_value"] = dct[k]
+                dct[k] = v
         # MA: I'm not super happy about the resolve_nested_adds implementation. Nested
         # adds should probably resolved in a different place, after the first level
         # ones are resolved.
@@ -683,7 +682,6 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
             resolve_nested_adds
             and isinstance(k, str)
             and k.startswith("add_")
-            and k not in protected_adds
             and isinstance(v, (list, dict))
         ):
             add_entries_from_chapter(dct, "".join(k.split("add_")), v)
@@ -698,9 +696,17 @@ def dict_merge(dct, merge_dct, resolve_nested_adds=False, **kwargs):
 
 
 def deep_update(chapter, entries, config, blackdict={}):
-    if "add_" in chapter:
-        add_chapter = chapter.replace("add_", "")
-        add_entries_from_chapter(config, add_chapter, entries)
+    if "choose_" in chapter:
+        chapter_with_no_add = chapter.replace("add_", "")
+        if chapter_with_no_add in config:
+            dict_merge(config.get(chapter_with_no_add, {}), entries, resolve_nested_adds=False)
+        else:
+            config[chapter_with_no_add] = entries
+        if chapter != chapter_with_no_add and chapter in config:
+            del config[chapter]
+    elif "add_" in chapter:
+        chapter_with_no_add = chapter.replace("add_", "")
+        add_entries_from_chapter(config, chapter_with_no_add, entries)
         # del config[chapter]
     else:
         if chapter not in blackdict:
@@ -725,12 +731,21 @@ def deep_update(chapter, entries, config, blackdict={}):
             # Trying to update a dictionary from the same file (in blackdict)
             # an ``add_`` returns an error
             if isinstance(blackdict[chapter], dict):
+                # Keys don't have provenance. In this case we know we are dealing with a
+                # choose block so the line of the conflicting choose is the line of the
+                # first value -3.
+                provenance = entries.extract_first_nested_values_provenance()
+                prov_string = (
+                    f"``{provenance['yaml_file']}``,"
+                    f"line:``{provenance['line']-3}``"
+                )
                 user_error(
                     "Missing 'add_'",
                     (
-                        f"Not possible to update the '{config['model']}.{chapter}' "
-                        + f"dictionary. Please, use 'add_{chapter}' inside the "
-                        + f"'choose_' block, instead of just '{chapter}'."
+                        f"Not possible to update the ``{config['model']}.{chapter}`` "
+                        + f"dictionary with {prov_string}. Please, use ``add_{chapter}`` "
+                        + f"inside the ``choose_`` block, instead of just "
+                        + f"``{chapter}``."
                     ),
                 )
 
@@ -846,10 +861,10 @@ def remove_entries_from_chapter(config, remove_chapter, remove_entries):
 def add_entries_from_chapter(config, add_chapter, add_entries):
     my_entries = copy.deepcopy(add_entries)
     if add_chapter in config:
-        if type(config[add_chapter]) == list:
+        if isinstance(config[add_chapter], list):
             for entry in my_entries:
                 config[add_chapter].append(entry)
-        elif type(config[add_chapter]) == dict:
+        elif isinstance(config[add_chapter], dict):
             # MA: I'm not supper happy about the resolve_nested_adds implementation
             dict_merge(
                 config[add_chapter],
@@ -892,7 +907,7 @@ def remove_entry_from_chapter(
         Setup-specific general configuration.
     """
 
-    logging.debug("%s, %s", remove_entries, remove_chapter)
+    logger.trace(f"{remove_entries}, {remove_chapter}")
     # Check that the the user entry is a list, if not rise an exception
     if not isinstance(remove_entries, list):
         raise TypeError("Please put all entries to remove as a list")
@@ -950,7 +965,7 @@ def remove_entries_from_chapter_in_config(
 ):
     config = model_config
     for model in valid_model_names:
-        logging.debug(model)
+        logger.trace(model)
         all_removes_for_model = find_remove_entries_in_config(
             config[model], model, config.keys()
         )
@@ -1044,23 +1059,23 @@ def add_entry_to_chapter(
     else:
         cource_config = setup_config
 
-    logging.debug(model_to_add_to)
-    logging.debug(add_chapter)
+    logger.trace(model_to_add_to)
+    logger.trace(add_chapter)
     if add_chapter in source_config[model_with_add_statement]:
         source_chapter = add_chapter
     else:
         source_chapter = add_chapter.replace(model_to_add_to + ".", "")
 
     # If the desired chapter doesn't exist yet, just put it there
-    logging.debug(model_to_add_to)
-    logging.debug(add_chapter)
+    logger.trace(model_to_add_to)
+    logger.trace(add_chapter)
 
     # Eg. add_general.mylist -> mylist
     chapter_to_add = add_chapter.split(".")[-1].replace("add_", "")
     if chapter_to_add not in target_config[model_to_add_to]:
         target_config[model_to_add_to][chapter_to_add] = add_entries
     else:
-        if type(target_config[model_to_add_to][chapter_to_add]) != type(add_entries):
+        if not isinstance(add_entries, type(target_config[model_to_add_to][chapter_to_add])):
             error_type = "Type mismatch"
             error_text = f"Can not add a variable of incompatible type ``{type(add_entries).__name__}`` to ``{chapter_to_add}``"
             user_error(error_type, error_text)
@@ -1072,7 +1087,7 @@ def add_entry_to_chapter(
             mod_list.extend(list(flatten_nested_lists(add_entries)))
 
             # Remove duplicates
-            mod_list_no_dupl = []
+            mod_list_no_dupl = ListWithProvenance([], None)
             for el in mod_list:
                 if not isinstance(el, (dict, tuple, list)):
                     if el not in mod_list_no_dupl:
@@ -1090,8 +1105,8 @@ def add_entry_to_chapter(
     if list_counter > 1:
         pass
         # pdb.set_trace()
-    logging.debug(model_with_add_statement)
-    logging.debug(source_chapter)
+    logger.trace(model_with_add_statement)
+    logger.trace(source_chapter)
     # del source_config[model_with_add_statement][source_chapter.replace("add_", "")]
 
 
@@ -1114,7 +1129,7 @@ def add_entries_to_chapter_in_config(
 ):
     config = model_config
     for model in list(config):
-        logging.debug(model)
+        logger.trace(model)
         all_adds_for_model = find_add_entries_in_config(config[model], model)
         for add_chapter, add_entries in all_adds_for_model:
             model_to_add_to = add_chapter.split(".")[0].replace("add_", "")
@@ -1199,23 +1214,23 @@ def find_value_for_nested_key(mapping, key_of_interest, tree=[]):
     occus...
     """
     original_mapping = mapping
-    logger.debug("Looking for key %s", key_of_interest)
-    logging.debug("Looking in %s", mapping)
-    logger.debug("Using tree %s", tree)
+    logger.trace(f"Looking for key {key_of_interest}")
+    logger.trace(f"Looking in {mapping}")
+    logger.trace(f"Using tree {tree}")
     if tree:
         for leaf in tree:
             mapping = mapping[leaf]
         else:
             tree = [None]
     for leaf in reversed(tree):
-        logging.debug("Looking in bottommost leaf %s", leaf)
+        logger.trace(f"Looking in bottommost leaf {leaf}")
         for key, value in mapping.items():
             if key == key_of_interest:
                 return value
         if leaf:
             find_value_in_nested_key(original_mapping, key_of_interest, tree[:-1])
-    warnings.warn("Couldn't find value for key %s" % key_of_interest)
-    # raise KeyError("Couldn't find value for key %s", key_of_interest)
+    warnings.warn(f"Couldn't find value for key {key_of_interest}")
+    # raise KeyError(f"Couldn't find value for key {key_of_interest}")
 
 
 def basic_choose_blocks(config_to_resolve, config_to_search, isblacklist=True):
@@ -1232,21 +1247,21 @@ def basic_choose_blocks(config_to_resolve, config_to_search, isblacklist=True):
             )
 
         task_list = choose_key = basic_find_one_independent_choose(all_set_variables)
-        logging.debug("The task list is: %s", task_list)
-        logging.debug("all_set_variables: %s", all_set_variables)
+        logger.trace(f"The task list is: {task_list}")
+        logger.trace(f"all_set_variables: {all_set_variables}")
         resolve_basic_choose(config_to_search, config_to_resolve, choose_key)
         del all_set_variables[choose_key]
         for key in list(all_set_variables):
             if not all_set_variables[key]:
                 del all_set_variables[key]
-        logging.debug("Remaining all_set_variables=%s", all_set_variables)
+        logger.trace(f"Remaining all_set_variables={all_set_variables}")
 
     basic_add_entries_to_chapter_in_config(config_to_resolve)
     basic_remove_entries_from_chapter_in_config(config_to_resolve)
 
 
 def basic_list_all_keys_starting_with_choose(mapping, ignore_list, isblacklist):
-    logging.debug("Top of list_all_keys_starting_with_choose")
+    logger.trace("Top of list_all_keys_starting_with_choose")
     all_chooses = []
     for key, value in mapping.items():
         if (
@@ -1259,7 +1274,7 @@ def basic_list_all_keys_starting_with_choose(mapping, ignore_list, isblacklist):
             and not determine_regex_list_match(key, constant_blacklist)
         ):
             all_chooses.append((key, value))
-    logging.debug("Will return %s", all_chooses)
+    logger.trace(f"Will return {all_chooses}")
     return all_chooses
 
 
@@ -1282,7 +1297,7 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
         A dictionary containing all key, value pairs starting with
         ``"choose_"``.
     """
-    logging.debug("Top of list_all_keys_starting_with_choose")
+    logger.trace("Top of list_all_keys_starting_with_choose")
     all_chooses = []
     if not isinstance(mapping, dict):
         print(">>>>>>>>>>>>>>>>>>>> PG")
@@ -1295,7 +1310,7 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
         value = mapping[key]
         if (
             isinstance(key, str)
-            and key.startswith("choose_")
+            and "choose_" in key
             and (
                 (not isblacklist)
                 or (isblacklist and not determine_regex_list_match(key, ignore_list))
@@ -1306,9 +1321,9 @@ def list_all_keys_starting_with_choose(mapping, model_name, ignore_list, isblack
                 old_key = key
                 key = "choose_" + model_name + "." + key.split("choose_")[-1]
                 del mapping[old_key]
-                mapping[key] = value
+                deep_update(key, value, mapping)
             all_chooses.append((key, value))
-    logging.debug("Will return %s", all_chooses)
+    logger.trace(f"Will return {all_chooses}")
     return all_chooses
 
 
@@ -1350,7 +1365,7 @@ def determine_set_variables_in_choose_block(config, valid_model_names, model_nam
     set_variables = []
     for k, v in config.items():
         if isinstance(k, str) and k in valid_model_names:
-            logging.debug(k)
+            logger.trace(k)
             model_name = k
         if isinstance(v, dict):  # and isinstance(k, str) and k.startswith("choose_"):
             # Go in further
@@ -1389,7 +1404,7 @@ def basic_find_one_independent_choose(all_set_variables):
         task_list = basic_add_more_important_tasks(
             choose_keyword, all_set_variables, task_list
         )
-        logging.debug(task_list)
+        logger.trace(task_list)
         return task_list[0]
 
 
@@ -1421,20 +1436,59 @@ def find_one_independent_choose(all_set_variables):
             task_list = add_more_important_tasks(
                 choose_keyword, all_set_variables, task_list
             )
-            logging.debug(task_list)
+            logger.trace(task_list)
             return task_list[0]
 
 
 def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={}):
+    """
+    Resolves the ``choose_`` block with key ``choose_key`` in the configuration
+    ``config_to_replace_in`` using the information in the ``config``. The switch
+    variable can be a string, a number or a boolean. In case it is a string,
+    variable calls (e.g. ``"${var}"``) and mathematical expressions (e.g.
+    ``"$((1+2))"``) are resolved. It also handles complicated cases where booleans
+    and 0/1 are used as switches and/or cases.
+
+    Parameters
+    ----------
+    config : dict
+        The full configuration to use for resolving the ``choose_`` block.
+    config_to_replace_in : dict
+        The configuration for which the choose block should be resolved in.
+    choose_key : str
+        The key of the ``choose_`` block to resolve. The key should be a string
+        starting with ``"choose_"`` where nested keys are separated by ``"."``.
+        The value of the key that is used for resolving the choose can contain
+        variables (e.g. ``"${var}"``) and mathematical expressions (e.g.
+        ``"$((1+2))"``).
+    blackdict : dict
+        A dictionary of keys to ignore when resolving the choose block.
+
+    Mutates
+    -------
+    config_to_replace_in : dict
+        The configuration is mutated to include the resolved ``choose_`` block.
+
+    Raises
+    ------
+    KeyError
+        If the ``choose_key`` is not defined in the configuration.
+    ValueError
+        If the choice is not found in the configuration.
+    """
     path_to_key = choose_key.replace("choose_", "").split(".")
+
+    # Extract the value of the choice
     try:
         choice = recursive_get(config, path_to_key)
     except ValueError:
         if "*" not in config_to_replace_in[choose_key]:
-            raise KeyError("Key %s was not defined" % ".".join(path_to_key))
+            raise KeyError(f"Key {'.'.join(path_to_key)} was not defined")
         else:
             del config_to_replace_in[choose_key]
             return
+
+    # If the choice is a string and contains a variable, try to resolve it
     if isinstance(choice, str) and "${" in choice:
         try:
             choice = find_variable(
@@ -1443,16 +1497,17 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
             # print("BEEEEE CALM, resolved: " + choice)
         except:
             # print("BEEEEE CAREFUL, did not resolve: " + choose_key)
-            # logging.warning("Variable %s as a choice, skipping...", choice)
+            # logger.warning(f"Variable {choice} as a choice, skipping...")
             # del config_to_replace_in[choose_key]
             gray_list.append(re.compile(choose_key))
             return
+
     # Evaluates the mathematical expressions in the choose_ blocks
     if isinstance(choice, str) and "$((" in choice:
         choice = do_math_in_entry([False], choice, config)
-    logging.debug(choice)
+    logger.trace(choice)
 
-    # This allows users to use version numbers (floats) and integers as choices inside
+    # Allows users to use version numbers (floats) and integers as choices inside
     # the choose_blocks, instead of having to specify the choices as strings
     if isinstance(choice, (int, float)) and not isinstance(choice, bool):
         choice = str(choice)
@@ -1486,20 +1541,66 @@ def resolve_basic_choose(config, config_to_replace_in, choose_key, blackdict={})
 
     # Resolve the choose variables
     if choice in choices_available:
+        # Include from_choose into the provenance of all entries
+        add_from_choose_info_to_provenance(
+            choices_available[choice],
+            choose_key,
+            choice,
+        )
+        # Update entries
         for update_key, update_value in choices_available[choice].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
 
     elif "*" in config_to_replace_in.get(choose_key):
-        logging.debug("Found a * case!")
+        # Include from_choose into the provenance of all entries
+        add_from_choose_info_to_provenance(
+            choices_available["*"],
+            choose_key,
+            "*",
+        )
+        # Update entries
+        logger.trace("Found a * case!")
         for update_key, update_value in config_to_replace_in[choose_key]["*"].items():
             deep_update(update_key, update_value, config_to_replace_in, blackdict)
     else:
-        # Those two are too noisy
-        # logging.warning("Choice %s could not be resolved", choice)
-        # logging.warning("Key was key=%s", choose_key)
-        pass
+        logger.trace(f"Choice {choice} could not be resolved")
+        logger.trace(f"Key was key={choose_key}")
 
     del config_to_replace_in[choose_key]
+
+
+def add_from_choose_info_to_provenance(entries, choose_key, choice):
+    """
+    Add the ``choose_key`` and ``choice`` to the provenance information of a set of
+    ``choose_`` block ``entries``.
+
+    Parameters
+    ----------
+    entries : esm_parser.DictWithProvenance
+        The entries to which the provenance information should be added.
+    choose_key : str
+        The path to the variable that the ``choose_<path.to.var>`` block evaluates.
+    choice : str
+        The value of the variable that is evaluated.
+
+    Mutates
+    -------
+    entries : esm_parser.DictWithProvenance
+        The entries are mutated to include the provenance information.
+    """
+    if isinstance(entries, DictWithProvenance):
+        if hasattr(choose_key, "value"):
+            choose_key_for_prov = choose_key.value
+        else:
+            choose_key_for_prov = choose_key
+        if hasattr(choice, "value") and hasattr(choice, "provenance"):
+            choice_for_prov = choice.value
+        else:
+            choice_for_prov = choice
+        entries.set_provenance(
+            {"from_choose": [{"choose_key": choose_key_for_prov, "choice": choice_for_prov}]},
+            update_method = "update_from_choose",
+        )
 
 
 def resolve_choose(model_with_choose, choose_key, config):
@@ -1520,10 +1621,41 @@ def resolve_choose(model_with_choose, choose_key, config):
 
     if key in config_to_search_in[model_name]:
         choice = config_to_search_in[model_name][key]
-        logging.debug(model_with_choose)
-        logging.debug(choice)
+        logger.trace(model_with_choose)
+        logger.trace(choice)
 
-        logging.debug("key=%s", key)
+        logger.trace(f"key={key}")
+
+
+def _resolve_choose_key_in_configs(
+    choose_key, component_with_key, user_config, setup_config, model_config
+):
+    """Resolve choose_key if it's defined within another choose block."""
+    for conf in [user_config, setup_config, model_config]:
+        component_config = conf.get(component_with_key, {})
+        if component_config:
+            resolve_choose_with_var(
+                choose_key,
+                component_config,
+                current_model=component_with_key,
+                user_config=user_config,
+                model_config=model_config,
+                setup_config=setup_config,
+            )
+
+
+def _find_config_with_key(
+    choose_key, component_with_key, user_config, setup_config, model_config
+):
+    """Find the config with the highest priority containing the choose key."""
+    # Priority order: user_config > setup_config > model_config
+    if choose_key in user_config.get(component_with_key, {}):
+        return user_config
+    if choose_key in setup_config.get(component_with_key, {}):
+        return setup_config
+    if choose_key in model_config.get(component_with_key, {}):
+        return model_config
+    return None
 
 
 def resolve_choose_with_var(
@@ -1542,99 +1674,90 @@ def resolve_choose_with_var(
         Name of the variable to be searched inside ``choose_`` blocks.
     config : dict
         Component configuration to be changed if the ``var`` is resolved by the ``choose_``.
-    user_config : dict
+    current_model : str, optional
+        The name of the current model being evaluated.
+    user_config : dict, optional
         User configuration, used to search for the selected case of the ``choose_``.
-    model_config : dict
-        Component configuration, used to search for the selected case of the
-        ``choose_``.
-    setup_config : dict
+    model_config : dict, optional
+        Component configuration, used to search for the selected case of the ``choose_``.
+    setup_config : dict, optional
         Setup configuration, used to search for the selected case of the ``choose_``.
     """
 
+    # Early return if no config provided
+    if not config:
+        return
+
     sep = ","
-    # Find the path to the variable ``var`` in the given ``config``, inside a
-    # ``choose_``
-    choose_with_var = get_chooses_with_var(config, var, sep=sep)
-    # Find the path to the variable ``add_var`` in the given ``config``, inside a
-    # ``choose_``
-    choose_with_add_var = get_chooses_with_var(config, f"add_{var}", sep=sep)
+    if not current_model:
+        current_model = config.get("model")
 
-    # Resolve first for ``<var>`` and then for ``add_<var>``
-    for choose_with_var, lvar in [
-        (choose_with_var, var),
-        (choose_with_add_var, f"add_{var}"),
-    ]:
-        # If the path is found
-        if choose_with_var:
-            # If ``lvar`` is in multiple ``choose_`` blocks return an error
-            chooses = [sep.join(choose_with_var[0].split(sep)[:-2])]
-            for case in choose_with_var:
-                choose = sep.join(case.split(sep)[:-2])
-                if choose not in chooses:
-                    user_error(
-                        f'"{lvar}" in more than one choose_ block', choose_with_var
-                    )
-                chooses.append(choose)
-            # Get the first part of the path to the ``lvar``
-            choose_with_var = choose_with_var[0].split(sep)[0]
-            # Get the key for the ``choose_``
-            choose_key = choose_with_var.replace("choose_", "")
-            # Deep copy here avoids the other variables in the case to be updated
-            # now. We want to update now ONLY the ``lvar``.
-            config_copy = copy.deepcopy(config)
-            # If the key includes the absolute path
-            if "." in choose_key:
-                # Get the component to search for the key
-                component_with_key = choose_key.split(".")[0]
-                # Remove the chapter from the key
-                choose_key = choose_key.split(".")[1]
-            else:
-                # Name of the evaluated model
-                if not current_model:
-                    current_model = config.get("model")
-                # Get the component to search for the key
-                component_with_key = current_model
-                # Rename the whole choose_ block in the copied configuration to include
-                # the chapter
-                choose_with_var_new = choose_with_var.replace(
-                    "choose_", f"choose_{component_with_key}."
-                )
-                config_copy[choose_with_var_new] = config_copy[choose_with_var]
-                del config_copy[choose_with_var]
-                choose_with_var = choose_with_var_new
+    # First check if we have any choose blocks containing our variables
+    variables_to_find = [var, f"add_{var}"]
+    all_choose_paths = []
+    for v in variables_to_find:
+        choose_paths = get_chooses_with_var(config, v, sep=sep)
+        if choose_paths:
+            all_choose_paths.extend([(p, v) for p in choose_paths])
 
-            # Resolve choose_key in case it is defined within another choose_block
-            for conf in [user_config, setup_config, model_config]:
-                component_config = conf.get(component_with_key, [])
-                if component_config:
-                    resolve_choose_with_var(
-                        choose_key,
-                        component_config,
-                        current_model=component_with_key,
-                        user_config=user_config,
-                        model_config=model_config,
-                        setup_config=setup_config
-                    )
+    if not all_choose_paths:
+        return
 
-            # Find where the case for the ``choose_`` is defined, with priority: user ->
-            # setup -> model
-            config_to_search_into = None
-            if choose_key in user_config.get(component_with_key, []):
-                config_to_search_into = user_config
-            elif choose_key in setup_config.get(component_with_key, []):
-                config_to_search_into = setup_config
-            elif choose_key in model_config.get(component_with_key, []):
-                config_to_search_into = model_config
-            # If the case was found
-            if config_to_search_into:
-                # Resolve the case
-                resolve_basic_choose(
-                    config_to_search_into, config_copy, choose_with_var
-                )
-                # If ``var`` was defined through the resolution of the ``choose_``, add
-                # the ``var`` value to the ``config``.
-                if config_copy.get(var):
-                    config[var] = config_copy.get(var)
+    # If we have choose blocks to process, create a working copy
+    config_copy = copy.deepcopy(config)
+
+    # Process each choose path until we've handled all of them
+    while all_choose_paths:
+        # Re-scan for choose paths after each resolution as the structure may change
+        all_choose_paths = []
+        for v in variables_to_find:
+            choose_paths = get_chooses_with_var(config_copy, v, sep=sep)
+            if choose_paths:
+                all_choose_paths.extend([(p, v) for p in choose_paths])
+
+        if not all_choose_paths:
+            break
+
+        choose_with_var, lvar = all_choose_paths[0]
+
+        # Extract the choose block name and key
+        choose_block = choose_with_var.split(sep)[0]
+        choose_key = choose_block.replace("choose_", "")
+
+        # Handle absolute vs relative paths in choose keys
+        if "." in choose_key:
+            component_with_key = choose_key.split(".")[0]
+            choose_key = choose_key.split(".")[1]
+        else:
+            component_with_key = current_model
+            # Add component name to choose block for proper resolution
+            choose_block_with_component = f"choose_{component_with_key}.{choose_key}"
+            if choose_block in config_copy:
+                config_copy[choose_block_with_component] = config_copy[choose_block]
+                del config_copy[choose_block]
+                choose_block = choose_block_with_component
+
+        # Recursively resolve choose_key if it's in another choose block
+        _resolve_choose_key_in_configs(
+            choose_key, component_with_key, user_config, setup_config, model_config
+        )
+
+        # Find config with the highest priority containing the choose key
+        config_to_search_into = _find_config_with_key(
+            choose_key, component_with_key, user_config, setup_config, model_config
+        )
+
+        # Resolve the choose block if a config with the key was found
+        if config_to_search_into:
+            resolve_basic_choose(config_to_search_into, config_copy, choose_block)
+
+            # Update original config with resolved variable value
+            lvar = lvar.replace("add_", "")
+            if lvar in config_copy:
+                config[lvar] = config_copy[lvar]
+        else:
+            # If no config with the key was found, remove the choose block
+            del config_copy[choose_block]
 
 
 def get_chooses_with_var(component_config, var, sep=","):
@@ -1718,7 +1841,7 @@ def basic_add_more_important_tasks(choose_keyword, all_set_variables, task_list)
     """
     keyword = choose_keyword.replace("choose_", "")
     for choose_thing in all_set_variables:
-        logging.debug("Choose_thing = %s", choose_thing)
+        logger.trace(f"Choose_thing = {choose_thing}")
         for keyword_that_is_set in all_set_variables[choose_thing]:
             if keyword_that_is_set == keyword:
                 if choose_thing not in task_list:
@@ -1728,7 +1851,7 @@ def basic_add_more_important_tasks(choose_keyword, all_set_variables, task_list)
                     )
                     return task_list
                 else:
-                    raise KeyError("Opps cyclic dependency: %s" % task_list)
+                    raise KeyError(f"Opps cyclic dependency: {task_list}")
     return task_list
 
 
@@ -1759,7 +1882,7 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
         pass  # pdb.set_trace()
     for model in all_set_variables:
         for choose_thing in all_set_variables[model]:
-            # logging.debug("Choose_thing = %s", choose_thing)
+            # logger.trace(f"Choose_thing = {choose_thing}")
             for (host, keyword_that_is_set) in all_set_variables[model][choose_thing]:
                 if (
                     keyword_that_is_set == keyword
@@ -1772,10 +1895,11 @@ def add_more_important_tasks(choose_keyword, all_set_variables, task_list):
                         )
                         return task_list
                     else:
-                        raise KeyError("Opps cyclic dependency: %s" % task_list)
+                        raise KeyError(f"Opps cyclic dependency: {task_list}")
     return task_list
 
 
+@keep_provenance_in_recursive_function
 def recursive_run_function(tree, right, level, func, *args, **kwargs):
     """Recursively runs func on all nested dicts.
 
@@ -1821,21 +1945,21 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         print(right)
         sys.exit(-1)
 
-    # logging.debug("Top of function")
-    # logging.debug("tree=%s", tree)
+    # logger.trace("Top of function")
+    # logger.trace(f"tree={tree}")
     if level == "mappings":
-        do_func_for = [dict, list]
+        do_func_for = (dict, list)
     elif level == "atomic":
-        do_func_for = [str, int, float, Date]
+        do_func_for = (str, int, float, Date)
     elif level == "always":
-        do_func_for = [str, dict, list, int, float, bool]
+        do_func_for = (str, dict, list, int, float, bool, BoolWithProvenance)
     elif level == "keys":
-        do_func_for = []
+        do_func_for = ()
     else:
-        do_func_for = []
+        do_func_for = ()
 
-    logging.debug("Type right: %s", type(right))
-    logging.debug("Do func for: %s", do_func_for)
+    logger.trace(f"Type right: {type(right)}")
+    logger.trace(f"Do func for: {do_func_for}")
 
     if level == "keys" and isinstance(right, dict):
         keys = list(right)
@@ -1845,24 +1969,21 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
             del right[key]
             right.update({returned_key: old_value})
 
-    # logger.debug("right is a %s!", type(right))
-    if type(right) in do_func_for:
+    # logger.trace(f"right is a {type(right)}!")
+    if isinstance(right, do_func_for):
         if isinstance(right, dict):
             keys = list(right)
             for key in keys:
                 value = right[key]
-                logging.debug("Deleting key %s", key)
-                logging.debug(
-                    "Start func %s with %s, %s sent from us",
-                    func.__name__,
-                    tree + [key],
-                    value,
-                    "type_of_sender=dict",
+                logger.trace(f"Deleting key {key}")
+                logger.trace(
+                    f"Start func {func.__name__} with {tree}[{key}], with value type "
+                    f"{type(value)}"
                 )
                 returned_dict = func(tree + [key], value, *args, **kwargs)
                 del right[key]
-                # logger.debug("Back out of func %s", func.__name__)
-                # logger.debug("Got as returned_dict: %s", returned_dict)
+                # logger.trace(f"Back out of func {func.__name__}")
+                # logger.trace(f"Got as returned_dict: {returned_dict}")
                 right.update(returned_dict)
         # elif isinstance(right, list):
         #    for index, item in enumerate(right):
@@ -1871,10 +1992,13 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         else:
             right = func(tree + [None], right, *args, **kwargs)
 
-    # logger.debug("finished with do_func_for")
+    # logger.trace("finished with do_func_for")
 
     if isinstance(right, list):
-        newright = []
+        if isinstance(right, ListWithProvenance):
+            newright = ListWithProvenance([], None)
+        else:
+            newright = []
         for index, item in enumerate(right):
             new_item = recursive_run_function(
                 tree + [None], item, level, func, *args, **kwargs
@@ -1886,7 +2010,7 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
                 extremely undesirable way of solving this
                 Miguels fault
             """
-            if type(item) == str and "[[" in item and func == list_to_multikey:
+            if isinstance(item, str) and "[[" in item and func == list_to_multikey:
                 newright += new_item
             elif isinstance(new_item, list):
                 newright.extend(new_item)
@@ -1898,8 +2022,9 @@ def recursive_run_function(tree, right, level, func, *args, **kwargs):
         for key in keys:
             # Avoid doing this for ``prev_run`` chapters, this is not needed as the
             # previous config is already resolved
-            if key == "prev_run":  # PrevRunInfo
-                continue  # PrevRunInfo
+            if isinstance(key, str):
+                if ("prev_run" in key) or ("prev_chunk" in key):  # PrevRunInfo
+                    continue  # PrevRunInfo
             value = right[key]
             right[key] = recursive_run_function(
                 tree + [key], value, level, func, *args, **kwargs
@@ -1912,7 +2037,7 @@ def recursive_get(config_to_search, config_elements):
     Recusively gets entries in a nested dictionary in the form ``outer_key.middle_key.inner_key = value``
 
     Given a list of config elements in the form above (e.g. the result of
-    splitting the string ``"outer_key.middle_key.inner_key".split(".")``` on
+    splitting the string ``"outer_key.middle_key.inner_key".split(".")`` on
     the dot), the value "value" of the innermost nest is returned.
 
     Parameters
@@ -1932,12 +2057,12 @@ def recursive_get(config_to_search, config_elements):
         ``actually_recursive_get``, which is needed to pop off standalone model
         configurations.
     """
-    logging.debug("Incoming config elements: %s", config_elements)
+    logger.trace(f"Incoming config elements: {config_elements}")
     my_config_elements = copy.deepcopy(config_elements)
     this_config = my_config_elements.pop(0)
 
-    logger.debug("this_config=%s", this_config)
-    logger.debug("config_to_search=%s", config_to_search)
+    logger.trace(f"this_config={this_config}")
+    logger.trace(f"config_to_search={config_to_search}")
     try:
         result = config_to_search[this_config]
     except:
@@ -1954,12 +2079,13 @@ def recursive_get(config_to_search, config_elements):
 def determine_regex_list_match(test_str, regex_list):
     result = []
     for regex in regex_list:
-        logging.debug("Checking %s against %s", test_str, regex)
+        logger.trace(f"Checking {test_str} against {regex}")
         result.append(regex.match(test_str))
-    logging.debug("Will return %s" % any(result))
+    logger.trace(f"Will return {any(result)}")
     return any(result)
 
 
+@keep_provenance_in_recursive_function
 def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
     raw_str = rhs
     if not tree[-1]:
@@ -1972,7 +2098,7 @@ def find_variable(tree, rhs, full_config, white_or_black_list, isblacklist):
         ):
             var_result, var_attrs = actually_find_variable(tree, var, full_config)
 
-            if type(var_result) == str:
+            if isinstance(var_result, str):
                 if "${" in var_result:
                     var_result = find_variable(
                         tree,
@@ -2032,7 +2158,7 @@ class EsmParserError(Exception):
 def actually_find_variable(tree, rhs, full_config):
     config_elements = rhs.split(".")
     valid_names = list(full_config)
-    logging.debug(valid_names)
+    logger.trace(valid_names)
     if config_elements[0] not in valid_names:
         config_elements.insert(0, tree[0])
 
@@ -2051,13 +2177,13 @@ def actually_find_variable(tree, rhs, full_config):
         # Maybe it is in the general:
         try:
             config_elements = original_config_elements
-            logging.debug(config_elements)
+            logger.trace(config_elements)
             config_elements[0] = "general"
             var_result = recursive_get(full_config, config_elements)
             # return var_result
         except:
             raise EsmParserError(
-                "Sorry, a variable was not resolved: %s not found" % (rhs)
+                f"Sorry, a variable was not resolved: {rhs} not found"
             )
 
     return var_result, var_attr
@@ -2112,7 +2238,6 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
 
                 if isinstance(entries_of_key, str):
                     entries_of_key = [entries_of_key]
-
                 if isinstance(rhs, str):
                     return_dict2 = {}
                     for key in entries_of_key:
@@ -2121,6 +2246,16 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
                                 value_in_list, str(key)
                             )
                         ] = rhs.replace(value_in_list, str(key))
+
+                    # If there are evals in the rhs (set on do_math_in_entry), evaluate them
+                    if re.findall(r'eval\((.*?)\)', rhs):
+                        for key, value in return_dict2.items():
+                            evals = re.findall(r'eval\((.*?)\)', value)
+                            for _eval in evals:
+                                return_dict2[key] = value.replace(
+                                    f"eval({_eval})",
+                                    str(eval(_eval)),
+                                )
 
                 if isinstance(rhs, list):
                     replaced_list = []
@@ -2279,7 +2414,7 @@ def list_to_multikey(tree, rhs, config_to_search, ignore_list, isblacklist):
     return rhs
 
 
-def determine_computer_from_hostname():
+def determine_computer_yaml_from_hostname():
     """
     Determines which yaml config file is needed for this computer
 
@@ -2293,33 +2428,51 @@ def determine_computer_from_hostname():
     str
         A string for the path of the computer specific yaml file.
     """
+    machine, node = determine_computer_and_node_from_hostname()
+    if machine:
+        return CONFIG_PATH + "/machines/" + machine + ".yaml"
+    else:
+        logger.warning(
+            f"The yaml file for this computer ({socket.gethostname()}) could not be "
+            "determined!"
+        )
+        logger.warning("Continuing with generic settings...")
+        return CONFIG_PATH + "/machines/generic.yaml"
+
+
+def determine_computer_and_node_from_hostname():
+    """
+    Determines the name of the computer and the node from the hostname
+
+    Returns
+    -------
+    tuple
+        A tuple of two strings, the first being the name of the computer and the
+        second being the node.
+    """
     all_computers = yaml_file_to_dict(CONFIG_PATH + "/machines/all_machines.yaml")
-    for this_computer in all_computers:
-        for computer_pattern in all_computers[this_computer].values():
+    for this_computer, nodes in all_computers.items():
+        for node, computer_pattern in nodes.items():
             if isinstance(computer_pattern, str):
                 if re.match(computer_pattern, socket.gethostname()) or re.match(
                     computer_pattern, socket.getfqdn()
                 ):
-                    return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
+                    return this_computer, node
             elif isinstance(computer_pattern, (list, tuple)):
                 # Pluralize to avoid confusion:
                 computer_patterns = computer_pattern
                 for pattern in computer_patterns:
                     if re.match(pattern, socket.gethostname()):
-                        return CONFIG_PATH + "/machines/" + this_computer + ".yaml"
-    logging.warning(
-        "The yaml file for this computer (%s) could not be determined!"
-        % socket.gethostname()
+                        return this_computer, node
+
+    logger.warning(
+        f"The name and node for this computer ({socket.gethostname()}) could not be "
+        "determined!"
     )
-    logging.warning("Continuing with generic settings...")
-    return CONFIG_PATH + "/machines/generic.yaml"
-
-    # raise FileNotFoundError(
-    #    "The yaml file for this computer (%s) could not be determined!"
-    #    % socket.gethostname()
-    # )
+    return None, None
 
 
+@keep_provenance_in_recursive_function
 def do_math_in_entry(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2329,12 +2482,14 @@ def do_math_in_entry(tree, rhs, config):
     if "${" in str(entry):
         return entry
     entry = " " + str(entry) + " "
+    date_operation = False
     while "$((" in entry:
         math, after_math = entry.split("))", 1)
         math, before_math = math[::-1].split("(($", 1)
         math = math[::-1]
         before_math = before_math[::-1]
         if DATE_MARKER in math:
+            date_operation = True
             all_dates = []
             steps = math.split(" ")
             steps = [step for step in steps if step]
@@ -2411,33 +2566,52 @@ def do_math_in_entry(tree, rhs, config):
                     )
                     math = math + "all_dates[" + str(index) + "]"
                     index += 1
-        result = eval(math)
-        if type(result) == list:
+
+        # If the math expression is part of a list expansion, wrap it in eval,
+        # otherwise evaluate it directly
+        if len(tree) > 0 and isinstance(tree[-1], str) and "-->" in tree[-1]:
+            list_expansion_pattern = re.search(r"^.*?\[\[.*-->(.*)\]\].*?", tree[-1])
+        else:
+            list_expansion_pattern = None
+        if list_expansion_pattern and list_expansion_pattern.group(1) in math:
+            result = f"eval({math})"
+        else:
+            result = eval(math)
+
+        if isinstance(result, list) and date_operation:
             result = result[
                 -1
             ]  # should be extended in the future - here: if list (= if diff between dates) than result in seconds
+        elif isinstance(result, list):
+            entry = ListWithProvenance(result, None)
+            entry.set_provenance(rhs.provenance)
+            return entry
+
         result = str(result)
         entry = before_math + result + after_math
+
     # TODO MA: this is a provisional dirty fix for release. Get rid of this once a more
     # general solution is worked out
     # ORIGINAL LINE: return convert(entry.strip())
     return convert(entry.strip(), tree)
 
 
+@keep_provenance_in_recursive_function
 def mark_dates(tree, rhs, config):
     """Adds the ``DATE_MARKER`` to any entry who's key ends with ``"date"``"""
     if not tree[-1]:
         tree = tree[:-1]
     lhs = tree[-1]
     entry = rhs
-    logging.debug(entry)
+    logger.trace(entry)
     # if "${" in str(entry):
     #    return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         entry = str(entry) + DATE_MARKER
     return entry
 
 
+@keep_provenance_in_recursive_function
 def marked_date_to_date_object(tree, rhs, config):
     """Transforms a marked date string into a Date object"""
     if not tree[-1]:
@@ -2448,7 +2622,7 @@ def marked_date_to_date_object(tree, rhs, config):
         return entry
     if "${" in str(entry):
         return entry
-    if isinstance(lhs, str) and lhs.endswith("date"):
+    if isinstance(lhs, str) and lhs.endswith("date") and not could_be_bool(rhs):
         # if isinstance(entry, str) and DATE_MARKER in entry and "<--" not in entry:
         while DATE_MARKER in entry and "${" not in entry:
             entry = entry.replace(DATE_MARKER, "")
@@ -2468,6 +2642,7 @@ def marked_date_to_date_object(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def unmark_dates(tree, rhs, config):
     """Removes the ``DATE_MARKER`` to any entry who's entry contains the ``DATE_MARKER``."""
     if not tree[-1]:
@@ -2479,12 +2654,13 @@ def unmark_dates(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def perform_actions(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
     lhs = tree[-1]
     entry = rhs
-    if type(entry) == str:
+    if isinstance(entry, str):
         if "[[" in entry:
             return rhs
         if "<--" in entry:
@@ -2529,6 +2705,7 @@ def perform_actions(tree, rhs, config):
     return entry
 
 
+@keep_provenance_in_recursive_function
 def purify_booleans(tree, rhs, config):
     if not tree[-1]:
         tree = tree[:-1]
@@ -2543,7 +2720,7 @@ def purify_booleans(tree, rhs, config):
 
 
 def to_boolean(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return value
     elif value in ["True", "true", ".true."]:
         return True
@@ -2552,9 +2729,9 @@ def to_boolean(value):
 
 
 def could_be_bool(value):
-    if type(value) == bool:
+    if isinstance(value, bool):
         return True
-    elif type(value) == str:
+    elif isinstance(value, str):
         if value.strip() in ["True", "true", "False", "false", ".true.", ".false."]:
             return True
     return False
@@ -2614,8 +2791,6 @@ def convert(value, tree=["NO_KEY"]):
         return int(float(value))
     elif could_be_float(value):
         return float(value)
-    elif could_be_complex(value):
-        return complex(value)
     return value
 
 
@@ -2627,7 +2802,7 @@ def list_all_keys_with_priority_marker(config):
                 all_keys.append(key)
             if isinstance(config[key], dict):
                 list_all_keys_with_priority_marker(config[key])
-    logging.critical(all_keys)
+    logger.critical(all_keys)
     return all_keys
 
 
@@ -2673,19 +2848,13 @@ def choose_blocks(config, blackdict={}, isblacklist=True):
                 del all_set_variables[key]
         if not all_set_variables:
             break
-        logging.debug("The task list is: %s", task_list)
-        logging.debug("all_set_variables: %s", all_set_variables)
-        if model_with_choose in list(blackdict):
-            resolve_basic_choose(
-                config,
-                config[model_with_choose],
-                choose_key,
-                blackdict[model_with_choose],
-            )
-        else:
-            resolve_basic_choose(config, config[model_with_choose], choose_key, {})
+        logger.trace(f"The task list is: {task_list}")
+        logger.trace(f"all_set_variables: {all_set_variables}")
+
+        resolve_basic_choose(config, config[model_with_choose], choose_key, {})
+
         del all_set_variables[model_with_choose][choose_key]
-        logging.debug("Remaining all_set_variables=%s", all_set_variables)
+        logger.trace(f"Remaining all_set_variables={all_set_variables}")
 
     add_entries_to_chapter_in_config(config, all_names, config, all_names)
     remove_entries_from_chapter_in_config(config, all_names, config, all_names)
@@ -2790,44 +2959,6 @@ def find_key(d_search, k_search, exc_strings="", level="", paths2finds=[], sep="
     return paths2finds
 
 
-def user_note(note_heading, note_text, color=colorama.Fore.YELLOW, dsymbols=["``"]):
-    """
-    Notify the user about something. In the future this should also write in the log.
-
-    Parameters
-    ----------
-    note_heading : str
-        Note type used for the heading.
-    text : str
-        Text clarifying the note.
-    """
-    reset_s = colorama.Style.RESET_ALL
-    for dsymbol in dsymbols:
-        note_text = re.sub(
-            f"{dsymbol}([^{dsymbol}]*){dsymbol}", f"{color}\\1{reset_s}", note_text
-        )
-    print(f"\n{color}{note_heading}\n{'-' * len(note_heading)}{reset_s}")
-    print(f"{note_text}\n")
-
-
-def user_error(error_type, error_text, exit_code=1, dsymbols=["``"]):
-    """
-    User-friendly error using ``sys.exit()`` instead of an ``Exception``.
-
-    Parameters
-    ----------
-    error_type : str
-        Error type used for the error heading.
-    text : str
-        Text clarifying the error.
-    exit_code : int
-        The exit code to send back to the parent process (default to 1)
-    """
-    error_title = "ERROR: " + error_type
-    user_note(error_title, error_text, color=colorama.Fore.RED, dsymbols=dsymbols)
-    sys.exit(exit_code)
-
-
 class GeneralConfig(dict):  # pragma: no cover
     """All configs do this!"""
 
@@ -2854,13 +2985,16 @@ class GeneralConfig(dict):  # pragma: no cover
         else:
             self.config = include_path
 
-        resolve_choose_with_var(
-            "further_reading",
-            self.config,
-            model_config={model: self.config},
-            user_config=user_config,
-        )
+        # Resolve futher_readings in "general"
+        if "general" in self.config:
+            resolve_choose_with_var(
+                "further_reading",
+                self.config["general"],
+                current_model="general",
+                user_config=user_config,
+            )
 
+        # Attach top level further_reading key (config["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(self.config, attachment, all_config=None)
 
@@ -2873,6 +3007,8 @@ class GeneralConfig(dict):  # pragma: no cover
         raise NotImplementedError(
             "Subclasses of GeneralConfig must define a _config_init!"
         )
+
+GeneralConfig.yaml_dump = esm_parser.yaml_dump
 
 
 class ConfigSetup(GeneralConfig):  # pragma: no cover
@@ -2901,92 +3037,96 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         # construct the `defaults` section of the configuration
         user_config["defaults"].update(default_infos)
 
-        computer_file = determine_computer_from_hostname()
+        computer_file = determine_computer_yaml_from_hostname()
         computer_config = yaml_file_to_dict(computer_file)
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):
-            general_config = yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
+            general_config = {
+                "general": yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
+            }
         else:
-            general_config = {}
+            general_config = {"general": {}}
 
-        setup_config = {
-            "computer": computer_config,
-            "general": general_config,
-        }
+        setup_config = copy.deepcopy(general_config)
+
+        # Computer config takes precedence over general config (order in dict_merge)
+        dict_merge(setup_config, computer_config)
+        # TODO: substitute this by slurm not been a further_reading but a file that has a lower hierarchy
+        # than computer
+        # Attach computer further_reading key (config["computer"]["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(
                 setup_config["computer"],
                 attachment,
-                all_config=None,
+                all_config=setup_config,
                 dont_overwrite_with_empty_value=True,
             )
         # Add the fake "model" name to the computer:
         setup_config["computer"]["model"] = "computer"
-        logger.info("setup config is being updated with setup_relevant_configs")
+        logger.debug("setup config is being updated with setup_relevant_configs")
 
         # distribute self.config into setup_config
+        coupled_setup = (
+            self.config.get("general", {}).get("coupled_setup", False)
+            or self.config.get("general", {}).get("pseudo_coupled_setup", False)
+        )
+        setup_name = user_config["general"]["setup_name"]
 
-        if "general" in self.config and "coupled_setup" in self.config["general"]:
-            setup_config["general"].update({"standalone": False})
-            # Resolve choose with include_models
-            resolve_choose_with_var(
-                "include_models",
-                self.config["general"],
-                current_model="general",
-                user_config=user_config,
-                setup_config=setup_config,
-            )
-            setup_config["general"]["include_models"] = self.config["general"][
-                "include_models"
-            ]
+        # Define keys and components to search for include_models
+        setup_config["general"].update({"standalone": not coupled_setup})
+        if coupled_setup:
+            key_with_includes = "general"
+        else:
+            key_with_includes = setup_name
+            setup_config["general"].update({
+                "models": [self.config[key_with_includes]["model"]],
+            })
+        # Resolve choose with include_models
+        component_with_includes = self.config[key_with_includes]
+        resolve_choose_with_var(
+            "include_models",
+            component_with_includes,
+            current_model=key_with_includes,
+            user_config=user_config,
+            setup_config=setup_config,
+        )
 
-            # that should happen in Shell2Yaml
+        # Attach the include_models to the general's setup_config
+        setup_config["general"]["include_models"] = component_with_includes.get(
+            "include_models", []
+        )
+        # If there is a setup name in the user_config, merge it with the general section
+        if coupled_setup:
             if user_config["general"]["setup_name"] in user_config:
                 user_config["general"].update(
                     user_config[user_config["general"]["setup_name"]]
                 )
                 del user_config[user_config["general"]["setup_name"]]
-            dict_merge(setup_config, self.config)
 
-            setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
-                setup_config
-            )
+        # Merge self.config into setup_config
+        dict_merge(setup_config, self.config)
+
+        # Set valid_setup_names and valid_model_names in general
+        setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
+            setup_config
+        )
+        if coupled_setup:
             setup_config["general"]["valid_model_names"] = valid_model_names = []
-
-            # Resolve the chooses including versions of the components to be able to
-            # later load the correct yaml files
-            for component in setup_config:
-                resolve_choose_with_var(
-                    "version",
-                    setup_config[component],
-                    current_model=component,
-                    user_config=user_config,
-                    setup_config=setup_config)
         else:
-            setup_config["general"].update({"standalone": True})
-            setup_config["general"].update({"models": [self.config["model"]]})
-
-            # Resolve choose with include_models
-            resolve_choose_with_var(
-                "include_models",
-                self.config,
-                user_config=user_config,
-                setup_config=setup_config,
-            )
-
-            if "include_models" in self.config:
-                setup_config["general"]["include_models"] = self.config[
-                    "include_models"
-                ]
-            setup_config[self.config["model"]] = self.config
-
-            setup_config["general"]["valid_setup_names"] = valid_setup_names = list(
-                setup_config
-            )
-            setup_config["general"]["valid_setup_names"].remove(self.config["model"])
+            setup_config["general"]["valid_setup_names"].remove(setup_name)
             setup_config["general"]["valid_model_names"] = valid_model_names = [
-                self.config["model"]
+                setup_name
             ]
+
+        # Resolve the chooses including versions of the components to be able to
+        # later load the correct yaml files
+        for component in setup_config:
+            resolve_choose_with_var(
+                "version",
+                setup_config[component],
+                current_model=component,
+                user_config=user_config,
+                setup_config=setup_config)
 
         del self.config
 
@@ -2995,6 +3135,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                 "esm_function_dir": CONFIG_PATH,
                 "esm_namelist_dir": NAMELIST_DIR,
                 "esm_runscript_dir": RUNSCRIPT_DIR,
+                "esm_couplings_dir": COUPLINGS_DIR,
                 "expid": "test",
             }
         )
@@ -3026,6 +3167,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             setup_config["general"]["include_models"] = new_model_list
 
         model_config = {}
+        # This function changes both the setup_config and the model_config
         attach_to_config_and_reduce_keyword(
             setup_config["general"], model_config, "include_models", "models"
         )
@@ -3054,17 +3196,17 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
                         attach_to_config_and_reduce_keyword(
                             this_config[model], model_config, "include_models", "models"
                         )
-            for model in list(model_config):
-                for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
-                    attach_to_config_and_remove(
-                        model_config[model], attachment, all_config=None
-                    )
+                        for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
+                            attach_to_config_and_remove(
+                                this_config[model], attachment, all_config=this_config
+                            )
 
         # Allows the ``general`` section to be able to handle attachable files (e.g.
         # ``further_reading``)
+        # Attach general further_reading key (config["general"]["further_reading"])
         for attachment in CONFIGS_TO_ALWAYS_ATTACH_AND_REMOVE:
             attach_to_config_and_remove(
-                setup_config["general"], attachment, all_config=None
+                setup_config["general"], attachment, all_config=setup_config
             )
 
         # if "models" in setup_config["general"]:
@@ -3074,14 +3216,15 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         #    setup_config["general"]["models"] = new_model_list
 
         for model in list(model_config):
-            setup_config["general"]["valid_model_names"].append(model)
+            if model != "general" and model != "computer":
+                setup_config["general"]["valid_model_names"].append(model)
             # valid_model_names.append(list(model_config)) happens automatically
 
         # model_config should be ok now
         # merge everything
 
-        logging.debug("Valid Setup Names = %s", valid_setup_names)
-        logging.debug("Valid Model Names = %s", valid_model_names)
+        logger.debug(f"Valid Setup Names = {valid_setup_names}")
+        logger.debug(f"Valid Model Names = {valid_model_names}")
 
         self._blackdict = blackdict = priority_merge_dicts(
             user_config, setup_config, priority="first"
@@ -3104,7 +3247,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             verbose=self.config["general"].get("verbose", False),
         )
 
-        # pprint_config(self.config)
         # sys.exit(0)
 
     def check_user_defined_versions(self, user_config):
@@ -3130,7 +3272,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             If something goes wrong with the user's version choices it exits the code
             with a ``esm_parser.user_error``
         """
-        if user_config["general"].get("run_or_compile", "runtime") == "runtime":
+        if user_config["general"].get("execution_mode", "run") == "run":
             version_in_runscript_general = user_config["general"].get("version")
             model_name = user_config["general"]["setup_name"]
             version_in_runscript_model = user_config.get(model_name, {}).get("version")
@@ -3154,7 +3296,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         del self._blackdict
 
     def run_recursive_functions(self, config, isblacklist=True):
-        logging.debug("Top of run recursive functions")
+        logger.debug("Top of run recursive functions")
         recursive_run_function([], config, "atomic", mark_dates, config)
         recursive_run_function([], config, "atomic", perform_actions, config)
         recursive_run_function(

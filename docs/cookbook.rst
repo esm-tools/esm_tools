@@ -46,3 +46,5 @@ documentation issue on `our GitHub repository <https://github.com/esm-tools/esm_
 .. include:: recipes/exclude_forcing_input.rst
 .. include:: recipes/use_own_namelist.rst
 .. include:: recipes/branchoff_from_old_spinups.rst
+.. include:: recipes/batch_mail.rst
+.. include:: recipes/awiesm_simulations_with_modified_topography.rst

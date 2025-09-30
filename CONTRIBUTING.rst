@@ -101,7 +101,7 @@ Contribution to Other Packages
 
 2. Proceed to do a development install of the package in the package's folder::
 
-   $ cd <package's_folder>
+   $ cd <package´s_folder>
    $ pip install -e .
 
 3. From now on when binaries are called, they will refer to the source code you are working

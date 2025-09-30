@@ -1,6 +1,7 @@
 """
 Module Docstring.,..?
 """
+
 import copy
 import logging
 import sys
@@ -54,8 +55,10 @@ class Dateformat(object):
 
     def __repr__(self):
         return (
-            "Dateformat(form=%s, printhours=%s, printminutes=%s, printseconds=%s)"
-            % (self.form, self.printhours, self.printminutes, self.printseconds)
+            f"Dateformat(form={self.form}, "
+            f"printhours={self.printhours}, "
+            f"printminutes={self.printminutes}, "
+            f"printseconds={self.printseconds})"
         )
 
 
@@ -210,7 +213,7 @@ class Calendar(object):
         return self.calendar_type
 
     def __repr__(self):
-        return "esm_calendar(calendar_type=%s)" % self.calendar_type
+        return f"esm_calendar(calendar_type={self.calendar_type})"
 
     def __str__(self):
         if self.calendar_type == 0:
@@ -218,8 +221,7 @@ class Calendar(object):
         if self.calendar_type == 1:
             return "esm_calendar object with allowed leap years"
         return (
-            "esm_calendar object with equal-length months of %s days"
-            % self.calendar_type
+            f"esm_calendar object with equal-length months of {self.calendar_type} days"
         )
 
 
@@ -261,6 +263,17 @@ class Date(object):
     """
 
     def __init__(self, indate, calendar=Calendar()):
+        if isinstance(indate, str):
+            self._init_from_str(indate, calendar=Calendar())
+        elif isinstance(indate, Date):
+            self._init_from_date(indate, calendar=Calendar())
+        else:
+            raise TypeError(
+                f"{type(indate)} is not a valid type to initialize a Date object "
+                "(valid types: str, Date)"
+            )
+
+    def _init_from_str(self, indate, calendar=Calendar()):
         printhours = True
         printminutes = True
         printseconds = True
@@ -335,6 +348,16 @@ class Date(object):
         self.sdoy = str(self.day_of_year())
 
         self._date_format = Dateformat(form, printhours, printminutes, printseconds)
+
+    def _init_from_date(self, indate, calendar=Calendar()):
+        self.year, self.month, self.day, self.hour, self.minute, self.second = (
+            indate.year,
+            indate.month,
+            indate.day,
+            indate.hour,
+            indate.minute,
+            indate.second,
+        )
 
     @property
     def sdoy(self):
@@ -504,6 +527,9 @@ class Date(object):
         return self_tup <= other_tup
 
     def __eq__(self, other):
+        if not isinstance(other, Date):
+            return False
+
         self_tup = (
             self.year,
             self.month,
@@ -523,6 +549,9 @@ class Date(object):
         return self_tup == other_tup
 
     def __ne__(self, other):
+        if not isinstance(other, Date):
+            return True
+
         self_tup = (
             self.year,
             self.month,
@@ -582,7 +611,7 @@ class Date(object):
     def __sub__(self, other):
         if isinstance(other, Date):
             return self.sub_date(other)
-        elif type(other) == tuple:
+        elif isinstance(other, tuple):
             return self.sub_tuple(other)
         else:
             print("No known combination for subtraction")

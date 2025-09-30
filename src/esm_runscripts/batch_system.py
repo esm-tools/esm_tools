@@ -1,17 +1,18 @@
-import os
-import textwrap
-import sys
-import stat
 import copy
+import os
+import stat
+import sys
+import textwrap
+
+from loguru import logger
 
 import esm_environment
+from esm_parser import find_variable
+from esm_tools import user_error, user_note
 
-from esm_parser import find_variable, user_error, user_note
-from . import helpers
-from . import dataprocess
-from . import prepare
-from .slurm import Slurm
+from . import dataprocess, helpers, prepare
 from .pbs import Pbs
+from .slurm import Slurm
 
 known_batch_systems = ["slurm", "pbs"]
 reserved_jobtypes = ["prepcompute", "compute", "prepare", "tidy", "inspect"]
@@ -161,7 +162,7 @@ class batch_system:
 
         # loop over all batch flag values and replace the tags
         for value in all_values_flat:
-            for (tag, repl) in replacement_tags:
+            for tag, repl in replacement_tags:
                 value = value.replace(tag, str(repl))
             if this_batch_system.get("header_start") is not None:
                 header.append(this_batch_system["header_start"] + " " + value)
@@ -192,13 +193,13 @@ class batch_system:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
                 if "nproc" in config[model]:
-                    print(f"nproc: {config[model]['nproc']}")
+                    logger.info(f"nproc: {config[model]['nproc']}")
 
                     # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI processes to start a program multiple times
                     # (used for FESOM-REcoM tracer loop parallelization (MPI based))
                     mpi_num_groups = config[model].get("mpi_num_groups", 1)
 
-# kh 22.06.22 adjust total number of MPI processes via mpi_num_groups at lowest level (nproc)
+                    # kh 22.06.22 adjust total number of MPI processes via mpi_num_groups at lowest level (nproc)
                     config[model]["nproc"] *= mpi_num_groups
                     config[model]["tasks"] = config[model]["nproc"]
 
@@ -226,7 +227,7 @@ class batch_system:
                 # seb-wahl: add support for ECHAM6's parallel I/O feature
                 # namelist parctl in namelist.echam
                 if "nprocio" in config[model]:
-                    config[model]["tasks"] += config[model].get("nprocio",0)
+                    config[model]["tasks"] += config[model].get("nprocio", 0)
 
                 nproc = config[model]["tasks"]
                 if cluster == "compute":
@@ -243,7 +244,7 @@ class batch_system:
 
                 config[model]["threads"] = config[model]["tasks"] * omp_num_threads
                 tasks += config[model]["tasks"]
-                print(f"tasks: {tasks}")
+                logger.info(f"tasks: {tasks}")
                 # Use the number of tasks and threads to update end_proc/core
                 end_proc = start_proc + config[model]["tasks"] - 1
                 end_core = start_core + config[model]["threads"] - 1
@@ -263,9 +264,9 @@ class batch_system:
 
             if (
                 not cluster
-                or not cluster in config["general"]["workflow"]["subjob_clusters"]
+                or cluster not in config["general"]["workflow"]["subjob_clusters"]
             ):
-                print(f"Unknown or unset cluster: {cluster}.")
+                logger.error(f"Unknown or unset cluster: {cluster}.")
                 sys.exit(-1)
             # user defined jobtype doing dataprocessing
             tasks = config["general"]["workflow"]["subjob_clusters"][cluster]["nproc"]
@@ -273,7 +274,7 @@ class batch_system:
             nodes = int(tasks / cores_per_node) + ((tasks % cores_per_node) > 0)
 
         config["general"]["resubmit_tasks"] = tasks
-        print(f"resubmit tasks: {config['general']['resubmit_tasks']}")
+        logger.info(f"resubmit tasks: {config['general']['resubmit_tasks']}")
         config["general"]["resubmit_nodes"] = nodes
 
         return config
@@ -282,7 +283,7 @@ class batch_system:
     def get_environment(config, subjob):
         environment = []
 
-        env = esm_environment.environment_infos("runtime", config)
+        env = esm_environment.EnvironmentInfos(config, "run")
         commands = env.commands
         if not subjob.replace("_general", "") in reserved_jobtypes:  # ??? fishy
             commands += dataprocess.subjob_environment(config, subjob)
@@ -337,37 +338,31 @@ class batch_system:
                 )
         return extras
 
+    def get_bash_command_to_print_in_progress_log(config, subjob, message):
+        task = subjob.replace("_general", "")
+        run_number = config["general"]["run_number"]
+        current_date = config["general"]["current_date"]
+        jobid = config["general"]["jobid"]
+        strftime_str = '"%Y-%m-%d %H:%M:%S.%3N"'
+        timestampStr = f"$(date +{strftime_str})"
+        line = (
+            f" {timestampStr} | PROGRESS | {task} {run_number} {current_date} {jobid} "
+            f"- {message}"
+        )
+        echo_command = f'echo "{line}" >> {config["general"]["experiment_log_file"]}'
+        return echo_command
+
     @staticmethod
     def append_start_statement(config, subjob):
-        line = helpers.assemble_log_message(
-            config,
-            [
-                subjob.replace("_general", ""),
-                config["general"]["run_number"],
-                config["general"]["current_date"],
-                config["general"]["jobid"],
-                "- start",
-            ],
-            timestampStr_from_Unix=True,
+        return batch_system.get_bash_command_to_print_in_progress_log(
+            config, subjob, "start"
         )
-        startline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
-        return startline
 
     @staticmethod
     def append_done_statement(config, subjob):
-        line = helpers.assemble_log_message(
-            config,
-            [
-                subjob.replace("_general", ""),
-                config["general"]["run_number"],
-                config["general"]["current_date"],
-                config["general"]["jobid"],
-                "- done",
-            ],
-            timestampStr_from_Unix=True,
+        return batch_system.get_bash_command_to_print_in_progress_log(
+            config, subjob, "done"
         )
-        doneline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
-        return doneline
 
     @staticmethod
     def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
@@ -443,16 +438,15 @@ class batch_system:
                     ]
 
         if not clusterconf:
-            print(f"No config found for cluster {cluster}.")
+            logger.error(f"No config found for cluster {cluster}.")
             sys.exit(-1)
 
         self = config["general"]["batch"]
         runfilename = batch_system.get_run_filename(config, cluster)
 
-        if config["general"]["verbose"]:
-            print("still alive")
-            print("jobtype: ", config["general"]["jobtype"])
-            print("writing run file for:", cluster)
+        logger.debug("still alive")
+        logger.debug(f"jobtype: {config['general']['jobtype']}")
+        logger.debug(f"writing run file for: {cluster}")
 
         with open(runfilename, "w") as runfile:
 
@@ -461,9 +455,8 @@ class batch_system:
 
                 config = batch_system.calculate_requirements(config, cluster)
                 # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if (
-                    cluster in reserved_jobtypes
-                    and config["computer"].get("taskset", False)
+                if cluster in reserved_jobtypes and config["computer"].get(
+                    "taskset", False
                 ):
                     config = config["general"]["batch"].write_het_par_wrappers(config)
                 # Prepare launcher
@@ -521,23 +514,14 @@ class batch_system:
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
                 #   " -j "+ config["general"]["jobtype"]
 
+                rundate = config["general"]["current_date"].format(
+                    form=9, givenph=False, givenpm=False, givenps=False
+                )
                 observe_call = (
-                    "esm_runscripts "
-                    + config["general"]["scriptname"]
-                    + " -e "
-                    + config["general"]["expid"]
-                    + " -t observe_"
-                    + cluster
-                    + " -p ${process}"
-                    + " -s "
-                    + config["general"]["current_date"].format(
-                        form=9, givenph=False, givenpm=False, givenps=False
-                    )
-                    + " -r "
-                    + str(config["general"]["run_number"])
-                    + " -v "
-                    + " --last-jobtype "
-                    + config["general"]["jobtype"]
+                    f'esm_runscripts {config["general"]["scriptname"]} '
+                    f'-e {config["general"]["expid"]} -t observe_{cluster} '
+                    f'-p ${{process}} -s {rundate} -r {config["general"]["run_number"]}'
+                    f' -v --last-jobtype {config["general"]["jobtype"]}'
                 )
 
                 if "--open-run" in config["general"]["original_command"] or not config[
@@ -549,8 +533,10 @@ class batch_system:
                 ] or config["general"].get("use_venv"):
                     observe_call += " --contained-run"
                 else:
-                    print("ERROR -- Not sure if you were in a contained or open run!")
-                    print(
+                    logger.error(
+                        "ERROR -- Not sure if you were in a contained or open run!"
+                    )
+                    logger.error(
                         "ERROR -- See write_simple_runscript for the code causing this."
                     )
                     sys.exit(1)
@@ -560,6 +546,9 @@ class batch_system:
                         observe_call += (
                             " -m " + config["general"]["modify_config_file_abspath"]
                         )
+
+                if "--task-log-files" in config["general"]["original_command"]:
+                    observe_call += " --task-log-files"
 
                 subjobs_to_launch = config["general"]["workflow"]["subjob_clusters"][
                     cluster
@@ -590,16 +579,15 @@ class batch_system:
             runfilestats = os.stat(runfilename)
             os.chmod(runfilename, runfilestats.st_mode | stat.S_IEXEC)
 
-        if config["general"]["verbose"]:
-            print("\n", 40 * "+ ")
-            print("Contents of ", runfilename, ":")
-            with open(runfilename, "r") as fin:
-                print(fin.read())
-            if os.path.isfile(self.bs.filename):
-                print("\n", 40 * "+ ")
-                print("Contents of ", self.bs.filename, ":")
-                with open(self.bs.filename, "r") as fin:
-                    print(fin.read())
+        logger.debug("\n" + 40 * "+ ")
+        logger.debug(f"Contents of {runfilename}:")
+        with open(runfilename, "r") as fin:
+            logger.debug(fin.read())
+        if os.path.isfile(self.bs.filename):
+            logger.debug("\n" + 40 * "+ ")
+            logger.debug(f"Contents of {self.bs.filename}:")
+            with open(self.bs.filename, "r") as fin:
+                logger.debug(fin.read())
 
         return config
 
@@ -694,9 +682,7 @@ class batch_system:
             if int(omp_num_threads) > 1 and model in config["general"].get(
                 "valid_model_names", []
             ):
-                config["computer"][
-                    "heterogeneous_parallelization"
-                ] = True
+                config["computer"]["heterogeneous_parallelization"] = True
                 if (
                     not config[model].get("nproc", False)
                     and not config[model].get("nproca", False)
@@ -734,20 +720,7 @@ class batch_system:
                 command = config[model]["executable"]
             # Prepare the MPMD commands
 
-# kh 24.06.22 observed behavior was:
-#model:  oasis3mct
-#command:  None
-
-#model:  recom
-#command:  None
-
-#model:  jsbach
-#command:  None
-
-#model:  hdmodel
-#command:  NONE
-
-# kh 24.06.22 workaround: filter hdmodel
+            # kh 24.06.22 workaround: filter hdmodel
             if command and (command != "NONE"):
                 launcher = config["computer"].get("launcher")
                 launcher_flags = self.calc_launcher_flags(config, model, cluster)
@@ -756,9 +729,11 @@ class batch_system:
         # Merge each component flags and commands into a single string
         components = sep.join(component_lines)
         # Substitute the ``@components@`` tag for the final launch command
-        config["computer"]["execution_command"] = config["computer"][
-            "execution_command"
-        ].replace("@components@", components).replace("@jobtype@", cluster)
+        config["computer"]["execution_command"] = (
+            config["computer"]["execution_command"]
+            .replace("@components@", components)
+            .replace("@jobtype@", cluster)
+        )
 
     @staticmethod
     def calc_launcher_flags(config, model, cluster):
@@ -815,9 +790,7 @@ class batch_system:
                 "cores_per_node"
             ]
         else:
-            cores_per_node = config["computer"]["partitions"]["pp"][
-                "cores_per_node"
-            ]
+            cores_per_node = config["computer"]["partitions"]["pp"]["cores_per_node"]
         # Get the OMP number of threads
         omp_num_threads = config[model].get("omp_num_threads", 1)
 
@@ -831,7 +804,7 @@ class batch_system:
             cpus_per_proc = config[model].get("cpus_per_proc", omp_num_threads)
             # Check for CPUs and OpenMP threads
             if omp_num_threads > cpus_per_proc:
-                esm_parser.user_error(
+                user_error(
                     "OpenMP configuration",
                     (
                         "The number of OpenMP threads cannot be larger than the number"
@@ -843,7 +816,7 @@ class batch_system:
         elif "nproca" in config[model] and "nprocb" in config[model]:
             # ``nproca``/``nprocb`` not compatible with ``omp_num_threads``
             if omp_num_threads > 1:
-                esm_parser.user_note(
+                user_note(
                     "nproc",
                     "``nproca``/``nprocb`` not compatible with ``omp_num_threads``",
                 )
@@ -852,10 +825,10 @@ class batch_system:
             omp_num_threads = 1
         else:
 
-# kh 22.06.22 defensive (user_error/user_note could also be added here)
+            # kh 22.06.22 defensive (user_error/user_note could also be added here)
             nproc = 0
             cpus_per_proc = 0
-#           omp_num_threads = 0
+        #           omp_num_threads = 0
 
         # Number of nodes needed
         nodes = int(nproc * cpus_per_proc / cores_per_node) + (
@@ -875,13 +848,12 @@ class batch_system:
             ("@omp_num_threads@", omp_num_threads),
         ]
         # Replace all tags
-        for (tag, repl) in replacement_tags:
+        for tag, repl in replacement_tags:
             launcher_flags = launcher_flags.replace(tag, str(repl))
         # Substitute @MODEL@ with the model name
         launcher_flags = launcher_flags.replace("@MODEL@", model.upper())
 
         return launcher_flags
-
 
 
 def submits_another_job(config, cluster):

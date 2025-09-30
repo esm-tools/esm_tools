@@ -11,11 +11,21 @@ Such subjobs can be arranged into clusters, and the order of execution can be se
 Default phases of a general model simulation run
 --------------------------------------------------------
 
-ESM-Tools uses the workflow manager itself to organize the default :term:`workflow` :term:`phases<phase>` of a simulation :term:`run`. Since Release 6.0 the default workflow phases are the following::
+Even before the addition of the workflow manager, the run jobs of esm_runscript were split into different subjobs, even though that was mostly hidden from the user's view. Before
+Release 6.0, these subjobs were:
+
+::
+
+        compute --> tidy (incl. wait_and_observe + resubmit next run)
+
+Technically, ``wait_and_observe`` was part of the tidy job, as was the resubmission, including above only for the purpose of demonstrating the difference to the 
+new standard workflow, which is now (post-Release 6.0)::
 
         newrun --> prepcompute --> compute --> observe_compute --> tidy (+ resubmit next run)
 
-.. Other than before adding the workflow manager, 
+Other than before adding the workflow manager, these standard subjobs are all separated and independant subjobs, each submitted (or started) by the previous subjob in one of three
+ways (see below). The splitting of the old compute job into newrun, prepcompute and compute on one side, and tidy into observe and tidy, was necessary to enable
+the user to insert coupling subjobs for iterative coupling at the correct places. Here is what each of the standard subjobs does:
 
 These standard phases are all separated and independant phases, each submitted (or started) by the previous phase in one of three ways (see below). Here is what each of the standard phases does:
 

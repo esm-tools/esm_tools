@@ -1,50 +1,16 @@
 import os
-import sys
-import subprocess
-import shlex  # contains shlex.split that respects quoted strings
-
 # deniz: it is better to use more pathlib in the future so that dir/path
 # operations will be more portable (supported since Python 3.4, 2014)
 import pathlib
-
-from .software_package import software_package
-from esm_parser import user_error
+import shlex  # contains shlex.split that respects quoted strings
+import subprocess
+import sys
 
 import esm_environment
 import esm_plugin_manager
+from esm_tools import user_error
 
-
-# Yes, Type Hints. Python >= 3.5 supports them. Small steps towards stability,
-# until Paul goes crazy and redoes everything in Go. Or Rust. Or Brainfuck
-# (yes, that's not made up: https://en.wikipedia.org/wiki/Brainfuck)
-# Docs for typing: https://docs.python.org/3/library/typing.html
-def install(package: str) -> None:
-    """
-    Checks if a package is already installed in the system and if it's not, then it
-    installs it.
-
-    Parameters
-    ----------
-    package : str
-        Name of the package or get operation. Can be a package name (e.g.
-        ``numpy``) or a full pip address (e.g.
-        ``git@https://github.com/esm-tools/esm_tools.git``)
-
-    Returns
-    -------
-    None
-    """
-    package_name = package.split("/")[-1].replace(".git", "")
-    installed_packages = esm_plugin_manager.find_installed_plugins()
-    arg_list = [sys.executable, "-m", "pip", "install", "--user", package]
-    if os.environ.get("VIRTUAL_ENV"):
-        arg_list.remove("--user")
-    if not package_name in installed_packages:
-        try:
-            subprocess.check_call(arg_list)
-        except (OSError, subprocess.CalledProcessError):  # PermissionDeniedError would be nicer...
-            subprocess.check_call(arg_list)
-
+from .software_package import software_package
 
 ######################################################################################
 ################################# class "task" #######################################
@@ -81,7 +47,7 @@ class Task:
             general, "already_installed_plugins", []
         )
 
-        if type(raw) == str:
+        if isinstance(raw, str):
             (
                 self.todo,
                 kind,
@@ -104,7 +70,7 @@ class Task:
 
         if kind == "components":
             self.env = esm_environment.esm_environment.EnvironmentInfos(
-                "compiletime", complete_config, model
+                complete_config, "compile", model
             )
         else:
             self.env = None
@@ -202,7 +168,7 @@ class Task:
         if self.only_subtask:
             if self.only_subtask == "NONE":
                 return []
-            elif type(self.only_subtask) == str:
+            elif isinstance(self.only_subtask, str):
                 return [self.only_subtask]
             else:
                 subtasks = self.only_subtask
@@ -300,6 +266,9 @@ class Task:
             if task.todo in ["get"]:
                 if task.package.command_list[task.todo] is not None:
                     for command in task.package.command_list[task.todo]:
+                        # Fix #1236: avoid repeated get commands
+                        if command in command_list:
+                            continue
                         command_list.append(command)
                         real_command_list.append(command)
 
@@ -401,7 +370,7 @@ class Task:
                     if plugin not in self.already_installed_plugins:
                         # Actually only works because Paul put the gfw_creator
                         # required plugin for awiesm onto PyPI...
-                        install(plugin)
+                        esm_plugin_manager.install(plugin)
                         self.already_installed_plugins.append(plugin)
 
         if self.package.kind in ["setups", "couplings"]:
@@ -415,6 +384,12 @@ class Task:
             os.remove("./dummy_script.sh")
         except OSError:
             print("No dummy script to remove!")
+        try:
+            source_fc = f"./{self.package.destination}-finished_config.yaml"
+            target_fc = f"./{self.package.destination}/finished_config.yaml"
+            os.rename(source_fc, target_fc)
+        except OSError:
+            print(f"Problems moving ``{source_fc}`` to ``{target_fc}``")
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 try:
@@ -464,6 +439,8 @@ class Task:
     def execute(self, ignore_errors=False):
         # Calculate the number of get commands for this esm_master operation
         self.num_of_get_commands()
+        # Initialize the dirstack for imitating pushd popd
+        dirstack = []
         # Loop through the commands
         for command in self.command_list:
             repo = self.get_repo_properties_from_command(command)
@@ -510,6 +487,16 @@ class Task:
                     command_spl = shlex.split(command)
                     if "cd" == command_spl[0]:
                         os.chdir(command_spl[1])
+                    elif "pushd" == command_spl[0]:
+                        # Emulates pushd (MA): yes it is horrible, but I don't
+                        # have time to rewrite esm_master right now
+                        dirstack.append(os.getcwd())
+                        os.chdir(command_spl[1])
+                    elif "popd" == command_spl[0]:
+                        # Emulates popd (MA): yes it is horrible, but I don't
+                        # have time to rewrite esm_master right now
+                        target_dir = target_dir = dirstack.pop(-1)
+                        os.chdir(target_dir)
                     else:
                         subprocess.run(
                             command_spl,

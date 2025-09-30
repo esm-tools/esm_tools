@@ -17,12 +17,16 @@ bs = "\033[1m"
 be = "\033[0m"
 
 # Define default files for comparisson
-compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelists"]}
+compare_files = {
+    "comp": ["comp-"],
+    "run": [".run", "finished_config", "namelists"],
+}
 
 
 def print_diff(info, sfile, tfile, name, ignore_lines):
     """
-    Prints the differences between two equivalent configuration files.
+    Prints the differences between two equivalent configuration files. Ignores the
+    provenance comments.
 
     Parameters
     ----------
@@ -41,30 +45,35 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
     file_t = open(tfile).readlines()
 
     # Delete dictionaries to be ignored from the finished_config.yaml
-    if "finished_config.yaml" in tfile:
+    if "finished_config.yaml" in tfile or "filelist" in tfile:
         file_t = del_ignore_dicts(info, file_t)
 
     # Substitute user lines in target string
     file_t = clean_user_specific_info(info, file_t)
 
+    # Pattern of provenance
+    provenance_pattern = r'\s*#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
+
     # Check for ignored lines
     new_file_s = []
     for line in file_s:
         ignore_this = False
+        line_no_prov = re.sub(provenance_pattern, "", line)
         for iline in ignore_lines:
-            if re.search(iline, line):
+            if re.search(iline, line_no_prov):
                 ignore_this = True
         if not ignore_this:
-            new_file_s.append(line)
+            new_file_s.append(line_no_prov)
     file_s = new_file_s
     new_file_t = []
     for line in file_t:
         ignore_this = False
+        line_no_prov = re.sub(provenance_pattern, "", line)
         for iline in ignore_lines:
-            if re.search(iline, line):
+            if re.search(iline, line_no_prov):
                 ignore_this = True
         if not ignore_this:
-            new_file_t.append(line)
+            new_file_t.append(line_no_prov)
     file_t = new_file_t
 
     diffobj = difflib.SequenceMatcher(a=file_s, b=file_t)
@@ -214,6 +223,9 @@ def save_files(info, user_choice):
             config_test.get("comp", {}).get(test_type_c, {}).get("compare", [])
         )
         compare_files_run = copy.deepcopy(compare_files["run"])
+        # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+        if not info["in_github"]:
+            compare_files_run.append("prepcompute_filelist")
         # TODO: The iterative coupling needs a rework. Therefore, no testing for files
         # is develop. Include the tests after iterative coupling is reworked
         if next(iter(scripts.values()))["iterative_coupling"]:

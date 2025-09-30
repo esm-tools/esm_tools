@@ -1,0 +1,23 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+        account: ba0989
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm.yaml
+        chunk_size: 2
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism_nh
+        runscript: pism_nh.yaml
+        chunk_size: 20
+        chunk_unit: "years"
+
+model3:
+        setup_name: pism_sh
+        runscript: pism_sh.yaml
+        chunk_size: 20
+        chunk_unit: "years"

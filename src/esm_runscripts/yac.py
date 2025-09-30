@@ -1,3 +1,6 @@
+from loguru import logger
+
+
 class yac:
     """
 
@@ -228,7 +231,7 @@ class yac:
 
     def print_config_files(self):
         for line in self.namcouple:
-            print(line)
+            logger.info(line)
 
     def add_output_file(self, lefts, rights, leftmodel, rightmodel, config):
         out_file = []
@@ -311,53 +314,42 @@ class yac:
         import os
         import subprocess
 
-        print("Preparing YAC restart files from initial run...")
+        logger.info("Preparing YAC restart files from initial run...")
         exe = config[model]["executable"]
-        print(restart_file, all_fields, model, exe)
+        logger.info(restart_file, all_fields, model, exe)
         cwd = os.getcwd()
         os.chdir(config["general"]["thisrun_work_dir"])
         filelist = ""
         for field in all_fields:
-            print(field + "-" + model)
+            logger.info(f"{field}-{model}")
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")
-            print(thesefiles)
+            logger.info(f"{thesefiles}")
             for thisfile in thesefiles:
-                print("cdo showtime " + thisfile + " 2>/dev/null | wc -w")
+                logger.info(f"cdo showtime {thisfile} 2>/dev/null | wc -w")
                 lasttimestep = (
                     subprocess.check_output(
-                        "cdo showtime " + thisfile + " 2>/dev/null | wc -w", shell=True
+                        f"cdo showtime {thisfile} 2>/dev/null | wc -w", shell=True
                     )
                     .decode("utf-8")
                     .rstrip()
                 )
-                # print (lasttimestep)
 
-                print(
-                    "cdo -O seltimestep,"
-                    + str(lasttimestep)
-                    + " "
-                    + thisfile
-                    + " onlyonetimestep.nc"
+                logger.info(
+                    f"cdo -O seltimestep,{lasttimestep} {thisfile} onlyonetimestep.nc"
                 )
                 os.system(
-                    "cdo -O seltimestep,"
-                    + str(lasttimestep)
-                    + " "
-                    + thisfile
-                    + " onlyonetimestep.nc"
+                    f"cdo -O seltimestep,{lasttimestep} {thisfile} onlyonetimestep.nc"
                 )
-                print("ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc")
-                os.system(
-                    "ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc"
-                )
-                filelist += "notimestep_" + field + ".nc "
-                print(filelist)
-        print("cdo merge " + filelist + " " + restart_file)  # + enddate)
-        os.system("cdo merge " + filelist + " " + restart_file)  # + enddate)
+                logger.info(f"ncwa -O -a time onlyonetimestep.nc notimestep_{field}.nc")
+                os.system(f"ncwa -O -a time onlyonetimestep.nc notimestep_{field}.nc")
+                filelist += f" notimestep_{field}.nc"
+                logger.info(f"File list: {filelist}")
+        logger.info(f"cdo merge {filelist} {restart_file}")  # + enddate)
+        os.system(f"cdo merge {filelist} {restart_file}") # + enddate)
         rmlist = glob.glob("notimestep*")
         rmlist.append("onlyonetimestep.nc")
         for rmfile in rmlist:
-            print("rm " + rmfile)
+            logger.info("rm " + rmfile)
             os.system("rm " + rmfile)
         os.chdir(cwd)
 

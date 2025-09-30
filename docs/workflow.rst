@@ -175,7 +175,9 @@ Keyword                                                Mandatory    (Default) va
 
 Syntax example
 ^^^^^^^^^^^^^^
-The following code snippet shows the general syntax for defining a new workflow job::
+The following code snippet shows the general syntax for defining a new workflow job:
+
+.. code-block:: yaml
 
     workflow:
         subjobs:
@@ -210,7 +212,9 @@ Example 1: Adding an additional postprocessing subjob
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In the case of a simple postprocessing task (here for model Echam), that sould be run as the last task of each run, independantly from restarting the experiment,
-the corresponding minimal code snippet in a runscript could look like this::
+the corresponding minimal code snippet in a runscript could look like this:
+
+.. code-block:: yaml
 
     echam:
         [...other information...]
@@ -226,7 +230,9 @@ Example 2: Adding an additional preprocessing subjob
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A preprocessing job basically is configured the same way as a postprocessing job, but the run_before keyword is needed now, to define when the new job should
-be run::
+be run:
+
+.. code-block:: yaml
 
     echam:
         [...other information...]
@@ -241,7 +247,9 @@ be run::
 Example 3: Adding a new job as the last task in a run
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To integrate a new job that should be run as the last task in every run but before the next run starts, use the following example::
+To integrate a new job that should be run as the last task in every run but before the next run starts, use the following example:
+
+.. code-block:: yaml
 
     echam:
         [...other information...]
@@ -257,7 +265,9 @@ Example 4: Adding multiple user jobs that can be run concurrently in a workflow 
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to define multiple new jobs that should start at the same but can be run independently from each other. This can be done by assigning these jobs
-to the same workflow cluster and run them concurrently over the batch system::
+to the same workflow cluster and run them concurrently over the batch system:
+
+.. code-block:: yaml
 
     echam:
         [...other information...]
@@ -286,7 +296,9 @@ Writing a runscript for iterative coupling using the workflow manager requires s
 that each coupling step consists of two data processing jobs, one pre- and one postprocessing job. This is done this way
 as to make the coupling modular, and enable the modeller to easily replace one of the coupled components by a different
 implementation. This is of course up to the user to decide, but we generally advise to do so, and the iterative couplings
-distributed with `ESM-Tools` are organized this way. ::
+distributed with `ESM-Tools` are organized this way. :
+
+.. code-block:: yaml
 
     echam:
         [...other information...]

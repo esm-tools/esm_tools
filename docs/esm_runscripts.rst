@@ -9,7 +9,7 @@ Usage
 
     esm_runscripts [-h] [-d] [-v] [-e EXPID] [-c] [-P] [-j LAST_JOBTYPE]
                       [-t TASK] [-p PID] [-x EXCLUDE] [-o ONLY]
-                      [-r RESUME_FROM] [-U]
+                      [-r RESUME_FROM] [-U] [-i INSPECT]
                       runscript
 
 Arguments

@@ -338,6 +338,20 @@ class batch_system:
                 )
         return extras
 
+    def get_bash_command_to_print_in_progress_log(config, subjob, message):
+        task = subjob.replace("_general", "")
+        run_number = config["general"]["run_number"]
+        current_date = config["general"]["current_date"]
+        jobid = config["general"]["jobid"]
+        strftime_str = '"%Y-%m-%d %H:%M:%S.%3N"'
+        timestampStr = f"$(date +{strftime_str})"
+        line = (
+            f" {timestampStr} | PROGRESS | {task} {run_number} {current_date} {jobid} "
+            f"- {message}"
+        )
+        echo_command = f'echo "{line}" >> {config["general"]["experiment_log_file"]}'
+        return echo_command
+
     @staticmethod
     def get_post_run_commands(config):
         extras = []
@@ -376,35 +390,15 @@ class batch_system:
 
     @staticmethod
     def append_start_statement(config, subjob):
-        line = helpers.assemble_log_message(
-            config,
-            [
-                subjob.replace("_general", ""),
-                config["general"]["run_number"],
-                config["general"]["current_date"],
-                config["general"]["jobid"],
-                "- start",
-            ],
-            timestampStr_from_Unix=True,
+        return batch_system.get_bash_command_to_print_in_progress_log(
+            config, subjob, "start"
         )
-        startline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
-        return startline
 
     @staticmethod
     def append_done_statement(config, subjob):
-        line = helpers.assemble_log_message(
-            config,
-            [
-                subjob.replace("_general", ""),
-                config["general"]["run_number"],
-                config["general"]["current_date"],
-                config["general"]["jobid"],
-                "- done",
-            ],
-            timestampStr_from_Unix=True,
+        return batch_system.get_bash_command_to_print_in_progress_log(
+            config, subjob, "done"
         )
-        doneline = "echo " + line + " >> " + config["general"]["experiment_log_file"]
-        return doneline
 
     @staticmethod
     def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
@@ -556,23 +550,14 @@ class batch_system:
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
                 #   " -j "+ config["general"]["jobtype"]
 
+                rundate = config["general"]["current_date"].format(
+                    form=9, givenph=False, givenpm=False, givenps=False
+                )
                 observe_call = (
-                    "esm_runscripts "
-                    + config["general"]["scriptname"]
-                    + " -e "
-                    + config["general"]["expid"]
-                    + " -t observe_"
-                    + cluster
-                    + " -p ${process}"
-                    + " -s "
-                    + config["general"]["current_date"].format(
-                        form=9, givenph=False, givenpm=False, givenps=False
-                    )
-                    + " -r "
-                    + str(config["general"]["run_number"])
-                    + " -v "
-                    + " --last-jobtype "
-                    + config["general"]["jobtype"]
+                    f'esm_runscripts {config["general"]["scriptname"]} '
+                    f'-e {config["general"]["expid"]} -t observe_{cluster} '
+                    f'-p ${{process}} -s {rundate} -r {config["general"]["run_number"]}'
+                    f' -v --last-jobtype {config["general"]["jobtype"]}'
                 )
 
                 if "--open-run" in config["general"]["original_command"] or not config[
@@ -597,6 +582,9 @@ class batch_system:
                         observe_call += (
                             " -m " + config["general"]["modify_config_file_abspath"]
                         )
+
+                if "--task-log-files" in config["general"]["original_command"]:
+                    observe_call += " --task-log-files"
 
                 subjobs_to_launch = config["general"]["workflow"]["subjob_clusters"][
                     cluster

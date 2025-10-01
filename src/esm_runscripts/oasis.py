@@ -642,9 +642,9 @@ class oasis:
         filelist = ""
         # Loop through the fields and their corresponding models and exes
         for field, model, exe in zip(all_fields, models, exes):
-            logger.info(field + "-" + model)
+            logger.info(f"{field}-{model}")
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")
-            logger.info(thesefiles)
+            logger.info(f"{thesefiles}")
             for thisfile in thesefiles:
 
                 logger.info(

@@ -99,7 +99,7 @@ def rename_sources_to_targets(config):
                     pass
 
                 elif (not sources and in_work) or (not sources and targets):
-                    logger.error(filetype + "_sources missing in model " + model)
+                    logger.error(f"{filetype}_sources missing in model {model}")
                     helpers.print_datetime(config)
                     sys.exit(-1)
 

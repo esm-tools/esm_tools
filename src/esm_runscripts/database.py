@@ -1,11 +1,10 @@
 import os
 
-from sqlalchemy import (Column, DateTime, Integer, Sequence, String,
-                        create_engine)
+from loguru import logger
+from sqlalchemy import Column, DateTime, Integer, Sequence, String, create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 
 from esm_database import location_database
-from loguru import logger
 
 # database_file = os.path.dirname(os.path.abspath(__file__)) + "/../database/esm_runscripts.db"
 database_file = os.path.expanduser("~") + "/.esm_tools/esm_runscripts.db"
@@ -62,7 +61,7 @@ class experiment(base):
 
     @staticmethod
     def nicer_output(run):
-        logger.info("ID: " + str(run.id) + ", EXPID: " + str(run.expid) + ":")
+        logger.info(f"ID: {run.id}, EXPID: {run.expid}:")
         logger.info("     Timestamp: " + run.timestamp.strftime("%x %X"))
         logger.info("     Runtime: " + run.runtime)
         logger.info("     Setup: " + run.setup_name)

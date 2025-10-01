@@ -27,8 +27,8 @@
 / 
 &run_nml
  num_lev                 = 90,90      ! number of full levels of vertical grid
- dtime                   = 450             ! [s] timestep in seconds
- modelTimeStep           = "PT450S"
+ dtime                   = 900             ! [s] timestep in seconds
+ modelTimeStep           = "PT900S"
  ldynamics               = .TRUE.               ! dynamics
  ltransport              = .TRUE.               ! transport
  iforcing                = 3          !

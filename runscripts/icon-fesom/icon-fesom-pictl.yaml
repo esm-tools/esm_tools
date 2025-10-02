@@ -9,11 +9,16 @@ computer:
           method: "warn" # default is kill
           message: "SLURM ERROR: slurm ended with an error, good luck."
           file: "stdout"
+      "Lookup table problem" :
+          frequency: 30
+          method: "kill" # default is kill
+          message: "The good old lookup table overflow."
+          file: "stdout"
 general:
    use_venv: false
    homedir: !ENV ${HOME}
    setup_name: icon-fesom
-   compute_time: "00:45:00"
+   compute_time: "01:05:00"
    account: bb0519
    # monthly restart
    #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
@@ -38,8 +43,7 @@ icon:
    nproc: 1488
    omp_num_threads: 1
    
-   dtime: 900 # 900 is the current default in icon.yaml
-   radTimeStep: PT60M
+   dtime: 450 # 900 is the current default in icon.yaml
    # monthly restart and output interval
    #checkpoint_interval: P01M
    #restart_interval: P01M

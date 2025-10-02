@@ -39,4 +39,18 @@ general:
 
 fesom:
     model_dir: ${general.model_dir}/fesom-2.6
+
+    file_movements:
+      input:
+         all_directions: link
+      forcing:
+         all_directions: link
+      restart_in:
+         all_directions: link
+      restart_out:
+         all_directions: move
+      outdata:
+         all_directions: move
+      unknown:
+         all_directions: move
 #yac:

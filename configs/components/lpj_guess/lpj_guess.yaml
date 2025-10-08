@@ -8,7 +8,7 @@
 
 lpj_guess:
     model: lpj_guess
-    version: 4.1.1
+    version: 4.1.2
 
     metadata:
         Institute: Lund Universitiy
@@ -30,7 +30,7 @@ lpj_guess:
 
     install_bins: "build/guess"
     clean_command: "rm -rf build"
-    executable: guess
+    executable: guess_TL255
     execution_command: ${executable} ${runscript_name}
     #resolution: TL159 #if it's not set i dosen't work!
     resolution: TL255 #if it's not set i dosen't work!
@@ -44,9 +44,12 @@ lpj_guess:
             runscript_name: run_coupled_4_1_2.ins
             git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
             branch: lpj_guess_awiesm3
-            mygrid: TL255
-            install_bins: build/guess_TL255
-            executable: guess_TL255
+            #mygrid: TL255
+            mygrid: TCO319
+            #install_bins: build/guess_TL255
+            install_bins: build/guess
+            #executable: guess_TL255
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating
@@ -182,7 +185,8 @@ computer:
     add_export_vars:
         myfortrancompiler: $FC
         #mygrid: TL159
-        mygrid: TL255
+        #mygrid: TL255
+        mygrid: TCO319
         OASIS_ANCHOR: ../../../oasis
         NETCDF_C_DIR: $NETCDFROOT
         NETCDF_F_DIR: $NETCDFFROOT

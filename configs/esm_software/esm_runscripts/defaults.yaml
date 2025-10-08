@@ -6,6 +6,14 @@ general:
     iterative_coupled_model: ""
     reset_calendar_to_last: False
     verbose: False
+    profile: False
+    intermediate_file_actions:
+    - "config"
+    - "bin"
+    - "input"
+    compute_file_checksums: False
+    parallel_file_actions: "dask"
+    force_overwrite_in_file_actions: False
 
 # Defaults to be added to each model or component
 per_model_defaults:
@@ -18,3 +26,5 @@ per_model_defaults:
                         run_to_work:    copy
                         work_to_run:    copy
 
+dask:
+    foo: bar

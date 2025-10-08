@@ -300,6 +300,13 @@ lpj_guess:
 
     resolution: ${oifs.resolution}
     grids:
+        ${resolution}-land:
+            name: ${resolution}-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
         lpjg:
             name: lpjg
             nx: "${nx}"
@@ -307,7 +314,6 @@ lpj_guess:
             oasis_grid_type: "D"
             oyac_grid_type: "LL"
             oyac_io_per_node: 4
-
         TL159-land:
             name: TL159-land
             nx: "${nx}"
@@ -324,6 +330,13 @@ lpj_guess:
             oyac_io_per_node: 4
         TCO95-land:
             name: TCO95-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TCO319-land:
+            name: TCO319-land
             nx: "${nx}"
             ny: "${ny}"
             oasis_grid_type: "D"

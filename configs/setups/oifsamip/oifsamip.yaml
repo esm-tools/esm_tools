@@ -9,6 +9,8 @@ general:
 
         lresume: False
         coupled_setup: True
+        with_co2_oce_coupling: False
+        with_co2_veg_coupling: False
 
         include_models:
                 - amip

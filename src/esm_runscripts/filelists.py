@@ -9,6 +9,7 @@ import re
 import shutil
 import sys
 
+from dask import distributed as daskd
 import f90nml
 import yaml
 from loguru import logger
@@ -1085,6 +1086,9 @@ def copy_files(config, filetypes, source, target):
     logger.debug("\n::: Copying files")
     helpers.print_datetime(config)
 
+    parallel_file_movements = config["general"].get("parallel_file_movements", False)
+    dask_scheduler_json = config["dask"]["scheduler_json"]
+
     successful_files = []
     missing_files = {}
 
@@ -1094,7 +1098,7 @@ def copy_files(config, filetypes, source, target):
 
     # Initialization for parallelization with futures
     futures = {}
-    if config["general"].get("parallel_file_movements", False) == "threads":
+    if parallel_file_movements in ["threads", "dask"]:
         number_of_threads = (
             config["computer"]
             .get("partitions", {})
@@ -1110,7 +1114,11 @@ def copy_files(config, filetypes, source, target):
             number_of_threads = number_of_threads - 1
 
         # Initialize client
-        client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
+        if parallel_file_movements == "dask" and node != "login_nodes":
+            # Dask should only run on compute nodes
+            client = daskd.Client(scheduler_file=dask_scheduler_json)
+        else:
+            client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
 
     # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(
@@ -1208,6 +1216,7 @@ def copy_files(config, filetypes, source, target):
                             config["general"].get("parallel_file_movements", False)
                             == "threads"
                         ):
+                            # Parallel
                             future = client.submit(
                                 movement_method,
                                 config,
@@ -1216,6 +1225,7 @@ def copy_files(config, filetypes, source, target):
                             )
                             futures[(file_source, file_target)] = future
                         else:
+                            # Sequential
                             futures[(file_source, file_target)] = movement_method(
                                 config,
                                 file_source,
@@ -1506,13 +1516,12 @@ def actually_move(source_path, target_path):
 def complete_all_file_movements(config):
     mconfig = config["general"]
     general_file_movements = copy.deepcopy(mconfig.get("file_movements", {}))
-    if "defaults.yaml" in mconfig:
-        if "per_model_defaults" in mconfig["defaults.yaml"]:
-            if "file_movements" in mconfig["defaults.yaml"]["per_model_defaults"]:
-                mconfig["file_movements"] = copy.deepcopy(
-                    mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
-                )
-                del mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
+    if "per_model_defaults" in mconfig:
+        if "file_movements" in mconfig["per_model_defaults"]:
+            mconfig["file_movements"] = copy.deepcopy(
+                mconfig["per_model_defaults"]["file_movements"]
+            )
+            del mconfig["per_model_defaults"]["file_movements"]
     if not "file_movements" in mconfig:
         mconfig["file_movements"] = {}
     # General ``file_movements`` win over default ones

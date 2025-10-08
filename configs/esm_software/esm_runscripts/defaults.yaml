@@ -7,13 +7,13 @@ general:
     reset_calendar_to_last: False
     verbose: False
     profile: False
-    intermediate_file_actions:
+    intermediate_file_movements:
     - "config"
     - "bin"
     - "input"
     compute_file_checksums: False
-    parallel_file_actions: "dask"
-    force_overwrite_in_file_actions: False
+    parallel_file_movements: "dask"
+    force_overwrite_in_file_movements: False
 
 # Defaults to be added to each model or component
 per_model_defaults:
@@ -27,4 +27,9 @@ per_model_defaults:
                         work_to_run:    copy
 
 dask:
-    foo: bar
+    scheduler_json_name: "dask_scheduler.json"
+    scheduler_json: "${general.thisrun_work_dir}/${scheduler_json_name}"
+    ignore_files:
+        scheduler_json: scheduler_json
+    ignore_in_work:
+        scheduler_json: "${scheduler_json_name}"

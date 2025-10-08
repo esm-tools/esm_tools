@@ -57,10 +57,10 @@
             description="ECE4/OIFS monthly surface fields">
 
             <field_group freq_op="6h" operation="average">
-        <!--    <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>  -->
-        <!--    <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>  -->
-        <!--    <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>  -->
-        <!--    <field field_ref="tvh" name="tvh" long_name="Type of high vegetation"/>  -->
+                <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/> 
+                <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/> 
+                <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>
+                <field field_ref="tvh" name="tvh" long_name="Type of high vegetation"/>
                 <field field_ref="ci" name="ci" long_name="Sea ice area fraction"/>
                 <field field_ref="asn" name="asn" long_name="Snow albedo"/>
                 <field field_ref="rsn" name="rsn" long_name="Snow density"/>
@@ -70,8 +70,8 @@
                 <field field_ref="swvl2" name="swvl2" long_name="Volumetric soil water layer 2"/>
                 <field field_ref="swvl3" name="swvl3" long_name="Volumetric soil water layer 3"/>
                 <field field_ref="swvl4" name="swvl4" long_name="Volumetric soil water layer 4"/>
-        <!--    <field field_ref="lai_lv" name="lai_lv" long_name="Leaf area index, low vegetation"/>  -->
-        <!--    <field field_ref="lai_hv" name="lai_hv" long_name="Leaf area index, high vegetation"/>  -->
+                <field field_ref="lai_lv" name="lai_lv" long_name="Leaf area index, low vegetation"/>
+                <field field_ref="lai_hv" name="lai_hv" long_name="Leaf area index, high vegetation"/>
                 <field field_ref="tclw" name="tclw" long_name="Total column cloud liquid water"/>
                 <field field_ref="tciw" name="tciw" long_name="Total column cloud ice water"/>
                 <field field_ref="tcw" name="tcw" long_name="Total column water"/>
@@ -198,6 +198,12 @@
             description="ECE4/OIFS daily surface fields">
 
             <field_group grid_ref="regular_sfc" freq_op="6h" operation="average">
+                <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>
+                <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>
+                <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>
+                <field field_ref="tvh" name="tvh" long_name="Type of high vegetation"/>
+                <field field_ref="lai_lv" name="lai_lv" long_name="Leaf area index, low vegetation"/>
+                <field field_ref="lai_hv" name="lai_hv" long_name="Leaf area index, high vegetation"/>
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>

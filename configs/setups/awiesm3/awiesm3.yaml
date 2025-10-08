@@ -605,7 +605,7 @@ oasis3mct:
         # "restart" files in initial coupling time step
         # but only if the general model setup is a cold start (i.e. general.lresume = false)
     lresume: true
-    ini_parent_date: "19500101"     # not used, but needs to be present
+    ini_parent_date: "20590101"     # not used, but needs to be present
     ini_parent_exp_id: "khw0030"     # not used, but needs to be present
     ini_restart_dir: "${input_dir}"
 

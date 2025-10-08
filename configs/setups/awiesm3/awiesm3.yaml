@@ -216,12 +216,20 @@ oifs:
                         YGHG_NL(1)%LNEGFIX: FALSE
                         YGHG_NL(1)%BETAMFBC: 2
                         YGHG_NL(1)%LASSIM: TRUE
+                        NMFDIAGLEV: 2
+                        NOPTVFE: 1
+
                     NAMCOMPO:
                         LCHEM_DIA: .false.
                         LCHEM_DDFLX: .false.
                         LCOMPO_DDFLX_DIR: .false.
                         LCHEM_TROPO: .false.
                         LCOMPO_DCDD: .false.
+                    NAEPHY:
+                        LNEEONLINE: False
+                        LWETONLINE: False
+                        LBFASCO2: False
+
 
 fesom:
     version: "2.6-main"

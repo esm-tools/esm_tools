@@ -41,7 +41,7 @@ fesom:
                 destination: "fesom-2.6-recom"
         wiso_code: false
         icb_code: false
-        namelist_dir: "${model_dir}/config/"
+        namelist_dir: "${model_dir}/config/bin_2p1z1d_tp/"
         nproc: 1024
         with_recom: true
         include_models: ["recom"]

@@ -141,7 +141,7 @@ recom:
                     add_namelist_changes:
                             namelist.recom:
                                   pavariables:
-                                          use_MEDUSA: true
+                                          use_MEDUSA: false
                                           sedflx_num: 0
                                           add_loopback: false
 

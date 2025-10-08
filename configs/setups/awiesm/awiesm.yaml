@@ -225,6 +225,9 @@ echam:
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.6-recom":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.6.1":
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
@@ -349,13 +352,13 @@ fesom:
                 "2.6-recom":
                         version: "2.6-recom"
                         ALE_scheme: 'zstar'
-                        namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d
+                        namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d_tp/
                         add_namelist_changes:
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: 0.0
-                        outdata_targets:
-                                fesom: "*.fesom.*.nc"
+#                        outdata_targets:
+#                                fesom: "*.fesom.*.nc"
                 "2.6":
                         version: "2.6"
                         ALE_scheme: 'zstar'
@@ -519,7 +522,7 @@ recom:
                         remove_namelist_changes.namelist.recom.paco2_flux_param:
                             - CO2_for_spinup
 
-                        namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d/
+                        namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d_tp/
 
                 "*":
                         not_used: ""

@@ -193,7 +193,7 @@ recom:
                         ask_user_to_continue: True
 
     namelist_sce: ""
-    namelist_dir: "${fesom.model_dir}/config/"
+    namelist_dir: "${fesom.model_dir}/config/bin_2p1z1d_tp/"
 
     # FESOM-2 standalone + REcoM options
     fesom2_standalone: "$((

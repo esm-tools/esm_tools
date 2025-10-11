@@ -736,6 +736,15 @@ fesom:
                                     grid: feom
                     number_of_overlapping_points: 0 # oasis P-value
 
+    grids:
+            feom:
+                    name: feom
+                    nx: ${nx}
+                    ny: 1
+                    oasis_grid_type: "U"
+                    oyac_grid_type: "GC"
+                    oyac_io_per_node: 4
+                    number_of_overlapping_points: 0 # oasis P-value
 
     further_reading:
             - fesom/fesom.forcing.yaml

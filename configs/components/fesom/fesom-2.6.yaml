@@ -37,6 +37,20 @@ fesom:
                   -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
             make install -j `nproc --all`'
 
+      "2.6.2-yac-sveta":
+        git-repository: "https://github.com/sveta-loza/fesom2.git"
+        branch: "fesom2-with-yac"
+        comp_command: '. env/levante.dkrz.de/shell.intel ;
+            FESOM_ROOT=$(pwd) ;
+            mkdir -p build; cd build; 
+            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
+            spack load /y24c4jj ;
+            cmake .. -DCMAKE_INSTALL_PREFIX=../ 
+                  -DCMAKE_BUILD_TYPE=RelWithDebInfo 
+                  -DUSE_YAC=ON 
+                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
+            make install -j `nproc --all`'
+
             #       -DCMAKE_SHARED_LINKER_FLAGS="$CMAKE_SHARED_LINKER_FLAGS";
       "2.6":
         branch: "2.6.10"

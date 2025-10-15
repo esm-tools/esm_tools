@@ -42,6 +42,7 @@ general:
         - default_oasismct4
         - default_oasismct5
         - moz 
+        - moz_mct2 
         - mops_oasismct4
         - mops_lmu
         - agrif
@@ -80,6 +81,10 @@ general:
           moz:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT5+echam-6.3.05p2-moz
+          # includes echam-moz (stratospheric chemistry based on Schmidt et al., 2009 and Schultz et al. 20xx) 
+          moz_mct2:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-moz_mct2
           # includes MOPS in the ocean, uses OASISMCT4. IMPORTANT: uses different coupling
           # settings and interpolation methods w.r.t mops with OASISMCT2.8 (only available in old
           # mkexp based setup of FOCI)
@@ -136,6 +141,26 @@ echam:
                         version: "6.3.05p2-foci_oasismct4"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 moz:
+                        version: "6.3.05p2-moz"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              radctl:
+                                 ico2: 1
+                                 io3: 1
+
+                        add_restartstreams:
+                           - tracer
+                           - vphysc 
+                        add_streams:
+                           - tracer
+                           - alltrm
+                           - moz
+                           - tdiag
+                           - temraw
+
+                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag temraw"
+                moz_mct2:
                         version: "6.3.05p2-moz"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                         add_namelist_changes:
@@ -667,6 +692,13 @@ nemo:
                             namsbc_cpl:
                               sn_rcv_emp: ['kcm_lim_2','no','','','']
                               sn_rcv_rnf: ['none','no','','','']
+                moz_mct2:
+                        version: "ORCA05_LIM2_KCM_AOW"
+                        add_namelist_changes:
+                          namelist_cfg:
+                            namsbc_cpl:
+                              sn_rcv_emp: ['kcm_lim_2','no','','','']
+                              sn_rcv_rnf: ['none','no','','','']
                 agrif_aow:
                         version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
                 agrif:
@@ -1002,6 +1034,38 @@ oasis3mct:
                            rmp_a2n_B_mct5: rmp_a2n_B_mct5
                            rmp_a2n_C_mct5: rmp_a2n_C_mct5
                            rmp_n2a_C_mct5: rmp_n2a_C_mct5
+
+                moz_mct2:
+                        version: "foci"
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap'
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_a2n_B: rmp_a2n_B
+                           rmp_a2n_C: rmp_a2n_C
+                           rmp_n2a_C: rmp_n2a_C
 
                 mops_oasismct4:
 

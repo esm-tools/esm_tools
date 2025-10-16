@@ -142,3 +142,14 @@ computer:
             overcommit_rule:  "--overcommit --nodes=${overcommit_nodes}"
 
     overcommit_flag: "${overcommit_rule}"
+
+    nnodes_envvar: "SLURM_JOB_NUM_NODES"
+
+dask:
+    threads: "$(( ${computer.partition_cpn} - 1 ))"
+    init_scheduler_cmd: "
+        srun --ntasks=1 --nodes=1 --exclusive dask scheduler --scheduler-file ${dask.scheduler_json} --interface ib0
+        "
+    init_workers_cmd: "
+        srun --ntasks=@nodes@ --cpus-per-task=${dask.threads} --nodes=@nodes@ --exclusive  dask worker --scheduler-file $SCHEDULER_FILE --nthreads ${dask.threads} --nworkers @nodes@ --interface ib0
+        "

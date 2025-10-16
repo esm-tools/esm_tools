@@ -3,6 +3,7 @@ import os
 import pathlib
 import re
 import shutil
+import subprocess
 import sys
 import time
 
@@ -497,3 +498,63 @@ class RunFolders(list):
         self.folders.sort()
         # Save to the log file
         self.save()
+
+def initialize_dask_cluster(config):
+    dask_config = config.get("dask", {})
+    dask_actions = dask_config.get("actions", [])
+    active_dask_actions = []
+    for action in dask_actions:
+        if config["general"].get(action) == "dask":
+            active_dask_actions.append(action)
+    if len(active_dask_actions) == 0:
+        return config
+
+    nnodes = int(os.getenv(config["computer"]["nnodes_envvar"], 1))
+
+    init_scheduler_cmd = config["dask"].get("init_scheduler_cmd")
+    init_workers_cmd = config["dask"].get("init_workers_cmd")
+
+    replacement_parameters = [
+        ("@nodes@", nnodes),
+    ]
+
+    for param, value in replacement_parameters:
+        init_workers_cmd = init_workers_cmd.replace(param, str(value))
+
+    # With subprocess run init_scheduler_cmd and print output into a log file on the fly (use it as a sink)
+    log_scheduler = f'{config["general"]["thisrun_log_dir"]}/dask_scheduler.log'
+    logger.info(f"Starting dask scheduler with command: {init_scheduler_cmd}")
+
+    process = subprocess.Popen(
+        f"{init_scheduler_cmd} 2>&1 | tee {log_scheduler}",
+        shell=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+
+    # TODO: choose to log versus not loging scheduler output
+    for line in process.stdout:
+        if "command not found" in line:
+            logger.warning(
+                "Dask scheduler could not be initialized. This job won't use dask "
+                f"parallelization. For more information check {log_scheduler}. Error:\n"
+                f"    {line}"
+            )
+
+    process = subprocess.Popen(
+        f"{init_workers_cmd} 2>&1 | tee -a {log_scheduler}",
+        shell=True,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+
+    for line in process.stdout:
+        if "command not found" in line:
+            logger.warning(
+                "Dask workers could not be initialized. This job won't use dask "
+                f"parallelization. For more information check {log_scheduler}. Error:\n"
+                f"    {line}"
+            )
+
+    #import ipdb; ipdb.set_trace()
+    return config

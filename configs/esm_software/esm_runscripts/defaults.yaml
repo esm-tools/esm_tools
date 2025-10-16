@@ -28,8 +28,11 @@ per_model_defaults:
 
 dask:
     scheduler_json_name: "dask_scheduler.json"
-    scheduler_json: "${general.thisrun_work_dir}/${scheduler_json_name}"
+    scheduler_json: "${general.thisrun_work_dir}/${dask.scheduler_json_name}"
     ignore_files:
         scheduler_json: scheduler_json
     ignore_in_work:
-        scheduler_json: "${scheduler_json_name}"
+        scheduler_json: "${dask.scheduler_json_name}"
+    # List of actions that should trigger a dask cluster initialization
+    actions:
+        - "parallel_file_movements"

@@ -1114,7 +1114,8 @@ def copy_files(config, filetypes, source, target):
             number_of_threads = number_of_threads - 1
 
         # Initialize client
-        if parallel_file_movements == "dask" and node != "login_nodes":
+        dask_cluster_initialized = os.path.isfile(dask_scheduler_json)
+        if parallel_file_movements == "dask" and dask_cluster_initialized and node != "login_nodes":
             # Dask should only run on compute nodes
             client = daskd.Client(scheduler_file=dask_scheduler_json)
         else:

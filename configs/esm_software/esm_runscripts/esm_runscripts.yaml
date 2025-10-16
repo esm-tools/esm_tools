@@ -64,6 +64,7 @@ choose_job_type:
 
         tidy:
                 recipe:
+                        - "initialize_dask_cluster"
                         - "tidy_coupler"
                         - "assemble"
                         - "check_for_unknown_files"

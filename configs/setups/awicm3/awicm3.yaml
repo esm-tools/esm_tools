@@ -474,8 +474,8 @@ fesom:
                                 namelist.config:
                                         ale_def:
                                                 which_ALE: 'zstar'
-                                        geometry:
-                                                metric_factor_zero: True
+                                        #geometry:
+                                                #metric_factor_zero: True
                                 namelist.oce:
                                         oce_dyn:
                                                 SPP: true

@@ -266,7 +266,7 @@ fesom:
         false:
             recom_comp_flag: ""
 
-    build_type: Debug #Available options: Debug Release RelWithDebInfo MinSizeRel
+    build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
     choose_general.oasis_with_yac:
         true:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON

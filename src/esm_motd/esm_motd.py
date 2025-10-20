@@ -127,14 +127,23 @@ class MessageOfTheDayHandler:
                 print()
                 print(self.message_dict[message]["message"])
                 if mypackage == "esm_tools":
-                    esm_tools_path = esm_tools._get_real_dir_from_pth_file("motd_flag")
-                    print(
-                        f"Upgrade ESM-Tools to the version contianing this fix (\x1b[96m{version}\x1b[0m) by:\n"
-                        f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"
-                        "\x1b[96m2.\x1b[0m Make sure that your git repo is clean (\x1b[35mgit status\x1b[0m)\n"
-                        "\x1b[96m3.\x1b[0m \x1b[35mgit checkout release\x1b[0m\n"
-                        "\x1b[96m4.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
-                    )
+                    esm_tools_path = esm_tools.get_esm_tools_root_dir()
+                    if esm_tools_path:
+                        print(
+                            f"Upgrade ESM-Tools to the version contianing this fix (\x1b[96m{version}\x1b[0m) by:\n"
+                            f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"
+                            "\x1b[96m2.\x1b[0m Make sure that your git repo is clean (\x1b[35mgit status\x1b[0m)\n"
+                            "\x1b[96m3.\x1b[0m \x1b[35mgit checkout release\x1b[0m\n"
+                            "\x1b[96m4.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
+                        )
+                    else:
+                        print(
+                            f"Upgrade ESM-Tools to the version containing this fix (\x1b[96m{version}\x1b[0m) by:\n"
+                            f"\x1b[96m1.\x1b[0m Navigate to your esm_tools installation directory\n"
+                            "\x1b[96m2.\x1b[0m Make sure that your git repo is clean (\x1b[35mgit status\x1b[0m)\n"
+                            "\x1b[96m3.\x1b[0m \x1b[35mgit checkout release\x1b[0m\n"
+                            "\x1b[96m4.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
+                        )
                 # Deprecated after monorepo rework, rewrite if we ever get to have
                 # more than one package again.
                 else:

@@ -1000,5 +1000,7 @@ computer:
                 levante:
                     iolibraries: system_gnu_libs
                     compiler_mpi: gnu11_ompi4
+                    #iolibraries: system_intel_impi_libs / system_intel_libs
+                    #compiler_mpi: intel2022_impi2021 / intel2022_openmpi
         '*':
             foo: bar

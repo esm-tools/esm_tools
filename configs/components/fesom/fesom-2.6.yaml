@@ -133,16 +133,6 @@ fesom:
             - namelist.tra
             - namelist.transit
 
-            - namelist.cvmix
-            - namelist.dyn
-            - namelist.forcing
-            - namelist.ice
-            - namelist.icepack
-            - namelist.io
-            - namelist.oce
-            - namelist.tra
-            - namelist.transit
-
     whichEVP: 0 # 0=EVP, 1=mEVP, 2=aEVP
                 # See: Kimmritz et. al 2015 & 2016: https://doi.org/10.1016/j.jcp.2015.04.051, https://doi.org/10.1016/j.ocemod.2016.03.004
     choose_resolution:
@@ -451,8 +441,8 @@ fesom:
     choose_fesom.with_recom:
             True:
                 add_config_sources:
-                    tra:    "${namelist_dir}/namelist.tra.recom${namelist_ciso_sufix}"
-                    io:     "${namelist_dir}/namelist.io.recom${namelist_ciso_sufix}"
+                    tra:    "${namelist_dir}/namelist.tra${namelist_ciso_sufix}"
+                    io:     "${namelist_dir}/namelist.io${namelist_ciso_sufix}"
                 remove_namelist_changes.namelist.config: [inout]
                 add_namelist_changes:
                     namelist.config:

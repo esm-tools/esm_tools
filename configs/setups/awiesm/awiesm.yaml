@@ -102,7 +102,7 @@ general:
             - fesom2.6_recom_tp+echam-6.3.05p2-awiesm-2.1+recom-2.0
             add_include_models:
             - recom
-            fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON"
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DRECOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../"
             with_recom: true
           '2.6':
             couplings:

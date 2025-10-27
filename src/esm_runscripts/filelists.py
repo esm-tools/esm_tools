@@ -1421,7 +1421,6 @@ def _check_fesom_missing_files(config):
     config : dict
     """
     if "fesom" in config["general"]["valid_model_names"]:
-        import ipdb; ipdb.set_trace()
         namelist_config_path = (
             pathlib.Path(config["general"]["thisrun_work_dir"]) / "namelist.config"
         )

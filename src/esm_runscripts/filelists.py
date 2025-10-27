@@ -1421,27 +1421,26 @@ def _check_fesom_missing_files(config):
     config : dict
     """
     if "fesom" in config["general"]["valid_model_names"]:
-        namelist_config_path = os.path.join(
-            config["general"]["thisrun_work_dir"],
-            "namelist.config"
+        namelist_config_path = (
+            pathlib.Path(config["general"]["thisrun_work_dir"]) / "namelist.config"
         )
         namelist_config = f90nml.read(namelist_config_path)
         for path_key, path in namelist_config["paths"].items():
             if path:  # Ignore empty strings
                 try:
-                    path_exists = os.path.exists(path)
+                    path = pathlib.Path(path)
                 except TypeError as error:
                     user_error(
                         "Invalid path",
                         f"The value for ``{path_key}`` in the namelist ``&paths``, "
                         f"defined in ``{namelist_config_path}``, is ``{path}``, and "
-                        f"cannot be interpreted as a valid path.\n{error}"
+                        f"cannot be interpreted as a valid path.\n{error}",
                     )
-                if not os.path.exists(path):
+                if not path.exists:
                     if "files_missing_when_preparing_run" not in config["general"]:
                         config["general"]["files_missing_when_preparing_run"] = {}
                     config["general"]["files_missing_when_preparing_run"][
-                        path_key + " (from namelist.config in FESOM)"
+                        f"{path_key} (from namelist.config in FESOM)"
                     ] = path
     return config
 

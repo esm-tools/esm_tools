@@ -78,6 +78,7 @@ class SimulationSetup(object):
             command_line_config, user_config
         )
 
+        #import ipdb; ipdb.set_trace()
         # 5. Set execution action
         execution_mode = user_config.get("general", {}).get("execution_mode", "run")
         user_config["general"]["execution_mode"] = execution_mode

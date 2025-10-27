@@ -3294,6 +3294,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
     def finalize(self):
         self.run_recursive_functions(self)
         del self._blackdict
+        #import ipdb; ipdb.set_trace()
 
     def run_recursive_functions(self, config, isblacklist=True):
         logger.debug("Top of run recursive functions")

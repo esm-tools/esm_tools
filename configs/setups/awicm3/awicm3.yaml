@@ -243,7 +243,8 @@ oifs:
                 "v3.4":
                         version: "48r1"
                         with_xios: True
-                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --install; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+                        build_type: 'release'
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         mip: "cmip6"
                         wam: true
@@ -359,13 +360,12 @@ fesom:
                 TL159_CORE2:
                         nproc: 72
         build_type: "Release"
+        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${yac_flag} -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
         choose_general.oasis_with_yac:
             True:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DOASIS_WITH_YAC=ON -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+                yac_flag: "-DOASIS_WITH_YAC=ON"
             False:
-                comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
-            "*":
-                comp_command: "missing"
+                yac_flag: ""
 
         missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
         choose_missing_owy:
@@ -992,8 +992,8 @@ computer:
                         iolibraries: system_libs
                         compiler_mpi: gnu2024_ompi2024
                     levante:
-                        iolibraries: system_gnu_libs
-                        compiler_mpi: gnu11_ompi4
+                        iolibraries: system_intel_libs
+                        compiler_mpi: intel2022_openmpi
                     albedo:
                         compiler_suite: gcc
             '*':

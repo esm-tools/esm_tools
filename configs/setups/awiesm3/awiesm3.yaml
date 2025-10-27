@@ -86,7 +86,6 @@ oifs:
     # added 05.03.2025
     git-repository: 'https://git.smhi.se/sager/oifs48r1'
     branch: 'lpj_guess_implementation'
-    #branch: 'invert_lpjg_recv_send+main' #use this branch if you want to use without the vegin.nc At the first timestep LPJG will recieve the data from the OIFS.
     #
     add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
@@ -109,10 +108,11 @@ oifs:
         "v3.4":
             version: "48r1"
             with_xios: true
+            build_type: 'release'
             comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
-                --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios
-                --install; chmod -R ${source_code_permissions} .; git config core.fileMode
-                false; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
+                --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios
+                --build-type=${build_type} --install; chmod -R ${source_code_permissions} .; 
+                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
             mip: "cmip6"
             wam: true
@@ -201,6 +201,7 @@ oifs:
 
     choose_general.with_co2_tracer:
         true:
+            branch: 'lpj_guess_implementation+co2'
             namelist_changes:
                 fort.4:
                     NAMGFL:
@@ -267,19 +268,15 @@ fesom:
             recom_comp_flag: ""
 
     build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
+    comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                 -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                -j `nproc --all`
     choose_general.oasis_with_yac:
         true:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install
-                -j `nproc --all`
+            yac_flag: "-DOASIS_WITH_YAC=ON"
         false:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc
-                --all`
-        "*":
-            comp_command: "missing"
+            yac_flag: ""
 
     missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
     choose_missing_owy:
@@ -998,9 +995,7 @@ computer:
                     iolibraries: system_libs
                     compiler_mpi: gnu2023_ompi2023
                 levante:
-                    iolibraries: system_gnu_libs
-                    compiler_mpi: gnu11_ompi4
-                    #iolibraries: system_intel_impi_libs / system_intel_libs
-                    #compiler_mpi: intel2022_impi2021 / intel2022_openmpi
+                    iolibraries: system_intel_libs
+                    compiler_mpi: intel2022_openmpi
         '*':
             foo: bar

@@ -1436,7 +1436,7 @@ def _check_fesom_missing_files(config):
                         f"defined in ``{namelist_config_path}``, is ``{path}``, and "
                         f"cannot be interpreted as a valid path.\n{error}",
                     )
-                if not path.exists:
+                if not path.exists():
                     if "files_missing_when_preparing_run" not in config["general"]:
                         config["general"]["files_missing_when_preparing_run"] = {}
                     config["general"]["files_missing_when_preparing_run"][

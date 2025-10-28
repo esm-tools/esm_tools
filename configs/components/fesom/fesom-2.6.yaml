@@ -46,7 +46,7 @@ fesom:
         with_recom: true
         include_models: ["recom"]
         fesom_Dflags: "-DRECOM_COUPLED=ON"
-        mpi_num_groups: 1 #YY: only needed if using tracer parallelisation (usetp)
+        mpi_num_groups: 1 
 
       "2.6.5":
         branch: "2.6.5"
@@ -449,7 +449,7 @@ fesom:
                         restart_log:
                             restart_length: "${restart_rate}"
                             restart_length_unit: "${restart_unit}"
-                        run_config: #YY:TODO: new flag use_tp to switch on tracer parallelisation needed
+                        run_config: 
                             num_fesom_groups: "${mpi_num_groups}"
 
                 # use_ciso switch

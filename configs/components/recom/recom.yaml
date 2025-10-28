@@ -234,7 +234,7 @@ recom:
             recom: "namelist.recom"
 
     restart_in_files:
-        par_oce_restart: par_bio_restart        
+        par_bio_restart: par_bio_restart        
 
     restart_in_in_work:
         par_bio_restart: fesom.${parent_date!syear}.bio.restart/*.nc

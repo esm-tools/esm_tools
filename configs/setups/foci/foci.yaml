@@ -1549,7 +1549,7 @@ computer:
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
                nesh:
                   compiler_mpi: intel2019_impi2019
 
@@ -1573,7 +1573,7 @@ computer:
                   compiler_mpi: intel2019_impi2019_nemo4
                   #compiler_mpi: intel2021_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
                   #compiler_mpi: intel2019_impi2019_nemo4
                   add_module_actions:
                      - "source $I_MPI_ROOT/../../setvars.sh"

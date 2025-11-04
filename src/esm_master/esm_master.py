@@ -6,6 +6,14 @@ import sys
 import os
 import yaml
 
+# Non-invasive hook system integration
+try:
+    from esm_tools.hooks import trigger_hook
+except ImportError:
+    # Fallback if hooks not available
+    def trigger_hook(*args, **kwargs):
+        pass
+
 from . import database_actions
 
 from .general_stuff import (
@@ -107,8 +115,19 @@ def main_flow(parsed_args, target):
         print("esm_master: check mode is activated. Not executing the actions above")
         return 0
 
+    # Trigger hook before task starts (using full task name like "get-fesom-2.5")
+    task_name = user_task.raw_name
+    trigger_hook(f"esm_master:{task_name}:start", config=complete_config, target=target, task=task_name)
 
-    user_task.execute(ignore_errors)  # env)
+    try:
+        user_task.execute(ignore_errors)  # env)
+
+        # Trigger hook after successful task completion
+        trigger_hook(f"esm_master:{task_name}:complete", config=complete_config, target=target, task=task_name)
+    except Exception as e:
+        # Trigger hook on task error
+        trigger_hook(f"esm_master:{task_name}:error", config=complete_config, target=target, task=task_name, error=str(e))
+        raise  # Re-raise the exception to maintain existing error handling
 
     database = database_actions.database_entry(
         complete_config, user_task.todo, user_task.package.raw_name, ESM_MASTER_DIR

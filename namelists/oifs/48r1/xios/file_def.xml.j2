@@ -32,13 +32,14 @@
         </file>
 
         <file
-            enabled="false"
+            enabled="true"
 	          timeseries="only"
 	          output_freq="1d"
             name_suffix="_1d"
             description="ECE4/OIFS daily surface fields">
 
             <field_group freq_op="6h" operation="average">
+                <field field_ref="ro" name="ro" long_name="Runoff"/>
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>

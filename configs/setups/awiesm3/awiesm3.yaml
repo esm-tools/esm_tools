@@ -86,7 +86,6 @@ oifs:
     # added 05.03.2025
     git-repository: 'https://git.smhi.se/sager/oifs48r1'
     branch: 'lpj_guess_implementation'
-    #branch: 'invert_lpjg_recv_send+main' #use this branch if you want to use without the vegin.nc At the first timestep LPJG will recieve the data from the OIFS.
     #
     add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
@@ -109,10 +108,11 @@ oifs:
         "v3.4":
             version: "48r1"
             with_xios: true
+            build_type: 'release'
             comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
-                --openifs-only --without-single-precision --with-cplng2 --with-oifs-xios
-                --install; chmod -R ${source_code_permissions} .; git config core.fileMode
-                false; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
+                --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios
+                --build-type=${build_type} --install; chmod -R ${source_code_permissions} .; 
+                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
             mip: "cmip6"
             wam: true
@@ -201,6 +201,7 @@ oifs:
 
     choose_general.with_co2_tracer:
         true:
+            branch: 'lpj_guess_implementation+co2'
             namelist_changes:
                 fort.4:
                     NAMGFL:
@@ -266,20 +267,16 @@ fesom:
         false:
             recom_comp_flag: ""
 
-    build_type: Debug #Available options: Debug Release RelWithDebInfo MinSizeRel
+    build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
+    comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                 -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                -j `nproc --all`
     choose_general.oasis_with_yac:
         true:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                -DOASIS_WITH_YAC=ON -DCMAKE_INSTALL_PREFIX=../  ..;   make install
-                -j `nproc --all`
+            yac_flag: "-DOASIS_WITH_YAC=ON"
         false:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                -DVERBOSE=OFF -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc
-                --all`
-        "*":
-            comp_command: "missing"
+            yac_flag: ""
 
     missing_owy: "$(( 'oasis_with_yac' not in config['general'] ))" # TODO: move this to the block above when the missing option is included in choose_ blocks
     choose_missing_owy:
@@ -320,8 +317,8 @@ fesom:
                 namelist.config:
                     ale_def:
                         which_ALE: 'zstar'
-                    geometry:
-                        metric_factor_zero: True
+                    #geometry:
+                        #metric_factor_zero: True
                 namelist.oce:
                     oce_dyn:
                         SPP: true
@@ -380,10 +377,12 @@ fesom:
 
 lpj_guess:
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
-    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
-        make -j8; cd .."                                                                                          #without debug.
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .."       #without debug.
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
     execution_command: ${executable} -parallel ${runscript_name}
+
+    # Automatically set mygrid to match OIFS resolution
+    mygrid: ${oifs.resolution}
 
     veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
         TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ,
@@ -465,7 +464,7 @@ lpj_guess:
         tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
         ins_files: ${namelist_dir}/*.ins
         ece_gridlist:
-            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                   #is this the correct file for ece_gridlist.txt?
+            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt
         lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
         "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
@@ -473,7 +472,7 @@ lpj_guess:
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
         "ece_gridlist_[[proc_list-->PROC_NUM]]":
-            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt                                              #is this the correct file for ece_gridlist.txt?
+            ${lpj_guess.input_dir}/gridlists/gridlist_${oifs.resolution}_${fesom.resolution}.txt
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2
 
         temp_namcouple: /home/a/a270270/temp_confiles/namcouple
@@ -482,14 +481,14 @@ lpj_guess:
     config_in_work:
         tmp_yaml_file: lpjg_steps.yaml
         ins_files: /*.ins
-        ece_gridlist: ece_gridlist.txt         #is this the correct file?
+        ece_gridlist: ece_gridlist_${oifs.resolution}.txt
         lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
         "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
         "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
         "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
-        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?
+        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist_${oifs.resolution}.txt
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
 
         temp_namcouple: namcouple
@@ -996,7 +995,7 @@ computer:
                     iolibraries: system_libs
                     compiler_mpi: gnu2023_ompi2023
                 levante:
-                    iolibraries: system_gnu_libs
-                    compiler_mpi: gnu11_ompi4
+                    iolibraries: system_intel_libs
+                    compiler_mpi: intel2022_openmpi
         '*':
             foo: bar

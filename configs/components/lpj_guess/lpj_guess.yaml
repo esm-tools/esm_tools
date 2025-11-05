@@ -45,9 +45,7 @@ lpj_guess:
             runscript_name: run_coupled_4_1_2.ins
             git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
             branch: lpj_guess_awiesm3
-            #mygrid: TL255
             mygrid: TCO319
-            #maxgrid: 25215
             maxgrid: 117804
             install_bins: build/guess
             executable: guess
@@ -119,6 +117,8 @@ lpj_guess:
             res_number: 95
             res_number_tl: "95_4"
             truncation: "TCO"
+            maxgrid: 10211
+            nx_atmo: 40320
         TL159:
             nx: 35718
             ny: 1
@@ -126,6 +126,8 @@ lpj_guess:
             res_number: 159
             res_number_tl: "159l_2"
             truncation: "TL"
+            maxgrid: 10059
+            nx_atmo: 35718
         TCO159:
             nx: 108160
             ny: 1
@@ -133,6 +135,8 @@ lpj_guess:
             res_number: 159
             res_number_tl: "159_4"
             truncation: "TCO"
+            maxgrid: 28800
+            nx_atmo: 108160
         TCO199:
             nx: 167200
             ny: 1
@@ -140,6 +144,8 @@ lpj_guess:
             res_number: 199
             res_number_tl: "199_4"
             truncation: "TCO"
+            maxgrid: 44800
+            nx_atmo: 167200
         TL255:
             nx: 88838
             ny: 1
@@ -147,6 +153,8 @@ lpj_guess:
             res_number: 255
             res_number_tl: "255l_2"
             truncation: "TL"
+            maxgrid: 25215
+            nx_atmo: 88838
         TCO319:
             nx: 421120
             ny: 1
@@ -154,6 +162,8 @@ lpj_guess:
             res_number: 319
             res_number_tl: "319_4"
             truncation: "TCO"
+            maxgrid: 117804
+            nx_atmo: 421120
         TCO399:
             nx: 654400
             ny: 1

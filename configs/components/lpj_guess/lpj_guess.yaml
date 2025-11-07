@@ -46,7 +46,6 @@ lpj_guess:
             git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
             branch: lpj_guess_awiesm3
             mygrid: TCO319
-            maxgrid: 117804
             install_bins: build/guess
             executable: guess
 

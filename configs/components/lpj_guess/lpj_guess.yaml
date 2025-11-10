@@ -26,7 +26,14 @@ lpj_guess:
     destination: lpj_guess
     branch: main
     #comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
-    comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
+    comp_command: "mkdir -p build; cd build; cmake .. -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .."  # Standalone, no OASIS
+    
+    # XIOS support (optional for standalone)
+    with_xios: false
+    
+    #choose_with_xios:
+    #    true:
+    #        comp_command: "mkdir -p build; cd build; cmake .. -DWITH_XIOS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .."
 
     install_bins: "build/guess"
     clean_command: "rm -rf build"
@@ -48,6 +55,9 @@ lpj_guess:
             mygrid: TCO319
             install_bins: build/guess
             executable: guess
+            with_xios: false  # Default to XIOS enabled for this version
+            config_sources:
+                runscript: ${namelist_dir}/run_coupled_4_1_2.j2
 
 
     # Automatically select the source code for esm_master if the command is operating
@@ -61,6 +71,8 @@ lpj_guess:
     # Some recommended defaults (restart for old experiment yes or no?)
     lresume: false
     time_step: 86400
+    calendar_type: gregorian
+    using_oasis: false
 
     choose_lresume:
         false:

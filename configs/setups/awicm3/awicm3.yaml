@@ -105,7 +105,7 @@ general:
           develop:
             major_version: v3.4
             couplings:
-            - fesom-2.6-main+oifs-48r1+xios-2.5
+            - fesom-2.6-main+oifs-48r1+xios-3.0
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -559,6 +559,10 @@ xios:
                         compression_level: 0
                 "v3.2":
                         interpolation_order: 2
+                        compression_level: 1
+                "v3.4":
+                        xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios3/"
+                        interpolation_order: 1
                         compression_level: 1
 
 

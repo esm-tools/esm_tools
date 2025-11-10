@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<file_definition>
+  <!-- File group for all LPJ-GUESS outputs -->
+  <file_group
+      type="one_file"
+      format="netcdf4"
+      par_access="collective"
+      name="lpjg"
+      compression_level="5"
+      split_freq="50y">
+    
+    <!-- Annual PFT-level output -->
+    <file
+        enabled="true"
+        timeseries="only"
+        output_freq="1y"
+        name_suffix="_annual_pft"
+        description="LPJ-GUESS annual PFT-level output">
+      
+      <field_group freq_op="1y" operation="instant">
+        <field field_ref="cmass" name="cmass" />
+        <field field_ref="anpp" name="anpp" />
+        <field field_ref="agpp" name="agpp" />
+        <field field_ref="lai" name="lai" />
+        <field field_ref="fpc" name="fpc" />
+      </field_group>
+    </file>
+    
+    <!-- Annual gridcell-level output -->
+    <file
+        enabled="true"
+        timeseries="only"
+        output_freq="1y"
+        name_suffix="_annual_grid"
+        description="LPJ-GUESS annual gridcell output">
+      
+      <field_group freq_op="1y" operation="instant">
+        <field field_ref="nee" name="nee" />
+        <field field_ref="cpool_fast" name="cpool_fast" />
+        <field field_ref="cpool_slow" name="cpool_slow" />
+        <field field_ref="runoff" name="runoff" />
+      </field_group>
+    </file>
+    
+    <!-- Monthly output -->
+    <file
+        enabled="false"
+        timeseries="only"
+        output_freq="1mo"
+        name_suffix="_monthly"
+        description="LPJ-GUESS monthly output">
+      
+      <field_group freq_op="1mo" operation="instant">
+        <field field_ref="mnpp" name="mnpp" />
+        <field field_ref="mlai" name="mlai" />
+        <field field_ref="mgpp" name="mgpp" />
+      </field_group>
+    </file>
+    
+  </file_group>
+</file_definition>

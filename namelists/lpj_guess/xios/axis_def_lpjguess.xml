@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<axis_definition>
+  <!-- PFT axis - dynamically sized based on simulation -->
+  <axis_group id="pft_axes" unit="-" positive="up">
+    <axis id="pft" long_name="Plant Functional Types" />
+  </axis_group>
+  
+  <!-- Month axis for monthly output -->
+  <axis_group id="time_axes" unit="-">
+    <axis id="month" long_name="Month of Year" n_glo="12" 
+          value="(0,11)[1 2 3 4 5 6 7 8 9 10 11 12]" />
+  </axis_group>
+  
+  <!-- Soil layer axis -->
+  <axis_group id="soil_axes" unit="-" positive="down">
+    <axis id="soillayer" long_name="Soil Layers" />
+  </axis_group>
+  
+  <!-- Landcover axis (if run_landcover=true) -->
+  <axis_group id="landcover_axes" unit="-">
+    <axis id="landcover" long_name="Land Cover Types" />
+  </axis_group>
+</axis_definition>

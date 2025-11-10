@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<simulation>
+
+  <context id="xios">
+    <variable_definition>
+      <variable_group id="buffer">
+        <!-- buffer_size_factor is usually 2.0, but for heavy output you 
+             may consider 3.0 or 4.0 --> 
+        <variable id="buffer_size_factor" type="double">4.0</variable>
+        <variable id="optimal_buffer_size" type="string">performance</variable>
+      </variable_group>
+      
+      <variable_group id="parameters">
+        <variable id="using_server" type="bool">true</variable>
+        <variable id="using_server2" type="bool">true</variable>
+        <variable id="ratio_server2" type="int">50</variable>
+        <variable id="number_pools_server2" type="int">1</variable>
+        <variable id="using_oasis" type="bool">true</variable>
+        <variable id="call_oasis_enddef" type="bool">true</variable>
+        <!-- Empty clients_code_id disables file-based MPI discovery, using OASIS comms instead -->
+        <variable id="clients_code_id" type="string"></variable>
+        <variable id="info_level" type="int">50</variable>
+        <variable id="print_file" type="bool">true</variable>
+      </variable_group>
+    </variable_definition>
+  </context>
+
+  <!-- OpenIFS context (always present in AWI-ESM) -->
+  <context id="oifs" src="./context_ifs.xml" />
+
+{%- if lpj_guess.with_xios %}
+  <context id="lpjguess" src="./context_lpjguess.xml" />
+{%- endif %}
+
+</simulation>

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<domain_definition>
+  <!-- Native unstructured domain - gridcells -->
+  <domain id="gridcells" long_name="LPJ-GUESS gridcells" type="unstructured" />
+  
+  <!-- Optional: regular grid for interpolated output -->
+  <domain_group id="regular_domains" type="rectilinear">
+    <domain id="regular_1deg" long_name="1 degree regular grid" 
+            ni_glo="360" nj_glo="180">
+      <generate_rectilinear_domain />
+      <interpolate_domain order="1" write_weight="true" />
+    </domain>
+  </domain_group>
+</domain_definition>

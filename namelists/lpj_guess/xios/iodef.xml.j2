@@ -1,0 +1,18 @@
+<\!-- XIOS Configuration for LPJ-GUESS -->
+<simulation>
+  <context id="xios">
+    <\!-- XIOS server configuration -->
+    <variable id="using_server" type="bool">true</variable>
+    <variable id="ratio_server" type="int">{{xios.ratio_server|default(10)}}</variable>
+    <variable id="info_level" type="int">{{xios.info_level|default(10)}}</variable>
+    <variable id="using_oasis" type="bool">{{lpj_guess.using_oasis|default('false')}}</variable>
+    <variable id="oasis_codes_id" type="string">lpjguess</variable>
+    
+    <\!-- Buffer settings -->
+    <variable id="optimal_buffer_size" type="string">performance</variable>
+    <variable id="buffer_size_factor" type="double">{{xios.buffer_size_factor|default(2.0)}}</variable>
+  </context>
+  
+  <\!-- LPJ-GUESS model context -->
+  <context id="lpjguess" src="./context_lpjguess.xml" />
+</simulation>

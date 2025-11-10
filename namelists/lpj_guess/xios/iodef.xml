@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<simulation>
+  <!-- LPJ-GUESS context -->
+  <context id="lpjguess" src="./context_lpjguess.xml" />
+  
+  <!-- XIOS server configuration -->
+  <context id="xios">
+    <variable_definition>
+      <!-- Server configuration -->
+      <variable_group id="server">
+        <variable id="using_server" type="bool">true</variable>
+        <variable id="ratio_server" type="int">10</variable>  <!-- 1 I/O server per 10 model procs -->
+        <!-- Optional 2-level server for very large runs -->
+        <variable id="using_server2" type="bool">false</variable>
+        <variable id="ratio_server2" type="int">50</variable>
+      </variable_group>
+      
+      <!-- Buffer configuration for performance -->
+      <variable_group id="buffer">
+        <variable id="optimal_buffer_size" type="string">performance</variable>
+        <variable id="buffer_size_factor" type="double">2.0</variable>
+      </variable_group>
+      
+      <!-- General parameters -->
+      <variable_group id="parameters">
+        <variable id="using_oasis" type="bool">false</variable>  <!-- Set true for coupled runs -->
+        <variable id="oasis_codes_id" type="string">lpjguess</variable>
+        <variable id="info_level" type="int">50</variable>
+        <variable id="print_file" type="bool">true</variable>
+      </variable_group>
+    </variable_definition>
+  </context>
+</simulation>

@@ -1,0 +1,14 @@
+<\!-- LPJ-GUESS Domain Definition -->
+<domain_definition>
+  <\!-- Unstructured domain for LPJ-GUESS gridcells -->
+  <domain id="lpjg_gridcells" long_name="LPJ-GUESS gridcells" type="unstructured" 
+          ni_glo="{{lpj_guess.nx}}" nvertex="0">
+    <generate_rectilinear_domain />
+  </domain>
+  
+  <\!-- Optional regular grid for interpolation/visualization -->
+  <domain id="lpjg_regular" long_name="regular lat-lon grid" type="rectilinear"
+          ni_glo="720" nj_glo="360">
+    <generate_rectilinear_domain />
+  </domain>
+</domain_definition>

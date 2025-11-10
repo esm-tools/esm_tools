@@ -34,6 +34,7 @@ xios:
     - 2.5_r1910_ogcm
     - 2.5_smhi
     - 2.5_ece
+    - "3.0"
 
     branch: esm-tools
 
@@ -143,7 +144,7 @@ xios:
                         foo: bar
         use_oasis: --use_oasis oasis3_mct
         branch: main
-        comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+        comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --use_cxx --job 24 --prod; cp bin/xios_server.exe bin/xios.x
       # XIOS with oasis dependencies and oasis support
       "2.5-yac":
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
@@ -218,6 +219,24 @@ xios:
                 archfile: ESMTOOLS_levante_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+      "3.0":
+        git-repository: https://git.smhi.se/jan.streffing/xios3
+        branch: esm_tools_modifications
+        archfile: ESMTOOLS_generic_oasis_intel
+        choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.name:
+            levante:
+                archfile: ESMTOOLS_levante_oasis_intel
+        use_oasis: --use_oasis oasis3_mct
+        comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --use_cxx --job 24 --prod; cp bin/xios_server.exe bin/xios.x
     clean_command: rm -rf bin lib obj ppsrc cfg done etc flags inc tmp
     comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par --full ${use_oasis} --job 24; cp bin/xios_server.exe bin/xios.x
     #destination: xios-${version}

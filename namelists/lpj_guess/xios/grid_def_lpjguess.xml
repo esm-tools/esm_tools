@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<grid_definition>
+  <!-- 2D grids (gridcells only) -->
+  <grid_group id="2d_grids">
+    <grid id="grid_2d" description="2D gridcell grid">
+      <domain domain_ref="gridcells" />
+    </grid>
+  </grid_group>
+  
+  <!-- 3D grids with PFT axis -->
+  <grid_group id="pft_grids">
+    <grid id="grid_pft" description="3D grid with PFT axis">
+      <domain domain_ref="gridcells" />
+      <axis axis_ref="pft" />
+    </grid>
+  </grid_group>
+  
+  <!-- 3D grids with month axis -->
+  <grid_group id="monthly_grids">
+    <grid id="grid_month" description="3D grid with month axis">
+      <domain domain_ref="gridcells" />
+      <axis axis_ref="month" />
+    </grid>
+  </grid_group>
+  
+  <!-- 3D grids with soil layer axis -->
+  <grid_group id="soil_grids">
+    <grid id="grid_soil" description="3D grid with soil layer axis">
+      <domain domain_ref="gridcells" />
+      <axis axis_ref="soillayer" />
+    </grid>
+  </grid_group>
+  
+  <!-- 3D grids with landcover axis -->
+  <grid_group id="landcover_grids">
+    <grid id="grid_landcover" description="3D grid with landcover axis">
+      <domain domain_ref="gridcells" />
+      <axis axis_ref="landcover" />
+    </grid>
+  </grid_group>
+</grid_definition>

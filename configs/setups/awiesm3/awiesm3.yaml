@@ -25,7 +25,7 @@ general:
         develop:
             major_version: v3.4
             couplings:
-                - fesom-2.6-main+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+                - fesom-2.6-main+oifs-48r1+xios-3.0+lpj_guess-4.1.2
             add_include_models:
                 - xios
             oasis_with_yac: false
@@ -377,8 +377,14 @@ fesom:
 
 lpj_guess:
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
-    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .."       #without debug.
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .."  # AWI-ESM: always with OASIS
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
+    
+    # Override choose_with_xios to add XIOS to OASIS compilation
+    choose_with_xios:
+        true:
+            comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DWITH_XIOS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .."
+    
     execution_command: ${executable} -parallel ${runscript_name}
 
     # Automatically set mygrid to match OIFS resolution
@@ -558,6 +564,7 @@ xios:
         file_def: file_def
         axis_def: axis_def
         grid_def: grid_def
+
 
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}

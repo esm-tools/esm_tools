@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<field_definition level="1" prec="4" enabled="true" operation="instant" 
+                 freq_op="1ts" default_value="1.e+20">
+  
+  <!-- Annual PFT-level fields -->
+  <field_group id="annual_pft" grid_ref="grid_pft" freq_op="1y">
+    <field id="cmass" name="cmass" long_name="Carbon Mass" 
+           standard_name="vegetation_carbon_content" unit="kg m-2" />
+    <field id="anpp" name="anpp" long_name="Annual Net Primary Production" 
+           standard_name="net_primary_productivity_of_biomass_expressed_as_carbon" 
+           unit="kg m-2 year-1" />
+    <field id="agpp" name="agpp" long_name="Annual Gross Primary Production" 
+           standard_name="gross_primary_productivity_of_biomass_expressed_as_carbon" 
+           unit="kg m-2 year-1" />
+    <field id="lai" name="lai" long_name="Leaf Area Index" 
+           standard_name="leaf_area_index" unit="m2 m-2" />
+    <field id="fpc" name="fpc" long_name="Foliage Projective Cover" 
+           standard_name="vegetation_area_fraction" unit="1" />
+  </field_group>
+  
+  <!-- Annual gridcell-level fields (no PFT dimension) -->
+  <field_group id="annual_gridcell" grid_ref="grid_2d" freq_op="1y">
+    <field id="nee" name="nee" long_name="Net Ecosystem Exchange" 
+           standard_name="surface_net_downward_mass_flux_of_carbon_dioxide_expressed_as_carbon" 
+           unit="kg m-2 year-1" />
+    <field id="cpool_fast" name="cpool_fast" long_name="Fast Soil Carbon Pool" 
+           standard_name="fast_soil_pool_carbon_content" unit="kg m-2" />
+    <field id="cpool_slow" name="cpool_slow" long_name="Slow Soil Carbon Pool" 
+           standard_name="slow_soil_pool_carbon_content" unit="kg m-2" />
+    <field id="runoff" name="runoff" long_name="Annual Runoff" 
+           standard_name="runoff_amount" unit="mm year-1" />
+  </field_group>
+  
+  <!-- Monthly fields with month dimension -->
+  <field_group id="monthly_output" grid_ref="grid_month" freq_op="1mo">
+    <field id="mnpp" name="mnpp" long_name="Monthly Net Primary Production" 
+           standard_name="net_primary_productivity_of_biomass_expressed_as_carbon" 
+           unit="kg m-2 month-1" />
+    <field id="mlai" name="mlai" long_name="Monthly Leaf Area Index" 
+           standard_name="leaf_area_index" unit="m2 m-2" />
+    <field id="mgpp" name="mgpp" long_name="Monthly Gross Primary Production" 
+           standard_name="gross_primary_productivity_of_biomass_expressed_as_carbon" 
+           unit="kg m-2 month-1" />
+  </field_group>
+  
+</field_definition>

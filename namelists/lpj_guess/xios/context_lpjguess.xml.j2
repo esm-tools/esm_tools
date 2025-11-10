@@ -1,0 +1,13 @@
+<\!-- LPJ-GUESS XIOS Context -->
+<context id="lpjguess">
+  <calendar type="{{lpj_guess.calendar_type|default('gregorian')}}" 
+            start_date="{{lpj_guess.initial_date|default('1900-01-01')}} 00:00:00" 
+            timestep="1d" />
+  
+  <\!-- Include other definition files -->
+  <axis_definition src="./axis_def_lpjguess.xml" />
+  <domain_definition src="./domain_def_lpjguess.xml" />
+  <grid_definition src="./grid_def_lpjguess.xml" />
+  <field_definition src="./field_def_lpjguess.xml" />
+  <file_definition src="./file_def_lpjguess.xml" />
+</context>

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<context id="lpjguess">
+  <calendar type="Gregorian" />
+  
+  <!-- External file references -->
+  <field_definition  src="./field_def_lpjguess.xml" />
+  <file_definition   src="./file_def_lpjguess.xml" />
+  <axis_definition   src="./axis_def_lpjguess.xml" />
+  <domain_definition src="./domain_def_lpjguess.xml" />
+  <grid_definition   src="./grid_def_lpjguess.xml" />
+  
+  <!-- Model-specific variables -->
+  <variable_definition>
+    <variable_group id="output_control">
+      <variable id="output_frequency_years" type="int">1</variable>
+      <variable id="output_monthly" type="bool">true</variable>
+      <variable id="output_daily" type="bool">false</variable>
+    </variable_group>
+  </variable_definition>
+</context>

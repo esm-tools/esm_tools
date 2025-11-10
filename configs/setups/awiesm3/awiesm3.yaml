@@ -81,11 +81,11 @@ general:
 #########################################################################################
 
 oifs:
-    version: "48r1_lpjg_branch"
+    version: "48r1"
 
     # added 05.03.2025
-    git-repository: 'https://git.smhi.se/sager/oifs48r1'
-    branch: 'lpj_guess_implementation'
+    git-repository: 'https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1.git'
+    branch: 'main'
     #
     add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 

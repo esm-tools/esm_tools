@@ -356,6 +356,10 @@ computer:
                 NETCDF_ROOT: $NetCDF_Fortran_ROOT
                 NETCDFROOT: $NetCDF_C_ROOT
                 NETCDFFROOT: $NetCDF_Fortran_ROOT
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
                 TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
                 TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
                 MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
@@ -388,6 +392,10 @@ computer:
                 NETCDF_ROOT: $NetCDF_Fortran_ROOT
                 NETCDFROOT: $NetCDF_C_ROOT
                 NETCDFFROOT: $NetCDF_Fortran_ROOT
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
                 TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
                 TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
                 MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t

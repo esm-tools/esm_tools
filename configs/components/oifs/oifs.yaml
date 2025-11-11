@@ -342,11 +342,14 @@ oifs:
         with_xios: false
         major_version: 48r1
       48r1_lpjg_branch:
-        branch: '73997159375996b6f2ec9013ce1dbe8a67ba772e'
+        #branch: ' lpj_guess_implementation+co2'
+        #branch: '73997159375996b6f2ec9013ce1dbe8a67ba772e'
+        branch: 'main'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS
-        git-repository: https://git.smhi.se/sager/oifs48r1
+        #git-repository: https://git.smhi.se/sager/oifs48r1
+        git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
         install_bins: install/bin/OpenIFS
         destination: oifs-48r1
         with_xios: false
@@ -363,7 +366,7 @@ oifs:
     nlev: ${levels_number}
     prepifs_expid: gu5a
     prepifs_startdate: 19820101
-    mip: "cmip5"
+    mip: "cmip7"
     o3_scheme: "default"
     scenario: "amip-prepifs"
     output: "default"

@@ -359,7 +359,7 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
-        build_type: "Release"
+        build_type: "Release"    # Available options: Release, Debug, Bit
         comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${yac_flag} -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
         choose_general.oasis_with_yac:
             True:

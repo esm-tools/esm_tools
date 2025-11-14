@@ -253,7 +253,7 @@ fesom:
                 io:        "${namelist_dir}/namelist.io.recom.${recom_setting}"
             add_config_in_work:
                 recom:     "namelist.recom"
-            recom_input_path: '/work/ba1103/a270073/bc/recom/'
+            recom_input_path: '/work/ab0246/a270092/input/fesom2/recom/'
             add_add_namelist_changes:
                 namelist.recom:
                     nam_rsbc:

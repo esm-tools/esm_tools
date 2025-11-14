@@ -59,7 +59,7 @@ general:
 
     choose_computer.name:
         levante:
-            pool_dir: "/work/ab0246/a270092/input"
+            pool_dir: "/work/pd1284/AWIESM/"
         juwels:
             pool_dir: "/p/project/chhb19/jstreffi/input"
         aleph:

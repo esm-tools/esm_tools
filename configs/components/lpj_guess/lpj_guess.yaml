@@ -56,7 +56,7 @@ lpj_guess:
 
     choose_computer.name:
         levante:
-            pool_dir: "/work/ab0246/a270092/input/"
+            pool_dir: "/work/pd1284/AWIESM"
 
     # Some recommended defaults (restart for old experiment yes or no?)
     lresume: false

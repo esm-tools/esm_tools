@@ -128,6 +128,8 @@ computer:
     module_actions:
         # Ensure a clean environment before start:
         - "purge"
+        # Build systems
+        - "load cmake"
         # Compilers:
         - "load ${compiler_module}"
         - "load ${mkl_module}"

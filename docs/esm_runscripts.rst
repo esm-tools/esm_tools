@@ -9,7 +9,7 @@ Usage
 
     esm_runscripts [-h] [-d] [-v] [-e EXPID] [-c] [-P] [-j LAST_JOBTYPE]
                       [-t TASK] [-p PID] [-x EXCLUDE] [-o ONLY]
-                      [-r RESUME_FROM] [-U]
+                      [-r RESUME_FROM] [-U] [-i INSPECT]
                       runscript
 
 Arguments
@@ -47,6 +47,8 @@ Optional arguments                                                  Description
                                                                     of the experiment folder), a filename or a directory name output 
                                                                     the content of the file /directory if found in the last 
                                                                     ``run_`` folder.)
+  ``--trace``                                                       Enable ``TRACE``-level output to stdout.
+  ``--task-log-files``                                              Enable per-task log files on disk.
 =================================================================== ==========================================================
 
 
@@ -427,3 +429,30 @@ ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
    folder .venv_esmtools listed above and **not** from your user install directory.
    You should make **all** changes to the namelists and config files via your user
    runscript (:ref:`yaml:Changing Namelists`). This is recommended in all cases!!!
+
+Logging and verbosity
+---------------------
+
+``esm_runscripts`` uses Loguru-based logging with simple flags to control verbosity and
+file logging. Logs are always written in the main run log (
+``<base_dir>/<expid>/log/<expid>_<model>_<datestamp>_<jobid>.log``). For more log
+granularity, it is possible to also set ``--task-log-files`` as a flag of
+``esm_runscripts``, to  write logs of each task to a separate file. You can use the
+following ``esm_runscripts`` flags to control  the logging behavior:
+
+* ``--trace``: enable ``TRACE``-level output to stdout. Prints very detailed
+  diagnostics and the parsed command-line config.
+* ``-d``, ``--debug``: enable ``DEBUG``-level output to stdout (less detailed than
+  ``--trace``) and breakpoints.
+* ``-v``, ``--verbose``: also enables ``DEBUG``-level output to stdout, without
+  breakpoints.
+* ``--task-log-files``: enable per-task log files on disk. When enabled,
+  ``esm_runscripts`` writes each task's output to a file in the  experiment's ``log``
+  folder (``<base_dir>/<expid>/log/<expid>_<model>_<task>_<datestamp>_<jobid>.log``).
+  To reduce the number of files, this option is turned off by default, but the logs
+  are always printed in the run log anyway.
+
+.. note::
+   Because the logging starts before the parsing of the yaml files, it is not possible
+   to control the logging behavior from variables defined in the yamls. Only
+   command-line flags can control the logging behavior.

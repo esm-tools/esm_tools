@@ -7,7 +7,7 @@ general:
     reset_calendar_to_last: False
     verbose: False
     profile: False
-    intermediate_file_movements:
+    intermediate_movements:
     - "config"
     - "bin"
     - "input"

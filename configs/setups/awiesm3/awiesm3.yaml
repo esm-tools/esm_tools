@@ -565,6 +565,7 @@ xios:
 rnfmap:
     pool_dir: ${general.pool_dir}
     runoff_maps_name: _${fesom.resolution}
+    version: v1.1
 
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}

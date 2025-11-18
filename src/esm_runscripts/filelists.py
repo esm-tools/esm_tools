@@ -1118,8 +1118,10 @@ def copy_files(config, filetypes, source, target):
         if parallel_file_movements == "dask" and dask_cluster_initialized and node != "login_nodes":
             # Dask should only run on compute nodes
             client = daskd.Client(scheduler_file=dask_scheduler_json)
+            logger.info("Using dask for parallel file movements")
         else:
             client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
+            logger.info("Using threads for parallel file movements")
 
     # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(
@@ -1139,6 +1141,9 @@ def copy_files(config, filetypes, source, target):
     elif target == "work":
         text_target = "targets"
 
+    # TODO: Add this to a choose for parallel
+    serializable_config = copy.deepcopy(config)
+    serializable_config = esm_parser.provenance.clean_provenance(serializable_config)
     # Loop through the different filetypes (input, forcing, restart_in/out, ...)
     files_to_be_moved = []
     for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
@@ -1215,12 +1220,12 @@ def copy_files(config, filetypes, source, target):
                         # Execute movement with or without futures (parallelization on/off)
                         if (
                             config["general"].get("parallel_file_movements", False)
-                            == "threads"
+                            in ["threads", "dask"]
                         ):
                             # Parallel
                             future = client.submit(
                                 movement_method,
-                                config,
+                                serializable_config,
                                 file_source,
                                 file_target,
                             )
@@ -1500,9 +1505,9 @@ def movement(func):
                 func(source_path, target_path)
             return True
         except IOError:
-            logger.error(
-                f"Could not execute movement ({func.__name__}) {file_source} to {file_target} for unknown reasons.",
-            )
+            #logger.error(
+            #    f"Could not execute movement ({func.__name__}) {file_source} to {file_target} for unknown reasons.",
+            #)
             helpers.print_datetime(config)
             return False
 

@@ -151,5 +151,5 @@ dask:
         srun --ntasks=1 --nodes=1 --exclusive dask scheduler --scheduler-file ${dask.scheduler_json} --interface ib0
         "
     init_workers_cmd: "
-        srun --ntasks=@nodes@ --cpus-per-task=${dask.threads} --nodes=@nodes@ --exclusive  dask worker --scheduler-file $SCHEDULER_FILE --nthreads ${dask.threads} --nworkers @nodes@ --interface ib0
+        srun --ntasks=@nodes@ --cpus-per-task=${dask.threads} --nodes=@nodes@ --exclusive  dask worker --scheduler-file ${dask.scheduler_json} --nthreads ${dask.threads} --nworkers 1 --interface ib0
         "

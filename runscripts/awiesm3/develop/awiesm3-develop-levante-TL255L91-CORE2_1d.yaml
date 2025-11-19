@@ -2,8 +2,8 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "develop"
-    account: "ab0995"
-    compute_time: "00:30:00"
+    account: "ab00246"
+    compute_time: "00:10:00"
     initial_date: "1900-01-01"
     final_date: "1900-01-04"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
@@ -25,7 +25,7 @@ fesom:
     restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 1152 #originally 512 but worked with 1152
+    nproc: 128 #originally 512 but worked with 1152
     omp_num_threads: 1 # originally 4 but worked with 1
     tar_binary_restarts: true
 
@@ -42,8 +42,8 @@ oifs:
     wam: true
     lresume: false
     time_step: 2400
-    nproc: 512
-    omp_num_threads: 2
+    nproc: 256
+    omp_num_threads: 1
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850
 

@@ -28,6 +28,8 @@ lpj_guess:
     #comp_command: "mkdir -p ${model_dir}/build; cd ${model_dir}/build; cmake ..; make -j8"
     comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
 
+    setup_dir: "${model_dir}"
+    bin_dir: "${setup_dir}/bin"
     install_bins: "build/guess"
     clean_command: "rm -rf build"
     executable: guess_TL255
@@ -70,6 +72,20 @@ lpj_guess:
 
     # Some commonly used variables in other ESM-Tools components (but optional)
     input_dir: ${pool_dir}/lpj-guess/
+
+    # Define files to ignore
+    ignore_files:
+        outputs: outputs
+        log: log
+    ignore_in_work:
+        # Ignore output files with the same name
+        outputs: "output/*.out"
+        # Ignore log files
+        log: "*.log"
+    ignore_sources:
+        outputs: "output/*.out"
+        log: "*.log"
+
     namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
     gridlist_dir: ${input_dir}/gridlists/
     forcing_dir: ${input_dir}/climate_forcing_data/

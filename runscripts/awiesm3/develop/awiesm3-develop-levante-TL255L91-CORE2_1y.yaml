@@ -2,11 +2,12 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "develop"
-    account: "ab0246"
-    compute_time: "00:30:00"
+    account: "bb1469"
+    compute_time: "02:00:00"
     initial_date: "1900-01-01"
-    final_date: "1900-01-04"
-    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    final_date: "2400-01-01"
+    #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-v3.4/" 
     nday: 0
     nmonth: 0
     nyear: 1
@@ -16,7 +17,7 @@ computer:
 
 awiesm3:
     postprocessing: false
-    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     resolution: "CORE2"
@@ -28,6 +29,10 @@ fesom:
     nproc: 1152 #originally 512 but worked with 1152
     omp_num_threads: 1 # originally 4 but worked with 1
     tar_binary_restarts: true
+    add_namelist_changes:
+        namelist.ice:
+            ice_therm:
+                use_meltponds: true
 
 lpj_guess:
     lresume: false 
@@ -46,6 +51,18 @@ oifs:
     omp_num_threads: 8
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                NCMIPFIXYR: 1850
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+                RCL_OVERLAPLIQICE: 0.1
+            NAMGWWMS:
+                GGAUSSB: -0.6
 
 oasis3mct:
     use_lucia: false #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster

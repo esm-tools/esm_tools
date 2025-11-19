@@ -81,11 +81,11 @@ general:
 #########################################################################################
 
 oifs:
-    version: "48r1_lpjg_branch"
+    version: "48r1"
 
     # added 05.03.2025
-    #git-repository: 'https://git.smhi.se/sager/oifs48r1'
-    #branch: 'lpj_guess_implementation'
+    git-repository: 'https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1.git'
+    branch: 'main'
     #
     add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
@@ -254,7 +254,7 @@ fesom:
                 io:        "${namelist_dir}/namelist.io.recom.${recom_setting}"
             add_config_in_work:
                 recom:     "namelist.recom"
-            recom_input_path: '/work/ba1103/a270073/bc/recom/'
+            recom_input_path: '/work/ab0246/a270092/input/fesom2/recom/'
             add_add_namelist_changes:
                 namelist.recom:
                     nam_rsbc:
@@ -377,9 +377,9 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
-    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
-    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE; make -j8; cd .."       #without debug.
-    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .." #debuging comp_command
+    build_type: DEBUG # Available options: Debug, Release
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .."
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=${build_type}; make -j8; cd .."
     execution_command: ${executable} -parallel ${runscript_name}
 
     # Automatically set mygrid to match OIFS resolution
@@ -566,6 +566,7 @@ xios:
 rnfmap:
     pool_dir: ${general.pool_dir}
     runoff_maps_name: _${fesom.resolution}
+    version: v1.1
 
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -979,7 +980,7 @@ oasis3mct:
                         true:
                             add_restart_in_sources:
                                 co2_a2o.nc: ${input_dir}/${co2_a2o_name}.nc
-                                co2_o2a.nc: ${input_dir}/${co2_o2a_name}.nc
+                                co2_o2a.nc: ${input_dir}/${fesom.nproc}/${co2_o2a_name}.nc
 
 computer:
     # Activates the taskset approach for heterogeneous parallelization, by default

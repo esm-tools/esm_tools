@@ -199,7 +199,8 @@ echam:
                            - tracer
                            - echamday
                            - co2day
-
+                        
+                        atm_file_tags: "echam co2 tracer accw echamday co2day" 
 
                 agrif:
                         version: "6.3.05p2-foci"
@@ -622,6 +623,7 @@ jsbach:
                   - vegday
                   - yassoday
                   - landday
+                land_file_tags: "veg surf yasso nitro jsbachday vegday landday yassoday nitroday land jsbach"
             moz:
                 add_forcing_sources:
                     lightning_renamed: "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}_renamed.nc"
@@ -1550,6 +1552,7 @@ computer:
                   compiler_mpi: intel2024_impi2021
                glogin:
                   compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2025_impi2021
                nesh:
                   compiler_mpi: intel2019_impi2019
 
@@ -1574,6 +1577,7 @@ computer:
                   #compiler_mpi: intel2021_impi2021
                glogin:
                   compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2025_impi2021
                   #compiler_mpi: intel2019_impi2019_nemo4
                   add_module_actions:
                      - "source $I_MPI_ROOT/../../setvars.sh"

@@ -13,6 +13,8 @@ startyear=1850                  # change via -s
 endyear=1850                    # change via -e
 envfile="$basedir/$EXP_ID/scripts/env.sh"  # change via -x
 
+# ATM_FILE_TAGS and LAND_FILE_TAGS are overwritten by command line arguments when
+# the script is called by esm-tools to be consistent with the standard postprocessing script
 #LAND_FILE_TAGS='jsbach veg surf yasso nitro land'
 LAND_FILE_TAGS='veg surf yasso nitro jsbachday vegday landday yassoday nitroday land jsbach'
 LAND_FILE_TAGS2='veg_mm surf_mm yasso_mm nitro_mm jsbachday vegday landday yassoday nitroday land_mm jsbach_mm'
@@ -43,6 +45,8 @@ while getopts "h?d:r:s:e:p:x:" opt; do
         echo "                   -r experiment / run id              (run,       default is $EXP_ID)"
         echo "                   -s startyear                        (startyear, default is $startyear)"
         echo "                   -e endyear                          (endyear,   default is $endyear)"
+        echo "                   -a atm file tags to process         (ATM_FILE_TAGS, default is $ATM_FILE_TAGS)"
+        echo "                   -l atm file tags to process         (LAND_FILE_TAGS, default is $LAND_FILE_TAGS)"
         echo "                   -x full path to env.sh file         (envfile,   default is $HOME/esm/esm-experiments/\$EXP_ID/scripts/env.sh)"
         #echo "                   -t filetype (nc or grb)             (fileext,   default is $fileext)"
         echo
@@ -55,6 +59,10 @@ while getopts "h?d:r:s:e:p:x:" opt; do
     s)  startyear=$OPTARG
         ;;
     e)  endyear=$OPTARG
+        ;;
+    a)  ATM_FILE_TAGS=$OPTARG
+        ;;
+    l)  LAND_FILE_TAGS=$OPTARG
         ;;
     p)  basedir=$OPTARG
         ;;
@@ -339,7 +347,6 @@ level = 100000, 92500, 85000, 77500, 70000, 60000, 50000, 40000, 30000, 25000,
 type = 30
 format = 1 
 mean = 1 
-
 EOF
                     after $input $ATM_2_file << EOF
 code = 138, 148, 149, 155

@@ -525,15 +525,11 @@ lpj_guess:
             choose_general.with_co2_veg_coupling:
                 true:
                     add_input_sources:
-                        co2_v2a: ${oasis3mct.input_dir}/co2_v2a.nc
-                        co2_a2v: ${oasis3mct.input_dir}/co2_a2v.nc
-                        "co2_v2aInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/co2_v2a.nc
-                        "co2_a2vInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/co2_a2v.nc
+                        rst_co2_av: ${oasis3mct.input_dir}/rst_co2_av.nc
+                        "rst_co2_avInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/rst_co2_av.nc
                     add_in_work:
-                        co2_v2a: co2_v2a.nc
-                        co2_a2v: co2_a2v.nc
-                        "co2_v2aInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/co2_v2a.nc
-                        "co2_a2vInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/co2_a2v.nc
+                        rst_co2_av: rst_co2_av.nc
+                        "rst_co2_avInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/rst_co2_av.nc
 
     choose_general.with_co2_veg_coupling:
         true:
@@ -671,27 +667,31 @@ oasis3mct:
             choose_general.with_co2_veg_coupling:
                 true:
                     add_coupling_target_fields:
-                        co2_a2v.nc:
+                        rst_co2_av.nc:
                             - 'CO2_LPJG <--loctrans_avg-- XCO2Veg'
-                        co2_v2a.nc:
                             - 'FCO2Land:FCO2Ant:FCO2Fire <--loctrans_avg-- GUE_CNAT:GUE_CANT:GUE_CFIR'
+                    add_merge_recv_restarts:
+                        - rst_co2_av.nc    # CO2 vegetation coupling (bidirectional LOCTRANS)
             choose_general.with_co2_oce_coupling:
                 true:
                     add_coupling_target_fields:
-                        co2_a2o.nc:
+                        rst_co2_ao.nc:
                             - 'XCO2_oce <--gauswgt_c-- A_XCO2_oce'
-                        co2_o2a.nc:
                             - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
+
+            # Specify which restart files need bidirectional merging
+            # Use this for restart files with LOCTRANS+EXPOUT in both directions
+            # where both send and receive use the same restart file name in namcouple
+            merge_recv_restarts:
+                - vegin.nc         # OpenIFS <-> lpjg bidirectional LOCTRANS
 
             mct_version: 5.0
             input_dir: ${oasis3mct.pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
             rstos_file_name: 'rstos'
             rstas_file_name: 'rstas'
             vegin_file_name: 'vegin'
-            co2_a2v_name: 'co2_a2v'
-            co2_v2a_name: 'co2_v2a'
-            co2_a2o_name: 'co2_a2o'
-            co2_o2a_name: 'co2_o2a'
+            rst_co2_ao_name: 'rst_co2_ao'
+            rst_co2_av_name: 'rst_co2_av'
 
     land_atmo_coupling_time_step: 86400
     coupling_directions:
@@ -917,37 +917,27 @@ oasis3mct:
     choose_general.with_co2_veg_coupling:
         true:
             add_restart_in_files:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v2a.nc: co2_v2a.nc
+                rst_co2_av.nc: rst_co2_av.nc
             add_restart_in_in_work:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v2a.nc: co2_v2a.nc
+                rst_co2_av.nc: rst_co2_av.nc
             add_restart_out_files:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v2a.nc: co2_v2a.nc
+                rst_co2_av.nc: rst_co2_av.nc
             add_restart_out_in_work:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v2a.nc: co2_v2a.nc
+                rst_co2_av.nc: rst_co2_av.nc
             add_restart_out_sources:
-                co2_a2v.nc: co2_a2v.nc
-                co2_v2a.nc: co2_v2a.nc
+                rst_co2_av.nc: rst_co2_av.nc
     choose_general.with_co2_oce_coupling:
         true:
             add_restart_in_files:
-                co2_a2o.nc: co2_a2o.nc
-                co2_o2a.nc: co2_o2a.nc
+                rst_co2_ao.nc: rst_co2_ao.nc
             add_restart_in_in_work:
-                co2_a2o.nc: co2_a2o.nc
-                co2_o2a.nc: co2_o2a.nc
+                rst_co2_ao.nc: rst_co2_ao.nc
             add_restart_out_files:
-                co2_a2o.nc: co2_a2o.nc
-                co2_o2a.nc: co2_o2a.nc
+                rst_co2_ao.nc: rst_co2_ao.nc
             add_restart_out_in_work:
-                co2_a2o.nc: co2_a2o.nc
-                co2_o2a.nc: co2_o2a.nc
+                rst_co2_ao.nc: rst_co2_ao.nc
             add_restart_out_sources:
-                co2_a2o.nc: co2_a2o.nc
-                co2_o2a.nc: co2_o2a.nc
+                rst_co2_ao.nc: rst_co2_ao.nc
 
     remove_config_files:
         - cf
@@ -978,8 +968,7 @@ oasis3mct:
                     choose_general.with_co2_oce_coupling:
                         true:
                             add_restart_in_sources:
-                                co2_a2o.nc: ${input_dir}/${co2_a2o_name}.nc
-                                co2_o2a.nc: ${input_dir}/${fesom.nproc}/${co2_o2a_name}.nc
+                                rst_co2_ao.nc: ${input_dir}/${rst_co2_ao_name}.nc
 
 computer:
     # Activates the taskset approach for heterogeneous parallelization, by default

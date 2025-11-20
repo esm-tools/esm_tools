@@ -302,8 +302,6 @@ fesom:
     # Move in the future to fesom-2.0.yaml
     mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
 
-    surf_relax_s: "0.0"
-
     namelist_changes:
         namelist.config:
             restart_log:
@@ -312,35 +310,14 @@ fesom:
 
     choose_general.major_version:
         "v3.4":
-            version: "2.6-main"
+            version: "2.7"
             add_namelist_changes:
                 namelist.config:
-                    ale_def:
-                        which_ALE: 'zstar'
-                    #geometry:
-                        #metric_factor_zero: True
+                    geometry:
+                        metric_factor_zero: True
                 namelist.oce:
-                    oce_dyn:
-                        SPP: true
-                        k_gm_max: 3000
-                        k_gm_rampmax: 40.0
-                        k_gm_rampmin: 30
-                        scaling_ferreira: true
-                        scaling_fesom14: true
                     oce_tra:
-                        surf_relax_s: "${surf_relax_s}"
-
-                namelist.tra:
-                    tracer_phys:
-                        surf_relax_s: "${surf_relax_s}"
-                        use_momix: false
-                        kv0_const: false
-                namelist.ice:
-                    ice_therm:
-                        albsn: 0.81
-                        albsnm: 0.77
-                        albi: 0.6
-                        albim: 0.43
+                        surf_relax_s: "0.0"
 
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)

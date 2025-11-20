@@ -471,24 +471,9 @@ fesom:
                         version: "2.6-main"
                         append_icmcl: ""
                         add_namelist_changes:
-                                namelist.config:
-                                        ale_def:
-                                                which_ALE: 'zstar'
-                                        #geometry:
-                                                #metric_factor_zero: True
-                                namelist.oce:
-                                        oce_dyn:
-                                                SPP: true
-                                                k_gm_max: 3000
-                                                k_gm_rampmax: 40.0
-                                                k_gm_rampmin: 30
-                                                scaling_ferreira: true
-                                                scaling_fesom14: true
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: "${surf_relax_s}"
-                                                use_momix: false
-                                                kv0_const: false
 
                 "frontiers-xios":
                         model_tag: "frontiers"

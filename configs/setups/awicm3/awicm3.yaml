@@ -105,7 +105,7 @@ general:
           develop:
             major_version: v3.4
             couplings:
-            - fesom-2.6-main+oifs-48r1+xios-2.5
+            - fesom-2.7+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             oasis_with_yac: False

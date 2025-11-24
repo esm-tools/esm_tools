@@ -129,7 +129,7 @@ computer:
             # This is default pool dir for FOCI and FOCI-OpenIFS
             focipool: ${computer.pool_dir}
 
-    pool_dir:  "/scratch/projects/shk00018"
+    pool_dir:  "/mnt/ceph-hdd/cold/shk00060/foci_input2"
 
     #
     # Now set default compiler etc

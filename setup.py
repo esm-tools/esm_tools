@@ -31,6 +31,7 @@ requirements = [
     "pyyaml==6.0.1",
     "questionary==1.10.0",
     "ruamel.yaml==0.17.32",
+    "ruamel.yaml.clib==0.2.7",
     "semver==2.13.0",
     "sqlalchemy>=1.4.39",
     "tabulate==0.8.10",

@@ -825,6 +825,7 @@ echam:
             - glim
             - spim
             - ism
+            - tracer
 
     restartstreams:
             - echam
@@ -840,6 +841,7 @@ echam:
             - glim
             - spim
             - ism
+            - tracer
 
     streamsnc:
             - aclcim
@@ -862,6 +864,7 @@ echam:
             - aeropt
             - co2
             - tdiag
+            - tracer
 
 
     other_date: $(( ${next_date} - ${time_step}seconds ))

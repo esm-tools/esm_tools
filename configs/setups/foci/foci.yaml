@@ -114,7 +114,7 @@ general:
 #########################################################################################
 
 echam:
-        atm_file_tags: "echam accw co2"
+        atm_file_tags: "echam accw co2 tracer"
 
         choose_general.version:
                 default:
@@ -409,11 +409,13 @@ echam:
               - echam
               - accw
               - co2
+              - tracer
 
         restartstreams:
               - echam
               - accw
               - co2
+              - tracer
 
         check_error:
               "wind speed":

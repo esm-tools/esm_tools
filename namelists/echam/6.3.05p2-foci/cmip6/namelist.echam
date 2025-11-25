@@ -47,6 +47,10 @@
     meannam = 'dtdt_rheat_sw', 'dtdt_rheat_lw', 'geosp', 'aps', 'lsp',
               'gboxarea'
 /
+&mvstreamctl ! 'default tracerm'
+    filetag = 'tracer'
+    source = 'tracer'
+/
 &mvstreamctl ! 'default jsbachm'
     filetag = 'jsbach'
     source = 'jsbach'

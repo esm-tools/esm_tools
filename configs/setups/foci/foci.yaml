@@ -148,6 +148,7 @@ echam:
                         version: "6.3.05p2-foci_oasismct4"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 moz:
+                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag temraw"
                         version: "6.3.05p2-moz"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                         add_namelist_changes:
@@ -166,8 +167,8 @@ echam:
                            - tdiag
                            - temraw
 
-                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag temraw"
                 moz_mct2:
+                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag temraw"
                         version: "6.3.05p2-moz"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                         add_namelist_changes:
@@ -185,8 +186,6 @@ echam:
                            - moz
                            - tdiag
                            - temraw
-
-                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag temraw"
 
                 mops_oasismct4:
                         atm_file_tags: "echam accw co2"
@@ -208,7 +207,7 @@ echam:
                            - tracer
 
                 mops_lmu:
-                        atm_file_tags: "echam accw co2"
+                        atm_file_tags: "echam co2 tracer accw echamday co2day" 
                         version: "6.3.05p2-foci_lmu"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
@@ -233,8 +232,6 @@ echam:
                            - tracer
                            - echamday
                            - co2day
-                        
-                        atm_file_tags: "echam co2 tracer accw echamday co2day" 
 
                 agrif:
                         atm_file_tags: "echam accw co2"
@@ -651,22 +648,21 @@ jsbach:
             "*":
                 land_file_tags: "land jsbach veg surf yasso nitro"
             mops_lmu:
-                land_file_tags: "jsbach nitro veg yasso surf"
+                land_file_tags: "veg surf yasso nitro jsbachday vegday landday yassoday nitroday land jsbach"
                 add_streams:
                   - jsbachday
                   - nitroday
                   - vegday
                   - yassoday
                   - landday
-                land_file_tags: "veg surf yasso nitro jsbachday vegday landday yassoday nitroday land jsbach"
             moz:
+                land_file_tags: "land jsbach nitro veg yasso surf"
                 add_forcing_sources:
                     lightning_renamed: "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}_renamed.nc"
                 add_forcing_files:
                     lightning: lightning_renamed
                 remove_streams:
                     - surf
-                land_file_tags: "land jsbach nitro veg yasso surf"
 
 nemo:
         choose_general.version:

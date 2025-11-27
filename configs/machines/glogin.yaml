@@ -129,7 +129,7 @@ computer:
             # This is default pool dir for FOCI and FOCI-OpenIFS
             focipool: ${computer.pool_dir}
 
-    pool_dir:  "/scratch/projects/shk00018"
+    pool_dir:  "/mnt/ceph-hdd/cold/shk00060/foci_input2"
 
     #
     # Now set default compiler etc
@@ -223,8 +223,96 @@ computer:
              MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
              MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-       # This is the new, recommended system Intel compiler set
-       # Note: The old release_mt stuff should not be needed anymore.
+       intel2025_impi2021:
+
+          # Use system modules
+          iolibraries: system_libs
+
+          # Here we load compiler and MPI
+          # netCDF etc is done later
+          add_module_actions:
+             - "load intel-oneapi-compilers/2025.0.0" 
+             - "load intel-oneapi-mpi/2021.14.0"
+             # MKL needed for OpenIFS
+             - "load intel-oneapi-mkl/2024.2.2"
+
+          # Note: Intel compilers now have new names:
+          # mpiicc (C) = mpiicx
+          # mpiicpc (C++) = mpiicpx
+          # mpiifort (Fortran) = mpiifx
+          #
+          # OASIS compiles with mpiifx etc, but
+          # XIOS and OpenIFS do not, so we
+          # use the old mpiifort etc and live with the warnings
+          add_export_vars:
+             # It is possible to use the new compilers (mpiifx etc)
+             # But some changes are necessary.
+             # -std=gnu89 is required in OIFS_CFLAGS. Also -mkl_sequential must be -qmkl=sequential
+             # Only new xios_trunk will work (not rev 1910) and only with -std=c++11
+             # The CPP for NEMO must be cpp -P. $CC will not work anymore.
+             #
+             FC: mpiifx
+             F77: mpiifx
+             MPIFC: mpiifx
+             FCFLAGS: "-free"
+             CC: mpiicx
+             CXX: mpiicpx
+             MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+       # the oldest possible compiler suite on the glogin 
+       intel2021_impi2021:
+
+          # Use system modules
+          iolibraries: system_libs
+
+          # Here we load compiler and MPI
+          # netCDF etc is done later
+          add_module_actions:
+             - "load intel-oneapi-compilers-classic/2021.10.0"
+             - "load intel-oneapi-mpi/2021.14.0"
+             # MKL needed for OpenIFS
+             - "load intel-oneapi-mkl/2024.2.2"
+
+          # Note: Intel compilers now have new names:
+          # mpiicc (C) = mpiicx
+          # mpiicpc (C++) = mpiicpx
+          # mpiifort (Fortran) = mpiifx
+          #
+          # OASIS compiles with mpiifx etc, but
+          # XIOS and OpenIFS do not, so we
+          # use the old mpiifort etc and live with the warnings
+          add_export_vars:
+             # For now (Intel 2023) we can stick to mpiifort etc
+             FC: mpiifort
+             F77: mpiifort
+             MPIFC: mpiifort
+             FCFLAGS: -free
+             CC: mpiicc
+             CXX: mpiicpc
+             MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+             # It is possible to use the new compilers (mpiifx etc)
+             # But some changes are necessary.
+             # -std=gnu89 is required in OIFS_CFLAGS. Also -mkl_sequential must be -qmkl=sequential
+             # Only new xios_trunk will work (not rev 1910) and only with -std=c++11
+             # The CPP for NEMO must be cpp -P. $CC will not work anymore.
+             #
+             #FC: mpiifx
+             #F77: mpiifx
+             #MPIFC: mpiifx
+             #FCFLAGS: -free
+             #CC: mpiicx
+             #CXX: mpiicpx
+             #MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             #MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+       # This was the new, recommended system Intel compiler set back in 2023 / 2024
+       # since sometime in 2025 it requires 
+       #   export PREFERRED_SOFTWARE_STACK=nhr-lmod
+       #   source /etc/profile
+       # to be set in $HOME/.bash_profile
        intel2023_impi2021:
 
           # Use system modules
@@ -369,6 +457,71 @@ computer:
 
         system_libs:
             choose_compiler_mpi:
+                intel2025_impi2021:
+                    add_module_actions:
+                        # This took a long time to work out how to do
+                        # I (Joakim) figured out that FOCI-OpenIFS can not run with
+                        # netcdf-fortran 4.6.1, due to "floating invalid" during nf90_open,
+                        # so a slightly older version is required.
+                        # See: https://www.unidata.ucar.edu/support/help/MailArchives/netcdf/msg15037.html
+                        # Therefore, GWDG support older HDF5 and netCDF for us.
+
+                        # Parallel HDF5
+                        - "load hdf5/1.14.5"
+
+                        # netcdf built with older HDF5
+                        - "load netcdf-c/4.9.2"
+
+                        # bug in netcdf-fortran 4.6.1. avoid it
+                        - "load netcdf-fortran/4.5.3-hdf5-1.10"
+
+                        # GWDG support suspected a problem with netcdf when not built with fp-model precise
+                        # Here are some test modules with fp-model precise
+                        # I could not find that it made any difference in FOCI-OpenIFS though
+                        #- "load hdf5/1.10.7-precise-fp"
+                        #- "load netcdf-c/4.9.2-hdf5-1.10-precise-fp"
+                        #- "load netcdf-fortran/4.5.3-hdf5-1.10-precise-fp"
+
+                        # The ecCodes, CDO and NCO modules are built with modern
+                        # netcdf, so they conflict when loaded.
+                        # Instead, we can load them manually (below) by adding paths
+                        # In the future, GWDG should re-build these libraries.
+                        # eccodes
+                        #- "load eccodes/2.34.0"
+                        - "load cdo/2.2.2-hdf5-1.10"
+                intel2021_impi2021:
+                    add_module_actions:
+                        # This took a long time to work out how to do
+                        # I (Joakim) figured out that FOCI-OpenIFS can not run with
+                        # netcdf-fortran 4.6.1, due to "floating invalid" during nf90_open,
+                        # so a slightly older version is required.
+                        # See: https://www.unidata.ucar.edu/support/help/MailArchives/netcdf/msg15037.html
+                        # Therefore, GWDG support older HDF5 and netCDF for us.
+
+                        # Parallel HDF5
+                        - "load hdf5/1.14.5"
+
+                        # netcdf built with older HDF5
+                        - "load netcdf-c/4.9.2"
+
+                        # bug in netcdf-fortran 4.6.1. avoid it
+                        - "load netcdf-fortran/4.5.3-hdf5-1.10"
+
+                        # GWDG support suspected a problem with netcdf when not built with fp-model precise
+                        # Here are some test modules with fp-model precise
+                        # I could not find that it made any difference in FOCI-OpenIFS though
+                        #- "load hdf5/1.10.7-precise-fp"
+                        #- "load netcdf-c/4.9.2-hdf5-1.10-precise-fp"
+                        #- "load netcdf-fortran/4.5.3-hdf5-1.10-precise-fp"
+
+                        # The ecCodes, CDO and NCO modules are built with modern
+                        # netcdf, so they conflict when loaded.
+                        # Instead, we can load them manually (below) by adding paths
+                        # In the future, GWDG should re-build these libraries.
+                        # eccodes
+                        #- "load eccodes/2.34.0"
+                        - "load cdo/2.2.2-hdf5-1.10"
+
                 intel2023_impi2021:
                     add_module_actions:
                         # This took a long time to work out how to do

@@ -47,8 +47,7 @@ nemo:
           all_directions: copy
        config:
           init_to_exp: copy
-          exp_to_run: link
-          run_to_work: link
+          run_to_work: copy
        forcing:
           all_directions: link
        log:

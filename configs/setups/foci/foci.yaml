@@ -233,7 +233,8 @@ echam:
                            - tracer
                            - echamday
                            - co2day
-
+                        
+                        atm_file_tags: "echam co2 tracer accw echamday co2day" 
 
                 agrif:
                         atm_file_tags: "echam accw co2"
@@ -287,8 +288,7 @@ echam:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -523,8 +523,7 @@ hdmodel:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -565,8 +564,7 @@ jsbach:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -660,6 +658,7 @@ jsbach:
                   - vegday
                   - yassoday
                   - landday
+                land_file_tags: "veg surf yasso nitro jsbachday vegday landday yassoday nitroday land jsbach"
             moz:
                 add_forcing_sources:
                     lightning_renamed: "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}_renamed.nc"
@@ -734,8 +733,7 @@ nemo:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -1626,7 +1624,8 @@ computer:
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2025_impi2021
                nesh:
                   compiler_mpi: intel2019_impi2019
 
@@ -1650,7 +1649,8 @@ computer:
                   compiler_mpi: intel2019_impi2019_nemo4
                   #compiler_mpi: intel2021_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2025_impi2021
                   #compiler_mpi: intel2019_impi2019_nemo4
                   add_module_actions:
                      - "source $I_MPI_ROOT/../../setvars.sh"

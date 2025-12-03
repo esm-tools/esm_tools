@@ -17,9 +17,7 @@ fesom:
 
     wiso_code: false
     with_wiso: false
-
     with_recom: false
-    namelist_dir: "${model_dir}/config/"
 
     required_plugins:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
@@ -33,7 +31,7 @@ fesom:
         branch: "main"
         #namelist_dir: "${model_dir}/config/"
 
-    destination: "fesom-2.6"
+    destination: "fesom-2.7"
     install_bins: bin/fesom.x
     git-repository:
     - https://github.com/FESOM/fesom2.git

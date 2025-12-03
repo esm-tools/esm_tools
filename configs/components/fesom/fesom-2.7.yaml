@@ -2,8 +2,8 @@
 #
 fesom:
     model: fesom
-    branch: "2.6"
-    version: "2.6"
+    branch: "2.7.0"
+    version: "2.7"
     type: ocean
 
     comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
@@ -19,41 +19,19 @@ fesom:
     with_wiso: false
 
     with_recom: false
+    namelist_dir: "${model_dir}/config/"
 
     required_plugins:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
     choose_version:
-      "2.6":
-        branch: "2.6.10"
-
-      "2.6-paleodyn":
-        branch: "2.6.7"
-        wiso_code: true
-        icb_code: true
-        namelist_dir: "${model_dir}/config/"
-
-      "2.6.5":
-        branch: "2.6.5"
-
-      "2.6.7":
-        branch: "2.6.7"
-
-      "2.6.8":
-        branch: "2.6.8"
-
-      "2.6.9":
-        branch: "2.6.9"
-
-      "2.6.10":
-        branch: "2.6.10"
-
-      "2.6.11":
-        branch: "2.6.11"
+      "2.7":
+        branch: "2.7.0"
+        #namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
         
-      "2.6-main":
+      "2.7-main":
         branch: "main"
-        namelist_dir: "${model_dir}/config/"
+        #namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.6"
     install_bins: bin/fesom.x

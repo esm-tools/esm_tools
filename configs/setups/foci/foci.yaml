@@ -656,7 +656,7 @@ jsbach:
                   - yassoday
                   - landday
             moz:
-                land_file_tags: "land jsbach nitro veg yasso surf"
+                land_file_tags: "land jsbach nitro veg surf"
                 add_forcing_sources:
                     lightning_renamed: "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}_renamed.nc"
                 add_forcing_files:

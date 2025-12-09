@@ -177,7 +177,8 @@ lpj_guess:
             res_number: 319
             res_number_tl: "319_4"
             truncation: "TCO"
-            maxgrid: 117804
+            #maxgrid: 117804
+            maxgrid: 119446
             nx_atmo: 421120
         TCO399:
             nx: 654400

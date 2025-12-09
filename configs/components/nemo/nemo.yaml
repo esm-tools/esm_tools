@@ -626,7 +626,7 @@ nemo:
             - nemobasemodel-5.0.0
         
         # We use the orca05_z46_si3_coupled git repo, but a different branch
-        branch: eORCA_SI3_COUPLED_NEMO5
+        branch: eORCA025_Z120_SI3_OpenIFS 
 
         reference_expid: 'FOCIOIFS'
 
@@ -651,20 +651,18 @@ nemo:
         namelist_dir: ${nemo.model_dir}/cfgs/${nemo.version}/${reference_expid}/
 
         generation: "5.0"
-        resolution: ORCA05
+        resolution: eORCA025
         use_tracer: false
         leapyear: true
         free_surface: nonlinear
 
-        input_dir: ${pool_dir}/NEMO4_eORCA05/L75/
+        input_dir: ${pool_dir}/nemo5_eorca025/
 
         # override hardcoded path to runoff forcing
         add_namelist_changes:
            namelist_cfg:
               namsbc_blk:
                  cn_dir: "./"
-              #namrun:
-              #    nn_write: 3 # hourly output (no xios used)
               namsbc:
                  ln_blk: false
                  ln_cpl: true
@@ -711,42 +709,43 @@ nemo:
                  rn_uv: 0.164
 
         add_input_sources:
-            namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
-            namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+           namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+           namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+
+           # bfr, subbasins, and domain_cfg 
+           bfr_coef_eorca025_nemo5: ${input_dir}/bfr_coef.nc 
+           subbasins_eorca025_nemo5: ${input_dir}/subbasins.nc
+           domain_cfg_eorca025_nemo5: ${input_dir}/domain_cfg.nc
+
+           # inital data
+           data_tem_eorca025_nemo5: ${input_dir}/data_tem.nc
+           data_sal_eorca025_nemo5: ${input_dir}/data_sal.nc
 
         add_input_files:
            namelist_ref: namelist_ref
            namelist_ice_ref: namelist_ice_ref
 
-           # from Sebastian / Markus
-           #bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
-           #coordinates_orca05_nemo4: bathy_meter_orca05_nemo4 
-           bfr_coef_orca05_nemo4: bfr_coef_eorca05_nemo4
-           subbasins_orca05_nemo4: subbasins_eorca05_nemo4
-           domain_cfg_orca05_nemo4: domain_cfg_eorca05_nemo4
-
-           # NEMO ORCA05 4.2.x input files
-           #ghflux_v2.0_orca05_nemo4: ghflux_v2.0_eorca05_nemo4
+           # bfr, subbasins, and domain_cfg 
+           bfr_coef: bfr_coef_eorca025_nemo5
+           subbasins: subbasins_eorca025_nemo5
+           domain_cfg: domain_cfg_eorca025_nemo5
 
            # inital data
-           data_tem_orca05_nemo4: data_tem_eorca05_nemo4
-           data_sal_orca05_nemo4: data_sal_eorca05_nemo4
+           data_tem: data_tem_eorca025_nemo5
+           data_sal: data_sal_eorca025_nemo5
 
            # inital data
            #seaice_orca05_nemo4: seaice_eorca05_nemo4
 
         input_in_work:
-           domain_cfg_orca05_nemo4: domain_cfg.nc
+           domain_cfg: domain_cfg.nc
            #coordinates_orca05_nemo4: coordinates.nc
-           bfr_coef_orca05_nemo4: bfr_coef.nc
-           subbasins_orca05_nemo4: subbasins.nc
+           bfr_coef: bfr_coef.nc
+           subbasins: subbasins.nc
 
            # inital data
-           data_tem_orca05_nemo4: data_tem.nc
-           data_sal_orca05_nemo4: data_sal.nc
-           #ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
-
-           #seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc 
+           data_tem: data_tem.nc
+           data_sal: data_sal.nc
 
       ORCA05_Z46_SI3_COUPLED:
         # coupled ORCA05 set up with SI3 sea ice model
@@ -2841,8 +2840,8 @@ nemo:
                             #namdom:
                             #   ln_linssh: '.false.'
                             namdyn_hpg:
-                               ln_hpg_zco: '.false.'
-                               ln_hpg_zps: '.false.'
+                                #ln_hpg_zco: '.false.'
+                                #ln_hpg_zps: '.false.'
                                ln_hpg_sco: '.true.'
                 # Restart settings               
                 choose_lresume:
@@ -3092,7 +3091,7 @@ nemo:
             eORCA025:
                     _nx: 1440
                     _ny: 1206
-                    time_step: 1200
+                    time_step: 1800
             ORCA05:
                     # Periodic points and folding points
                     # are not included on grid for NEMO 4.2

@@ -29,6 +29,7 @@ xios:
     - "2.5"
     - 2.5_r1910
     - 2.5_r2497
+    - 2.5_r2777
     - 2.5_r1910_oifs
     - 2.5_r1910_ogcm
     - 2.5_smhi
@@ -194,6 +195,10 @@ xios:
         archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5_r2497
+      2.5_r2777:
+        archfile: ESMTOOLS_generic_oasis_gnu
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5_r2777
       2.5_r2497_autotools:
         archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct

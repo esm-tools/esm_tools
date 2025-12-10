@@ -50,7 +50,6 @@ class batch_system:
     def add_pre_launcher_lines(self, config, cluster, runfile):
         return self.bs.add_pre_launcher_lines(config, cluster, runfile)
 
-    # TODO: remove it once it's not needed anymore (substituted by packjob)
     def write_het_par_wrappers(self, config):
         return self.bs.write_het_par_wrappers(config)
 
@@ -369,26 +368,35 @@ class batch_system:
 
         commands = []
         if subjob.startswith("compute"):
-            if config["general"].get("submit_to_batch_system", True):
-                batch_system = config["computer"]
-                if "execution_command" in batch_system:
-                    commands.append(
-                        "time "
-                        + batch_system["execution_command"]
-                        + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
-                    )
-                    if config["general"].get("multi_srun"):
-                        return self.bs.get_run_commands_multisrun(config, commands)
+            submit_to_batch_system = config["general"].get(
+                "submit_to_batch_system", True
+            )
+            write_execution_log = config["computer"].get(
+                "write_execution_log", ""
+            )
+
+            if submit_to_batch_system:
+                execution_command_list = config["computer"].get(
+                    "execution_command_list",
+                    [config["computer"].get("execution_command")]
+                )
             else:
+                execution_command_list = []
                 for model in config:
                     if model == "computer":
                         continue
                     if "execution_command" in config[model]:
-                        commands.append(
-                            "time ./"
-                            + config[model]["execution_command"]
-                            + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
+                        execution_command_list.append(
+                            config[model]["execution_command"]
                         )
+
+            for execution_command in execution_command_list:
+                commands.append(
+                    f"time {execution_command} 2>&1{write_execution_log} &"
+                )
+
+            if submit_to_batch_system and config["general"].get("multi_srun"):
+                return self.bs.get_run_commands_multisrun(config, commands)
         else:
             subjob_tasks = dataprocess.subjob_tasks(config, subjob, batch_or_shell)
             for task in subjob_tasks:
@@ -454,10 +462,9 @@ class batch_system:
             if batch_or_shell == "batch":
 
                 config = batch_system.calculate_requirements(config, cluster)
-                # TODO: remove it once it's not needed anymore (substituted by packjob)
                 if cluster in reserved_jobtypes and config["computer"].get(
-                    "taskset", False
-                ):
+                    "hetjob_strategy", "hetjob"
+                ) == "taskset":
                     config = config["general"]["batch"].write_het_par_wrappers(config)
                 # Prepare launcher
                 config = config["general"]["batch"].prepare_launcher(config, cluster)
@@ -691,7 +698,7 @@ class batch_system:
                     config[model]["nproc"] = 1
         return config
 
-    def het_par_launcher_lines(self, config, cluster):
+    def hetjob_single_launcher_command(self, config, cluster):
         """
         Loops through the components to generate job launcher flags and execution
         commands, to be appended in substitution to the ``@components@`` tag, in
@@ -734,6 +741,54 @@ class batch_system:
             .replace("@components@", components)
             .replace("@jobtype@", cluster)
         )
+
+    def hetjob_concurrent_launcher_commands(self, config, cluster):
+        """
+        Loops through the components to generate job launcher flags and execution
+        commands, to be appended in substitution to the ``@components@`` tag, in
+        ``computer.execution_command``, that would later be used in the writing of the
+        ``.run`` file, in ``batch_system.py``.
+
+        Parameters
+        ----------
+        config : dict
+            Configuration dictionary containing information about the experiment and
+            experiment directory.
+        cluster : str
+            Type of job cluster.
+        """
+        component_lines = []
+        # Read in the separator to be used in between component calls in the job
+        # launcher
+        sep = config["computer"].get("launcher_comp_sep", "\\\n    ") + " "
+        # Loop through the components
+        for model in config["general"]["valid_model_names"]:
+            command = None
+            # Read in execution command
+            if "execution_command" in config[model]:
+                command = config[model]["execution_command"]
+            elif "executable" in config[model]:
+                command = config[model]["executable"]
+            # Prepare the MPMD commands
+
+            # kh 24.06.22 workaround: filter hdmodel
+            if command and (command != "NONE"):
+                launcher = config["computer"].get("launcher")
+                launcher_flags = self.calc_launcher_flags(config, model, cluster)
+                component_lines.append(f"{launcher_flags} ./{command} ")
+
+        execution_command = config["computer"]["execution_command"]
+        execution_command_list = []
+        for component in component_lines:
+            # Replace the ``@components@`` tag with the component command
+            # and add the ``&`` at the end to run it in background
+            execution_command_list.append(
+                execution_command
+                .replace("@components@", component)
+                .replace("@jobtype@", cluster)
+            )
+
+        config["computer"]["execution_command_list"] = execution_command_list
 
     @staticmethod
     def calc_launcher_flags(config, model, cluster):

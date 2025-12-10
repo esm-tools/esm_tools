@@ -995,8 +995,9 @@ computer:
                         iolibraries: system_libs
                         compiler_mpi: intel2025_psmpi
                     blogin:
+                        taskset: false
                         iolibraries: geomar_libs
-                        compiler_mpi: intel2019_ompi
+                        compiler_mpi: intel2024_impi2021
                     glogin:
                         iolibraries: geomar_libs
                         compiler_mpi: intel2019_ompi

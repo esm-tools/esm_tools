@@ -510,6 +510,8 @@ class batch_system:
                     runfile.write(line + "\n")
                 runfile.write("\n")
 
+            runfile.write("# Store the SLURM environment variables for later sourcing\n")
+            runfile.write("declare -p | grep SLURM > slurm.env\n\n")
             if clusterconf:
                 for subjob in clusterconf["subjobs"]:
 
@@ -598,7 +600,10 @@ class batch_system:
                 runfile.write("\n")
                 runfile.write("# Call to esm_runscript to start subjobs:\n")
                 runfile.write("# " + str(subjobs_to_launch) + "\n")
-                runfile.write("process=$! \n")
+                runfile.write("process=$!\n\n")
+                slurm_env_file = f'{config["general"]["thisrun_scripts_dir"]}/slurm.env'
+                runfile.write(f"# Recover the SLURM environment variables\n")
+                runfile.write(f"source {slurm_env_file}; rm {slurm_env_file}\n\n")
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )

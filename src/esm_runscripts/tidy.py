@@ -503,6 +503,7 @@ class RunFolders(list):
         self.save()
 
 def initialize_dask_cluster(config):
+    #import ipdb; ipdb.set_trace()
     dask_config = config.get("dask", {})
     dask_actions = dask_config.get("actions", [])
     dask_scheduler_json = dask_config["scheduler_json"]
@@ -527,7 +528,7 @@ def initialize_dask_cluster(config):
 
     # With subprocess run init_scheduler_cmd and print output into a log file on the fly (use it as a sink)
     log_scheduler = f'{config["general"]["thisrun_log_dir"]}/dask_scheduler.log'
-    logger.info(f"Starting dask scheduler with command: {init_scheduler_cmd}")
+    logger.info(f"Starting dask scheduler with: {init_scheduler_cmd}")
 
     #import ipdb; ipdb.set_trace()
     # Check whether there is already a dask scheduler started
@@ -537,13 +538,20 @@ def initialize_dask_cluster(config):
             scheduler_info = json.load(f)
             tcp_address = scheduler_info.get("address", None)
         client = daskd.Client(tcp_address)
+        n_workers = len(client.scheduler_info().get("workers", []))
     except Exception:
         client = None
-        os.remove(dask_scheduler_json) if os.path.isfile(dask_scheduler_json) else None
-    if client is not None:
-        n_workers = len(client.scheduler_info().get("workers", []))
+        #os.remove(dask_scheduler_json) if os.path.isfile(dask_scheduler_json) else None
+    if client is not None and n_workers>0:
+        #print(f"Dask scheduler is already running with {n_workers} workers.")
         logger.info(f"Dask scheduler is already running with {n_workers} workers.")
         return config
+    else:
+        # TODO: this is probably bad
+        logger.info(f"No existing dask scheduler found, or no workers connected")
+        #os.remove(dask_scheduler_json) if os.path.isfile(dask_scheduler_json) else None
+
+    #import ipdb; ipdb.set_trace()
 
     # Start the dask scheduler
     process = subprocess.Popen(
@@ -557,11 +565,12 @@ def initialize_dask_cluster(config):
     # TODO: choose to log versus not loging scheduler output
     # Check that the scheduler is started
     scheduler_started = False
-    keep_checking = True
+    scheduler_json_created = False
+    continue_iterating = True
     counter = 0
     repetitions = 50 # give up after 5 seconds
     frequency = 0.1
-    while not scheduler_started and keep_checking:
+    while (not scheduler_started or not scheduler_json_created) and counter < repetitions and continue_iterating:
         if counter != 0:
             time.sleep(frequency)
         counter += 1
@@ -576,35 +585,36 @@ def initialize_dask_cluster(config):
                 for line in f:
                     if "distributed.scheduler - INFO -" in line:
                         scheduler_started = True
+                        #print("Dask scheduler started.")
                         logger.info("Dask scheduler started.")
                         break
                     elif "command not found" in line:
                         logger.warning(
+                        #print(
                             "Dask scheduler could not be initialized. This job won't use dask "
                             f"parallelization. For more information check {log_scheduler}. Error:\n"
                             f"    {line}"
                         )
                         scheduler_started = False
-                        keep_checking = False
+                        continue_iterating = False
                         break
 
         # Double check that the scheduler json file is created, if not iterate again
-        if scheduler_started == True and not os.path.isfile(dask_scheduler_json):
-            continue
-
-        # Give up after certain number of tries
-        if counter >= repetitions:
-            logger.warning(
-                "Dask scheduler could not be initialized after checking "
-                f"{repetitions} times. This job won't use dask parallelization. "
-                f"For more information check {log_scheduler}."
-            )
-            scheduler_started = False
-            keep_checking = False
+        scheduler_json_created = os.path.isfile(dask_scheduler_json)
+        if scheduler_started == True and scheduler_json_created:
+            logger.info(f"Dask scheduler json file created: {dask_scheduler_json}")
             break
 
+    if not scheduler_started or not scheduler_json_created:
+        logger.warning(
+            "Dask scheduler could not be initialized after checking "
+            f"{repetitions} times. This job won't use dask parallelization. "
+            f"For more information check {log_scheduler}."
+        )
+
+    #import ipdb; ipdb.set_trace()
     # Stop here if scheduler could not be started
-    if not scheduler_started:
+    if not scheduler_started and not scheduler_json_created:
         logger.warning(
             "Dask scheduler could not be initialized. This job won't use dask "
             f"parallelization. For more information check {log_scheduler}."
@@ -612,8 +622,9 @@ def initialize_dask_cluster(config):
         return config
 
     # Start the dask workers
+    logger.info(f"Starting dask workers with: {init_scheduler_cmd}")
     process = subprocess.Popen(
-        f"sleep 6; {init_workers_cmd} >> {log_scheduler} 2>&1",
+        f"{init_workers_cmd} >> {log_scheduler} 2>&1",
         shell=True,
         #stdout=subprocess.DEVNULL,
         #stderr=subprocess.STDOUT,
@@ -647,4 +658,5 @@ def initialize_dask_cluster(config):
 
     # TODO: kill the scheduler and workers if something went wrong and remove the json file
 
+    #import ipdb; ipdb.set_trace()
     return config

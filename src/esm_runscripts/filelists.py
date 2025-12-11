@@ -24,7 +24,7 @@ def rename_sources_to_targets(config):
     # Purpose of this routine is to make sure that filetype_sources and
     # filetype_targets are set correctly, and _in_work is unset
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             sources = filetype + "_sources" in config[model]
             targets = filetype + "_targets" in config[model]
             in_work = filetype + "_in_work" in config[model]
@@ -126,7 +126,7 @@ def rename_sources_to_targets(config):
 
 def complete_targets(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if filetype + "_sources" in config[model]:
                 for category in config[model][filetype + "_sources"]:
                     if not category in config[model][filetype + "_targets"]:
@@ -160,7 +160,7 @@ def complete_sources(config):
     logger.debug("::: Complete sources")
     helpers.print_datetime(config)
     for filetype in config["general"]["out_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if filetype + "_sources" in config[model]:
                 for category in config[model][filetype + "_sources"]:
                     if not config[model][filetype + "_sources"][category].startswith(
@@ -183,13 +183,13 @@ def reuse_sources(config):
 
     # Put together all the possible reusable file types
     all_reusable_filetypes = []
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in config["general"]["valid_model_names"] + ["general", "dask"]:
         all_reusable_filetypes = list(
             set(all_reusable_filetypes + config[model].get("reusable_filetypes", []))
         )
     # Loop through all the reusable file types
     for filetype in all_reusable_filetypes:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             # Get the model-specific reusable_filetypes, if not existing, get the
             # general ones
             model_reusable_filetypes = config[model].get(
@@ -219,7 +219,7 @@ def choose_needed_files(config):
     # (if exists), and then remove filetype_files
 
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if not filetype + "_files" in config[model]:
                 continue
 
@@ -257,7 +257,7 @@ def choose_needed_files(config):
 
 def globbing(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if filetype + "_sources" in config[model]:
                 # oldconf = copy.deepcopy(config[model])
                 for descr, filename in copy.deepcopy(
@@ -301,7 +301,7 @@ def globbing(config):
 
 def target_subfolders(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if filetype + "_targets" in config[model]:
                 for descr, filename in config[model][filetype + "_targets"].items():
                     # * only in targets if denotes subfolder
@@ -451,7 +451,7 @@ def complete_restart_in(config):
 
 def assemble_intermediate_files_and_finalize_targets(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if filetype + "_targets" in config[model]:
                 if not filetype + "_intermediate" in config[model]:
                     config[model][filetype + "_intermediate"] = {}
@@ -508,7 +508,7 @@ def find_valid_year(config, year):
 
 def replace_year_placeholder(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if filetype + "_targets" in config[model]:
                 if filetype + "_additional_information" in config[model]:
                     for file_category in config[model][
@@ -793,7 +793,7 @@ def log_used_files(config):
     )
 
     with open(flist_file, "w") as flist:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             flist.write(
                 f"These files are used for\n"
                 f"experiment {config['general']['expid']}\n"
@@ -887,7 +887,7 @@ def compute_and_log_file_checksums(config):
     files_not_handled_by_filelists = copy.deepcopy(checksums)
 
     # Loop over all components, file types, and files
-    for component in config["general"]["valid_model_names"] + ["general"]:
+    for component in config["general"]["valid_model_names"] + ["general", "dask"]:
         component_files = {}
         for filetype in filetypes:
             component_config = config[component]
@@ -989,7 +989,7 @@ def check_for_unknown_files(config):
     ]
 
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             if filetype + "_sources" in config[model]:
                 known_files += list(config[model][filetype + "_sources"].values())
                 known_files += list(config[model][filetype + "_targets"].values())
@@ -1117,9 +1117,36 @@ def copy_files(config, filetypes, source, target):
         dask_cluster_initialized = os.path.isfile(dask_scheduler_json)
         if parallel_file_movements == "dask" and dask_cluster_initialized and node != "login_nodes":
             # Dask should only run on compute nodes
-            client = daskd.Client(scheduler_file=dask_scheduler_json)
-            logger.info("Using dask for parallel file movements")
-        else:
+            try:
+                client = daskd.Client(scheduler_file=dask_scheduler_json)
+                n_workers = len(client.scheduler_info()["workers"])
+            except Exception:
+                n_workers = 0
+
+            try:
+                client.submit(test_dask).result()
+                dask_custer_running = True
+            except Exception:
+                dask_custer_running = False
+                logger.warning(
+                    "Dask client could not submit jobs to the cluster. "
+                    "Falling back to threads parallelization."
+                )
+
+            if n_workers > 0 and dask_custer_running:
+                logger.info(
+                    f"Using dask for parallel file movements with {n_workers} workers"
+                )
+            else:
+                parallel_file_movements = "threads"
+                logger.warning(
+                    "Dask workers not available. Defaulting to threads parallelization "
+                    "in one single node"
+                )
+        elif parallel_file_movements == "dask":
+            parallel_file_movements = "threads"
+
+        if parallel_file_movements == "threads":
             client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
             logger.info("Using threads for parallel file movements")
 
@@ -1141,14 +1168,11 @@ def copy_files(config, filetypes, source, target):
     elif target == "work":
         text_target = "targets"
 
-    # TODO: Add this to a choose for parallel
-    serializable_config = copy.deepcopy(config)
-    serializable_config = esm_parser.provenance.clean_provenance(serializable_config)
     # Loop through the different filetypes (input, forcing, restart_in/out, ...)
     files_to_be_moved = []
     for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
         # Loop through the components
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             # If there is a source of this file type in the model
             if filetype + "_" + text_source in config[model]:
                 this_text_target = text_target
@@ -1223,9 +1247,10 @@ def copy_files(config, filetypes, source, target):
                             in ["threads", "dask"]
                         ):
                             # Parallel
+                            logger.info("DASK!!!!")
                             future = client.submit(
                                 movement_method,
-                                serializable_config,
+                                {}, # do not pass a config to avoid serialization issues. Serialization is possible but even after that the config is too big to be sent to many workers efficiently
                                 file_source,
                                 file_target,
                             )
@@ -1238,9 +1263,18 @@ def copy_files(config, filetypes, source, target):
                                 file_target,
                             )
 
+    #import ipdb; ipdb.set_trace()
     for (file_source, file_target), movement_output in futures.items():
         if config["general"].get("parallel_file_movements", False):
-            result = movement_output.result()
+            try:
+                result = movement_output.result()
+            # If something goes wrong in the parallel execution, try again serially
+            except Exception:
+                logger.debug(
+                    f"Parallel movement of file {file_source} to {file_target} "
+                    "failed. Trying again serially.",
+                )
+                result = movement_method(config, file_source, file_target)
         else:
             result = movement_output
         if result:
@@ -1260,6 +1294,8 @@ def copy_files(config, filetypes, source, target):
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
     return config
 
+def test_dask():
+    return True
 
 def avoid_overwriting(config, source, target):
     """
@@ -1381,7 +1417,7 @@ def filter_allowed_missing_files(config):
     for missing_file_source, missing_file_target in missing_files.items():
         missing_file_source_fname = pathlib.Path(missing_file_source).name
         missing_file_target_fname = pathlib.Path(missing_file_target).name
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in config["general"]["valid_model_names"] + ["general", "dask"]:
             for allowed_missing_pattern in config[model].get(
                 "allowed_missing_files", []
             ):
@@ -1465,7 +1501,7 @@ def _check_fesom_missing_files(config):
 
 
 def create_missing_file_movement_entries(config):
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in config["general"]["valid_model_names"] + ["general", "dask"]:
         if not "file_movements" in config[model]:
             config[model]["file_movements"] = {}
         for filetype in config["general"]["all_model_filetypes"] + [
@@ -1505,10 +1541,7 @@ def movement(func):
                 func(source_path, target_path)
             return True
         except IOError:
-            #logger.error(
-            #    f"Could not execute movement ({func.__name__}) {file_source} to {file_target} for unknown reasons.",
-            #)
-            helpers.print_datetime(config)
+            #helpers.print_datetime(config)
             return False
 
     return inner
@@ -1545,7 +1578,7 @@ def complete_all_file_movements(config):
 
     config = create_missing_file_movement_entries(config)
 
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in config["general"]["valid_model_names"] + ["general", "dask"]:
         mconfig = config[model]
         if "file_movements" in mconfig:
             for filetype in config["general"]["all_model_filetypes"] + [
@@ -1568,7 +1601,7 @@ def complete_all_file_movements(config):
                             )
                         del mconfig["file_movements"][filetype]["all_directions"]
 
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in config["general"]["valid_model_names"] + ["general", "dask"]:
         mconfig = config[model]
         if "file_movements" in mconfig:
             # Complete movements with general

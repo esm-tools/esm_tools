@@ -56,10 +56,10 @@ fesom:
         branch: "main"
         namelist_dir: "${model_dir}/config/"
 
-      "2.6-r3.1":
+      "2.6-recom-3.1":
         branch: "f2.6r3.1"
         with_recom: true
-        destination: "fesom-2.6-r3.1"
+        destination: "fesom-2.6-recom-3.1"
         namelist_dir: "${model_dir}/config/"
       
     destination: "fesom-2.6"

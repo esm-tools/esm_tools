@@ -25,10 +25,10 @@ fesom:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
     choose_version:
-      "2.7-recom3.1":
-        branch: "fesom2.7-recom3.1"
+      "2.7-recom-3.1":
+        branch: "fesom2.7-recom-3.1"
         with_recom: true
-        destination: "fesom-2.7-recom3.1"
+        destination: "fesom-2.7-recom-3.1"
         namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.7"

@@ -73,6 +73,16 @@ lpj_guess:
     # Some commonly used variables in other ESM-Tools components (but optional)
     input_dir: ${pool_dir}/lpj-guess/
 
+    LCMIP7: true
+
+    # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
+    choose_LCMIP7:
+        false:
+            ndep_cmip_dir: ""
+        true:
+            #ndep_cmip_dir: "${input_dir}/ndep/${resolution}/"
+            ndep_cmip_dir: "/work/ab0995/a270270/ndep/${resolution}/"
+          
     # Define files to ignore
     ignore_files:
         outputs: outputs
@@ -177,7 +187,6 @@ lpj_guess:
             res_number: 319
             res_number_tl: "319_4"
             truncation: "TCO"
-            #maxgrid: 117804
             maxgrid: 119446
             nx_atmo: 421120
         TCO399:

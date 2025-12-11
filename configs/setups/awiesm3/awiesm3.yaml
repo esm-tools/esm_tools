@@ -469,12 +469,14 @@ lpj_guess:
 
 
     forcing_sources:
-        soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        CO2:
-            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        "CO2_[[proc_list-->PROC_NUM]]":
-            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        # TEMPORARY FIX: Using fixed slt files with correct variable name (var43)
+        # Original path (uncomment when input dir is fixed):
+        #soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+        soil_layer_type: /work/ab0995/a270270/slt/slt_${mygrid}.nc
+        CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        #"soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": /work/ab0995/a270270/slt/slt_${mygrid}.nc
+        "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
 
     forcing_in_work:
         soil_layer_type: slt_${mygrid}.nc

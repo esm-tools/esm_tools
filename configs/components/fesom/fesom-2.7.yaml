@@ -2,8 +2,8 @@
 #
 fesom:
     model: fesom
-    branch: "2.6"
-    version: "2.6"
+    branch: "2.7"
+    version: "2.7"
     type: ocean
 
     #comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON ${recom_comp_flag} -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all` # todo: ${recom_comp_flag} does not work
@@ -25,44 +25,13 @@ fesom:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
     choose_version:
-      "2.6":
-        branch: "2.6.10"
-
-      "2.6-paleodyn":
-        branch: "2.6.7"
-        wiso_code: true
-        icb_code: true
-        namelist_dir: "${model_dir}/config/"
-
-      "2.6.5":
-        branch: "2.6.5"
-
-      "2.6.7":
-        branch: "2.6.7"
-
-      "2.6.8":
-        branch: "2.6.8"
-
-      "2.6.9":
-        branch: "2.6.9"
-
-      "2.6.10":
-        branch: "2.6.10"
-
-      "2.6.11":
-        branch: "2.6.11"
-        
-      "2.6-main":
-        branch: "main"
-        namelist_dir: "${model_dir}/config/"
-
-      "2.6-r3.1":
-        branch: "f2.6r3.1"
+      "2.7-recom3.1":
+        branch: "fesom2.7-recom3.1"
         with_recom: true
-        destination: "fesom-2.6-r3.1"
+        destination: "fesom-2.7-recom3.1"
         namelist_dir: "${model_dir}/config/"
-      
-    destination: "fesom-2.6"
+
+    destination: "fesom-2.7"
     install_bins: bin/fesom.x
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -75,8 +44,8 @@ fesom:
 
     tar_binary_restarts: True
 
-    time_step: 1800
     resolution: CORE2
+    time_step: 2400
 
     comp_executable: fesom.x
     executable: fesom
@@ -111,7 +80,7 @@ fesom:
 
     steps_per_day: "$(( 86400 / ${time_step} ))"
 
-    asforcing: JRA55
+    asforcing: JRA55 # defined in fesom.forcing.yaml
 
     namelists:
             - namelist.config

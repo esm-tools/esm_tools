@@ -152,5 +152,5 @@ dask:
         srun --ntasks=1 --nodes=1 --cpus-per-task=1 dask scheduler --scheduler-file ${dask.scheduler_json} --interface ib0
         "
     init_workers_cmd: "
-        srun --ntasks=60 --cpus-per-task=1 --nodes=@nodes@ --distribution=cyclic:cyclic ~/.conda/envs/esm_tools/bin/dask worker --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ib0
+        srun --ntasks=$(( 32*4 )) --cpus-per-task=1 --nodes=@nodes@ --distribution=cyclic:cyclic:cyclic ~/.conda/envs/esm_tools/bin/dask worker --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ib0
         "

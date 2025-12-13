@@ -62,7 +62,6 @@ core:
                         - "_write_date_file"
                         - "signal_tidy_completion"
                         - "throw_away_some_infiles"
-                        - "initialize_dask_cluster"
 
                 observe:
                         - "init_observe_logs"
@@ -110,4 +109,7 @@ core:
 
                 workflow:
                         - "assemble_workflow"
+
+                dask:
+                        - "initialize_dask_cluster"
 

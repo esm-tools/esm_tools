@@ -6,6 +6,7 @@ __version__ = "6.59.2"
 
 from .batch_system import *
 from .chunky_parts import *
+from .dask import *
 from .database import *
 from .database_actions import *
 from .dataprocess import *

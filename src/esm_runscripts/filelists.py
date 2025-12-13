@@ -8,6 +8,7 @@ import pathlib
 import re
 import shutil
 import sys
+import time
 
 from dask import distributed as daskd
 import f90nml
@@ -1084,6 +1085,7 @@ def copy_files(config, filetypes, source, target):
         ``work``.
     """
     logger.debug("\n::: Copying files")
+    logger.debug(f"{time.ctime()} | 1. Copying files started")
     helpers.print_datetime(config)
 
     parallel_file_movements = config["general"].get("parallel_file_movements", False)
@@ -1097,6 +1099,7 @@ def copy_files(config, filetypes, source, target):
     config["general"]["files_target"] = target
 
     # Initialization for parallelization with futures
+    logger.debug(f"{time.ctime()} | 2. Parallel file movements preparation and testing")
     futures = {}
     if parallel_file_movements in ["threads", "dask"]:
         number_of_threads = (
@@ -1106,6 +1109,7 @@ def copy_files(config, filetypes, source, target):
             .get("cores_per_node", 2)
         )
 
+        logger.debug(f"{time.ctime()} | 2.1. Determining number of threads")
         # For login nodes take only 1/3 of the possible threads
         machine, node = esm_parser.determine_computer_and_node_from_hostname()
         if node == "login_nodes":
@@ -1114,17 +1118,20 @@ def copy_files(config, filetypes, source, target):
             number_of_threads = number_of_threads - 1
 
         # Initialize client
+        logger.debug(f"{time.ctime()} | 2.2. Check dask scheduler file")
         dask_cluster_initialized = os.path.isfile(dask_scheduler_json)
         if parallel_file_movements == "dask" and dask_cluster_initialized and node != "login_nodes":
             # Dask should only run on compute nodes
             try:
+                logger.debug(f"{time.ctime()} | 2.3. Initialize dask client")
                 client = daskd.Client(scheduler_file=dask_scheduler_json)
                 n_workers = len(client.scheduler_info()["workers"])
             except Exception:
                 n_workers = 0
 
             try:
-                client.submit(test_dask).result()
+                logger.debug(f"{time.ctime()} | 2.4. Submit dask test job")
+                client.submit(test_dask)
                 dask_custer_running = True
             except Exception:
                 dask_custer_running = False
@@ -1133,6 +1140,7 @@ def copy_files(config, filetypes, source, target):
                     "Falling back to threads parallelization."
                 )
 
+            logger.debug(f"{time.ctime()} | 2.5. Decide parallelization method")
             if n_workers > 0 and dask_custer_running:
                 logger.info(
                     f"Using dask for parallel file movements with {n_workers} workers"
@@ -1144,9 +1152,11 @@ def copy_files(config, filetypes, source, target):
                     "in one single node"
                 )
         elif parallel_file_movements == "dask":
+            logger.debug(f"{time.ctime()} | 2.6. Should not be reached")
             parallel_file_movements = "threads"
 
         if parallel_file_movements == "threads":
+            logger.debug(f"{time.ctime()} | 2.7. Should not be reached")
             client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
             logger.info("Using threads for parallel file movements")
 
@@ -1168,6 +1178,7 @@ def copy_files(config, filetypes, source, target):
     elif target == "work":
         text_target = "targets"
 
+    logger.debug(f"{time.ctime()} | 3. Submission loop")
     # Loop through the different filetypes (input, forcing, restart_in/out, ...)
     files_to_be_moved = []
     for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
@@ -1263,6 +1274,7 @@ def copy_files(config, filetypes, source, target):
                                 file_target,
                             )
 
+    logger.debug(f"{time.ctime()} | 4. Wait wall for results")
     #import ipdb; ipdb.set_trace()
     for (file_source, file_target), movement_output in futures.items():
         if config["general"].get("parallel_file_movements", False):
@@ -1282,6 +1294,7 @@ def copy_files(config, filetypes, source, target):
         else:
             missing_files.update({file_target: file_source})
 
+    logger.debug(f"{time.ctime()} | 5. Missing files")
     if missing_files:
         if not "files_missing_when_preparing_run" in config["general"]:
             config["general"]["files_missing_when_preparing_run"] = {}
@@ -1292,6 +1305,7 @@ def copy_files(config, filetypes, source, target):
                 logger.warning(f"- missing target: {missing_file}")
                 helpers.print_datetime(config)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
+    logger.debug(f"{time.ctime()} | 6. End")
     return config
 
 def test_dask():

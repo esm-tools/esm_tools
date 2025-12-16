@@ -437,28 +437,6 @@ lpj_guess:
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1
-    
-    # CMIP CO2 forcing version: 6 (default) or 7
-    cmip_co2_version: 6
-    
-    # CO2 file paths for different CMIP versions
-    co2_file_cmip6: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-    co2_file_cmip7: /work/ab0246/a270092/input/oifs-48r1/cmip7-data/co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
-    co2_workname_cmip6: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-    co2_workname_cmip7: co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
-    
-    # Select CO2 file based on cmip_co2_version
-    choose_cmip_co2_version:
-        "6":
-            co2_source_file: ${co2_file_cmip6}
-            co2_work_file: ${co2_workname_cmip6}
-        "7":
-            co2_source_file: ${co2_file_cmip7}
-            co2_work_file: ${co2_workname_cmip7}
-        "*":
-            co2_source_file: ${co2_file_cmip6}
-            co2_work_file: ${co2_workname_cmip6}
-
 
     config_sources:
         tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
@@ -498,16 +476,16 @@ lpj_guess:
         # Original path (uncomment when input dir is fixed):
         #soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
         soil_layer_type: /work/ab0995/a270270/slt/slt_${mygrid}.nc
-        CO2: ${co2_source_file}
+        CO2: ${lpj_guess.co2_source_file}
         #"soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": /work/ab0995/a270270/slt/slt_${mygrid}.nc
-        "CO2_[[proc_list-->PROC_NUM]]": ${co2_source_file}
+        "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
 
     forcing_in_work:
         soil_layer_type: slt_${mygrid}.nc
-        CO2: ${co2_work_file}
+        CO2: ${lpj_guess.co2_work_file}
         "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
-        "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/${co2_work_file}
+        "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/${lpj_guess.co2_work_file}
 
     # Create empty folders for landuse and fire in work
     create_folders:

@@ -42,7 +42,7 @@ param "file_ndep"     (str "") ! NB! MUST be cru_ncep version of this file
 !param "ndep_cmip_dir" (str "D:/DATA/J/MODELDATA/ndep/cmip6/") ! Windows PC
 !param "ndep_cmip_dir" (str "/proj/rescue/users/sm_paumi/osm_output/HST1/ndep/") ! Tetralith
 ! param "ndep_cmip_dir" (str "../ndep/") 
-param "ndep_cmip_dir" (str "")
+param "ndep_cmip_dir" (str "{{lpj_guess.ndep_cmip_dir}}")
 ! if (param["ndep_cmip_dir"].str != "") { // PaulM - ECE4 hack - option to run without ndep
 ! PaulM - ECE4 hack - edited 
 

@@ -2,11 +2,12 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "develop"
-    account: "ab00246"
+    account: "ab0246"
     compute_time: "00:10:00"
-    initial_date: "1900-01-01"
-    final_date: "1900-01-04"
-    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    initial_date: "1960-01-01"
+    final_date: "1960-01-05"
+    #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-v3.4/"
     nday: 1
     nmonth: 0
     nyear: 0
@@ -25,7 +26,7 @@ fesom:
     restart_first: 1
     lresume: false
     time_step: 1800
-    nproc: 128 #originally 512 but worked with 1152
+    nproc: 256 #originally 512 but worked with 1152
     omp_num_threads: 1 # originally 4 but worked with 1
     tar_binary_restarts: true
 
@@ -33,6 +34,9 @@ lpj_guess:
     lresume: false 
     nproc: 8 # originally 16
     omp_num_threads: 8
+    co_coupling: 0
+    resolution: "TL255"
+    mygrid: ${resolution}
 
 oifs:
     resolution: TL255
@@ -42,13 +46,25 @@ oifs:
     wam: true
     lresume: false
     time_step: 2400
-    nproc: 256
+    nproc: 128 
     omp_num_threads: 1
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                NCMIPFIXYR: 1850
+            NAERAD:
+                #NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+                RCL_OVERLAPLIQICE: 0.1
+            NAMGWWMS:
+                GGAUSSB: -0.6
 
 oasis3mct:
-    use_lucia: false #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster
+    use_lucia: true #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster
     lresume: true # Set to false to generate the rst files for first leg
     time_step: 7200
     norestart: false #Do i restart from vegin or not?

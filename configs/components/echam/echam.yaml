@@ -10,6 +10,7 @@ echam:
             - 6.3.05p2
             - 6.3.05p2-foci
             - 6.3.05p2-moz
+            - 6.3.05p2-moz_mct2
             - 6.3.05p2-foci_autotools
             - 6.3.05p2-foci_lmu
             - 6.3.05p2-foci_oasismct4
@@ -83,9 +84,15 @@ echam:
                   ./config/createMakefiles.pl; autoreconf -i --force; unset FCFLAGS; unset FFLAGS; 
                   ./configure --prefix=$(pwd)/../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../oasis/INSTALL_OASIS.ESMTOOLS/ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
                   make -j `nproc --all`; make install -j `nproc --all`;
-                  #comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps;
-                  #./configure --prefix=$(pwd)/../ --with-coupler=oasis3-mct-nemo --disable-mh-file --enable-cdi-pio --disable-shared CFLAGS="-O2 -DgFortran -std=gnu99" FCFLAGS="-DHAMMOZ -DQBO -I. -O3 -traceback -fp-model source -fast-transcendentals -no-prec-sqrt -no-prec-div -xHost" FFLAGS="-I. -traceback -O3 -xHost -DTREAT_OVERLAY -Duse_netCDF -Duse_comm_MPI1" LAPACK_LIB='-mkl=sequential' OASIS3MCTROOT=$(pwd)/../ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support" ;
-                  #make -j `nproc --all`; make install -j `nproc --all`;
+                install_bins: ''
+              6.3.05p2-moz_mct2:
+                branch: master 
+                git-repository: https://git.geomar.de/foci/src/echam_hammoz.git
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
+                comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
+                  ./config/createMakefiles.pl; autoreconf -i --force; unset FCFLAGS; unset FFLAGS; 
+                  ./configure --prefix=$(pwd)/../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
+                  make -j `nproc --all`; make install -j `nproc --all`;
                 install_bins: ''
               6.3.05p2-foci_lmu:
                 git-repository: https://gitlab.dkrz.de/lmu-lus/mpiesm/hbp_mpiesm-landveg.git 
@@ -110,12 +117,6 @@ echam:
               6.3.05p2-foci_oasismct4:
                 branch: esm-tools-oasis3mct4
                 git-repository: https://git.geomar.de/foci/src/echam.git
-                clean_command: cd src/echam; rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
-                comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
-                  ./config/createMakefiles.pl; autoreconf -i --force; unset FCFLAGS; unset FFLAGS; 
-                  ./configure --prefix=$(pwd)/../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../oasis/INSTALL_OASIS.ESMTOOLS/ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
-                  make -j `nproc --all`; make install -j `nproc --all`;
-                install_bins: ''
               6.3.05p2-wiso:
                 branch: "wiso"
                 clean_command: rm -rf src/echam/bin; rm -rf bin; make clean
@@ -302,7 +303,18 @@ echam:
                     dataset: r0008
                     nprocrad: "remove_from_namelist"
                     lrad_async: "remove_from_namelist"
+            6.3.05p2-foci_autotools:
+                    repo_tag: not_set
+                    dataset: r0008
+                    nprocrad: "remove_from_namelist"
+                    lrad_async: "remove_from_namelist"
             6.3.05p2-moz:
+                    repo_tag: not_set
+                    dataset: r0008
+                    nprocrad: "remove_from_namelist"
+                    lrad_async: "remove_from_namelist"
+                    use_moz: true
+            6.3.05p2-moz_mct2:
                     repo_tag: not_set
                     dataset: r0008
                     nprocrad: "remove_from_namelist"

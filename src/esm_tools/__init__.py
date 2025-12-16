@@ -28,6 +28,7 @@ __version__ = "6.59.3"
 import functools
 import inspect
 import operator
+import re
 import os
 import pathlib
 import shutil
@@ -249,7 +250,29 @@ def _get_real_dir_from_pth_file(subfolder):
             logger.debug(f"Found package data at: {resolved_path}")
             return resolved_path
 
-        # Fallback: if relative_path looks like an absolute path, try it directly
+        # Fallback 1: Try translating concurrent directory (CI environments like Jacamar)
+        # The egg-link might have paths like /builds/project/000/... but we're in /001/
+        # Try to extract relative path and use current working directory
+        concurrent_dir_pattern = r'/\d{3}/(.+)$'  # Matches /000/, /001/, etc.
+        match = re.search(concurrent_dir_pattern, source_dir)
+        if match:
+            relative_part = match.group(1)
+            cwd = os.getcwd()
+            # Try to find the concurrent dir pattern in cwd and get base path
+            cwd_match = re.search(r'(.*/\d{3}/)', cwd)
+            if cwd_match:
+                translated_source = pathlib.Path(cwd_match.group(1)) / relative_part
+                if len(egg_link_lines) >= 2:
+                    translated_path = translated_source / relative_path / subfolder
+                else:
+                    translated_path = translated_source / subfolder
+                translated_resolved = translated_path.resolve()
+                logger.debug(f"Trying translated path: {translated_resolved}")
+                if translated_resolved.exists():
+                    logger.debug(f"Found package data at translated path: {translated_resolved}")
+                    return translated_resolved
+
+        # Fallback 2: if relative_path looks like an absolute path, try it directly
         if len(egg_link_lines) >= 2 and egg_link_lines[1].startswith("/"):
             logger.debug(f"Trying {egg_link_lines[1]} as absolute path")
             fallback_path = (pathlib.Path(egg_link_lines[1]) / subfolder).resolve()

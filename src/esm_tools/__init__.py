@@ -86,73 +86,180 @@ def _transform(nested_list):
     return regular_list
 
 
+def _get_venv_identifier():
+    """
+    Extract a stable identifier for the current virtual environment.
+
+    In CI environments with concurrent job directories (e.g., /builds/project/000/,
+    /builds/project/001/), the full VIRTUAL_ENV path changes between jobs even when
+    using the same cached virtualenv. This function extracts a stable identifier
+    that can be used to match site-packages paths regardless of the varying prefix.
+
+    Configuration:
+        ESM_TOOLS_VENV_IDENTIFIER: If set, use this value directly as the identifier.
+            Example: ".direnv/python-3.9.2" or "venv"
+        ESM_TOOLS_VENV_IDENTIFIER_DEPTH: Number of path components from the end of
+            VIRTUAL_ENV to use as identifier. Default: 2 (e.g., ".direnv/python-3.9.2")
+
+    Returns
+    -------
+    str or None
+        The venv identifier string, or None if VIRTUAL_ENV is not set.
+    """
+    virtual_env_path = os.getenv("VIRTUAL_ENV")
+    if not virtual_env_path:
+        return None
+
+    # Allow explicit override via environment variable
+    explicit_identifier = os.getenv("ESM_TOOLS_VENV_IDENTIFIER")
+    if explicit_identifier:
+        logger.debug(f"Using explicit venv identifier: {explicit_identifier}")
+        return explicit_identifier
+
+    # Extract identifier from the last N components of VIRTUAL_ENV path
+    # Default depth of 2 captures patterns like ".direnv/python-3.9.2" or "venv/lib"
+    try:
+        depth = int(os.getenv("ESM_TOOLS_VENV_IDENTIFIER_DEPTH", "2"))
+    except ValueError:
+        depth = 2
+
+    path_parts = pathlib.Path(virtual_env_path).parts
+    if len(path_parts) >= depth:
+        identifier = str(pathlib.Path(*path_parts[-depth:]))
+    else:
+        # Fall back to just the last component if path is too short
+        identifier = path_parts[-1] if path_parts else None
+
+    logger.debug(f"Derived venv identifier from VIRTUAL_ENV: {identifier}")
+    return identifier
+
+
+def _filter_site_packages_for_venv(all_site_packages):
+    """
+    Filter site-packages directories to only include those belonging to the current venv.
+
+    When running in a virtual environment, we want to search only the venv's
+    site-packages, not the system site-packages. This is especially important in
+    CI environments where cached venv paths may have a different prefix than the
+    current working directory.
+
+    Parameters
+    ----------
+    all_site_packages : list of str
+        All discovered site-packages directories.
+
+    Returns
+    -------
+    list of str
+        Filtered list containing only venv site-packages, or the original list
+        if no venv is active or no matches found.
+    """
+    venv_identifier = _get_venv_identifier()
+    if not venv_identifier:
+        logger.debug("No virtual environment detected, using all site-packages")
+        return all_site_packages
+
+    logger.debug(f"Filtering site-packages for venv identifier: {venv_identifier}")
+
+    # Filter to site-packages paths that contain the venv identifier
+    filtered = [
+        site_dir for site_dir in all_site_packages
+        if venv_identifier in site_dir
+    ]
+
+    if filtered:
+        logger.debug(f"Filtered site-packages: {filtered}")
+        return filtered
+
+    # No matches found - this shouldn't happen in normal usage
+    logger.warning(
+        f"No site-packages matched venv identifier '{venv_identifier}'. "
+        f"Searched: {all_site_packages}. Falling back to all site-packages."
+    )
+    return all_site_packages
+
+
 @caller_wrapper
 def _get_real_dir_from_pth_file(subfolder):
+    """
+    Resolve the actual filesystem path for package data in an editable install.
+
+    When esm_tools is installed in editable/develop mode (pip install -e),
+    package data like configs and namelists are not copied to site-packages.
+    Instead, an .egg-link file points to the source directory. This function
+    reads that link and resolves the actual path to the requested subfolder.
+
+    Parameters
+    ----------
+    subfolder : str
+        The package data subfolder to locate (e.g., 'configs', 'namelists').
+
+    Returns
+    -------
+    pathlib.Path
+        Resolved absolute path to the subfolder.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the subfolder cannot be located in any site-packages directory.
+    """
     logger.debug(f"Trying to resolve: {subfolder}")
     if subfolder.startswith("/"):
-        logger.warning("Subfolder is strange!")
-        logger.warning(subfolder)
-    site_packages_dirs = functools.reduce(
+        logger.warning(f"Subfolder '{subfolder}' starts with '/' - this is unusual")
+
+    # Gather all site-packages directories
+    all_site_packages = functools.reduce(
         operator.iconcat,
         _transform([site.getusersitepackages(), site.getsitepackages()]),
         [],
     )
-    logger.debug(site_packages_dirs)
+    logger.debug(f"All site-packages: {all_site_packages}")
 
-    # Check if the user is running with direnv and removes all other sites
-    direnv = os.getenv("VIRTUAL_ENV")
-    if direnv:
-        logger.debug(f"User running with direnv, removing other sites")
-        site_package_dirs_new = []
-        for site_package_dir in site_packages_dirs:
-            if direnv in site_package_dir:
-                site_package_dirs_new.append(site_package_dir)
-        site_packages_dirs = site_package_dirs_new
-        logger.debug(site_packages_dirs)
+    # Filter to venv site-packages if running in a virtual environment
+    site_packages_to_search = _filter_site_packages_for_venv(all_site_packages)
 
-    for site_package_dir in site_packages_dirs:
-        logger.debug(f"Working on {site_package_dir}")
-        # Read the pth file:
-        if pathlib.Path(f"{site_package_dir}/esm-tools.egg-link").exists():
-            with open(f"{site_package_dir}/esm-tools.egg-link", "r") as f:
-                paths = [p.strip() for p in f.readlines()]
-            # NOTE(PG): a pathlib.Path has a method resolve, which removes
-            # things like "foo/baz/../bar" in the path to "foo/bar"
-            logger.debug(f"paths={paths}")
-            logger.debug(f"subfolder={subfolder}")
-            actual_package_data_dir = pathlib.Path(
-                f"{paths[0]}/{paths[1]}/{subfolder}/"
-            )
-            logger.debug("Before resolve:")
-            logger.debug(actual_package_data_dir)
-            logger.debug("After resolve:")
-            actual_package_data_dir = actual_package_data_dir.resolve()
-            logger.debug(actual_package_data_dir)
-            try:
-                assert actual_package_data_dir.exists()
-            # NOTE(PG): there is probably a better way of doing that than with assert.
-            except AssertionError as e:
-                logger.debug(
-                    f"Assumed path {actual_package_data_dir} did not exist! We tried:"
-                )
-                logger.debug(f"paths[0]={paths[0]}")
-                logger.debug(f"paths[1]={paths[1]}")
-                if paths[1].startswith("/"):
-                    logger.debug(
-                        f"{paths[1]} starts with a slash, assuming absolute path!"
-                    )
-                    actual_package_data_dir = pathlib.Path(
-                        f"{paths[1]}/{subfolder}/"
-                    ).resolve()
-                    try:
-                        assert actual_package_data_dir.exists()
-                    except AssertionError as e:
-                        logger.error("Could not determine path!")
-                        break  # Break out of the for loop
-            logger.debug(f"actual_package_data_dir={actual_package_data_dir}")
-            return actual_package_data_dir
+    # Search for esm-tools.egg-link in each site-packages directory
+    for site_packages_dir in site_packages_to_search:
+        logger.debug(f"Searching in: {site_packages_dir}")
+
+        egg_link_path = pathlib.Path(site_packages_dir) / "esm-tools.egg-link"
+        if not egg_link_path.exists():
+            continue
+
+        # Parse the .egg-link file (contains source path and optional relative path)
+        with open(egg_link_path, "r") as f:
+            egg_link_lines = [line.strip() for line in f.readlines()]
+
+        logger.debug(f"egg-link contents: {egg_link_lines}")
+
+        # Try to construct the package data path
+        if len(egg_link_lines) >= 2:
+            source_dir = egg_link_lines[0]
+            relative_path = egg_link_lines[1]
+            candidate_path = pathlib.Path(source_dir) / relative_path / subfolder
+        else:
+            source_dir = egg_link_lines[0]
+            candidate_path = pathlib.Path(source_dir) / subfolder
+
+        resolved_path = candidate_path.resolve()
+        logger.debug(f"Candidate path: {candidate_path} -> resolved: {resolved_path}")
+
+        if resolved_path.exists():
+            logger.debug(f"Found package data at: {resolved_path}")
+            return resolved_path
+
+        # Fallback: if relative_path looks like an absolute path, try it directly
+        if len(egg_link_lines) >= 2 and egg_link_lines[1].startswith("/"):
+            logger.debug(f"Trying {egg_link_lines[1]} as absolute path")
+            fallback_path = (pathlib.Path(egg_link_lines[1]) / subfolder).resolve()
+            if fallback_path.exists():
+                logger.debug(f"Found package data at fallback: {fallback_path}")
+                return fallback_path
+
     raise FileNotFoundError(
-        f"Could not determine where {subfolder}'s path is inside the esm-tools installation! These were searched for info: {site_packages_dirs}"
+        f"Could not locate '{subfolder}' in esm-tools installation. "
+        f"Searched site-packages: {site_packages_to_search}"
     )
 
 

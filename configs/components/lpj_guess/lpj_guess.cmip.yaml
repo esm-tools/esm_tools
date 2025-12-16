@@ -1,0 +1,30 @@
+# LPJ-GUESS CMIP Configuration
+#
+# This file provides CMIP-specific defaults for LPJ-GUESS.
+# Set lpj_guess.mip to "cmip6" or "cmip7" to select the appropriate defaults.
+# Individual settings can still be overridden in the runscript.
+
+lpj_guess:
+    # Default MIP version
+    mip: "cmip6"
+
+    # CO2 forcing file paths
+    co2_file_cmip6: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+    co2_file_cmip7: ${lpj_guess.input_dir}/cmip7_forcing/co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
+    co2_workname_cmip6: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+    co2_workname_cmip7: co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
+
+    choose_mip:
+        "cmip6":
+            # CMIP6 defaults
+            cmip_co2_version: 6
+            co2_source_file: ${co2_file_cmip6}
+            co2_work_file: ${co2_workname_cmip6}
+            ndep_cmip_dir: ""
+
+        "cmip7":
+            # CMIP7 defaults
+            cmip_co2_version: 7
+            co2_source_file: ${co2_file_cmip7}
+            co2_work_file: ${co2_workname_cmip7}
+            ndep_cmip_dir: "../ndep/"

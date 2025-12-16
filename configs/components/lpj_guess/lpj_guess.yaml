@@ -6,6 +6,9 @@
 # For more information about the ESM-Tools feature variables available, please consult:
 # https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
 
+further_reading:
+    - configs/components/lpj_guess/lpj_guess.cmip.yaml
+
 lpj_guess:
     model: lpj_guess
     version: 4.1.2
@@ -73,17 +76,9 @@ lpj_guess:
     # Some commonly used variables in other ESM-Tools components (but optional)
     input_dir: ${pool_dir}/lpj-guess/
 
-    LCMIP7: true
-
     # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
     ndep_input_dir: ${input_dir}/ndep/${resolution}/
 
-    choose_LCMIP7:
-        false:
-            ndep_cmip_dir: ""
-        true:
-            ndep_cmip_dir: "../ndep/"
-          
     # Define files to ignore
     ignore_files:
         outputs: outputs
@@ -133,18 +128,24 @@ lpj_guess:
     restart_out_sources:
         state: lpjg_state_${lpjg_end_state}/*
 
+    # Soil type file
+    slt_dir: ${input_dir}/slt/
+
     # N deposition forcing files - link from input to work/ndep with renamed filenames
     forcing_files:
+        slt: slt
         drynhx: drynhx
         drynoy: drynoy
         wetnhx: wetnhx
         wetnoy: wetnoy
     forcing_sources:
+        slt: ${slt_dir}/slt_${resolution}.nc
         drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
         drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
         wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
     forcing_in_work:
+        slt: slt_${resolution}.nc
         drynhx: ndep/drynhx2.nc
         drynoy: ndep/drynoy2.nc
         wetnhx: ndep/wetnhx2.nc

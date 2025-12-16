@@ -12,7 +12,7 @@ general:
    homedir: !ENV ${HOME}
 
    # operational settings: yearly restarts
-   compute_time: "02:15:00"
+   compute_time: "01:15:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    final_date: "2014-01-01T00:00:00"         # Final date of the experiment
    nmonth: 12
@@ -26,7 +26,9 @@ general:
    postprocessing: True
    # machine specific setup 
    account: shk00060
-   base_dir: ${homedir}/esm/esm-experiments/
+   # uses workspaces on glogin, see
+   # https://git.geomar.de/foci/doc/foci-doc/-/blob/master/README.md?ref_type=heads#q-how-do-i-use-the-workspaces-on-nhr-goettingen
+   base_dir: ${homedir}/esm/esm-experiments-mdc/
 
    lresume: True
    ini_parent_exp_id: "FOCILMU-SW233"
@@ -170,6 +172,8 @@ echam:
    with_lco2_emis: True
    namelist_changes:
       namelist.echam:
+         runctl:
+            nproma: 32
          parctl:
             iomode: 2
             nprocio: ${nprocio}

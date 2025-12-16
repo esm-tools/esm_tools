@@ -78,6 +78,66 @@
     stream = 'yasso'
     lpost = 0
 /
+&set_stream
+    stream = co2m
+    lrerun = 0
+/
+&set_stream
+    stream = g3bday2 
+    lrerun = 0
+/
+&set_stream
+    stream = g3bday 
+    lrerun = 0
+/
+&set_stream
+    stream = g3bemean 
+    lrerun = 0
+/
+&set_stream
+    stream = g3beinst 
+    lrerun = 0
+/
+&set_stream
+    stream = g3bm 
+    lrerun = 0
+/
+&set_stream
+    stream = glm
+    lrerun = 0
+/
+&set_stream
+    stream = jsbachm
+    lrerun = 0
+/
+&set_stream 
+    stream = landm
+    lrerun = 0
+/
+&set_stream
+    stream = spday2 
+    lrerun = 0
+/
+&set_stream
+    stream = spm 
+    lrerun = 0
+/
+&set_stream
+    stream = surfm
+    lrerun = 0
+/
+&set_stream
+    stream = tracerm
+    lrerun = 0
+/
+&set_stream
+    stream = vegm 
+    lrerun = 0
+/
+&set_stream
+    stream = yassom
+    lrerun = 0
+/
 &radctl
   iaero   = 8
   ighg    = 1
@@ -95,15 +155,75 @@
 &submdiagctl
   vphysc_lpost = .false.
 /
+! for zonal wind we need to save vorticity, divergence and log surface pressure
+! to be able to calculate zonal wind with cdo -after during the postprocessing
+&mvstreamctl
+    filetag = 'spday'
+    source = 'sp', 'g3b'
+    target = '*day2'
+    interval = 1, 'days', 'last', 0
+    variables = 'svo', 'sd', 'lsp', 'geosp'
+/
+&mvstreamctl ! '6h instantaneous output
+    filetag = 'echam6hrpt'
+    source = 'g3b'
+    target = '*einst'
+    interval = 6, 'hours', 'last', 0
+    variables = 'tsurf_na:inst>tsurf_pt=169', 'temp2:inst>temp2_pt=167', 
+                'dew2:inst>dew2_pt=168', 
+                'aclcov_na:inst>aclcov_pt=164',
+                'u10:inst>u10_pt=165', 'v10:inst>v10_pt=166',
+                'wind10_na:inst>wind10_pt=171', 'aps:inst>aps_pt=134'
+/
+! the settings below are required otherwise the variables
+! do not show up in the echam6hrpt output stream, reason unknown
+&set_stream_element
+   stream = g3beinst
+   name = wind10_pt
+   code = 171
+   lpost = 1
+/
+&set_stream_element
+   stream = g3beinst
+   name = tsurf_pt
+   code = 169
+   lpost = 1
+/
+&set_stream_element
+   stream = g3beinst
+   name = aclcov_pt 
+   code = 164
+   lpost = 1
+/
+
+&mvstreamctl
+    filetag = 'echam6hr'
+    source = 'g3b'
+    target = '*emean'
+    interval = 6, 'hours', 'last', 0
+    variables = 'aprc_na>aprc=143', 'aprl_na>aprl=142', 'aprs_na>aprs=144', 
+                'srads_na:mean>srads=176', 'sradsu_na:mean>sradsu=204', 
+                'trads_na:mean>trads=177', 'tradsu_na:mean>tradsu=205', 
+/
 &mvstreamctl ! 'cmip6 echamday'
     filetag = 'echamday'
     source = 'sp', 'gl', 'g3b'
     target = '*day'
     interval = 1, 'days', 'last', 0
-    variables = 'ahfl_na>ahfl=147', 'ahfs_na>ahfs=146', 'aprc_na>aprc=143',
-                'aprl_na>aprl=142', 'aprs_na>aprs=144', 'aps', 'dew2', 'geosp',
-                'q2m', 'rh2m', 'srads_na>srads=176', 'temp2',
-                'tsurf_na>tsurf=169', 'u10', 'v10', 'wind10_na>wind10=171',
+    ! old settings from Shradda Gupta, LMU
+    !variables = 'ahfl_na>ahfl=147', 'ahfs_na>ahfs=146', 'aprc_na>aprc=143',
+    !            'aprl_na>aprl=142', 'aprs_na>aprs=144', 'aps', 'dew2', 'geosp',
+    !            'q2m', 'rh2m', 'temp2', 'srads_na>srads=176', 'sradsu_na>sradsu=204',
+    !            'tsurf_na>tsurf=169', 'u10', 'v10', 'wind10_na>wind10=171',
+    !            'temp2:max>t2max=201', 'temp2:min>t2min=202'
+    variables = 'ahfl_na:mean>ahfl=147', 'ahfs_na:mean>ahfs=146', 
+                'aprc_na:mean>aprc=143', 'aprl_na:mean>aprl=142', 'aprs_na:mean>aprs=144', 
+                'aps:mean>aps=134', 'geosp:mean>geosp=129',
+                'dew2:mean>dew2',
+                'q2m:mean>q2m=54', 'rh2m:mean>rh2m=55', 'temp2:mean>temp2=167',
+                'srads_na:mean>srads=176','sradsu_na:mean>sradsu=204',
+                'u10:mean>u10=165', 'v10:mean>v10=166', 'wind10_na:mean>wind10=171',
+                'tsurf_na:mean>tsurf=169',
                 'temp2:max>t2max=201', 'temp2:min>t2min=202'
 /
 &mvstreamctl ! 'cmip6 co2day'

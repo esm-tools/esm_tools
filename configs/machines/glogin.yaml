@@ -521,6 +521,42 @@ computer:
                         # eccodes
                         #- "load eccodes/2.34.0"
                         - "load cdo/2.2.2-hdf5-1.10"
+                    add_export_vars:
+                        # Run module show on the modules to see how
+                        # each module changes or sets env variables
+                        # Module load usually sets <libname>_INSTALL_PREFIX
+                        # so we just use that to find the libraries and includes.
+                        HDF5_ROOT: $HDF5_MODULE_INSTALL_PREFIX
+                        HDF5ROOT: $HDF5_ROOT
+                        NETCDF_DIR: $NETCDF_C_MODULE_INSTALL_PREFIX
+                        NETCDFROOT: $NETCDF_C_MODULE_INSTALL_PREFIX
+                        NETCDFFROOT: $NETCDF_FORTRAN_MODULE_INSTALL_PREFIX
+
+                        # Path to ecCodes module
+                        ECCODESROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/eccodes-2.34.0-cwlamwcpvlhsuejrpqjlr7z3pdbkkw56/
+                        # Path to CDO
+                        CDOROOT: /sw/rev/24.05/cascadelake_opa_rocky8/linux-rocky8-cascadelake/oneapi-2023.2.1/cdo-2.2.2-hmzmwdifoec6niyoau7mobur43v7q52p/
+
+                        PATH: $ECCODESROOT/bin:$CDOROOT/bin:$PATH
+                        # This should be done when correct module is installed
+                        #ECCODESROOT: $ECCODES_MODULE_INSTALL_PREFIX
+
+                        # Add everything to LD_LIBRARY_PATH
+                        # Gottingen support recommended to also add LD_RUN_PATH
+                        # Add both lib and lib64 for ecCodes since it varies
+                        LD_LIBRARY_PATH: $ECCODESROOT/lib/:$ECCODESROOT/lib64/:$NETCDFROOT/lib/:$NETCDFFROOT/lib/:$HDF5ROOT/lib/:$LD_LIBRARY_PATH
+
+                        # For OASIS
+                        NETCDF_CXX_LIBRARIES: $NETCDF_DIR/lib
+                        HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                        NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                        NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                        OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+                        # For OASIS3-MCT5 from CERFACS
+                        OASIS_NETCDF: $NETCDFROOT
+                        OASIS_NETCDFF: $NETCDFFROOT
 
                 intel2023_impi2021:
                     add_module_actions:

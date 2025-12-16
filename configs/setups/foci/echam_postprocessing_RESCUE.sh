@@ -35,7 +35,7 @@ ftype="nc" # or szip for grb.szip output
 #
 # Read the command line arguments
 OPTIND=1         # Reset in case getopts has been used previously in the shell.
-while getopts "h?d:r:s:e:p:x:" opt; do
+while getopts "h?d:r:s:e:p:x:a:l:" opt; do
     case "$opt" in
     h|\?)
         echo
@@ -255,7 +255,8 @@ prefix=${EXP_ID}_${atmmod}
 # Lists of files
 
 meantags='BOT ATM'
-filetags=${ATM_FILE_TAGS}
+filetags="${ATM_FILE_TAGS}"
+derivedtags=''
 #TODO
 #filetags=""
 #meantags='BOT'
@@ -360,6 +361,23 @@ EOF
                     cdo merge $ATM_1_file $ATM_2_file $output
                 ) &
                 ;;
+            spday/*)
+                input=${prefix}_spday_${suffix}
+                output=${prefix}_Uzm_${suffix}
+                derivedtags="$derivedtags Uzm"
+                (
+                    trap 'echo $? > $post_dir/status' ERR
+                    after $input $output << EOF
+code = 131
+level = 100000, 92500, 85000, 77500, 70000, 60000, 50000, 40000, 30000, 25000,
+    20000, 15000, 10000, 7000, 5000, 3000, 2000, 1000, 700, 500, 300, 200, 100,
+    50, 20, 10 
+type = 61
+format = 1 
+mean = 0 
+EOF
+                ) &
+                ;;
 
             */?*)
                 # with averaging, by default, files are left as they are
@@ -394,7 +412,7 @@ remove_list=
 for ((year=startyear; year<=endyear; ++year))
 do
 
-    for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags
+    for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags $derivedtags
     do
         input=${prefix}_${filetag}_%s$fileext
         output=${prefix}_${filetag}_$year$fileext
@@ -416,7 +434,7 @@ wait
 for ((year=startyear; year<=endyear; ++year))
 do
 	# Add szip compression or netcdf conversion for remaining echam output
-	for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags 
+	for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags $derivedtags
 	do
 		file=${prefix}_${filetag}_$year${fileext}
 		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
@@ -424,7 +442,7 @@ do
 			trap 'echo $? > $post_dir/status' ERR
       if [[ "$ftype" == "nc" ]] || [[ $meantag == *$filetag* ]]; then
          codesfile=${basedir}/${EXP_ID}/log/echam/${prefix}_${filetag}.codes 
-         [[ "BOT_mm ATM_mm" == *$filetag* ]] && codesfile="echam6"
+         [[ "BOT_mm ATM_mm Uzm" == *$filetag* ]] && codesfile="echam6"
          if [[ -f $codesfile ]] || [[ "$codesfile" == "echam6" ]]; then
             cdo -r -f nc4c -z zip_3 -t $codesfile copy $file $(basename $file .grb).nc 
          else
@@ -437,7 +455,7 @@ do
 	done
   wait
   # check whether files can be removed
-	for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags 
+	for filetag in $(echo $meantags | sed 's/\>/_mm/g') $filetags $derivedtags 
 	do
 		file=${prefix}_${filetag}_$year${fileext}
     if [[ -f ${file}.szip ]] || [[ -f $(basename $file .grb).nc ]] ; then

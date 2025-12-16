@@ -207,7 +207,7 @@ echam:
                            - tracer
 
                 mops_lmu:
-                        atm_file_tags: "echam co2 tracer accw echamday co2day" 
+                        atm_file_tags: "echam co2 tracer accw echamday co2day echam6hr echam6hrpt spday" 
                         version: "6.3.05p2-foci_lmu"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
@@ -232,6 +232,9 @@ echam:
                            - tracer
                            - echamday
                            - co2day
+                           - echam6hr
+                           - echam6hrpt
+                           - spday
 
                 agrif:
                         atm_file_tags: "echam accw co2"

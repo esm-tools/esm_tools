@@ -76,12 +76,13 @@ lpj_guess:
     LCMIP7: true
 
     # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
+    ndep_input_dir: ${input_dir}/ndep/${resolution}/
+
     choose_LCMIP7:
         false:
             ndep_cmip_dir: ""
         true:
-            #ndep_cmip_dir: "${input_dir}/ndep/${resolution}/"
-            ndep_cmip_dir: "/work/ab0995/a270270/ndep/${resolution}/"
+            ndep_cmip_dir: "../ndep/"
           
     # Define files to ignore
     ignore_files:
@@ -131,6 +132,23 @@ lpj_guess:
         state: lpjg_state_${lpjg_end_state}/*
     restart_out_sources:
         state: lpjg_state_${lpjg_end_state}/*
+
+    # N deposition forcing files - link from input to work/ndep with renamed filenames
+    forcing_files:
+        drynhx: drynhx
+        drynoy: drynoy
+        wetnhx: wetnhx
+        wetnoy: wetnoy
+    forcing_sources:
+        drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
+        drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
+        wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
+        wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
+    forcing_in_work:
+        drynhx: ndep/drynhx2.nc
+        drynoy: ndep/drynoy2.nc
+        wetnhx: ndep/wetnhx2.nc
+        wetnoy: ndep/wetnoy2.nc
 
     choose_resolution:
         # Note:

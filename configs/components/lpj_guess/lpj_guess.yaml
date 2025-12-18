@@ -6,12 +6,12 @@
 # For more information about the ESM-Tools feature variables available, please consult:
 # https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
 
-further_reading:
-    - configs/components/lpj_guess/lpj_guess.cmip.yaml
-
 lpj_guess:
     model: lpj_guess
     version: 4.1.2
+
+    further_reading:
+        - lpj_guess/lpj_guess.cmip.yaml
 
     metadata:
         Institute: Lund Universitiy

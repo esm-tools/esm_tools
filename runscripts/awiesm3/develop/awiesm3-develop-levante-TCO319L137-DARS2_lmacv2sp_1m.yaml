@@ -1,0 +1,111 @@
+general:
+    user: !ENV ${USER}
+    #use_venv: True
+    #install_esm_tools_branch: 'feat/awiesm3-v3.4_macv2_dars2'
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "ab0246"
+    #account: "bb1469"
+    compute_time: "00:30:00"
+    initial_date: "1850-01-01"
+    final_date: "1850-02-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 0
+    nmonth: 1
+    nyear: 0
+    ini_parent_exp_id: "awicm3-dev-TCO319L137-DARS2_branchoff_450s_50y_1850_base_007"
+    ini_restart_dir: "/work/bb1469/a270089/runtime/other_restarts/finn_dras2_resom_restarts/"
+    parallel_file_movements: 'threads'
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "DARS2"
+    namelist_dir: "/work/bb1469/a270089/input/newfesom/"
+    pool_dir: "/work/ab0246/a270092/input/fesom2/"
+    mesh_dir: "/work/bb1469/a270089/Meshes/DARS2/"
+    restart_rate: 1
+    restart_first: 1
+    restart_unit: 'm'
+    lresume: true
+    tar_binary_restarts: true
+    time_step: 360
+    nproc: 5120 #originally 512 but worked with 1152
+    omp_num_threads: 2 # originally 4 but worked with 1
+
+    # branchoff
+    ini_parent_exp_id: "${general.ini_parent_exp_id}"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "${general.ini_restart_dir}/"
+    #
+    choose_general.run_number:
+        1:
+            lasttime:
+                85950
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.1970.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.1970.ice.restart/*.nc
+
+    add_namelist_changes:
+        namelist.config:
+            geometry:
+                metric_factor_zero: True
+
+
+lpj_guess:
+    input_dir: "/work/bb1469/a270089/input/lpj-guess/"
+    resolution: "TCO319"
+    lresume: false 
+    nproc: 8 # originally 16
+    omp_num_threads: 8
+    co2_coupling: 0
+
+oifs:
+    ifsdata_dir: "/work/bb1469/a270089/ifsdata/"
+    #input_dir: "/work/bb1469/a270089/input/oifs-48r1/"
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: abns
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 900
+    nproc: 896
+    omp_num_threads: 4
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                LCMIP6: False
+                LCMIP7: True
+                CMIP7DATADIR: '/work/bb1469/a270089/input/oifs-48r1/cmip-data/'
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
+            NAERAD:
+                LAER3D: False
+                #NRADLP: 2
+            #NAMCLDP:
+                #NAERCLD: 1
+            #NAMGFL:
+                #NAEROUT: 10
+
+oasis3mct:
+    lresume: true # Set to false to generate the rst files for first leg
+    use_lucia: false #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster
+    time_step: 7200
+    norestart: false #Should lpj-guess restart from vegin or not?
+
+
+rnfmap:
+    input_dir: "/work/bb1469/a270089/input/runoff-mapper/"
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32

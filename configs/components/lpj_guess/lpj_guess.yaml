@@ -134,8 +134,9 @@ lpj_guess:
     # LUH3 land use input directory (NetCDF files regridded to various resolutions)
     luh3_input_dir: ${input_dir}/land_use/regridded/
 
-    # LUH3 input control (0 = disabled, 1 = enabled)
-    use_luh3_input: 0
+    # LUH3 input control - set automatically by choose_mip in lpj_guess.cmip.yaml
+    # (cmip6 -> use_luh3_input=0 for LUH2 text files, cmip7 -> use_luh3_input=1 for LUH3 NetCDF)
+    # Can still be overridden in runscript if needed
 
     # N deposition forcing files - link from input to work/ndep with renamed filenames
     forcing_files:

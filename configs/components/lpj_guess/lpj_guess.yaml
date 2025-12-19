@@ -131,6 +131,12 @@ lpj_guess:
     # Soil type file
     slt_dir: ${input_dir}/slt/
 
+    # LUH3 land use input directory (NetCDF files regridded to various resolutions)
+    luh3_input_dir: ${input_dir}/land_use/regridded/
+
+    # LUH3 input control (0 = disabled, 1 = enabled)
+    use_luh3_input: 0
+
     # N deposition forcing files - link from input to work/ndep with renamed filenames
     forcing_files:
         slt: slt
@@ -150,6 +156,22 @@ lpj_guess:
         drynoy: ndep/drynoy2.nc
         wetnhx: ndep/wetnhx2.nc
         wetnoy: ndep/wetnoy2.nc
+
+    # LUH3 land use files - conditionally added when use_luh3_input=1
+    choose_use_luh3_input:
+        1:
+            add_forcing_files:
+                luh3_states: luh3_states
+                luh3_transitions: luh3_transitions
+                luh3_management: luh3_management
+            add_forcing_sources:
+                luh3_states: ${luh3_input_dir}/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
+                luh3_transitions: ${luh3_input_dir}/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2023_${resolution}.nc
+                luh3_management: ${luh3_input_dir}/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
+            add_forcing_in_work:
+                luh3_states: landuse/luh3_states.nc
+                luh3_transitions: landuse/luh3_transitions.nc
+                luh3_management: landuse/luh3_management.nc
 
     choose_resolution:
         # Note:

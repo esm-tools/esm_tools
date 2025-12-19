@@ -21,6 +21,7 @@ lpj_guess:
             co2_source_file: ${co2_file_cmip6}
             co2_work_file: ${co2_workname_cmip6}
             ndep_cmip_dir: ""
+            use_luh3_input: 0  # CMIP6 uses LUH2 text files
 
         "cmip7":
             # CMIP7 defaults
@@ -28,3 +29,4 @@ lpj_guess:
             co2_source_file: ${co2_file_cmip7}
             co2_work_file: ${co2_workname_cmip7}
             ndep_cmip_dir: "../ndep/"
+            use_luh3_input: 1  # CMIP7 uses LUH3 NetCDF files

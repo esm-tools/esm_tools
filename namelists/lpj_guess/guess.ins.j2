@@ -103,9 +103,14 @@ npatch 5                                ! number of replicate patches to simulat
 ! LUH3 NetCDF land use input (0 = use text files, 1 = use NetCDF LUH3 files)
 use_luh3_input {{lpj_guess.use_luh3_input | default(0)}}
 {% if lpj_guess.use_luh3_input | default(0) == 1 %}
-param "file_luh3_states" (str "../landuse/luh3_states.nc")
-param "file_luh3_transitions" (str "../landuse/luh3_transitions.nc")
-param "file_luh3_management" (str "../landuse/luh3_management.nc")
+file_luh3_states "../landuse/luh3_states.nc"
+file_luh3_transitions "../landuse/luh3_transitions.nc"
+file_luh3_management "../landuse/luh3_management.nc"
+! Override LUH2 text files to empty strings when using LUH3 NetCDF
+param "file_lu" (str "")
+param "file_lucrop" (str "")
+param "file_Nfert" (str "")
+param "file_grossLUC" (str "")
 {% endif %}
 
 run_landcover {{lpj_guess.run_landcover | default(0)}}        ! whether to use (and change) landcover fractions (1) or not (0)

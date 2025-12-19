@@ -1,0 +1,17 @@
+! Land use input configuration
+! Automatically generated from ESM-Tools configuration
+
+{% if lpj_guess.use_luh3_input is defined and lpj_guess.use_luh3_input %}
+! Using LUH3 NetCDF input for CMIP7
+use_luh3_input 1
+file_luh3_states      "{{lpj_guess.file_luh3_states}}"
+file_luh3_transitions "{{lpj_guess.file_luh3_transitions}}"
+file_luh3_management  "{{lpj_guess.file_luh3_management}}"
+{% else %}
+! Using LUH2 text input (default for CMIP6)
+use_luh3_input 0
+file_lu         "../landuse/lu_luh2.txt"
+file_lucrop     "../landuse/crop_luh2.txt"
+file_Nfert      "../landuse/nfert_luh2.txt"
+file_grossLUC   "../landuse/gross_luh2.txt"
+{% endif %}

@@ -105,9 +105,11 @@ lpj_guess:
     config_sources:
         runscript: ${namelist_dir}/run_trunk_4_1.j2
         forcing_path_file: ${namelist_dir}/paths_forcing.j2
+        landuse_file: ${namelist_dir}/landuse.ins.j2
     config_in_work:
         runscript: ${runscript_name}
         forcing_path_file: paths_forcing.ins
+        landuse_file: landuse.ins
 
     bin_sources:
         bin_tag: ${model_dir}/bin/${executable}
@@ -138,18 +140,21 @@ lpj_guess:
         drynoy: drynoy
         wetnhx: wetnhx
         wetnoy: wetnoy
+        co2_cmip7: co2_cmip7
     forcing_sources:
         slt: ${slt_dir}/slt_${resolution}.nc
         drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
         drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
         wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
+        co2_cmip7: ${input_dir}/cmip7_forcing/co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
     forcing_in_work:
         slt: slt_${resolution}.nc
         drynhx: ndep/drynhx2.nc
         drynoy: ndep/drynoy2.nc
         wetnhx: ndep/wetnhx2.nc
         wetnoy: ndep/wetnoy2.nc
+        co2_cmip7: co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
 
     choose_resolution:
         # Note:

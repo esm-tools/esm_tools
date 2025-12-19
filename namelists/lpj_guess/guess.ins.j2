@@ -95,8 +95,17 @@ coordinates_precision 6
 ! optimesm & rescue TESTING
 ! PaulM ECE4 hack - changed below
 npatch 5                                ! number of replicate patches to simulate
+{% if lpj_guess.mip is defined and lpj_guess.mip in ['cmip6', 'cmip7'] %}
+run_landcover 1        ! enabled for CMIP runs
+run_urban 1           ! enabled for CMIP runs
+run_crop 1            ! enabled for CMIP runs
+run_forest 0          ! managed forest off
+run_pasture 1         ! enabled for CMIP runs
+run_natural 1         ! natural vegetation always on
+run_peatland 0        ! not in LUH3
+run_barren 0          ! not in LUH3
+{% else %}
 run_landcover 0        ! whether to use (and change) landcover fractions (1) or not (0)
-
 run_urban 0           ! whether to simulate urban land (1) or not (0)
 run_crop 0            ! whether to simulate crop vegetation (1) or not (0)
 run_forest 0          ! whether to simulate managed forest (1) or not (0)
@@ -104,6 +113,7 @@ run_pasture 0         ! whether to simulate pasture (1) or not (0)
 run_natural 1         ! whether to simulate natural vegetation (1) or not (0)
 run_peatland 0        ! whether to simulate peatland (1) or not (0)
 run_barren 0          ! whether to simulate barren land (1) or not (0)
+{% endif %}
 
 !printcmip 0            ! Whether to print CMIP output
 !printcmipdaily 0       ! Whether to print daily CMIP output

@@ -14,6 +14,18 @@ lpj_guess:
     co2_workname_cmip6: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
     co2_workname_cmip7: co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
 
+    # LUH3 land use NetCDF paths (regridded files - absolute paths to avoid copying)
+    luh3_dir: ${pool_dir}/lpj-guess/land_use/regridded
+    luh3_states_file: multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
+    luh3_transitions_file: multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2023_${resolution}.nc
+    luh3_management_file: multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
+
+    # Copy landuse.ins.j2 template to run subdirectories (for both CMIP6 and CMIP7)
+    add_config_sources:
+        "landuse_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/landuse.ins.j2
+    add_config_in_work:
+        "landuse_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/landuse.ins
+
     choose_mip:
         "cmip6":
             # CMIP6 defaults
@@ -28,3 +40,8 @@ lpj_guess:
             co2_source_file: ${co2_file_cmip7}
             co2_work_file: ${co2_workname_cmip7}
             ndep_cmip_dir: "../ndep/"
+            # Use LUH3 NetCDF input for CMIP7
+            use_luh3_input: true
+            file_luh3_states: ${luh3_dir}/${luh3_states_file}
+            file_luh3_transitions: ${luh3_dir}/${luh3_transitions_file}
+            file_luh3_management: ${luh3_dir}/${luh3_management_file}

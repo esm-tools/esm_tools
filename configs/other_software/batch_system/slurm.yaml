@@ -9,6 +9,11 @@ computer:
     debugger: None
     mail_type: NONE
     account: None
+    submit_mode: "direct"  # "direct" for traditional sbatch, "jacamar" for GitLab CI trigger
+
+    # Jacamar-specific settings (required when submit_mode: jacamar)
+    jacamar_gitlab_url: "https://codebase.helmholtz.cloud"
+    jacamar_trigger_token: ""  # Set to CI_JOB_TOKEN when using Jacamar mode
 
 
 

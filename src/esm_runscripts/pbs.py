@@ -56,7 +56,7 @@ class Pbs:
         config["general"]["batch"].het_par_launcher_lines(config, cluster)
 
     @staticmethod
-    def add_pre_launcher_lines(config, cluster, runfile):
+    def add_pre_launcher_lines(config, cluster, runfile, collect_lines=None):
         """
         Adds pre-launcher lines to the ``runfile``.
 

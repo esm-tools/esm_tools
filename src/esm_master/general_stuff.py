@@ -238,7 +238,9 @@ class version_control_infos:
                 repo = package.repo[0]
             else:
                 repo = package.repo
-            if os.environ.get("CI"):
+            # QUESTION: What even is this block for?? TOP
+            # [FIXME](PG): This is not a good way to solve this...
+            if os.environ.get("CI") and os.environ.get("ESM_TOOLS_CI_SETUP") == "true":
                 if "gitlab.awi.de" in repo:
                     awi_user = os.environ.get("GITLAB_AWI_USER_NAME", "")
                     if awi_user:
@@ -269,6 +271,7 @@ class version_control_infos:
                     ):
                         print("Pedantic mode is on, exiting instead of warning only!")
                         sys.exit(1)
+            # QUESTION: What even is this block for?? BOTTOM
 
             raw_command = raw_command.replace("${repository}", repo)
             if todo == "get":

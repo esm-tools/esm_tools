@@ -6,14 +6,47 @@ from . import chunky_parts, helpers, logfiles, workflow
 
 
 def submit(config):
+    from . import batch_system
+
     logger.debug("\n", 40 * "+ ")
-    logger.info("Submitting jobscript to batch system...")
-    logger.info(f"Output written by {config['computer']['batch_system']}:")
-    logger.debug("\n", 40 * "+ ")
-    for command in config["general"]["submit_command"]:
-        logger.debug(command)
-    for command in config["general"]["submit_command"]:
-        os.system(command)
+
+    batch_obj = config["general"]["batch"]
+
+    # Check if we're in Jacamar mode
+    if hasattr(batch_obj, 'submit_mode') and batch_obj.submit_mode == "jacamar":
+        logger.info("Submitting via GitLab/Jacamar trigger...")
+
+        # Extract SBATCH headers for Jacamar
+        cluster = config["general"]["jobtype"]
+        headers = batch_system.batch_system.get_batch_header(config, cluster, for_jacamar=True)
+
+        # Get the collected script sections
+        if "jacamar_sections" not in config["general"]:
+            logger.error("Jacamar sections not found in config")
+            raise Exception(
+                "Script sections were not collected during generation. "
+                "This is an internal error."
+            )
+
+        script_sections = config["general"]["jacamar_sections"]
+
+        # Submit via GitLab API
+        pipeline_data = batch_obj.jacamar.submit_via_api(headers, script_sections, config)
+
+        # Store pipeline URL for user reference
+        config["general"]["gitlab_pipeline_url"] = pipeline_data.get("web_url")
+        config["general"]["gitlab_pipeline_id"] = pipeline_data.get("id")
+
+    else:
+        # Traditional direct submission via sbatch
+        logger.info("Submitting jobscript to batch system...")
+        logger.info(f"Output written by {config['computer']['batch_system']}:")
+        logger.debug("\n", 40 * "+ ")
+        for command in config["general"]["submit_command"]:
+            logger.debug(command)
+        for command in config["general"]["submit_command"]:
+            os.system(command)
+
     return config
 
 

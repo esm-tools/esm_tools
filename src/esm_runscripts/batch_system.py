@@ -28,10 +28,18 @@ class batch_system:
     # should be written independent of actual batch system
     def __init__(self, config, name):
         self.name = name
+        self.submit_mode = config["computer"].get("submit_mode", "direct")
+
         if name == "slurm":
             self.bs = Slurm(config)
+            if self.submit_mode == "jacamar":
+                from .jacamar import JacamarSubmitter
+                self.jacamar = JacamarSubmitter(config)
         elif name == "pbs":
             self.bs = Pbs(config)
+            if self.submit_mode == "jacamar":
+                from .jacamar import JacamarSubmitter
+                self.jacamar = JacamarSubmitter(config)
         else:
             raise UnknownBatchSystemError(name)
 
@@ -47,8 +55,8 @@ class batch_system:
     def job_is_still_running(self, jobid):
         return self.bs.job_is_still_running(jobid)
 
-    def add_pre_launcher_lines(self, config, cluster, runfile):
-        return self.bs.add_pre_launcher_lines(config, cluster, runfile)
+    def add_pre_launcher_lines(self, config, cluster, runfile, collect_lines=None):
+        return self.bs.add_pre_launcher_lines(config, cluster, runfile, collect_lines)
 
     # TODO: remove it once it's not needed anymore (substituted by packjob)
     def write_het_par_wrappers(self, config):
@@ -85,10 +93,11 @@ class batch_system:
         return header
 
     @staticmethod
-    def get_batch_header(config, cluster):
+    def get_batch_header(config, cluster, for_jacamar=False):
         header = []
         this_batch_system = config["computer"]
-        if "sh_interpreter" in this_batch_system:
+        # Skip shebang for Jacamar (not needed in SCHEDULER_PARAMETERS)
+        if not for_jacamar and "sh_interpreter" in this_batch_system:
             header.append("#!" + this_batch_system["sh_interpreter"])
 
         tasks = config["general"]["resubmit_tasks"]
@@ -165,7 +174,12 @@ class batch_system:
             for tag, repl in replacement_tags:
                 value = value.replace(tag, str(repl))
             if this_batch_system.get("header_start") is not None:
-                header.append(this_batch_system["header_start"] + " " + value)
+                if for_jacamar:
+                    # For Jacamar, return clean directives without #SBATCH prefix
+                    header.append(value)
+                else:
+                    # For direct submission, include #SBATCH prefix
+                    header.append(this_batch_system["header_start"] + " " + value)
 
         return header
 
@@ -444,9 +458,25 @@ class batch_system:
         self = config["general"]["batch"]
         runfilename = batch_system.get_run_filename(config, cluster)
 
+        # Check if we're in Jacamar mode for section collection
+        for_jacamar = (
+            batch_or_shell == "batch"
+            and config["computer"].get("submit_mode") == "jacamar"
+        )
+
+        # Initialize section collectors for Jacamar
+        if for_jacamar:
+            jacamar_sections = {
+                'before_script': [],
+                'script': [],
+                'after_script': []
+            }
+
         logger.debug("still alive")
         logger.debug(f"jobtype: {config['general']['jobtype']}")
         logger.debug(f"writing run file for: {cluster}")
+        if for_jacamar:
+            logger.debug("Collecting script sections for Jacamar submission")
 
         with open(runfilename, "w") as runfile:
 
@@ -482,11 +512,15 @@ class batch_system:
                     batch_system.write_env(config, environment, runfilename)
                     for line in environment:
                         runfile.write(line + "\n")
+                        if for_jacamar:
+                            jacamar_sections['before_script'].append(line)
 
                     # extra entries for each subjob
                     extra = batch_system.get_extra(config)
                     for line in extra:
                         runfile.write(line + "\n")
+                        if for_jacamar:
+                            jacamar_sections['before_script'].append(line)
 
                     # Add actual commands
                     commands = batch_system.get_run_commands(
@@ -494,16 +528,29 @@ class batch_system:
                     )
                     # commands = clusterconf.get("data_task_list", [])
                     runfile.write("\n")
-                    runfile.write(self.append_start_statement(config, subjob) + "\n")
+                    start_stmt = self.append_start_statement(config, subjob)
+                    runfile.write(start_stmt + "\n")
+                    if for_jacamar:
+                        jacamar_sections['before_script'].append("")
+                        jacamar_sections['before_script'].append(start_stmt)
+
                     runfile.write("\n")
-                    runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
+                    cd_cmd = "cd " + config["general"]["thisrun_work_dir"]
+                    runfile.write(cd_cmd + "\n")
+                    if for_jacamar:
+                        jacamar_sections['before_script'].append("")
+                        jacamar_sections['before_script'].append(cd_cmd)
+
                     if cluster in reserved_jobtypes:
                         config["general"]["batch"].add_pre_launcher_lines(
-                            config, cluster, runfile
+                            config, cluster, runfile,
+                            collect_lines=jacamar_sections['before_script'] if for_jacamar else None
                         )
 
                     for line in commands:
                         runfile.write(line + "\n")
+                        if for_jacamar:
+                            jacamar_sections['script'].append(line)
 
             # elif multisrun_stuff: # pauls stuff maybe here? or matching to clusterconf possible?
             #    dummy = 0
@@ -561,19 +608,46 @@ class batch_system:
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )
-                runfile.write(
-                    "cd " + config["general"]["experiment_scripts_dir"] + "\n"
-                )
+                cd_exp_cmd = "cd " + config["general"]["experiment_scripts_dir"]
+                runfile.write(cd_exp_cmd + "\n")
                 runfile.write(observe_call + "\n")
                 runfile.write("\n")
-                runfile.write(self.append_done_statement(config, subjob) + "\n")
+                done_stmt = self.append_done_statement(config, subjob)
+                runfile.write(done_stmt + "\n")
+
+                if for_jacamar:
+                    jacamar_sections['after_script'].append("")
+                    jacamar_sections['after_script'].append("# Call to esm_runscript to start subjobs:")
+                    jacamar_sections['after_script'].append("# " + str(subjobs_to_launch))
+                    jacamar_sections['after_script'].append("process=$!")
+                    jacamar_sections['after_script'].append("# Comment the following line if you don't want esm_runscripts to restart:")
+                    jacamar_sections['after_script'].append(cd_exp_cmd)
+                    jacamar_sections['after_script'].append(observe_call)
+                    jacamar_sections['after_script'].append("")
+                    jacamar_sections['after_script'].append(done_stmt)
 
             runfile.write("\n")
             runfile.write("wait\n")
 
+            if for_jacamar:
+                jacamar_sections['after_script'].append("")
+                jacamar_sections['after_script'].append("wait")
+
         config["general"]["submit_command"] = batch_system.get_submit_command(
             config, batch_or_shell, runfilename
         )
+
+        # Store collected sections for Jacamar submission
+        if for_jacamar:
+            config["general"]["jacamar_sections"] = {
+                'before_script': '\n'.join(jacamar_sections['before_script']),
+                'script': '\n'.join(jacamar_sections['script']),
+                'after_script': '\n'.join(jacamar_sections['after_script'])
+            }
+            logger.debug("Jacamar sections collected:")
+            logger.debug(f"  before_script: {len(jacamar_sections['before_script'])} lines")
+            logger.debug(f"  script: {len(jacamar_sections['script'])} lines")
+            logger.debug(f"  after_script: {len(jacamar_sections['after_script'])} lines")
 
         if batch_or_shell == "shell":
             runfilestats = os.stat(runfilename)

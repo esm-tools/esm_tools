@@ -143,7 +143,7 @@ class Slurm:
 
     ############# HETEROGENOUS PARALLELIZATION STUFF (MPI + OMP) #################
 
-    def add_pre_launcher_lines(self, config, cluster, runfile):
+    def add_pre_launcher_lines(self, config, cluster, runfile, collect_lines=None):
         """
         Adds pre-launcher lines to the ``runfile``.
 
@@ -155,12 +155,14 @@ class Slurm:
         runfile : io.TextIOWrapper
             File wrapper object for writing of the lines
             (``runfile.write("<your_line_here>")``).
+        collect_lines : list, optional
+            If provided, lines will also be appended to this list for Jacamar collection.
         """
 
         # TODO: remove it once it's not needed anymore (substituted by packjob)
         if config["computer"].get("heterogeneous_parallelization", False):
             if config["computer"].get("taskset", False):
-                self.add_hostlist_file_gen_lines(config, runfile)
+                self.add_hostlist_file_gen_lines(config, runfile, collect_lines)
 
     @staticmethod
     def het_par_headers(config, cluster, headers):
@@ -305,25 +307,21 @@ class Slurm:
 
     # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod
-    def add_hostlist_file_gen_lines(config, runfile):
+    def add_hostlist_file_gen_lines(config, runfile, collect_lines=None):
         cores_per_node = config["computer"]["partitions"]["compute"]["cores_per_node"]
-        runfile.write(
-            "\n"
-            + "#Creating hostlist for MPI + MPI&OMP heterogeneous parallel job"
-            + "\n"
-        )
-        runfile.write("rm -f ./hostlist" + "\n")
-        runfile.write(
-            f"export SLURM_HOSTFILE={config['general']['thisrun_work_dir']}/hostlist\n"
-        )
-        runfile.write("IFS=$'\\n'; set -f" + "\n")
-        runfile.write(
-            "listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))" + "\n"
-        )
-        runfile.write("unset IFS; set +f" + "\n")
-        runfile.write("rank=0" + "\n")
-        runfile.write("current_core=0" + "\n")
-        runfile.write("current_core_mpi=0" + "\n")
+        lines = []
+
+        lines.append("")
+        lines.append("#Creating hostlist for MPI + MPI&OMP heterogeneous parallel job")
+        lines.append("rm -f ./hostlist")
+        lines.append(f"export SLURM_HOSTFILE={config['general']['thisrun_work_dir']}/hostlist")
+        lines.append("IFS=$'\\n'; set -f")
+        lines.append("listnodes=($(< <( scontrol show hostnames $SLURM_JOB_NODELIST )))")
+        lines.append("unset IFS; set +f")
+        lines.append("rank=0")
+        lines.append("current_core=0")
+        lines.append("current_core_mpi=0")
+
         for model in config["general"]["valid_model_names"]:
             if "oasis3mct" != model and (
                 config[model].get("execution_command")
@@ -333,44 +331,53 @@ class Slurm:
                     mpi_tasks = config[model]["nproca"] * config[model]["nprocb"]
                 else:
                     mpi_tasks = config[model]["nproc"]
-                runfile.write("mpi_tasks_" + model + "=" + str(mpi_tasks) + "\n")
-                runfile.write(
+                lines.append("mpi_tasks_" + model + "=" + str(mpi_tasks))
+                lines.append(
                     "omp_threads_"
                     + model
                     + "="
                     + str(config[model].get("omp_num_threads", 1))
-                    + "\n"
                 )
-        import pdb
 
+        import pdb
         # pdb.set_trace()
-        runfile.write(
+
+        lines.append(
             "for model in "
             + str(config["general"]["valid_model_names"])[1:-1]
             .replace(",", "")
             .replace("'", "")
             + " ;do"
-            + "\n"
         )
-        runfile.write("    eval nb_of_cores=\${mpi_tasks_${model}}" + "\n")
-        runfile.write("    eval nb_of_cores=$((${nb_of_cores}-1))" + "\n")
-        runfile.write("    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do" + "\n")
-        runfile.write(
+        lines.append("    eval nb_of_cores=\${mpi_tasks_${model}}")
+        lines.append("    eval nb_of_cores=$((${nb_of_cores}-1))")
+        lines.append("    for nb_proc_mpi in `seq 0 ${nb_of_cores}`; do")
+        lines.append(
             "        (( index_host = current_core / "
             + str(cores_per_node)
             + " ))"
-            + "\n"
         )
-        runfile.write("        host_value=${listnodes[${index_host}]}" + "\n")
-        runfile.write(
-            "        (( slot =  current_core % " + str(cores_per_node) + " ))" + "\n"
+        lines.append("        host_value=${listnodes[${index_host}]}")
+        lines.append(
+            "        (( slot =  current_core % " + str(cores_per_node) + " ))"
         )
-        runfile.write("        echo $host_value >> hostlist" + "\n")
-        runfile.write(
-            "        (( current_core = current_core + omp_threads_${model} ))" + "\n"
+        lines.append("        echo $host_value >> hostlist")
+        lines.append(
+            "        (( current_core = current_core + omp_threads_${model} ))"
         )
-        runfile.write("    done" + "\n")
-        runfile.write("done" + "\n\n")
+        lines.append("    done")
+        lines.append("done")
+        lines.append("")
+
+        # Write to file
+        for line in lines:
+            runfile.write(line + "\n")
+
+        # Optionally collect for Jacamar
+        if collect_lines is not None:
+            collect_lines.extend(lines)
+
+        return lines
 
     ############# MULTI SRUN STUFF ##############
 

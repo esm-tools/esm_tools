@@ -437,6 +437,19 @@ lpj_guess:
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1
+    nyear_spinup: 1
+    freenyears: 0
+
+    # LUH3 Land Use settings (0 = disabled, 1 = enabled)
+    use_luh3_input: 0
+    run_landcover: 0
+    run_urban: 0
+    run_crop: 0
+    run_forest: 0
+    run_pasture: 0
+    run_natural: 1
+    run_peatland: 0
+    run_barren: 0
 
     config_sources:
         tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2

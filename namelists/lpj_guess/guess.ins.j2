@@ -26,6 +26,12 @@ import "wetlandpfts.ins"
 ! ecev3 - overrides ifbvoc 0 in global.ins
 ifbvoc 1
 
+! AWI-ESM3 - override spinup parameters from ecearth.ins
+! nyear_spinup must be > freenyears to avoid fatal error
+! Default: nyear_spinup=1, freenyears=0 (no spinup, no N limitation delay)
+nyear_spinup {{lpj_guess.nyear_spinup | default(1)}}
+freenyears {{lpj_guess.freenyears | default(0)}}
+
 ! ecev3 - set to 1
 ifintercropgrass 1	! Whether to grow grass as cover crop between growing periods
 
@@ -39,8 +45,6 @@ ifintercropgrass 1	! Whether to grow grass as cover crop between growing periods
 param "file_ndep"     (str "") ! NB! MUST be cru_ncep version of this file
 
 ! CMIP N deposition - replaces file_ndep
-!param "ndep_cmip_dir" (str "D:/DATA/J/MODELDATA/ndep/cmip6/") ! Windows PC
-!param "ndep_cmip_dir" (str "/proj/rescue/users/sm_paumi/osm_output/HST1/ndep/") ! Tetralith
 ! param "ndep_cmip_dir" (str "../ndep/") 
 param "ndep_cmip_dir" (str "{{lpj_guess.ndep_cmip_dir}}")
 ! if (param["ndep_cmip_dir"].str != "") { // PaulM - ECE4 hack - option to run without ndep
@@ -95,15 +99,24 @@ coordinates_precision 6
 ! optimesm & rescue TESTING
 ! PaulM ECE4 hack - changed below
 npatch 5                                ! number of replicate patches to simulate
-run_landcover 0        ! whether to use (and change) landcover fractions (1) or not (0)
 
-run_urban 0           ! whether to simulate urban land (1) or not (0)
-run_crop 0            ! whether to simulate crop vegetation (1) or not (0)
-run_forest 0          ! whether to simulate managed forest (1) or not (0)
-run_pasture 0         ! whether to simulate pasture (1) or not (0)
-run_natural 1         ! whether to simulate natural vegetation (1) or not (0)
-run_peatland 0        ! whether to simulate peatland (1) or not (0)
-run_barren 0          ! whether to simulate barren land (1) or not (0)
+! LUH3 NetCDF land use input (0 = use text files, 1 = use NetCDF LUH3 files)
+use_luh3_input {{lpj_guess.use_luh3_input | default(0)}}
+{% if lpj_guess.use_luh3_input | default(0) == 1 %}
+param "file_luh3_states" (str "../landuse/luh3_states.nc")
+param "file_luh3_transitions" (str "../landuse/luh3_transitions.nc")
+param "file_luh3_management" (str "../landuse/luh3_management.nc")
+{% endif %}
+
+run_landcover {{lpj_guess.run_landcover | default(0)}}        ! whether to use (and change) landcover fractions (1) or not (0)
+
+run_urban {{lpj_guess.run_urban | default(0)}}           ! whether to simulate urban land (1) or not (0)
+run_crop {{lpj_guess.run_crop | default(0)}}            ! whether to simulate crop vegetation (1) or not (0)
+run_forest {{lpj_guess.run_forest | default(0)}}          ! whether to simulate managed forest (1) or not (0)
+run_pasture {{lpj_guess.run_pasture | default(0)}}         ! whether to simulate pasture (1) or not (0)
+run_natural {{lpj_guess.run_natural | default(1)}}         ! whether to simulate natural vegetation (1) or not (0)
+run_peatland {{lpj_guess.run_peatland | default(0)}}        ! whether to simulate peatland (1) or not (0)
+run_barren {{lpj_guess.run_barren | default(0)}}          ! whether to simulate barren land (1) or not (0)
 
 !printcmip 0            ! Whether to print CMIP output
 !printcmipdaily 0       ! Whether to print daily CMIP output

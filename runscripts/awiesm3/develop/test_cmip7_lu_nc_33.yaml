@@ -1,0 +1,90 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "ba0989"
+    compute_time: "00:30:00"
+    initial_date: "1900-01-01"
+    final_date: "1900-01-10"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 10
+    nmonth: 0
+    nyear: 0
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE3"
+    restart_rate: 10
+    restart_unit: "d"
+    restart_first: 10
+    lresume: false
+    time_step: 300
+    nproc: 256
+    omp_num_threads: 1
+    tar_binary_restarts: true
+    add_namelist_changes:
+        namelist.config:
+            run_config:
+                use_cavity: true
+
+lpj_guess:
+    nproc: 8
+    omp_num_threads: 8
+    lresume: false
+    resolution: "TCO95"
+    mygrid: ${resolution}
+    mip: cmip7
+    use_luh3_input: 1  # Explicitly enable LUH3 NetCDF input
+    luh3_input_dir: /work/ab0246/a270092/input/lpj-guess/land_use/regridded_conserv/
+    run_landcover: 1
+    run_natural: 1
+    run_crop: 1
+    run_pasture: 1
+    run_barren: 0  # Disabled for LUH3 - calculated as residual internally
+    run_urban: 1
+    run_peatland: 0  # Disabled for LUH3
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 2400
+    nproc: 128
+    omp_num_threads: 1
+    mip: cmip7
+    scenario: piControl
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                CMIP7DATADIR: '/work/bb1469/a270089/input/oifs-48r1/cmip-data/'
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+
+oasis3mct:
+    use_lucia: true
+    lresume: false
+    time_step: 7200
+    norestart: T
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32

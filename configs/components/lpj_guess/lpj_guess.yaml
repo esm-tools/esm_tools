@@ -130,6 +130,10 @@ lpj_guess:
 
     # Soil type file
     slt_dir: ${input_dir}/slt/
+    
+    # Ocean grid name for configuration-specific slt files
+    # TCO319 uses DARS2, all others default to CORE2
+    ocean_grid_name: CORE2
 
     # LUH3 land use input directory (NetCDF files regridded to various resolutions)
     
@@ -151,7 +155,7 @@ lpj_guess:
         wetnhx: wetnhx
         wetnoy: wetnoy
     forcing_sources:
-        slt: ${slt_dir}/slt_${resolution}.nc
+        slt: ${slt_dir}/slt_${resolution}_${ocean_grid_name}.nc
         drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
         drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
@@ -221,6 +225,7 @@ lpj_guess:
             res_number_tl: "255l_2"
             truncation: "TL"
         TCO319:
+            ocean_grid_name: DARS2
             nx: 421120
             ny: 1
             oasis_grid_name: 320

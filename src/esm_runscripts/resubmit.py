@@ -18,7 +18,7 @@ def submit(config):
 
         # Extract SBATCH headers for Jacamar
         cluster = config["general"]["jobtype"]
-        headers = batch_system.batch_system.get_batch_header(config, cluster, for_jacamar=True)
+        headers = batch_system.get_batch_header(config, cluster, for_jacamar=True)
 
         # Get the collected script sections
         if "jacamar_sections" not in config["general"]:

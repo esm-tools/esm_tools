@@ -488,10 +488,10 @@ lpj_guess:
         # TEMPORARY FIX: Using fixed slt files with correct variable name (var43)
         # Original path (uncomment when input dir is fixed):
         #soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        soil_layer_type: /work/ab0995/a270270/slt/slt_${mygrid}.nc
+        soil_layer_type: ${pool_dir}/lpj-guess/slt/slt_${mygrid}.nc
         CO2: ${lpj_guess.co2_source_file}
         #"soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        "soil_layer_type_[[proc_list-->PROC_NUM]]": /work/ab0995/a270270/slt/slt_${mygrid}.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${pool_dir}/lpj-guess/slt/slt_${mygrid}.nc
         "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
 
     forcing_in_work:

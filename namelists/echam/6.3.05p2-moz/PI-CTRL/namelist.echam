@@ -173,14 +173,15 @@
 !    lpost = 0
 !/
 &radctl
-  iaero   = 8
-  ighg    = 1
-  io3     = 1
-  isolrad = 1
-  ico2    = 1
-  ich4    = 1
-  in2o    = 1
-  icfc    = 1
+    iaero = 3
+    io3 = 4
+    isolrad = 6
+    ich4 = 3
+    in2o = 3
+    co2vmr = 0.000284316986084
+    ch4vmr = 8.082490234375e-07
+    n2ovmr = 2.730210571289e-07
+    yr_perp = 1850
 /
 &submdiagctl
     vphysc_lpost = .false.
@@ -202,11 +203,11 @@
     emi_gastrac = 'all'
 /
 &mozctl
-    ! use EPP
-    bc_epp%ef_type = 2 ! ef_type: EF_INACTIVE=0, EF_VALUE=1, EF_FILE=2, EF_MODULE=3
+    ! don't use EPP
+    bc_epp%ef_type = 0 ! ef_type: EF_INACTIVE=0, EF_VALUE=1, EF_FILE=2, EF_MODULE=3
     bc_epp%ef_timedef = 1 ! ef_timedef: EF_TIMERESOLVED=1 , EF_IGNOREYEAR=2 , EF_CONSTANT=3
-    lese = .true.
-    tempthresh = 34.42212
+    lese = .false.
+    tempthresh = 34.42212 ! only relevant if lese = .true.
     out_species = 'default'
     lbc_species = 'CCL4', 'CFC12', 'CF2CLBR', 'CF3BR', 'CFC113', 'CFC11',
                   'CH3BR', 'CH3CCL3', 'CH3CL', 'CH4', 'CO2', 'H2', 'HCFC22',

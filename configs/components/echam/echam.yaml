@@ -714,26 +714,34 @@ echam:
                 moz_uvalbedo: moz_uvalbedo
                 moz_xtsoil: moz_xtsoil
                 moz_surface_properties: moz_surface_properties 
-            add_forcing_files:
-                moz_lbc: moz_lbc
-                moz_sad_sulf: moz_sad_sulf
-                moz_epp: moz_epp
-                moz_photolysis: moz_photolysis
-                moz_ap_index: moz_ap_index
+
+            add_choose_scenario_type:
+                'PI-CTRL':
+                    add_forcing_files:
+                        moz_lbc: moz_lbc_pictl
+                        moz_sad_sulf: moz_sad_sulf_pictl
+                    add_forcing_in_work:
+                        moz_lbc: "moz_lbc.${echam.resolution}.nc"
+                        moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"
+                'cmip6':
+                    add_forcing_files:
+                        moz_lbc: moz_lbc
+                        moz_sad_sulf: moz_sad_sulf
+                        moz_epp: moz_epp
+                        moz_photolysis: moz_photolysis
+                        moz_ap_index: moz_ap_index
+                    add_forcing_in_work:
+                        moz_epp: "moz_epp.${echam.resolution}${echam.levels}.nc"
+                        moz_photolysis: etfphot_@YEAR@.nc
+                        moz_ap_index: apindex_@YEAR@.nc
+                        moz_lbc: "moz_lbc.${echam.resolution}.nc"
+                        moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"
 
             add_input_in_work:
                 moz_temp: "moz_temp_prs_gt200nm.nc"
                 moz_uvalbedo: "moz_uvalbedo.${echam.resolution}.nc"
                 moz_xtsoil: "xtsoil.nc"
                 moz_surface_properties: "surface_properties.nc"
-
-            add_forcing_in_work:
-                moz_lbc: "moz_lbc.${echam.resolution}.nc"            
-                moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"            
-                moz_epp: "moz_epp.${echam.resolution}${echam.levels}.nc"
-                moz_photolysis: etfphot_@YEAR@.nc 
-                moz_ap_index: apindex_@YEAR@.nc 
-
 
     bin_files:
             "echam_bin": "echam_bin"

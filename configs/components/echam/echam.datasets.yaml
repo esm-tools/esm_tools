@@ -169,8 +169,12 @@ echam:
                 moz_uvalbedo: "${input_dir}/HAMMOZ_${echam.resolution}/moz_uvalbedo_${echam.resolution}.nc"
                 moz_xtsoil: "${input_dir}/HAMMOZ_${echam.resolution}/soilpHfrac_${echam.resolution}.nc"
                 moz_surface_properties: "${input_dir}/HAMMOZ_${echam.resolution}/xtsurf_v2_${echam.resolution}.nc"
-
+            
             add_forcing_sources:
+                # pi control forcing
+                moz_lbc_pictl: "${input_dir}/HAMMOZ_${echam.resolution}/hammoz_lbc_piControl_CMIP6_CCMI2_${echam.resolution}.nc"
+                moz_sad_sulf_pictl: "${input_dir}/HAMMOZ_${echam.resolution}/moz_sad_sulf_piControl_c080220_${echam.resolution}${echam.levels}.nc"
+                # historical and scenario forcing
                 moz_lbc: 
                     "${input_dir}/HAMMOZ_${echam.resolution}/hammoz_lbc_17500116-21011216_CMIP6_CCMI2_ssp370_${echam.resolution}.nc":
                         to: 2014

@@ -33,7 +33,7 @@ lpj_guess:
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
-    install_bins: "build/guess"
+    install_bins: "${model_dir}/build/guess"
     clean_command: "rm -rf build"
     executable: guess_TL255
     execution_command: ${executable} ${runscript_name}
@@ -51,7 +51,7 @@ lpj_guess:
             git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
             branch: lpj_guess_awiesm3
             mygrid: TCO319
-            install_bins: build/guess
+            install_bins: ${model_dir}/build/guess
             executable: guess
 
 

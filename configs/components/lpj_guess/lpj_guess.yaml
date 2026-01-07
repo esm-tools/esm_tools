@@ -75,6 +75,7 @@ lpj_guess:
 
     # Some commonly used variables in other ESM-Tools components (but optional)
     input_dir: ${pool_dir}/lpj-guess/
+    out_date_folder: "${end_date!syear!smonth!sday}"
 
     # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
     ndep_input_dir: ${input_dir}/ndep/${resolution}/
@@ -88,9 +89,22 @@ lpj_guess:
         outputs: "output/*.out"
         # Ignore log files
         log: "*.log"
+        # Ignore input directories (created during setup)
+        ndep_dir: "ndep"
+        landuse_dir: "landuse"
     ignore_sources:
         outputs: "output/*.out"
         log: "*.log"
+
+    # Output data - move *.out files to outdata/lpj_guess with subdirectory structure intact
+    outdata_files:
+        lpjg_out: lpjg_out
+
+    outdata_in_work:
+        lpjg_out: "run*/output/*.out"
+
+    outdata_sources:
+        lpjg_out: "run*/*.out"
 
     namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
     gridlist_dir: ${input_dir}/gridlists/

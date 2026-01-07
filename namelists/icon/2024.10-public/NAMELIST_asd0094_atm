@@ -27,8 +27,8 @@
 / 
 &run_nml
  num_lev                 = 90,90      ! number of full levels of vertical grid
- dtime                   = 900             ! [s] timestep in seconds
- modelTimeStep           = "PT900S"
+ dtime                   = 450             ! [s] timestep in seconds
+ modelTimeStep           = "PT450S"
  ldynamics               = .TRUE.               ! dynamics
  ltransport              = .TRUE.               ! transport
  iforcing                = 3          !
@@ -86,7 +86,7 @@
  tune_gkwake             = 1.5                       ! R2B6: 1.5
  tune_gfrcrit            = 0.425                     ! R2B6: 0.425
  tune_dust_abs           = 0.
- tune_box_liq_asy        = 3.05  !sl 3.5             ! oper global: 3.0 , oper D2: 3.25, default: 2.5
+ tune_box_liq_asy        = 3.5                       ! oper global: 3.0 , oper D2: 3.25, default: 2.5
  tune_box_liq            = 0.05
  tune_rcucov             = 0.075
  tune_rhebc_land         = 0.825
@@ -162,7 +162,7 @@ rbf_scale_mode_ll        = 2
  albim                   = 0.68_wp         ! 0.70_wp Albedo of ice (melting)
  Cd_ia                   = 1.20e-3_wp      ! Ice-atmosphere drag coefficient			
  t_heat_base             = -2.0_wp         ! -5.0 arbitrary temperature used as basis for
- hci_layer               = 0.25_wp         ! 0.10 Thickness of stabilizing constant heat capacity layer
+! hci_layer               = 0.25_wp         ! 0.10 Thickness of stabilizing constant heat capacity layer
 /
 &sleve_nml			                     
  min_lay_thckn           = 20.                       ! lowest level thickness (between half-levels)
@@ -299,7 +299,7 @@ rbf_scale_mode_ll        = 2
  irad_o3                 = 7
  irad_aero               = 12
  izenith                 = 4           ! 4: NWP default, 3: no annual cycle
- albedo_type             = 2 ! Modis albedo
+! albedo_type             = 2 ! Modis albedo
  vmr_co2                 = 284.3e-06   ! 1137.2e-6   ! piCTL : 284.3e-06   !
  vmr_ch4                 = 808.2e-09   ! values for 1850 CE
  vmr_n2o                 = 273.0e-09   ! values for 1850 CE

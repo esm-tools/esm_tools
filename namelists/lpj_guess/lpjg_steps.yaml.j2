@@ -22,7 +22,7 @@ onepcCO2: {{lpj_guess.onepcCO2 | default(false) | lower}}
 # Fixed year settings (integer, -1 = disabled)
 fixed_CO2: {{lpj_guess.fixed_CO2 | default(-1)}}
 fixed_ndep: {{lpj_guess.fixed_ndep | default(-1)}}
-fixed_LU: {{lpj_guess.fixed_LU | default(-1)}}
+fixed_LU: {{lpj_guess.fixed_landuse_year | default(lpj_guess.fixed_LU) | default(-1)}}
 
 # CMIP CO2 forcing version (6 or 7, default=6)
 cmip_co2_version: {{lpj_guess.cmip_co2_version | default(6)}}

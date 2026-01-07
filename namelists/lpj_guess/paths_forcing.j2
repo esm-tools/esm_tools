@@ -1,5 +1,14 @@
 ! This file contains paths to forcing data used by the benchmarks
 
+! Enable landcover when use_luh3_input is set (CMIP7)
+{% if lpj_guess.use_luh3_input is defined and lpj_guess.use_luh3_input == 1 %}
+run_landcover 1
+param "use_luh3_input" (num 1)
+param "file_luh3_states" (str "{{general.work_dir}}/landuse/luh3_states.nc")
+param "file_luh3_transitions" (str "{{general.work_dir}}/landuse/luh3_transitions.nc")
+param "file_luh3_management" (str "{{general.work_dir}}/landuse/luh3_management.nc")
+{% endif %}
+
 ! CO2
 param "file_co2"      (str "{{lpj_guess.forcing_dir}}/2019-04-29/co2/co2_1901_2018.txt")
 

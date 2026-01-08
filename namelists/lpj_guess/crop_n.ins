@@ -1,0 +1,305 @@
+!///////////////////////////////////////////////////////////////////////////////////////
+!// NITROGEN-LIMITED CROP ADDITIONS TO LPJ-GUESS INSTRUCTION SCRIPT
+!// Mats Lindeskog, Stefan Olin 2015-10-14
+!// Peter Anthoni, 2016-05-19 updated for LUH2 crop type mapping, removed standard crop stands/pfts
+!// Peter Anthoni, 2017-01-24 added LUH2 irrigated crop types
+!///////////////////////////////////////////////////////////////////////////////////////
+
+import "crop.ins"
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// RUN PARAMETERS AND OPTIONS 
+!
+
+ifnlim 1
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PARAMETERS FOR STAND TYPES
+
+!// LUH2 c3ann: C3 annual crop type
+st "CC3ann" (
+
+	crop_stand
+	stinclude 1
+	pft "CC3ann"
+	intercrop "NOINTERCROP"
+)
+
+!// LUH2 c3per: C3 perennial crop type with inter crop grass enabled
+st "CC3per" (
+
+	crop_stand
+	stinclude 1
+	pft "CC3per"
+	intercrop "NATURALGRASS"
+)
+
+!// LUH2 c3nfx: C3 nitrogen fixers type
+st "CC3nfx" (
+
+	crop_stand
+	stinclude 1
+	pft "CC3nfx"
+	intercrop "NOINTERCROP"
+)
+
+!// LUH2 c4ann: C4 annual crop type
+st "CC4ann" (
+
+	crop_stand
+	stinclude 1
+	pft "CC4ann"
+	intercrop "NOINTERCROP"
+)
+
+!// LUH2 c4per: C4 perennial crop type with inter crop grass enabled
+st "CC4per" (
+
+	crop_stand
+	stinclude 1
+	pft "CC4per"
+	intercrop "NATURALGRASS"
+)
+
+!// LUH2 irrigated crop types, 
+!// Note: LUH2 irrigated has the exact same irrigated fraction within each of the 5 crop types.
+!// LUH2 c3ann: C3 annual crop type irrigated
+st "CC3anni" (
+
+	crop_stand
+	stinclude 1
+	pft "CC3anni"
+	intercrop "NOINTERCROP"
+  hydrology "irrigated"
+)
+
+!// LUH2 c3per: C3 perennial crop type with inter crop grass enabled irrigated
+st "CC3peri" (
+
+	crop_stand
+	stinclude 1
+	pft "CC3peri"
+	intercrop "NATURALGRASS"
+  hydrology "irrigated"
+)
+
+!// LUH2 c3nfx: C3 nitrogen fixers type irrigated
+st "CC3nfxi" (
+
+	crop_stand
+	stinclude 1
+	pft "CC3nfxi"
+	intercrop "NOINTERCROP"
+  hydrology "irrigated"
+)
+
+!// LUH2 c4ann: C4 annual crop type irrigated
+st "CC4anni" (
+
+	crop_stand
+	stinclude 1
+	pft "CC4anni"
+	intercrop "NOINTERCROP"
+  hydrology "irrigated"
+)
+
+!// LUH2 c4per: C4 perennial crop type with inter crop grass enabled irrigated
+st "CC4peri" (
+
+	crop_stand
+	stinclude 1
+	pft "CC4peri"
+	intercrop "NATURALGRASS"
+  hydrology "irrigated"
+)
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// PARAMETERS FOR PFTS
+!// Run GUESS with -help option for list of keywords and their meanings
+
+group "TeW_nlim" (
+
+	TeW
+	sla 35	
+	cton_leaf_min 15.0
+
+	T_vn_min -1.3 !-1.3 - -1
+	T_vn_opt 4.9 !2 - 4.9
+	T_vn_max 15.7!15 - 15.7
+
+	T_veg_min 0.0 !
+	T_veg_opt 24.0 !
+	T_veg_max 35.0 !
+
+	T_rep_min 8.0 !0 - 8
+	T_rep_opt 29.0 !
+	T_rep_max 40.0 !
+
+	!photoperiod, critical omega short-day-plant
+	photo 9.5 0.34 0.0
+	photo 9.5 0.34 0.0
+	dev_rate_veg 0.03
+	dev_rate_rep 0.042 !0.04545
+
+	fertdates 110 202
+)
+
+group "TeWW" (
+
+	TeW_nlim
+	a1 0.53 
+	b1 0.0 !0.06 
+	c1 7.63 
+	d1 0.55
+	a2 0.8 !0.88
+	b2 0.2 !0.09
+	c2 13.99
+	d2 0.55 !0.65
+	a3 0.00 
+	b3 1.00 
+	c3 8.32
+	d3 1.15
+
+	ifsdautumn 1
+	forceautumnsowing 0 
+	fertrate 0.09 0.11
+	N_appfert 0.025
+)
+
+group "TeSW" (
+
+	TeW_nlim
+	a1 0.62 
+	b1 -0.02 !0.06 
+	c1 5.8 
+	d1 0.55
+	a2 0.86 !0.88
+	b2 0.19 !0.09
+	c2 28.65
+	d2 0.55 !0.65
+	a3 0.00 
+	b3 1.00 
+	c3 8.27
+	d3 1.1
+
+	ifsdautumn 0
+	forceautumnsowing 2
+	fertrate 0.09 0.49
+	N_appfert 0.0250
+)
+	
+group "TeCo_nlim" (
+
+	TeCo
+	sla 45.0
+	cton_leaf_min 15.0
+
+	a1 0.24 
+	b1 1.22 
+	c1 18.10 
+	d1 1.12
+	a2 0.68 
+	b2 -0.06 
+	c2 12.45 
+	d2 0.81
+	a3 0.00 
+	b3 1.00 
+	c3 28.52 
+	d3 1.03
+
+	T_vn_min 0
+	T_vn_opt 0
+	T_vn_max 0
+
+	T_veg_min 10.0 !
+	T_veg_opt 28.0 !
+	T_veg_max 47.0 !
+
+	T_rep_min 10.0 !
+	T_rep_opt 28.0 !
+	T_rep_max 47.0 !
+
+	dev_rate_veg 0.0265
+	dev_rate_rep 0.017
+
+	!photoperiod, critical omega short-day-plant
+	photo 12.0 0.02619 1.0
+
+	fertrate 0.4 0.5
+	fertdates 0 30
+	N_appfert 0.005
+)
+
+!//LUH2 C3 annual is mapped to our winter wheat (no inter crop grass)
+pft "CC3ann" (
+	TeWW
+)
+
+!//LUH2 C3 perennial is mapped to our summer wheat with inter crop grasses enabled
+pft "CC3per" (
+	TeSW
+)
+
+!//LUH2 C3 nitrogen fixers is mapped to our summer wheat (no inter crop grass)
+pft "CC3nfx" (
+  TeSW
+)
+
+!//LUH2 C4 annual is mapped to our corn (no inter crop grass)
+pft "CC4ann" (
+	TeCo_nlim
+)
+
+!//LUH2 C4 perennial is mapped to our corn with inter crop grasses enabled
+pft "CC4per" (
+	TeCo_nlim
+)
+
+!//LUH2 irrigated crop PFTs
+!//LUH2 C3 annual is mapped to our winter wheat (no inter crop grass)
+pft "CC3anni" (
+	TeWW
+)
+
+!//LUH2 C3 perennial is mapped to our summer wheat with inter crop grasses enabled
+pft "CC3peri" (
+	TeSW
+)
+
+!//LUH2 C3 nitrogen fixer is mapped to our summer wheat (no inter crop grass)
+pft "CC3nfxi" (
+  TeSW
+)
+
+!//LUH2 C4 annual is mapped to our corn (no inter crop grass)
+pft "CC4anni" (
+	TeCo_nlim
+)
+
+!//LUH2 C4 perennial is mapped to our corn with inter crop grasses enabled
+pft "CC4peri" (
+	TeCo_nlim
+)
+
+
+pft "CC3G_ic" (
+	C3G
+	landcover "cropland"
+	laimax 4
+	isintercropgrass 1
+	harv_eff 0.0
+	harv_eff_ic 0.0
+	res_outtake 0.0		! not used by crop grass
+	leaflong 1		! as in crop
+)
+
+pft "CC4G_ic" (
+	C4G
+	landcover "cropland"
+	laimax 4
+	isintercropgrass 1
+	harv_eff 0.0
+	harv_eff_ic 0.0
+	res_outtake 0.0		! not used by crop grass
+	leaflong 1		! as in crop
+)

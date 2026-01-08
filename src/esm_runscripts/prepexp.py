@@ -14,6 +14,7 @@ from esm_tools import user_error, user_note
 
 from . import filelists
 from .helpers import end_it_all, evaluate, write_to_log
+from .logfiles import set_progress_level
 
 
 def run_job(config):
@@ -350,38 +351,21 @@ def initialize_experiment_logfile(config):
         the general configuration is set to 1, and a file exists for
         ``general.exp_log_file``; this file is removed; and re-initialized.
     """
-
-    experiment_dir = config["general"]["experiment_dir"]
+    experiment_log_file = config["general"]["experiment_log_file"]
     expid = config["general"]["expid"]
-    it_coupled_model = config["general"]["iterative_coupled_model"]
-    datestamp = config["general"]["run_datestamp"]
+    jobtype = config["general"]["jobtype"]
+    run_number = config["general"]["run_number"]
+    current_date = config["general"]["current_date"]
+    jobid = config["general"]["jobid"]
 
-    if config["general"]["run_number"] == 1:
-        if os.path.isfile(config["general"]["experiment_log_file"]):
-            os.remove(config["general"]["experiment_log_file"])
+    # Include the progress level in logger and filter to only print progress messages
+    # in the experiment log file
+    set_progress_level(config)
 
-        log_msg = f"# Beginning of Experiment {expid}"
-        write_to_log(config, [log_msg], message_sep="")
+    if os.path.getsize(experiment_log_file) == 0:
+        logger.progress(f"Beginning of Experiment {expid}")
 
-        write_to_log(
-            config,
-            [
-                str(config["general"]["jobtype"]),
-                str(config["general"]["run_number"]),
-                str(config["general"]["current_date"]),
-                str(config["general"]["jobid"]),
-                "- start",
-            ],
-        )
-
-    # Write trace-log file now that we know where to do that
-    if "trace_sink" in dir(logger):
-        logfile_path = (
-            f"{experiment_dir}/log/"
-            f"{expid}_{it_coupled_model}esm_runscripts_{datestamp}.log"
-        )
-
-        logger.trace_sink.def_path(logfile_path)
+    logger.progress(f"{jobtype} {run_number} {current_date} {jobid} - start")
 
     return config
 

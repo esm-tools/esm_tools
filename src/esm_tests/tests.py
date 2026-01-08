@@ -289,7 +289,7 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
-    run_errors = ["ERROR:", "slurmstepd: error: *** STEP", "PBS: job killed: walltime"]
+    run_errors = ["ERROR:", "slurmstepd: error: ", "PBS: job killed: walltime"]
 
     # Set the counter to 0
     c = 0

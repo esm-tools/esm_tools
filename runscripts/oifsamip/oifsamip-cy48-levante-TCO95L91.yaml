@@ -6,12 +6,15 @@ general:
     initial_date: "1990-01-01"
     final_date: "2015-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
-    account: "bb1469"
+    account: "ab0246"
     nday: 0
     nmonth: 0
     nyear: 1
     use_venv: true
     install_esm_tools_branch: "feat/awicm3_v3.3_and_v3.4_test_venv_building"
+
+computer:
+    taskset: true
 
 oifsamip:
     postprocessing: false

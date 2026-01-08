@@ -1,7 +1,7 @@
 general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
-    version: "develop-cc"
+    version: "develop"
     account: "ab0246"
     compute_time: "00:30:00"
     initial_date: "1900-01-01"

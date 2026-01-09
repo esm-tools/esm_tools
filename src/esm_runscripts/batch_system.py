@@ -473,6 +473,8 @@ class batch_system:
         # Initialize section collectors for Jacamar
         if for_jacamar:
             jacamar_sections = {"before_script": [], "script": [], "after_script": []}
+            # Store cluster for later use in submit()
+            config["general"]["jacamar_cluster"] = cluster
 
         logger.debug("still alive")
         logger.debug(f"jobtype: {config['general']['jobtype']}")

@@ -17,7 +17,9 @@ def submit(config):
         logger.info("Submitting via GitLab/Jacamar trigger...")
 
         # Extract SBATCH headers for Jacamar
-        cluster = config["general"]["jobtype"]
+        # Use the cluster stored during write_simple_runscript, not jobtype
+        cluster = config["general"].get("jacamar_cluster", config["general"]["jobtype"])
+        logger.info(f"Using cluster '{cluster}' for partition determination")
         headers = batch_system.get_batch_header(config, cluster, for_jacamar=True)
 
         # Get the collected script sections

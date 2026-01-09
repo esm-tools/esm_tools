@@ -53,6 +53,9 @@ computer:
             compute:
                     partition_name: "compute"
                     partition_cpn: 128
+            pp:
+                    partition_name: "compute"
+                    partition_cpn: 128
 
     partitions:
             compute:

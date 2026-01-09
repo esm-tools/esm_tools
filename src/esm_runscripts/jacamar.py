@@ -193,21 +193,11 @@ class JacamarSubmitter:
         # Format SBATCH headers for Jacamar SCHEDULER_PARAMETERS
         scheduler_params = " ".join(sbatch_headers)
 
-        # Reverse esm_parser expansions for runtime eval in BEFORE_SCRIPT
-        current_env = os.environ.copy()
-        before_script_lines = script_sections["before_script"].split("\n")
-        for i, line in enumerate(before_script_lines):
-            if line.startswith("export "):
-                parts = line.split("=", 1)
-                if len(parts) == 2:
-                    key = parts[0].split()[1]
-                    value = parts[1]
-                    if key in current_env:
-                        current_val = current_env[key]
-                        if current_val in value:
-                            value = value.replace(current_val, f"${key}")
-                            before_script_lines[i] = f"export {key}={value}"
-        script_sections["before_script"] = "\n".join(before_script_lines)
+        # Replace $ with @@DOLLAR@@ to preserve dollars in script sections
+        for section in ["before_script", "script", "after_script"]:
+            script_sections[section] = script_sections[section].replace(
+                "$", "@@DOLLAR@@"
+            )
 
         payload = {
             "token": self.token,

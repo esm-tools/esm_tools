@@ -504,6 +504,7 @@ echam:
                                                     echam_monitoring.sh
                                                     -r ${general.expid}
                                                     -i ${initial_date!syear}
+                                                    -p ${general.base_dir}
                                                     -o ${computer.pool_directories.focipool}/OBS_MONITORING/T63/
                                                     "
                                                 nproc: 1

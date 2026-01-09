@@ -187,11 +187,27 @@ class JacamarSubmitter:
             If GitLab API request fails
         """
         endpoint = (
-            f"{self.gitlab_url}/api/v4/projects/{self.project_id}" f"/trigger/pipeline"
+            f"{self.gitlab_url}/api/v4/projects/{self.project_id}/trigger/pipeline"
         )
 
         # Format SBATCH headers for Jacamar SCHEDULER_PARAMETERS
         scheduler_params = " ".join(sbatch_headers)
+
+        # Reverse esm_parser expansions for runtime eval in BEFORE_SCRIPT
+        current_env = os.environ.copy()
+        before_script_lines = script_sections["before_script"].split("\n")
+        for i, line in enumerate(before_script_lines):
+            if line.startswith("export "):
+                parts = line.split("=", 1)
+                if len(parts) == 2:
+                    key = parts[0].split()[1]
+                    value = parts[1]
+                    if key in current_env:
+                        current_val = current_env[key]
+                        if current_val in value:
+                            value = value.replace(current_val, f"${key}")
+                            before_script_lines[i] = f"export {key}={value}"
+        script_sections["before_script"] = "\n".join(before_script_lines)
 
         payload = {
             "token": self.token,

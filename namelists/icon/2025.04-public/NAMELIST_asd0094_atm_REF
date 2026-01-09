@@ -95,7 +95,7 @@
  lcalib_clcov            = .false.                   ! turn off TCC, HCC, MCC, LCC tuning
  tune_eiscrit            = 7.0                       ! to switch off conv param in stratocumulus regions
  tune_zvz0i              = 0.85    ! 1.2 !  0.6      ! default: 0.85   ; Terminal fall velocity of ice
- tune_entrorg            = 2.9e-3  !sl 3.0e-3 ! 2.2e-3 ! default: 1.95e-3; Entrainment parameter valid for dx=20 km
+ tune_entrorg            = 3.0e-3        !  2.2e-3   ! default: 1.95e-3; Entrainment parameter valid for dx=20 km
  tune_sc_eis             = 7.            !  7.       ! default: 1000. - exec newer 633d375ad0
 /
 &turbdiff_nml
@@ -154,15 +154,12 @@ rbf_scale_mode_ll        = 2
  hbot_qvsubstep          = 16000.                    
 /
 &sea_ice_nml
- albedoW_sim             = 0.066_wp         ! albedo of the ocean used in sea ice model
- albedoW                 = 0.085_wp         ! 0.066 albedo of the ocean water
- albs                    = 0.83_wp          !0.85_wp Albedo of snow (not melting)
- albsm                   = 0.77_wp          !0.70_wp Albedo of snow (melting)
- albi                    = 0.70_wp         ! 0.75_wp Albedo of ice (not melting)
- albim                   = 0.68_wp         ! 0.70_wp Albedo of ice (melting)
- Cd_ia                   = 1.20e-3_wp      ! Ice-atmosphere drag coefficient			
- t_heat_base             = -2.0_wp         ! -5.0 arbitrary temperature used as basis for
-! hci_layer               = 0.25_wp         ! 0.10 Thickness of stabilizing constant heat capacity layer
+ albedoW_sim             = 0.07_wp         ! albedo of the ocean used in sea ice model
+ albs                    = 0.85_wp         ! Albedo of snow (not melting)
+ albsm                   = 0.70_wp         ! Albedo of snow (melting)
+ albi                    = 0.75_wp         ! Albedo of ice (not melting)
+ albim                   = 0.70_wp         ! Albedo of ice (melting)
+ Cd_ia                   = 1.20e-3_wp      ! Ice-atmosphere drag coefficient				  
 /
 &sleve_nml			                     
  min_lay_thckn           = 20.                       ! lowest level thickness (between half-levels)
@@ -186,26 +183,26 @@ rbf_scale_mode_ll        = 2
  lnetcdf_flt64_output    = .FALSE.                   ! T: 64 bit output in all files
 /
 &initicon_nml
- ifs2icon_filename     = "ifs2icon.nc"
+ ifs2icon_filename     = "ifs2icon_R2B04_DOM01.nc"
  filetype              = 4
 /
 &output_nml
  filetype                = 4
  output_start            = "1958-01-01T00:00:00Z"
- output_end              = "1958-01-01T00:00:00Z"
+ output_end              = "2014-01-01T00:00:00Z"
  output_interval         = "P1D"
  file_interval           = "P50Y"
  mode                    = 1
  remap                   = 0
  output_grid             = .FALSE. 
- output_filename         = "icon_zmc_ml"
+ output_filename         = "asd0094_zmc_ml"
  filename_format         = "<output_filename>_<datetime2>"
  ml_varlist              = 'z_mc', 'z_ifc'
 /
 &output_nml
  filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
  output_start            = "1958-01-01T00:00:00Z"
- output_end              = "2094-01-01T00:00:00Z"
+ output_end              = "2014-01-01T00:00:00Z"
  output_interval         = "P1D"  ! the output interval and
  file_interval           = "P50Y"    ! the file interval
  mode                    = 1                         ! 1: forecast mode (relative t-axis)
@@ -213,41 +210,41 @@ rbf_scale_mode_ll        = 2
  remap                   = 0                         ! 1: latlon,  0: native grid
  include_last            = .FALSE.                   ! flag whether to include the last time step
  output_grid             = .FALSE.                   ! flag whether grid information is added to output.
- output_filename         = "icon_atm_mon"      ! file name base
+ output_filename         = "asd0094_atm_mon"      ! file name base
  filename_format         = "<output_filename>_<datetime2>"
  ml_varlist              = 'tas_gmean','rsdt_gmean','rsut_gmean','rlut_gmean','radtop_gmean','prec_gmean','evap_gmean','pme_gmean'
 /
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
- output_end              = "2094-01-01T00:00:00Z"
+ output_end              = "2014-01-01T00:00:00Z"
  output_interval         = "P1D"  ! the output interval and
  file_interval           = "P50Y"    ! the file interval
  filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
  dom                     = -1		             
  mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
  include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_atm_2d_ml"    ! file name base
+ output_filename         = "asd0094_atm_2d_ml"    ! file name base
  filename_format         = "<output_filename>_<datetime2>"
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid
  operation               = "mean"                    ! works on icon grid only (remap=0)
  ml_varlist              = 'pres_msl', 'pres_sfc', 'sod_t', 'sou_t', 'thb_t', 't_s', 'clct', 'tot_prec_rate',
                            'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m',
-                           'sob_t', 'thb_t', 'sob_s', 'thb_s', 'shfl_s', 'lhfl_s', 'qhfl_s', 
+                           'sob_t', 'thb_t', 'sob_s', 'thb_s', 'shfl_s', 'lhfl_s', 'qhfl_s',
                            'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate', 'qifl_s',
                            't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 't_ice', 'h_ice',
                            'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
 /
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
- output_end              = "2094-01-01T00:00:00Z"
+ output_end              = "2014-01-01T00:00:00Z"
  output_interval         = "P1D"  ! the output interval and
  file_interval           = "P50Y"    ! the file interval
  filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
  dom                     = -1		             
  mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
  include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_atm_3d_ml"    ! file name base
+ output_filename         = "asd0094_atm_3d_ml"    ! file name base
  filename_format         = "<output_filename>_<datetime2>"
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid
@@ -299,8 +296,8 @@ rbf_scale_mode_ll        = 2
  irad_o3                 = 7
  irad_aero               = 12
  izenith                 = 4           ! 4: NWP default, 3: no annual cycle
-! albedo_type             = 2 ! Modis albedo
- vmr_co2                 = 284.3e-06   ! 1137.2e-6   ! piCTL : 284.3e-06   !
+ albedo_type             = 2 ! Modis albedo
+ vmr_co2                 = 1137.2e-6   ! piCTL : 284.3e-06   !
  vmr_ch4                 = 808.2e-09   ! values for 1850 CE
  vmr_n2o                 = 273.0e-09   ! values for 1850 CE
  vmr_o2                  = 0.20946

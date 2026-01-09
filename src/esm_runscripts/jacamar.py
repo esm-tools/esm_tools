@@ -7,8 +7,9 @@ triggers using the Jacamar executor, as an alternative to direct sbatch submissi
 
 import os
 import re
-import requests
 import subprocess
+
+import requests
 from loguru import logger
 
 
@@ -88,57 +89,70 @@ class JacamarSubmitter:
             If git repository is not found or remote URL cannot be parsed
         """
         # Prefer GitLab CI environment variables when running in CI
-        ci_project_path = os.environ.get('CI_PROJECT_PATH')
-        ci_ref = os.environ.get('CI_COMMIT_REF_NAME')
+        ci_project_path = os.environ.get("CI_PROJECT_PATH")
+        ci_ref = os.environ.get("CI_COMMIT_REF_NAME")
 
         if ci_project_path and ci_ref:
             # Running in GitLab CI - use environment variables
-            project_id = ci_project_path.replace('/', '%2F')
-            logger.debug(f"Using CI env vars: PROJECT_PATH={ci_project_path}, REF={ci_ref}")
+            project_id = ci_project_path.replace("/", "%2F")
+            logger.debug(
+                f"Using CI env vars: PROJECT_PATH={ci_project_path}, REF={ci_ref}"
+            )
             return project_id, ci_ref
 
         # Fallback to git detection for local development
         try:
             # Get remote URL
-            remote_url = subprocess.check_output(
-                ['git', 'remote', 'get-url', 'origin'],
-                stderr=subprocess.DEVNULL
-            ).decode().strip()
+            remote_url = (
+                subprocess.check_output(
+                    ["git", "remote", "get-url", "origin"], stderr=subprocess.DEVNULL
+                )
+                .decode()
+                .strip()
+            )
 
             # Parse project path from URL
             # Handles both HTTPS and SSH formats:
             # https://codebase.helmholtz.cloud/user/project.git
             # git@codebase.helmholtz.cloud:user/project.git
-            match = re.search(r'[:/]([\w\-\.]+/[\w\-\.]+)(?:\.git)?$', remote_url)
+            match = re.search(r"[:/]([\w\-\.]+/[\w\-\.]+)(?:\.git)?$", remote_url)
             if not match:
                 raise ValueError(f"Could not parse project from remote: {remote_url}")
 
             project_path = match.group(1)
             # Strip .git suffix if present (can be captured by [\w\-\.]+ pattern)
-            if project_path.endswith('.git'):
+            if project_path.endswith(".git"):
                 project_path = project_path[:-4]
             # URL-encode the project path for GitLab API
-            project_id = project_path.replace('/', '%2F')
+            project_id = project_path.replace("/", "%2F")
 
             # Get current branch
-            ref = subprocess.check_output(
-                ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
-                stderr=subprocess.DEVNULL
-            ).decode().strip()
+            ref = (
+                subprocess.check_output(
+                    ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                    stderr=subprocess.DEVNULL,
+                )
+                .decode()
+                .strip()
+            )
 
             # In detached HEAD state, try to get branch from symbolic ref
-            if ref == 'HEAD':
+            if ref == "HEAD":
                 try:
-                    ref = subprocess.check_output(
-                        ['git', 'symbolic-ref', '--short', 'HEAD'],
-                        stderr=subprocess.DEVNULL
-                    ).decode().strip()
+                    ref = (
+                        subprocess.check_output(
+                            ["git", "symbolic-ref", "--short", "HEAD"],
+                            stderr=subprocess.DEVNULL,
+                        )
+                        .decode()
+                        .strip()
+                    )
                 except subprocess.CalledProcessError:
                     logger.warning(
                         "Detached HEAD state detected. Using 'main' as default ref. "
                         "Set CI_COMMIT_REF_NAME environment variable to override."
                     )
-                    ref = 'main'
+                    ref = "main"
 
             return project_id, ref
 
@@ -173,8 +187,7 @@ class JacamarSubmitter:
             If GitLab API request fails
         """
         endpoint = (
-            f"{self.gitlab_url}/api/v4/projects/{self.project_id}"
-            f"/trigger/pipeline"
+            f"{self.gitlab_url}/api/v4/projects/{self.project_id}" f"/trigger/pipeline"
         )
 
         # Format SBATCH headers for Jacamar SCHEDULER_PARAMETERS
@@ -184,9 +197,9 @@ class JacamarSubmitter:
             "token": self.token,
             "ref": self.ref,
             "variables[SCHEDULER_PARAMETERS]": scheduler_params,
-            "variables[BEFORE_SCRIPT]": script_sections['before_script'],
-            "variables[EXECUTION_SCRIPT]": script_sections['script'],
-            "variables[AFTER_SCRIPT]": script_sections['after_script'],
+            "variables[BEFORE_SCRIPT]": script_sections["before_script"],
+            "variables[EXECUTION_SCRIPT]": script_sections["script"],
+            "variables[AFTER_SCRIPT]": script_sections["after_script"],
             "variables[EXPERIMENT_ID]": config["general"]["expid"],
             "variables[RUN_DATE]": str(config["general"]["current_date"]),
             # Skip prepare, build, and child pipeline creation for SLURM resubmission
@@ -196,6 +209,10 @@ class JacamarSubmitter:
             # Flag to indicate this is an esm_tools compute job trigger
             "variables[ESM_TOOLS_COMPUTE]": "true",
         }
+
+        logger.info("PAYLOAD INFORMATION")
+        for key, value in payload.items():
+            logger.info(f"{key}: {value}")
 
         logger.info(f"Triggering GitLab pipeline at {endpoint}")
         logger.debug(f"Ref: {self.ref}, Project: {self.project_id}")

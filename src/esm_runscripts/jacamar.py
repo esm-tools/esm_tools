@@ -99,6 +99,9 @@ class JacamarSubmitter:
                 raise ValueError(f"Could not parse project from remote: {remote_url}")
 
             project_path = match.group(1)
+            # Strip .git suffix if present (can be captured by [\w\-\.]+ pattern)
+            if project_path.endswith('.git'):
+                project_path = project_path[:-4]
             # URL-encode the project path for GitLab API
             project_id = project_path.replace('/', '%2F')
 

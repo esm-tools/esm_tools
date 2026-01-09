@@ -476,8 +476,8 @@ fesom:
                 K_hor: 5000.0
                 K_gm: 5000.0
             zstar:
-                K_gm_max: 2000.0
-                K_hor: 3000.0
+                K_gm_max: 1000.0
+                K_hor: 0.0
                 K_gm: remove_from_namelist
             "*":
                 is: invalid

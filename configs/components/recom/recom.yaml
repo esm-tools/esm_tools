@@ -172,6 +172,7 @@ recom:
                 currentCO2cycle: "${current_CO2_cycle}"
         lgm:
                 namelist_sce: ".lgm"
+
         "*":
                 constant_CO2: ""
                 REcoM_PI: ""
@@ -210,8 +211,10 @@ recom:
     use_atbox: "remove_from_namelist"
     namelist_changes:
             namelist.recom:
+                    nam_rsbc:
+                            nm_fe_data_file: "${data_path}"
                     pavariables:
-                            REcoMDataPath: "${data_path}"
+                            #REcoMDataPath: "${data_path}"
                             constant_CO2: "${constant_CO2}"
                             firstyearoffesomcycle: "${firstyearoffesomcycle}"
                             lastyearoffesomcycle: "${lastyearoffesomcycle}"

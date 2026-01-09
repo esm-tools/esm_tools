@@ -5,6 +5,7 @@ This module provides functionality to submit SLURM jobs via GitLab CI pipeline
 triggers using the Jacamar executor, as an alternative to direct sbatch submission.
 """
 
+import os
 import re
 import requests
 import subprocess
@@ -70,7 +71,10 @@ class JacamarSubmitter:
 
     def _detect_git_info(self):
         """
-        Extract GitLab project ID and current branch from git remote.
+        Extract GitLab project ID and current branch from CI env or git remote.
+
+        Prefers GitLab CI environment variables (CI_PROJECT_PATH, CI_COMMIT_REF_NAME)
+        when available, falling back to git commands for local execution.
 
         Returns
         -------
@@ -83,6 +87,17 @@ class JacamarSubmitter:
         Exception
             If git repository is not found or remote URL cannot be parsed
         """
+        # Prefer GitLab CI environment variables when running in CI
+        ci_project_path = os.environ.get('CI_PROJECT_PATH')
+        ci_ref = os.environ.get('CI_COMMIT_REF_NAME')
+
+        if ci_project_path and ci_ref:
+            # Running in GitLab CI - use environment variables
+            project_id = ci_project_path.replace('/', '%2F')
+            logger.debug(f"Using CI env vars: PROJECT_PATH={ci_project_path}, REF={ci_ref}")
+            return project_id, ci_ref
+
+        # Fallback to git detection for local development
         try:
             # Get remote URL
             remote_url = subprocess.check_output(
@@ -110,6 +125,20 @@ class JacamarSubmitter:
                 ['git', 'rev-parse', '--abbrev-ref', 'HEAD'],
                 stderr=subprocess.DEVNULL
             ).decode().strip()
+
+            # In detached HEAD state, try to get branch from symbolic ref
+            if ref == 'HEAD':
+                try:
+                    ref = subprocess.check_output(
+                        ['git', 'symbolic-ref', '--short', 'HEAD'],
+                        stderr=subprocess.DEVNULL
+                    ).decode().strip()
+                except subprocess.CalledProcessError:
+                    logger.warning(
+                        "Detached HEAD state detected. Using 'main' as default ref. "
+                        "Set CI_COMMIT_REF_NAME environment variable to override."
+                    )
+                    ref = 'main'
 
             return project_id, ref
 
@@ -160,6 +189,9 @@ class JacamarSubmitter:
             "variables[AFTER_SCRIPT]": script_sections['after_script'],
             "variables[EXPERIMENT_ID]": config["general"]["expid"],
             "variables[RUN_DATE]": str(config["general"]["current_date"]),
+            # Skip prepare and build stages for SLURM resubmission
+            "variables[SKIP_CHECK_MODEL_EXISTS]": "true",
+            "variables[SKIP_TRIGGER_BUILD]": "true",
         }
 
         logger.info(f"Triggering GitLab pipeline at {endpoint}")

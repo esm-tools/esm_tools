@@ -189,10 +189,11 @@ class JacamarSubmitter:
             "variables[AFTER_SCRIPT]": script_sections['after_script'],
             "variables[EXPERIMENT_ID]": config["general"]["expid"],
             "variables[RUN_DATE]": str(config["general"]["current_date"]),
-            # Skip prepare, build, and compute trigger for SLURM resubmission
+            # Skip prepare and build stages for SLURM resubmission
             "variables[SKIP_CHECK_MODEL_EXISTS]": "true",
             "variables[SKIP_TRIGGER_BUILD]": "true",
-            "variables[SKIP_TRIGGER_COMPUTE]": "true",
+            # Flag to indicate this is an esm_tools compute job trigger
+            "variables[ESM_TOOLS_COMPUTE]": "true",
         }
 
         logger.info(f"Triggering GitLab pipeline at {endpoint}")

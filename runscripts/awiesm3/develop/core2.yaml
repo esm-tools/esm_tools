@@ -5,7 +5,7 @@ general:
     account: "bb1469"
     compute_time: "02:00:00"
     initial_date: "1900-01-01"
-    final_date: "1900-01-10"
+    final_date: "1910-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
     nmonth: 0
@@ -24,9 +24,9 @@ fesom:
     restart_unit: "y"
     restart_first: 2
     lresume: false
-    time_step: 360
+    time_step: 1800
     nproc: 768 #originally 512 but worked with 1152
-    omp_num_threads: 1 # originally 4 but worked with 1
+    omp_num_threads: 2 # originally 4 but worked with 1
     tar_binary_restarts: true
 
 lpj_guess:
@@ -42,8 +42,8 @@ oifs:
     input_expid: awi3
     wam: true
     lresume: false
-    time_step: 900
-    nproc: 128
+    time_step: 3600
+    nproc: 384
     omp_num_threads: 4
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850

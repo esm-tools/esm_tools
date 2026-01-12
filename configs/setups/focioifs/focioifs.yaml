@@ -228,7 +228,8 @@ general:
 
 oifs:
 
-        version: "48r1"
+        version: "48r1-foci5"
+        major_version: "48r1"
 
         # This is 0 (off) by default in oifs.yaml
         # but should always be 2 for coupled runs

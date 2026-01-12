@@ -59,7 +59,7 @@ general:
 
     choose_computer.name:
         levante:
-            pool_dir: "/work/pd1284/AWIESM/"
+            pool_dir: "/work/ab0246/a270092/input/"
         juwels:
             pool_dir: "/p/project/chhb19/jstreffi/input"
         aleph:
@@ -440,16 +440,7 @@ lpj_guess:
     nyear_spinup: 1
     freenyears: 0
 
-    # LUH3 Land Use settings (0 = disabled, 1 = enabled)
-    use_luh3_input: 0
-    run_landcover: 0
-    run_urban: 0
-    run_crop: 0
-    run_forest: 0
-    run_pasture: 0
-    run_natural: 1
-    run_peatland: 0
-    run_barren: 0
+
 
     config_sources:
         tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
@@ -485,13 +476,9 @@ lpj_guess:
         CO2: CO2
 
     forcing_sources:
-        # TEMPORARY FIX: Using fixed slt files with correct variable name (var43)
-        # Original path (uncomment when input dir is fixed):
-        #soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        soil_layer_type: ${pool_dir}/lpj-guess/slt/slt_${mygrid}.nc
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}.nc
         CO2: ${lpj_guess.co2_source_file}
-        #"soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${pool_dir}/lpj-guess/slt/slt_${mygrid}.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}.nc
         "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
 
     forcing_in_work:

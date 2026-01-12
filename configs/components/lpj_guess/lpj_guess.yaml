@@ -66,7 +66,7 @@ lpj_guess:
 
     choose_computer.name:
         levante:
-            pool_dir: "/work/pd1284/AWIESM"
+            pool_dir: "/work/ab0246/a270092/input/"
 
     # Some recommended defaults (restart for old experiment yes or no?)
     lresume: false
@@ -150,10 +150,6 @@ lpj_guess:
 
     # Soil type file
     slt_dir: ${input_dir}/slt/
-    
-    # Ocean grid name for configuration-specific slt files
-    # TCO319 uses DARS2, all others default to CORE2
-    ocean_grid_name: CORE2
 
     # LUH3 land use input directory (NetCDF files regridded to various resolutions)
     
@@ -169,23 +165,33 @@ lpj_guess:
 
     # N deposition forcing files - link from input to work/ndep with renamed filenames
     forcing_files:
-        slt: slt
+        soil_layer_type: soil_layer_type
         drynhx: drynhx
         drynoy: drynoy
         wetnhx: wetnhx
         wetnoy: wetnoy
     forcing_sources:
-        slt: ${slt_dir}/slt_${resolution}_${ocean_grid_name}.nc
+        soil_layer_type: ${slt_dir}/slt_${resolution}.nc
         drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
         drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
         wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${slt_dir}/slt_${resolution}.nc
+        "drynhx_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
+        "drynoy_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
+        "wetnhx_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
+        "wetnoy_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
     forcing_in_work:
-        slt: slt_${resolution}.nc
+        soil_layer_type: slt_${resolution}.nc
         drynhx: ndep/drynhx2.nc
         drynoy: ndep/drynoy2.nc
         wetnhx: ndep/wetnhx2.nc
         wetnoy: ndep/wetnoy2.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${resolution}.nc
+        "drynhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynhx2.nc
+        "drynoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynoy2.nc
+        "wetnhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnhx2.nc
+        "wetnoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnoy2.nc
 
     # LUH3 land use files - conditionally added when use_luh3_input=1
     choose_use_luh3_input:
@@ -245,7 +251,6 @@ lpj_guess:
             res_number_tl: "255l_2"
             truncation: "TL"
         TCO319:
-            ocean_grid_name: DARS2
             nx: 421120
             ny: 1
             oasis_grid_name: 320

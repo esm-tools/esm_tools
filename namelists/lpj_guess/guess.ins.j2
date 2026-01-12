@@ -50,6 +50,9 @@ param "ndep_cmip_dir" (str "{{lpj_guess.ndep_cmip_dir}}")
 ! if (param["ndep_cmip_dir"].str != "") { // PaulM - ECE4 hack - option to run without ndep
 ! PaulM - ECE4 hack - edited 
 
+! CMIP CO2 forcing file (set by choose_mip block based on mip version)
+param "file_co2" (str "{{lpj_guess.co2_work_file | default('mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc')}}")
+
 ! Whether to use soil water content and soil temperature sent from IFS (1), or use GUESS' own
 ! hydrology (driven by precipitation) and analytic soil temperature (0).
 param "useifssoilmoist" (num 0)
@@ -103,9 +106,17 @@ npatch 5                                ! number of replicate patches to simulat
 ! LUH3 NetCDF land use input (0 = use text files, 1 = use NetCDF LUH3 files)
 use_luh3_input {{lpj_guess.use_luh3_input | default(0)}}
 {% if lpj_guess.use_luh3_input | default(0) == 1 %}
-file_luh3_states "../landuse/luh3_states.nc"
-file_luh3_transitions "../landuse/luh3_transitions.nc"
-file_luh3_management "../landuse/luh3_management.nc"
+param "file_luh3_states" (str "{{lpj_guess.file_luh3_states | default('../landuse/luh3_states.nc')}}")
+param "file_luh3_management" (str "{{lpj_guess.file_luh3_management | default('../landuse/luh3_management.nc')}}")
+{% if lpj_guess.use_luh3_yearly_transitions | default(0) == 1 %}
+! Yearly transition files mode
+param "use_luh3_yearly_transitions" (num 1)
+param "file_luh3_transitions_dir" (str "{{lpj_guess.file_luh3_transitions_dir}}/{{lpj_guess.mygrid | lower}}/")
+param "file_luh3_transitions" (str "")
+{% else %}
+! Single transition file mode
+param "file_luh3_transitions" (str "{{lpj_guess.file_luh3_transitions | default('../landuse/luh3_transitions.nc')}}")
+{% endif %}
 ! Override LUH2 text files to empty strings when using LUH3 NetCDF
 param "file_lu" (str "")
 param "file_lucrop" (str "")

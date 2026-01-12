@@ -1,263 +1,170 @@
 &NAMIOS
-    CFRCF = './rcf'
-    CIOSPRF = './srf'
+CFRCF="./rcf",
+CIOSPRF="./srf",
 /
-
 &NAMGRIB
-    CFCLASS = 'rd'
-    NCYCLE = 154
+CFCLASS="rd",
+NCYCLE=154,
 /
-
 &NAMCVER
-    LVERTFE = .true.
-    NVSCH = 3
-    LVFE_GWMPA = .true.
-    LVFE_GW = .false.
-    LVFE_Z_TERM = .false.
-    LVFE_X_TERM = .false.
-    LVFE_LAPL_BC = .true.
-    LVFE_LAPL = .true.
-    NDLNPR = 0
+LVERTFE=true,
+NVSCH=3,
+LVFE_GWMPA=true,
+LVFE_GW=false,
+LVFE_Z_TERM=false,
+LVFE_X_TERM=false,
+LVFE_LAPL_BC=true,
+LVFE_LAPL=true,
+NDLNPR=0,
 /
-
 &NAMMCC
-    LMCCEC = .true.
-    LMCCIEC = .false.
-    LMCC_COMPO = .false.
-    LMCCDYNSEAICE = .true.
+LMCCEC=true,
+LMCCIEC=false,
+LMCC_COMPO=false,
 /
-
 &NAMTRANS
-    LUSEFLT = .false.
-    LFFTW = .true.
+LUSEFLT=false,
+LFFTW=true,
 /
-
 &NAMRES
-    NFRRES = 1
-    NRESTS(:) = -1, -2976
 /
-
 &NAERAD
-    CRTABLEDIR = '/work/bb1460/b383103/MYMODELS/openifs_48r1_general/rtables/'
-    NRPROMA = 0
-    LECOMPGRID = .true.
-    NSOLARSPECTRUM = 1
-    NGHGRAD = 21
+CRTABLEDIR='./rtables/',
+NRPROMA=0,
+LECOMPGRID=true,
 /
-
-!!    CRTABLEDIR = ' /work/bb1460/b383103/MYMODELS/openifs_48r1_general    |         CRTABLEDIR = './rtables/',
-!!    CRTABLEDIR = '/work/bb1460/b383103/DATA_JK/oifs/rtables/'             |         NRPROMA = 0,
-!!    NRPROMA = 0                                                           |         CSOLARIRRADIANCEFILE = './ifsdata/total_solar_irradiance_CMIP6_49r
-!!    LECOMPGRID = .true.                                                   |         LAER3D = .false.
-!!    NSOLARSPECTRUM = 1                                                    |         NO3CMIP = 6
-!!    NGHGRAD = 21                                                          |         CO3DATADIR = "/home/rossby/ece-4-inidata/cmip6-data/"
-                                                                          >         LECOMPGRID=.false.
-
-
 &NAEPHY
-
-!! &NAEPHY                                                                         &NAEPHY
-!!    LEPHYS = .true.                                                       |         LEPHYS=true,
-!!    LEVDIF = .true.                                                       |         LEVDIF=true,
-!!    LESURF = .true.                                                       |         LESURF=true,
-!!    LECOND = .true.                                                       |         LECOND=true,
-!!    LECUMF = .true.                                                       |         LECUMF=true,
-!!    LEPCLD = .true.                                                       |         LEPCLD=true,
-!!    LEEVAP = .true.                                                       |         LEEVAP=true,
-!!    LEVGEN = .true.                                                       |         LEVGEN=true,
-!!    LESSRO = .true.                                                       |         LESSRO=true,
-!!    LECURR = .false.                                                      |         LECURR=false,
-!!    LEOCWA = .true.                                                       |         LEGWDG=true,
-!!    LEGWDG = .true.                                                       |         LEGWWMS=true,
-!!    LEGWWMS = .true.                                                      |         LEOZOC=true,
-!!    LEOZOC = .true.                                                       |         LEQNGT=true,
-!!    LEQNGT = .true.                                                       |         LERADI=true,
-!!    LERADI = .true.                                                       |         LERADS=true,
-!!    LERADS = .true.                                                       |         LELAIV = true,
-!!    LESICE = .true.                                                       |         LESICE = false,
-!!    LEO3CH = .true. ! switched off due to issue with reading input?       |         LEOCWA = false,
-!!    LO3CH_HLO = .true.                                                    |         LEO3CH=false,
-!!    CO3CHEM = 'H1.0'                                                      |         LO3CH_HLO=true,
-!!    LEDCLD = .true.                                                       |         CO3CHEM="H1.0",
-!!    LDUCTDIA = .false.                                                    |         LEDCLD=true,
-!!    LDIAGTURB_EC = .false.                                                |         LDUCTDIA=false,
-!!    LELIGHT = .false.                                                     |         LDIAGTURB_EC=false,
-!!    LWCOU = .true. ! switch off for testing; NOTE can only run 67 year    |         LELIGHT=false,
-!!    LWCOU2W = .true. ! switch off for testing; NOTE can only run 67 ye    |         LWCOU=false,
-!!    LWCOUHMF = .false.                                                    |         LWCOU2W=false,
-!!    LWCOURNW = .false.                                                    |         LWCOUHMF=false,
-!!    NSTPW = 1                                                             |         LWCOURNW=false,
-!!    LSLPHY = .true.                                                       |         NSTPW=1,
-!!    LESNML = .true.                                                       |         LSLPHY=true,
-!!    NSNMLWS = 2                                                           |         LESNML=true,
-!!    LEFARQUHAR = .true.                                                   |         NSNMLWS=2,
-!!    LEOPTSURF = .false.                                                   |         LEFARQUHAR=true,
-!!    LEAIRCO2COUP = .false.                                                |         LEOPTSURF=false,
-!!    LEC4MAP = .true.                                                      |         LEAIRCO2COUP=false,
-!!    LEAGS = .false.                                                       |         LEC4MAP=true,
-!!    NALBEDOSCHEME = 3                                                     |         LEAGS=false,
-!!                                                                          >         RCIMIN = 0.,
-!!                                                                          >         NALBEDOSCHEME=3,
-    LEPHYS = .true.
-    LEVDIF = .true.
-    LESURF = .true.
-    LECOND = .true.
-    LECUMF = .true.
-    LEPCLD = .true.
-    LEEVAP = .true.
-    LEVGEN = .true.
-    LESSRO = .true.
-    LECURR = .false.
-    LEOCWA = .false. !.true. ! switch off - no change
-    LEGWDG = .true.
-    LEGWWMS = .true.
-    LEOZOC = .true.
-    LEQNGT = .true.
-    LERADI = .true.
-    LERADS = .true.
-    LESICE = .false. !.true.
-    LEO3CH = .true. ! switched off due to issue with reading input?
-    LO3CH_HLO = .true.
-    CO3CHEM = 'H1.0'
-    LEDCLD = .true.
-    LDUCTDIA = .false.
-    LDIAGTURB_EC = .false.
-    LELIGHT = .false.
-    LWCOU = .true. ! switch off for testing; NOTE can only run 67 years
-    LWCOU2W = .true. ! switch off for testing; NOTE can only run 67 years
-    LWCOUHMF = .false.
-    LWCOURNW = .false.
-    NSTPW = 1
-    LSLPHY = .true.
-    LESNML = .true.
-    NSNMLWS = 2
-    LEFARQUHAR = .true.
-    LEOPTSURF = .false.
-    LEAIRCO2COUP = .false.
-    LEC4MAP = .true.
-    LEAGS = .false.
-    NALBEDOSCHEME = 3
+LEPHYS=true,
+LEVDIF=true,
+LESURF=true,
+LECOND=true,
+LECUMF=true,
+LEPCLD=true,
+LEEVAP=true,
+LEVGEN=true,
+LESSRO=true,
+LECURR=false,
+LEOCWA=true,
+LEGWDG=true,
+LEGWWMS=true,
+LEOZOC=true,
+LEQNGT=true,
+LERADI=true,
+LERADS=true,
+LESICE=true,
+LEO3CH=true,
+LO3CH_HLO=true,
+CO3CHEM="H1.0",
+LEDCLD=true,
+LDUCTDIA=false,
+LDIAGTURB_EC=false,
+LELIGHT=false,
+LWCOU=true,
+LWCOU2W=true,
+LWCOUHMF=false,
+LWCOURNW=false,
+NSTPW=1,
+LSLPHY=true,
+LESNML=true,
+NSNMLWS=2,
+LEFARQUHAR=true,
+LEOPTSURF=false,
+LEAIRCO2COUP=false,
+LEC4MAP=true,
+LEAGS=false,
 /
-
 &NAMPAR1
-    NOUTTYPE = 1
-    LSPLIT = .true.
-    NWRTOUT = 4
-    NFLDIN = 0
-    NSTRIN = 1
+NOUTTYPE=1,
+LSPLIT=true,
+NWRTOUT=4,
+NFLDIN=0,
+NSTRIN=1,
 /
-
 &NAMPAR0
-    LSTATS = .true.
-    LDETAILED_STATS = .false.
-    LSYNCSTATS = .false.
-    LSTATSCPU = .false.
-    NPRNT_STATS = 62
-    LBARRIER_STATS = .false.
-    LBARRIER_STATS2 = .false.
-    NPROC = 192 !384
-    NSPECRESMIN = 320
-    NOUTPUT = 1
-    MP_TYPE = 1
-    MBX_SIZE = 0
+LSTATS=true,
+LDETAILED_STATS=false,
+LSYNCSTATS=false,
+LSTATSCPU=false,
+NPRNT_STATS=62,
+LBARRIER_STATS=false,
+LBARRIER_STATS2=false,
+NPROC=62,
+NSPECRESMIN=96,
+NOUTPUT=1,
+MP_TYPE=1,
+MBX_SIZE=0,
 /
-
 &NAMDYNA
-    LSLAG = .true.
-    LNHEE = .false.
-    LNHQE = .false.
-    LGRADSP = .false.
+LSLAG=true,
+LNHEE=false,
+LNHQE=false,
+LGRADSP=false,
 /
-
 &NAMDYNCORE
-    LAQUA = .false.
+LAQUA=false,
 /
-
 &NAMDYN
-    LMASCOR = .true. ! .false. !.true. ! MASS correction switsched off for testing ; no change
-    NITMP = 3
-    LMASDRY = .false.
+LMASCOR=true,
+NITMP=3,
 /
-
 &NAMNMI
-    LASSI = .false.
+LASSI=false,
 /
-
 &NAMCT0
-    LARPEGEF = .false.
-    LFDBOP = .false.
-    LSMSSIG = .false.
-    N3DINI = 0
-    NFRDHP = 12
-    NFRDHFD = 1
-    NFRSDI = 1
-    NFRPOS = 24
-    NFRHIS = 24
-    NFRMASSCON = 1
-    NFPOS = 2
-    NPOSTS = 0
-    NHISTS = 0
-    NMASSCONS = 0
-    NFRCO = 4
-    NFRDHFZ = 48
-    NDHFZTS = 0
-    NDHFDTS = 0
-    NUNDEFLD = -999999
-    CMETER = 'xmeter'
-    CEVENT = 'xevent'
-    LXIOS = .true.
+LARPEGEF=false,
+LFDBOP=false,
+LSMSSIG=false,
+N3DINI=0,
+NFRDHP=12,
+NFRDHFD=1,
+NFRSDI=1,
+NFRPOS=24,
+NFRHIS=24,
+NFRMASSCON=1,
+NFPOS=2,
+NPOSTS=0,
+NHISTS=0,
+NMASSCONS=0,
+NFRCO=4,
+NFRDHFZ=48,
+NDHFZTS=0,
+NDHFDTS=0,
+NUNDEFLD=-999999,
+CMETER="xmeter",
+CEVENT="xevent",
 /
-
 &NAMDDH
-    BDEDDH(1:6,1) = 4.0, 1.0, 0.0, 50.0, 0.0, 49.0
-    NDHKD = 72
-    LHDZON = .false.
-    LHDEFZ = .false.
-    LHDDOP = .false.
-    LHDEFD = .false.
-    LHDGLB = .true.
-    LHDPRG = .true.
-    LHDHKS = .true.
+BDEDDH(1:6,1)=4.0,1.0,0.0,50.0,0.0,49.0,
+NDHKD=72,
+LHDZON=false,
+LHDEFZ=false,
+LHDDOP=false,
+LHDEFD=false,
+LHDGLB=true,
+LHDPRG=true,
+LHDHKS=true,
 /
-
 &NAMIO_SERV
-    NPROCESS_LEVEL = 5
-    NIO_SERV_METHOD = 2
-    NMSG_LEVEL_CLIENT = 0
-    NMSG_LEVEL_SERVER = 1
+NPROCESS_LEVEL=5,
+NIO_SERV_METHOD=2,
+NMSG_LEVEL_CLIENT=0,
+NMSG_LEVEL_SERVER=1,
 /
-
 &NAMGFL
-    YQ_NL%LGP = .true.
-    YQ_NL%LSP = .false.
-    YL_NL%LGP = .true.
-    YI_NL%LGP = .true.
-    YA_NL%LGP = .true.
-    YO3_NL%LGP = .true.
-    NMFDIAGLEV = 1
-    NOPTVFE = 0
-    YA_NL%LGP = .true.
-    YI_NL%BETAMFBC = -1
-    YI_NL%LGP = .true.
-    YI_NL%LINTLIN = .true.
-    YL_NL%BETAMFBC = -1
-    YL_NL%LGP = .true.
-    YL_NL%LINTLIN = .true.
-    YO3_NL%LGP = .true.
-    YQ_NL%LSP = .false.
-    YR_NL%BETAMFBC = -1
-    YR_NL%LINTLIN = .true.
-    YS_NL%BETAMFBC = -1
-    YS_NL%LINTLIN = .true.
+YQ_NL%LGP=true,
+YQ_NL%LSP=false,
+YL_NL%LGP=true,
+YI_NL%LGP=true,
+YA_NL%LGP=true,
+YO3_NL%LGP=true,
 /
-
 &NAMFPC
     CFPFMT = 'MODEL'
     NFP3DFP = 3
-    MFP3DFP(:) = 129, 130, 133
-    RFP3P(:) = 100000.0, 92500.0, 85000.0, 70000.0, 60000.0, 50000.0, 40000.0,
-               30000.0, 25000.0, 20000.0, 15000.0, 10000.0, 7000.0, 5000.0,
-               3000.0, 2000.0, 1000.0, 500.0, 100.0
+    MFP3DFP(:) = 129, 130, 133,
+    RFP3P(:) = 100000.0, 92500.0, 85000.0, 70000.0, 60000.0 50000.0, 40000.0, 30000.0,
+               25000.0, 20000.0, 15000.0, 10000.0, 7000.0, 5000.0, 3000.0,
+               2000.0, 1000.0, 500.0, 100.0
     NFPPHY = 2
     MFPPHY(:) = 166, 167
     NFPCLI = 0
@@ -265,518 +172,342 @@
     LTRACEFP = .false.
     RFPCORR = 60000.0
 /
-
 &NAMDIM
-    NPROMA = 0
+NPROMA=0,
 /
-
 &NAMDPHY
-    NCSNEC = 5
+NCSNEC=5,
 /
-
 &NAMGEM
-    LNONHYD_GEOM = .false.
-    NHTYP = 2
+LNONHYD_GEOM=false,
+NHTYP=2,
 /
-
 &NAMRIP
-    TSTEP = 900
-    CSTOP = 't2976'
+TSTEP=1800.0,
+CSTOP='h240',
 /
-
 &NAMARG
-    NCONF = 1
-    CNMEXP = 'ECE3'
+NCONF=1,
+CNMEXP="ab45",
 /
-
 &NAMRLX
 /
-
 &NAMVAR
-    LMODERR = .false.
-    LJCDFI = .false.
-    LUSEJCDFI = .false.
-    LECV = .false.
+ LMODERR=.false.,
+ LJCDFI=.false.,
+ LUSEJCDFI=.false.,
+ LECV=false,
 /
-
 &NAETLDIAG
 /
-
 &NAMVV0
-    LLFORCE_READ = .false.
+ LLFORCE_READ=false,
 /
-
 &NAEAER
 /
-
 &NALBAR
 /
-
 &NALORI
 /
-
 &NAM_DISTRIBUTED_VECTORS
 /
-
 &NAM926
 /
-
 &NAMAFN
 /
-
 &NAMANA
 /
-
 &NAMARPHY
 /
-
 &NAMCA
 /
-
 &NAMCAPE
 /
-
 &NAMCFU
 /
-
 &NAMCHK
 /
-
 &NAMCHET
 /
-
 &NAMCLDP
-    RCLDIFF = 5e-06
 /
-
 &NAMCLTC
 /
-
 &NAMCOM
 /
-
 &NAMCOS
 /
-
 &NAMCTAN
 /
-
 &NAMCUMF
 /
-
 &NAMCUMFS
 /
-
 &NAMCT1
 /
-
 &NAMCVA
 /
-
 &NAMDFHD
 /
-
 &NAMDFI
 /
-
 &NAMDIF
 /
-
 &NAMDIMO
 /
-
 &NAMDMSP
 /
-
 &NAMDYNA_STATIC
 /
-
 &NAMEMIS_CONF
 /
-
 &NAMENKF
 /
-
 &NAMFA
 /
-
 &NAMFFT
 /
-
 &NAMFPD
-    NLAT = 640
-    NLON = 1280
 /
-
 &NAMFPDY2
 /
-
 &NAMFPDYH
 /
-
 &NAMFPDYP
 /
-
 &NAMFPDYS
 /
-
 &NAMFPDYT
 /
-
 &NAMFPDYV
 /
-
 &NAMFPEZO
 /
-
 &NAMFPF
 /
-
 &NAMFPG
-    NFPLEV = 137
-    NFPMAX = 319
 /
-
 &NAMFPIOS
 /
-
 &NAMFPPHY
 /
-
 &NAMFPSC2
 /
-
 &NAMFPSC2_DEP
 /
-
 &NAMFY2
 /
-
 &NAMGMS
 /
-
 &NAMGOES
 /
-
 &NAMGOM
 /
-
 &NAMGWD
 /
-
 &NAMGWWMS
 /
-
 &NAMHLOPT
 /
-
 &NAMINI
 /
-
 &NAMIOMI
 /
-
 &NAMJBCODES
 /
-
 &NAMJFH
 /
-
 &NAMJG
 /
-
 &NAMJO
 /
-
 &NAMKAP
 /
-
 &NAMLCZ
 /
-
 &NAMLEG
 /
-
 &NAMLFI
 /
-
 &NAMMCUF
 /
-
 &NAMMETEOSAT
 /
-
 &NAMMTS
 /
-
 &NAMMTSAT
 /
-
 &NAMMTT
 /
-
 &NAMMUL
 /
-
 &NAMNASA
 /
-
 &NAMNN
 /
-
 &NAMNPROF
 /
-
 &NAMNUD
 /
-
 &NAMOBS
 /
-
 &NAMONEDVAR
 /
-
 &NAMOPH
 /
-
 &NAMOPTCMEM
 /
-
 &NAMPARAR
 /
-
 &NAMPHY
 /
-
 &NAMPHY0
 /
-
 &NAMPHY1
 /
-
 &NAMPHY2
 /
-
 &NAMPHY3
 /
-
 &NAMPHYDS
 /
-
 &NAMPPC
-    LRSACC = .true.
 /
-
 &NAMPONG
 /
-
 &NAMRAD15
 /
-
 &NAMRADCMEM
 /
-
 &NAMRCOEF
 /
-
 &NAMRINC
 /
-
 &NAMSATS
 /
-
 &NAMSCC
 /
-
 &NAMSCEN
 /
-
 &NAMSCM
 /
-
 &NAMSENS
 /
-
 &NAMSIMPHL
 /
-
 &NAMSKF
 /
-
 &NAMSPSDT
 /
-
 &NAMSPP
 /
-
 &NAMSSMI
 /
-
 &NAMSTA
 /
-
 &NAMSTOPH
 /
-
 &NAMTCWV
 /
-
 &NAMTESTVAR
 /
-
 &NAMTOPH
 /
-
 &NAMTOVS
 /
-
 &NAMTRAJP
 /
-
 &NAMTRM
 /
-
 &NAMVARBC
 /
-
 &NAMVARBC_AIREP
 /
-
 &NAMVARBC_ALLSKY
 /
-
 &NAMVARBC_GBRAD
 /
-
 &NAMVARBC_RAD
 /
-
 &NAMVARBC_SFCOBS
 /
-
 &NAMVARBC_TCWV
 /
-
 &NAMVARBC_TO3
 /
-
 &NAMVAREPS
 /
-
 &NAMVDOZ
 /
-
 &NAMVFP
 /
-
 &NAMVRTL
 /
-
 &NAMVV1
 /
-
 &NAMVV2
 /
-
 &NAMVWRK
 /
-
 &NAMWAVELETJB
 /
-
 &NAMXFU
 /
-
 &NAMZDI
 /
-
 &NAPHLC
 /
-
 &NAV1IS
 /
-
 &NAEPHLI
 /
-
 &NAMPPVI
 /
-
 &NAMSPNG
 /
-
 &NAMTHLIM
 /
-
 &NAMOOPS
 /
-
 &NAMINTFLEX
 /
-
 &NAMIAU
 /
-
 &NAMDIM_TRAJ
 /
-
 &NAMVDF
 /
-
 &NAMGWDIAG
 /
-
 &NAMTRANS0
 /
-
 &NAMMETHOX
 /
-
 &NAM_ATLAS_IFS
 /
-
 &NAMACV
 /
-
 &NAM_MGRIDS_ADVECTION
 /
-
 &NAMTRAJ
 /
-
 &NAMSATSIM
 /
-
 &NAMCMEM_MW
 /
-
 &NAMPHMSE
 /
-
 &NAMNORGWD
 /
-
 &NAMCLRADLID
 /
-
 &NAMDVISI
 /
-
 &NAM_MGRIDS_ADVECTION
 /
-
 &NAMNUDGLH
 /
-
 &NAMPERTOBS
 /
-
 &NAMVARBC_MODES
-/
-
-&NAMECECFG
-    ECE_CPL_NEMO_LIM = .true.
-    ECE_CPL_NEMO_CONSERVATIVE_HEATFLUX = .true.
-/
-&NAMECECMIP
 /

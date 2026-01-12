@@ -3257,36 +3257,34 @@ nemo:
           add_config_files:
              namelist_ice_cfg: namelist_ice_cfg
 
-          choose_generation:
-             "4.2":
+          add_namelist_changes:
+             namelist_ice_cfg:
+                nampar:
+                   cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                   cn_icerst_indir: '${parent_restart_dir}/'
+                   cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
+                   cn_icerst_outdir: '${experiment_restart_out_dir}/'
+                namini:
+                   ln_iceini: ${ln_iceini}
+                   # initialize sea ice based on SSTs
+                   nn_iceini_file: 0
+
+          # Additional changes for 1st AGRIF child
+          choose_use_si3_agrif:
+             true:
+                add_config_files:
+                   1_namelist_ice_cfg: 1_namelist_ice_cfg
                 add_namelist_changes:
-                   namelist_ice_cfg:
+                   1_namelist_ice_cfg:
                       nampar:
-                         cn_icerst_in: ${parent_expid}_${prevstep_formatted}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
+                         cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
                          cn_icerst_indir: '${parent_restart_dir}/'
                          cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
                          cn_icerst_outdir: '${experiment_restart_out_dir}/'
                       namini:
-                         ln_iceini: ${ln_iceini}
+                         ln_iceini: ${ln_iceini_agrif}
                          # initialize sea ice based on SSTs
                          nn_iceini_file: 0
-
-                # Additional changes for 1st AGRIF child
-                choose_use_si3_agrif:
-                   true:
-                      add_config_files:
-                         1_namelist_ice_cfg: 1_namelist_ice_cfg
-                      add_namelist_changes:
-                         1_namelist_ice_cfg:
-                            nampar:
-                               cn_icerst_in: ${parent_expid}_${prevstep_formatted_nest}_restart_ice_${parent_date!syear!smonth!sday}${global_tag}
-                               cn_icerst_indir: '${parent_restart_dir}/'
-                               cn_icerst_out: restart_ice_${end_date_m1!syear!smonth!sday}
-                               cn_icerst_outdir: '${experiment_restart_out_dir}/'
-                            namini:
-                               ln_iceini: ${ln_iceini_agrif}
-                               # initialize sea ice based on SSTs
-                               nn_iceini_file: 0
 
     choose_use_tracer:
        true:

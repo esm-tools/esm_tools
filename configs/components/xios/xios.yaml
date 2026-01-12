@@ -275,10 +275,17 @@ xios:
                             ifs_xml: ifs_xml
             focioifs:
                     xml_dir: "${computer.pool_directories.focipool}"
-                    add_config_files:
-                            context_ifs: context_ifs
-                            ifs_xml: ifs_xml
-                            nemo_xml: nemo_xml
+                    choose_general.version:
+                        # in 5.0 context_ifs is in subdir ifs_xml
+                        "5.0":
+                            add_config_files:
+                                ifs_xml: ifs_xml
+                                nemo_xml: nemo_xml
+                        "*":
+                            add_config_files:
+                                context_ifs: context_ifs
+                                ifs_xml: ifs_xml
+                                nemo_xml: nemo_xml
 
             foci:
                choose_general.version:

@@ -1154,8 +1154,8 @@ oifs:
                                     NAMRES:
                                             NFRRES: 1
                                             NRESTS:
-                                                   - -1
-                                                   - -${oifs.next_step}
+                                                   - 1
+                                                   - ${oifs.next_step}
                                     NAMPAR0:
                                             NPROC: ${oifs.nproc}
                                     NAMRIP:

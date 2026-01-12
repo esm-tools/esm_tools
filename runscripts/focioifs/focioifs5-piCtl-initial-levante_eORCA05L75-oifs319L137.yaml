@@ -13,14 +13,21 @@ general:
    setup_name: "focioifs"      
    resolution: "TCO319_eORCA05"
    version: "5.0"
-   
-   compute_time: "01:00:00"
+  
+   # test settings: daily restarts for two days
+   #compute_time: "00:30:00"
+   #initial_date: "1950-01-01T00:00:00"       # Initial exp. date
+   #final_date: "1950-01-03T00:00:00"         # Final date of the experiment
+   #nmonth: 0
+   #nday: 1
+   # monthly restarts for 6 months 
+   compute_time: "02:30:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1950-02-01T00:00:00"         # Final date of the experiment
-   
-   nyear: 0
+   final_date: "1950-07-01T00:00:00"         # Final date of the experiment
    nmonth: 1
    nday: 0
+   
+   nyear: 0
    hours: 0
    account: bb1460
    base_dir: /work/bb1460/${general.userdir}/esm-experiments

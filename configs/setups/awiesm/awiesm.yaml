@@ -513,14 +513,14 @@ recom:
                         restart_name: "restart." #YY: not needed, always the same format of filename as fesom 
 
                         remove_namelist_changes.namelist.recom.pavariables:
-                            - constant_CO2
+#                            - constant_CO2
                             - firstyearoffesomcycle
                             - lastyearoffesomcycle
                             - numofCO2cycles
                             - currentCO2cycle
                             - REcoM_PI
-                        remove_namelist_changes.namelist.recom.paco2_flux_param:
-                            - CO2_for_spinup
+#                        remove_namelist_changes.namelist.recom.paco2_flux_param:
+#                            - CO2_for_spinup
 
                         namelist_dir: ${fesom.model_dir}/config/bin_2p1z1d_tp/
 

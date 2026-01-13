@@ -209,6 +209,7 @@ recom:
             - namelist.recom
 
     use_atbox: "remove_from_namelist"
+    restore_alkalinity: true
     namelist_changes:
             namelist.recom:
                     nam_rsbc:
@@ -216,6 +217,7 @@ recom:
                     pavariables:
                             #REcoMDataPath: "${data_path}"
                             constant_CO2: "${constant_CO2}"
+                            restore_alkalinity: "{restore_alkalinity}"
                             firstyearoffesomcycle: "${firstyearoffesomcycle}"
                             lastyearoffesomcycle: "${lastyearoffesomcycle}"
                             numofCO2cycles: "${numofCO2cycles}"

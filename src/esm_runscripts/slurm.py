@@ -256,6 +256,9 @@ class Slurm:
                         "export OMP_NUM_THREADS="
                         + str(config[model].get("omp_num_threads", 1))
                         + "\n"
+                        "export OASIS_OMP_NUM_THREADS="
+                        + str(config[model].get("omp_num_threads", 1))
+                        + "\n"
                     )
                     f.write(command + "\n")
                 os.chmod(scriptfolder + scriptname, 0o755)

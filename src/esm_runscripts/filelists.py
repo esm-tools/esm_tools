@@ -14,7 +14,7 @@ import yaml
 from loguru import logger
 
 import esm_parser
-from esm_tools import user_error
+from esm_tools import user_error, user_note
 
 from . import helpers, jinja
 
@@ -99,7 +99,7 @@ def rename_sources_to_targets(config):
                     pass
 
                 elif (not sources and in_work) or (not sources and targets):
-                    logger.error(filetype + "_sources missing in model " + model)
+                    logger.error(f"{filetype}_sources missing in model {model}")
                     helpers.print_datetime(config)
                     sys.exit(-1)
 
@@ -1276,6 +1276,15 @@ def avoid_overwriting(config, source, target):
         if filecmp.cmp(source, target):
             return target
 
+        warning_function = user_error
+        action = "Skipping movement"
+        hint = (
+            "\n\nNote: if you are rerunning a given run and you want to enforce "
+            "overwriting the output files, you can define "
+            "'general.force_overwrite_in_file_movements: True'. Use it at your own "
+            "risk and only if you understand why are you doing this. You should never "
+            "run with it set True as a default."
+        )
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
             if filecmp.cmp(source, date_stamped_target):
@@ -1286,14 +1295,17 @@ def avoid_overwriting(config, source, target):
             elif config["general"]["force_overwrite_in_file_movements"]:
                 os.remove(date_stamped_target)
                 warning_function = user_note
+                action = "Overwriting the file"
+                hint = ""
             else:
                 # This will exit(1) (default in configs/defaults/general.yaml)
                 warning_function = user_error
 
             warning_function(
                 "File movement conflict",
-                f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
-                f"{source} -> {date_stamped_target}",
+                f"The file ``{date_stamped_target}`` already exists. {action}:\n"
+                f"{source} -> {date_stamped_target}"
+                f"{hint}",
             )
 
         if os.path.islink(target):
@@ -1409,17 +1421,27 @@ def _check_fesom_missing_files(config):
     config : dict
     """
     if "fesom" in config["general"]["valid_model_names"]:
-        namelist_config = f90nml.read(
-            os.path.join(config["general"]["thisrun_work_dir"], "namelist.config")
+        namelist_config_path = (
+            pathlib.Path(config["general"]["thisrun_work_dir"]) / "namelist.config"
         )
-        for path_key, path in namelist_config["paths"].items():
-            if path:  # Remove empty strings
-                if not os.path.exists(path):
+        namelist_config = f90nml.read(namelist_config_path)
+        for path_key, path_val in namelist_config["paths"].items():
+            if path_val:  # Ignore empty strings
+                try:
+                    path = pathlib.Path(path_val)
+                except TypeError as error:
+                    user_error(
+                        "Invalid path",
+                        f"The value for ``{path_key}`` in the namelist ``&paths``, "
+                        f"defined in ``{namelist_config_path}``, is ``{path}``, and "
+                        f"cannot be interpreted as a valid path.\n{error}",
+                    )
+                if not path.exists():
                     if "files_missing_when_preparing_run" not in config["general"]:
                         config["general"]["files_missing_when_preparing_run"] = {}
                     config["general"]["files_missing_when_preparing_run"][
-                        path_key + " (from namelist.config in FESOM)"
-                    ] = path
+                        f"{path_key} (from namelist.config in FESOM)"
+                    ] = path_val
     return config
 
 

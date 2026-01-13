@@ -289,7 +289,7 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
-    run_errors = ["ERROR:", "slurmstepd: error: *** STEP", "PBS: job killed: walltime"]
+    run_errors = ["ERROR:", "slurmstepd: error: ", "PBS: job killed: walltime"]
 
     # Set the counter to 0
     c = 0
@@ -520,7 +520,7 @@ def check(info, mode, model, version, out, script, v):
     """
     # Set variables
     success = True
-    mode_name = {"comp": "compilation", "submission": "submission", "run": "runtime"}
+    mode_name = {"comp": "compilation", "submission": "submission", "run": "run"}
     last_tested_dir = info["last_tested_dir"]
     this_computer = info["this_computer"]
     user_info = info["user"]
@@ -789,9 +789,9 @@ def exist_files(files, path, version):
         exception_list = find_exceptions(f)
 
         # Command's logic
-        if " except " in f and version in exception_list:
+        if " except " in f and str(version) in exception_list:
             continue
-        elif " in " in f and not version in exception_list:
+        elif " in " in f and not str(version) in exception_list:
             continue
         else:
             f_path = f.split(" ")[0]

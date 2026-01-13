@@ -1,0 +1,111 @@
+!///////////////////////////////////////////////////////////////////////////////////////
+!// ecev3 guess.ins
+
+! optimesm & rescue
+import "ecearth.ins"
+! import "global.ins"
+import "crop_n.ins"
+import "landuse.ins"
+
+param "file_gridlist"	(str "ece_gridlist.txt")
+
+! *** SIMFIRE related files  
+param "file_simfire"  (str "/proj/rescue/lpjg/fire/SimfireInput.bin") ! Tetralith
+! PaulM hack ECE4
+!param "file_simfire"  (str "SimfireInput.bin")
+
+! PaulM hack ECE4
+firemodel "NOFIRE"               ! BLAZE, GLOBFIRM, NOFIRE
+
+! optimesm
+import "wetlandpfts.ins"
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// RUN PARAMETERS AND OPTIONS 
+
+! ecev3 - overrides ifbvoc 0 in global.ins
+ifbvoc 1
+
+! ecev3 - set to 1
+ifintercropgrass 1	! Whether to grow grass as cover crop between growing periods
+
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// ecev3 - Parameters and options specific to LPJ-GUESS coupled to EC-Earth
+
+! N deposition (blank string to use constant pre-industrial level of 2 kgN/ha/year)
+! NB! not used in EC-Earth coupling
+!param "file_ndep"     (str "c:/ndep/GlobalNitrogenDeposition.bin")
+param "file_ndep"     (str "") ! NB! MUST be cru_ncep version of this file
+
+! CMIP N deposition - replaces file_ndep
+!param "ndep_cmip_dir" (str "D:/DATA/J/MODELDATA/ndep/cmip6/") ! Windows PC
+!param "ndep_cmip_dir" (str "/proj/rescue/users/sm_paumi/osm_output/HST1/ndep/") ! Tetralith
+! param "ndep_cmip_dir" (str "../ndep/") 
+param "ndep_cmip_dir" (str "")
+! if (param["ndep_cmip_dir"].str != "") { // PaulM - ECE4 hack - option to run without ndep
+! PaulM - ECE4 hack - edited 
+
+! Whether to use soil water content and soil temperature sent from IFS (1), or use GUESS' own
+! hydrology (driven by precipitation) and analytic soil temperature (0).
+param "useifssoilmoist" (num 0)
+param "useifssoiltemp" (num 0)
+
+
+! Determine which RCP to use
+! 0 - historical only (i.e. use file_co2 below)
+! 1 - use ghg_rcp3PD.txt
+! 2 - use ghg_rcp45.txt
+! 3 - use ghg_rcp60.txt
+! 4 - use ghg_rcp85.txt
+param "nrcp" (num 0)
+
+! State file name and directory 
+! For saving and reading .bin files.
+!state_path "./" 
+param "state_path" (str "../../../restart/lpj_guess/") 	! directory containing the .bin state files
+param "state_name" (str "lpjg")	! state filenames
+param "restart" (num {{lpj_guess.restart_num}}) ! 		! 1: restart from .bin files. 0: start from bare ground
+! PaulM ECE4 hack - changed to 0
+
+! Paths to IFS spinup data - MUST have trailing "/" (linux/unix systems) or "\" (Windows)
+
+! NSC ECE 3p1:
+!param "spinup_directory" (str "/nobackup/rossby15/sm_paumi/ecev3/processed/daily/")
+! NSC ECE 3p2 AMIP output:
+!param "spinup_directory" (str "/nobackup/rossby18/sm_wyser/ecearth3-amip/processed/daily/")
+! Fast AMIP output:
+!param "spinup_directory" (str "/nobackup/rossby20/sm_paumi/amipspinupforcing/")
+! lsm runscript: ifs_spinup_forcing must be linked in the runtime script
+param "spinup_directory" (str "../ifs_spinup_forcing/")
+
+! Tetralith, GSWP files:
+! param "spinup_directory" (str "/proj/rescue/lpjg/gswp3/osm_forcing/gswp3/T255L91/lpjg_spinup_forcing/")
+
+!param "spinup_directory" (str "D:\DATA\J\EC-Earth\Version3p1_output\se21\daily\") ! Older set
+!param "spinup_directory" (str "D:\DATA\J\EC-Earth\Version3p2_output\AMIP\") 
+
+! N deposition (default is pre-industrial level of 2 kgN/ha/year)
+param "ndep" (num 2)
+
+! Print Lon/Lat with extra precision. Default is 1
+coordinates_precision 6
+
+
+! optimesm & rescue TESTING
+! PaulM ECE4 hack - changed below
+npatch 5                                ! number of replicate patches to simulate
+run_landcover 0        ! whether to use (and change) landcover fractions (1) or not (0)
+
+run_urban 0           ! whether to simulate urban land (1) or not (0)
+run_crop 0            ! whether to simulate crop vegetation (1) or not (0)
+run_forest 0          ! whether to simulate managed forest (1) or not (0)
+run_pasture 0         ! whether to simulate pasture (1) or not (0)
+run_natural 1         ! whether to simulate natural vegetation (1) or not (0)
+run_peatland 0        ! whether to simulate peatland (1) or not (0)
+run_barren 0          ! whether to simulate barren land (1) or not (0)
+
+!printcmip 0            ! Whether to print CMIP output
+!printcmipdaily 0       ! Whether to print daily CMIP output
+
+!ifmethane 1

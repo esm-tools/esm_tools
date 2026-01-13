@@ -44,11 +44,12 @@ the XDG standard (typically ~/.config/esm_archiving)::
     Writing global (user) configuration...
 
 """
+
 import logging
 import os
 
-from xdgenvpy import XDGPedanticPackage
 import yaml
+from xdgenvpy import XDGPedanticPackage
 
 # Add XDG Standard
 xdg = XDGPedanticPackage("esm_archiving")
@@ -91,7 +92,9 @@ def load_config():
 def write_config_yaml(path=None):
     if not path:
         path = xdg.XDG_CONFIG_DIRS.split(":")[0] + "/esm_archiving"
-    logging.debug("Opening %s for writing..." % os.path.join(path, CONFIG_FNAME))
+    # [FIXME] PG: At some point, I'd like all paths to be ``Path``
+    # [PROJECT] PG: path-refactor
+    logging.debug(f"Opening {os.path.join(path, CONFIG_FNAME)} for writing...")
     with open(os.path.join(path, CONFIG_FNAME), "w") as config_file:
         logging.debug("...dumping...")
         yaml.dump(DEFAULT_CONFIG, config_file)

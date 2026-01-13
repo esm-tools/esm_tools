@@ -101,8 +101,9 @@ def yaml_dump(config, config_file_path=None):
     )
 
     if "oasis3mct" in config:
+        from esm_runscripts import oasis
         my_yaml.representer.add_representer(
-            esm_runscripts.oasis.oasis, oasis_representer
+            oasis.oasis, oasis_representer
         )
 
     # Avoid saving ``prev_run`` information in the config file

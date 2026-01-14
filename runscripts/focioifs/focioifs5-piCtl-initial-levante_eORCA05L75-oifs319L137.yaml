@@ -17,11 +17,11 @@ general:
    # test settings: daily restarts for two days
    #compute_time: "00:30:00"
    #initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   #final_date: "1950-01-03T00:00:00"         # Final date of the experiment
+   #final_date: "1950-01-04T00:00:00"         # Final date of the experiment
    #nmonth: 0
    #nday: 1
    # monthly restarts for 6 months 
-   compute_time: "02:30:00"
+   compute_time: "03:30:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
    final_date: "1950-07-01T00:00:00"         # Final date of the experiment
    nmonth: 1
@@ -57,6 +57,26 @@ focioifs:
    
 oifs:
    
+   # if you change name=OIFS in file_def*xml you currently have to adjust 
+   # it here as well.
+   # need to discuss this with Joakim and/or Jan Streffing from AWI
+   # used to be ECE3 with OIFS43
+   # this section can be removed once the search pattern for 
+   # outdata_sources:
+   #    oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+   # in oifs.yaml has been adjusted (need to talk to AWI first)
+   # and I'm sure that I can safely change input_expid to OIFS
+   # oifsnc: can't be overwritten here do to the use of wildcards
+   # need to file a bug report with AWI
+   add_outdata_files:
+      oifsnc2: oifsnc2 
+   add_outdata_in_work:
+      oifsnc2: OIFS_*_${start_date!syear}*.nc
+   add_outdata_sources:
+      oifsnc2: OIFS_*_${start_date!syear}*.nc
+   #outdata_sources:
+   #  oifsnc: OIFS_*_${start_date!syear}*.nc
+
    post_run_commands: "sync"
    lresume: ${general.lresume}
    # This would be for a traditional restart
@@ -177,7 +197,7 @@ xios:
    with_model: focioifs 
    version: 3.0_trunk
    xml_dir: /work/bb1460/b350071/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/ 
-   nproc: 140
+   nproc: 180
    omp_num_threads: 1
 
 computer:

@@ -81,6 +81,7 @@ fesom:
     time_dimension: "time"
 
     pool_dir: "${computer.pool_directories.pool}"
+    tripyview_conda_module: "NOT_SET"
 
     choose_computer.name:
         ollie:
@@ -90,9 +91,11 @@ fesom:
             climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
             forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
             mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
+            tripyview_conda_module: "python3" # Provides conda: https://tinyurl.com/3887k99t
         albedo:
             climate_data_dir: "${pool_dir}/FESOM/hydrography/"
             mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+            tripyview_conda_module: "conda"
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
@@ -208,7 +211,7 @@ fesom:
     outdata_sources:
             fesom: "*.fesom.*.nc"
     outdata_targets:
-            fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
+            fesom: "*.fesom.*.nc"
 
     choose_use_icebergs:
             True:
@@ -468,6 +471,15 @@ fesom:
 
     bin_sources:
             fesom: "${bin_dir}/${comp_executable}"
+    scripts_files:
+            Tripy1: Tripy1
+            Tripy2: Tripy2
+    scripts_sources:
+            Tripy1: "${esm_function_dir}/components/fesom/Subjob_tripy.sh"
+            Tripy2: "${esm_function_dir}/components/fesom/ESM_auto_tripy.yaml"
+    scripts_targets:
+            Tripy1: "${general.experiment_scripts_dir}/${model}/Subjob_tripy.sh"
+            Tripy2: "${general.experiment_scripts_dir}/${model}/ESM_auto_tripy.yaml"
 
 
 
@@ -626,6 +638,18 @@ fesom:
         - "copy_stuff_back_from_work"
         - "copy_all_results_to_exp"
         - "clean_run_dir"
+    workflow:
+            next_run_triggered_by: tidy
+            subjobs:
+                    Tripy_Fesom:
+                            batch_or_shell: batch
+                            order_in_cluster: concurrent
+                            run_on_queue: ${computer.partitions.pp.name}
+                            run_after: tidy
+                            script_dir: ${base_dir}/${expid}/scripts/fesom
+                            submit_to_batch_system: true
+                            script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir} ${general.base_dir} ${general.expid} ${fesom.tripyview_conda_module}"
+                            nproc: 1
 
 computer:
     choose_computer.name:

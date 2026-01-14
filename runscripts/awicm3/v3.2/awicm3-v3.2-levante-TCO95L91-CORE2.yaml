@@ -6,7 +6,8 @@ general:
     compute_time: "08:00:00"
     initial_date: "2000-01-01"
     final_date: "2050-01-01"
-    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    project_base: !ENV ${PROJECT_BASE}
+    base_dir: "${general.project_base}/experiments"
     nday: 0
     nmonth: 0
     nyear: 25

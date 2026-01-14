@@ -27,6 +27,7 @@ final_date=$5
 mesh_dir=$6
 base_dir=$7
 expid=$8
+conda_module=$9
 
 # Change dates to years
 start_year=$(date -d "$start_date" +%Y)
@@ -61,6 +62,7 @@ echo "$(date):: base_dir=$base_dir"
 echo "$(date):: expid=$expid"
 echo "$(date):: output_file=$output_file"
 echo "$(date):: target_dir=$target_dir"
+echo "$(date):: conda_module=$conda_module"
 
 function activate_env() {
     # https://www.shellcheck.net/wiki/SC1091
@@ -76,6 +78,7 @@ function activate_env() {
 }
 
 function check_conda_availability() {
+    module load $conda_module
     if ! command -v conda &> /dev/null; then
         echo "$(date):: Conda is not installed. Please install conda or miniconda"
         exit 1

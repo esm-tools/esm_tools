@@ -72,6 +72,7 @@ fesom:
 
     pool_dir: "${computer.pool_directories.pool}"
 
+    tripyview_conda_module: "NOT_SET"
     choose_computer.name:
         ollie:
             pool_dir: "${computer.pool_directories.pool}/../clidyn/"

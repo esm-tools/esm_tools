@@ -118,24 +118,40 @@ lpj_guess:
         temp_namcouple: namcouple
         "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
 
-
     forcing_sources:
         oifs_forcing: ${lpj_guess.input_dir}/oifs_forcing/AM04_atm_cmip6_1d_1990-1999_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
         soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
-        CO2:
-            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        CO2: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        drynhx: ${lpj_guess.ndep_input_dir}/drynhx_${lpj_guess.resolution}_hist_d1.nc
+        drynoy: ${lpj_guess.ndep_input_dir}/drynoy_${lpj_guess.resolution}_hist_d1.nc
+        wetnhx: ${lpj_guess.ndep_input_dir}/wetnhx_${lpj_guess.resolution}_hist_d1.nc
+        wetnoy: ${lpj_guess.ndep_input_dir}/wetnoy_${lpj_guess.resolution}_hist_d1.nc
         "oifs_forcing_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/oifs_forcing/AM04_atm_cmip6_1d_1990-1999_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
-        "CO2_[[proc_list-->PROC_NUM]]":
-            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "drynhx_[[proc_list-->PROC_NUM]]": ${lpj_guess.ndep_input_dir}/drynhx_${lpj_guess.resolution}_hist_d1.nc
+        "drynoy_[[proc_list-->PROC_NUM]]": ${lpj_guess.ndep_input_dir}/drynoy_${lpj_guess.resolution}_hist_d1.nc
+        "wetnhx_[[proc_list-->PROC_NUM]]": ${lpj_guess.ndep_input_dir}/wetnhx_${lpj_guess.resolution}_hist_d1.nc
+        "wetnoy_[[proc_list-->PROC_NUM]]": ${lpj_guess.ndep_input_dir}/wetnoy_${lpj_guess.resolution}_hist_d1.nc
 
     forcing_in_work:
         oifs_forcing: AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
         soil_layer_type: slt_${mygrid}.nc
         CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        drynhx: drynhx_${lpj_guess.resolution}_hist_d1.nc
+        drynoy: drynoy_${lpj_guess.resolution}_hist_d1.nc
+        wetnhx: wetnhx_${lpj_guess.resolution}_hist_d1.nc
+        wetnoy: wetnoy_${lpj_guess.resolution}_hist_d1.nc
         "oifs_forcing_[[proc_list-->PROC_NUM]]": runPROC_NUM/AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
         "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        "drynhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/drynhx_${lpj_guess.resolution}_hist_d1.nc
+        "drynoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/drynoy_${lpj_guess.resolution}_hist_d1.nc
+        "wetnhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/wetnhx_${lpj_guess.resolution}_hist_d1.nc
+        "wetnoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/wetnoy_${lpj_guess.resolution}_hist_d1.nc
+
+    add_forcing_files:
+        oifs_forcing: oifs_forcing
 
     # Create empty folders for landuse and fire in work
     create_folders:

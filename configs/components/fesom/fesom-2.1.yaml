@@ -211,7 +211,7 @@ fesom:
     outdata_sources:
             fesom: "*.fesom.*.nc"
     outdata_targets:
-            fesom: "*.fesom.*.nc"
+            fesom: "*.fesom.*${start_date!smonth}.${start_date!sday}.nc"
 
     choose_use_icebergs:
             True:

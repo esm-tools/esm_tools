@@ -55,7 +55,6 @@ lpj_guess:
             runscript_name: run_coupled_4_1_2.ins
             git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
             branch: lpj_guess_awiesm3
-            mygrid: TCO319
             install_bins: build/guess
             executable: guess
 
@@ -304,9 +303,6 @@ lpj_guess:
 computer:
     add_export_vars:
         myfortrancompiler: $FC
-        #mygrid: TL159
-        #mygrid: TL255
-        mygrid: TCO319
         OASIS_ANCHOR: ../../../oasis
         NETCDF_C_DIR: $NETCDFROOT
         NETCDF_F_DIR: $NETCDFFROOT

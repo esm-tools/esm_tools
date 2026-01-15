@@ -17,8 +17,21 @@ computer:
 lpjg-spinup:
     postprocessing: false
     model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    resolution: TL255
+    fesom_resolution: CORE2
 
 lpj_guess:
     lresume: false 
     nproc: 8 # originally 16
     omp_num_threads: 8
+    resolution: TL255
+    fesom_resolution: CORE2
+    mygrid: TL255
+    execution_command: ${executable} -parallel -islpjgspinup ${runscript_name}
+    mip: cmip7
+    add_forcing_files:
+        co2_file: co2_file
+    add_forcing_sources:
+        co2_file: ${lpj_guess.co2_source_file}
+    add_forcing_in_work:
+        co2_file: ${lpj_guess.co2_work_file}

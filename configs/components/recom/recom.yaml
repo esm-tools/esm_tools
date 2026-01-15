@@ -96,6 +96,7 @@ recom:
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
     data_path: ""
+    dust_file: ""
 
     scenario: "PI-CTRL"
 
@@ -210,10 +211,11 @@ recom:
 
     use_atbox: "remove_from_namelist"
     restore_alkalinity: true
+    fe_2ligands: true
     namelist_changes:
             namelist.recom:
                     nam_rsbc:
-                            nm_fe_data_file: "${data_path}"
+                            nm_fe_data_file: "${dust_file}"
                     pavariables:
                             #REcoMDataPath: "${data_path}"
                             constant_CO2: "${constant_CO2}"
@@ -225,6 +227,8 @@ recom:
                             REcoM_PI: "${REcoM_PI}"
                             recom_restart: "${recom.lresume}"  # this was in the feat/ssp branch
                             use_atbox: "${use_atbox}"
+                    pairon_chem:
+                            fe_2ligands: "{fe_2ligands}"
                     paco2_flux_param:
                             CO2_for_spinup: "${CO2_for_spinup}"
 

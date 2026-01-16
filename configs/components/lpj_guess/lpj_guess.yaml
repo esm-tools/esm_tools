@@ -169,12 +169,14 @@ lpj_guess:
         drynoy: drynoy
         wetnhx: wetnhx
         wetnoy: wetnoy
+        peat: peat
     forcing_sources:
         soil_layer_type: ${slt_dir}/slt_${resolution}.nc
         drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
         drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
         wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
+        peat: ${input_dir}/peat/${resolution}_peat_frac.txt
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${slt_dir}/slt_${resolution}.nc
         "drynhx_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
         "drynoy_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
@@ -186,6 +188,7 @@ lpj_guess:
         drynoy: ndep/drynoy2.nc
         wetnhx: ndep/wetnhx2.nc
         wetnoy: ndep/wetnoy2.nc
+        peat: landuse/peat_frac.txt
         "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${resolution}.nc
         "drynhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynhx2.nc
         "drynoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynoy2.nc

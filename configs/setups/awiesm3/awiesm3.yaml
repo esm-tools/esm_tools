@@ -355,7 +355,7 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
-    build_type: DEBUG # Available options: Debug, Release
+    build_type: Release # Available options: Debug, Release
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .."
     comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=${build_type}; make -j8; cd .."
     execution_command: ${executable} -parallel ${runscript_name}
@@ -482,6 +482,7 @@ lpj_guess:
         "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
 
     forcing_in_work:
+        # Work directory files use old naming (slt_ATMO.nc) that LPJ-GUESS binary expects
         soil_layer_type: slt_${mygrid}.nc
         CO2: ${lpj_guess.co2_work_file}
         "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc

@@ -2,10 +2,11 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "develop"
-    account: "ab0995"
-    compute_time: "01:00:00"
+    #account: "ab0995"
+    account: "ba0989" #new account if it works
+    compute_time: "03:00:00"
     initial_date: "1850-01-01"
-    final_date: "1850-01-05"
+    final_date: "1852-01-01"
     #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-v3.4/"
     nday: 1
@@ -14,6 +15,8 @@ general:
 
 computer:
     taskset: true
+    # Wait indefinitely for all tasks to complete (needed for slow LPJ-GUESS cold start)
+    launcher_flags: "-l --wait=0"
 
 awiesm3:
     postprocessing: false

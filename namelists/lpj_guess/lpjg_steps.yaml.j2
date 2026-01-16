@@ -24,5 +24,15 @@ fixed_CO2: {{lpj_guess.fixed_CO2 | default(-1)}}
 fixed_ndep: {{lpj_guess.fixed_ndep | default(-1)}}
 fixed_LU: {{lpj_guess.fixed_landuse_year | default(lpj_guess.fixed_LU) | default(-1)}}
 
-# CMIP version (cmip6 or cmip7, default=cmip6)
+# CMIP version - provide both for compatibility with old and new binaries
+# New binaries read 'mip', old binaries read 'cmip_co2_version'
 mip: {{lpj_guess.mip | default("cmip6")}}
+{% if lpj_guess.mip is defined %}
+{% if lpj_guess.mip == "cmip7" %}
+cmip_co2_version: 7
+{% else %}
+cmip_co2_version: 6
+{% endif %}
+{% else %}
+cmip_co2_version: 6
+{% endif %}

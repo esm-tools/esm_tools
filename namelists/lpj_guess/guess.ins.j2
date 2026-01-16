@@ -106,16 +106,16 @@ npatch 5                                ! number of replicate patches to simulat
 ! LUH3 NetCDF land use input (0 = use text files, 1 = use NetCDF LUH3 files)
 use_luh3_input {{lpj_guess.use_luh3_input | default(0)}}
 {% if lpj_guess.use_luh3_input | default(0) == 1 %}
-param "file_luh3_states" (str "{{lpj_guess.file_luh3_states | default('../landuse/luh3_states.nc')}}")
-param "file_luh3_management" (str "{{lpj_guess.file_luh3_management | default('../landuse/luh3_management.nc')}}")
+file_luh3_states "{{lpj_guess.file_luh3_states | default('../landuse/luh3_states.nc')}}"
+file_luh3_management "{{lpj_guess.file_luh3_management | default('../landuse/luh3_management.nc')}}"
 {% if lpj_guess.use_luh3_yearly_transitions | default(0) == 1 %}
 ! Yearly transition files mode
-param "use_luh3_yearly_transitions" (num 1)
-param "file_luh3_transitions_dir" (str "{{lpj_guess.file_luh3_transitions_dir}}/{{lpj_guess.mygrid | lower}}/")
-param "file_luh3_transitions" (str "")
+use_luh3_yearly_transitions 1
+file_luh3_transitions_dir "{{lpj_guess.file_luh3_transitions_dir}}/{{lpj_guess.mygrid | lower}}/"
+file_luh3_transitions ""
 {% else %}
 ! Single transition file mode
-param "file_luh3_transitions" (str "{{lpj_guess.file_luh3_transitions | default('../landuse/luh3_transitions.nc')}}")
+file_luh3_transitions "{{lpj_guess.file_luh3_transitions | default('../landuse/luh3_transitions.nc')}}"
 {% endif %}
 ! Override LUH2 text files to empty strings when using LUH3 NetCDF
 param "file_lu" (str "")
@@ -133,6 +133,11 @@ run_pasture {{lpj_guess.run_pasture | default(0)}}         ! whether to simulate
 run_natural {{lpj_guess.run_natural | default(1)}}         ! whether to simulate natural vegetation (1) or not (0)
 run_peatland {{lpj_guess.run_peatland | default(0)}}        ! whether to simulate peatland (1) or not (0)
 run_barren {{lpj_guess.run_barren | default(0)}}          ! whether to simulate barren land (1) or not (0)
+
+! Peatland fraction input file (only used when run_peatland = 1)
+{% if lpj_guess.run_peatland | default(0) == 1 %}
+param "file_peat" (str "../landuse/peat_frac.txt")
+{% endif %}
 
 !printcmip 0            ! Whether to print CMIP output
 !printcmipdaily 0       ! Whether to print daily CMIP output

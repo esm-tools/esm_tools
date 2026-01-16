@@ -2,7 +2,7 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "develop"
-    account: "ab0246"
+    account: "ab0995" #original account
     compute_time: "00:30:00"
     initial_date: "1900-01-01"
     final_date: "1900-01-04"
@@ -33,6 +33,8 @@ lpj_guess:
     lresume: false 
     nproc: 8 # originally 16
     omp_num_threads: 8
+    # Use fixed TCO95 soil file with correct var43 variable name
+    slt_dir: /work/ab0995/a270270/input/lpj-guess/slt/
 
 oifs:
     resolution: TCO95

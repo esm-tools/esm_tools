@@ -60,12 +60,16 @@ fesom:
     vis_server: NOT_SET
     vis_publicdir: NOT_SET
     vis_sync: false
+    tripyview_conda_module: "NOT_SET"
 
-    choose_computer:
+    choose_computer.name:
         levante:
             vis_server: modvis.dkrz.de
             vis_publicdir: /var/www/projects/${fesom.vis_project}/${general.expid}
             vis_sync: true
+            tripyview_conda_module: "python3"  # Provides conda: https://tinyurl.com/3887k99t
+        albedo:
+            tripyview_conda_module: "conda"
 
     scripts_files:
         Tripy1: Tripy1

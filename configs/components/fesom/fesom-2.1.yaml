@@ -81,7 +81,6 @@ fesom:
     time_dimension: "time"
 
     pool_dir: "${computer.pool_directories.pool}"
-    tripyview_conda_module: "NOT_SET"
 
     choose_computer.name:
         ollie:
@@ -91,11 +90,9 @@ fesom:
             climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
             forcing_data_dir: "${pool_dir}/FESOM2/FORCING/"
             mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
-            tripyview_conda_module: "python3" # Provides conda: https://tinyurl.com/3887k99t
         albedo:
             climate_data_dir: "${pool_dir}/FESOM/hydrography/"
             mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
-            tripyview_conda_module: "conda"
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"

@@ -70,6 +70,7 @@ lpj_guess:
     # Some recommended defaults (restart for old experiment yes or no?)
     lresume: false
     time_step: 86400
+    nyear_spinup: 10
 
     choose_lresume:
         false:

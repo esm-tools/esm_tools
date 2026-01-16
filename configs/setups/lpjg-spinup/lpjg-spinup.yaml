@@ -88,7 +88,7 @@ lpj_guess:
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1
-    nyear_spinup: 1
+    nyear_spinup: ${nyear}
     freenyears: 0
 
     config_sources:
@@ -97,7 +97,7 @@ lpj_guess:
         lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
         "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
-        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins.j2
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2 
@@ -124,7 +124,7 @@ lpj_guess:
 
     forcing_in_work:
         oifs_forcing: ifs_spinup_forcing/AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
-        soil_layer_type: slt_${mygrid}.nc
+        soil_layer_type: slt_${lpj_guess.resolution}.nc
 
     add_forcing_files:
         oifs_forcing: oifs_forcing

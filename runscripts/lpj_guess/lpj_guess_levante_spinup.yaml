@@ -3,13 +3,13 @@ general:
     setup_name: "lpjg-spinup"
     version: "develop"
     account: "ab0995"
-    compute_time: "00:30:00"
+    compute_time: "00:05:00"
     initial_date: "1900-01-01"
-    final_date: "1901-01-01"
+    final_date: "1910-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
     nmonth: 0
-    nyear: 1
+    nyear: 500
 
 computer:
     taskset: true

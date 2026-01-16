@@ -7,7 +7,7 @@ import "ecearth.ins"
 import "crop_n.ins"
 import "landuse.ins"
 
-param "file_gridlist"        (str "../ece_gridlist_{{lpj_guess.mygrid}}.txt")
+param "file_gridlist"        (str "../ece_gridlist_{{lpj_guess.resolution}}.txt")
 
 ! *** SIMFIRE related files  
 param "file_simfire"  (str "/proj/rescue/lpjg/fire/SimfireInput.bin") ! Tetralith
@@ -111,7 +111,7 @@ param "file_luh3_management" (str "{{lpj_guess.file_luh3_management | default('.
 {% if lpj_guess.use_luh3_yearly_transitions | default(0) == 1 %}
 ! Yearly transition files mode
 param "use_luh3_yearly_transitions" (num 1)
-param "file_luh3_transitions_dir" (str "{{lpj_guess.file_luh3_transitions_dir}}/{{lpj_guess.mygrid | lower}}/")
+param "file_luh3_transitions_dir" (str "{{lpj_guess.file_luh3_transitions_dir}}/{{lpj_guess.resolution | lower}}/")
 param "file_luh3_transitions" (str "")
 {% else %}
 ! Single transition file mode

@@ -116,7 +116,7 @@ import "lpjg_default_cmip6_output.ins"
 title 'LPJ-GUESS cohort mode - global pfts'
 
 vegmode "cohort"		! "cohort", "individual" or "population"
-nyear_spinup 500		! Number of years to spin up the simulation for
+nyear_spinup {{lpj_guess.nyear_spinup}}		! Number of years to spin up the simulation for
 ifcalcsla 1			! Whether to calculate SLA from leaf longevity
 				! (PFT-specific value can be specified in this file instead)
 ifcalccton 1			! Whether to calculate leaf C:N min from leaf longevity
@@ -785,3 +785,4 @@ pft "C4G" (
 
 ! optimesm import shrub PFTs
 import "arcticshrubs.ins"
+{# Force trailing newline to prevent file concatenation errors #}

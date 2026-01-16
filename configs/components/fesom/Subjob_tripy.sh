@@ -28,6 +28,9 @@ mesh_dir=$6
 base_dir=$7
 expid=$8
 conda_module=$9
+vis_sync=${10}
+vis_server=${11}
+vis_publicdir=${12}
 
 # Change dates to years
 start_year=$(date -d "$start_date" +%Y)
@@ -63,6 +66,10 @@ echo "$(date):: expid=$expid"
 echo "$(date):: output_file=$output_file"
 echo "$(date):: target_dir=$target_dir"
 echo "$(date):: conda_module=$conda_module"
+echo "$(date):: vis_sync=$vis_sync"
+echo "$(date):: vis_server=$vis_server"
+echo "$(date):: vis_publicdir=$vis_publicdir"
+echo "$(date):: ---------------------"
 
 function activate_env() {
     # https://www.shellcheck.net/wiki/SC1091
@@ -137,12 +144,25 @@ function execute_tripyrun() {
     tripyrun "$output_file"
 }
 
+function sync_to_vis_server() {
+    if [ "${vis_sync}" == "true" ]; then
+        echo "$(date):: Syncing visualization results to ${vis_server}:${vis_publicdir}"
+        rsync -avzhP "${base_dir}/${expid}/analysis/fesom" "$USER@${vis_server}:${vis_publicdir}/analysis/"
+        rsync -avzhP "${base_dir}/${expid}/viz/fesom" "$USER@${vis_server}:${vis_publicdir}/viz/"
+        echo "$(date):: Sync complete"
+    else
+        echo "$(date):: Visualization sync disabled (vis_sync=${vis_sync})"
+    fi
+}
+
+
 function main() {
     check_conda_availability
     activate_or_install_tripyview_environment
     setup_target_directory
     prepare_output_file
     execute_tripyrun
+    sync_to_vis_server
 }
 
 main

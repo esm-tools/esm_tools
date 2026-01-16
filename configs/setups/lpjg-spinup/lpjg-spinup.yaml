@@ -68,6 +68,9 @@ lpj_guess:
     resolution: TL255
     fesom_resolution: CORE2
     openifsspinup: true
+    
+    # Disable CMIP N-Dep file reading for spinup - use pre-industrial constant values instead
+    ndep_cmip_dir: ""
 
     choose_general.major_version:
         "v3.4":

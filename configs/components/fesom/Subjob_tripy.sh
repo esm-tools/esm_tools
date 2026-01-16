@@ -146,9 +146,19 @@ function execute_tripyrun() {
 
 function sync_to_vis_server() {
     if [ "${vis_sync}" == "true" ]; then
-        echo "$(date):: Syncing visualization results to ${vis_server}:${vis_publicdir}"
-        rsync -avzhP "${base_dir}/${expid}/analysis/fesom" "$USER@${vis_server}:${vis_publicdir}/analysis/"
-        rsync -avzhP "${base_dir}/${expid}/viz/fesom" "$USER@${vis_server}:${vis_publicdir}/viz/"
+        echo "$(date):: Syncing visualization results to ${USER}@${vis_server}:${vis_publicdir}"
+
+        # Create remote directories if they don't exist
+        echo "$(date):: Creating remote directories"
+        ssh "${USER}@${vis_server}" "mkdir -p ${vis_publicdir}/analysis ${vis_publicdir}/viz"
+
+        # Sync analysis and viz directories
+        echo "$(date):: Syncing analysis directory"
+        rsync -avzhP "${base_dir}/${expid}/analysis/fesom" "${USER}@${vis_server}:${vis_publicdir}/analysis/"
+
+        echo "$(date):: Syncing viz directory"
+        rsync -avzhP "${base_dir}/${expid}/viz/fesom" "${USER}@${vis_server}:${vis_publicdir}/viz/"
+
         echo "$(date):: Sync complete"
     else
         echo "$(date):: Visualization sync disabled (vis_sync=${vis_sync})"

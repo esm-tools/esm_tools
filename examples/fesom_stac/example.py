@@ -2,6 +2,8 @@ import shutil
 from pathlib import Path
 from builder import build_fesom_stac
 
+# dump all items in one collection
+
 force_rewrite = True
 
 exp_dir = Path("/albedo/work/user/pgierz/SciComp/Tutorials/AWIESM_Basics/experiments")

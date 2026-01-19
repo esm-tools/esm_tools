@@ -145,7 +145,8 @@ function execute_tripyrun() {
 }
 
 function sync_to_vis_server() {
-    if [ "${vis_sync}" == "true" ]; then
+    # Convert to lowercase for case-insensitive boolean comparison
+    if [ "${vis_sync,,}" == "true" ]; then
         echo "$(date):: Syncing visualization results to ${USER}@${vis_server}:${vis_publicdir}"
 
         # Create remote directories if they don't exist

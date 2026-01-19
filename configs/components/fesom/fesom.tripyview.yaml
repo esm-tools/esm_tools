@@ -57,6 +57,7 @@
 
 fesom:
     vis_project: ${general.account}
+    vis_user: ${general.user}
     vis_server: NOT_SET
     vis_publicdir: NOT_SET
     vis_sync: false
@@ -65,7 +66,7 @@ fesom:
     choose_computer.name:
         levante:
             vis_server: modvis.dkrz.de
-            vis_publicdir: /var/www/projects/${fesom.vis_project}/${general.user}/${general.expid}
+            vis_publicdir: /var/www/projects/${fesom.vis_project}/${fesom.vis_user}/${general.expid}
             vis_sync: true
             tripyview_conda_module: "python3"  # Provides conda: https://tinyurl.com/3887k99t
         albedo:

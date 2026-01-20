@@ -17,6 +17,26 @@ from loguru import logger
 from shapely.geometry import box, mapping
 
 
+def _parse_codes_file(codes_path):
+    """
+    Parse ECHAM .codes file to extract variable names.
+
+    Args:
+        codes_path: Path to .codes file
+
+    Returns:
+        List of variable names (ECHAM naming convention)
+    """
+    variables = []
+    with open(codes_path) as f:
+        for line in f:
+            parts = line.split()
+            if len(parts) >= 3:
+                short_name = parts[2]
+                variables.append(short_name)
+    return variables
+
+
 def _get_asset_metadata(file_path):
     """
     Return media_type, roles, and xarray metadata for a file.
@@ -46,6 +66,10 @@ def _get_asset_metadata(file_path):
                 "xarray:engine": "cfgrib",
                 "xarray:open_kwargs": {
                     "backend_kwargs": {"indexpath": ""}
+                },
+                "xarray:storage_options": {
+                    "multi_message": True,
+                    "merge_datasets": True
                 }
             }
         }
@@ -197,21 +221,48 @@ def build_catalog(config_path, output_dir="catalog"):
             # Get asset metadata (media_type, xarray engine, etc.)
             asset_metadata = _get_asset_metadata(file_path)
 
-            # Open dataset to extract metadata
-            # Use the appropriate engine based on file type
-            open_kwargs = {}
-            if asset_metadata["extra_fields"]["xarray:engine"] == "cfgrib":
-                open_kwargs["engine"] = "cfgrib"
-                open_kwargs["backend_kwargs"] = {"indexpath": ""}
+            # Check for .codes file (GRIB code tables with ECHAM variable names)
+            codes_file = file_path.parent / f"{file_path.name}.codes"
 
-            try:
-                with xr.open_dataset(file_path, **open_kwargs) as ds:
-                    variables = list(ds.data_vars)
+            # Extract variables and temporal metadata
+            if codes_file.exists() and asset_metadata["media_type"] == "application/x-grib":
+                # Parse .codes file for ECHAM variable names (more reliable for GRIB)
+                logger.info(f"Using .codes file for variable names: {codes_file}")
+                variables = _parse_codes_file(codes_file)
+
+                # Still need to open for temporal metadata, but handle cfgrib complexity
+                try:
+                    import cfgrib
+                    datasets = cfgrib.open_datasets(
+                        file_path,
+                        backend_kwargs={"indexpath": ""}
+                    )
+                    # Use first dataset for time info
+                    ds = datasets[0] if datasets else xr.Dataset()
                     item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
-            except Exception as e:
-                logger.error(f"Failed to open {file_path} with xarray: {e}")
-                logger.warning(f"Skipping {file_path}")
-                continue
+                except Exception as e:
+                    logger.warning(f"Could not extract time from {file_path}: {e}")
+                    # Fallback to config dates
+                    item_time_kwargs = {
+                        "datetime": None,
+                        "start_datetime": initial_date,
+                        "end_datetime": final_date
+                    }
+            else:
+                # NetCDF or GRIB without .codes - open with xarray
+                open_kwargs = {}
+                if asset_metadata["extra_fields"]["xarray:engine"] == "cfgrib":
+                    open_kwargs["engine"] = "cfgrib"
+                    open_kwargs["backend_kwargs"] = {"indexpath": ""}
+
+                try:
+                    with xr.open_dataset(file_path, **open_kwargs) as ds:
+                        variables = list(ds.data_vars)
+                        item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
+                except Exception as e:
+                    logger.error(f"Failed to open {file_path} with xarray: {e}")
+                    logger.warning(f"Skipping {file_path}")
+                    continue
 
             item = pystac.Item(
                 id=file_path.stem,
@@ -232,8 +283,7 @@ def build_catalog(config_path, output_dir="catalog"):
                 ),
             )
 
-            # Check for .codes auxiliary file (GRIB code tables)
-            codes_file = file_path.parent / f"{file_path.name}.codes"
+            # Add .codes auxiliary file if it exists (GRIB code tables with ECHAM names)
             if codes_file.exists():
                 item.add_asset(
                     "codes",
@@ -241,7 +291,7 @@ def build_catalog(config_path, output_dir="catalog"):
                         href=str(codes_file.resolve()),
                         media_type="text/plain",
                         roles=["metadata"],
-                        title="GRIB code table",
+                        title="ECHAM GRIB code table",
                     ),
                 )
 

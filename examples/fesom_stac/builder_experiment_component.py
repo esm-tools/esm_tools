@@ -131,9 +131,23 @@ def build_catalog(config_path, output_dir="catalog"):
         # Use outdata_targets from config (already expanded from patterns)
         outdata_targets = comp_config.get("outdata_targets", {})
 
+        # Check if we should use config or fall back to directory scan
+        use_directory_scan = False
+
         if not outdata_targets:
-            # Some components (like fesom) don't populate outdata_targets
-            # Fall back to experiment_outdata_dir
+            # No outdata_targets, must scan directory
+            use_directory_scan = True
+        else:
+            # Check if any files from config actually exist
+            existing_count = sum(1 for v in outdata_targets.values() if Path(v).exists())
+            if existing_count == 0:
+                logger.warning(
+                    f"{component}: outdata_targets lists {len(outdata_targets)} files but none exist, "
+                    f"falling back to directory scan"
+                )
+                use_directory_scan = True
+
+        if use_directory_scan:
             experiment_outdata_dir = comp_config.get("experiment_outdata_dir")
             if not experiment_outdata_dir:
                 logger.warning(f"Skipping {component}: no outdata_targets or experiment_outdata_dir")
@@ -144,10 +158,14 @@ def build_catalog(config_path, output_dir="catalog"):
                 logger.warning(f"Skipping {component}: {outdata_dir} does not exist")
                 continue
 
-            # Get all NetCDF files from directory
-            nc_files = sorted(outdata_dir.glob("*.nc"))
-            data_files = {f.stem: f for f in nc_files}
-            logger.info(f"{component}: processing {len(data_files)} files (from directory glob)")
+            # Scan for all data files (both NetCDF and GRIB)
+            all_files = sorted(outdata_dir.glob("*"))
+            # Filter out .codes files, symlinks, and directories
+            data_files = {
+                f.stem: f for f in all_files
+                if f.is_file() and not f.is_symlink() and not f.name.endswith('.codes')
+            }
+            logger.info(f"{component}: processing {len(data_files)} files (from directory scan)")
         else:
             # Use explicit file paths from config
             data_files = {k: Path(v) for k, v in outdata_targets.items()}

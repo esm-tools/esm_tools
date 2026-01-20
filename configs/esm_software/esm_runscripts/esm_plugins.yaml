@@ -25,8 +25,8 @@ core:
                         - "initialize_batch_system"
                         - "initialize_coupler"
                         - "set_logfile"
-                        #- "add_vcs_info"
-                        #- "check_vcs_info_against_last_run"
+                        - "add_vcs_info"
+                        - "check_vcs_info_against_last_run"
                         - "check_config_for_warnings_errors"
 
                 prepexp:
@@ -41,7 +41,6 @@ core:
                         - "compile_model"
                         - "_write_finalized_config"
                         - "_show_simulation_info"
-                        - "assemble_filelists"
                         - "wait_for_iterative_coupling"
                         - "copy_files_to_thisrun"
                         - "modify_namelists"
@@ -49,7 +48,6 @@ core:
                         - "create_new_files"
                         - "create_empty_folders"
                         - "prepare_coupler_files"
-                        - "add_batch_hostfile"
                         - "copy_files_to_work"
 
                 tidy:
@@ -57,12 +55,7 @@ core:
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
                         - "clean_run_dir"
-                        - "start_post_job"
-                        - "_increment_date_and_run_number"
-                        - "_write_date_file"
-                        - "signal_tidy_completion"
                         - "throw_away_some_infiles"
-
 
                 observe:
                         - "init_observe_logs"
@@ -102,6 +95,8 @@ core:
 
                 resubmit:
                         - "submit"
+                        - "_increment_date_and_run_number"
+                        - "_write_date_file"
 
                 chunky_parts:
                         - "_update_run_in_chunk"
@@ -111,3 +106,5 @@ core:
                 workflow:
                         - "assemble_workflow"
 
+                postprocess:
+                        - "convert_to_zarr"

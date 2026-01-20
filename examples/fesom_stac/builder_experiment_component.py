@@ -132,7 +132,14 @@ def build_catalog(config_path, output_dir="catalog"):
     initial_date = datetime.fromisoformat(config["general"]["initial_date"])
     final_date = datetime.fromisoformat(config["general"]["final_date"])
 
-    root = pystac.Catalog(id="esm-tools-plus", description="ESM-Tools+ Demo Catalog")
+    # Load existing catalog or create new one
+    catalog_file = output_dir / "catalog.json"
+    if catalog_file.exists():
+        logger.info(f"Loading existing catalog from {catalog_file}")
+        root = pystac.Catalog.from_file(str(catalog_file))
+    else:
+        logger.info("Creating new catalog")
+        root = pystac.Catalog(id="esm-tools-plus", description="ESM-Tools+ Demo Catalog")
 
     # Create experiment catalog with metadata from config
     exp_cat = pystac.Catalog(
@@ -312,6 +319,16 @@ def build_catalog(config_path, output_dir="catalog"):
             collection.add_item(item)
 
         exp_cat.add_child(collection)
+
+    # Check if experiment already exists and remove it
+    try:
+        existing_exp = root.get_child(expid, recursive=False)
+        if existing_exp:
+            logger.info(f"Replacing existing experiment catalog: {expid}")
+            root.remove_child(expid)
+    except KeyError:
+        # Experiment doesn't exist yet, that's fine
+        logger.info(f"Adding new experiment catalog: {expid}")
 
     root.add_child(exp_cat)
 

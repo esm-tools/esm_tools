@@ -230,7 +230,13 @@ def build_catalog(config_path, output_dir="catalog"):
             asset_metadata = _get_asset_metadata(file_path)
 
             # Check for .codes file (GRIB code tables with ECHAM variable names)
-            codes_file = file_path.parent / f"{file_path.name}.codes"
+            # For ECHAM: codes files don't have date suffix, e.g.:
+            #   Data: basic-001_185002.01_echam_18500201-18500228
+            #   Codes: basic-001_185002.01_echam.codes
+            # Strip date suffix pattern _YYYYMMDD-YYYYMMDD if present
+            import re
+            codes_base_name = re.sub(r'_\d{8}-\d{8}$', '', file_path.name)
+            codes_file = file_path.parent / f"{codes_base_name}.codes"
 
             # Extract variables and temporal metadata
             if codes_file.exists() and asset_metadata["media_type"] == "application/x-grib":

@@ -221,7 +221,7 @@ def _process_file(file_path, component, initial_date, final_date):
     return item
 
 
-def build_catalog(config_path, output_dir="catalog", n_jobs=-1):
+def build_catalog(config_path, output_dir="catalog", n_jobs=-1, backend=None):
     """
     Build catalog from ESM-Tools finished config
 
@@ -229,6 +229,7 @@ def build_catalog(config_path, output_dir="catalog", n_jobs=-1):
         config_path: Path to *_finished_config.yaml file
         output_dir: Where to write the STAC catalog
         n_jobs: Number of parallel jobs (-1 = all cores, 1 = sequential)
+        backend: Joblib backend ('threading', 'multiprocessing', 'loky', None=default)
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
@@ -333,10 +334,15 @@ def build_catalog(config_path, output_dir="catalog", n_jobs=-1):
         )
 
         # Process files in parallel
-        logger.info(f"Processing {len(data_files)} files with {n_jobs} jobs")
+        backend_str = f"backend={backend}" if backend else "default backend"
+        logger.info(f"Processing {len(data_files)} files with {n_jobs} jobs ({backend_str})")
         file_paths = [path for _, path in sorted(data_files.items())]
 
-        items = Parallel(n_jobs=n_jobs)(
+        parallel_kwargs = {"n_jobs": n_jobs, "verbose": 10}
+        if backend is not None:
+            parallel_kwargs["backend"] = backend
+
+        items = Parallel(**parallel_kwargs)(
             delayed(_process_file)(file_path, component, initial_date, final_date)
             for file_path in file_paths
         )
@@ -382,12 +388,15 @@ def cli():
 @cli.command
 @click.argument("cfg", type=click.Path(exists=True))
 @click.option("--n-jobs", "-j", default=-1, type=int, help="Number of parallel jobs (-1 = all cores)")
-def generate(cfg, n_jobs):
-    click.echo(f"Generate catalog (using {n_jobs} jobs)")
+@click.option("--backend", "-b", default=None, type=click.Choice(['threading', 'multiprocessing', 'loky'], case_sensitive=False), help="Joblib backend (default: loky)")
+def generate(cfg, n_jobs, backend):
+    backend_str = backend if backend else "default (loky)"
+    click.echo(f"Generate catalog (using {n_jobs} jobs, backend={backend_str})")
     build_catalog(
         config_path=cfg,
         output_dir="stac_catalog",
         n_jobs=n_jobs,
+        backend=backend,
     )
 
 

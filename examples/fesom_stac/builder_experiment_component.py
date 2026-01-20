@@ -4,6 +4,7 @@ cat[experiment][component]
 Uses ESM-Tools finished config as source of truth
 """
 
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -13,6 +14,7 @@ import pystac
 from pystac.layout import TemplateLayoutStrategy
 import xarray as xr
 import yaml
+from joblib import Parallel, delayed
 from loguru import logger
 from shapely.geometry import box, mapping
 
@@ -110,13 +112,123 @@ def _define_time_kwargs(ds, initial_date, final_date) -> dict:
     return {"datetime": dt, "start_datetime": initial_date, "end_datetime": final_date}
 
 
-def build_catalog(config_path, output_dir="catalog"):
+def _process_file(file_path, component, initial_date, final_date):
+    """
+    Process a single data file and create a STAC item.
+
+    Args:
+        file_path: Path to data file
+        component: Component name (e.g., "fesom", "echam")
+        initial_date: Experiment initial date (fallback)
+        final_date: Experiment final date (fallback)
+
+    Returns:
+        pystac.Item or None if file should be skipped
+    """
+    if not file_path.exists():
+        logger.debug(f"File in config doesn't exist: {file_path}")
+        return None
+
+    # Skip empty files
+    if file_path.stat().st_size == 0:
+        logger.warning(f"Skipping empty file: {file_path}")
+        return None
+
+    logger.info(f"Processing {file_path}")
+
+    # Get asset metadata (media_type, xarray engine, etc.)
+    asset_metadata = _get_asset_metadata(file_path)
+
+    # Check for .codes file (GRIB code tables with ECHAM variable names)
+    # For ECHAM: codes files don't have date suffix, e.g.:
+    #   Data: basic-001_185002.01_echam_18500201-18500228
+    #   Codes: basic-001_185002.01_echam.codes
+    # Strip date suffix pattern _YYYYMMDD-YYYYMMDD if present
+    codes_base_name = re.sub(r'_\d{8}-\d{8}$', '', file_path.name)
+    codes_file = file_path.parent / f"{codes_base_name}.codes"
+
+    # Extract variables and temporal metadata
+    if codes_file.exists() and asset_metadata["media_type"] == "application/x-grib":
+        # Parse .codes file for ECHAM variable names (more reliable for GRIB)
+        logger.info(f"Using .codes file for variable names: {codes_file}")
+        variables = _parse_codes_file(codes_file)
+
+        # Still need to open for temporal metadata, but handle cfgrib complexity
+        try:
+            import cfgrib
+            datasets = cfgrib.open_datasets(
+                file_path,
+                backend_kwargs={"indexpath": ""}
+            )
+            # Use first dataset for time info
+            ds = datasets[0] if datasets else xr.Dataset()
+            item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
+        except Exception as e:
+            logger.warning(f"Could not extract time from {file_path}: {e}")
+            # Fallback to config dates
+            item_time_kwargs = {
+                "datetime": None,
+                "start_datetime": initial_date,
+                "end_datetime": final_date
+            }
+    else:
+        # NetCDF or GRIB without .codes - open with xarray
+        open_kwargs = {}
+        if asset_metadata["extra_fields"]["xarray:engine"] == "cfgrib":
+            open_kwargs["engine"] = "cfgrib"
+            open_kwargs["backend_kwargs"] = {"indexpath": ""}
+
+        try:
+            with xr.open_dataset(file_path, **open_kwargs) as ds:
+                variables = list(ds.data_vars)
+                item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
+        except Exception as e:
+            logger.error(f"Failed to open {file_path} with xarray: {e}")
+            logger.warning(f"Skipping {file_path}")
+            return None
+
+    item = pystac.Item(
+        id=file_path.stem,
+        geometry=mapping(box(-180, -90, 180, 90)),
+        bbox=[-180, -90, 180, 90],
+        properties={"variables": variables, "component": component},
+        **item_time_kwargs,
+    )
+
+    # Add primary data asset with xarray metadata
+    item.add_asset(
+        "data",
+        pystac.Asset(
+            href=str(file_path.resolve()),
+            media_type=asset_metadata["media_type"],
+            roles=asset_metadata["roles"],
+            extra_fields=asset_metadata["extra_fields"],
+        ),
+    )
+
+    # Add .codes auxiliary file if it exists (GRIB code tables with ECHAM names)
+    if codes_file.exists():
+        item.add_asset(
+            "codes",
+            pystac.Asset(
+                href=str(codes_file.resolve()),
+                media_type="text/plain",
+                roles=["metadata"],
+                title="ECHAM GRIB code table",
+            ),
+        )
+
+    return item
+
+
+def build_catalog(config_path, output_dir="catalog", n_jobs=-1):
     """
     Build catalog from ESM-Tools finished config
 
     Args:
         config_path: Path to *_finished_config.yaml file
         output_dir: Where to write the STAC catalog
+        n_jobs: Number of parallel jobs (-1 = all cores, 1 = sequential)
     """
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
@@ -220,103 +332,19 @@ def build_catalog(config_path, output_dir="catalog"):
             },
         )
 
-        # Process each data file
-        for file_key, file_path in sorted(data_files.items()):
-            if not file_path.exists():
-                logger.debug(f"File in config doesn't exist: {file_path}")
-                continue
+        # Process files in parallel
+        logger.info(f"Processing {len(data_files)} files with {n_jobs} jobs")
+        file_paths = [path for _, path in sorted(data_files.items())]
 
-            # Skip empty files
-            if file_path.stat().st_size == 0:
-                logger.warning(f"Skipping empty file: {file_path}")
-                continue
+        items = Parallel(n_jobs=n_jobs)(
+            delayed(_process_file)(file_path, component, initial_date, final_date)
+            for file_path in file_paths
+        )
 
-            logger.info(f"Processing {file_path}")
-
-            # Get asset metadata (media_type, xarray engine, etc.)
-            asset_metadata = _get_asset_metadata(file_path)
-
-            # Check for .codes file (GRIB code tables with ECHAM variable names)
-            # For ECHAM: codes files don't have date suffix, e.g.:
-            #   Data: basic-001_185002.01_echam_18500201-18500228
-            #   Codes: basic-001_185002.01_echam.codes
-            # Strip date suffix pattern _YYYYMMDD-YYYYMMDD if present
-            import re
-            codes_base_name = re.sub(r'_\d{8}-\d{8}$', '', file_path.name)
-            codes_file = file_path.parent / f"{codes_base_name}.codes"
-
-            # Extract variables and temporal metadata
-            if codes_file.exists() and asset_metadata["media_type"] == "application/x-grib":
-                # Parse .codes file for ECHAM variable names (more reliable for GRIB)
-                logger.info(f"Using .codes file for variable names: {codes_file}")
-                variables = _parse_codes_file(codes_file)
-
-                # Still need to open for temporal metadata, but handle cfgrib complexity
-                try:
-                    import cfgrib
-                    datasets = cfgrib.open_datasets(
-                        file_path,
-                        backend_kwargs={"indexpath": ""}
-                    )
-                    # Use first dataset for time info
-                    ds = datasets[0] if datasets else xr.Dataset()
-                    item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
-                except Exception as e:
-                    logger.warning(f"Could not extract time from {file_path}: {e}")
-                    # Fallback to config dates
-                    item_time_kwargs = {
-                        "datetime": None,
-                        "start_datetime": initial_date,
-                        "end_datetime": final_date
-                    }
-            else:
-                # NetCDF or GRIB without .codes - open with xarray
-                open_kwargs = {}
-                if asset_metadata["extra_fields"]["xarray:engine"] == "cfgrib":
-                    open_kwargs["engine"] = "cfgrib"
-                    open_kwargs["backend_kwargs"] = {"indexpath": ""}
-
-                try:
-                    with xr.open_dataset(file_path, **open_kwargs) as ds:
-                        variables = list(ds.data_vars)
-                        item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
-                except Exception as e:
-                    logger.error(f"Failed to open {file_path} with xarray: {e}")
-                    logger.warning(f"Skipping {file_path}")
-                    continue
-
-            item = pystac.Item(
-                id=file_path.stem,
-                geometry=mapping(box(-180, -90, 180, 90)),
-                bbox=[-180, -90, 180, 90],
-                properties={"variables": variables, "component": component},
-                **item_time_kwargs,
-            )
-
-            # Add primary data asset with xarray metadata
-            item.add_asset(
-                "data",
-                pystac.Asset(
-                    href=str(file_path.resolve()),
-                    media_type=asset_metadata["media_type"],
-                    roles=asset_metadata["roles"],
-                    extra_fields=asset_metadata["extra_fields"],
-                ),
-            )
-
-            # Add .codes auxiliary file if it exists (GRIB code tables with ECHAM names)
-            if codes_file.exists():
-                item.add_asset(
-                    "codes",
-                    pystac.Asset(
-                        href=str(codes_file.resolve()),
-                        media_type="text/plain",
-                        roles=["metadata"],
-                        title="ECHAM GRIB code table",
-                    ),
-                )
-
-            collection.add_item(item)
+        # Filter out None (skipped files) and add to collection
+        for item in items:
+            if item is not None:
+                collection.add_item(item)
 
         exp_cat.add_child(collection)
 
@@ -353,12 +381,13 @@ def cli():
 
 @cli.command
 @click.argument("cfg", type=click.Path(exists=True))
-def generate(cfg):
-    click.echo("Generate catalog")
+@click.option("--n-jobs", "-j", default=-1, type=int, help="Number of parallel jobs (-1 = all cores)")
+def generate(cfg, n_jobs):
+    click.echo(f"Generate catalog (using {n_jobs} jobs)")
     build_catalog(
-        # config_path="basic-001_finished_config.yaml_18500101-18500131",
         config_path=cfg,
         output_dir="stac_catalog",
+        n_jobs=n_jobs,
     )
 
 

@@ -91,18 +91,21 @@ def _get_time_axis_from_dataset(ds):
 
 def _define_time_kwargs(ds, initial_date, final_date) -> dict:
     dt = _get_time_axis_from_dataset(ds)
+
+    # Extract start and end times from dataset, handling both scalar and array times
     try:
-        initial_date = (
-            np.datetime64(ds["time"].values[0]).astype("datetime64[ms]").item()
-        )
-    except ValueError:
-        initial_date = initial_date
-    try:
-        final_date = (
-            np.datetime64(ds["time"].values[-1]).astype("datetime64[ms]").item()
-        )
-    except ValueError:
-        final_date = final_date
+        if "time" in ds and ds["time"].ndim == 0:
+            # Scalar time coordinate (single timestep)
+            time_val = np.datetime64(ds["time"].values).astype("datetime64[ms]").item()
+            initial_date = time_val
+            final_date = time_val
+        elif "time" in ds:
+            # Array time coordinate (multiple timesteps)
+            initial_date = np.datetime64(ds["time"].values[0]).astype("datetime64[ms]").item()
+            final_date = np.datetime64(ds["time"].values[-1]).astype("datetime64[ms]").item()
+    except (ValueError, IndexError):
+        # Keep the fallback dates from config
+        pass
 
     return {"datetime": dt, "start_datetime": initial_date, "end_datetime": final_date}
 
@@ -214,6 +217,11 @@ def build_catalog(config_path, output_dir="catalog"):
         for file_key, file_path in sorted(data_files.items()):
             if not file_path.exists():
                 logger.debug(f"File in config doesn't exist: {file_path}")
+                continue
+
+            # Skip empty files
+            if file_path.stat().st_size == 0:
+                logger.warning(f"Skipping empty file: {file_path}")
                 continue
 
             logger.info(f"Processing {file_path}")

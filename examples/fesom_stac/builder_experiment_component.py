@@ -4,13 +4,48 @@ cat[experiment][component]
 Uses ESM-Tools finished config as source of truth
 """
 
+from datetime import datetime
 from pathlib import Path
 
+import click
 import numpy as np
 import pystac
 import xarray as xr
 import yaml
+from loguru import logger
 from shapely.geometry import box, mapping
+
+
+def _get_time_axis_from_dataset(ds):
+    dt = None
+    if "time" in ds:
+        try:
+            dt = np.datetime64(ds["time"].values[0]).astype("datetime64[ms]").item()
+        except ValueError:
+            logger.warning(
+                f"Could not convert {ds['time'].values[0]} to datetime64[ms]"
+            )
+            logger.warning("Fallback to None")
+            dt = None
+    return dt
+
+
+def _define_time_kwargs(ds, initial_date, final_date) -> dict:
+    dt = _get_time_axis_from_dataset(ds)
+    try:
+        initial_date = (
+            np.datetime64(ds["time"].values[0]).astype("datetime64[ms]").item()
+        )
+    except ValueError:
+        initial_date = initial_date
+    try:
+        final_date = (
+            np.datetime64(ds["time"].values[-1]).astype("datetime64[ms]").item()
+        )
+    except ValueError:
+        final_date = final_date
+
+    return {"datetime": dt, "start_datetime": initial_date, "end_datetime": final_date}
 
 
 def build_catalog(config_path, output_dir="catalog"):
@@ -32,6 +67,8 @@ def build_catalog(config_path, output_dir="catalog"):
     expid = config["general"]["expid"]
     base_dir = Path(config["general"]["base_dir"])
     models = config["general"]["models"]
+    initial_date = datetime.fromisoformat(config["general"]["initial_date"])
+    final_date = datetime.fromisoformat(config["general"]["final_date"])
 
     root = pystac.Catalog(id="esm-tools-plus", description="ESM-Tools+ Demo Catalog")
 
@@ -69,7 +106,7 @@ def build_catalog(config_path, output_dir="catalog"):
             description=f"{component} output",
             extent=pystac.Extent(
                 spatial=pystac.SpatialExtent([[-180, -90, 180, 90]]),
-                temporal=pystac.TemporalExtent([[None, None]]),
+                temporal=pystac.TemporalExtent([[initial_date, final_date]]),
             ),
             extra_fields={
                 "component_type": comp_config.get("type"),
@@ -80,27 +117,20 @@ def build_catalog(config_path, output_dir="catalog"):
 
         # Add items
         nc_files = list(data_dir.glob("*.nc"))
-        print(f"{component}: processing {len(nc_files)} files")
+        logger.info(f"{component}: processing {len(nc_files)} files")
 
         for nc_file in sorted(nc_files):
+            logger.info(f"Processing {nc_file}")
             with xr.open_dataset(nc_file) as ds:
-
                 variables = list(ds.data_vars)
-
-                dt = None
-                if "time" in ds:
-                    dt = (
-                        np.datetime64(ds["time"].values[0])
-                        .astype("datetime64[ms]")
-                        .item()
-                    )
+                item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
 
                 item = pystac.Item(
                     id=nc_file.stem,
                     geometry=mapping(box(-180, -90, 180, 90)),
                     bbox=[-180, -90, 180, 90],
-                    datetime=dt,
                     properties={"variables": variables, "component": component},
+                    **item_time_kwargs,
                 )
 
                 # [TODO]: Clarify if each "item" can have more than one asset??
@@ -120,14 +150,27 @@ def build_catalog(config_path, output_dir="catalog"):
     root.add_child(exp_cat)
 
     root.normalize_and_save(str(output_dir), pystac.CatalogType.SELF_CONTAINED)
-    print(f"\nCatalog saved to {output_dir.resolve()}")
+    logger.success(f"\nCatalog saved to {output_dir.resolve()}")
 
     # ESM-Tools pattern: always return config
     return config
 
 
-if __name__ == "__main__":
+@click.group
+def cli():
+    pass
+
+
+@cli.command
+@click.argument("cfg", type=click.Path(exists=True))
+def generate(cfg):
+    click.echo("Generate catalog")
     build_catalog(
-        config_path="basic-001_finished_config.yaml_18500101-18500131",
+        # config_path="basic-001_finished_config.yaml_18500101-18500131",
+        config_path=cfg,
         output_dir="stac_catalog",
     )
+
+
+if __name__ == "__main__":
+    cli()

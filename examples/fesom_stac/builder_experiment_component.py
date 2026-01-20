@@ -186,43 +186,48 @@ def build_catalog(config_path, output_dir="catalog"):
                 open_kwargs["engine"] = "cfgrib"
                 open_kwargs["backend_kwargs"] = {"indexpath": ""}
 
-            with xr.open_dataset(file_path, **open_kwargs) as ds:
-                variables = list(ds.data_vars)
-                item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
+            try:
+                with xr.open_dataset(file_path, **open_kwargs) as ds:
+                    variables = list(ds.data_vars)
+                    item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
+            except Exception as e:
+                logger.error(f"Failed to open {file_path} with xarray: {e}")
+                logger.warning(f"Skipping {file_path}")
+                continue
 
-                item = pystac.Item(
-                    id=file_path.stem,
-                    geometry=mapping(box(-180, -90, 180, 90)),
-                    bbox=[-180, -90, 180, 90],
-                    properties={"variables": variables, "component": component},
-                    **item_time_kwargs,
-                )
+            item = pystac.Item(
+                id=file_path.stem,
+                geometry=mapping(box(-180, -90, 180, 90)),
+                bbox=[-180, -90, 180, 90],
+                properties={"variables": variables, "component": component},
+                **item_time_kwargs,
+            )
 
-                # Add primary data asset with xarray metadata
+            # Add primary data asset with xarray metadata
+            item.add_asset(
+                "data",
+                pystac.Asset(
+                    href=str(file_path.resolve()),
+                    media_type=asset_metadata["media_type"],
+                    roles=asset_metadata["roles"],
+                    extra_fields=asset_metadata["extra_fields"],
+                ),
+            )
+
+            # Check for .codes auxiliary file (GRIB code tables)
+            codes_file = file_path.parent / f"{file_path.name}.codes"
+            if codes_file.exists():
                 item.add_asset(
-                    "data",
+                    "codes",
                     pystac.Asset(
-                        href=str(file_path.resolve()),
-                        media_type=asset_metadata["media_type"],
-                        roles=asset_metadata["roles"],
-                        extra_fields=asset_metadata["extra_fields"],
+                        href=str(codes_file.resolve()),
+                        media_type="text/plain",
+                        roles=["metadata"],
+                        title="GRIB code table",
                     ),
                 )
 
-                # Check for .codes auxiliary file (GRIB code tables)
-                codes_file = file_path.parent / f"{file_path.name}.codes"
-                if codes_file.exists():
-                    item.add_asset(
-                        "codes",
-                        pystac.Asset(
-                            href=str(codes_file.resolve()),
-                            media_type="text/plain",
-                            roles=["metadata"],
-                            title="GRIB code table",
-                        ),
-                    )
-
-                collection.add_item(item)
+            collection.add_item(item)
 
         exp_cat.add_child(collection)
 
@@ -230,7 +235,9 @@ def build_catalog(config_path, output_dir="catalog"):
 
     # Use flat layout strategy to avoid nested directories
     layout_strategy = TemplateLayoutStrategy(
-        item_template="${collection}/${id}.json"
+        catalog_template="${id}/catalog.json",
+        collection_template="${id}/collection.json",
+        item_template="${id}.json"
     )
     root.normalize_hrefs(str(output_dir), strategy=layout_strategy)
     root.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)

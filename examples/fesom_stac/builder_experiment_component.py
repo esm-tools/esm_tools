@@ -10,10 +10,45 @@ from pathlib import Path
 import click
 import numpy as np
 import pystac
+from pystac.layout import TemplateLayoutStrategy
 import xarray as xr
 import yaml
 from loguru import logger
 from shapely.geometry import box, mapping
+
+
+def _get_asset_metadata(file_path):
+    """
+    Return media_type, roles, and xarray metadata for a file.
+
+    Args:
+        file_path: Path to the data file
+
+    Returns:
+        dict with media_type, roles, and extra_fields for xarray
+    """
+    suffix = file_path.suffix.lower()
+
+    if suffix == '.nc':
+        return {
+            "media_type": "application/x-netcdf",
+            "roles": ["data"],
+            "extra_fields": {
+                "xarray:engine": "netcdf4",
+                "xarray:open_kwargs": {}
+            }
+        }
+    else:  # GRIB files (often have no extension)
+        return {
+            "media_type": "application/x-grib",
+            "roles": ["data"],
+            "extra_fields": {
+                "xarray:engine": "cfgrib",
+                "xarray:open_kwargs": {
+                    "backend_kwargs": {"indexpath": ""}
+                }
+            }
+        }
 
 
 def _get_time_axis_from_dataset(ds):
@@ -93,12 +128,30 @@ def build_catalog(config_path, output_dir="catalog"):
 
         comp_config = config[component]
 
-        # Build path to output data
-        data_dir = base_dir / expid / "outdata" / component
+        # Use outdata_targets from config (already expanded from patterns)
+        outdata_targets = comp_config.get("outdata_targets", {})
 
-        if not data_dir.exists():
-            print(f"Skipping {component}: {data_dir} does not exist")
-            continue
+        if not outdata_targets:
+            # Some components (like fesom) don't populate outdata_targets
+            # Fall back to experiment_outdata_dir
+            experiment_outdata_dir = comp_config.get("experiment_outdata_dir")
+            if not experiment_outdata_dir:
+                logger.warning(f"Skipping {component}: no outdata_targets or experiment_outdata_dir")
+                continue
+
+            outdata_dir = Path(experiment_outdata_dir)
+            if not outdata_dir.exists():
+                logger.warning(f"Skipping {component}: {outdata_dir} does not exist")
+                continue
+
+            # Get all NetCDF files from directory
+            nc_files = sorted(outdata_dir.glob("*.nc"))
+            data_files = {f.stem: f for f in nc_files}
+            logger.info(f"{component}: processing {len(data_files)} files (from directory glob)")
+        else:
+            # Use explicit file paths from config
+            data_files = {k: Path(v) for k, v in outdata_targets.items()}
+            logger.info(f"{component}: processing {len(data_files)} files (from outdata_targets)")
 
         # Create collection with component metadata
         collection = pystac.Collection(
@@ -115,33 +168,59 @@ def build_catalog(config_path, output_dir="catalog"):
             },
         )
 
-        # Add items
-        nc_files = list(data_dir.glob("*.nc"))
-        logger.info(f"{component}: processing {len(nc_files)} files")
+        # Process each data file
+        for file_key, file_path in sorted(data_files.items()):
+            if not file_path.exists():
+                logger.debug(f"File in config doesn't exist: {file_path}")
+                continue
 
-        for nc_file in sorted(nc_files):
-            logger.info(f"Processing {nc_file}")
-            with xr.open_dataset(nc_file) as ds:
+            logger.info(f"Processing {file_path}")
+
+            # Get asset metadata (media_type, xarray engine, etc.)
+            asset_metadata = _get_asset_metadata(file_path)
+
+            # Open dataset to extract metadata
+            # Use the appropriate engine based on file type
+            open_kwargs = {}
+            if asset_metadata["extra_fields"]["xarray:engine"] == "cfgrib":
+                open_kwargs["engine"] = "cfgrib"
+                open_kwargs["backend_kwargs"] = {"indexpath": ""}
+
+            with xr.open_dataset(file_path, **open_kwargs) as ds:
                 variables = list(ds.data_vars)
                 item_time_kwargs = _define_time_kwargs(ds, initial_date, final_date)
 
                 item = pystac.Item(
-                    id=nc_file.stem,
+                    id=file_path.stem,
                     geometry=mapping(box(-180, -90, 180, 90)),
                     bbox=[-180, -90, 180, 90],
                     properties={"variables": variables, "component": component},
                     **item_time_kwargs,
                 )
 
-                # [TODO]: Clarify if each "item" can have more than one asset??
+                # Add primary data asset with xarray metadata
                 item.add_asset(
                     "data",
-                    # [TODO] Figure out if we can have "file specific" things here? Date/variable??
                     pystac.Asset(
-                        href=str(nc_file.resolve()),
-                        media_type="application/x-netcdf",
+                        href=str(file_path.resolve()),
+                        media_type=asset_metadata["media_type"],
+                        roles=asset_metadata["roles"],
+                        extra_fields=asset_metadata["extra_fields"],
                     ),
                 )
+
+                # Check for .codes auxiliary file (GRIB code tables)
+                codes_file = file_path.parent / f"{file_path.name}.codes"
+                if codes_file.exists():
+                    item.add_asset(
+                        "codes",
+                        pystac.Asset(
+                            href=str(codes_file.resolve()),
+                            media_type="text/plain",
+                            roles=["metadata"],
+                            title="GRIB code table",
+                        ),
+                    )
 
                 collection.add_item(item)
 
@@ -149,7 +228,12 @@ def build_catalog(config_path, output_dir="catalog"):
 
     root.add_child(exp_cat)
 
-    root.normalize_and_save(str(output_dir), pystac.CatalogType.SELF_CONTAINED)
+    # Use flat layout strategy to avoid nested directories
+    layout_strategy = TemplateLayoutStrategy(
+        item_template="${collection}/${id}.json"
+    )
+    root.normalize_hrefs(str(output_dir), strategy=layout_strategy)
+    root.save(catalog_type=pystac.CatalogType.SELF_CONTAINED)
     logger.success(f"\nCatalog saved to {output_dir.resolve()}")
 
     # ESM-Tools pattern: always return config

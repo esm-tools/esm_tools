@@ -354,6 +354,8 @@ def run_test(info):
                     f"ESM_TESTING_DIR='{general_run_dir}'",
                     f"MODEL_DIR='{model_dir}'",
                 ]
+                if not os.getenv("USER"):
+                    env_vars.append(f"USER='github_runner'")
                 run_command = (
                     f"esm_runscripts {v['path']} -e {script} --open-run "
                     f"{check_flag}{additional_actions}"

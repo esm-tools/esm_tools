@@ -106,6 +106,10 @@ def main():
     if delete_tests:
         del_prev_tests(info)
 
+    # If running on GitHub and USER env var is not defined, export it
+    if info["in_github"] and os.environ.get("USER") is None:
+        os.environ["USER"] = "github_runner"
+
     # Compile
     comp_test(info)
 

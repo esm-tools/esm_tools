@@ -30,5 +30,12 @@ lpj_guess:
             use_luh3_input: 1  # CMIP7 uses LUH3 NetCDF files
             use_luh3_yearly_transitions: 1
             file_luh3_transitions_dir: "${lpj_guess.input_dir}/land_use/transitions_yearly"
-            file_luh3_states: "${lpj_guess.input_dir}/regridded/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.mygrid}.nc"
+            file_luh3_states: "${lpj_guess.input_dir}/land_use/regridded/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.mygrid}.nc"
             file_luh3_management: "${lpj_guess.input_dir}/land_use/regridded/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.mygrid}.nc"
+            run_landcover: 1
+            run_natural: 1
+            run_crop: 1
+            run_pasture: 1
+            run_barren: 0  # Disabled for LUH3 - calculated as residual internally
+            run_urban: 1
+            run_peatland: 0  # Disabled for now. 

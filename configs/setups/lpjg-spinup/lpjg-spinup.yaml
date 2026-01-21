@@ -138,9 +138,6 @@ lpj_guess:
         - ${work_dir}/fire
 
 
-    choose_general.with_co2_veg_coupling:
-        true:
-            co2_coupling: 1
 
 oasis3mct:
     input_dir: ${oasis3mct.pool_dir}/oasis/cy48r1/${lpj_guess.resolution}-${lpj_guess.fesom_resolution}

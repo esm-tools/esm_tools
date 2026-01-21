@@ -3,13 +3,13 @@ general:
     setup_name: "lpjg-spinup"
     version: "develop"
     account: "ab0995"
-    compute_time: "00:05:00"
+    compute_time: "08:00:00"
     initial_date: "1900-01-01"
-    final_date: "1910-01-01"
+    final_date: "2900-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
     nmonth: 0
-    nyear: 500
+    nyear: 200
 
 computer:
     taskset: true
@@ -22,7 +22,7 @@ lpjg-spinup:
 
 lpj_guess:
     lresume: false 
-    nproc: 8 # originally 16
+    nproc: 16 # originally 16
     omp_num_threads: 8
     resolution: TL255
     fesom_resolution: CORE2

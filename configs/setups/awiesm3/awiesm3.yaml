@@ -164,7 +164,7 @@ oifs:
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
         SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
-        SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg, XCO2Veg, FCO2Land, FCO2Ant, FCO2Fire]
+        SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg, XCO2Veg, FCO2NAT, FCO2ANT, FCO2NPP]
     coupling_fields:
         "[[atm_oce_fields-->FIELD]]":
             grid: atma
@@ -366,7 +366,7 @@ lpj_guess:
     veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
         TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ,
         SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ,
-        TMIN_LPJ, TMAX_LPJ, GUE_CFIR, GUE_CANT, GUE_CNAT, CO2_LPJG]
+        TMIN_LPJ, TMAX_LPJ, GUE_CNPP, GUE_CANT, GUE_CNAT, CO2_LPJG]
 
     coupling_fields:
         "[[veg_atm_fields-->FIELD]]":
@@ -453,7 +453,6 @@ lpj_guess:
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2
 
-        temp_namcouple: /home/a/a270270/temp_confiles/namcouple
         "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
     config_in_work:
@@ -467,7 +466,6 @@ lpj_guess:
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
 
-        temp_namcouple: namcouple
         "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
 
 
@@ -648,7 +646,7 @@ oasis3mct:
                     add_coupling_target_fields:
                         rst_co2_av.nc:
                             - 'CO2_LPJG <--loctrans_avg-- XCO2Veg'
-                            - 'FCO2Land:FCO2Ant:FCO2Fire <--loctrans_avg-- GUE_CNAT:GUE_CANT:GUE_CFIR'
+                            - 'FCO2NAT:FCO2ANT:FCO2NPP <--loctrans_avg-- GUE_CNAT:GUE_CANT:GUE_CNPP'
                     add_merge_recv_restarts:
                         - rst_co2_av.nc    # CO2 vegetation coupling (bidirectional LOCTRANS)
             choose_general.with_co2_oce_coupling:

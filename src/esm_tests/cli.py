@@ -71,8 +71,7 @@ def main():
     info["rm_user_info"] = {
         "TEST_DIR": info["user"]["test_dir"],
         "HOME_DIR": f"{os.path.expanduser('~')}",
-        "SLURM_ACCOUNT": info["user"]["account"],
-        "USER_ACCOUNT": os.environ.get("USER"),
+        "USER_ACCOUNT": os.environ.get("USER", "github_runner"),
     }
 
     # Define lines to be ignored during comparison

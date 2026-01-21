@@ -106,7 +106,6 @@ lpj_guess:
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2 
-        temp_namcouple: /home/a/a270270/temp_confiles/namcouple
         "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
     config_in_work:
@@ -120,7 +119,6 @@ lpj_guess:
         "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
 
-        temp_namcouple: namcouple
         "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
 
     forcing_sources:

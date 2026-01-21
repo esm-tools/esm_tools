@@ -16,29 +16,19 @@ lpj_guess:
 
     choose_mip:
         "cmip6":
-            # CMIP6 defaults
             co2_source_file: ${co2_file_cmip6}
             co2_work_file: ${co2_workname_cmip6}
             ndep_cmip_dir: ""
             use_luh3_input: 0  # CMIP6 uses LUH2 text files
 
         "cmip7":
-            # CMIP7 defaults
             co2_source_file: ${co2_file_cmip7}
             co2_work_file: ${co2_workname_cmip7}
+
             ndep_cmip_dir: "../ndep/"
+
             use_luh3_input: 1  # CMIP7 uses LUH3 NetCDF files
-            # LUH3 yearly transitions (faster loading than single file)
             use_luh3_yearly_transitions: 1
-            file_luh3_transitions_dir: "/work/ab0246/a270092/input/lpj-guess/land_use/transitions_yearly"
-            file_luh3_states: "/work/ab0246/a270092/input/lpj-guess/land_use/regridded/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.mygrid}.nc"
-            file_luh3_management: "/work/ab0246/a270092/input/lpj-guess/land_use/regridded/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.mygrid}.nc"
-            # LUH3 run switches (used with LUH3 NetCDF files)
-            run_landcover: 0
-            run_urban: 0
-            run_crop: 0
-            run_forest: 0
-            run_pasture: 0
-            run_natural: 1
-            run_peatland: 0
-            run_barren: 0
+            file_luh3_transitions_dir: "${lpj_guess.input_dir}/land_use/transitions_yearly"
+            file_luh3_states: "${lpj_guess.input_dir}/regridded/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.mygrid}.nc"
+            file_luh3_management: "${lpj_guess.input_dir}/land_use/regridded/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.mygrid}.nc"

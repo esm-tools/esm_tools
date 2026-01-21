@@ -57,7 +57,7 @@
 
 fesom:
     vis_project: ${general.account}
-    vis_user: ${general.user}
+    vis_user: !ENV ${USER}
     vis_server: NOT_SET
     vis_publicdir: NOT_SET
     vis_sync: false

@@ -92,16 +92,9 @@ lpj_guess:
     fixed_ndep: -1
     fixed_LU: -1
     nyear_spinup: ${nyear}
-    
-    # Conditional freenyears: set to nyear_spinup during first 100 years, then 0
-    # Boolean to check if we're within 100 years of initial_date
-    within_spinup_period: "$(( ${general.start_date!year} - ${general.initial_date!year} < 100 ))"
-    
-    choose_within_spinup_period:
-        True:
-            freenyears: ${nyear_spinup}
-        False:
-            freenyears: 0
+    # freenyears: N limitation delay years (must be <= nyear_spinup)
+    # Set equal to nyear_spinup for full N limitation delay during spinup
+    freenyears: ${nyear}
 
     config_sources:
         tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2

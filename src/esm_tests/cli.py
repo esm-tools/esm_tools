@@ -3,6 +3,9 @@
 A small wrapper that combines the shell interface and the Python interface
 """
 
+import os
+import sys
+
 # Import from Python Standard Library
 from loguru import logger
 
@@ -13,9 +16,6 @@ from .read_shipped_data import *
 from .repos import *
 from .test_utilities import *
 from .tests import *
-
-import os
-import sys
 
 
 def main():
@@ -71,6 +71,8 @@ def main():
     info["rm_user_info"] = {
         "TEST_DIR": info["user"]["test_dir"],
         "HOME_DIR": f"{os.path.expanduser('~')}",
+        "SLURM_ACCOUNT": info["user"]["account"],
+        "USER_ACCOUNT": os.environ.get("USER"),
     }
 
     # Define lines to be ignored during comparison

@@ -17,36 +17,30 @@
             enabled="true"
             output_freq="1d"
             name_suffix="_1d"
-            description="ECE4/OIFS daily surface fields"
+            description="ECE4/OIFS daily surface fields for LPJ-GUESS"
         >
             <field_group operation="average" grid_ref="reduced_sfc">
-                <field field_ref="air_temperature__tas"/>  <!-- Near-Surface Air Temperature [K] -->
-                <field field_ref="air_temperature__tasmin"/>  <!-- Daily Minimum Near-Surface Air Temperature [K] -->
-                <field field_ref="air_temperature__tasmax"/>  <!-- Daily Maximum Near-Surface Air Temperature [K] -->
-                <field field_ref="dew_point_temperature__tdps"/>  <!-- 2m Dewpoint Temperature [K] -->
-                <field field_ref="surface_air_pressure__ps"/>  <!-- Surface Air Pressure [Pa] -->
-                <field field_ref="surface_temperature__ts"/>  <!-- Surface Temperature [K] -->
-                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- Sea Level Pressure [Pa] -->
-                <field field_ref="toa_incoming_shortwave_flux__rsdt"/>  <!-- TOA Incident Shortwave Radiation [W m-2] -->
-                <field field_ref="toa_outgoing_shortwave_flux__rsut"/>  <!-- TOA Outgoing Shortwave Radiation [W m-2] -->
-                <field field_ref="toa_outgoing_longwave_flux__rlut"/>  <!-- TOA Outgoing Longwave Radiation [W m-2] -->
-                <field field_ref="surface_net_solar_radiation__rsns"/>  <!--  Surface net solar radiation [W m-2] -->
-                <field field_ref="surface_net_thermal_radiation__rlns"/>  <!--  Surface net thermal radiation [W m-2] -->
-                <field field_ref="wind_speed__sfcWind"/>  <!-- Near-Surface Wind Speed [m s-1] -->
-                <field field_ref="wind_speed__sfcWindmax"/>  <!-- Daily Maximum Near-Surface Wind Speed [m s-1] -->
-                <field field_ref="surface_albedo__albsn"/>  <!-- Snow Albedo [1] -->
-                <field field_ref="surface_snow_thickness__snd"/> <!-- Snow depth [m] -->
-                <field field_ref="surface_upward_sensible_heat_flux__hfss"/>  <!-- Surface Upward Sensible Heat Flux [W m-2] -->
-                <field field_ref="surface_upward_latent_heat_flux__hfls"/>  <!-- Surface Upward Latent Heat Flux [W m-2] -->
-                <field field_ref="cloud_area_fraction__clt"/>  <!-- Total Cloud Cover Percentage [%] -->
-                <field field_ref="precipitation_flux__pr"/>  <!-- Precipitation [kg m-2 s-1] -->
-                <field field_ref="snowfall_flux__prsn"/> <!-- Snowfall [kg m-2 s-1] -->
-                <field field_ref="water_evapotranspiration_flux__evspsbl"/> <!-- Total evaporation [kg m-2 s-1] -->
-                <field field_ref="relative_humidity__hurs"/>  <!-- Near-Surface Relative Humidity [%] -->
-                <field field_ref="atmosphere_mass_content_of_water_vapor__prw"/>  <!-- Water Vapor Path [kg m-2] -->
-                <field field_ref="atmosphere_mass_content_of_cloud_liquid_water__lwp"/>  <!-- Liquid Water Path [kg m-2] -->
-                <field field_ref="surface_downward_eastward_stress__tauu"/>  <!-- Surface Downward Eastward Wind Stress [Pa] -->
-                <field field_ref="surface_downward_northward_stress__tauv"/>  <!-- Surface Downward Northward Wind Stress [Pa] -->
+                <!-- Core fields matching AM04 format -->
+                <field field_ref="air_temperature__tas"/>  <!-- tas: Near-Surface Air Temperature [K] -->
+                <field field_ref="air_temperature__tasmin"/>  <!-- tasmin: Daily Min Temperature [K] -->
+                <field field_ref="air_temperature__tasmax"/>  <!-- tasmax: Daily Max Temperature [K] -->
+                <field field_ref="surface_net_solar_radiation__rsns"/>  <!-- rsns: Surface net solar [W m-2] -->
+                <field field_ref="surface_net_thermal_radiation__rlns"/>  <!-- rlns: Surface net thermal [W m-2] -->
+                <field field_ref="wind_speed__sfcWind"/>  <!-- sfcWind: Wind speed magnitude [m s-1] -->
+                <field field_ref="precipitation_flux__pr"/>  <!-- pr: Precipitation [kg m-2 s-1] -->
+                
+                <!-- Additional fields for LPJ-GUESS forcing -->
+                <field field_ref="dew_point_temperature__tdps"/>  <!-- tdps: 2m Dewpoint [K] - for offline hurs calc -->
+                <field field_ref="surface_air_pressure__ps"/>  <!-- ps: Surface pressure [Pa] -->
+                <field field_ref="air_pressure_at_mean_sea_level__psl"/>  <!-- psl: Sea level pressure [Pa] -->
+                <field field_ref="cloud_area_fraction__clt"/>  <!-- clt: Total cloud cover [%] -->
+                <field field_ref="snowfall_flux__prsn"/>  <!-- prsn: Snowfall [kg m-2 s-1] -->
+                <field field_ref="water_evapotranspiration_flux__evspsbl"/>  <!-- evspsbl: Evaporation [kg m-2 s-1] -->
+                <field field_ref="atmosphere_mass_content_of_water_vapor__prw"/>  <!-- prw: Water vapor path [kg m-2] -->
+                
+                <!-- Raw fields for problematic conversions -->
+                <field field_ref="sd"/>  <!-- sd: Snow depth water equivalent [m] - for offline snd calc -->
+                <field field_ref="rsn"/>  <!-- rsn: Snow density [kg m-3] - for offline snd calc -->
             </field_group>
         </file>
 

@@ -583,10 +583,12 @@ oifs:
                                           fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                                 "5.0":
                                           fociagrif_fields_l: [M01_A_Ice_albedo, M01_A_Ice_frac, M01_A_SST, M01_A_Ice_temp, M01_A_Ice_thickness, 
-                                                               M01_A_Snow_thickness, M01_A_CurX, M01_A_CurY, M01_A_TauX_oce, 
-                                                               M01_A_TauY_oce, M01_A_TauX_ice, M01_A_TauY_ice, M01_A_Qs_ice, 
-                                                               M01_A_Qns_ice, M01_A_dQns_dT]
-                                          fociagrif_fields_a: [M01_A_Qs_mix, M01_A_Qns_mix, M01_A_Precip_liquid, M01_A_Evap_total, M01_A_Precip_solid, M01_A_Evap_ice]
+                                                               M01_A_Snow_thickness, M01_A_CurX, M01_A_CurY]
+                                                               # I dont think we need these...ever...
+                                                               #, M01_A_TauX_oce, 
+                                                               #M01_A_TauY_oce, M01_A_TauX_ice, M01_A_TauY_ice, M01_A_Qs_ice, 
+                                                               #M01_A_Qns_ice, M01_A_dQns_dT]
+                                                               #fociagrif_fields_a: [M01_A_Qs_mix, M01_A_Qns_mix, M01_A_Precip_liquid, M01_A_Evap_total, M01_A_Precip_solid, M01_A_Evap_ice]
 
                         fociagrif_fields_n: [M01_A_AgrSpg]
                         add_namelist_changes:
@@ -1215,11 +1217,11 @@ oasis3mct:
                                                 sstocean_1:
                                                         - 'M01_A_Ice_frac:M01_A_SST:M01_A_Ice_temp:M01_A_Ice_thickness:M01_A_Snow_thickness:M01_A_CurX:M01_A_CurY:M01_A_Ice_albedo <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
                                                 atmflx_1:
-                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- M01_A_Qs_mix:M01_A_Qns_mix:M01_A_Precip_liquid:M01_A_Precip_solid:M01_A_Evap_total:M01_A_Evap_ice'
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_Qs_mix:A_Qns_mix:A_Precip_liquid:A_Precip_solid:A_Evap_total:A_Evap_ice'
                                                 atmtau_1:
-                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- M01_A_TauX_oce:M01_A_TauY_oce:M01_A_TauX_ice:M01_A_TauY_ice'
+                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                                 flxatmos_1:
-                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- M01_A_Qs_ice:M01_A_Qns_ice:M01_A_dQns_dT'
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_Qs_ice:A_Qns_ice:A_dQns_dT'
                 #'*':
                 #        # Couple HTESSEL runoff to river routing
                 #        add_coupling_target_fields:

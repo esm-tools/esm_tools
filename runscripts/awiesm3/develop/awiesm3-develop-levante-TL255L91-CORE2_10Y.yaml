@@ -59,6 +59,8 @@ lpj_guess:
     fixed_CO2: 1850 # For piControl - freeze CO2 at 1850 levels
     fixed_ndep: 1850 # For piControl - freeze ndep at 1850 levels
     fixed_LU: -1  # For piControl - freeze land use at 1850
+    firemodel: BLAZE  # Enable SIMFIRE/BLAZE fire module (valid: BLAZE, GLOBFIRM, NOFIRE)
+    
     
 oifs:
     #resolution: TL255

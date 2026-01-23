@@ -6,7 +6,8 @@ general:
     compute_time: "08:00:00"
     initial_date: "1900-01-01"
     final_date: "2900-01-01"
-    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}/"
     nday: 0
     nmonth: 0
     nyear: 200
@@ -16,7 +17,7 @@ computer:
 
 lpjg-spinup:
     postprocessing: false
-    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0995/${user}/model_codes/${general.setup_name}-${general.version}//"
     resolution: TL255
     fesom_resolution: CORE2
 

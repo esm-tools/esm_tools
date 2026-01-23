@@ -72,6 +72,10 @@ lpj_guess:
     time_step: 86400
     nyear_spinup: 10
 
+    # Fire model selection: BLAZE, GLOBFIRM, NOFIRE
+    # Set to BLAZE to enable SIMFIRE/BLAZE fire module
+    firemodel: NOFIRE
+
     choose_lresume:
         false:
             restart_num: 0
@@ -151,6 +155,22 @@ lpj_guess:
     # Soil type file
     slt_dir: ${input_dir}/slt/
 
+    # LUH3 land use input directory (NetCDF files regridded to various resolutions)
+    
+    #luh3_input_dir: ${input_dir}/land_use/regridded/ #put back aftet the fix !!! LASZLO
+    
+    luh3_input_dir: /work/ab0995/a270270/land_use/regridded_proper/ #Temp for testing LASZLO
+
+
+
+    # LUH3 input control - set automatically by choose_mip in lpj_guess.cmip.yaml
+    # (cmip6 -> use_luh3_input=0 for LUH2 text files, cmip7 -> use_luh3_input=1 for LUH3 NetCDF)
+    # Can still be overridden in runscript if needed
+
+    # SIMFIRE/BLAZE fire input directory
+    # Files: simfire_monthly_ba.nc (12 months), annual_population_density.nc (1850-2025)
+    fire_input_dir: ${input_dir}/fire/${resolution}/
+
     # N deposition forcing files - link from input to work/ndep with renamed filenames
     forcing_files:
         soil_layer_type: soil_layer_type
@@ -159,6 +179,8 @@ lpj_guess:
         wetnhx: wetnhx
         wetnoy: wetnoy
         peat: peat
+        simfire_ba: simfire_ba
+        simfire_popdens: simfire_popdens
     forcing_sources:
         soil_layer_type: ${slt_dir}/slt_${resolution}.nc
         drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
@@ -166,6 +188,8 @@ lpj_guess:
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
         wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
         peat: ${input_dir}/peat/${resolution}_peat_frac.txt
+        simfire_ba: ${fire_input_dir}/simfire_monthly_ba.nc
+        simfire_popdens: ${fire_input_dir}/annual_population_density.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${slt_dir}/slt_${resolution}.nc
         "drynhx_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
         "drynoy_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
@@ -178,12 +202,32 @@ lpj_guess:
         wetnhx: ndep/wetnhx2.nc
         wetnoy: ndep/wetnoy2.nc
         peat: landuse/peat_frac.txt
+        simfire_ba: fire/simfire_monthly_ba.nc
+        simfire_popdens: fire/annual_population_density.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${resolution}.nc
         "drynhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynhx2.nc
         "drynoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynoy2.nc
         "wetnhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnhx2.nc
         "wetnoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnoy2.nc
 
+    # LUH3 land use files - conditionally added when use_luh3_input=1
+    choose_use_luh3_input:
+        1:
+            add_forcing_files:
+                luh3_states: luh3_states
+                luh3_transitions: luh3_transitions
+                luh3_management: luh3_management
+                luh3_static: luh3_static
+            add_forcing_sources:
+                luh3_states: ${luh3_input_dir}/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
+                luh3_transitions: ${luh3_input_dir}/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2023_${resolution}.nc
+                luh3_management: ${luh3_input_dir}/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
+                luh3_static: ${luh3_input_dir}/multiple-static_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_${resolution}.nc
+            add_forcing_in_work:
+                luh3_states: landuse/luh3_states.nc
+                luh3_transitions: landuse/luh3_transitions.nc
+                luh3_management: landuse/luh3_management.nc
+                luh3_static: landuse/luh3_static.nc
 
     choose_resolution:
         # Note:

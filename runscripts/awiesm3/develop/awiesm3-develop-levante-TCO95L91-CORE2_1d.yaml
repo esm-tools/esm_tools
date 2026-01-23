@@ -33,8 +33,6 @@ lpj_guess:
     lresume: false 
     nproc: 8 # originally 16
     omp_num_threads: 8
-    # Use fixed TCO95 soil file with correct var43 variable name
-    slt_dir: /work/ab0995/a270270/input/lpj-guess/slt/
 
 oifs:
     resolution: TCO95

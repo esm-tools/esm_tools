@@ -9,13 +9,13 @@ import "landuse.ins"
 
 param "file_gridlist"        (str "../ece_gridlist_{{lpj_guess.resolution}}.txt")
 
-! *** SIMFIRE related files  
-param "file_simfire"  (str "/proj/rescue/lpjg/fire/SimfireInput.bin") ! Tetralith
-! PaulM hack ECE4
-!param "file_simfire"  (str "SimfireInput.bin")
+! *** SIMFIRE/BLAZE fire input
+! EC-Earth coupling uses NetCDF files in work/fire/ directory (hardcoded in simfire_input.cpp)
+! This param is required but ignored - actual files are: simfire_monthly_ba.nc, annual_population_density.nc
+param "file_simfire"  (str "dummy")
 
-! PaulM hack ECE4
-firemodel "NOFIRE"               ! BLAZE, GLOBFIRM, NOFIRE
+! Fire model selection: BLAZE, GLOBFIRM, NOFIRE
+firemodel "{{lpj_guess.firemodel | default('NOFIRE')}}"
 
 ! optimesm
 import "wetlandpfts.ins"

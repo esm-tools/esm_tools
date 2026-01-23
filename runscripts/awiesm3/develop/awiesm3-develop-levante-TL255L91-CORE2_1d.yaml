@@ -2,16 +2,16 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "develop"
-    #account: "ab0995"
-    account: "ba0989" #new account if it works
-    compute_time: "03:00:00"
+    account: "ab0995" #original account
+    #account: "ba0989" #new account if it works
+    compute_time: "08:00:00"
     initial_date: "1850-01-01"
-    final_date: "1852-01-01"
-    #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    final_date: "1850-05-01"
+    #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-v3.4/"
     nday: 1
     nmonth: 0
-    nyear: 0
+    nyear: 0 #should be 10
 
 computer:
     taskset: true
@@ -24,12 +24,13 @@ awiesm3:
 
 fesom:
     resolution: "CORE2"
-    restart_rate: 1
-    restart_unit: "d"
-    restart_first: 1
+    restart_rate: 1 #should be 10
+    restart_unit: "d"  #should be "y"
+    restart_first: 1 #should be 10
     lresume: false
     time_step: 1800
-    nproc: 256 #originally 512 but worked with 1152
+    nproc: 256 #for TL255 should  be 1152
+    #nproc: 768 #should be 768 for TCO95
     omp_num_threads: 1 # originally 4 but worked with 1
     tar_binary_restarts: true
     add_namelist_changes:
@@ -39,10 +40,11 @@ fesom:
 
 lpj_guess:
     lresume: false 
-    nproc: 8 # originally 16
-    omp_num_threads: 8
-    co_coupling: 0
+    nproc: 8 # should be 8
+    omp_num_threads: 8 # should be 8
+    co2_coupling: 0
     resolution: "TL255"
+    #resolution: "TCO95"
     mygrid: ${resolution}
     # Use CMIP7 forcing (CO2 and N deposition)
     mip: "cmip7"
@@ -53,21 +55,23 @@ lpj_guess:
     run_pasture: 1
     run_barren: 0  # Disabled for LUH3 - calculated as residual internally
     run_urban: 1
-    run_peatland: 0  # Disabled for LUH3 - no peatland data in LUH3
+    run_peatland: 1 # Enable peatland with external file only works with LUH3
     fixed_CO2: 1850 # For piControl - freeze CO2 at 1850 levels
     fixed_ndep: 1850 # For piControl - freeze ndep at 1850 levels
     fixed_LU: 1850  # For piControl - freeze land use at 1850
-
+    
 oifs:
     resolution: TL255
+    #resolution: TCO95
     levels: "L91"
-    prepifs_expid: abl7
+    prepifs_expid: abl7 #for TL255
+    #prepifs_expid: ab45 #for TCO95
     input_expid: awi3
     wam: true
     lresume: false
     time_step: 2400
-    nproc: 128 
-    omp_num_threads: 1
+    nproc: 128 #should be 512
+    omp_num_threads: 8 #should be 8
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850
     add_namelist_changes:
@@ -92,5 +96,5 @@ oasis3mct:
 
 xios:
     with_model: oifs
-    nproc: 4
-    omp_num_threads: 32
+    nproc: 4 # should be 4
+    omp_num_threads: 32 # should be 32

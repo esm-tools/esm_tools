@@ -574,18 +574,20 @@ oifs:
                                                                M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
                                                                M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
                                                                M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
+                                          fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                                 "4.2":
                                           fociagrif_fields_l: [M01_A_AlbIce, M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
                                                                M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
                                                                M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
                                                                M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
+                                          fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                                 "5.0":
-                                          fociagrif_fields_l: [M01_A_AlbIce, M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
-                                                               M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
-                                                               M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
-                                                               M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
+                                          fociagrif_fields_l: [M01_A_Ice_albedo, M01_A_Ice_frac, M01_A_SST, M01_A_Ice_temp, M01_A_Ice_thickness, 
+                                                               M01_A_Snow_thickness, M01_A_CurX, M01_A_CurY, M01_A_TauX_oce, 
+                                                               M01_A_TauY_oce, M01_A_TauX_ice, M01_A_TauY_ice, M01_A_Qs_ice, 
+                                                               M01_A_Qns_ice, M01_A_dQns_dT]
+                                          fociagrif_fields_a: [M01_A_Qs_mix, M01_A_Qns_mix, M01_A_Precip_liquid, M01_A_Evap_total, M01_A_Precip_solid, M01_A_Evap_ice]
 
-                        fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                         fociagrif_fields_n: [M01_A_AgrSpg]
                         add_namelist_changes:
                                 fort.4:
@@ -1173,12 +1175,12 @@ oasis3mct:
                                 rnfatm:
                                         - 'R_Runoff_atm:R_Calving_atm <--a2rgauswgt-- A_Runoff:A_Calving'
                                         #- 'R_Runoff_atm <--a2rgauswgt-- A_Runoff'
-                                atmflx_1:
-                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
-                                atmtau_1:
-                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
-                                flxatmos_1:
-                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_QsrIce:A_QnsIce:A_dQnsdT'
+                                # atmflx_1:
+                                        #- '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
+                                # atmtau_1:
+                                        #- '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                                # flxatmos_1:
+                                          #- '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_QsrIce:A_QnsIce:A_dQnsdT'
                                 rnrunoff_1:
                                         - '1_O_Runoff <--r2agrloccunif-- 1_R_Runoff_oce'
                                         - '1_OCalving <--c2agrzero-- 1_R_Calving_oce'
@@ -1192,14 +1194,32 @@ oasis3mct:
                                         add_coupling_target_fields:
                                                 sstocean_1:
                                                         - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1 <--agr2a_nc-- 1_OIceFrac:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1'
+                                                atmflx_1:
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
+                                                atmtau_1:
+                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                                                flxatmos_1:
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_QsrIce:A_QnsIce:A_dQnsdT'
                                 "4.2":
                                         add_coupling_target_fields:
                                                 sstocean_1:
                                                         - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
+                                                atmflx_1:
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
+                                                atmtau_1:
+                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                                                flxatmos_1:
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_QsrIce:A_QnsIce:A_dQnsdT'
                                 "5.0":
                                         add_coupling_target_fields:
                                                 sstocean_1:
-                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
+                                                        - 'M01_A_Ice_frac:M01_A_SST:M01_A_Ice_temp:M01_A_Ice_thickness:M01_A_Snow_thickness:M01_A_CurX:M01_A_CurY:M01_A_Ice_albedo <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
+                                                atmflx_1:
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- M01_A_Qs_mix:M01_A_Qns_mix:M01_A_Precip_liquid:M01_A_Precip_solid:M01_A_Evap_total:M01_A_Evap_ice'
+                                                atmtau_1:
+                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- M01_A_TauX_oce:M01_A_TauY_oce:M01_A_TauX_ice:M01_A_TauY_ice'
+                                                flxatmos_1:
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- M01_A_Qs_ice:M01_A_Qns_ice:M01_A_dQns_dT'
                 #'*':
                 #        # Couple HTESSEL runoff to river routing
                 #        add_coupling_target_fields:

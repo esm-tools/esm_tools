@@ -878,7 +878,8 @@ nemo:
            seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc
 
       eORCA_SI3_AGRIF_COUPLED_NEMO5:
-        # coupled ORCA05 with AGRIF set up with SI3 sea ice model
+        # coupled eORCAxx with AGRIF set up with SI3 sea ice model
+        # for NEMO 5.x 
         #
         # This configuration is based on the ICE_AGRIF_CPL in cfgs in NEMO
         # but the settings here are defaults for ORCA05 with 5x AGRIF.
@@ -923,118 +924,19 @@ nemo:
 
         input_dir: ${pool_dir}/NEMO4_${resolution}/input
 
-        # We need to add the namelist files for AGRIF
-        add_config_files:
-           1_namelist_cfg: 1_namelist_cfg
-           1_namelist_ice_cfg: 1_namelist_ice_cfg
-           # uncomment if we would use top for biogeochemistry
-           #1_namelist_top_cfg: 1_namelist_top_cfg
-
-        add_input_sources:
-            namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
-            namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
-            #namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
-
-            # 1_namelist_ref is just a copy of namelist_ref
-            1_namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
-            1_namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
-            #1_namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
-
-            # Ensure we take domain_cfg made with AGRIF in mind
-            domain_cfg_orca05_nemo4: ${agrif_dir}/domain_cfg.nc
-
-        add_input_files:
-           # add reference namelists to the work dir
-           namelist_ref: namelist_ref
-           namelist_ice_ref: namelist_ice_ref
-           #namelist_top_ref: namelist_top_ref
-           1_namelist_ref: 1_namelist_ref
-           1_namelist_ice_ref: 1_namelist_ice_ref
-           #1_namelist_top_ref: 1_namelist_top_ref
-
-           # from Sebastian / Markus
-           # Note: Some of these files may be different
-           # than those used for non-AGRIF ORCA05 since
-           # the nesting tools modify the bathymetry for the
-           # parent grid
-           bathy_meter_orca05_nemo4: bathy_meter_orca05_nemo4
-           coordinates_orca05_nemo4: bathy_meter_orca05_nemo4
-           bfr_coef_orca05_nemo4: bfr_coef_orca05_nemo4
-           subbasins_orca05_nemo4: subbasins_orca05_nemo4
-           domain_cfg_orca05_nemo4: domain_cfg_orca05_nemo4
-           # ghflux remapped to ORCA05, no reshape file needed
-           ghflux_v2.0_orca05_nemo4: ghflux_v2.0_orca05_nemo4
-
-           # inital data
-           # Note: We will initialise the child grids
-           # from the parent data, so no need for
-           # 1_data_tem etc
-           data_tem_orca05_nemo4: data_tem_orca05_nemo4
-           data_sal_orca05_nemo4: data_sal_orca05_nemo4
-
-           # inital data
-           seaice_orca05_nemo4: seaice_orca05_nemo4
-
-           # domain_cfg and AGRIF_FixedGrids.in for AGRIF
-           1_domain_cfg: 1_domain_cfg
-           fixed_grids: fixed_grids
-           # if subbasins is present for the parent grid
-           # (to compute Atlantic, Pacific overturning etc)
-           # then 1_subbasins must also be present for child
-           # Mostly, this file should only contain zeros
-           # since AGRIF nests usually do not enclose an
-           # entire ocean, e.g. Pacific or Atlantic
-           1_subbasins: 1_subbasins
-
-        input_in_work:
-           1_namelist_ref: 1_namelist_ref
-           1_namelist_ice_ref: 1_namelist_ice_ref
-           #1_namelist_top_ref: 1_namelist_top_ref
-
-           domain_cfg_orca05_nemo4: domain_cfg.nc
-           coordinates_orca05_nemo4: coordinates.nc
-           bfr_coef_orca05_nemo4: bfr_coef.nc
-           subbasins_orca05_nemo4: subbasins.nc
-
-           1_domain_cfg: 1_domain_cfg.nc
-           1_subbasins: 1_subbasins.nc
-
-           # inital data
-           data_tem_orca05_nemo4: data_tem.nc
-           data_sal_orca05_nemo4: data_sal.nc
-           ghflux_v2.0_orca05_nemo4: geothermal_heating.nc
-           seaice_orca05_nemo4: seaice_c3.0_v19802004.0_ORCA05_r4.2.0.nc
-
-        # Add extra coupling fields to couple AGRIF to OpenIFS
-        add_coupling_fields:
-            "[[agr1_t_fields-->FIELD]]":
-                grid: agr1
-            "[[agr1_c_fields-->FIELD]]":
-                grid: agr1
-            "[[agr2_t_fields-->FIELD]]":
-                grid: agr2
-
-        # Namelist changes for AGRIF coupled
+        # override hardcoded path to runoff forcing
         add_namelist_changes:
-
-           # override hardcoded path to runoff forcing
            namelist_cfg:
               namsbc_blk:
                  cn_dir: "./"
-              # use domain_cfg file to set the grid
-              namcfg:
-                 ln_read_cfg: ".true. "
-                 cn_domcfg: "domain_cfg.nc"
-                 ln_closea: '.false.'
               namsbc:
-                 # turn off all sbc except coupling
+                 nn_fsbc: 1
                  ln_blk: false
                  ln_cpl: true
                  ln_ssr: false
                  ln_rnf: false
                  ln_traqsr: false
                  ln_apr_dyn: false
-              # turn on most coupling fields
               namsbc_cpl:
                  sn_snd_temp: ['oce and ice', 'no', '', '', '']
                  sn_snd_alb: ['ice', 'no', '', '', '']
@@ -1056,57 +958,6 @@ nemo:
                  sn_rcv_rnf: ['coupled', 'no', '', '', '']
                  sn_rcv_cal: ['coupled', 'no', '', '', '']
                  sn_rcv_co2: ['none', 'no', '', '', '']
-              nambbc:
-                 # Unlike default, we use geothermal heating remapped to ORCA05
-                 # No need for a reshape file
-                 sn_qgh: ['geothermal_heating.nc', -12.0, 'gh_flux', .false., .true., 'yearly', '', '']
-
-              # This is set later in this file under choose_free_surface
-              #namdyn_hpg:
-              #   ln_hpg_zco: '.false.'
-              #   ln_hpg_zps: '.false.'
-              #   ln_hpg_sco: '.true.'
-
-              namlbc:
-                 # no slip
-                 rn_shlat: 0
-
-              # set diffusion to be 600 m2/s
-              # and visc to be -1,709 m4/s
-              # A = Ud * Ld / 2. Ud = 0.024 gives approx A=600 m2/s for Ld=50km.
-              # A = Uv * Lv / 12. Uv = 0.164 gives around A=-1,709 m4/s for Ld=50km
-              namtra_ldf:
-                 # Laplacian, iso-neutral
-                 ln_traldf_lap: '.true.'
-                 ln_traldf_iso: '.true.'
-                 ln_traldf_msc: '.true.'
-                 # 2D varying, i.e. scaled by grid-cell size
-                 nn_aht_ijk_t: 20
-                 rn_ud: 0.018
-                 rn_Ld: 200.e+3
-
-              namtra_eiv:
-                 ln_ldfeiv: '.false.'
-                 # 21 = Treguier et al. JPO 1997 formulation
-                 nn_aei_ijk_t: 21
-                 # rn_ue and rn_le are irrelevant if nn_aei_ijk_t = 21
-                 rn_ue: 0.03
-                 rn_Le: 200.e+3
-                 ln_ldfeiv_dia: '.true.'
-
-              namdyn_ldf:
-                 # Bi-Laplacian, horizontal
-                 ln_dynldf_blp: '.true.'
-                 ln_dynldf_hor: '.true.'
-                 # Constant
-                 nn_ahm_ijk_t: 0
-                 rn_uv: 0.164
-                 rn_Lv: 10.e+3
-
-              namagrif:
-                 ln_spc_dyn: '.true.'
-                 # use default sponge diffusion for now
-                 # Experiment with this later...
 
            1_namelist_cfg:
               namrun:
@@ -1124,41 +975,14 @@ nemo:
                  ln_rstart: ${nemo.lresume}
                  ln_1st_euler: ${ln_1st_euler}
 
-              namcfg:
-                 ln_read_cfg: ".true. "
-                 cn_domcfg: "domain_cfg.nc"
-                 ln_closea: '.false.'
-
-              namtsd:
-                 ln_tsd_dmp: '.false.'
-                 ln_tsd_init: '.false.'
-
               namdom:
                  rn_Dt: ${time_step_nest}
                  ln_meshmask: ${ln_meshmask}
 
-              namlbc:
-                 # free slip in the nest
-                 rn_shlat: 2.0
-
               namagrif:
-                 ln_agrif_2way: '.true.'
                  # initialise AGRIF from parent T/S
                  ln_init_chfrpar: ${ln_init_chfrpar}
-                 ln_vert_remap: '.false.'
-                 # check bathymetry
-                 ln_chk_bathy: '.true.'
-                 #rn_sponge_tra: 600
-                 #rn_sponge_dyn: 600
 
-              namsbc:
-                 ln_blk: false
-                 ln_cpl: true
-                 ln_ssr: false
-                 ln_rnf: false
-                 ln_traqsr: false
-                 ln_apr_dyn: false
-                 nn_fsbc: 1 #${nest_refinement}
               namsbc_cpl:
                  sn_snd_temp: ['oce and ice', 'no', '', '', '']
                  sn_snd_alb: ['ice', 'no', '', '', '']
@@ -1180,29 +1004,90 @@ nemo:
                  sn_rcv_rnf: ['coupled', 'no', '', '', '']
                  sn_rcv_cal: ['coupled', 'no', '', '', '']
                  sn_rcv_co2: ['none', 'no', '', '', '']
+                 
+        # We need to add the namelist files for AGRIF
+        add_config_files:
+           1_namelist_cfg: 1_namelist_cfg
+           1_namelist_ice_cfg: 1_namelist_ice_cfg
+           # uncomment if we would use top for biogeochemistry
+           #1_namelist_top_cfg: 1_namelist_top_cfg
 
-              # Sang-Yeobs first test was with partial steps
-              namdyn_hpg:
-                 ln_hpg_zco: '.false.'
-                 ln_hpg_zps: '.false.'
-                 ln_hpg_sco: '.true.'
+        add_input_sources:
+            namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+            namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+            #namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
 
-              namtra_ldf:
-                 # For now turn it all off
-                 ln_traldf_OFF: '.true.'
-                 # aht = 1/2 * rn_Ud * rn_Ld = 1/2 * 0.02 * 10000 = 100 m2/s
-                 #ln_traldf_lap: '.true.'
-                 #ln_traldf_iso: '.true.'
-                 #nn_aht_ijk_t:  20
-                 #rn_Ud: 0.02
-                 #rn_Ld: 10000
+            # 1_namelist_ref is just a copy of namelist_ref
+            1_namelist_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ref
+            1_namelist_ice_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_ice_ref
+            #1_namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
+            #
+            # bfr, subbasins, and domain_cfg 
+            bfr_coef_eorca025_nemo5: ${input_dir}/bfr_coef.nc 
+            subbasins_eorca025_nemo5: ${input_dir}/subbasins.nc
+            domain_cfg_eorca025_nemo5: ${input_dir}/domain_cfg.nc
 
-              namdyn_ldf:
-                 # For now turn it all off
-                 ln_dynldf_off: '.true.'
-                 #ln_dynldf_blp: '.true.'
-                 #ln_dynldf_hor: '.true.'
-                 #nn_ahm_ijk_t: 32
+            # inital data
+            data_tem_eorca025_nemo5: ${input_dir}/data_tem.nc
+            data_sal_eorca025_nemo5: ${input_dir}/data_sal.nc
+
+            #fixed_grids: ${agrif_dir}/AGRIF_FixedGrids.in
+
+        add_input_files:
+           # add reference namelists to the work dir
+           namelist_ref: namelist_ref
+           namelist_ice_ref: namelist_ice_ref
+           #namelist_top_ref: namelist_top_ref
+           1_namelist_ref: 1_namelist_ref
+           1_namelist_ice_ref: 1_namelist_ice_ref
+           #1_namelist_top_ref: 1_namelist_top_ref
+
+
+           # bfr, subbasins, and domain_cfg 
+           bfr_coef: bfr_coef_eorca025_nemo5
+           subbasins: subbasins_eorca025_nemo5
+           domain_cfg: domain_cfg_eorca025_nemo5
+
+           # inital data
+           data_tem: data_tem_eorca025_nemo5
+           data_sal: data_sal_eorca025_nemo5
+
+           # domain_cfg and AGRIF_FixedGrids.in for AGRIF
+           1_domain_cfg: 1_domain_cfg
+           fixed_grids: fixed_grids
+           # if subbasins is present for the parent grid
+           # (to compute Atlantic, Pacific overturning etc)
+           # then 1_subbasins must also be present for child
+           # Mostly, this file should only contain zeros
+           # since AGRIF nests usually do not enclose an
+           # entire ocean, e.g. Pacific or Atlantic
+           #1_subbasins: 1_subbasins
+
+        input_in_work:
+           1_namelist_ref: 1_namelist_ref
+           1_namelist_ice_ref: 1_namelist_ice_ref
+           #1_namelist_top_ref: 1_namelist_top_ref
+
+           1_domain_cfg: 1_domain_cfg.nc
+
+           domain_cfg: domain_cfg.nc
+           #coordinates_orca05_nemo4: coordinates.nc
+           bfr_coef: bfr_coef.nc
+           subbasins: subbasins.nc
+
+           # inital data
+           data_tem: data_tem.nc
+           data_sal: data_sal.nc
+
+        # Add extra coupling fields to couple AGRIF to OpenIFS
+        add_coupling_fields:
+            "[[agr1_t_fields-->FIELD]]":
+                grid: agr1
+            "[[agr1_c_fields-->FIELD]]":
+                grid: agr1
+            "[[agr2_t_fields-->FIELD]]":
+                grid: agr2
+
 
 
       ORCA05_SI3_COUPLED_AGRIF:
@@ -3491,6 +3376,10 @@ nemo:
             # nest_refinement MUST (!!!) match the last value
             # in AGRIF_FixedGrids.in
             # for backward compatibility with Joakims settings
+            eINALT20:
+                    _nx_nest1: 2978
+                    _ny_nest1: 2813
+                    nest_refinement: 5
             viking10:
                     _nx_nest1: 884
                     _ny_nest1: 869

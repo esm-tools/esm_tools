@@ -21,13 +21,13 @@ general:
    #nmonth: 0
    #nday: 1
    # monthly restarts for 6 months 
-   compute_time: "03:30:00"
+   compute_time: "08:00:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1950-07-01T00:00:00"         # Final date of the experiment
-   nmonth: 1
+   final_date: "1955-01-01T00:00:00"      #1955-01-01T00:00:00   # Final date of the experiment
+   nmonth: 0
    nday: 0
    
-   nyear: 0
+   nyear: 1
    hours: 0
    account: bb1460
    base_dir: /work/bb1460/${general.userdir}/esm-experiments
@@ -50,7 +50,7 @@ general:
    oasis_date_stamp: "_19400101-19491231"
    # Previous run config file
    # (should be general enough)
-   prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
+   # prev_run_config_file: ""
 
 focioifs:
    model_dir: /work/bb1460/${general.userdir}/models/focioifs-5.0/
@@ -114,7 +114,7 @@ oifs:
    
    resolution: TCO319
    levels: L137
-   nproc: 192
+   nproc: 948
    omp_num_threads: 1
    solarspectrum: True 
    ini_pseudo_initial_date: "1859-01-01"
@@ -181,6 +181,7 @@ nemo:
    #nproca: ${nemo.jpni}
    #nprocb: ${nemo.jpnj}
    nproc: 1943
+   time_step: 900
    add_namelist_changes:
        namelist_cfg:
           namctl:
@@ -196,7 +197,8 @@ rnfmap:
 xios: 
    with_model: focioifs 
    version: 3.0_trunk
-   xml_dir: /work/bb1460/b350071/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/ 
+   #xml_dir: "${model_dir}/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/" # results in /work/bb1460/$USER/models/focioifs-5.0/xios-eORCA_SI3_COUPLED_NEMO5/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00 WHY?
+   xml_dir: "/work/bb1460/${general.userdir}/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/"
    nproc: 180
    omp_num_threads: 1
 

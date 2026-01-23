@@ -17,7 +17,7 @@ amip:
     ##
     clean_command: rm -rf bin; cd src; make clean; cd ..
     comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/amip-forcing.exe ./bin/amip
-    git-repository: https://gitlab.dkrz.de/ec-earth/amip-forcing.git
+    git-repository: https://gitlab.dkrz.de/ec-earth/amip-forcing-ece4.git
     install_bins: bin/amip
     ##
     ## Directories

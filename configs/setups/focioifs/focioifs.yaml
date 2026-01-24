@@ -574,13 +574,13 @@ oifs:
                                                                M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
                                                                M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
                                                                M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
-                                          fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
+                                                               #fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                                 "4.2":
                                           fociagrif_fields_l: [M01_A_AlbIce, M01_AIceFrac, M01_A_SSTSST, M01_A_TepIce, M01_A_IceTck,
                                                                M01_A_SnwTck, M01_A_OCurx1, M01_A_OCury1, M01_A_OTaux1,
                                                                M01_A_OTauy1, M01_A_ITaux1, M01_A_ITauy1, M01_A_QsrIce,
                                                                M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
-                                          fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
+                                                               #fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                                 "5.0":
                                           fociagrif_fields_l: [M01_A_Ice_albedo, M01_A_Ice_frac, M01_A_SST, M01_A_Ice_temp, M01_A_Ice_thickness, 
                                                                M01_A_Snow_thickness, M01_A_CurX, M01_A_CurY]
@@ -599,8 +599,8 @@ oifs:
                                                 #FOCI_CPL_NEMO_LIM: ".true."
                                                 FOCI_CPL_NB_OCE_ZOOM: 1
                         add_coupling_fields:
-                                "[[fociagrif_fields_a-->FIELD]]":
-                                        grid: atma
+                                #"[[fociagrif_fields_a-->FIELD]]":
+                                #        grid: atma
                                 "[[fociagrif_fields_l-->FIELD]]":
                                         grid: atml
                                 "[[fociagrif_fields_n-->FIELD]]":
@@ -1032,8 +1032,15 @@ oasis3mct:
         o2a_remap_method: "gauswgt"
         c2o_remap_method: "default"
 
+        # Remapping AGRIF1 mask from NEMO grid to OpenIFS
+        # Only DISTWGT available
+        a2agr1_remap_method: "bilincub"
+        agr12a_remap_method: "bilinear"
+
+        o2a_agr1m_remap_method: "distwgt"
+
         # Alternative: CONSERV (does not work)
-        agr2a_remap_method: "default"
+        #agr12a_remap_method: "default"
 
 
         coupling_target_fields:
@@ -1141,13 +1148,14 @@ oasis3mct:
 
                 "*":
                         add_restart_in_files:
-                                #rmp_a2agr_L1: rmp_a2agr_L1
-                                rmp_a2agr_A1: rmp_a2agr_A1
-                                rmp_agr2a_1L: rmp_agr2a_1L
-                                rmp_agr2a_2L: rmp_agr2a_2L
-                                rmp_agr2r_R1: rmp_agr2r_R1
-                                rmp_r2agr_R1: rmp_r2agr_R1
-                                rmp_c2agr_R1: rmp_c2agr_R1
+                                # when using 1 AGRIF nest
+                                rmp_a2agr1_L: rmp_a2agr1_L    # remap OpenIFS scalars to AGRIF1 nest 
+                                rmp_aw2agr1_L: rmp_aw2agr1_L  # remap OpenIFS wind to AGRIF1 nest
+                                rmp_agr12a_L: rmp_agr12a_L    # remap AGRIF1 to OpenIFS
+                                rmp_o2a_agr1m: rmp_o2a_agr1m  # remap AGRIF1 mask (on NEMO grid) to OpenIFS
+                                rmp_o2r_agr1m: rmp_o2r_agr1m  # remap AGRIF1 mask (on NEMO grid) to runoff mapper
+                                rmp_r2agr_R1: rmp_r2agr_R1    # remap runoff to AGRIF1 nest
+                                rmp_c2agr_R1: rmp_c2agr_R1    # remap calving to AGRIF1 nest
 
                                 sstocean_1: sstocean_1
                                 flxatmos_1: flxatmos_1
@@ -1157,11 +1165,11 @@ oasis3mct:
                                 agrifspg: agrifspg
 
                         add_restart_out_files:
-                                #rmp_a2agr_L1: rmp_a2agr_L1
-                                rmp_a2agr_A1: rmp_a2agr_A1
-                                rmp_agr2a_1L: rmp_agr2a_1L
-                                rmp_agr2a_2L: rmp_agr2a_2L
-                                rmp_agr2r_R1: rmp_agr2r_R1
+                                rmp_a2agr1_L: rmp_a2agr1_L
+                                rmp_aw2agr1_L: rmp_aw2agr1_L
+                                rmp_agr12a_L: rmp_agr12a_L
+                                rmp_o2a_agr1m: rmp_o2a_agr1m
+                                rmp_o2r_agr1m: rmp_o2r_agr1m
                                 rmp_r2agr_R1: rmp_r2agr_R1
                                 rmp_c2agr_R1: rmp_c2agr_R1
 
@@ -1187,41 +1195,41 @@ oasis3mct:
                                         - '1_O_Runoff <--r2agrloccunif-- 1_R_Runoff_oce'
                                         - '1_OCalving <--c2agrzero-- 1_R_Calving_oce'
                                 agrifspg:
-                                        - 'M01_A_AgrSpg <--agr22adistwgt-- 1_O_AgrSpg'
-                                        - '1_R_AgrSpg <--agr22rdistwgt-- 1_O_AgrSpg'
+                                        - 'M01_A_AgrSpg <--o2a_agr1m-- 1_O_AgrSpg'
+                                        - '1_R_AgrSpg <--o2r_agr1m-- 1_O_AgrSpg'
 
                         # Coupling fields are different for 3.6 and 4.2, so we need to put this part inside a choose block
                         add_choose_nemo.generation:
                                 "3.6":
                                         add_coupling_target_fields:
                                                 sstocean_1:
-                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1 <--agr2a_nc-- 1_OIceFrac:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1'
+                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1 <--agr12a_nc-- 1_OIceFrac:1_O_SSTSST:1_O_TepIce:1_O_IceTck:1_O_SnwTck:1_O_OCurx1:1_O_OCury1'
                                                 atmflx_1:
-                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr1_nc-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
                                                 atmtau_1:
-                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--aw2agr1_nc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
                                                 flxatmos_1:
-                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_QsrIce:A_QnsIce:A_dQnsdT'
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr1_nc-- A_QsrIce:A_QnsIce:A_dQnsdT'
                                 "4.2":
                                         add_coupling_target_fields:
                                                 sstocean_1:
-                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
+                                                        - 'M01_AIceFrac:M01_A_SSTSST:M01_A_TepIce:M01_A_IceTck:M01_A_SnwTck:M01_A_OCurx1:M01_A_OCury1:M01_A_AlbIce <--agr12a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
                                                 atmflx_1:
-                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr1_nc-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:ATotEvap:AIceEvap'
                                                 atmtau_1:
-                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
+                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--aw2agr1_nc-- A_OTaux1:A_OTauy1:A_ITaux1:A_ITauy1'
                                                 flxatmos_1:
-                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_QsrIce:A_QnsIce:A_dQnsdT'
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr1_nc-- A_QsrIce:A_QnsIce:A_dQnsdT'
                                 "5.0":
                                         add_coupling_target_fields:
                                                 sstocean_1:
-                                                        - 'M01_A_Ice_frac:M01_A_SST:M01_A_Ice_temp:M01_A_Ice_thickness:M01_A_Snow_thickness:M01_A_CurX:M01_A_CurY:M01_A_Ice_albedo <--agr2a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
+                                                        - 'M01_A_Ice_frac:M01_A_SST:M01_A_Ice_temp:M01_A_Ice_thickness:M01_A_Snow_thickness:M01_A_CurX:M01_A_CurY:M01_A_Ice_albedo <--agr12a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
                                                 atmflx_1:
-                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr_cn-- A_Qs_mix:A_Qns_mix:A_Precip_liquid:A_Precip_solid:A_Evap_total:A_Evap_ice'
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr1_nc-- A_Qs_mix:A_Qns_mix:A_Precip_liquid:A_Precip_solid:A_Evap_total:A_Evap_ice'
                                                 atmtau_1:
-                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--a2agr_cn-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                                        - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--aw2agr1_nc-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                                 flxatmos_1:
-                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr_cn-- A_Qs_ice:A_Qns_ice:A_dQns_dT'
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr1_nc-- A_Qs_ice:A_Qns_ice:A_dQns_dT'
                 #'*':
                 #        # Couple HTESSEL runoff to river routing
                 #        add_coupling_target_fields:
@@ -1408,164 +1416,8 @@ oasis3mct:
                         postprocessing:
                                 conserv:
                                         method: global
-                #c2obilincn:
-                #        time_transformation: average
-                #        remapping:
-                #                - bilinear:
-                #                        search_bin: latitude
-                #                        nb_of_search_bins: 100
-                #                - mapping:
-                #                        mapname: rmp_rnfs_to_opaa_ZERO_${nemo.resolution}.nc
-                #                        map_regrid_on: dst
-                #        postprocessing:
-                #                conserv:
-                #                        method: global
-
-                # OpenIFS (Lgrid) to AGRIF
-                # GAUSWGT remapping. No conservation post processing.
-                a2agrgauswgtnc:
-                        time_transformation: average
-                        remapping:
-                                - gauswgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 15
-                                        weight: 0.1
-                                - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                                        map_regrid_on: src
-
-                # OpenIFS (Agrid) to AGRIF
-                # GAUSWGT remapping. No conservation post processing.
-                a2agrgauswgtcn:
-                        time_transformation: average
-                        remapping:
-                                - gauswgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 15
-                                        weight: 0.1
-                                - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                                        map_regrid_on: src
-
-                # AGRIF to OpenIFS (Lgrid)
-                # GAUSWGT remapping. No conservation post processing
-                agr2agauswgt:
-                        time_transformation: average
-                        remapping:
-                                - gauswgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 25
-                                        weight: 2.0
-                                - mapping:
-                                        mapname: rmp_agr1_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.nest1}.nc
-                                        map_regrid_on: dst
-
-                # AGRIF mask to OpenIFS (Lgrid)
-                # GAUSWGT remapping. No conservation post processing
-                agr22agauswgt:
-                        time_transformation: average
-                        remapping:
-                                - gauswgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 25
-                                        weight: 2.0
-                                - mapping:
-                                        mapname: rmp_agr2_to_${oifs.oasis_grid_name_l}_GAUSWGT_${nemo.resolution}.nc
-                                        map_regrid_on: dst
-                a2agrdistwgt:
-                        time_transformation: average
-                        remapping:
-                                - distwgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 1
-                                - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_agr1_DISTWGT1_${nemo.resolution}.nc
-                                        map_regrid_on: src
-                a2agrbilin:
-                        time_transformation: average
-                        remapping:
-                                - bilinear:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_agr1_BILINEAR_${nemo.resolution}.nc
-                                        map_regrid_on: src
-                a2agrdistwgtcn:
-                        time_transformation: average
-                        remapping:
-                                - distwgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 1
-                                - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_DISTWGT1_${nemo.resolution}.nc
-                                        map_regrid_on: src
-                a2agrbilincn:
-                        time_transformation: average
-                        remapping:
-                                - bilinear:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                - mapping:
-                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_BILINEAR_${nemo.resolution}.nc
-                                        map_regrid_on: src
-                agr2adistwgt:
-                        time_transformation: average
-                        remapping:
-                                - distwgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 25
-                                - mapping:
-                                        mapname: rmp_agr1_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.nest1}.nc
-                                        map_regrid_on: dst
-                agr2abilin:
-                        time_transformation: average
-                        remapping:
-                                - bilinear:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                - mapping:
-                                        mapname: rmp_agr1_to_${oifs.oasis_grid_name_l}_BILINEAR_${nemo.nest1}.nc
-                                        map_regrid_on: dst
-                agr22adistwgt:
-                        time_transformation: average
-                        remapping:
-                                - distwgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 4
-                                - mapping:
-                                        mapname: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.nest1}.nc
-                                        map_regrid_on: dst
-                agr22abilin:
-                        time_transformation: average
-                        remapping:
-                                - bilinear:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 1
-                                - mapping:
-                                        mapname: rmp_agr2_to_${oifs.oasis_grid_name_l}_BILINEAR_${nemo.resolution}.nc
-                                        map_regrid_on: dst
-                agr22rdistwgt:
-                        time_transformation: average
-                        remapping:
-                                - distwgt:
-                                        search_bin: latitude
-                                        nb_of_neighbours: 4
-                                - mapping:
-                                        mapname: rmp_agr2_to_rnfm_DISTWGT.nc
-                                        map_regrid_on: dst
-
-                # Runoff to AGRIF
-                r2agrbilinear:
-                        time_transformation: average
-                        remapping:
-                                - bilinear:
-                                        search_bin: latitude
-                                        nb_of_search_bins: 40
-                                - mapping:
-                                        mapname: rmp_rnfo_to_agr1r_BILINEAR_${nemo.resolution}.nc
-                                        map_regrid_on: dst
-
-                # Locally conserving runoff mapping
+                
+                # Remapping runoff from runoff mapper to AGRIF1 using LOCCUNIF
                 r2agrloccunif:
                         time_transformation: average
                         remapping:
@@ -1587,9 +1439,11 @@ oasis3mct:
         #
         choose_a2o_remap_method:
                 "gauswgt":
+                        # OpenIFS to NEMO
                         rmp_a2o_nc_file: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                         rmp_aw2o_nc_file: rmp_${oifs.oasis_grid_name_l}_to_opat_GAUSWGT_${nemo.resolution}.nc
                         rmp_a2o_cn_file: rmp_${oifs.oasis_grid_name_a}_to_opac_GAUSWGT_${nemo.resolution}.nc
+
                         add_coupling_methods:
                                 # OpenIFS (Lgrid) to NEMO
                                 # GAUSWGT remapping. No conservation post processing.
@@ -1632,11 +1486,15 @@ oasis3mct:
                                         postprocessing:
                                                 conserv:
                                                         method: glbpos
-
+                                
+                                                        
                 "bilincub":
+                        
+                        # remapping files for OpenIFS to NEMO
                         rmp_a2o_nc_file: rmp_${oifs.oasis_grid_name_l}_to_opat_BILINEAR_${nemo.resolution}.nc
                         rmp_aw2o_nc_file: rmp_${oifs.oasis_grid_name_l}_to_opat_BICUBIC_${nemo.resolution}.nc
                         rmp_a2o_cn_file: rmp_${oifs.oasis_grid_name_a}_to_opat_BILINEAR_${nemo.resolution}.nc
+                        
                         add_coupling_methods:
                                 # OpenIFS (Lgrid) to NEMO
                                 # BILINEAR remapping. No conservation post processing.
@@ -1676,11 +1534,15 @@ oasis3mct:
                                         postprocessing:
                                                 conserv:
                                                         method: glbpos
+                                
+
 
                 "conserv":
+                        # OpenIFS to NEMO 
                         rmp_a2o_nc_file: rmp_${oifs.oasis_grid_name_l}_to_opac_CONSERV_${nemo.resolution}.nc
                         rmp_aw2o_nc_file: rmp_${oifs.oasis_grid_name_l}_to_opac_CONSERV_${nemo.resolution}.nc
                         rmp_a2o_cn_file: rmp_${oifs.oasis_grid_name_a}_to_opac_CONSERV_${nemo.resolution}.nc
+                        
                         add_coupling_methods:
                                 # OpenIFS Lgrid to NEMO
                                 # 1st order conservative
@@ -1772,20 +1634,43 @@ oasis3mct:
                                                         map_regrid_on: dst
 
 
-        choose_agr2a_remap_method:
-                "default":
+        choose_a2agr1_remap_method: 
+                "gauswgt":
+                        # OpenIFS to AGRIF1 with GAUSWGT
+                        # Heat flux (a2agr) and wind stress (aw2agr) are remapped the same way
+                        rmp_a2agr1_nc_file: rmp_${oifs.oasis_grid_name_l}_to_${nemo.nest1}_GAUSWGT.nc
+                        rmp_aw2agr1_nc_file: rmp_${oifs.oasis_grid_name_l}_to_${nemo.nest1}_GAUSWGT.nc
+
                         add_coupling_methods:
-                                # AGRIF to OpenIFS (Agrid) for SST, ice fraction etc
-                                # Bilinear remapping
-                                agr2a_nc:
+                                # OpenIFS (Lgrid) to AGRIF
+                                # GAUSWGT remapping. No conservation post processing.
+                                a2agr1_nc:
                                         time_transformation: average
                                         remapping:
-                                                - bilinear:
+                                                - gauswgt:
                                                         search_bin: latitude
-                                                        nb_of_search_bins: 1
+                                                        nb_of_neighbours: 15
+                                                        weight: 0.1
                                                 - mapping:
-                                                        mapname: rmp_agr1_to_${oifs.oasis_grid_name_l}_BILINEAR_${nemo.nest1}.nc
-                                                        map_regrid_on: dst
+                                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_${nemo.nest1}_GAUSWGT.nc
+                                                        map_regrid_on: src
+                                
+                                # OpenIFS (Lgrid) to AGRIF for wind stress
+                                # GAUSWGT remapping. No conservation post processing.
+                                # Note: This is identical to a2agr1_nc above. 
+                                aw2agr1_nc:
+                                        time_transformation: average
+                                        remapping:
+                                                - gauswgt:
+                                                        search_bin: latitude
+                                                        nb_of_neighbours: 15
+                                                        weight: 0.1
+                                                - mapping:
+                                                        mapname: rmp_${oifs.oasis_grid_name_l}_to_${nemo.nest1}_GAUSWGT.nc
+                                                        map_regrid_on: src 
+                                
+                                # OpenIFS (Agrid) to AGRIF1
+                                # GAUSWGT. Should have conservation, if used. 
                                 a2agr_cn:
                                         time_transformation: average
                                         remapping:
@@ -1796,20 +1681,42 @@ oasis3mct:
                                                 - mapping:
                                                         mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.nest1}.nc
                                                         map_regrid_on: src
-                "conserv":
+
+                "bilincub":
+                        # remapping files for OpenIFS to AGRIF1
+                        rmp_a2agr1_nc_file: rmp_${oifs.oasis_grid_name_l}_to_${nemo.nest1}_BILINEAR.nc
+                        rmp_aw2agr1_nc_file: rmp_${oifs.oasis_grid_name_l}_to_${nemo.nest1}_BICUBIC.nc
+
                         add_coupling_methods:
-                                # AGRIF to OpenIFS (Agrid) for SST, ice fraction
-                                # 1st order conservative
-                                agr2a_nc:
+                                # OpenIFS (Lgrid) to AGRIF nest1. No conservation. 
+                                # BILINEAR remapping for heat flux, FW flux etc
+                                a2agr1_nc:
                                         time_transformation: average
                                         remapping:
-                                                - conserv:
+                                                - bilinear:
                                                         search_bin: latitude
-                                                        nb_of_search_bins: 500
-                                                        normalization: fracnnei
-                                                        order: first
+                                                        nb_of_search_bins: 1
                                                 - mapping:
-                                                        mapname: rmp_agr1_to_${oifs.oasis_grid_name_l}_CONSERV_${nemo.nest1}.nc
+                                                        mapname: ${rmp_a2agr1_nc_file} 
+                                                        map_regrid_on: src
+                                
+                                # OpenIFS (Lgrid) to AGRIF1 nest. No conservation. 
+                                # BICUBIC remapping for wind stress. 
+                                aw2agr1_nc: 
+                                        time_transformation: average
+                                        remapping: 
+                                                - bicubic: 
+                                                        search_bin: latitude
+                                                        nb_of_search_bin: 1
+                                                - mapping: 
+                                                        mapname: ${rmp_aw2agr1_nc_file}
+                                                        map_regrid_on: src    
+                "conserv":
+                        #
+                        # NOT IMPLEMENTED YET!!!
+                        # 
+                        add_coupling_fields:
+                                # Conservative remapping from OpenIFS (Agrid) to AGRIF1
                                 a2agr_cn:
                                         time_transformation: average
                                         remapping:
@@ -1819,7 +1726,41 @@ oasis3mct:
                                                         normalization: fracnnei
                                                         order: first
                                                 - mapping:
-                                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_CONSERV_${nemo.nest1}.nc
+                                                        mapname: rmp_${oifs.oasis_grid_name_a}_to_agr1_CONSERV_${nemo.nest1}.nc                    
+                                
+        choose_agr12a_remap_method:
+                "bilinear":
+                        rmp_agr12a_file: rmp_${nemo.nest1}_to_${oifs.oasis_grid_name_l}_BILINEAR.nc 
+
+                        add_coupling_methods:
+                                # AGRIF to OpenIFS (Agrid) for SST, ice fraction etc
+                                # Bilinear remapping
+                                agr12a_nc:
+                                        time_transformation: average
+                                        remapping:
+                                                - bilinear:
+                                                        search_bin: latitude
+                                                        nb_of_search_bins: 1
+                                                - mapping:
+                                                        mapname: ${rmp_agr12a_file}
+                                                        map_regrid_on: dst
+                                
+                "conserv":
+                        rmp_agr12a_file: rmp_${nemo.nest1}_to_${oifs.oasis_grid_name_l}_CONSERV.nc 
+                        add_coupling_methods:
+                                # AGRIF to OpenIFS (Agrid) for SST, ice fraction
+                                # 1st order conservative
+                                agr12a_nc:
+                                        time_transformation: average
+                                        remapping:
+                                                - conserv:
+                                                        search_bin: latitude
+                                                        nb_of_search_bins: 500
+                                                        normalization: fracnnei
+                                                        order: first
+                                                - mapping:
+                                                        mapname: ${rmp_agr12a_file}
+                                
 
         choose_c2o_remap_method:
                 "default":
@@ -1886,6 +1827,36 @@ oasis3mct:
                                                 conserv:
                                                         method: global
 
+        choose_o2a_agr1m_remap_method: 
+                "distwgt":
+                        rmp_o2a_agr1m_file: rmp_${nemo.resolution}_to_${oifs.oasis_grid_name_l}_DISTWGT.nc 
+                        rmp_o2r_agr1m_file: rmp_${nemo.resolution}_to_rnfm_DISTWGT.nc 
+
+                        add_coupling_methods: 
+                                # Remapping AGRIF1 mask from NEMO grid to OpenIFS
+                                # Using DISTWGT for now
+                                o2a_agr1m:
+                                        time_transformation: average
+                                        remapping:
+                                                - distwgt:
+                                                        search_bin: latitude
+                                                        nb_of_neighbours: 4
+                                                - mapping:
+                                                        mapname: ${rmp_o2a_agr1m_file}
+                                                        map_regrid_on: dst
+                
+                                # Remapping AGRIF1 mask from NEMO to runoff mapper 
+                                # Using DISTWGT for now
+                                o2r_agr1m:
+                                        time_transformation: average
+                                        remapping:
+                                                - distwgt:
+                                                        search_bin: latitude
+                                                        nb_of_neighbours: 4
+                                                - mapping:
+                                                        mapname: ${rmp_o2r_agr1m_file}
+                                                        map_regrid_on: dst
+        
         input_files:
                 areas: areas
                 masks: masks
@@ -1905,15 +1876,13 @@ oasis3mct:
 
         #add_restart_out_files:
         restart_out_files:
-                rmp_o2a_TL: rmp_o2a_TL
-                rmp_a2r_RR: rmp_a2r_RR
-                rmp_r2f_RF: rmp_r2f_RF
-                rmp_a2o_LT: rmp_a2o_LT
-                rmp_aw2o_LT: rmp_aw2o_LT
-                rmp_a2o_AC: rmp_a2o_AC
-                #rmp_c2o_RC: rmp_c2o_RC
-                #rmp_r2o_RC: rmp_r2o_RC
-
+                rmp_o2a_TL: rmp_o2a_TL    # remap NEMO to OpenIFS Lgrid
+                rmp_a2r_RR: rmp_a2r_RR    # remap OpenIFS land to runoff mapper
+                rmp_r2f_RF: rmp_r2f_RF    # remap runoff mapper to NEMO (old way, not good)
+                rmp_a2o_LT: rmp_a2o_LT    # remap OpenIFS scalars grid to NEMO
+                rmp_aw2o_LT: rmp_aw2o_LT  # remap OpenIFS wind to NEMO
+                rmp_a2o_AC: rmp_a2o_AC    # remap OpenIFS scalars to NEMO (conserved) 
+                
                 sstocean: sstocean
                 flxatmos: flxatmos
                 rnfatm: rnfatm
@@ -1932,12 +1901,12 @@ oasis3mct:
                 rmp_a2o_AC: ${rmp_a2o_cn_file}
                 rmp_c2o_RC: rmp_rnfs_to_opaa_ZERO_${nemo.resolution}.nc
 
-                # These four are for AGRIF-OpenIFS remapping
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_BILINEAR_${nemo.nest1}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.nest1}.nc
-                rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc
+                # When using 1 AGRIF nest
+                rmp_a2agr1_L: ${rmp_a2agr1_nc_file}
+                rmp_aw2agr1_L: ${rmp_aw2agr1_nc_file}  
+                rmp_agr12a_L: ${rmp_agr12a_file} 
+                rmp_o2a_agr1m: ${rmp_o2a_agr1m_file}
+                rmp_o2r_agr1m: ${rmp_o2r_agr1m_file}
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
                 rmp_c2agr_R1: rmp_rnfs_to_agrc_ZERO.nc
 
@@ -1965,11 +1934,11 @@ oasis3mct:
                 rmp_aw2o_LT: ${rmp_aw2o_nc_file}
                 rmp_a2o_AC: ${rmp_a2o_cn_file}
 
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_BILINEAR_${nemo.nest1}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.nest1}.nc
-                rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc
+                rmp_a2agr1_L: ${rmp_a2agr1_nc_file}
+                rmp_aw2agr1_L: ${rmp_aw2agr1_nc_file}
+                rmp_agr12a_L: ${rmp_agr12a_file}
+                rmp_o2a_agr1m: ${rmp_o2a_agr1m_file}
+                rmp_o2r_agr1m: ${rmp_o2r_agr1m_file}
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
                 rmp_c2agr_R1: rmp_rnfs_to_agrc_ZERO.nc
 
@@ -2013,11 +1982,14 @@ oasis3mct:
                 rmp_aw2o_LT: ${rmp_aw2o_nc_file}
                 rmp_a2o_AC: ${rmp_a2o_cn_file}
 
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_BILINEAR_${nemo.nest1}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.nest1}.nc
-                rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc
+                #rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.nest1}.nc
+                #rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_${nemo.nest1}_BILINEAR.nc 
+                #rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.nest1}.nc
+                rmp_a2agr1_L: ${rmp_a2agr1_nc_file}
+                rmp_aw2agr1_L: ${rmp_aw2agr1_nc_file}
+                rmp_agr12a_L: ${rmp_agr12a_file}
+                rmp_o2a_agr1m: ${rmp_o2a_agr1m_file}
+                rmp_o2r_agr1m: ${rmp_o2r_agr1m_file}
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
                 rmp_c2agr_R1: rmp_rnfs_to_agrc_ZERO.nc
 
@@ -2045,11 +2017,11 @@ oasis3mct:
                 rmp_aw2o_LT: ${rmp_aw2o_nc_file}
                 rmp_a2o_AC: ${rmp_a2o_cn_file}
 
-                rmp_a2agr_L1: rmp_${oifs.oasis_grid_name_l}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_a2agr_A1: rmp_${oifs.oasis_grid_name_a}_to_agr1_GAUSWGT_${nemo.nest1}.nc
-                rmp_agr2a_1L: rmp_agr1_to_${oifs.oasis_grid_name_l}_BILINEAR_${nemo.nest1}.nc
-                rmp_agr2a_2L: rmp_agr2_to_${oifs.oasis_grid_name_l}_DISTWGT_${nemo.nest1}.nc
-                rmp_agr2r_R1: rmp_agr2_to_rnfm_DISTWGT.nc
+                rmp_a2agr1_L: ${rmp_a2agr1_nc_file}
+                rmp_aw2agr1_L: ${rmp_aw2agr1_nc_file}
+                rmp_agr12a_L: ${rmp_agr12a_file} 
+                rmp_o2a_agr1m: ${rmp_o2a_agr1m_file}
+                rmp_o2r_agr1m: ${rmp_o2r_agr1m_file}
                 rmp_r2agr_R1: rmp_rnfm_to_agr1_LOCCUNIF_${nemo.loccunif_nb_nest}_${nemo.nest1}.nc
                 rmp_c2agr_R1: rmp_rnfs_to_agrc_ZERO.nc
 

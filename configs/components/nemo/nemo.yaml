@@ -978,6 +978,9 @@ nemo:
               namdom:
                  rn_Dt: ${time_step_nest}
                  ln_meshmask: ${ln_meshmask}
+              
+              namsbc:
+                 nn_fsbc: 1
 
               namagrif:
                  # initialise AGRIF from parent T/S
@@ -3025,7 +3028,9 @@ nemo:
                 # 1) OIceFrac is now OIceFrc
                 # 2) O_AlbIce is added 
                 # 3) O_SnwTck, O_IceTck are now OSnwTck, OIceTck 
-                opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
+                opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1, 
+                              O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
+                opac_fields: []
                 agr1_t_fields: [1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_OIceTck, 1_OSnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
 
                 # in NEMO 4, the periodic points, i.e. i=1, i=imax
@@ -3755,6 +3760,21 @@ nemo:
             # Runoff is split to river and calving.
             # Also remapped from runoff mapper grid (rnfm)
             # to the opac grid (for NEMO) and agr1 (for AGRIF)
+            "JK26":
+                    ornf_fields: [O_Runoff]
+                    ocal_fields: [OCalving]
+                    agr1_r_fields: [1_O_Runoff]
+                    agr1_rc_fields: [1_OCalving]
+                    add_coupling_fields:
+                            "[[ornf_fields-->FIELD]]":
+                                    grid: opat
+                            "[[ocal_fields-->FIELD]]":
+                                    grid: opat
+                            "[[agr1_r_fields-->FIELD]]":
+                                    grid: agr1
+                            "[[agr1_rc_fields-->FIELD]]":
+                                    grid: agr1
+
             "EM21":
                     ornf_fields: [O_Runoff]
                     ocal_fields: [OCalving]

@@ -155,17 +155,6 @@ lpj_guess:
     # Soil type file
     slt_dir: ${input_dir}/slt/
 
-    # LUH3 land use input directory (NetCDF files regridded to various resolutions)
-    
-    #luh3_input_dir: ${input_dir}/land_use/regridded/ #put back aftet the fix !!! LASZLO
-    
-    luh3_input_dir: /work/ab0995/a270270/land_use/regridded_proper/ #Temp for testing LASZLO
-
-
-
-    # LUH3 input control - set automatically by choose_mip in lpj_guess.cmip.yaml
-    # (cmip6 -> use_luh3_input=0 for LUH2 text files, cmip7 -> use_luh3_input=1 for LUH3 NetCDF)
-    # Can still be overridden in runscript if needed
 
     # SIMFIRE/BLAZE fire input directory
     # Files: simfire_monthly_ba.nc (12 months), annual_population_density.nc (1850-2025)
@@ -209,25 +198,6 @@ lpj_guess:
         "drynoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynoy2.nc
         "wetnhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnhx2.nc
         "wetnoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnoy2.nc
-
-    # LUH3 land use files - conditionally added when use_luh3_input=1
-    choose_use_luh3_input:
-        1:
-            add_forcing_files:
-                luh3_states: luh3_states
-                luh3_transitions: luh3_transitions
-                luh3_management: luh3_management
-                luh3_static: luh3_static
-            add_forcing_sources:
-                luh3_states: ${luh3_input_dir}/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
-                luh3_transitions: ${luh3_input_dir}/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2023_${resolution}.nc
-                luh3_management: ${luh3_input_dir}/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${resolution}.nc
-                luh3_static: ${luh3_input_dir}/multiple-static_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_${resolution}.nc
-            add_forcing_in_work:
-                luh3_states: landuse/luh3_states.nc
-                luh3_transitions: landuse/luh3_transitions.nc
-                luh3_management: landuse/luh3_management.nc
-                luh3_static: landuse/luh3_static.nc
 
     choose_resolution:
         # Note:

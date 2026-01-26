@@ -38,4 +38,5 @@ lpj_guess:
             run_pasture: 1
             run_barren: 0  # Disabled for LUH3 - calculated as residual internally
             run_urban: 1
-            run_peatland: 0  # Disabled for now. 
+            run_peatland: 1  # Disabled for now.
+            firemodel: BLAZE

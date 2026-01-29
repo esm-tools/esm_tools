@@ -196,7 +196,23 @@ xios:
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5_r2497
       2.5_r2777:
-        archfile: ESMTOOLS_generic_oasis_gnu
+        # Switch arch file if we use GCC on levante
+        choose_computer.name:
+          levante:
+            choose_computer.compiler_mpi:
+              gnu11_ompi4:
+                archfile: ESMTOOLS_generic_oasis_gnu
+              '*':
+                archfile: ESMTOOLS_generic_oasis_intel
+          glogin:
+            choose_computer.compiler_mpi:
+              gcc11_ompi416:
+                archfile: ESMTOOLS_generic_oasis_GNU
+              '*':
+                archfile: ESMTOOLS_generic_oasis_intel
+          '*':
+            archfile: ESMTOOLS_generic_oasis_intel
+        archfile: ESMTOOLS_generic_oasis_intel
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5_r2777
       2.5_r2497_autotools:

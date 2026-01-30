@@ -1,0 +1,136 @@
+# =============================================================================
+# Example Experiment Configuration for Event-Driven Snakemake Workflow
+# =============================================================================
+#
+# This is a simplified experiment config that demonstrates the workflow without
+# needing the full esm_tools machinery. File lists are explicit rather than
+# dynamically assembled.
+#
+# Usage:
+#   python cli.py example_experiment.yaml -e myexp001
+#   python cli.py example_experiment.yaml -e myexp001 --dry-run
+#   python cli.py example_experiment.yaml -e myexp001 --dag | dot -Tpng > dag.png
+
+general:
+  # Experiment identifier (can be overridden via CLI -e flag)
+  expid: "demo001"
+
+  # Setup/model name (used in log file naming)
+  setup_name: "awicm"
+
+  # Base directory for experiments
+  base_dir: "./runs"
+
+  # Initial date for the simulation (YYYYMMDD format)
+  initial_date: "19500101"
+
+  # Runscript path (the file that was used to launch this experiment)
+  # This will be copied to the experiment's scripts directory
+  runscript: "example_experiment.yaml"
+
+# =============================================================================
+# File Lists
+# =============================================================================
+# Explicit file specifications for the demo. In production, these would be
+# assembled dynamically from model configurations.
+#
+# Each file spec has:
+#   - source: Where to copy from (absolute path or relative to workflow dir)
+#   - target: Where to copy to (relative to thisrun directory)
+#   - method: Optional - "copy" (default) or "link"
+#   - modify: Optional - true if file needs modification (namelists)
+
+files:
+  # Input files - copied to thisrun/input/
+  input: []
+    # Example entries (commented out since files don't exist for demo):
+    # - source: "/pool/data/awicm/input/grid.nc"
+    #   target: "input/grid.nc"
+    #   method: "link"  # Use symlink to save space
+    # - source: "/pool/data/awicm/input/forcing_1950.nc"
+    #   target: "input/forcing.nc"
+
+  # Restart files - copied to thisrun/restart/
+  restart: []
+    # - source: "/pool/data/awicm/restart/ocean_restart.nc"
+    #   target: "restart/ocean_restart.nc"
+
+  # Binary files - copied to thisrun/bin/
+  bin: []
+    # - source: "/sw/awicm/bin/fesom.x"
+    #   target: "bin/fesom.x"
+
+  # Namelist/config files - copied to thisrun/config/, may be modified
+  config: []
+    # - source: "templates/namelist.echam"
+    #   target: "config/namelist.echam"
+    #   modify: true
+    # - source: "templates/namelist.fesom"
+    #   target: "config/namelist.fesom"
+    #   modify: true
+
+# =============================================================================
+# Namelist Modifications
+# =============================================================================
+# Key-value pairs to apply to namelists. In production, these would come from
+# the full esm_tools configuration resolution.
+
+namelists:
+  # ECHAM namelist modifications
+  echam:
+    runctl:
+      dt: 450
+      nsteps: 960  # 5 days at 450s timestep
+    radctl:
+      iaero: 3
+
+  # FESOM namelist modifications
+  fesom:
+    clockinit:
+      timenew: 0.0
+      daession: 86400.0
+    paths:
+      meshpath: "./input/mesh/"
+
+# =============================================================================
+# Dynamic File Generation
+# =============================================================================
+# Files to create from scratch with specified content
+
+create_files: []
+  # Example:
+  # - path: "config/coupling.yaml"
+  #   content: |
+  #     coupling_type: "sequential"
+  #     exchange_interval: 3600
+
+# =============================================================================
+# Tidy/Cleanup Configuration
+# =============================================================================
+
+tidy:
+  # Whether to clean the work directory after archiving
+  clean_work: false
+
+  # Patterns of files to always keep
+  keep_patterns:
+    - "*.log"
+    - "*.nc"
+
+  # Whether to archive results to experiment directory
+  archive_results: true
+
+# =============================================================================
+# Hook Prerequisites
+# =============================================================================
+# Users can add custom event dependencies here. The workflow will wait for
+# these events before proceeding to the next stage.
+
+hooks:
+  # Events that must complete before prepcompute starts
+  prepcompute_prerequisites: []
+    # - "my_custom_validation.yaml"
+
+  # Events that must complete before tidy starts
+  tidy_prerequisites: []
+    # - "custom_postprocessing.yaml"

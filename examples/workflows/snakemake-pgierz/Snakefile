@@ -1,0 +1,167 @@
+"""
+Main Snakefile: Event-driven workflow for ESM-Tools.
+
+This workflow implements the three main stages of an ESM simulation:
+- prepexp: Prepare the experiment (create directories, stage configs)
+- prepcompute: Prepare for computation (stage files, configure namelists)
+- tidy: Clean up after run (archive results, cleanup work directory)
+
+Each rule emits an event file that can be used as a hook point for
+user-defined custom rules.
+"""
+
+import sys
+from pathlib import Path
+
+# =============================================================================
+# Configuration
+# =============================================================================
+
+config:
+    create_files: []
+    files:
+      bin: []
+      config: []
+      input: []
+      restart: []
+    general:
+      base_dir: ./runs
+      expid: test
+      initial_date: '19500101'
+      runscript: example_experiment.yaml
+      setup_name: awicm
+    hooks:
+      prepcompute_prerequisites: []
+      tidy_prerequisites: []
+    namelists:
+      echam:
+        radctl:
+          iaero: 3
+        runctl:
+          dt: 450
+          nsteps: 960
+      fesom:
+        clockinit:
+          daession: 86400.0
+          timenew: 0.0
+        paths:
+          meshpath: ./input/mesh/
+    tidy:
+      archive_results: true
+      clean_work: false
+      keep_patterns:
+      - '*.log'
+      - '*.nc'
+
+# Add lib directory to path for common utilities
+_workflow_dir = Path(workflow.basedir)
+sys.path.insert(0, str(_workflow_dir / "lib"))
+
+from common import get_paths
+
+# Get paths for use in rule targets
+paths = get_paths(config)
+EVENT_DIR = paths["event_dir"]
+EXPID = paths["expid"]
+DATESTAMP = paths["datestamp"]
+
+# =============================================================================
+# Prepexp Stage - Prepare the Experiment
+# =============================================================================
+# Creates directory structure, initializes logs, installs configs
+
+include: "rules/prepexp/prepare_experiment_directories.smk"
+include: "rules/prepexp/prepare_run_directories.smk"
+include: "rules/prepexp/initialize_experiment_log.smk"
+include: "rules/prepexp/install_esm_tools.smk"
+include: "rules/prepexp/stage_runscript.smk"
+
+# =============================================================================
+# Prepcompute Stage - Prepare for Computation
+# =============================================================================
+# Stages input files, configures namelists, populates work directory
+
+include: "rules/prepcompute/generate_dynamic_files.smk"
+include: "rules/prepcompute/validate_input_sources.smk"
+include: "rules/prepcompute/stage_input_files.smk"
+include: "rules/prepcompute/configure_namelists.smk"
+include: "rules/prepcompute/populate_work_directory.smk"
+include: "rules/prepcompute/snapshot_configuration.smk"
+
+# =============================================================================
+# Tidy Stage - Clean Up After Run
+# =============================================================================
+# Collects outputs, archives results, cleans up
+
+include: "rules/tidy/collect_model_outputs.smk"
+include: "rules/tidy/inventory_unknown_files.smk"
+include: "rules/tidy/generate_file_manifest.smk"
+include: "rules/tidy/archive_results.smk"
+include: "rules/tidy/cleanup_run_directory.smk"
+
+# =============================================================================
+# User Hooks (Optional)
+# =============================================================================
+# Include user-defined hooks if they exist
+
+_user_hooks = _workflow_dir / "rules" / "hooks" / "user_hooks.smk"
+if _user_hooks.exists():
+    include: str(_user_hooks)
+
+# =============================================================================
+# Top-level Targets
+# =============================================================================
+
+rule all:
+    """Complete workflow: prepexp -> prepcompute -> tidy."""
+    input:
+        EVENT_DIR / "run_directory_cleaned.yaml"
+    default_target: True
+    message:
+        "Workflow complete for {EXPID} / {DATESTAMP}"
+
+
+rule prepexp:
+    """Run only the prepexp stage."""
+    input:
+        EVENT_DIR / "runscript_staged.yaml"
+    message:
+        "Prepexp complete for {EXPID}"
+
+
+rule prepcompute:
+    """Run prepexp and prepcompute stages."""
+    input:
+        EVENT_DIR / "configuration_snapshot_saved.yaml"
+    message:
+        "Prepcompute complete for {EXPID}"
+
+
+rule tidy:
+    """Run all stages including tidy."""
+    input:
+        EVENT_DIR / "run_directory_cleaned.yaml"
+    message:
+        "Tidy complete for {EXPID}"
+
+
+# =============================================================================
+# Utility Rules
+# =============================================================================
+
+rule show_events:
+    """List all event files for this experiment."""
+    shell:
+        """
+        echo "Events for {EXPID}:"
+        ls -la {EVENT_DIR}/*.yaml 2>/dev/null || echo "No events yet"
+        """
+
+
+rule show_dag:
+    """Display workflow DAG (requires graphviz)."""
+    shell:
+        """
+        snakemake --dag | dot -Tpng > dag.png
+        echo "DAG written to dag.png"
+        """

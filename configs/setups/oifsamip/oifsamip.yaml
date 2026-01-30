@@ -43,7 +43,8 @@ general:
                         pool_dir: "/proj/awi/input"
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
-
+        # Load compute recipe from oifs.yaml
+        prepcompute_recipe: ${oifs.prepcompute_recipe} 
         # Load compute recipe from oifs.yaml
         compute_recipe: ${oifs.compute_recipe}
 

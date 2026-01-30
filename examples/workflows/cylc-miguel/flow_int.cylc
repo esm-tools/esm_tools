@@ -1,0 +1,20 @@
+[scheduler]
+     allow implicit tasks = True
+[scheduling]
+    cycling mode = integer
+    initial cycle point = 1
+    [[graph]]
+
+        P1 = """
+            a & c => b => d & f
+            f[-P1] => c
+        """
+        P2 = """
+            d => e
+        """
+        1/P2 = """
+            d[-P1] => a
+        """
+        2/P2 = """
+            e[-P1] => a
+        """

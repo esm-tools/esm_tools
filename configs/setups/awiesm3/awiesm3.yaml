@@ -317,8 +317,8 @@ fesom:
                 namelist.config:
                     geometry:
                         metric_factor_zero: True
-                namelist.oce:
-                    oce_tra:
+                namelist.tra:
+                    tracer_phys:
                         surf_relax_s: "0.0"
 
 

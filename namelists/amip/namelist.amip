@@ -7,6 +7,8 @@
     fixyear = 1850
     filelistsst = 'comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc'
     filelistsic = 'comb_input4MIPs_SSTsAndSeaIce_PAMIP_pdSST_pdSIC_gn.nc'
+    sstvarname = 'sstbcs'
+    siconcvarname = 'siconcbcs'
     ldebug = .true.
     linterpolate = .true.
 /

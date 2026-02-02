@@ -7,6 +7,8 @@ run_year: {{lpj_guess.run_year}}
 run_month: {{lpj_guess.run_month}}
 run_day: {{lpj_guess.run_day}}
 ndays_per_run: {{lpj_guess.ndays_per_run}}
+# initial_year: Experiment start year for continuous output (only for spinup)
+initial_year: {{lpj_guess.initial_year | default(lpj_guess.run_year)}}
 
 # Grid configuration
 mygrid: "{{lpj_guess.resolution}}"

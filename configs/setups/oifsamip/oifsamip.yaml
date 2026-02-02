@@ -162,7 +162,7 @@ oifs:
 
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: ""
+        ICMGG_INIT_name: "_AMIP"
 
 
 

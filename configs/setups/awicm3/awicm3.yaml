@@ -474,6 +474,14 @@ fesom:
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: "${surf_relax_s}"
+                                namelist.config:
+                                        geometry:
+                                                metric_factor_zero: True
+                                        ale_def:
+                                                which_ale: 'linfs'
+                                namelist.ice:
+                                        ice_therm:
+                                                use_meltponds: true
 
                 "frontiers-xios":
                         model_tag: "frontiers"

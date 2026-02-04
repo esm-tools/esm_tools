@@ -317,9 +317,14 @@ fesom:
                 namelist.config:
                     geometry:
                         metric_factor_zero: True
+                    ale_def:
+                        which_ale: 'linfs'
                 namelist.tra:
                     tracer_phys:
                         surf_relax_s: "0.0"
+                namelist.ice:
+                    ice_therm:
+                        use_meltponds: true
 
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)

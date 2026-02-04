@@ -74,6 +74,7 @@ oifs:
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
+        with_xios: true
 
         mip: "cmip6"
         scenario: "historical"
@@ -106,8 +107,6 @@ oifs:
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         add_namelist_changes:
                                 fort.4:
-                                        NAMCT0:
-                                                LXIOS: TRUE
                                         NAMECECFG:
                                                 ECE_CPL_NEMO_LIM: ".false."
                                                 ECE_CPL_FESOM_FESIM: ".false."

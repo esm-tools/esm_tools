@@ -18,7 +18,7 @@ general:
    use_venv: false
    homedir: !ENV ${HOME}
    setup_name: icon-fesom
-   compute_time: "01:05:00"
+   compute_time: "00:08:00"
    account: bb0519
    # monthly restart
    #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
@@ -26,15 +26,15 @@ general:
    #nmonth: 1
    # yearly restart
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1860-01-01T00:00:00"         # Final date of the experiment
-   nmonth: 12
+   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
+   nday: 1 
    
    base_dir: ${homedir}/esm/esm-experiments/ 
    model_dir: /work/bb0519/b350071/models/icon-fesom-v2.0
    version: "v2.0"
 
 icon:
-   monitoring: True
+   monitoring: False
    # As icon insist on having the restart files in link that points to a directory
    # we have to run this pre_run_command, this can hopefully change in the future
    pre_run_commands: 
@@ -55,9 +55,9 @@ icon:
    #restart_interval: P01M
    #output_interval: P01M
    # yearly restart and output interval
-   checkpoint_interval: P01Y
-   restart_interval: P01Y
-   output_interval: P01M
+   checkpoint_interval: P01D
+   restart_interval: P01D
+   output_interval: P01D
 
    # example, change a namelist parameter
    # be aware of typos, use the exact name as in the namelist 
@@ -72,10 +72,14 @@ icon:
          output_nml:
             output_interval: "${output_interval}"
             # file_interval must be > output_interval
-            file_interval: "${restart_interval}"
+            file_interval: "P50Y"
 fesom:
    version: "2.6.2-yac"
    nproc: 432 
+   # daily restarts 
+   restart_unit: "d"
+   restart_rate: "1"
+
    add_input_files:
        fesom_griddes: fesom_griddes
    add_input_sources:

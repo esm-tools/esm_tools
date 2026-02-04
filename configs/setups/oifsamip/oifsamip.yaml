@@ -164,6 +164,63 @@ oifs:
         tl_o3_data_dir: ${input_dir}/${version}/climate/
         ICMGG_INIT_name: "_AMIP"
 
+        file_movements:
+                forcing:
+                    all_directions: link
+                restart_in:
+                    all_directions: link
+                restart_out:
+                    all_directions: move
+                rcf_in:
+                    all_directions: copy
+                waminfo_in:
+                    all_directions: copy
+                outdata:
+                    all_directions: move
+
+    #======================================================================================
+    # OUTPUT FILES
+    #======================================================================================
+
+        outdata_in_work:
+                ICMGG: ICMGG${oifs.input_expid}+*
+                ICMSH: ICMSH${oifs.input_expid}+*
+                ICMUA: ICMUA${oifs.input_expid}+*
+                MPP: MPP*
+                # XIOS output
+                oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+                atm: atm_*
+
+        outdata_sources:
+                # old grib based output
+                ICMGG: ${out_date_folder}/ICMGG${oifs.input_expid}+*
+                ICMSH: ${out_date_folder}/ICMSH${oifs.input_expid}+*
+                ICMUA: ${out_date_folder}/ICMUA${oifs.input_expid}+*
+                MPP: ${out_date_folder}/MPP*
+                # XIOS output
+                oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+                atm: atm_*
+
+   #======================================================================================
+   # XIOS (Parallel output via XML IO server)
+   #======================================================================================
+
+   # Using XIOS?
+        choose_with_xios:
+                1:
+                        include_models:
+                                - xios
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: ".true."
+                        outdata_files:
+                                oifsnc: oifsnc
+                                atm: atm
+                0:
+                        outdata_files:
+                                ICMGG: ICMGG
+                                ICMSH: ICMSH
 
 
 amip:

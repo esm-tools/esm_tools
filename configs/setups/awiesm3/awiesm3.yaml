@@ -65,7 +65,7 @@ general:
         aleph:
             pool_dir: "/proj/awi/input"
         albedo:
-            pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+            pool_dir: "/albedo/pool/"
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -300,8 +300,6 @@ fesom:
     restart_unit: "d"
     leapyear: true
 
-
-    # Move in the future to fesom-2.0.yaml
     mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
 
     namelist_changes:

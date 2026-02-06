@@ -1,0 +1,20 @@
+[scheduler]
+    allow implicit tasks = True
+[scheduling]
+    initial cycle point = 20000101T00Z
+    [[graph]]
+        PT3H = """
+            get_observations_aldergrove => consolidate_observations
+            get_observations_camborne => consolidate_observations
+            get_observations_heathrow => consolidate_observations
+            get_observations_shetland => consolidate_observations
+        """
+        +PT6H/PT64H = """
+            consolidate_observations[-PT6H] => forecast
+            consolidate_observations[-PT3H] => forecast
+            consolidate_observations => forecast
+            get_rainfall => forecast => post_process_exeter
+        """
+        +PT12H/PT6H = """
+            forecast[-PT6H] => forecast
+        """

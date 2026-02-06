@@ -1,0 +1,9 @@
+channels:
+- conda-forge
+dependencies:
+- python=3.12
+- cylc-flow
+- cylc-uiserver
+- cylc-rose
+- metomi-rose
+name: cylc

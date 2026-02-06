@@ -1,3 +1,6 @@
+# Claude Code local context
+CLAUDE.md
+
 # Mac finder files
 .DS_Store
 # Direnv stuff
@@ -152,3 +155,6 @@ pack
 unpack
 jsbach_init_file
 calnoro
+
+# snakemake files
+.snakemake/

@@ -1,0 +1,15 @@
+rule hello:
+    input:
+        "data/hi.txt",
+    output:
+        "output/hello_world_{number}.txt"
+    shell:
+        "echo Hello world! > {output[0]}"
+
+rule introductions:
+    input:
+        "output/hello_world_{number}.txt",
+    output:
+        "output/introductions_{number}.txt"
+    shell:
+        "echo 'Let me introduce myself.' > {output[0]}"

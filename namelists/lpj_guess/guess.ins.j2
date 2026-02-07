@@ -75,6 +75,9 @@ param "state_name" (str "lpjg")	! state filenames
 param "restart" (num {{lpj_guess.restart_num}}) ! 		! 1: restart from .bin files. 0: start from bare ground
 ! PaulM ECE4 hack - changed to 0
 
+! Number of years in IFS spinup forcing file (must match the forcing NetCDF time dimension)
+param "nyearifs" (num {{lpj_guess.nyearifs | default(10)}})
+
 ! Paths to IFS spinup data - MUST have trailing "/" (linux/unix systems) or "\" (Windows)
 
 ! NSC ECE 3p1:

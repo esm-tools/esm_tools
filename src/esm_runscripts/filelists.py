@@ -19,6 +19,7 @@ import esm_parser
 from esm_tools import user_error, user_note
 
 from . import helpers, jinja
+from .dask import get_dask_cluster_status, DaskStatus
 
 
 def rename_sources_to_targets(config):
@@ -1099,63 +1100,49 @@ def copy_files(config, filetypes, source, target):
     config["general"]["files_target"] = target
 
     # Initialization for parallelization with futures
-    logger.debug(f"{time.ctime()} | 2. Parallel file movements preparation and testing")
+    logger.debug(f"{time.ctime()} | 2.1 Parallel file movements preparation and testing")
     futures = {}
     if parallel_file_movements in ["threads", "dask"]:
-        number_of_threads = (
-            config["computer"]
-            .get("partitions", {})
-            .get("compute", {})
-            .get("cores_per_node", 2)
-        )
-
-        logger.debug(f"{time.ctime()} | 2.1. Determining number of threads")
-        # For login nodes take only 1/3 of the possible threads
-        machine, node = esm_parser.determine_computer_and_node_from_hostname()
-        if node == "login_nodes":
-            number_of_threads = number_of_threads // 3
-        else:
-            number_of_threads = number_of_threads - 1
+        # Get the type of node (login_nodes vs other types)
+        _, node = esm_parser.determine_computer_and_node_from_hostname()
 
         # Initialize client
-        logger.debug(f"{time.ctime()} | 2.2. Check dask scheduler file")
-        dask_cluster_initialized = os.path.isfile(dask_scheduler_json)
-        if parallel_file_movements == "dask" and dask_cluster_initialized and node != "login_nodes":
-            # Dask should only run on compute nodes
-            try:
-                logger.debug(f"{time.ctime()} | 2.3. Initialize dask client")
-                client = daskd.Client(scheduler_file=dask_scheduler_json)
-                n_workers = len(client.scheduler_info()["workers"])
-            except Exception:
-                n_workers = 0
-
-            try:
-                logger.debug(f"{time.ctime()} | 2.4. Submit dask test job")
-                client.submit(test_dask)
-                dask_custer_running = True
-            except Exception:
-                dask_custer_running = False
-                logger.warning(
-                    "Dask client could not submit jobs to the cluster. "
-                    "Falling back to threads parallelization."
-                )
-
-            logger.debug(f"{time.ctime()} | 2.5. Decide parallelization method")
-            if n_workers > 0 and dask_custer_running:
+        # Dask should only run on compute nodes
+        if parallel_file_movements == "dask" and node != "login_nodes":
+            logger.debug(f"{time.ctime()} | 2.2. Check dask scheduler file")
+            # TODO: remove test=True
+            dask_cluster_status, n_workers = get_dask_cluster_status(dask_scheduler_json, test=True)
+            logger.debug(f"{time.ctime()} | 2.3. Decide parallelization method")
+            if n_workers > 0 and dask_cluster_status >= DaskStatus.RUNNING:
                 logger.info(
                     f"Using dask for parallel file movements with {n_workers} workers"
                 )
+                logger.debug(f"{time.ctime()} | 2.4. Initialize dask client")
+                client = daskd.Client(scheduler_file=dask_scheduler_json)
             else:
                 parallel_file_movements = "threads"
                 logger.warning(
                     "Dask workers not available. Defaulting to threads parallelization "
                     "in one single node"
                 )
-        elif parallel_file_movements == "dask":
-            logger.debug(f"{time.ctime()} | 2.6. Should not be reached")
+        elif parallel_file_movements == "dask" and node == "login_nodes":
+            logger.debug(f"{time.ctime()} | 2.6. Running from the login node. Using threads instead of dask")
             parallel_file_movements = "threads"
 
         if parallel_file_movements == "threads":
+            logger.debug(f"{time.ctime()} | 2.6. Determining number of threads")
+            number_of_threads = (
+                config["computer"]
+                .get("partitions", {})
+                .get("compute", {})
+                .get("cores_per_node", 2)
+            )
+            # For login nodes take only 1/3 of the possible threads
+            if node == "login_nodes":
+                number_of_threads = number_of_threads // 3
+            else:
+                number_of_threads = number_of_threads - 1
+
             logger.debug(f"{time.ctime()} | 2.7. Should not be reached")
             client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
             logger.info("Using threads for parallel file movements")
@@ -1307,9 +1294,6 @@ def copy_files(config, filetypes, source, target):
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
     logger.debug(f"{time.ctime()} | 6. End")
     return config
-
-def test_dask():
-    return True
 
 def avoid_overwriting(config, source, target):
     """

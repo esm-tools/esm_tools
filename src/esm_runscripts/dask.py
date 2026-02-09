@@ -3,13 +3,24 @@ import os
 import subprocess
 import time
 
+import esm_parser
+
 from loguru import logger
 from enum import IntEnum
 
 import dask.distributed as daskd
 
+class DaskStatus(IntEnum):
+    MISSING_JSON = 0
+    SCHEDULER_ERROR = 1
+    WORKERS_ERROR = 2
+    NO_WORKERS = 3
+    RUNNING = 4
+    TESTED = 5
+
 def initialize_dask_cluster(config):
-    if not uses_dask(config) or not config["general"].get("isinteractive", False):
+    _, node = esm_parser.determine_computer_and_node_from_hostname()
+    if not uses_dask(config) or node == "login_nodes":
         return config
 
     ini_dask_cluster(config)
@@ -24,14 +35,10 @@ def uses_dask(config):
             active_dask_actions.append(action)
     return len(active_dask_actions) > 0
 
-class DaskStatus(IntEnum):
-    MISSING_JSON = 0
-    SCHEDULER_ERROR = 1
-    WORKERS_ERROR = 2
-    NO_WORKERS = 3
-    RUNNING = 4
+def test_dask():
+    return True
 
-def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01):
+def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False):
     n_workers = 0
     # Read tcp address from dask_scheduler_json
     if os.path.isfile(dask_scheduler_json):
@@ -57,6 +64,14 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01):
     if n_workers == 0:
         logger.debug(f"No dask workers connected to scheduler at {tcp_address}")
         return (DaskStatus.NO_WORKERS, n_workers)
+    elif test:
+        try:
+            client.submit(test_dask).result()
+            logger.debug(f"Dask test task succeeded on scheduler at {tcp_address} with {n_workers} workers")
+            return (DaskStatus.TESTED, n_workers)
+        except Exception as e:
+            logger.debug(f"Dask test task failed on scheduler at {tcp_address}: {e}")
+            return (DaskStatus.RUNNING, n_workers)
     else:
         logger.debug(f"Dask cluster is running with {n_workers} workers connected to scheduler at {tcp_address}")
         return (DaskStatus.RUNNING, n_workers)
@@ -64,7 +79,6 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01):
 def ini_dask_cluster(config):
 
     logger.debug(f"{time.ctime()} | Start dask cluster initialization")
-
     # Load parameters
     dask_config = config.get("dask", {})
     dask_scheduler_json = dask_config["scheduler_json"]
@@ -101,11 +115,14 @@ def ini_dask_cluster(config):
         return config
 
     # Start the dask workers
+    logger.debug(f"Starting dask workers with: {init_workers_cmd}")
     process = subprocess.Popen(
         f"{init_workers_cmd} >> {log_scheduler} 2>&1",
         shell=True,
         preexec_fn=os.setpgrp,
     )
 
+    dask_status, n_workers = get_dask_cluster_status(dask_scheduler_json)
+    logger.info(f"Dask cluster status: {dask_status.name}, number of workers: {n_workers}")
     logger.debug(f"{time.ctime()} | End dask cluster initialization")
     return config

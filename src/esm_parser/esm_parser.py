@@ -75,7 +75,6 @@ else:
 
 # Always import externals before any non standard library imports
 
-import coloredlogs
 # Third-Party Imports
 import numpy
 import yaml

@@ -79,7 +79,7 @@ amip:
             namelist.amip:
                     NAMAMIP:
                             RunLengthSec: "${runtime_seconds}"
-                            TimeStepSec: "84600"
+                            TimeStepSec: "86400"
                             FixYear: "0"
                             StartYear: "1850"
                             FileListSST: ${input_in_work.sst_forcing}

@@ -8,7 +8,6 @@ import pathlib
 import re
 import shutil
 import sys
-import time
 
 from dask import distributed as daskd
 import f90nml
@@ -1086,7 +1085,6 @@ def copy_files(config, filetypes, source, target):
         ``work``.
     """
     logger.debug("\n::: Copying files")
-    logger.debug(f"{time.ctime()} | 1. Copying files started")
     helpers.print_datetime(config)
 
     parallel_file_movements = config["general"].get("parallel_file_movements", False)
@@ -1100,7 +1098,6 @@ def copy_files(config, filetypes, source, target):
     config["general"]["files_target"] = target
 
     # Initialization for parallelization with futures
-    logger.debug(f"{time.ctime()} | 2.1 Parallel file movements preparation and testing")
     futures = {}
     if parallel_file_movements in ["threads", "dask"]:
         # Get the type of node (login_nodes vs other types)
@@ -1109,20 +1106,20 @@ def copy_files(config, filetypes, source, target):
         # Initialize client
         # Dask should only run on compute nodes
         if parallel_file_movements == "dask" and node != "login_nodes":
-            logger.debug(f"{time.ctime()} | 2.2. Check dask scheduler file")
+            dask_config = config.get("dask", {})
+            timeout = dask_config.get("workers_timeout", 5)
+            poll_interval = dask_config.get("poll_interval", 0.5)
             dask_cluster_status, n_workers = wait_for_dask_status(
                 dask_scheduler_json,
                 target_status=DaskStatus.RUNNING,
-                timeout=5,
-                poll_interval=0.5,
+                timeout=timeout,
+                poll_interval=poll_interval,
                 description="Waiting for dask cluster to be running",
             )
-            logger.debug(f"{time.ctime()} | 2.3. Decide parallelization method")
             if n_workers > 0 and dask_cluster_status >= DaskStatus.RUNNING:
                 logger.info(
                     f"Using dask for parallel file movements with {n_workers} workers"
                 )
-                logger.debug(f"{time.ctime()} | 2.4. Initialize dask client")
                 client = daskd.Client(scheduler_file=dask_scheduler_json)
             else:
                 parallel_file_movements = "threads"
@@ -1131,11 +1128,10 @@ def copy_files(config, filetypes, source, target):
                     "in one single node"
                 )
         elif parallel_file_movements == "dask" and node == "login_nodes":
-            logger.debug(f"{time.ctime()} | 2.6. Running from the login node. Using threads instead of dask")
+            logger.debug("Running from the login node, using threads instead of dask")
             parallel_file_movements = "threads"
 
         if parallel_file_movements == "threads":
-            logger.debug(f"{time.ctime()} | 2.6. Determining number of threads")
             number_of_threads = (
                 config["computer"]
                 .get("partitions", {})
@@ -1148,9 +1144,10 @@ def copy_files(config, filetypes, source, target):
             else:
                 number_of_threads = number_of_threads - 1
 
-            logger.debug(f"{time.ctime()} | 2.7. Should not be reached")
             client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
-            logger.info("Using threads for parallel file movements")
+            logger.info(
+                f"Using {number_of_threads} threads for parallel file movements"
+            )
 
     # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(
@@ -1170,7 +1167,6 @@ def copy_files(config, filetypes, source, target):
     elif target == "work":
         text_target = "targets"
 
-    logger.debug(f"{time.ctime()} | 3. Submission loop")
     # Loop through the different filetypes (input, forcing, restart_in/out, ...)
     files_to_be_moved = []
     for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
@@ -1250,7 +1246,6 @@ def copy_files(config, filetypes, source, target):
                             in ["threads", "dask"]
                         ):
                             # Parallel
-                            logger.info("DASK!!!!")
                             future = client.submit(
                                 movement_method,
                                 {}, # do not pass a config to avoid serialization issues. Serialization is possible but even after that the config is too big to be sent to many workers efficiently
@@ -1266,8 +1261,6 @@ def copy_files(config, filetypes, source, target):
                                 file_target,
                             )
 
-    logger.debug(f"{time.ctime()} | 4. Wait wall for results")
-    #import ipdb; ipdb.set_trace()
     for (file_source, file_target), movement_output in futures.items():
         if config["general"].get("parallel_file_movements", False):
             try:
@@ -1286,7 +1279,6 @@ def copy_files(config, filetypes, source, target):
         else:
             missing_files.update({file_target: file_source})
 
-    logger.debug(f"{time.ctime()} | 5. Missing files")
     if missing_files:
         if not "files_missing_when_preparing_run" in config["general"]:
             config["general"]["files_missing_when_preparing_run"] = {}
@@ -1297,7 +1289,6 @@ def copy_files(config, filetypes, source, target):
                 logger.warning(f"- missing target: {missing_file}")
                 helpers.print_datetime(config)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
-    logger.debug(f"{time.ctime()} | 6. End")
     return config
 
 def avoid_overwriting(config, source, target):

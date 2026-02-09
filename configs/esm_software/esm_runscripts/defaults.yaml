@@ -29,6 +29,8 @@ per_model_defaults:
 dask:
     scheduler_json_name: "dask_scheduler.json"
     scheduler_json: "${general.thisrun_work_dir}/${dask.scheduler_json_name}"
+    workers_timout: 5
+    poll_interval: 0.5
     ignore_files:
         scheduler_json: scheduler_json
     ignore_sources:

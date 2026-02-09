@@ -61,44 +61,43 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False
             scheduler_info = json.load(f)
             tcp_address = scheduler_info.get("address", None)
     else:
-        logger.debug(f"Missing dask scheduler json file {dask_scheduler_json}")
+        logger.trace(f"Missing dask scheduler json file {dask_scheduler_json}")
         return (DaskStatus.MISSING_JSON, n_workers)
 
     try:
         client = daskd.Client(tcp_address, timeout=client_timeout)
     except Exception as e:
-        logger.debug(f"Could not connect to dask scheduler at {tcp_address}: {e}")
+        logger.trace(f"Could not connect to dask scheduler at {tcp_address}: {e}")
         return (DaskStatus.SCHEDULER_ERROR, n_workers)
 
     try:
         n_workers = len(client.scheduler_info().get("workers", []))
     except Exception as e:
-        logger.debug(f"Could not get dask workers info from scheduler at {tcp_address}: {e}")
+        logger.trace(f"Could not get dask workers info: {e}")
         client.close()
         return (DaskStatus.WORKERS_ERROR, n_workers)
 
     if n_workers == 0:
-        logger.debug(f"No dask workers connected to scheduler at {tcp_address}")
+        logger.trace(f"No dask workers connected to scheduler at {tcp_address}")
         client.close()
         return (DaskStatus.NO_WORKERS, n_workers)
     elif test:
         status = DaskStatus.RUNNING
         try:
             client.submit(test_dask).result()
-            logger.debug(f"Dask test task succeeded on scheduler at {tcp_address} with {n_workers} workers")
+            logger.trace(f"Dask test task succeeded on scheduler at {tcp_address} with {n_workers} workers")
             status = DaskStatus.TESTED
         except Exception as e:
-            logger.debug(f"Dask test task failed on scheduler at {tcp_address}: {e}")
+            logger.trace(f"Dask test task failed: {e}")
         client.close()
         return (status, n_workers)
     else:
-        logger.debug(f"Dask cluster is running with {n_workers} workers connected to scheduler at {tcp_address}")
+        logger.trace(f"Dask cluster running with {n_workers} workers at {tcp_address}")
         client.close()
         return (DaskStatus.RUNNING, n_workers)
 
 def ini_dask_cluster(config):
 
-    logger.debug(f"{time.ctime()} | Start dask cluster initialization")
     # Load parameters
     dask_config = config.get("dask", {})
     dask_scheduler_json = dask_config["scheduler_json"]
@@ -122,7 +121,6 @@ def ini_dask_cluster(config):
     poll_interval = dask_config.get("poll_interval", 0.5)
 
     # Check whether there is already a dask scheduler started
-    logger.debug(f"{time.ctime()} | Checking for existing dask scheduler")
     dask_status, n_workers = get_dask_cluster_status(dask_scheduler_json)
 
     # Run init_scheduler_cmd with subprocess and print output into a log file
@@ -158,5 +156,4 @@ def ini_dask_cluster(config):
     dask_status, n_workers = get_dask_cluster_status(dask_scheduler_json)
 
     logger.info(f"Dask cluster status: {dask_status.name}, number of workers: {n_workers}")
-    logger.debug(f"{time.ctime()} | End dask cluster initialization")
     return config

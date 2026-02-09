@@ -155,14 +155,7 @@ def ini_dask_cluster(config):
         preexec_fn=os.setpgrp,
     )
 
-    # Wait for at least 1 worker to connect
-    dask_status, n_workers = wait_for_dask_status(
-        dask_scheduler_json,
-        target_status=DaskStatus.RUNNING,
-        timeout=workers_timeout,
-        poll_interval=poll_interval,
-        description="Dask workers startup",
-    )
+    dask_status, n_workers = get_dask_cluster_status(dask_scheduler_json)
 
     logger.info(f"Dask cluster status: {dask_status.name}, number of workers: {n_workers}")
     logger.debug(f"{time.ctime()} | End dask cluster initialization")

@@ -148,7 +148,7 @@ computer:
     nnodes: !ENV ${SLURM_JOB_NUM_NODES}
 
 dask:
-    ntasks: "$(( ${computer.nnodes} / 4 ))"
+    ntasks: "$(( ${computer.nnodes} * ${computer.partition_cpn} / 4 ))"
     init_scheduler_cmd: "
         srun --ntasks=1 --nodes=1 --cpus-per-task=1 dask scheduler --scheduler-file ${dask.scheduler_json} --interface ib0
         "

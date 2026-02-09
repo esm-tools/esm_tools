@@ -19,7 +19,7 @@ import esm_parser
 from esm_tools import user_error, user_note
 
 from . import helpers, jinja
-from .dask import get_dask_cluster_status, DaskStatus
+from .dask import get_dask_cluster_status, wait_for_dask_status, DaskStatus
 
 
 def rename_sources_to_targets(config):
@@ -1110,8 +1110,13 @@ def copy_files(config, filetypes, source, target):
         # Dask should only run on compute nodes
         if parallel_file_movements == "dask" and node != "login_nodes":
             logger.debug(f"{time.ctime()} | 2.2. Check dask scheduler file")
-            # TODO: remove test=True
-            dask_cluster_status, n_workers = get_dask_cluster_status(dask_scheduler_json, test=True)
+            dask_cluster_status, n_workers = wait_for_dask_status(
+                dask_scheduler_json,
+                target_status=DaskStatus.RUNNING,
+                timeout=5,
+                poll_interval=0.5,
+                description="Waiting for dask cluster to be running",
+            )
             logger.debug(f"{time.ctime()} | 2.3. Decide parallelization method")
             if n_workers > 0 and dask_cluster_status >= DaskStatus.RUNNING:
                 logger.info(

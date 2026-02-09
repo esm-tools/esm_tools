@@ -46,7 +46,7 @@ general:
         aleph:
             pool_dir: "/proj/awi/input"
         albedo:
-            pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+            pool_dir: "/albedo/pool/"
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 

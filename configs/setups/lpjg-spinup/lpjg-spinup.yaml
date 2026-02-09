@@ -94,10 +94,18 @@ lpj_guess:
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1
-    nyear_spinup: ${nyear}
-    # freenyears: N limitation delay years (must be <= nyear_spinup)
-    # Set equal to nyear_spinup for full N limitation delay during spinup
-    freenyears: ${nyear}
+    # nyear_spinup and freenyears should only apply to the first leg.
+    # For continuation legs, disable the internal spinup to avoid
+    # re-running N-free years and causing soil C discontinuities.
+    choose_general.run_number:
+        1:
+            nyear_spinup: ${nyear}
+            # freenyears: N limitation delay years (must be <= nyear_spinup)
+            # Set equal to nyear_spinup for full N limitation delay during spinup
+            freenyears: ${nyear}
+        "*":
+            nyear_spinup: 1
+            freenyears: 0
 
     config_sources:
         tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
@@ -139,6 +147,9 @@ lpj_guess:
     create_folders:
         - ${work_dir}/landuse
         - ${work_dir}/fire
+
+    # Disable output copying for spinup runs
+    outdata_files: {}
 
 
 

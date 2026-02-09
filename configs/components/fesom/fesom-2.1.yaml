@@ -469,8 +469,6 @@ fesom:
     bin_sources:
             fesom: "${bin_dir}/${comp_executable}"
 
-
-
     config_files:
             config:  config
             forcing: forcing
@@ -612,6 +610,7 @@ fesom:
 
     further_reading:
             - fesom/fesom.forcing.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

@@ -181,6 +181,48 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False
         client.close()
         return (DaskStatus.RUNNING, n_workers)
 
+
+def shutdown_dask_cluster(config):
+    """
+    Gracefully shut down the dask scheduler and workers.
+
+    Connects to the running scheduler (if reachable) and calls
+    ``Client.shutdown()``, which terminates all workers and the scheduler
+    process. If the cluster is not running, the function is a no-op.
+
+    Parameters
+    ----------
+    config : dict
+        The simulation configuration dictionary.
+
+    Returns
+    -------
+    config : dict
+        The unchanged simulation configuration.
+    """
+    dask_config = config.get("dask", {})
+    dask_scheduler_json = dask_config.get("scheduler_json")
+    if not dask_scheduler_json:
+        return config
+
+    status, _ = get_dask_cluster_status(dask_scheduler_json)
+    if status < DaskStatus.NO_WORKERS:
+        logger.debug("No dask cluster to shut down.")
+        return config
+
+    try:
+        with open(dask_scheduler_json, "r") as f:
+            scheduler_info = json.load(f)
+            tcp_address = scheduler_info.get("address")
+        client = daskd.Client(tcp_address, timeout=2)
+        client.shutdown()
+        logger.info("Dask cluster shut down successfully.")
+    except Exception as e:
+        logger.warning(f"Could not shut down dask cluster: {e}")
+
+    return config
+
+
 def ini_dask_cluster(config):
     """
     Start a dask scheduler and workers as background processes.

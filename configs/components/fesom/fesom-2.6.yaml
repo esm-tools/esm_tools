@@ -704,7 +704,6 @@ fesom:
     # RECIPE
     # ------------------------
     tidy_recipe:
-    - "initialize_dask_cluster"
     - "tidy_coupler"
     - "tar_binary_restarts"                 # Plugin
     - "assemble"

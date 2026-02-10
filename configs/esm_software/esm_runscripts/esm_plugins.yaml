@@ -110,6 +110,7 @@ core:
                 workflow:
                         - "assemble_workflow"
 
-                dask:
+                dask_cluster:
                         - "initialize_dask_cluster"
+                        - "shutdown_dask_cluster"
 

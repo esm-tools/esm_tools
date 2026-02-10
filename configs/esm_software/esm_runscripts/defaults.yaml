@@ -7,6 +7,11 @@ general:
     reset_calendar_to_last: False
     verbose: False
     profile: False
+    pre_recipe:
+        exclude_job_types:
+            - "observe"
+        steps:
+            - "initialize_dask_cluster"
     intermediate_movements:
     - "config"
     - "bin"

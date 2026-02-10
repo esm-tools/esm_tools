@@ -6,7 +6,7 @@ __version__ = "6.60.4"
 
 from .batch_system import *
 from .chunky_parts import *
-from .dask import *
+from .dask_cluster import *
 from .database import *
 from .database_actions import *
 from .dataprocess import *

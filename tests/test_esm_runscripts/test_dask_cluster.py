@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 
-from esm_runscripts.dask import (
+from esm_runscripts.dask_cluster import (
     DaskStatus,
     get_dask_cluster_status,
     uses_dask,
@@ -145,7 +145,7 @@ class TestGetDaskClusterStatus(unittest.TestCase):
         )
         self.assertEqual(n_workers, 0)
 
-    @patch("esm_runscripts.dask.daskd.Client")
+    @patch("esm_runscripts.dask_cluster.daskd.Client")
     def test_no_workers(self, mock_client_cls):
         mock_client_cls.return_value = make_mock_client(workers={})
         path = self._write_json()
@@ -153,7 +153,7 @@ class TestGetDaskClusterStatus(unittest.TestCase):
         self.assertEqual(status, DaskStatus.NO_WORKERS)
         self.assertEqual(n_workers, 0)
 
-    @patch("esm_runscripts.dask.daskd.Client")
+    @patch("esm_runscripts.dask_cluster.daskd.Client")
     def test_with_workers(self, mock_client_cls):
         mock_client_cls.return_value = make_mock_client(
             workers={"w1": {}, "w2": {}},
@@ -163,7 +163,7 @@ class TestGetDaskClusterStatus(unittest.TestCase):
         self.assertEqual(status, DaskStatus.RUNNING)
         self.assertEqual(n_workers, 2)
 
-    @patch("esm_runscripts.dask.daskd.Client")
+    @patch("esm_runscripts.dask_cluster.daskd.Client")
     def test_test_mode_success(self, mock_client_cls):
         mock_client_cls.return_value = make_mock_client(
             workers={"w1": {}}, submit_result=True,
@@ -173,7 +173,7 @@ class TestGetDaskClusterStatus(unittest.TestCase):
         self.assertEqual(status, DaskStatus.TESTED)
         self.assertEqual(n_workers, 1)
 
-    @patch("esm_runscripts.dask.daskd.Client")
+    @patch("esm_runscripts.dask_cluster.daskd.Client")
     def test_test_mode_failure(self, mock_client_cls):
         mock_client_cls.return_value = make_mock_client(
             workers={"w1": {}}, submit_error=RuntimeError("task failed"),
@@ -183,7 +183,7 @@ class TestGetDaskClusterStatus(unittest.TestCase):
         self.assertEqual(status, DaskStatus.RUNNING)
         self.assertEqual(n_workers, 1)
 
-    @patch("esm_runscripts.dask.daskd.Client")
+    @patch("esm_runscripts.dask_cluster.daskd.Client")
     def test_workers_info_exception(self, mock_client_cls):
         mock_client_cls.return_value = make_mock_client(
             info_error=RuntimeError("conn lost"),
@@ -197,8 +197,8 @@ class TestGetDaskClusterStatus(unittest.TestCase):
 class TestWaitForDaskStatus(unittest.TestCase):
     """Test the polling loop in wait_for_dask_status."""
 
-    @patch("esm_runscripts.dask.time.sleep")
-    @patch("esm_runscripts.dask.get_dask_cluster_status")
+    @patch("esm_runscripts.dask_cluster.time.sleep")
+    @patch("esm_runscripts.dask_cluster.get_dask_cluster_status")
     def test_immediate_success(self, mock_status, mock_sleep):
         mock_status.return_value = (DaskStatus.RUNNING, 2)
         status, n_workers = wait_for_dask_status(
@@ -209,8 +209,8 @@ class TestWaitForDaskStatus(unittest.TestCase):
         self.assertEqual(n_workers, 2)
         mock_sleep.assert_not_called()
 
-    @patch("esm_runscripts.dask.time.sleep")
-    @patch("esm_runscripts.dask.get_dask_cluster_status")
+    @patch("esm_runscripts.dask_cluster.time.sleep")
+    @patch("esm_runscripts.dask_cluster.get_dask_cluster_status")
     def test_eventual_success(self, mock_status, mock_sleep):
         mock_status.side_effect = [
             (DaskStatus.NO_WORKERS, 0),
@@ -225,8 +225,8 @@ class TestWaitForDaskStatus(unittest.TestCase):
         self.assertEqual(n_workers, 3)
         self.assertEqual(mock_sleep.call_count, 2)
 
-    @patch("esm_runscripts.dask.time.sleep")
-    @patch("esm_runscripts.dask.get_dask_cluster_status")
+    @patch("esm_runscripts.dask_cluster.time.sleep")
+    @patch("esm_runscripts.dask_cluster.get_dask_cluster_status")
     def test_timeout(self, mock_status, mock_sleep):
         mock_status.return_value = (DaskStatus.MISSING_JSON, 0)
         status, n_workers = wait_for_dask_status(
@@ -241,7 +241,7 @@ class TestWaitForDaskStatus(unittest.TestCase):
 class TestInitializeDaskCluster(unittest.TestCase):
     """Test the initialize_dask_cluster entry point."""
 
-    @patch("esm_runscripts.dask.esm_parser.determine_computer_and_node_from_hostname")
+    @patch("esm_runscripts.dask_cluster.esm_parser.determine_computer_and_node_from_hostname")
     def test_skips_on_login_node(self, mock_hostname):
         mock_hostname.return_value = ("levante", "login_nodes")
         config = {
@@ -251,15 +251,15 @@ class TestInitializeDaskCluster(unittest.TestCase):
         result = initialize_dask_cluster(config)
         self.assertIs(result, config)
 
-    @patch("esm_runscripts.dask.esm_parser.determine_computer_and_node_from_hostname")
+    @patch("esm_runscripts.dask_cluster.esm_parser.determine_computer_and_node_from_hostname")
     def test_skips_when_dask_not_used(self, mock_hostname):
         mock_hostname.return_value = ("levante", "compute")
         config = {"general": {}, "dask": {"actions": []}}
         result = initialize_dask_cluster(config)
         self.assertIs(result, config)
 
-    @patch("esm_runscripts.dask.ini_dask_cluster")
-    @patch("esm_runscripts.dask.esm_parser.determine_computer_and_node_from_hostname")
+    @patch("esm_runscripts.dask_cluster.ini_dask_cluster")
+    @patch("esm_runscripts.dask_cluster.esm_parser.determine_computer_and_node_from_hostname")
     def test_calls_ini_on_compute_node(self, mock_hostname, mock_ini):
         mock_hostname.return_value = ("levante", "compute")
         config = {
@@ -287,9 +287,9 @@ class TestIniDaskCluster(unittest.TestCase):
             },
         }
 
-    @patch("esm_runscripts.dask.subprocess.Popen")
-    @patch("esm_runscripts.dask.wait_for_dask_status")
-    @patch("esm_runscripts.dask.get_dask_cluster_status")
+    @patch("esm_runscripts.dask_cluster.subprocess.Popen")
+    @patch("esm_runscripts.dask_cluster.wait_for_dask_status")
+    @patch("esm_runscripts.dask_cluster.get_dask_cluster_status")
     def test_starts_scheduler_and_workers(self, mock_status, mock_wait, mock_popen):
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._make_config(tmp_dir)
@@ -302,8 +302,8 @@ class TestIniDaskCluster(unittest.TestCase):
             self.assertIs(result, config)
             self.assertEqual(mock_popen.call_count, 2)
 
-    @patch("esm_runscripts.dask.subprocess.Popen")
-    @patch("esm_runscripts.dask.get_dask_cluster_status")
+    @patch("esm_runscripts.dask_cluster.subprocess.Popen")
+    @patch("esm_runscripts.dask_cluster.get_dask_cluster_status")
     def test_skips_when_already_running(self, mock_status, mock_popen):
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._make_config(tmp_dir)
@@ -312,9 +312,9 @@ class TestIniDaskCluster(unittest.TestCase):
             self.assertIs(result, config)
             mock_popen.assert_not_called()
 
-    @patch("esm_runscripts.dask.subprocess.Popen")
-    @patch("esm_runscripts.dask.wait_for_dask_status")
-    @patch("esm_runscripts.dask.get_dask_cluster_status")
+    @patch("esm_runscripts.dask_cluster.subprocess.Popen")
+    @patch("esm_runscripts.dask_cluster.wait_for_dask_status")
+    @patch("esm_runscripts.dask_cluster.get_dask_cluster_status")
     def test_substitutes_nodes_placeholder(self, mock_status, mock_wait, mock_popen):
         with tempfile.TemporaryDirectory() as tmp_dir:
             config = self._make_config(tmp_dir)

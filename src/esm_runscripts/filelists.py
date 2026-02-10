@@ -18,7 +18,7 @@ import esm_parser
 from esm_tools import user_error, user_note
 
 from . import helpers, jinja
-from .dask import get_dask_cluster_status, wait_for_dask_status, DaskStatus
+from .dask_cluster import get_dask_cluster_status, wait_for_dask_status, DaskStatus
 
 
 def rename_sources_to_targets(config):

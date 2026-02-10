@@ -1053,7 +1053,17 @@ def copy_files(config, filetypes, source, target):
     """
     This function has a misleading name. It is not only used for copying, but also
     for moving or linking, depending on what was specified for the particular file
-    or file type vie the ``file_movements``.
+    or file type via the ``file_movements``.
+
+    File movements can be executed sequentially or in parallel depending on the
+    ``config["general"]["parallel_file_movements"]`` setting:
+
+    - ``False`` (default): sequential execution.
+    - ``"threads"``: parallel via a thread pool (cores_per_node threads).
+    - ``"dask"``: parallel via a dask distributed cluster (falls back to
+      threads if the cluster is not available or on login nodes).
+
+    When parallel execution fails for a file, it is retried sequentially.
 
     Note: when the ``target`` is ``thisrun`` (intermediate folders) check whether the
     type of file is included in ``intermediate_movements``. If it's not, instead of
@@ -1074,9 +1084,9 @@ def copy_files(config, filetypes, source, target):
     Parameters
     ----------
     config : dict
-        The general configuration
+        The general configuration.
     filetypes : list
-        List of file types to be copied/linked/moved
+        List of file types to be copied/linked/moved.
     source : str
         Specifies the source type, to be chosen between ``init``, ``thisrun``,
         ``work``.

@@ -11,7 +11,30 @@ from enum import IntEnum
 import dask.distributed as daskd
 
 def wait_for_dask_status(dask_scheduler_json, target_status, timeout, poll_interval, description):
-    """Poll get_dask_cluster_status until status >= target_status or timeout."""
+    """
+    Poll ``get_dask_cluster_status`` until the cluster reaches
+    ``target_status`` or the ``timeout`` expires.
+
+    Parameters
+    ----------
+    dask_scheduler_json : str
+        Path to the dask scheduler JSON file.
+    target_status : DaskStatus
+        Minimum status level to wait for.
+    timeout : float
+        Maximum seconds to wait before giving up.
+    poll_interval : float
+        Seconds between status checks.
+    description : str
+        Label used in log messages (e.g. ``"Dask scheduler startup"``).
+
+    Returns
+    -------
+    status : DaskStatus
+        The last observed cluster status.
+    n_workers : int
+        Number of workers connected at the time of the last check.
+    """
     elapsed = 0
     status, n_workers = get_dask_cluster_status(dask_scheduler_json)
     while status < target_status and elapsed < timeout:
@@ -26,6 +49,12 @@ def wait_for_dask_status(dask_scheduler_json, target_status, timeout, poll_inter
 
 
 class DaskStatus(IntEnum):
+    """
+    Status levels for a dask cluster, ordered by readiness.
+
+    The integer ordering allows comparison: a cluster with status >= RUNNING
+    is ready to accept work.
+    """
     MISSING_JSON = 0
     SCHEDULER_ERROR = 1
     WORKERS_ERROR = 2
@@ -34,6 +63,23 @@ class DaskStatus(IntEnum):
     TESTED = 5
 
 def initialize_dask_cluster(config):
+    """
+    Entry point for dask cluster initialization.
+
+    Starts a dask scheduler and workers as background processes when dask is
+    enabled in the config and the current node is a compute node. Does nothing
+    on login nodes or when dask is not configured.
+
+    Parameters
+    ----------
+    config : dict
+        The simulation configuration dictionary (read-only).
+
+    Returns
+    -------
+    config : dict
+        The unchanged simulation configuration.
+    """
     _, node = esm_parser.determine_computer_and_node_from_hostname()
     if not uses_dask(config) or node == "login_nodes":
         return config
@@ -43,6 +89,20 @@ def initialize_dask_cluster(config):
     return config
 
 def uses_dask(config):
+    """
+    Check whether any action in ``config["dask"]["actions"]`` is set to
+    ``"dask"`` in the general configuration.
+
+    Parameters
+    ----------
+    config : dict
+        The simulation configuration dictionary.
+
+    Returns
+    -------
+    bool
+        ``True`` if at least one action uses dask.
+    """
     dask_config = config.get("dask", {})
     active_dask_actions = []
     for action in dask_config.get("actions", []):
@@ -51,9 +111,34 @@ def uses_dask(config):
     return len(active_dask_actions) > 0
 
 def test_dask():
+    """Trivial function submitted to the cluster to verify workers are responsive."""
     return True
 
 def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False):
+    """
+    Probe the health of a dask cluster by reading its scheduler JSON,
+    connecting to the scheduler, and optionally submitting a test task.
+
+    This function is called repeatedly during polling loops, so it logs
+    only at trace level.
+
+    Parameters
+    ----------
+    dask_scheduler_json : str
+        Path to the dask scheduler JSON file containing the TCP address.
+    client_timeout : float, optional
+        Timeout in seconds for connecting to the scheduler (default 0.01).
+    test : bool, optional
+        If ``True``, submit a test task to verify the cluster can execute
+        work (default ``False``).
+
+    Returns
+    -------
+    status : DaskStatus
+        The current cluster status.
+    n_workers : int
+        Number of workers connected to the scheduler.
+    """
     n_workers = 0
     # Read tcp address from dask_scheduler_json
     if os.path.isfile(dask_scheduler_json):
@@ -97,7 +182,24 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False
         return (DaskStatus.RUNNING, n_workers)
 
 def ini_dask_cluster(config):
+    """
+    Start a dask scheduler and workers as background processes.
 
+    If a scheduler is already running and has workers, the function returns
+    early. Otherwise it launches the scheduler command, waits for it to
+    become reachable, then launches the workers command. Commands and
+    timeouts are read from ``config["dask"]``.
+
+    Parameters
+    ----------
+    config : dict
+        The simulation configuration dictionary (read-only).
+
+    Returns
+    -------
+    config : dict
+        The unchanged simulation configuration.
+    """
     # Load parameters
     dask_config = config.get("dask", {})
     dask_scheduler_json = dask_config["scheduler_json"]

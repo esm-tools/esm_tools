@@ -354,6 +354,23 @@ class batch_system:
 
     @staticmethod
     def get_post_run_commands(config):
+        """
+        Collect ``post_run_commands`` from all components in the config.
+
+        Each component may define ``post_run_commands`` as a string or a list
+        of strings. These are shell commands appended to the job script after
+        each subjob finishes.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        extras : list of str
+            Collected shell commands from all components.
+        """
         extras = []
 
         # Search for ``post_run_commands``s in the components

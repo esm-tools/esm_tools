@@ -9,6 +9,7 @@ general:
     profile: False
     pre_recipe:
         exclude_job_types:
+            - "prepare"
             - "observe"
         steps:
             - "initialize_dask_cluster"

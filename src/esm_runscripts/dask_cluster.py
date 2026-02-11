@@ -285,8 +285,11 @@ def ini_dask_cluster(config):
             description="Dask scheduler startup",
         )
 
-    elif dask_status > DaskStatus.NO_WORKERS and n_workers > 0:
-        logger.debug("Skipping initialization of new dask scheduler.")
+    elif dask_status > DaskStatus.WORKERS_ERROR:
+        logger.debug(
+            "Skipping initialization of new dask scheduler and workers since an active "
+            f"cluster is already running (status: {n_workers} workers running)"
+        )
         return config
 
     # Start the dask workers

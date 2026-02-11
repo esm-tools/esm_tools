@@ -124,7 +124,6 @@ oifs:
                         LECURR: true
 
 
-    cmip7_data_dir_nml: ${input_dir}/cmip7-data
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data
 

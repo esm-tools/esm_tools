@@ -60,7 +60,6 @@ oifs:
     cmip7_data_dir: ${input_dir}/../cmip7_data
     cmip5_data_dir_nml: ${cmip5_data_dir}
     cmip6_data_dir_nml: ${cmip6_data_dir}
-    cmip7_data_dir_nml: ${cmip7_data_dir}
     restart_dir: ""
     in_date_folder: "${parent_date!syear!smonth!sday}"
     out_date_folder: "${end_date!syear!smonth!sday}"

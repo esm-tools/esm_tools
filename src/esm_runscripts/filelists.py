@@ -1117,6 +1117,7 @@ def copy_files(config, filetypes, source, target):
         # Dask should only run on compute nodes
         if parallel_file_movements == "dask" and node != "login_nodes":
             dask_config = config.get("dask", {})
+            client_timeout = dask_config.get("client_timeout", 0.01)
             timeout = dask_config.get("workers_timeout", 5)
             poll_interval = dask_config.get("poll_interval", 0.5)
             dask_cluster_status, n_workers = wait_for_dask_status(
@@ -1125,6 +1126,7 @@ def copy_files(config, filetypes, source, target):
                 timeout=timeout,
                 poll_interval=poll_interval,
                 description="Waiting for dask cluster to be running",
+                client_timeout=client_timeout,
             )
             if n_workers > 0 and dask_cluster_status >= DaskStatus.RUNNING:
                 logger.info(

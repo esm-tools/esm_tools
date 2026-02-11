@@ -10,7 +10,14 @@ from enum import IntEnum
 
 import dask.distributed as daskd
 
-def wait_for_dask_status(dask_scheduler_json, target_status, timeout, poll_interval, description):
+def wait_for_dask_status(
+    dask_scheduler_json,
+    target_status,
+    timeout,
+    poll_interval,
+    description,
+    client_timeout=0.01,
+):
     """
     Poll ``get_dask_cluster_status`` until the cluster reaches
     ``target_status`` or the ``timeout`` expires.
@@ -36,11 +43,15 @@ def wait_for_dask_status(dask_scheduler_json, target_status, timeout, poll_inter
         Number of workers connected at the time of the last check.
     """
     elapsed = 0
-    status, n_workers = get_dask_cluster_status(dask_scheduler_json)
+    status, n_workers = get_dask_cluster_status(
+        dask_scheduler_json, client_timeout=client_timeout
+    )
     while status < target_status and elapsed < timeout:
         time.sleep(poll_interval)
         elapsed += poll_interval
-        status, n_workers = get_dask_cluster_status(dask_scheduler_json)
+        status, n_workers = get_dask_cluster_status(
+            dask_scheduler_json, client_timeout=client_timeout
+        )
     if status >= target_status:
         logger.debug(f"{description} succeeded after {elapsed:.1f}s")
     else:
@@ -205,7 +216,8 @@ def shutdown_dask_cluster(config):
     if not dask_scheduler_json:
         return config
 
-    status, _ = get_dask_cluster_status(dask_scheduler_json)
+    client_timeout = dask_config.get("client_timeout", 0.01)
+    status, _ = get_dask_cluster_status(dask_scheduler_json, client_timeout=client_timeout)
     if status < DaskStatus.NO_WORKERS:
         logger.debug("No dask cluster to shut down.")
         return config
@@ -260,12 +272,17 @@ def ini_dask_cluster(config):
     for param, value in placeholders:
         init_workers_cmd = init_workers_cmd.replace(param, str(value))
 
+    client_timeout = dask_config.get("client_timeout", 0.01)
     scheduler_timeout = dask_config.get("scheduler_timeout", 5)
-    workers_timeout = dask_config.get("workers_timeout", 5)
+    workers_timeout = dask_config.get(
+        "workers_timeout", dask_config.get("workers_timeout", 5)
+    )
     poll_interval = dask_config.get("poll_interval", 0.5)
 
     # Check whether there is already a dask scheduler started
-    dask_status, n_workers = get_dask_cluster_status(dask_scheduler_json)
+    dask_status, n_workers = get_dask_cluster_status(
+        dask_scheduler_json, client_timeout=client_timeout
+    )
 
     # Run init_scheduler_cmd with subprocess and print output into a log file
     if dask_status <= DaskStatus.SCHEDULER_ERROR:
@@ -283,6 +300,7 @@ def ini_dask_cluster(config):
             timeout=scheduler_timeout,
             poll_interval=poll_interval,
             description="Dask scheduler startup",
+            client_timeout=client_timeout,
         )
 
     elif dask_status > DaskStatus.WORKERS_ERROR:
@@ -300,7 +318,9 @@ def ini_dask_cluster(config):
         preexec_fn=os.setpgrp,
     )
 
-    dask_status, n_workers = get_dask_cluster_status(dask_scheduler_json)
+    dask_status, n_workers = get_dask_cluster_status(
+        dask_scheduler_json, client_timeout=client_timeout
+    )
 
     logger.info(f"Dask cluster status: {dask_status.name}, number of workers: {n_workers}")
     return config

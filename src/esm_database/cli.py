@@ -10,7 +10,6 @@ import os
 import sys
 
 # Import from 3rd Party packages
-import coloredlogs
 
 from .esm_database import *
 

@@ -587,8 +587,6 @@ fesom:
             bin: "${bin_dir}/${comp_executable}"
             lib: "${fesom.model_dir}/build/lib/libfesom.so"
 
-
-
     config_files:
             config:  config
             cvmix:   cvmix
@@ -716,6 +714,7 @@ fesom:
     further_reading:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

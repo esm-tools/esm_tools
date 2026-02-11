@@ -1,4 +1,5 @@
 oifs:
+    cmip7_data_dir: ${input_dir}/cmip7-data
     choose_mip:
         "cmip5":
             add_namelist_changes:

@@ -57,7 +57,6 @@ oifs:
     namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
     cmip5_data_dir: ${input_dir}/../cmip5_data
     cmip6_data_dir: ${input_dir}/../cmip6_data
-    cmip7_data_dir: ${input_dir}/../cmip7_data
     cmip5_data_dir_nml: ${cmip5_data_dir}
     cmip6_data_dir_nml: ${cmip6_data_dir}
     restart_dir: ""
@@ -1138,6 +1137,7 @@ oifs:
                                     NAMPPC:
                                             LRSACC: ".true." # reset accumulation of fluxes
                     further_reading:
+                            - oifs/oifs48.tuning.yaml
                             - oifs/oifs48.env.yaml
                             - oifs/oifs48.cmip.yaml
 

@@ -6,7 +6,7 @@ import questionary
 import yaml
 from loguru import logger
 
-import esm_parser
+from esm_parser import get_components, choose_blocks
 import esm_utilities
 from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
@@ -116,7 +116,7 @@ def check_model_lresume(config):
 
 
 def resolve_some_choose_blocks(config):
-    esm_parser.choose_blocks(config, blackdict=config._blackdict)
+    choose_blocks(config, blackdict=config._blackdict)
     return config
 
 
@@ -399,7 +399,7 @@ def _add_all_folders(config):
 
     config["general"]["all_model_filetypes"] = all_model_filetypes
 
-    for model in config["general"]["valid_model_names"] + ["dask"]:
+    for model in get_components(config):
         for filetype in all_model_filetypes:
             if "restart" in filetype:
                 filedir = "restart"

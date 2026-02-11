@@ -145,7 +145,7 @@ computer:
     overcommit_flag: "${overcommit_rule}"
 
     nnodes_envvar: "SLURM_JOB_NUM_NODES"
-    nnodes: !ENV ${SLURM_JOB_NUM_NODES}
+    nnodes: "$(( os.getenv('SLURM_JOB_NUM_NODES', 1) ))"
 
 dask:
     ntasks: "$(( ${computer.nnodes} * ${computer.partition_cpn} / 4 ))"

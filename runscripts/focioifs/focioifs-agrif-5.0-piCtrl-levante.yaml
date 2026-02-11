@@ -1,3 +1,7 @@
+# 
+# Runscript to run FOCI-OpenIFS with NWPAC10
+# on glogin
+#
 general:
    check_error:
       "BFD: Dwarf Error":
@@ -11,8 +15,7 @@ general:
    userdir: !ENV ${USER}
    
    setup_name: "focioifs"      
-   resolution: "TCO319_eORCA05"
-   version: "5.0"
+   version: "agrif-5.0"
   
    # test settings: daily restarts for two days
    #compute_time: "00:30:00"
@@ -21,20 +24,20 @@ general:
    #nmonth: 0
    #nday: 1
    # monthly restarts for 6 months 
-   compute_time: "08:00:00"
+   compute_time: "00:01:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1955-01-01T00:00:00"      #1955-01-01T00:00:00   # Final date of the experiment
-   nmonth: 0
+   final_date: "1950-07-01T00:00:00"         # Final date of the experiment
+   nmonth: 1
    nday: 0
    
-   nyear: 1
+   nyear: 0
    hours: 0
    account: bb1460
    base_dir: /work/bb1460/${general.userdir}/esm-experiments
 
    # This activates post processing for OpenIFS and NEMO
    postprocessing: True
-   
+  
    lresume: False
    # Name of the run you are starting from
    ini_parent_exp_id: "foci3-test12"
@@ -50,13 +53,13 @@ general:
    oasis_date_stamp: "_19400101-19491231"
    # Previous run config file
    # (should be general enough)
-   # prev_run_config_file: ""
+   prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
 
 focioifs:
-   model_dir: /work/bb1460/${general.userdir}/models/focioifs-5.0/
-   
+   model_dir: /work/bb1460/${general.userdir}/models/focioifs-agrif-5.0/
+  
 oifs:
-   
+   with_nest1: true 
    # if you change name=OIFS in file_def*xml you currently have to adjust 
    # it here as well.
    # need to discuss this with Joakim and/or Jan Streffing from AWI
@@ -74,8 +77,6 @@ oifs:
       oifsnc2: OIFS_*_${start_date!syear}*.nc
    add_outdata_sources:
       oifsnc2: OIFS_*_${start_date!syear}*.nc
-   #outdata_sources:
-   #  oifsnc: OIFS_*_${start_date!syear}*.nc
 
    post_run_commands: "sync"
    lresume: ${general.lresume}
@@ -103,8 +104,9 @@ oifs:
    cmip5_data_dir: "${pool_dir}/openifs_cy48_general/cmip5_ghg/"
    cmip6_data_dir: "${pool_dir}/openifs_cy48_general/cmip6-data/"
    icmcl_dir: "${pool_dir}/openifs_cy48_tco319/${prepifs_startdate}00/"
-   icmcl_file: "ICMCLabooINIT"
+   icmcl_file: "ICMCL${prepifs_expid}INIT"
    # This would use initial conditions from ERA-Interim 2008-01-01
+   # prepifs_expid: ac0x
    prepifs_expid: aboo
    prepifs_startdate: 19900101
    
@@ -114,7 +116,10 @@ oifs:
    
    resolution: TCO319
    levels: L137
-   nproc: 948
+   # L137 was thought to reduce the cloud bias
+   # Jan Streffing proved that more levels don't help
+   # levels: L91
+   nproc: 192
    omp_num_threads: 1
    solarspectrum: True 
    ini_pseudo_initial_date: "1859-01-01"
@@ -136,7 +141,7 @@ oasis3mct:
    # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git
    # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05.git
    lresume: True
-   pool_dir: "/work/bb1460/foci_input2/create_oasis_files_focioifs_eORCA025_L120_OpenIFS319_L137_OpenIFS48/"
+   pool_dir: "/work/bb1460/foci_input2/create_oasis_files_focioifs_eORCA025_L120_OpenIFS319_L137_OpenIFS48_test/"
    # This would be for a cold start (SST = 0C,etc)
    ini_parent_dir: "${pool_dir}" 
    # for a real restart you would use
@@ -148,25 +153,25 @@ oasis3mct:
    use_lucia: False
    #export_mode: EXPOUT
    #standard debug_level = 1, 20 for debugging
-   debug_level: 1
+   debug_level: 1 
    mct_version: "5.0"
    # in FOCIOIFS all oasis input files are treated as restarts.
    # in FOCI all remapping files are handled as inputs. Both approaches work.
    #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
    #oasis_date_stamp: "${general.oasis_date_stamp}"
    #oasis_date_stamp: "" 
-   
+      
 nemo:
-   # DONE: 
-   # cd /home/b/b383098/_work/foci_input2
-   # git clone https://git.geomar.de/foci/foci_input2/nemo4_orca05.git 
-   # git clone https://git.geomar.de/foci/foci_input2/nemo4_eorca05.git
+   time_step: 1200
+   generation: "5.0"
+   nest1: eINALT20
    lresume: ${general.lresume}
    #ini_parent_exp_id: "${general.ini_parent_exp_id}"
    #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
    #ini_parent_date: "${prev_date}"
    #input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
-   input_dir: "/work/bb1460/foci_input2/nemo5_eorca025/"
+   pool_dir: "/work/bb1460/foci_input2" 
+   input_dir: "${pool_dir}/nemo5_eorca025/"
    resolution: "eORCA025"
    #version: "eORCA05_Z75_SI3_COUPLED" 
    # 64x51 = 3264 
@@ -180,8 +185,7 @@ nemo:
    jpnj: 0
    #nproca: ${nemo.jpni}
    #nprocb: ${nemo.jpnj}
-   nproc: 1943
-   time_step: 900
+   nproc: 3663
    add_namelist_changes:
        namelist_cfg:
           namctl:
@@ -193,16 +197,17 @@ nemo:
    
 rnfmap:
    nproc: 1
+   with_agrif: true 
 
 xios: 
    with_model: focioifs 
    version: 3.0_trunk
-   #xml_dir: "${model_dir}/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/" # results in /work/bb1460/$USER/models/focioifs-5.0/xios-eORCA_SI3_COUPLED_NEMO5/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00 WHY?
-   xml_dir: "/work/bb1460/${general.userdir}/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/"
+   xml_dir: "/work/bb1460/b350071/models/focioifs-agrif-5.0/nemo-eORCA_SI3_AGRIF_COUPLED_NEMO5/cfgs/eORCA_SI3_AGRIF_COUPLED_NEMO5/EXP00" 
    nproc: 180
    omp_num_threads: 1
-
+   
 computer:
+   taskset: true
    #additional_flags: '--qos=preempt'
    launcher: srun 
    launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic" 

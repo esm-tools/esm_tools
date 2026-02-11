@@ -14,7 +14,6 @@ lpj_guess:
     co2_workname_cmip6: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
     co2_workname_cmip7: co2_input4MIPs_GHGConcentrations_CMIP_CR-CMIP-1-0-0_gm_1750-2022.nc
 
-    luh3_input_dir: ${lpj_guess.input_dir}/land_use/regridded/
     choose_mip:
         "cmip6":
             co2_source_file: ${co2_file_cmip6}
@@ -29,6 +28,7 @@ lpj_guess:
             ndep_cmip_dir: "../ndep/"
 
             use_luh3_input: 1  # CMIP7 uses LUH3 NetCDF files
+            luh3_input_dir: ${lpj_guess.input_dir}/land_use/regridded/
             use_luh3_yearly_transitions: 0
             file_luh3_transitions_dir: "${lpj_guess.input_dir}/land_use/transitions_yearly"
             file_luh3_transitions: "${lpj_guess.input_dir}/land_use/regridded/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2023_${lpj_guess.mygrid}.nc"

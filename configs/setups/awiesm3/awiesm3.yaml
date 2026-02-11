@@ -298,6 +298,7 @@ fesom:
 
     restart_unit: "d"
     leapyear: true
+    tar_binary_restarts: false
 
     mesh_dir: "${pool_dir}/$(( '${resolution}'.lower() ))/"
 

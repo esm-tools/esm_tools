@@ -386,6 +386,7 @@ fesom:
 
         restart_unit: "d"
         leapyear: True
+        tar_binary_restarts: false
 
 
         # Move in the future to fesom-2.0.yaml

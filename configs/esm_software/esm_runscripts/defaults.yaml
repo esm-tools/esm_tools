@@ -10,6 +10,7 @@ general:
     pre_recipe:
         exclude_job_types:
             - "prepare"
+            - "prepexp"
             - "observe"
         steps:
             - "initialize_dask_cluster"

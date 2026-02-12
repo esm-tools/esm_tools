@@ -10,6 +10,9 @@ lpj_guess:
     model: lpj_guess
     version: 4.1.2
 
+    required_plugins:
+        - "git+https://github.com/JanStreffing/lpjg2nc2"
+
     further_reading:
         - lpj_guess/lpj_guess.cmip.yaml
 
@@ -88,32 +91,79 @@ lpj_guess:
     # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
     ndep_input_dir: ${input_dir}/ndep/${resolution}/
 
-    # Define files to ignore
-    ignore_files:
-        outputs: outputs
-        log: log
-    ignore_in_work:
-        # Ignore output files with the same name
-        outputs: "output/*.out"
-        # Ignore log files
-        log: "*.log"
-        # Ignore input directories (created during setup)
-        ndep_dir: "ndep"
-        landuse_dir: "landuse"
-    ignore_sources:
-        outputs: "output/*.out"
-        log: "*.log"
+    # Output mode: 
+    # esm_tools_copy: slow but reliable, many files
+    # collect_txt: combile into one run1 folder for ec2cmor2 few files, fast
+    # convert_netcdf (future)
+    output_mode: collect_txt
+    choose_output_mode:
+        esm_tools_copy:
+            # Define files to ignore
+            ignore_files:
+                outputs: outputs
+                log: log
+            ignore_in_work:
+                # Ignore output files with the same name
+                outputs: "output/*.out"
+                # Ignore log files
+                log: "*.log"
+                # Ignore input directories (created during setup)
+                ndep_dir: "ndep"
+                landuse_dir: "landuse"
+            ignore_sources:
+                outputs: "output/*.out"
+                log: "*.log"
 
-    # Output data - enumerate over all run directories to preserve structure
-    # Uses proc_list enumeration (defined above via nproc)
-    outdata_files:
-        "lpjg_run_[[proc_list-->PROC_NUM]]": "lpjg_run_PROC_NUM"
+            # Output data - enumerate over all run directories to preserve structure
+            # Uses proc_list enumeration (defined above via nproc)
+            outdata_files:
+                "lpjg_run_[[proc_list-->PROC_NUM]]": "lpjg_run_PROC_NUM"
+            outdata_in_work:
+                "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/output/*.out"
+            outdata_sources:
+                "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/*"
 
-    outdata_in_work:
-        "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/output/*.out"
+        collect_txt:
+            # In collect_txt mode, esm_tools does NOT copy output files.
+            # Instead, a separate slurm job combines runX/output/*.out into
+            # single .out files per pattern (for ec2cmor2 preprocessing).
+            combine_njobs: 8
 
-    outdata_sources:
-        "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/*"
+            ignore_files:
+                outputs: outputs
+                log: log
+            ignore_in_work:
+                outputs: "output/*.out"
+                log: "*.log"
+                ndep_dir: "ndep"
+                landuse_dir: "landuse"
+            ignore_sources:
+                outputs: "output/*.out"
+                log: "*.log"
+
+            outdata_files: {}
+            outdata_in_work: {}
+            outdata_sources: {}
+
+            scripts_files:
+                combine1: combine1
+            scripts_sources:
+                combine1: "${esm_function_dir}/components/lpj_guess/subjob_combine.sh"
+            scripts_targets:
+                combine1: "${general.experiment_scripts_dir}/${model}/subjob_combine.sh"
+
+            workflow:
+                next_run_triggered_by: tidy
+                subjobs:
+                    Combine_LPJG:
+                        batch_or_shell: batch
+                        order_in_cluster: concurrent
+                        run_on_queue: ${computer.partitions.pp.name}
+                        run_after: tidy
+                        script_dir: ${base_dir}/${expid}/scripts/lpj_guess
+                        submit_to_batch_system: true
+                        script: "subjob_combine.sh ${general.thisrun_dir}/work ${lpj_guess.experiment_outdata_dir} ${general.run_datestamp} ${lpj_guess.combine_njobs}"
+                        nproc: 1
 
     namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
     gridlist_dir: ${input_dir}/gridlists/

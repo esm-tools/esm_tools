@@ -105,6 +105,8 @@ oifs:
     ocean_resolution: "${fesom.resolution}"
 
     scenario: "historical"
+    mip: "cmip7"
+    cmip7_cmor_output: ""
 
     input_expid: awi3 # This cannot be longer than 4 characters
     input_dir: ${pool_dir}/oifs-${version}
@@ -121,7 +123,6 @@ oifs:
                 --build-type=${build_type} --install; chmod -R ${source_code_permissions} .; 
                 git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
-            mip: "cmip7"
             wam: true
             add_add_namelist_changes:
                 fort.4:
@@ -531,12 +532,27 @@ xios:
     xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
     interpolation_order: 1
     compression_level: 1
-    regular_res_lat: 192
-    regular_res_lon: 400
-    config_sources:
-        context_ifs: ${xml_dir}/context_ifs.xml.j2
-        domain_def: ${xml_dir}/domain_def.xml.j2
-        file_def: ${xml_dir}/file_def.xml.j2
+    truncation: "${oifs.truncation}"
+    choose_truncation:
+        TCO:
+            regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"     #For TCO95->192
+            regular_res_lon: "$(( (${oifs.res_number})*4+20 ))"    #For TCO95->400
+        TL:
+            regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"
+            regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"
+    cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
+    choose_cmip7_cmor_output:
+        "cmip7_spinup":
+            config_sources:
+                context_ifs: ${xml_dir}/context_ifs.xml.j2
+                domain_def: ${xml_dir}/domain_def.xml.j2
+                file_def: ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
+                field_def: ${xml_dir}/field_def_cmip7.xml
+        "*":
+            config_sources:
+                context_ifs: ${xml_dir}/context_ifs.xml.j2
+                domain_def: ${xml_dir}/domain_def.xml.j2
+                file_def: ${xml_dir}/file_def.xml.j2
     add_config_files:
         context_ifs: context_ifs
         ifs_xml: ifs_xml

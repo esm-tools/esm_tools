@@ -39,7 +39,10 @@ blogin:
 
 glogin:
         login_nodes: 'glogin[1-9]'
-        compute_nodes: 'g[A-Za-z0-9]+'
+        compute_nodes: 
+         - 'g[A-Za-z0-9]+'          # phase2 nodes
+         - '^c[0-9][0-9][0-9][0-9]' # phase3 nodes
+        #compute_nodes: 'g[A-Za-z0-9]+'
         #compute_nodes: '^g[A-Za-z0-9]+\.usr\.hlrn\.de$'
         #compute_nodes: '^c[0-9][0-9][0-9][0-9]'
         post_nodes: 'glogin[1-9]'

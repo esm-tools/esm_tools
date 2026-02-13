@@ -526,8 +526,14 @@ xios:
     xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
     interpolation_order: 1
     compression_level: 1
-    regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"     #192
-    regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"     #400
+    truncation: "${oifs.truncation}"
+    choose_truncation:
+        TCO:
+            regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"     #For TCO95->192
+            regular_res_lon: "$(( (${oifs.res_number})*4+20 ))"    #For TCO95->400
+        TL:
+            regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"
+            regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"
     cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
     choose_cmip7_cmor_output:
         "cmip7_spinup":

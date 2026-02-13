@@ -100,39 +100,58 @@ computer:
             CPU_MODEL: AMD_EPYC_ZEN3
             FESOM_PLATFORM_STRATEGY: levante.dkrz.de
 
-    # kh 07.03.22
-            I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
-            I_MPI_PMI: pmi2
-            FI_PROVIDER: mlx
-            I_MPI_OFI_PROVIDER: mlx
-            I_MPI_FABRICS: shm:ofi
+            # kh 07.03.22
+            #I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
+            #I_MPI_PMI: pmi2
+            #FI_PROVIDER: mlx
+            #I_MPI_OFI_PROVIDER: mlx
+            #I_MPI_FABRICS: shm:ofi
 
-    #       I_MPI_HYDRA_BOOTSTRAP: slurm
-    #       I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS: "--ntasks-per-node=1"
+            #I_MPI_HYDRA_BOOTSTRAP: slurm
+            #I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS: "--ntasks-per-node=1"
 
-    # kh 18.02.22 also see https://gitlab.dkrz.de/levante/early-access/-/wikis/home
-            HCOLL_ENABLE_MCAST_ALL: "1"
-            HCOLL_MAIN_IB: mlx5_0:1
-            UCX_IB_ADDR_TYPE: ib_global
-            UCX_NET_DEVICES: mlx5_0:1
-            UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
-            UCX_UNIFIED_MODE: y
+            # kh 18.02.22 also see https://gitlab.dkrz.de/levante/early-access/-/wikis/home
+            #HCOLL_ENABLE_MCAST_ALL: "1"
+            #HCOLL_MAIN_IB: mlx5_0:1
+            #UCX_IB_ADDR_TYPE: ib_global
+            #UCX_NET_DEVICES: mlx5_0:1
+            #UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
+            #UCX_UNIFIED_MODE: y
+    
+            # DKRZ recommends
+            # https://docs.dkrz.de/doc/levante/running-jobs/runtime-settings.html
+            #OMPI_MCA_osc: "ucx"
+            #OMPI_MCA_pml: "ucx"
+            #OMPI_MCA_btl: "self"
+            #UCX_HANDLE_ERRORS: "bt"
+            #OMPI_MCA_pml_ucx_opal_mem_hooks: 1
 
-    # kh 16.06.22 set appropriate pinning for OpenMP
+            # DKRZ: may improve things
+            #OMPI_MCA_io: "romio321"          # basic optimisation of I/O
+            #UCX_TLS: "shm,rc_mlx5,rc_x,self" # for jobs using LESS than 150 nodes
+            #UCX_TLS: "shm,dc_mlx5,dc_x,self" # for jobs using MORE than 150 nodes
+            #UCX_UNIFIED_MODE: "y"            # JUST for homogeneous jobs on CPUs, do not use for GPU nodes
+            
+            # set stack size
+            #ulimit -s unlimited is not necessarily a good choice on Levante...
+            # increase if you get Segmentation fault: address not mapped to object ... 
+            #ulimit -s 204800000
+
+            # kh 16.06.22 set appropriate pinning for OpenMP
             KMP_LIBRARY: turnaround
             KMP_AFFINITY: "granularity=fine,scatter"
 
 
     # Variables needed exclusively during run time
-    choose_general.execution_mode:
-        run:
-            add_export_vars:
-                OMPI_MCA_btl: self
-                OMPI_MCA_coll: "^ml"
-                OMPI_MCA_coll_hcoll_enable: "1"
-                OMPI_MCA_io: "romio321"
-                OMPI_MCA_osc: "pt2pt"
-                OMPI_MCA_pml: "ucx"
+    #choose_general.execution_mode:
+    #    run:
+    #        add_export_vars:
+    #            OMPI_MCA_btl: self
+    #            OMPI_MCA_coll: "^ml"
+    #            OMPI_MCA_coll_hcoll_enable: "1"
+    #            OMPI_MCA_io: "romio321"
+    #            OMPI_MCA_osc: "pt2pt"
+    #            OMPI_MCA_pml: "ucx"
 
     load_python: False
     choose_computer.load_python:
@@ -160,6 +179,20 @@ computer:
                             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
+                            # DKRZ recommends
+                            # https://docs.dkrz.de/doc/levante/running-jobs/runtime-settings.html
+                            OMPI_MCA_osc: "ucx"
+                            OMPI_MCA_pml: "ucx"
+                            OMPI_MCA_btl: "self"
+                            UCX_HANDLE_ERRORS: "bt"
+                            OMPI_MCA_pml_ucx_opal_mem_hooks: 1
+
+                            # DKRZ: may improve things
+                            OMPI_MCA_io: "romio321"          # basic optimisation of I/O
+                            UCX_TLS: "shm,rc_mlx5,rc_x,self" # for jobs using LESS than 150 nodes
+                            #UCX_TLS: "shm,dc_mlx5,dc_x,self" # for jobs using MORE than 150 nodes
+                            UCX_UNIFIED_MODE: "y"            # JUST for homogeneous jobs on CPUs, do not use for GPU nodes
+
            intel2022_impi2021:
                     python_version: "python3/2023.01-gcc-11.2.0"
                     # ESM-Tools vars necessary for ``system_libs`` case
@@ -180,6 +213,14 @@ computer:
                             CXX: mpiicpc
                             MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+                            # for small jobs. Not sure what is regarded as small
+                            I_MPI_PMI: pmi
+                            I_MPI_PMI_LIBRARY: /usr/lib64/libpmi.so
+
+                            # or for large jobs (I could not get this to work though)
+                            #I_MPI_PMI: pmi2
+                            #I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
 
            intel2022_openmpi:
                     python_version: "python3/2023.01-gcc-11.2.0"
@@ -202,6 +243,20 @@ computer:
                             CXX: mpicxx
                             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+                            # DKRZ recommends
+                            # https://docs.dkrz.de/doc/levante/running-jobs/runtime-settings.html
+                            OMPI_MCA_osc: "ucx"
+                            OMPI_MCA_pml: "ucx"
+                            OMPI_MCA_btl: "self"
+                            UCX_HANDLE_ERRORS: "bt"
+                            OMPI_MCA_pml_ucx_opal_mem_hooks: 1
+
+                            # DKRZ: may improve things
+                            OMPI_MCA_io: "romio321"          # basic optimisation of I/O
+                            UCX_TLS: "shm,rc_mlx5,rc_x,self" # for jobs using LESS than 150 nodes
+                            #UCX_TLS: "shm,dc_mlx5,dc_x,self" # for jobs using MORE than 150 nodes
+                            UCX_UNIFIED_MODE: "y"            # JUST for homogeneous jobs on CPUs, do not use for GPU nodes
 
     choose_iolibraries:
         awi_gnu_libs: #Copy paste from DE IFS env.sh
@@ -399,7 +454,7 @@ computer:
                 HDF5ROOT: /sw/spack-levante/hdf5-1.12.1-jmeuy3
                 HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
                 HDF5_ROOT: $HDF5ROOT
-                MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+                #MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                 NetCDF_C_ROOT: /sw/spack-levante/netcdf-c-4.8.1-7dq6g2
                 NetCDF_Fortran_ROOT: /sw/spack-levante/netcdf-fortran-4.5.3-r5r3ev
                 NETCDF_PATH: $NetCDF_C_ROOT
@@ -413,8 +468,11 @@ computer:
                 mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
                 MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
                 mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                LD_LIBRARY_PATH: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:$AEC_ROOT/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
-                LD_LIBRARY_PATH[(0)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+                LD_LIBRARY_PATH[(0)]: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:$AEC_ROOT/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
+                LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
 
         # Work done on self-compiled libraries by Jan Streffing, currently in progress and untested.
         awi_paleodyn_libs:

@@ -98,6 +98,7 @@ oifs:
 
     scenario: "historical"
     mip: "cmip7"
+    cmip7_cmor_output: ""
 
     input_expid: awi3 # This cannot be longer than 4 characters
     input_dir: ${pool_dir}/oifs-${version}
@@ -523,16 +524,15 @@ xios:
     xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
     interpolation_order: 1
     compression_level: 1
-    regular_res_lat: 192
-    regular_res_lon: 400
-    mip: "${oifs.mip}"
-    scen: "${oifs.scenario}"
-    choose_mip:
-        "cmip7":
+    regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"     #192
+    regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"     #400
+    cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
+    choose_cmip7_cmor_output:
+        "cmip7_spinup":
             config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2
-                file_def: ${xml_dir}/file_def_oifs_cmip7_${scen}.xml.j2
+                file_def: ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
                 field_def: ${xml_dir}/field_def_cmip7.xml
         "*":
             config_sources:

@@ -68,6 +68,7 @@ general:
 
 
 lpj_guess:
+    version: "4.1.2"
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
     comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
         make -j8; cd .."                                                                                          #without debug.
@@ -81,10 +82,6 @@ lpj_guess:
     
     # Disable CMIP N-Dep file reading for spinup - use pre-industrial constant values instead
     ndep_cmip_dir: ""
-
-    choose_general.major_version:
-        "v3.4":
-            version: "4.1.2"
 
     nproc: 128
     proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'

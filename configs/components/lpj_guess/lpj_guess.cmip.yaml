@@ -5,8 +5,9 @@
 # Individual settings can still be overridden in the runscript.
 
 lpj_guess:
-    # Default MIP version
-    mip: "cmip6"
+    # Default MIP version and scenario
+    mip: "cmip7"
+    scenario: piControl
 
     # CO2 forcing file paths
     co2_file_cmip6: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
@@ -42,3 +43,9 @@ lpj_guess:
             run_urban: 1
             run_peatland: 1  # Disabled for now.
             firemodel: BLAZE
+
+    choose_scenario:
+        "piControl":
+            fixed_CO2: 1850
+            fixed_ndep: 1850
+            fixed_LU: 1850

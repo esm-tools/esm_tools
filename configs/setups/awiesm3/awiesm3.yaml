@@ -18,10 +18,22 @@ general:
         - oasis3mct
 
     available_versions:
+        - 'v3.4.0'
         - 'develop'
         - 'develop-cc'
 
     choose_version:
+        v3.4.0:
+            major_version: v3.4
+            couplings:
+                - awiesm3_v3.4.0
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
         develop:
             major_version: v3.4
             couplings:
@@ -83,10 +95,6 @@ general:
 oifs:
     version: "48r1"
 
-    # added 05.03.2025
-    git-repository: 'https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1.git'
-    branch: 'main'
-    #
     add_prepcompute_recipe: ["oasis_rmp_rst_to_input"]
 
     pool_dir: ${general.pool_dir}
@@ -106,7 +114,6 @@ oifs:
 
     choose_general.major_version:
         "v3.4":
-            version: "48r1"
             with_xios: true
             build_type: 'release'
             comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
@@ -233,7 +240,7 @@ oifs:
 
 
 fesom:
-    version: "2.7-main"
+    version: "2.7"
     time_step: 1800
     resolution: CORE2
     lresume: false
@@ -310,13 +317,15 @@ fesom:
 
     choose_general.major_version:
         "v3.4":
-            version: "2.7"
             add_namelist_changes:
                 namelist.config:
                     geometry:
                         metric_factor_zero: True
                     ale_def:
                         which_ale: 'linfs'
+                    restart_log:
+                        raw_restart_length_unit: "off"
+                        bin_restart_length_unit: "off"
                 namelist.tra:
                     tracer_phys:
                         surf_relax_s: "0.0"
@@ -358,6 +367,7 @@ fesom:
 #       - fesom/fesom.io.yaml
 
 lpj_guess:
+    version: "4.1.2"
     build_type: Release # Available options: Debug, Release
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .."
     comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=${build_type}; make -j8; cd .."
@@ -422,11 +432,7 @@ lpj_guess:
             oyac_grid_type: "LL"
             oyac_io_per_node: 4
 
-    choose_general.major_version:
-        "v3.4":
-            version: "4.1.2"
 
-        #proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
     nproc: 128
     proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
     proc_list: $(( ${proc_list_entry} ))
@@ -578,6 +584,7 @@ rnfmap:
     input_files:
         runoff_maps: runoff_maps
 
+
 #########################################################################################
 
 # Settings for OASIS
@@ -670,7 +677,7 @@ oasis3mct:
             merge_recv_restarts:
                 - vegin.nc         # OpenIFS <-> lpjg bidirectional LOCTRANS
 
-            mct_version: 5.0
+            mct_version: "5.0"
             input_dir: ${oasis3mct.pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
             rstos_file_name: 'rstos'
             rstas_file_name: 'rstas'

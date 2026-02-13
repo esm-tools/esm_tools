@@ -1,0 +1,79 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "v3.4.0"
+    account: "bb1469"
+    compute_time: "00:30:00"
+    initial_date: "1850-01-01"
+    final_date: "1850-04-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 0
+    nmonth: 1
+    nyear: 0
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "DARS2"
+    namelist_dir: "${general.esm_namelist_dir}/fesom2/CMIP7_HR"
+    time_step: 360
+    nproc: 5120
+    omp_num_threads: 2
+    lresume: true
+    restart_rate: 1
+    restart_unit: 'm'
+    restart_first: 1
+    ini_parent_exp_id: "lpj_spinup_HR_2000y"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/ab0246/a270092/input/fesom2/restart/DARS2/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.1862.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.1862.ice.restart/*.nc
+
+lpj_guess:
+    resolution: "TCO319"
+    mip: cmip7
+    scenario: piControl
+    daily_output: False
+    nproc: 64
+    omp_num_threads: 4
+    lresume: true
+    ini_parent_exp_id: "lpj_spinup_HR_2000y"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/ab0246/a270092/input/lpj-guess/restart/TCO319-DARS2/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_3350/*
+            #restart_out_in_work:
+            #    state: /${work_dir}/lpjg_state_$(date -u -d "${initial_date}" +%Y)/*
+
+oifs:
+    resolution: "TCO319"
+    levels: "L137"
+    prepifs_expid: abns
+    input_expid: awi3
+    wam: true
+    time_step: 1200
+    nproc: 640
+    omp_num_threads: 4
+    mip: cmip7
+    scenario: 'piControl'
+    lresume: false
+
+oasis3mct:
+    use_lucia: true
+    lresume: true
+    time_step: 3600
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32

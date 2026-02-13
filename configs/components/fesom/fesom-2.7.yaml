@@ -25,8 +25,8 @@ fesom:
     choose_version:
       "2.7":
         branch: "2.7.0"
-        #namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
-        
+      "2.7.2":
+        branch: "2.7.2"
       "2.7-main":
         branch: "main"
         #namelist_dir: "${model_dir}/config/"

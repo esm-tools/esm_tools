@@ -343,8 +343,8 @@ oifs:
         requires:
         - oasis3mct-5.0-geomar
         - xios-2.5_r2777
-        branch: foci5
-        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --with-double-precision --install; chmod -R ${source_code_permissions} .; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
+        branch: dev/agrif-coupling 
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --with-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
         clean_command: rm -rf build install
         git-repository: https://git.geomar.de/foci/src/oifs48r1.git
         executable: OpenIFS
@@ -1154,8 +1154,8 @@ oifs:
                                     NAMRES:
                                             NFRRES: 1
                                             NRESTS:
-                                                   - -1
-                                                   - -${oifs.next_step}
+                                                   - 1
+                                                   - ${oifs.next_step}
                                     NAMPAR0:
                                             NPROC: ${oifs.nproc}
                                     NAMRIP:
@@ -1396,7 +1396,6 @@ oifs:
     # as general.run_number, but for branchoff experiments should be 0 so that the 3rd
     # preprocessing option is used, instead of the options 1 or 2.
     branchoff: false
-    ini_pseudo_initial_date: "${initial_date}" #${prev_run.general.start_date}"
     eternal_run_number: "$((
             0 if (${lresume} and ${general.run_number} == 1)
                 or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})
@@ -1415,6 +1414,8 @@ oifs:
     #
     # When we branch off from an existing experiment, we must set ini_pseudo_initial_date
     # in the runscript to inform ESM-Tools what initial_date it should trick OpenIFS it is.
+    # ini_pseudo_initial_date is set automatically to prev_run.general.start_date a few
+    # lines below, but can also be set manually from the runscript.
     # For example, a piControl may start from 1850 and run to 2850.
     # A historical run would then start from 2850 of the existing run, but we would set
     # start_date for the new run to be 1850 and also trick OpenIFS to think initial_date is 1849.
@@ -1426,6 +1427,7 @@ oifs:
     choose_eternal_run_number:
             0:
                     # If we are branching off from an existing run
+                    ini_pseudo_initial_date: "${prev_run.general.start_date}"
                     pseudo_initial_date: "${ini_pseudo_initial_date}"
                     start_ndays_source: "${prev_run.oifs.next_ndays}"
                     branchoff: true

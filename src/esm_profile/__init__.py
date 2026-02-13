@@ -2,6 +2,6 @@
 
 __author__ = """Dirk Barbi"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.59.0"
+__version__ = "6.60.4"
 
 from .esm_profile import *

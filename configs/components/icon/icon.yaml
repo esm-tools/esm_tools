@@ -32,7 +32,8 @@ icon:
    #- hdmodel
    #
    scenario: 'PI-CTRL'
-   
+   monitoring: False 
+
    compile_infos:
       choose_version:
          2.6.6-nwp: 
@@ -241,9 +242,10 @@ icon:
    #
    outdata_sources:
       # TODO: different file names, look at f90nml issue
-      # output_filename: ${expid}
+      # workaround build with pre_run_commands
       #icon_nc: ${expid}_*_${start_rsttime}.nc
-      icon_nc: icon_*_${start_rsttime}.nc
+      #icon_nc: icon_*_${start_rsttime}.nc
+      icon_nc: "*_${start_rsttime}.nc"
    #
    # restart settings, ICON uses multifile restarts
    #
@@ -463,6 +465,29 @@ icon:
       #stenchikov_sw:
          #- need_year_before
          #- need_year_after
+        # Postprocessing
+   monitoringscript: "run_qp_driver_r2b4_icon-esm-tools.sh"
+   choose_monitoring:
+      True:
+         workflow:
+            next_run_triggered_by: tidy
+            subjobs:
+               icon_monitoring:
+                  batch_or_shell: shell
+                  order_in_cluster: concurrent
+                  run_on_queue: ${computer.partitions.pp.name}
+                  run_after: tidy
+                  script_dir: ${computer.pool_directories.focipool}/ICON-FESOM/ICON/pyicon/tools
+                  submit_to_batch_system: True
+                  script: "
+                      ${icon.monitoringscript} 
+                      -r ${general.expid}
+                      -i ${initial_date!syear}
+                      -e ${end_date!syear}
+                      -p ${general.base_dir}
+                      "
+                      #-o ${computer.pool_directories.focipool}/OBS_MONITORING/T63/
+                  nproc: 1
 
 # This section takes care of dealing with environment changes you might want to do, to
 # deviated from the defaults define for the specific machine

@@ -1279,6 +1279,8 @@ def copy_files(config, filetypes, source, target):
                 result = movement_output.result()
             # If something goes wrong in the parallel execution, try again serially
             except Exception:
+                result = False
+            if result is False:
                 logger.debug(
                     f"Parallel movement of file {file_source} to {file_target} "
                     "failed. Trying again serially.",

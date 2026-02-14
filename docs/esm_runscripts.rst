@@ -365,8 +365,91 @@ As an example, to configure ``esm_runscripts`` for an echam-experiment to link t
 Both ways to set the entries are doing the same thing. It is possible, as in the ``input`` case, to set the file movement method independently for each of the
 directions; the setting ``all_directions`` is just a shortcut if the method is identical for all of them.
 
+Parallel File Movements
+-----------------------
+
+By default, ``esm_runscripts`` moves files (inputs, restarts, outputs, etc.)
+between experiment directories in parallel using `Dask <https://www.dask.org/>`_
+workers distributed across the compute nodes. This can significantly speed up
+the file-handling phases of a simulation, especially on large allocations.
+
+The mode is controlled by ``parallel_file_movements`` in the ``general`` section
+of your runscript. To use Dask workers across compute nodes (the default) use:
+
+.. code-block:: yaml
+
+   general:
+       parallel_file_movements: "dask"
+
+To use local threads instead (only 1 node with cores working in parallel):
+
+.. code-block:: yaml
+
+   general:
+       parallel_file_movements: "threads"
+
+To disable parallel file movements entirely (serial):
+
+.. code-block:: yaml
+
+   general:
+       parallel_file_movements: False
+
+Which mode should I use?
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Small runs (< 5 nodes)**: ``"threads"`` is usually sufficient and has no
+  setup overhead.
+* **Large runs (>= 5 nodes)**: ``"dask"`` distributes I/O across all nodes and
+  scales better. The small startup cost is offset by faster file transfers.
+* **Debugging or safety**: ``False`` runs everything serially.
+
+.. note::
+   When ``"dask"`` is selected but the Dask cluster is not available (e.g. on a
+   login node or if workers fail to start), ``esm_runscripts`` automatically
+   falls back to ``"threads"`` with a warning.
+
+Dask internals
+~~~~~~~~~~~~~~
+
+When ``parallel_file_movements`` is set to ``"dask"``, the following happens
+automatically:
+
+1. **Cluster startup** -- Before the main recipe begins, a Dask scheduler and
+   workers are launched via ``srun`` (SLURM) on the allocated nodes. The
+   scheduler writes a ``dask_scheduler.json`` file into the run's ``work``
+   directory.
+
+2. **Parallel I/O** -- During each file-movement phase, ``esm_runscripts``
+   connects to the Dask cluster and submits copy/link/move operations as
+   parallel tasks. If any single file transfer fails, it is retried serially
+   as a fallback.
+
+The cluster is configured through the ``dask`` section, which has sensible
+defaults but can be tuned in your runscript:
+
+.. list-table:: Dask configuration variables
+   :header-rows: 1
+   :widths: 30 15 55
+
+   * - Variable
+     - Default
+     - Description
+   * - ``dask.client_timeout``
+     - ``0.05``
+     - Timeout (seconds) when probing the Dask scheduler status.
+   * - ``dask.workers_timeout``
+     - ``5``
+     - Max time (seconds) to wait for workers to become available.
+   * - ``dask.poll_interval``
+     - ``0.5``
+     - How often (seconds) to poll for cluster readiness.
+
+The Dask scheduler and worker launch commands are defined per batch system
+(e.g. in ``slurm.yaml``) and are not typically changed by users.
+
 Running an experiment with a virtual environment
------------------------------------------------
+------------------------------------------------
 
 Running jobs can optionally be encapsulated into a virtual environment.
 

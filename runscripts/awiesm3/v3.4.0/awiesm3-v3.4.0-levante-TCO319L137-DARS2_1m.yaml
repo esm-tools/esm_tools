@@ -13,6 +13,7 @@ general:
 
 computer:
     taskset: true
+    mail_type: "ALL"
 
 awiesm3:
     postprocessing: false
@@ -52,8 +53,6 @@ lpj_guess:
         1:
             restart_in_sources:
                 state: /${ini_restart_dir}/lpjg_state_3350/*
-            #restart_out_in_work:
-            #    state: /${work_dir}/lpjg_state_$(date -u -d "${initial_date}" +%Y)/*
 
 oifs:
     resolution: "TCO319"
@@ -66,6 +65,7 @@ oifs:
     omp_num_threads: 4
     mip: cmip7
     scenario: 'piControl'
+    cmip7_cmor_output: cmip7_spinup
     lresume: false
 
 oasis3mct:

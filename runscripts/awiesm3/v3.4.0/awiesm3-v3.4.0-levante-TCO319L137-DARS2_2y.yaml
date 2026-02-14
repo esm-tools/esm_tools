@@ -4,14 +4,14 @@ general:
     version: "v3.4.0"
     account: "bb1469"
     compute_time: "08:00:00"
-    initial_date: "1850-01-01"
-    final_date: "1856-01-01"
+    initial_date: "1350-01-01"
+    final_date: "1850-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
     nmonth: 0
     nyear: 2
-    use_venv: False
-    install_esm_tools_branch: 'feat/awiesm3-v3.4-co2'
+    use_venv: True
+    install_esm_tools_branch: 'branch_for_CMIP7_HR_spinup_tag'
 
 computer:
     taskset: true
@@ -56,8 +56,6 @@ lpj_guess:
         1:
             restart_in_sources:
                 state: /${ini_restart_dir}/lpjg_state_3350/*
-            #restart_out_in_work:
-            #    state: /${work_dir}/lpjg_state_$(date -u -d "${initial_date}" +%Y)/*
 
 oifs:
     resolution: "TCO319"
@@ -65,12 +63,13 @@ oifs:
     prepifs_expid: abns
     input_expid: awi3
     wam: true
-    time_step: 900
-    nproc: 896
+    time_step: 1200
+    nproc: 640
     omp_num_threads: 4
-    mip: cmip7
-    scenario: piControl
+    mip: "cmip7"
+    scenario: "piControl"
     lresume: false
+    cmip7_cmor_output: "cmip7_spinup"
 
 oasis3mct:
     use_lucia: false

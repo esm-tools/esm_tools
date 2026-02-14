@@ -52,8 +52,6 @@ lpj_guess:
         1:
             restart_in_sources:
                 state: /${ini_restart_dir}/lpjg_state_3350/*
-            #restart_out_in_work:
-            #    state: /${work_dir}/lpjg_state_$(date -u -d "${initial_date}" +%Y)/*
 
 oifs:
     resolution: "TCO319"

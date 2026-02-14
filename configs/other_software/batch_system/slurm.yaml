@@ -10,7 +10,11 @@ computer:
     mail_type: NONE
     account: None
 
-
+    # Patterns to grep from `declare -p` to save/restore batch env vars across
+    # job script stages (e.g. before resubmission). Needed because subprocesses
+    # spawned during the job may clear these variables.
+    save_batch_env_patterns:
+        - "SLURM"
 
     # intermediate vars
 

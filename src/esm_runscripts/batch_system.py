@@ -406,6 +406,68 @@ class batch_system:
         return extras
 
     @staticmethod
+    def get_env_capture_commands(config):
+        """
+        Return shell lines that capture batch system env vars to a file.
+
+        Reads ``save_batch_env_patterns`` from the batch system config (e.g.
+        ``["SLURM"]`` or ``["PBS"]``) and builds a ``declare -p | grep -E``
+        command that dumps matching variables into
+        ``{thisrun_work_dir}/batch_system.env``.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        list of str
+            Shell lines to write into the job script, or ``[]`` if no
+            patterns are configured.
+        """
+        patterns = config["computer"].get("save_batch_env_patterns", [])
+        if not patterns:
+            return []
+        grep_pattern = "|".join(patterns)
+        env_file = f'{config["general"]["thisrun_work_dir"]}/batch_system.env'
+        return [
+            "# Store batch system environment variables for later sourcing",
+            f'declare -p | grep -E "({grep_pattern})" > {env_file}',
+            "",
+        ]
+
+    @staticmethod
+    def get_env_recovery_commands(config):
+        """
+        Return shell lines that restore batch system env vars from a file.
+
+        Sources the env file written by :meth:`get_env_capture_commands` and
+        removes it afterwards. This is needed before resubmission because
+        subprocesses spawned during the job may have cleared these variables.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        list of str
+            Shell lines to write into the job script, or ``[]`` if no
+            patterns are configured.
+        """
+        patterns = config["computer"].get("save_batch_env_patterns", [])
+        if not patterns:
+            return []
+        env_file = f'{config["general"]["thisrun_work_dir"]}/batch_system.env'
+        return [
+            "# Recover batch system environment variables",
+            f"source {env_file}; rm {env_file}",
+            "",
+        ]
+
+    @staticmethod
     def append_start_statement(config, subjob):
         return batch_system.get_bash_command_to_print_in_progress_log(
             config, subjob, "start"
@@ -527,8 +589,10 @@ class batch_system:
                     runfile.write(line + "\n")
                 runfile.write("\n")
 
-            runfile.write("# Store the SLURM environment variables for later sourcing\n")
-            runfile.write("declare -p | grep SLURM > slurm.env\n\n")
+            # Save batch env vars (e.g. SLURM_*, PBS_*) so they can be
+            # restored before resubmission
+            for line in batch_system.get_env_capture_commands(config):
+                runfile.write(line + "\n")
             if clusterconf:
                 for subjob in clusterconf["subjobs"]:
 
@@ -618,9 +682,9 @@ class batch_system:
                 runfile.write("# Call to esm_runscript to start subjobs:\n")
                 runfile.write("# " + str(subjobs_to_launch) + "\n")
                 runfile.write("process=$!\n\n")
-                slurm_env_file = f'{config["general"]["thisrun_scripts_dir"]}/slurm.env'
-                runfile.write(f"# Recover the SLURM environment variables\n")
-                runfile.write(f"source {slurm_env_file}; rm {slurm_env_file}\n\n")
+                # Restore batch env vars before resubmission
+                for line in batch_system.get_env_recovery_commands(config):
+                    runfile.write(line + "\n")
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )

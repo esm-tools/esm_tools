@@ -2,13 +2,13 @@ import json
 import os
 import subprocess
 import time
-
-import esm_parser
-
-from loguru import logger
 from enum import IntEnum
 
 import dask.distributed as daskd
+from loguru import logger
+
+import esm_parser
+
 
 def wait_for_dask_status(
     dask_scheduler_json,
@@ -55,7 +55,9 @@ def wait_for_dask_status(
     if status >= target_status:
         logger.debug(f"{description} succeeded after {elapsed:.1f}s")
     else:
-        logger.warning(f"{description} timed out after {timeout}s (status: {status.name})")
+        logger.warning(
+            f"{description} timed out after {timeout}s (status: {status.name})"
+        )
     return (status, n_workers)
 
 
@@ -66,12 +68,14 @@ class DaskStatus(IntEnum):
     The integer ordering allows comparison: a cluster with status >= RUNNING
     is ready to accept work.
     """
+
     MISSING_JSON = 0
     SCHEDULER_ERROR = 1
     WORKERS_ERROR = 2
     NO_WORKERS = 3
     RUNNING = 4
     TESTED = 5
+
 
 def initialize_dask_cluster(config):
     """
@@ -99,6 +103,7 @@ def initialize_dask_cluster(config):
 
     return config
 
+
 def uses_dask(config):
     """
     Check whether any action in ``config["dask"]["actions"]`` is set to
@@ -121,9 +126,11 @@ def uses_dask(config):
             active_dask_actions.append(action)
     return len(active_dask_actions) > 0
 
+
 def test_dask():
     """Trivial function submitted to the cluster to verify workers are responsive."""
     return True
+
 
 def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False):
     """
@@ -181,7 +188,9 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False
         status = DaskStatus.RUNNING
         try:
             client.submit(test_dask).result()
-            logger.trace(f"Dask test task succeeded on scheduler at {tcp_address} with {n_workers} workers")
+            logger.trace(
+                f"Dask test task succeeded on scheduler at {tcp_address} with {n_workers} workers"
+            )
             status = DaskStatus.TESTED
         except Exception as e:
             logger.trace(f"Dask test task failed: {e}")
@@ -217,7 +226,9 @@ def shutdown_dask_cluster(config):
         return config
 
     client_timeout = dask_config.get("client_timeout", 0.01)
-    status, _ = get_dask_cluster_status(dask_scheduler_json, client_timeout=client_timeout)
+    status, _ = get_dask_cluster_status(
+        dask_scheduler_json, client_timeout=client_timeout
+    )
     if status < DaskStatus.NO_WORKERS:
         logger.debug("No dask cluster to shut down.")
         return config
@@ -322,5 +333,7 @@ def ini_dask_cluster(config):
         dask_scheduler_json, client_timeout=client_timeout
     )
 
-    logger.info(f"Dask cluster status: {dask_status.name}, number of workers: {n_workers}")
+    logger.info(
+        f"Dask cluster status: {dask_status.name}, number of workers: {n_workers}"
+    )
     return config

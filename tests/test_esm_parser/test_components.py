@@ -1,6 +1,7 @@
 """Tests for component handling functionality in esm_parser"""
 
 import pytest
+
 from esm_parser import get_components
 
 
@@ -9,7 +10,7 @@ def test_get_components():
     config = {
         "general": {
             "valid_model_names": ["model1", "model2"],
-            "system_components": ["general", "dask"]
+            "system_components": ["general", "dask"],
         }
     }
 
@@ -22,10 +23,6 @@ def test_get_components():
     assert set(components) == {"model1", "model2"}
 
     # Test with missing system_components key
-    config = {
-        "general": {
-            "valid_model_names": ["model1", "model2"]
-        }
-    }
+    config = {"general": {"valid_model_names": ["model1", "model2"]}}
     components = get_components(config, include_system=True)
     assert set(components) == {"model1", "model2", "general"}

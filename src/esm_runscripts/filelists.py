@@ -9,16 +9,16 @@ import re
 import shutil
 import sys
 
-from dask import distributed as daskd
 import f90nml
 import yaml
+from dask import distributed as daskd
 from loguru import logger
 
 import esm_parser
 from esm_tools import user_error, user_note
 
 from . import helpers, jinja
-from .dask_cluster import get_dask_cluster_status, wait_for_dask_status, DaskStatus
+from .dask_cluster import DaskStatus, get_dask_cluster_status, wait_for_dask_status
 
 
 def rename_sources_to_targets(config):
@@ -150,9 +150,9 @@ def complete_targets(config):
                             )
                             user_error(error_type, error_text)
                         else:
-                            config[model][filetype + "_targets"][
-                                category
-                            ] = os.path.basename(file_source)
+                            config[model][filetype + "_targets"][category] = (
+                                os.path.basename(file_source)
+                            )
 
     return config
 
@@ -287,9 +287,9 @@ def globbing(config):
                             if (
                                 config[model][filetype + "_targets"][descr] == filename
                             ):  # source and target are identical if autocompleted
-                                config[model][filetype + "_targets"][
-                                    newdescr
-                                ] = os.path.basename(new_filename)
+                                config[model][filetype + "_targets"][newdescr] = (
+                                    os.path.basename(new_filename)
+                                )
                             else:
                                 config[model][filetype + "_targets"][newdescr] = config[
                                     model
@@ -322,9 +322,9 @@ def target_subfolders(config):
                         # in routine 'globbing' above, if we don't check here, wildcards are handled twice
                         # for files and hence filenames of e.g. restart files are screwed up.
                         if filename.endswith("/*"):
-                            config[model][filetype + "_targets"][
-                                descr
-                            ] = filename.replace("*", source_filename)
+                            config[model][filetype + "_targets"][descr] = (
+                                filename.replace("*", source_filename)
+                            )
                         elif "/" in filename:
                             # Return the correct target name
                             target_name = get_target_name_from_wildcard(
@@ -729,11 +729,11 @@ def replace_year_placeholder(config):
                     if isinstance(
                         config[model][filetype + "_sources"][file_category], dict
                     ):
-                        config[model][filetype + "_sources"][
-                            file_category
-                        ] = find_valid_year(
-                            config[model][filetype + "_sources"][file_category],
-                            year,
+                        config[model][filetype + "_sources"][file_category] = (
+                            find_valid_year(
+                                config[model][filetype + "_sources"][file_category],
+                                year,
+                            )
                         )
                     if "@YEAR@" in config[model][filetype + "_targets"][file_category]:
                         new_target_name = config[model][filetype + "_targets"][
@@ -1253,14 +1253,14 @@ def copy_files(config, filetypes, source, target):
                             )
 
                         # Execute movement with or without futures (parallelization on/off)
-                        if (
-                            config["general"].get("parallel_file_movements", False)
-                            in ["threads", "dask"]
-                        ):
+                        if config["general"].get("parallel_file_movements", False) in [
+                            "threads",
+                            "dask",
+                        ]:
                             # Parallel
                             future = client.submit(
                                 movement_method,
-                                {}, # do not pass a config to avoid serialization issues. Serialization is possible but even after that the config is too big to be sent to many workers efficiently
+                                {},  # do not pass a config to avoid serialization issues. Serialization is possible but even after that the config is too big to be sent to many workers efficiently
                                 file_source,
                                 file_target,
                             )
@@ -1302,6 +1302,7 @@ def copy_files(config, filetypes, source, target):
                 helpers.print_datetime(config)
         config["general"]["files_missing_when_preparing_run"].update(missing_files)
     return config
+
 
 def avoid_overwriting(config, source, target):
     """
@@ -1547,7 +1548,7 @@ def movement(func):
                 func(source_path, target_path)
             return True
         except IOError:
-            #helpers.print_datetime(config)
+            # helpers.print_datetime(config)
             return False
 
     return inner

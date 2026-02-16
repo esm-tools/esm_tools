@@ -399,7 +399,7 @@ Which mode should I use?
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 * **Small runs (< 5 nodes)**: ``"threads"`` is usually sufficient and has no
-  setup overhead.
+  cluster initialization overhead.
 * **Large runs (>= 5 nodes)**: ``"dask"`` distributes I/O across all nodes and
   scales better. The small startup cost is offset by faster file transfers.
 * **Debugging or safety**: ``False`` runs everything serially.
@@ -444,9 +444,40 @@ defaults but can be tuned in your runscript:
    * - ``dask.poll_interval``
      - ``0.5``
      - How often (seconds) to poll for cluster readiness.
+   * - ``dask.init_scheduler_cmd``
+     - per batch system
+     - Shell command to start the Dask scheduler (defined in the batch
+       system YAML, e.g. ``slurm.yaml``).
+   * - ``dask.init_workers_cmd``
+     - per batch system
+     - Shell command to start the Dask workers (defined in the batch
+       system YAML, e.g. ``slurm.yaml``).
+   * - ``dask.scheduler_json``
+     - ``${general.thisrun_work_dir}/dask_scheduler.json``
+     - Full path to the Dask scheduler JSON file used for client
+       connections.
+   * - ``dask.actions``
+     - ``["parallel_file_movements"]``
+     - List of actions that trigger Dask cluster initialization.
 
 The Dask scheduler and worker launch commands are defined per batch system
-(e.g. in ``slurm.yaml``) and are not typically changed by users.
+(e.g. in ``slurm.yaml``) and are not typically changed by users. For SLURM,
+the default worker count is ``nnodes * partition_cpn / 4``, meaning one Dask
+worker per four CPU cores (see ``configs/other_software/batch/slurm.yaml``).
+Workers are distributed cyclically across all allocated nodes using InfiniBand:
+
+**slurm.yaml**
+
+.. code-block:: yaml
+
+   dask:
+       ntasks: "$(( ${computer.nnodes} * ${computer.partition_cpn} / 4 ))"
+       ...
+       init_workers_cmd: "srun --ntasks=${dask.ntasks} --cpus-per-task=1 --nodes=@nodes@ --distribution=cyclic:cyclic:cyclic dask worker --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ib0"
+
+If you need to change the number of workers, you can either redefine
+``dask.ntasks`` or provide a custom ``dask.init_workers_cmd`` in any of
+your configuration files or directly in your runscript.
 
 Running an experiment with a virtual environment
 ------------------------------------------------

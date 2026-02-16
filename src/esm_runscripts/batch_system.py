@@ -355,11 +355,12 @@ class batch_system:
     @staticmethod
     def get_post_run_commands(config):
         """
-        Collect ``post_run_commands`` from all components in the config.
+        Collect ``post_run_commands`` from all top-level config sections.
 
-        Each component may define ``post_run_commands`` as a string or a list
-        of strings. These are shell commands appended to the job script after
-        each subjob finishes.
+        Any section (component, computer, etc.) may define
+        ``post_run_commands`` as a string or a list of strings. These are
+        shell commands appended to the job script after the model execution
+        and before the resubmission call.
 
         Parameters
         ----------

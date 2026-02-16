@@ -1,4 +1,4 @@
-setuptools
+setuptools==67.6.1
 click
 colorama
 coloredlogs

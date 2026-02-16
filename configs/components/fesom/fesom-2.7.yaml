@@ -509,6 +509,13 @@ fesom:
                             alpha_evp: ${alpha_evp}
                             beta_evp: ${beta_evp}
 
+    choose_with_cavity:
+            true:
+                    add_namelist_changes:
+                            namelist.config:
+                                    run_config:
+                                            use_cavity: true
+
     use_landice_water: False
     choose_general.iterative_coupling:
             true:

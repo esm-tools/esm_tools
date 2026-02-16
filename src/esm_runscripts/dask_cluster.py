@@ -272,6 +272,8 @@ def ini_dask_cluster(config):
     dask_scheduler_json = dask_config["scheduler_json"]
     log_scheduler = f'{config["general"]["thisrun_log_dir"]}/dask_scheduler.log'
 
+    # Get number of nodes from a environment variable specified in config, for example
+    # in the slurm.yaml the value of ``nnodes_envvar`` is ``SLURM_JOB_NUM_NODES``
     nnodes = int(os.getenv(config["computer"]["nnodes_envvar"], 1))
 
     init_scheduler_cmd = config["dask"].get("init_scheduler_cmd")

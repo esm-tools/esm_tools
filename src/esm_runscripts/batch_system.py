@@ -355,12 +355,11 @@ class batch_system:
     @staticmethod
     def get_post_run_commands(config):
         """
-        Collect ``post_run_commands`` from all top-level config sections.
+        Collect ``post_run_commands`` from ``config["computer"]``.
 
-        Any section (component, computer, etc.) may define
-        ``post_run_commands`` as a string or a list of strings. These are
-        shell commands appended to the job script after the model execution
-        and before the resubmission call.
+        The ``computer`` section may define ``post_run_commands`` as a string
+        or a list of strings. These are shell commands appended to the job
+        script after the model execution and before the resubmission call.
 
         Parameters
         ----------
@@ -370,40 +369,36 @@ class batch_system:
         Returns
         -------
         extras : list of str
-            Collected shell commands from all components.
+            Collected shell commands from the computer section.
         """
         extras = []
 
-        # Search for ``post_run_commands``s in the components
-        for component in config.keys():
-            post_run_commands = config[component].get("post_run_commands")
-            if isinstance(post_run_commands, list):
-                for pr_command in post_run_commands:
-                    if isinstance(pr_command, str):
-                        extras.append(pr_command)
-                    else:
-                        user_error(
-                            'Invalid type for "post_run_commands"',
-                            (
-                                f'"{type(pr_command)}" type is not supported for '
-                                + f'elements of the "post_run_commands", defined in '
-                                + f'"{component}". Please, define '
-                                + '"post_run_commands" as a "list" of "strings" or a "list".'
-                            ),
-                        )
-            elif isinstance(post_run_commands, str):
-                extras.append(post_run_commands)
-            elif post_run_commands == None:
-                continue
-            else:
-                user_error(
-                    'Invalid type for "post_run_commands"',
-                    (
-                        f'"{type(post_run_commands)}" type is not supported for '
-                        + f'"post_run_commands" defined in "{component}". Please, define '
-                        + '"post_run_commands" as a "string" or a "list" of "strings".'
-                    ),
-                )
+        post_run_commands = config.get("computer", {}).get("post_run_commands")
+        if isinstance(post_run_commands, list):
+            for pr_command in post_run_commands:
+                if isinstance(pr_command, str):
+                    extras.append(pr_command)
+                else:
+                    user_error(
+                        'Invalid type for "post_run_commands"',
+                        (
+                            f'"{type(pr_command)}" type is not supported for '
+                            + f'elements of the "post_run_commands", defined in '
+                            + f'"computer". Please, define '
+                            + '"post_run_commands" as a "list" of "strings" or a "list".'
+                        ),
+                    )
+        elif isinstance(post_run_commands, str):
+            extras.append(post_run_commands)
+        elif post_run_commands is not None:
+            user_error(
+                'Invalid type for "post_run_commands"',
+                (
+                    f'"{type(post_run_commands)}" type is not supported for '
+                    + f'"post_run_commands" defined in "computer". Please, define '
+                    + '"post_run_commands" as a "string" or a "list" of "strings".'
+                ),
+            )
         return extras
 
     @staticmethod

@@ -90,7 +90,7 @@ Runi time variables
    parallel_file_movements,     general,        "Controls how file movements are parallelized. ``""dask""`` (default) distributes I/O across all compute nodes via a Dask cluster, ``""threads""`` uses local threads on a single node, ``False`` runs sequentially. See :ref:`esm_runscripts:Parallel File Movements`."
    pool_dir,            general,                "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
    post_processing,     <component>,            Boolean to indicate whether to run postprocessing or not.
-   post_run_commands,   "any section",          "Shell commands appended to the job script after the model execution and before resubmission. Collected from all top-level config sections (components, computer, etc.). Can be a ``string`` or a ``list`` of ``strings``."
+   post_run_commands,   computer,               "Shell commands appended to the job script after the model execution and before resubmission. Can be a ``string`` or a ``list`` of ``strings``."
    pre_recipe.exclude_job_types,  general,      "List of job types that skip ``pre_recipe.steps`` (default: ``[""prepare"", ""prepexp"", ""observe""]``)."
    pre_recipe.steps,    general,                "List of recipe step names injected before the main recipe (e.g. ``[""initialize_dask_cluster""]``). Steps listed here run for all job types except those in ``pre_recipe.exclude_job_types``."
    save_batch_env_patterns,  computer,          "List of grep patterns used to capture and restore batch system environment variables across job script stages (e.g. ``[""SLURM""]`` or ``[""PBS""]``)."

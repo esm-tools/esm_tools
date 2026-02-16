@@ -9,9 +9,9 @@ from loguru import logger
 from ruamel.yaml import RoundTripConstructor
 from ruamel.yaml.nodes import ScalarNode
 
+import esm_environment
 import esm_parser
 import esm_tools
-import esm_environment
 from esm_tools import user_error
 
 from .provenance import *
@@ -234,7 +234,7 @@ def yaml_file_to_dict(filepath):
                 f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}",
             )
     raise FileNotFoundError(
-        "All file extensions tried and none worked for %s" % filepath
+        f"All file extensions tried and none worked for {filepath}"
     )
 
 

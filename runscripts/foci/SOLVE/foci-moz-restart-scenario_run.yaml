@@ -81,10 +81,10 @@ nemo:
    add_namelist_changes:
        namelist_cfg:
            namtra_ldf:
-               rn_aht_0: 600
-               rn_aeiv_scale: 0.5
-           namdyn_ldf:
-               rn_cmsmag_2: 4
+               rn_aht_0: 300
+                   #rn_aeiv_scale: 0.5
+                   #namdyn_ldf:
+                   #rn_cmsmag_2: 4
            namsbc_cpl:
                sn_rcv_rnf: ['none', 'no', '', '', '']
                sn_rcv_emp: ['kcm_lim_2', 'no', '', '', '']

@@ -16,8 +16,6 @@ envfile=""  # change via -x
 freq="m"
 run_monitoring="no"
 
-module load nco || module load NCO
-
 OCEAN_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
 OCEAN_CONVERT_NETCDF4=true
@@ -99,6 +97,8 @@ else
   # module purge in envfile writes non-printable chars to log
    source $envfile > >(tee) 
 fi
+# load nco after env.sh has been sourced
+module load nco || module load NCO
 #
 # the ncks option -a is deprecated since version 4.7.1 and replaced by --no-alphabetize
 sortoption="--no-alphabetize"

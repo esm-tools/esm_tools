@@ -172,7 +172,7 @@ class TestGetDaskClusterStatus(unittest.TestCase):
             submit_result=True,
         )
         path = self._write_json()
-        status, n_workers = get_dask_cluster_status(path, test=True)
+        status, n_workers = get_dask_cluster_status(path, submit_test_task=True)
         self.assertEqual(status, DaskStatus.TESTED)
         self.assertEqual(n_workers, 1)
 
@@ -183,7 +183,7 @@ class TestGetDaskClusterStatus(unittest.TestCase):
             submit_error=RuntimeError("task failed"),
         )
         path = self._write_json()
-        status, n_workers = get_dask_cluster_status(path, test=True)
+        status, n_workers = get_dask_cluster_status(path, submit_test_task=True)
         self.assertEqual(status, DaskStatus.RUNNING)
         self.assertEqual(n_workers, 1)
 

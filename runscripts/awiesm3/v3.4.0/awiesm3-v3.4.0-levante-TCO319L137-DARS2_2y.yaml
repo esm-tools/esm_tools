@@ -31,8 +31,7 @@ fesom:
     restart_rate: 2
     restart_unit: 'y'
     restart_first: 2
-    branchoff: true
-    ini_parent_exp_id: "lpj_spinup_HR_2000y"
+    ini_parent_exp_id: "foo"
     ini_parent_date: "${prev_date}"
     ini_restart_dir: "/work/ab0246/a270092/input/fesom2/restart/DARS2/"
     choose_general.run_number:
@@ -49,7 +48,7 @@ lpj_guess:
     nproc: 64
     omp_num_threads: 4
     lresume: true
-    ini_parent_exp_id: "lpj_spinup_HR_2000y"
+    ini_parent_exp_id: "foo"
     ini_parent_date: "${prev_date}"
     ini_restart_dir: "/work/ab0246/a270092/input/lpj-guess/restart/TCO319-DARS2/"
     choose_general.run_number:

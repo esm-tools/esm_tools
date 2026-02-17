@@ -29,6 +29,7 @@ general:
         - 'v3.2.2'
         - 'v3.3.0'
         - 'v3.4.0'
+        - 'v3.4.1'
         - 'develop'
         - 'frontiers-xios'
 
@@ -104,6 +105,14 @@ general:
             oasis_with_yac: False
             xios_interp_order: 1
           v3.4.0:
+            major_version: v3.4
+            couplings:
+            - awicm3_v3.4.0
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          v3.4.1:
             major_version: v3.4
             couplings:
             - awicm3_v3.4.0

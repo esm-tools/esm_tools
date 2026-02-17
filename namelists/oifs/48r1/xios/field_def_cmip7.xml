@@ -172,6 +172,7 @@
     <field id="co2nbf" long_name="natural biosphere flux of carbon dioxide"                   standard_name="natural+biosphere+flux_of_carbon_dioxide"                 unit="kg m-2 s-1" />
     <field id="co2apf" long_name="anthropogenic emissions of carbon dioxide"                  standard_name="anthropogenic_emissions_of_carbon dioxide"                unit="kg m-2 s-1" />
     <field id="co2fire" long_name="wildfire flux of carbon dioxide"                           standard_name="wildfire_flux_of_carbon_dioxide"                          unit="kg m-2 s-1" />
+    <field id="macv2sp_taod550" long_name="Total Aerosol Optical Depth at 550nm from MACV2SP" standard_name="total_aerosol_optical_depth_at_550nm_from_MACV2SP"        unit="1" />
   </field_group>
 
   <field_group id="3D_ml" grid_ref="reduced_ml" freq_op="3h" >

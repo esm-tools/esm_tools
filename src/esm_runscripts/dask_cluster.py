@@ -276,7 +276,16 @@ def ini_dask_cluster(config):
     # in the slurm.yaml the value of ``nnodes_envvar`` is ``SLURM_JOB_NUM_NODES``
     nnodes = int(os.getenv(config["computer"]["nnodes_envvar"], 1))
 
+    # Start the dask scheduler using the commands specified in the config, for example
+    # ``srun --ntasks=1 --nodes=1 --cpus-per-task=1 dask scheduler --scheduler-file
+    # ${dask.scheduler_json} --interface ib0``
     init_scheduler_cmd = config["dask"].get("init_scheduler_cmd")
+
+    # Start the dask workers using the commands specified in the config, for example
+    # ``srun --ntasks=${dask.ntasks} --cpus-per-task=1 --nodes=@nodes@
+    # --distribution=cyclic:cyclic:cyclic ~/.conda/envs/esm_tools/bin/dask worker
+    # --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1
+    # --interface ib0``
     init_workers_cmd = config["dask"].get("init_workers_cmd")
 
     # Substitute placeholders in scheduler commands

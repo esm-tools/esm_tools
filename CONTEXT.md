@@ -109,6 +109,10 @@ def my_function(config, name):
 
 Every new configuration parameter that has a direct effect on the backend (i.e., is read by Python code to control behavior) **must** have an entry in the variable reference at `docs/esm_variables.rst`. Place the entry in the appropriate section (Runtime, Dask, Calendar, etc.) following the existing csv-table format.
 
+## Message of the Day (MOTD)
+
+Major new features should include an entry in `motd/motd.yaml` so that users on older versions are notified of the new functionality. Follow the existing format: target a version range (`versions: "<X.Y.Z"`), write a short message with ANSI color codes for emphasis, set `action: DELAY(1)`, and add `announcement: true`. See existing entries in `motd/motd.yaml` for examples.
+
 ## Git Workflow
 
 - **release** branch: stable releases

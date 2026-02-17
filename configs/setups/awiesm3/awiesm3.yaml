@@ -238,7 +238,7 @@ oifs:
     choose_general.with_wiso:
         true:
             branch: 'feature/wiso_implementation'
-            add_namelist_changes:
+            add_add_add_add_add_add_add_namelist_changes:
                 fort.4:
                     NAMPHY:
                         LWISO: true

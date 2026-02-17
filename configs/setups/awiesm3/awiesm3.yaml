@@ -724,17 +724,22 @@ oasis3mct:
                             - 'XCO2_oce <--gauswgt_c-- A_XCO2_oce'
                             - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
             
-            choose_general.with_wiso:
-                true:
-                    add_coupling_target_fields:
-                        rstas.nc:
-                            - 'evap_o18_oce:evap_hdo_oce <--gauswgt_c-- A_Evap_O18:A_Evap_HDO'
-                            - 'prec_o18_oce:prec_hdo_oce <--gauswgt_c-- A_Precip_O18:A_Precip_HDO'
-                            - 'subl_o18_oce:subl_hdo_oce <--gauswgt_c-- A_Subl_O18:A_Subl_HDO'
-                            - 'roff_o18_oce:roff_hdo_oce <--gauswgt_c-- A_Runoff_O18:A_Runoff_HDO'
-                        rstos.nc:
-                            - 'A_SST_O18:A_SST_HDO <--gauswgt_i-- sst_o18_feom:sst_hdo_feom'
-                            - 'A_Ice_O18:A_Ice_HDO <--gauswgt_i-- ice_o18_feom:ice_hdo_feom'
+            # NOTE: WISO coupling fields are commented out until FESOM 2.7 WISO support is implemented
+            # The OpenIFS side is ready and field names are defined in ecearth.F90
+            # Required FESOM output fields: sst_o18_feom, sst_hdo_feom, ice_o18_feom, ice_hdo_feom
+            # Required FESOM input fields: evap_o18_oce, evap_hdo_oce, prec_o18_oce, prec_hdo_oce,
+            #                              subl_o18_oce, subl_hdo_oce, roff_o18_oce, roff_hdo_oce
+            #choose_general.with_wiso:
+            #    true:
+            #        add_coupling_target_fields:
+            #            rstas.nc:
+            #                - 'evap_o18_oce:evap_hdo_oce <--gauswgt_c-- A_Evap_O18:A_Evap_HDO'
+            #                - 'prec_o18_oce:prec_hdo_oce <--gauswgt_c-- A_Precip_O18:A_Precip_HDO'
+            #                - 'subl_o18_oce:subl_hdo_oce <--gauswgt_c-- A_Subl_O18:A_Subl_HDO'
+            #                - 'roff_o18_oce:roff_hdo_oce <--gauswgt_c-- A_Runoff_O18:A_Runoff_HDO'
+            #            rstos.nc:
+            #                - 'A_SST_O18:A_SST_HDO <--gauswgt_i-- sst_o18_feom:sst_hdo_feom'
+            #                - 'A_Ice_O18:A_Ice_HDO <--gauswgt_i-- ice_o18_feom:ice_hdo_feom'
 
             # Specify which restart files need bidirectional merging
             # Use this for restart files with LOCTRANS+EXPOUT in both directions

@@ -132,7 +132,9 @@ def test_dask():
     return True
 
 
-def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False):
+def get_dask_cluster_status(
+    dask_scheduler_json, client_timeout=0.01, submit_test_task=False
+):
     """
     Probe the health of a dask cluster by reading its scheduler JSON,
     connecting to the scheduler, and optionally submitting a test task.
@@ -146,7 +148,7 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False
         Path to the dask scheduler JSON file containing the TCP address.
     client_timeout : float, optional
         Timeout in seconds for connecting to the scheduler (default 0.01).
-    test : bool, optional
+    submit_test_task : bool, optional
         If ``True``, submit a test task to verify the cluster can execute
         work (default ``False``).
 
@@ -184,7 +186,7 @@ def get_dask_cluster_status(dask_scheduler_json, client_timeout=0.01, test=False
         logger.trace(f"No dask workers connected to scheduler at {tcp_address}")
         client.close()
         return (DaskStatus.NO_WORKERS, n_workers)
-    elif test:
+    elif submit_test_task:
         status = DaskStatus.RUNNING
         try:
             client.submit(test_dask).result()
@@ -270,6 +272,8 @@ def ini_dask_cluster(config):
     dask_scheduler_json = dask_config["scheduler_json"]
     log_scheduler = f'{config["general"]["thisrun_log_dir"]}/dask_scheduler.log'
 
+    # Get number of nodes from a environment variable specified in config, for example
+    # in the slurm.yaml the value of ``nnodes_envvar`` is ``SLURM_JOB_NUM_NODES``
     nnodes = int(os.getenv(config["computer"]["nnodes_envvar"], 1))
 
     init_scheduler_cmd = config["dask"].get("init_scheduler_cmd")

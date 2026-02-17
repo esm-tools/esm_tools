@@ -105,6 +105,10 @@ def my_function(config, name):
     """
 ```
 
+## Documentation of New Parameters
+
+Every new configuration parameter that has a direct effect on the backend (i.e., is read by Python code to control behavior) **must** have an entry in the variable reference at `docs/esm_variables.rst`. Place the entry in the appropriate section (Runtime, Dask, Calendar, etc.) following the existing csv-table format.
+
 ## Git Workflow
 
 - **release** branch: stable releases

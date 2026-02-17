@@ -509,6 +509,7 @@ fesom:
                             alpha_evp: ${alpha_evp}
                             beta_evp: ${beta_evp}
 
+    with_cavity: false
     choose_with_cavity:
             true:
                     add_namelist_changes:

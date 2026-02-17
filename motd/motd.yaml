@@ -204,6 +204,33 @@ esm_environment_refactoring:
         action: DELAY(1)
         announcement: true
 
+parallel_file_movements:
+        package: "esm_tools"
+        versions: "<6.61.0"
+        message: "\x1b[1m\x1b[96mPARALLEL FILE MOVEMENTS WITH DASK!\x1b[0m\n
+
+            File movements (inputs, restarts, outputs, etc.) are now \x1b[96mparallelized by default\x1b[0m\n
+            using \x1b[1mDask\x1b[0m workers distributed across your compute nodes.\n
+
+            This speeds up the file-handling phases significantly, especially on large\n
+            allocations. No configuration changes are needed \x1b[35m- it just works!\x1b[0m hopefully ;)\n
+
+            If you prefer the previous behavior, you can switch to local threads or\n
+            disable parallelization in your runscript:\n
+
+            \ \ \x1b[35mgeneral\x1b[0m:\n
+            \ \ \ \ \x1b[96mparallel_file_movements\x1b[0m: \x1b[31m\"threads\"\x1b[0m \ \ \ \x1b[34m# local threads (good for < 5 nodes)\x1b[0m\n
+            \ \ \ \ \x1b[96mparallel_file_movements\x1b[0m: \x1b[31mFalse\x1b[0m \ \ \ \ \ \ \ \x1b[34m# serial\x1b[0m\n
+
+            This feature only works on SLURM at the moment, but we will very soon add PBS\n
+            support as well.\n
+
+            Read more at:\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/esm_runscripts.html#parallel-file-movements\x1b[0m\n
+            "
+        action: DELAY(1)
+        announcement: true
+
 #online_workshops:
 #        package: "esm_tools"
 #        versions: "<7.0.0"

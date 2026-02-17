@@ -9,8 +9,10 @@ computer:
     debugger: None
     account: None
 
-
-
+    # Patterns to grep from `declare -p` to save/restore batch env vars across
+    # job script stages.
+    save_batch_env_patterns:
+        - "PBS"
 
     # intermediate vars
 

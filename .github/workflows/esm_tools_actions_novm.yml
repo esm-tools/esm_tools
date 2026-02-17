@@ -63,7 +63,6 @@ jobs:
 
       - name: run get-fesom-2.0
         run: |
-          sudo hostname ollie1
           esm_master get-fesom-2.0
 
       - name: run status-fesom-2.0

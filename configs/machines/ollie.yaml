@@ -20,6 +20,7 @@ computer:
                     name: smp
                     cores_per_node: 1
 
+    partition_cpn: 36
 
     logical_cpus_per_core: 2
 

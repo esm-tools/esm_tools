@@ -358,6 +358,13 @@ fesom:
                 restart_length_unit: "${restart_unit}"
                 restart_length: "${restart_rate}"
 
+    choose_general.with_wiso:
+        true:
+            add_namelist_changes:
+                namelist.config:
+                    run_config:
+                        lwiso: .true.
+
     choose_general.major_version:
         "v3.4":
             add_namelist_changes:

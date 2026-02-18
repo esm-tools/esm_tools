@@ -195,7 +195,8 @@ oifs:
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
         A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY, 
-        A_FCO2_oce, A_XCO2_oce]
+        A_FCO2_oce, A_XCO2_oce, A_Evap_O18, A_Evap_HDO, A_Precip_O18, A_Precip_HDO,
+        A_Subl_O18, A_Subl_HDO, A_SST_O18, A_SST_HDO, A_Ice_O18, A_Ice_HDO]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
         SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
@@ -208,6 +209,10 @@ oifs:
         A_Runoff:
             grid: atmr
         A_Calving:
+            grid: atmr
+        A_Runoff_O18:
+            grid: atmr
+        A_Runoff_HDO:
             grid: atmr
 
     input_files:

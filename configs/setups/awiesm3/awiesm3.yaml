@@ -397,7 +397,9 @@ fesom:
     remove_config_files:
         - diag
 
-    atm_oce_fields: [ist_feom, sia_feom]
+    atm_oce_fields: [ist_feom, sia_feom, sst_o18_feom, sst_hdo_feom, ice_o18_feom, 
+        ice_hdo_feom, evap_o18_oce, evap_hdo_oce, prec_o18_oce, prec_hdo_oce,
+        subl_o18_oce, subl_hdo_oce, roff_o18_oce, roff_hdo_oce]
 
     coupling_fields:
         "[[atm_oce_fields-->FIELD]]":

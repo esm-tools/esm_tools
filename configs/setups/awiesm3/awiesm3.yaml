@@ -619,6 +619,15 @@ rnfmap:
     time_step: ${oasis3mct.coupling_time_step}
 
     runoff_method: awicm3-default
+    
+    choose_general.with_wiso:
+        true:
+            add_runoff_fields_recv:
+                - R_Runoff_O18_atm
+                - R_Runoff_HDO_atm
+            add_runoff_fields_send:
+                - R_Runoff_O18_oce
+                - R_Runoff_HDO_oce
 
     coupling_fields:
         "[[runoff_fields_send-->FIELD]]":
@@ -738,7 +747,8 @@ oasis3mct:
                             - 'evap_o18_oce:evap_hdo_oce <--gauswgt_c-- A_Evap_O18:A_Evap_HDO'
                             - 'prec_o18_oce:prec_hdo_oce <--gauswgt_c-- A_Precip_O18:A_Precip_HDO'
                             - 'subl_o18_oce:subl_hdo_oce <--gauswgt_c-- A_Subl_O18:A_Subl_HDO'
-                            - 'roff_o18_oce:roff_hdo_oce <--gauswgt_c-- A_Runoff_O18:A_Runoff_HDO'
+                            - 'R_Runoff_O18_atm:R_Runoff_HDO_atm <--gauswgt_c-- A_Runoff_O18:A_Runoff_HDO'
+                            - 'roff_o18_oce:roff_hdo_oce <--gauswgt_c-- R_Runoff_O18_oce:R_Runoff_HDO_oce'
                             - 'A_SST_O18:A_SST_HDO <--gauswgt_i-- sst_o18_feom:sst_hdo_feom'
                             - 'A_Ice_O18:A_Ice_HDO <--gauswgt_i-- ice_o18_feom:ice_hdo_feom'
 

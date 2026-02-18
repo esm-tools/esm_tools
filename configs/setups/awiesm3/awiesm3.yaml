@@ -622,16 +622,6 @@ rnfmap:
     
     choose_general.with_wiso:
         true:
-            runoff_fields_recv:
-                - R_Runoff_atm
-                - R_Calving_atm
-                - R_Runoff_O18_atm
-                - R_Runoff_HDO_atm
-            runoff_fields_send:
-                - R_Runoff_oce
-                - R_Calving_oce
-                - R_Runoff_O18_oce
-                - R_Runoff_HDO_oce
             add_namelist_changes:
                 namelist.runoffmapper:
                     NAMRNFMAP:

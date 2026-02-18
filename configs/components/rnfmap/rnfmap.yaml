@@ -187,6 +187,14 @@ rnfmap:
             'awicm3-default':
                     runoff_fields_recv: [R_Runoff_atm,R_Calving_atm]
                     runoff_fields_send: [R_Runoff_oce,R_Calving_oce]
+                    choose_general.with_wiso:
+                        true:
+                            add_runoff_fields_recv:
+                                - R_Runoff_O18_atm
+                                - R_Runoff_HDO_atm
+                            add_runoff_fields_send:
+                                - R_Runoff_O18_oce
+                                - R_Runoff_HDO_oce
 
     namelist_changes:
             namelist.runoffmapper:

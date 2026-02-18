@@ -634,6 +634,8 @@ rnfmap:
                         LWISO: .true.
 
     coupling_fields:
+        "[[runoff_fields_recv-->FIELD]]":
+            grid: rnfa
         "[[runoff_fields_send-->FIELD]]":
             grid: rnfo
 

@@ -628,6 +628,10 @@ rnfmap:
             add_runoff_fields_send:
                 - R_Runoff_O18_oce
                 - R_Runoff_HDO_oce
+            add_namelist_changes:
+                namelist.runoffmapper:
+                    NAMRNFMAP:
+                        LWISO: .true.
 
     coupling_fields:
         "[[runoff_fields_send-->FIELD]]":

@@ -389,11 +389,12 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     subpaths_source = subpaths
     subpaths_target = []
     datestamp_format = re.compile(r"_[\d]{8}-[\d]{8}$")
+    run_dir_format = re.compile(r"^run_[\d]{8}$")
     for sp in subpaths:
         sp_t = ""
         pieces = sp.split("/")
         for p in pieces:
-            if "run_" not in p:
+            if not run_dir_format.match(p):
                 sp_t += f"/{p}"
         # Remove the datestamp
         if datestamp_format.findall(sp_t):

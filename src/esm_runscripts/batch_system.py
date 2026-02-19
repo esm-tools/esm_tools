@@ -672,11 +672,7 @@ class batch_system:
                 # extra entries for each subjob
                 post_run_commands = batch_system.get_post_run_commands(config)
                 for line in post_run_commands:
-<<<<<<< HEAD
                    runfile.write(line + "\n")
-=======
-                    runfile.write(line + "\n")
->>>>>>> origin/release
 
                 runfile.write("\n")
                 runfile.write("# Call to esm_runscript to start subjobs:\n")

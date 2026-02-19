@@ -86,8 +86,11 @@
     <field id="str"    long_name="surface net thermal radiation"                              standard_name="surface_net_downward_longwave_flux"                       unit="J m-2" />
     <!--TODO: convert to W m-2-->
     <field id="tsr"    long_name="top net solar radiation"                                    standard_name="toa_net_downward_shortwave_flux"                          unit="J m-2" />
-    <!--TODO: convert to W m-2-->
     <field id="ttr"    long_name="top net thermal radiation"                                  standard_name="toa_net_downward_longwave_flux"                           unit="J m-2" />
+    <!-- convert to W m-2-->
+    <field id="toa_outgoing_longwave_flux__rlut" name="rlut" field_ref="ttr" standard_name="toa_outgoing_longwave_flux" long_name="TOA Outgoing Longwave Radiation"    unit="W m-2" >
+        -ttr/21600
+    </field>
     <!--remains nonstandard-->
     <field id="ewss"   long_name="eastward turbulent surface stress"                          standard_name="surface_downward_eastward_turbulent_stress_amount"        unit="N m-2 s" />
     <!--remains nonstandard-->
@@ -119,8 +122,15 @@
     <field id="ssrc"   long_name="surface net clear sky solar radiation"                      standard_name="surface_net_downward_shortwave_flux_assuming_clear_sky"   unit="J m-2" />
     <!--TODO: convert to W m-2-->
     <field id="strc"   long_name="surface net clear sky thermal radiation"                    standard_name="surface_net_downward_longwave_flux_assuming_clear_sky"    unit="J m-2" />
-    <!--TODO: convert to W m-2-->
     <field id="tisr"   long_name="toa incident solar radiation"                               standard_name="toa_incoming_shortwave_flux"                              unit="J m-2" />
+    <!-- convert to W m-2-->
+    <field id="toa_incoming_shortwave_flux__rsdt" name="rsdt" field_ref="tisr" standard_name="toa_incoming_shortwave_flux" long_name="TOA Incident Shortwave Radiation" unit="W m-2" >
+        tisr/21600
+    </field>
+    <!-- convert to W m-2-->
+    <field id="toa_outgoing_shortwave_flux__rsut" name="rsut" field_ref="tisr" standard_name="toa_outgoing_shortwave_flux" long_name="TOA Outgoing Shortwave Radiation" unit="W m-2" >
+        (tisr-tsr)/21600
+    </field>
     <field id="vimd"   long_name="vertically integrated moisture divergence"                                                                                           unit="kg m-2" />
     <field id="tp"     long_name="total precipitation (rain+snow)"                            standard_name="lwe_thickness_of_precipitation_amount"                    unit="m" />
     <!--remains nonstandard-->
@@ -210,6 +220,7 @@
     <field id="clwc_pl"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
     <field id="ciwc_pl"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
     <field id="cc_pl"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+    <field id="co2_pl"    long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
   </field_group>
 
   <field_group id="3D_th" grid_ref="reduced_th" freq_op="3h" >
@@ -233,6 +244,7 @@
     <field id="clwc_th"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
     <field id="ciwc_th"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
     <field id="cc_th"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+    <field id="co2_th"    long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
   </field_group>
 
   <field_group id="3D_pv" grid_ref="reduced_pv" freq_op="3h" >
@@ -256,6 +268,7 @@
     <field id="clwc_pv"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
     <field id="ciwc_pv"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
     <field id="cc_pv"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
+    <field id="co2_pv"    long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
   </field_group>
 
   <field_group id="pextra" grid_ref="reduced_ml" freq_op="3h" >

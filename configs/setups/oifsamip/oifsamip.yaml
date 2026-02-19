@@ -189,6 +189,7 @@ oifs:
                 # XIOS output
                 oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
                 atm: atm_*
+                atmos: atmos.*
 
         outdata_sources:
                 # old grib based output
@@ -199,6 +200,7 @@ oifs:
                 # XIOS output
                 oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
                 atm: atm_*
+                atmos: atmos.*
 
    #======================================================================================
    # XIOS (Parallel output via XML IO server)
@@ -216,6 +218,7 @@ oifs:
                         outdata_files:
                                 oifsnc: oifsnc
                                 atm: atm
+                                atmos: atmos
                 0:
                         outdata_files:
                                 ICMGG: ICMGG
@@ -245,8 +248,14 @@ amip:
 
 xios:
         xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
-        regular_res_lat: 192
-        regular_res_lon: 400
+        truncation: "${oifs.truncation}"
+        choose_truncation:
+            TCO:
+                regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"     #192
+                regular_res_lon: "$(( (${oifs.res_number})*4+20 ))"    #400
+            TL:
+                regular_res_lat: "$(( (${oifs.res_number}+1)*2 ))"
+                regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"    
         interpolation_order: 1
         compression_level: 1
 

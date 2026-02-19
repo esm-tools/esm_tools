@@ -6,6 +6,21 @@ general:
     iterative_coupled_model: ""
     reset_calendar_to_last: False
     verbose: False
+    profile: False
+    pre_recipe:
+        exclude_job_types:
+            - "prepare"
+            - "prepexp"
+            - "observe"
+        steps:
+            - "initialize_dask_cluster"
+    intermediate_movements:
+    - "config"
+    - "bin"
+    - "input"
+    compute_file_checksums: False
+    parallel_file_movements: "dask"
+    force_overwrite_in_file_movements: False
 
 # Defaults to be added to each model or component
 per_model_defaults:
@@ -18,3 +33,18 @@ per_model_defaults:
                         run_to_work:    copy
                         work_to_run:    copy
 
+dask:
+    scheduler_json_name: "dask_scheduler.json"
+    scheduler_json: "${general.thisrun_work_dir}/${dask.scheduler_json_name}"
+    client_timeout: 0.05
+    workers_timeout: 5
+    poll_interval: 0.5
+    ignore_files:
+        scheduler_json: scheduler_json
+    ignore_sources:
+        scheduler_json: "${dask.scheduler_json}"
+    ignore_in_work:
+        scheduler_json: "${dask.scheduler_json_name}"
+    # List of actions that should trigger a dask cluster initialization
+    actions:
+        - "parallel_file_movements"

@@ -48,6 +48,7 @@ oifs:
         nproc: 564
         omp_num_threads: 1 
         # only required with omp_num_threads > 1 
+        # post_run_commands have moved to the computer section
         # post_run_commands: "unset SLURM_HOSTFILE"
         perturb: 0
         ensemble_id: 1

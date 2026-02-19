@@ -354,39 +354,114 @@ class batch_system:
 
     @staticmethod
     def get_post_run_commands(config):
+        """
+        Collect ``post_run_commands`` from ``config["computer"]``.
+
+        The ``computer`` section may define ``post_run_commands`` as a string
+        or a list of strings. These are shell commands appended to the job
+        script after the model execution and before the resubmission call.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        extras : list of str
+            Collected shell commands from the computer section.
+        """
         extras = []
 
-        # Search for ``post_run_commands``s in the components
-        for component in config.keys():
-            post_run_commands = config[component].get("post_run_commands")
-            if isinstance(post_run_commands, list):
-                for pr_command in post_run_commands:
-                    if isinstance(pr_command, str):
-                        extras.append(pr_command)
-                    else:
-                        user_error(
-                            'Invalid type for "post_run_commands"',
-                            (
-                                f'"{type(pr_command)}" type is not supported for '
-                                + f'elements of the "post_run_commands", defined in '
-                                + f'"{component}". Please, define '
-                                + '"post_run_commands" as a "list" of "strings" or a "list".'
-                            ),
-                        )
-            elif isinstance(post_run_commands, str):
-                extras.append(post_run_commands)
-            elif post_run_commands == None:
-                continue
-            else:
-                user_error(
-                    'Invalid type for "post_run_commands"',
-                    (
-                        f'"{type(post_run_commands)}" type is not supported for '
-                        + f'"post_run_commands" defined in "{component}". Please, define '
-                        + '"post_run_commands" as a "string" or a "list" of "strings".'
-                    ),
-                )
+        post_run_commands = config.get("computer", {}).get("post_run_commands")
+        if isinstance(post_run_commands, list):
+            for pr_command in post_run_commands:
+                if isinstance(pr_command, str):
+                    extras.append(pr_command)
+                else:
+                    user_error(
+                        'Invalid type for "post_run_commands"',
+                        (
+                            f'"{type(pr_command)}" type is not supported for '
+                            + f'elements of the "post_run_commands", defined in '
+                            + f'"computer". Please, define '
+                            + '"post_run_commands" as a "list" of "strings" or a "list".'
+                        ),
+                    )
+        elif isinstance(post_run_commands, str):
+            extras.append(post_run_commands)
+        elif post_run_commands is not None:
+            user_error(
+                'Invalid type for "post_run_commands"',
+                (
+                    f'"{type(post_run_commands)}" type is not supported for '
+                    + f'"post_run_commands" defined in "computer". Please, define '
+                    + '"post_run_commands" as a "string" or a "list" of "strings".'
+                ),
+            )
         return extras
+
+    @staticmethod
+    def get_env_capture_commands(config):
+        """
+        Return shell lines that capture batch system env vars to a file.
+
+        Reads ``save_batch_env_patterns`` from the batch system config (e.g.
+        ``["SLURM"]`` or ``["PBS"]``) and builds a ``declare -p | grep -E``
+        command that dumps matching variables into
+        ``{thisrun_work_dir}/batch_system.env``.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        list of str
+            Shell lines to write into the job script, or ``[]`` if no
+            patterns are configured.
+        """
+        patterns = config["computer"].get("save_batch_env_patterns", [])
+        if not patterns:
+            return []
+        grep_pattern = "|".join(patterns)
+        env_file = f'{config["general"]["thisrun_work_dir"]}/batch_system.env'
+        return [
+            "# Store batch system environment variables for later sourcing",
+            f'declare -p | grep -E "({grep_pattern})" > {env_file}',
+            "",
+        ]
+
+    @staticmethod
+    def get_env_recovery_commands(config):
+        """
+        Return shell lines that restore batch system env vars from a file.
+
+        Sources the env file written by :meth:`get_env_capture_commands` and
+        removes it afterwards. This is needed before resubmission because
+        subprocesses spawned during the job may have cleared these variables.
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        list of str
+            Shell lines to write into the job script, or ``[]`` if no
+            patterns are configured.
+        """
+        patterns = config["computer"].get("save_batch_env_patterns", [])
+        if not patterns:
+            return []
+        env_file = f'{config["general"]["thisrun_work_dir"]}/batch_system.env'
+        return [
+            "# Recover batch system environment variables",
+            f"source {env_file}; rm {env_file}",
+            "",
+        ]
 
     @staticmethod
     def append_start_statement(config, subjob):
@@ -510,6 +585,10 @@ class batch_system:
                     runfile.write(line + "\n")
                 runfile.write("\n")
 
+            # Save batch env vars (e.g. SLURM_*, PBS_*) so they can be
+            # restored before resubmission
+            for line in batch_system.get_env_capture_commands(config):
+                runfile.write(line + "\n")
             if clusterconf:
                 for subjob in clusterconf["subjobs"]:
 
@@ -598,7 +677,10 @@ class batch_system:
                 runfile.write("\n")
                 runfile.write("# Call to esm_runscript to start subjobs:\n")
                 runfile.write("# " + str(subjobs_to_launch) + "\n")
-                runfile.write("process=$! \n")
+                runfile.write("process=$!\n\n")
+                # Restore batch env vars before resubmission
+                for line in batch_system.get_env_recovery_commands(config):
+                    runfile.write(line + "\n")
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )

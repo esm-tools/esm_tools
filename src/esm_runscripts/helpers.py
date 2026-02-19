@@ -60,6 +60,13 @@ def evaluate(config, job_type, recipe_name):
     )
     if recipe_steps:
         framework_recipe["recipe"] = recipe_steps
+
+    pre_recipe = config.get("general", {}).get("pre_recipe", {})
+    excluded_jobs = pre_recipe.get("exclude_job_types", [])
+    pre_steps = pre_recipe.get("steps", [])
+    if job_type not in excluded_jobs and pre_steps:
+        framework_recipe["recipe"] = pre_steps + framework_recipe["recipe"]
+
     framework_plugins = esm_plugin_manager.read_plugin_information(
         plugins_bare, framework_recipe, need_to_parse_plugins
     )

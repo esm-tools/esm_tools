@@ -245,6 +245,8 @@ oifs:
             branch: 'feature/wiso_implementation'
             add_add_add_add_add_add_add_namelist_changes:
                 fort.4:
+                    NAMECECFG:
+                        ECE_CPL_WISO: true
                     NAMPHY:
                         LWISO: true
                         NWISO: 2

@@ -3772,8 +3772,8 @@ nemo:
                                     grid: opat
                             "[[agr1_r_fields-->FIELD]]":
                                     grid: agr1
-                            "[[agr1_rc_fields-->FIELD]]":
-                                    grid: agr1
+                            #"[[agr1_rc_fields-->FIELD]]":
+                                    #grid: agr1
 
             "EM21":
                     ornf_fields: [O_Runoff]
@@ -3787,8 +3787,8 @@ nemo:
                                     grid: opaa
                             "[[agr1_r_fields-->FIELD]]":
                                     grid: agr1
-                            "[[agr1_rc_fields-->FIELD]]":
-                                    grid: agrc
+                            #"[[agr1_rc_fields-->FIELD]]":
+                                    #grid: agrc
 
             # Old method based on remapping runoff to a pre-made
             # runoff mask on the ORCA05 grid (rnfo) or AGRIF (agr1r)

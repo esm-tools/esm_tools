@@ -76,31 +76,39 @@ function ice2fesom {
 }
 
 function build_submesh {
-      echo "UKK13"	
+      echo "===================================================================="
+      echo "[BUILD_SUBMESH] Starting dynamic submesh generation"
+      echo "===================================================================="
       SUBMESH_DIR=submesh_${CHUNK_END_DATE_fesom}/
       
-      echo "submesh $SUBMESH_DIR"
+      echo "[BUILD_SUBMESH] Target submesh directory: ${SUBMESH_DIR}"
        MAXMESH_DIR_fesom=$MAX_MESH
-      echo $MESH_DIR
+      echo "[BUILD_SUBMESH] Current MESH_DIR: ${MESH_DIR}"
+      echo "[BUILD_SUBMESH] Maximum mesh directory: ${MAXMESH_DIR_fesom}"
       mkdir -p $SUBMESH_DIR
       rm -rf $SUBMESH_DIR/*
 	
+      echo "[BUILD_SUBMESH] Step 1: Regridding ice geometry to ocean resolution..."
       cdo -setmisstoc,5 -remapbil,T512grid ${COUPLE_DIR}/latest_ice_geometry.nc tmp1.nc
       cdo -remapnn,core2_griddes_nodes.nc tmp1.nc tmp2.nc
       ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
       rm tmp1.nc tmp2.nc
+      echo "[BUILD_SUBMESH] Step 2: Generating mesh flags from PISM ice geometry..."
       python3 mesh_flags.py > output.txt 2>&1
+    echo "[BUILD_SUBMESH] Step 3: Copying mesh text files and compiling Fortran submesh tool..."
     cp ${MESH_DIR_fesom}/*.txt .
-    gfortran -o fesom_submesh.x fesom_submesh_UKK.F90 > lala
+    gfortran -o fesom_submesh.x fesom_submesh_UKK.F90 > compile_submesh.log 2>&1
     rm -rf ${COUPLE_DIR}/${SUBMESH_DIR}/*
-    echo UKK111 ./fesom_submesh.x  ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/ 
+    echo "[BUILD_SUBMESH] Step 4: Running mesh reduction algorithm..."
+    echo "[BUILD_SUBMESH]   Command: ./fesom_submesh.x ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/"
     ./fesom_submesh.x  ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/
     rm -rf ${COUPLE_DIR}/latest_submesh
-    echo ${MESH_DIR_fesom}
-    echo $PATH
-    echo "singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-partition oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev --mesh-dir ${SUBMESH_DIR} --n-part 288 --use-cavity"
+    echo "[BUILD_SUBMESH] Mesh directory (FESOM): ${MESH_DIR_fesom}"
+    echo "[BUILD_SUBMESH] Step 5: Running mesh partitioning with Singularity..."
+    echo "[BUILD_SUBMESH]   Container: paul.gierz/meshtools-creator:dev"
+    echo "[BUILD_SUBMESH]   Partitions: 288, Using cavity: yes"
     singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-partition oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev --mesh-dir ${SUBMESH_DIR} --n-part 288 --use-cavity
-    echo "UKK999"
+    echo "[BUILD_SUBMESH] Step 6: Creating mesh grid description file..."
     singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-griddes oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev --mesh-dir ${SUBMESH_DIR} --ofile mesh_cst.nc
     rm tmp*.nc
     mv ${COUPLE_DIR}/mesh_cst.nc ${COUPLE_DIR}/${SUBMESH_DIR}/
@@ -108,7 +116,8 @@ function build_submesh {
     mesh_dir=${COUPLE_DIR}/${SUBMESH_DIR}
 
 if [ -f "${mesh_dir}/cavity_nlvls.out" ]; then
-    echo "Found cavity_nlvls.out -> building OCE_flag mask"
+    echo "[BUILD_SUBMESH] Step 7: Processing ice shelf cavity levels..."
+    echo "[BUILD_SUBMESH]   Found cavity_nlvls.out -> building OCE_flag mask"
     # Convert text to NetCDF
     cdo -L -f nc -b F64 input,${mesh_dir}/mesh_cst.nc cavity_nlvls_tmp.nc < ${mesh_dir}/cavity_nlvls.out
 
@@ -119,7 +128,8 @@ if [ -f "${mesh_dir}/cavity_nlvls.out" ]; then
     # Merge mask into mesh	
      cdo -L -f nc -b F64 -merge ${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc
 else
-    echo "No cavity_nlvls.out -> OCE_flag is constant 1 everywhere"
+    echo "[BUILD_SUBMESH] Step 7: No cavity detected..."
+    echo "[BUILD_SUBMESH]   No cavity_nlvls.out -> OCE_flag is constant 1 everywhere"
     # Create a constant mask variable OCE_flag = 1 on the mesh grid
     cdo -L -f nc -b F64 -setname,OCE_flag -const,1,${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc
     cdo -L -f nc -b F64 -setname,GLAC_flag -setctomiss,1 -const,1,${mesh_dir}/mesh_cst.nc GLAC_flag_tmp.nc
@@ -131,8 +141,10 @@ fi
 cp mesh_cst_tmp.nc ${mesh_dir}/mesh_cst.nc
 
 # clean up
+echo "[BUILD_SUBMESH] Cleaning up temporary files..."
 rm *.out *_tmp.nc
-
+echo "[BUILD_SUBMESH] Submesh generation completed successfully!"
+echo "===================================================================="
 
 }
 
@@ -267,12 +279,14 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     COUNT_MAX=12
     while [ ${counter} -lt ${COUNT_MAX} ]
     do
-        echo "          * inside while loop "
+        echo "[ICEBERG_FORCING] Checking for PISM output file (attempt ${counter}/${COUNT_MAX})..."
         if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
+            echo "[ICEBERG_FORCING] PISM output file found!"
             break
         fi
 
-        echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
+        echo "[ICEBERG_FORCING] File not found: ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc"
+        echo "[ICEBERG_FORCING] Waiting 10 seconds before retry..."
         sleep 10
         counter=$((counter+1))
     done
@@ -285,9 +299,11 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         pism_discharge_file=${SPINUP_FILE_pism}
     fi
 
-    echo "CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
-    echo "COUPLE_DIR: ${COUPLE_DIR}"
-    echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
+    echo "[ICEBERG_FORCING] Configuration:"
+    echo "[ICEBERG_FORCING]   CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
+    echo "[ICEBERG_FORCING]   COUPLE_DIR: ${COUPLE_DIR}"
+    echo "[ICEBERG_FORCING]   PISM_DISCHARGE_FILE: ${pism_discharge_file}"
+    echo "[ICEBERG_FORCING] Processing iceberg discharge data with CDO..."
 
     cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc

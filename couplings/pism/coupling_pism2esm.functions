@@ -1,6 +1,11 @@
 #!/usr/bin/ksh
 pism2esm() {
+    echo "===================================================================="
+    echo "[PISM2ESM] Starting PISM to ESM coupling"
+    echo "===================================================================="
+    echo "[PISM2ESM] Loaded modules:"
     echo $(module list)
+    echo "[PISM2ESM] Loading coupling functions..."
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/general_helpers.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
@@ -33,18 +38,22 @@ pism2esm() {
     #    . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions.origin
     . ${FUNCTION_PATH}/coupling_pism2ocean.functions
 
-    echo "UKK0********"
- #   export GEOMETRY_FILE="latest_ice_geometry.nc"
- #   export PATH2COUPLE=${COUPLE_DIR}
+    echo "[PISM2ESM] Extracting ice geometry variables from PISM output..."
+    echo "[PISM2ESM]   Input file: ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
+    echo "[PISM2ESM]   Output file: ${COUPLE_DIR}/latest_ice_geometry.nc"
     if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
 	    echo "cdo seltimestep,1  -expr,ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=(mask==2); mask=mask; ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/latest_ice_geometry.nc"
 	    cdo seltimestep,1  -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
               ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/latest_ice_geometry.nc
+    else
+        echo "[PISM2ESM] WARNING: PISM output file not found!"
     fi
 
     #    env > env_pism2awiesm.txt
     #pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
-    echo "*** Starting pis2atmosphere ***"
+    echo "[PISM2ESM] Calling pism2atmosphere coupling..."
  #   pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
     #pism2ocean
+    echo "[PISM2ESM] PISM to ESM coupling completed"
+    echo "===================================================================="
 }

@@ -99,6 +99,8 @@ general:
 
     # Load general environment for the whole coupled setup
     dr_hook_ignore_signals: -1
+    required_plugins:
+        - "git+https://github.com/JanStreffing/ocp-tool/"
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

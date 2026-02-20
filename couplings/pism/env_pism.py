@@ -49,6 +49,17 @@ def prepare_environment(config):
             "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),
             "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
             "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1),
+
+            # OCP-tool variables (for ice2oifs coupling)
+            "OCP_POOL_DIR": config["general"].get("pool_dir", ""),
+            "OCP_OIFS_RES": config.get("oifs", {}).get("resolution", ""),
+            "OCP_OIFS_RES_NUMBER": config.get("oifs", {}).get("res_number", ""),
+            "OCP_OIFS_TRUNCATION": config.get("oifs", {}).get("truncation", ""),
+            "OCP_OIFS_LEVELS": config.get("oifs", {}).get("levels", ""),
+            "OCP_OIFS_PREPIFS_EXPID": config.get("oifs", {}).get("prepifs_expid", ""),
+            "OCP_OIFS_INPUT_EXPID": config.get("oifs", {}).get("input_expid", ""),
+            "OCP_OIFS_VERSION": config.get("oifs", {}).get("version", ""),
+            "OCP_FESOM_RES": config.get("fesom", {}).get("resolution", ""),
             }
     print (environment_dict)
     return environment_dict

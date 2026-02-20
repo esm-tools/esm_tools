@@ -140,6 +140,12 @@ fi
 
 cp mesh_cst_tmp.nc ${mesh_dir}/mesh_cst.nc
 
+# Rename cavity_depth.out to pyfesom2-standard name
+if [[ -f ${mesh_dir}/cavity_depth.out ]]; then
+    mv ${mesh_dir}/cavity_depth.out ${mesh_dir}/cavity_depth@node.out
+    echo "[BUILD_SUBMESH] Renamed cavity_depth.out -> cavity_depth@node.out"
+fi
+
 # clean up
 echo "[BUILD_SUBMESH] Cleaning up temporary files..."
 rm *.out *_tmp.nc

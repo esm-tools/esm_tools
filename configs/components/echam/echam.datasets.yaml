@@ -147,6 +147,7 @@ echam:
             carbon_emissions_ssp370: "${forcing_dir}/${resolution}_carbon_emissions_ssp370.nc"
             carbon_emissions_ssp534os: "${forcing_dir}/${resolution}_carbon_emissions_ssp534.nc"
             carbon_emissions_ssp585: "${forcing_dir}/${resolution}_carbon_emissions_ssp585.nc"
+            carbon_emissions_ssp119: "${forcing_dir}/${resolution}_carbon_emissions_ssp119.nc"
 
     greenhouse_hist_name: "greenhouse_historical"
     MAC-SP_hist_name: "MAC-SP"

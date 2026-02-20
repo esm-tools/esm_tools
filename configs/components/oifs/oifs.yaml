@@ -1153,7 +1153,7 @@ oifs:
                             fort.4:
                                     NAMRES:
                                             NFRRES: 1
-                                            NRESTS:
+                                            NRESTS(:):
                                                    - 1
                                                    - ${oifs.next_step}
                                     NAMPAR0:

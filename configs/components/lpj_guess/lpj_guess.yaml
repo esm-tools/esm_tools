@@ -1,0 +1,352 @@
+# LPJ-GUESS 4
+#
+# For more information about the extended YAML syntax, please consult:
+# https://esm-tools.readthedocs.io/en/latest/yaml.html#esm-tools-extended-yaml-syntax
+#
+# For more information about the ESM-Tools feature variables available, please consult:
+# https://esm-tools.readthedocs.io/en/latest/esm_variables.html#esm-tools-variables
+
+lpj_guess:
+    model: lpj_guess
+    version: 4.1.2
+
+    required_plugins:
+        - "git+https://github.com/JanStreffing/lpjg2nc2"
+
+    further_reading:
+        - lpj_guess/lpj_guess.cmip.yaml
+
+    metadata:
+        Institute: Lund Universitiy
+        Description: Dynamic vegetation model
+        Authors: Ben Smith
+        Publications:
+            - "Smith, B., Prentice, I.C. & Sykes, M.T. 2001. Representation of vegetation dynamics in the modelling of terrestrial ecosystems: comparing two contrasting approaches within European climate space. Global Ecology & Biogeography 10: 621-637. <https://doi.org/10.1046/j.1466-822X.2001.t01-1-00256.x>"
+            - "Sitch, S., Smith, B., Prentice, I.C., Arneth, A., Bondeau, A., Cramer, W., Kaplan, J., Levis, S., Lucht, W., Sykes, M., Thonicke, K. & Venevsky, S. 2003. Evaluation of ecosystem dynamics, plant geography and terrestrial carbon cycling in the LPJ Dynamic Global Vegetation Model. Global Change Biology 9: 161-185. <https://doi.org/10.1046/j.1365-2486.2003.00569.x>"
+            - "Martín Belda, D., Anthoni, P., Wårlind, D., Olin, S., Schurgers, G., Tang, J., Smith, B., & Arneth, A. 2022. LPJ-GUESS/LSMv1.0: A next generation Land Surface Model with high ecological realism. Geoscientific Model Development: <https://doi.org/10.5194/gmd-15-6709-2022>"
+            - "Nord, J., Anthoni, P., Gregor, K., Gustafson, A., Hantson, S., Lindeskog, M., Meyer, B., Miller, P., Nieradzik, L., Olin, S., Papastefanou, P., Smith, B., Tang, J., Wårlind, D., & and past LPJ-GUESS contributors. (2021). LPJ-GUESS Release v4.1.1 model code (4.1.1). Zenodo. <https://doi.org/10.5281/zenodo.8065737>"
+        License: Mozilla Public License Version 2.0
+
+
+    git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
+    destination: lpj_guess
+    branch: main
+    comp_command: "mkdir -p build; cd build; cmake ..; make -j8"
+
+    setup_dir: "${model_dir}"
+    bin_dir: "${setup_dir}/bin"
+    install_bins: "build/guess"
+    clean_command: "rm -rf build"
+    executable: guess_TL255
+    execution_command: ${executable} ${runscript_name}
+    #resolution: TL159 #if it's not set i dosen't work!
+    resolution: TL255 #if it's not set i dosen't work!
+    TM5: 0
+
+    # Enumeration for parallel run directories (run1, run2, ..., runN)
+    nproc: 8
+    proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
+    proc_list: $(( ${proc_list_entry} ))
+
+    choose_version:
+        4.1.1:
+            runscript_name: run_trunk_4_1.ins
+            git-repository: https://gitlab.dkrz.de/ec-earth/lpj-guess4.1.1.git
+            branch: main
+        4.1.2:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
+            branch: lpj_guess_awiesm3
+            install_bins: build/guess
+            executable: guess
+        4.1.3:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.3
+            install_bins: build/guess
+            executable: guess
+
+
+    # Automatically select the source code for esm_master if the command is operating
+    # with a coupled setup
+    model_dir: ${general.model_dir}
+
+    choose_computer.name:
+        levante:
+            pool_dir: "/work/ab0246/a270092/input/"
+
+    # Some recommended defaults (restart for old experiment yes or no?)
+    lresume: false
+    time_step: 86400
+    nyear_spinup: 10
+
+    # Fire model selection: BLAZE, GLOBFIRM, NOFIRE
+    # Set to BLAZE to enable SIMFIRE/BLAZE fire module
+    firemodel: NOFIRE
+
+    choose_lresume:
+        false:
+            restart_num: 0
+        true:
+            restart_num: 1
+
+    # Some commonly used variables in other ESM-Tools components (but optional)
+    input_dir: ${pool_dir}/lpj-guess/
+    out_date_folder: "${end_date!syear!smonth!sday}"
+
+    # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
+    ndep_input_dir: ${input_dir}/ndep/${resolution}/
+
+    # Output mode: 
+    # esm_tools_copy: slow but reliable, many files
+    # collect_txt: combile into one run1 folder for ec2cmor2 few files, fast
+    # convert_netcdf (future)
+    output_mode: collect_txt
+    choose_output_mode:
+        esm_tools_copy:
+            # Define files to ignore
+            ignore_files:
+                outputs: outputs
+                log: log
+            ignore_in_work:
+                # Ignore output files with the same name
+                outputs: "output/*.out"
+                # Ignore log files
+                log: "*.log"
+                # Ignore input directories (created during setup)
+                ndep_dir: "ndep"
+                landuse_dir: "landuse"
+            ignore_sources:
+                outputs: "output/*.out"
+                log: "*.log"
+
+            # Output data - enumerate over all run directories to preserve structure
+            # Uses proc_list enumeration (defined above via nproc)
+            outdata_files:
+                "lpjg_run_[[proc_list-->PROC_NUM]]": "lpjg_run_PROC_NUM"
+            outdata_in_work:
+                "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/output/*.out"
+            outdata_sources:
+                "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/*"
+
+        collect_txt:
+            # In collect_txt mode, esm_tools does NOT copy output files.
+            # Instead, a separate slurm job combines runX/output/*.out into
+            # single .out files per pattern (for ec2cmor2 preprocessing).
+            combine_njobs: 8
+
+            ignore_files:
+                outputs: outputs
+                log: log
+            ignore_in_work:
+                outputs: "output/*.out"
+                log: "*.log"
+                ndep_dir: "ndep"
+                landuse_dir: "landuse"
+            ignore_sources:
+                outputs: "output/*.out"
+                log: "*.log"
+
+            outdata_files: {}
+            outdata_in_work: {}
+            outdata_sources: {}
+
+            scripts_files:
+                combine1: combine1
+            scripts_sources:
+                combine1: "${esm_function_dir}/components/lpj_guess/subjob_combine.sh"
+            scripts_targets:
+                combine1: "${general.experiment_scripts_dir}/${model}/subjob_combine.sh"
+
+            workflow:
+                next_run_triggered_by: tidy
+                subjobs:
+                    Combine_LPJG:
+                        batch_or_shell: batch
+                        order_in_cluster: concurrent
+                        run_on_queue: ${computer.partitions.pp.name}
+                        run_after: tidy
+                        script_dir: ${base_dir}/${expid}/scripts/lpj_guess
+                        submit_to_batch_system: true
+                        script: "subjob_combine.sh ${general.thisrun_dir}/work ${lpj_guess.experiment_outdata_dir} ${general.run_datestamp} ${lpj_guess.combine_njobs}"
+                        nproc: 1
+
+    namelist_dir: ${general.esm_namelist_dir}/lpj_guess/
+    gridlist_dir: ${input_dir}/gridlists/
+    forcing_dir: ${input_dir}/climate_forcing_data/
+
+    #gridlist: "full_global" # sets up grid cell list =/ setup_name!!
+    gridlist: "home" # sets up grid cell list =/ setup_name!!
+    setup_name: global # sets up all the model parameters
+
+
+    # File dictionaries
+    config_sources:
+        runscript: ${namelist_dir}/run_trunk_4_1.j2
+        forcing_path_file: ${namelist_dir}/paths_forcing.j2
+    config_in_work:
+        runscript: ${runscript_name}
+        forcing_path_file: paths_forcing.ins
+
+    bin_sources:
+        bin_tag: ${model_dir}/bin/${executable}
+
+    lpjg_parent_state: $((${parent_date!syear}+1))
+    lpjg_end_state: $((${end_date!syear}+1))
+
+    restart_in_files:
+        state: state
+    restart_in_in_work:
+        state: lpjg_state_${lpjg_parent_state}/*
+    restart_in_sources:
+        state: lpjg_state_${lpjg_parent_state}/*
+    restart_out_files:
+        state: state
+    restart_out_in_work:
+        state: lpjg_state_${lpjg_end_state}/*
+    restart_out_sources:
+        state: lpjg_state_${lpjg_end_state}/*
+
+    # Soil type file
+    slt_dir: ${input_dir}/slt/
+
+
+    # SIMFIRE/BLAZE fire input directory
+    # Files: simfire_monthly_ba.nc (12 months), annual_population_density.nc (1850-2025)
+    fire_input_dir: ${input_dir}/fire/${resolution}/
+
+    # N deposition forcing files - link from input to work/ndep with renamed filenames
+    forcing_files:
+        soil_layer_type: soil_layer_type
+        drynhx: drynhx
+        drynoy: drynoy
+        wetnhx: wetnhx
+        wetnoy: wetnoy
+        peat: peat
+        simfire_ba: simfire_ba
+        simfire_popdens: simfire_popdens
+    forcing_sources:
+        soil_layer_type: ${slt_dir}/slt_${resolution}.nc
+        drynhx: ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
+        drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
+        wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
+        wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
+        peat: ${input_dir}/peat/${resolution}_peat_frac.txt
+        simfire_ba: ${fire_input_dir}/simfire_monthly_ba.nc
+        simfire_popdens: ${fire_input_dir}/annual_population_density.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${slt_dir}/slt_${resolution}.nc
+        "drynhx_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynhx_${resolution}_hist_d1.nc
+        "drynoy_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
+        "wetnhx_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
+        "wetnoy_[[proc_list-->PROC_NUM]]": ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
+    forcing_in_work:
+        soil_layer_type: slt_${resolution}.nc
+        drynhx: ndep/drynhx2.nc
+        drynoy: ndep/drynoy2.nc
+        wetnhx: ndep/wetnhx2.nc
+        wetnoy: ndep/wetnoy2.nc
+        peat: landuse/peat_frac.txt
+        simfire_ba: fire/simfire_monthly_ba.nc
+        simfire_popdens: fire/annual_population_density.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${resolution}.nc
+        "drynhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynhx2.nc
+        "drynoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynoy2.nc
+        "wetnhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnhx2.nc
+        "wetnoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnoy2.nc
+
+    choose_resolution:
+        # Note:
+        # Tco grids only work with version 43r3.
+        TCO95:
+            nx: 40320
+            ny: 1
+            oasis_grid_name: "096"
+            res_number: 95
+            res_number_tl: "95_4"
+            truncation: "TCO"
+        TL159:
+            nx: 35718
+            ny: 1
+            oasis_grid_name: "080"
+            res_number: 159
+            res_number_tl: "159l_2"
+            truncation: "TL"
+        TCO159:
+            nx: 108160
+            ny: 1
+            oasis_grid_name: "160"
+            res_number: 159
+            res_number_tl: "159_4"
+            truncation: "TCO"
+        TCO199:
+            nx: 167200
+            ny: 1
+            oasis_grid_name: "200"
+            res_number: 199
+            res_number_tl: "199_4"
+            truncation: "TCO"
+        TL255:
+            nx: 88838
+            ny: 1
+            oasis_grid_name: "128"
+            res_number: 255
+            res_number_tl: "255l_2"
+            truncation: "TL"
+        TCO319:
+            nx: 421120
+            ny: 1
+            oasis_grid_name: 320
+            res_number: 319
+            res_number_tl: "319_4"
+            truncation: "TCO"
+        TCO399:
+            nx: 654400
+            ny: 1
+            oasis_grid_name: 400
+            res_number: 399
+            res_number_tl: "399_4"
+            truncation: "TCO"
+        TCO639:
+            nx: 1661440
+            ny: 1
+            oasis_grid_name: 640
+            res_number: 639
+            res_number_tl: "639_4"
+            truncation: "TCO"
+        TCO1279:
+            nx: 6599680
+            ny: 1
+            oasis_grid_name: 128
+            res_number: 1279
+            res_number_tl: "1279_4"
+            truncation: "TCO"
+        TL511:
+            nx: 348528
+            ny: 1
+            oasis_grid_name: "256"
+            res_number: 511
+            res_number_tl: "511l_2"
+            truncation: "TL"
+        TL799:
+            nx: 843490
+            ny: 1
+            oasis_grid_name: "400"
+            res_number: 799
+            res_number_tl: "799l_2"
+            truncation: "TL"
+        TL1279:
+            nx: 2140702
+            ny: 1
+            oasis_grid_name: "640"
+            res_number: 799
+            res_number_tl: "1279l_2"
+            truncation: "TL"
+
+
+computer:
+    add_export_vars:
+        myfortrancompiler: $FC
+        OASIS_ANCHOR: ../../../oasis
+        NETCDF_C_DIR: $NETCDFROOT
+        NETCDF_F_DIR: $NETCDFFROOT
+        OASIS_DIR: ../../../oasis/arch_ecearth/

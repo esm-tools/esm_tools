@@ -1,29 +1,69 @@
-choose_oifs.mip:
-    "cmip5":
-        add_namelist_changes:
-            fort.4:
-                NAMECECMIP:
-                    CMIP5DATADIR: "${cmip5_data_dir_nml}"
-    "cmip6":
-        add_namelist_changes:
-            fort.4:
-                NAMECECMIP:
-                    LCMIP6: ".true."
-                    CMIP6DATADIR: "${cmip6_data_dir_nml}"
-        choose_scenario:
-            "piControl":
-                add_namelist_changes:
-                    fort.4:
-                        NAMECECMIP:
-                            NCMIPFIXYR: 1850
-            "SSP5-8.5":
-                add_namelist_changes:
-                    fort.4:
-                        NAMECECMIP:
-                            SCENARIONAME: "SSP5-8.5"
-    "cmip7":
-        add_namelist_changes:
-            fort.4:
-                NAMECECMIP:
-                    LCMIP7: ".true."
-                    CMIP7DATADIR: "${cmip7_data_dir_nml}"
+oifs:
+    cmip7_data_dir: ${input_dir}/cmip7-data
+    choose_mip:
+        "cmip5":
+            add_namelist_changes:
+                fort.4:
+                    NAMECECMIP:
+                        CMIP5DATADIR: "${oifs.cmip5_data_dir_nml}"
+        "cmip6":
+            add_namelist_changes:
+                fort.4:
+                    NAMECECMIP:
+                        LCMIP6: ".true."
+                        CMIP6DATADIR: "${oifs.cmip6_data_dir_nml}"
+                    NAERAD:
+                        CO3DATADIR: "${oifs.cmip6_data_dir_nml}/"
+            choose_scenario:
+                "piControl":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: 1850
+                "SSP5-8.5":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "SSP5-8.5"
+                "SSP3-7.0":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "SSP3-7.0"
+                "SSP2-4.5":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "SSP2-4.5"
+                "SSP1-2.6":
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                SCENARIONAME: "SSP1-2.6"
+        "cmip7":
+            choose_scenario:
+                "piControl":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+            add_namelist_changes:
+                fort.4:
+                    NAMECECMIP:
+                        LCMIP7: True
+                        LCMIP6: False
+                        CMIP7DATADIR: '${cmip7_data_dir}'
+                        LMACV2SP: True
+                        LMACV2SP_CCNF: True
+                    NAERAD:
+                        NO3CMIP: 7
+                        CO3DATADIR: '${cmip7_data_dir}'
+                        CCMIP_STRAT_FULL: '/work/ab0246/a270092/input/oifs-48r1/cmip7-data/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_historical_1750-2023_2-2-1_${levels}.nc'
+                        CCMIP_STRAT_FULL_CLIM: '/work/ab0246/a270092/input/oifs-48r1/cmip7-data/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_climatology2-2-1_${levels}.nc'
+                    NAMMCC:
+                        LRDALB: True

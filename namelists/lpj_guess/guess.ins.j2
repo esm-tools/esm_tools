@@ -1,0 +1,151 @@
+!///////////////////////////////////////////////////////////////////////////////////////
+!// ecev3 guess.ins
+
+! optimesm & rescue
+import "ecearth.ins"
+! import "global.ins"
+import "crop_n.ins"
+import "landuse.ins"
+
+param "file_gridlist"        (str "../ece_gridlist_{{lpj_guess.resolution}}.txt")
+
+! *** SIMFIRE/BLAZE fire input
+! EC-Earth coupling uses NetCDF files in work/fire/ directory (hardcoded in simfire_input.cpp)
+! This param is required but ignored - actual files are: simfire_monthly_ba.nc, annual_population_density.nc
+param "file_simfire"  (str "dummy")
+
+! Fire model selection: BLAZE, GLOBFIRM, NOFIRE
+firemodel "{{lpj_guess.firemodel | default('NOFIRE')}}"
+
+! optimesm
+import "wetlandpfts.ins"
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// RUN PARAMETERS AND OPTIONS 
+
+! ecev3 - overrides ifbvoc 0 in global.ins
+ifbvoc 1
+
+! AWI-ESM3 - override spinup parameters from ecearth.ins
+! nyear_spinup must be > freenyears to avoid fatal error
+! Default: nyear_spinup=1, freenyears=0 (no spinup, no N limitation delay)
+nyear_spinup {{lpj_guess.nyear_spinup | default(1)}}
+freenyears {{lpj_guess.freenyears | default(0)}}
+
+! ecev3 - set to 1
+ifintercropgrass 1	! Whether to grow grass as cover crop between growing periods
+
+
+!///////////////////////////////////////////////////////////////////////////////////////
+!// ecev3 - Parameters and options specific to LPJ-GUESS coupled to EC-Earth
+
+! N deposition (blank string to use constant pre-industrial level of 2 kgN/ha/year)
+! NB! not used in EC-Earth coupling
+!param "file_ndep"     (str "c:/ndep/GlobalNitrogenDeposition.bin")
+param "file_ndep"     (str "") ! NB! MUST be cru_ncep version of this file
+
+! CMIP N deposition - replaces file_ndep
+! param "ndep_cmip_dir" (str "../ndep/") 
+param "ndep_cmip_dir" (str "{{lpj_guess.ndep_cmip_dir}}")
+! if (param["ndep_cmip_dir"].str != "") { // PaulM - ECE4 hack - option to run without ndep
+! PaulM - ECE4 hack - edited 
+
+! CMIP CO2 forcing file (set by choose_mip block based on mip version)
+param "file_co2" (str "{{lpj_guess.co2_work_file | default('mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc')}}")
+
+! Whether to use soil water content and soil temperature sent from IFS (1), or use GUESS' own
+! hydrology (driven by precipitation) and analytic soil temperature (0).
+param "useifssoilmoist" (num 0)
+param "useifssoiltemp" (num 0)
+
+
+! Determine which RCP to use
+! 0 - historical only (i.e. use file_co2 below)
+! 1 - use ghg_rcp3PD.txt
+! 2 - use ghg_rcp45.txt
+! 3 - use ghg_rcp60.txt
+! 4 - use ghg_rcp85.txt
+param "nrcp" (num 0)
+
+! State file name and directory 
+! For saving and reading .bin files.
+!state_path "./" 
+param "state_path" (str "../") 	! directory containing the .bin state files
+param "state_name" (str "lpjg")	! state filenames
+param "restart" (num {{lpj_guess.restart_num}}) ! 		! 1: restart from .bin files. 0: start from bare ground
+! PaulM ECE4 hack - changed to 0
+
+! Number of years in IFS spinup forcing file (must match the forcing NetCDF time dimension)
+param "nyearifs" (num {{lpj_guess.nyearifs | default(10)}})
+
+! Paths to IFS spinup data - MUST have trailing "/" (linux/unix systems) or "\" (Windows)
+
+! NSC ECE 3p1:
+!param "spinup_directory" (str "/nobackup/rossby15/sm_paumi/ecev3/processed/daily/")
+! NSC ECE 3p2 AMIP output:
+!param "spinup_directory" (str "/nobackup/rossby18/sm_wyser/ecearth3-amip/processed/daily/")
+! Fast AMIP output:
+!param "spinup_directory" (str "/nobackup/rossby20/sm_paumi/amipspinupforcing/")
+! lsm runscript: ifs_spinup_forcing must be linked in the runtime script
+param "spinup_directory" (str "../ifs_spinup_forcing/")
+
+! Tetralith, GSWP files:
+! param "spinup_directory" (str "/proj/rescue/lpjg/gswp3/osm_forcing/gswp3/T255L91/lpjg_spinup_forcing/")
+
+!param "spinup_directory" (str "D:\DATA\J\EC-Earth\Version3p1_output\se21\daily\") ! Older set
+!param "spinup_directory" (str "D:\DATA\J\EC-Earth\Version3p2_output\AMIP\") 
+
+! N deposition (default is pre-industrial level of 2 kgN/ha/year)
+param "ndep" (num 2)
+
+! Print Lon/Lat with extra precision. Default is 1
+coordinates_precision 6
+
+
+! optimesm & rescue TESTING
+! PaulM ECE4 hack - changed below
+npatch 5                                ! number of replicate patches to simulate
+
+! LUH3 NetCDF land use input (0 = use text files, 1 = use NetCDF LUH3 files)
+use_luh3_input {{lpj_guess.use_luh3_input | default(0)}}
+{% if lpj_guess.use_luh3_input | default(0) == 1 %}
+file_luh3_states "{{lpj_guess.file_luh3_states | default('../landuse/luh3_states.nc')}}"
+file_luh3_management "{{lpj_guess.file_luh3_management | default('../landuse/luh3_management.nc')}}"
+{% if lpj_guess.use_luh3_yearly_transitions | default(0) == 1 %}
+! Yearly transition files mode
+use_luh3_yearly_transitions 1
+file_luh3_transitions_dir "{{lpj_guess.file_luh3_transitions_dir}}/{{lpj_guess.resolution | lower}}/"
+file_luh3_transitions ""
+{% else %}
+! Single transition file mode
+file_luh3_transitions "{{lpj_guess.file_luh3_transitions | default('../landuse/luh3_transitions.nc')}}"
+{% endif %}
+! Override LUH2 text files to empty strings when using LUH3 NetCDF
+param "file_lu" (str "")
+param "file_lucrop" (str "")
+param "file_Nfert" (str "")
+param "file_grossLUC" (str "")
+{% endif %}
+
+run_landcover {{lpj_guess.run_landcover | default(0)}}        ! whether to use (and change) landcover fractions (1) or not (0)
+
+run_urban {{lpj_guess.run_urban | default(0)}}           ! whether to simulate urban land (1) or not (0)
+run_crop {{lpj_guess.run_crop | default(0)}}            ! whether to simulate crop vegetation (1) or not (0)
+run_forest {{lpj_guess.run_forest | default(0)}}          ! whether to simulate managed forest (1) or not (0)
+run_pasture {{lpj_guess.run_pasture | default(0)}}         ! whether to simulate pasture (1) or not (0)
+run_natural {{lpj_guess.run_natural | default(1)}}         ! whether to simulate natural vegetation (1) or not (0)
+run_peatland {{lpj_guess.run_peatland | default(0)}}        ! whether to simulate peatland (1) or not (0)
+run_barren {{lpj_guess.run_barren | default(0)}}          ! whether to simulate barren land (1) or not (0)
+
+! Peatland fraction input file (only used when run_peatland = 1)
+{% if lpj_guess.run_peatland | default(0) == 1 %}
+param "file_peat" (str "../landuse/peat_frac.txt")
+{% endif %}
+
+!printcmip 0            ! Whether to print CMIP output
+!printcmipdaily 0       ! Whether to print daily CMIP output
+
+!ifmethane 1
+{% if lpj_guess.daily_alloc_output | default(0) == 1 %}
+file_daily_alloc "daily_alloc.out"
+{% endif %}

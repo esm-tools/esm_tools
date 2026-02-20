@@ -1,0 +1,61 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awicm3"
+    version: "v3.4.0"
+    account: "bb1469"
+    compute_time: "08:00:00"
+    initial_date: "1850-01-01"
+    final_date: "1853-01-01"
+    base_dir: "/albedo/work/user/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 0
+    nmonth: 0
+    nyear: 1
+
+computer:
+    taskset: true
+    mail_type: "FAIL"
+
+awicm3:
+    postprocessing: false
+    model_dir: "/albedo/home/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "CORE3"
+    time_step: 1200
+    nproc: 1792
+    omp_num_threads: 1
+    lresume: true
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    ini_parent_exp_id: "foo"
+    ini_parent_date: "1900-01-01"
+    ini_restart_dir: "/albedo/pool/fesom2/restart/CORE3"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.2000.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.2000.ice.restart/*.nc
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    time_step: 3600
+    nproc: 256
+    omp_num_threads: 4
+    mip: cmip7
+    scenario: piControl
+    lresume: false
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 3600
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32

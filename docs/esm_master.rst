@@ -63,6 +63,11 @@ You can get further help with::
     $ esm_master --help
     
  
+Logging
+-------
+
+``esm_master`` uses Loguru for console logging. To increase verbosity call ``esm_master`` with the ``-v`` or ``--verbose`` flag.
+
 Configuring esm-master for Compile-Time Overrides
 -------------------------------------------------
 

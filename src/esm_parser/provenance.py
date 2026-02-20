@@ -683,7 +683,10 @@ class DictWithProvenance(dict):
                             f"values (``{old_val}``:``{new_val}``). To solve this remove "
                             f"one of the these two values, or include them into a choose "
                             f"block that avoids the conflict."
-                            "\n- @HINT_0@\n- @HINT_1@",
+                            "\n- @HINT_0@\n- @HINT_1@"
+                            "\nNote: if you are developing a feature in the backend and "
+                            "you'd like to force-overwrite this value, use the "
+                            "super_setitem method.",
                             hints=[
                                 {
                                     "type": "prov",
@@ -717,6 +720,16 @@ class DictWithProvenance(dict):
                 final_val.provenance = new_provenance
 
         super().__setitem__(key, final_val)
+
+    def super_setitem(self, key, val):
+        """
+        A method to call the original ``dict.__setitem__`` method without provenance
+        tracking. This is useful when you want to set a value without extending the
+        provenance history, for example when you are setting a value that does not
+        come from a yaml file and you do not want to keep the provenance history, or
+        when resetting a value is blocked due to provenance conflicts.
+        """
+        super().__setitem__(key, val)
 
     def update(self, dictionary, *args, **kwargs):
         """
@@ -968,6 +981,16 @@ class ListWithProvenance(list):
                 val_new.provenance = new_provenance
 
         super().__setitem__(indx, val_new)
+
+    def super_setitem(self, indx, val):
+        """
+        A method to call the original ``list.__setitem__`` method without provenance
+        tracking. This is useful when you want to set a value without extending the
+        provenance history, for example when you are setting a value that does not
+        come from a yaml file and you do not want to keep the provenance history, or
+        when resetting a value is blocked due to provenance conflicts.
+        """
+        super().__setitem__(indx, val)
 
 
 ListWithProvenance.yaml_dump = esm_parser.yaml_dump

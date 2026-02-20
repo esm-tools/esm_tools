@@ -433,41 +433,25 @@ def _is_last_run_in_chunk(config):
     return config
 
 
-def without_prov_custom_setitem_for_config_general(func):
-    """
-    Decorator to allow custom setitem for config["general"] ignoring the provenance
-    setitem custom method.
-    """
-    def inner(config, *args, **kwargs):
-        general = config.get("general")
-        restore = False
-        if general is not None and hasattr(general, "custom_setitem"):
-            original_custom_setitem = general.custom_setitem
-            restore = True
-            general.custom_setitem = False
-
-        output = func(config, *args, **kwargs)
-
-        if restore:
-            config["general"].custom_setitem = original_custom_setitem
-
-        return output
-    return inner
-
-
-@without_prov_custom_setitem_for_config_general
 def _find_next_model_to_run(config):
     if config["general"]["last_run_in_chunk"]:
-        config["general"]["next_setup_name"] = config["general"]["model_named_queue"][0]
+        config["general"].super_setitem(
+            "next_setup_name", config["general"]["model_named_queue"][0]
+        )
     else:
-        config["general"]["next_setup_name"] = config["general"]["setup_name"]
+        config["general"].super_setitem(
+            "next_setup_name", config["general"]["setup_name"]
+        )
     return config
 
 
-@without_prov_custom_setitem_for_config_general
 def _find_next_chunk_number(config):
     if config["general"]["last_run_in_chunk"]:
-        config["general"]["next_chunk_number"] = config["general"]["chunk_number"] + 1
+        config["general"].super_setitem(
+            "next_chunk_number", config["general"]["chunk_number"] + 1
+        )
     else:
-        config["general"]["next_chunk_number"] = config["general"]["chunk_number"]
+        config["general"].super_setitem(
+            "next_chunk_number", config["general"]["chunk_number"]
+        )
     return config

@@ -249,7 +249,7 @@ oifs:
                         ECE_CPL_WISO: true
                     NAMPHY:
                         LWISO: true
-                        NWISO: 2
+                        NWISO: 1
 
     choose_general.with_co2_tracer:
         true:

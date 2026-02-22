@@ -10,10 +10,10 @@ general:
 
    compute_time: "1:00:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
 
    nyear: 0
-   nmonth: 11
+   nmonth: 1
    nday: 0
    restart_rate: 1
    restart_unit: days 
@@ -40,12 +40,19 @@ general:
    oasis_date_stamp: "_25400101-25491231"    
 
 focioifs:
-   model_dir: ${general.homedir}/esm/models/focioifs-2.1.1/
-
+   #model_dir: ${general.homedir}/esm/models/focioifs-2.2/ #focioifs-2.1.1/
+   model_dir: ${general.homedir}/esm/models/focioifs-2.2/
 computer: 
    partition: "standard96:test" 
-  
+   #compiler_mpi: intel2019_impi2019 
+     
 oifs:
+   #runtime_environment_changes:
+   #   choose_computer.name:
+   #      "glogin":
+   #          compiler_mpi: intel2019_impi2019_nemo4 
+     
+   
    lresume: True
    version: "43r3"
    with_xios: True
@@ -121,11 +128,12 @@ oifs:
 
 oasis3mct:
    lresume: True
-   a2o_remap_method: "conserv"
-   o2a_remap_method: "conserv" 
+   #a2o_remap_method: "conserv"
+   #o2a_remap_method: "conserv" 
    norestart: F
    use_lucia: True
    debug_level: 1
+   mct_version: "5.0"
    #export_mode: EXPOUT
    coupling_time_step: 3600
    pool_dir: /scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/
@@ -142,8 +150,8 @@ nemo:
    resolution: "ORCA05"
    jpni: 24
    jpnj: 24
-   nproca: 24
-   nprocb: 24
+   #nproca: 24
+   #nprocb: 18
    nproc: 576
    
    add_namelist_changes:
@@ -161,5 +169,6 @@ rnfmap:
 
 xios: 
    with_model: focioifs 
-   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_prod/"
-   nproc: 48
+   xml_dir: "/scratch/projects/shk00018/foci_input2/oasis3_openifs43r3-tco95_orca05/output_for_spinup/"
+   nproc: 4
+   omp_num_threads: 48 

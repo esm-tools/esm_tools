@@ -134,9 +134,9 @@ release6.7:
         action: DELAY(1)
         announcement: true
 
-oasis_branchoff6.21.17:
+oasis_branchoff6.21.23:
         package: "esm_tools"
-        versions: "<6.21.17"
+        versions: "<6.21.23"
         message: "\x1b[1m\x1b[96mOASIS BRANCH-OFF RESTARTS FIXED!\x1b[0m\n
 
             The bug on the copying of the wrong flux files from OASIS \x1b[96mwhen running\n

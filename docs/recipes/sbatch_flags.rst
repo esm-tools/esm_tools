@@ -28,3 +28,17 @@ your runscript:
 
    computer:
        additional_flags: "--qos=24h"
+
+Adding more than one flag
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Alternatively, you can include a list of additional flags:
+
+.. code-block:: yaml
+
+    computer:
+        additional_flags:
+            - "--qos=24h"
+            - "--comment='My Slurm Comment'"
+
+See the documentation for the batch scheduler on your HPC system to see the allowed options.

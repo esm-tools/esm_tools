@@ -12,8 +12,13 @@ jobs:
           LC_ALL: en_US.UTF-8
           LANG: en_US.UTF-8
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
+        python-version: 
+            - "3.8"
+            - "3.9"
+            - "3.10"
+            - "3.11"
     name: Python ${{ matrix.python-version }} sample
     steps:
       - uses: actions/checkout@v2
@@ -22,6 +27,15 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
+      - name: Update Ubuntu
+        run: sudo apt-get update
+
+      - name: Install libhdf5-dev
+        run: sudo apt-get install libhdf5-dev
+
+      - name: Install libnetcdf-dev
+        run: sudo apt-get install libnetcdf-dev
+        
       - name: add to the path
         run: |
           echo "$HOME/.local/bin" >> $GITHUB_PATH

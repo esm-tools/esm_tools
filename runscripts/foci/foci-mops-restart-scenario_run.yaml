@@ -1,5 +1,5 @@
 computer:
-        partition: "standard96"
+   pool_dir: "/scratch/usr/shkifmsw/foci_input2/" 
 general:
    use_venv: False
    verbose: True 
@@ -8,27 +8,28 @@ general:
    homedir: !ENV ${HOME}
 
    # operational settings: yearly restarts
+   #compute_time: "00:15:00"
+   #initial_date: "2015-01-01T00:00:00"       # Initial exp. date
+   #final_date: "2016-01-01T00:00:00"         # Final date of the experiment
+   #nmonth: 12
+   #clean_runs: 2
+   # test settings, daily restarts
    compute_time: "00:15:00"
    initial_date: "2015-01-01T00:00:00"       # Initial exp. date
-   final_date: "2016-01-01T00:00:00"         # Final date of the experiment
-   nmonth: 12
-   clean_runs: 2
-   # test settings, daily restarts
-   #compute_time: "00:15:00"
-   #initial_date: "2021-01-01T00:00:00"       # Initial exp. date
-   #final_date: "2021-01-04T00:00:00"         # Final date of the experiment
-   #nday: 1 
+   final_date: "2015-01-04T00:00:00"         # Final date of the experiment
+   nday: 1 
    
-   postprocessing: 0
+   postprocessing: False
    # machine specific setup 
-   account: shktkeme
+   account: shk00060
    base_dir: ${homedir}/esm/esm-experiments/
 
    lresume: True
    ini_parent_exp_id: "FOCI1.20.0-CC105_RCP_ESM_spinup2099"
    ini_parent_date: "20141231" 
    ini_nemo_restart_steps: 2410600 
-   ini_parent_dir: "/scratch/usr/shktkeme/foci_input/FOCI-MOPS/${ini_parent_exp_id}"
+   #ini_parent_dir: "/scratch/usr/shktkeme/foci_input/FOCI-MOPS/${ini_parent_exp_id}"
+   ini_parent_dir: "/scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
 
    #oasis3mct:
    #   export_mode_a2o: "EXPOUT"
@@ -48,22 +49,25 @@ echam:
    scenario: "ssp370"
    resolution: "T63"
    # operational settings: yearly restarts
-   restart_rate: ${general.nmonth}
-   restart_unit: "months"
+   #restart_rate: ${general.nmonth}
+   #restart_unit: "months"
    # test settings, daily restarts
-   #restart_rate: ${general.nday}
-   #restart_unit: "days"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
    nproca: 24
    nprocb: 24
    nprocio: 12
+   # set's the namelist parameters, and links the correct 
+   # carbon_emission.nc file
+   with_lco2_emis: True
    namelist_changes:
       namelist.echam:
          parctl:
             iomode: 2
             nprocio: ${nprocio}
-         co2ctl:
-            lco2_emis: true
-            lco2_2per: true
+         #co2ctl:
+               #lco2_emis: true
+               #lco2_2perc: true
          submodelctl:
             lmethox: true
 nemo:

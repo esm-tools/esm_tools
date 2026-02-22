@@ -1,6 +1,5 @@
 import signal
 import sys
-import os
 
 
 def signal_listener():
@@ -33,7 +32,3 @@ def handle_sigint(signum, stack_frame):
 
     # exit with 2 according to https://en.wikipedia.org/wiki/Signal_(IPC)
     sys.exit(signal.SIGINT.value)
-
-
-if __name__ == "__main__":
-    pass

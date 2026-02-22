@@ -1,3 +1,6 @@
+computer:
+   pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/"
+   partition: "standard96:test"
 general:
    use_venv: False
    verbose: False
@@ -12,7 +15,7 @@ general:
    nday: 1 
    
    # machine specific setup 
-   account: shk00018
+   account: shk00060
    base_dir: ${homedir}/esm/esm-experiments/
 
 foci:

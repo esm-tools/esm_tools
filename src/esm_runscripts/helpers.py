@@ -1,24 +1,21 @@
+import os
 import sys
 from datetime import datetime
 
 import colorama
-import esm_parser
-import esm_plugin_manager
-import esm_tools
 import git
 from loguru import logger
 
+import esm_parser
+import esm_plugin_manager
+import esm_tools
+from esm_profile import print_profile_summary
+from esm_tools import user_error
 
-def vprint(message, config):
-    if config["general"]["verbose"]:
-        print(message)
 
-
-# TODO: to be replaced by loguru. WIP (deniz)
 def print_datetime(config):
-    """prints the datetime of the operation if `verbose_line_numbers` option is True"""
-    if config["general"].get("verbose_datetime_info", False):
-        print(datetime.now(), flush=True)
+    """prints the datetime of the operation if `verbose` option is True"""
+    logger.debug(datetime.now())
 
 
 def evaluate(config, job_type, recipe_name):
@@ -32,8 +29,10 @@ def evaluate(config, job_type, recipe_name):
             "general"
         ].get(recipe_name)
     except KeyError:
-        print("Your configuration is incorrect.")
-        print("It should include headings for the setup_name as well as general!")
+        logger.error("Your configuration is incorrect.")
+        logger.error(
+            "It should include headings for the setup_name as well as general!"
+        )
         sys.exit(1)
 
     FUNCTION_PATH = esm_tools.get_config_filepath()
@@ -76,11 +75,11 @@ def evaluate(config, job_type, recipe_name):
 #                                  general stuff                                       #
 ########################################################################################
 def end_it_all(config):
-    if config["general"]["profile"]:
-        for line in timing_info:
-            print(line)
+    if config["general"].get("profile", False):
+        print_profile_summary()
+
     if config["general"]["verbose"]:
-        print("Exiting entire Python process!")
+        logger.debug("Exiting entire Python process!")
     sys.exit()
 
 
@@ -110,6 +109,7 @@ def write_to_log(config, message, message_sep=None):
        programmer passes a ``message_sep`` argument; this one wins over
        the user choice.
     """
+    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED!")
     try:
         with open(config["general"]["experiment_log_file"], "a+") as logfile:
             line = assemble_log_message(config, message, message_sep)
@@ -117,14 +117,17 @@ def write_to_log(config, message, message_sep=None):
     except KeyError:
         import esm_parser
 
-        print("Sorry; couldn't find 'experiment_log_file' in config['general']...")
-        esm_parser.pprint_config(config["general"])
+        logger.error(
+            "Sorry; couldn't find 'experiment_log_file' in config['general']..."
+        )
+        config["general"].yaml_dump()
         raise
 
 
 def assemble_log_message(
     config, message, message_sep=None, timestampStr_from_Unix=False
 ):
+    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED!")
     """Assembles message for log file. See doc for write_to_log"""
     message = [str(i) for i in message]
     dateTimeObj = datetime.now()
@@ -189,9 +192,9 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     update_filetypes = (
         config["general"].get("command_line_config", {}).get("update_filetypes", [])
     )
-    if config["general"].get("verbose", False) and update_filetypes:
-        print("User requests that the following filetypes be updated:")
-        [print(f"* {filetype}") for filetype in update_filetypes]
+    if update_filetypes:
+        logger.debug("User requests that the following filetypes be updated:")
+        [logger.debug(f"* {filetype}") for filetype in update_filetypes]
 
     # NOTE(MAM, PG): Originally defined in prepare.py
     # https://tinyurl.com/2p8awzsu
@@ -202,7 +205,7 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     for update_filetype in update_filetypes:
         # Check if that file type exists/makes sense. Otherwise, through an error
         if update_filetype not in potentially_reusable_filetypes:
-            esm_parser.user_error(
+            user_error(
                 "update-filetypes",
                 f"``{update_filetype}`` specified by you in ``--update-filetypes`` is "
                 + "not a ESM-Tools file type. Please, select one (or more) of the "
@@ -215,96 +218,23 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
             # Remove duplicates just in case
             reusable_filetypes = list(set(reusable_filetypes))
             # Do the removal
-            if config["general"].get("verbose", False):
-                print(f"Removing {update_filetype}")
+            logger.debug(f"Removing {update_filetype}")
             reusable_filetypes.remove(update_filetype)
-        elif config["general"].get("verbose", False):
-            print(
+        else:
+            logger.debug(
                 f"- The file type ``{update_filetype}`` you are trying to update was"
                 "not reusable across runs in the first place, so it's been always "
                 "updated with the external source, and it will still be."
             )
 
-    if config["general"].get("verbose", False):
-        print("The following filetypes will be re-used from already copied sources:")
-        for reusable_filetype in reusable_filetypes:
-            print(f"* {reusable_filetype}")
+    logger.debug("The following filetypes will be re-used from already copied sources:")
+    for reusable_filetype in reusable_filetypes:
+        logger.debug(f"* {reusable_filetype}")
     config["general"]["reusable_filetypes"] = reusable_filetypes
 
     if return_config:
         return config
     return reusable_filetypes
-
-
-##############################
-# SINK CLASS FOR LOGURU.LOGGER
-##############################
-
-
-class SmartSink:
-    """
-    A class for smart sinks that allow for logging (using ``logger`` from loguru), even
-    if the file path of the log file is not yet defined. The actual sink is not the
-    instanced object itself, but the method ``sink`` of the instance. The log record is
-    saved in ``self.log_record`` and the log file is written using the path specified
-    in ``self.path``. If the path is not specified, the log is stored only in the
-    ``self.log_record``. When the path is finally specified, ``self.log_record`` is
-    dumped into the log file and from that moment, any time ``logger`` logs something it
-    will also be written into the file. To specify the path the method ``def_path``
-    needs to be used.
-    """
-
-    def __init__(self):
-        # Initialise instance variables
-        self.log_record = []
-        self.path = None
-
-    def sink(self, message):
-        """
-        The actual sink for loguru's ``logger``. Once you define a logger level a sink
-        needs to be provided. Standard sinks include file paths, methods, etc.
-        Providing this method as a sink (``logger.add(<name_of_the_instance>.sink,
-        level="<your_level>", ...)``) enables the functionality of the SmartSink object.
-
-        Parameters
-        ----------
-        message : str
-            String containing the logging message.
-        """
-        if self.path:
-            self.write_log(message, "a")
-        self.log_record.append(message)
-
-    def write_log(self, message, wmode):
-        """
-        Method to write the logs into the disk.
-
-        Parameters
-        ----------
-        message : str, list
-            String containing the logging message or list containing more than one
-            logging message, to be written in the file.
-        wmode : str
-            Writing mode to choose among ``"w"`` or ``"a"``.
-        """
-        if isinstance(message, str):
-            message = [message]
-        with open(self.path, wmode) as log:
-            for line in message:
-                log.write(line)
-
-    def def_path(self, path):
-        """
-        Method to define the path of the file. Once the path is defined, the log record
-        is written into the file.
-
-        Parameters
-        ----------
-        path : str
-            Path of the logging file.
-        """
-        self.path = path
-        self.write_log(self.log_record, "w")
 
 
 ################################################################################

@@ -1,21 +1,17 @@
 import os
 
-from . import logfiles
-from . import helpers
-from . import chunky_parts
-from . import workflow
+from loguru import logger
+
+from . import chunky_parts, helpers, logfiles, workflow
 
 
 def submit(config):
-    if config["general"]["verbose"]:
-        print("\n", 40 * "+ ")
-    print("Submitting jobscript to batch system...")
-    print()
-    print(f"Output written by {config['computer']['batch_system']}:")
-    if config["general"]["verbose"]:
-        print("\n", 40 * "+ ")
-        for command in config["general"]["submit_command"]:
-            print(command)
+    logger.debug("\n", 40 * "+ ")
+    logger.info("Submitting jobscript to batch system...")
+    logger.info(f"Output written by {config['computer']['batch_system']}:")
+    logger.debug("\n", 40 * "+ ")
+    for command in config["general"]["submit_command"]:
+        logger.debug(command)
     for command in config["general"]["submit_command"]:
         os.system(command)
     return config
@@ -31,17 +27,18 @@ def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
 
 
 def resubmit_SimulationSetup(config, cluster=None):
-    monitor_file = logfiles.logfile_handle
     # Jobs that should be started directly from the compute job:
 
     jobtype = config["general"]["jobtype"]
 
-    monitor_file.write(f"{cluster} for this run:\n")
     command_line_config = config["general"]["command_line_config"]
     command_line_config["jobtype"] = cluster
 
-    monitor_file.write(f"Initializing {cluster} object with:\n")
-    monitor_file.write(str(command_line_config))
+    logfiles.initialize_logging(command_line_config)
+
+    logger.debug(f"{cluster} for this run:")
+    logger.debug(f"Initializing {cluster} object with:")
+    logger.debug(str(command_line_config))
     # NOTE(PG) Non top level import to avoid circular dependency:
 
     os.chdir(config["general"]["started_from"])
@@ -49,20 +46,17 @@ def resubmit_SimulationSetup(config, cluster=None):
 
     cluster_obj = SimulationSetup(command_line_config)
 
-    monitor_file.write(f"{cluster} object built....\n")
+    logger.debug(f"{cluster} object built....")
 
     if f"{cluster}_update_{jobtype}_config_before_resubmit" in cluster_obj.config:
-        monitor_file.write(
-            f"{cluster} object needs to update the calling job config:\n"
-        )
+        logger.debug(f"{cluster} object needs to update the calling job config:")
         # FIXME(PG): This might need to be a deep update...?
         config.update(
             cluster_obj.config[f"{cluster}_update_{jobtype}_config_before_resubmit"]
         )
 
     if not check_if_check(config):
-
-        monitor_file.write(f"Calling {cluster} job:\n")
+        logger.debug(f"Calling {cluster} job:")
         config["general"]["experiment_over"] = cluster_obj(kill_after_submit=False)
 
     return config
@@ -87,10 +81,9 @@ def get_submission_type(cluster, config):
 
 def end_of_experiment(config):
     if config["general"]["next_date"] >= config["general"]["final_date"]:
-        monitor_file = logfiles.logfile_handle
-        monitor_file.write("Reached the end of the simulation, quitting...\n")
+        logger.info("Reached the end of the simulation, quitting...")
         config["general"]["experiment_over"] = True
-        helpers.write_to_log(config, ["# Experiment over"], message_sep="")
+        logger.progress("Experiment over")
         return True
     return False
 
@@ -105,7 +98,7 @@ def end_of_experiment_all_models(config):
         ):
             experiment_done = False
             setup_name = config["model" + str(index)]["setup_name"]
-            print(f"Testing if {setup_name} is already done...")
+            logger.info(f"Testing if {setup_name} is already done...")
             logfile = (
                 config["general"]["experiment_log_dir"]
                 + "/"
@@ -119,36 +112,33 @@ def end_of_experiment_all_models(config):
                     logfile_array = open_logfile.readlines()
                     for line in logfile_array:
                         if "# Experiment over" in line:
-                            print(f"    ...{setup_name} is done.")
+                            logger.info(f"    ...{setup_name} is done.")
                             experiment_done = True
                             break
             if not experiment_done:
-                print("Still something left to do...")
+                logger.info("Still something left to do...")
                 return False
         index += 1
-    print("Nothing left to do...")
+    logger.info("Nothing left to do...")
     return True
 
 
 def check_if_check(config):
     if config["general"]["check"]:
-        print(
+        logger.info(
             "Actually not submitting anything, this job preparation was launched in 'check' mode (-c)."
         )
-        print()
         return True
     else:
         return False
 
 
 def maybe_resubmit(config):
-
     jobtype = config["general"]["jobtype"]
 
     nextrun = resubmit_recursively(config, jobtype=jobtype)
 
     if nextrun:  # submit list contains stuff from next run
-
         config = _increment_date_and_run_number(config)
         config = _write_date_file(config)
 
@@ -190,7 +180,7 @@ def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in
                 elif submission_type in ["batch", "shell"]:
                     resubmit_batch_or_shell(config, submission_type, cluster)
             else:
-                print(f"Skipping {cluster}")
+                logger.info(f"Skipping {cluster}")
                 nextrun = (
                     resubmit_recursively(config, jobtype=cluster, nextrun_in=nextrun_in)
                     or nextrun
@@ -216,8 +206,6 @@ def _increment_date_and_run_number(config):
 
 
 def _write_date_file(config):  # self, date_file=None):
-    # monitor_file = config["general"]["logfile"]
-    monitor_file = logfiles.logfile_handle
 
     # if not date_file:
     date_file = (
@@ -231,5 +219,5 @@ def _write_date_file(config):  # self, date_file=None):
             + " "
             + str(config["general"]["run_number"])
         )
-    monitor_file.write("writing date file \n")
+    logger.debug("writing date file")
     return config

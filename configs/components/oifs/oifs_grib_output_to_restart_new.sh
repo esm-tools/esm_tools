@@ -224,7 +224,9 @@ done
 if [[ "x$debug" == "x1" ]] ; then
 echo " orography is last field in ${tmpdir}/shinit.tmp "
 fi
-cat ${tmpdir}/shinit.z.hybrid.1 >> ${tmpdir}/shinit.tmp 
+# I think the last should be on surface, not hybrid
+#cat ${tmpdir}/shinit.z.hybrid.1 >> ${tmpdir}/shinit.tmp 
+cat ${tmpdir}/shinit.z.surface.0 >> ${tmpdir}/shinit.tmp
 
 # Now surface physics (grid point)
 for var in stl1 stl2 stl3 stl4 swvl1 swvl2 swvl3 swvl4 sd src skt ci \

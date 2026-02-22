@@ -38,51 +38,59 @@ The following keys should/can be provided inside configuration files for models
 (``<PATH>/esm_tools/configs/setups/<name>/<name>.yaml``) and runscripts. You can find
 runscript templates in ``esm_tools/runscripts/templates/``).
 
-Installation variables
+Compile time variables
 ----------------------
 
 .. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
+   :header: Key, Section, Description
+   :widths: 10, 10, 80
 
-   model,                   "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
-   setup_name,              Name of the coupled setup.
-   version,                 "Version of the model/setup (one of the available options in the ``available_versions`` list)."
-   available_versions,      List of supported versions of the component or coupled setup.
-   git-repository,          Address of the model's git repository.
-   branch,                  Branch from where to clone.
-   destination,             "Name of the folder where the model is downloaded and compiled, in a coupled setup."
-   comp_command,            Command used to compile the component.
-   install_bins,            "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
-   source_code_permissions, "Sets the file permisions for the source code using `chmod <source_code_permissions> -R <source_code_folder>."
+   execution_mode,     general,             "Takes the value ``compile`` during compile time. Can be used in ``choose_`` blocks with ``choose_general.execution_mode``."
+   model,              general,             "Name of the model/setup as listed in the config files (``esm_tools/configs/components`` for models and ``esm_tools/configs/setups`` for setups)."
+   setup_name,         general,             Name of the coupled setup.
+   version,            general,             "Version of the model/setup (one of the available options in the ``available_versions`` list)."
+   available_versions, <component>,         List of supported versions of the component or coupled setup.
+   git-repository,     <component>,         Address of the model's git repository.
+   branch,             <component>,         Branch from where to clone.
+   destination,        <component>,         "Name of the folder where the model is downloaded and compiled, in a coupled setup."
+   comp_command,       <component>,         Command used to compile the component.
+   install_bins,       <component>,         "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
+   source_code_permissions,     <component>,    "Sets the file permisions for the source code using `chmod <source_code_permissions> -R <source_code_folder>."
 
-Runtime variables
------------------
+Runi time variables
+-------------------
 .. csv-table::
-   :header: Key, Description
-   :widths: 15, 85
+   :header: Key, Section, Description
+   :widths: 10, 10, 80
 
-   account,             User account of the HPC system to be used to run the experiment.
-   model_dir,           "Absolute path of the model directory (where it was installed by `esm_master`)."
-   setup_dir,           "Absolute path of the setup directory (where it was installed by `esm_master`)."
-   executable,          "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
-   compute_time,        "Estimated computing time for a run, used for submitting a job with the job scheduler."
-   time_step,           Time step of the component in seconds.
-   lresume,             Boolean to indicate whether the run is an initial run or a restart.
-   pool_dir,            "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
-   namelists,           "List of namelist files required for the model."
-   namelist_changes,    "Functionality to handle changes in the namelists from the yaml files (see :ref:`yaml:Changing Namelists`)."
-   nproc,               Number of processors to use for the model.
-   nproca/nprocb,       "Number of processors for different MPI tasks/ranks. Incompatible with ``nproc``."
-   base_dir,            Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
-   post_processing,     Boolean to indicate whether to run postprocessing or not.
-   ":ref:`yaml:File Dictionaries`",     "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files (see :ref:`yaml:File Dictionaries`)."
-   expid,               "ID of the experiment. This variable can also be defined when calling ``esm_runscripts`` with the ``-e`` flag."
-   ini_restart_exp_id,  "ID of the restarted experiment in case the current experiment has a different ``expid``. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
-   ini_restart_dir,     "Path of the restarted experiment in case the current experiment runs in a different directory. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
-   execution_command,   "Command for executing the component, including ``${executable}`` and the necessary flags."
-   heterogeneous_parallelization,   "A boolean that controls whether the simulation needs to be run with or without heterogeneous parallelization. When ``false`` OpenMP is not used for any component, independently of the value of ``omp_num_threads`` defined in the components. When ``true``, ``open_num_threads`` needs to be specified for each component using OpenMP. ``heterogeneous_parallelization`` variable **needs to be defined inside the** ``computer`` section of the runscript. See :ref:`cookbook:Heterogeneous Parallelization Run (MPI/OpenMP)` for examples."
-   omp_num_threads,     "A variable to control the number of OpenMP threads used by a component during an heterogeneous parallelization run. This variable **has to be defined inside the section of the components** for which OpenMP needs to be used. This variable will be ignored if ``computer.heterogeneous_parallelization`` is not set to ``true``."
+   account,             general,                User account of the HPC system to be used to run the experiment.
+   base_dir,            general,                Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
+   compute_time,        general,                "Estimated computing time for a run, used for submitting a job with the job scheduler."
+   create_folders,      <component>,            "List of absolute paths of the folders to be created. See :ref:`yaml:Create empty folders`."
+   executable,          <component>,            "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
+   execution_command,   <component>,            "Command for executing the component, including ``${executable}`` and the necessary flags."
+   execution_mode,      general,                "Takes the value ``run`` during run time. Can be used in ``choose_`` blocks with ``choose_general.execution_mode``."
+   expid,               general,                "ID of the experiment. This variable can also be defined when calling ``esm_runscripts`` with the ``-e`` flag."
+   ":ref:`yaml:File Dictionaries`",     <component>,    "`YAML` dictionaries used to handle input, output, forcing, logging, binary and restart files (see :ref:`yaml:File Dictionaries`)."
+   force_overwrite_in_file_movements, general   "A boolean to indicate whether the file movements should overwrite existing files or not. If ``False`` (default), the file movements will not overwrite existing files. Only set to ``True`` if you know why you would want to do that (e.g to overwrite files in a failed tidy task)."
+   heterogeneous_parallelization,   computer,    "A boolean that controls whether the simulation needs to be run with or without heterogeneous parallelization. When ``false`` OpenMP is not used for any component, independently of the value of ``omp_num_threads`` defined in the components. When ``true``, ``open_num_threads`` needs to be specified for each component using OpenMP. ``heterogeneous_parallelization`` variable **needs to be defined inside the** ``computer`` section of the runscript. See :ref:`cookbook:Heterogeneous Parallelization Run (MPI/OpenMP)` for examples."
+   ini_restart_dir,     <component>,            "Path of the restarted experiment in case the current experiment runs in a different directory. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
+   ini_restart_exp_id,  <component>,            "ID of the restarted experiment in case the current experiment has a different ``expid``. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
+   install_missing_plugins,     general,        "A boolean to indicate whether ``esm_runscripts`` needs to install missing plugins (``True``, default) or not (``False``). Implemented to solve a problem with the ``esm_tests`` CI in GitHub where we might not have access to some repositories."
+   lresume,             <component>,            Boolean to indicate whether the run is an initial run or a restart.
+   mail_type,           general/computer,       "Value for the SBATCH flag ``--mail-type`` (see https://slurm.schedmd.com/sbatch.html#OPT_mail-type)"
+   mail_user,           general/computer,       "Value for the SBATCH flag ``--mail-user`` (see https://slurm.schedmd.com/sbatch.html#OPT_mail-user)"
+   model_dir,           general/<component>,    "Absolute path of the model directory (where it was installed by `esm_master`)."
+   namelists,           <component>,            "List of namelist files required for the model."
+   namelist_changes,    <component>,            "Functionality to handle changes in the namelists from the yaml files (see :ref:`yaml:Changing Namelists`)."
+   nproc,               <component>,            Number of processors to use for the model.
+   nproca/nprocb,       <component>,            "Number of processors for different MPI tasks/ranks. Incompatible with ``nproc``."
+   omp_num_threads,     <component>,            "A variable to control the number of OpenMP threads used by a component during an heterogeneous parallelization run. This variable **has to be defined inside the section of the components** for which OpenMP needs to be used. This variable will be ignored if ``computer.heterogeneous_parallelization`` is not set to ``true``."
+   parallel_file_movements,     general,        "A variable indicating whether the file movements should be done in parallel or not. If ``threads`` (default), the file movements will be done in parallel in a single node. If ``False``, the file movements will be done sequentially."
+   pool_dir,            general,                "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
+   post_processing,     <component>,            Boolean to indicate whether to run postprocessing or not.
+   setup_dir,           general,                "Absolute path of the setup directory (where it was installed by `esm_master`)."
+   time_step,           <component>,            Time step of the component in seconds.
 
 Calendar variables
 ------------------
@@ -113,6 +121,24 @@ Coupling variables
    time_transformation,     "Time transformation used by `oasis3mct`, defined inside ``coupling_methods``."
    remapping,           "Remappings and their parameters, used by `oasis3mct`, defined inside ``coupling_methods``."
 
+Environment variables
+--------------------
+.. csv-table::
+   :header: Key, Section, Description
+   :widths: 15, 15, 70
+
+   general_actions,      computer,            "List of general shell actions to be included in the compilation and run scripts. These are added directly to the script without any prefix."
+   module_actions,       computer,            "List of module actions to be included in the compilation and run scripts. Each entry will be prefixed with ``module`` in the generated script."
+   spack_actions,        computer,            "List of Spack actions to be included in the compilation and run scripts. Each entry will be prefixed with ``spack`` in the generated script."
+   export_vars,          computer,            "Dictionary of environment variables to be exported in the script. Each key-value pair will generate an ``export KEY=VALUE`` line."
+   unset_vars,           computer,            "List of environment variables to be unset in the script. Each entry will generate an ``unset VARIABLE`` line."
+   include_env_from_component_files,  computer/<component>,  "Boolean that controls whether environment variables from component files should be included. Can be set globally in the computer section or per-component. Default: ``True``."
+   merge_component_envs, computer,           "Dictionary with ``compile`` and ``run`` keys that controls whether environments from all components should be merged. For ``compile`` the default is false (each component maintains its own environment), for ``run`` the default is true (environments are merged)."
+
+.. note::
+   For more detailed information on all environment configuration options, including attribute-based selection,
+   coupled setup environment control, and advanced environment management features, please refer to the
+   :ref:`esm_environment:ESM Environment` documentation.
 
 Other variables
 ---------------

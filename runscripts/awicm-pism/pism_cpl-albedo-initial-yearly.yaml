@@ -1,0 +1,121 @@
+general:
+        setup_name: pism
+        compute_time: "00:40:00"
+        initial_date: "1000-01-01"
+        final_date: "15000-12-31"
+        script_dir: "${general.esm_couplings_dir}"
+        nyear: 1
+#        clean_old_rundirs_keep_every: 5
+#        clean_old_rundirs_except: 5
+        files_to_wait_for: 
+            - "latest_atmo_forcing_file.nc"
+            - "latest_ocean_forcing_file.nc"
+        use_venv: False
+
+computer:
+        mail_type: "FAIL"
+        mail_user: "lars.ackermann@awi.de"
+        sh_interpreter: "/bin/bash"
+
+pism:
+        #version: "github1.1.4"
+        version: "github1.2.1"
+        resolution: "10km"
+        model_dir: "/albedo/home/lackerma/modeldir/pism-github1.2.1/"
+        lresume: 1
+
+        ###################
+        # Settings for AWIES - PISM coupling
+        # DEBM
+        debm_path: "/albedo/home/lackerma/modeldir/dEBM/Fortran/dEBMmain"
+        # lapse rate
+        ablation_method: "DEBM"
+        reduce_temp: False
+        #reduce_temp_by: "anom"
+        #temp2_bias_file: "/work/ba0989/a270124/PalModII/reanalysis/temp2.bias.bilT63.1948-2010.no_greenland.nc"
+        prec_anom: False
+        #prec_bias_file: "/work/ba0989/a270124/PalModII/reanalysis/prec.bias.conT63.1948-2010.no_greenland.nc"
+        ###################
+        
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+        spinup_file: "/albedo/work/user/lackerma/restarts/pismr_nhem_10km_LU.nc"
+        pool_dir: "/albedo/work/user/lackerma/pool_pism/"
+        ts_interval: "1"
+        ex_interval: "monthly"
+        domain: "nhem"
+        force_bootstrap_first_run: True
+
+        kv_pairs:
+                stress_balance.model: "ssa+sia"
+                stress_balance.sia.max_diffusivity: 800
+                sia_e: 5.0
+                ssa_e: 1.0
+                basal_resistance.pseudo_plastic.q: 0.25
+                basal_resistance.pseudo_plastic.u_threshold: 100
+                basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden: 0.01
+                basal_yield_stress.mohr_coulomb.till_phi_default: 30
+                basal_yield_stress.mohr_coulomb.till_cohesion: 0
+                basal_yield_stress.mohr_coulomb.till_compressibility_coefficient: 0.12
+                hydrology.tillwat_max: 1
+                bed_deformation.model: "lc"
+                calving.methods: 'eigen_calving,thickness_calving'
+                calving.thickness_calving.threshold: 200
+                geometry.front_retreat.prescribed.file: "${pism.pool_dir}/masks/nhem/pismr_nhem_10km_no-tibet_mask.nc"
+                ocean.pik_melt_factor: "1e-2"
+                atmosphere.elevation_change.precip_lapse_rate: 0.0
+                atmosphere.elevation_change.smb_lapse_rate: 0.0
+
+        flags:
+                #- "bootstrap"
+                #- "allow_extrapolation"
+                - "pik"
+                - "basal_resistance.pseudo_plastic.enabled"
+                - "basal_yield_stress.slippery_grounding_lines"
+
+        couplers:
+                surface: 
+                    given:
+                        files:
+                            surface_given_file: "latest_atmo_forcing_file.nc"
+                        kv_pairs: 
+                            surface_given_period: 1
+                ocean:
+                    th:
+                        files:
+                            ocean_th_file: "latest_ocean_forcing_file.nc"
+
+        workflow:
+                next_run_triggered_by: tidy
+                subjobs:
+                        postprocessing:
+                                batch_or_shell: batch
+                                order_in_cluster: concurrent
+                                run_on_queue: ${computer.partitions.pp.name}
+                                run_after: tidy
+                                script_dir: /home/a/a270124/scripts/
+                                submit_to_batch_system: True
+                                script: post_pism.sh ${pism.experiment_outdata_dir}
+                                nproc: 1
+                #next_run_triggered_by: couple_out
+                #subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                script: coupling_awiesm2pism.functions
+                                script_dir: ${general.script_dir}/pism
+                                call_function: awiesm2pism
+                                env_preparation: env_pism.py
+                                run_only: first_run_in_chunk
+                                #skip_chunk_number: 1
+
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                script: coupling_pism2awiesm.functions
+                                script_dir: ${general.script_dir}/pism
+                                call_function: pism2awiesm
+                                env_preparation: env_pism2awiesm.py
+                                run_only: last_run_in_chunk
+

@@ -3,6 +3,9 @@
 A small wrapper that combines the shell interface and the Python interface
 """
 
+import os
+import sys
+
 # Import from Python Standard Library
 from loguru import logger
 
@@ -13,9 +16,6 @@ from .read_shipped_data import *
 from .repos import *
 from .test_utilities import *
 from .tests import *
-
-import os
-import sys
 
 
 def main():
@@ -51,7 +51,7 @@ def main():
     update_resources_submodule(info)
 
     info["this_computer"] = (
-        determine_computer_from_hostname().split("/")[-1].replace(".yaml", "")
+        determine_computer_yaml_from_hostname().split("/")[-1].replace(".yaml", "")
     )
     info["last_tested_dir"] = get_last_tested_dir()
 
@@ -71,6 +71,7 @@ def main():
     info["rm_user_info"] = {
         "TEST_DIR": info["user"]["test_dir"],
         "HOME_DIR": f"{os.path.expanduser('~')}",
+        "USER_ACCOUNT": os.environ.get("USER", "github_runner"),
     }
 
     # Define lines to be ignored during comparison
@@ -103,6 +104,10 @@ def main():
     # Delete previous test
     if delete_tests:
         del_prev_tests(info)
+
+    # If running on GitHub and USER env var is not defined, export it
+    if info["in_github"] and os.environ.get("USER") is None:
+        os.environ["USER"] = "github_runner"
 
     # Compile
     comp_test(info)

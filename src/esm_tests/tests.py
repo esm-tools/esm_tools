@@ -5,7 +5,7 @@ import re
 import shutil
 import time
 import yaml
-from esm_parser import determine_computer_from_hostname
+from esm_parser import determine_computer_yaml_from_hostname
 from loguru import logger
 
 from .output import *
@@ -17,7 +17,10 @@ bs = "\033[1m"
 be = "\033[0m"
 
 # Define default files for comparisson
-compare_files = {"comp": ["comp-"], "run": [".run", "finished_config", "namelists"]}
+compare_files = {
+    "comp": ["comp-"],
+    "run": [".run", "finished_config", "namelists"],
+}
 
 """
 ``config.yaml``:
@@ -109,8 +112,9 @@ def comp_test(info):
     user_info = info["user"]
     this_computer = info["this_computer"]
 
-    # Set the regex format for check compilations
+    # Set the regex formats for check compilations
     cd_format = re.compile("         cd (.*)")
+    pushd_format = re.compile("         pushd (.*)")
 
     # Set the counter to 0
     c = 0
@@ -209,17 +213,20 @@ def comp_test(info):
                     folders = []
                     # Search for the folders to be created
                     for line in out.split("\n"):
+                        found_format = ""
                         if "cd" in line and "cd .." not in line:
                             found_format = cd_format.findall(line)
-                            if len(found_format) > 0:
-                                if (
-                                    ";" not in found_format[0]
-                                    and "/" not in found_format[0]
-                                ):
-                                    folders.append(found_format[0])
+                        elif "pushd" in line and "popd" not in line:
+                            found_format = pushd_format.findall(line)
+                        if len(found_format) > 0:
+                            if (
+                                ";" not in found_format[0]
+                                and "/" not in found_format[0]
+                            ):
+                                folders.append(found_format[0])
                     if len(folders) == 0:
                         logger.warning(
-                            f'NOT TESTING {model + version}: "cd" command not found'
+                            f'NOT TESTING {model}{version}: "cd" command not found'
                         )
                         continue
 
@@ -282,7 +289,7 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
-    run_errors = ["ERROR:", "slurmstepd: error: *** STEP", "PBS: job killed: walltime"]
+    run_errors = ["ERROR:", "slurmstepd: error: ", "PBS: job killed: walltime"]
 
     # Set the counter to 0
     c = 0
@@ -433,7 +440,9 @@ def run_test(info):
                         # If the run has errors label the state for ``run_finished`` as
                         # ``False`` and run a check for files that should have been
                         # created anyway
-                        elif any([run_error in observe_out for run_error in run_errors]):
+                        elif any(
+                            [run_error in observe_out for run_error in run_errors]
+                        ):
                             subc, finished_runs, success = experiment_state_action(
                                 info,
                                 "Simulation crashed!",
@@ -511,7 +520,7 @@ def check(info, mode, model, version, out, script, v):
     """
     # Set variables
     success = True
-    mode_name = {"comp": "compilation", "submission": "submission", "run": "runtime"}
+    mode_name = {"comp": "compilation", "submission": "submission", "run": "run"}
     last_tested_dir = info["last_tested_dir"]
     this_computer = info["this_computer"]
     user_info = info["user"]
@@ -610,6 +619,9 @@ def check(info, mode, model, version, out, script, v):
 
     # Compare scripts with previous, if existing
     this_compare_files = copy.deepcopy(compare_files[config_mode])
+    # If it's not run in GitHub (but in an HPC) also check the prepcompute_filelist log
+    if not info["in_github"] and config_mode == "run":
+        this_compare_files.append("prepcompute_filelist")
     # TODO: The iterative coupling needs a rework. Therefore, no testing for files
     # is develop. Include the tests after iterative coupling is reworked
     if config_mode == "run" and v["iterative_coupling"]:
@@ -777,9 +789,9 @@ def exist_files(files, path, version):
         exception_list = find_exceptions(f)
 
         # Command's logic
-        if " except " in f and version in exception_list:
+        if " except " in f and str(version) in exception_list:
             continue
-        elif " in " in f and not version in exception_list:
+        elif " in " in f and not str(version) in exception_list:
             continue
         else:
             f_path = f.split(" ")[0]
@@ -799,6 +811,7 @@ def exist_files(files, path, version):
                 files_checked = False
 
     return files_checked
+
 
 def find_exceptions(string_to_be_checked):
     """

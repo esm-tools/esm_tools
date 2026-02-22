@@ -1,0 +1,98 @@
+general:
+    account: "bm1030"
+    setup_name: "awiesm"
+    version: "2.1-recom"
+    compute_time: "02:30:00"
+    initial_date: "2001-01-01"
+    final_date: "2005-01-01"
+    base_dir: "/work/bm1030/a270105/awiesm-output" 
+#    nday: 1
+    nmonth: 0
+    nyear: 1
+    use_venv: False
+
+#    clean_old_rundirs_except: 2
+#    clean_old_rundirs_keep_every: 20
+#    clean_runs: 5
+    
+awiesm:
+    version: "2.1-recom"
+    postprocessing: false
+    scenario: "PALEO"
+    model_dir: "/work/ab0995/a270105/esm_code/awiesm-2.1-recom/"
+
+echam:
+    restart_rate: 1
+    restart_unit: "years"
+    nproca: 32
+    nprocb: 16
+    lresume: 1
+    disturbance_years: [3491, 3491]
+    disturbace: 1.000001
+    lrad_async: False
+    ini_parent_exp_id: "awiesm-medusa-diffchunk"
+    ini_parent_date: "20001231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/awiesm-medusa-diffchunk/restart/echam/"   
+    default_output: False
+
+hdmodel:
+    lresume: 1
+    ini_parent_exp_id: "awiesm-medusa-diffchunk"
+    ini_parent_date: "20001231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/awiesm-medusa-diffchunk/restart/hdmodel/"
+
+fesom:
+    model_dir: "/work/ab0995/a270105/esm_code/awiesm-2.1-recom/fesom-2.1/" 
+    res: "CORE2"
+    mesh_dir: "/work/k20200/k202138/bb1029/AWIESM2.1-EXP/mesh_core2/"
+    nproc: 1024
+    resolution: ${general.fesom_resolution} #Ying: ${res}? really needed?
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: 1
+    ini_parent_exp_id: "awiesm-medusa-diffchunk"
+    ini_parent_date: "20001231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/awiesm-medusa-diffchunk/restart/fesom/"
+    climate_data_dir: "/home/a/a270105/initial_files/pi_init/"
+    mpi_num_groups: 2
+
+    workflow:
+            next_run_triggered_by: couple_out
+
+            subjobs:
+                    couple_out:
+                            batch_or_shell: shell
+                            run_after: tidy
+                            script: "
+                                    postprocessing_fesom.sh
+                                    ${experiment_outdata_dir}
+                                    ${experiment_outdata_dir}
+                                    ${chunk_start_date!syear}
+                                    ${chunk_end_date!syear}"
+                            script_dir: ${general.esm_function_dir}/components/medusa
+                            run_only: last_run_in_chunk
+                            nproc: 1
+
+recom:
+# default scenario is pi
+#    scenario: "preindustrial"
+    lresume: 1
+    ini_parent_exp_id: "awiesm-medusa-diffchunk"
+    ini_parent_date: "20001231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/awiesm-medusa-diffchunk/restart/recom/"
+    data_path: "/home/a/a270105/initial_files/pi_init/dust_coremesh/"
+    use_ciso: true
+    use_atbox: true
+    use_medusa: true
+
+jsbach:
+    input_sources:
+        # NOTE: This will be incorporated into the pool at a later stage
+           jsbach_1850: "/home/a/a270105/awiesm_input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850.nc"
+
+oasis3mct:
+    lresume: 1
+    ini_parent_exp_id: "awiesm-medusa-diffchunk"
+    ini_parent_date: "20001231"
+    ini_parent_dir: "/work/bm1030/a270105/awiesm-output/awiesm-medusa-diffchunk/restart/oasis3mct/"

@@ -1,6 +1,10 @@
-from . import database
 from datetime import datetime
+
 import sqlalchemy
+
+from loguru import logger
+
+from . import database
 
 
 def database_entry(config):
@@ -40,8 +44,8 @@ def try_to_commit():
     try:
         database.session.commit()
     except sqlalchemy.exc.OperationalError as e:
-        print("Sorry, there was some SQL Error!")
-        print(e)
+        logger.error("Sorry, there was some SQL Error!")
+        logger.error(e)
 
 
 def database_entry_check(config):

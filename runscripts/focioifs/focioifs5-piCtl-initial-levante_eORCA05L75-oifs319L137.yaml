@@ -1,0 +1,218 @@
+general:
+   check_error:
+      "BFD: Dwarf Error":
+          method: "warn"
+          message: "Ignoring BFD: Dwarf Error"
+          file: stdout
+          frequency: 15
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   userdir: !ENV ${USER}
+   
+   setup_name: "focioifs"      
+   resolution: "TCO319_eORCA05"
+   version: "5.0"
+  
+   # test settings: daily restarts for two days
+   #compute_time: "00:30:00"
+   #initial_date: "1950-01-01T00:00:00"       # Initial exp. date
+   #final_date: "1950-01-04T00:00:00"         # Final date of the experiment
+   #nmonth: 0
+   #nday: 1
+   # monthly restarts for 6 months 
+   compute_time: "08:00:00"
+   initial_date: "1950-01-01T00:00:00"       # Initial exp. date
+   final_date: "1955-01-01T00:00:00"      #1955-01-01T00:00:00   # Final date of the experiment
+   nmonth: 0
+   nday: 0
+   
+   nyear: 1
+   hours: 0
+   account: bb1460
+   base_dir: /work/bb1460/${general.userdir}/esm-experiments
+
+   # This activates post processing for OpenIFS and NEMO
+   postprocessing: True
+   
+   lresume: False
+   # Name of the run you are starting from
+   ini_parent_exp_id: "foci3-test12"
+   # Where are you starting from in the above run
+   ini_parent_date: "19491231" 
+   ini_string_parent_date: "1950-01-01"
+   # Time step in NEMO from restarts in parent run
+   # NOTE: ESM-Tools looks for a global NEMO restart file 
+   # You must run nocs_combine on restarts first.
+   #ini_nemo_restart_steps: 262800
+   #ini_parent_dir: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/"
+   # Time stamp from OASIS for restarts in parent run
+   oasis_date_stamp: "_19400101-19491231"
+   # Previous run config file
+   # (should be general enough)
+   # prev_run_config_file: ""
+
+focioifs:
+   model_dir: /work/bb1460/${general.userdir}/models/focioifs-5.0/
+   
+oifs:
+   
+   # if you change name=OIFS in file_def*xml you currently have to adjust 
+   # it here as well.
+   # need to discuss this with Joakim and/or Jan Streffing from AWI
+   # used to be ECE3 with OIFS43
+   # this section can be removed once the search pattern for 
+   # outdata_sources:
+   #    oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
+   # in oifs.yaml has been adjusted (need to talk to AWI first)
+   # and I'm sure that I can safely change input_expid to OIFS
+   # oifsnc: can't be overwritten here do to the use of wildcards
+   # need to file a bug report with AWI
+   add_outdata_files:
+      oifsnc2: oifsnc2 
+   add_outdata_in_work:
+      oifsnc2: OIFS_*_${start_date!syear}*.nc
+   add_outdata_sources:
+      oifsnc2: OIFS_*_${start_date!syear}*.nc
+   #outdata_sources:
+   #  oifsnc: OIFS_*_${start_date!syear}*.nc
+
+   post_run_commands: "sync"
+   lresume: ${general.lresume}
+   # This would be for a traditional restart
+   # but not used here
+   prev_run_config_file: "${general.prev_run_config_file}"
+   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   #ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/18591231/"
+   #ini_parent_date: "${prev_date}"
+   
+   version: "48r1-foci5"
+   major_version: "48r1"
+   time_step: 900
+   with_xios: True
+   scenario: "piControl"
+   copy_forcing: true
+   mip: ""
+   o3_scheme: default
+   pool_dir: /work/bb1460/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy48_tco319/"
+   rtables_dir: "${pool_dir}/openifs_cy48_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy48_general/vtables/"
+   tl_o3_data_dir: "${pool_dir}/openifs_cy48_tco319/"
+   ifsdata_dir: "${pool_dir}/openifs_cy48_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy48_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy48_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy48_tco319/${prepifs_startdate}00/"
+   icmcl_file: "ICMCLabooINIT"
+   # This would use initial conditions from ERA-Interim 2008-01-01
+   prepifs_expid: aboo
+   prepifs_startdate: 19900101
+   
+   # This uses initial conditions from FOCI_GJK006 4000-01-02
+   #prepifs_expid: ECE3 
+   #prepifs_startdate: 40000101 
+   
+   resolution: TCO319
+   levels: L137
+   nproc: 948
+   omp_num_threads: 1
+   solarspectrum: True 
+   ini_pseudo_initial_date: "1859-01-01"
+   # new option for FOCI5, see oifs.yaml
+   # otherwise we get duplicate namelist entries in fort.4
+   # need to talk to Jan Streffing about this
+   massfixer: 4
+   #cloudfixer: 0
+   add_input_sources:
+       icmcl: ${icmcl_dir}/*
+   add_input_in_work:
+       icmcl: ${prepifs_startdate}/*
+   add_input_files:
+       icmcl: icmcl
+
+oasis3mct:
+   # DONE
+   # cd /home/b/b383098/_work/foci_input2
+   # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git
+   # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05.git
+   lresume: True
+   pool_dir: "/work/bb1460/foci_input2/create_oasis_files_focioifs_eORCA025_L120_OpenIFS319_L137_OpenIFS48/"
+   # This would be for a cold start (SST = 0C,etc)
+   ini_parent_dir: "${pool_dir}" 
+   # for a real restart you would use
+   # "${general.ini_parent_dir}/restart/oasis3mct/"
+   
+   a2o_remap_method: "bilincub"
+   o2a_remap_method: "bilinear"
+   norestart: F
+   use_lucia: False
+   #export_mode: EXPOUT
+   #standard debug_level = 1, 20 for debugging
+   debug_level: 1
+   mct_version: "5.0"
+   # in FOCIOIFS all oasis input files are treated as restarts.
+   # in FOCI all remapping files are handled as inputs. Both approaches work.
+   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+   #oasis_date_stamp: "${general.oasis_date_stamp}"
+   #oasis_date_stamp: "" 
+   
+nemo:
+   # DONE: 
+   # cd /home/b/b383098/_work/foci_input2
+   # git clone https://git.geomar.de/foci/foci_input2/nemo4_orca05.git 
+   # git clone https://git.geomar.de/foci/foci_input2/nemo4_eorca05.git
+   lresume: ${general.lresume}
+   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
+   #ini_parent_date: "${prev_date}"
+   #input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
+   input_dir: "/work/bb1460/foci_input2/nemo5_eorca025/"
+   resolution: "eORCA025"
+   #version: "eORCA05_Z75_SI3_COUPLED" 
+   # 64x51 = 3264 
+   # 48x48 = 2304
+   # 36x36 = 1296
+   # 36x24 = 864
+   # 24x24 = 576
+   #_nx: 720
+   #_ny: 603 
+   jpni: 0 
+   jpnj: 0
+   #nproca: ${nemo.jpni}
+   #nprocb: ${nemo.jpnj}
+   nproc: 1943
+   time_step: 900
+   add_namelist_changes:
+       namelist_cfg:
+          namctl:
+              ln_timing: ".false."
+          namrun:
+              nn_istate: 0
+          namsbc:
+              ln_rnf: .true. 
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   version: 3.0_trunk
+   #xml_dir: "${model_dir}/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/" # results in /work/bb1460/$USER/models/focioifs-5.0/xios-eORCA_SI3_COUPLED_NEMO5/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00 WHY?
+   xml_dir: "/work/bb1460/${general.userdir}/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/"
+   nproc: 180
+   omp_num_threads: 1
+
+computer:
+   #additional_flags: '--qos=preempt'
+   launcher: srun 
+   launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic" 
+
+   choose_general.execution_mode:
+      run:
+         add_export_vars:
+           OIFS_DATA_DIR: "/work/bb1460/foci_input2/openifs_48r1_general/"
+           GFORTRAN_UNBUFFERED_ALL: 'y'  
+           DATA: "${general.work_dir}"
+           LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/oifs-48r1/build/lib:$MPI_LIB:$AEC_ROOT/lib:$HDF5ROOT/lib:$NetCDF_C_ROOT/lib:$NETCDF_ROOT/lib:$LD_LIBRARY_PATH'
+           GRIB_SAMPLES_PATH: '${model_dir}/oifs-48r1/build/share/eccodes/ifs_samples/grib1_mlgrib2'
+           OIFS_LOGFILE: '${model_dir}/oifs-48r1/build/oifs_test_log.txt'

@@ -1,10 +1,9 @@
 """
 Contains functions for dealing with PBS-based batch systems
 """
+
 import os
 import subprocess
-import sys
-import esm_parser
 
 
 class Pbs:
@@ -76,7 +75,7 @@ class Pbs:
         thisrun_logfile = config["computer"]["thisrun_logfile"].replace(
             "@jobtype@", cluster
         )
-        runfile.write(f'qalter $PBS_JOBID -o {thisrun_logfile}\n')
+        runfile.write(f"qalter $PBS_JOBID -o {thisrun_logfile}\n")
 
     # TODO: remove it once it's not needed anymore (substituted by packjob)
     @staticmethod

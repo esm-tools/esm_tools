@@ -1,0 +1,23 @@
+# FESOM2.1-REcoM-MEDUSA yaml configuration file#
+
+general:
+        model: fesom-2.1-recom-medusa-2.0
+        #model_dir: ${esm_master_dir}/fesom-recom-${version}
+
+        version: ""
+
+        coupled_setup: false
+        standalone: true
+
+        include_models:
+                - fesom
+                - recom
+                - medusa
+
+        available_versions:
+        - ''
+        choose_version:
+          '':
+            couplings:
+            - fesom-recom-medusa
+

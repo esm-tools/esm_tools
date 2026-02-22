@@ -1,11 +1,13 @@
 import os
 import sys
-import yaml
 
 import questionary
+import yaml
+from loguru import logger
 
 import esm_parser
-from esm_calendar import Date, Calendar
+from esm_calendar import Calendar, Date
+from esm_tools import user_error, user_note
 
 
 class PrevRunInfo(dict):
@@ -62,6 +64,7 @@ class PrevRunInfo(dict):
         self.components_with_prev_run()
         # Counter for debuggin
         self._prev_config_count = 0
+
 
     def components_with_prev_run(self):
         """
@@ -239,7 +242,7 @@ class PrevRunInfo(dict):
                 )
                 # Dates don't match
                 if calc_prev_date_stamp != prev_date_stamp and self.warn:
-                    esm_parser.user_note(
+                    user_note(
                         f"End date of the previous configuration file for '{component}'"
                         + " not coinciding:",
                         (
@@ -258,7 +261,7 @@ class PrevRunInfo(dict):
                             elif answer == "n":
                                 sys.exit(0)
                             else:
-                                print("Incorrect answer.")
+                                logger.error("Incorrect answer.")
 
                 # Load the component info into the self._prev_config dictionary
                 if not self._prev_config:
@@ -328,7 +331,7 @@ class PrevRunInfo(dict):
                     "prev_run_config_file"
                 )
                 if not user_prev_run_config_full_path:
-                    esm_parser.user_error(
+                    user_error(
                         "'prev_run_config_file' not defined",
                         "You are trying to run a branchoff experiment that uses the "
                         + f"'prev_run' functionality for '{component}' without "
@@ -366,7 +369,7 @@ class PrevRunInfo(dict):
 
         # Check for errors
         if not os.path.isdir(config_dir):
-            esm_parser.user_error(
+            user_error(
                 "Config folder not existing",
                 (
                     f"The config folder {config_dir} does not exist. "
@@ -428,7 +431,7 @@ class PrevRunInfo(dict):
                     )
                 else:
                     # Error
-                    esm_parser.user_error(
+                    user_error(
                         "Too many possible config files",
                         "There is more than one config file with the same final date "
                         + "as the one required for the continuation of this experiment."
@@ -448,7 +451,7 @@ class PrevRunInfo(dict):
             prev_run_config_file = user_prev_run_config_file
             prev_run_config_path = f"{config_dir}/{prev_run_config_file}"
             if not os.path.isfile(prev_run_config_path):
-                esm_parser.user_error(
+                user_error(
                     "'prev_run_config_file' incorrectly defined",
                     f"The file defined in the '{component}.prev_run_config_path' "
                     + f"({prev_run_config_path}) does not exist.",

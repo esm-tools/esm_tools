@@ -271,7 +271,7 @@ computer:
                 mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
                 LD_LIBRARY_PATH: $MPI_HOME/lib:$NetCDF_C_ROOT/lib:$NetCDF_Fortran_ROOT/lib:$HDF5ROOT/lib:$AEC_ROOT/lib:$TBBMALLOC_DIR:$LD_LIBRARY_PATH
                 LD_LIBRARY_PATH[(0)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
-                # For OASIS3-MCT5 from CERFACS      
+                # For OASIS3-MCT5 from CERFACS
                 OASIS_NETCDF: $NETCDF_PATH
                 OASIS_NETCDFF: $NETCDF_ROOT
 

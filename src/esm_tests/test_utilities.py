@@ -389,7 +389,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     subpaths_source = subpaths
     subpaths_target = []
     datestamp_format = re.compile(r"_[\d]{8}-[\d]{8}$")
-    run_dir_format = re.compile(r"^run_[\d]{8}$")
+    run_dir_format = re.compile(r"^run_[\d]{8}-[\d]{8}$")
     for sp in subpaths:
         sp_t = ""
         pieces = sp.split("/")

@@ -7,9 +7,5 @@ oifs:
                 NDECOLAT: 0
             NAMGWWMS:
                 GGAUSSB: -0.5
-    choose_resolution:
-        '*':
-            add_add_namelist_changes:
-                fort.4:
-                    NAMCLDP:
-                        RVICE: 0.16
+            NAMCLDP:
+                RVICE: 0.16

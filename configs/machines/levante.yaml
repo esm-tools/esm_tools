@@ -203,6 +203,12 @@ computer:
                             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
+                            MPI_HOME: $MPIROOT
+                            MPI_ROOT: $MPIROOT
+                            mpi_ROOT: $MPIROOT
+                            MPI_DIR: $MPIROOT
+                            mpi_DIR: $MPIROOT
+
     choose_iolibraries:
         awi_gnu_libs: #Copy paste from DE IFS env.sh
             add_module_actions:
@@ -284,11 +290,6 @@ computer:
                   #- "load fftw/3.3.10-gcc-11.2.0"
             add_export_vars:
                 IO_LIB_ROOT: "/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0"
-                MPI_HOME: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                MPI_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                mpi_ROOT: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                MPI_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
-                mpi_DIR: /sw/spack-levante/openmpi-4.1.2-yfwe6t
 
                 AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
                 aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
@@ -299,9 +300,9 @@ computer:
                 # netcdf-fortran
                 NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
                 NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
-                NetCDF_Fortran_ROOT: $NETCDFFROOT 
+                NetCDF_Fortran_ROOT: $NETCDFFROOT
                 NETCDF_ROOT: $NETCDFFROOT
-                # netcdf-c   
+                # netcdf-c
                 NETCDFROOT: /sw/spack-levante/netcdf-c-4.8.1-2k3cmu
                 NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
                 NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
@@ -473,7 +474,7 @@ computer:
 
                 TBBROOT: /sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/tbb/2021.5.0
                 TBBMALLOC_DIR: $TBBROOT/lib/intel64/gcc4.8
-                
+
                 OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
                 # For OASIS3-MCT5 from CERFACS
                 OASIS_NETCDF: $NETCDFROOT

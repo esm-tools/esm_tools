@@ -219,10 +219,7 @@ def comp_test(info):
                         elif "pushd" in line and "popd" not in line:
                             found_format = pushd_format.findall(line)
                         if len(found_format) > 0:
-                            if (
-                                ";" not in found_format[0]
-                                and "/" not in found_format[0]
-                            ):
+                            if ";" not in found_format[0]:
                                 folders.append(found_format[0])
                     if len(folders) == 0:
                         logger.warning(
@@ -234,9 +231,9 @@ def comp_test(info):
                     prim_f = folders[0]
                     folders.append(f"{model}-{version}")
                     folders = [x for x in set(folders)]
-                    os.mkdir(prim_f)
+                    os.makedirs(prim_f, exist_ok=True)
                     for folder in folders:
-                        os.mkdir(prim_f + "/" + folder)
+                        os.makedirs(prim_f + "/" + folder, exist_ok=True)
 
                     # Get files from the
                     # ``esm_test/runscripts/<model>/comp_files4check_runs`` (i.e.

@@ -193,6 +193,10 @@ def clean_user_specific_info(info, str2clean):
                 continue
             line = line.replace(f"{mnt}{string}", f"<{key}>")
             line = line.replace(string, f"<{key}>")
+            # Collapse double slashes after <key>
+            line = re.sub(rf"<{key}>//+", f"<{key}>/", line)
+            # Ensure there is a one slash after <key>
+            line = re.sub(rf"<{key}>(?=[^/\s])", f"<{key}>/", line)
         new_clean_str.append(line)
     clean_str = new_clean_str
 
@@ -373,10 +377,17 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
                             path_in_general_config = (
                                 f"{this_test_dir}/config/{model}/{n}_{f.split('_')[-1]}"
                             )
+                            path_in_general_config_no_date = (
+                                f"{this_test_dir}/config/{model}/{n}"
+                            )
                             if os.path.exists(
                                 f"{user_info['test_dir']}/{path_in_general_config}"
                             ):
                                 subpaths.append(f"{path_in_general_config}")
+                            elif os.path.exists(
+                                f"{user_info['test_dir']}/{path_in_general_config_no_date}"
+                            ):
+                                subpaths.append(f"{path_in_general_config_no_date}")
                             else:
                                 logger.debug(f"'{cf_path}/{n}' does not exist!")
                         else:
@@ -389,7 +400,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     subpaths_source = subpaths
     subpaths_target = []
     datestamp_format = re.compile(r"_[\d]{8}-[\d]{8}$")
-    run_dir_format = re.compile(r"^run_[\d]{8}$")
+    run_dir_format = re.compile(r"^run_[\d]{8}-[\d]{8}$")
     for sp in subpaths:
         sp_t = ""
         pieces = sp.split("/")
@@ -441,6 +452,6 @@ def extract_namelists(s_config_yaml):
     # Adds OASIS ``namcouple``
     if "oasis3mct" in config:
         namelists.append("namcouple")
-        components.append("oasis")
+        components.append("oasis3mct")
 
     return namelists, components

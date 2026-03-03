@@ -1,0 +1,73 @@
+&jsb_model_nml
+  usecase              = 'jsbach_pfts'
+  npft                 = 12
+  use_lakes            = .TRUE.
+  enforce_water_budget = 'logging'  		! write water balance issue in logfile
+  fract_filename       = 'bc_land_frac_12pfts_1850.nc'
+  !output_tiles         =      ! List of tiles to output
+  init_from_ifs        = .FALSE.		! always start Jsbach from its initial file	
+/
+&jsb_seb_nml
+  l_skin_temp = .TRUE.
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_rad_nml
+  use_alb_veg_simple   = .FALSE.          ! Use TRUE for jsbach_lite, FALSE for jsbach_pfts
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_turb_nml
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_sse_nml
+  l_heat_cap_map       = .FALSE.
+  l_heat_cond_map      = .FALSE.
+  l_heat_cap_dyn       = .TRUE.
+  l_heat_cond_dyn      = .TRUE.
+  l_snow               = .TRUE.
+  l_dynsnow            = .TRUE.
+  l_freeze             = .TRUE.
+  l_supercool          = .TRUE.
+  bc_filename          = 'bc_land_soil.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_hydro_nml
+  l_organic            = .FALSE.
+  bc_filename          = 'bc_land_soil.nc'
+  ic_filename          = 'ic_land_soil.nc'
+  bc_sso_filename      = 'bc_land_sso.nc'
+/
+&jsb_assimi_nml
+  active               = .TRUE.              ! Use FALSE for jsbach_lite, TRUE for jsbach_pfts
+/
+&jsb_pheno_nml
+  active               = .TRUE.
+  scheme               = 'logrop'            ! scheme = logrop / climatology; use climatology for jsbach_lite
+  bc_filename          = 'bc_land_phys.nc'
+  ic_filename          = 'ic_land_soil.nc'
+/
+&jsb_carbon_nml
+  active               = .FALSE.
+  bc_filename          = ''
+  ic_filename          = ''
+/
+!&jsb_alcc_nml   ! Antropogene land cover changes, read in yearly land use map bc_land_fract*
+!  active               = .TRUE.
+!/
+!&jsb_pplcc_nml  ! Needed to restart from experiment, in which alcc was not activated
+!  lrestart_cont        = .TRUE.
+!/
+&jsb_fuel_nml
+  active               = .FALSE.
+  fuel_algorithm       = 1
+/
+&jsb_disturb_nml
+  active               = .FALSE.
+  ic_filename          = 'ic_land_soil.nc'
+  bc_filename          = 'bc_land_phys.nc'
+  fire_algorithm       = 1
+  windbreak_algorithm  = 1
+  lburn_pasture        = .FALSE.
+/

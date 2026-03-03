@@ -44,6 +44,8 @@ icon:
             branch: release-${icon.version} 
          2025.04-public:
             branch: release-${icon.version} 
+         2025.10-public:
+            branch: release-${icon.version} 
 
 
       # default settings 
@@ -133,7 +135,7 @@ icon:
    #
    # namelists and namelist settings/changes
    #
-   namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/"
+   namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/${resolution}"
    namelists:
        - NAMELIST_atm
        - NAMELIST_lnd
@@ -169,11 +171,12 @@ icon:
             ecrad_data_path: ${model_dir}/icon/externals/ecrad/data/ 
          output_nml:
             # TODO: different file names, look at f90nml issue
+            # WORKAROUND is using a pre_run_command
             # output_filename: ${expid}
             output_start: ${start_date}
             output_end: ${next_date}
-            #output_interval: ${output_interval}
-            #file_interval: ${file_interval}
+            output_interval: ${output_interval}
+            file_interval: ${file_interval}
             # TODO: operation = 'mean' not working at least not with
             # my set of output variables
             # operation: ${operation}
@@ -266,6 +269,27 @@ icon:
 
    bin_sources:
        bin_tag: ${model_dir}/bin/${executable} # This would be the normal way to do it
+
+   log_files:
+       finish: finish
+       nml_icon: nml_icon
+       nml_log:
+       output_schedule_atmo: output_schedule_atmo
+       output_schedule: output_schedule
+
+   log_sources:
+       finish: finish.status
+       nml_icon: NAMELIST_ICON_output_atm
+       nml_log: nml.atmo.log
+       output_schedule_atmo: output_schedule_atmo.txt
+       output_schedule: output_schedule.ps
+
+   log_in_work:
+       finish: finish.status
+       nml_icon: NAMELIST_ICON_output_atm
+       nml_log: nml.atmo.log
+       output_schedule_atmo: output_schedule_atmo.txt
+       output_schedule: output_schedule.ps
 
    #
    # input and forcing files

@@ -1,0 +1,355 @@
+!
+&coupling_mode_nml
+ coupled_to_ocean            = .TRUE.
+ !TODO: this is not documented but used in ICON-XPP
+ !coupled_to_hydrodisc    = .TRUE.
+/
+!
+&parallel_nml
+ nproma                  = 8
+ p_test_run              = .FALSE.
+ l_fast_sum              = .FALSE.
+ l_test_openmp           = .FALSE.
+ l_log_checks            = .FALSE.
+ num_io_procs            = 8
+ pio_type                = 1                   ! default 1: asynchron io
+ num_restart_procs       = 16 ! number of procs for multifile restart
+ num_dist_array_replicas = 1 ! can be 1 iff passive or active (see HAVE_SLOW_PASSIVE_TARGET_ONESIDED) target RMA works well
+/
+&grid_nml
+ dynamics_grid_filename  = "icon_grid_0030_R02B05_G.nc"
+ lredgrid_phys           = .FALSE.
+ radiation_grid_filename = " "
+ lfeedback               = .FALSE.
+/ 
+&run_nml
+ num_lev                 = 130              ! number of full levels of vertical grid
+ dtime                   = 450             ! [s] timestep in seconds
+ modelTimeStep           = "PT450S"
+ ldynamics               = .TRUE.               ! dynamics
+ ltransport              = .TRUE.               ! transport
+ iforcing                = 3          !
+ ntracer                 =  5                   ! number of tracers - default 0
+ ltimer                  = .TRUE.               ! 
+ ltestcase               = .FALSE.              ! initialize with real data
+ timers_level            = 10
+ msg_level               = 7                    ! detailed report during integration (5-7 or 13 incl. seaice prints)
+ output                  = 'nml'
+ check_uuid_gracefully   = .TRUE.
+ Restart_filename        = "tpPi210_restart_atm_<rsttime>.nc"
+/
+&dynamics_nml
+ lcoriolis               = .TRUE.
+ divavg_cntrwgt          = 0.50
+/
+&initicon_nml
+ ifs2icon_filename       = ''
+/
+&diffusion_nml
+ hdiff_order             = 5
+ hdiff_efdt_ratio        = 24.0
+ hdiff_smag_fac          = 0.025
+ lhdiff_vn               = .TRUE.
+ lhdiff_temp             = .TRUE.
+ hdiff_multfac           = 1.0
+ hdiff_tv_ratio          = 1.0
+/
+&nwp_phy_nml
+ itype_satpres_coeffs = 2
+ scale_cdnc_mode        = 2             ! for modis cdnc, scaling factor for simple plumes, =1 historical scaling factor to 2005, =2 picontrol scaling factor to 1850
+ inwp_gscp               = 1	! 3
+ !icalc_reff              = 100 
+ !icpl_rad_reff           = 1
+ inwp_convection         = 1
+ inwp_radiation          = 4
+ inwp_cldcover           = 1
+ inwp_satad              = 1
+ inwp_sso                = 1
+ inwp_gwd                = 1
+ latm_above_top          = .FALSE.
+ efdt_min_raylfric       = 7200.
+ itype_z0                = 2
+ icapdcycl               = 3
+ icpl_aero_conv          = 1	! 0: off
+				! 1: requires climatology cloud_num which Kinne does not have. Must use with icpl_aero_gscp=3 (external cdnc)
+ icpl_aero_gscp          = 3	!=0 off without modis cdnc and irad_aero=12, default; =1 if irad_aero=6 or 9 is used; =3 for external modis cd
+ icpl_o3_tp              = 1
+ icpl_aero_ice		 = 0	! 2
+ dt_rad                  = 3600.
+ dt_conv                 = 450     ! time step for convection in s (domain specific)
+ dt_sso                  = 450     ! time step for SSO parameterization
+ dt_gwd                  = 450    	! time step for gravity wave drag parameterization
+ inwp_surface            = 2           ! 1 = terra; 2 = JSBACH
+ inwp_turb               = 6           ! 1 = terra; 6 = VDIFF
+ lconv_cdnc_interp      = .true.  	!activates deep convection, requires modis/cdnc (icpl_aero_conv=1)
+ itype_parcel_ascent    = 2       	! =1 for icon-nwp quadratic profile, =2 for ifs type parcel ascent with cubic profile (Bechtold et al. 20
+/
+&nwp_tuning_nml
+ tune_gcstar = 2	! 1
+ tune_rprcon             =  0.0012
+ itune_albedo            = 0                         ! somewhat reduced albedo (w.r.t. MODIS data) over Sahara 
+ tune_zceff_min          = 0.025	!1.0e-4	!0.025 
+ tune_gkdrag             = 0.065
+ tune_gkwake             = 0.5		!1.4
+ tune_gfrcrit            = 0.38		!0.45
+ tune_grcrit		 = 0.5		!NA
+ tune_gkdrag_enh 	 = 0.09		!NA
+ tune_grcrit_enh 	 = 0.55		!NA
+ tune_dust_abs           = 0.
+ tune_box_liq_asy        = 3.0
+ tune_box_liq            = 0.05
+ tune_rcucov             = 0.075
+ tune_rhebc_land         = 0.825
+ tune_gust_factor        = 7.0
+ icpl_turb_clc           = 1
+ lcalib_clcov            = .FALSE.     ! turn off TCC, HCC, MCC, LCC tuning
+ tune_eiscrit            = 7.0         ! switch off conv. param. in stratocumulus regions
+ tune_zvz0i              = 0.85         ! Terminal fall velocity of ice
+ tune_entrorg            = 1.95e-3     ! Entrainment parameter
+ tune_sc_eis             = 7.          
+ tune_rmfdeps_land       = 0.30        ! fractional mass flux for downdrafts over land (default, 0.25)
+ tune_rmfdeps_ocean      = 0.25        ! fractional mass flux for downdrafts over ocean (default, 0.15)
+/
+&transport_nml
+ tracer_names            = 'qv', 'qc', 'qi', 'qr', 'qs'
+ ivadv_tracer            = 3,3,3,3,3
+ itype_hlimit            = 3,4,4,4,4,0
+ ihadv_tracer            = 32,2,2,2,2,0
+/
+&nonhydrostatic_nml
+ ndyn_substeps	= 8
+ iadv_rhotheta           = 2
+ ivctype                 = 2
+ itime_scheme            = 4
+ exner_expol             = 0.5	!0.333
+ vwind_offctr            = 0.2                       ! 0.2 for R2B6 and higher resolution, 0.3 for lower resolution
+ damp_height             = 50000.	!44000.
+ rayleigh_coeff          = 0.500001
+ divdamp_order           = 24                        ! 2 ass, 24 fc
+ divdamp_type            = 32                        ! optional: 2 assimilation cycle, 32 forecast
+ divdamp_fac             = 0.004              
+ divdamp_trans_start     = 12500                     
+ divdamp_trans_end       = 17500                     
+ igradp_method           = 3	                     
+ l_zdiffu_t              = .TRUE.                    
+ thslp_zdiffu            = 0.02	                     
+ thhgtd_zdiffu           = 125.	                     
+ htop_moist_proc         = 22500.                    
+ hbot_qvsubstep          = 16000.                    
+/
+! only relevant if iforcing = 2 in run_ml
+! the current setup uses iforcing = 3
+&sea_ice_nml
+ albedoW_sim             = 0.066_wp         ! albedo of the ocean used in sea ice model
+ albedoW                 = 0.085_wp         ! 0.066 albedo of the ocean water
+ albs                    = 0.83_wp          !0.85_wp Albedo of snow (not melting)
+ albsm                   = 0.77_wp          !0.70_wp Albedo of snow (melting)
+ albi                    = 0.70_wp         ! 0.75_wp Albedo of ice (not melting)
+ albim                   = 0.68_wp         ! 0.70_wp Albedo of ice (melting)
+ Cd_ia                   = 1.20e-3_wp      ! Ice-atmosphere drag coefficient			
+ t_heat_base             = -2.0_wp         ! -5.0 arbitrary temperature used as basis for
+ hci_layer               = 0.25_wp         ! 0.10 Thickness of stabilizing constant heat capacity layer
+/
+&sleve_nml			                     
+ top_height              = 75000.      ! model top
+ min_lay_thckn           = 20.                       ! lowest level thickness (between half-levels)
+ decay_scale_1           = 4000.                     
+ decay_scale_2           = 2500.                     
+ decay_exp               = 1.2	                     
+ max_lay_thckn           = 500.   ! maximum layer thickness below htop_thcknlimit
+ htop_thcknlimit         = 35000.   ! top limit for max_lay_thckn
+ stretch_fac             = 1.2
+ flat_height             = 35000.
+/
+&io_nml				                     
+ lflux_avg               = .FALSE.                   ! true: averaged (ashfl_s), false: accumulated fluxes (accshfl_s)
+ itype_pres_msl          = 5                         ! (1) 3: IFS-type extrapolation
+ itype_rh                = 1                         ! (1) 2: mixed phase (water and ice)
+ inextra_3d              = 2                         ! 3D extra variables 
+ inextra_2d              = 10                        ! 2D extra variables 
+ restart_write_mode      = "joint procs multifile"   ! asynchron multifile restart handling; 'sync' for single file writing
+ lkeep_in_sync           = .TRUE.                    ! sync after each timestep
+ lnetcdf_flt64_output    = .FALSE.                   ! T: 64 bit output in all files
+/
+&output_nml
+ filetype                = 4
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "1958-01-01T00:00:00Z"
+ output_interval         = "P1D"
+ file_interval           = "P50Y"
+ mode                    = 1
+ remap                   = 0
+ output_grid             = .FALSE. 
+ output_filename         = "icon_zmc_ml"
+ filename_format         = "<output_filename>_<datetime2>"
+ ml_varlist              = 'z_mc', 'z_ifc'
+/
+&output_nml
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1M"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ mode                    = 1                         ! 1: forecast mode (relative t-axis)
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_grid             = .FALSE.                   ! flag whether grid information is added to output.
+ output_filename         = "icon_atm_mon"      ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ ml_varlist              = 'tas_gmean','rsdt_gmean','rsut_gmean','rlut_gmean','radtop_gmean','prec_gmean','evap_gmean','pme_gmean'
+/
+&output_nml
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1M"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1		             
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "icon_atm_2d_ml"    ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'pres_msl', 'pres_sfc', 't_s', 'clct', 'tot_prec_rate',
+                           'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m',
+                           'sob_t', 'sod_t', 'sou_t', 'thb_t', 'sob_s', 'sou_s', 'thb_s', 'shfl_s', 'lhfl_s',
+                           'rain_con_rate', 'rain_gsp_rate', 'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate',          
+                           'rain_con', 'rain_gsp', 'prec_con','prec_gsp_rate',                                          
+                           'qifl_s', 'qhfl_s',
+                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 'meltpot_ice', 't_ice', 'h_ice',
+                           'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
+/
+&output_nml
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1M"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1		             
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "icon_atm_3d_ml"    ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'pres', 'geopot', 'temp', 'u', 'v', 'qv', 'rh', 'clc', 'tot_qc_dia', 'tot_qi_dia'
+/
+&output_nml
+ output_start            = "2595-01-01T00:00:00Z"
+ output_end              = "5000-01-01T00:00:00Z"
+ output_interval         = "P1M"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1                        
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "tpPi210_jsb_2d"       ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'group:jsb_seb_basic','group:jsb_hydro_basic',
+			   'group:jsb_sse_basic', 'group:jsb_pheno_basic',
+			   'group:jsb_rad_basic','group:jsb_alcc_basic',
+			   'group:jsb_all_basic','hydro_weq_snow_box'
+/
+&output_nml ! 'lnd_mon'
+ output_start            = "2595-01-01T00:00:00Z"
+ output_end              = "5000-01-01T00:00:00Z"
+ output_interval         = "P1M"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1                        
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "tpPi210_lnd_mon"      ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'group:jsb_mon'
+/
+&dbg_index_nml
+  idbg_mxmn              = 1                          ! initialize MIN/MAX  debug output
+  idbg_val               = 0                          ! initialize one cell debug output
+  idbg_slev              = 1                          ! initialize start level for debug output
+  idbg_elev              = 3                          ! initialize start level for debug output
+/
+&extpar_nml
+ itopo                   = 1
+ n_iter_smooth_topo      = 1
+ heightdiff_threshold    = 3000.
+ pp_sso 		 = 2  ! (1) Optimized tuning for MERIT/REMA orography data
+/
+&lnd_nml
+tf_salt=271.45
+itype_oskin_cold = 1
+albsi_snow_max = 0.80
+albsi_snow_min = 0.69
+albsi_max = 0.70
+albsi_min = 0.65
+ nlev_snow               = 3
+ lmulti_snow             = .false.
+ itype_heatcond          = 3
+ idiag_snowfrac          = 20
+ lsnowtile               = .true.
+ llake                   = .true.
+ itype_lndtbl            = 4
+ itype_evsl              = 4
+ itype_trvg              = 3
+ itype_root              = 2
+ cwimax_ml               = 5.e-4
+ c_soil                  = 1.25
+ c_soil_urb              = 0.5
+ itype_snowevap          = 2
+ lprog_albsi             = .true.      ! default = F 
+ lseaice                 = .true.
+ hice_min                = 0.05        ! default of nwp sea-ice model - 0.05 in sea-ice model of icon-o
+ hice_max                = 10.0        ! must correspont to seaice_limit in icon-o in % of upper layer thickness
+ sstice_mode             = 1           ! 1 for coupled 
+ !                                     ! parameters for jsbach land model:
+ ntiles                  = 1           ! 1 for jsbach, 3 for terra
+/
+&turb_vdiff_nml
+ fsl                     = 0.8         ! for lowest model layer thickness of 20m
+ pr0                     = 0.85 ! default: 1.0; neutral limit Prandtl number (0.6 to 1.0)
+ f_theta_limit_fraction  = 0.15
+ f_theta_decay           = 4.0         ! default: 4.0
+ ek_ep_ratio_stable      = 2.33        ! default: 3 - Mauritzen: 1/(0.3 +- 0.1) -1 = 1.5 to 4
+ ek_ep_ratio_unstable    = 1           ! default: 2 - Mauritzen: 1
+/
+&radiation_nml
+ isolrad                 = 2
+ irad_o3                 = 5
+ irad_aero               = 12
+ ghg_filename            = './bc_greenhouse_gases.nc'
+ irad_co2                = 2           
+ irad_ch4                = 3           
+ irad_n2o                = 3           
+ irad_cfc11              = 2
+ irad_cfc12              = 2
+ vmr_co2                 = 284.29e-06   ! values for 1850 CE
+ vmr_ch4                 = 798.79e-09   ! values for 1850 CE
+ vmr_n2o                 = 271.57e-09   ! values for 1850 CE
+ vmr_cfc11               = 21.72e-12    ! values for 1850 CE
+ vmr_cfc12               = 0.0         ! values for 1850 CE
+ izenith                 = 4           ! 4: NWP default, 3: no annual cycle
+ direct_albedo           = 4
+ direct_albedo_water     = 3
+ albedo_whitecap         = 1
+ ecrad_llw_cloud_scat    = .true.
+ ecRad_data_path         = '/ec/res4/hpcperm/dwtp/build/backports-release-2025.10-2/externals/ecrad/data' 
+ decorr_pole             = 780.         !clouds decorrelation in poles, default = 2000.
+ decorr_equator          = 2950.        !clouds decorrelation in the equator, default = 2000.
+ lcalculate_fsd          = .true.       ! for FSD (fractional standard deviation) activation            
+ fsd_gridlen             = 120.         ! 80, default, horizontal grid spacing in FSD parameterization
+/
+&ccycle_nml
+ ccycle_config%iccycle  = 2            ! 0: vmr_co2=384 for jsbach (def); 2: ccycle namelist values used
+ ccycle_config%ico2conc = 2     ! 2: use vmr_co2 of ccycle; 4: use values of GHG file
+ ccycle_config%vmr_co2  = 284.29e-06   ! same value as in radiation_nml
+/

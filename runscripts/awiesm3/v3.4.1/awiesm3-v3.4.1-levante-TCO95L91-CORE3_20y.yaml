@@ -1,0 +1,68 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "v3.4.1"
+    account: "bb1469"
+    compute_time: "08:00:00"
+    initial_date: "1850-01-01"
+    final_date: "1910-01-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 0
+    nmonth: 0
+    nyear: 20
+
+computer:
+    taskset: true
+    mail_type: "FAIL"
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "CORE3"
+    time_step: 1200
+    nproc: 1792
+    omp_num_threads: 2
+    lresume: false
+    restart_rate: 20
+    restart_unit: "y"
+    restart_first: 20
+
+lpj_guess:
+    mip: cmip7
+    scenario: piControl
+    nproc: 64
+    omp_num_threads: 4
+    lresume: true
+    ini_parent_exp_id: "foo"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/ab0246/a270092/input/lpj-guess/restart/TCO95-CORE3/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_3850/*
+   
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    mip: cmip7
+    scenario: piControl
+    lresume: false
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 3600
+
+xios:
+    with_model: oifs
+    nproc: 8
+    omp_num_threads: 32

@@ -27,6 +27,14 @@ class FileOperation(Enum):
     HARDLINK = "hardlink"
 
 
+class OutputFormat(Enum):
+    """Output formats for FileTracker YAML dump."""
+
+    FILEDICTS = "filedicts"  # files.<filetype>.<file_id> - compatible with filedicts design
+    BY_PHASE = "by_phase"    # <phase>.<operation>.[list] - grouped by prepare/tidy
+    BY_OPERATION = "by_operation"  # <operation>.[list] - flat grouping by operation type
+
+
 @dataclass
 class TrackedFile:
     """A single tracked file operation."""
@@ -131,12 +139,12 @@ class FileTracker:
         **metadata
             Additional metadata (phase, filetype, component).
         """
-        logger.info(f"DEBUG FileTracker.record: {operation} {source} -> {destination}")
+        logger.debug(f" FileTracker.record: {operation} {source} -> {destination}")
         op = FileOperation(operation)
         if checksum is None and self.compute_checksums:
             checksum = self._compute_checksum(destination)
         self._track(source, destination, op, checksum, **metadata)
-        logger.info(f"DEBUG FileTracker.record: Now have {len(self._operations)} operations")
+        logger.debug(f" FileTracker.record: Now have {len(self._operations)} operations")
 
     def record_many(self, results: list[dict], **metadata) -> None:
         """
@@ -297,7 +305,54 @@ class FileTracker:
 
         return result
 
-    def dump_yaml(self, path: str, by_phase: bool = False) -> None:
+    def to_dict_by_filetype(self) -> dict:
+        """
+        Convert tracked operations to a dictionary organized by filetype.
+
+        This produces output compatible with the filedicts design:
+        files.<filetype>.<file_id> with operation attributes.
+
+        Returns
+        -------
+        dict
+            Dictionary with structure: {"files": {<filetype>: {<file_id>: {...}}}}
+        """
+        from pathlib import Path
+
+        result = {"files": {}}
+
+        for op in self._operations:
+            filetype = op.filetype or "unknown"
+            if filetype not in result["files"]:
+                result["files"][filetype] = {}
+
+            # Use destination basename as the file ID
+            file_id = Path(op.destination).name
+
+            # Handle duplicate file IDs by appending a counter
+            base_id = file_id
+            counter = 1
+            while file_id in result["files"][filetype]:
+                file_id = f"{base_id}_{counter}"
+                counter += 1
+
+            entry = {
+                "source": op.source,
+                "destination": op.destination,
+                "operation": op.operation.value,
+            }
+            if op.phase:
+                entry["phase"] = op.phase
+            if op.checksum:
+                entry["checksum"] = op.checksum
+            if op.component:
+                entry["component"] = op.component
+
+            result["files"][filetype][file_id] = entry
+
+        return result
+
+    def dump_yaml(self, path: str, format: OutputFormat = OutputFormat.FILEDICTS) -> None:
         """
         Write tracked operations to a YAML file.
 
@@ -305,12 +360,17 @@ class FileTracker:
         ----------
         path : str
             Output file path.
-        by_phase : bool
-            If True, organize output by phase.
+        format : OutputFormat
+            Output format (default: FILEDICTS).
         """
-        logger.info(f"DEBUG FileTracker.dump_yaml: {len(self._operations)} operations, writing to {path}")
-        data = self.to_dict_by_phase() if by_phase else self.to_dict()
-        logger.info(f"DEBUG FileTracker.dump_yaml: data = {data}")
+        logger.debug(f" FileTracker.dump_yaml: {len(self._operations)} operations, writing to {path}")
+        if format == OutputFormat.FILEDICTS:
+            data = self.to_dict_by_filetype()
+        elif format == OutputFormat.BY_PHASE:
+            data = self.to_dict_by_phase()
+        else:
+            data = self.to_dict()
+        logger.debug(f" FileTracker.dump_yaml: data = {data}")
         esm_parser.yaml_dump(data, path)
         logger.info(f"File tracking log written to {path}")
 

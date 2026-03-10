@@ -16,11 +16,10 @@ general:
 fesom:
         version: 2.6
         model_dir: "/albedo/work/user/${user}/Models/fesom-2.6/"
-        mesh_dir: "/albedo/pool/FESOM/meshes_default/core2/"
+        mesh_dir: "/albedo/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
         restart_rate: 1
         restart_first: 1
         restart_unit: 'm'
         resolution: "CORE2"
         lresume: false
         time_step: 1800
-        nproc: 128

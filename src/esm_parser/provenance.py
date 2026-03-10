@@ -1089,8 +1089,10 @@ def clean_provenance(data, nested=False):
             clean_provenance(key, nested=True): clean_provenance(value, nested=True)
             for key, value in data.items()
         }
-    # Clean vars in objects
+    # Clean vars in objects (skip objects marked with _skip_provenance)
     elif hasattr(data, "__dict__"):
+        if getattr(data, "_skip_provenance", False):
+            return data
         for key, value in vars(data).items():
             setattr(data, key, clean_provenance(value, nested=True))
         return data

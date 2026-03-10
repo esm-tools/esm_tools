@@ -63,6 +63,7 @@ class FileTracker:
         self._operations: list[TrackedFile] = []
         self._lock = threading.Lock()
         self.compute_checksums = compute_checksums
+        self._skip_provenance = True  # Marker to skip provenance tracking
 
     def _compute_checksum(self, path: str) -> Optional[str]:
         """Compute MD5 checksum of a file."""

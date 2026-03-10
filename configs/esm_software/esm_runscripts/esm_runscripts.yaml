@@ -58,7 +58,7 @@ choose_job_type:
 
         observe:
                 recipe:
-                        - "init_monitor_file"
+                        - "init_observe_logs"
                         - "wait_and_observe"
                         - "wake_up_call"
 

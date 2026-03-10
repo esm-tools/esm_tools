@@ -104,14 +104,6 @@ echam:
                         nproca: 24
                         nprocb: 24
 
-        compiletime_environment_changes:
-            add_export_vars:
-                # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
-                - 'OIFS_OASIS_BASE=$(pwd)/oasis'
-                - 'OIFS_OASIS_INCLUDE="-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                - "OASIS3MCT_FC_LIB=$(pwd)/lib/"
-                - "OASIS3MCTROOT=$(pwd)/oasis/"
-                - 'configure_opts=--with-coupler=oasis3-mct'
 
 #########################################################################################
 
@@ -184,10 +176,13 @@ fesom:
 
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
+        mct_version: 2.8
 
         process_ordering:
                 - fesom
                 - echam
+
+        include_env_from_component_files: False
 
         a2o_lag: "${echam.time_step}"
         o2a_lag: "${fesom.time_step}"
@@ -266,3 +261,26 @@ oasis3mct:
                 rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
 
 
+computer:
+    add_export_vars:
+        # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
+        OIFS_OASIS_BASE:
+            _value: '$(pwd)/oasis'
+            _execution_mode: compile
+            _component: echam
+        OIFS_OASIS_INCLUDE:
+            _value: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+            _execution_mode: compile
+            _component: echam
+        OASIS3MCT_FC_LIB:
+            _value: "$(pwd)/lib/"
+            _execution_mode: compile
+            _component: echam
+        OASIS3MCTROOT:
+            _value: "$(pwd)/oasis/"
+            _execution_mode: compile
+            _component: echam
+        configure_opts:
+            _value: '--with-coupler=oasis3-mct'
+            _execution_mode: compile
+            _component: echam

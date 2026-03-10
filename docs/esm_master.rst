@@ -63,15 +63,22 @@ You can get further help with::
     $ esm_master --help
     
  
+Logging
+-------
+
+``esm_master`` uses Loguru for console logging. To increase verbosity call ``esm_master`` with the ``-v`` or ``--verbose`` flag.
+
 Configuring esm-master for Compile-Time Overrides
 -------------------------------------------------
 
-It is possible that some models have special compile-time settings that need to be included, overriding the machine defaults. Rather than placing these changes in ``configs/machines/NAME.yaml``, they can be instead placed in special blocks of the component or model configurations, e.g.:
+It is possible that some models have special compile-time settings that need to be included, overriding the machine defaults. Rather than placing these changes in ``configs/machines/NAME.yaml``, they can be instead placed in the ``computer`` section of the component or model configurations using a ``choose_general.execution_mode`` block, e.g.:
 
 .. code-block:: yaml
     
-    compiletime_environment_changes:
-            add_export_vars:
-                    [ ... ]
+    computer:
+        choose_general.execution_mode:
+            compile:
+                export_vars:
+                    SPECIAL_COMPILE_VAR: "compile_value"        
 
-The same is also possible for specifying ``runtime_environment_changes``.
+See :ref:`esm_environment:ESM Environment` for more details on environment configuration options.

@@ -1,0 +1,358 @@
+!///////////////////////////////////////////////////////////////////////////////
+! Arctic specific groups and PFTs
+! Values from Wolf et al. and Wania et al., unless otherwise stated.
+!///////////////////////////////////////////////////////////////////////////////
+
+group "tallshrub" (
+
+	shrub
+
+	! Allometry
+	crownarea_max 4.0
+	k_allom2 6
+	k_latosa 500
+	rootdist 0.14 0.14 0.14 0.14 0.14 0.03 0.03 0.03 0.03 0.03 0.03 0.03 0.03 0.03 0.03
+
+	! Longevity
+	longevity 100 		! Wolf et al have 40. Juniper can live for > 100 years
+
+	! Bioclimatic limits (GDD5 values set for each PFT below)
+	gdd0_min 600 
+	tcmin_surv -32.5
+	tcmax_est 5
+	
+	! Shade tolerance (Zhang et al. 2014 - Table S2b)
+	est_max 0.5
+	parff_min 2000000
+	alphar 10.0
+	greff_min 0.02
+	turnover_sap 0.015
+)
+
+
+
+group "lowshrub" (
+
+	! Typical species: Vaccinium vitis-idaea, Cassiope tet.,
+	! Ledum palustre, Erica spec.
+
+	shrub
+
+	! Allometry
+	crownarea_max 1.0
+	k_allom1 10
+	k_allom2 4
+	k_latosa 125
+	rootdist 0.16 0.16 0.16 0.16 0.16 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02 0.02	
+	root_beta 0.938		! Somewhat closer to tundra vegetation in Jackson et al.
+
+	! Longevity
+	longevity 25
+
+	! Bioclimatic limits
+	tcmax_est 5
+	gdd0_min 250		! Wolf et al (2008), Zhang et al (2013) have 300
+	gdd5min_est 100 	! Wolf et al (2008), Zhang et al (2013)
+
+	! Shade tolerance (Zhang et al. 2014 - Table S2b)
+	est_max 0.75
+	parff_min 1000000
+	alphar 2.0
+	greff_min 0.012
+	turnover_sap 0.01
+)
+
+
+group "prostratedwarfshrub" (
+
+	! Prostrate dwarf shrubs
+	! Typical species: Vaccinium oxycoccus, Salix arctica, Arctostaphylos alpinus
+
+	shrub
+
+	! Allometry
+	crownarea_max 1.0
+	k_allom1 10
+	k_allom2 1
+	rootdist 0.18 0.18 0.18 0.18 0.18 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01 0.01
+	root_beta 0.914		! Tundra vegetation in Jackson et al., 1996
+	ltor_max 0.5   		! overrides shrub group value
+
+	! Longevity
+	longevity 30
+
+	! Structure and function
+	wooddens 200
+	cton_sap 300		! overrides shrub value of 330
+
+	! Bioclimatic limits
+	tcmax_est 5
+	gdd5min_est 0
+	gdd0_min 100		! Wolf et al (2008) have 150 
+	gdd0_max 900		! as in Zhang et al. (2013)
+	min_snow 20.0
+
+	! Shade tolerance (Zhang et al. 2014 - Table S2b) - Assumed to be the same as low shrubs
+	est_max 0.75
+	parff_min 500000	! Lower than the low shrub value
+	alphar 2.0
+	greff_min 0.012
+	turnover_sap 0.01
+
+	! Tundra peatlands
+	wtp_max -200
+	inund_duration 10
+
+	ga 0.030
+)
+
+group "cushionforblichenmosstundra" (
+
+	! Cushion forb, lichen and moss tundra
+	! Found in (tundra, High Arctic) peatlands
+	! Typical species: Saxifragacea, Caryophyllaceae, Papaver, Draba, lichens, mosses
+
+	grass
+   	boreal
+	pathway "c3"
+
+	! Structure and function
+	rootdist 0.37 0.23 0.15 0.09 0.06 0.04 0.02 0.02 0.01 0.01 0.0 0.0 0.0 0.0 0.0
+	root_beta 0.9555
+	ltor_max 0.4
+	turnover_root 0.5
+	turnover_leaf 0.6
+
+	! Bioclimatic limits
+	tcmax_est 5
+	gdd5min_est 0
+	phengdd5ramp 1
+	min_snow 50.0
+	gdd0_min 50
+	gdd0_max 150		! This is the main condition limiting CLM growing in the Abisko region.
+
+	! Tundra (High Arctic) peatlands
+	wtp_max -200
+	inund_duration 10
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 1.29
+	seas_iso 0
+	eps_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 		! Fraction from C3G
+	storfrac_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+	ga 0.030
+
+        !optimisem
+        harv_eff 0
+        res_outtake 0.0
+)
+
+
+pft "HSE" (
+
+	! Tall shrub, evergreen
+	! Typical species: Juniper communis, Pinus pumila
+	! Not a peatland PFT
+
+	include 1
+
+	needleleaved  
+	tallshrub 		! NB: Overrides k_latosa set in needleleaved
+	boreal
+	evergreen
+
+	k_allom1 28
+
+	leaflong 3
+	turnover_leaf 0.333
+
+	est_max 0.2		! overrides group value
+	wooddens 300		! was 250
+
+	tcmin_est -16		! Estimated from map
+	gdd5min_est 300
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 0.0
+	seas_iso 0
+	eps_mon 0.462 0.246 0.292 0.124 0.13 0.108 0.13 0.276 0.232 	! Fraction from C3G
+	storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+)
+
+
+pft "HSS" (
+
+	! Tall shrub, summergreen
+	! Typical species: Alnus spec., Salix, Betula, etc. 
+	! Values from Wolf et al., unless otherwise stated.
+	! Not a peatland PFT
+
+	include 1
+
+	broadleaved
+	tallshrub ! NB: Overrides k_latosa set in broadleaved
+	boreal
+	summergreen
+
+	k_allom1 30
+
+	wooddens 200		! was 250
+	k_latosa 600		! Set to the same relative difference as broadleafed/needleleafed, was 500
+
+	tcmin_est -32.5 	! Estimated from map
+	gdd5min_est 200
+	phengdd5ramp 50
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 4.0
+	seas_iso 1
+	eps_mon 0.462 0.246 0.292 0.124 0.13 0.108 0.13 0.276 0.232	! Fraction from C3G
+	storfrac_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+)
+
+
+pft "LSE" (
+
+	! Low shrub, evergreen
+	! Typical species: Empetrum hermaphroditum Juniperus communis, Vaccinium vitis-idaea; Andromeda polifolia
+	! Ledum palustre, Erica spec.
+	! Non-peatland version
+
+	include 1
+
+	needleleaved
+	lowshrub		! NB: Overrides k_latosa set in needleleaved
+	boreal
+	evergreen
+
+ 	leaflong 3
+	turnover_leaf 0.33
+ 
+	est_max 0.25 		! overrides group value
+
+	! BVOC values, Tang et al., 2016
+	eps_iso 1.75
+	seas_iso 0
+	eps_mon 0.02 0.01 0.01 0.01 0.01 0.00 0.01 0.01 0.01 		! Fraction from C3G
+	storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+	ga 0.040
+)
+
+
+pft "LSS" (
+
+	! Low shrub, summergreen
+	! Typical species: Vaccinium myrtillus, V. uliginosum, Salix hastata, S. glauca etc.
+
+	include 1
+
+	broadleaved
+	lowshrub 		! NB: Overrides k_latosa set in broadleaved
+	boreal
+	summergreen
+
+	phengdd5ramp 20
+
+	k_latosa 150		! Set to the same relative difference as broadleafed/needleleafed, was 125
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 6.9 
+	seas_iso 1
+	eps_mon 0.17 0.09 0.11 0.05 0.05 0.04 0.05 0.10 0.09		! Fraction from C3G
+	storfrac_mon  0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+)
+
+
+pft "GRT" (
+
+	! Graminoid and forb tundra
+	! Typical species: Artemisia, Kobresia, Brassicaceae etc.
+	! Not a peatland PFT
+
+	include 1
+
+	grass
+	shade_intolerant
+	boreal
+
+	pathway "c3"
+	ltor_max 0.5 		! possible override of the grass group value - Wolf et al (2008) has 0.2
+	
+	gdd5min_est 0
+	phengdd5ramp 10 	! Overrides grass group value
+	gdd0_min 150
+	gdd0_max 1000
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 9.82
+	seas_iso 1
+	eps_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 			! Fraction from C3G
+	storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+	ga 0.030
+)
+
+pft "EPDS" (
+
+	! Prostrate dwarf shrubs
+	! Typical species: Vaccinium oxycoccus, Cassiope tetragona, Dryas octopetala, Saxifraga oppositifolia
+
+	include 1
+
+	prostratedwarfshrub
+	needleleaved
+	evergreen
+	boreal
+
+	leaflong 2
+	turnover_leaf 0.5
+
+	k_latosa 100		! Overrides value in needleleaved
+
+	est_max 0.5		! overrides group value
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 1.4
+	seas_iso 0
+	eps_mon 0.30 0.16 0.19 0.08 0.08 0.07 0.08 0.18 0.15 		! Fraction from C3G
+	storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+	ga 0.030
+)
+
+
+pft "SPDS" (
+
+	! Prostrate dwarf shrubs
+	! Typical species: Salix arctica, Arctostaphylos alpinus, Salix reticulata
+
+	include 1
+
+	prostratedwarfshrub
+	broadleaved
+	summergreen
+	boreal
+
+	k_latosa 120		! set to the same relative difference as broadleafed/needleleafed, was 100	
+
+	phengdd5ramp 10
+
+	! BVOC
+	eps_iso 14.11
+	seas_iso 1
+	eps_mon 0.10 0.05 0.06 0.03 0.03 0.02 0.03 0.06 0.05 		! Fraction from C3G
+	storfrac_mon  0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+	ga 0.030
+)
+
+
+pft "CLM" (
+
+	! Cushion forb, lichen and moss tundra
+	! Found in (tundra, High Arctic) peatlands
+	! Typical species: Saxifragacea, Caryophyllaceae, Papaver, Draba, lichens, mosses
+
+	! Non peatland version
+
+	include 1
+	cushionforblichenmosstundra
+)
+

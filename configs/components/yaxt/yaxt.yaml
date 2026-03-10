@@ -1,5 +1,24 @@
-model: "yaxt"
-environment_changes:
+yaxt:
+    model: "yaxt"
+
+    available_versions:
+    - "0.9.0"
+    choose_version:
+        "0.9.0":
+            curl-repository: "https://www.dkrz.de/redmine/attachments/download/498/yaxt-0.9.0.tar.gz"
+            repo_options: "--silent"
+    clean_command: ""
+    comp_command: ""
+    conf_command: "autoreconf -iv"
+    pipe_options: "| tar xz"    # deniz: added extraction via pipe
+    metadata:
+        Information: "For more information about YAXT please ..."
+        Description: "yaxt"
+        Authors: ""
+        Publications: ""
+        License: ""
+
+computer:
     choose_computer.name:
         mistral:
             add_module_actions:
@@ -8,19 +27,3 @@ environment_changes:
             ollie:
                 add_module_actions:
                     - "load automake"
-available_versions:
-- "0.9.0"
-choose_version:
-    "0.9.0":
-        curl-repository: "https://www.dkrz.de/redmine/attachments/download/498/yaxt-0.9.0.tar.gz"
-        repo_options: "--silent"
-clean_command: ""
-comp_command: ""
-conf_command: "autoreconf -iv"
-pipe_options: "| tar xz"    # deniz: added extraction via pipe
-metadata:
-    Information: "For more information about YAXT please ..."
-    Description: "yaxt"
-    Authors: ""
-    Publications: ""
-    License: ""

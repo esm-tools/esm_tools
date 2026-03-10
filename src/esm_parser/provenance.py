@@ -11,10 +11,12 @@ And that will return a list of the provenance history of that variable, for exam
 .. code-block:: python
 
     [{'category': 'components',
+      'subcategory': 'fesom',
       'col': 10,
       'line': 6,
       'yaml_file': '/Users/mandresm/Codes/esm_tools/configs/components/fesom/fesom-2.0.yaml'},
      {'category': 'setups',
+      'subcategory': 'awicm3',
       'col': 18,
       'extended_by': 'dict.__setitem__',
       'line': 321,
@@ -41,10 +43,11 @@ from loguru import logger
 from ruamel.yaml import YAML
 
 import esm_parser
-import esm_tools
 from esm_calendar import Date
+from esm_tools import user_error
 
 CATEGORY_HIERARCHY = [
+    None,
     "defaults",  # Lowest in the hierarchy
     "other_software",
     "machines",
@@ -52,8 +55,9 @@ CATEGORY_HIERARCHY = [
     "setups",
     "couplings",
     "runscript",
+    "command_line",
     "backend",  # Highest in the hierarchy (no category means it is a change
-]               # from ESM-Tools functions)
+]  # from ESM-Tools functions)
 
 
 # =================
@@ -461,7 +465,7 @@ class DictWithProvenance(dict):
                     val, provenance.get(key, None)
                 )
 
-    def set_provenance(self, provenance):
+    def set_provenance(self, provenance, update_method="extend"):
         """
         Recursively transforms every value in ``DictWithProvenance`` into its
         corresponding WithProvenance object and appends the same ``provenance`` to it.
@@ -472,6 +476,10 @@ class DictWithProvenance(dict):
         ----------
         provenance : any
             New `provenance value` to be set
+        update_method : str, optional
+            Method to use when updating provenance of existing values. Can be either
+            ``extend`` to append the new provenance to the existing one, or ``update``
+            to update the last provenance entry with new values. Default is ``extend``.
         """
         if not isinstance(provenance, list):
             provenance = [provenance]
@@ -479,12 +487,35 @@ class DictWithProvenance(dict):
         for key, val in self.items():
             if isinstance(val, dict):
                 self[key] = DictWithProvenance(val, {})
-                self[key].set_provenance(provenance)
+                self[key].set_provenance(provenance, update_method=update_method)
             elif isinstance(val, list):
                 self[key] = ListWithProvenance(val, [])
-                self[key].set_provenance(provenance)
+                self[key].set_provenance(provenance, update_method=update_method)
             elif hasattr(val, "provenance"):
-                self[key].provenance.extend(provenance)
+                if update_method == "extend":
+                    self[key].provenance.extend(provenance)
+                elif update_method == "update":
+                    if self[key].provenance[-1]:
+                        self[key].provenance[-1].update(provenance[-1])
+                    else:
+                        self[key].provenance[-1] = provenance[-1]
+                elif update_method == "update_from_choose":
+                    if self[key].provenance[-1]:
+                        old_from_choose = (
+                            self[key].provenance[-1].get("from_choose", [])
+                        )
+                        # Extend the from_choose list with the new entry
+                        if old_from_choose:
+                            provenance[-1]["from_choose"] = (
+                                old_from_choose + provenance[-1].get("from_choose", [])
+                            )
+                        self[key].provenance[-1].update(provenance[-1])
+                    else:
+                        self[key].provenance[-1] = provenance[-1]
+                else:
+                    raise ValueError(
+                        f"Unknown update method {update_method}. Use either 'extend' or 'update'"
+                    )
             else:
                 self[key] = wrapper_with_provenance_factory(val, provenance)
 
@@ -554,6 +585,12 @@ class DictWithProvenance(dict):
             Key of the item
         val : any
             Value of the item
+
+        Raises
+        ------
+        user_error :
+            If the new value comes from a choose and the old value comes from a choose
+            within the same category
         """
         # Initialize values. final_val is the variable that will be used in
         # super().__setitem__
@@ -568,13 +605,14 @@ class DictWithProvenance(dict):
             and self.custom_setitem
         ):
             # Define the category of the old value (components, setups, machines, ...)
-            if old_val.provenance[-1]:
-                old_category = old_val.provenance[-1].get("category", None)
+            old_provenance = old_val.provenance
+            if old_provenance[-1]:
+                old_category = old_provenance[-1].get("category", None)
             else:
                 old_category = "backend"
 
             # Initialize new provenance with the old provenance
-            new_provenance = copy.deepcopy(old_val.provenance)
+            new_provenance = copy.deepcopy(old_provenance)
 
             # If the new value has provenance extend its provenance with the old one
             if hasattr(new_val, "provenance"):
@@ -592,8 +630,78 @@ class DictWithProvenance(dict):
                 old_category_index = CATEGORY_HIERARCHY.index(old_category)
                 new_category_index = CATEGORY_HIERARCHY.index(new_category)
 
+                # Raise an error if the categories are the same
+                if old_category_index == new_category_index and old_val != new_val:
+                    old_val_comes_from_choose = old_provenance[-1].get(
+                        "from_choose", []
+                    )
+                    new_val_comes_from_choose = new_provenance[-1].get(
+                        "from_choose", []
+                    )
+                    # If both values come from a choose, raise a choose conflict
+                    # user_error
+                    both_vals_from_choose = (
+                        old_val_comes_from_choose and new_val_comes_from_choose
+                    )
+                    new_val_is_nested_in_old_choose = (
+                        new_val_comes_from_choose[: len(old_val_comes_from_choose)]
+                        == old_val_comes_from_choose
+                    )
+                    if both_vals_from_choose and not new_val_is_nested_in_old_choose:
+                        user_error(
+                            "Choose conflict",
+                            f"Two ``choose_`` blocks ("
+                            f"``{old_provenance[-1]['from_choose'][-1]['choose_key']}`` and "
+                            f"``{new_provenance[-1]['from_choose'][-1]['choose_key']}``) define "
+                            f"the same key ``{key}`` with different values and belong "
+                            f"to the same hierarchy level ``{old_category}``. This is "
+                            f"not allowed. To solve this rethink the logic of these "
+                            f"choose blocks and make sure their parameters are "
+                            f"independent/non-conflicting. Conflicting values defined "
+                            f"in:\n- @HINT_0@\n- @HINT_1@",
+                            hints=[
+                                {
+                                    "type": "prov",
+                                    "object": old_val,
+                                    "text": "@HINT@",
+                                },
+                                {
+                                    "type": "prov",
+                                    "object": new_val,
+                                    "text": "@HINT@",
+                                },
+                            ],
+                        )
+                    # If the new value comes from a choose, it can overwrite
+                    elif new_val_comes_from_choose:
+                        final_val = copy.deepcopy(new_val)
+                    else:
+                        user_error(
+                            "Category conflict",
+                            f"Key ``{key}`` exists in two different yaml files at the same "
+                            f"hierarchical level (``{old_category}``) and have different "
+                            f"values (``{old_val}``:``{new_val}``). To solve this remove "
+                            f"one of the these two values, or include them into a choose "
+                            f"block that avoids the conflict."
+                            "\n- @HINT_0@\n- @HINT_1@"
+                            "\nNote: if you are developing a feature in the backend and "
+                            "you'd like to force-overwrite this value, use the "
+                            "super_setitem method.",
+                            hints=[
+                                {
+                                    "type": "prov",
+                                    "object": old_val,
+                                    "text": "@HINT@",
+                                },
+                                {
+                                    "type": "prov",
+                                    "object": new_val,
+                                    "text": "@HINT@",
+                                },
+                            ],
+                        )
                 # Assign the new value if the new category is higher in the hierarchy
-                if old_category_index <= new_category_index or old_val == None:
+                elif old_category_index < new_category_index or old_val == None:
                     final_val = copy.deepcopy(new_val)
                 # Keep the old value if the new category is lower in the hierarchy
                 elif self.respect_hierarchy_in_setitem:
@@ -602,7 +710,7 @@ class DictWithProvenance(dict):
                         Provenance(old_val.provenance[-1]),
                         "dict.__setitem__->reverted_by_hierarchy",
                     )
-                    logger.debug(
+                    logger.trace(
                         f"Value {new_val} won't be assigned to the key {key}, because "
                         f"the old value {old_val} comes from a category higher in the "
                         f"hierarchy ({old_val}:{old_category} > "
@@ -612,6 +720,16 @@ class DictWithProvenance(dict):
                 final_val.provenance = new_provenance
 
         super().__setitem__(key, final_val)
+
+    def super_setitem(self, key, val):
+        """
+        A method to call the original ``dict.__setitem__`` method without provenance
+        tracking. This is useful when you want to set a value without extending the
+        provenance history, for example when you are setting a value that does not
+        come from a yaml file and you do not want to keep the provenance history, or
+        when resetting a value is blocked due to provenance conflicts.
+        """
+        super().__setitem__(key, val)
 
     def update(self, dictionary, *args, **kwargs):
         """
@@ -729,7 +847,7 @@ class ListWithProvenance(list):
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance[c])
 
-    def set_provenance(self, provenance):
+    def set_provenance(self, provenance, update_method="extend"):
         """
         Recursively transforms every value in ``ListWithProvenance`` into its
         corresponding WithProvenance object and appends the same ``provenance`` to it.
@@ -740,6 +858,10 @@ class ListWithProvenance(list):
         ----------
         provenance : any
             New `provenance value` to be set
+        update_method : str, optional
+            Method to use when updating provenance of existing values. Can be either
+            ``extend`` to append the new provenance to the existing one, or ``update``
+            to update the last provenance entry with new values. Default is ``extend``.
         """
         if not isinstance(provenance, list):
             provenance = [provenance]
@@ -747,12 +869,34 @@ class ListWithProvenance(list):
         for c, elem in enumerate(self):
             if isinstance(elem, dict):
                 self[c] = DictWithProvenance(elem, {})
-                self[c].set_provenance(provenance)
+                self[c].set_provenance(provenance, update_method=update_method)
             elif isinstance(elem, list):
                 self[c] = ListWithProvenance(elem, [])
-                self[c].set_provenance(provenance)
+                self[c].set_provenance(provenance, update_method=update_method)
             elif hasattr(elem, "provenance"):
-                self[c].provenance.extend(provenance)
+                if update_method == "extend":
+                    self[c].provenance.extend(provenance)
+                elif update_method == "update":
+                    if self[c].provenance[-1]:
+                        self[c].provenance[-1].update(provenance[-1])
+                    else:
+                        self[c].provenance[-1] = provenance[-1]
+                elif update_method == "update_from_choose":
+                    if self[c].provenance[-1]:
+                        old_from_choose = self[c].provenance[-1].get("from_choose", [])
+                        # Extend the from_choose list with the new entry
+                        if old_from_choose:
+                            provenance[-1]["from_choose"] = (
+                                old_from_choose + provenance[-1].get("from_choose", [])
+                            )
+                        self[c].provenance[-1].update(provenance[-1])
+                    else:
+                        self[c].provenance[-1] = provenance[-1]
+                else:
+                    raise ValueError(
+                        f"Unknown update method {update_method}. Use either 'extend' "
+                        f"or 'update'"
+                    )
             else:
                 self[c] = wrapper_with_provenance_factory(elem, provenance)
 
@@ -838,6 +982,16 @@ class ListWithProvenance(list):
 
         super().__setitem__(indx, val_new)
 
+    def super_setitem(self, indx, val):
+        """
+        A method to call the original ``list.__setitem__`` method without provenance
+        tracking. This is useful when you want to set a value without extending the
+        provenance history, for example when you are setting a value that does not
+        come from a yaml file and you do not want to keep the provenance history, or
+        when resetting a value is blocked due to provenance conflicts.
+        """
+        super().__setitem__(indx, val)
+
 
 ListWithProvenance.yaml_dump = esm_parser.yaml_dump
 
@@ -902,7 +1056,7 @@ def keep_provenance_in_recursive_function(func):
 # ========
 # HELPERS
 # ========
-def clean_provenance(data):
+def clean_provenance(data, nested=False):
     """
     Returns the values of provenance mappings in their original classes (without the
     provenance). Recurs through mappings. Make sure you copy.deepcopy the data mapping
@@ -920,17 +1074,25 @@ def clean_provenance(data):
         Values in their original format, or lists and dictionaries containing provenance
         values.
     """
-    if hasattr(data, "value"):
+    if not nested:
+        data = copy.deepcopy(data)
+
+    if hasattr(data, "provenance") and hasattr(data, "value"):
         assert (
             data == data.value
         ), "The provenance object's value and the original value do not match!"
         return data.value
     elif isinstance(data, list):
-        return [clean_provenance(item) for item in data]
+        return [clean_provenance(item, nested=True) for item in data]
     elif isinstance(data, dict):
         return {
-            clean_provenance(key): clean_provenance(value)
+            clean_provenance(key, nested=True): clean_provenance(value, nested=True)
             for key, value in data.items()
         }
+    # Clean vars in objects
+    elif hasattr(data, "__dict__"):
+        for key, value in vars(data).items():
+            setattr(data, key, clean_provenance(value, nested=True))
+        return data
     else:
         return data

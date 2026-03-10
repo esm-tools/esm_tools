@@ -11,19 +11,21 @@ import sys
 
 import f90nml
 import yaml
+from dask import distributed as daskd
 from loguru import logger
 
 import esm_parser
-from esm_tools import user_error
+from esm_tools import user_error, user_note
 
 from . import helpers, jinja
+from .dask_cluster import DaskStatus, get_dask_cluster_status, wait_for_dask_status
 
 
 def rename_sources_to_targets(config):
     # Purpose of this routine is to make sure that filetype_sources and
     # filetype_targets are set correctly, and _in_work is unset
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             sources = filetype + "_sources" in config[model]
             targets = filetype + "_targets" in config[model]
             in_work = filetype + "_in_work" in config[model]
@@ -99,7 +101,7 @@ def rename_sources_to_targets(config):
                     pass
 
                 elif (not sources and in_work) or (not sources and targets):
-                    logger.error(filetype + "_sources missing in model " + model)
+                    logger.error(f"{filetype}_sources missing in model {model}")
                     helpers.print_datetime(config)
                     sys.exit(-1)
 
@@ -125,7 +127,7 @@ def rename_sources_to_targets(config):
 
 def complete_targets(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if filetype + "_sources" in config[model]:
                 for category in config[model][filetype + "_sources"]:
                     if not category in config[model][filetype + "_targets"]:
@@ -148,9 +150,9 @@ def complete_targets(config):
                             )
                             user_error(error_type, error_text)
                         else:
-                            config[model][filetype + "_targets"][
-                                category
-                            ] = os.path.basename(file_source)
+                            config[model][filetype + "_targets"][category] = (
+                                os.path.basename(file_source)
+                            )
 
     return config
 
@@ -159,7 +161,7 @@ def complete_sources(config):
     logger.debug("::: Complete sources")
     helpers.print_datetime(config)
     for filetype in config["general"]["out_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if filetype + "_sources" in config[model]:
                 for category in config[model][filetype + "_sources"]:
                     if not config[model][filetype + "_sources"][category].startswith(
@@ -182,13 +184,13 @@ def reuse_sources(config):
 
     # Put together all the possible reusable file types
     all_reusable_filetypes = []
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in esm_parser.get_components(config):
         all_reusable_filetypes = list(
             set(all_reusable_filetypes + config[model].get("reusable_filetypes", []))
         )
     # Loop through all the reusable file types
     for filetype in all_reusable_filetypes:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             # Get the model-specific reusable_filetypes, if not existing, get the
             # general ones
             model_reusable_filetypes = config[model].get(
@@ -218,7 +220,7 @@ def choose_needed_files(config):
     # (if exists), and then remove filetype_files
 
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if not filetype + "_files" in config[model]:
                 continue
 
@@ -256,7 +258,7 @@ def choose_needed_files(config):
 
 def globbing(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if filetype + "_sources" in config[model]:
                 # oldconf = copy.deepcopy(config[model])
                 for descr, filename in copy.deepcopy(
@@ -285,9 +287,9 @@ def globbing(config):
                             if (
                                 config[model][filetype + "_targets"][descr] == filename
                             ):  # source and target are identical if autocompleted
-                                config[model][filetype + "_targets"][
-                                    newdescr
-                                ] = os.path.basename(new_filename)
+                                config[model][filetype + "_targets"][newdescr] = (
+                                    os.path.basename(new_filename)
+                                )
                             else:
                                 config[model][filetype + "_targets"][newdescr] = config[
                                     model
@@ -300,7 +302,7 @@ def globbing(config):
 
 def target_subfolders(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if filetype + "_targets" in config[model]:
                 for descr, filename in config[model][filetype + "_targets"].items():
                     # * only in targets if denotes subfolder
@@ -320,9 +322,9 @@ def target_subfolders(config):
                         # in routine 'globbing' above, if we don't check here, wildcards are handled twice
                         # for files and hence filenames of e.g. restart files are screwed up.
                         if filename.endswith("/*"):
-                            config[model][filetype + "_targets"][
-                                descr
-                            ] = filename.replace("*", source_filename)
+                            config[model][filetype + "_targets"][descr] = (
+                                filename.replace("*", source_filename)
+                            )
                         elif "/" in filename:
                             # Return the correct target name
                             target_name = get_target_name_from_wildcard(
@@ -450,7 +452,7 @@ def complete_restart_in(config):
 
 def assemble_intermediate_files_and_finalize_targets(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if filetype + "_targets" in config[model]:
                 if not filetype + "_intermediate" in config[model]:
                     config[model][filetype + "_intermediate"] = {}
@@ -507,7 +509,7 @@ def find_valid_year(config, year):
 
 def replace_year_placeholder(config):
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if filetype + "_targets" in config[model]:
                 if filetype + "_additional_information" in config[model]:
                     for file_category in config[model][
@@ -727,11 +729,11 @@ def replace_year_placeholder(config):
                     if isinstance(
                         config[model][filetype + "_sources"][file_category], dict
                     ):
-                        config[model][filetype + "_sources"][
-                            file_category
-                        ] = find_valid_year(
-                            config[model][filetype + "_sources"][file_category],
-                            year,
+                        config[model][filetype + "_sources"][file_category] = (
+                            find_valid_year(
+                                config[model][filetype + "_sources"][file_category],
+                                year,
+                            )
                         )
                     if "@YEAR@" in config[model][filetype + "_targets"][file_category]:
                         new_target_name = config[model][filetype + "_targets"][
@@ -792,7 +794,7 @@ def log_used_files(config):
     )
 
     with open(flist_file, "w") as flist:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             flist.write(
                 f"These files are used for\n"
                 f"experiment {config['general']['expid']}\n"
@@ -893,7 +895,7 @@ def log_files_in_target_to_yaml(config):
         checksums = {}
 
     # Loop over all components, file types, and files
-    for component in config["general"]["valid_model_names"] + ["general"]:
+    for component in esm_parser.get_components(config):
         component_files = {}
         for filetype in filetypes:
             component_config = config[component]
@@ -1094,7 +1096,7 @@ def check_for_unknown_files(config):
     ]
 
     for filetype in config["general"]["all_model_filetypes"]:
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             if filetype + "_sources" in config[model]:
                 known_files += list(config[model][filetype + "_sources"].values())
                 known_files += list(config[model][filetype + "_targets"].values())
@@ -1157,7 +1159,17 @@ def copy_files(config, filetypes, source, target):
     """
     This function has a misleading name. It is not only used for copying, but also
     for moving or linking, depending on what was specified for the particular file
-    or file type vie the ``file_movements``.
+    or file type via the ``file_movements``.
+
+    File movements can be executed sequentially or in parallel depending on the
+    ``config["general"]["parallel_file_movements"]`` setting:
+
+    - ``False`` (default): sequential execution.
+    - ``"threads"``: parallel via a thread pool (cores_per_node threads).
+    - ``"dask"``: parallel via a dask distributed cluster (falls back to
+      threads if the cluster is not available or on login nodes).
+
+    When parallel execution fails for a file, it is retried sequentially.
 
     Note: when the ``target`` is ``thisrun`` (intermediate folders) check whether the
     type of file is included in ``intermediate_movements``. If it's not, instead of
@@ -1178,9 +1190,9 @@ def copy_files(config, filetypes, source, target):
     Parameters
     ----------
     config : dict
-        The general configuration
+        The general configuration.
     filetypes : list
-        List of file types to be copied/linked/moved
+        List of file types to be copied/linked/moved.
     source : str
         Specifies the source type, to be chosen between ``init``, ``thisrun``,
         ``work``.
@@ -1191,6 +1203,9 @@ def copy_files(config, filetypes, source, target):
     logger.debug("\n::: Copying files")
     helpers.print_datetime(config)
 
+    parallel_file_movements = config["general"].get("parallel_file_movements", False)
+    dask_scheduler_json = config["dask"]["scheduler_json"]
+
     successful_files = []
     missing_files = {}
 
@@ -1200,23 +1215,57 @@ def copy_files(config, filetypes, source, target):
 
     # Initialization for parallelization with futures
     futures = {}
-    if config["general"].get("parallel_file_movements", False) == "threads":
-        number_of_threads = (
-            config["computer"]
-            .get("partitions", {})
-            .get("compute", {})
-            .get("cores_per_node", 2)
-        )
-
-        # For login nodes take only 1/3 of the possible threads
-        machine, node = esm_parser.determine_computer_and_node_from_hostname()
-        if node == "login_nodes":
-            number_of_threads = number_of_threads // 3
-        else:
-            number_of_threads = number_of_threads - 1
+    if parallel_file_movements in ["threads", "dask"]:
+        # Get the type of node (login_nodes vs other types)
+        _, node = esm_parser.determine_computer_and_node_from_hostname()
 
         # Initialize client
-        client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
+        # Dask should only run on compute nodes
+        if parallel_file_movements == "dask" and node != "login_nodes":
+            dask_config = config.get("dask", {})
+            client_timeout = dask_config.get("client_timeout", 0.01)
+            timeout = dask_config.get("workers_timeout", 5)
+            poll_interval = dask_config.get("poll_interval", 0.5)
+            dask_cluster_status, n_workers = wait_for_dask_status(
+                dask_scheduler_json,
+                target_status=DaskStatus.RUNNING,
+                timeout=timeout,
+                poll_interval=poll_interval,
+                description="Waiting for dask cluster to be running",
+                client_timeout=client_timeout,
+            )
+            if n_workers > 0 and dask_cluster_status >= DaskStatus.RUNNING:
+                logger.info(
+                    f"Using dask for parallel file movements with {n_workers} workers"
+                )
+                client = daskd.Client(scheduler_file=dask_scheduler_json)
+            else:
+                parallel_file_movements = "threads"
+                logger.warning(
+                    "Dask workers not available. Defaulting to threads parallelization "
+                    "in one single node"
+                )
+        elif parallel_file_movements == "dask" and node == "login_nodes":
+            logger.debug("Running from the login node, using threads instead of dask")
+            parallel_file_movements = "threads"
+
+        if parallel_file_movements == "threads":
+            number_of_threads = (
+                config["computer"]
+                .get("partitions", {})
+                .get("compute", {})
+                .get("cores_per_node", 2)
+            )
+            # For login nodes take only 1/3 of the possible threads
+            if node == "login_nodes":
+                number_of_threads = number_of_threads // 3
+            else:
+                number_of_threads = number_of_threads - 1
+
+            client = concurrent.futures.ThreadPoolExecutor(number_of_threads)
+            logger.info(
+                f"Using {number_of_threads} threads for parallel file movements"
+            )
 
     # See the default intermediate movements list in `configs/defaults/general.yaml`
     intermediate_movements = config["general"].get(
@@ -1240,7 +1289,7 @@ def copy_files(config, filetypes, source, target):
     files_to_be_moved = []
     for filetype in [filetype for filetype in filetypes if not filetype == "ignore"]:
         # Loop through the components
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             # If there is a source of this file type in the model
             if filetype + "_" + text_source in config[model]:
                 this_text_target = text_target
@@ -1310,18 +1359,20 @@ def copy_files(config, filetypes, source, target):
                             )
 
                         # Execute movement with or without futures (parallelization on/off)
-                        if (
-                            config["general"].get("parallel_file_movements", False)
-                            == "threads"
-                        ):
+                        if config["general"].get("parallel_file_movements", False) in [
+                            "threads",
+                            "dask",
+                        ]:
+                            # Parallel
                             future = client.submit(
                                 movement_method,
-                                config,
+                                {},  # do not pass a config to avoid serialization issues. Serialization is possible but even after that the config is too big to be sent to many workers efficiently
                                 file_source,
                                 file_target,
                             )
                             futures[(file_source, file_target)] = future
                         else:
+                            # Sequential
                             futures[(file_source, file_target)] = movement_method(
                                 config,
                                 file_source,
@@ -1330,7 +1381,17 @@ def copy_files(config, filetypes, source, target):
 
     for (file_source, file_target), movement_output in futures.items():
         if config["general"].get("parallel_file_movements", False):
-            result = movement_output.result()
+            try:
+                result = movement_output.result()
+            # If something goes wrong in the parallel execution, try again serially
+            except Exception:
+                result = False
+            if result is False:
+                logger.debug(
+                    f"Parallel movement of file {file_source} to {file_target} "
+                    "failed. Trying again serially.",
+                )
+                result = movement_method(config, file_source, file_target)
         else:
             result = movement_output
         if result:
@@ -1382,6 +1443,15 @@ def avoid_overwriting(config, source, target):
         if filecmp.cmp(source, target):
             return target
 
+        warning_function = user_error
+        action = "Skipping movement"
+        hint = (
+            "\n\nNote: if you are rerunning a given run and you want to enforce "
+            "overwriting the output files, you can define "
+            "'general.force_overwrite_in_file_movements: True'. Use it at your own "
+            "risk and only if you understand why are you doing this. You should never "
+            "run with it set True as a default."
+        )
         date_stamped_target = f"{target}_{config['general']['run_datestamp']}"
         if os.path.isfile(date_stamped_target):
             if filecmp.cmp(source, date_stamped_target):
@@ -1392,14 +1462,17 @@ def avoid_overwriting(config, source, target):
             elif config["general"]["force_overwrite_in_file_movements"]:
                 os.remove(date_stamped_target)
                 warning_function = user_note
+                action = "Overwriting the file"
+                hint = ""
             else:
                 # This will exit(1) (default in configs/defaults/general.yaml)
                 warning_function = user_error
 
             warning_function(
                 "File movement conflict",
-                f"The file ``{date_stamped_target}`` already exists. Skipping movement:\n"
-                f"{source} -> {date_stamped_target}",
+                f"The file ``{date_stamped_target}`` already exists. {action}:\n"
+                f"{source} -> {date_stamped_target}"
+                f"{hint}",
             )
 
         if os.path.islink(target):
@@ -1459,7 +1532,7 @@ def filter_allowed_missing_files(config):
     for missing_file_source, missing_file_target in missing_files.items():
         missing_file_source_fname = pathlib.Path(missing_file_source).name
         missing_file_target_fname = pathlib.Path(missing_file_target).name
-        for model in config["general"]["valid_model_names"] + ["general"]:
+        for model in esm_parser.get_components(config):
             for allowed_missing_pattern in config[model].get(
                 "allowed_missing_files", []
             ):
@@ -1515,17 +1588,27 @@ def _check_fesom_missing_files(config):
     config : dict
     """
     if "fesom" in config["general"]["valid_model_names"]:
-        namelist_config = f90nml.read(
-            os.path.join(config["general"]["thisrun_work_dir"], "namelist.config")
+        namelist_config_path = (
+            pathlib.Path(config["general"]["thisrun_work_dir"]) / "namelist.config"
         )
-        for path_key, path in namelist_config["paths"].items():
-            if path:  # Remove empty strings
-                if not os.path.exists(path):
+        namelist_config = f90nml.read(namelist_config_path)
+        for path_key, path_val in namelist_config["paths"].items():
+            if path_val:  # Ignore empty strings
+                try:
+                    path = pathlib.Path(path_val)
+                except TypeError as error:
+                    user_error(
+                        "Invalid path",
+                        f"The value for ``{path_key}`` in the namelist ``&paths``, "
+                        f"defined in ``{namelist_config_path}``, is ``{path}``, and "
+                        f"cannot be interpreted as a valid path.\n{error}",
+                    )
+                if not path.exists():
                     if "files_missing_when_preparing_run" not in config["general"]:
                         config["general"]["files_missing_when_preparing_run"] = {}
                     config["general"]["files_missing_when_preparing_run"][
-                        path_key + " (from namelist.config in FESOM)"
-                    ] = path
+                        f"{path_key} (from namelist.config in FESOM)"
+                    ] = path_val
     return config
 
 
@@ -1533,7 +1616,7 @@ def _check_fesom_missing_files(config):
 
 
 def create_missing_file_movement_entries(config):
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in esm_parser.get_components(config):
         if not "file_movements" in config[model]:
             config[model]["file_movements"] = {}
         for filetype in config["general"]["all_model_filetypes"] + [
@@ -1573,10 +1656,7 @@ def movement(func):
                 func(source_path, target_path)
             return True
         except IOError:
-            logger.error(
-                f"Could not execute movement ({func.__name__}) {file_source} to {file_target} for unknown reasons.",
-            )
-            helpers.print_datetime(config)
+            # helpers.print_datetime(config)
             return False
 
     return inner
@@ -1600,13 +1680,12 @@ def actually_move(source_path, target_path):
 def complete_all_file_movements(config):
     mconfig = config["general"]
     general_file_movements = copy.deepcopy(mconfig.get("file_movements", {}))
-    if "defaults.yaml" in mconfig:
-        if "per_model_defaults" in mconfig["defaults.yaml"]:
-            if "file_movements" in mconfig["defaults.yaml"]["per_model_defaults"]:
-                mconfig["file_movements"] = copy.deepcopy(
-                    mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
-                )
-                del mconfig["defaults.yaml"]["per_model_defaults"]["file_movements"]
+    if "per_model_defaults" in mconfig:
+        if "file_movements" in mconfig["per_model_defaults"]:
+            mconfig["file_movements"] = copy.deepcopy(
+                mconfig["per_model_defaults"]["file_movements"]
+            )
+            del mconfig["per_model_defaults"]["file_movements"]
     if not "file_movements" in mconfig:
         mconfig["file_movements"] = {}
     # General ``file_movements`` win over default ones
@@ -1614,7 +1693,7 @@ def complete_all_file_movements(config):
 
     config = create_missing_file_movement_entries(config)
 
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in esm_parser.get_components(config):
         mconfig = config[model]
         if "file_movements" in mconfig:
             for filetype in config["general"]["all_model_filetypes"] + [
@@ -1637,7 +1716,7 @@ def complete_all_file_movements(config):
                             )
                         del mconfig["file_movements"][filetype]["all_directions"]
 
-    for model in config["general"]["valid_model_names"] + ["general"]:
+    for model in esm_parser.get_components(config):
         mconfig = config[model]
         if "file_movements" in mconfig:
             # Complete movements with general

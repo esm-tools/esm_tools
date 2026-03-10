@@ -70,7 +70,7 @@ class Task:
 
         if kind == "components":
             self.env = esm_environment.esm_environment.EnvironmentInfos(
-                "compiletime", complete_config, model
+                complete_config, "compile", model
             )
         else:
             self.env = None
@@ -384,6 +384,12 @@ class Task:
             os.remove("./dummy_script.sh")
         except OSError:
             print("No dummy script to remove!")
+        try:
+            source_fc = f"./{self.package.destination}-finished_config.yaml"
+            target_fc = f"./{self.package.destination}/finished_config.yaml"
+            os.rename(source_fc, target_fc)
+        except OSError:
+            print(f"Problems moving ``{source_fc}`` to ``{target_fc}``")
         for task in self.ordered_tasks:
             if task.todo in ["conf", "comp"]:
                 try:

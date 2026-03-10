@@ -9,7 +9,7 @@ Usage
 
     esm_runscripts [-h] [-d] [-v] [-e EXPID] [-c] [-P] [-j LAST_JOBTYPE]
                       [-t TASK] [-p PID] [-x EXCLUDE] [-o ONLY]
-                      [-r RESUME_FROM] [-U]
+                      [-r RESUME_FROM] [-U] [-i INSPECT]
                       runscript
 
 Arguments
@@ -25,7 +25,7 @@ Optional arguments                                                  Description
   ``-c``, ``--check``                                               Run in check mode (don't submit job to supercomputer).
   ``-P``, ``--profile``                                             Write profiling information (esm-tools).
   ``-j LAST_JOBTYPE``, ``--last_jobtype LAST_JOBTYPE``              Write the jobtype this run was called from (esm-tools internal).
-  ``-t TASK``, ``--task TASK``                                      The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy_and_resubmit``.
+  ``-t TASK``, ``--task TASK``                                      The task to run. Choose from: ``compute``, ``post``, ``couple``, ``tidy``.
   ``-p PID``, ``--pid PID``                                         The PID of the task to observe.
   ``-x EXCLUDE``, ``--exclude EXCLUDE``                             E[x]clude this step.
   ``-o ONLY``, ``--only ONLY``                                      [o]nly do this step.
@@ -47,6 +47,8 @@ Optional arguments                                                  Description
                                                                     of the experiment folder), a filename or a directory name output 
                                                                     the content of the file /directory if found in the last 
                                                                     ``run_`` folder.)
+  ``--trace``                                                       Enable ``TRACE``-level output to stdout.
+  ``--task-log-files``                                              Enable per-task log files on disk.
 =================================================================== ==========================================================
 
 
@@ -102,7 +104,7 @@ As an example; let's say you only want to run the ``tidy`` phase of a
 particular job; which will move things from the particular run folder to the
 overall experiment tree. In this example; the experiment will be called ``test001``::
 
-        esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy_and_resubmit
+        esm_runscripts ${PATH_TO_USER_CONFIG} -t tidy
 
 Experiment Directory Structure
 ------------------------------
@@ -411,8 +413,122 @@ The generated YAML file has the following structure:
    not_handled_by_filelists:
        # ... files found in work but not tracked by esm_runscripts ...
 
+Parallel File Movements
+-----------------------
+
+By default, ``esm_runscripts`` moves files (inputs, restarts, outputs, etc.)
+between experiment directories in parallel using `Dask <https://www.dask.org/>`_
+workers distributed across the compute nodes. This can significantly speed up
+the file-handling phases of a simulation, especially on large allocations.
+
+The mode is controlled by ``parallel_file_movements`` in the ``general`` section
+of your runscript. To use Dask workers across compute nodes (the default) use:
+
+.. code-block:: yaml
+
+   general:
+       parallel_file_movements: "dask"
+
+To use local threads instead (only 1 node with cores working in parallel):
+
+.. code-block:: yaml
+
+   general:
+       parallel_file_movements: "threads"
+
+To disable parallel file movements entirely (serial):
+
+.. code-block:: yaml
+
+   general:
+       parallel_file_movements: False
+
+Which mode should I use?
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+* **Small runs (< 5 nodes)**: ``"threads"`` is usually sufficient and has no
+  cluster initialization overhead.
+* **Large runs (>= 5 nodes)**: ``"dask"`` distributes I/O across all nodes and
+  scales better. The small startup cost is offset by faster file transfers.
+* **Debugging or safety**: ``False`` runs everything serially.
+
+.. note::
+   When ``"dask"`` is selected but the Dask cluster is not available (e.g. on a
+   login node or if workers fail to start), ``esm_runscripts`` automatically
+   falls back to ``"threads"`` with a warning.
+
+Dask internals
+~~~~~~~~~~~~~~
+
+When ``parallel_file_movements`` is set to ``"dask"``, the following happens
+automatically:
+
+1. **Cluster startup** -- Before the main recipe begins, a Dask scheduler and
+   workers are launched via ``srun`` (SLURM) on the allocated nodes. The
+   scheduler writes a ``dask_scheduler.json`` file into the run's ``work``
+   directory.
+
+2. **Parallel I/O** -- During each file-movement phase, ``esm_runscripts``
+   connects to the Dask cluster and submits copy/link/move operations as
+   parallel tasks. If any single file transfer fails, it is retried serially
+   as a fallback.
+
+The cluster is configured through the ``dask`` section, which has sensible
+defaults but can be tuned in your runscript:
+
+.. list-table:: Dask configuration variables
+   :header-rows: 1
+   :widths: 30 15 55
+
+   * - Variable
+     - Default
+     - Description
+   * - ``dask.client_timeout``
+     - ``0.05``
+     - Timeout (seconds) when probing the Dask scheduler status.
+   * - ``dask.workers_timeout``
+     - ``5``
+     - Max time (seconds) to wait for workers to become available.
+   * - ``dask.poll_interval``
+     - ``0.5``
+     - How often (seconds) to poll for cluster readiness.
+   * - ``dask.init_scheduler_cmd``
+     - per batch system
+     - Shell command to start the Dask scheduler (defined in the batch
+       system YAML, e.g. ``slurm.yaml``).
+   * - ``dask.init_workers_cmd``
+     - per batch system
+     - Shell command to start the Dask workers (defined in the batch
+       system YAML, e.g. ``slurm.yaml``).
+   * - ``dask.scheduler_json``
+     - ``${general.thisrun_work_dir}/dask_scheduler.json``
+     - Full path to the Dask scheduler JSON file used for client
+       connections.
+   * - ``dask.actions``
+     - ``["parallel_file_movements"]``
+     - List of actions that trigger Dask cluster initialization.
+
+The Dask scheduler and worker launch commands are defined per batch system
+(e.g. in ``slurm.yaml``) and are not typically changed by users. For SLURM,
+the default worker count is ``nnodes * partition_cpn / 4``, meaning one Dask
+worker per four CPU cores (see ``configs/other_software/batch/slurm.yaml``).
+Workers are distributed cyclically across all allocated nodes using InfiniBand:
+
+**slurm.yaml**
+
+.. code-block:: yaml
+
+   dask:
+       ntasks: "$(( ${computer.nnodes} * ${computer.partition_cpn} / 4 ))"
+       ...
+       init_workers_cmd: "srun --ntasks=${dask.ntasks} --cpus-per-task=1 --nodes=@nodes@ --distribution=cyclic:cyclic:cyclic dask worker --scheduler-file ${dask.scheduler_json} --nthreads 1 --nworkers 1 --interface ib0"
+
+If you need to change the number of workers, you can either redefine
+``dask.ntasks`` or provide a custom ``dask.init_workers_cmd`` in any of
+your configuration files or directly in your runscript.
+
 Running an experiment with a virtual environment
------------------------------------------------
+------------------------------------------------
 
 Running jobs can optionally be encapsulated into a virtual environment.
 
@@ -475,3 +591,30 @@ ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
    folder .venv_esmtools listed above and **not** from your user install directory.
    You should make **all** changes to the namelists and config files via your user
    runscript (:ref:`yaml:Changing Namelists`). This is recommended in all cases!!!
+
+Logging and verbosity
+---------------------
+
+``esm_runscripts`` uses Loguru-based logging with simple flags to control verbosity and
+file logging. Logs are always written in the main run log (
+``<base_dir>/<expid>/log/<expid>_<model>_<datestamp>_<jobid>.log``). For more log
+granularity, it is possible to also set ``--task-log-files`` as a flag of
+``esm_runscripts``, to  write logs of each task to a separate file. You can use the
+following ``esm_runscripts`` flags to control  the logging behavior:
+
+* ``--trace``: enable ``TRACE``-level output to stdout. Prints very detailed
+  diagnostics and the parsed command-line config.
+* ``-d``, ``--debug``: enable ``DEBUG``-level output to stdout (less detailed than
+  ``--trace``) and breakpoints.
+* ``-v``, ``--verbose``: also enables ``DEBUG``-level output to stdout, without
+  breakpoints.
+* ``--task-log-files``: enable per-task log files on disk. When enabled,
+  ``esm_runscripts`` writes each task's output to a file in the  experiment's ``log``
+  folder (``<base_dir>/<expid>/log/<expid>_<model>_<task>_<datestamp>_<jobid>.log``).
+  To reduce the number of files, this option is turned off by default, but the logs
+  are always printed in the run log anyway.
+
+.. note::
+   Because the logging starts before the parsing of the yaml files, it is not possible
+   to control the logging behavior from variables defined in the yamls. Only
+   command-line flags can control the logging behavior.

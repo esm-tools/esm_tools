@@ -49,7 +49,7 @@ def logfile_stats(logfile_to_read):
         if jobnumber > 1:
             prev_subdf = gb.get_group((jobnumber - 1, jobtype))
             prev_compute = gb.get_group((jobnumber - 1, "compute"))
-            prev_tidy = gb.get_group((jobnumber - 1, "tidy_and_resubmit"))
+            prev_tidy = gb.get_group((jobnumber - 1, "tidy"))
         if "compute" in jobtype:
             submit = subdf.Date[subdf.State == "submitted"].values[0].astimezone(None)
             end = subdf.Date[subdf.State == "done"].values[0].astimezone(None)

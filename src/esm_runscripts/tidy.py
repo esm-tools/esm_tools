@@ -4,7 +4,6 @@ import pathlib
 import re
 import shutil
 import sys
-import time
 
 import psutil
 from loguru import logger
@@ -278,8 +277,7 @@ def _clean_old_runs_size(config):
 def throw_away_some_infiles(config):
     if config["general"]["run_number"] == 1:
         return config
-    monitor_file = logfiles.logfile_handle
-    monitor_file.write("throwing away restart_in files \n")
+    logger.debug("throwing away restart_in files")
     for model in config["general"]["valid_model_names"]:
         logger.info(f"{model}")
         if "thisrun_restart_in_dir" in config[model]:
@@ -295,8 +293,7 @@ def throw_away_some_infiles(config):
 
 
 def copy_all_results_to_exp(config):
-    monitor_file = logfiles.logfile_handle
-    monitor_file.write("Copying stuff to main experiment folder \n")
+    logger.debug("Copying results to experiment directory")
 
     # Track files during tidy phase for logging
     config["general"]["files_moved_for_tidy"] = []
@@ -326,7 +323,7 @@ def copy_all_results_to_exp(config):
             if not os.path.islink(source):
                 if os.path.isfile(destination):
                     if filecmp.cmp(source, destination):
-                        logger.debug("File " + source + " has not changed, skipping.")
+                        logger.debug(f"File {source} has not changed, skipping.")
                         continue
                     else:
                         if os.path.isfile(
@@ -362,7 +359,7 @@ def copy_all_results_to_exp(config):
                             })
                             continue
                 try:
-                    logger.debug("Moving file " + source + " to " + destination)
+                    logger.debug(f"Moving file {source} to {destination}")
                     try:
                         os.rename(source, destination)
                     except:  # File is still open... create a hard (!) link instead
@@ -373,10 +370,8 @@ def copy_all_results_to_exp(config):
                     })
                 except:
                     logger.critical(
-                        ">>>>>>>>>  Something went wrong moving "
-                        + source
-                        + " to "
-                        + destination
+                        f">>>>>>>>>  Something went wrong moving {source} to "
+                        f"{destination}"
                     )
             else:
                 linkdest = resolve_symlinks(config, source)

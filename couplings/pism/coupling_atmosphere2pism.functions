@@ -499,18 +499,18 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
                 echo ""; echo "                *  using INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_usurf.nc
                 ${cdo} -s -selvar,usurf ${INPUT_FILE_pism} usurf.tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                ${cdo} -s -seltimestep,-1 usurf.tmp.nc ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                ${cdo} -s -seltimestep,-1 usurf.tmp.nc ${COUPLE_DIR}/elev_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
                 #${cdo} -s -seltimestep,-1 -selvar,usurf ${INPUT_FILE_pism} ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         else
                 elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
-		echo "UKK1: elev_hi=" ${elev_hi_file}
                 ${cdo} -s -setrtoc,-10000,0,0 \
-			-add \
+			            -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -selvar,topg ${INPUT_FILE_pism} \
                         ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
 	        ncrename -v thk,usurf ${COUPLE_DIR}/${elev_hi_file} ${COUPLE_DIR}/elev_hi.nc
         fi
+        cp ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_hi_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
         #mv $elev_hi_file ${COUPLE_DIR}/elev_hi.nc
         cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
 	ncrename -v $atmosphere_name_elevation,usurf ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/tmp.nc
@@ -679,8 +679,9 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
 		echo "UKK2: elev_hi=" ${elev_hi_file}
                 echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 echo " * LA DEBUG: INPUT_FILE_NAME_BASE_pism = ${INPUT_FILE_NAME_BASE_pism%.*}"
-                ${cdo} -s -add \
+                ${cdo} -s \
                         -setrtoc,-10000,0,0 \
+                        -add \
                         -selvar,thk ${INPUT_FILE_pism} \
                         -selvar,topg ${INPUT_FILE_pism} \
                         ${COUPLE_DIR}/${elev_hi_file} 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
@@ -1270,7 +1271,12 @@ ic_atm2pism_ablation_pdd_set_time_axis() {
                 -a \
                 calendar,time,o,c,${time_calendar} \
                 ${COUPLE_DIR}/atmo_given_file.nc tmp && mv tmp ${COUPLE_DIR}/atmo_given_file.nc
-        ncks -A ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc  ${COUPLE_DIR}/atmo_given_file.nc
+        
+        ${FUNCTION_PATH}/../utils/CreateTimeAxisNC.bash ${nt} ${COUPLE_DIR}/time_axis_pism.nc 0 classic 365_day #${CHUNK_START_YEAR_pism} 
+        #ncks -A ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc  ${COUPLE_DIR}/atmo_given_file.nc
+        ncks -A ${COUPLE_DIR}/time_axis_pism.nc ${COUPLE_DIR}/atmo_given_file.nc
+        #cdo -s settunits,days -settaxis,0000-01-01,00:00:00,1mon ${COUPLE_DIR}/atmo_given_file.nc tmp
+        #mv tmp ${COUPLE_DIR}/atmo_given_file.nc
 
         #FAILURE: ncks -A ${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ${COUPLE_DIR}/atmo_given_file.nc
         #         Producesses unrealistic x-/y-arrays with a values like: -8.0e+51, 1.7e+161, 1.e-258
@@ -1746,53 +1752,9 @@ ic_atm2debm_ablation_debm_run_compile_binary() {
                 fi
                 # compile it
                 current_dir=$(pwd)
-                #cd dEBM/Fortran
                 cd ${FUNCTION_PATH}
                 ./install_debm.sh ${MACHINE} 2>> debm_compile_stdout_stderr 
                 
-                #if command -v nc-config > /dev/null 2>&1; then
-                #        # Do nothing
-                #        :
-                #else
-                #        echo -e "\t\t!!! F A T A L   E R R O R !!! nc-config not found, not sure how to compile. Aborting"
-                #        exit
-                #fi
-
-                #if [ $(nc-config --has-fortran) == "no" ]; then
-                #        echo -e "\t\t!!! F A T A L   E R R O R !!! netcdf specified via nc-config doesn't have FORTRAN bindings. Aborting"
-                #        exit
-                #fi
-
-                #echo -e "\t\t- Compiling dEBM"
-
-                #compiler=$(nc-config --fc)
-                #include=$(nc-config --fflags)
-                #libs=$(nc-config --flibs)
-
-                ## For ollie, a bad hack: the library -lsz and -lcurl don't
-                ## appear to be found on the compute nodes, we throw them out:
-                #bad_libs="-lsz -lcurl"
-                #for bad_lib in ${bad_libs}; do
-                #        libs="${libs//$bad_lib/}"
-                #done
-
-                #if [ "x${debug_compile_ic_atm2debm_binary}" == "x1" ]; then
-                #        echo -e "\t\t- INFO: compiler=$compiler"
-                #        echo -e "\t\t- INFO: include=$include"
-                #        echo -e "\t\t- INFO: libs=$libs"
-                #        echo -e "\t\t- INFO: the compile command will be:"
-                #        echo "$compiler $include $libs MOD_PRE.f90 MOD_DATA.f90 MOD_MAIN.f90 MOD_OUTPUT.f90 dEBMmain.f90 -o dEBMmain"
-                #fi
-                #$compiler \
-                #        $include \
-                #        $libs \
-                #        MOD_PRE.f90 \
-                #        MOD_DATA.f90 \
-                #        MOD_MAIN.f90 \
-                #        MOD_OUTPUT.f90 \
-                #        dEBMmain.f90 \
-                #        -o dEBMmain \
-                #        2>> ${compiler}_stdout_stderr
                 if [ -f ${COUPLE_DIR}/dEBMmain ]; then
                     echo -e "\t\t * dEBM compilation was successful!"
                 else
@@ -1854,12 +1816,20 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
         fi
         # select air_temperature
         #LA: change timmean to ymonmean
-        cdo -s \
-                -ymonmean \
-                -selvar,tsurf \
-                ${COUPLE_DIR}/temperature_below_firn.nc \
-                tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                #${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+        if [[ "x${MULTI_YEAR_MEAN_SMB}" == "x1" ]]; then
+                cdo -s \
+                        -ymonmean \
+                        -selvar,tsurf \
+                        ${COUPLE_DIR}/temperature_below_firn.nc \
+                        tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                        #${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+        else
+                cdo -s \
+                        -selvar,tsurf \
+                        ${COUPLE_DIR}/temperature_below_firn.nc \
+                        tmp0 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+                        #${COUPLE_DIR}/input_file_for_debm_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
+        fi
 
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Determining temperature scale Kelvin vs Celsius" 
@@ -1881,22 +1851,10 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
                 echo -e "\t\t@ DEBUG: Duplicating array 12x" 
         fi
         ##  copy this array 12x so you have one for each month
-        #LA: Not necessary anymore as we have now monthly output
-        #cdo -s \
-        #        cat \
-        #        tmp1 tmp1 tmp1 tmp1 tmp1 tmp1 \
-        #        tmp6 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
-        #cdo -s \
-        #        cat \
-        #        tmp6 tmp6 \
-        #        tmp12 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         cp tmp1 tmp12
 
-        if [ "x${debug_add_surface_temperature}" == "x1" ]; then
-                echo -e "\t\t@ DEBUG: Setting time axis" 
-        fi
         cdo -s \
-                -settaxis,1000-01-16,12:00:00,1mon \
+                -settaxis,${CHUNK_START_YEAR_pism}-01-16,23:55:55,1mon \
                 tmp12 \
                 ${COUPLE_DIR}/air_temp_copy.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         #rm tmp0 tmp tmp1 tmp6 tmp12 
@@ -1908,11 +1866,18 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
         # merge air_temp with debm output files
         # & set time axies
         # PG: Why is this set to noon on the year 1000? Does that have any reason?
-        cdo -s \
-                -ymonmean \
-                -settaxis,1000-01-16,12:00:00,1mon \
-                surface_mass_balance.nc \
-                tmp 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        if [[ "x${MULTI_YEAR_MEAN_SMB}" == "x1" ]]; then
+                cdo -s \
+                        -ymonmean \
+                        -settaxis,${CHUNK_START_YEAR_pism}-01-16,23:55:55,1mon \
+                        surface_mass_balance.nc \
+                        tmp 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        else
+                cdo -s \
+                        -settaxis,${CHUNK_START_YEAR_pism}-01-16,23:55:55,1mon \
+                        surface_mass_balance.nc \
+                        tmp 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        fi
 
         if [ "x${debug_add_surface_temperature}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Merge and clean up" 
@@ -1958,58 +1923,43 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
         cdo -s -lec,3 mask.nc tmp 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
         mv tmp ${mask_file}
 
-        if [[ "x${DEBM_BETA}" == "x999" ]]; then
+        #if [[ "x${DEBM_BETA}" == "x999" ]]; then
+        #        # apply mask
+        #        #for var in SNH ME SMB RZ A air_temp; do
+        #        for var in SNH ME SMB RZ A tsurf; do
+        #                #cdo -s -f nc ifthen ${mask_file} -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        #                cdo -s -f nc -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        #        done
+        #        #cdo -s -O merge SNH ME SMB RZ A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+        #        cdo -s -O merge SNH ME SMB RZ A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+
+        #        cp surface_mass_balance_masked.nc ${COUPLE_DIR}/uta_surface_mass_balance_masked2.nc
+        #        # TODO/BUG (sxu): For right now, Paul is just filling in any missing
+        #        # values with a setmisstodis, maybe there is a better way to solve
+        #        # this?
+
+        #        #cdo -s -O -setmisstodis surface_mass_balance_masked.nc tmp
+
+        #        # TODO(sxu) Not urgent, but we can use a cleanup list for this, that
+        #        # way we can have a debug step print it out if anything needs to get
+        #        # checked.
+        #        # make clean
+        #        #rm SNH ME SMB RZ A air_temp
+        #        rm SNH ME SMB RZ A tsurf
+        #        rm smb.nc
+        #else
                 # apply mask
-                #for var in SNH ME SMB RZ A air_temp; do
                 for var in SNH ME SMB RZ A tsurf; do
-                        #cdo -s -f nc ifthen ${mask_file} -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                         cdo -s -f nc -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                 done
-                #cdo -s -O merge SNH ME SMB RZ A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
-                cdo -s -O merge SNH ME SMB RZ A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
-
-                cp surface_mass_balance_masked.nc ${COUPLE_DIR}/uta_surface_mass_balance_masked2.nc
-                # TODO/BUG (sxu): For right now, Paul is just filling in any missing
-                # values with a setmisstodis, maybe there is a better way to solve
-                # this?
-
-                #cdo -s -O -setmisstodis surface_mass_balance_masked.nc tmp
-
-                # TODO(sxu) Not urgent, but we can use a cleanup list for this, that
-                # way we can have a debug step print it out if anything needs to get
-                # checked.
-                # make clean
-                #rm SNH ME SMB RZ A air_temp
-                rm SNH ME SMB RZ A tsurf
-                rm smb.nc
-        else
-                # apply mask
-                #for var in SNH MELT SMB REFR A air_temp; do
-                for var in SNH ME SMB RZ A tsurf; do
-                        #cdo -s -f nc ifthen ${mask_file} -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
-                        cdo -s -f nc -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
-                done
-                #cdo -s -O merge SNH MELT SMB REFR A air_temp surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                 cdo -s -O merge SNH ME SMB RZ A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
 
                 cp ${COUPLE_DIR}/uta_smb.nc ${COUPLE_DIR}/uta_surface_mass_balance_masked3.nc
-                cdo -selvar,SNH,MELT,SMB,REFR,A,tsurf ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/surface_mass_balance_masked.nc
-		        #cp ${COUPLE_DIR}/uta_smb.nc  ${COUPLE_DIR}/surface_mass_balance_masked.nc
+                cdo -selvar,SNH,ME,SMB,RZ,A,tsurf ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/surface_mass_balance_masked.nc
           
-                # TODO/BUG (sxu): For right now, Paul is just filling in any missing
-                # values with a setmisstodis, maybe there is a better way to solve
-                # this?
-
-                #cdo -s -O -setmisstodis surface_mass_balance_masked.nc tmp
-
-                # TODO(sxu) Not urgent, but we can use a cleanup list for this, that
-                # way we can have a debug step print it out if anything needs to get
-                # checked.
-                # make clean
-                #rm SNH MELT SMB REFR A air_temp
                 rm SNH ME SMB RZ A tsurf
                 rm smb.nc
-        fi
+        #fi
         if [ ! -f ${COUPLE_DIR}/${mask_file} ]; then
                 mv ${mask_file} ${COUPLE_DIR}/
         fi
@@ -2064,7 +2014,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_smb_varname_and_units() {
                 units,${pism_mass_balance_varname},o,c,"kg m-2 s-1" \
                 ${COUPLE_DIR}/debm_output_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}_${debm_mass_balance_varname}.nc \
                 tmp_${debm_mass_balance_varname}
-        cp tmp_${debm_mass_balance_varname} ${COUPLE_DIR}/uta_tmp_${debm_mass_balance_varname}
+        #cp tmp_${debm_mass_balance_varname} ${COUPLE_DIR}/uta_tmp_${debm_mass_balance_varname}
         mv tmp_${debm_mass_balance_varname} \
                 ${COUPLE_DIR}/debm_output_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}_${debm_mass_balance_varname}.nc
 }
@@ -2080,7 +2030,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_merge_preliminary_files() {
                 ${COUPLE_DIR}/debm_output_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}_${debm_mass_balance_varname}.nc \
                 ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc \
                 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
-                cp ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc ${COUPLE_DIR}/uta_surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
+                #cp ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc ${COUPLE_DIR}/uta_surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
 }
 
 ## @fn ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis
@@ -2102,7 +2052,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis() {
                 time_calendar="360_day"
         fi
 
-        cp ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc ${COUPLE_DIR}/uta_dummy.nc
+        #cp ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc ${COUPLE_DIR}/uta_dummy.nc
         ncatted \
                 -a \
                 bounds,time,o,c,"time_bnds" \
@@ -2111,8 +2061,9 @@ ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis() {
                 ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc tmp_with_taxis \
                 && mv tmp_with_taxis ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
 
+        ${FUNCTION_PATH}/../utils/CreateTimeAxisNC.bash ${nt} ${COUPLE_DIR}/time_axis_pism.nc 0 classic 365_day #${CHUNK_START_YEAR_pism}
         ncks -A \
-                ${POOL_DIR_pism}/time_axis/pismr_timeaxis_12_360day.nc \
+                ${COUPLE_DIR}/time_axis_pism.nc \
                 ${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
 
         #FAILURE: ncks -A ${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ${COUPLE_DIR}/atmo_given_file.nc

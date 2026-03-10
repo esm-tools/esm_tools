@@ -27,17 +27,18 @@ def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
 
 
 def resubmit_SimulationSetup(config, cluster=None):
-    monitor_file = logfiles.logfile_handle
     # Jobs that should be started directly from the compute job:
 
     jobtype = config["general"]["jobtype"]
 
-    monitor_file.write(f"{cluster} for this run:\n")
     command_line_config = config["general"]["command_line_config"]
     command_line_config["jobtype"] = cluster
 
-    monitor_file.write(f"Initializing {cluster} object with:\n")
-    monitor_file.write(str(command_line_config))
+    logfiles.initialize_logging(command_line_config)
+
+    logger.debug(f"{cluster} for this run:")
+    logger.debug(f"Initializing {cluster} object with:")
+    logger.debug(str(command_line_config))
     # NOTE(PG) Non top level import to avoid circular dependency:
 
     os.chdir(config["general"]["started_from"])
@@ -45,19 +46,17 @@ def resubmit_SimulationSetup(config, cluster=None):
 
     cluster_obj = SimulationSetup(command_line_config)
 
-    monitor_file.write(f"{cluster} object built....\n")
+    logger.debug(f"{cluster} object built....")
 
     if f"{cluster}_update_{jobtype}_config_before_resubmit" in cluster_obj.config:
-        monitor_file.write(
-            f"{cluster} object needs to update the calling job config:\n"
-        )
+        logger.debug(f"{cluster} object needs to update the calling job config:")
         # FIXME(PG): This might need to be a deep update...?
         config.update(
             cluster_obj.config[f"{cluster}_update_{jobtype}_config_before_resubmit"]
         )
 
     if not check_if_check(config):
-        monitor_file.write(f"Calling {cluster} job:\n")
+        logger.debug(f"Calling {cluster} job:")
         config["general"]["experiment_over"] = cluster_obj(kill_after_submit=False)
 
     return config
@@ -82,10 +81,9 @@ def get_submission_type(cluster, config):
 
 def end_of_experiment(config):
     if config["general"]["next_date"] >= config["general"]["final_date"]:
-        monitor_file = logfiles.logfile_handle
-        monitor_file.write("Reached the end of the simulation, quitting...\n")
+        logger.info("Reached the end of the simulation, quitting...")
         config["general"]["experiment_over"] = True
-        helpers.write_to_log(config, ["# Experiment over"], message_sep="")
+        logger.progress("Experiment over")
         return True
     return False
 
@@ -208,8 +206,6 @@ def _increment_date_and_run_number(config):
 
 
 def _write_date_file(config):  # self, date_file=None):
-    # monitor_file = config["general"]["logfile"]
-    monitor_file = logfiles.logfile_handle
 
     # if not date_file:
     date_file = (
@@ -223,5 +219,5 @@ def _write_date_file(config):  # self, date_file=None):
             + " "
             + str(config["general"]["run_number"])
         )
-    monitor_file.write("writing date file \n")
+    logger.debug("writing date file")
     return config

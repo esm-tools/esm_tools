@@ -328,3 +328,16 @@ class FileTracker:
         for op in self._operations:
             counts[op.operation.value] += 1
         return counts
+
+    def __getstate__(self) -> dict:
+        """Return state for pickling (exclude the lock)."""
+        state = self.__dict__.copy()
+        # Remove the lock - it can't be pickled
+        del state["_lock"]
+        return state
+
+    def __setstate__(self, state: dict) -> None:
+        """Restore state from pickling (recreate the lock)."""
+        self.__dict__.update(state)
+        # Recreate the lock
+        self._lock = threading.Lock()

@@ -341,3 +341,31 @@ class FileTracker:
         self.__dict__.update(state)
         # Recreate the lock
         self._lock = threading.Lock()
+
+    @classmethod
+    def yaml_representer(cls, dumper, data):
+        """YAML representer - serialize as placeholder string."""
+        return dumper.represent_scalar("!FileTracker", f"<FileTracker: {len(data)} operations>")
+
+    @classmethod
+    def register_yaml_representer(cls):
+        """Register the YAML representer with ruamel.yaml."""
+        try:
+            from ruamel.yaml import YAML
+            yaml = YAML()
+            yaml.representer.add_representer(cls, cls.yaml_representer)
+        except ImportError:
+            pass
+
+
+# Register representer on module load
+try:
+    from ruamel.yaml import RoundTripRepresenter
+    RoundTripRepresenter.add_representer(
+        FileTracker,
+        lambda dumper, data: dumper.represent_scalar(
+            "!FileTracker", f"<FileTracker: {len(data)} operations>"
+        )
+    )
+except ImportError:
+    pass

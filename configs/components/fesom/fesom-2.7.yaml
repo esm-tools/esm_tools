@@ -6,7 +6,7 @@ fesom:
     version: "2.7"
     type: ocean
 
-    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON, -DASYNCHRONOUS_IO_THREADS=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DASYNCHRONOUS_IO_THREADS=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
     clean_command: ${defaults.clean_command}
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block

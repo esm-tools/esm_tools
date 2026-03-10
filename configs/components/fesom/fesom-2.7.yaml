@@ -133,7 +133,9 @@ fesom:
                     beta_evp: 250           # constant that control numerical stability of mEVP.
             CAVCORE2:
                     nx: 72411
-                    mesh_dir: "/work/ollie/pscholz/mesh_fesom2.0/cavity_72k/"
+                    # [TODO] @patrickscholz - move mesh to pool and update path
+                    # suggested: mesh_dir: "${fesom.mesh_base_dir}/cavity_72k/"
+                    mesh_dir: "/albedo/work/user/pscholz/mesh_fesom2.0/cavity_72k/"
                     nproc: 288
                     whichEVP: 0
                     alpha_evp: 250          # constant that control numerical stability of mEVP.

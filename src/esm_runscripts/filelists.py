@@ -1288,19 +1288,19 @@ def copy_files(config, filetypes, source, target):
                             }
                         )
 
-                        # Store metadata for file tracking
+                        # To avoid overwriting in general experiment folder
+                        if skip_intermediate == True:
+                            file_target = avoid_overwriting(
+                                config, file_source, file_target
+                            )
+
+                        # Store metadata for file tracking (after avoid_overwriting modifies file_target)
                         operation_name = _get_operation_name(movement_method)
                         file_metadata[(file_source, file_target)] = {
                             "operation": operation_name,
                             "component": model,
                             "filetype": filetype,
                         }
-
-                        # To avoid overwriting in general experiment folder
-                        if skip_intermediate == True:
-                            file_target = avoid_overwriting(
-                                config, file_source, file_target
-                            )
 
                         # Execute movement with or without futures (parallelization on/off)
                         if config["general"].get("parallel_file_movements", False) in [

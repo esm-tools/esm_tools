@@ -363,6 +363,54 @@ As an example, to configure ``esm_runscripts`` for an echam-experiment to link t
 Both ways to set the entries are doing the same thing. It is possible, as in the ``input`` case, to set the file movement method independently for each of the
 directions; the setting ``all_directions`` is just a shortcut if the method is identical for all of them.
 
+File Logging and Checksums
+--------------------------
+
+During experiment execution, ``esm_runscripts`` can generate a YAML file listing all
+files that were copied or linked into the work directory, along with optional MD5
+checksums. This is useful for:
+
+* **Reproducibility**: Track exactly which files were used in a run
+* **Debugging**: Identify missing or changed files between runs
+* **Validation**: Compare file manifests between baseline and test runs
+
+The file list is written to the ``log`` directory of each run as
+``<expid>_<model>_filelist_<datestamp>.yaml`` and contains:
+
+* Source, intermediate, and target paths for each file
+* The file category (input, forcing, restart, etc.)
+* Whether the file exists in the target directory
+* MD5 checksum (if enabled)
+
+To enable checksum computation, add the following to your runscript:
+
+.. code-block:: yaml
+
+   general:
+       compute_file_checksums: True
+
+.. note::
+   Computing checksums adds overhead to the job preparation phase, especially for
+   large files or many files. For production runs where reproducibility tracking
+   is not needed, leave this option disabled (the default).
+
+The generated YAML file has the following structure:
+
+.. code-block:: yaml
+
+   fesom:
+       forcing_sss:
+           source: /pool/forcing/sss.nc
+           intermediate: /work/exp/run_123/sss.nc
+           target: /work/exp/run_123/work/sss.nc
+           kind: forcing
+           checksum: a1b2c3d4e5f6...
+           exists: true
+   general:
+       # ... general files ...
+   not_handled_by_filelists:
+       # ... files found in work but not tracked by esm_runscripts ...
+
 Running an experiment with a virtual environment
 -----------------------------------------------
 

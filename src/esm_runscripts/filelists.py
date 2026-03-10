@@ -945,6 +945,83 @@ def log_files_in_target_to_yaml(config):
     return config
 
 
+def log_tidy_files_to_yaml(config):
+    """
+    This function logs the files moved and linked during the tidy phase to a YAML
+    file in the ``thisrun_log_dir`` directory. The file is named as follows:
+    ``{expid}_{it_coupled_model_name}tidy_filelist_{datestamp}`` and contains the
+    following information:
+
+    - The source and destination for each file moved or linked
+    - The operation type (moved or linked)
+    - The checksum of each destination file if ``general.compute_file_checksums``
+      is set to ``True``
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration
+    """
+    compute_file_checksums = config["general"].get("compute_file_checksums", False)
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+
+    # Name of the yaml file log to be written
+    flist_file_yaml = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_tidy_filelist_{datestamp}.yaml"
+    )
+
+    files_moved = config["general"].get("files_moved_for_tidy", [])
+    files_linked = config["general"].get("files_linked_for_tidy", [])
+
+    all_files = {
+        "moved": {},
+        "linked": {},
+    }
+
+    # Process moved files
+    for i, file_info in enumerate(files_moved):
+        source = file_info["source"]
+        destination = file_info["destination"]
+        checksum = None
+        if compute_file_checksums and os.path.isfile(destination):
+            checksum = hashlib.md5(open(destination, "rb").read()).hexdigest()
+        all_files["moved"][f"file_{i}"] = {
+            "source": source,
+            "destination": destination,
+            "checksum": checksum,
+        }
+
+    # Process linked files
+    for i, file_info in enumerate(files_linked):
+        source = file_info["source"]
+        destination = file_info["destination"]
+        checksum = None
+        if compute_file_checksums and os.path.isfile(destination):
+            checksum = hashlib.md5(open(destination, "rb").read()).hexdigest()
+        all_files["linked"][f"file_{i}"] = {
+            "source": source,
+            "destination": destination,
+            "checksum": checksum,
+        }
+
+    logger.debug(
+        f"::: Logged {len(files_moved)} moved and {len(files_linked)} linked files for tidy"
+    )
+
+    # Dump the all_files dictionary to a yaml file
+    esm_parser.yaml_dump(all_files, flist_file_yaml)
+
+    return config
+
+
 def _list_files_in_dir(config, target):
     """
     List all the files in the target directory. Currently only the ``work`` directory
@@ -973,7 +1050,7 @@ def _list_files_in_dir(config, target):
     else:
         logger.error(
             f"Listing files in ``{target}`` directory types are not yet supported. "
-            "Only files in the ``work`` directory currently supported. "
+            "Supported targets: ``work``, ``exp``. "
         )
         exit(1)
 

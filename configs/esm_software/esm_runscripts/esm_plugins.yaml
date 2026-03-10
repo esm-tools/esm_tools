@@ -88,6 +88,7 @@ core:
                         - "report_missing_files"
                         - "check_for_unknown_files"
                         - "log_files_in_target_to_yaml"
+                        - "log_tidy_files_to_yaml"
 
                 database_actions:
                         - "database_entry"

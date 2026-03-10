@@ -297,6 +297,11 @@ def throw_away_some_infiles(config):
 def copy_all_results_to_exp(config):
     monitor_file = logfiles.logfile_handle
     monitor_file.write("Copying stuff to main experiment folder \n")
+
+    # Track files during tidy phase for logging
+    config["general"]["files_moved_for_tidy"] = []
+    config["general"]["files_linked_for_tidy"] = []
+
     for root, dirs, files in os.walk(config["general"]["thisrun_dir"], topdown=False):
         logger.debug("Working on folder: " + root)
         if root.startswith(config["general"]["thisrun_work_dir"]) or root.endswith(
@@ -351,14 +356,21 @@ def copy_all_results_to_exp(config):
                             )
                             os.rename(source, newdestination)
                             os.symlink(newdestination, destination)
+                            config["general"]["files_moved_for_tidy"].append({
+                                "source": source,
+                                "destination": newdestination,
+                            })
                             continue
                 try:
                     logger.debug("Moving file " + source + " to " + destination)
                     try:
                         os.rename(source, destination)
-                    except:  # Fill is still open... create a hard (!) link instead
+                    except:  # File is still open... create a hard (!) link instead
                         os.link(source, destination)
-
+                    config["general"]["files_moved_for_tidy"].append({
+                        "source": source,
+                        "destination": destination,
+                    })
                 except:
                     logger.critical(
                         ">>>>>>>>>  Something went wrong moving "
@@ -383,6 +395,10 @@ def copy_all_results_to_exp(config):
                         destination + "_" + config["general"]["last_run_datestamp"],
                     )
                 os.symlink(linkdest, destination)
+                config["general"]["files_linked_for_tidy"].append({
+                    "source": source,
+                    "destination": destination,
+                })
     return config
 
 

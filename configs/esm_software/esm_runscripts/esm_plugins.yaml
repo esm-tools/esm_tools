@@ -23,6 +23,7 @@ core:
                         - "install_missing_plugins"
                         - "add_submission_info"
                         - "initialize_batch_system"
+                        - "initialize_file_tracker"
                         - "initialize_coupler"
                         - "set_logfile"
                         #- "add_vcs_info"
@@ -87,7 +88,7 @@ core:
                         - "report_missing_files"
                         - "check_for_unknown_files"
                         - "log_files_in_target_to_yaml"
-                        - "log_tidy_files_to_yaml"
+                        - "dump_file_tracker_log"
 
                 database_actions:
                         - "database_entry"

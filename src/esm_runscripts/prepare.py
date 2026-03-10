@@ -13,6 +13,7 @@ from esm_plugin_manager import install_missing_plugins
 from esm_tools import user_error, user_note
 
 from . import batch_system, helpers
+from .file_tracker import FileTracker
 
 
 def run_job(config):
@@ -665,6 +666,24 @@ def initialize_batch_system(config):
         config, config["computer"]["batch_system"]
     )
 
+    return config
+
+
+def initialize_file_tracker(config):
+    """
+    Initialize the centralized file tracker for logging all file operations.
+
+    The tracker is stored in config["general"]["file_tracker"] and should be
+    used by all file movement functions (copy_files, copy_all_results_to_exp, etc.)
+    to ensure consistent logging.
+
+    The tracker respects the ``compute_file_checksums`` setting.
+    """
+    compute_checksums = config["general"].get("compute_file_checksums", False)
+    config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums)
+    logger.debug(
+        f"Initialized file tracker (checksums: {compute_checksums})"
+    )
     return config
 
 

@@ -11,6 +11,7 @@ general:
         use_venv: True
         install_esm_tools_branch: "feat/write_files_yaml"
         compute_file_checksums: True
+        parallel_file_movements: "dask"
 
 fesom:
         version: 2.6

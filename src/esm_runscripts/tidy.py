@@ -299,6 +299,9 @@ def copy_all_results_to_exp(config):
     config["general"]["files_moved_for_tidy"] = []
     config["general"]["files_linked_for_tidy"] = []
 
+    # Get the file tracker
+    file_tracker = config["general"].get("file_tracker")
+
     for root, dirs, files in os.walk(config["general"]["thisrun_dir"], topdown=False):
         logger.debug("Working on folder: " + root)
         if root.startswith(config["general"]["thisrun_work_dir"]) or root.endswith(
@@ -357,17 +360,35 @@ def copy_all_results_to_exp(config):
                                 "source": source,
                                 "destination": newdestination,
                             })
+                            if file_tracker:
+                                file_tracker.record(
+                                    source=source,
+                                    destination=newdestination,
+                                    operation="move",
+                                    phase="tidy",
+                                    filetype="outdata",
+                                )
                             continue
                 try:
                     logger.debug(f"Moving file {source} to {destination}")
+                    operation = "move"
                     try:
                         os.rename(source, destination)
                     except:  # File is still open... create a hard (!) link instead
                         os.link(source, destination)
+                        operation = "hardlink"
                     config["general"]["files_moved_for_tidy"].append({
                         "source": source,
                         "destination": destination,
                     })
+                    if file_tracker:
+                        file_tracker.record(
+                            source=source,
+                            destination=destination,
+                            operation=operation,
+                            phase="tidy",
+                            filetype="outdata",
+                        )
                 except:
                     logger.critical(
                         f">>>>>>>>>  Something went wrong moving {source} to "
@@ -394,6 +415,14 @@ def copy_all_results_to_exp(config):
                     "source": source,
                     "destination": destination,
                 })
+                if file_tracker:
+                    file_tracker.record(
+                        source=linkdest,
+                        destination=destination,
+                        operation="link",
+                        phase="tidy",
+                        filetype="outdata",
+                    )
     return config
 
 

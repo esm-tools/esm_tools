@@ -947,83 +947,6 @@ def log_files_in_target_to_yaml(config):
     return config
 
 
-def log_tidy_files_to_yaml(config):
-    """
-    This function logs the files moved and linked during the tidy phase to a YAML
-    file in the ``thisrun_log_dir`` directory. The file is named as follows:
-    ``{expid}_{it_coupled_model_name}tidy_filelist_{datestamp}`` and contains the
-    following information:
-
-    - The source and destination for each file moved or linked
-    - The operation type (moved or linked)
-    - The checksum of each destination file if ``general.compute_file_checksums``
-      is set to ``True``
-
-    Parameters
-    ----------
-    config : dict
-        The experiment configuration
-
-    Returns
-    -------
-    config : dict
-        The experiment configuration
-    """
-    compute_file_checksums = config["general"].get("compute_file_checksums", False)
-    expid = config["general"]["expid"]
-    it_coupled_model_name = config["general"]["iterative_coupled_model"]
-    datestamp = config["general"]["run_datestamp"]
-    thisrun_log_dir = config["general"]["thisrun_log_dir"]
-
-    # Name of the yaml file log to be written
-    flist_file_yaml = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_tidy_filelist_{datestamp}.yaml"
-    )
-
-    files_moved = config["general"].get("files_moved_for_tidy", [])
-    files_linked = config["general"].get("files_linked_for_tidy", [])
-
-    all_files = {
-        "moved": {},
-        "linked": {},
-    }
-
-    # Process moved files
-    for i, file_info in enumerate(files_moved):
-        source = file_info["source"]
-        destination = file_info["destination"]
-        checksum = None
-        if compute_file_checksums and os.path.isfile(destination):
-            checksum = hashlib.md5(open(destination, "rb").read()).hexdigest()
-        all_files["moved"][f"file_{i}"] = {
-            "source": source,
-            "destination": destination,
-            "checksum": checksum,
-        }
-
-    # Process linked files
-    for i, file_info in enumerate(files_linked):
-        source = file_info["source"]
-        destination = file_info["destination"]
-        checksum = None
-        if compute_file_checksums and os.path.isfile(destination):
-            checksum = hashlib.md5(open(destination, "rb").read()).hexdigest()
-        all_files["linked"][f"file_{i}"] = {
-            "source": source,
-            "destination": destination,
-            "checksum": checksum,
-        }
-
-    logger.debug(
-        f"::: Logged {len(files_moved)} moved and {len(files_linked)} linked files for tidy"
-    )
-
-    # Dump the all_files dictionary to a yaml file
-    esm_parser.yaml_dump(all_files, flist_file_yaml)
-
-    return config
-
-
 def _list_files_in_dir(config, target):
     """
     List all the files in the target directory. Currently only the ``work`` directory
@@ -1206,8 +1129,21 @@ def copy_files(config, filetypes, source, target):
     parallel_file_movements = config["general"].get("parallel_file_movements", False)
     dask_scheduler_json = config["dask"]["scheduler_json"]
 
+    # Get the file tracker for logging operations
+    file_tracker = config["general"].get("file_tracker")
+
+    # Determine phase based on source/target
+    if source == "init" and target in ["thisrun", "work"]:
+        phase = "prepare"
+    elif source == "work" and target == "thisrun":
+        phase = "tidy"
+    else:
+        phase = "unknown"
+
     successful_files = []
     missing_files = {}
+    # Metadata for tracking: maps (source, target) to operation info
+    file_metadata = {}
 
     # Save the source and target for later use in other methods
     config["general"]["files_source"] = source
@@ -1352,6 +1288,14 @@ def copy_files(config, filetypes, source, target):
                             }
                         )
 
+                        # Store metadata for file tracking
+                        operation_name = _get_operation_name(movement_method)
+                        file_metadata[(file_source, file_target)] = {
+                            "operation": operation_name,
+                            "component": model,
+                            "filetype": filetype,
+                        }
+
                         # To avoid overwriting in general experiment folder
                         if skip_intermediate == True:
                             file_target = avoid_overwriting(
@@ -1396,6 +1340,17 @@ def copy_files(config, filetypes, source, target):
             result = movement_output
         if result:
             successful_files.append(file_source)
+            # Record operation in file tracker
+            if file_tracker and (file_source, file_target) in file_metadata:
+                metadata = file_metadata[(file_source, file_target)]
+                file_tracker.record(
+                    source=file_source,
+                    destination=file_target,
+                    operation=metadata["operation"],
+                    phase=phase,
+                    filetype=metadata["filetype"],
+                    component=metadata["component"],
+                )
         else:
             missing_files.update({file_target: file_source})
 
@@ -1645,6 +1600,29 @@ def get_method(movement):
     return actually_copy
 
 
+def _get_operation_name(movement_method):
+    """
+    Get the operation name string from the movement method function.
+
+    Parameters
+    ----------
+    movement_method : function
+        The movement function (actually_copy, actually_link, actually_move)
+
+    Returns
+    -------
+    str
+        The operation name: "copy", "link", or "move"
+    """
+    if movement_method == actually_copy:
+        return "copy"
+    elif movement_method == actually_link:
+        return "link"
+    elif movement_method == actually_move:
+        return "move"
+    return "copy"  # default
+
+
 def movement(func):
     def inner(config, source_path, target_path):
         try:
@@ -1833,6 +1811,59 @@ def get_movement(config, model, category, filetype, source, target):
         logger.error(f"Error: Unknown file movement from {source} to {target}")
         helpers.print_datetime(config)
         sys.exit(42)
+
+
+def dump_file_tracker_log(config):
+    """
+    Dump the file tracker log to a YAML file.
+
+    This function writes all tracked file operations (copy, move, link, hardlink)
+    to a YAML file in the ``thisrun_log_dir`` directory. The file is named:
+    ``{expid}_{it_coupled_model_name}_file_operations_{datestamp}.yaml``
+
+    The log is organized by phase (prepare, tidy) and includes:
+    - Source and destination paths
+    - Operation type
+    - File type and component
+    - Checksums (if enabled via ``general.compute_file_checksums``)
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration (unchanged)
+    """
+    file_tracker = config["general"].get("file_tracker")
+    if not file_tracker:
+        logger.debug("No file tracker found, skipping file operations log dump")
+        return config
+
+    if len(file_tracker) == 0:
+        logger.debug("File tracker is empty, skipping file operations log dump")
+        return config
+
+    expid = config["general"]["expid"]
+    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    datestamp = config["general"]["run_datestamp"]
+    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+
+    log_file_path = (
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_file_operations_{datestamp}.yaml"
+    )
+
+    file_tracker.dump_yaml(log_file_path, by_phase=True)
+
+    summary = file_tracker.summary()
+    logger.info(
+        f"File operations logged: {summary['copy']} copies, {summary['move']} moves, "
+        f"{summary['link']} links, {summary['hardlink']} hardlinks"
+    )
+
+    return config
 
 
 def assemble(config):

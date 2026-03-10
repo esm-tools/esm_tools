@@ -119,6 +119,8 @@ fesom:
                     beta_evp: 250           # constant that control numerical stability of mEVP.
             LGM:
                     nx: 95239
+                    # [TODO] @christian-stepanek - move mesh to pool and update path
+                    # suggested: mesh_dir: "/work/ab0246/pool/FESOM2/meshes/glac1d_m1_512/"
                     mesh_dir: "/home/a/a270064/bb1029/inputs/mesh_glac1d_m1_512/"
                     nproc: 1024
                     whichEVP: 0

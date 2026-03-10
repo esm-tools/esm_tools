@@ -17,6 +17,7 @@ def run_job(config):
     # Re-initialize the FileTracker for tidy phase
     compute_checksums = config["general"].get("compute_file_checksums", False)
     config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums)
+    logger.info(f"DEBUG tidy run_job: Created FileTracker with checksums={compute_checksums}")
 
     config["general"]["relevant_filetypes"] = [
         "log",
@@ -306,6 +307,7 @@ def copy_all_results_to_exp(config):
 
     # Get the file tracker
     file_tracker = config["general"].get("file_tracker")
+    logger.info(f"DEBUG copy_all_results_to_exp: file_tracker = {type(file_tracker)}")
 
     for root, dirs, files in os.walk(config["general"]["thisrun_dir"], topdown=False):
         logger.debug("Working on folder: " + root)
@@ -366,6 +368,7 @@ def copy_all_results_to_exp(config):
                                 "destination": newdestination,
                             })
                             if file_tracker:
+                                logger.info(f"DEBUG copy_all_results_to_exp: Recording move {source} -> {newdestination}")
                                 file_tracker.record(
                                     source=source,
                                     destination=newdestination,
@@ -387,6 +390,7 @@ def copy_all_results_to_exp(config):
                         "destination": destination,
                     })
                     if file_tracker:
+                        logger.info(f"DEBUG copy_all_results_to_exp: Recording {operation} {source} -> {destination}")
                         file_tracker.record(
                             source=source,
                             destination=destination,
@@ -421,6 +425,7 @@ def copy_all_results_to_exp(config):
                     "destination": destination,
                 })
                 if file_tracker:
+                    logger.info(f"DEBUG copy_all_results_to_exp: Recording link {linkdest} -> {destination}")
                     file_tracker.record(
                         source=linkdest,
                         destination=destination,
@@ -428,6 +433,7 @@ def copy_all_results_to_exp(config):
                         phase="tidy",
                         filetype="outdata",
                     )
+    logger.info(f"DEBUG copy_all_results_to_exp: Done. FileTracker now has {len(file_tracker) if file_tracker else 0} operations")
     return config
 
 

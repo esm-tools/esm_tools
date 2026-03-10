@@ -127,10 +127,12 @@ class FileTracker:
         **metadata
             Additional metadata (phase, filetype, component).
         """
+        logger.info(f"DEBUG FileTracker.record: {operation} {source} -> {destination}")
         op = FileOperation(operation)
         if checksum is None and self.compute_checksums:
             checksum = self._compute_checksum(destination)
         self._track(source, destination, op, checksum, **metadata)
+        logger.info(f"DEBUG FileTracker.record: Now have {len(self._operations)} operations")
 
     def record_many(self, results: list[dict], **metadata) -> None:
         """
@@ -302,7 +304,9 @@ class FileTracker:
         by_phase : bool
             If True, organize output by phase.
         """
+        logger.info(f"DEBUG FileTracker.dump_yaml: {len(self._operations)} operations, writing to {path}")
         data = self.to_dict_by_phase() if by_phase else self.to_dict()
+        logger.info(f"DEBUG FileTracker.dump_yaml: data = {data}")
         esm_parser.yaml_dump(data, path)
         logger.info(f"File tracking log written to {path}")
 

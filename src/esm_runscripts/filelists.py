@@ -1341,8 +1341,10 @@ def copy_files(config, filetypes, source, target):
         if result:
             successful_files.append(file_source)
             # Record operation in file tracker
+            logger.info(f"DEBUG copy_files: result=True, file_tracker={file_tracker is not None}, key_in_metadata={(file_source, file_target) in file_metadata}")
             if file_tracker and (file_source, file_target) in file_metadata:
                 metadata = file_metadata[(file_source, file_target)]
+                logger.info(f"DEBUG copy_files: Recording {metadata['operation']} {file_source} -> {file_target}")
                 file_tracker.record(
                     source=file_source,
                     destination=file_target,
@@ -1838,12 +1840,14 @@ def dump_file_tracker_log(config):
         The experiment configuration (unchanged)
     """
     file_tracker = config["general"].get("file_tracker")
+    logger.info(f"DEBUG: file_tracker type = {type(file_tracker)}, value = {file_tracker}")
     if not file_tracker:
-        logger.debug("No file tracker found, skipping file operations log dump")
+        logger.info("No file tracker found, skipping file operations log dump")
         return config
 
+    logger.info(f"DEBUG: file_tracker length = {len(file_tracker)}")
     if len(file_tracker) == 0:
-        logger.debug("File tracker is empty, skipping file operations log dump")
+        logger.info("File tracker is empty, skipping file operations log dump")
         return config
 
     expid = config["general"]["expid"]
@@ -1855,7 +1859,9 @@ def dump_file_tracker_log(config):
         f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_file_operations_{datestamp}.yaml"
     )
 
+    logger.info(f"DEBUG dump_file_tracker_log: Writing to {log_file_path}")
     file_tracker.dump_yaml(log_file_path, by_phase=True)
+    logger.info(f"DEBUG dump_file_tracker_log: Write complete")
 
     summary = file_tracker.summary()
     logger.info(

@@ -680,9 +680,9 @@ def initialize_file_tracker(config):
     The tracker respects the ``compute_file_checksums`` setting.
     """
     compute_checksums = config["general"].get("compute_file_checksums", False)
-    config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums)
+    config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums, phase="prepare")
     logger.debug(
-        f"Initialized file tracker (checksums: {compute_checksums})"
+        f"Initialized file tracker for prepare phase (checksums: {compute_checksums})"
     )
     return config
 

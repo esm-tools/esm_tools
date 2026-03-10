@@ -89,6 +89,7 @@ choose_job_type:
                         - "modify_namelists"
                         - "modify_files"
                         - "copy_files_to_work"
+                        - "dump_file_tracker_log"
                         - "report_missing_files"
                         - "log_files_in_target_to_yaml"
                         #- "add_vcs_info"

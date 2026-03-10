@@ -1854,9 +1854,10 @@ def dump_file_tracker_log(config):
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    phase = file_tracker.phase
 
     log_file_path = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_file_operations_{datestamp}.yaml"
+        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_file_operations_{phase}_{datestamp}.yaml"
     )
 
     logger.info(f"DEBUG dump_file_tracker_log: Writing to {log_file_path}")

@@ -16,8 +16,8 @@ from .file_tracker import FileTracker
 def run_job(config):
     # Re-initialize the FileTracker for tidy phase
     compute_checksums = config["general"].get("compute_file_checksums", False)
-    config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums)
-    logger.info(f"DEBUG tidy run_job: Created FileTracker with checksums={compute_checksums}")
+    config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums, phase="tidy")
+    logger.info(f"DEBUG tidy run_job: Created FileTracker for tidy phase with checksums={compute_checksums}")
 
     config["general"]["relevant_filetypes"] = [
         "log",

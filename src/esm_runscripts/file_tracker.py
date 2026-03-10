@@ -51,7 +51,7 @@ class FileTracker:
         tracker.dump_yaml("/path/to/filelist.yaml")
     """
 
-    def __init__(self, compute_checksums: bool = False):
+    def __init__(self, compute_checksums: bool = False, phase: str = "unknown"):
         """
         Initialize the file tracker.
 
@@ -59,10 +59,13 @@ class FileTracker:
         ----------
         compute_checksums : bool
             If True, compute MD5 checksums for all tracked files.
+        phase : str
+            The phase this tracker is for (e.g., "prepare", "tidy").
         """
         self._operations: list[TrackedFile] = []
         self._lock = threading.Lock()
         self.compute_checksums = compute_checksums
+        self.phase = phase
         self._skip_provenance = True  # Marker to skip provenance tracking
 
     def _compute_checksum(self, path: str) -> Optional[str]:

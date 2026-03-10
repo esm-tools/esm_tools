@@ -105,7 +105,9 @@ def _find_component_for_path(path: Path, config: dict) -> str | None:
     for key, block in config.items():
         if key in skip_keys or not isinstance(block, dict):
             continue
-        outdata = block.get("outdata_dir") or block.get("thisrun_outdata_dir")
+        outdata = (block.get("outdata_dir") or
+                   block.get("experiment_outdata_dir") or
+                   block.get("thisrun_outdata_dir"))
         if not outdata:
             continue
         try:

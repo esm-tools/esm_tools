@@ -828,12 +828,12 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [x] Pytest tests: `tests/test_hpc.py`, `tests/test_scan.py`, `tests/test_stac.py`, `tests/test_storage.py`, `tests/test_integration.py` (137 passing)
 - [x] User documentation: `CLI.md` — command reference with examples for all CLI subcommands
 
-### Phase 2: ESM-Tools Integration
-- [ ] `integration/esm_tools.py` — `add_files()` bridge for tidy phase
-- [ ] `integration/config.py` — `finished_config.yaml` loader
-- [ ] Auto-catalog on run completion
-- [ ] Pytest tests: `tests/test_integration.py` — end-to-end `add_files()` coverage
-- [ ] User documentation: `docs/esm_tools_integration.md` — how to enable cataloging in a run script, `add_files()` API reference, `finished_config.yaml` keys used
+### Phase 2: ESM-Tools Integration ✅ COMPLETE
+- [x] `integration/esm_tools.py` — `add_files()` bridge for tidy phase
+- [x] `integration/config.py` — `finished_config.yaml` loader (`load_config`); plus `find_finished_configs`, `get_outdata_files`, `extract_stac_metadata` helpers
+- [x] Bug fix: `scan/context.py` `_find_component_for_path()` now checks `experiment_outdata_dir` (the key used in real finished_config files; `outdata_dir` is `None` in practice)
+- [x] Pytest tests: `tests/test_integration.py` — 33 tests covering `load_config`, `find_finished_configs`, `get_outdata_files`, `extract_stac_metadata`, `experiment_outdata_dir` context resolution, and end-to-end `add_files()` coverage (159 total tests passing)
+- [x] User documentation: `docs/esm_tools_integration.md` — how to enable cataloging in a run script, `add_files()` API reference, all three config helpers, `finished_config.yaml` keys used, collection naming convention
 
 ### Phase 3: API + Browser
 - [ ] stac-fastapi architecture defined (DuckDB backend, federation, CORS)

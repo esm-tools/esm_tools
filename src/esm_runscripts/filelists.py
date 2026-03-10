@@ -1822,7 +1822,7 @@ def dump_file_tracker_log(config):
     Dump the file tracker log to a YAML file.
 
     This function writes all tracked file operations (copy, move, link, hardlink)
-    to a YAML file in the ``thisrun_log_dir`` directory. The file is named:
+    to a YAML file in the ``experiment_log_dir`` directory. The file is named:
     ``{expid}_{it_coupled_model_name}_file_operations_{datestamp}.yaml``
 
     The log is organized by phase (prepare, tidy) and includes:
@@ -1855,11 +1855,11 @@ def dump_file_tracker_log(config):
     expid = config["general"]["expid"]
     setup_name = config["general"]["setup_name"]
     datestamp = config["general"]["run_datestamp"]
-    thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    experiment_log_dir = config["general"]["experiment_log_dir"]
     phase = file_tracker.phase
 
     log_file_path = (
-        f"{thisrun_log_dir}/{expid}_{setup_name}_file_operations_{phase}_{datestamp}.yaml"
+        f"{experiment_log_dir}/{expid}_{setup_name}_file_operations_{phase}_{datestamp}.yaml"
     )
 
     logger.info(f"DEBUG dump_file_tracker_log: Writing to {log_file_path}")

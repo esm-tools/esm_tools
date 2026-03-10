@@ -307,24 +307,29 @@ class FileTracker:
 
     def to_dict_by_filetype(self) -> dict:
         """
-        Convert tracked operations to a dictionary organized by filetype.
+        Convert tracked operations to a dictionary organized by component and filetype.
 
         This produces output compatible with the filedicts design:
-        files.<filetype>.<file_id> with operation attributes.
+        <component>.files.<filetype>.<file_id> - ready for copy/paste into component configs.
 
         Returns
         -------
         dict
-            Dictionary with structure: {"files": {<filetype>: {<file_id>: {...}}}}
+            Dictionary with structure: {<component>: {"files": {<filetype>: {<file_id>: {...}}}}}
         """
         from pathlib import Path
 
-        result = {"files": {}}
+        result = {}
 
         for op in self._operations:
+            component = op.component or "unknown"
             filetype = op.filetype or "unknown"
-            if filetype not in result["files"]:
-                result["files"][filetype] = {}
+
+            # Initialize nested structure
+            if component not in result:
+                result[component] = {"files": {}}
+            if filetype not in result[component]["files"]:
+                result[component]["files"][filetype] = {}
 
             # Use destination basename as the file ID
             file_id = Path(op.destination).name
@@ -332,23 +337,23 @@ class FileTracker:
             # Handle duplicate file IDs by appending a counter
             base_id = file_id
             counter = 1
-            while file_id in result["files"][filetype]:
+            while file_id in result[component]["files"][filetype]:
                 file_id = f"{base_id}_{counter}"
                 counter += 1
+
+            phase = op.phase or "unknown"
+            phase_op_key = f"{phase}_op"
 
             entry = {
                 "source": op.source,
                 "destination": op.destination,
-                "operation": op.operation.value,
+                "phase": phase,
+                phase_op_key: op.operation.value,
             }
-            if op.phase:
-                entry["phase"] = op.phase
-            if op.checksum:
+            if op.checksum is not None:
                 entry["checksum"] = op.checksum
-            if op.component:
-                entry["component"] = op.component
 
-            result["files"][filetype][file_id] = entry
+            result[component]["files"][filetype][file_id] = entry
 
         return result
 

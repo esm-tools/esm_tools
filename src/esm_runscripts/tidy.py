@@ -367,7 +367,7 @@ def copy_all_results_to_exp(config):
                                 "source": source,
                                 "destination": newdestination,
                             })
-                            if file_tracker:
+                            if file_tracker is not None:
                                 logger.info(f"DEBUG copy_all_results_to_exp: Recording move {source} -> {newdestination}")
                                 file_tracker.record(
                                     source=source,
@@ -389,7 +389,7 @@ def copy_all_results_to_exp(config):
                         "source": source,
                         "destination": destination,
                     })
-                    if file_tracker:
+                    if file_tracker is not None:
                         logger.info(f"DEBUG copy_all_results_to_exp: Recording {operation} {source} -> {destination}")
                         file_tracker.record(
                             source=source,
@@ -424,7 +424,7 @@ def copy_all_results_to_exp(config):
                     "source": source,
                     "destination": destination,
                 })
-                if file_tracker:
+                if file_tracker is not None:
                     logger.info(f"DEBUG copy_all_results_to_exp: Recording link {linkdest} -> {destination}")
                     file_tracker.record(
                         source=linkdest,

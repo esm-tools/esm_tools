@@ -17,6 +17,7 @@ fesom:
         version: 2.6
         model_dir: "/albedo/work/user/${user}/Models/fesom-2.6/"
         mesh_dir: "/albedo/pool/FESOM/fesom2.0/meshes/mesh_CORE2_final/"
+        forcing_data_dir: "/albedo/work/projects/p_pool_fesom1/forcing/"
         restart_rate: 1
         restart_first: 1
         restart_unit: 'm'

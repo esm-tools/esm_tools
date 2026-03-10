@@ -819,17 +819,21 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 
 ## Phase Plan
 
-### Phase 1: Core (MVP)
-- [ ] Clean module structure
-- [ ] GRIB + NetCDF scanning
-- [ ] DuckDB storage
-- [ ] Basic CLI
-- [ ] Collection context (`scan/context.py`) — design hole identified and resolved
+### Phase 1: Core (MVP) ✅ COMPLETE
+- [x] Clean module structure
+- [x] GRIB + NetCDF scanning (magic-byte fallback for extension-less ECHAM output; 0–360° longitude normalisation)
+- [x] DuckDB storage
+- [x] Basic CLI
+- [x] Collection context (`scan/context.py`) — design hole identified and resolved
+- [x] Pytest tests: `tests/test_hpc.py`, `tests/test_scan.py`, `tests/test_stac.py`, `tests/test_storage.py`, `tests/test_integration.py` (137 passing)
+- [x] User documentation: `CLI.md` — command reference with examples for all CLI subcommands
 
 ### Phase 2: ESM-Tools Integration
 - [ ] `integration/esm_tools.py` — `add_files()` bridge for tidy phase
 - [ ] `integration/config.py` — `finished_config.yaml` loader
 - [ ] Auto-catalog on run completion
+- [ ] Pytest tests: `tests/test_integration.py` — end-to-end `add_files()` coverage
+- [ ] User documentation: `docs/esm_tools_integration.md` — how to enable cataloging in a run script, `add_files()` API reference, `finished_config.yaml` keys used
 
 ### Phase 3: API + Browser
 - [ ] stac-fastapi architecture defined (DuckDB backend, federation, CORS)
@@ -837,18 +841,24 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [ ] Three-tier browser customization (config, src additions, upstream patches)
 - [ ] JSON-LD vocabulary links
 - [ ] Deploy and serve
+- [ ] Pytest tests: `tests/test_api.py` — STAC endpoint responses, CQL2 filter parsing, CORS headers, collection search conformance
+- [ ] User documentation: `docs/api_and_browser.md` — federation config (`~/.esm_catalog.yaml`), `esm-catalog serve` usage, STAC Browser deployment steps, supported CQL2 filter syntax
 
 ### Phase 4: HPC Features
 - [ ] Tape state detection (`hpc/state.py` — dmattr, scoutfs)
 - [ ] Batch scanning with SLURM (Snakemake + `--config` context passing)
 - [ ] Rate limiting
 - [ ] Recall initiation
+- [ ] Pytest tests: `tests/test_hpc.py` — dmattr/scoutfs mocks, rate-limiter throttle, recall initiation
+- [ ] User documentation: `docs/hpc_batch_scanning.md` — Snakemake workflow, `scan-batch` + `merge-parquet` recipe, `--rate-limit`/`--checkpoint`/`--resume` flags, storage tier reference table
 
 ### Phase 5: Hardening
 - [ ] Unstructured grid representation (FESOM — see Open Questions)
 - [ ] ECHAM GRIB support
 - [ ] `hpc-storage` extension spec document (currently undocumented custom extension)
 - [ ] Checkpoint/resume for interrupted batch scans
+- [ ] Pytest tests: `tests/test_scan_grib.py` — ECHAM GRIB fixtures; `tests/test_scan_unstructured.py` — FESOM mesh datacube representation
+- [ ] User documentation: `docs/supported_formats.md` — NetCDF, GRIB, unstructured grid caveats; update `hpc-storage` extension spec with full field definitions
 
 ---
 

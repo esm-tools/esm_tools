@@ -10,9 +10,14 @@ from loguru import logger
 
 from . import coupler, database_actions, helpers, logfiles
 from .filelists import copy_files, resolve_symlinks
+from .file_tracker import FileTracker
 
 
 def run_job(config):
+    # Re-initialize the FileTracker for tidy phase
+    compute_checksums = config["general"].get("compute_file_checksums", False)
+    config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums)
+
     config["general"]["relevant_filetypes"] = [
         "log",
         "mon",

@@ -1135,6 +1135,8 @@ def copy_files(config, filetypes, source, target):
     # Determine phase based on source/target
     if source == "init" and target in ["thisrun", "work"]:
         phase = "prepare"
+    elif source == "thisrun" and target == "work":
+        phase = "prepare"
     elif source == "work" and target == "thisrun":
         phase = "tidy"
     else:
@@ -1851,13 +1853,13 @@ def dump_file_tracker_log(config):
         return config
 
     expid = config["general"]["expid"]
-    it_coupled_model_name = config["general"]["iterative_coupled_model"]
+    setup_name = config["general"]["setup_name"]
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
     phase = file_tracker.phase
 
     log_file_path = (
-        f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}_file_operations_{phase}_{datestamp}.yaml"
+        f"{thisrun_log_dir}/{expid}_{setup_name}_file_operations_{phase}_{datestamp}.yaml"
     )
 
     logger.info(f"DEBUG dump_file_tracker_log: Writing to {log_file_path}")

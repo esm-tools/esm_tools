@@ -127,44 +127,49 @@ class FilteredSearchPostRequest(BaseSearchPostRequest):
 
 
 def _inject_item_links(item: dict, base_url: str) -> dict:
-    """Return a copy of *item* with absolute self, root, and collection links.
+    """Return a copy of *item* with absolute self, root, parent and collection links.
 
     Items stored in the DB have only a fragment ``collection`` link
     (``href: "#collection-id"``).  STAC Browser needs absolute URLs to render
-    item cards and navigate to the parent collection.
+    item cards and navigate to the parent collection.  A ``parent`` link
+    (= the collection) is added so STAC validation passes.
     """
     item = dict(item)
     cid = item.get("collection", "")
     iid = item.get("id", "")
     item["links"] = [
         lnk for lnk in item.get("links", [])
-        if lnk.get("rel") not in ("self", "root", "collection")
+        if lnk.get("rel") not in ("self", "root", "parent", "collection")
     ]
     item["links"].extend([
         {"rel": "self",       "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items/{iid}"},
         {"rel": "root",       "type": "application/json",     "href": f"{base_url}/"},
+        {"rel": "parent",     "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
         {"rel": "collection", "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
     ])
     return item
 
 
 def _inject_collection_links(col: dict, base_url: str) -> dict:
-    """Return a copy of *col* with self, root, and items links set.
+    """Return a copy of *col* with self, root, parent, and items links set.
 
-    stac-fastapi stores collections with only a ``parent`` link.
-    STAC Browser needs ``items`` to know where to fetch items for a collection.
+    Collections stored in DuckDB have only a fragment ``parent`` link
+    (e.g. ``href: "#basic-001"``).  Replace it with the absolute root URL so
+    the STAC Browser "Up" button navigates to the landing page and STAC
+    validation passes (fragment-only hrefs fail the iri-reference format check).
     """
     col = dict(col)
     cid = col["id"]
-    # Remove any stale self/root/items links from stored JSON, then re-add
+    # Strip all links we manage so stale / fragment hrefs don't leak through
     col["links"] = [
         lnk for lnk in col.get("links", [])
-        if lnk.get("rel") not in ("self", "root", "items")
+        if lnk.get("rel") not in ("self", "root", "parent", "items")
     ]
     col["links"].extend([
-        {"rel": "self",  "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
-        {"rel": "root",  "type": "application/json",     "href": f"{base_url}/"},
-        {"rel": "items", "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items",
+        {"rel": "self",   "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
+        {"rel": "root",   "type": "application/json",     "href": f"{base_url}/"},
+        {"rel": "parent", "type": "application/json",     "href": f"{base_url}/"},
+        {"rel": "items",  "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items",
          "title": "Items"},
     ])
     return col

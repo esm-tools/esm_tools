@@ -104,6 +104,9 @@ class FilteredSearchPostRequest(BaseSearchPostRequest):
     # Use model_fields alias because JSON key contains a hyphen
     filter: Optional[Dict[str, Any]] = Field(default=None)
     filter_lang: Optional[str] = Field(default=None, alias="filter-lang")
+    # Opaque pagination token — encodes the integer offset of the next page.
+    # STAC Browser follows the ``next`` link body which includes this field.
+    token: Optional[str] = Field(default=None)
 
     model_config = {"populate_by_name": True}
 
@@ -175,15 +178,64 @@ def _parse_datetime_filter(datetime_str: str | None) -> dict:
 
 
 def _make_item_collection(
-    items: list[dict], total: int, limit: int
+    items: list[dict],
+    total: int,
+    limit: int,
+    offset: int = 0,
+    base_url: str = "",
+    method: str = "GET",
+    search_body: dict | None = None,
+    search_path: str = "/search",
 ) -> stac.ItemCollection:
-    """Wrap items list in an ItemCollection dict."""
+    """Wrap items list in an ItemCollection dict with pagination links."""
+    returned = len(items)
+    links: list[dict] = []
+
+    if base_url:
+        href_base = f"{base_url}{search_path}"
+
+        # first
+        if method == "POST" and search_body is not None:
+            first_body = {k: v for k, v in search_body.items() if k != "token"}
+            links.append({"rel": "first", "type": "application/geo+json",
+                          "method": "POST", "href": href_base, "body": first_body})
+        else:
+            links.append({"rel": "first", "type": "application/geo+json",
+                          "href": href_base})
+
+        # prev
+        if offset > 0:
+            prev_offset = max(0, offset - limit)
+            if method == "POST" and search_body is not None:
+                prev_body = {k: v for k, v in search_body.items() if k != "token"}
+                if prev_offset > 0:
+                    prev_body["token"] = str(prev_offset)
+                links.append({"rel": "prev", "type": "application/geo+json",
+                              "method": "POST", "href": href_base, "body": prev_body})
+            else:
+                prev_href = f"{href_base}?token={prev_offset}&limit={limit}" if prev_offset > 0 else href_base
+                links.append({"rel": "prev", "type": "application/geo+json", "href": prev_href})
+
+        # next
+        next_offset = offset + returned
+        if next_offset < total:
+            if method == "POST" and search_body is not None:
+                next_body = {**{k: v for k, v in search_body.items() if k != "token"},
+                             "token": str(next_offset)}
+                links.append({"rel": "next", "type": "application/geo+json",
+                              "method": "POST", "href": href_base, "body": next_body})
+            else:
+                links.append({"rel": "next", "type": "application/geo+json",
+                              "href": f"{href_base}?token={next_offset}&limit={limit}"})
+
     return stac.ItemCollection(
         type="FeatureCollection",
         features=items,
-        links=[],
+        links=links,
+        numberMatched=total,
+        numberReturned=returned,
         context={
-            "returned": len(items),
+            "returned": returned,
             "limit": limit,
             "matched": total,
         },
@@ -375,7 +427,12 @@ class DuckDBCatalogClient(BaseCoreClient):
                 db.close()
 
         patched = [_inject_item_links(it, base_url) for it in items[:limit]]
-        return _make_item_collection(patched, total, limit)
+        return _make_item_collection(
+            patched, total, limit,
+            offset=offset,
+            base_url=base_url,
+            search_path=f"/collections/{collection_id}/items",
+        )
 
     def get_item(self, item_id: str, collection_id: str, **kwargs) -> stac.Item:
         """GET /collections/{collection_id}/items/{item_id}"""
@@ -417,7 +474,9 @@ class DuckDBCatalogClient(BaseCoreClient):
         filter_props.update(_parse_datetime_filter(datetime))
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
-        return self._run_search(filter_props, limit or 10, base_url)
+        token = kwargs.get("token", "")
+        offset = int(token) if token and str(token).isdigit() else 0
+        return self._run_search(filter_props, limit or 10, base_url, offset=offset)
 
     def post_search(
         self, search_request: BaseSearchPostRequest, **kwargs
@@ -430,30 +489,61 @@ class DuckDBCatalogClient(BaseCoreClient):
             filter_props["id"] = search_request.ids[0]
         filter_props.update(_parse_datetime_filter(search_request.datetime))
 
-        # CQL2-JSON filter from STAC Browser "Additional filters" builder
-        if isinstance(search_request, FilteredSearchPostRequest) and search_request.filter:
-            filter_props.update(_parse_cql2_json(search_request.filter))
+        offset = 0
+        search_body: dict | None = None
+        if isinstance(search_request, FilteredSearchPostRequest):
+            # CQL2-JSON filter from STAC Browser "Additional filters" builder
+            if search_request.filter:
+                filter_props.update(_parse_cql2_json(search_request.filter))
+            # Pagination token encodes the integer offset
+            if search_request.token and search_request.token.isdigit():
+                offset = int(search_request.token)
+            # Build a serializable body for pagination next/prev links
+            search_body = {}
+            if search_request.filter:
+                search_body["filter"] = search_request.filter
+                search_body["filter-lang"] = search_request.filter_lang or "cql2-json"
+            if search_request.collections:
+                search_body["collections"] = search_request.collections
+            if search_request.datetime:
+                search_body["datetime"] = search_request.datetime
 
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
         limit = search_request.limit or 10
-        return self._run_search(filter_props, limit, base_url)
+        if search_body is not None:
+            search_body["limit"] = limit
+        return self._run_search(
+            filter_props, limit, base_url,
+            offset=offset, method="POST", search_body=search_body,
+        )
 
     # ------------------------------------------------------------------
     # Internal search
     # ------------------------------------------------------------------
 
-    def _run_search(self, filter_props: dict, limit: int, base_url: str = "") -> stac.ItemCollection:
+    def _run_search(
+        self,
+        filter_props: dict,
+        limit: int,
+        base_url: str = "",
+        offset: int = 0,
+        method: str = "GET",
+        search_body: dict | None = None,
+    ) -> stac.ItemCollection:
         items: list[dict] = []
         total = 0
         dbs = self._open_catalogs()
         try:
             for db in dbs:
-                db_items, db_total = db.search_items(filter_props, limit=limit)
+                db_items, db_total = db.search_items(filter_props, limit=limit, offset=offset)
                 items.extend(db_items)
                 total += db_total
         finally:
             for db in dbs:
                 db.close()
         patched = [_inject_item_links(it, base_url) for it in items[:limit]]
-        return _make_item_collection(patched, total, limit)
+        return _make_item_collection(
+            patched, total, limit,
+            offset=offset, base_url=base_url, method=method, search_body=search_body,
+        )

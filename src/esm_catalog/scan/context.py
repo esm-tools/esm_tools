@@ -6,10 +6,10 @@ the original scan → item → insert flow had no step that resolved this value.
 
 `resolve_context()` must be called BEFORE make_item(). It returns a
 CollectionContext dataclass that carries experiment_id, component, and the
-derived collection_id. If context cannot be resolved, it raises ValueError
-rather than returning a NULL-collection context — a silent NULL is worse than
-a failed insert because it produces a catalog that appears to work but cannot
-be navigated via STAC Browser's collection tree.
+derived collection_id. If context cannot be resolved, it raises
+CollectionContextError rather than returning a NULL-collection context — a
+silent NULL is worse than a failed insert because it produces a catalog that
+appears to work but cannot be navigated via STAC Browser's collection tree.
 """
 
 from __future__ import annotations
@@ -18,6 +18,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from loguru import logger
+
+
+class CollectionContextError(ValueError):
+    """Raised when collection context cannot be resolved for a path.
+
+    This is a normal outcome for files outside the outdata directory tree
+    (work/, restart/, input/, config/, log/ etc.) and should be logged at
+    DEBUG level, not ERROR.
+    """
 
 
 @dataclass
@@ -57,7 +66,7 @@ def resolve_context(
     ctx = _from_config(path, config) or _from_path(path)
 
     if ctx is None:
-        raise ValueError(
+        raise CollectionContextError(
             f"Cannot resolve collection context for: {path}\n"
             "Expected one of:\n"
             "  - ESM-Tools config with general.expid and component outdata_dir\n"

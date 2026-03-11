@@ -65,7 +65,7 @@ def scan(ctx, path, db_path, config_path):
     All supported files in a directory are scanned recursively.
     """
     from esm_catalog.integration.config import load_config
-    from esm_catalog.scan.context import resolve_context
+    from esm_catalog.scan.context import CollectionContextError, resolve_context
     from esm_catalog.scan.detect import UnsupportedFormatError, scan_file
     from esm_catalog.stac.extensions.hpc import add_hpc_extension
     from esm_catalog.stac.item import make_item
@@ -119,6 +119,8 @@ def scan(ctx, path, db_path, config_path):
                 ok += 1
             except UnsupportedFormatError:
                 logger.debug("Skipping unsupported file: {}", fp)
+            except CollectionContextError:
+                logger.debug("Skipping (not an outdata file): {}", fp)
             except ValueError as e:
                 logger.error("Skipping {}: {}", fp, e)
             except Exception as e:

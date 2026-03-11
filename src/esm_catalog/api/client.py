@@ -35,6 +35,28 @@ _EXTRA_CONFORMANCE = [
 ]
 
 
+def _inject_collection_links(col: dict, base_url: str) -> dict:
+    """Return a copy of *col* with self, root, and items links set.
+
+    stac-fastapi stores collections with only a ``parent`` link.
+    STAC Browser needs ``items`` to know where to fetch items for a collection.
+    """
+    col = dict(col)
+    cid = col["id"]
+    # Remove any stale self/root/items links from stored JSON, then re-add
+    col["links"] = [
+        lnk for lnk in col.get("links", [])
+        if lnk.get("rel") not in ("self", "root", "items")
+    ]
+    col["links"].extend([
+        {"rel": "self",  "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
+        {"rel": "root",  "type": "application/json",     "href": f"{base_url}/"},
+        {"rel": "items", "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items",
+         "title": "Items"},
+    ])
+    return col
+
+
 def _parse_datetime_filter(datetime_str: str | None) -> dict:
     """Convert STAC datetime parameter to filter_props entries.
 
@@ -133,6 +155,14 @@ class DuckDBCatalogClient(BaseCoreClient):
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
 
+        # Queryables link — required for STAC Browser "Additional Filtering" builder
+        lp["links"].append({
+            "rel": "queryables",
+            "type": "application/schema+json",
+            "title": "Queryables",
+            "href": f"{base_url}/queryables",
+        })
+
         dbs = self._open_catalogs()
         try:
             seen: set[str] = set()
@@ -166,6 +196,9 @@ class DuckDBCatalogClient(BaseCoreClient):
                 if key not in ("limit", "offset", "token"):
                     q_params[key] = val
 
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
+
         dbs = self._open_catalogs()
         try:
             all_cols: list[dict] = []
@@ -176,7 +209,7 @@ class DuckDBCatalogClient(BaseCoreClient):
                 )
                 for col in matched:
                     if col["id"] not in seen:
-                        all_cols.append(col)
+                        all_cols.append(_inject_collection_links(col, base_url))
                         seen.add(col["id"])
         finally:
             for db in dbs:
@@ -191,11 +224,15 @@ class DuckDBCatalogClient(BaseCoreClient):
 
     def get_collection(self, collection_id: str, **kwargs) -> stac.Collection:
         """GET /collections/{collection_id}"""
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
+
         dbs = self._open_catalogs()
         try:
             for db in dbs:
                 col = db.get_collection(collection_id)
                 if col is not None:
+                    col = _inject_collection_links(col, base_url)
                     return stac.Collection(**col)
         finally:
             for db in dbs:

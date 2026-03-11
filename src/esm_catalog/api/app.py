@@ -86,6 +86,50 @@ def create_app(
         api_version=version,
     )
 
+    # /queryables endpoint — required for STAC Browser "Additional Filtering" CQL2 builder.
+    # The landing page already advertises rel=queryables pointing here; without this endpoint
+    # the browser falls back to hiding the filter UI.
+    @api.app.get(
+        "/queryables",
+        response_model=None,
+        include_in_schema=True,
+        summary="Queryable properties for CQL2 filtering",
+        tags=["STAC API - Filter Extension"],
+    )
+    def queryables():
+        return {
+            "$schema": "https://json-schema.org/draft/07/schema",
+            "$id": "/queryables",
+            "type": "object",
+            "title": "Queryable properties for ESM-Tools STAC Catalog",
+            "description": (
+                "Properties that can be used as filter predicates in CQL2 expressions."
+            ),
+            "properties": {
+                "datetime": {
+                    "title": "Datetime",
+                    "type": "string",
+                    "format": "date-time",
+                },
+                "experiment": {
+                    "title": "Experiment ID",
+                    "type": "string",
+                },
+                "component": {
+                    "title": "Model Component",
+                    "type": "string",
+                },
+                "variable": {
+                    "title": "Variable",
+                    "type": "string",
+                },
+                "collection": {
+                    "title": "Collection",
+                    "type": "string",
+                },
+            },
+        }
+
     return api
 
 

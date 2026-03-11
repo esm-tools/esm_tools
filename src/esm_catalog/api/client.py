@@ -133,6 +133,10 @@ def _inject_item_links(item: dict, base_url: str) -> dict:
     (``href: "#collection-id"``).  STAC Browser needs absolute URLs to render
     item cards and navigate to the parent collection.  A ``parent`` link
     (= the collection) is added so STAC validation passes.
+
+    Asset hrefs that are bare filesystem paths (starting with ``/``) are
+    prefixed with ``file://`` so they satisfy the ``iri-reference`` format
+    required by the STAC JSON schema.
     """
     item = dict(item)
     cid = item.get("collection", "")
@@ -147,6 +151,27 @@ def _inject_item_links(item: dict, base_url: str) -> dict:
         {"rel": "parent",     "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
         {"rel": "collection", "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
     ])
+    # Fix asset hrefs: bare absolute paths must be proper file:// URIs
+    if item.get("assets"):
+        fixed_assets = {}
+        for key, asset in item["assets"].items():
+            href = asset.get("href", "")
+            if href.startswith("/"):
+                asset = dict(asset)
+                asset["href"] = "file://" + href
+            fixed_assets[key] = asset
+        item["assets"] = fixed_assets
+
+    # Rewrite the HPC extension URL to our local schema endpoint so STAC
+    # Browser can actually fetch and validate against it.
+    _HPC_GITHUB_URL = "https://esm-tools.github.io/stac-hpc-extension/v0.1.0/schema.json"
+    _hpc_local = f"{base_url}/stac-extensions/hpc/v0.1.0/schema.json"
+    if base_url and _HPC_GITHUB_URL in item.get("stac_extensions", []):
+        item["stac_extensions"] = [
+            _hpc_local if u == _HPC_GITHUB_URL else u
+            for u in item["stac_extensions"]
+        ]
+
     return item
 
 

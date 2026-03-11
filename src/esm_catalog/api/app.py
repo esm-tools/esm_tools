@@ -152,6 +152,68 @@ def create_app(
             },
         }
 
+    # GET /stac-extensions/hpc/v0.1.0/schema.json
+    # Serves the HPC storage extension schema locally so STAC Browser can
+    # validate items against it.  The canonical URL
+    # (https://esm-tools.github.io/stac-hpc-extension/v0.1.0/schema.json)
+    # is not yet published; items' stac_extensions are rewritten at serve time
+    # to point here instead.
+    @api.app.get(
+        "/stac-extensions/hpc/v0.1.0/schema.json",
+        response_model=None,
+        include_in_schema=False,
+    )
+    def hpc_schema(request: Request):
+        base_url = str(request.base_url).rstrip("/")
+        schema_id = f"{base_url}/stac-extensions/hpc/v0.1.0/schema.json"
+        return {
+            "$schema": "http://json-schema.org/draft-07/schema#",
+            "$id": schema_id,
+            "title": "HPC Storage Extension",
+            "description": "STAC extension for HPC facility and storage-tier metadata.",
+            "oneOf": [{"$ref": "#/definitions/stac_item"}],
+            "definitions": {
+                "stac_item": {
+                    "allOf": [
+                        {"$ref": "#/definitions/hpc_props"},
+                        {"$ref": "#/definitions/hpc_assets"},
+                    ]
+                },
+                "hpc_props": {
+                    "type": "object",
+                    "properties": {
+                        "properties": {
+                            "type": "object",
+                            "properties": {
+                                "hpc:facility":     {"type": "string",  "title": "HPC facility name"},
+                                "hpc:system":       {"type": "string",  "title": "HPC system name"},
+                                "hpc:storage_tier": {"type": "string",  "title": "Storage tier",
+                                                     "enum": ["hot", "warm", "cold"]},
+                                "hpc:last_access":  {"type": "string",  "title": "Last access time",
+                                                     "format": "date-time"},
+                            },
+                        }
+                    },
+                },
+                "hpc_assets": {
+                    "type": "object",
+                    "properties": {
+                        "assets": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "object",
+                                "properties": {
+                                    "hpc:storage_type":       {"type": "string"},
+                                    "hpc:state":              {"type": "string"},
+                                    "hpc:recall_time_estimate": {"type": "string"},
+                                },
+                            },
+                        }
+                    },
+                },
+            },
+        }
+
     # POST /format — OGC CQL2 format-negotiation probe issued by STAC Browser.
     # Not required for filtering to work (filters travel as CQL2-JSON in /search),
     # but returning 200 silences the 404 log noise.

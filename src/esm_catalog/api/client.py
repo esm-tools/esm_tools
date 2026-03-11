@@ -450,14 +450,24 @@ class DuckDBCatalogClient(BaseCoreClient):
         **kwargs,
     ) -> stac.ItemCollection:
         """GET /collections/{collection_id}/items"""
-        offset = int(token) if token and token.isdigit() else 0
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
+
+        # stac-fastapi does not forward unknown query params via the method
+        # signature, so read token (and limit) directly from the request.
+        if request is not None:
+            qp = request.query_params
+            if token is None:
+                token = qp.get("token")
+            raw_limit = qp.get("limit")
+            if raw_limit and raw_limit.isdigit():
+                limit = int(raw_limit)
+
+        offset = int(token) if token and str(token).isdigit() else 0
         filter_props: dict = {"collection": collection_id}
         if bbox:
             filter_props["bbox"] = bbox
         filter_props.update(_parse_datetime_filter(datetime))
-
-        request = kwargs.get("request")
-        base_url = str(request.base_url).rstrip("/") if request else ""
 
         items: list[dict] = []
         total = 0

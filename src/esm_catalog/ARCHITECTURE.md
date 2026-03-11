@@ -464,8 +464,11 @@ Browser can resolve these to human-readable definitions.
 | `/` | GET | Landing page / root catalog + conformance declaration |
 | `/collections` | GET | List/search collections — supports CQL2 filter |
 | `/collections/{id}` | GET | Single collection |
-| `/collections/{id}/items` | GET | Items in collection |
+| `/collections/{id}/items` | GET | Items in collection — offset pagination via `token` query param |
 | `/search` | GET/POST | Query items — supports CQL2 filter |
+| `/queryables` | GET | JSON Schema of filterable properties with enum lists from live catalog |
+| `/stac-extensions/hpc/v0.1.0/schema.json` | GET | HPC storage extension schema (served locally; published URL not yet live) |
+| `/format` | POST | OGC CQL2 format-negotiation stub (silences STAC Browser 404 probe) |
 | `/docs` | GET | Swagger UI |
 
 **Item search** custom query parameters (`/search`):
@@ -549,13 +552,18 @@ def search_collections(self, filter_props, limit, offset):
 ### CQL2 filter parsing
 
 Both `/search` and `/collections` accept `filter` (expression) and `filter-lang`
-(`cql2-text` or `cql2-json`). A dedicated parser in `api/server.py` translates CQL2
+(`cql2-text` or `cql2-json`). A dedicated parser in `api/client.py` translates CQL2
 expressions into the property dict consumed by the DuckDB query layer:
 
 ```
 filter=experiment='basic-001' AND model='fesom'
   →  {"experiment": ("=", "basic-001"), "model": ("=", "fesom")}
 ```
+
+**Temporal literal unwrapping:** STAC Browser sends datetime values as CQL2-JSON
+objects (`{"timestamp": "2000-01-01T00:00:00Z"}`) rather than bare strings.
+`_cql2_value()` unwraps these before passing values to DuckDB so that TIMESTAMPTZ
+binding works correctly.
 
 ### Response formats
 
@@ -692,6 +700,15 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [x] CLI `serve` command wired to `create_app()` (was referencing stub `api.server`)
 - [x] Pytest tests: `tests/test_api.py` — 34 tests covering landing page, conformance, collections CRUD, items CRUD, GET/POST search with datetime range, multi-catalog federation, CORS headers, client init validation (211 total tests passing)
 - [x] Decision: STAC Browser is **external** — use radiantearth hosted instance; no fork required in this repo
+- [x] CQL2-JSON filtering for `/search` (POST body `filter` field) and `/collections` (query param)
+- [x] `GET /queryables` — JSON Schema with enum lists populated via `DISTINCT` queries on live catalog; enables STAC Browser dropdown pickers in "Additional filters"
+- [x] `GET /stac-extensions/hpc/v0.1.0/schema.json` — serves HPC extension schema locally; canonical GitHub Pages URL rewired in `stac_extensions` at serve time so STAC Browser can validate
+- [x] `POST /format` — OGC CQL2 format-negotiation stub; silences 404 log noise from STAC Browser probe
+- [x] Absolute link injection for collections (`self`, `root`, `parent`, `items`) and items (`self`, `root`, `parent`, `collection`) — stored fragment links are not valid IRIs and break STAC validation and Browser navigation
+- [x] Asset `href` normalisation — bare filesystem paths prefixed with `file://` to pass `iri-reference` format validation
+- [x] Pagination for POST `/search` — `numberMatched`, `numberReturned`, and `first`/`prev`/`next` links with full body replay; token encodes integer offset
+- [x] Pagination for GET `/collections/{id}/items` — `token` and `limit` read directly from `request.query_params` (stac-fastapi does not forward unknown query params via method signature)
+- [x] CQL2 temporal literal unwrapping (`_cql2_value`) — STAC Browser sends `{"timestamp": "..."}` dicts; unwrapped before DuckDB binding
 - [ ] JSON-LD vocabulary links (deferred to Phase 5)
 - [ ] User documentation: `docs/api_and_browser.md` — federation config, `esm-catalog serve` usage, STAC Browser URL pattern, supported filter syntax
 
@@ -705,7 +722,10 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 
 ### Phase 5: Hardening
 - [ ] Unstructured grid representation (FESOM — see Open Questions)
-- [ ] ECHAM GRIB support
+- [x] ECHAM GRIB support (`scan/grib.py`):
+  - `_extract_dimensions_grib()` — builds `cube:dimensions` from all open hypercube datasets; handles temporal, spatial (lat/lon/vertical), spectral (`values`), and ordinal axes
+  - paramId=0 expansion — ECHAM `_accw`/`_co2` files store all parameters under paramId=0; cfgrib collapses them to a single "unknown" variable; when a `.codes` table is available, that entry is expanded into one variable per codes table parameter (all share the same grid/dimensions)
+  - `CollectionContextError(ValueError)` in `scan/context.py` — non-outdata paths (work/, restart/, input/, etc.) now caught at DEBUG level, not ERROR; genuine errors still log at ERROR
 - [ ] `hpc-storage` extension spec document (currently undocumented custom extension)
 - [ ] Checkpoint/resume for interrupted batch scans
 - [ ] Pytest tests: `tests/test_scan_grib.py` — ECHAM GRIB fixtures; `tests/test_scan_unstructured.py` — FESOM mesh datacube representation
@@ -715,7 +735,7 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 
 ## Open Questions
 
-1. **ECHAM GRIB support** - Pavan's code only handles FESOM NetCDF. GRIB + .codes files need work.
+1. **ECHAM GRIB support** — Substantially addressed: `_extract_dimensions_grib()` populates `cube:dimensions` from all hypercube datasets; paramId=0 expansion recovers variable names for `_accw`/`_co2` files via the companion `.codes` table. Remaining gap: variables whose paramId is non-zero but not in the standard eccodes tables appear as "unknown" within mixed datasets (e.g. the `regular_gg+surface` hypercube of the main `_echam` file contains some unrecognised parameters). These residual unknowns do not block catalog construction — they simply appear as `unknown` in `cube:variables` alongside properly-named variables.
 
 2. **Unstructured grids** - FESOM uses unstructured mesh. How to represent in datacube extension?
 

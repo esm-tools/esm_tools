@@ -108,6 +108,28 @@ class FilteredSearchPostRequest(BaseSearchPostRequest):
     model_config = {"populate_by_name": True}
 
 
+def _inject_item_links(item: dict, base_url: str) -> dict:
+    """Return a copy of *item* with absolute self, root, and collection links.
+
+    Items stored in the DB have only a fragment ``collection`` link
+    (``href: "#collection-id"``).  STAC Browser needs absolute URLs to render
+    item cards and navigate to the parent collection.
+    """
+    item = dict(item)
+    cid = item.get("collection", "")
+    iid = item.get("id", "")
+    item["links"] = [
+        lnk for lnk in item.get("links", [])
+        if lnk.get("rel") not in ("self", "root", "collection")
+    ]
+    item["links"].extend([
+        {"rel": "self",       "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items/{iid}"},
+        {"rel": "root",       "type": "application/json",     "href": f"{base_url}/"},
+        {"rel": "collection", "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
+    ])
+    return item
+
+
 def _inject_collection_links(col: dict, base_url: str) -> dict:
     """Return a copy of *col* with self, root, and items links set.
 
@@ -337,6 +359,9 @@ class DuckDBCatalogClient(BaseCoreClient):
             filter_props["bbox"] = bbox
         filter_props.update(_parse_datetime_filter(datetime))
 
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
+
         items: list[dict] = []
         total = 0
         dbs = self._open_catalogs()
@@ -349,10 +374,14 @@ class DuckDBCatalogClient(BaseCoreClient):
             for db in dbs:
                 db.close()
 
-        return _make_item_collection(items[:limit], total, limit)
+        patched = [_inject_item_links(it, base_url) for it in items[:limit]]
+        return _make_item_collection(patched, total, limit)
 
     def get_item(self, item_id: str, collection_id: str, **kwargs) -> stac.Item:
         """GET /collections/{collection_id}/items/{item_id}"""
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
+
         dbs = self._open_catalogs()
         try:
             for db in dbs:
@@ -360,7 +389,7 @@ class DuckDBCatalogClient(BaseCoreClient):
                     {"collection": collection_id, "id": item_id}, limit=1
                 )
                 if results:
-                    return stac.Item(**results[0])
+                    return stac.Item(**_inject_item_links(results[0], base_url))
         finally:
             for db in dbs:
                 db.close()
@@ -386,7 +415,9 @@ class DuckDBCatalogClient(BaseCoreClient):
         if ids and len(ids) == 1:
             filter_props["id"] = ids[0]
         filter_props.update(_parse_datetime_filter(datetime))
-        return self._run_search(filter_props, limit or 10)
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
+        return self._run_search(filter_props, limit or 10, base_url)
 
     def post_search(
         self, search_request: BaseSearchPostRequest, **kwargs
@@ -403,14 +434,16 @@ class DuckDBCatalogClient(BaseCoreClient):
         if isinstance(search_request, FilteredSearchPostRequest) and search_request.filter:
             filter_props.update(_parse_cql2_json(search_request.filter))
 
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
         limit = search_request.limit or 10
-        return self._run_search(filter_props, limit)
+        return self._run_search(filter_props, limit, base_url)
 
     # ------------------------------------------------------------------
     # Internal search
     # ------------------------------------------------------------------
 
-    def _run_search(self, filter_props: dict, limit: int) -> stac.ItemCollection:
+    def _run_search(self, filter_props: dict, limit: int, base_url: str = "") -> stac.ItemCollection:
         items: list[dict] = []
         total = 0
         dbs = self._open_catalogs()
@@ -422,4 +455,5 @@ class DuckDBCatalogClient(BaseCoreClient):
         finally:
             for db in dbs:
                 db.close()
-        return _make_item_collection(items[:limit], total, limit)
+        patched = [_inject_item_links(it, base_url) for it in items[:limit]]
+        return _make_item_collection(patched, total, limit)

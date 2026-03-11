@@ -155,8 +155,18 @@ def _extract_time_range(ds: xr.Dataset) -> tuple[datetime | None, datetime | Non
         times = time_coord.values
         if len(times) == 0:
             return None, None
-        t0 = times[0]
-        t1 = times[-1]
+        t0, t1 = times[0], times[-1]
+
+        # Integer-encoded time: xarray could not decode (non-standard calendar or
+        # missing units).  Decode manually via cftime using the coordinate attributes.
+        if np.issubdtype(times.dtype, np.integer):
+            units = time_coord.attrs.get("units", "")
+            calendar = time_coord.attrs.get("calendar", "standard")
+            if not units:
+                return None, None
+            decoded = cftime.num2date([t0, t1], units=units, calendar=calendar)
+            t0, t1 = decoded[0], decoded[1]
+
         if hasattr(t0, "year"):
             # cftime object
             t0 = datetime(t0.year, t0.month, t0.day, t0.hour, t0.minute, t0.second,
@@ -182,9 +192,26 @@ def _time_extent_iso(coord) -> list:
     if coord is None:
         return [None, None]
     try:
+        import cftime
         vals = coord.values
-        t0 = vals[0]
-        t1 = vals[-1]
+        t0, t1 = vals[0], vals[-1]
+
+        # Integer-encoded time: decode via CF units/calendar attributes
+        if np.issubdtype(vals.dtype, np.integer):
+            units = coord.attrs.get("units", "")
+            calendar = coord.attrs.get("calendar", "standard")
+            if not units:
+                return [None, None]
+            decoded = cftime.num2date([t0, t1], units=units, calendar=calendar)
+            t0, t1 = decoded[0], decoded[1]
+
+        if hasattr(t0, "year"):
+            # cftime object — convert to ISO string via datetime
+            t0_dt = datetime(t0.year, t0.month, t0.day, t0.hour, t0.minute, t0.second,
+                             tzinfo=timezone.utc)
+            t1_dt = datetime(t1.year, t1.month, t1.day, t1.hour, t1.minute, t1.second,
+                             tzinfo=timezone.utc)
+            return [t0_dt.isoformat(), t1_dt.isoformat()]
         if hasattr(t0, "isoformat"):
             return [t0.isoformat(), t1.isoformat()]
         t0_dt = _np64_to_datetime(t0)

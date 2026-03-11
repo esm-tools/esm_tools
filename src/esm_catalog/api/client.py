@@ -58,6 +58,21 @@ _CQL2_OP_INVERSE: dict[str, str] = {
 }
 
 
+def _cql2_value(val: Any) -> Any:
+    """Unwrap a CQL2 literal object into a plain Python value.
+
+    CQL2-JSON represents temporal literals as ``{"timestamp": "..."}`` or
+    ``{"date": "..."}`` dicts rather than bare strings.  Return the inner
+    string so the DB layer receives a value it can bind as TIMESTAMPTZ.
+    """
+    if isinstance(val, dict):
+        if "timestamp" in val:
+            return val["timestamp"]
+        if "date" in val:
+            return val["date"]
+    return val
+
+
 def _parse_cql2_json(expr: dict | None) -> dict:
     """Parse a CQL2-JSON filter expression into a flat ``filter_props`` dict.
 
@@ -83,11 +98,11 @@ def _parse_cql2_json(expr: dict | None) -> dict:
     if sql_op and len(args) == 2:
         left, right = args
         if isinstance(left, dict) and "property" in left:
-            return {left["property"]: (sql_op, right)}
+            return {left["property"]: (sql_op, _cql2_value(right))}
         if isinstance(right, dict) and "property" in right:
             # Reversed — invert the operator
             inv = _CQL2_OP_INVERSE.get(sql_op, sql_op)
-            return {right["property"]: (inv, left)}
+            return {right["property"]: (inv, _cql2_value(left))}
 
     # OR, NOT, spatial ops — return empty (no-op filter)
     return {}

@@ -25,14 +25,22 @@ from stac_fastapi.types.search import BaseSearchPostRequest
 
 from esm_catalog.storage.duckdb import CatalogDB
 
-# Extra conformance classes beyond the stac-fastapi defaults:
-# collection-search   → "Search for Collections" tab in STAC Browser
-# item-search#filter  → "Additional filters" CQL2 builder in STAC Browser
+# Extra conformance classes beyond the stac-fastapi defaults.
+# STAC Browser 5 checks for the OGC CQL2 classes to decide whether to show
+# the "Additional filters" builder, in addition to the STAC-API filter class.
 _EXTRA_CONFORMANCE = [
     "https://api.stacspec.org/v1.0.0/collection-search",
     "https://api.stacspec.org/v1.0.0/collection-search#filter",
     "https://api.stacspec.org/v1.0.0/item-search#filter",
+    # OGC API – Features Part 3 (CQL2) conformance classes
+    "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter",
+    "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter",
+    "http://www.opengis.net/spec/cql2/1.0/conf/cql2-text",
+    "http://www.opengis.net/spec/cql2/1.0/conf/cql2-json",
 ]
+
+# OGC rel for queryables link — STAC Browser checks for this exact URI
+_OGC_QUERYABLES_REL = "http://www.opengis.net/def/rel/ogc/1.0/queryables"
 
 
 def _inject_collection_links(col: dict, base_url: str) -> dict:
@@ -155,9 +163,9 @@ class DuckDBCatalogClient(BaseCoreClient):
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
 
-        # Queryables link — required for STAC Browser "Additional Filtering" builder
+        # Queryables link — STAC Browser checks for the full OGC rel URI
         lp["links"].append({
-            "rel": "queryables",
+            "rel": _OGC_QUERYABLES_REL,
             "type": "application/schema+json",
             "title": "Queryables",
             "href": f"{base_url}/queryables",

@@ -21,6 +21,7 @@ from typing import List, Union
 
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware import Middleware
+from starlette.requests import Request
 from stac_fastapi.api.app import StacApi
 from stac_fastapi.types.config import ApiSettings
 
@@ -87,8 +88,9 @@ def create_app(
     )
 
     # /queryables endpoint — required for STAC Browser "Additional Filtering" CQL2 builder.
-    # The landing page already advertises rel=queryables pointing here; without this endpoint
-    # the browser falls back to hiding the filter UI.
+    # The landing page advertises rel=http://www.opengis.net/def/rel/ogc/1.0/queryables
+    # pointing here.  We populate enum lists from the live catalogs so STAC Browser
+    # shows dropdown pickers rather than free-text fields.
     @api.app.get(
         "/queryables",
         response_model=None,
@@ -96,37 +98,55 @@ def create_app(
         summary="Queryable properties for CQL2 filtering",
         tags=["STAC API - Filter Extension"],
     )
-    def queryables():
+    def queryables(request: Request):
+        base_url = str(request.base_url).rstrip("/")
+
+        # Collect unique values for enum dropdowns from the live catalogs
+        experiments: list[str] = []
+        components: list[str] = []
+        variables: list[str] = []
+        collections: list[str] = []
+        for path in catalogs:
+            p = Path(path)
+            if not p.exists():
+                continue
+            from esm_catalog.storage.duckdb import CatalogDB
+            db = CatalogDB(p)
+            try:
+                for col in db.iter_collections():
+                    cid = col["id"]
+                    if cid not in collections:
+                        collections.append(cid)
+                    props = col.get("summaries", {})
+                    for exp in props.get("experiment", []):
+                        if exp not in experiments:
+                            experiments.append(exp)
+                    for comp in props.get("component", []):
+                        if comp not in components:
+                            components.append(comp)
+                    for var in props.get("variable:id", []):
+                        if var not in variables:
+                            variables.append(var)
+            finally:
+                db.close()
+
+        def _str_prop(title: str, enum: list[str]) -> dict:
+            p: dict = {"title": title, "type": "string"}
+            if enum:
+                p["enum"] = sorted(enum)
+            return p
+
         return {
-            "$schema": "https://json-schema.org/draft/07/schema",
-            "$id": "/queryables",
+            "$schema": "https://json-schema.org/draft/2019-09/schema",
+            "$id": f"{base_url}/queryables",
             "type": "object",
             "title": "Queryable properties for ESM-Tools STAC Catalog",
-            "description": (
-                "Properties that can be used as filter predicates in CQL2 expressions."
-            ),
             "properties": {
-                "datetime": {
-                    "title": "Datetime",
-                    "type": "string",
-                    "format": "date-time",
-                },
-                "experiment": {
-                    "title": "Experiment ID",
-                    "type": "string",
-                },
-                "component": {
-                    "title": "Model Component",
-                    "type": "string",
-                },
-                "variable": {
-                    "title": "Variable",
-                    "type": "string",
-                },
-                "collection": {
-                    "title": "Collection",
-                    "type": "string",
-                },
+                "datetime":   {"title": "Datetime",       "type": "string", "format": "date-time"},
+                "collection": _str_prop("Collection",     collections),
+                "experiment": _str_prop("Experiment ID",  experiments),
+                "component":  _str_prop("Model Component", components),
+                "variable":   _str_prop("Variable",       variables),
             },
         }
 

@@ -141,6 +141,17 @@ def _inject_item_links(item: dict, base_url: str) -> dict:
     item = dict(item)
     cid = item.get("collection", "")
     iid = item.get("id", "")
+
+    # Inject a human-readable title so STAC Browser item cards show the
+    # collection name.  Without a title the card displays only the item ID
+    # (e.g. "st.echam.185001") with no indication of which collection it
+    # belongs to — a problem when viewing cross-collection search results.
+    props = item.get("properties", {})
+    if not props.get("title") and cid:
+        variable = props.get("variable", "")
+        item["properties"] = dict(props)
+        item["properties"]["title"] = f"{cid} · {variable}" if variable else cid
+
     item["links"] = [
         lnk for lnk in item.get("links", [])
         if lnk.get("rel") not in ("self", "root", "parent", "collection")

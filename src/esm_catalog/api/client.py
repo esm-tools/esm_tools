@@ -20,10 +20,19 @@ from typing import Any, Dict, List, Optional, Union
 import attr
 from fastapi import HTTPException
 from stac_fastapi.types import stac
-from stac_fastapi.types.core import BaseCoreClient
+from stac_fastapi.types.core import BASE_CONFORMANCE_CLASSES, BaseCoreClient
 from stac_fastapi.types.search import BaseSearchPostRequest
 
 from esm_catalog.storage.duckdb import CatalogDB
+
+# Extra conformance classes beyond the stac-fastapi defaults:
+# collection-search   → "Search for Collections" tab in STAC Browser
+# item-search#filter  → "Additional filters" CQL2 builder in STAC Browser
+_EXTRA_CONFORMANCE = [
+    "https://api.stacspec.org/v1.0.0/collection-search",
+    "https://api.stacspec.org/v1.0.0/collection-search#filter",
+    "https://api.stacspec.org/v1.0.0/item-search#filter",
+]
 
 
 def _parse_datetime_filter(datetime_str: str | None) -> dict:
@@ -74,6 +83,9 @@ class DuckDBCatalogClient(BaseCoreClient):
     """
 
     catalogs: List[Union[str, Path]] = attr.ib(factory=list)
+    base_conformance_classes: List[str] = attr.ib(
+        factory=lambda: BASE_CONFORMANCE_CLASSES + _EXTRA_CONFORMANCE
+    )
 
     def __attrs_post_init__(self):
         if not self.catalogs:
@@ -105,6 +117,40 @@ class DuckDBCatalogClient(BaseCoreClient):
                     collections.append(col)
                     seen.add(col["id"])
         return collections
+
+    # ------------------------------------------------------------------
+    # Landing page — override to add child links for STAC Browser Browse
+    # ------------------------------------------------------------------
+
+    def landing_page(self, **kwargs) -> stac.LandingPage:
+        """Extend the default landing page with per-collection child links.
+
+        STAC Browser Browse mode navigates via ``child`` links.  stac-fastapi's
+        default landing page only includes a ``data`` link to ``/collections``;
+        without explicit ``child`` links the Browse view is empty.
+        """
+        lp = super().landing_page(**kwargs)
+        request = kwargs.get("request")
+        base_url = str(request.base_url).rstrip("/") if request else ""
+
+        dbs = self._open_catalogs()
+        try:
+            seen: set[str] = set()
+            for db in dbs:
+                for col in db.iter_collections():
+                    if col["id"] in seen:
+                        continue
+                    seen.add(col["id"])
+                    lp["links"].append({
+                        "rel": "child",
+                        "type": "application/json",
+                        "title": col.get("title", col["id"]),
+                        "href": f"{base_url}/collections/{col['id']}",
+                    })
+        finally:
+            for db in dbs:
+                db.close()
+        return lp
 
     # ------------------------------------------------------------------
     # BaseCoreClient abstract methods

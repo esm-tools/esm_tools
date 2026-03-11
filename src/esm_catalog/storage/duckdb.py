@@ -159,6 +159,19 @@ class CatalogDB:
                     [collection_id, key, str(val)],
                 )
 
+        # Index each variable name in multi-variable files (GRIB).
+        # Stored individually so collection-level searches also work.
+        for var_name in props.get("variables", []):
+            if var_name:
+                self.db.execute(
+                    """
+                    INSERT OR IGNORE INTO collection_item_props
+                        (collection_id, property, value)
+                    VALUES (?, ?, ?)
+                    """,
+                    [collection_id, "variables", str(var_name)],
+                )
+
     def get_collection_item_props(self, collection_id: str) -> dict:
         """Return {property: set_of_values} index for *collection_id*."""
         rows = self.db.execute(
@@ -198,6 +211,16 @@ class CatalogDB:
                     # datetime and datetime_end map to the native TIMESTAMPTZ column
                     col = "datetime"
                     conditions.append(f"{col} {op} ?::TIMESTAMPTZ")
+                    params.append(val)
+                elif field == "variables":
+                    # Array containment: check if val appears in the
+                    # $.properties.variables JSON array (multi-variable files).
+                    conditions.append(
+                        "list_contains("
+                        "    json_extract(data, '$.properties.variables')::VARCHAR[],"
+                        "    ?"
+                        ")"
+                    )
                     params.append(val)
                 else:
                     # JSON path query for item properties

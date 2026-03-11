@@ -60,6 +60,17 @@ def make_item(path: Path, metadata: dict, ctx, config: dict | None = None) -> di
     if metadata.get("conventions"):
         properties["conventions"] = metadata["conventions"]
 
+    # All variable names for multi-variable files (GRIB _echam/_accw/_co2).
+    # Stored as a JSON array so users can filter items by any contained variable,
+    # not just the primary one.  Excluded from single-variable NetCDF files where
+    # it would duplicate `variable`.
+    all_var_names = [
+        v["name"] for v in metadata.get("variables", [])
+        if v.get("name") and v["name"] != "unknown"
+    ]
+    if len(all_var_names) > 1:
+        properties["variables"] = all_var_names
+
     # Determine asset media type
     fmt = metadata.get("format", "")
     if fmt == "grib":

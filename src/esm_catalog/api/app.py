@@ -15,6 +15,7 @@ Typical use::
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import List, Union
@@ -118,6 +119,7 @@ def create_app(
         experiments: set[str] = set()
         components: set[str] = set()
         variables: set[str] = set()
+        all_variables: set[str] = set()
         collections: set[str] = set()
         for path in catalogs:
             p = Path(path)
@@ -129,6 +131,22 @@ def create_app(
                 experiments.update(_distinct(db, "$.properties.experiment"))
                 components.update(_distinct(db, "$.properties.component"))
                 variables.update(_distinct(db, "$.properties.variable"))
+
+                # Collect all variable names from multi-variable files.
+                # $.properties.variables is a JSON array; flatten via Python.
+                rows = db.db.execute(
+                    "SELECT json_extract_string(data, '$.properties.variables') "
+                    "FROM items "
+                    "WHERE json_array_length(data, '$.properties.variables') > 0"
+                ).fetchall()
+                for (arr_str,) in rows:
+                    if arr_str:
+                        try:
+                            names = json.loads(arr_str)
+                            if isinstance(names, list):
+                                all_variables.update(n for n in names if n)
+                        except Exception:
+                            pass
             finally:
                 db.close()
 
@@ -149,6 +167,7 @@ def create_app(
                 "experiment": _str_prop("Experiment ID",  sorted(experiments)),
                 "component":  _str_prop("Model Component", sorted(components)),
                 "variable":   _str_prop("Variable",       sorted(variables)),
+                "variables":  _str_prop("Any Variable (multi-var files)", sorted(all_variables)),
             },
         }
 

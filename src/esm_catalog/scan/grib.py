@@ -191,11 +191,42 @@ def _extract_variables(
 
     Enriches from the .codes table when available; falls back to GRIB attrs.
     Adds grid_type, level_type, and shape per variable.
+
+    Special case — ECHAM accw/co2 files store all parameters under paramId=0,
+    so cfgrib collapses them into a single variable named "unknown".  When this
+    happens and a codes_table is available, the single "unknown" entry is
+    expanded into one entry per codes_table parameter (they all share the same
+    grid and dimensions).
     """
     result = []
     for (grid_type, level_type), ds in datasets.items():
         for var_name, da in ds.data_vars.items():
             param_id = da.attrs.get("GRIB_paramId")
+
+            # paramId=0 means eccodes couldn't identify the parameter. When a
+            # codes_table is available it contains the real variable definitions,
+            # so expand the single collapsed entry into one per codes parameter.
+            if var_name == "unknown" and param_id == 0 and codes_table:
+                dims   = list(da.dims)
+                shape  = list(da.shape)
+                for cpid, code_info in sorted(codes_table.items()):
+                    exp: dict = {
+                        "name":            code_info["shortName"],
+                        "long_name":       code_info["longName"],
+                        "units":           code_info["units"],
+                        "original_name":   "unknown",
+                        "metadata_source": "codes_table_expanded",
+                        "GRIB_paramId":    cpid,
+                        "grid_type":       grid_type,
+                        "level_type":      level_type,
+                        "dimensions":      dims,
+                        "shape":           shape,
+                    }
+                    cf = _grib_to_cf(exp["name"])
+                    if cf:
+                        exp["standard_name"] = cf
+                    result.append(exp)
+                continue  # skip normal single-entry path for this variable
 
             if codes_table and param_id and param_id in codes_table:
                 code_info = codes_table[param_id]

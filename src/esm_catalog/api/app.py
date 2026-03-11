@@ -102,32 +102,33 @@ def create_app(
     def queryables(request: Request):
         base_url = str(request.base_url).rstrip("/")
 
-        # Collect unique values for enum dropdowns from the live catalogs
-        experiments: list[str] = []
-        components: list[str] = []
-        variables: list[str] = []
-        collections: list[str] = []
+        # Collect unique values via DISTINCT queries on the items table.
+        # Summaries on collections are often empty; the items table is the
+        # authoritative source for what values actually exist.
+        from esm_catalog.storage.duckdb import CatalogDB
+
+        def _distinct(db, json_path: str) -> list[str]:
+            """Return sorted distinct non-null string values for a JSON property."""
+            rows = db.db.execute(
+                f"SELECT DISTINCT json_extract_string(data, '{json_path}') AS v "
+                f"FROM items WHERE v IS NOT NULL ORDER BY v"
+            ).fetchall()
+            return [r[0] for r in rows if r[0]]
+
+        experiments: set[str] = set()
+        components: set[str] = set()
+        variables: set[str] = set()
+        collections: set[str] = set()
         for path in catalogs:
             p = Path(path)
             if not p.exists():
                 continue
-            from esm_catalog.storage.duckdb import CatalogDB
             db = CatalogDB(p)
             try:
-                for col in db.iter_collections():
-                    cid = col["id"]
-                    if cid not in collections:
-                        collections.append(cid)
-                    props = col.get("summaries", {})
-                    for exp in props.get("experiment", []):
-                        if exp not in experiments:
-                            experiments.append(exp)
-                    for comp in props.get("component", []):
-                        if comp not in components:
-                            components.append(comp)
-                    for var in props.get("variable:id", []):
-                        if var not in variables:
-                            variables.append(var)
+                collections.update(_distinct(db, "$.collection"))
+                experiments.update(_distinct(db, "$.properties.experiment"))
+                components.update(_distinct(db, "$.properties.component"))
+                variables.update(_distinct(db, "$.properties.variable"))
             finally:
                 db.close()
 
@@ -144,10 +145,10 @@ def create_app(
             "title": "Queryable properties for ESM-Tools STAC Catalog",
             "properties": {
                 "datetime":   {"title": "Datetime",       "type": "string", "format": "date-time"},
-                "collection": _str_prop("Collection",     collections),
-                "experiment": _str_prop("Experiment ID",  experiments),
-                "component":  _str_prop("Model Component", components),
-                "variable":   _str_prop("Variable",       variables),
+                "collection": _str_prop("Collection",     sorted(collections)),
+                "experiment": _str_prop("Experiment ID",  sorted(experiments)),
+                "component":  _str_prop("Model Component", sorted(components)),
+                "variable":   _str_prop("Variable",       sorted(variables)),
             },
         }
 

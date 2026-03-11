@@ -191,8 +191,13 @@ class CatalogDB:
                 else:
                     op, val = "=", spec
 
-                if field in ("collection", "experiment"):
+                if field in ("id", "collection", "experiment"):
                     conditions.append(f"{field} {op} ?")
+                    params.append(val)
+                elif field in ("datetime", "datetime_end"):
+                    # datetime and datetime_end map to the native TIMESTAMPTZ column
+                    col = "datetime"
+                    conditions.append(f"{col} {op} ?::TIMESTAMPTZ")
                     params.append(val)
                 else:
                     # JSON path query for item properties

@@ -264,15 +264,15 @@ def serve(catalog_paths, host, port):
     """
     try:
         import uvicorn
-        from esm_catalog.api.server import build_app
+        from esm_catalog.api.app import create_app
 
-        app = build_app(list(catalog_paths))
+        api = create_app(list(catalog_paths))
         logger.info("Starting STAC API on {}:{}", host, port)
-        uvicorn.run(app, host=host, port=port)
+        uvicorn.run(api.app, host=host, port=port)
     except ImportError as e:
         logger.error(
             "Missing dependency for serve command: {}\n"
-            "Install with: pip install 'esm-tools[api]'",
+            "Install with: pip install stac-fastapi-api uvicorn",
             e,
         )
         sys.exit(1)

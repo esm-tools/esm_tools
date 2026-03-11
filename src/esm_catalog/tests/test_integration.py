@@ -4,11 +4,13 @@ import pytest
 
 from esm_catalog.integration.config import (
     extract_stac_metadata,
+    find_file_operations_log,
     find_finished_configs,
     get_outdata_files,
+    get_outdata_from_file_operations,
     load_config,
 )
-from esm_catalog.integration.esm_tools import add_files
+from esm_catalog.integration.esm_tools import add_files, add_run
 from esm_catalog.storage.duckdb import CatalogDB
 
 
@@ -386,3 +388,270 @@ class TestAddFiles:
         }
         n = add_files(db_path, [fesom_nc], config)
         assert n == 1
+
+    def test_checksum_stored_in_asset(self, tmp_path, fesom_nc):
+        """file:checksum is stored in the asset when checksums dict is provided."""
+        db_path = tmp_path / "catalog.duckdb"
+        config = {
+            "general": {"expid": "basic-001"},
+            "fesom": {"outdata_dir": str(fesom_nc.parent)},
+        }
+        fake_md5 = "aabbccdd11223344aabbccdd11223344"
+        checksums = {str(fesom_nc.resolve()): fake_md5}
+        add_files(db_path, [fesom_nc], config, checksums=checksums)
+        with CatalogDB(db_path) as db:
+            import json
+            row = db.db.execute("SELECT data FROM items LIMIT 1").fetchone()
+            item = json.loads(row[0])
+            assert item["assets"]["data"]["file:checksum"] == fake_md5
+
+    def test_file_extension_url_added_when_checksum_present(self, tmp_path, fesom_nc):
+        """STAC file extension URL is added to stac_extensions when checksum provided."""
+        db_path = tmp_path / "catalog.duckdb"
+        config = {
+            "general": {"expid": "basic-001"},
+            "fesom": {"outdata_dir": str(fesom_nc.parent)},
+        }
+        checksums = {str(fesom_nc.resolve()): "deadbeef" * 4}
+        add_files(db_path, [fesom_nc], config, checksums=checksums)
+        with CatalogDB(db_path) as db:
+            import json
+            row = db.db.execute("SELECT data FROM items LIMIT 1").fetchone()
+            item = json.loads(row[0])
+            assert any("file" in url for url in item["stac_extensions"])
+
+    def test_no_checksum_no_file_extension(self, tmp_path, fesom_nc):
+        """Without checksums, file extension is not added."""
+        db_path = tmp_path / "catalog.duckdb"
+        config = {
+            "general": {"expid": "basic-001"},
+            "fesom": {"outdata_dir": str(fesom_nc.parent)},
+        }
+        add_files(db_path, [fesom_nc], config, checksums=None)
+        with CatalogDB(db_path) as db:
+            import json
+            row = db.db.execute("SELECT data FROM items LIMIT 1").fetchone()
+            item = json.loads(row[0])
+            assert not any(
+                "stac-extensions.github.io/file" in url
+                for url in item["stac_extensions"]
+            )
+
+
+# ---------------------------------------------------------------------------
+# integration/config.py — find_file_operations_log
+# ---------------------------------------------------------------------------
+
+class TestFindFileOperationsLog:
+    def _make_log(self, tmp_path, expid="myexp", component="fesom",
+                  datestamp="19580101-19580131"):
+        exp_dir = tmp_path / "experiments" / expid
+        log_dir = exp_dir / "log"
+        log_dir.mkdir(parents=True)
+        log_file = log_dir / f"{expid}_{component}_file_operations_tidy_{datestamp}.yaml"
+        log_file.write_text(f"# file_operations_tidy for {datestamp}\n")
+        return exp_dir, log_file
+
+    def test_finds_log_by_canonical_name(self, tmp_path):
+        exp_dir, expected = self._make_log(tmp_path)
+        result = find_file_operations_log(exp_dir, "fesom", "19580101-19580131")
+        assert result == expected
+
+    def test_returns_none_when_log_missing(self, tmp_path):
+        exp_dir = tmp_path / "experiments" / "myexp"
+        (exp_dir / "log").mkdir(parents=True)
+        result = find_file_operations_log(exp_dir, "fesom", "19580101-19580131")
+        assert result is None
+
+    def test_returns_none_when_log_dir_missing(self, tmp_path):
+        exp_dir = tmp_path / "experiments" / "myexp"
+        exp_dir.mkdir(parents=True)
+        result = find_file_operations_log(exp_dir, "fesom", "19580101-19580131")
+        assert result is None
+
+    def test_glob_fallback_finds_different_expid(self, tmp_path):
+        """If expid differs from dir name, glob fallback still finds the file."""
+        exp_dir = tmp_path / "experiments" / "myexp"
+        log_dir = exp_dir / "log"
+        log_dir.mkdir(parents=True)
+        # File uses a different prefix than the dir name
+        log_file = log_dir / "other-expid_fesom_file_operations_tidy_19580101-19580131.yaml"
+        log_file.write_text("")
+        result = find_file_operations_log(exp_dir, "fesom", "19580101-19580131")
+        assert result == log_file
+
+
+# ---------------------------------------------------------------------------
+# integration/config.py — get_outdata_from_file_operations
+# ---------------------------------------------------------------------------
+
+FILE_OPS_YAML = """\
+fesom:
+  files:
+    log:
+      fesom.clock:
+        source: /run/work/fesom.clock
+        destination: /exp/log/fesom/fesom.clock
+        phase: tidy
+        tidy_op: copy
+        checksum: aaaabbbbccccdddd0000111122223333
+    outdata:
+      sst.fesom.1958.nc:
+        source: /run/work/sst.fesom.1958.nc
+        destination: /exp/outdata/fesom/sst.fesom.1958.nc
+        phase: tidy
+        tidy_op: copy
+        checksum: e8f4eb4f9f4a3bff932d2bffc5a78d68
+      ssh.fesom.1958.nc:
+        source: /run/work/ssh.fesom.1958.nc
+        destination: /exp/outdata/fesom/ssh.fesom.1958.nc
+        phase: tidy
+        tidy_op: move
+        checksum: 7f7a0feab048cf611387c91511ebf5cc
+    restart_out:
+      fesom_mesh.nc:
+        source: /run/work/fesom_mesh.nc
+        destination: /exp/restart/fesom/fesom_mesh.nc
+        phase: tidy
+        tidy_op: copy
+        checksum: deadbeefdeadbeefdeadbeefdeadbeef
+"""
+
+
+class TestGetOutdataFromFileOperations:
+    def _write_yaml(self, tmp_path, content=FILE_OPS_YAML):
+        p = tmp_path / "myexp_fesom_file_operations_tidy_19580101-19580131.yaml"
+        p.write_text(content)
+        return p
+
+    def test_returns_only_outdata_entries(self, tmp_path):
+        path = self._write_yaml(tmp_path)
+        records = get_outdata_from_file_operations(path)
+        # log and restart_out entries must be excluded
+        dests = [r["destination"].name for r in records]
+        assert "fesom.clock" not in dests
+        assert "fesom_mesh.nc" not in dests
+        assert len(records) == 2
+
+    def test_destination_paths_are_path_objects(self, tmp_path):
+        from pathlib import Path
+        path = self._write_yaml(tmp_path)
+        records = get_outdata_from_file_operations(path)
+        assert all(isinstance(r["destination"], Path) for r in records)
+
+    def test_checksum_is_preserved(self, tmp_path):
+        path = self._write_yaml(tmp_path)
+        records = get_outdata_from_file_operations(path)
+        by_name = {r["destination"].name: r for r in records}
+        assert by_name["sst.fesom.1958.nc"]["checksum"] == "e8f4eb4f9f4a3bff932d2bffc5a78d68"
+        assert by_name["ssh.fesom.1958.nc"]["checksum"] == "7f7a0feab048cf611387c91511ebf5cc"
+
+    def test_tidy_op_is_preserved(self, tmp_path):
+        path = self._write_yaml(tmp_path)
+        records = get_outdata_from_file_operations(path)
+        by_name = {r["destination"].name: r for r in records}
+        assert by_name["sst.fesom.1958.nc"]["tidy_op"] == "copy"
+        assert by_name["ssh.fesom.1958.nc"]["tidy_op"] == "move"
+
+    def test_source_path_is_set(self, tmp_path):
+        from pathlib import Path
+        path = self._write_yaml(tmp_path)
+        records = get_outdata_from_file_operations(path)
+        assert all(isinstance(r["source"], Path) for r in records)
+
+    def test_raises_for_missing_file(self, tmp_path):
+        """A missing file propagates FileNotFoundError — callers use find_file_operations_log first."""
+        with pytest.raises(FileNotFoundError):
+            get_outdata_from_file_operations(tmp_path / "nonexistent.yaml")
+
+    def test_empty_outdata_section(self, tmp_path):
+        yaml = "fesom:\n  files:\n    outdata: {}\n"
+        path = tmp_path / "ops.yaml"
+        path.write_text(yaml)
+        records = get_outdata_from_file_operations(path)
+        assert records == []
+
+
+# ---------------------------------------------------------------------------
+# integration/esm_tools.py — add_run
+# ---------------------------------------------------------------------------
+
+class TestAddRun:
+    def _make_experiment(self, tmp_path, fesom_nc):
+        """Create a minimal experiment directory structure."""
+        exp_dir = fesom_nc.parent.parent.parent  # .../experiments/basic-001
+        log_dir = exp_dir / "log"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        return exp_dir, log_dir
+
+    def _make_config(self, fesom_nc):
+        return {
+            "general": {"expid": "basic-001", "run_datestamp": "18500101-18500131"},
+            "fesom": {
+                "outdata_dir": None,
+                "experiment_outdata_dir": str(fesom_nc.parent),
+                "outdata_targets": {"ssh_nc": str(fesom_nc)},
+            },
+        }
+
+    def _write_file_ops_log(self, log_dir, fesom_nc, expid="basic-001",
+                             datestamp="18500101-18500131"):
+        """Write a minimal file_operations_tidy YAML pointing at fesom_nc."""
+        log_file = log_dir / f"{expid}_fesom_file_operations_tidy_{datestamp}.yaml"
+        log_file.write_text(
+            f"fesom:\n"
+            f"  files:\n"
+            f"    outdata:\n"
+            f"      {fesom_nc.name}:\n"
+            f"        source: /run/work/{fesom_nc.name}\n"
+            f"        destination: {fesom_nc}\n"
+            f"        phase: tidy\n"
+            f"        tidy_op: copy\n"
+            f"        checksum: cafebabe12345678cafebabe12345678\n"
+        )
+        return log_file
+
+    def test_add_run_uses_file_ops_log_when_present(self, tmp_path, fesom_nc):
+        """add_run picks file_operations_tidy when it exists."""
+        exp_dir, log_dir = self._make_experiment(tmp_path, fesom_nc)
+        self._write_file_ops_log(log_dir, fesom_nc)
+        config = self._make_config(fesom_nc)
+        db_path = tmp_path / "catalog.duckdb"
+        n = add_run(db_path, exp_dir, "fesom", "18500101-18500131", config)
+        assert n == 1
+
+    def test_add_run_checksum_from_file_ops_log(self, tmp_path, fesom_nc):
+        """Checksum from file_operations_tidy appears in cataloged item."""
+        exp_dir, log_dir = self._make_experiment(tmp_path, fesom_nc)
+        self._write_file_ops_log(log_dir, fesom_nc)
+        config = self._make_config(fesom_nc)
+        db_path = tmp_path / "catalog.duckdb"
+        add_run(db_path, exp_dir, "fesom", "18500101-18500131", config)
+        with CatalogDB(db_path) as db:
+            import json
+            row = db.db.execute("SELECT data FROM items LIMIT 1").fetchone()
+            item = json.loads(row[0])
+            assert item["assets"]["data"]["file:checksum"] == "cafebabe12345678cafebabe12345678"
+
+    def test_add_run_falls_back_to_config_when_no_log(self, tmp_path, fesom_nc):
+        """add_run falls back to outdata_targets when no file_operations_tidy log."""
+        exp_dir, _ = self._make_experiment(tmp_path, fesom_nc)
+        # No log file written
+        config = self._make_config(fesom_nc)
+        db_path = tmp_path / "catalog.duckdb"
+        n = add_run(db_path, exp_dir, "fesom", "18500101-18500131", config)
+        assert n == 1
+        # No checksum in fallback path
+        with CatalogDB(db_path) as db:
+            import json
+            row = db.db.execute("SELECT data FROM items LIMIT 1").fetchone()
+            item = json.loads(row[0])
+            assert "file:checksum" not in item["assets"]["data"]
+
+    def test_add_run_returns_zero_for_no_files(self, tmp_path, fesom_nc):
+        """add_run returns 0 when config has no outdata files for the component."""
+        exp_dir, _ = self._make_experiment(tmp_path, fesom_nc)
+        config = {"general": {"expid": "basic-001"}, "fesom": {}}
+        db_path = tmp_path / "catalog.duckdb"
+        n = add_run(db_path, exp_dir, "fesom", "18500101-18500131", config)
+        assert n == 0

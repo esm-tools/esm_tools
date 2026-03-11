@@ -74,6 +74,92 @@ def get_outdata_files(config: dict, component: str) -> list[Path]:
     return [Path(p) for p in targets.values() if p]
 
 
+def find_file_operations_log(
+    experiment_dir: Path | str,
+    component: str,
+    run_datestamp: str,
+) -> Path | None:
+    """Find the file_operations_tidy YAML for one component run.
+
+    ESM-Tools writes one log per component per run period::
+
+        {log_dir}/{expid}_{component}_file_operations_tidy_{run_datestamp}.yaml
+
+    Args:
+        experiment_dir: Root experiment directory.
+        component:      Component name, e.g. ``"fesom"``.
+        run_datestamp:  Date range string, e.g. ``"19580101-19580131"``.
+
+    Returns:
+        Path to the file if it exists, None otherwise.
+    """
+    experiment_dir = Path(experiment_dir)
+    log_dir = experiment_dir / "log"
+    if not log_dir.is_dir():
+        return None
+
+    expid = experiment_dir.name
+    # Try the canonical name first (fast path)
+    candidate = log_dir / f"{expid}_{component}_file_operations_tidy_{run_datestamp}.yaml"
+    if candidate.is_file():
+        return candidate
+
+    # Glob fallback in case expid differs from directory name
+    matches = sorted(log_dir.glob(f"*_{component}_file_operations_tidy_{run_datestamp}.yaml"))
+    return matches[0] if matches else None
+
+
+def get_outdata_from_file_operations(path: Path | str) -> list[dict]:
+    """Extract outdata entries from a file_operations_tidy YAML.
+
+    ESM-Tools writes this log during the tidy phase.  It records every file
+    moved, copied, or symlinked and includes MD5 checksums, making it the
+    preferred source for catalog construction — checksums come for free.
+
+    Only the ``outdata`` category is returned; ``log``, ``restart_out``, and
+    ``unknown`` entries are intentionally excluded.
+
+    Args:
+        path: Path to the ``*_file_operations_tidy_*.yaml`` file.
+
+    Returns:
+        List of dicts, one per output file::
+
+            {
+              "destination": Path,        # canonical path after tidy
+              "source":      Path | None, # original path in run work dir
+              "checksum":    str | None,  # MD5 hex string
+              "tidy_op":     str | None,  # "copy", "move", or "link"
+            }
+    """
+    cfg = load_config(path)
+    if cfg is None:
+        return []
+
+    records: list[dict] = []
+    # Top-level: {component: {files: {category: {filename: entry}}}}
+    for component_block in cfg.values():
+        if not isinstance(component_block, dict):
+            continue
+        files_block = component_block.get("files") or {}
+        outdata = files_block.get("outdata") or {}
+        for _filename, entry in outdata.items():
+            if not isinstance(entry, dict):
+                continue
+            dst = entry.get("destination")
+            if not dst:
+                continue
+            src = entry.get("source")
+            checksum = entry.get("checksum")
+            records.append({
+                "destination": Path(str(dst).strip()),
+                "source": Path(str(src).strip()) if src else None,
+                "checksum": str(checksum).strip() if checksum else None,
+                "tidy_op": str(entry.get("tidy_op", "")).strip() or None,
+            })
+    return records
+
+
 def extract_stac_metadata(config: dict) -> dict:
     """Extract STAC-relevant metadata from a finished_config.
 

@@ -130,6 +130,17 @@ def create_app(
             },
         }
 
+    # POST /format — OGC CQL2 format-negotiation probe issued by STAC Browser.
+    # Not required for filtering to work (filters travel as CQL2-JSON in /search),
+    # but returning 200 silences the 404 log noise.
+    @api.app.post(
+        "/format",
+        response_model=None,
+        include_in_schema=False,
+    )
+    def cql2_format(body: dict | None = None):
+        return body or {}
+
     return api
 
 

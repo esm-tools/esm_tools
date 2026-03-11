@@ -25,7 +25,7 @@ from starlette.requests import Request
 from stac_fastapi.api.app import StacApi
 from stac_fastapi.types.config import ApiSettings
 
-from esm_catalog.api.client import DuckDBCatalogClient
+from esm_catalog.api.client import DuckDBCatalogClient, FilteredSearchPostRequest
 
 
 _DEFAULT_TITLE = "ESM-Tools STAC Catalog"
@@ -85,6 +85,7 @@ def create_app(
         title=title,
         description=description,
         api_version=version,
+        search_post_request_model=FilteredSearchPostRequest,
     )
 
     # /queryables endpoint — required for STAC Browser "Additional Filtering" CQL2 builder.

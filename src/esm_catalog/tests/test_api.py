@@ -312,6 +312,79 @@ class TestCORS:
 # DuckDBCatalogClient — unit
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# CQL2-JSON filter parsing
+# ---------------------------------------------------------------------------
+
+class TestCQL2Filter:
+    """Tests that CQL2-JSON filters sent by STAC Browser are applied correctly."""
+
+    def test_post_search_cql2_equality(self, client):
+        """POST /search with CQL2-JSON equality filter returns matching items."""
+        payload = {
+            "filter-lang": "cql2-json",
+            "filter": {"op": "=", "args": [{"property": "variable"}, "temp"]},
+        }
+        r = client.post("/search", json=payload)
+        assert r.status_code == 200
+        data = r.json()
+        assert data["type"] == "FeatureCollection"
+        # All returned items must have variable=temp
+        for feat in data["features"]:
+            assert feat["properties"].get("variable") == "temp"
+
+    def test_post_search_cql2_no_match(self, client):
+        """CQL2-JSON filter with non-existent value returns empty feature collection."""
+        payload = {
+            "filter-lang": "cql2-json",
+            "filter": {"op": "=", "args": [{"property": "variable"}, "nonexistent_var"]},
+        }
+        r = client.post("/search", json=payload)
+        assert r.status_code == 200
+        assert r.json()["features"] == []
+
+    def test_post_search_cql2_and(self, client):
+        """CQL2-JSON AND filter combines predicates correctly."""
+        payload = {
+            "filter-lang": "cql2-json",
+            "filter": {
+                "op": "and",
+                "args": [
+                    {"op": "=", "args": [{"property": "variable"}, "temp"]},
+                    {"op": "=", "args": [{"property": "experiment"}, "basic"]},
+                ],
+            },
+        }
+        r = client.post("/search", json=payload)
+        assert r.status_code == 200
+        for feat in r.json()["features"]:
+            assert feat["properties"].get("variable") == "temp"
+            assert feat["properties"].get("experiment") == "basic"
+
+    def test_landing_page_has_ogc_queryables_rel(self, client):
+        """Landing page must advertise rel=OGC-queryables for STAC Browser filters."""
+        r = client.get("/")
+        links = r.json()["links"]
+        rels = [lnk["rel"] for lnk in links]
+        assert "http://www.opengis.net/def/rel/ogc/1.0/queryables" in rels
+
+    def test_queryables_endpoint(self, client):
+        """GET /queryables returns valid JSON Schema with properties."""
+        r = client.get("/queryables")
+        assert r.status_code == 200
+        body = r.json()
+        assert "properties" in body
+        assert "variable" in body["properties"]
+        assert body["$schema"] == "https://json-schema.org/draft/2019-09/schema"
+
+    def test_ogc_cql2_conformance(self, client):
+        """Conformance must include OGC CQL2 classes for STAC Browser filter UI."""
+        r = client.get("/conformance")
+        classes = r.json()["conformsTo"]
+        assert "http://www.opengis.net/spec/cql2/1.0/conf/cql2-json" in classes
+        assert "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter" in classes
+
+
 class TestDuckDBCatalogClientInit:
     def test_raises_on_empty_catalogs(self):
         from esm_catalog.api.client import DuckDBCatalogClient

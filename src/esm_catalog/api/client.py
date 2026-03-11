@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import attr
 from fastapi import HTTPException
+from pydantic import Field
 from stac_fastapi.types import stac
 from stac_fastapi.types.core import BASE_CONFORMANCE_CLASSES, BaseCoreClient
 from stac_fastapi.types.search import BaseSearchPostRequest
@@ -41,6 +42,70 @@ _EXTRA_CONFORMANCE = [
 
 # OGC rel for queryables link — STAC Browser checks for this exact URI
 _OGC_QUERYABLES_REL = "http://www.opengis.net/def/rel/ogc/1.0/queryables"
+
+# Operator mapping from CQL2-JSON op names to SQL operators
+_CQL2_OP_MAP: dict[str, str] = {
+    "eq": "=", "=": "=",
+    "neq": "!=", "!=": "!=", "<>": "!=",
+    "lt": "<", "<": "<",
+    "lte": "<=", "<=": "<=",
+    "gt": ">", ">": ">",
+    "gte": ">=", ">=": ">=",
+    "like": "LIKE",
+}
+_CQL2_OP_INVERSE: dict[str, str] = {
+    "<": ">", "<=": ">=", ">": "<", ">=": "<=", "=": "=", "!=": "!=", "LIKE": "LIKE",
+}
+
+
+def _parse_cql2_json(expr: dict | None) -> dict:
+    """Parse a CQL2-JSON filter expression into a flat ``filter_props`` dict.
+
+    Handles AND combinations and comparison operators.  OR/NOT are silently
+    ignored (treated as no-op) because our storage layer only supports AND.
+
+    Returns:
+        Dict mapping field name → (sql_op, value) suitable for
+        :meth:`~esm_catalog.storage.duckdb.CatalogDB.search_items`.
+    """
+    if not expr:
+        return {}
+    op = str(expr.get("op", "")).lower()
+    args = expr.get("args", [])
+
+    if op == "and":
+        result: dict = {}
+        for arg in args:
+            result.update(_parse_cql2_json(arg))
+        return result
+
+    sql_op = _CQL2_OP_MAP.get(op)
+    if sql_op and len(args) == 2:
+        left, right = args
+        if isinstance(left, dict) and "property" in left:
+            return {left["property"]: (sql_op, right)}
+        if isinstance(right, dict) and "property" in right:
+            # Reversed — invert the operator
+            inv = _CQL2_OP_INVERSE.get(sql_op, sql_op)
+            return {right["property"]: (inv, left)}
+
+    # OR, NOT, spatial ops — return empty (no-op filter)
+    return {}
+
+
+class FilteredSearchPostRequest(BaseSearchPostRequest):
+    """POST /search request model extended with CQL2 filter fields.
+
+    stac-fastapi's base model drops unknown fields, so ``filter`` and
+    ``filter-lang`` from STAC Browser are silently discarded unless we
+    capture them here.
+    """
+
+    # Use model_fields alias because JSON key contains a hyphen
+    filter: Optional[Dict[str, Any]] = Field(default=None)
+    filter_lang: Optional[str] = Field(default=None, alias="filter-lang")
+
+    model_config = {"populate_by_name": True}
 
 
 def _inject_collection_links(col: dict, base_url: str) -> dict:
@@ -195,17 +260,26 @@ class DuckDBCatalogClient(BaseCoreClient):
     # ------------------------------------------------------------------
 
     def all_collections(self, **kwargs) -> stac.Collections:
-        """GET /collections — return all collections across all catalogs."""
-        request = kwargs.get("request")
-        # Support simple ?q= filter via query params (collection-search)
-        q_params: dict = {}
-        if request is not None:
-            for key, val in request.query_params.items():
-                if key not in ("limit", "offset", "token"):
-                    q_params[key] = val
+        """GET /collections — return all collections across all catalogs.
 
+        Supports CQL2-JSON filtering via the ``filter`` query parameter so
+        STAC Browser "Search for Collections → Additional filters" works.
+        """
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
+
+        filter_props: dict = {}
+        if request is not None:
+            qp = request.query_params
+            # CQL2-JSON via ?filter=<json>&filter-lang=cql2-json
+            raw_filter = qp.get("filter")
+            filter_lang = qp.get("filter-lang", "cql2-json")
+            if raw_filter:
+                if filter_lang == "cql2-json":
+                    try:
+                        filter_props = _parse_cql2_json(json.loads(raw_filter))
+                    except Exception:
+                        pass
 
         dbs = self._open_catalogs()
         try:
@@ -213,7 +287,7 @@ class DuckDBCatalogClient(BaseCoreClient):
             seen: set[str] = set()
             for db in dbs:
                 matched, _ = db.search_collections(
-                    filter_props=q_params if q_params else None
+                    filter_props=filter_props if filter_props else None
                 )
                 for col in matched:
                     if col["id"] not in seen:
@@ -317,13 +391,18 @@ class DuckDBCatalogClient(BaseCoreClient):
     def post_search(
         self, search_request: BaseSearchPostRequest, **kwargs
     ) -> stac.ItemCollection:
-        """POST /search"""
+        """POST /search — handles standard fields plus CQL2 ``filter``."""
         filter_props: dict = {}
         if search_request.collections and len(search_request.collections) == 1:
             filter_props["collection"] = search_request.collections[0]
         if search_request.ids and len(search_request.ids) == 1:
             filter_props["id"] = search_request.ids[0]
         filter_props.update(_parse_datetime_filter(search_request.datetime))
+
+        # CQL2-JSON filter from STAC Browser "Additional filters" builder
+        if isinstance(search_request, FilteredSearchPostRequest) and search_request.filter:
+            filter_props.update(_parse_cql2_json(search_request.filter))
+
         limit = search_request.limit or 10
         return self._run_search(filter_props, limit)
 

@@ -55,32 +55,8 @@ esm_catalog/
 │
 ├── api/
 │   ├── __init__.py
-│   └── server.py             # stac-fastapi backed by DuckDB, CORS middleware
-│
-└── browser/
-    ├── README.md              # Fork relationship, build steps, upstream rebase guide
-    │
-    ├── config/                # Tier 1: config overrides (copy-in, no source edit)
-    │   ├── config.js          # apiCatalogPriority, catalog URL, feature flags
-    │   ├── fields.config.js   # HPC + datacube extension field labels/formatters
-    │   ├── assetActions.config.js  # Enable xarray/Jupyter, disable irrelevant viewers
-    │   ├── basemaps.config.js # Map projection defaults (OSM)
-    │   └── theme/
-    │       └── variables.scss # ESM-Tools color scheme / branding
-    │
-    ├── src/                   # Tier 2: net-new additions (drop into fork's src/)
-    │   ├── components/
-    │   │   └── PythonCodeBox.vue   # Syntax-highlighted pystac-client code snippets
-    │   └── codegen/
-    │       ├── PythonGenerator.js  # Context-aware OGC filter → Python code
-    │       └── templates/
-    │           ├── template.py
-    │           └── template_collections.py
-    │
-    └── patches/               # Reference diffs only (Tier 3 lives as commits in the fork)
-        ├── Catalog.vue.patch   # PythonCodeBox injection into catalog view
-        ├── Item.vue.patch      # PythonCodeBox injection into item view
-        └── ApiSearch.vue.patch # Search tabs (Collections / Items), searchType wiring
+│   ├── client.py             # DuckDBCatalogClient — BaseCoreClient implementation (6 methods)
+│   └── app.py                # create_app() factory + module-level app for uvicorn
 ```
 
 ---
@@ -106,37 +82,36 @@ non-negotiable.
 ### Serving (API)
 
 ```python
-# stac-fastapi with DuckDB backend
+# stac-fastapi with DuckDB backend (api/client.py + api/app.py)
 
-class DuckDBClient(AsyncBaseCoreClient):
-    def __init__(self, catalogs: list[str]):
-        # ATTACH all readable catalog files at startup; federation is transparent to callers
-        for path in catalogs:
-            alias = Path(path).parent.name   # e.g. "picontrol"
-            self.db.execute(f"ATTACH '{path}' AS {alias} (READ_ONLY)")
+# DuckDBCatalogClient implements BaseCoreClient — 6 required abstract methods
+class DuckDBCatalogClient(BaseCoreClient):
+    catalogs: List[str]   # paths to catalog.duckdb files (at least one)
 
-    async def post_search(self, search):
-        query = "SELECT data FROM items WHERE 1=1"
-        if search.collections:
-            query += " AND collection IN (?)"
-        if search.datetime:
-            query += " AND datetime BETWEEN ? AND ?"
-        if search.filter:                            # custom: experiment, variable, model
-            query += " AND experiment = ?"
-        # DuckDB queries JSON natively
-        rows = self.db.execute(query, params).fetchall()
-        return {"type": "FeatureCollection", "features": [r[0] for r in rows]}
+    def all_collections(self, **kwargs):   # GET /collections — supports query param filters
+    def get_collection(self, collection_id, **kwargs):   # GET /collections/{id}
+    def item_collection(self, collection_id, ...):       # GET /collections/{id}/items
+    def get_item(self, item_id, collection_id, **kwargs):  # GET /collections/{id}/items/{item_id}
+    def get_search(self, collections, ids, bbox, datetime, limit, **kwargs):   # GET /search
+    def post_search(self, search_request, **kwargs):     # POST /search
 
-# Catalogs list comes from ~/.esm_catalog.yaml
-api = StacApi(client=DuckDBClient(catalogs=config["catalogs"]))
-app = api.app
+# create_app() wires everything together (api/app.py)
+api = create_app(catalogs=["/work/exp1/catalog.duckdb", "/work/exp2/catalog.duckdb"])
+# CORS allow_origins=["*"] added automatically — required for STAC Browser cross-origin access
 
-# CORS required: STAC Browser runs on a different origin from the API
-from fastapi.middleware.cors import CORSMiddleware
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["GET", "POST"])
-
-# uvicorn esm_catalog.api.server:app
+# Direct uvicorn invocation:
+#   uvicorn esm_catalog.api.app:app
+# Configure via env:
+#   ESM_CATALOG_DB=/work/exp1/catalog.duckdb:/work/exp2/catalog.duckdb uvicorn esm_catalog.api.app:app
 ```
+
+Multi-catalog federation: `DuckDBCatalogClient` opens each `CatalogDB` per request and merges
+results in Python. This is simpler than DuckDB `ATTACH` and avoids alias conflicts across
+independently-named experiments.
+
+Collection-search: `all_collections()` passes any non-pagination query params to
+`db.search_collections()`, which checks both native collection fields and the
+`collection_item_props` index built at scan time.
 
 ---
 
@@ -521,17 +496,12 @@ STAC Browser shows a tab only when the API advertises the corresponding conforma
 The API **must** declare both in the landing page (`GET /`) `conformsTo` array:
 
 ```python
-# api/server.py — conformance classes required for both tabs to appear
-CONFORMANCE = [
-    # Item search
-    "https://api.stacspec.org/v1.0.0/item-search",
-    "https://api.stacspec.org/v1.0.0/item-search#filter",
-    # Collection search — triggers the "Search for Collections" tab
-    "https://api.stacspec.org/v1.0.0/collection-search",
-    "https://api.stacspec.org/v1.0.0/collection-search#filter",
-    # CQL2
-    "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter",
-]
+# stac-fastapi declares these automatically via BaseCoreClient.conformance_classes()
+# The "Search for Collections" tab in STAC Browser appears when the API advertises:
+#   "https://api.stacspec.org/v1.0.0/collection-search"
+# The "Additional filters" CQL2 builder appears when the API advertises:
+#   "https://api.stacspec.org/v1.0.0/item-search#filter"
+# Both are in the base conformance set declared by stac-fastapi-api v6.
 ```
 
 If `collection-search` is absent from `conformsTo`, the tab is silently hidden in STAC Browser —
@@ -606,161 +576,36 @@ filter=experiment='basic-001' AND model='fesom'
 
 ---
 
-## STAC Browser Configuration
+## STAC Browser
 
-### Fork relationship
-
-The STAC Browser fork is maintained as a **separate GitHub repository** under the esm-tools
-organisation:
+The STAC Browser is **entirely external** to this project.  Use the hosted
+radiantearth instance or any self-hosted upstream build:
 
 ```
-https://github.com/esm-tools/stac-browser   ← fork (custom commits live here)
-https://github.com/radiantearth/stac-browser ← upstream
+https://radiantearth.github.io/stac-browser/#/search/external/<your-api-host>
 ```
 
-The fork is separate from the `esm_tools` repo by design — it is a JavaScript application with
-its own release cycle, and keeping it separate avoids mixing Python package tooling with Node/npm
-tooling in a single repo.
+No fork is required.  The features needed — "Search for Collections" tab and
+"Additional filters" (CQL2 builder) — are present in upstream STAC Browser v3.x:
 
-The local working copy (`~/repos/stacbrowser2/`) should have two remotes configured:
-
-```bash
-git remote add origin   https://github.com/esm-tools/stac-browser   # fork — push target
-git remote add upstream https://github.com/radiantearth/stac-browser # upstream — rebase source
-```
-
-The fork was necessary because core upstream views (`Catalog.vue`, `Item.vue`) had to be modified
-to inject climate-specific UI — context-aware Python code snippets generated from the catalog
-hierarchy. Configuration files alone cannot achieve this.
-
-`browser/` in this repo tracks only the **esm_catalog-specific** content (Tier 1 and Tier 2). It
-is applied on top of the fork during deployment. Tier 3 changes (view modifications) live as
-commits in the fork itself, not as patch files.
-
-### Three tiers of customization
-
-| Tier | What | Where | How deployed |
-|---|---|---|---|
-| 1 — Config overrides | Runtime settings, field labels, asset actions, theme | `browser/config/` in this repo | `cp -r browser/config/* stacbrowser2/` |
-| 2 — Net-new additions | PythonCodeBox component, codegen layer | `browser/src/` in this repo | `cp -r browser/src/* stacbrowser2/src/` |
-| 3 — View modifications | Commits to `Catalog.vue`, `Item.vue` | Commits in `esm-tools/stac-browser` fork | Already present — clone the fork |
-
-Tier 3 changes live as named commits in the fork, not as patch files applied at deploy time. This
-makes the fork self-contained: cloning it gives a working browser without any extra steps. The
-trade-off is that upstream rebases must be done carefully to preserve those commits.
-
-### Why `browser/` is a first-class deliverable
-
-The API (`api/server.py`) alone does not close the loop. Without browser configuration:
-
-| Without `browser/` | With `browser/` |
+| Feature | Upstream activation |
 |---|---|
-| `hpc:state: "nearline"` rendered as raw text | "On Tape (est. 5 min recall)" with icon |
-| `hpc:storage_tier` not shown | Displayed as "Hot / Warm / Cold" badge |
-| `cube:dimensions` fields raw JSON | Rendered as dimension table with units |
-| No Python code snippet at any catalog level | Context-aware `pystac-client` snippet at every level |
-| All asset viewers shown (Cesium, Potree, ...) | Only xarray/Jupyter action relevant to climate data |
-| Default blue OSM basemap | ESM-Tools branded theme |
+| "Search for Collections" tab | API declares `collection-search` conformance class |
+| "Additional filters" CQL2 builder | API declares `item-search#filter` conformance class |
 
-### Tier 1 — Config files
+Both conformance classes are advertised by `stac-fastapi` when the corresponding
+extensions are registered.  The tab appears automatically with no browser changes.
 
-**`config.js`** — Runtime behavior:
-```javascript
-apiCatalogPriority: "childs",   // Preserve experiment → model hierarchy in sidebar
-catalogUrl: "http://...",        // Point to esm-catalog API
-displayGeoTiffByDefault: false,
-showKeywordsInItemCards: true,
+### Usage
+
+```
+# Point the hosted browser at the running API
+https://radiantearth.github.io/stac-browser/#/search/external/your-host:8000
 ```
 
-**`fields.config.js`** — How custom extension fields are labeled and formatted:
-```javascript
-{ name: "hpc:state",                label: "Storage State",        formatter: hpcStateFormatter },
-{ name: "hpc:storage_tier",         label: "Storage Tier" },
-{ name: "hpc:recall_time_estimate", label: "Est. Recall Time (s)" },
-{ name: "hpc:facility",             label: "HPC Facility" },
-{ name: "hpc:system",               label: "HPC System" },
-// cube:dimensions and cube:variables handled natively by STAC Browser >= 3.x
-```
-
-**`assetActions.config.js`** — Enable only relevant asset viewers:
-```javascript
-// Enable: xarray code snippet action, Jupyter launch
-// Disable: Cesium, CopcViewer, F3D, ThreePipe, GeoJsonIo, Protomaps
-```
-
-**`basemaps.config.js`** — OSM default; no planetary data so no multi-body config needed.
-
-**`theme/variables.scss`** — Bootstrap variable overrides for ESM-Tools branding.
-
-### Tier 2 — Net-new additions
-
-**`PythonCodeBox.vue`** — Renders syntax-highlighted Python code at catalog, collection, and item
-level. Accepts a `searchType` prop (`"items"` or `"collections"`) wired from `ApiSearch.vue`
-based on the active tab, so the generated snippet matches what the active search mode does:
-- `searchType="items"` → `pystac-client catalog.search(...)` snippet
-- `searchType="collections"` → `requests.get(/collections, params={filter: ...})` snippet
-
-Uses `highlight.js` for syntax highlighting; optionally calls a `/format` endpoint for
-`black`-formatted output.
-
-**`codegen/PythonGenerator.js`** — Two generation modes driven by `searchType`:
-
-*Item mode* — context-aware `pystac-client` calls:
-- Root catalog → generic `catalog.search()` call
-- Experiment catalog → filter by `experiment`
-- Component collection → filter by `experiment` + `component`
-- Item → filter extracted from item properties
-
-*Collection mode* — `formatCollectionFilters` builds a CQL2 params dict:
-- Uses `template_collections.py` (not `template.py`) as the code template
-- Generates `requests.get(api_url + "/collections", params={"filter": ...})` — because
-  `pystac-client`'s `catalog.search()` targets items, not collections
-
-### Tier 3 — View modifications (fork commits)
-
-`Catalog.vue` and `Item.vue` modifications are committed directly to the `esm-tools/stac-browser`
-fork. Current custom commits on top of upstream:
-
-- `8016f41e` — Add Search for Collections tab with correct Python snippet and clean card UI
-  *(modifies `src/views/ApiSearch.vue` — tab structure, `searchType` prop wiring, conformance detection)*
-- `f91608bc` — Strip trailing slash from api_url for cleaner URL construction
-- `963d2e9e` — Add PythonCodeBox to Catalog and Item views with context-aware filters
-  *(modifies `src/views/Catalog.vue`, `src/views/Item.vue`)*
-
-Keep `browser/patches/` updated as human-readable reference diffs (not used at deploy time):
-
-```bash
-cd stacbrowser2
-git diff upstream/main src/views/Catalog.vue    > ../esm_catalog/browser/patches/Catalog.vue.patch
-git diff upstream/main src/views/Item.vue        > ../esm_catalog/browser/patches/Item.vue.patch
-git diff upstream/main src/views/ApiSearch.vue  > ../esm_catalog/browser/patches/ApiSearch.vue.patch
-```
-
-### Upstream rebase workflow
-
-When `radiantearth/stac-browser` releases a new version:
-
-```bash
-cd stacbrowser2
-git fetch upstream
-git rebase upstream/main   # replay custom commits on top of new upstream
-git push origin --force-with-lease
-# Regenerate patches/ reference diffs afterward
-```
-
-### Build and deploy
-
-```bash
-# Clone the fork (Tier 3 already present as commits)
-git clone https://github.com/esm-tools/stac-browser stacbrowser2
-
-# Apply Tier 1 and Tier 2 overrides from this repo
-cp -r browser/config/* stacbrowser2/       # -r required: theme/ is a subdirectory
-cp -r browser/src/* stacbrowser2/src/
-
-# Build
-cd stacbrowser2 && npm install && npm run build
-```
+The API runs inside the AWI internal network; access via VPN.  Because the browser
+runs on a different origin, **CORS must be open** — `create_app()` already sets
+`allow_origins=["*"]`.
 
 ---
 
@@ -832,17 +677,23 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [x] `integration/esm_tools.py` — `add_files()` bridge for tidy phase
 - [x] `integration/config.py` — `finished_config.yaml` loader (`load_config`); plus `find_finished_configs`, `get_outdata_files`, `extract_stac_metadata` helpers
 - [x] Bug fix: `scan/context.py` `_find_component_for_path()` now checks `experiment_outdata_dir` (the key used in real finished_config files; `outdata_dir` is `None` in practice)
-- [x] Pytest tests: `tests/test_integration.py` — 33 tests covering `load_config`, `find_finished_configs`, `get_outdata_files`, `extract_stac_metadata`, `experiment_outdata_dir` context resolution, and end-to-end `add_files()` coverage (159 total tests passing)
+- [x] Pytest tests: `tests/test_integration.py` — 51 tests covering `load_config`, `find_finished_configs`, `get_outdata_files`, `extract_stac_metadata`, `find_file_operations_log`, `get_outdata_from_file_operations`, `add_files()` (with checksums), `add_run()` (177 total tests passing)
+- [x] `integration/config.py` — `find_file_operations_log()` + `get_outdata_from_file_operations()`: primary source for catalog construction (MD5 checksums included); falls back to `finished_config.yaml` outdata_targets
+- [x] `integration/esm_tools.py` — `add_files()` `checksums` param injects `file:checksum` into item assets; `add_run()` implements the priority chain (file_operations_tidy → finished_config)
 - [x] User documentation: `docs/esm_tools_integration.md` — how to enable cataloging in a run script, `add_files()` API reference, all three config helpers, `finished_config.yaml` keys used, collection naming convention
 
-### Phase 3: API + Browser
-- [ ] stac-fastapi architecture defined (DuckDB backend, federation, CORS)
-- [ ] STAC Browser fork (`stacbrowser2`) with PythonCodeBox and context-aware codegen
-- [ ] Three-tier browser customization (config, src additions, upstream patches)
-- [ ] JSON-LD vocabulary links
-- [ ] Deploy and serve
-- [ ] Pytest tests: `tests/test_api.py` — STAC endpoint responses, CQL2 filter parsing, CORS headers, collection search conformance
-- [ ] User documentation: `docs/api_and_browser.md` — federation config (`~/.esm_catalog.yaml`), `esm-catalog serve` usage, STAC Browser deployment steps, supported CQL2 filter syntax
+### Phase 3: API ✅ COMPLETE
+- [x] `api/client.py` — `DuckDBCatalogClient` (BaseCoreClient, 6 abstract methods)
+- [x] `api/app.py` — `create_app()` factory; module-level `app` for `uvicorn esm_catalog.api.app:app`
+- [x] Multi-catalog federation across per-experiment `catalog.duckdb` files
+- [x] CORS middleware (`allow_origins=["*"]`) for STAC Browser cross-origin access
+- [x] `ESM_CATALOG_DB` env var for colon-separated catalog paths
+- [x] `storage/duckdb.py` — `search_items()` extended with `id` and `datetime`/`datetime_end` native column filters
+- [x] CLI `serve` command wired to `create_app()` (was referencing stub `api.server`)
+- [x] Pytest tests: `tests/test_api.py` — 34 tests covering landing page, conformance, collections CRUD, items CRUD, GET/POST search with datetime range, multi-catalog federation, CORS headers, client init validation (211 total tests passing)
+- [x] Decision: STAC Browser is **external** — use radiantearth hosted instance; no fork required in this repo
+- [ ] JSON-LD vocabulary links (deferred to Phase 5)
+- [ ] User documentation: `docs/api_and_browser.md` — federation config, `esm-catalog serve` usage, STAC Browser URL pattern, supported filter syntax
 
 ### Phase 4: HPC Features
 - [ ] Tape state detection (`hpc/state.py` — dmattr, scoutfs)

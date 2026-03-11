@@ -355,6 +355,89 @@ def _grib_to_cf(short_name: str) -> str | None:
 
 
 # -----------------------------------------------------------------------------
+# Dimension extraction
+# -----------------------------------------------------------------------------
+
+def _extract_dimensions_grib(datasets: dict) -> dict:
+    """Build a ``cube:dimensions`` dict from all open GRIB hypercube datasets.
+
+    Iterates over every (gridType, levelType) → xr.Dataset pair and collects
+    unique dimension names with their type, axis, and extent.  Multiple
+    hypercubes may share dimensions (e.g. *latitude*/*longitude* appear in
+    both the surface and hybrid-level cubes); duplicates are skipped after the
+    first occurrence.
+    """
+    import numpy as np
+
+    dims: dict = {}
+
+    for ds in datasets.values():
+        for name, size in ds.sizes.items():
+            if name in dims:
+                continue  # Already handled from a previous hypercube
+
+            coord = ds.coords.get(name)
+            entry: dict = {}
+
+            if name in ("time", "valid_time") or "time" in name.lower():
+                entry["type"] = "temporal"
+                times = _extract_datetimes(ds)
+                if times:
+                    entry["extent"] = [min(times).isoformat(), max(times).isoformat()]
+                else:
+                    entry["extent"] = [None, None]
+
+            elif name in ("latitude", "lat", "y"):
+                entry["type"] = "spatial"
+                entry["axis"] = "y"
+                if coord is not None:
+                    vals = coord.values
+                    entry["extent"] = [float(np.nanmin(vals)), float(np.nanmax(vals))]
+
+            elif name in ("longitude", "lon", "x"):
+                entry["type"] = "spatial"
+                entry["axis"] = "x"
+                if coord is not None:
+                    vals = coord.values.copy()
+                    if np.nanmax(vals) > 180:
+                        vals = np.where(vals > 180, vals - 360, vals)
+                    entry["extent"] = [float(np.nanmin(vals)), float(np.nanmax(vals))]
+
+            elif name in ("hybrid", "level", "lev", "depth",
+                          "heightAboveGround", "isobaricInhPa"):
+                entry["type"] = "spatial"
+                entry["axis"] = "z"
+                if coord is not None:
+                    vals = coord.values
+                    try:
+                        entry["extent"] = [float(np.nanmin(vals)), float(np.nanmax(vals))]
+                    except Exception:
+                        entry["extent"] = [0, size - 1]
+                else:
+                    entry["extent"] = [0, size - 1]
+
+            elif name == "values":
+                # Reduced Gaussian / spectral grid — spatial but no single axis
+                entry["type"] = "spatial"
+                entry["extent"] = [0, size - 1]
+
+            else:
+                entry["type"] = "ordinal"
+                if coord is not None:
+                    vals = coord.values
+                    try:
+                        entry["extent"] = [float(np.nanmin(vals)), float(np.nanmax(vals))]
+                    except Exception:
+                        entry["extent"] = [0, size - 1]
+                else:
+                    entry["extent"] = [0, size - 1]
+
+            dims[name] = entry
+
+    return dims
+
+
+# -----------------------------------------------------------------------------
 # Public entry point
 # -----------------------------------------------------------------------------
 
@@ -387,6 +470,7 @@ def scan_grib(path: Path) -> dict:
     all_variables: list[dict] = _extract_variables(datasets, codes_table)
     bbox = [-180.0, -90.0, 180.0, 90.0]
     all_datetimes: list[datetime] = []
+    dimensions = _extract_dimensions_grib(datasets)
     for ds in datasets.values():
         bbox = _update_bbox(ds, bbox)
         all_datetimes.extend(_extract_datetimes(ds))
@@ -400,7 +484,7 @@ def scan_grib(path: Path) -> dict:
         "variable":       primary_var,
         "variables":      all_variables,
         "cf_parameters":  _cf_parameters(all_variables),
-        "dimensions":     {},   # GRIB dims are implicit per-hypercube
+        "dimensions":     dimensions,
         "bbox":           bbox,
         "geometry":       _bbox_to_polygon(bbox),
         "datetime_start": dt_start,

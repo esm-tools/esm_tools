@@ -45,5 +45,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Usage: docker run -p 23000:23000 esm-catalog-api
 #        docker run -e ESM_CATALOG_PORT=9000 -p 9000:9000 esm-catalog-api
-CMD uvicorn esm_catalog.api.app:create_app --factory \
+CMD uvicorn esm_catalog.api.app:app \
     --host ${ESM_CATALOG_HOST} --port ${ESM_CATALOG_PORT}

@@ -241,8 +241,10 @@ def create_app(
         response_model=None,
         include_in_schema=False,
     )
-    def cql2_format(body: dict | None = None):
-        return body or {}
+    async def cql2_format(request: Request):
+        # STAC Browser sends the CQL2 expression as plain text, not JSON.
+        # Accept anything and echo back an empty 200 to silence log noise.
+        return {}
 
     return api
 

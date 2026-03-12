@@ -599,10 +599,13 @@ No fork is required.  The features needed — "Search for Collections" tab and
 | Feature | Upstream activation |
 |---|---|
 | "Search for Collections" tab | API declares `collection-search` conformance class |
-| "Additional filters" CQL2 builder | API declares `item-search#filter` conformance class |
+| "Additional filters" in Items tab | API declares `item-search#filter` + OGC CQL2 conformance classes |
+| "Additional filters" in Collections tab | API declares `collection-search#filter` + OGC CQL2 conformance classes **and** `GET /collections` response includes a `rel=queryables` link |
 
-Both conformance classes are advertised by `stac-fastapi` when the corresponding
-extensions are registered.  The tab appears automatically with no browser changes.
+The conformance classes are advertised automatically by `stac-fastapi`.  The queryables
+link in `GET /collections` must be added explicitly — STAC Browser's `SearchFilter.vue`
+fetches queryables for the Collections tab from the link embedded in that response, not
+from the landing page queryables link used by the Items tab.
 
 ### Usage
 
@@ -703,12 +706,13 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [x] CQL2-JSON filtering for `/search` (POST body `filter` field) and `/collections` (query param)
 - [x] `GET /queryables` — JSON Schema with enum lists populated via `DISTINCT` queries on live catalog; enables STAC Browser dropdown pickers in "Additional filters"
 - [x] `GET /stac-extensions/hpc/v0.1.0/schema.json` — serves HPC extension schema locally; canonical GitHub Pages URL rewired in `stac_extensions` at serve time so STAC Browser can validate
-- [x] `POST /format` — OGC CQL2 format-negotiation stub; silences 404 log noise from STAC Browser probe
+- [x] `POST /format` — OGC CQL2 format-negotiation stub; accepts raw body (plain-text CQL2 or JSON) to always return 200; silences log noise from STAC Browser probe
 - [x] Absolute link injection for collections (`self`, `root`, `parent`, `items`) and items (`self`, `root`, `parent`, `collection`) — stored fragment links are not valid IRIs and break STAC validation and Browser navigation
 - [x] Asset `href` normalisation — bare filesystem paths prefixed with `file://` to pass `iri-reference` format validation
 - [x] Pagination for POST `/search` — `numberMatched`, `numberReturned`, and `first`/`prev`/`next` links with full body replay; token encodes integer offset
 - [x] Pagination for GET `/collections/{id}/items` — `token` and `limit` read directly from `request.query_params` (stac-fastapi does not forward unknown query params via method signature)
 - [x] CQL2 temporal literal unwrapping (`_cql2_value`) — STAC Browser sends `{"timestamp": "..."}` dicts; unwrapped before DuckDB binding
+- [x] `GET /collections` response includes `rel=queryables` link — required for STAC Browser to load queryables and show "Additional filters" CQL2 builder in the "Search for Collections" tab (without this link the tab shows no filter controls even when `collection-search#filter` is declared)
 - [ ] JSON-LD vocabulary links (deferred to Phase 5)
 - [ ] User documentation: `docs/api_and_browser.md` — federation config, `esm-catalog serve` usage, STAC Browser URL pattern, supported filter syntax
 

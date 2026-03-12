@@ -377,6 +377,17 @@ class TestCQL2Filter:
         assert "variable" in body["properties"]
         assert body["$schema"] == "https://json-schema.org/draft/2019-09/schema"
 
+    def test_collections_response_has_queryables_link(self, client):
+        """GET /collections must include a queryables link so STAC Browser shows
+        'Additional filters' in the 'Search for Collections' tab."""
+        r = client.get("/collections")
+        assert r.status_code == 200
+        links = r.json().get("links", [])
+        rels = [lnk["rel"] for lnk in links]
+        assert "http://www.opengis.net/def/rel/ogc/1.0/queryables" in rels
+        queryables_link = next(lnk for lnk in links if lnk["rel"] == "http://www.opengis.net/def/rel/ogc/1.0/queryables")
+        assert queryables_link["href"].endswith("/queryables")
+
     def test_ogc_cql2_conformance(self, client):
         """Conformance must include OGC CQL2 classes for STAC Browser filter UI."""
         r = client.get("/conformance")

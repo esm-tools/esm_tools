@@ -431,7 +431,14 @@ class DuckDBCatalogClient(BaseCoreClient):
 
         return stac.Collections(
             collections=all_cols,
-            links=[],
+            links=[
+                {
+                    "rel": _OGC_QUERYABLES_REL,
+                    "href": f"{base_url}/queryables",
+                    "type": "application/schema+json",
+                    "title": "Queryable properties",
+                }
+            ],
             numberMatched=len(all_cols),
             numberReturned=len(all_cols),
         )

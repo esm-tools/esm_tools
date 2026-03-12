@@ -257,10 +257,15 @@ class TestMakeItem:
         assert "data" in item["assets"]
         assert "href" in item["assets"]["data"]
 
-    def test_data_asset_href_is_absolute(self, fesom_nc, sample_metadata, ctx):
+    def test_data_asset_href_is_uri(self, fesom_nc, sample_metadata, ctx):
         item = make_item(fesom_nc, sample_metadata, ctx)
-        from pathlib import Path
-        assert Path(item["assets"]["data"]["href"]).is_absolute()
+        href = item["assets"]["data"]["href"]
+        # href should be a valid URI (file:// for local, or other protocols)
+        assert href.startswith("file://") or "://" in href
+        # For file:// URIs, the path after the protocol should be absolute
+        if href.startswith("file://"):
+            path_part = href[7:]  # Remove "file://"
+            assert path_part.startswith("/"), f"file:// URI path should be absolute: {href}"
 
     def test_properties_contain_experiment(self, fesom_nc, sample_metadata, ctx):
         item = make_item(fesom_nc, sample_metadata, ctx)

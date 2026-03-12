@@ -1,6 +1,6 @@
 computer:
    pool_dir: "/mnt/lustre-mdc/projects/geomar/foci_input2/" 
-   partition: "standard96"
+   partition: "standard96:test"
 general:
    use_venv: False
    verbose: True 
@@ -9,18 +9,18 @@ general:
    homedir: !ENV ${HOME}
 
    # operational settings: yearly restarts
-   compute_time: "06:00:00"
-   initial_date: "1900-01-01T00:00:00"       # Initial exp. date
-   final_date: "1903-01-01T00:00:00"         # Final date of the experiment
-   nmonth: 12
-   postprocessing: 1
-   clean_runs: 2
-   # test settings, daily restarts
-   #compute_time: "00:15:00"
+   #compute_time: "01:00:00"
    #initial_date: "1900-01-01T00:00:00"       # Initial exp. date
-   #final_date: "1900-01-04T00:00:00"         # Final date of the experiment
-   #nday: 1 
-   #postprocessing: 0
+   #final_date: "1940-01-01T00:00:00"         # Final date of the experiment
+   #nmonth: 12
+   #postprocessing: 1
+   #clean_runs: 2
+   # test settings, daily restarts
+   compute_time: "00:15:00"
+   initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   final_date: "1900-01-04T00:00:00"         # Final date of the experiment
+   nday: 1 
+   postprocessing: 0
    
    # machine specific setup 
    account: shk00060
@@ -57,11 +57,11 @@ echam:
    scenario: "PI-CTRL"
    resolution: "T63"
    # operational settings: yearly restarts
-   restart_rate: ${general.nmonth}
-   restart_unit: "months"
+   #restart_rate: ${general.nmonth}
+   #restart_unit: "months"
    # test settings, daily restarts
-   #restart_rate: ${general.nday}
-   #restart_unit: "days"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
    nproca: 8 
    nprocb: 12
    nprocio: 0
@@ -93,9 +93,9 @@ nemo:
    # overwrite default time step of 1800s 
    time_step: 1800
    version: "ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4"
-   jpni: 48
+   jpni: 36
    jpnj: 24
-   nproc: 1152
+   nproc: 864 
    # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
    # alkalinity masks
    namelist_changes:

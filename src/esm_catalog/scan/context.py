@@ -28,10 +28,11 @@ class CollectionContext:
     component: str
     collection_id: str       # "{experiment_id}-{component}"
     collection_title: str
+    experiment_path: Path | None = None  # Path to experiment root (for namelist scanning)
 
 
 def resolve_context(
-    path: Path,
+    path,
     config: dict | None = None,
     db=None,
 ) -> CollectionContext:
@@ -52,9 +53,16 @@ def resolve_context(
     Raises:
         ValueError: if neither strategy can resolve the context.
     """
-    path = Path(path)
+    # For remote UPath objects, we need to work with the path string
+    # Path(upath) fails with "expected str, bytes or os.PathLike object, not SFTPPath"
+    if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
+        # Remote path - use PurePosixPath for parsing (no filesystem access)
+        from pathlib import PurePosixPath
+        path_for_parsing = PurePosixPath(path.path if hasattr(path, "path") else str(path))
+    else:
+        path_for_parsing = Path(path)
 
-    ctx = _from_config(path, config) or _from_path(path)
+    ctx = _from_config(path_for_parsing, config) or _from_path(path_for_parsing)
 
     if ctx is None:
         raise ValueError(
@@ -94,12 +102,24 @@ def _from_config(path: Path, config: dict | None) -> CollectionContext | None:
     if not component:
         return None
 
-    return _make_ctx(experiment_id, component)
+    # Try to find experiment path from config
+    experiment_path = None
+    base_dir = general.get("base_dir") or general.get("experiment_dir")
+    if base_dir:
+        experiment_path = Path(base_dir)
+
+    return _make_ctx(experiment_id, component, experiment_path)
 
 
-def _find_component_for_path(path: Path, config: dict) -> str | None:
+def _find_component_for_path(path, config: dict) -> str | None:
     """Return the component name whose outdata_dir is an ancestor of *path*."""
-    path_resolved = path.resolve()
+    # For PurePosixPath (remote), we can't resolve, so use as-is
+    # For Path (local), resolve to absolute
+    if hasattr(path, "resolve"):
+        path_str = str(path.resolve())
+    else:
+        path_str = str(path)
+
     # ESM-Tools config has top-level keys for each component (fesom, echam, ...)
     skip_keys = {"general", "computer", "setup", "env", "defaults"}
     for key, block in config.items():
@@ -111,7 +131,9 @@ def _find_component_for_path(path: Path, config: dict) -> str | None:
         if not outdata:
             continue
         try:
-            if path_resolved.is_relative_to(Path(outdata).resolve()):
+            # String-based check: is the path under the outdata directory?
+            outdata_str = str(Path(outdata).resolve()) if hasattr(path, "resolve") else outdata
+            if path_str.startswith(outdata_str):
                 return key
         except (ValueError, TypeError):
             pass
@@ -122,14 +144,20 @@ def _find_component_for_path(path: Path, config: dict) -> str | None:
 # Strategy 2: Path parsing
 # ------------------------------------------------------------------
 
-def _from_path(path: Path) -> CollectionContext | None:
+def _from_path(path) -> CollectionContext | None:
     """Parse collection context from a path following ESM-Tools conventions.
 
     Expected patterns:
         .../experiments/{experiment}/outdata/{component}/file.nc
         .../experiments/{experiment}/outdata/{component}/subdir/file.nc
+
+    Works with both Path (local) and PurePosixPath (remote).
     """
-    parts = path.resolve().parts
+    # For PurePosixPath (remote), we can't resolve, so use as-is
+    if hasattr(path, "resolve"):
+        parts = path.resolve().parts
+    else:
+        parts = path.parts
 
     # Find "outdata" segment; experiment is one directory above it
     try:
@@ -146,18 +174,26 @@ def _from_path(path: Path) -> CollectionContext | None:
     exp_idx = _rindex_before(parts, "experiments", outdata_idx)
     if exp_idx is not None and exp_idx + 1 < outdata_idx:
         experiment_id = parts[exp_idx + 1]
+        # Experiment path is everything up to and including the experiment name
+        experiment_path = Path(*parts[: exp_idx + 2])
     else:
         # Fallback: use the parent directory of "outdata"
         experiment_id = parts[outdata_idx - 1]
+        # Experiment path is the directory containing "outdata"
+        experiment_path = Path(*parts[:outdata_idx])
 
-    return _make_ctx(experiment_id, component)
+    return _make_ctx(experiment_id, component, experiment_path)
 
 
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
 
-def _make_ctx(experiment_id: str, component: str) -> CollectionContext:
+def _make_ctx(
+    experiment_id: str,
+    component: str,
+    experiment_path: Path | None = None,
+) -> CollectionContext:
     collection_id = f"{experiment_id}-{component}"
     collection_title = f"{experiment_id} / {component}"
     return CollectionContext(
@@ -165,6 +201,7 @@ def _make_ctx(experiment_id: str, component: str) -> CollectionContext:
         component=component,
         collection_id=collection_id,
         collection_title=collection_title,
+        experiment_path=experiment_path,
     )
 
 
@@ -175,7 +212,7 @@ def _ensure_collection(ctx: CollectionContext, db) -> None:
     if db.collection_exists(ctx.collection_id):
         return
 
-    collection = make_collection(ctx)
+    collection = make_collection(ctx, experiment_path=ctx.experiment_path)
     db.insert_collection(collection)
     logger.info("Created collection: {}", ctx.collection_id)
 

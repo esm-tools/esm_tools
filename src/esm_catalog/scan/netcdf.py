@@ -1,25 +1,63 @@
-"""Scan a NetCDF file and return a metadata dict for STAC Item construction."""
+"""Scan a NetCDF file and return a metadata dict for STAC Item construction.
 
-import os
+Supports both local paths and remote URIs via fsspec/UPath.
+"""
+
+from __future__ import annotations
+
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import xarray as xr
 from loguru import logger
 
+if TYPE_CHECKING:
+    from upath import UPath
 
-def scan_netcdf(path: Path) -> dict:
+
+def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
     """Open *path* with xarray and extract STAC-relevant metadata.
+
+    Supports local paths and remote URIs (ssh://, scoutfs://, s3://, etc.).
+
+    Args:
+        path: Local path, UPath, or URI string to scan
+        timeout: Max seconds to wait for remote file operations (default: 120)
 
     Returns a dict with keys:
         variable, variables, cf_parameters, dimensions, bbox, geometry,
-        datetime_start, datetime_end, datetime_str, file_size, conventions
+        datetime_start, datetime_end, datetime_str, file_size, conventions,
+        format, global_attributes
+
+    All NetCDF global attributes are extracted and stored in 'global_attributes'
+    for inclusion in STAC item properties, enabling search by any metadata
+    present in the file (model version, mesh path, advection scheme, etc.).
     """
-    path = Path(path)
+    # Handle string paths
+    if isinstance(path, str):
+        from esm_catalog.scan.upath import parse_uri
+        path = parse_uri(path)
+
     logger.debug("Scanning NetCDF: {}", path)
 
-    ds = xr.open_dataset(str(path), decode_times=True)
+    # xarray can open URIs directly via fsspec, or we can use h5netcdf with file object
+    # For remote files, convert to string URI which xarray handles via fsspec
+    if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
+        # Remote file - reconstruct full URI with hostname
+        from esm_catalog.scan.upath import to_uri
+        uri = to_uri(path)
+        logger.debug("Opening remote file: {}", uri)
+        # Use fsspec storage options for SSH to handle timeout
+        storage_options = {"timeout": timeout}
+        ds = xr.open_dataset(
+            uri, decode_times=True, engine="h5netcdf",
+            backend_kwargs={"storage_options": storage_options}
+        )
+    else:
+        # Local file - use standard approach
+        ds = xr.open_dataset(str(path), decode_times=True)
 
     variables = _extract_variables(ds)
     dimensions = _extract_dimensions(ds)
@@ -28,6 +66,9 @@ def scan_netcdf(path: Path) -> dict:
 
     # Primary variable: first data variable (non-coordinate)
     primary_var = next(iter(ds.data_vars), "unknown")
+
+    # Extract ALL global attributes for queryable metadata
+    global_attrs = _extract_global_attributes(ds)
 
     ds.close()
 
@@ -41,10 +82,42 @@ def scan_netcdf(path: Path) -> dict:
         "datetime_start": dt_start,
         "datetime_end": dt_end,
         "datetime_str": _datetime_str(path, dt_start),
-        "file_size": os.path.getsize(path),
-        "conventions": ds.attrs.get("Conventions", ""),
+        "file_size": _get_file_size(path),
+        "conventions": global_attrs.pop("Conventions", ""),
         "format": "netcdf",
+        "global_attributes": global_attrs,
     }
+
+
+def _get_file_size(path: "Union[Path, UPath]") -> int:
+    """Get file size, works for both local Path and remote UPath."""
+    try:
+        return path.stat().st_size
+    except Exception:
+        return 0
+
+
+def _extract_global_attributes(ds: xr.Dataset) -> dict:
+    """Extract all global attributes from the dataset.
+
+    Filters out attributes that are too large (> 1000 chars) or non-scalar.
+    Converts numpy types to Python native types.
+    """
+    attrs = {}
+    for key, value in ds.attrs.items():
+        # Skip very long values (e.g., large arrays or binary data)
+        if isinstance(value, str) and len(value) > 1000:
+            continue
+        # Skip non-scalar numpy arrays
+        if isinstance(value, np.ndarray):
+            if value.size > 10:
+                continue
+            value = value.tolist()
+        # Convert numpy scalars to Python types
+        if hasattr(value, "item"):
+            value = value.item()
+        attrs[key] = value
+    return attrs
 
 
 def _extract_variables(ds: xr.Dataset) -> list[dict]:
@@ -232,7 +305,7 @@ def _cf_parameters(variables: list[dict]) -> list[dict]:
     return params
 
 
-def _datetime_str(path: Path, dt: datetime | None) -> str:
+def _datetime_str(path: "Union[Path, UPath]", dt: datetime | None) -> str:
     """Return a compact datetime string for use in item IDs."""
     if dt is not None:
         return dt.strftime("%Y%m")

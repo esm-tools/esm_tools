@@ -1,13 +1,22 @@
-"""Scan a GRIB file and return a metadata dict for STAC Item construction."""
+"""Scan a GRIB file and return a metadata dict for STAC Item construction.
 
-import os
+Note: GRIB scanning currently requires local file access due to eccodes limitations.
+Remote files will be cached locally before scanning.
+"""
+
+from __future__ import annotations
+
 import re
 import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, Union
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 
 # -----------------------------------------------------------------------------
@@ -358,7 +367,7 @@ def _grib_to_cf(short_name: str) -> str | None:
 # Public entry point
 # -----------------------------------------------------------------------------
 
-def scan_grib(path: Path) -> dict:
+def scan_grib(path: "Union[Path, UPath, str]") -> dict:
     """Scan *path* with eccodes + cfgrib and return a STAC-ready metadata dict.
 
     Strategy:
@@ -368,8 +377,23 @@ def scan_grib(path: Path) -> dict:
     3. Merge variables, bbox, and datetimes across all hypercubes.
     4. Enrich variable names/units from the companion .codes file if present.
 
+    Note: eccodes requires local file access. Remote files are not yet supported
+    for GRIB scanning and will raise an error.
+
     Returns a dict with the same schema as scan_netcdf.
     """
+    # Handle string paths
+    if isinstance(path, str):
+        from esm_catalog.scan.upath import parse_uri
+        path = parse_uri(path)
+
+    # Check if remote - eccodes doesn't support remote files
+    if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
+        raise ValueError(
+            f"GRIB scanning requires local file access. Remote path not supported: {path}\n"
+            "Download the file locally first, or use NetCDF format for remote scanning."
+        )
+
     path = Path(path)
     logger.debug("Scanning GRIB: {}", path)
 
@@ -406,7 +430,7 @@ def scan_grib(path: Path) -> dict:
         "datetime_start": dt_start,
         "datetime_end":   dt_end,
         "datetime_str":   dt_start.strftime("%Y%m") if dt_start else "000000",
-        "file_size":      os.path.getsize(path),
+        "file_size":      path.stat().st_size,
         "conventions":    "CF-1.6",
         "format":         "grib",
     }

@@ -19,17 +19,27 @@ _FS_TYPE_NAMES = {
 }
 
 
-def detect_hpc_storage(path: Path) -> dict:
+def detect_hpc_storage(path) -> dict:
     """Return HPC storage metadata for *path*.
 
     Tries path-pattern matching first (fast, no syscall).  Falls back to
     filesystem statvfs for unknown paths.
 
+    Works with both local Path and remote UPath objects.
+
     Returns a dict with a subset of these keys:
         hpc:facility, hpc:system, hpc:storage_type, hpc:state,
         hpc:recall_time_estimate
     """
-    path_str = str(path.resolve())
+    # Check if remote path (UPath with protocol)
+    is_remote = hasattr(path, "protocol") and path.protocol and path.protocol != "file"
+
+    # For remote paths, use the path attribute or string representation
+    # For local paths, resolve to absolute
+    if is_remote:
+        path_str = path.path if hasattr(path, "path") else str(path)
+    else:
+        path_str = str(Path(path).resolve())
 
     # AWI Albedo cluster (Lustre)
     if "/albedo/" in path_str:
@@ -58,7 +68,11 @@ def detect_hpc_storage(path: Path) -> dict:
             "hpc:recall_time_estimate": 300,
         }
 
-    # Fallback: probe the actual filesystem
+    # Fallback: probe the actual filesystem (only for local paths)
+    if is_remote:
+        # Can't statvfs a remote path - return generic remote storage
+        return {"hpc:storage_type": "remote", "hpc:state": "online"}
+
     return _detect_from_statvfs(path)
 
 
@@ -74,7 +88,17 @@ def _detect_from_statvfs(path: Path) -> dict:
 
 
 def _statfs(path: Path) -> int:
-    """Return f_type from statfs(2).  Linux only."""
+    """Return f_type from statfs(2).  Linux only.
+
+    On non-Linux platforms (macOS, BSD), returns 0 to fall back to
+    generic POSIX detection since statfs structure differs significantly.
+    """
+    import sys
+
+    # Only Linux has f_type in statfs - macOS/BSD have different structures
+    if sys.platform != "linux":
+        return 0
+
     import ctypes
     import ctypes.util
 

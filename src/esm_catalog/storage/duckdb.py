@@ -180,6 +180,10 @@ class CatalogDB:
         """Return (items, total_count) matching *filter_props*.
 
         filter_props: {field: (operator, value)} or {field: value}
+
+        Supported operators:
+        - Standard comparison: =, !=, <, <=, >, >=, LIKE
+        - IN: for multi-value matching, value should be a list
         """
         conditions = ["1=1"]
         params: list = []
@@ -191,7 +195,21 @@ class CatalogDB:
                 else:
                     op, val = "=", spec
 
-                if field in ("id", "collection", "experiment"):
+                # Handle IN operator for multi-value matching
+                if op == "IN":
+                    if not isinstance(val, (list, tuple)) or not val:
+                        continue  # Skip invalid IN clauses
+                    placeholders = ", ".join("?" for _ in val)
+                    if field in ("id", "collection", "experiment"):
+                        conditions.append(f"{field} IN ({placeholders})")
+                        params.extend(val)
+                    else:
+                        # JSON path query for item properties
+                        conditions.append(
+                            f"json_extract_string(data, '$.properties.{field}') IN ({placeholders})"
+                        )
+                        params.extend(str(v) for v in val)
+                elif field in ("id", "collection", "experiment"):
                     conditions.append(f"{field} {op} ?")
                     params.append(val)
                 elif field in ("datetime", "datetime_end"):
@@ -234,27 +252,114 @@ class CatalogDB:
         return matched[offset:offset + limit], total
 
     def _collection_matches(self, collection: dict, filter_props: dict) -> bool:
-        """Return True if *collection* satisfies all constraints in *filter_props*."""
+        """Return True if *collection* satisfies all constraints in *filter_props*.
+
+        Supports CQL2 operators (=, <, >, <=, >=, <>) on:
+        - Native collection fields
+        - Namelist parameters (nml:group:key -> looks in nml:parameters)
+        - Item-derived property index (for equality only)
+        """
         idx = self.get_collection_item_props(collection["id"])
+
         for field, spec in filter_props.items():
             if isinstance(spec, tuple):
                 op, val = spec
             else:
                 op, val = "=", spec
 
-            # Check native collection field first
-            native_val = collection.get(field)
-            if native_val is not None and str(native_val) == str(val):
-                continue
+            # Get the actual value to compare
+            actual_val = self._get_collection_field_value(collection, field, idx)
 
-            # Check item-derived property index
-            indexed_vals = idx.get(field, set())
-            if op == "=" and str(val) in indexed_vals:
-                continue
+            if actual_val is None:
+                # Field not found - constraint fails
+                return False
 
-            # Neither matched — constraint fails
-            return False
+            # For indexed values (sets), only equality is supported
+            if isinstance(actual_val, set):
+                if op == "=" and str(val) in actual_val:
+                    continue
+                return False
+
+            # Compare with CQL2 operator
+            if not self._compare_values(actual_val, op, val):
+                return False
+
         return True
+
+    def _get_collection_field_value(
+        self, collection: dict, field: str, idx: dict
+    ):
+        """Get value for a field from collection, namelist params, or index.
+
+        Args:
+            collection: Collection dict
+            field: Field name (e.g., "experiment", "nml:radctl:co2vmr")
+            idx: Item-derived property index
+
+        Returns:
+            Value if found, set of values from index, or None if not found.
+        """
+        # 1. Check native collection field
+        if field in collection:
+            return collection[field]
+
+        # 2. Check namelist parameters (nml:group:key format)
+        if field.startswith("nml:"):
+            nml_params = collection.get("nml:parameters", {})
+            # Field is "nml:radctl:co2vmr", key in nml:parameters is "radctl:co2vmr"
+            param_key = field[4:]  # Remove "nml:" prefix
+            if param_key in nml_params:
+                return nml_params[param_key]
+
+        # 3. Check item-derived property index (returns set)
+        if field in idx:
+            return idx[field]
+
+        return None
+
+    def _compare_values(self, actual, op: str, expected) -> bool:
+        """Compare actual value against expected using CQL2 operator.
+
+        Handles type coercion for numeric comparisons.
+        """
+        # Try numeric comparison first
+        try:
+            actual_num = float(actual)
+            expected_num = float(expected)
+
+            if op == "=":
+                return actual_num == expected_num
+            if op == "<":
+                return actual_num < expected_num
+            if op == ">":
+                return actual_num > expected_num
+            if op == "<=":
+                return actual_num <= expected_num
+            if op == ">=":
+                return actual_num >= expected_num
+            if op == "<>":
+                return actual_num != expected_num
+        except (ValueError, TypeError):
+            pass
+
+        # Fall back to string comparison
+        actual_str = str(actual)
+        expected_str = str(expected)
+
+        if op == "=":
+            return actual_str == expected_str
+        if op == "<>":
+            return actual_str != expected_str
+        if op == "<":
+            return actual_str < expected_str
+        if op == ">":
+            return actual_str > expected_str
+        if op == "<=":
+            return actual_str <= expected_str
+        if op == ">=":
+            return actual_str >= expected_str
+
+        return False
 
     def close(self):
         self.db.close()

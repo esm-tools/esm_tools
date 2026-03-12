@@ -1161,8 +1161,8 @@ oasis3mct:
                 agrif_oasismct4:
 
                         norestart: "T"
-                        mct_version: "4.0"
-                        version: "4.0-geomar"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
 
                         export_mode_a2o: EXPORTED
 
@@ -1194,26 +1194,26 @@ oasis3mct:
                               - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
                               - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
-                           # TODO: test if the naming of the remapping file works
+                           
                            flxatmos_1:
-                              - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
-                              - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
-                              - '1_O_ITaux1 <--gauswgt-- A_ITaux1'
-                              - '1_O_ITauy1 <--gauswgt-- A_ITauy1'
-                              - '1_O_QsrIce <--gauswgt-- A_QsrIce'
-                              - '1_O_QsrMix <--gauswgt-- A_QsrMix'
-                              - '1_O_QnsIce <--gauswgt-- A_QnsIce'
-                              - '1_O_QnsMix <--gauswgt-- A_QnsMix'
-                              - '1_OTotRain <--gauswgt-- ATotRain'
-                              - '1_OTotSnow <--gauswgt-- ATotSnow'
-                              - '1_OIceEvap <--gauswgt-- AIceEvap'
-                              - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - '1_O_OTaux1 <--gauswgt_agr1-- A_OTaux1'
+                              - '1_O_OTauy1 <--gauswgt_agr1-- A_OTauy1'
+                              - '1_O_ITaux1 <--gauswgt_agr1-- A_ITaux1'
+                              - '1_O_ITauy1 <--gauswgt_agr1-- A_ITauy1'
+                              - '1_O_QsrIce <--gauswgt_agr1-- A_QsrIce'
+                              - '1_O_QsrMix <--gauswgt_agr1-- A_QsrMix'
+                              - '1_O_QnsIce <--gauswgt_agr1-- A_QnsIce'
+                              - '1_O_QnsMix <--gauswgt_agr1-- A_QnsMix'
+                              - '1_OTotRain <--gauswgt_agr1-- ATotRain'
+                              - '1_OTotSnow <--gauswgt_agr1-- ATotSnow'
+                              - '1_OIceEvap <--gauswgt_agr1-- AIceEvap'
+                              - '1_O_dQnsdT <--gauswgt_agr1-- A_dQnsdT'
 
-                        add_input_files:
-                           rmp_ot2a: rmp_ot2a
-                           rmp_a2oc: rmp_a2oc
-                           rmp_a2ot: rmp_a2ot
-                           rmp_a2agr1: rmp_a2agr1
+                        #add_input_files:
+                           #rmp_ot2a: rmp_ot2a
+                           #rmp_a2oc: rmp_a2oc
+                           #rmp_a2ot: rmp_a2ot
+                           #rmp_a2agr1: rmp_a2agr1
 
                 fs_oasismct4:
 

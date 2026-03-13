@@ -201,14 +201,17 @@ def _inject_collection_links(col: dict, base_url: str) -> dict:
     # Strip all links we manage so stale / fragment hrefs don't leak through
     col["links"] = [
         lnk for lnk in col.get("links", [])
-        if lnk.get("rel") not in ("self", "root", "parent", "items")
+        if lnk.get("rel") not in ("self", "root", "parent", "items", "queryables")
     ]
     col["links"].extend([
-        {"rel": "self",   "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
-        {"rel": "root",   "type": "application/json",     "href": f"{base_url}/"},
-        {"rel": "parent", "type": "application/json",     "href": f"{base_url}/"},
-        {"rel": "items",  "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items",
+        {"rel": "self",        "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
+        {"rel": "root",        "type": "application/json",     "href": f"{base_url}/"},
+        {"rel": "parent",      "type": "application/json",     "href": f"{base_url}/"},
+        {"rel": "items",       "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items",
          "title": "Items"},
+        {"rel": "queryables",  "type": "application/schema+json",
+         "href": f"{base_url}/collections/{cid}/queryables",
+         "title": "Queryables"},
     ])
     return col
 

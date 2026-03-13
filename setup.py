@@ -40,6 +40,15 @@ requirements = [
     "xdgenvpy==2.3.5",
     "pydantic>=1.10.13",
     "h5netcdf>=0.8.1",
+    # New for catalogs
+    "pystac",
+    "shapely",
+    # esm_catalog dependencies
+    "duckdb",
+    "cfgrib",
+    "joblib",
+    "pyarrow",
+    "rich-click",
 ]
 
 setup_requirements = []
@@ -86,6 +95,7 @@ setup(
             "esm_tests=esm_tests.cli:main",
             "esm_tools=esm_tools.cli:main",
             "esm_utilities=esm_utilities.cli:main",
+        "esm-catalog=esm_catalog.cli:main",
         ],
     },
     install_requires=requirements,

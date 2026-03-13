@@ -1,0 +1,48 @@
+# FESOM Experiments Configuration
+# This file contains metadata for FESOM experiments to be included in the multi-level STAC catalog
+#
+# Each experiment can have:
+#   - description: Human-readable description of the experiment
+#   - metadata: Additional key-value pairs for experiment-specific information
+#
+# If an experiment is discovered but not listed here, default values will be used.
+
+experiments:
+  basic-001:
+    description: "AWIESM basic experiment 001 - CORE2 forced simulation"
+    metadata:
+      resolution: "CORE2"
+      forcing: "CORE2"
+      start_year: 1850
+      end_year: 1852
+      configuration: "basic"
+      pi: "Paul Gierz"
+      purpose: "Tutorial example for AWIESM basics"
+  
+  basic-002:
+    description: "AWIESM basic experiment 002 - Extended simulation"
+    metadata:
+      resolution: "CORE2"
+      forcing: "CORE2"
+      start_year: 1850
+      end_year: 1855
+      configuration: "basic"
+      notes: "Extended run from basic-001"
+  
+  basic-003:
+    description: "AWIESM basic experiment 003 - Sensitivity test"
+    metadata:
+      resolution: "CORE2"
+      forcing: "CORE2"
+      start_year: 1850
+      end_year: 1852
+      configuration: "basic"
+      notes: "Sensitivity test with modified parameters"
+
+# Default metadata for experiments not explicitly listed above
+defaults:
+  description: "FESOM experiment"
+  metadata:
+    resolution: "CORE2"
+    forcing: "CORE2"
+    configuration: "standard"

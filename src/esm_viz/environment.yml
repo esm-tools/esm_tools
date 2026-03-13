@@ -34,5 +34,3 @@ dependencies:
   - pydantic>=2.5.0
   - pydantic-settings>=2.1.0
   - numpy>=1.26.0
-  # Natural Earth data for cartopy
-  - natural-earth-data

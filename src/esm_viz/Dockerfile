@@ -41,7 +41,7 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER . /app/esm_viz/
 
 # Add conda env to PATH and esm_viz to PYTHONPATH
 ENV PATH="/opt/conda/envs/viz/bin:$PATH"
-ENV PYTHONPATH="/app:$PYTHONPATH"
+ENV PYTHONPATH="/app"
 
 # Create non-root user for runtime
 RUN useradd --create-home --shell /bin/bash viz && \

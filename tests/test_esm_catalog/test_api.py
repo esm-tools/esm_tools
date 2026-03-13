@@ -377,6 +377,33 @@ class TestCQL2Filter:
         assert "variable" in body["properties"]
         assert body["$schema"] == "https://json-schema.org/draft/2019-09/schema"
 
+    def test_collection_queryables_endpoint(self, client):
+        """GET /collections/{id}/queryables returns scoped JSON Schema for the
+        'Additional Filters' CQL2 builder when browsing a collection's items."""
+        r = client.get("/collections/basic-fesom/queryables")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["$schema"] == "https://json-schema.org/draft/2019-09/schema"
+        assert "properties" in body
+        assert "variable" in body["properties"]
+        assert body["$id"].endswith("/collections/basic-fesom/queryables")
+
+    def test_collection_queryables_404_for_unknown(self, client):
+        """GET /collections/{id}/queryables returns 404 for unknown collections."""
+        r = client.get("/collections/does-not-exist/queryables")
+        assert r.status_code == 404
+
+    def test_collections_response_has_queryables_link(self, client):
+        """GET /collections must include a queryables link so STAC Browser shows
+        'Additional filters' in the 'Search for Collections' tab."""
+        r = client.get("/collections")
+        assert r.status_code == 200
+        links = r.json().get("links", [])
+        rels = [lnk["rel"] for lnk in links]
+        assert "http://www.opengis.net/def/rel/ogc/1.0/queryables" in rels
+        queryables_link = next(lnk for lnk in links if lnk["rel"] == "http://www.opengis.net/def/rel/ogc/1.0/queryables")
+        assert queryables_link["href"].endswith("/queryables")
+
     def test_ogc_cql2_conformance(self, client):
         """Conformance must include OGC CQL2 classes for STAC Browser filter UI."""
         r = client.get("/conformance")
@@ -386,18 +413,10 @@ class TestCQL2Filter:
 
 
 class TestDuckDBCatalogClientInit:
-    def test_allows_empty_catalogs_for_registry_mode(self):
-        """Empty catalog list is allowed (for registry mode).
-
-        This previously raised ValueError but now just logs a warning
-        to support dynamic catalog registration via the registry API.
-        """
+    def test_raises_on_empty_catalogs(self):
         from esm_catalog.api.client import DuckDBCatalogClient
-        # Should not raise - empty list is valid for registry mode
-        client = DuckDBCatalogClient(catalogs=[])
-        assert client is not None
-        # Verify the client is functional (returns empty results)
-        assert client._catalog_paths == []
+        with pytest.raises(ValueError, match="at least one catalog"):
+            DuckDBCatalogClient(catalogs=[])
 
     def test_warns_on_missing_path(self, tmp_path, caplog):
         from esm_catalog.api.client import DuckDBCatalogClient

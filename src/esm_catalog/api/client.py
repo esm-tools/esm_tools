@@ -33,6 +33,8 @@ from stac_fastapi.types import stac
 from stac_fastapi.types.core import BASE_CONFORMANCE_CLASSES, BaseCoreClient
 from stac_fastapi.types.search import BaseSearchPostRequest
 
+from esm_catalog.api.cql2 import parse_cql2_json, parse_filter, parse_datetime
+
 if TYPE_CHECKING:
     from esm_catalog.api.cache import CollectionCache
     from esm_catalog.api.pool import CatalogPool
@@ -56,88 +58,6 @@ _EXTRA_CONFORMANCE = [
 # OGC rel for queryables link - STAC Browser checks for this exact URI
 _OGC_QUERYABLES_REL = "http://www.opengis.net/def/rel/ogc/1.0/queryables"
 
-# Operator mapping from CQL2-JSON op names to SQL operators
-_CQL2_OP_MAP: dict[str, str] = {
-    "eq": "=", "=": "=",
-    "neq": "!=", "!=": "!=", "<>": "!=",
-    "lt": "<", "<": "<",
-    "lte": "<=", "<=": "<=",
-    "gt": ">", ">": ">",
-    "gte": ">=", ">=": ">=",
-    "like": "LIKE",
-}
-_CQL2_OP_INVERSE: dict[str, str] = {
-    "<": ">", "<=": ">=", ">": "<", ">=": "<=", "=": "=", "!=": "!=", "LIKE": "LIKE",
-}
-
-
-def _cql2_value(val: Any) -> Any:
-    """Unwrap a CQL2 literal object into a plain Python value.
-
-    CQL2-JSON represents temporal literals as ``{"timestamp": "..."}`` or
-    ``{"date": "..."}`` dicts rather than bare strings.  Return the inner
-    string so the DB layer receives a value it can bind as TIMESTAMPTZ.
-    """
-    if isinstance(val, dict):
-        if "timestamp" in val:
-            return val["timestamp"]
-        if "date" in val:
-            return val["date"]
-    return val
-
-
-def _parse_cql2_json(expr: dict | None) -> dict:
-    """Parse a CQL2-JSON filter expression into a flat ``filter_props`` dict.
-
-    Handles AND combinations and comparison operators. OR/NOT are logged
-    and handled with limited support (OR uses first clause only, NOT ignored).
-
-    Returns:
-        Dict mapping field name -> (sql_op, value) suitable for
-        :meth:`~esm_catalog.storage.duckdb.CatalogDB.search_items`.
-    """
-    if not expr:
-        return {}
-    op = str(expr.get("op", "")).lower()
-    args = expr.get("args", [])
-
-    if op == "and":
-        result: dict = {}
-        for arg in args:
-            result.update(_parse_cql2_json(arg))
-        return result
-
-    if op == "or":
-        logger.warning(
-            "CQL2 OR operator not fully supported; using first clause only. "
-            "Filter: {}", expr
-        )
-        if args:
-            return _parse_cql2_json(args[0])
-        return {}
-
-    if op == "not":
-        logger.warning(
-            "CQL2 NOT operator not supported; filter ignored. Filter: {}", expr
-        )
-        return {}
-
-    sql_op = _CQL2_OP_MAP.get(op)
-    if sql_op and len(args) == 2:
-        left, right = args
-        if isinstance(left, dict) and "property" in left:
-            return {left["property"]: (sql_op, _cql2_value(right))}
-        if isinstance(right, dict) and "property" in right:
-            # Reversed - invert the operator
-            inv = _CQL2_OP_INVERSE.get(sql_op, sql_op)
-            return {right["property"]: (inv, _cql2_value(left))}
-
-    # Spatial ops or unknown - log and ignore
-    if op:
-        logger.debug("CQL2 operator '{}' not supported; filter ignored", op)
-    return {}
-
-
 class FilteredSearchPostRequest(BaseSearchPostRequest):
     """POST /search request model extended with CQL2 filter fields.
 
@@ -157,72 +77,64 @@ class FilteredSearchPostRequest(BaseSearchPostRequest):
 
 
 def _inject_item_links(item: dict, base_url: str) -> dict:
-    """Return a copy of *item* with absolute self, root, and collection links.
+    """Inject absolute URLs into item links.
 
-    Items stored in the DB have only a fragment ``collection`` link
-    (``href: "#collection-id"``).  STAC Browser needs absolute URLs to render
-    item cards and navigate to the parent collection.
+    Items are stored with relative/fragment links because we don't know
+    the API base URL at scan time. This injects the runtime base URL.
+
+    Note: keywords and file:// hrefs are set at insert time in stac/item.py.
     """
     item = dict(item)
     cid = item.get("collection", "")
     iid = item.get("id", "")
+
+    # Replace links with absolute URLs
     item["links"] = [
         lnk for lnk in item.get("links", [])
-        if lnk.get("rel") not in ("self", "root", "collection")
+        if lnk.get("rel") not in ("self", "root", "parent", "collection")
     ]
     item["links"].extend([
         {"rel": "self", "type": "application/geo+json",
          "href": f"{base_url}/collections/{cid}/items/{iid}"},
-        {"rel": "root", "type": "application/json", "href": f"{base_url}/"},
+        {"rel": "root", "type": "application/json",
+         "href": f"{base_url}/"},
+        {"rel": "parent", "type": "application/json",
+         "href": f"{base_url}/collections/{cid}"},
         {"rel": "collection", "type": "application/json",
          "href": f"{base_url}/collections/{cid}"},
     ])
+
     return item
 
 
 def _inject_collection_links(col: dict, base_url: str) -> dict:
-    """Return a copy of *col* with self, root, and items links set.
+    """Return a copy of *col* with self, root, parent, items, and queryables links.
 
-    stac-fastapi stores collections with only a ``parent`` link.
-    STAC Browser needs ``items`` to know where to fetch items for a collection.
+    Collections stored in DuckDB have only a fragment ``parent`` link.
+    STAC Browser needs absolute URLs for navigation and the ``queryables``
+    link for per-collection CQL2 filtering.
     """
     col = dict(col)
     cid = col["id"]
-    # Remove any stale self/root/items links from stored JSON, then re-add
+    # Remove managed links, then re-add with absolute URLs
     col["links"] = [
         lnk for lnk in col.get("links", [])
-        if lnk.get("rel") not in ("self", "root", "items")
+        if lnk.get("rel") not in ("self", "root", "parent", "items", "queryables")
     ]
     col["links"].extend([
         {"rel": "self", "type": "application/json",
          "href": f"{base_url}/collections/{cid}"},
-        {"rel": "root", "type": "application/json", "href": f"{base_url}/"},
+        {"rel": "root", "type": "application/json",
+         "href": f"{base_url}/"},
+        {"rel": "parent", "type": "application/json",
+         "href": f"{base_url}/"},
         {"rel": "items", "type": "application/geo+json",
          "href": f"{base_url}/collections/{cid}/items", "title": "Items"},
+        {"rel": "http://www.opengis.net/def/rel/ogc/1.0/queryables",
+         "type": "application/schema+json",
+         "href": f"{base_url}/collections/{cid}/queryables", "title": "Queryables"},
     ])
     return col
-
-
-def _parse_datetime_filter(datetime_str: str | None) -> dict:
-    """Convert STAC datetime parameter to filter_props entries.
-
-    Handles:
-    - Single timestamp:  ``"2000-01-01T00:00:00Z"``
-    - Open-ended range:  ``"2000-01-01T00:00:00Z/.."`` or ``"../2005-12-31"``
-    - Closed range:      ``"2000-01-01/2005-12-31"``
-    """
-    if not datetime_str:
-        return {}
-    if "/" in datetime_str:
-        parts = datetime_str.split("/", 1)
-        start, end = parts[0], parts[1]
-        filt: dict = {}
-        if start and start != "..":
-            filt["datetime"] = (">=", start)
-        if end and end != "..":
-            filt["datetime_end"] = ("<=", end)
-        return filt
-    return {"datetime": ("=", datetime_str)}
 
 
 def _make_item_collection(
@@ -535,24 +447,11 @@ class DuckDBCatalogClient(BaseCoreClient):
         filter_props: dict = {}
         if request is not None:
             qp = request.query_params
-            # CQL2-JSON via ?filter=<json>&filter-lang=cql2-json
+            # CQL2 filter via ?filter=<expr>&filter-lang=<cql2-json|cql2-text>
             raw_filter = qp.get("filter")
-            filter_lang = qp.get("filter-lang", "cql2-json")
+            filter_lang = qp.get("filter-lang")
             if raw_filter:
-                if filter_lang == "cql2-json":
-                    try:
-                        filter_props = _parse_cql2_json(json.loads(raw_filter))
-                    except json.JSONDecodeError as e:
-                        logger.warning(
-                            "Invalid CQL2-JSON filter syntax, ignoring filter: {}",
-                            str(e)[:100],
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            "Failed to parse CQL2 filter, ignoring: {} - {}",
-                            type(e).__name__,
-                            str(e)[:100],
-                        )
+                filter_props = parse_filter(raw_filter, filter_lang)
 
         dbs = self._open_catalogs()
         try:
@@ -609,7 +508,7 @@ class DuckDBCatalogClient(BaseCoreClient):
         filter_props: dict = {"collection": collection_id}
         if bbox:
             filter_props["bbox"] = bbox
-        filter_props.update(_parse_datetime_filter(datetime))
+        filter_props.update(parse_datetime(datetime))
 
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
@@ -672,7 +571,7 @@ class DuckDBCatalogClient(BaseCoreClient):
             else:
                 filter_props["id"] = ("IN", ids)
 
-        filter_props.update(_parse_datetime_filter(datetime))
+        filter_props.update(parse_datetime(datetime))
 
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
@@ -701,14 +600,14 @@ class DuckDBCatalogClient(BaseCoreClient):
             else:
                 filter_props["id"] = ("IN", search_request.ids)
 
-        filter_props.update(_parse_datetime_filter(search_request.datetime))
+        filter_props.update(parse_datetime(search_request.datetime))
 
         offset = 0
         search_body: dict | None = None
         if isinstance(search_request, FilteredSearchPostRequest):
             # CQL2-JSON filter from STAC Browser "Additional filters" builder
             if search_request.filter:
-                filter_props.update(_parse_cql2_json(search_request.filter))
+                filter_props.update(parse_cql2_json(search_request.filter))
             # Pagination token encodes the integer offset
             if search_request.token and search_request.token.isdigit():
                 offset = int(search_request.token)

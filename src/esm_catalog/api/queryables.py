@@ -470,3 +470,169 @@ def get_queryables(
         "properties": properties,
         "additionalProperties": True,
     }
+
+
+def _get_collection_distinct_values_filtered(
+    db: "CatalogDB", prop_name: str, collection_id: str, limit: int = 100
+) -> list:
+    """Get distinct values for a property, filtered by collection."""
+    if not is_safe_property_name(prop_name):
+        return []
+
+    try:
+        rows = db.db.execute(f"""
+            SELECT DISTINCT v FROM (
+                SELECT json_extract(data, '$.properties."{prop_name}"') AS v
+                FROM items
+                WHERE json_extract_string(data, '$.collection') = ?
+            )
+            WHERE v IS NOT NULL
+            ORDER BY v
+            LIMIT {limit + 1}
+        """, [collection_id]).fetchall()
+
+        values = []
+        for row in rows:
+            if row[0] is not None:
+                raw = row[0]
+                if isinstance(raw, str):
+                    try:
+                        val = json.loads(raw)
+                        values.append(val)
+                    except (json.JSONDecodeError, TypeError):
+                        values.append(raw)
+                else:
+                    values.append(raw)
+        return values
+    except Exception as e:
+        logger.debug("Failed to get values for {} in {}: {}", prop_name, collection_id, e)
+        return []
+
+
+def get_collection_queryables(
+    request: "Request",
+    collection_id: str,
+    catalog_paths: list[str | Path],
+    pool: "CatalogPool",
+) -> dict | None:
+    """Return queryables scoped to a specific collection.
+
+    Similar to get_queryables() but enum values are filtered to only
+    include values present in items belonging to the specified collection.
+
+    Args:
+        request: HTTP request (for base URL extraction).
+        collection_id: The collection to scope queryables to.
+        catalog_paths: List of catalog paths to query.
+        pool: Connection pool for catalog access.
+
+    Returns:
+        JSON Schema dict, or None if collection not found.
+    """
+    base_url = str(request.base_url).rstrip("/")
+
+    # Check if collection exists and discover properties
+    collection_found = False
+    all_keys: set[str] = set()
+    property_values: dict[str, list] = {}
+
+    for path in catalog_paths:
+        db = pool.get(path)
+        if db is None:
+            continue
+
+        # Check if collection exists in this catalog
+        try:
+            row = db.db.execute(
+                "SELECT COUNT(*) FROM items WHERE json_extract_string(data, '$.collection') = ?",
+                [collection_id],
+            ).fetchone()
+            if row and row[0] > 0:
+                collection_found = True
+        except Exception:
+            pass
+
+        # Discover property keys from this collection's items
+        try:
+            rows = db.db.execute("""
+                SELECT DISTINCT json_keys(json_extract(data, '$.properties')) AS keys
+                FROM items
+                WHERE json_extract_string(data, '$.collection') = ?
+                LIMIT 500
+            """, [collection_id]).fetchall()
+
+            for row in rows:
+                keys = row[0]
+                if keys:
+                    if isinstance(keys, list):
+                        all_keys.update(keys)
+                    elif isinstance(keys, str):
+                        try:
+                            parsed = json.loads(keys)
+                            if isinstance(parsed, list):
+                                all_keys.update(parsed)
+                        except (json.JSONDecodeError, TypeError):
+                            pass
+        except Exception as e:
+            logger.debug("Failed to discover keys for {}: {}", collection_id, e)
+
+    if not collection_found:
+        return None
+
+    # Filter to safe property names and limit count
+    all_keys = {k for k in all_keys if is_safe_property_name(k)}
+    all_keys = set(list(all_keys)[:_MAX_PROPERTIES])
+    all_keys -= _EXCLUDED_PROPERTIES
+
+    # Get distinct values for each property within this collection
+    for prop_name in all_keys:
+        values: list = []
+        for path in catalog_paths:
+            db = pool.get(path)
+            if db:
+                values.extend(_get_collection_distinct_values_filtered(
+                    db, prop_name, collection_id
+                ))
+        # Deduplicate
+        seen: set = set()
+        unique_values = []
+        for v in values:
+            key = str(v)
+            if key not in seen:
+                seen.add(key)
+                unique_values.append(v)
+        property_values[prop_name] = unique_values[:_MAX_ENUM_VALUES + 1]
+
+    # Build properties dict
+    properties: dict = {}
+
+    # Add special properties
+    for name, schema in _SPECIAL_PROPERTIES.items():
+        properties[name] = schema.copy()
+
+    # Add discovered properties
+    for prop_name in sorted(all_keys):
+        values = property_values.get(prop_name, [])
+        schema_type, enum_values = _infer_json_schema_type(values)
+
+        prop_schema: dict = {
+            "title": _make_title(prop_name),
+            "type": schema_type,
+        }
+
+        if enum_values and len(enum_values) <= _MAX_ENUM_VALUES:
+            if prop_name == "paleo:display":
+                prop_schema["enum"] = sorted(enum_values, key=_sort_paleo_display)
+            else:
+                prop_schema["enum"] = sorted(enum_values)
+
+        properties[prop_name] = prop_schema
+
+    return {
+        "$schema": "https://json-schema.org/draft/2019-09/schema",
+        "$id": f"{base_url}/collections/{collection_id}/queryables",
+        "type": "object",
+        "title": f"Queryable properties for collection {collection_id!r}",
+        "properties": properties,
+        "additionalProperties": True,
+    }

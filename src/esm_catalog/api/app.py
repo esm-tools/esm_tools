@@ -39,7 +39,7 @@ from esm_catalog.api.cache import CollectionCache, QueryablesCache
 from esm_catalog.api.catalog_routes import create_catalog_router
 from esm_catalog.api.client import DuckDBCatalogClient, FilteredSearchPostRequest
 from esm_catalog.api.pool import CatalogPool
-from esm_catalog.api.queryables import get_queryables
+from esm_catalog.api.queryables import get_collection_queryables, get_queryables
 from esm_catalog.api.registry import CatalogRegistry
 
 if TYPE_CHECKING:
@@ -149,6 +149,30 @@ def create_app(
             "global",
             lambda: get_queryables(request, registry.get_paths(), pool),
         )
+
+    # Per-collection queryables - enum values scoped to items in that collection
+    @api.app.get(
+        "/collections/{collection_id}/queryables",
+        response_model=None,
+        include_in_schema=True,
+        summary="Queryable properties for a specific collection",
+        tags=["STAC API - Filter Extension"],
+    )
+    def collection_queryables(collection_id: str, request: Request):
+        # Cache per collection
+        result = queryables_cache.get_or_compute(
+            f"collection:{collection_id}",
+            lambda: get_collection_queryables(
+                request, collection_id, registry.get_paths(), pool
+            ),
+        )
+        if result is None:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection '{collection_id}' not found",
+            )
+        return result
 
     # POST /format - OGC CQL2 format-negotiation probe issued by STAC Browser.
     # Not required for filtering to work (filters travel as CQL2-JSON in /search),

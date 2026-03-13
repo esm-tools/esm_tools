@@ -75,6 +75,7 @@ def make_item(
         "component": ctx.component,
         "file_size": metadata.get("file_size"),
         "format": metadata.get("format", "unknown"),
+        "keywords": [ctx.collection_id],  # Shows as badge in STAC Browser
     }
     if stream:
         properties["stream"] = stream

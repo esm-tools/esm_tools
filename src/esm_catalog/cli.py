@@ -36,6 +36,24 @@ def _configure_logging(verbose: bool):
     logger.add(sys.stderr, level=level, format="{time:HH:mm:ss} | {level:<8} | {message}")
 
 
+def _scan_file_worker(fp_str: str) -> tuple[str, str, dict | None]:
+    """Scan a single file in a separate process (avoids HDF5 thread-safety issues).
+
+    Must be module-level for ProcessPoolExecutor pickling.
+    """
+    from pathlib import Path
+    from esm_catalog.scan.detect import UnsupportedFormatError, scan_file
+
+    fp = Path(fp_str)
+    try:
+        metadata = scan_file(fp)
+        return (fp_str, "ok", metadata)
+    except UnsupportedFormatError:
+        return (fp_str, "unsupported", None)
+    except Exception as e:
+        return (fp_str, "error", str(e))
+
+
 # ------------------------------------------------------------------
 # Main group
 # ------------------------------------------------------------------
@@ -98,10 +116,7 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     All supported files (.nc, .grb, etc.) are scanned recursively.
     Files are discovered and scanned in parallel using -j workers.
     """
-    import queue
-    import threading
-    import time
-    from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
+    from dask.distributed import Client, LocalCluster, as_completed
 
     from esm_catalog.integration.config import load_config
     from esm_catalog.scan.context import resolve_context
@@ -126,31 +141,11 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     else:
         logger.info("Scanning local filesystem: {} ({} workers)", path, jobs)
 
-    # Semaphore to limit concurrent SSH/remote operations
-    # This prevents connection exhaustion while still allowing parallel result processing
-    ssh_semaphore = threading.Semaphore(ssh_connections if is_remote else jobs)
-
     known_exts = {".nc", ".nc4", ".nc3", ".cdf", ".h5", ".hdf5", ".hdf",
                   ".grb", ".grb2", ".grib", ".grib2"}
     skip_exts = {".codes", ".txt", ".log", ".sh", ".py", ".yaml", ".yml", ".json"}
 
-    def scan_one_file(fp, config, msg_callback=None, semaphore=None):
-        """Scan a single file and return (fp, status, data)."""
-        fname = fp.name if hasattr(fp, "name") else str(fp).split("/")[-1]
-
-        # Use semaphore to limit concurrent operations
-        sem = semaphore or threading.Semaphore(1)
-
-        with sem:
-            if msg_callback:
-                msg_callback(f"→ {fname}", "dim")
-            try:
-                metadata = scan_file(fp)
-                return (fp, "ok", metadata)
-            except UnsupportedFormatError:
-                return (fp, "unsupported", None)
-            except Exception as e:
-                return (fp, "error", str(e))
+    # Note: scan_one_file is defined at module level (_scan_file_worker) for pickling
 
     def file_candidates(root, include_extensionless=True):
         """Yield file candidates: known extensions first, then extension-less files."""
@@ -172,54 +167,41 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                     seen.add(key)
                     yield fp
 
-    with CatalogDB(db_path) as db:
+    with CatalogDB(db_path) as catalog_db:
         ok = 0
         errors = 0
         scanned = 0
-        discovery_done = threading.Event()
-        discovery_error = [None]  # Store any exception from discovery thread
-        file_queue = queue.Queue()
-        total_found = [0]  # Use list to allow mutation in thread
 
-        def discover_files():
-            """Producer: discover files and add to queue."""
-            try:
-                if is_file(root):
-                    file_queue.put(root)
-                    total_found[0] = 1
-                elif is_dir(root):
-                    # Determine whether to include extension-less files
-                    # Default: yes for local, no for remote (GRIB needs local files)
-                    if include_extensionless is None:
-                        include_ext = not is_remote
-                    else:
-                        include_ext = include_extensionless
+        # Phase 1: Discover all files
+        logger.info("Discovering files...")
+        files = []
+        if is_file(root):
+            files = [root]
+        elif is_dir(root):
+            # Determine whether to include extension-less files
+            if include_extensionless is None:
+                include_ext = not is_remote
+            else:
+                include_ext = include_extensionless
 
-                    if not include_ext and is_remote:
-                        logger.info("Skipping extension-less files for remote scan")
+            if not include_ext and is_remote:
+                logger.info("Skipping extension-less files for remote scan")
 
-                    for fp in file_candidates(root, include_extensionless=include_ext):
-                        file_queue.put(fp)
-                        total_found[0] += 1
-            except Exception as e:
-                discovery_error[0] = e
-            finally:
-                discovery_done.set()
+            files = list(file_candidates(root, include_extensionless=include_ext))
+        else:
+            logger.error("Path does not exist or is not accessible: {}", path)
+            return
 
-        # Start discovery in background thread
-        discovery_thread = threading.Thread(target=discover_files, daemon=True)
-        discovery_thread.start()
+        total_files = len(files)
+        logger.info("Found {} files to scan", total_files)
 
-        # Message log for display (thread-safe deque)
-        from collections import deque
-        messages = deque(maxlen=6)  # Keep last 6 messages
-        messages_lock = threading.Lock()
+        if total_files == 0:
+            logger.info("No files to scan")
+            return
 
-        def add_message(msg, style=""):
-            with messages_lock:
-                messages.append((msg, style))
-
-        # Progress bar
+        # Phase 2: Scan files in parallel using dask.distributed
+        # Uses process workers to avoid HDF5 thread-safety issues
+        # Later: can swap LocalCluster for SLURMCluster via dask-jobqueue
         progress = Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -228,111 +210,72 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             TextColumn("({task.completed}/{task.total})"),
             TimeElapsedColumn(),
         )
-        task = progress.add_task("[cyan]Scanning...[/cyan]", total=0)
+
+        from collections import deque
+        messages = deque(maxlen=6)
 
         def make_display():
-            """Build the display with progress bar and message log."""
-            with messages_lock:
-                msg_lines = []
-                for msg, style in messages:
-                    if style:
-                        msg_lines.append(Text(msg, style=style))
-                    else:
-                        msg_lines.append(Text(msg))
-
+            msg_lines = [Text(msg, style=style) if style else Text(msg) for msg, style in messages]
             if msg_lines:
                 msg_text = Text("\n").join(msg_lines)
                 msg_panel = Panel(msg_text, title="Activity", border_style="dim", height=8)
                 return Group(progress, msg_panel)
             return progress
 
-        def process_result(future, fp):
-            """Process a completed scan result."""
-            nonlocal ok, errors, scanned
-            fp_result, status, data = future.result()
-            scanned += 1
-            progress.update(task, completed=scanned, total=total_found[0])
-
-            fname = fp.name if hasattr(fp, "name") else str(fp).split("/")[-1]
-
-            if status == "ok":
-                try:
-                    ctx_col = resolve_context(fp, config=config, db=db)
-                    item = make_item(fp, data, ctx_col, config=config)
-                    item = add_hpc_extension(item, fp)
-                    db.insert_item(item)
-                    db.update_collection_extent(ctx_col.collection_id, item)
-                    db.upsert_collection_item_props(ctx_col.collection_id, item)
-                    ok += 1
-                    add_message(f"✓ {fname}", "green")
-                except Exception as e:
-                    errors += 1
-                    add_message(f"✗ {fname}: {e}", "red")
-            elif status == "error":
-                errors += 1
-                add_message(f"✗ {fname}: {data}", "yellow")
-            elif status == "unsupported":
-                add_message(f"- {fname} (skipped)", "dim")
-
-        # Suppress loguru during scan (we use the message panel instead)
         logger.disable("esm_catalog")
 
         try:
             with Live(make_display(), refresh_per_second=4) as live:
-                with ThreadPoolExecutor(max_workers=jobs) as executor:
-                    futures = {}
+                task_id = progress.add_task("[cyan]Scanning...[/cyan]", total=total_files)
 
-                    while True:
-                        # Update total and refresh display
-                        progress.update(task, total=total_found[0])
-                        live.update(make_display())
+                # Start local cluster with process workers
+                with LocalCluster(n_workers=jobs, processes=True, threads_per_worker=1) as cluster:
+                    with Client(cluster) as client:
+                        # Submit all files as futures
+                        futures = client.map(_scan_file_worker, [str(fp) for fp in files])
 
-                        # Submit new files to workers (up to batch size)
-                        submitted = 0
-                        while not file_queue.empty() and submitted < jobs * 2:
+                        # Process results as they complete (real-time progress)
+                        for future in as_completed(futures):
                             try:
-                                fp = file_queue.get_nowait()
-                                future = executor.submit(
-                                    scan_one_file, fp, config, add_message, ssh_semaphore
-                                )
-                                futures[future] = fp
-                                submitted += 1
-                            except queue.Empty:
-                                break
+                                fp_str, status, data = future.result()
+                            except Exception as e:
+                                errors += 1
+                                scanned += 1
+                                messages.append((f"✗ Error: {e}", "red"))
+                                progress.update(task_id, completed=scanned)
+                                live.update(make_display())
+                                continue
 
-                        if not futures:
-                            # No pending work - check for errors or completion
-                            if discovery_done.is_set():
-                                if discovery_error[0]:
-                                    raise discovery_error[0]
-                                if file_queue.empty():
-                                    break
-                            # Wait for discovery to produce files
-                            time.sleep(0.1)
-                            continue
+                            fp = Path(fp_str)
+                            fname = fp.name
+                            scanned += 1
+                            progress.update(task_id, completed=scanned)
 
-                        # Wait for at least one future to complete (with timeout)
-                        done, pending = wait(futures.keys(), timeout=0.5, return_when=FIRST_COMPLETED)
+                            if status == "ok":
+                                try:
+                                    ctx_col = resolve_context(fp, config=config, db=catalog_db)
+                                    item = make_item(fp, data, ctx_col, config=config)
+                                    item = add_hpc_extension(item, fp)
+                                    catalog_db.insert_item(item)
+                                    catalog_db.update_collection_extent(ctx_col.collection_id, item)
+                                    catalog_db.upsert_collection_item_props(ctx_col.collection_id, item)
+                                    ok += 1
+                                    messages.append((f"✓ {fname}", "green"))
+                                except Exception as e:
+                                    errors += 1
+                                    messages.append((f"✗ {fname}: {e}", "red"))
+                            elif status == "error":
+                                errors += 1
+                                messages.append((f"✗ {fname}: {data}", "yellow"))
+                            elif status == "unsupported":
+                                messages.append((f"- {fname} (skipped)", "dim"))
 
-                        # Process completed futures
-                        for future in done:
-                            fp = futures.pop(future)
-                            process_result(future, fp)
+                            live.update(make_display())
 
-                        # Check exit condition
-                        if discovery_done.is_set() and file_queue.empty() and not futures:
-                            if discovery_error[0]:
-                                raise discovery_error[0]
-                            break
-
-                progress.update(task, description="[green]Done[/green]", total=total_found[0])
+                progress.update(task_id, description="[green]Done[/green]")
                 live.update(make_display())
         finally:
             logger.enable("esm_catalog")
-
-        if not is_file(root) and not is_dir(root):
-            logger.error("Path does not exist or is not accessible: {}", path)
-            return
 
     logger.info("Scanned {} files: {} cataloged, {} errors", scanned, ok, errors)
 
@@ -709,3 +652,7 @@ def catalogs(server, as_json):
     except httpx.ConnectError:
         logger.error("Could not connect to server: {}", server)
         sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

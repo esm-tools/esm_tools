@@ -51,26 +51,27 @@ def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
         logger.debug("Opening remote file: {}", uri)
         # Use fsspec storage options for SSH to handle timeout
         storage_options = {"timeout": timeout}
-        ds = xr.open_dataset(
-            uri, decode_times=True, engine="h5netcdf",
+        open_kwargs = dict(
+            decode_times=True, engine="h5netcdf",
             backend_kwargs={"storage_options": storage_options}
         )
+        open_path = uri
     else:
         # Local file - use standard approach
-        ds = xr.open_dataset(str(path), decode_times=True)
+        open_kwargs = dict(decode_times=True)
+        open_path = str(path)
 
-    variables = _extract_variables(ds)
-    dimensions = _extract_dimensions(ds)
-    bbox, geometry = _extract_bbox(ds)
-    dt_start, dt_end = _extract_time_range(ds)
+    with xr.open_dataset(open_path, **open_kwargs) as ds:
+        variables = _extract_variables(ds)
+        dimensions = _extract_dimensions(ds)
+        bbox, geometry = _extract_bbox(ds)
+        dt_start, dt_end = _extract_time_range(ds)
 
-    # Primary variable: first data variable (non-coordinate)
-    primary_var = next(iter(ds.data_vars), "unknown")
+        # Primary variable: first data variable (non-coordinate)
+        primary_var = next(iter(ds.data_vars), "unknown")
 
-    # Extract ALL global attributes for queryable metadata
-    global_attrs = _extract_global_attributes(ds)
-
-    ds.close()
+        # Extract ALL global attributes for queryable metadata
+        global_attrs = _extract_global_attributes(ds)
 
     return {
         "variable": primary_var,

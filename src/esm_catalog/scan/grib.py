@@ -157,33 +157,41 @@ def _open_grib_datasets(
 
     Returns:
         {(gridType, levelType): xr.Dataset}
+
+    Note: Caller is responsible for closing all returned datasets.
     """
     import xarray as xr
 
     datasets = {}
-    for (grid_type, level_type) in structure:
-        filter_keys = {"gridType": grid_type, "typeOfLevel": level_type}
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", message=".*ecCodes provides no.*")
-                warnings.filterwarnings("ignore", category=UserWarning)
-                ds = xr.open_dataset(
-                    str(file_path),
-                    engine="cfgrib",
-                    backend_kwargs={
-                        "filter_by_keys": filter_keys,
-                        "errors": "ignore",
-                        "indexpath": "",
-                        "decode_times": False,
-                    },
+    try:
+        for (grid_type, level_type) in structure:
+            filter_keys = {"gridType": grid_type, "typeOfLevel": level_type}
+            try:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message=".*ecCodes provides no.*")
+                    warnings.filterwarnings("ignore", category=UserWarning)
+                    ds = xr.open_dataset(
+                        str(file_path),
+                        engine="cfgrib",
+                        backend_kwargs={
+                            "filter_by_keys": filter_keys,
+                            "errors": "ignore",
+                            "indexpath": "",
+                            "decode_times": False,
+                        },
+                    )
+                datasets[(grid_type, level_type)] = ds
+                logger.debug(
+                    "  ({}, {}): {} variables",
+                    grid_type, level_type, list(ds.data_vars),
                 )
-            datasets[(grid_type, level_type)] = ds
-            logger.debug(
-                "  ({}, {}): {} variables",
-                grid_type, level_type, list(ds.data_vars),
-            )
-        except Exception as e:
-            logger.debug("  Skipping ({}, {}): {}", grid_type, level_type, e)
+            except Exception as e:
+                logger.debug("  Skipping ({}, {}): {}", grid_type, level_type, e)
+    except BaseException:
+        # Clean up any opened datasets on unexpected exception (e.g., KeyboardInterrupt)
+        for ds in datasets.values():
+            ds.close()
+        raise
 
     return datasets
 
@@ -411,10 +419,14 @@ def scan_grib(path: "Union[Path, UPath, str]") -> dict:
     all_variables: list[dict] = _extract_variables(datasets, codes_table)
     bbox = [-180.0, -90.0, 180.0, 90.0]
     all_datetimes: list[datetime] = []
-    for ds in datasets.values():
-        bbox = _update_bbox(ds, bbox)
-        all_datetimes.extend(_extract_datetimes(ds))
-        ds.close()
+    try:
+        for ds in datasets.values():
+            bbox = _update_bbox(ds, bbox)
+            all_datetimes.extend(_extract_datetimes(ds))
+    finally:
+        # Ensure all datasets are closed even if exception occurs
+        for ds in datasets.values():
+            ds.close()
 
     dt_start = min(all_datetimes) if all_datetimes else None
     dt_end   = max(all_datetimes) if all_datetimes else None

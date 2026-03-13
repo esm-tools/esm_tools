@@ -43,8 +43,11 @@ def make_item(
         path = parse_uri(path)
 
     variable = metadata.get("variable", "unknown")
+    stream = metadata.get("stream")  # GRIB stream type (echam, accw, co2)
     dt_str = metadata.get("datetime_str", "000000")
-    item_id = _make_id(variable, ctx.component, dt_str, path)
+    # For GRIB files, use stream type for item ID; otherwise use variable
+    id_prefix = stream if stream else variable
+    item_id = _make_id(id_prefix, ctx.component, dt_str, path)
 
     dt_start = metadata.get("datetime_start")
     dt_end = metadata.get("datetime_end")
@@ -73,6 +76,8 @@ def make_item(
         "file_size": metadata.get("file_size"),
         "format": metadata.get("format", "unknown"),
     }
+    if stream:
+        properties["stream"] = stream
     if start_datetime:
         properties["start_datetime"] = start_datetime
     if end_datetime:

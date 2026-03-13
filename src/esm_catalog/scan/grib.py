@@ -70,21 +70,56 @@ def _parse_codes_file(codes_path: Path) -> dict[int, dict]:
     return params
 
 
+def _extract_stream_type(path: Path) -> str:
+    """Extract ECHAM stream type from filename.
+
+    Examples:
+        basic-001_185001.01_echam -> echam
+        basic-001_185001.01_co2 -> co2
+        basic-001_185001.01_accw -> accw
+        basic-001_185002.01_echam_18500201-18500228 -> echam
+
+    Note: ECHAM filenames contain dots that aren't extensions (e.g., .01),
+    so we use .name not .stem to avoid truncation.
+    """
+    name = path.name
+    # Strip date range suffix if present
+    name = re.sub(r"_\d{6,8}-\d{6,8}$", "", name)
+    # Get the last part after underscore (stream type)
+    parts = name.rsplit("_", 1)
+    if len(parts) == 2:
+        return parts[1]
+    return name
+
+
 def _find_codes_file(grib_path: Path) -> Path | None:
     """Find the associated .codes file for a GRIB file.
 
     Search order:
     1. {grib_filename}.codes in same directory
-    2. echam6.codes, echam.codes in same directory
-    3. Any *.codes file in same directory
+    2. {grib_filename_without_date_range}.codes (strips _YYYYMMDD-YYYYMMDD suffix)
+    3. echam6.codes, echam.codes in same directory
+    4. Any *.codes file in same directory
     """
+    # Try exact match first
     codes_path = grib_path.parent / (grib_path.name + ".codes")
     if codes_path.exists():
         return codes_path
+
+    # Try stripping date range suffix: _YYYYMMDD-YYYYMMDD or _YYYYMM-YYYYMM
+    base_name = re.sub(r"_\d{6,8}-\d{6,8}$", "", grib_path.name)
+    if base_name != grib_path.name:
+        codes_path = grib_path.parent / (base_name + ".codes")
+        if codes_path.exists():
+            return codes_path
+
+    # Try generic ECHAM codes files
     for name in ("echam6.codes", "echam.codes"):
         codes_path = grib_path.parent / name
         if codes_path.exists():
             return codes_path
+
+    # Fall back to any .codes file in directory
     codes_files = list(grib_path.parent.glob("*.codes"))
     if codes_files:
         return codes_files[0]
@@ -100,7 +135,7 @@ def _scan_grib_structure(file_path: Path) -> dict:
 
     Returns:
         {(gridType, levelType): {paramId: {shortName, name, dataDate, dataTime,
-                                           gridDimensions}}}
+                                           gridDimensions, indicatorOfParameter}}}
     """
     import eccodes
 
@@ -116,6 +151,11 @@ def _scan_grib_structure(file_path: Path) -> dict:
                 param_id   = eccodes.codes_get(gid, "paramId")
                 short_name = eccodes.codes_get(gid, "shortName")
                 name       = eccodes.codes_get(gid, "name")
+                # Get indicatorOfParameter as fallback for paramId=0 cases
+                try:
+                    indicator = eccodes.codes_get(gid, "indicatorOfParameter")
+                except Exception:
+                    indicator = None
                 try:
                     data_date = eccodes.codes_get(gid, "dataDate")
                     data_time = eccodes.codes_get(gid, "dataTime")
@@ -132,6 +172,7 @@ def _scan_grib_structure(file_path: Path) -> dict:
                     "dataDate": data_date,
                     "dataTime": data_time,
                     "gridDimensions": (ni, nj) if ni and nj else None,
+                    "indicatorOfParameter": indicator,
                 }
             finally:
                 eccodes.codes_release(gid)
@@ -203,10 +244,12 @@ def _open_grib_datasets(
 def _extract_variables(
     datasets: dict,
     codes_table: dict[int, dict] | None,
+    structure: dict | None = None,
 ) -> list[dict]:
     """Collect variable metadata across all hypercube datasets.
 
     Enriches from the .codes table when available; falls back to GRIB attrs.
+    Uses indicatorOfParameter from structure when paramId is 0.
     Adds grid_type, level_type, and shape per variable.
     """
     result = []
@@ -214,8 +257,20 @@ def _extract_variables(
         for var_name, da in ds.data_vars.items():
             param_id = da.attrs.get("GRIB_paramId")
 
-            if codes_table and param_id and param_id in codes_table:
-                code_info = codes_table[param_id]
+            # Try to find code_info from codes_table
+            code_info = None
+            if codes_table:
+                if param_id and param_id in codes_table:
+                    code_info = codes_table[param_id]
+                elif param_id == 0 and structure:
+                    # Fallback: use indicatorOfParameter when paramId is 0
+                    hypercube = structure.get((grid_type, level_type), {})
+                    msg_info = hypercube.get(0, {})
+                    indicator = msg_info.get("indicatorOfParameter")
+                    if indicator and indicator in codes_table:
+                        code_info = codes_table[indicator]
+
+            if code_info:
                 entry = {
                     "name":            code_info["shortName"],
                     "long_name":       code_info["longName"],
@@ -416,7 +471,7 @@ def scan_grib(path: "Union[Path, UPath, str]") -> dict:
     if not datasets:
         raise ValueError(f"Could not open any hypercube from: {path}")
 
-    all_variables: list[dict] = _extract_variables(datasets, codes_table)
+    all_variables: list[dict] = _extract_variables(datasets, codes_table, structure)
     bbox = [-180.0, -90.0, 180.0, 90.0]
     all_datetimes: list[datetime] = []
     try:
@@ -430,10 +485,17 @@ def scan_grib(path: "Union[Path, UPath, str]") -> dict:
 
     dt_start = min(all_datetimes) if all_datetimes else None
     dt_end   = max(all_datetimes) if all_datetimes else None
-    primary_var = all_variables[0]["name"] if all_variables else "unknown"
+
+    # Extract stream type from filename (echam, accw, co2, etc.)
+    # Pattern: expid_YYYYMM.NN_STREAM or expid_YYYYMM.NN_STREAM_DATERANGE
+    stream_type = _extract_stream_type(path)
+
+    # Primary variable: first extracted variable name, or stream type as fallback
+    primary_var = all_variables[0]["name"] if all_variables else stream_type
 
     return {
         "variable":       primary_var,
+        "stream":         stream_type,  # ECHAM output stream (echam, accw, co2)
         "variables":      all_variables,
         "cf_parameters":  _cf_parameters(all_variables),
         "dimensions":     {},   # GRIB dims are implicit per-hypercube

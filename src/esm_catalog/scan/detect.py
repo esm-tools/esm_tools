@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Union
 
+from esm_catalog.scan.echam import is_echam_file, scan_echam
 from esm_catalog.scan.grib import scan_grib
 from esm_catalog.scan.netcdf import scan_netcdf
 
@@ -28,6 +29,22 @@ _MAGIC_GRIB = b"GRIB"
 _MAGIC_HDF5 = b"\x89HDF"
 _MAGIC_NC3  = b"CDF\x01"
 _MAGIC_NC4  = b"CDF\x02"
+
+
+def _dispatch_grib(path: "Union[Path, UPath]") -> dict:
+    """Dispatch GRIB file to appropriate scanner.
+
+    Uses ECHAM scanner if the file has a companion .codes file,
+    otherwise falls back to generic GRIB scanner.
+    """
+    from pathlib import Path as LocalPath
+
+    # Convert to local Path for is_echam_file check
+    local_path = LocalPath(path) if not isinstance(path, LocalPath) else path
+
+    if is_echam_file(local_path):
+        return scan_echam(path)
+    return scan_grib(path)
 
 
 def _sniff_format(path: "Union[Path, UPath]") -> str | None:
@@ -71,12 +88,12 @@ def scan_file(path: "Union[Path, UPath, str]") -> dict:
         return scan_netcdf(path)
 
     if suffix in _GRIB_SUFFIXES:
-        return scan_grib(path)
+        return _dispatch_grib(path)
 
     # Extension is absent or non-standard — try magic bytes
     fmt = _sniff_format(path)
     if fmt == "grib":
-        return scan_grib(path)
+        return _dispatch_grib(path)
     if fmt == "netcdf":
         return scan_netcdf(path)
 

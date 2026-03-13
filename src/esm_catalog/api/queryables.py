@@ -109,15 +109,17 @@ def _discover_property_keys(db: "CatalogDB") -> set[str]:
     """Discover all unique property keys from items table.
 
     Only returns property names that pass validation (safe for SQL queries).
+    Samples a subset of items to avoid expensive full-table scans.
     """
     try:
         # Get all top-level keys from properties JSON
         # DuckDB's json_keys returns a list directly, not a JSON string
+        # Use USING SAMPLE to avoid scanning entire table on large catalogs
         rows = db.db.execute("""
             SELECT DISTINCT json_keys(json_extract(data, '$.properties')) AS keys
             FROM items
+            USING SAMPLE 500
             WHERE keys IS NOT NULL
-            LIMIT 1000
         """).fetchall()
 
         all_keys: set[str] = set()
@@ -164,9 +166,13 @@ def _get_distinct_values(db: "CatalogDB", prop_name: str, limit: int = 100) -> l
     try:
         # Property name is validated, safe for interpolation
         # Double-quote the property name to handle any special JSON path chars
+        # Use subquery with SAMPLE to avoid expensive full-table scans
         rows = db.db.execute(f"""
-            SELECT DISTINCT json_extract(data, '$.properties."{prop_name}"') AS v
-            FROM items
+            SELECT DISTINCT v FROM (
+                SELECT json_extract(data, '$.properties."{prop_name}"') AS v
+                FROM items
+                USING SAMPLE 1000
+            )
             WHERE v IS NOT NULL
             ORDER BY v
             LIMIT {limit + 1}

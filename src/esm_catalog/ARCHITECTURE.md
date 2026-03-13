@@ -892,6 +892,88 @@ descriptor file that already holds this kind of metadata?
 
 ---
 
+## Universal Pathlib / fsspec Integration (Decision Note)
+
+> **Decision: do not add as a dependency yet — but design interfaces to accommodate it.**
+> Related library: [`universal_pathlib`](https://github.com/fsspec/universal_pathlib)
+
+### What it is
+
+`universal_pathlib` provides `UPath` — a drop-in replacement for `pathlib.Path` that
+works transparently with any fsspec-backed filesystem: S3, GCS, Azure, SFTP, HTTP,
+ZIP archives, and more.  Code written against the standard pathlib API (`path / "sub"`,
+`path.read_bytes()`, `path.glob("**/*.nc")`) runs unchanged against any backend.
+
+### Where it would help this project
+
+**Asset hrefs as proper cross-system URIs.**
+`_inject_item_links` currently hacks bare filesystem paths by prepending `file://` at
+serve time.  If files ever live on S3, Swift object storage, or SFTP at a partner
+institute, the catalog already stores the href string — it just needs to store a
+proper URI from the start.  A consumer using `UPath(asset_href)` would open the file
+regardless of protocol.
+
+**Cross-site federation.**
+A catalog entry with `sftp://albedo.awi.de/path/to/file.nc` or
+`s3://awi-cold-storage/...` as the asset href is meaningful to any researcher with
+network access — not just to processes running on the originating cluster.  This is
+the long-term direction for a federated catalog across AWI, DKRZ, and other sites.
+
+**Scanning files that are not locally mounted.**
+Replacing `Path` with `UPath` in `scan/netcdf.py` and `scan/grib.py` would allow
+scanning data on S3, SFTP, or HTTP without a local mount.  Both xarray and cfgrib
+already accept fsspec-compatible file objects, so the scanner itself needs only a
+one-line change.
+
+### Where it does not help
+
+**Tape/HSM state detection.**
+`UPath` has no concept of HSM states (online / nearline / offline), dmattr queries,
+scoutfs, or recall initiation.  The logic in `hpc/state.py` and `hpc/detect.py` must
+remain custom regardless.  The two layers are orthogonal:
+
+```
+UPath          — how to open a file given a URI (transport layer)
+hpc/ extension — whether the file is accessible right now (accessibility layer)
+```
+
+**Lustre/GPFS performance.**
+UPath treats Lustre as plain POSIX.  No striping hints, collective I/O, or
+filesystem-specific optimisations — not a regression, but not an improvement either.
+
+**The catalog database.**
+DuckDB is always local; no benefit.
+
+### What to do now (zero-cost preparation)
+
+Do not add `upath` as a dependency today.  Instead, keep interfaces compatible so the
+swap is trivial when the time comes:
+
+1. **Type-hint path arguments as `os.PathLike`** rather than `pathlib.Path` in
+   `scan/netcdf.py`, `scan/grib.py`, and `scan/detect.py`.  `UPath` is already
+   `os.PathLike`, so this is a documentation change only.
+
+2. **Store asset hrefs as full URI strings at write time** — `file:///absolute/path`
+   rather than `/absolute/path` — so the API layer does not need to fix them up.
+   Currently `_inject_item_links` prepends `file://` at serve time; moving this
+   earlier (to `stac/item.py` or `storage/duckdb.py`) is cleaner and makes hrefs
+   valid in the stored JSON.
+
+3. **Keep storage detection separate from path handling** in `hpc/detect.py`.
+   When S3 or Swift arrives, `UPath.protocol` would be the natural complement to
+   `hpc:storage_type` — the detect logic just needs to branch on protocol rather
+   than path prefix.
+
+### Trigger conditions to actually add the dependency
+
+Add `upath` when any of these become real requirements:
+
+- Files are migrated to S3 / Swift cold storage and the catalog needs to point there
+- Cross-institute catalog federation where asset hrefs must be resolvable remotely
+- Scanning data that is not locally mounted (remote S3, SFTP, HTTP collections)
+
+---
+
 ## Dependencies
 
 **Core:**

@@ -464,9 +464,10 @@ Browser can resolve these to human-readable definitions.
 | `/` | GET | Landing page / root catalog + conformance declaration |
 | `/collections` | GET | List/search collections — supports CQL2 filter |
 | `/collections/{id}` | GET | Single collection |
-| `/collections/{id}/items` | GET | Items in collection — offset pagination via `token` query param |
+| `/collections/{id}/items` | GET | Items in collection — supports CQL2 filter; offset pagination via `token` |
+| `/collections/{id}/queryables` | GET | Per-collection JSON Schema — scoped to that collection's actual values; enables "Additional Filters" in collection items view |
 | `/search` | GET/POST | Query items — supports CQL2 filter |
-| `/queryables` | GET | JSON Schema of filterable properties with enum lists from live catalog |
+| `/queryables` | GET | Global JSON Schema of filterable properties with enum lists from live catalog |
 | `/stac-extensions/hpc/v0.1.0/schema.json` | GET | HPC storage extension schema (served locally; published URL not yet live) |
 | `/format` | POST | OGC CQL2 format-negotiation stub (silences STAC Browser 404 probe) |
 | `/docs` | GET | Swagger UI |
@@ -552,13 +553,45 @@ def search_collections(self, filter_props, limit, offset):
 ### CQL2 filter parsing
 
 Both `/search` and `/collections` accept `filter` (expression) and `filter-lang`
-(`cql2-text` or `cql2-json`). A dedicated parser in `api/client.py` translates CQL2
-expressions into the property dict consumed by the DuckDB query layer:
+(`cql2-text` or `cql2-json`). Two dedicated parsers in `api/client.py` translate
+CQL2 expressions into a `filter_props` dict consumed by the DuckDB query layer.
+`_parse_cql2_filter()` dispatches to the correct parser based on `filter-lang`.
+
+**STAC Browser sends different formats depending on context:**
+- Collection items view (`GET /collections/{id}/items`) — sends `cql2-text` as a query param
+- Global Search tab (`POST /search`) — sends `cql2-json` in the POST body
+
+#### `filter_props` dict format
 
 ```
-filter=experiment='basic-001' AND model='fesom'
-  →  {"experiment": ("=", "basic-001"), "model": ("=", "fesom")}
+{field: value}           where value is one of:
+  (sql_op, val)          — single condition  → field = val  (AND with others)
+  [(op,v1), (op,v2)]     — AND duplicate list → field=v1 AND field=v2
+  [v1, v2]               — OR value list     → field IN (v1, v2)
 ```
+
+#### Supported filter combinations
+
+| Input expression | Parsed `filter_props` | SQL generated |
+|---|---|---|
+| `variable = 'ssh'` | `{'variable': ('=', 'ssh')}` | `json_extract(...) = 'ssh'` |
+| `var = 'a' AND var = 'b'` | `{'variable': [('=','a'), ('=','b')]}` | `... = 'a' AND ... = 'b'` |
+| `var = 'a' OR var = 'b'` | `{'variable': ['a', 'b']}` | `... = 'a' OR ... = 'b'` |
+| `NOT (var = 'ssh')` | `{'variable': ('!=', 'ssh')}` | `json_extract(...) != 'ssh'` |
+| `expr = 'e1' AND var = 'v1'` | `{'experiment': ('=','e1'), 'variable': ('=','v1')}` | `experiment = 'e1' AND ...` |
+
+**OR semantics** (STAC Browser "Match any filters"):
+- `_parse_cql2_json` collects OR branch values as plain lists `['v1', 'v2']`
+- `_parse_cql2_text` splits on `\bOR\b` and collects plain values per field
+- `search_items` detects plain lists (not tuple lists) and emits `IN (?, ?)` SQL
+- `_collection_matches` uses `any(v in indexed_vals ...)` for OR list matching
+
+**NOT semantics** (STAC Browser "Negate filter"):
+- Both parsers support `NOT (...)` wrapper and a `negate` flag
+- Operators are inverted via `_CQL2_OP_INVERT`: `=`→`!=`, `<`→`>=`, etc.
+- `CqlNot.toText()` in stac-browser's `logical.js` is overridden to emit
+  `NOT (inner)` — the base class `join()` on a single-element array drops the
+  operator silently
 
 **Temporal literal unwrapping:** STAC Browser sends datetime values as CQL2-JSON
 objects (`{"timestamp": "2000-01-01T00:00:00Z"}`) rather than bare strings.
@@ -586,32 +619,55 @@ binding works correctly.
 
 ## STAC Browser
 
-The STAC Browser is **entirely external** to this project.  Use the hosted
-radiantearth instance or any self-hosted upstream build:
+A fork of STAC Browser lives at `~/repos/esm_tools/stac-browser` and is served
+locally (e.g. `npm start -- --port 23005`).  Two bugs were fixed in the fork and
+one visual enhancement was added:
 
+### Fork changes
+
+**`src/models/cql2/operators/logical.js` — `CqlNot.toText()` fix:**
+The base-class `join(" NOT ")` on a single-element array returns the element alone
+(separator is dropped for length-1 arrays).  `CqlNot.toText()` now overrides this to
+always emit `NOT (inner)`:
+
+```javascript
+toText() {
+  if (this.args && this.args.length === 1) {
+    return `NOT (${this.args[0].toText()})`;
+  }
+  return super.toText();
+}
 ```
-https://radiantearth.github.io/stac-browser/#/search/external/<your-api-host>
-```
 
-No fork is required.  The features needed — "Search for Collections" tab and
-"Additional filters" (CQL2 builder) — are present in upstream STAC Browser v3.x:
+**`src/components/Item.vue` — collection badge on item cards:**
+A `variant="info"` badge showing the collection ID is injected as the first element
+in the card intro section.  This is especially useful when viewing cross-collection
+search results (e.g. "Additional filters" spans multiple collections).
 
-| Feature | Upstream activation |
+> **Note:** Vite's HMR does not always hot-reload utility modules (`utils.js`,
+> `logical.js`).  After editing these files restart the dev server fully.
+
+### API-side activation
+
+| Feature | What enables it |
 |---|---|
 | "Search for Collections" tab | API declares `collection-search` conformance class |
-| "Additional filters" in Items tab | API declares `item-search#filter` + OGC CQL2 conformance classes |
+| "Additional filters" in Items tab | API declares `item-search#filter` + OGC CQL2 conformance classes **and** `GET /collections/{id}/queryables` returns 200 |
 | "Additional filters" in Collections tab | API declares `collection-search#filter` + OGC CQL2 conformance classes **and** `GET /collections` response includes a `rel=queryables` link |
 
-The conformance classes are advertised automatically by `stac-fastapi`.  The queryables
-link in `GET /collections` must be added explicitly — STAC Browser's `SearchFilter.vue`
-fetches queryables for the Collections tab from the link embedded in that response, not
-from the landing page queryables link used by the Items tab.
+The conformance classes are advertised automatically by `stac-fastapi`.
+`GET /collections/{id}/queryables` must exist (404 silently hides the "Additional
+Filters" section for the collection items view — no error shown).
+The queryables link in `GET /collections` must be added explicitly — STAC Browser's
+`SearchFilter.vue` fetches queryables for the Collections tab from that embedded link.
 
 ### Usage
 
-```
-# Point the hosted browser at the running API
-https://radiantearth.github.io/stac-browser/#/search/external/your-host:8000
+```bash
+# Start the dev server
+cd ~/repos/esm_tools/stac-browser && npm start -- --port 23005
+# Point at the running API
+# http://localhost:23005/#/search/external/http://localhost:23003
 ```
 
 The API runs inside the AWI internal network; access via VPN.  Because the browser
@@ -713,6 +769,13 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [x] Pagination for GET `/collections/{id}/items` — `token` and `limit` read directly from `request.query_params` (stac-fastapi does not forward unknown query params via method signature)
 - [x] CQL2 temporal literal unwrapping (`_cql2_value`) — STAC Browser sends `{"timestamp": "..."}` dicts; unwrapped before DuckDB binding
 - [x] `GET /collections` response includes `rel=queryables` link — required for STAC Browser to load queryables and show "Additional filters" CQL2 builder in the "Search for Collections" tab (without this link the tab shows no filter controls even when `collection-search#filter` is declared)
+- [x] `GET /collections/{id}/queryables` — per-collection queryables endpoint; scoped enum values for that collection; enables "Additional Filters" section in collection items view (STAC Browser silently hides the section if this returns 404)
+- [x] CQL2-text parser `_parse_cql2_text()` — handles `variable = 'ssh'`, `A AND B`, `A OR B`, `NOT (A)` as generated by STAC Browser GET requests on collection items view
+- [x] CQL2 NOT filter — `_CQL2_OP_INVERT` dict inverts operators under negation; `CqlNot.toText()` fixed in stac-browser fork (`logical.js`) to emit `NOT (inner)` instead of dropping the operator
+- [x] CQL2 AND with duplicate fields — `_parse_cql2_json` and `_parse_cql2_text` collect multiple conditions on the same field as `[(op,v1), (op,v2)]` tuple lists; `search_items` iterates them as separate AND clauses
+- [x] CQL2 OR filter — values collected as plain lists `[v1, v2]`; `search_items` detects plain vs tuple lists and emits `IN (?, ?)` SQL; `_collection_matches` uses `any()` for OR matching
+- [x] Collection badge injection — `_inject_item_links` inserts the collection ID as the first keyword in item properties; STAC Browser renders keywords as colored chips, giving a visual collection indicator on item cards; also added as a Vue badge in stac-browser `Item.vue` (fork)
+- [x] CLI tests — 31 CLI tests covering all four commands (`scan`, `serve`, `info`, `export`) added in `tests/test_cli.py`
 - [ ] JSON-LD vocabulary links (deferred to Phase 5)
 - [ ] User documentation: `docs/api_and_browser.md` — federation config, `esm-catalog serve` usage, STAC Browser URL pattern, supported filter syntax
 

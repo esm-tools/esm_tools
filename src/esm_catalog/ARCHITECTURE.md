@@ -692,36 +692,42 @@ unnecessary burden on researchers and requires port coordination across users.
 1. Researcher runs **one command** to publish a catalog.  No ports, no server admin.
 2. The portal and STAC Browser are **always running** — never need restarting when
    a new catalog is added.
-3. Different departments (Paleo, Ocean, Atmosphere, …) get **isolated API servers**
-   on reserved port ranges, but researchers never think about port numbers.
+3. Researchers never think about port numbers or which process owns their catalog.
 
-### Architecture
+### Architecture: one API, one registry
+
+The key insight: once the catalog list is dynamic (read from `registry.json` on
+every request), **there is no reason to run more than one STAC API process**.
+A single process already handles all catalogs — splitting by department into separate
+processes just rebuilds the old "one port per DuckDB" model with extra steps.
 
 ```
 Fixed infrastructure (one-time setup by sysadmin / long-running SLURM job):
 
   Port 23000  ── Data Portal
                   nginx serves stac-portal/ (bind-mounted from host)
-                  Reads servers.json for the list of department API cards
+                  Shows all registered catalogs as browsable cards
                   Researcher never edits this
 
   Port 23000/stac/  ── STAC Browser SPA (built into Apptainer image)
 
-Department STAC API servers (one per group, always running):
-
-  Port 23100  ── Paleo STAC API
-  Port 23200  ── Ocean STAC API
-  Port 23300  ── Atmosphere STAC API
-                  Each server reads its registry.json on every request
-                  → new catalogs appear automatically on the next HTTP hit
+  Port 23100  ── Single STAC API  (all users, all experiments)
+                  Reads /shared/registry.json on every request
+                  → any newly registered catalog appears on the next HTTP hit
 
 Researcher action (runs anywhere, takes <1 second):
 
   esm-catalog register ~/experiments/picontrol/catalog.duckdb \
-      --registry /shared/paleo/registry.json \
       --name "PI Control 1000yr" \
       --description "FESOM + ECHAM6 pre-industrial control run"
+  → appends entry to /shared/registry.json atomically
+  → immediately visible in STAC Browser without any restart
 ```
+
+Department "isolation" is not a routing concern — it is a filter.  STAC Browser's
+collection search lets any researcher find their group's data by `experiment`,
+`model`, `variable`, or any other catalog property.  No per-department ports or
+processes are needed.
 
 ### Why hot-reload is nearly free
 
@@ -744,9 +750,25 @@ def _open_catalogs(self) -> list[CatalogDB]:
 Reading a small JSON file per request costs microseconds.  For a research portal
 with tens of concurrent users, this overhead is negligible.
 
+### When multiple API processes make sense
+
+A separate STAC API process per department is still reasonable if:
+
+- **Access control**: a department needs to restrict which catalogs are visible to
+  which users (a single shared registry has no ACL mechanism).
+- **Admin autonomy**: a group wants to manage their own portal independently (their
+  own `registry.json`, their own port, their own uptime SLA).
+- **Load isolation**: one group's heavy query workload should not affect others
+  (unlikely at research-portal scale, but possible).
+
+In these cases each group runs `esm-catalog serve --registry /shared/<dept>/registry.json --port 231XX`.
+Researchers `register` into their department's registry.  The data portal `servers.json`
+lists all group APIs as browsable cards.  This is purely opt-in — the default remains
+one shared API.
+
 ### Registry file format
 
-`/shared/<dept>/registry.json` — edited only by `esm-catalog register`:
+`/shared/registry.json` — edited only by `esm-catalog register`:
 
 ```json
 {
@@ -776,31 +798,24 @@ are safe.
 
 2. Researcher publishes (one command, runs on login node):
    esm-catalog register ~/experiments/picontrol/catalog.duckdb \
-       --registry /shared/paleo/registry.json \
        --name "PI Control 1000yr"
-   → appends entry to registry.json atomically
+   → appends entry to /shared/registry.json atomically
 
 3. Portal (nothing to do):
-   Paleo STAC API on :23100 reads registry.json on next request
+   STAC API on :23100 reads registry.json on next request
    New collections appear in STAC Browser automatically
-   Health dots on portal stay green throughout
    No restarts, no admin, no port juggling
 ```
 
 ### Open design questions
 
-- **Department assignment**: should `--registry` be explicit (researcher specifies
-  the path) or inferred (from path conventions like `/albedo/home/<user>/` → lookup
-  table, or from a `~/.esm_catalog.yaml` user config)?
+- **Registry location**: should `--registry` be explicit or inferred from a
+  `~/.esm_catalog.yaml` user config (so researchers don't need to know the path)?
 - **Deregistration**: should `esm-catalog deregister` exist, or is stale-entry
-  cleanup handled by health-check timeouts in the portal?
+  cleanup handled manually / by health-check timeouts in the portal?
 - **Portal placement**: the portal itself must be always-on.  A login-node process
   is the pragmatic first step; a systemd unit managed by IT would be the production
   answer.
-- **Cross-department search**: a user wanting to search across all departments would
-  need to query multiple APIs.  A global "all departments" API (one registry that
-  imports all per-department registries) could be offered as a read-only view
-  without changing the per-department model.
 
 ---
 
@@ -1155,14 +1170,14 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 
 > Pending review and approval — see [Data Portal & Self-Registration](#data-portal--self-registration-proposal) section.
 
-- [ ] `esm-catalog register` command — atomic append to `registry.json` with file locking; `--registry`, `--name`, `--description`, `--owner` flags
+- [ ] `esm-catalog register` command — atomic append to `registry.json` with file locking; `--name`, `--description`, `--owner` flags; optional `--registry` override (defaults from `~/.esm_catalog.yaml`)
 - [ ] `esm-catalog deregister` command — remove own entry from registry by path
 - [ ] Registry-aware `DuckDBCatalogClient` — reads `registry.json` per request when `--registry` flag is given to `esm-catalog serve`
-- [ ] Department port conventions documented — reserved ranges for Paleo / Ocean / Atmosphere / etc.
+- [ ] Single shared API as default — one `esm-catalog serve --registry /shared/registry.json --port 23100`; per-department instances remain optional for access-control / admin-autonomy use cases
 - [ ] Apptainer image (`stac-browser.sif`) built and verified — portal on :23000, STAC Browser at `/stac/`
 - [ ] `run-portal.sh` / SLURM job script for always-on portal
 - [ ] End-to-end test: `register` → catalog appears in STAC Browser without API restart
-- [ ] User documentation: `docs/data_portal.md` — register/deregister commands, department registry paths, SSH tunnel instructions
+- [ ] User documentation: `docs/data_portal.md` — register/deregister commands, shared registry path, optional per-department setup, SSH tunnel instructions
 
 ---
 

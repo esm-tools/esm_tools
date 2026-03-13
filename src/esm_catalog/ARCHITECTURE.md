@@ -892,6 +892,61 @@ descriptor file that already holds this kind of metadata?
 
 ---
 
+## VirtualiZarr Integration (Future Enhancement)
+
+> **Status: no implementation needed now — documented as a consumer-side workflow.**
+> See [`docs/virtualizarr_workflow.md`](docs/virtualizarr_workflow.md) for the
+> step-by-step guide.
+> Related library: [`VirtualiZarr`](https://github.com/zarr-developers/VirtualiZarr)
+
+### What it is
+
+VirtualiZarr creates a **manifest of byte-range references** into existing
+NetCDF/HDF5/GRIB files — no data is copied or reformatted.  The manifest maps Zarr
+chunk coordinates to `(file_path, byte_offset, byte_length)` tuples.  A consumer
+opens the manifest with xarray and gets a fully lazy, chunked dataset backed by the
+original files read on demand.
+
+### Why it fits with this catalog
+
+The two tools occupy different layers and compose naturally:
+
+```
+STAC catalog  →  "what exists, where, and what does it contain?"  (discovery)
+VirtualiZarr  →  "how do I open all those files as a single cube?"  (access)
+```
+
+**Multi-file virtual aggregation** is the compelling workflow.  A STAC search returns
+a list of items — say, all FESOM SSH files from a 1000-year PI control.  VirtualiZarr
+can concatenate all of them into a single virtual time-series cube, purely in the
+manifest, with no data movement:
+
+```python
+items = catalog.search(collections=["basic-001-fesom"],
+                       filter="variable='ssh'").items()
+paths = [item.assets["data"].href.removeprefix("file://") for item in items]
+vds   = xr.concat([open_virtual_dataset(p, parser=HDFParser()) for p in paths],
+                  dim="time")
+```
+
+### Integration points (when triggered)
+
+| Trigger | Integration point |
+|---|---|
+| Now (zero cost) | Document the workflow — see `docs/virtualizarr_workflow.md` |
+| Files move to S3 / cold storage | Store Kerchunk/Icechunk manifest as a second STAC asset alongside the raw NetCDF href |
+| Files accessed cross-site | Manifest path in STAC item becomes the shareable access handle |
+| Python snippet in STAC Browser | `PythonCodeBox` offers a second tab: "Open as virtual Zarr" |
+
+### Current limitations on HPC
+
+VirtualiZarr's main benefit is cloud-native byte-range reads over HTTP/S3.  For local
+Lustre, opening NetCDF directly is already efficient.  On tape, virtual manifests do
+not help with recall latency — that remains the `hpc/` extension's domain.  The
+integration becomes high-value once files live on object storage.
+
+---
+
 ## Universal Pathlib / fsspec Integration (Decision Note)
 
 > **Decision: do not add as a dependency yet — but design interfaces to accommodate it.**

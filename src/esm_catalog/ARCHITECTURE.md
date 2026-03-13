@@ -804,6 +804,94 @@ are safe.
 
 ---
 
+## Paleo Time as a Searchable Attribute (Proposal)
+
+> **Status: design proposal — awaiting feedback from Paul Gierz.**
+> Related library: [`paleodatetime`](https://github.com/pgierz/paleodatetime)
+
+### The problem
+
+Paleo simulations represent geological time far outside the range of standard
+datetime types.  A 65 Ma run (`-65_000_000` CE) overflows DuckDB's `TIMESTAMPTZ`
+column (range ≈ ±290,000 years) and is outside RFC 3339 entirely.  Researchers
+need to filter items by geological age — e.g. "show me all LGM runs" or "all
+Cretaceous experiments" — which is not possible with the existing `datetime` field.
+
+### Why a plain integer works
+
+`paleodatetime.PaleoDateTime` stores time internally as a large signed integer year.
+The cleanest catalog representation is the same: a plain integer property
+`paleo_year` on each item.  No special column type, no schema migration — it
+participates in the existing `json_extract` query path without any changes to the
+filter machinery.
+
+```json
+{
+  "properties": {
+    "datetime":    "1850-01-01T00:00:00Z",  ← model simulation clock (unchanged)
+    "paleo_year":  -65000000,               ← geological age (year number, negative = past)
+    "paleo_age_ma": 65.0                    ← human-readable display value in Ma (optional)
+  }
+}
+```
+
+**Why `paleo_year` and not `paleo:year`?**
+The STAC extension colon-prefix convention (`paleo:year`) is valid JSON but
+unreliable in DuckDB JSON path syntax — `json_extract(data, '$.properties.paleo:year')`
+is ambiguous.  Using an underscore (`paleo_year`) is simpler and consistent with how
+`experiment`, `variable`, etc. are stored.  Alternatively a dedicated
+`paleo_year BIGINT` column in the `items` table (mirroring `datetime`) would be the
+cleanest approach for efficient range queries.
+
+### Where does the value come from at scan time?
+
+NetCDF output files use a model calendar (e.g. year 1850 for a PI-control), not the
+geological age the simulation represents.  The geological age is experiment-level
+metadata.  Three candidate sources, in preference order:
+
+1. **`finished_config.yaml`** — Paul adds a `paleo_reference_year: -65000000` field
+   to the experiment config.  `integration/esm_tools.py` reads it automatically
+   during the ESM-Tools tidy phase and injects it into every item in that experiment.
+   This is the right long-term home.
+
+2. **CLI flag** — `esm-catalog scan /outdata/ --paleo-year -65000000`.  A practical
+   fallback for batch scanning of legacy runs where no config is available.
+
+3. **NetCDF time coordinate auto-detection** — some paleo models encode time as
+   `"years since -65000000-01-01"` with a non-standard `calendar` attribute.
+   `scan/netcdf.py` could detect this and extract the reference year automatically.
+   Worth checking during implementation whether FESOM/ECHAM output uses this pattern.
+
+### Filter examples (CQL2-text)
+
+```
+paleo_year >= -70000000 AND paleo_year <= -60000000   ← Cretaceous slice
+paleo_year >= -26000 AND paleo_year <= -19000          ← Last Glacial Maximum
+paleo_year = -65000000                                  ← single snapshot
+```
+
+STAC Browser exposes `paleo_year` as a numeric range picker in "Additional Filters"
+automatically once it is declared in `/queryables` with `"type": "integer"`.
+
+### What needs to change
+
+| Layer | Change needed |
+|---|---|
+| `stac/item.py` | Read `paleo_year` from metadata dict, include in `properties` |
+| `integration/esm_tools.py` | Extract `paleo_reference_year` from `finished_config.yaml` |
+| `scan/netcdf.py` | Optionally detect paleo reference from time coordinate `units` attribute |
+| `storage/duckdb.py` | Add `paleo_year` to `upsert_collection_item_props`; optionally add `paleo_year BIGINT` column |
+| `api/app.py` | Expose `paleo_year` in `/queryables` with `"type": "integer"`, `minimum`/`maximum` from live catalog |
+| Filter machinery | **No changes needed** — `paleo_year` is handled generically like any other JSON property |
+
+### Open question for Paul
+
+Where is the geological age best declared in the ESM-Tools configuration?
+Is `finished_config.yaml` the right place, or is there a higher-level experiment
+descriptor file that already holds this kind of metadata?
+
+---
+
 ## Dependencies
 
 **Core:**

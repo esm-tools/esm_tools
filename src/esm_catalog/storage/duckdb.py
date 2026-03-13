@@ -199,9 +199,37 @@ class CatalogDB:
 
         if filter_props:
             for field, spec in filter_props.items():
-                # spec can be a single (op, val) tuple, a plain value,
-                # or a list of (op, val) tuples for multiple AND conditions
-                # on the same field (e.g. variable = 'ssh' AND variable = 'sst').
+                # OR list: a list of plain (non-tuple) values → IN clause
+                if isinstance(spec, list) and spec and not isinstance(spec[0], tuple):
+                    vals = spec
+                    if field in ("id", "collection", "experiment"):
+                        ph = ", ".join(["?"] * len(vals))
+                        conditions.append(f"{field} IN ({ph})")
+                        params.extend(vals)
+                    elif field in ("datetime", "datetime_end"):
+                        or_conds = ["datetime = ?::TIMESTAMPTZ" for _ in vals]
+                        conditions.append(f"({' OR '.join(or_conds)})")
+                        params.extend(vals)
+                    elif field == "variables":
+                        or_conds = [
+                            "list_contains("
+                            "    json_extract(data, '$.properties.variables')::VARCHAR[],"
+                            "    ?)"
+                            for _ in vals
+                        ]
+                        conditions.append(f"({' OR '.join(or_conds)})")
+                        params.extend(vals)
+                    else:
+                        or_conds = [
+                            f"json_extract(data, '$.properties.{field}') = ?"
+                            for _ in vals
+                        ]
+                        conditions.append(f"({' OR '.join(or_conds)})")
+                        params.extend([json.dumps(v) for v in vals])
+                    continue
+
+                # AND: single (op, val) tuple, plain value,
+                # or list of (op, val) tuples for multiple conditions on same field.
                 specs = spec if isinstance(spec, list) else [spec]
                 for s in specs:
                     if isinstance(s, tuple):
@@ -261,6 +289,17 @@ class CatalogDB:
         """Return True if *collection* satisfies all constraints in *filter_props*."""
         idx = self.get_collection_item_props(collection["id"])
         for field, spec in filter_props.items():
+            # OR list: plain values — collection matches if any value is present
+            if isinstance(spec, list) and spec and not isinstance(spec[0], tuple):
+                native_val = collection.get(field)
+                if native_val is not None and str(native_val) in [str(v) for v in spec]:
+                    continue
+                indexed_vals = idx.get(field, set())
+                if any(str(v) in indexed_vals for v in spec):
+                    continue
+                return False
+
+            # AND: single condition or list of (op, val) tuples
             specs = spec if isinstance(spec, list) else [spec]
             for s in specs:
                 if isinstance(s, tuple):

@@ -82,12 +82,14 @@ def _cql2_value(val: Any) -> Any:
 def _parse_cql2_json(expr: dict | None, negate: bool = False) -> dict:
     """Parse a CQL2-JSON filter expression into a flat ``filter_props`` dict.
 
-    Handles AND combinations, comparison operators, and NOT wrappers.
-    OR is silently ignored (our storage layer only supports AND semantics).
+    Handles AND combinations, OR combinations, comparison operators, and NOT
+    wrappers.
 
     Returns:
-        Dict mapping field name → (sql_op, value) suitable for
-        :meth:`~esm_catalog.storage.duckdb.CatalogDB.search_items`.
+        Dict mapping field name → value where value is:
+        - ``(sql_op, value)`` for a single condition
+        - ``[(sql_op, v1), (sql_op, v2), ...]`` for AND duplicates
+        - ``[v1, v2, ...]`` (plain values) for OR equality conditions → IN clause
     """
     if not expr:
         return {}
@@ -107,6 +109,20 @@ def _parse_cql2_json(expr: dict | None, negate: bool = False) -> dict:
                     result[k] = v
         return result
 
+    if op == "or":
+        # Collect same-field equality values as a plain list for IN-clause OR.
+        or_result: dict = {}
+        for arg in args:
+            for k, v in _parse_cql2_json(arg, negate=negate).items():
+                # Extract plain value from equality tuple for OR semantics
+                plain = v[1] if isinstance(v, tuple) and v[0] == "=" else v
+                if k in or_result:
+                    existing = or_result[k]
+                    or_result[k] = (existing if isinstance(existing, list) else [existing]) + [plain]
+                else:
+                    or_result[k] = [plain]
+        return or_result
+
     if op == "not" and len(args) == 1:
         return _parse_cql2_json(args[0], negate=not negate)
 
@@ -122,7 +138,7 @@ def _parse_cql2_json(expr: dict | None, negate: bool = False) -> dict:
             inv = _CQL2_OP_INVERSE.get(sql_op, sql_op)
             return {right["property"]: (inv, _cql2_value(left))}
 
-    # OR, spatial ops — return empty (no-op filter)
+    # Spatial ops or unknown — return empty (no-op filter)
     return {}
 
 
@@ -143,6 +159,7 @@ def _parse_cql2_text(expr: str, negate: bool = False) -> dict:
 
         variable = 'ssh'
         experiment = 'basic-001' AND variable = 'sst'
+        variable = 'ssh' OR variable = 'sst'
         NOT (variable = 'sst')
 
     The ``NOT (...)`` wrapper (produced by the "Negate filter" checkbox) is
@@ -150,7 +167,9 @@ def _parse_cql2_text(expr: str, negate: bool = False) -> dict:
     sees ``!=`` instead of ``=``, etc.
 
     Returns the same ``{field: (sql_op, value)}`` structure as
-    :func:`_parse_cql2_json` so callers are format-agnostic.
+    :func:`_parse_cql2_json` so callers are format-agnostic.  OR equality
+    conditions are returned as plain lists ``[v1, v2, ...]`` for IN-clause
+    matching; AND duplicates are ``[(op, v1), (op, v2), ...]``.
     """
     # Detect top-level NOT (...) and recurse with negate=True
     stripped = expr.strip()
@@ -158,6 +177,29 @@ def _parse_cql2_text(expr: str, negate: bool = False) -> dict:
     if not_match:
         return _parse_cql2_text(not_match.group(1), negate=not negate)
 
+    # Detect top-level OR (STAC Browser "Match any filters" generates flat OR)
+    or_parts = re.split(r'\bOR\b', stripped, flags=re.IGNORECASE)
+    if len(or_parts) > 1:
+        or_result: dict = {}
+        for part in or_parts:
+            for m in _CQL2_TEXT_PAT.finditer(part):
+                prop = m.group(1)
+                if prop.upper() in ("AND", "OR", "NOT"):
+                    continue
+                op = m.group(2)
+                value = m.group(3) if m.group(3) is not None else (
+                    m.group(4) if m.group(4) is not None else (m.group(5) or "").strip()
+                )
+                key = prop.lower() if prop.lower() in _CQL2_TEXT_KNOWN else prop
+                # Collect plain values for OR → IN clause
+                if key in or_result:
+                    existing = or_result[key]
+                    or_result[key] = (existing if isinstance(existing, list) else [existing]) + [value]
+                else:
+                    or_result[key] = [value]
+        return or_result
+
+    # AND expression (or single condition)
     result: dict = {}
     for m in _CQL2_TEXT_PAT.finditer(expr):
         prop = m.group(1)

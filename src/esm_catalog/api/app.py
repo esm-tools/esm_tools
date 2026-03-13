@@ -171,6 +171,98 @@ def create_app(
             },
         }
 
+    # /collections/{collection_id}/queryables — per-collection queryables for the
+    # CQL2 "Additional Filters" section that appears when browsing a collection's
+    # items.  Returns the same schema as /queryables but with enum values scoped
+    # to items that belong to the requested collection.
+    @api.app.get(
+        "/collections/{collection_id}/queryables",
+        response_model=None,
+        include_in_schema=True,
+        summary="Queryable properties for a specific collection",
+        tags=["STAC API - Filter Extension"],
+    )
+    def collection_queryables(collection_id: str, request: Request):
+        from esm_catalog.storage.duckdb import CatalogDB
+        from fastapi.responses import JSONResponse
+
+        base_url = str(request.base_url).rstrip("/")
+
+        def _distinct(db, json_path: str, cid: str) -> list[str]:
+            rows = db.db.execute(
+                f"SELECT DISTINCT json_extract_string(data, '{json_path}') AS v "
+                f"FROM items "
+                f"WHERE json_extract_string(data, '$.collection') = ? AND v IS NOT NULL "
+                f"ORDER BY v",
+                [cid],
+            ).fetchall()
+            return [r[0] for r in rows if r[0]]
+
+        # Verify collection exists and collect distinct values across all DBs.
+        found = False
+        experiments: set[str] = set()
+        components: set[str] = set()
+        variables: set[str] = set()
+        all_variables: set[str] = set()
+        for path in catalogs:
+            p = Path(path)
+            if not p.exists():
+                continue
+            db = CatalogDB(p)
+            try:
+                # Check if this collection exists in this DB
+                row = db.db.execute(
+                    "SELECT COUNT(*) FROM items "
+                    "WHERE json_extract_string(data, '$.collection') = ?",
+                    [collection_id],
+                ).fetchone()
+                if row and row[0] > 0:
+                    found = True
+                experiments.update(_distinct(db, "$.properties.experiment", collection_id))
+                components.update(_distinct(db, "$.properties.component", collection_id))
+                variables.update(_distinct(db, "$.properties.variable", collection_id))
+
+                rows = db.db.execute(
+                    "SELECT json_extract_string(data, '$.properties.variables') "
+                    "FROM items "
+                    "WHERE json_extract_string(data, '$.collection') = ? "
+                    "  AND json_array_length(data, '$.properties.variables') > 0",
+                    [collection_id],
+                ).fetchall()
+                for (arr_str,) in rows:
+                    if arr_str:
+                        try:
+                            names = json.loads(arr_str)
+                            if isinstance(names, list):
+                                all_variables.update(n for n in names if n)
+                        except Exception:
+                            pass
+            finally:
+                db.close()
+
+        if not found:
+            return JSONResponse(status_code=404, content={"detail": f"Collection '{collection_id}' not found"})
+
+        def _str_prop(title: str, enum: list[str]) -> dict:
+            p: dict = {"title": title, "type": "string"}
+            if enum:
+                p["enum"] = sorted(enum)
+            return p
+
+        return {
+            "$schema": "https://json-schema.org/draft/2019-09/schema",
+            "$id": f"{base_url}/collections/{collection_id}/queryables",
+            "type": "object",
+            "title": f"Queryable properties for collection {collection_id!r}",
+            "properties": {
+                "datetime":   {"title": "Datetime",       "type": "string", "format": "date-time"},
+                "experiment": _str_prop("Experiment ID",  sorted(experiments)),
+                "component":  _str_prop("Model Component", sorted(components)),
+                "variable":   _str_prop("Variable",       sorted(variables)),
+                "variables":  _str_prop("Any Variable (multi-var files)", sorted(all_variables)),
+            },
+        }
+
     # GET /stac-extensions/hpc/v0.1.0/schema.json
     # Serves the HPC storage extension schema locally so STAC Browser can
     # validate items against it.  The canonical URL

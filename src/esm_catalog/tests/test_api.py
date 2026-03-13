@@ -377,6 +377,22 @@ class TestCQL2Filter:
         assert "variable" in body["properties"]
         assert body["$schema"] == "https://json-schema.org/draft/2019-09/schema"
 
+    def test_collection_queryables_endpoint(self, client):
+        """GET /collections/{id}/queryables returns scoped JSON Schema for the
+        'Additional Filters' CQL2 builder when browsing a collection's items."""
+        r = client.get("/collections/basic-fesom/queryables")
+        assert r.status_code == 200
+        body = r.json()
+        assert body["$schema"] == "https://json-schema.org/draft/2019-09/schema"
+        assert "properties" in body
+        assert "variable" in body["properties"]
+        assert body["$id"].endswith("/collections/basic-fesom/queryables")
+
+    def test_collection_queryables_404_for_unknown(self, client):
+        """GET /collections/{id}/queryables returns 404 for unknown collections."""
+        r = client.get("/collections/does-not-exist/queryables")
+        assert r.status_code == 404
+
     def test_collections_response_has_queryables_link(self, client):
         """GET /collections must include a queryables link so STAC Browser shows
         'Additional filters' in the 'Search for Collections' tab."""

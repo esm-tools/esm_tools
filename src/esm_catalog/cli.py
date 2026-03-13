@@ -103,8 +103,14 @@ def main(ctx, verbose):
     default=None,
     help="Include extension-less files (GRIB). Default: yes for local, no for remote.",
 )
+@click.option(
+    "--distributed", "use_dask",
+    is_flag=True,
+    default=False,
+    help="Use dask.distributed (heavier, but scalable to SLURM). Default: ProcessPoolExecutor.",
+)
 @click.pass_context
-def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensionless):
+def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensionless, use_dask):
     """Scan PATH (file or directory) into the catalog at DB.
 
     PATH can be a local path or a remote URI:
@@ -116,7 +122,7 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     All supported files (.nc, .grb, etc.) are scanned recursively.
     Files are discovered and scanned in parallel using -j workers.
     """
-    from dask.distributed import Client, LocalCluster, as_completed
+    from concurrent.futures import ProcessPoolExecutor, as_completed as futures_as_completed
 
     from esm_catalog.integration.config import load_config
     from esm_catalog.scan.context import resolve_context
@@ -199,9 +205,9 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             logger.info("No files to scan")
             return
 
-        # Phase 2: Scan files in parallel using dask.distributed
-        # Uses process workers to avoid HDF5 thread-safety issues
-        # Later: can swap LocalCluster for SLURMCluster via dask-jobqueue
+        # Phase 2: Scan files in parallel
+        # Default: ProcessPoolExecutor (lightweight, works on login nodes)
+        # --distributed: dask.distributed (heavier, but scalable to SLURM)
         progress = Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -222,54 +228,77 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                 return Group(progress, msg_panel)
             return progress
 
+        def process_scan_result(fp_str, status, data):
+            """Process a single scan result and insert into database."""
+            nonlocal ok, errors, scanned
+            fp = Path(fp_str)
+            fname = fp.name
+            scanned += 1
+
+            if status == "ok":
+                try:
+                    ctx_col = resolve_context(fp, config=config, db=catalog_db)
+                    item = make_item(fp, data, ctx_col, config=config)
+                    item = add_hpc_extension(item, fp)
+                    catalog_db.insert_item(item)
+                    catalog_db.update_collection_extent(ctx_col.collection_id, item)
+                    catalog_db.upsert_collection_item_props(ctx_col.collection_id, item)
+                    ok += 1
+                    messages.append((f"✓ {fname}", "green"))
+                except Exception as e:
+                    errors += 1
+                    messages.append((f"✗ {fname}: {e}", "red"))
+            elif status == "error":
+                errors += 1
+                messages.append((f"✗ {fname}: {data}", "yellow"))
+            elif status == "unsupported":
+                messages.append((f"- {fname} (skipped)", "dim"))
+
         logger.disable("esm_catalog")
 
         try:
             with Live(make_display(), refresh_per_second=4) as live:
                 task_id = progress.add_task("[cyan]Scanning...[/cyan]", total=total_files)
 
-                # Start local cluster with process workers
-                with LocalCluster(n_workers=jobs, processes=True, threads_per_worker=1) as cluster:
-                    with Client(cluster) as client:
-                        # Submit all files as futures
-                        futures = client.map(_scan_file_worker, [str(fp) for fp in files])
+                if use_dask:
+                    # dask.distributed - heavier but scalable to SLURM
+                    from dask.distributed import Client, LocalCluster, as_completed as dask_as_completed
 
-                        # Process results as they complete (real-time progress)
-                        for future in as_completed(futures):
+                    with LocalCluster(n_workers=jobs, processes=True, threads_per_worker=1) as cluster:
+                        with Client(cluster) as client:
+                            futures = client.map(_scan_file_worker, [str(fp) for fp in files])
+
+                            for future in dask_as_completed(futures):
+                                try:
+                                    fp_str, status, data = future.result()
+                                except Exception as e:
+                                    errors += 1
+                                    scanned += 1
+                                    messages.append((f"✗ Error: {e}", "red"))
+                                else:
+                                    process_scan_result(fp_str, status, data)
+
+                                progress.update(task_id, completed=scanned)
+                                live.update(make_display())
+                else:
+                    # ProcessPoolExecutor - lightweight, works on login nodes
+                    with ProcessPoolExecutor(max_workers=jobs) as executor:
+                        future_to_path = {
+                            executor.submit(_scan_file_worker, str(fp)): fp
+                            for fp in files
+                        }
+
+                        for future in futures_as_completed(future_to_path):
                             try:
                                 fp_str, status, data = future.result()
                             except Exception as e:
                                 errors += 1
                                 scanned += 1
                                 messages.append((f"✗ Error: {e}", "red"))
-                                progress.update(task_id, completed=scanned)
-                                live.update(make_display())
-                                continue
+                            else:
+                                process_scan_result(fp_str, status, data)
 
-                            fp = Path(fp_str)
-                            fname = fp.name
-                            scanned += 1
                             progress.update(task_id, completed=scanned)
-
-                            if status == "ok":
-                                try:
-                                    ctx_col = resolve_context(fp, config=config, db=catalog_db)
-                                    item = make_item(fp, data, ctx_col, config=config)
-                                    item = add_hpc_extension(item, fp)
-                                    catalog_db.insert_item(item)
-                                    catalog_db.update_collection_extent(ctx_col.collection_id, item)
-                                    catalog_db.upsert_collection_item_props(ctx_col.collection_id, item)
-                                    ok += 1
-                                    messages.append((f"✓ {fname}", "green"))
-                                except Exception as e:
-                                    errors += 1
-                                    messages.append((f"✗ {fname}: {e}", "red"))
-                            elif status == "error":
-                                errors += 1
-                                messages.append((f"✗ {fname}: {data}", "yellow"))
-                            elif status == "unsupported":
-                                messages.append((f"- {fname} (skipped)", "dim"))
-
                             live.update(make_display())
 
                 progress.update(task_id, description="[green]Done[/green]")

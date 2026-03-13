@@ -827,6 +827,27 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
     return receiver
 
 
+def get_components(config, include_system=True):
+    """Get list of components including models and optionally system components.
+
+    Parameters
+    ----------
+    config : dict
+        The configuration object
+    include_system : bool
+        Whether to include system components like 'general' and 'dask'
+
+    Returns
+    -------
+    list
+        List of component names
+    """
+    components = list(config.get('general', {}).get('valid_model_names', []))
+    if include_system:
+        components.extend(config.get('general', {}).get('system_components', ['general']))
+    return components
+
+
 def find_remove_entries_in_config(mapping, model_name, models=[]):
     all_removes = []
     mappings = [mapping]

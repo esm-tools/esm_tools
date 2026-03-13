@@ -321,14 +321,9 @@ def add_esm_runscripts_defaults_to_config(config):
         f"{esm_tools.get_config_filepath()}/esm_software/esm_runscripts/defaults.yaml"
     )
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
-    config["general"]["defaults.yaml"] = default_config
-
-    if "general" in default_config:
-        config["general"] = esm_parser.new_deep_update(
-            config["general"], default_config["general"]
-        )
 
     if "per_model_defaults" in default_config:
+        config["general"]["per_model_defaults"] = default_config["per_model_defaults"]
         per_model_defaults = copy.deepcopy(default_config["per_model_defaults"])
         # Remove ``file_movements`` from per_model_defaults as this is resolved in
         # ``filelists.py`` and otherwise, it is not possible to understand there what
@@ -340,5 +335,8 @@ def add_esm_runscripts_defaults_to_config(config):
             config[model] = esm_parser.new_deep_update(
                 config[model], per_model_defaults
             )
+        del default_config["per_model_defaults"]
+
+    config = esm_parser.new_deep_update(config, default_config)
 
     return config

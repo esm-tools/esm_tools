@@ -188,8 +188,12 @@ echam:
                            - temraw
 
                 mops_oasismct4:
-                        atm_file_tags: "echam accw co2"
+                        atm_file_tags: "echam accw co2 tracer"
                         version: "6.3.05p2-foci_oasismct4"
+                        # with mops we use a different namelist template that as a mvstream namelist
+                        # entry for tracer output. An entire mvstreamctl namelist block can't be added
+                        # as f90nml does not fully support the duplicate mvstreamctl entries
+                        namelist_dir: "${general.esm_namelist_dir}/echam/6.3.05p2-foci-withtracer/${echam.scenario_type}"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
                            namelist.echam:
@@ -246,8 +250,12 @@ echam:
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
                 agrif_mops_oasismct4:
-                        atm_file_tags: "echam accw co2"
+                        atm_file_tags: "echam accw co2 tracer"
                         version: "6.3.05p2-foci_oasismct4"
+                        # with mops we use a different namelist template that as a mvstream namelist
+                        # entry for tracer output. An entire mvstreamctl namelist block can't be added
+                        # as f90nml does not fully support the duplicate mvstreamctl entries
+                        namelist_dir: "${general.esm_namelist_dir}/echam/6.3.05p2-foci-withtracer/${echam.scenario_type}"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         #foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT, MODCO2_A]
                         add_namelist_changes:

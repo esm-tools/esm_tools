@@ -97,7 +97,14 @@ def _parse_cql2_json(expr: dict | None, negate: bool = False) -> dict:
     if op == "and":
         result: dict = {}
         for arg in args:
-            result.update(_parse_cql2_json(arg, negate=negate))
+            for k, v in _parse_cql2_json(arg, negate=negate).items():
+                if k in result:
+                    # Same field appears in multiple AND branches — collect both
+                    # so search_items can emit two separate SQL conditions.
+                    existing = result[k]
+                    result[k] = (existing if isinstance(existing, list) else [existing]) + [v]
+                else:
+                    result[k] = v
         return result
 
     if op == "not" and len(args) == 1:
@@ -165,7 +172,12 @@ def _parse_cql2_text(expr: str, negate: bool = False) -> dict:
         sql_op = _CQL2_OP_MAP.get(op.lower(), op)
         if negate:
             sql_op = _CQL2_OP_INVERT.get(sql_op, sql_op)
-        result[key] = (sql_op, value)
+        cond = (sql_op, value)
+        if key in result:
+            existing = result[key]
+            result[key] = (existing if isinstance(existing, list) else [existing]) + [cond]
+        else:
+            result[key] = cond
     return result
 
 

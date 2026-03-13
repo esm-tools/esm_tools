@@ -199,35 +199,36 @@ class CatalogDB:
 
         if filter_props:
             for field, spec in filter_props.items():
-                if isinstance(spec, tuple):
-                    op, val = spec
-                else:
-                    op, val = "=", spec
+                # spec can be a single (op, val) tuple, a plain value,
+                # or a list of (op, val) tuples for multiple AND conditions
+                # on the same field (e.g. variable = 'ssh' AND variable = 'sst').
+                specs = spec if isinstance(spec, list) else [spec]
+                for s in specs:
+                    if isinstance(s, tuple):
+                        op, val = s
+                    else:
+                        op, val = "=", s
 
-                if field in ("id", "collection", "experiment"):
-                    conditions.append(f"{field} {op} ?")
-                    params.append(val)
-                elif field in ("datetime", "datetime_end"):
-                    # datetime and datetime_end map to the native TIMESTAMPTZ column
-                    col = "datetime"
-                    conditions.append(f"{col} {op} ?::TIMESTAMPTZ")
-                    params.append(val)
-                elif field == "variables":
-                    # Array containment: check if val appears in the
-                    # $.properties.variables JSON array (multi-variable files).
-                    conditions.append(
-                        "list_contains("
-                        "    json_extract(data, '$.properties.variables')::VARCHAR[],"
-                        "    ?"
-                        ")"
-                    )
-                    params.append(val)
-                else:
-                    # JSON path query for item properties
-                    conditions.append(
-                        f"json_extract(data, '$.properties.{field}') {op} ?"
-                    )
-                    params.append(json.dumps(val))
+                    if field in ("id", "collection", "experiment"):
+                        conditions.append(f"{field} {op} ?")
+                        params.append(val)
+                    elif field in ("datetime", "datetime_end"):
+                        col = "datetime"
+                        conditions.append(f"{col} {op} ?::TIMESTAMPTZ")
+                        params.append(val)
+                    elif field == "variables":
+                        conditions.append(
+                            "list_contains("
+                            "    json_extract(data, '$.properties.variables')::VARCHAR[],"
+                            "    ?"
+                            ")"
+                        )
+                        params.append(val)
+                    else:
+                        conditions.append(
+                            f"json_extract(data, '$.properties.{field}') {op} ?"
+                        )
+                        params.append(json.dumps(val))
 
         where = " AND ".join(conditions)
         total = self.db.execute(
@@ -260,23 +261,25 @@ class CatalogDB:
         """Return True if *collection* satisfies all constraints in *filter_props*."""
         idx = self.get_collection_item_props(collection["id"])
         for field, spec in filter_props.items():
-            if isinstance(spec, tuple):
-                op, val = spec
-            else:
-                op, val = "=", spec
+            specs = spec if isinstance(spec, list) else [spec]
+            for s in specs:
+                if isinstance(s, tuple):
+                    op, val = s
+                else:
+                    op, val = "=", s
 
-            # Check native collection field first
-            native_val = collection.get(field)
-            if native_val is not None and str(native_val) == str(val):
-                continue
+                # Check native collection field first
+                native_val = collection.get(field)
+                if native_val is not None and str(native_val) == str(val):
+                    continue
 
-            # Check item-derived property index
-            indexed_vals = idx.get(field, set())
-            if op == "=" and str(val) in indexed_vals:
-                continue
+                # Check item-derived property index
+                indexed_vals = idx.get(field, set())
+                if op == "=" and str(val) in indexed_vals:
+                    continue
 
-            # Neither matched — constraint fails
-            return False
+                # Constraint not satisfied
+                return False
         return True
 
     def close(self):

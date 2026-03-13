@@ -492,6 +492,18 @@ class DuckDBCatalogClient(BaseCoreClient):
             filter_props["bbox"] = bbox
         filter_props.update(_parse_datetime_filter(datetime))
 
+        # CQL2-JSON filter via ?filter=<json>&filter-lang=cql2-json
+        # Sent by STAC Browser's "Additional Filters" CQL2 builder when browsing
+        # a collection's items (GET request, JSON-encoded filter in query param).
+        if request is not None:
+            raw_filter = request.query_params.get("filter")
+            filter_lang = request.query_params.get("filter-lang", "cql2-json")
+            if raw_filter and filter_lang == "cql2-json":
+                try:
+                    filter_props.update(_parse_cql2_json(json.loads(raw_filter)))
+                except Exception:
+                    pass
+
         items: list[dict] = []
         total = 0
         dbs = self._open_catalogs()

@@ -112,10 +112,10 @@ def main(ctx, verbose):
 @click.option(
     "--exclude", "exclude_patterns",
     multiple=True,
-    default=("/work/", "/input/"),
+    default=("/run_", ),
     show_default=True,
     help="Directory patterns to exclude (can be specified multiple times). "
-         "Default excludes run_*/work/ and run_*/input/ directories.",
+         "Default excludes run_*/ directories (work files, input copies).",
 )
 @click.option(
     "--no-exclude",

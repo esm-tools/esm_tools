@@ -129,3 +129,52 @@ def validate_offset(offset: int | str | None, default: int = 0) -> int:
         return default
 
     return offset
+
+
+import re
+
+# Pattern for safe property names in SQL queries.
+# Allows alphanumeric, underscores, hyphens, colons (for namespaced properties).
+# Must start with alphanumeric or underscore.
+_SAFE_PROPERTY_PATTERN = re.compile(r"^[a-zA-Z_][a-zA-Z0-9_:\-]*$")
+
+# Maximum length for property names
+_MAX_PROPERTY_NAME_LENGTH = 256
+
+
+def is_safe_property_name(name: str) -> bool:
+    """Check if a property name is safe for use in SQL queries.
+
+    Property names discovered from JSON keys are generally safe, but this
+    provides an additional layer of validation before string interpolation.
+
+    Args:
+        name: Property name to validate.
+
+    Returns:
+        True if the name is safe for SQL interpolation.
+    """
+    if not name or len(name) > _MAX_PROPERTY_NAME_LENGTH:
+        return False
+    return bool(_SAFE_PROPERTY_PATTERN.match(name))
+
+
+def validate_property_name(name: str) -> str:
+    """Validate a property name for use in SQL queries.
+
+    Args:
+        name: Property name to validate.
+
+    Returns:
+        The validated property name.
+
+    Raises:
+        ValidationError: If the property name is invalid.
+    """
+    if not is_safe_property_name(name):
+        raise ValidationError(
+            f"Invalid property name: {name!r}. "
+            "Must start with a letter/underscore and contain only "
+            "alphanumeric characters, underscores, colons, or hyphens."
+        )
+    return name

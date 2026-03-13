@@ -116,16 +116,21 @@ class CatalogDB:
     # ------------------------------------------------------------------
 
     def insert_item(self, item: dict):
-        """Insert or replace a STAC Item."""
+        """Insert or update a STAC Item (upsert)."""
         props = item.get("properties", {})
         dt_str = props.get("datetime") or props.get("start_datetime")
         bbox = item.get("bbox")
 
         self.db.execute(
             """
-            INSERT OR REPLACE INTO items
-                (id, collection, experiment, datetime, bbox, data)
+            INSERT INTO items (id, collection, experiment, datetime, bbox, data)
             VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT (id) DO UPDATE SET
+                collection = EXCLUDED.collection,
+                experiment = EXCLUDED.experiment,
+                datetime = EXCLUDED.datetime,
+                bbox = EXCLUDED.bbox,
+                data = EXCLUDED.data
             """,
             [
                 item["id"],
@@ -136,7 +141,7 @@ class CatalogDB:
                 json.dumps(item),
             ],
         )
-        logger.debug("Inserted item: {}", item["id"])
+        logger.debug("Upserted item: {}", item["id"])
 
     def upsert_collection_item_props(self, collection_id: str, item: dict):
         """Index item properties for fast collection search.

@@ -109,8 +109,22 @@ def main(ctx, verbose):
     default=False,
     help="Use dask.distributed (heavier, but scalable to SLURM). Default: ProcessPoolExecutor.",
 )
+@click.option(
+    "--exclude", "exclude_patterns",
+    multiple=True,
+    default=("/work/", "/input/"),
+    show_default=True,
+    help="Directory patterns to exclude (can be specified multiple times). "
+         "Default excludes run_*/work/ and run_*/input/ directories.",
+)
+@click.option(
+    "--no-exclude",
+    is_flag=True,
+    default=False,
+    help="Disable default exclusions and scan all directories.",
+)
 @click.pass_context
-def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensionless, use_dask):
+def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensionless, use_dask, exclude_patterns, no_exclude):
     """Scan PATH (file or directory) into the catalog at DB.
 
     PATH can be a local path or a remote URI:
@@ -153,6 +167,18 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
 
     # Note: scan_one_file is defined at module level (_scan_file_worker) for pickling
 
+    # Determine active exclusion patterns
+    active_excludes = [] if no_exclude else list(exclude_patterns)
+    if active_excludes:
+        logger.debug("Excluding paths matching: {}", active_excludes)
+
+    def should_exclude(fp_str: str) -> bool:
+        """Check if file path matches any exclusion pattern."""
+        for pattern in active_excludes:
+            if pattern in fp_str:
+                return True
+        return False
+
     def file_candidates(root, include_extensionless=True):
         """Yield file candidates: known extensions first, then extension-less files."""
         seen = set()
@@ -162,7 +188,8 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             key = str(fp)
             if key not in seen:
                 seen.add(key)
-                yield fp
+                if not should_exclude(key):
+                    yield fp
 
         # Second: extension-less files (magic byte detection happens in worker)
         # Skip for remote scans - GRIB (most extension-less files) can't be scanned remotely anyway
@@ -171,7 +198,8 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                 key = str(fp)
                 if key not in seen and fp.suffix.lower() not in known_exts:
                     seen.add(key)
-                    yield fp
+                    if not should_exclude(key):
+                        yield fp
 
     with CatalogDB(db_path) as catalog_db:
         ok = 0

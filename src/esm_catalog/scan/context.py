@@ -150,6 +150,7 @@ def _from_path(path) -> CollectionContext | None:
     Expected patterns:
         .../experiments/{experiment}/outdata/{component}/file.nc
         .../experiments/{experiment}/outdata/{component}/subdir/file.nc
+        .../experiments/{experiment}/restart/{component}/file.nc
 
     Works with both Path (local) and PurePosixPath (remote).
     """
@@ -159,30 +160,34 @@ def _from_path(path) -> CollectionContext | None:
     else:
         parts = path.parts
 
-    # Find "outdata" segment; experiment is one directory above it
-    try:
-        outdata_idx = _rindex(parts, "outdata")
-    except ValueError:
-        return None
+    # Try multiple directory markers in order of preference
+    # outdata is preferred (actual output), restart is secondary
+    for marker in ("outdata", "restart"):
+        try:
+            marker_idx = _rindex(parts, marker)
+        except ValueError:
+            continue
 
-    if outdata_idx < 1 or outdata_idx + 1 >= len(parts):
-        return None
+        if marker_idx < 1 or marker_idx + 1 >= len(parts):
+            continue
 
-    component = parts[outdata_idx + 1]
+        component = parts[marker_idx + 1]
 
-    # Experiment: prefer the "experiments/{experiment}" convention
-    exp_idx = _rindex_before(parts, "experiments", outdata_idx)
-    if exp_idx is not None and exp_idx + 1 < outdata_idx:
-        experiment_id = parts[exp_idx + 1]
-        # Experiment path is everything up to and including the experiment name
-        experiment_path = Path(*parts[: exp_idx + 2])
-    else:
-        # Fallback: use the parent directory of "outdata"
-        experiment_id = parts[outdata_idx - 1]
-        # Experiment path is the directory containing "outdata"
-        experiment_path = Path(*parts[:outdata_idx])
+        # Experiment: prefer the "experiments/{experiment}" convention
+        exp_idx = _rindex_before(parts, "experiments", marker_idx)
+        if exp_idx is not None and exp_idx + 1 < marker_idx:
+            experiment_id = parts[exp_idx + 1]
+            # Experiment path is everything up to and including the experiment name
+            experiment_path = Path(*parts[: exp_idx + 2])
+        else:
+            # Fallback: use the parent directory of the marker
+            experiment_id = parts[marker_idx - 1]
+            # Experiment path is the directory containing the marker
+            experiment_path = Path(*parts[:marker_idx])
 
-    return _make_ctx(experiment_id, component, experiment_path)
+        return _make_ctx(experiment_id, component, experiment_path)
+
+    return None
 
 
 # ------------------------------------------------------------------

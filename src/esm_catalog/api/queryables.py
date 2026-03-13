@@ -39,6 +39,8 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 
+from esm_catalog.api.validation import is_safe_property_name
+
 if TYPE_CHECKING:
     from starlette.requests import Request
 
@@ -104,7 +106,10 @@ def _sort_paleo_display(display: str) -> float:
 
 
 def _discover_property_keys(db: "CatalogDB") -> set[str]:
-    """Discover all unique property keys from items table."""
+    """Discover all unique property keys from items table.
+
+    Only returns property names that pass validation (safe for SQL queries).
+    """
     try:
         # Get all top-level keys from properties JSON
         # DuckDB's json_keys returns a list directly, not a JSON string
@@ -130,7 +135,15 @@ def _discover_property_keys(db: "CatalogDB") -> set[str]:
                             all_keys.update(parsed)
                     except (json.JSONDecodeError, TypeError):
                         pass
-        return all_keys
+
+        # Filter to only safe property names (security: prevents SQL injection)
+        safe_keys = {k for k in all_keys if is_safe_property_name(k)}
+        if len(safe_keys) < len(all_keys):
+            logger.debug(
+                "Filtered {} unsafe property names from queryables",
+                len(all_keys) - len(safe_keys),
+            )
+        return safe_keys
     except Exception as e:
         logger.warning("Failed to discover property keys: {}", e)
         return set()
@@ -141,14 +154,18 @@ def _get_distinct_values(db: "CatalogDB", prop_name: str, limit: int = 100) -> l
 
     Returns list of values with their native Python types.
     """
-    try:
-        # Use parameterized-style query with validated property name
-        # Property names come from json_keys() so are safe, but we still escape
-        safe_prop = prop_name.replace("'", "''").replace('"', '\\"')
+    # Validate property name before SQL interpolation (security)
+    if not is_safe_property_name(prop_name):
+        logger.warning(
+            "Skipping property with invalid name for SQL: {!r}", prop_name
+        )
+        return []
 
-        # First try json_extract to preserve type information
+    try:
+        # Property name is validated, safe for interpolation
+        # Double-quote the property name to handle any special JSON path chars
         rows = db.db.execute(f"""
-            SELECT DISTINCT json_extract(data, '$.properties."{safe_prop}"') AS v
+            SELECT DISTINCT json_extract(data, '$.properties."{prop_name}"') AS v
             FROM items
             WHERE v IS NOT NULL
             ORDER BY v

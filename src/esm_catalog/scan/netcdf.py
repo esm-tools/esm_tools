@@ -61,7 +61,19 @@ def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
         open_kwargs = dict(decode_times=True)
         open_path = str(path)
 
-    with xr.open_dataset(open_path, **open_kwargs) as ds:
+    # Try opening with time decoding; if that fails (non-standard calendar/units),
+    # retry without time decoding and handle times manually
+    try:
+        ds = xr.open_dataset(open_path, **open_kwargs)
+    except ValueError as e:
+        if "unable to decode time" in str(e) or "Failed to decode" in str(e):
+            logger.debug("Time decode failed for {}, retrying without decode_times", path)
+            open_kwargs["decode_times"] = False
+            ds = xr.open_dataset(open_path, **open_kwargs)
+        else:
+            raise
+
+    with ds:
         variables = _extract_variables(ds)
         dimensions = _extract_dimensions(ds)
         bbox, geometry = _extract_bbox(ds)

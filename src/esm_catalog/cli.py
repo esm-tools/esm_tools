@@ -41,8 +41,14 @@ def _scan_file_worker(fp_str: str) -> tuple[str, str, dict | None]:
 
     Must be module-level for ProcessPoolExecutor pickling.
     """
+    import warnings
     from pathlib import Path
     from esm_catalog.scan.detect import UnsupportedFormatError, scan_file
+
+    # Suppress xarray warnings about ambiguous date strings (e.g., "1-1-1" vs "0001-1-1")
+    # These are common in climate model output and harmless
+    warnings.filterwarnings("ignore", message=".*Ambiguous reference date.*")
+    warnings.filterwarnings("ignore", message=".*Unable to decode time axis.*")
 
     fp = Path(fp_str)
     try:
@@ -112,10 +118,10 @@ def main(ctx, verbose):
 @click.option(
     "--exclude", "exclude_patterns",
     multiple=True,
-    default=("/run_", ),
+    default=("/run_", "/input/", "/unknown/"),
     show_default=True,
     help="Directory patterns to exclude (can be specified multiple times). "
-         "Default excludes run_*/ directories (work files, input copies).",
+         "Default excludes run_*/, input/, and unknown/ directories.",
 )
 @click.option(
     "--no-exclude",

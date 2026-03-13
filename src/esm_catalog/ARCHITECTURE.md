@@ -676,6 +676,134 @@ runs on a different origin, **CORS must be open** — `create_app()` already set
 
 ---
 
+## Data Portal & Self-Registration (Proposal)
+
+> **Status: design proposal — not yet implemented. See Phase 6 in the phase plan.**
+
+### The problem
+
+Once a researcher's SLURM job finishes and a `catalog.duckdb` exists, there is no
+frictionless path to make that catalog visible to others.  The current approach
+(`esm-catalog serve --port XXXX` + manually editing `servers.json`) puts
+unnecessary burden on researchers and requires port coordination across users.
+
+### Design goals
+
+1. Researcher runs **one command** to publish a catalog.  No ports, no server admin.
+2. The portal and STAC Browser are **always running** — never need restarting when
+   a new catalog is added.
+3. Different departments (Paleo, Ocean, Atmosphere, …) get **isolated API servers**
+   on reserved port ranges, but researchers never think about port numbers.
+
+### Architecture
+
+```
+Fixed infrastructure (one-time setup by sysadmin / long-running SLURM job):
+
+  Port 23000  ── Data Portal
+                  nginx serves stac-portal/ (bind-mounted from host)
+                  Reads servers.json for the list of department API cards
+                  Researcher never edits this
+
+  Port 23000/stac/  ── STAC Browser SPA (built into Apptainer image)
+
+Department STAC API servers (one per group, always running):
+
+  Port 23100  ── Paleo STAC API
+  Port 23200  ── Ocean STAC API
+  Port 23300  ── Atmosphere STAC API
+                  Each server reads its registry.json on every request
+                  → new catalogs appear automatically on the next HTTP hit
+
+Researcher action (runs anywhere, takes <1 second):
+
+  esm-catalog register ~/experiments/picontrol/catalog.duckdb \
+      --registry /shared/paleo/registry.json \
+      --name "PI Control 1000yr" \
+      --description "FESOM + ECHAM6 pre-industrial control run"
+```
+
+### Why hot-reload is nearly free
+
+`DuckDBCatalogClient._open_catalogs()` already opens catalog files
+**per request** — it holds no connection state between requests.  If the list of
+paths it reads changes (because `registry.json` was updated), the very next HTTP
+request picks up the new catalog automatically.  No file-watch thread, no server
+restart, no signal handling required.
+
+```python
+# api/client.py — proposed extension
+def _open_catalogs(self) -> list[CatalogDB]:
+    if self.registry:                               # new: registry-aware path
+        paths = _read_registry(self.registry)       # parse JSON, extract paths
+    else:
+        paths = self.catalogs                       # legacy: static list
+    return [CatalogDB(p) for p in paths if Path(p).exists()]
+```
+
+Reading a small JSON file per request costs microseconds.  For a research portal
+with tens of concurrent users, this overhead is negligible.
+
+### Registry file format
+
+`/shared/<dept>/registry.json` — edited only by `esm-catalog register`:
+
+```json
+{
+  "catalogs": [
+    {
+      "id": "pasili001-picontrol",
+      "name": "PI Control 1000yr",
+      "description": "FESOM + ECHAM6 pre-industrial control run",
+      "path": "/albedo/home/pasili001/experiments/picontrol/catalog.duckdb",
+      "owner": "pasili001",
+      "registered_at": "2026-03-13T09:00:00Z"
+    }
+  ]
+}
+```
+
+`esm-catalog register` writes this file atomically (write to `.tmp`, then
+`os.rename`) and takes a file lock so concurrent registrations from multiple users
+are safe.
+
+### Complete researcher lifecycle
+
+```
+1. SLURM job runs (catalog building):
+   esm-catalog scan /experiments/picontrol/outdata/
+   → creates catalog.duckdb
+
+2. Researcher publishes (one command, runs on login node):
+   esm-catalog register ~/experiments/picontrol/catalog.duckdb \
+       --registry /shared/paleo/registry.json \
+       --name "PI Control 1000yr"
+   → appends entry to registry.json atomically
+
+3. Portal (nothing to do):
+   Paleo STAC API on :23100 reads registry.json on next request
+   New collections appear in STAC Browser automatically
+   Health dots on portal stay green throughout
+   No restarts, no admin, no port juggling
+```
+
+### Open design questions
+
+- **Department assignment**: should `--registry` be explicit (researcher specifies
+  the path) or inferred (from path conventions like `/albedo/home/<user>/` → lookup
+  table, or from a `~/.esm_catalog.yaml` user config)?
+- **Deregistration**: should `esm-catalog deregister` exist, or is stale-entry
+  cleanup handled by health-check timeouts in the portal?
+- **Portal placement**: the portal itself must be always-on.  A login-node process
+  is the pragmatic first step; a systemd unit managed by IT would be the production
+  answer.
+- **Cross-department search**: a user wanting to search across all departments would
+  need to query multiple APIs.  A global "all departments" API (one registry that
+  imports all per-department registries) could be offered as a read-only view
+  without changing the per-department model.
+
+---
+
 ## Dependencies
 
 **Core:**
@@ -797,6 +925,19 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [ ] Checkpoint/resume for interrupted batch scans
 - [ ] Pytest tests: `tests/test_scan_grib.py` — ECHAM GRIB fixtures; `tests/test_scan_unstructured.py` — FESOM mesh datacube representation
 - [ ] User documentation: `docs/supported_formats.md` — NetCDF, GRIB, unstructured grid caveats; update `hpc-storage` extension spec with full field definitions
+
+### Phase 6: Data Portal & Self-Registration (Proposed)
+
+> Pending review and approval — see [Data Portal & Self-Registration](#data-portal--self-registration-proposal) section.
+
+- [ ] `esm-catalog register` command — atomic append to `registry.json` with file locking; `--registry`, `--name`, `--description`, `--owner` flags
+- [ ] `esm-catalog deregister` command — remove own entry from registry by path
+- [ ] Registry-aware `DuckDBCatalogClient` — reads `registry.json` per request when `--registry` flag is given to `esm-catalog serve`
+- [ ] Department port conventions documented — reserved ranges for Paleo / Ocean / Atmosphere / etc.
+- [ ] Apptainer image (`stac-browser.sif`) built and verified — portal on :23000, STAC Browser at `/stac/`
+- [ ] `run-portal.sh` / SLURM job script for always-on portal
+- [ ] End-to-end test: `register` → catalog appears in STAC Browser without API restart
+- [ ] User documentation: `docs/data_portal.md` — register/deregister commands, department registry paths, SSH tunnel instructions
 
 ---
 

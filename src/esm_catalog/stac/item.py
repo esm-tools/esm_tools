@@ -73,7 +73,7 @@ def make_item(
         "variable": variable,
         "experiment": ctx.experiment_id,
         "component": ctx.component,
-        "file_size": metadata.get("file_size"),
+        "file:size": metadata.get("file_size"),  # STAC File extension
         "format": metadata.get("format", "unknown"),
         "keywords": [ctx.collection_id],  # Shows as badge in STAC Browser
     }
@@ -103,7 +103,7 @@ def make_item(
     item: dict = {
         "type": "Feature",
         "stac_version": "1.0.0",
-        "stac_extensions": [EXTENSION_URLS["cf"]],
+        "stac_extensions": [EXTENSION_URLS["cf"], EXTENSION_URLS["file"]],
         "id": item_id,
         "geometry": metadata.get("geometry"),
         "bbox": metadata.get("bbox"),

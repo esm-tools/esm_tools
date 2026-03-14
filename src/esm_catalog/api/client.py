@@ -26,12 +26,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import attr
-from fastapi import HTTPException
+from fastapi import HTTPException, Query
 from loguru import logger
 from pydantic import Field
+from stac_fastapi.api.models import ItemCollectionUri
 from stac_fastapi.types import stac
 from stac_fastapi.types.core import BASE_CONFORMANCE_CLASSES, BaseCoreClient
 from stac_fastapi.types.search import BaseSearchPostRequest
+from typing import Annotated
 
 from esm_catalog.api.cql2 import parse_cql2_json, parse_filter, parse_datetime
 
@@ -74,6 +76,24 @@ class FilteredSearchPostRequest(BaseSearchPostRequest):
     token: Optional[str] = Field(default=None)
 
     model_config = {"populate_by_name": True}
+
+
+@attr.s
+class ItemCollectionUriWithToken(ItemCollectionUri):
+    """Extended ItemCollectionUri that includes pagination token.
+
+    The upstream stac-fastapi ItemCollectionUri model does not include a token
+    field, which means pagination tokens in GET /collections/{id}/items requests
+    are silently dropped. This model adds the token field so pagination works.
+    """
+
+    token: Annotated[
+        Optional[str],
+        Query(
+            description="Pagination token (opaque string encoding offset)",
+            example="10",
+        ),
+    ] = attr.ib(default=None)
 
 
 def _inject_item_links(item: dict, base_url: str) -> dict:

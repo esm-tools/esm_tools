@@ -53,6 +53,7 @@ from esm_catalog.api.validation import ValidationError, validate_catalog_path
 
 if TYPE_CHECKING:
     from esm_catalog.api.auth import Authenticator
+    from esm_catalog.api.cache import QueryablesCache
     from esm_catalog.api.pool import CatalogPool
 
 
@@ -76,6 +77,7 @@ def create_catalog_router(
     registry: CatalogRegistry,
     pool: "CatalogPool",
     authenticator: "Authenticator | None" = None,
+    queryables_cache: "QueryablesCache | None" = None,
 ) -> APIRouter:
     """Create the catalog management router with injected dependencies.
 
@@ -83,11 +85,18 @@ def create_catalog_router(
         registry: Catalog registry instance.
         pool: Connection pool for catalog access.
         authenticator: Optional authenticator for access control.
+        queryables_cache: Optional queryables cache to invalidate on changes.
 
     Returns:
         FastAPI router with catalog CRUD endpoints.
     """
     router = APIRouter(prefix="/catalogs", tags=["Catalog Management"])
+
+    def _invalidate_caches() -> None:
+        """Invalidate queryables cache when catalog data changes."""
+        if queryables_cache is not None:
+            queryables_cache.invalidate()
+            logger.debug("Invalidated queryables cache due to catalog change")
 
     async def _check_permission(
         request: Request, action: str, raise_on_fail: bool = True
@@ -175,7 +184,9 @@ def create_catalog_router(
                 name=body.name,
                 description=body.description,
             )
-            return registry.add_catalog(body_with_validated_path)
+            result = registry.add_catalog(body_with_validated_path)
+            _invalidate_caches()
+            return result
         except ValidationError as e:
             logger.warning("Invalid catalog path: {}", e)
             raise HTTPException(status_code=400, detail=str(e))
@@ -228,6 +239,7 @@ def create_catalog_router(
             raise HTTPException(
                 status_code=404, detail=f"Catalog '{catalog_id}' not found"
             )
+        _invalidate_caches()
         return info
 
     @router.post("/{catalog_id}/refresh", response_model=RefreshResponse)
@@ -258,6 +270,7 @@ def create_catalog_router(
         else:
             message = "No active connection; will open on next query"
 
+        _invalidate_caches()
         return RefreshResponse(
             id=catalog_id,
             path=info.path,
@@ -286,6 +299,7 @@ def create_catalog_router(
                 status_code=404, detail=f"Catalog '{catalog_id}' not found"
             )
 
+        _invalidate_caches()
         return Response(status_code=204)
 
     return router

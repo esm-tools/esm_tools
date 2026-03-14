@@ -37,7 +37,11 @@ from starlette.requests import Request
 from esm_catalog.api.auth import Authenticator, NoAuthenticator
 from esm_catalog.api.cache import CollectionCache, QueryablesCache
 from esm_catalog.api.catalog_routes import create_catalog_router
-from esm_catalog.api.client import DuckDBCatalogClient, FilteredSearchPostRequest
+from esm_catalog.api.client import (
+    DuckDBCatalogClient,
+    FilteredSearchPostRequest,
+    ItemCollectionUriWithToken,
+)
 from esm_catalog.api.pool import CatalogPool
 from esm_catalog.api.queryables import get_collection_queryables, get_queryables
 from esm_catalog.api.registry import CatalogRegistry
@@ -125,10 +129,11 @@ def create_app(
         description=description,
         api_version=version,
         search_post_request_model=FilteredSearchPostRequest,
+        items_get_request_model=ItemCollectionUriWithToken,
     )
 
     # Add catalog management routes
-    catalog_router = create_catalog_router(registry, pool, auth)
+    catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
     api.app.include_router(catalog_router)
 
     # /queryables endpoint - required for STAC Browser "Additional Filtering" CQL2 builder.

@@ -12,6 +12,14 @@ class CatalogDB:
 
     One instance = one catalog.duckdb file.  The database is created with
     the full schema on first open; subsequent opens reuse the existing tables.
+
+    Thread Safety:
+        DuckDB connections are not thread-safe for concurrent queries. While
+        a single connection can be shared across threads, queries are serialized.
+        This class uses cursor() to create thread-local query handles, ensuring
+        safe concurrent access when used with a connection pool.
+
+        See: https://duckdb.org/docs/stable/guides/python/multiple_threads
     """
 
     def __init__(self, path: Path | str):
@@ -72,10 +80,14 @@ class CatalogDB:
     # ------------------------------------------------------------------
 
     def collection_exists(self, collection_id: str) -> bool:
-        row = self.db.execute(
-            "SELECT 1 FROM collections WHERE id = ?", [collection_id]
-        ).fetchone()
-        return row is not None
+        cursor = self.db.cursor()
+        try:
+            row = cursor.execute(
+                "SELECT 1 FROM collections WHERE id = ?", [collection_id]
+            ).fetchone()
+            return row is not None
+        finally:
+            cursor.close()
 
     def insert_collection(self, collection: dict):
         self.db.execute(
@@ -85,12 +97,16 @@ class CatalogDB:
         logger.debug("Inserted collection: {}", collection["id"])
 
     def get_collection(self, collection_id: str) -> dict | None:
-        row = self.db.execute(
-            "SELECT data FROM collections WHERE id = ?", [collection_id]
-        ).fetchone()
-        if row is None:
-            return None
-        return json.loads(row[0])
+        cursor = self.db.cursor()
+        try:
+            row = cursor.execute(
+                "SELECT data FROM collections WHERE id = ?", [collection_id]
+            ).fetchone()
+            if row is None:
+                return None
+            return json.loads(row[0])
+        finally:
+            cursor.close()
 
     def update_collection_extent(self, collection_id: str, item: dict):
         """Re-read the collection, update extent, and write it back."""
@@ -106,8 +122,17 @@ class CatalogDB:
         )
 
     def iter_collections(self):
-        """Yield all collection dicts."""
-        rows = self.db.execute("SELECT data FROM collections").fetchall()
+        """Yield all collection dicts.
+
+        Thread Safety:
+            Fetches all rows before yielding to avoid holding a cursor open
+            during iteration, which could cause issues with concurrent queries.
+        """
+        cursor = self.db.cursor()
+        try:
+            rows = cursor.execute("SELECT data FROM collections").fetchall()
+        finally:
+            cursor.close()
         for (data,) in rows:
             yield json.loads(data)
 
@@ -166,10 +191,14 @@ class CatalogDB:
 
     def get_collection_item_props(self, collection_id: str) -> dict:
         """Return {property: set_of_values} index for *collection_id*."""
-        rows = self.db.execute(
-            "SELECT property, value FROM collection_item_props WHERE collection_id = ?",
-            [collection_id],
-        ).fetchall()
+        cursor = self.db.cursor()
+        try:
+            rows = cursor.execute(
+                "SELECT property, value FROM collection_item_props WHERE collection_id = ?",
+                [collection_id],
+            ).fetchall()
+        finally:
+            cursor.close()
         result: dict[str, set] = {}
         for prop, val in rows:
             result.setdefault(prop, set()).add(val)
@@ -189,6 +218,11 @@ class CatalogDB:
         Supported operators:
         - Standard comparison: =, !=, <, <=, >, >=, LIKE
         - IN: for multi-value matching, value should be a list
+
+        Thread Safety:
+            Uses a cursor to ensure thread-safe query execution. Each call
+            gets its own cursor handle, preventing "closed pending query result"
+            errors when multiple threads query the same connection concurrently.
         """
         conditions = ["1=1"]
         params: list = []
@@ -230,16 +264,42 @@ class CatalogDB:
                     params.append(json.dumps(val))
 
         where = " AND ".join(conditions)
-        count_result = self.db.execute(
-            f"SELECT COUNT(*) FROM items WHERE {where}", params
-        ).fetchone()
-        total = count_result[0] if count_result is not None else 0
-        rows = self.db.execute(
-            f"SELECT data FROM items WHERE {where} LIMIT ? OFFSET ?",
-            params + [limit, offset],
-        ).fetchall()
-        items = [json.loads(r[0]) for r in rows]
-        return items, total
+
+        # Use a cursor for thread-safe query execution.
+        # This prevents "InvalidInputException: Attempting to execute an
+        # unsuccessful or closed pending query result" errors during concurrent
+        # pagination requests. Each cursor provides an isolated query context.
+        cursor = self.db.cursor()
+        try:
+            count_result = cursor.execute(
+                f"SELECT COUNT(*) FROM items WHERE {where}", params
+            ).fetchone()
+            total = count_result[0] if count_result is not None else 0
+            rows = cursor.execute(
+                f"SELECT data FROM items WHERE {where} LIMIT ? OFFSET ?",
+                params + [limit, offset],
+            ).fetchall()
+            items = [json.loads(r[0]) for r in rows]
+
+            # Debug logging for single-item lookups (when both id and collection are specified)
+            if filter_props and "id" in filter_props and "collection" in filter_props:
+                if total == 0:
+                    logger.debug(
+                        "search_items: No items found for collection={!r}, id={!r}",
+                        filter_props.get("collection"),
+                        filter_props.get("id"),
+                    )
+                else:
+                    logger.debug(
+                        "search_items: Found {} item(s) for collection={!r}, id={!r}",
+                        total,
+                        filter_props.get("collection"),
+                        filter_props.get("id"),
+                    )
+
+            return items, total
+        finally:
+            cursor.close()
 
     def search_collections(
         self, filter_props: dict | None = None, limit: int = 100, offset: int = 0

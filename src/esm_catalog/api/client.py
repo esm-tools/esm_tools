@@ -529,16 +529,37 @@ class DuckDBCatalogClient(BaseCoreClient):
         base_url = str(request.base_url).rstrip("/") if request else ""
 
         dbs = self._open_catalogs()
+        if not dbs:
+            logger.warning(
+                "get_item: No catalogs available for lookup "
+                "(collection={!r}, item={!r})",
+                collection_id, item_id
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f"Item '{item_id}' not found in collection '{collection_id}'",
+            )
+
         try:
             for db in dbs:
                 results, _ = db.search_items(
                     {"collection": collection_id, "id": item_id}, limit=1
                 )
                 if results:
+                    logger.debug(
+                        "get_item: Found item {!r} in collection {!r}",
+                        item_id, collection_id
+                    )
                     return stac.Item(**_inject_item_links(results[0], base_url))
         finally:
             self._close_catalogs(dbs)
 
+        # Item not found - log additional debug info to help diagnose
+        logger.warning(
+            "get_item: Item not found (collection={!r}, item={!r}). "
+            "Checked {} catalog(s).",
+            collection_id, item_id, len(dbs)
+        )
         raise HTTPException(
             status_code=404,
             detail=f"Item '{item_id}' not found in collection '{collection_id}'",

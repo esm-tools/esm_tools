@@ -60,7 +60,9 @@ async def health_check() -> dict[str, str]:
     }
 
 
-async def _fetch_stac_item(stac_api: str, item_id: str) -> dict:
+async def _fetch_stac_item(
+    stac_api: str, item_id: str, collection_id: str | None = None
+) -> dict:
     """
     Fetch a STAC item from the API.
 
@@ -70,6 +72,9 @@ async def _fetch_stac_item(stac_api: str, item_id: str) -> dict:
         Base URL of the STAC API.
     item_id : str
         The STAC item ID to fetch.
+    collection_id : str, optional
+        The collection ID containing the item. If not provided, the item
+        will be discovered via the search endpoint.
 
     Returns
     -------
@@ -84,33 +89,76 @@ async def _fetch_stac_item(stac_api: str, item_id: str) -> dict:
     # Normalize API URL
     stac_api = stac_api.rstrip("/")
 
-    # Try different endpoint patterns
-    endpoints = [
-        f"{stac_api}/items/{item_id}",
-        f"{stac_api}/collections/default/items/{item_id}",
-        f"{stac_api}/search?ids={item_id}",
-    ]
-
     async with httpx.AsyncClient(timeout=30.0) as client:
-        for endpoint in endpoints:
+        # If collection_id is provided, try the direct endpoint first
+        if collection_id:
+            endpoint = f"{stac_api}/collections/{collection_id}/items/{item_id}"
             try:
                 logger.debug(f"Trying STAC endpoint: {endpoint}")
                 response = await client.get(endpoint)
-
                 if response.status_code == 200:
                     data = response.json()
-
-                    # Handle search response (returns FeatureCollection)
-                    if "features" in data and len(data["features"]) > 0:
-                        return data["features"][0]
-
-                    # Direct item response
                     if "assets" in data:
                         return data
-
             except httpx.RequestError as e:
                 logger.warning(f"Request failed for {endpoint}: {e}")
-                continue
+
+        # Use search endpoint to find the item across all collections
+        # This is the most reliable method as items are collection-scoped in STAC
+        search_endpoint = f"{stac_api}/search?ids={item_id}"
+        try:
+            logger.debug(f"Searching for item via: {search_endpoint}")
+            response = await client.get(search_endpoint)
+            if response.status_code == 200:
+                data = response.json()
+                if "features" in data and len(data["features"]) > 0:
+                    item = data["features"][0]
+                    # Log the collection for debugging
+                    found_collection = item.get("collection", "unknown")
+                    logger.debug(f"Found item in collection: {found_collection}")
+                    return item
+        except httpx.RequestError as e:
+            logger.warning(f"Search request failed: {e}")
+
+        # POST search as fallback (some STAC APIs require POST for search)
+        try:
+            logger.debug(f"Trying POST search for item: {item_id}")
+            response = await client.post(
+                f"{stac_api}/search",
+                json={"ids": [item_id]},
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if "features" in data and len(data["features"]) > 0:
+                    return data["features"][0]
+        except httpx.RequestError as e:
+            logger.warning(f"POST search request failed: {e}")
+
+        # Try to fetch all collections and search for item in each
+        # This is a last resort for APIs that don't support item search
+        try:
+            logger.debug("Attempting to discover item by iterating collections")
+            collections_response = await client.get(f"{stac_api}/collections")
+            if collections_response.status_code == 200:
+                collections_data = collections_response.json()
+                collection_list = collections_data.get(
+                    "collections", collections_data.get("features", [])
+                )
+                for coll in collection_list:
+                    coll_id = coll.get("id")
+                    if coll_id:
+                        endpoint = f"{stac_api}/collections/{coll_id}/items/{item_id}"
+                        try:
+                            response = await client.get(endpoint)
+                            if response.status_code == 200:
+                                data = response.json()
+                                if "assets" in data:
+                                    logger.debug(f"Found item in collection: {coll_id}")
+                                    return data
+                        except httpx.RequestError:
+                            continue
+        except httpx.RequestError as e:
+            logger.warning(f"Collection iteration failed: {e}")
 
     raise HTTPException(
         status_code=404,
@@ -173,6 +221,9 @@ async def get_preview_png(
     stac_api: Annotated[str, Query(description="STAC API base URL")],
     time: Annotated[int, Query(description="Time index")] = 0,
     cmap: Annotated[str, Query(description="Matplotlib colormap")] = "viridis",
+    collection_id: Annotated[
+        str | None, Query(description="STAC collection ID (optional, improves performance)")
+    ] = None,
 ) -> Response:
     """
     Generate a static PNG preview of a dataset variable.
@@ -189,6 +240,9 @@ async def get_preview_png(
         Time index to plot. Default is 0.
     cmap : str, optional
         Matplotlib colormap name. Default is 'viridis'.
+    collection_id : str, optional
+        STAC collection ID. If provided, enables direct item fetch
+        via /collections/{collection_id}/items/{item_id}.
 
     Returns
     -------
@@ -199,7 +253,7 @@ async def get_preview_png(
 
     try:
         # Fetch STAC item
-        item = await _fetch_stac_item(stac_api, item_id)
+        item = await _fetch_stac_item(stac_api, item_id, collection_id=collection_id)
         href = _get_data_href(item)
         logger.debug(f"Data href: {href}")
 
@@ -256,6 +310,9 @@ async def get_preview_png(
 async def get_preview_metadata(
     item_id: str,
     stac_api: Annotated[str, Query(description="STAC API base URL")],
+    collection_id: Annotated[
+        str | None, Query(description="STAC collection ID (optional, improves performance)")
+    ] = None,
 ) -> dict:
     """
     Get metadata for a dataset referenced by a STAC item.
@@ -266,6 +323,9 @@ async def get_preview_metadata(
         STAC item ID.
     stac_api : str
         Base URL of the STAC API.
+    collection_id : str, optional
+        STAC collection ID. If provided, enables direct item fetch
+        via /collections/{collection_id}/items/{item_id}.
 
     Returns
     -------
@@ -276,7 +336,7 @@ async def get_preview_metadata(
 
     try:
         # Fetch STAC item
-        item = await _fetch_stac_item(stac_api, item_id)
+        item = await _fetch_stac_item(stac_api, item_id, collection_id=collection_id)
         href = _get_data_href(item)
         logger.debug(f"Data href: {href}")
 
@@ -308,6 +368,9 @@ async def get_interactive_app(
     item_id: str,
     stac_api: Annotated[str | None, Query(description="STAC API base URL")] = None,
     var: Annotated[str | None, Query(description="Initial variable")] = None,
+    collection_id: Annotated[
+        str | None, Query(description="STAC collection ID (optional, improves performance)")
+    ] = None,
 ) -> dict:
     """
     Get information about the interactive preview app.
@@ -324,6 +387,9 @@ async def get_interactive_app(
         Base URL of the STAC API.
     var : str, optional
         Initial variable to display.
+    collection_id : str, optional
+        STAC collection ID. If provided, enables direct item fetch
+        via /collections/{collection_id}/items/{item_id}.
 
     Returns
     -------
@@ -335,7 +401,7 @@ async def get_interactive_app(
     href = None
     if stac_api:
         try:
-            item = await _fetch_stac_item(stac_api, item_id)
+            item = await _fetch_stac_item(stac_api, item_id, collection_id=collection_id)
             href = _get_data_href(item)
         except HTTPException:
             pass
@@ -344,6 +410,12 @@ async def get_interactive_app(
     panel_url = f"/panel/{item_id}"
     if stac_api:
         panel_url += f"?stac_api={stac_api}"
+        if collection_id:
+            panel_url += f"&collection_id={collection_id}"
+        if var:
+            panel_url += f"&var={var}"
+    elif collection_id:
+        panel_url += f"?collection_id={collection_id}"
         if var:
             panel_url += f"&var={var}"
     elif var:
@@ -400,6 +472,7 @@ def _create_panel_app_for_item(
     item_id: str,
     stac_api: str | None = None,
     var: str | None = None,
+    collection_id: str | None = None,
 ) -> pn.viewable.Viewable:
     """
     Create a Panel app for a specific STAC item.
@@ -414,6 +487,9 @@ def _create_panel_app_for_item(
         Base URL of the STAC API.
     var : str, optional
         Initial variable to display.
+    collection_id : str, optional
+        STAC collection ID. If provided, enables direct item fetch
+        via /collections/{collection_id}/items/{item_id}.
 
     Returns
     -------
@@ -432,39 +508,86 @@ def _create_panel_app_for_item(
             # Use synchronous httpx client
             with httpx.Client(timeout=30.0) as client:
                 stac_api_norm = stac_api.rstrip("/")
-                endpoints = [
-                    f"{stac_api_norm}/items/{item_id}",
-                    f"{stac_api_norm}/collections/default/items/{item_id}",
-                ]
-                for endpoint in endpoints:
+                item = None
+
+                # If collection_id is provided, try direct endpoint first
+                if collection_id:
                     try:
+                        endpoint = f"{stac_api_norm}/collections/{collection_id}/items/{item_id}"
+                        logger.debug(f"Trying direct endpoint: {endpoint}")
                         response = client.get(endpoint)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if "assets" in data:
+                                item = data
+                    except Exception as e:
+                        logger.warning(f"Direct fetch failed: {e}")
+
+                # Use search endpoint (most reliable for STAC)
+                if not item:
+                    try:
+                        search_url = f"{stac_api_norm}/search?ids={item_id}"
+                        logger.debug(f"Searching for item via: {search_url}")
+                        response = client.get(search_url)
                         if response.status_code == 200:
                             data = response.json()
                             if "features" in data and len(data["features"]) > 0:
                                 item = data["features"][0]
-                            elif "assets" in data:
-                                item = data
-                            else:
-                                continue
-
-                            # Extract href from assets
-                            assets = item.get("assets", {})
-                            preferred_keys = ["data", "netcdf", "nc", "grib"]
-                            for key in preferred_keys:
-                                if key in assets and "href" in assets[key]:
-                                    href = assets[key]["href"]
-                                    break
-                            if not href:
-                                for asset in assets.values():
-                                    if "href" in asset:
-                                        href = asset["href"]
-                                        break
-                            if href:
-                                break
                     except Exception as e:
-                        logger.warning(f"Failed to fetch from {endpoint}: {e}")
-                        continue
+                        logger.warning(f"Search failed: {e}")
+
+                # Try POST search as fallback
+                if not item:
+                    try:
+                        response = client.post(
+                            f"{stac_api_norm}/search",
+                            json={"ids": [item_id]},
+                        )
+                        if response.status_code == 200:
+                            data = response.json()
+                            if "features" in data and len(data["features"]) > 0:
+                                item = data["features"][0]
+                    except Exception as e:
+                        logger.warning(f"POST search failed: {e}")
+
+                # Last resort: iterate through collections
+                if not item:
+                    try:
+                        collections_response = client.get(f"{stac_api_norm}/collections")
+                        if collections_response.status_code == 200:
+                            collections_data = collections_response.json()
+                            collection_list = collections_data.get(
+                                "collections", collections_data.get("features", [])
+                            )
+                            for coll in collection_list:
+                                coll_id = coll.get("id")
+                                if coll_id:
+                                    endpoint = f"{stac_api_norm}/collections/{coll_id}/items/{item_id}"
+                                    try:
+                                        response = client.get(endpoint)
+                                        if response.status_code == 200:
+                                            data = response.json()
+                                            if "assets" in data:
+                                                item = data
+                                                break
+                                    except Exception:
+                                        continue
+                    except Exception as e:
+                        logger.warning(f"Collection iteration failed: {e}")
+
+                # Extract href from item if found
+                if item:
+                    assets = item.get("assets", {})
+                    preferred_keys = ["data", "netcdf", "nc", "grib"]
+                    for key in preferred_keys:
+                        if key in assets and "href" in assets[key]:
+                            href = assets[key]["href"]
+                            break
+                    if not href:
+                        for asset in assets.values():
+                            if "href" in asset:
+                                href = asset["href"]
+                                break
         except Exception as e:
             logger.error(f"Failed to fetch STAC item: {e}")
 
@@ -514,10 +637,11 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
                             item_id = args.get("item_id", [b""])[0].decode()
                             stac_api = args.get("stac_api", [b""])[0].decode() or None
                             var = args.get("var", [b""])[0].decode() or None
+                            collection_id = args.get("collection_id", [b""])[0].decode() or None
 
                             if item_id:
                                 return _create_panel_app_for_item(
-                                    item_id, stac_api=stac_api, var=var
+                                    item_id, stac_api=stac_api, var=var, collection_id=collection_id
                                 )
             except Exception as e:
                 logger.warning(f"Could not get request context: {e}")
@@ -554,6 +678,9 @@ async def panel_redirect(
     item_id: str,
     stac_api: Annotated[str | None, Query(description="STAC API base URL")] = None,
     var: Annotated[str | None, Query(description="Initial variable")] = None,
+    collection_id: Annotated[
+        str | None, Query(description="STAC collection ID (optional, improves performance)")
+    ] = None,
 ) -> dict:
     """
     Interactive Panel visualization endpoint.
@@ -571,6 +698,9 @@ async def panel_redirect(
         Base URL of the STAC API.
     var : str, optional
         Initial variable to display.
+    collection_id : str, optional
+        STAC collection ID. If provided, enables direct item fetch
+        via /collections/{collection_id}/items/{item_id}.
 
     Returns
     -------
@@ -583,7 +713,7 @@ async def panel_redirect(
     href = None
     if stac_api:
         try:
-            item = await _fetch_stac_item(stac_api, item_id)
+            item = await _fetch_stac_item(stac_api, item_id, collection_id=collection_id)
             href = _get_data_href(item)
         except HTTPException:
             href = item_id

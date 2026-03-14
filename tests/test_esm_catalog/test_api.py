@@ -189,6 +189,41 @@ class TestGetItem:
         r = client.get("/collections/basic-fesom/items/no-such-item")
         assert r.status_code == 404
 
+    def test_item_id_with_dots(self, tmp_path):
+        """Item IDs with dots (like 'a_ice.fesom.185001.687e4c') should work correctly.
+
+        This tests a regression where item IDs containing dots were not found
+        when accessed directly via GET /collections/{col}/items/{item_id},
+        even though they appeared in the item listing.
+        """
+        from fastapi.testclient import TestClient
+        from esm_catalog.api.app import create_app
+        from esm_catalog.storage.duckdb import CatalogDB
+
+        db_path = tmp_path / "catalog.duckdb"
+        collection_id = "test-001-fesom"
+        item_id_with_dots = "a_ice.fesom.185001.687e4c"
+
+        with CatalogDB(db_path) as db:
+            db.insert_collection(_minimal_collection(collection_id))
+            item = _minimal_item(item_id_with_dots, collection_id)
+            db.insert_item(item)
+
+        api = create_app(catalogs=[db_path])
+        client = TestClient(api.app)
+
+        # Item should appear in listing
+        r = client.get(f"/collections/{collection_id}/items")
+        assert r.status_code == 200
+        items = r.json()["features"]
+        assert len(items) == 1
+        assert items[0]["id"] == item_id_with_dots
+
+        # Item should be accessible directly
+        r = client.get(f"/collections/{collection_id}/items/{item_id_with_dots}")
+        assert r.status_code == 200, f"Expected 200, got {r.status_code}: {r.json()}"
+        assert r.json()["id"] == item_id_with_dots
+
 
 # ---------------------------------------------------------------------------
 # Search (GET)

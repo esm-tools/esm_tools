@@ -118,10 +118,10 @@ def main(ctx, verbose):
 @click.option(
     "--exclude", "exclude_patterns",
     multiple=True,
-    default=("/run_", "/input/", "/unknown/"),
+    default=("/run_", "/input/", "/unknown/", "/restart/"),
     show_default=True,
     help="Directory patterns to exclude (can be specified multiple times). "
-         "Default excludes run_*/, input/, and unknown/ directories.",
+         "Default excludes run_*/, input/, unknown/, and restart/ directories.",
 )
 @click.option(
     "--no-exclude",
@@ -145,7 +145,7 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     from concurrent.futures import ProcessPoolExecutor, as_completed as futures_as_completed
 
     from esm_catalog.integration.config import load_config
-    from esm_catalog.scan.context import resolve_context
+    from esm_catalog.scan.context import resolve_context, RestartFileError
     from esm_catalog.scan.detect import UnsupportedFormatError, scan_file
     from esm_catalog.scan.upath import (
         parse_uri, list_files, list_all_files, is_file, is_dir, get_protocol,
@@ -279,6 +279,9 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                     catalog_db.upsert_collection_item_props(ctx_col.collection_id, item)
                     ok += 1
                     messages.append((f"✓ {fname}", "green"))
+                except RestartFileError:
+                    # Restart files are silently skipped (not counted as errors)
+                    messages.append((f"- {fname} (restart, skipped)", "dim"))
                 except Exception as e:
                     errors += 1
                     messages.append((f"✗ {fname}: {e}", "red"))
@@ -373,7 +376,7 @@ def scan_batch(ctx, files, config_path, output_path, jobs):
     from joblib import Parallel, delayed
 
     from esm_catalog.integration.config import load_config
-    from esm_catalog.scan.context import resolve_context
+    from esm_catalog.scan.context import resolve_context, RestartFileError
     from esm_catalog.scan.detect import UnsupportedFormatError, scan_file
     from esm_catalog.stac.extensions.hpc import add_hpc_extension
     from esm_catalog.stac.item import make_item
@@ -388,7 +391,8 @@ def scan_batch(ctx, files, config_path, output_path, jobs):
             item = make_item(fp, metadata, ctx_col, config=config)
             item = add_hpc_extension(item, fp)
             return item
-        except UnsupportedFormatError:
+        except (UnsupportedFormatError, RestartFileError):
+            # Silently skip unsupported formats and restart files
             return None
         except Exception as e:
             logger.error("Error scanning {}: {}", fp, e)

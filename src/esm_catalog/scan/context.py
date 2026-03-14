@@ -10,14 +10,84 @@ derived collection_id. If context cannot be resolved, it raises ValueError
 rather than returning a NULL-collection context — a silent NULL is worse than
 a failed insert because it produces a catalog that appears to work but cannot
 be navigated via STAC Browser's collection tree.
+
+Restart File Handling
+---------------------
+Restart files are filtered out by default. They are detected by:
+
+1. **Directory-based**: Files in `/restart/` directories
+2. **Filename patterns**: Files matching restart naming conventions:
+   - `*_restart_*` (FESOM restart files)
+   - `*.restart.*` (generic restart format)
+   - `rerun_*` (ECHAM rerun files)
+   - `*_rerun_*` (ECHAM rerun files)
+   - `restart_*` (general restart prefix)
+
+When a restart file is detected, `resolve_context()` raises `RestartFileError`
+which the caller should catch and skip. This keeps the main output collections
+clean while allowing explicit restart cataloging if needed.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 from loguru import logger
+
+
+# Restart filename patterns - compiled for performance
+_RESTART_PATTERNS = [
+    re.compile(r".*_restart_.*", re.IGNORECASE),     # FESOM: fesom_restart_oce.nc
+    re.compile(r".*\.restart\.", re.IGNORECASE),     # generic: model.restart.nc
+    re.compile(r"^rerun_.*", re.IGNORECASE),         # ECHAM: rerun_basic-001_185001
+    re.compile(r".*_rerun_.*", re.IGNORECASE),       # ECHAM variant: basic-001_rerun_185001
+    re.compile(r"^restart_.*", re.IGNORECASE),       # generic prefix: restart_fesom.nc
+]
+
+
+class RestartFileError(ValueError):
+    """Raised when a file is identified as a restart file.
+
+    Restart files should be filtered out from the main catalog to keep
+    output collections clean. Callers should catch this exception and
+    skip the file.
+    """
+    pass
+
+
+def is_restart_file(path) -> bool:
+    """Check if a file is a restart file based on path and filename patterns.
+
+    Detection methods:
+    1. Directory-based: File is under a /restart/ directory
+    2. Filename-based: Filename matches restart patterns
+
+    Args:
+        path: Path-like object (Path, PurePosixPath, or UPath)
+
+    Returns:
+        True if the file appears to be a restart file
+    """
+    # Get path parts for directory check
+    if hasattr(path, "resolve"):
+        parts = path.resolve().parts
+    else:
+        parts = path.parts
+
+    # Check if any parent directory is named "restart"
+    for part in parts[:-1]:  # Exclude the filename itself
+        if part.lower() == "restart":
+            return True
+
+    # Check filename against restart patterns
+    filename = parts[-1] if parts else ""
+    for pattern in _RESTART_PATTERNS:
+        if pattern.match(filename):
+            return True
+
+    return False
 
 
 @dataclass
@@ -35,6 +105,7 @@ def resolve_context(
     path,
     config: dict | None = None,
     db=None,
+    allow_restart: bool = False,
 ) -> CollectionContext:
     """Resolve collection membership for *path*.
 
@@ -50,7 +121,15 @@ def resolve_context(
     If db is provided and the resolved collection does not yet exist in the
     database, the collection is created and inserted atomically here.
 
+    Args:
+        path: File path to resolve context for
+        config: Optional ESM-Tools config dict
+        db: Optional database connection for collection creation
+        allow_restart: If False (default), raise RestartFileError for restart files.
+                       If True, allow restart files to be cataloged.
+
     Raises:
+        RestartFileError: if the file is a restart file and allow_restart=False.
         ValueError: if neither strategy can resolve the context.
     """
     # For remote UPath objects, we need to work with the path string
@@ -61,6 +140,15 @@ def resolve_context(
         path_for_parsing = PurePosixPath(path.path if hasattr(path, "path") else str(path))
     else:
         path_for_parsing = Path(path)
+
+    # Check for restart files BEFORE attempting context resolution
+    # This prevents restart files from polluting output collections
+    if not allow_restart and is_restart_file(path_for_parsing):
+        raise RestartFileError(
+            f"Restart file detected: {path}\n"
+            "Restart files are filtered out by default to keep output collections clean.\n"
+            "Use allow_restart=True to include restart files in the catalog."
+        )
 
     ctx = _from_config(path_for_parsing, config) or _from_path(path_for_parsing)
 

@@ -52,7 +52,10 @@ def make_collection(ctx, experiment_path: Path | str | None = None) -> dict:
 def _add_namelists(collection: dict, experiment_path: Path | str, component: str) -> dict:
     """Scan and add namelist data to collection."""
     try:
-        from esm_catalog.scan.namelist import scan_namelist_directory
+        from esm_catalog.scan.namelist import (
+            extract_fesom_mesh_info,
+            scan_namelist_directory,
+        )
         from esm_catalog.stac.extensions.namelist import (
             add_namelist_extension,
             get_namelist_config_path,
@@ -70,6 +73,17 @@ def _add_namelists(collection: dict, experiment_path: Path | str, component: str
                     config_path,
                     collection["id"],
                 )
+
+            # Extract FESOM-specific mesh info
+            if component.lower() in ("fesom", "fesom2"):
+                fesom_info = extract_fesom_mesh_info(config_path)
+                if fesom_info:
+                    # Add FESOM mesh properties directly to collection
+                    collection.update(fesom_info)
+                    logger.debug(
+                        "Added FESOM mesh info to collection {}",
+                        collection["id"],
+                    )
     except ImportError:
         # f90nml not installed - skip namelist scanning
         logger.debug("f90nml not available, skipping namelist scanning")

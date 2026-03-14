@@ -217,6 +217,76 @@ def create_app(
             "catalogs_total": len(paths),
         }
 
+    # Paleo time presets endpoints for climate scientist UX
+    @api.app.get(
+        "/paleo-presets",
+        response_model=None,
+        include_in_schema=True,
+        summary="Get available paleo time period presets",
+        tags=["Climate Science"],
+    )
+    def get_paleo_presets():
+        """Return available paleo time period presets.
+
+        Presets include commonly simulated periods like LGM, Mid-Holocene, Eemian, etc.
+        These can be used for filtering collections by paleo time period.
+        """
+        from esm_catalog.api.paleo_presets import get_presets
+
+        return {"presets": get_presets()}
+
+    @api.app.post(
+        "/paleo-presets",
+        response_model=None,
+        include_in_schema=True,
+        summary="Add a user-defined paleo time preset",
+        tags=["Climate Science"],
+    )
+    def add_paleo_preset(preset: dict):
+        """Add a user-defined paleo time preset.
+
+        Required fields in body:
+        - id: Unique identifier (e.g., "my_period")
+        - name: Human-readable name (e.g., "My Custom Period")
+        - display: Display string (e.g., "15.0 ka")
+        - years_bp: Years before present (1950 CE)
+        - description: Optional description
+        """
+        from esm_catalog.api.paleo_presets import add_preset
+
+        result = add_preset(
+            preset_id=preset.get("id", ""),
+            name=preset.get("name", ""),
+            display=preset.get("display", ""),
+            years_bp=preset.get("years_bp", 0),
+            description=preset.get("description", ""),
+        )
+        return {"status": "created", "preset": result}
+
+    @api.app.delete(
+        "/paleo-presets/{preset_id}",
+        response_model=None,
+        include_in_schema=True,
+        summary="Delete a user-added paleo time preset",
+        tags=["Climate Science"],
+    )
+    def delete_paleo_preset(preset_id: str):
+        """Delete a user-added paleo time preset.
+
+        Only user-added presets can be deleted. Built-in presets are protected.
+        """
+        from esm_catalog.api.paleo_presets import delete_preset
+
+        deleted = delete_preset(preset_id)
+        if deleted:
+            return {"status": "deleted", "id": preset_id}
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=404,
+            detail=f"Preset '{preset_id}' not found or is a built-in preset",
+        )
+
     # Register lifespan handler for cleanup on shutdown
     # We wrap any existing lifespan from StacApi to ensure proper chaining
     original_lifespan = api.app.router.lifespan_context

@@ -63,6 +63,12 @@ _SPECIAL_PROPERTIES: dict[str, dict] = {
     },
 }
 
+# Collection-level properties to expose as queryables (for collection search)
+_COLLECTION_PROPERTIES: list[str] = [
+    "model",       # Model component (ECHAM, FESOM, etc.)
+    "experiment",  # Experiment ID
+]
+
 # Properties to exclude from auto-discovery (too complex or not useful for filtering)
 _EXCLUDED_PROPERTIES: frozenset[str] = frozenset({
     "cube:dimensions",
@@ -77,6 +83,112 @@ _MAX_ENUM_VALUES = 100
 
 # Maximum number of properties to discover (performance limit)
 _MAX_PROPERTIES = 200
+
+# GHG (greenhouse gas) parameters with unit conversion support
+# Maps parameter name patterns to their unit information
+# canonical_unit: the unit values are stored in (decimal = volume mixing ratio)
+# supported_units: units users can search with, with conversion factors to canonical
+_GHG_PARAMETERS: dict[str, dict] = {
+    "co2vmr": {
+        "title": "CO2 Concentration",
+        "canonical_unit": "decimal",
+        "supported_units": {
+            "decimal": 1.0,        # No conversion
+            "ppm": 1e-6,           # Parts per million
+            "ppb": 1e-9,           # Parts per billion
+        },
+        "default_display_unit": "ppm",
+    },
+    "ch4vmr": {
+        "title": "CH4 Concentration",
+        "canonical_unit": "decimal",
+        "supported_units": {
+            "decimal": 1.0,
+            "ppm": 1e-6,
+            "ppb": 1e-9,
+        },
+        "default_display_unit": "ppb",  # CH4 typically in ppb
+    },
+    "n2ovmr": {
+        "title": "N2O Concentration",
+        "canonical_unit": "decimal",
+        "supported_units": {
+            "decimal": 1.0,
+            "ppm": 1e-6,
+            "ppb": 1e-9,
+        },
+        "default_display_unit": "ppb",  # N2O typically in ppb
+    },
+    # Add more GHG parameters as needed
+    "co2": {
+        "title": "CO2 Concentration",
+        "canonical_unit": "decimal",
+        "supported_units": {
+            "decimal": 1.0,
+            "ppm": 1e-6,
+            "ppb": 1e-9,
+        },
+        "default_display_unit": "ppm",
+    },
+    "ch4": {
+        "title": "CH4 Concentration",
+        "canonical_unit": "decimal",
+        "supported_units": {
+            "decimal": 1.0,
+            "ppm": 1e-6,
+            "ppb": 1e-9,
+        },
+        "default_display_unit": "ppb",
+    },
+    "n2o": {
+        "title": "N2O Concentration",
+        "canonical_unit": "decimal",
+        "supported_units": {
+            "decimal": 1.0,
+            "ppm": 1e-6,
+            "ppb": 1e-9,
+        },
+        "default_display_unit": "ppb",
+    },
+}
+
+
+def get_ghg_info(param_name: str) -> dict | None:
+    """Get GHG info for a parameter name.
+
+    Checks if the last part of the property name (after last colon)
+    matches a known GHG parameter.
+
+    Args:
+        param_name: Full property name (e.g., "nml:radctl:co2vmr")
+
+    Returns:
+        GHG info dict if matched, None otherwise.
+    """
+    # Get the last part of the parameter name
+    parts = param_name.split(":")
+    key = parts[-1].lower()
+
+    return _GHG_PARAMETERS.get(key)
+
+
+def convert_ghg_value(value: float, from_unit: str, param_name: str) -> float:
+    """Convert a GHG value from user unit to canonical (decimal) unit.
+
+    Args:
+        value: The numeric value to convert.
+        from_unit: The unit the value is in ("ppm", "ppb", or "decimal").
+        param_name: The parameter name (to look up conversion info).
+
+    Returns:
+        Value converted to canonical decimal unit.
+    """
+    ghg_info = get_ghg_info(param_name)
+    if ghg_info is None:
+        return value  # Not a GHG parameter, no conversion
+
+    factor = ghg_info["supported_units"].get(from_unit.lower(), 1.0)
+    return value * factor
 
 
 def _sort_paleo_display(display: str) -> float:
@@ -316,6 +428,25 @@ def _discover_namelist_parameters(db: "CatalogDB") -> dict[str, set]:
         return {}
 
 
+def _discover_collection_properties(db: "CatalogDB") -> dict[str, set]:
+    """Discover collection-level properties (model, experiment, etc.)."""
+    props: dict[str, set] = {}
+    for prop in _COLLECTION_PROPERTIES:
+        try:
+            rows = db.db.execute(f"""
+                SELECT DISTINCT json_extract_string(data, '$."{prop}"') AS v
+                FROM collections WHERE v IS NOT NULL
+                ORDER BY v
+                LIMIT 100
+            """).fetchall()
+            values = {r[0] for r in rows if r[0]}
+            if values:
+                props[prop] = values
+        except Exception as e:
+            logger.debug("Failed to discover collection property {}: {}", prop, e)
+    return props
+
+
 def get_queryables(
     request: "Request",
     catalog_paths: list[str | Path],
@@ -345,6 +476,7 @@ def get_queryables(
     collection_ids: set[str] = set()
     nml_groups: set[str] = set()
     nml_params: dict[str, set] = {}
+    collection_props: dict[str, set] = {}  # model, experiment, etc.
 
     for path in catalog_paths:
         db = pool.get(path)
@@ -365,6 +497,12 @@ def get_queryables(
             if key not in nml_params:
                 nml_params[key] = set()
             nml_params[key].update(values)
+
+        # Discover collection-level properties (model, experiment)
+        for key, values in _discover_collection_properties(db).items():
+            if key not in collection_props:
+                collection_props[key] = set()
+            collection_props[key].update(values)
 
     # Limit number of properties for performance
     all_keys = set(list(all_keys)[:_MAX_PROPERTIES])
@@ -404,6 +542,18 @@ def get_queryables(
             "enum": sorted(collection_ids),
         }
 
+    # Add collection-level properties (model, experiment)
+    for prop_name, values in sorted(collection_props.items()):
+        title_map = {
+            "model": "Model Component",
+            "experiment": "Experiment ID",
+        }
+        properties[prop_name] = {
+            "title": title_map.get(prop_name, _make_title(prop_name)),
+            "type": "string",
+            "enum": sorted(values),
+        }
+
     # Add discovered item properties
     for prop_name in sorted(all_keys):
         values = property_values.get(prop_name, [])
@@ -439,21 +589,43 @@ def get_queryables(
             continue  # Already added from items
 
         sample = next(iter(values), None)
+
+        # Check if this is a GHG parameter
+        ghg_info = get_ghg_info(prop_name)
+
         if isinstance(sample, bool):
             properties[prop_name] = {
                 "title": f"Namelist: {key}",
                 "type": "boolean",
             }
         elif isinstance(sample, int):
-            properties[prop_name] = {
+            prop_schema = {
                 "title": f"Namelist: {key}",
                 "type": "integer",
             }
+            # Add GHG unit info if applicable
+            if ghg_info:
+                prop_schema["title"] = ghg_info["title"]
+                prop_schema["x-ghg-units"] = {
+                    "canonical": ghg_info["canonical_unit"],
+                    "supported": list(ghg_info["supported_units"].keys()),
+                    "default": ghg_info["default_display_unit"],
+                }
+            properties[prop_name] = prop_schema
         elif isinstance(sample, float):
-            properties[prop_name] = {
+            prop_schema = {
                 "title": f"Namelist: {key}",
                 "type": "number",
             }
+            # Add GHG unit info if applicable
+            if ghg_info:
+                prop_schema["title"] = ghg_info["title"]
+                prop_schema["x-ghg-units"] = {
+                    "canonical": ghg_info["canonical_unit"],
+                    "supported": list(ghg_info["supported_units"].keys()),
+                    "default": ghg_info["default_display_unit"],
+                }
+            properties[prop_name] = prop_schema
         else:
             prop_schema = {
                 "title": f"Namelist: {key}",

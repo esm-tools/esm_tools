@@ -288,3 +288,75 @@ def get_searchable_namelist_keys(namelists: dict) -> set[str]:
             for key in values.keys():
                 keys.add(f"{group_name}:{key}")
     return keys
+
+
+def extract_fesom_mesh_info(config_dir: Path) -> dict:
+    """Extract FESOM mesh information from namelist.config.
+
+    FESOM uses an unstructured triangular mesh. The mesh path and rotation
+    parameters are stored in the namelist.config file under geometry/paths groups.
+
+    Args:
+        config_dir: Path to FESOM config directory (e.g., /exp/config/fesom/).
+
+    Returns:
+        Dict with FESOM mesh properties for STAC item/collection:
+            - fesom:mesh_path: Path to mesh directory
+            - fesom:rotated: Whether mesh is rotated (force_rotation=False)
+            - fesom:alpha: Euler alpha rotation angle
+            - fesom:beta: Euler beta rotation angle
+            - fesom:gamma: Euler gamma rotation angle
+
+    Example output::
+
+        {
+            "fesom:mesh_path": "/pool/data/AWICM/FESOM2/meshes/core2",
+            "fesom:rotated": False,
+            "fesom:alpha": 0.0,
+            "fesom:beta": 0.0,
+            "fesom:gamma": 0.0
+        }
+    """
+    config_dir = Path(config_dir)
+
+    # Try namelist.config first, then namelist.nml
+    namelist_path = config_dir / "namelist.config"
+    if not namelist_path.exists():
+        namelist_path = config_dir / "namelist.nml"
+    if not namelist_path.exists():
+        logger.debug("No FESOM namelist found in {}", config_dir)
+        return {}
+
+    try:
+        nml = scan_namelist(namelist_path)
+    except (ValueError, ImportError) as e:
+        logger.warning("Failed to parse FESOM namelist: {}", e)
+        return {}
+
+    result: dict = {}
+
+    # Extract mesh path from paths group
+    paths = nml.get("paths", {})
+    mesh_path = paths.get("meshpath") or paths.get("mesh_path")
+    if mesh_path:
+        result["fesom:mesh_path"] = str(mesh_path).rstrip("/")
+
+    # Extract geometry/rotation info
+    geometry = nml.get("geometry", {})
+
+    # force_rotation=.true. means mesh is NOT rotated (confusing naming)
+    # force_rotation=.false. means mesh IS rotated using Euler angles
+    force_rotation = geometry.get("force_rotation", True)
+    result["fesom:rotated"] = not force_rotation
+
+    # Euler rotation angles (only meaningful when rotated=True)
+    result["fesom:alpha"] = float(geometry.get("alphaeuler", 0.0))
+    result["fesom:beta"] = float(geometry.get("betaeuler", 0.0))
+    result["fesom:gamma"] = float(geometry.get("gammaeuler", 0.0))
+
+    # Extract resolution info if available
+    if "res" in geometry:
+        result["fesom:resolution"] = geometry["res"]
+
+    logger.debug("Extracted FESOM mesh info: {}", result)
+    return result

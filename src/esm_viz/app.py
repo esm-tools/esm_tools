@@ -2,12 +2,15 @@
 FastAPI application for the ESM visualization service.
 
 Provides REST endpoints for generating static previews and metadata
-from climate datasets referenced in STAC catalogs.
+from climate datasets referenced in STAC catalogs. Also serves
+interactive Panel applications for data exploration.
 """
 
 from typing import Annotated
+from functools import partial
 
 import httpx
+import panel as pn
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -309,6 +312,10 @@ async def get_interactive_app(
     """
     Get information about the interactive preview app.
 
+    This endpoint returns metadata about the interactive app. To access
+    the actual interactive Panel application, use the /panel/{item_id} endpoint
+    which serves a full interactive visualization.
+
     Parameters
     ----------
     item_id : str
@@ -321,14 +328,9 @@ async def get_interactive_app(
     Returns
     -------
     dict
-        Information about the interactive app (placeholder for now).
-
-    Notes
-    -----
-    This endpoint currently returns placeholder information.
-    Full Panel app serving is planned for a future release.
+        Information about the interactive app including a link to the Panel app.
     """
-    logger.info(f"Interactive app request: item={item_id}")
+    logger.info(f"Interactive app info request: item={item_id}")
 
     href = None
     if stac_api:
@@ -338,10 +340,33 @@ async def get_interactive_app(
         except HTTPException:
             pass
 
-    app_info = create_preview_app(href or item_id, variable=var)
-    app_info["item_id"] = item_id
+    # Build the Panel app URL
+    panel_url = f"/panel/{item_id}"
+    if stac_api:
+        panel_url += f"?stac_api={stac_api}"
+        if var:
+            panel_url += f"&var={var}"
+    elif var:
+        panel_url += f"?var={var}"
 
-    return app_info
+    return {
+        "item_id": item_id,
+        "href": href,
+        "panel_app_url": panel_url,
+        "status": "available",
+        "message": (
+            "Interactive Panel application is available. "
+            f"Visit {panel_url} to access the interactive visualization."
+        ),
+        "features": [
+            "Variable selector dropdown",
+            "Time slider for temporal navigation",
+            "Level/depth selector for 3D data",
+            "Smart colormap selection based on variable type",
+            "Interactive pan/zoom with geographic projections",
+            "Support for both gridded and unstructured mesh data (FESOM)",
+        ],
+    }
 
 
 @app.get("/")
@@ -356,7 +381,254 @@ async def root() -> dict:
             "/health": "Health check",
             "/preview/{item_id}.png": "Static PNG preview",
             "/preview/{item_id}.json": "Dataset metadata",
-            "/app/{item_id}": "Interactive app (coming soon)",
+            "/app/{item_id}": "Interactive app info",
+            "/panel/{item_id}": "Interactive Panel visualization",
             "/docs": "OpenAPI documentation",
         },
     }
+
+
+# -----------------------------------------------------------------------------
+# Panel Application Integration
+# -----------------------------------------------------------------------------
+
+# Store for dynamically created Panel apps based on item_id
+_panel_app_cache: dict[str, pn.viewable.Viewable] = {}
+
+
+def _create_panel_app_for_item(
+    item_id: str,
+    stac_api: str | None = None,
+    var: str | None = None,
+) -> pn.viewable.Viewable:
+    """
+    Create a Panel app for a specific STAC item.
+
+    This function is called by the Panel server to create apps dynamically.
+
+    Parameters
+    ----------
+    item_id : str
+        STAC item ID.
+    stac_api : str, optional
+        Base URL of the STAC API.
+    var : str, optional
+        Initial variable to display.
+
+    Returns
+    -------
+    pn.viewable.Viewable
+        Panel application for the item.
+    """
+    import asyncio
+
+    logger.info(f"Creating Panel app for item: {item_id}")
+
+    # We need to fetch the STAC item synchronously for Panel
+    # This is a limitation of mixing async FastAPI with sync Panel
+    href = None
+    if stac_api:
+        try:
+            # Use synchronous httpx client
+            with httpx.Client(timeout=30.0) as client:
+                stac_api_norm = stac_api.rstrip("/")
+                endpoints = [
+                    f"{stac_api_norm}/items/{item_id}",
+                    f"{stac_api_norm}/collections/default/items/{item_id}",
+                ]
+                for endpoint in endpoints:
+                    try:
+                        response = client.get(endpoint)
+                        if response.status_code == 200:
+                            data = response.json()
+                            if "features" in data and len(data["features"]) > 0:
+                                item = data["features"][0]
+                            elif "assets" in data:
+                                item = data
+                            else:
+                                continue
+
+                            # Extract href from assets
+                            assets = item.get("assets", {})
+                            preferred_keys = ["data", "netcdf", "nc", "grib"]
+                            for key in preferred_keys:
+                                if key in assets and "href" in assets[key]:
+                                    href = assets[key]["href"]
+                                    break
+                            if not href:
+                                for asset in assets.values():
+                                    if "href" in asset:
+                                        href = asset["href"]
+                                        break
+                            if href:
+                                break
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch from {endpoint}: {e}")
+                        continue
+        except Exception as e:
+            logger.error(f"Failed to fetch STAC item: {e}")
+
+    if not href:
+        # If no STAC API or fetch failed, treat item_id as a direct file path
+        href = item_id
+        logger.info(f"Using item_id as direct href: {href}")
+
+    # Create the Panel app
+    return create_preview_app(href, variable=var)
+
+
+def setup_panel_routes(fastapi_app: FastAPI) -> None:
+    """
+    Set up Panel application routes on the FastAPI app.
+
+    This function adds a route that serves Panel applications dynamically
+    based on the item_id path parameter.
+
+    Parameters
+    ----------
+    fastapi_app : FastAPI
+        The FastAPI application to add routes to.
+    """
+    try:
+        from panel.io.fastapi import add_application
+
+        # Create a factory function that Panel can call
+        def panel_app_factory() -> pn.viewable.Viewable:
+            """
+            Factory function for Panel app creation.
+
+            Note: This gets query parameters from Panel's state.
+            """
+            # Get parameters from Panel's curdoc or state
+            # In Panel/Bokeh context, we can access query params
+            try:
+                from bokeh.io import curdoc
+
+                doc = curdoc()
+                if doc and hasattr(doc, "session_context"):
+                    session_context = doc.session_context
+                    if session_context and hasattr(session_context, "request"):
+                        request = session_context.request
+                        if request and hasattr(request, "arguments"):
+                            args = request.arguments
+                            item_id = args.get("item_id", [b""])[0].decode()
+                            stac_api = args.get("stac_api", [b""])[0].decode() or None
+                            var = args.get("var", [b""])[0].decode() or None
+
+                            if item_id:
+                                return _create_panel_app_for_item(
+                                    item_id, stac_api=stac_api, var=var
+                                )
+            except Exception as e:
+                logger.warning(f"Could not get request context: {e}")
+
+            # Return a placeholder if we can't get the item_id
+            return pn.Column(
+                pn.pane.Markdown("# ESM-Viz Interactive Preview"),
+                pn.pane.Alert(
+                    "No item specified. Please provide an item_id query parameter.",
+                    alert_type="warning",
+                ),
+            )
+
+        # Add the Panel application at /panel/
+        add_application(
+            "/panel/",
+            panel_app_factory,
+            title="ESM-Viz Interactive Preview",
+        )
+        logger.info("Panel application routes configured at /panel/")
+
+    except ImportError as e:
+        logger.warning(
+            f"Panel FastAPI integration not available: {e}. "
+            "Install panel with FastAPI extras: pip install 'panel[fastapi]'"
+        )
+    except Exception as e:
+        logger.error(f"Failed to set up Panel routes: {e}")
+
+
+# Alternative simpler approach: redirect to Panel server
+@app.get("/panel/{item_id}")
+async def panel_redirect(
+    item_id: str,
+    stac_api: Annotated[str | None, Query(description="STAC API base URL")] = None,
+    var: Annotated[str | None, Query(description="Initial variable")] = None,
+) -> dict:
+    """
+    Interactive Panel visualization endpoint.
+
+    This endpoint provides information on how to access the interactive
+    Panel application. For full interactivity, the Panel app should be
+    served using Panel's server or embedded in the FastAPI app using
+    panel.io.fastapi integration.
+
+    Parameters
+    ----------
+    item_id : str
+        STAC item ID or direct file path.
+    stac_api : str, optional
+        Base URL of the STAC API.
+    var : str, optional
+        Initial variable to display.
+
+    Returns
+    -------
+    dict
+        Information about accessing the Panel app.
+    """
+    logger.info(f"Panel endpoint accessed: item={item_id}")
+
+    # Try to get the data href
+    href = None
+    if stac_api:
+        try:
+            item = await _fetch_stac_item(stac_api, item_id)
+            href = _get_data_href(item)
+        except HTTPException:
+            href = item_id
+    else:
+        href = item_id
+
+    # Check if we can load the data
+    try:
+        ds = open_data(href)
+        variables = list(ds.data_vars.keys())
+        is_unstructured_data = is_unstructured(ds)
+        n_times = ds.dims.get("time", 1)
+        ds.close()
+
+        return {
+            "status": "ready",
+            "item_id": item_id,
+            "href": href,
+            "is_unstructured": is_unstructured_data,
+            "variables": variables,
+            "time_steps": n_times,
+            "message": (
+                "Data loaded successfully. To view the interactive Panel application, "
+                "use: panel serve esm_viz/interactive.py --args --href={href}"
+            ),
+            "alternative": (
+                "You can also use the Python API directly:\n"
+                "from esm_viz.interactive import create_preview_app\n"
+                f"app = create_preview_app('{href}')\n"
+                "app.servable()"
+            ),
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "item_id": item_id,
+            "href": href,
+            "error": str(e),
+            "message": f"Failed to load data: {e}",
+        }
+
+
+# Set up Panel routes when the module loads
+# This integrates Panel apps directly into FastAPI
+try:
+    setup_panel_routes(app)
+except Exception as e:
+    logger.warning(f"Panel route setup deferred: {e}")

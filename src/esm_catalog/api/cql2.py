@@ -249,3 +249,79 @@ def parse_datetime(datetime_str: str | None) -> dict:
             filt["datetime_end"] = ("<=", end)
         return filt
     return {"datetime": ("=", datetime_str)}
+
+
+def apply_ghg_unit_conversions(
+    filter_props: dict,
+    unit_specs: dict[str, str] | None = None,
+) -> dict:
+    """Apply GHG unit conversions to filter values.
+
+    Converts user-provided values in ppm/ppb to decimal (volume mixing ratio)
+    for GHG parameters like co2vmr, ch4vmr, n2ovmr.
+
+    Args:
+        filter_props: Parsed filter dict from parse_cql2_json/parse_cql2_text.
+        unit_specs: Optional dict mapping field names to units (e.g., {"nml:radctl:co2vmr": "ppm"}).
+                    If not provided, will attempt to auto-detect based on value ranges.
+
+    Returns:
+        New filter_props dict with converted values.
+
+    Example:
+        >>> props = {"nml:radctl:co2vmr": ("=", 280)}
+        >>> specs = {"nml:radctl:co2vmr": "ppm"}
+        >>> apply_ghg_unit_conversions(props, specs)
+        {"nml:radctl:co2vmr": ("=", 0.00028)}  # 280 ppm -> 0.00028 decimal
+    """
+    # Import here to avoid circular import
+    from esm_catalog.api.queryables import get_ghg_info
+
+    if not filter_props:
+        return filter_props
+
+    result = {}
+    unit_specs = unit_specs or {}
+
+    for field, value in filter_props.items():
+        # Check if this is a GHG field
+        ghg_info = get_ghg_info(field)
+        if ghg_info is None:
+            result[field] = value
+            continue
+
+        # Get the unit for this field
+        unit = unit_specs.get(field, "decimal")  # Default to decimal (no conversion)
+
+        # Get conversion factor
+        factor = ghg_info["supported_units"].get(unit.lower(), 1.0)
+
+        # Apply conversion to value(s)
+        result[field] = _convert_filter_value(value, factor)
+
+    return result
+
+
+def _convert_filter_value(value: Any, factor: float) -> Any:
+    """Convert filter value(s) by a multiplication factor.
+
+    Handles tuple (op, val), list of values, or plain value.
+    """
+    if factor == 1.0:
+        return value  # No conversion needed
+
+    if isinstance(value, tuple) and len(value) == 2:
+        op, val = value
+        try:
+            converted_val = float(val) * factor
+            return (op, converted_val)
+        except (TypeError, ValueError):
+            return value
+
+    if isinstance(value, list):
+        return [_convert_filter_value(v, factor) for v in value]
+
+    try:
+        return float(value) * factor
+    except (TypeError, ValueError):
+        return value

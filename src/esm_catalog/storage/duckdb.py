@@ -230,9 +230,10 @@ class CatalogDB:
                     params.append(json.dumps(val))
 
         where = " AND ".join(conditions)
-        total = self.db.execute(
+        count_result = self.db.execute(
             f"SELECT COUNT(*) FROM items WHERE {where}", params
-        ).fetchone()[0]
+        ).fetchone()
+        total = count_result[0] if count_result is not None else 0
         rows = self.db.execute(
             f"SELECT data FROM items WHERE {where} LIMIT ? OFFSET ?",
             params + [limit, offset],

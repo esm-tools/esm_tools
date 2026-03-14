@@ -116,10 +116,11 @@ def _discover_property_keys(db: "CatalogDB") -> set[str]:
         # DuckDB's json_keys returns a list directly, not a JSON string
         # Use USING SAMPLE to avoid scanning entire table on large catalogs
         rows = db.db.execute("""
-            SELECT DISTINCT json_keys(json_extract(data, '$.properties')) AS keys
-            FROM items
-            USING SAMPLE 500
-            WHERE keys IS NOT NULL
+            SELECT DISTINCT keys FROM (
+                SELECT json_keys(json_extract(data, '$.properties')) AS keys
+                FROM items
+                USING SAMPLE 500
+            ) WHERE keys IS NOT NULL
         """).fetchall()
 
         all_keys: set[str] = set()

@@ -1,13 +1,13 @@
 # ESM-Tools File Operations Redesign — Filedicts
 
-This deliverable has been using as its base the old GitHub project for the refactoring of file handling https://github.com/orgs/esm-tools/projects/12, that already included many of the current requirements and design considerations reflected in this document. It is also based in existing unfinished developments in `sprint/filedicts/main` branch that correspond to that old GitHub project. The deliverable has been written using @claude -code in planning mode, using the existing resources mentioned above and new prompted design considerations.
+This deliverable uses as its base the old GitHub project for the refactoring of file handling https://github.com/orgs/esm-tools/projects/12, that already included many of the current requirements and design considerations reflected in this document. It is also based in existing unfinished developments in `sprint/filedicts/main` branch that belongs to that old GitHub project. The deliverable has been written using @claude -code in planning mode, using the existing resources mentioned above and new prompted design considerations.
 
 ## Overview
 
 ESM-Tools currently handles file operations during `esm_runscripts` through a fragmented system of parallel flat dictionaries (`input_files`, `input_sources`, `input_in_work`, `forcing_files`, etc.) distributed across multiple sections of
 component configs. This approach is hard to read, difficult to extend, and couples file metadata to intermediate directory structures that add unnecessary complexity and file duplication.
 
-This document describes the new design — **filedicts** — which unifies file definitions into structured objects, removes intermediate staging directories inside `run_DATE/`, and simplifies the operation model, where each phase declares in the backend the file operation directions.
+This document describes the new design — **filedicts** — which unifies file definitions into structured objects, removes intermediate staging directories inside `run_DATE/`, and `run_DATE` itself in favor of `work_DATE` (one work per run at the root of the experiment dir), and simplifies the operation model, where each phase declares in the backend the file operation directions.
 
 ----
 
@@ -57,22 +57,25 @@ files:
             name_in_run: restart.nc
 ```
 
+File types are limitted to the current existing ones, and there will be a mechanism to control that the "types" are correct.
+
+Note about the `null` values: we might want to avoid implementing this feature. Have None as the value (or in fact, anything that might be considered `false`-y) will make anything one does with comparison logic fragile. Also, tracking the provenance of the value might be challenging, but maybe not, as `None`s also have provenance in the current implementation. Maybe, it's a matter of internally swapping the `None` of the files with the key name, while preserving the `None`'s provenance. Placeholders with `${}` could be a problem, because they might not be resolved inside the keys. All this is something to consider during the implementation.
+
 #### File object attributes
 
 | Attribute | Description |
 |---|---|
 | `name_in_pool` | Filename in the pool/source location |
-| `name_in_run` | Filename in `run_DATE/` (the working directory) |
+| `name_in_work` | Filename in `work_DATE/` (the working directory) |
 | `name_in_exp` | Filename in the experiment tree (defaults to `name_in_run`) |
 | `path_in_pool` | Path to the file in the pool (excluding filename) |
-| `prepare` | Operation for `pool/exp → run`: `copy`, `link`, `move` |
-| `tidy` | Operation for `run → exp/<type>`: `copy`, `link`, `move` |
-| `include_years_before` | Years before current to include (requires `StringWithDate`) |
-| `include_years_after` | Years after current to include (requires `StringWithDate`) |
-| `description` | Human-readable description |
+| `prepare_operation` | Operation for `pool/exp → run`: `copy`, `link`, `move` |
+| `tidy_operation` | Operation for `run → exp/<type>`: `copy`, `link`, `move` |
+| `include_timedelta_before` | For example, years before current to include (requires `StringWithDate`) |
+| `include_timdelta_after` | For example, years after current to include (requires `StringWithDate`) |
+| `description` | Human-readable description [optional] |
 | `allowed_to_be_missing` | If `true`, missing file does not raise an error |
 | `is_reusable` | if `true` copy from exp instead of from pool, like bins and inputs (default: false) |
-| description | a file description [optional] |
 | filetype | filetype, like NetCDF [optional], not sure if we should implement this attribute |
 
 #### Files with varying paths depending on dates

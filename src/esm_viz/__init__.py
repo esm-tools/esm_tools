@@ -13,6 +13,7 @@ from esm_viz.readers import open_data, get_data_metadata
 from esm_viz.static_preview import plot_spatial, generate_preview_png
 from esm_viz.fesom import is_unstructured, plot_unstructured
 from esm_viz.interactive import create_preview_app, create_comparison_app, get_smart_colormap
+from esm_viz.collection import create_collection_preview_app
 
 __all__ = [
     "open_data",
@@ -23,5 +24,6 @@ __all__ = [
     "plot_unstructured",
     "create_preview_app",
     "create_comparison_app",
+    "create_collection_preview_app",
     "get_smart_colormap",
 ]

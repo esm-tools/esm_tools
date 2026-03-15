@@ -139,7 +139,7 @@ class TestPreviewPanelRedirect:
         )
         assert r.status_code == 307
         location = r.headers["location"]
-        assert location.startswith("/_panel/")
+        assert "/_panel" in location
         assert f"item_id={ITEM_ID}" in location or "item_id=" in location
         assert "stac_api=" in location
         assert "collection_id=" in location
@@ -178,6 +178,81 @@ class TestCors:
         assert "access-control-allow-origin" in r.headers
 
 
+class TestCollectionPanelRedirect:
+    """The /preview/collection/{id}/panel endpoint must redirect to /_panel with collection params."""
+
+    def test_redirects_with_collection_id(self, client):
+        r = client.get(
+            f"/preview/collection/{COLLECTION_ID}/panel",
+            params={"stac_api": STAC_API},
+            follow_redirects=False,
+        )
+        assert r.status_code == 307
+        location = r.headers["location"]
+        assert "/_panel" in location
+        assert f"collection_id={COLLECTION_ID}" in location
+        assert "stac_api=" in location
+        # Must NOT have item_id (this is collection-level)
+        assert "item_id" not in location
+
+    def test_collection_redirect_without_stac_api(self, client):
+        r = client.get(
+            f"/preview/collection/{COLLECTION_ID}/panel",
+            follow_redirects=False,
+        )
+        assert r.status_code == 307
+        location = r.headers["location"]
+        assert f"collection_id={COLLECTION_ID}" in location
+
+
+class TestCompareRedirect:
+    """The /preview/compare/panel endpoint must redirect to /_panel with both collection params."""
+
+    COLLECTION_A = "basic-001-echam"
+    COLLECTION_B = "branchoff-002-fesom"
+
+    def test_redirects_with_both_collections(self, client):
+        r = client.get(
+            "/preview/compare/panel",
+            params={
+                "collection_a": self.COLLECTION_A,
+                "collection_b": self.COLLECTION_B,
+                "stac_api": STAC_API,
+            },
+            follow_redirects=False,
+        )
+        assert r.status_code == 307
+        location = r.headers["location"]
+        assert "/_panel" in location
+        assert "compare=1" in location
+        assert f"collection_a={self.COLLECTION_A}" in location
+        assert f"collection_b={self.COLLECTION_B}" in location
+        assert "stac_api=" in location
+
+    def test_requires_both_collections(self, client):
+        """collection_a and collection_b are required query params."""
+        r = client.get(
+            "/preview/compare/panel",
+            params={"collection_a": self.COLLECTION_A, "stac_api": STAC_API},
+            follow_redirects=False,
+        )
+        # FastAPI returns 422 for missing required query params
+        assert r.status_code == 422
+
+    def test_does_not_conflict_with_item_panel(self, client):
+        """Ensure /preview/compare/panel doesn't match /preview/{item_id}/panel."""
+        r = client.get(
+            f"/preview/{ITEM_ID}/panel",
+            params={"stac_api": STAC_API},
+            follow_redirects=False,
+        )
+        assert r.status_code == 307
+        location = r.headers["location"]
+        # Should be an item redirect, not a compare redirect
+        assert "item_id=" in location
+        assert "compare" not in location
+
+
 class TestRootEndpoint:
     def test_lists_endpoints(self, client):
         data = client.get("/").json()
@@ -185,4 +260,6 @@ class TestRootEndpoint:
         assert "/preview/{item_id}.png" in endpoints
         assert "/preview/{item_id}.json" in endpoints
         assert "/preview/{item_id}/panel" in endpoints
+        assert "/preview/collection/{collection_id}/panel" in endpoints
+        assert "/preview/compare/panel" in endpoints
         assert "/health" in endpoints

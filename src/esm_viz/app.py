@@ -18,6 +18,7 @@ from fastapi.responses import RedirectResponse
 from loguru import logger
 
 from esm_viz import __version__
+from esm_viz.collection import create_collection_preview_app, create_comparison_preview_app
 from esm_viz.fesom import (
     is_unstructured, plot_unstructured,
     get_mesh_from_stac_item, create_interactive_fesom_plot,
@@ -375,6 +376,49 @@ async def get_preview_metadata(
         raise HTTPException(status_code=500, detail=f"Metadata extraction failed: {e}")
 
 
+# NOTE: Fixed-path routes MUST be defined BEFORE parameterized routes.
+# /preview/compare/panel and /preview/collection/... must come before
+# /preview/{item_id}/panel, otherwise FastAPI matches "compare" as an item_id.
+
+
+@app.get("/preview/compare/panel")
+async def preview_compare_redirect(
+    collection_a: Annotated[str, Query(description="Reference collection ID")],
+    collection_b: Annotated[str, Query(description="Comparison collection ID")],
+    stac_api: Annotated[str | None, Query(description="STAC API base URL")] = None,
+) -> RedirectResponse:
+    """
+    Redirect to the interactive comparison Panel for two STAC collections.
+
+    Shows side-by-side views of two experiments with independent time
+    range selectors, plus a difference panel (B - A).
+    """
+    logger.info(f"Compare redirect: {collection_a} vs {collection_b}")
+    params = {
+        "compare": "1",
+        "collection_a": collection_a,
+        "collection_b": collection_b,
+    }
+    if stac_api:
+        params["stac_api"] = stac_api
+    return RedirectResponse(url=f"/_panel?{urlencode(params)}", status_code=307)
+
+
+@app.get("/preview/collection/{collection_id}/panel")
+async def preview_collection_panel_redirect(
+    collection_id: str,
+    stac_api: Annotated[str | None, Query(description="STAC API base URL")] = None,
+) -> RedirectResponse:
+    """
+    Redirect to the interactive Panel visualization for a whole STAC collection.
+    """
+    logger.info(f"Panel collection redirect: collection={collection_id}")
+    params = {"collection_id": collection_id}
+    if stac_api:
+        params["stac_api"] = stac_api
+    return RedirectResponse(url=f"/_panel?{urlencode(params)}", status_code=307)
+
+
 @app.get("/preview/{item_id}/panel")
 async def preview_panel_redirect(
     item_id: str,
@@ -386,21 +430,6 @@ async def preview_panel_redirect(
 ) -> RedirectResponse:
     """
     Redirect to the interactive Panel visualization for a STAC item.
-
-    This provides a clean REST URL under /preview/{item_id}/panel that
-    redirects to the internal Panel ASGI mount at /_panel with query
-    parameters.
-
-    Parameters
-    ----------
-    item_id : str
-        STAC item ID.
-    stac_api : str, optional
-        Base URL of the STAC API.
-    var : str, optional
-        Initial variable to display.
-    collection_id : str, optional
-        STAC collection ID.
     """
     logger.info(f"Panel redirect: item={item_id}")
     params = {"item_id": item_id}
@@ -426,6 +455,8 @@ async def root() -> dict:
             "/preview/{item_id}.png": "Static PNG preview",
             "/preview/{item_id}.json": "Dataset metadata",
             "/preview/{item_id}/panel": "Interactive Panel visualization",
+            "/preview/collection/{collection_id}/panel": "Interactive collection-level Panel visualization",
+            "/preview/compare/panel": "Cross-experiment comparison (two collections)",
             "/docs": "OpenAPI documentation",
         },
     }
@@ -591,9 +622,25 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
                             var = args.get("var", [b""])[0].decode() or None
                             collection_id = args.get("collection_id", [b""])[0].decode() or None
 
+                            # Cross-experiment comparison
+                            compare = args.get("compare", [b""])[0].decode()
+                            collection_a = args.get("collection_a", [b""])[0].decode()
+                            collection_b = args.get("collection_b", [b""])[0].decode()
+
+                            if compare and collection_a and collection_b and stac_api:
+                                return create_comparison_preview_app(
+                                    collection_a, collection_b, stac_api
+                                )
+
                             if item_id:
                                 return _create_panel_app_for_item(
                                     item_id, stac_api=stac_api, var=var, collection_id=collection_id
+                                )
+
+                            # Collection-level preview (no item_id, but collection_id present)
+                            if collection_id and stac_api:
+                                return create_collection_preview_app(
+                                    collection_id, stac_api
                                 )
             except Exception as e:
                 logger.warning(f"Could not get request context: {e}")
@@ -601,7 +648,7 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
             return pn.Column(
                 pn.pane.Markdown("# ESM-Viz Interactive Preview"),
                 pn.pane.Alert(
-                    "No item specified. Please provide an item_id query parameter.",
+                    "No item or collection specified. Please provide an item_id or collection_id query parameter.",
                     alert_type="warning",
                 ),
             )

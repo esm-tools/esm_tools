@@ -408,7 +408,7 @@ def create_collection_preview_app(
     level_slider = pn.widgets.IntSlider(
         name="Level / Depth",
         start=0,
-        end=max(0, n_l_init - 1),
+        end=max(1, n_l_init - 1),
         value=0,
         step=1,
         width=300,
@@ -452,7 +452,7 @@ def create_collection_preview_app(
         )
 
         n_l = _n_levels_for(var_name)
-        level_slider.end = max(0, n_l - 1)
+        level_slider.end = max(1, n_l - 1)
         level_slider.disabled = n_l <= 1
         if level_slider.value > level_slider.end:
             level_slider.value = 0
@@ -739,7 +739,7 @@ def create_comparison_preview_app(
     level_slider = pn.widgets.IntSlider(
         name="Level / Depth",
         start=0,
-        end=0,
+        end=1,
         value=0,
         step=1,
         width=250,
@@ -778,7 +778,7 @@ def create_comparison_preview_app(
             for dim in dv.dims:
                 if dim.lower() in level_dims:
                     n_l = max(n_l, dv.sizes[dim])
-        level_slider.end = max(0, n_l - 1)
+        level_slider.end = max(1, n_l - 1)
         level_slider.disabled = (n_l <= 1)
         if level_slider.value > level_slider.end:
             level_slider.value = 0

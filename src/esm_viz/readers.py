@@ -156,7 +156,7 @@ def get_data_metadata(ds: xr.Dataset) -> dict[str, Any]:
     """
     metadata: dict[str, Any] = {
         "variables": [],
-        "dimensions": dict(ds.dims),
+        "dimensions": {k: int(v) for k, v in ds.dims.items()},
         "coordinates": {},
         "global_attrs": dict(ds.attrs),
     }
@@ -166,7 +166,7 @@ def get_data_metadata(ds: xr.Dataset) -> dict[str, Any]:
         var_info = {
             "name": var_name,
             "dims": list(var_data.dims),
-            "shape": list(var_data.shape),
+            "shape": [int(s) for s in var_data.shape],
             "dtype": str(var_data.dtype),
             "attrs": dict(var_data.attrs),
         }
@@ -187,7 +187,7 @@ def get_data_metadata(ds: xr.Dataset) -> dict[str, Any]:
             coord_values = coord_data.values
             coord_info: dict[str, Any] = {
                 "dims": list(coord_data.dims),
-                "size": coord_data.size,
+                "size": int(coord_data.size),
                 "dtype": str(coord_data.dtype),
             }
 
@@ -210,7 +210,7 @@ def get_data_metadata(ds: xr.Dataset) -> dict[str, Any]:
             logger.warning(f"Could not extract range for coordinate {coord_name}: {e}")
             metadata["coordinates"][coord_name] = {
                 "dims": list(coord_data.dims),
-                "size": coord_data.size,
+                "size": int(coord_data.size),
                 "error": str(e),
             }
 

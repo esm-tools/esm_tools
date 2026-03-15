@@ -220,6 +220,33 @@ def get_mesh_from_stac_item(item: dict) -> tuple[np.ndarray, np.ndarray, np.ndar
 # Cyclic element filtering
 # ---------------------------------------------------------------------------
 
+def _trim_mesh_to_data(lon: np.ndarray, lat: np.ndarray, elem: np.ndarray,
+                       n_data: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Trim mesh to match data size when there's a mismatch.
+
+    FESOM mesh files (nod2d.out) sometimes include extra boundary nodes
+    that aren't present in the output data. This filters elements that
+    reference nodes beyond the data array size and truncates coordinates.
+    """
+    n_mesh = len(lon)
+    if n_mesh == n_data:
+        return lon, lat, elem
+
+    logger.warning(f"Mesh/data size mismatch: mesh has {n_mesh} nodes, data has {n_data} values")
+
+    if n_mesh > n_data:
+        # Filter out elements that reference nodes beyond the data size
+        valid_mask = np.all(elem < n_data, axis=1)
+        elem = elem[valid_mask]
+        lon = lon[:n_data]
+        lat = lat[:n_data]
+        n_removed = (~valid_mask).sum()
+        logger.info(f"Trimmed mesh: removed {n_removed} elements referencing extra nodes")
+
+    return lon, lat, elem
+
+
 def _remove_cyclic_elements(lon: np.ndarray, elem: np.ndarray,
                             threshold: float = 100.0) -> np.ndarray:
     """
@@ -289,10 +316,8 @@ def plot_unstructured(
 
     if mesh is not None:
         lon, lat, elem = mesh
+        lon, lat, elem = _trim_mesh_to_data(lon, lat, elem, len(values))
         elem_clean = _remove_cyclic_elements(lon, elem)
-
-        if len(values) != len(lon):
-            logger.warning(f"Data size ({len(values)}) != mesh nodes ({len(lon)})")
 
         try:
             triang = tri.Triangulation(lon, lat, elem_clean)
@@ -399,6 +424,9 @@ def create_interactive_fesom_plot(
 
     if title is None:
         title = f"{long_name}" + (f" [{units}]" if units else "")
+
+    # Trim mesh to match data size (FESOM mesh files may have extra nodes)
+    lon, lat, elem = _trim_mesh_to_data(lon, lat, elem, len(values))
 
     # Remove cyclic elements
     elem_clean = _remove_cyclic_elements(lon, elem)

@@ -220,6 +220,7 @@ async def get_preview_png(
     var: Annotated[str, Query(description="Variable name to plot")],
     stac_api: Annotated[str, Query(description="STAC API base URL")],
     time: Annotated[int, Query(description="Time index")] = 0,
+    level: Annotated[int, Query(description="Level/depth index for 3D data")] = 0,
     cmap: Annotated[str, Query(description="Matplotlib colormap")] = "viridis",
     collection_id: Annotated[
         str | None, Query(description="STAC collection ID (optional, improves performance)")
@@ -249,8 +250,9 @@ async def get_preview_png(
     Response
         PNG image response.
     """
-    logger.info(f"Preview request: item={item_id}, var={var}, time={time}")
+    logger.info(f"Preview request: item={item_id}, var={var}, time={time}, level={level}")
 
+    ds = None
     try:
         # Fetch STAC item
         item = await _fetch_stac_item(stac_api, item_id, collection_id=collection_id)
@@ -268,6 +270,11 @@ async def get_preview_png(
             data_array = ds[var]
             if "time" in data_array.dims:
                 data_array = data_array.isel(time=min(time, data_array.sizes["time"] - 1))
+            # Handle level/depth dimension for 3D data
+            level_dims = {"nz", "nz1", "depth", "lev", "level", "z"}
+            for dim in data_array.dims:
+                if dim.lower() in level_dims:
+                    data_array = data_array.isel({dim: min(level, data_array.sizes[dim] - 1)})
 
             import io
             import matplotlib
@@ -282,10 +289,7 @@ async def get_preview_png(
             plt.close(fig)
         else:
             # Regular gridded data
-            png_bytes = generate_preview_png(ds, var, time_index=time, cmap=cmap)
-
-        # Close dataset
-        ds.close()
+            png_bytes = generate_preview_png(ds, var, time_index=time, level_index=level, cmap=cmap)
 
         return Response(
             content=png_bytes,
@@ -304,6 +308,13 @@ async def get_preview_png(
     except Exception as e:
         logger.exception(f"Preview generation failed: {e}")
         raise HTTPException(status_code=500, detail=f"Preview generation failed: {e}")
+    finally:
+        # Ensure dataset is always closed to prevent file handle leaks
+        if ds is not None:
+            try:
+                ds.close()
+            except Exception:
+                pass  # Ignore close errors
 
 
 @app.get("/preview/{item_id}.json")

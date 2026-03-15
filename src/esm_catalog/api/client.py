@@ -488,9 +488,20 @@ class DuckDBCatalogClient(BaseCoreClient):
         finally:
             self._close_catalogs(dbs)
 
+        # Include queryables link so STAC Browser shows "Additional filters"
+        # in the "Search for Collections" tab
+        links = [
+            {
+                "rel": _OGC_QUERYABLES_REL,
+                "href": f"{base_url}/queryables",
+                "type": "application/schema+json",
+                "title": "Queryables",
+            }
+        ]
+
         return stac.Collections(
             collections=all_cols,
-            links=[],
+            links=links,
             numberMatched=len(all_cols),
             numberReturned=len(all_cols),
         )

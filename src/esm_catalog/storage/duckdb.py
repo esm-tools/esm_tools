@@ -381,17 +381,73 @@ class CatalogDB:
         if field in idx:
             return idx[field]
 
+        # 4. Check collection summaries (e.g., "paleo:years_bp")
+        summaries = collection.get("summaries", {})
+        if field in summaries:
+            values = summaries[field]
+            # Return first value if single-element list, otherwise return list
+            if isinstance(values, list) and len(values) == 1:
+                return values[0]
+            return values
+
         return None
 
     def _compare_values(self, actual, op: str, expected) -> bool:
         """Compare actual value against expected using CQL2 operator.
 
-        Handles type coercion for numeric comparisons.
+        Args:
+            actual: The value from the collection/item (may be scalar or list).
+            op: CQL2 operator string: "=", "<>", "<", ">", "<=", ">=".
+            expected: The value to compare against (from the filter).
+
+        Returns:
+            True if the comparison matches, False otherwise.
+
+        List Semantics (ANY/SOME):
+            When `actual` is a list (e.g., from collection summaries with
+            multiple values), uses ANY semantics: returns True if ANY element
+            in the list satisfies the comparison.
+
+            Example: actual=[1, 100], op=">", expected=50
+                     Returns True because 100 > 50, even though 1 < 50.
+
+            This matches SQL's "field IN (...)" or "EXISTS" behavior and is
+            appropriate for collection-level filtering where we want to find
+            collections containing at least one matching value.
+
+        Type Coercion:
+            Attempts numeric comparison first. If both values can be converted
+            to float, uses numeric comparison. Otherwise falls back to string
+            comparison.
+
+        Edge Cases:
+            - Empty list: Returns False (no element can match).
+            - NaN values: Numeric comparison may fail, falls back to string.
+            - None values: Converted to string "None" for comparison.
         """
+        # Handle empty list - no matches possible
+        if isinstance(actual, list) and len(actual) == 0:
+            return False
+
+        # Handle list values (e.g., from summaries with multiple values)
+        # Uses ANY/SOME semantics: True if ANY value matches
+        if isinstance(actual, list):
+            return any(self._compare_values(v, op, expected) for v in actual)
+
+        # Handle None values explicitly
+        if actual is None:
+            return False
+
         # Try numeric comparison first
         try:
             actual_num = float(actual)
             expected_num = float(expected)
+
+            # Guard against NaN comparisons (NaN != NaN in IEEE 754)
+            import math
+            if math.isnan(actual_num) or math.isnan(expected_num):
+                # Fall through to string comparison for NaN
+                raise ValueError("NaN comparison")
 
             if op == "=":
                 return actual_num == expected_num

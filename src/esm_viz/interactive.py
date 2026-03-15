@@ -202,6 +202,43 @@ def _get_plottable_variables(ds: xr.Dataset) -> list[str]:
     return sorted(variables)
 
 
+def _get_variable_display_names(ds: xr.Dataset, variables: list[str]) -> dict[str, str]:
+    """
+    Create a mapping of display names to variable names.
+
+    Display names show both short name and long name for clarity.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The xarray Dataset containing the variables.
+    variables : list[str]
+        List of variable names to create display names for.
+
+    Returns
+    -------
+    dict[str, str]
+        Mapping of display name -> variable name.
+    """
+    display_map = {}
+    for var_name in variables:
+        var_data = ds[var_name]
+        long_name = var_data.attrs.get("long_name", "")
+        units = var_data.attrs.get("units", "")
+
+        if long_name:
+            if units:
+                display_name = f"{var_name} ({long_name}, {units})"
+            else:
+                display_name = f"{var_name} ({long_name})"
+        else:
+            display_name = var_name
+
+        display_map[display_name] = var_name
+
+    return display_map
+
+
 def _select_time_slice(
     data_array: xr.DataArray, time_index: int
 ) -> xr.DataArray:
@@ -566,8 +603,15 @@ def create_preview_app(
             sizing_mode="stretch_width",
         )
 
+    # Create display name mapping (shows long names alongside short names)
+    var_display_map = _get_variable_display_names(ds, variables)
+    # Reverse map to get variable name from display name
+    display_to_var = var_display_map
+    var_to_display = {v: k for k, v in var_display_map.items()}
+
     # Determine initial variable
     initial_var = variable if variable in variables else variables[0]
+    initial_display = var_to_display.get(initial_var, initial_var)
 
     # Detect if unstructured mesh
     unstructured = is_unstructured(ds)
@@ -584,9 +628,9 @@ def create_preview_app(
     # Create widgets
     var_selector = pn.widgets.Select(
         name="Variable",
-        options=variables,
-        value=initial_var,
-        width=200,
+        options=list(var_display_map.keys()),
+        value=initial_display,
+        width=300,  # Wider to accommodate long names
     )
 
     time_slider = pn.widgets.IntSlider(
@@ -633,9 +677,11 @@ def create_preview_app(
         level_slider.param.value,
         cmap_selector.param.value,
     )
-    def update_plot(var: str, time_idx: int, level_idx: int, cmap: str) -> Any:
+    def update_plot(var_display: str, time_idx: int, level_idx: int, cmap: str) -> Any:
         """Reactive function to update plot based on widget values."""
         try:
+            # Convert display name back to variable name
+            var = display_to_var.get(var_display, var_display)
             # Get data array
             data_array = ds[var]
 
@@ -664,8 +710,9 @@ def create_preview_app(
 
     # Update level slider when variable changes
     @pn.depends(var_selector.param.value, watch=True)
-    def update_level_slider(var: str) -> None:
+    def update_level_slider(var_display: str) -> None:
         """Update level slider range when variable changes."""
+        var = display_to_var.get(var_display, var_display)
         n_lvls = _get_level_steps(ds, var)
         level_slider.end = max(0, n_lvls - 1)
         level_slider.disabled = (n_lvls <= 1)
@@ -674,8 +721,9 @@ def create_preview_app(
 
     # Update colormap when variable changes (smart selection)
     @pn.depends(var_selector.param.value, watch=True)
-    def update_colormap(var: str) -> None:
+    def update_colormap(var_display: str) -> None:
         """Update colormap based on variable name (smart selection)."""
+        var = display_to_var.get(var_display, var_display)
         smart_cmap = get_smart_colormap(var)
         if smart_cmap in AVAILABLE_COLORMAPS:
             cmap_selector.value = smart_cmap

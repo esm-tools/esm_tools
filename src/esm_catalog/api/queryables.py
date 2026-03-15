@@ -714,14 +714,23 @@ def get_collection_queryables(
         if db is None:
             continue
 
-        # Check if collection exists in this catalog
+        # Check if collection exists in this catalog (check both collections table and items)
         try:
+            # First check collections table directly
             row = db.db.execute(
-                "SELECT COUNT(*) FROM items WHERE json_extract_string(data, '$.collection') = ?",
+                "SELECT 1 FROM collections WHERE id = ?",
                 [collection_id],
             ).fetchone()
-            if row and row[0] > 0:
+            if row:
                 collection_found = True
+            else:
+                # Fall back to checking if any items reference this collection
+                row = db.db.execute(
+                    "SELECT COUNT(*) FROM items WHERE json_extract_string(data, '$.collection') = ?",
+                    [collection_id],
+                ).fetchone()
+                if row and row[0] > 0:
+                    collection_found = True
         except Exception:
             pass
 

@@ -448,10 +448,17 @@ class TestCQL2Filter:
 
 
 class TestDuckDBCatalogClientInit:
-    def test_raises_on_empty_catalogs(self):
+    def test_allows_empty_catalogs_for_registry_mode(self):
+        """Empty catalogs list in legacy mode is allowed (for registry mode support).
+
+        Note: A warning is logged via loguru, but pytest's caplog doesn't capture it.
+        The key behavior is that no exception is raised, allowing registry mode to
+        add catalogs dynamically after initialization.
+        """
         from esm_catalog.api.client import DuckDBCatalogClient
-        with pytest.raises(ValueError, match="at least one catalog"):
-            DuckDBCatalogClient(catalogs=[])
+        # Should not raise - allows registry mode to add catalogs later
+        client = DuckDBCatalogClient(catalogs=[])
+        assert client is not None
 
     def test_warns_on_missing_path(self, tmp_path, caplog):
         from esm_catalog.api.client import DuckDBCatalogClient

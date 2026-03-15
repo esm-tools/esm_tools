@@ -227,6 +227,7 @@ def generate_preview_png(
     ds: xr.Dataset,
     variable: str,
     time_index: int = 0,
+    level_index: int = 0,
     cmap: str = "viridis",
     dpi: int = 100,
     **plot_kwargs: Any,
@@ -242,6 +243,8 @@ def generate_preview_png(
         Name of the variable to plot.
     time_index : int, optional
         Index along the time dimension. Default is 0.
+    level_index : int, optional
+        Index along the level/depth dimension for 3D data. Default is 0.
     cmap : str, optional
         Matplotlib colormap name. Default is 'viridis'.
     dpi : int, optional
@@ -269,16 +272,19 @@ def generate_preview_png(
     data_array = ds[variable]
     logger.debug(f"Generating preview for variable '{variable}' with shape {data_array.shape}")
 
-    # Select time slice if time dimension exists
-    data_2d = _select_2d_slice(data_array, time_index)
+    # Select time and level slice to get 2D data
+    data_2d = _select_2d_slice(data_array, time_index, level_index)
 
     # Load data into memory for plotting
     logger.debug("Loading data slice into memory")
     data_2d = data_2d.compute() if hasattr(data_2d, "compute") else data_2d
 
-    # Check for valid data
+    # Check for valid data - raise error if all NaN to avoid returning blank PNG
     if np.all(np.isnan(data_2d.values)):
-        logger.warning(f"All values are NaN for variable '{variable}' at time_index {time_index}")
+        raise ValueError(
+            f"All values are NaN for variable '{variable}' at time_index={time_index}, "
+            f"level_index={level_index}. Cannot generate preview."
+        )
 
     # Generate the plot
     fig = plot_spatial(data_2d, cmap=cmap, **plot_kwargs)
@@ -300,6 +306,7 @@ def generate_preview_png(
 def _select_2d_slice(
     data_array: xr.DataArray,
     time_index: int = 0,
+    level_index: int = 0,
 ) -> xr.DataArray:
     """
     Select a 2D spatial slice from a potentially higher-dimensional array.
@@ -310,6 +317,8 @@ def _select_2d_slice(
         The input data array (may be 2D, 3D, or 4D).
     time_index : int
         Index to select along the time dimension.
+    level_index : int
+        Index to select along the level/depth dimension for 3D data.
 
     Returns
     -------
@@ -318,7 +327,7 @@ def _select_2d_slice(
     """
     # Common dimension names to reduce
     time_dims = {"time", "t", "Time", "TIME"}
-    level_dims = {"level", "lev", "depth", "z", "plev", "height", "pressure"}
+    level_dims = {"level", "lev", "depth", "z", "plev", "height", "pressure", "nz", "nz1"}
 
     result = data_array
 
@@ -332,12 +341,13 @@ def _select_2d_slice(
                 logger.debug(f"Selected time index {idx} along dimension '{dim}'")
                 break
 
-    # If still more than 2D, select first slice of level dimension
+    # If still more than 2D, select along level dimension using provided index
     if result.ndim > 2:
         for dim in result.dims:
             if dim.lower() in {d.lower() for d in level_dims}:
-                result = result.isel({dim: 0})
-                logger.debug(f"Selected level index 0 along dimension '{dim}'")
+                idx = min(level_index, result[dim].size - 1)
+                result = result.isel({dim: idx})
+                logger.debug(f"Selected level index {idx} along dimension '{dim}'")
                 break
 
     # Final fallback: take first slice of any extra dimensions

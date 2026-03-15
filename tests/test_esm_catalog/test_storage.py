@@ -278,3 +278,275 @@ class TestImportParquet:
         import_parquet(db, [pq1, pq2])
         _, total = db.search_items()
         assert total == 2
+
+
+# ---------------------------------------------------------------------------
+# storage/duckdb.py — _compare_values behavioral tests
+# ---------------------------------------------------------------------------
+
+class TestCompareValues:
+    """Behavioral tests for CatalogDB._compare_values method.
+
+    Tests cover:
+    - Scalar numeric comparison
+    - Scalar string comparison
+    - List value handling (ANY semantics)
+    - Edge cases (None, NaN, empty lists)
+    - Type coercion behavior
+    """
+
+    def test_scalar_numeric_equality(self, db):
+        """Numeric values are compared as floats."""
+        assert db._compare_values(42, "=", 42) is True
+        assert db._compare_values(42.0, "=", 42) is True
+        assert db._compare_values(42, "=", 43) is False
+
+    def test_scalar_numeric_inequality(self, db):
+        """Numeric inequality operators work correctly."""
+        assert db._compare_values(10, "<", 20) is True
+        assert db._compare_values(20, "<", 10) is False
+        assert db._compare_values(20, ">", 10) is True
+        assert db._compare_values(10, ">", 20) is False
+
+    def test_scalar_numeric_bounds(self, db):
+        """Numeric <= and >= include boundary values."""
+        assert db._compare_values(10, "<=", 10) is True
+        assert db._compare_values(10, ">=", 10) is True
+        assert db._compare_values(9, "<=", 10) is True
+        assert db._compare_values(11, ">=", 10) is True
+
+    def test_scalar_not_equal(self, db):
+        """<> operator tests inequality."""
+        assert db._compare_values(10, "<>", 20) is True
+        assert db._compare_values(10, "<>", 10) is False
+
+    def test_string_comparison(self, db):
+        """String comparison for non-numeric values."""
+        assert db._compare_values("abc", "=", "abc") is True
+        assert db._compare_values("abc", "=", "ABC") is False
+        assert db._compare_values("abc", "<>", "xyz") is True
+
+    def test_string_ordering(self, db):
+        """String comparison respects lexicographic order."""
+        assert db._compare_values("apple", "<", "banana") is True
+        assert db._compare_values("zebra", ">", "apple") is True
+
+    def test_numeric_string_coercion(self, db):
+        """Numeric strings are compared as numbers."""
+        assert db._compare_values("42", "=", 42) is True
+        assert db._compare_values("10.5", "<", 11) is True
+
+    def test_list_any_semantics_equality(self, db):
+        """List comparison uses ANY semantics: True if ANY element matches."""
+        assert db._compare_values([1, 2, 3], "=", 2) is True
+        assert db._compare_values([1, 2, 3], "=", 5) is False
+
+    def test_list_any_semantics_inequality(self, db):
+        """List comparison: True if ANY element satisfies the operator."""
+        # [1, 100] > 50: True because 100 > 50
+        assert db._compare_values([1, 100], ">", 50) is True
+        # [1, 100] < 50: True because 1 < 50
+        assert db._compare_values([1, 100], "<", 50) is True
+        # [60, 70, 80] < 50: False because no element < 50
+        assert db._compare_values([60, 70, 80], "<", 50) is False
+
+    def test_empty_list_returns_false(self, db):
+        """Empty list cannot match any condition."""
+        assert db._compare_values([], "=", 1) is False
+        assert db._compare_values([], ">", 0) is False
+        assert db._compare_values([], "<", 100) is False
+
+    def test_none_value_returns_false(self, db):
+        """None actual value never matches."""
+        assert db._compare_values(None, "=", None) is False
+        assert db._compare_values(None, "=", "None") is False
+
+    def test_nan_falls_back_to_string(self, db):
+        """NaN values fall back to string comparison."""
+        import math
+        # NaN comparisons use string fallback
+        # float('nan') as string is "nan"
+        result = db._compare_values(float('nan'), "=", float('nan'))
+        # Both become string "nan", so they are equal as strings
+        assert result is True
+
+    def test_mixed_type_list(self, db):
+        """Lists with mixed types work correctly."""
+        # [1, "two", 3] - "two" can't be converted to float, uses string
+        assert db._compare_values([1, "two", 3], "=", 1) is True
+        assert db._compare_values([1, "two", 3], "=", "two") is True
+
+    def test_float_precision(self, db):
+        """Float comparison handles precision correctly."""
+        # This tests that we're comparing as floats, not exact decimals
+        assert db._compare_values(0.1 + 0.2, "=", 0.3) is False  # Floating point imprecision
+        # But reasonable tolerances work
+        assert db._compare_values(0.284e-3, ">", 0.283e-3) is True
+
+
+# ---------------------------------------------------------------------------
+# storage/duckdb.py — collection summaries filtering tests
+# ---------------------------------------------------------------------------
+
+class TestCollectionSummariesFiltering:
+    """Tests for filtering collections by summaries values."""
+
+    def test_filter_collection_by_summary_scalar(self, db, ctx):
+        """Filter collections by single-value summary field."""
+        col = make_collection(ctx)
+        col["summaries"] = {"paleo:years_bp": [21000]}  # Single-element list
+        db.insert_collection(col)
+
+        # Should match
+        cols, n = db.search_collections({"paleo:years_bp": ("=", 21000)})
+        assert n == 1
+
+        # Should not match
+        cols, n = db.search_collections({"paleo:years_bp": ("=", 6000)})
+        assert n == 0
+
+    def test_filter_collection_by_summary_range(self, db, ctx):
+        """Filter collections by summary field with range operators."""
+        col = make_collection(ctx)
+        col["summaries"] = {"paleo:years_bp": [21000]}
+        db.insert_collection(col)
+
+        # Should match: 21000 > 10000
+        cols, n = db.search_collections({"paleo:years_bp": (">", 10000)})
+        assert n == 1
+
+        # Should not match: 21000 < 10000
+        cols, n = db.search_collections({"paleo:years_bp": ("<", 10000)})
+        assert n == 0
+
+    def test_filter_collection_by_summary_multi_value(self, db, ctx):
+        """Filter collections by multi-value summary (ANY semantics)."""
+        col = make_collection(ctx)
+        # Multiple paleo periods represented in this collection
+        col["summaries"] = {"paleo:years_bp": [6000, 21000, 125000]}
+        db.insert_collection(col)
+
+        # Should match: 21000 is in the list
+        cols, n = db.search_collections({"paleo:years_bp": ("=", 21000)})
+        assert n == 1
+
+        # Should match: 6000 < 10000 (at least one element matches)
+        cols, n = db.search_collections({"paleo:years_bp": ("<", 10000)})
+        assert n == 1
+
+        # Should not match: no value equals 50000
+        cols, n = db.search_collections({"paleo:years_bp": ("=", 50000)})
+        assert n == 0
+
+    def test_filter_collection_by_namelist_param(self, db, ctx):
+        """Filter collections by namelist parameters."""
+        col = make_collection(ctx)
+        col["nml:parameters"] = {"radctl:co2vmr": 0.000284}
+        db.insert_collection(col)
+
+        # Should match
+        cols, n = db.search_collections({"nml:radctl:co2vmr": ("=", 0.000284)})
+        assert n == 1
+
+        # Should match with comparison
+        cols, n = db.search_collections({"nml:radctl:co2vmr": (">", 0.00028)})
+        assert n == 1
+
+    def test_filter_collection_multiple_constraints(self, db, ctx):
+        """Filter collections with multiple constraints."""
+        col = make_collection(ctx)
+        col["summaries"] = {"paleo:years_bp": [21000]}
+        col["nml:parameters"] = {"radctl:co2vmr": 0.000190}  # LGM CO2 ~190ppm
+        db.insert_collection(col)
+
+        # Both constraints must match
+        cols, n = db.search_collections({
+            "paleo:years_bp": ("=", 21000),
+            "nml:radctl:co2vmr": ("<", 0.0002),
+        })
+        assert n == 1
+
+        # One constraint fails
+        cols, n = db.search_collections({
+            "paleo:years_bp": ("=", 21000),
+            "nml:radctl:co2vmr": (">", 0.0003),  # LGM CO2 was lower
+        })
+        assert n == 0
+
+
+# ---------------------------------------------------------------------------
+# storage/duckdb.py — _get_collection_field_value tests
+# ---------------------------------------------------------------------------
+
+class TestGetCollectionFieldValue:
+    """Tests for _get_collection_field_value method."""
+
+    def test_get_native_field(self, db, ctx):
+        """Get a native collection field."""
+        col = make_collection(ctx)
+        col["description"] = "Test collection"
+        db.insert_collection(col)
+
+        # Retrieve and test
+        retrieved = db.get_collection("basic-001-fesom")
+        idx = db.get_collection_item_props("basic-001-fesom")
+        val = db._get_collection_field_value(retrieved, "description", idx)
+        assert val == "Test collection"
+
+    def test_get_namelist_param(self, db, ctx):
+        """Get a namelist parameter via nml: prefix."""
+        col = make_collection(ctx)
+        col["nml:parameters"] = {"radctl:co2vmr": 0.000284}
+        db.insert_collection(col)
+
+        retrieved = db.get_collection("basic-001-fesom")
+        idx = db.get_collection_item_props("basic-001-fesom")
+        val = db._get_collection_field_value(retrieved, "nml:radctl:co2vmr", idx)
+        assert val == 0.000284
+
+    def test_get_summary_single_value(self, db, ctx):
+        """Get a single-element summary (returns scalar)."""
+        col = make_collection(ctx)
+        col["summaries"] = {"paleo:years_bp": [21000]}
+        db.insert_collection(col)
+
+        retrieved = db.get_collection("basic-001-fesom")
+        idx = db.get_collection_item_props("basic-001-fesom")
+        val = db._get_collection_field_value(retrieved, "paleo:years_bp", idx)
+        # Single-element list returns the scalar value
+        assert val == 21000
+
+    def test_get_summary_multi_value(self, db, ctx):
+        """Get a multi-element summary (returns list)."""
+        col = make_collection(ctx)
+        col["summaries"] = {"paleo:years_bp": [6000, 21000]}
+        db.insert_collection(col)
+
+        retrieved = db.get_collection("basic-001-fesom")
+        idx = db.get_collection_item_props("basic-001-fesom")
+        val = db._get_collection_field_value(retrieved, "paleo:years_bp", idx)
+        # Multi-element list returns the list
+        assert val == [6000, 21000]
+
+    def test_get_indexed_property(self, db, ctx, sample_item):
+        """Get an item-derived indexed property (returns set)."""
+        col = make_collection(ctx)
+        db.insert_collection(col)
+        db.insert_item(sample_item)
+        db.upsert_collection_item_props("basic-001-fesom", sample_item)
+
+        retrieved = db.get_collection("basic-001-fesom")
+        idx = db.get_collection_item_props("basic-001-fesom")
+        val = db._get_collection_field_value(retrieved, "variable", idx)
+        assert isinstance(val, set)
+        assert "ssh" in val
+
+    def test_get_nonexistent_field(self, db, ctx):
+        """Get a field that doesn't exist returns None."""
+        col = make_collection(ctx)
+        db.insert_collection(col)
+
+        retrieved = db.get_collection("basic-001-fesom")
+        idx = db.get_collection_item_props("basic-001-fesom")
+        val = db._get_collection_field_value(retrieved, "nonexistent:field", idx)
+        assert val is None

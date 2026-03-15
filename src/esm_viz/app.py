@@ -18,7 +18,10 @@ from fastapi.responses import RedirectResponse
 from loguru import logger
 
 from esm_viz import __version__
-from esm_viz.fesom import is_unstructured, plot_unstructured
+from esm_viz.fesom import (
+    is_unstructured, plot_unstructured,
+    get_mesh_from_stac_item, create_interactive_fesom_plot,
+)
 from esm_viz.interactive import create_preview_app
 from esm_viz.readers import get_data_metadata, open_data
 from esm_viz.static_preview import generate_preview_png
@@ -267,12 +270,9 @@ async def get_preview_png(
         # Check if unstructured mesh (e.g., FESOM)
         if is_unstructured(ds):
             logger.info("Detected unstructured mesh data")
-            # For unstructured data, we need special handling
-            # This is a simplified path - full implementation would use plot_unstructured
             data_array = ds[var]
             if "time" in data_array.dims:
                 data_array = data_array.isel(time=min(time, data_array.sizes["time"] - 1))
-            # Handle level/depth dimension for 3D data
             level_dims = {"nz", "nz1", "depth", "lev", "level", "z"}
             for dim in data_array.dims:
                 if dim.lower() in level_dims:
@@ -281,9 +281,8 @@ async def get_preview_png(
             import io
             import matplotlib
             matplotlib.use("Agg")
-            import matplotlib.pyplot as plt
 
-            fig = plot_unstructured(data_array, cmap=cmap, ds=ds)
+            fig = plot_unstructured(data_array, cmap=cmap, ds=ds, stac_item=item)
             buf = io.BytesIO()
             fig.savefig(buf, format="png", dpi=100, bbox_inches="tight")
             buf.seek(0)
@@ -467,6 +466,7 @@ def _create_panel_app_for_item(
     logger.info(f"Creating Panel app for item: {item_id}")
 
     href = None
+    item = None
     if stac_api:
         try:
             with httpx.Client(timeout=30.0) as client:
@@ -528,6 +528,31 @@ def _create_panel_app_for_item(
     if not href:
         href = item_id
         logger.info(f"Using item_id as direct href: {href}")
+
+    # Check if this is FESOM data -- use specialized interactive plot
+    try:
+        ds = open_data(href)
+        if is_unstructured(ds) and item is not None:
+            mesh = get_mesh_from_stac_item(item)
+            if mesh is not None:
+                lon, lat, elem = mesh
+                # Select variable
+                sel_var = var or next(iter(ds.data_vars), None)
+                if sel_var and sel_var in ds.data_vars:
+                    data_array = ds[sel_var]
+                    if "time" in data_array.dims:
+                        data_array = data_array.isel(time=0)
+                    level_dims = {"nz", "nz1", "depth", "lev", "level", "z"}
+                    for dim in data_array.dims:
+                        if dim.lower() in level_dims:
+                            data_array = data_array.isel({dim: 0})
+                    plot = create_interactive_fesom_plot(data_array, lon, lat, elem)
+                    ds.close()
+                    logger.info("Created interactive FESOM Panel app")
+                    return pn.pane.HoloViews(plot)
+        ds.close()
+    except Exception as e:
+        logger.warning(f"FESOM interactive check failed, falling back to generic: {e}")
 
     return create_preview_app(href, variable=var)
 

@@ -1,12 +1,22 @@
 """
 FESOM unstructured mesh support module.
 
-Provides detection and plotting utilities for FESOM (Finite-volumE Sea ice-Ocean Model)
-data which uses unstructured triangular meshes instead of regular lat/lon grids.
+Provides detection, mesh loading, and plotting utilities for FESOM
+(Finite-volumE Sea ice-Ocean Model) data which uses unstructured
+triangular meshes instead of regular lat/lon grids.
+
+Mesh coordinates and triangulation are loaded from the standard FESOM
+mesh files (nod2d.out, elem2d.out) whose path is extracted from
+STAC item properties (nml:fesom:paths:meshpath).
 """
 
+from __future__ import annotations
+
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
+import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.tri as tri
 import numpy as np
@@ -17,6 +27,10 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 
 
+# ---------------------------------------------------------------------------
+# Detection
+# ---------------------------------------------------------------------------
+
 def is_unstructured(ds: xr.Dataset) -> bool:
     """
     Detect if a dataset uses an unstructured mesh.
@@ -25,125 +39,207 @@ def is_unstructured(ds: xr.Dataset) -> bool:
     - Presence of 'nod2' or 'node' dimensions (FESOM)
     - Presence of triangulation connectivity arrays
     - Single spatial dimension with 'ncells' or similar naming
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        The dataset to check.
-
-    Returns
-    -------
-    bool
-        True if the dataset appears to use an unstructured mesh.
     """
-    # Common FESOM/unstructured mesh indicators
     unstructured_dims = {
         "nod2", "nod3", "node", "nodes", "ncells", "nelem",
         "n_node", "n_nodes", "n_cell", "n_cells", "npoints"
     }
 
-    # Check dimensions
     dims_lower = {dim.lower() for dim in ds.dims}
     if dims_lower & unstructured_dims:
-        logger.debug("Detected unstructured mesh via dimension names")
         return True
 
-    # Check for triangulation/connectivity variables
     connectivity_vars = {"elem", "elements", "tri", "triangles", "face_node_connectivity"}
     vars_lower = {var.lower() for var in ds.data_vars} | {coord.lower() for coord in ds.coords}
     if vars_lower & connectivity_vars:
-        logger.debug("Detected unstructured mesh via connectivity variables")
         return True
 
-    # Check for FESOM-specific attributes
     if ds.attrs.get("source", "").lower().startswith("fesom"):
-        logger.debug("Detected FESOM via source attribute")
         return True
 
     if any("fesom" in str(attr).lower() for attr in ds.attrs.values()):
-        logger.debug("Detected FESOM via attributes")
         return True
 
-    # Check for single spatial dimension (common in unstructured data)
     for var in ds.data_vars.values():
         spatial_dims = [d for d in var.dims if d not in ("time", "t", "level", "lev", "depth")]
         if len(spatial_dims) == 1:
             dim_name = spatial_dims[0].lower()
             if any(indicator in dim_name for indicator in ["nod", "cell", "elem", "point"]):
-                logger.debug(f"Detected unstructured mesh via single spatial dimension: {spatial_dims[0]}")
                 return True
 
     return False
 
 
-def _get_mesh_coordinates(ds: xr.Dataset) -> tuple[np.ndarray | None, np.ndarray | None]:
+# ---------------------------------------------------------------------------
+# Mesh loading from FESOM mesh files
+# ---------------------------------------------------------------------------
+
+def _euler_rotation(lon: np.ndarray, lat: np.ndarray,
+                    alpha: float, beta: float, gamma: float) -> tuple[np.ndarray, np.ndarray]:
     """
-    Extract node coordinates from an unstructured mesh dataset.
+    Rotate coordinates from rotated to geographical using Euler angles.
+
+    This undoes the rotation applied by FESOM when force_rotation=True.
+    Based on the pyfesom2 rotation implementation.
+    """
+    rad = np.pi / 180.0
+
+    lon_r = lon * rad
+    lat_r = lat * rad
+
+    rotate_matrix = np.zeros((3, 3))
+    rotate_matrix[0, 0] = (np.cos(gamma * rad) * np.cos(alpha * rad)
+                           - np.sin(gamma * rad) * np.cos(beta * rad) * np.sin(alpha * rad))
+    rotate_matrix[0, 1] = (np.cos(gamma * rad) * np.sin(alpha * rad)
+                           + np.sin(gamma * rad) * np.cos(beta * rad) * np.cos(alpha * rad))
+    rotate_matrix[0, 2] = np.sin(gamma * rad) * np.sin(beta * rad)
+    rotate_matrix[1, 0] = (-np.sin(gamma * rad) * np.cos(alpha * rad)
+                           - np.cos(gamma * rad) * np.cos(beta * rad) * np.sin(alpha * rad))
+    rotate_matrix[1, 1] = (-np.sin(gamma * rad) * np.sin(alpha * rad)
+                           + np.cos(gamma * rad) * np.cos(beta * rad) * np.cos(alpha * rad))
+    rotate_matrix[1, 2] = np.cos(gamma * rad) * np.sin(beta * rad)
+    rotate_matrix[2, 0] = np.sin(beta * rad) * np.sin(alpha * rad)
+    rotate_matrix[2, 1] = -np.sin(beta * rad) * np.cos(alpha * rad)
+    rotate_matrix[2, 2] = np.cos(beta * rad)
+
+    # Convert to Cartesian
+    x = np.cos(lat_r) * np.cos(lon_r)
+    y = np.cos(lat_r) * np.sin(lon_r)
+    z = np.sin(lat_r)
+
+    # Apply inverse rotation (transpose)
+    rot_inv = rotate_matrix.T
+    xr = rot_inv[0, 0] * x + rot_inv[0, 1] * y + rot_inv[0, 2] * z
+    yr = rot_inv[1, 0] * x + rot_inv[1, 1] * y + rot_inv[1, 2] * z
+    zr = rot_inv[2, 0] * x + rot_inv[2, 1] * y + rot_inv[2, 2] * z
+
+    lat_geo = np.arcsin(np.clip(zr, -1, 1)) / rad
+    lon_geo = np.arctan2(yr, xr) / rad
+
+    return lon_geo, lat_geo
+
+
+@lru_cache(maxsize=8)
+def load_fesom_mesh(meshpath: str, alpha: float = 0.0, beta: float = 0.0,
+                    gamma: float = 0.0, force_rotation: bool = False
+                    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Load FESOM mesh from nod2d.out and elem2d.out files.
+
+    Results are cached by meshpath + rotation parameters so repeated
+    requests for the same mesh are fast.
+
+    Parameters
+    ----------
+    meshpath : str
+        Path to the FESOM mesh directory containing nod2d.out and elem2d.out.
+    alpha, beta, gamma : float
+        Euler rotation angles (degrees). Only used when force_rotation is True.
+    force_rotation : bool
+        Whether the mesh uses a rotated grid that needs to be unrotated.
 
     Returns
     -------
-    tuple[np.ndarray | None, np.ndarray | None]
-        (lon_values, lat_values) or (None, None) if not found.
+    tuple[np.ndarray, np.ndarray, np.ndarray]
+        (lon, lat, elem) where lon/lat are 1D arrays of node coordinates
+        and elem is (n_triangles, 3) 0-based connectivity.
     """
-    # Common coordinate variable names for unstructured meshes
-    lon_names = ["lon", "longitude", "x", "nod_x", "lon_nod2", "xc", "clon"]
-    lat_names = ["lat", "latitude", "y", "nod_y", "lat_nod2", "yc", "clat"]
+    meshdir = Path(meshpath)
+    nod2d_path = meshdir / "nod2d.out"
+    elem2d_path = meshdir / "elem2d.out"
 
-    lon_vals = None
-    lat_vals = None
+    if not nod2d_path.exists():
+        raise FileNotFoundError(f"FESOM mesh file not found: {nod2d_path}")
+    if not elem2d_path.exists():
+        raise FileNotFoundError(f"FESOM mesh file not found: {elem2d_path}")
 
-    all_vars = set(ds.data_vars.keys()) | set(ds.coords.keys())
-    all_vars_lower = {v.lower(): v for v in all_vars}
+    # Read nod2d.out: first line is count, then "id lon lat flag"
+    logger.info(f"Loading FESOM mesh from {meshpath}")
+    nod2d = np.loadtxt(str(nod2d_path), skiprows=1)
+    lon = nod2d[:, 1].astype(np.float64)
+    lat = nod2d[:, 2].astype(np.float64)
 
-    for lon_name in lon_names:
-        if lon_name in all_vars_lower:
-            actual_name = all_vars_lower[lon_name]
-            lon_vals = ds[actual_name].values
-            logger.debug(f"Found longitude coordinate: {actual_name}")
-            break
+    # Read elem2d.out: first line is count, then "node1 node2 node3" (1-based)
+    elem = np.loadtxt(str(elem2d_path), skiprows=1, dtype=int) - 1  # convert to 0-based
 
-    for lat_name in lat_names:
-        if lat_name in all_vars_lower:
-            actual_name = all_vars_lower[lat_name]
-            lat_vals = ds[actual_name].values
-            logger.debug(f"Found latitude coordinate: {actual_name}")
-            break
+    # Apply inverse Euler rotation if needed
+    if force_rotation and (alpha != 0 or beta != 0 or gamma != 0):
+        logger.info(f"Applying inverse Euler rotation: alpha={alpha}, beta={beta}, gamma={gamma}")
+        lon, lat = _euler_rotation(lon, lat, alpha, beta, gamma)
 
-    return lon_vals, lat_vals
+    logger.info(f"Loaded mesh: {len(lon)} nodes, {len(elem)} elements")
+    return lon, lat, elem
 
 
-def _get_triangulation(ds: xr.Dataset) -> np.ndarray | None:
+def get_mesh_from_stac_item(item: dict) -> tuple[np.ndarray, np.ndarray, np.ndarray] | None:
     """
-    Extract triangulation connectivity from an unstructured mesh dataset.
+    Load a FESOM mesh using metadata from a STAC item's properties.
+
+    Extracts the mesh path from ``nml:fesom:paths:meshpath`` or
+    ``file:FESOM_MeshPath``, and rotation parameters from the
+    ``nml:fesom:geometry:*`` properties.
+
+    Parameters
+    ----------
+    item : dict
+        STAC item with properties containing mesh metadata.
 
     Returns
     -------
-    np.ndarray | None
-        Triangle connectivity array (n_triangles, 3) or None if not found.
+    tuple or None
+        (lon, lat, elem) if mesh can be loaded, None otherwise.
     """
-    connectivity_names = [
-        "elem", "elements", "tri", "triangles",
-        "face_node_connectivity", "nv", "elem_nod2"
-    ]
+    props = item.get("properties", {})
 
-    all_vars = set(ds.data_vars.keys()) | set(ds.coords.keys())
-    all_vars_lower = {v.lower(): v for v in all_vars}
+    meshpath = props.get("nml:fesom:paths:meshpath") or props.get("file:FESOM_MeshPath")
+    if not meshpath:
+        logger.warning("No mesh path found in STAC item properties")
+        return None
 
-    for name in connectivity_names:
-        if name in all_vars_lower:
-            actual_name = all_vars_lower[name]
-            triangles = ds[actual_name].values
-            logger.debug(f"Found triangulation: {actual_name} with shape {triangles.shape}")
+    force_rotation_raw = props.get("nml:fesom:geometry:force_rotation")
+    # FESOM uses -1 for true in some contexts, or actual bool
+    if isinstance(force_rotation_raw, bool):
+        force_rotation = force_rotation_raw
+    elif isinstance(force_rotation_raw, (int, float)):
+        force_rotation = bool(force_rotation_raw)  # -1 -> True, 0 -> False
+    else:
+        force_rotation = False
 
-            # Ensure correct shape (n_triangles, 3)
-            if triangles.ndim == 2:
-                if triangles.shape[1] == 3:
-                    return triangles
-                elif triangles.shape[0] == 3:
-                    return triangles.T
+    alpha = float(props.get("nml:fesom:geometry:alphaeuler", 0))
+    beta = float(props.get("nml:fesom:geometry:betaeuler", 0))
+    gamma = float(props.get("nml:fesom:geometry:gammaeuler", 0))
 
-    return None
+    try:
+        return load_fesom_mesh(meshpath, alpha, beta, gamma, force_rotation)
+    except FileNotFoundError as e:
+        logger.error(f"Could not load FESOM mesh: {e}")
+        return None
 
+
+# ---------------------------------------------------------------------------
+# Cyclic element filtering
+# ---------------------------------------------------------------------------
+
+def _remove_cyclic_elements(lon: np.ndarray, elem: np.ndarray,
+                            threshold: float = 100.0) -> np.ndarray:
+    """
+    Remove triangles that span the antimeridian (cyclic boundary).
+
+    These triangles create visual artifacts -- long horizontal streaks
+    across the entire plot.
+    """
+    elem_lon = lon[elem]
+    lon_range = elem_lon.max(axis=1) - elem_lon.min(axis=1)
+    mask = lon_range < threshold
+    n_removed = (~mask).sum()
+    if n_removed > 0:
+        logger.debug(f"Removed {n_removed} cyclic elements")
+    return elem[mask]
+
+
+# ---------------------------------------------------------------------------
+# Static (matplotlib) plotting
+# ---------------------------------------------------------------------------
 
 def plot_unstructured(
     data_array: xr.DataArray,
@@ -154,170 +250,217 @@ def plot_unstructured(
     title: str | None = None,
     vmin: float | None = None,
     vmax: float | None = None,
+    stac_item: dict | None = None,
 ) -> plt.Figure:
     """
-    Create a plot from unstructured mesh data using triangulation.
+    Create a matplotlib plot from unstructured FESOM mesh data.
 
-    This function attempts to use proper triangulation-based plotting for
-    unstructured mesh data (like FESOM). If triangulation information is
-    not available, it falls back to scatter plot or regular grid plotting.
+    Uses the STAC item properties to locate the mesh files (nod2d.out,
+    elem2d.out) and rotation parameters. Falls back to scatter plot
+    if mesh cannot be loaded.
 
     Parameters
     ----------
     data_array : xr.DataArray
-        Data array from an unstructured mesh.
-    cmap : str, optional
-        Matplotlib colormap name. Default is 'viridis'.
+        Data on unstructured mesh nodes (1D spatial dimension).
+    cmap : str
+        Matplotlib colormap name.
     ds : xr.Dataset, optional
-        Parent dataset containing mesh information (coordinates, triangulation).
-        If None, attempts to extract from data_array coordinates.
-    figsize : tuple[int, int], optional
-        Figure size in inches. Default is (12, 8).
-    add_coastlines : bool, optional
-        Whether to add coastlines. Default is True.
-    title : str, optional
-        Plot title.
-    vmin : float, optional
-        Minimum value for colormap scaling.
-    vmax : float, optional
-        Maximum value for colormap scaling.
-
-    Returns
-    -------
-    plt.Figure
-        Matplotlib Figure object with the plot.
-
-    Notes
-    -----
-    This is currently a basic implementation that supports:
-    - Scatter plots when mesh coordinates are available
-    - Triangulated contour plots when connectivity is available
-
-    Full support for FESOM mesh visualization is planned for future versions.
+        Parent dataset (unused, kept for API compatibility).
+    stac_item : dict, optional
+        STAC item containing mesh path in properties.
     """
+    matplotlib.use("Agg")
+
     fig, ax = plt.subplots(
         figsize=figsize,
-        subplot_kw={"projection": ccrs.PlateCarree()},
+        subplot_kw={"projection": ccrs.Robinson()},
     )
 
-    # Try to get mesh coordinates from dataset
-    lon_vals = None
-    lat_vals = None
-    triangles = None
-
-    if ds is not None:
-        lon_vals, lat_vals = _get_mesh_coordinates(ds)
-        triangles = _get_triangulation(ds)
-
-    # Also check data_array coordinates
-    if lon_vals is None or lat_vals is None:
-        lon_vals, lat_vals = _get_mesh_coordinates(
-            xr.Dataset(coords=data_array.coords)
-        )
-
-    # Load data values
     values = data_array.values
     if hasattr(values, "compute"):
         values = values.compute()
-
-    # Flatten if needed
     values = values.ravel()
 
-    if lon_vals is not None and lat_vals is not None:
-        lon_vals = lon_vals.ravel()
-        lat_vals = lat_vals.ravel()
+    # Try to load mesh from STAC item
+    mesh = None
+    if stac_item is not None:
+        mesh = get_mesh_from_stac_item(stac_item)
 
-        # Ensure matching sizes
-        if len(lon_vals) != len(values):
-            logger.warning(
-                f"Coordinate size mismatch: lon={len(lon_vals)}, values={len(values)}. "
-                "Falling back to scatter plot."
-            )
-            triangles = None
+    if mesh is not None:
+        lon, lat, elem = mesh
+        elem_clean = _remove_cyclic_elements(lon, elem)
 
-        if triangles is not None:
-            # Use triangulation for proper mesh visualization
-            logger.debug("Creating triangulated plot")
-            try:
-                # Create triangulation object
-                # Adjust indices if 1-based (common in Fortran-based models)
-                if triangles.min() == 1:
-                    triangles = triangles - 1
+        if len(values) != len(lon):
+            logger.warning(f"Data size ({len(values)}) != mesh nodes ({len(lon)})")
 
-                triang = tri.Triangulation(lon_vals, lat_vals, triangles)
+        try:
+            triang = tri.Triangulation(lon, lat, elem_clean)
 
-                im = ax.tripcolor(
-                    triang,
-                    values,
-                    cmap=cmap,
-                    vmin=vmin,
-                    vmax=vmax,
-                    transform=ccrs.PlateCarree(),
-                    shading="flat",
-                )
-            except Exception as e:
-                logger.warning(f"Triangulation plotting failed: {e}. Falling back to scatter.")
-                im = ax.scatter(
-                    lon_vals,
-                    lat_vals,
-                    c=values,
-                    cmap=cmap,
-                    vmin=vmin,
-                    vmax=vmax,
-                    s=1,
-                    transform=ccrs.PlateCarree(),
-                )
-        else:
-            # Scatter plot fallback
-            logger.debug("Creating scatter plot (no triangulation available)")
-            im = ax.scatter(
-                lon_vals,
-                lat_vals,
-                c=values,
+            # Compute element-mean values for flat shading
+            elem_values = values[elem_clean].mean(axis=1)
+
+            im = ax.tripcolor(
+                triang,
+                facecolors=elem_values,
                 cmap=cmap,
                 vmin=vmin,
                 vmax=vmax,
-                s=1,
                 transform=ccrs.PlateCarree(),
+                shading="flat",
             )
-    else:
-        # No coordinates found - use index-based plot
-        logger.warning(
-            "No mesh coordinates found. Creating index-based plot. "
-            "For proper FESOM visualization, ensure mesh coordinates are in the dataset."
-        )
-        im = ax.imshow(
-            values.reshape(-1, 1).T,
-            aspect="auto",
-            cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
-        )
-
-    # Set global extent for global models
-    if lon_vals is not None and lat_vals is not None:
-        lon_range = float(lon_vals.max()) - float(lon_vals.min())
-        lat_range = float(lat_vals.max()) - float(lat_vals.min())
-        if lon_range > 300 and lat_range > 150:
             ax.set_global()
+            logger.info("Created triangulated FESOM plot")
+        except Exception as e:
+            logger.warning(f"Triangulation failed: {e}, using scatter")
+            im = ax.scatter(
+                lon, lat, c=values, cmap=cmap, s=0.5,
+                vmin=vmin, vmax=vmax, transform=ccrs.PlateCarree(),
+            )
+            ax.set_global()
+    else:
+        logger.warning("No mesh available -- falling back to index-based plot")
+        ax = fig.add_subplot(111)
+        im = ax.plot(values)
+        add_coastlines = False
 
-    # Add map features
     if add_coastlines:
         try:
             ax.add_feature(cfeature.COASTLINE, linewidth=0.5, edgecolor="black")
+            ax.add_feature(cfeature.LAND, facecolor="lightgray", alpha=0.3)
         except Exception as e:
             logger.warning(f"Could not add coastlines: {e}")
 
-    # Add colorbar
-    cbar = fig.colorbar(im, ax=ax, orientation="horizontal", pad=0.05, shrink=0.8)
+    if hasattr(im, "colorbar") or not isinstance(im, list):
+        try:
+            cbar = fig.colorbar(im, ax=ax, orientation="horizontal", pad=0.05, shrink=0.8)
+            if "units" in data_array.attrs:
+                cbar.set_label(data_array.attrs["units"])
+        except Exception:
+            pass
 
-    if "units" in data_array.attrs:
-        cbar.set_label(data_array.attrs["units"])
-
-    # Set title
     if title is None:
-        title = data_array.attrs.get("long_name", data_array.name or "Unstructured Data")
+        title = data_array.attrs.get("long_name", data_array.name or "FESOM Data")
     ax.set_title(title, fontsize=12)
 
     plt.tight_layout()
     return fig
+
+
+# ---------------------------------------------------------------------------
+# Interactive (Panel/GeoViews) plotting
+# ---------------------------------------------------------------------------
+
+def create_interactive_fesom_plot(
+    data_array: xr.DataArray,
+    lon: np.ndarray,
+    lat: np.ndarray,
+    elem: np.ndarray,
+    cmap: str = "viridis",
+    title: str | None = None,
+):
+    """
+    Create an interactive GeoViews TriMesh + datashader plot for FESOM data.
+
+    This produces the same kind of visualization as the AWI-ESM documentation
+    notebooks: rasterized triangulated data with proper geographic projection.
+
+    Parameters
+    ----------
+    data_array : xr.DataArray
+        1D data on mesh nodes.
+    lon, lat : np.ndarray
+        Node coordinates (geographic, after rotation).
+    elem : np.ndarray
+        Element connectivity (n_triangles, 3), 0-based.
+    cmap : str
+        Colormap name (matplotlib or colorcet).
+
+    Returns
+    -------
+    holoviews.Element
+        A rasterized TriMesh suitable for Panel serving.
+    """
+    import geoviews as gv
+    import holoviews as hv
+    import pandas as pd
+    from holoviews.operation.datashader import rasterize
+
+    hv.extension("bokeh")
+
+    values = data_array.values
+    if hasattr(values, "compute"):
+        values = values.compute()
+    values = values.ravel()
+
+    var_name = data_array.name or "value"
+    long_name = data_array.attrs.get("long_name", var_name)
+    units = data_array.attrs.get("units", "")
+
+    if title is None:
+        title = f"{long_name}" + (f" [{units}]" if units else "")
+
+    # Remove cyclic elements
+    elem_clean = _remove_cyclic_elements(lon, elem)
+
+    # Compute element-mean values
+    elem_values = values[elem_clean].mean(axis=1)
+
+    # Build TriMesh dataframes
+    elem_df = pd.DataFrame(
+        np.column_stack([elem_clean, elem_values]),
+        columns=["v0", "v1", "v2", var_name],
+    )
+    elem_df[["v0", "v1", "v2"]] = elem_df[["v0", "v1", "v2"]].astype(int)
+
+    nodes = gv.Points((lon, lat))
+    trimesh = gv.TriMesh((elem_df, nodes)).redim(
+        x="Longitude", y="Latitude",
+    )
+
+    projection = ccrs.Robinson()
+    projected = gv.project(trimesh, projection=projection)
+
+    # Resolve colormap -- try cmocean, then colorcet, then matplotlib
+    resolved_cmap = _resolve_cmap(cmap, var_name)
+
+    plot = rasterize(projected).opts(
+        cmap=resolved_cmap,
+        height=500,
+        width=800,
+        projection=projection,
+        colorbar=True,
+        colorbar_position="bottom",
+        clabel=f"{long_name} ({units})" if units else long_name,
+        bgcolor="darkgray",
+        color_levels=25,
+        title=title,
+    )
+
+    return plot
+
+
+def _resolve_cmap(cmap: str, var_name: str) -> Any:
+    """Resolve a colormap name, with smart defaults for climate variables."""
+    # Smart defaults based on variable name
+    climate_cmaps = {
+        "sst": "thermal", "temp": "thermal", "temperature": "thermal",
+        "salt": "haline", "sss": "haline", "salinity": "haline",
+        "ssh": "balance", "zos": "balance",
+        "u_ice": "balance", "v_ice": "balance",
+        "m_ice": "ice", "a_ice": "ice",
+        "precip": "rain", "evap": "rain",
+    }
+
+    if cmap == "viridis":
+        # Only override default; if user chose a specific cmap, respect it
+        cmap = climate_cmaps.get(var_name.lower(), cmap)
+
+    try:
+        import cmocean.cm as cmo
+        if hasattr(cmo, cmap):
+            return getattr(cmo, cmap)
+    except ImportError:
+        pass
+
+    return cmap

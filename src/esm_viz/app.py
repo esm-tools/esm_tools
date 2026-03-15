@@ -389,7 +389,7 @@ async def preview_panel_redirect(
     Redirect to the interactive Panel visualization for a STAC item.
 
     This provides a clean REST URL under /preview/{item_id}/panel that
-    redirects to the internal Panel ASGI mount at /_panel/ with query
+    redirects to the internal Panel ASGI mount at /_panel with query
     parameters.
 
     Parameters
@@ -411,7 +411,7 @@ async def preview_panel_redirect(
         params["var"] = var
     if collection_id:
         params["collection_id"] = collection_id
-    return RedirectResponse(url=f"/_panel/?{urlencode(params)}", status_code=307)
+    return RedirectResponse(url=f"/_panel?{urlencode(params)}", status_code=307)
 
 
 @app.get("/")
@@ -537,7 +537,7 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
     Set up Panel application routes on the FastAPI app.
 
     Uses Panel's ``add_application`` decorator to mount an interactive
-    Panel app at ``/_panel/``. The public-facing endpoint at
+    Panel app at ``/_panel``. The public-facing endpoint at
     ``/preview/{item_id}/panel`` redirects here with query parameters.
 
     Parameters
@@ -548,7 +548,7 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
     try:
         from panel.io.fastapi import add_application
 
-        @add_application("/_panel/", fastapi_app, title="ESM-Viz Interactive Preview")
+        @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview")
         def panel_app_factory():
             """Panel app factory -- reads query params from Bokeh session context."""
             try:
@@ -581,7 +581,7 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
                 ),
             )
 
-        logger.info("Panel application routes configured at /_panel/")
+        logger.info("Panel application routes configured at /_panel")
 
     except ImportError as e:
         logger.warning(

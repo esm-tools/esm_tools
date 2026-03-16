@@ -408,8 +408,8 @@ def create_interactive_fesom_plot(
     """
     import datashader as ds_module
     import geoviews as gv
+    import geoviews.feature as gf
     import holoviews as hv
-    import pandas as pd
     from holoviews.operation.datashader import rasterize
 
     hv.extension("bokeh")
@@ -432,27 +432,27 @@ def create_interactive_fesom_plot(
     # Remove cyclic elements
     elem_clean = _remove_cyclic_elements(lon, elem)
 
-    # Compute element-mean values for flat shading
+    # Compute element-center coordinates and mean values.
+    # We use element centers as Points instead of TriMesh because
+    # gv.project() drops nodes during reprojection, causing IndexError
+    # when rasterize() tries to access the dropped node indices.
     elem_values = values[elem_clean].mean(axis=1)
+    elem_lon = lon[elem_clean].mean(axis=1)
+    elem_lat = lat[elem_clean].mean(axis=1)
 
     resolved_cmap = _resolve_cmap(cmap, var_name)
     projection = ccrs.Robinson()
 
-    # Build TriMesh: elem_df columns are v0, v1, v2, value
-    elem_df = pd.DataFrame(
-        np.column_stack([elem_clean, elem_values]),
-        columns=["v0", "v1", "v2", var_name],
-    )
-    elem_df[["v0", "v1", "v2"]] = elem_df[["v0", "v1", "v2"]].astype(int)
-
-    nodes = gv.Points((lon, lat))
-    trimesh = gv.TriMesh((elem_df, nodes)).redim(
-        x="Longitude", y="Latitude",
+    # Use gv.Points (geographic) so we get proper projection + coastlines
+    points = gv.Points(
+        (elem_lon, elem_lat, elem_values),
+        kdims=["Longitude", "Latitude"],
+        vdims=[var_name],
     )
 
-    projected = gv.project(trimesh, projection=projection)
-
-    plot = rasterize(projected).opts(
+    rasterized = rasterize(
+        points, aggregator=ds_module.mean(var_name)
+    ).opts(
         cmap=resolved_cmap,
         height=500,
         width=800,
@@ -464,7 +464,11 @@ def create_interactive_fesom_plot(
         color_levels=25,
         title=title,
         tools=["hover", "wheel_zoom", "pan", "reset", "save"],
+        global_extent=True,
     )
+
+    # Overlay coastlines
+    plot = rasterized * gf.coastline()
 
     return plot
 

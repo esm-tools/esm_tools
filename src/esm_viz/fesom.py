@@ -409,6 +409,7 @@ def create_interactive_fesom_plot(
     import datashader as ds_module
     import geoviews as gv
     import holoviews as hv
+    import pandas as pd
     from holoviews.operation.datashader import rasterize
 
     hv.extension("bokeh")
@@ -431,26 +432,27 @@ def create_interactive_fesom_plot(
     # Remove cyclic elements
     elem_clean = _remove_cyclic_elements(lon, elem)
 
-    # Compute element-mean values and element-center coordinates.
-    # We plot on ELEMENTS (not nodes) to avoid gv.project() dropping
-    # nodes during reprojection which causes IndexError.
+    # Compute element-mean values for flat shading
     elem_values = values[elem_clean].mean(axis=1)
-    elem_lon = lon[elem_clean].mean(axis=1)
-    elem_lat = lat[elem_clean].mean(axis=1)
 
-    # Resolve colormap
     resolved_cmap = _resolve_cmap(cmap, var_name)
-
     projection = ccrs.Robinson()
 
-    # Use Points + rasterize instead of TriMesh to avoid node/element
-    # index mismatches after gv.project reprojection
-    points = gv.Points(
-        (elem_lon, elem_lat, elem_values),
-        vdims=[var_name],
+    # Build TriMesh: elem_df columns are v0, v1, v2, value
+    elem_df = pd.DataFrame(
+        np.column_stack([elem_clean, elem_values]),
+        columns=["v0", "v1", "v2", var_name],
+    )
+    elem_df[["v0", "v1", "v2"]] = elem_df[["v0", "v1", "v2"]].astype(int)
+
+    nodes = gv.Points((lon, lat))
+    trimesh = gv.TriMesh((elem_df, nodes)).redim(
+        x="Longitude", y="Latitude",
     )
 
-    plot = rasterize(points, aggregator=ds_module.mean(var_name)).opts(
+    projected = gv.project(trimesh, projection=projection)
+
+    plot = rasterize(projected).opts(
         cmap=resolved_cmap,
         height=500,
         width=800,
@@ -461,7 +463,7 @@ def create_interactive_fesom_plot(
         bgcolor="darkgray",
         color_levels=25,
         title=title,
-        global_extent=True,
+        tools=["hover", "wheel_zoom", "pan", "reset", "save"],
     )
 
     return plot

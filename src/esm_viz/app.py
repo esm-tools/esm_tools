@@ -6,6 +6,7 @@ from climate datasets referenced in STAC catalogs. Also serves
 interactive Panel applications for data exploration.
 """
 
+from pathlib import Path
 from typing import Annotated
 from functools import partial
 from urllib.parse import urlencode
@@ -15,6 +16,7 @@ import panel as pn
 from fastapi import FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from loguru import logger
 
 from esm_viz import __version__
@@ -47,6 +49,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve GeoViews JS extension -- Panel looks for it at
+# /static/extensions/geoviews/ but geoviews installs it elsewhere.
+try:
+    import geoviews as _gv
+    _gv_dist = Path(_gv.__file__).parent / "dist"
+    if _gv_dist.exists():
+        # Panel expects /static/extensions/geoviews/geoviews.min.js
+        # Mount the geoviews dist directory at that path
+        app.mount(
+            "/static/extensions/geoviews",
+            StaticFiles(directory=str(_gv_dist)),
+            name="geoviews-static",
+        )
+        logger.info(f"Mounted GeoViews static files from {_gv_dist}")
+except ImportError:
+    logger.warning("GeoViews not available, interactive maps will be limited")
 
 
 @app.get("/health")

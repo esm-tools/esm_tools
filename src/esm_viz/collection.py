@@ -497,8 +497,16 @@ def create_collection_preview_app(
                 da = _compute_time_mean(da, time_range)
                 plot_title = f"{var_name} mean (t[{time_range[0]}:{time_range[1]}])"
 
-            # Compute into memory for plotting
+            # Compute into memory for plotting.
+            # When a distributed.Client exists it is automatically used
+            # by Dask for all .compute() calls -- no explicit routing needed.
             if hasattr(da.data, "compute"):
+                from esm_viz.compute import get_compute_manager
+
+                manager = get_compute_manager()
+                client = manager.get_client()
+                if client:
+                    logger.debug("Using distributed client for compute")
                 da = da.compute()
 
             if unstructured and mesh is not None:
@@ -797,6 +805,12 @@ def create_comparison_preview_app(
         da = _isel_level(da, level_idx)
         da = _compute_time_mean(da, time_range)
         if hasattr(da.data, "compute"):
+            from esm_viz.compute import get_compute_manager
+
+            mgr = get_compute_manager()
+            _client = mgr.get_client()
+            if _client:
+                logger.debug("Using distributed client for comparison compute")
             da = da.compute()
 
         mesh = meta.get("mesh")
@@ -872,6 +886,12 @@ def create_comparison_preview_app(
 
             diff = mean_b - mean_a
             if hasattr(diff.data, "compute"):
+                from esm_viz.compute import get_compute_manager
+
+                mgr = get_compute_manager()
+                _client = mgr.get_client()
+                if _client:
+                    logger.debug("Using distributed client for diff compute")
                 diff = diff.compute()
 
             title = f"Difference: {collection_b} - {collection_a}"

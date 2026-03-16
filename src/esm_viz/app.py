@@ -25,6 +25,7 @@ from esm_viz.fesom import (
     is_unstructured, plot_unstructured,
     get_mesh_from_stac_item, create_interactive_fesom_plot,
 )
+from esm_viz.compute_routes import create_compute_router
 from esm_viz.interactive import create_preview_app
 from esm_viz.readers import get_data_metadata, open_data
 from esm_viz.static_preview import generate_preview_png
@@ -49,6 +50,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount compute cluster management routes
+app.include_router(create_compute_router())
 
 # Serve GeoViews JS extension -- Panel looks for it at
 # /static/extensions/geoviews/ but geoviews installs it elsewhere.

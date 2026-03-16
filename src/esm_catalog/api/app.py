@@ -37,6 +37,7 @@ from starlette.requests import Request
 from esm_catalog.api.auth import Authenticator, NoAuthenticator
 from esm_catalog.api.cache import CollectionCache, QueryablesCache
 from esm_catalog.api.catalog_routes import create_catalog_router
+from esm_catalog.api.personal_routes import create_personal_router
 from esm_catalog.api.client import (
     DuckDBCatalogClient,
     FilteredSearchPostRequest,
@@ -135,6 +136,23 @@ def create_app(
     # Add catalog management routes
     catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
     api.app.include_router(catalog_router)
+
+    # Add personal collections routes
+    try:
+        from esm_catalog.storage.personal import PersonalCollectionStore
+
+        personal_db_path = os.environ.get(
+            "ESM_PERSONAL_DB",
+            str(Path(registry_persist_path).parent / "personal.duckdb")
+            if registry_persist_path
+            else "/tmp/esm-personal-collections.duckdb",
+        )
+        personal_store = PersonalCollectionStore(personal_db_path)
+        personal_router = create_personal_router(personal_store, auth)
+        api.app.include_router(personal_router)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Personal collections not available: {e}")
 
     # /queryables endpoint - required for STAC Browser "Additional Filtering" CQL2 builder.
     # The landing page advertises rel=http://www.opengis.net/def/rel/ogc/1.0/queryables

@@ -9,8 +9,24 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
+import numpy as np
 import xarray as xr
 from loguru import logger
+
+
+def _to_native(obj: Any) -> Any:
+    """Recursively convert numpy types to Python native for JSON serialization."""
+    if isinstance(obj, (np.integer,)):
+        return int(obj)
+    if isinstance(obj, (np.floating,)):
+        return float(obj)
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    if isinstance(obj, dict):
+        return {k: _to_native(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_to_native(v) for v in obj]
+    return obj
 
 
 def _strip_file_uri(href: str) -> str:
@@ -158,7 +174,7 @@ def get_data_metadata(ds: xr.Dataset) -> dict[str, Any]:
         "variables": [],
         "dimensions": {k: int(v) for k, v in ds.dims.items()},
         "coordinates": {},
-        "global_attrs": dict(ds.attrs),
+        "global_attrs": _to_native(dict(ds.attrs)),
     }
 
     # Extract variable information
@@ -168,7 +184,7 @@ def get_data_metadata(ds: xr.Dataset) -> dict[str, Any]:
             "dims": list(var_data.dims),
             "shape": [int(s) for s in var_data.shape],
             "dtype": str(var_data.dtype),
-            "attrs": dict(var_data.attrs),
+            "attrs": _to_native(dict(var_data.attrs)),
         }
 
         # Add standard_name and long_name if available

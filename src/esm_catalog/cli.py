@@ -5,6 +5,7 @@ Commands:
     scan-batch    Scan a list of files and write to Parquet (for SLURM arrays)
     merge-parquet Merge Parquet staging files into a catalog.duckdb
     serve         Launch the STAC API server (Phase 3)
+    mcp           Start the MCP server for LLM tool access to the catalog
 """
 
 from __future__ import annotations
@@ -275,6 +276,52 @@ def serve(catalog_paths, host, port):
         logger.error(
             "Missing dependency for serve command: {}\n"
             "Install with: pip install stac-fastapi-api uvicorn",
+            e,
+        )
+        sys.exit(1)
+
+
+# ------------------------------------------------------------------
+# mcp  (Phase 7 — LLM assistant)
+# ------------------------------------------------------------------
+
+@main.command()
+@click.option(
+    "--catalog-url",
+    default="http://localhost:23100",
+    show_default=True,
+    help="STAC API URL to connect to",
+)
+@click.option(
+    "--transport",
+    type=click.Choice(["stdio", "sse"]),
+    default="stdio",
+    show_default=True,
+    help="MCP transport: stdio (for Open WebUI / process-based clients) or sse (HTTP)",
+)
+@click.option(
+    "--port",
+    default=8001,
+    show_default=True,
+    help="Port for SSE transport (ignored when transport=stdio)",
+)
+def mcp(catalog_url, transport, port):
+    """Start the MCP server for LLM tool access to the catalog.
+
+    Exposes four tools to connected LLMs:
+      list_collections, get_collection_info, search_items, run_python
+
+    [dim]Requires: pip install 'esm-catalog[mcp]'[/dim]
+    """
+    try:
+        from esm_catalog.mcp.server import run as mcp_run
+
+        logger.info("Starting MCP server (transport={}, catalog={})", transport, catalog_url)
+        mcp_run(catalog_url=catalog_url, transport=transport, port=port)
+    except ImportError as e:
+        logger.error(
+            "Missing dependency for mcp command: {}\n"
+            "Install with: pip install 'esm-catalog[mcp]'",
             e,
         )
         sys.exit(1)

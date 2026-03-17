@@ -1166,6 +1166,54 @@ Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which establ
 - [ ] Pytest tests: `tests/test_scan_grib.py` — ECHAM GRIB fixtures; `tests/test_scan_unstructured.py` — FESOM mesh datacube representation
 - [ ] User documentation: `docs/supported_formats.md` — NetCDF, GRIB, unstructured grid caveats; update `hpc-storage` extension spec with full field definitions
 
+### Phase 7: LLM Assistant ✅ COMPLETE
+
+A natural-language interface to the catalog via a local LLM, using the Model Context Protocol (MCP).
+See [`docs/llm_assistant.md`](docs/llm_assistant.md) for the full setup guide.
+
+#### Architecture
+
+```
+Researcher (browser)
+      ↓
+Open WebUI  :3000       ← Apptainer (no Docker daemon)
+      ↓  MCP stdio
+esm-catalog mcp         ← new CLI subcommand (mcp/server.py)
+      ↓  HTTP (httpx)
+STAC API  :23100        ← existing esm-catalog serve
+      ↓
+catalog.duckdb
+
+Open WebUI also connects to:
+Ollama  :11434          ← GPU SLURM job (qwen2.5:72b or llama3.3:70b)
+```
+
+All data and model weights stay on-cluster — no external API calls.
+
+#### MCP tools
+
+| Tool | What it does |
+|---|---|
+| `list_collections` | List all experiment collections |
+| `get_collection_info` | Variables, time range, spatial extent, item count for a collection |
+| `search_items` | Find files by collection, variable, date range; returns file paths |
+| `run_python` | Execute Python with xarray/matplotlib; returns plot paths |
+
+#### Implementation
+
+| File | Role |
+|---|---|
+| `mcp/__init__.py` | Package marker |
+| `mcp/server.py` | FastMCP server; tool registration; `run()` entry point |
+| `mcp/tools.py` | Tool implementations (pure functions; no MCP dependency) |
+| `cli.py` | `esm-catalog mcp` subcommand — `--catalog-url`, `--transport`, `--port` |
+| `setup.py` | `[mcp]` optional extra: `mcp>=1.0`, `httpx>=0.27` |
+
+- [x] `mcp/` package (`__init__.py`, `server.py`, `tools.py`)
+- [x] `cli.py` — `mcp` subcommand with `--catalog-url`, `--transport`, `--port`
+- [x] `setup.py` — `[mcp]` optional extra
+- [x] `docs/llm_assistant.md` — Ollama SLURM job, Apptainer Open WebUI, SSH tunnel, model recommendations
+
 ### Phase 6: Data Portal & Self-Registration (Proposed)
 
 > Pending review and approval — see [Data Portal & Self-Registration](#data-portal--self-registration-proposal) section.

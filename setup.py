@@ -98,6 +98,12 @@ setup(
         "esm-catalog=esm_catalog.cli:main",
         ],
     },
+    extras_require={
+        "mcp": [
+            "mcp>=1.0",
+            "httpx>=0.27",
+        ],
+    },
     install_requires=requirements,
     license="GNU General Public License v2",
     long_description=readme + "\n\n" + history,

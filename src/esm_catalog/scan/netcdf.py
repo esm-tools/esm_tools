@@ -84,6 +84,7 @@ def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
 
         # Extract ALL global attributes for queryable metadata
         global_attrs = _extract_global_attributes(ds)
+        output_frequency = _infer_output_frequency(ds, path)
 
     return {
         "variable": primary_var,
@@ -98,6 +99,7 @@ def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
         "file_size": _get_file_size(path),
         "conventions": global_attrs.pop("Conventions", ""),
         "format": "netcdf",
+        "output_frequency": output_frequency,
         "global_attributes": global_attrs,
     }
 
@@ -338,3 +340,102 @@ def _to_python(val):
     if hasattr(val, "item"):
         return val.item()
     return val
+
+
+def _infer_output_frequency(ds: xr.Dataset, path) -> str | None:
+    """Return a CF-style output frequency code for this file, or None if unknown.
+
+    Priority order:
+    1. Global attribute ``frequency`` or ``output_frequency`` (CF / CMIP convention).
+    2. Step size calculated from ≥2 time-coordinate values.
+    3. Filename numeric suffix length heuristic (YYYYMM = 6 digits → "mon",
+       YYYYMMDD / YYYYDDD = 7–8 digits → "day").
+
+    Files with no time coordinate at all (e.g. OASIS coupling exchange files)
+    return None — they have no temporal frequency.
+    """
+    import re
+
+    # 1. Global attribute (CF / CMIP standard)
+    for attr_name in ("frequency", "output_frequency"):
+        freq = ds.attrs.get(attr_name)
+        if freq and isinstance(freq, str):
+            return freq.lower()
+
+    # 2. No time coordinate → non-temporal file → no frequency
+    time_coord = ds.coords.get("time")
+    if time_coord is None:
+        return None
+
+    times = time_coord.values
+    if len(times) == 0:
+        return None
+
+    # 3. Multi-timestep → calculate step and map to code
+    if len(times) >= 2:
+        step_days = _calc_time_step_days(times, time_coord)
+        if step_days is not None:
+            return _step_days_to_frequency(step_days)
+
+    # 4. Single timestep — fall back to filename numeric suffix length
+    stem = getattr(path, "stem", str(path))
+    m = re.search(r"\b(\d{6,8})\b", stem)
+    if m:
+        n = len(m.group(1))
+        if n == 6:
+            return "mon"
+        if n in (7, 8):
+            return "day"
+
+    return None
+
+
+def _calc_time_step_days(times, time_coord) -> float | None:
+    """Return the step in days between the first two time values, or None."""
+    t0, t1 = times[0], times[1]
+
+    if np.issubdtype(times.dtype, np.integer):
+        units = time_coord.attrs.get("units", "").lower()
+        diff = float(t1 - t0)
+        if "day" in units:
+            return diff
+        if "hour" in units:
+            return diff / 24.0
+        if "minute" in units:
+            return diff / 1440.0
+        if "second" in units:
+            return diff / 86400.0
+        return None
+
+    if hasattr(t0, "year"):
+        # cftime objects
+        try:
+            import cftime
+            cal = time_coord.attrs.get("calendar", "standard")
+            d0 = cftime.date2num(t0, "days since 2000-01-01", calendar=cal)
+            d1 = cftime.date2num(t1, "days since 2000-01-01", calendar=cal)
+            return float(d1 - d0)
+        except Exception:
+            return None
+
+    # numpy datetime64
+    try:
+        return float((t1 - t0) / np.timedelta64(1, "D"))
+    except Exception:
+        return None
+
+
+def _step_days_to_frequency(step_days: float) -> str:
+    """Map a time step (in days) to a CF-style frequency code."""
+    hours = step_days * 24
+    if hours < 1.5:
+        return "subhr"
+    if hours < 2.0:
+        return "1hr"
+    if hours < 4.5:
+        return "3hr"
+    if hours < 12.0:
+        return "6hr"
+    if step_days < 2.0:
+        return "day"
+    return "mon"

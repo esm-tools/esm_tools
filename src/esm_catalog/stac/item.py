@@ -85,6 +85,8 @@ def make_item(
         properties["end_datetime"] = end_datetime
     if metadata.get("conventions"):
         properties["conventions"] = metadata["conventions"]
+    if metadata.get("output_frequency"):
+        properties["output_frequency"] = metadata["output_frequency"]
 
     # Include all global attributes from the file (model version, mesh, schemes, etc.)
     # These become searchable via the queryables endpoint

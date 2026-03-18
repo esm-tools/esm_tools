@@ -317,6 +317,21 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
 
                                 progress.update(task_id, completed=scanned)
                                 live.update(make_display())
+                elif jobs == 1:
+                    # Serial mode: run in the main process, no fork needed.
+                    # Use this when the node is low on memory (os.fork fails).
+                    for fp in files:
+                        try:
+                            fp_str, status, data = _scan_file_worker(str(fp))
+                        except Exception as e:
+                            errors += 1
+                            scanned += 1
+                            messages.append((f"✗ Error: {e}", "red"))
+                        else:
+                            process_scan_result(fp_str, status, data)
+
+                        progress.update(task_id, completed=scanned)
+                        live.update(make_display())
                 else:
                     # ProcessPoolExecutor - lightweight, works on login nodes
                     with ProcessPoolExecutor(max_workers=jobs) as executor:

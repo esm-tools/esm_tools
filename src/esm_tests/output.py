@@ -19,7 +19,7 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {
     "comp": ["comp-"],
-    "run": [".run", "finished_config", "namelists"],
+    "run": [".run", "finished_config", "namelists", "hostfiles"],
 }
 
 

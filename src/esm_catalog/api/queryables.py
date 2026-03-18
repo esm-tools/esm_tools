@@ -156,17 +156,18 @@ _GHG_PARAMETERS: dict[str, dict] = {
 def get_ghg_info(param_name: str) -> dict | None:
     """Get GHG info for a parameter name.
 
-    Checks if the last part of the property name (after last colon)
+    Checks if the last part of the property name (after the last colon or dot)
     matches a known GHG parameter.
 
     Args:
-        param_name: Full property name (e.g., "nml:radctl:co2vmr")
+        param_name: Full property name (e.g., "nml:radctl.co2vmr")
 
     Returns:
         GHG info dict if matched, None otherwise.
     """
-    # Get the last part of the parameter name
-    parts = param_name.split(":")
+    import re as _re
+    # Split on both ":" and "." to handle both old and new formats
+    parts = _re.split(r"[.:]", param_name)
     key = parts[-1].lower()
 
     return _GHG_PARAMETERS.get(key)
@@ -369,6 +370,8 @@ def _make_title(prop_name: str) -> str:
             name = name[len(prefix):]
             break
 
+    # Replace dot sub-separator (used in nml: keys) with space for readability
+    name = name.replace(".", " ")
     # Convert FESOM_model -> FESOM model, etc.
     name = name.replace("_", " ")
 
@@ -582,11 +585,29 @@ def get_queryables(
             "enum": sorted(nml_groups),
         }
 
-    # Add namelist parameters
+    # Add namelist parameters from collection-level discovery.
+    # Use "nml:group.param" (dot sub-separator) for the key so STAC Browser
+    # splits on ":" into exactly two segments (namespace + property).
+    #
+    # Skip a collection-level entry if an item-level key already covers the
+    # same parameter. Items store nml params as nml:{comp}:{group}:{key}
+    # (e.g. nml:FESOM:forcing_nml:atmbndy). These 4-segment keys produce the
+    # organized "FESOM / forcing_nml" accordion display in STAC Browser.
+    # Adding the collection-level nml:forcing_nml.atmbndy duplicate on top
+    # would create a redundant "General" group alongside the nice accordion.
     for key, values in sorted(nml_params.items()):
-        prop_name = f"nml:{key}"
+        prop_name = f"nml:{key.replace(':', '.')}"
         if prop_name in properties:
             continue  # Already added from items
+
+        # key format from collections: "group:param" (e.g. "forcing_nml:atmbndy")
+        # Item-level keys end with ":group:param" (e.g. "nml:FESOM:forcing_nml:atmbndy")
+        item_suffix = f":{key}"  # e.g. ":forcing_nml:atmbndy"
+        if any(
+            k.startswith("nml:") and k.count(":") >= 2 and k.endswith(item_suffix)
+            for k in properties
+        ):
+            continue  # Already covered by item-level key; avoid duplicate group
 
         sample = next(iter(values), None)
 

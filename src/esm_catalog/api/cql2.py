@@ -122,6 +122,12 @@ def parse_cql2_json(expr: dict | None, negate: bool = False) -> dict:
     if op == "not" and len(args) == 1:
         return parse_cql2_json(args[0], negate=not negate)
 
+    if op == "in" and len(args) == 2:
+        left, right = args
+        if isinstance(left, dict) and "property" in left:
+            values = right if isinstance(right, list) else [right]
+            return {left["property"]: ("IN", values)}
+
     sql_op = _OP_MAP.get(op)
     if sql_op and len(args) == 2:
         left, right = args

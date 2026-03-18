@@ -30,7 +30,9 @@ src/esm_catalog/
 │   ├── queryables.py       # STAC queryables endpoint
 │   ├── registry.py         # Dynamic catalog registry with persistence
 │   ├── responses.py        # FastAPI response models
-│   └── validation.py       # Request validation
+│   ├── validation.py       # Request validation
+│   └── ui/                 # Admin web UI (served at /ui)
+│       └── index.html      # Single-file vanilla JS admin page
 ├── stac/                   # STAC object builders
 │   ├── collection.py       # Build STAC Collection dicts
 │   ├── item.py             # Build STAC Item dicts
@@ -172,6 +174,8 @@ FastAPI (stac-fastapi)
 | POST | `/catalogs/{id}/refresh` | Reconnect to updated DuckDB |
 | DELETE | `/catalogs/{id}` | Unregister catalog |
 | GET | `/health` | Health check |
+| GET, HEAD | `/admin` | Redirect → `/ui` |
+| GET | `/ui` | Admin web UI (register/list/delete catalogs) |
 
 ### Personal Collections Endpoints
 
@@ -391,50 +395,34 @@ The route is a pure read-only shortcut over the existing
 
 ---
 
-## TODO 4: Web UI for Catalog Upload Endpoint
+## TODO 4: Web UI for Catalog Management ✅ DONE
 
 **Goal:** Replace the CLI command `esm-catalog register ...` / `deploy_albedo.sh register`
-with a browser-based web UI page where users can register (upload) a catalog DuckDB file
-or path to the running server.
+with a browser-based web UI page where users can register a catalog path with the running
+server, view all registered catalogs, and manage them without using `curl`.
 
-**Current state:** Registration is CLI-only:
-```bash
-esm-catalog register /path/to/catalog.duckdb --server http://localhost:23000 --name "My Exp"
+### What was done
+
+- **`api/ui/index.html`** — New single-file vanilla JS admin page. No build step, no
+  external dependencies. Served by FastAPI as a static mount.
+  - Header with live `GET /health` API status badge
+  - Register form: path input with auto-suggested name (strips `.duckdb`), name, description
+  - Catalog list loaded from `GET /catalogs` on page load with status icons (green `●` active,
+    red `✗` missing/error)
+  - Per-catalog **Refresh** (`POST /catalogs/{id}/refresh`) and **Delete**
+    (`DELETE /catalogs/{id}`) buttons with confirm dialog
+  - All API calls use `window.location.origin` as base — no hardcoded URLs
+
+- **`api/app.py`** — Added imports for `StaticFiles` and `RedirectResponse`; mounted
+  `StaticFiles(directory=ui_dir, html=True)` at `/ui`; added `/admin` → `/ui` redirect
+  (GET + HEAD).
+
+### Access
+
 ```
-This sends `POST /catalogs` with `{ path, name, description }`. The endpoint already exists
-in `api/catalog_routes.py`; there is no web UI for it.
-
-**What the Web UI page needs:**
-
-1. **Form fields:**
-   - Catalog path on the server filesystem (text input with validation)
-   - Name (text input, auto-suggested from path)
-   - Description (textarea)
-   - Submit → calls `POST /catalogs`
-
-2. **List view:** Show registered catalogs (calls `GET /catalogs`) with per-entry
-   Refresh / Delete buttons (calls `POST /catalogs/{id}/refresh`, `DELETE /catalogs/{id}`).
-
-3. **Status indicators:** Show whether each catalog file is accessible (online/offline).
-
-**Implementation options:**
-
-- **Option A — Static HTML + vanilla JS:** A single `ui/index.html` served by FastAPI as a
-  static mount at `/ui`. Calls the existing REST endpoints via `fetch()`. No build step needed.
-  Easiest to deploy and maintain.
-
-- **Option B — Lightweight framework (Alpine.js / HTMX):** Still one HTML file, but with
-  reactive state from Alpine.js or HTMX for dynamic list updates. No Node.js build chain.
-
-- **Option C — Full SPA (React/Vue):** Overkill for a single admin page; avoid unless the
-  UI scope grows significantly.
-
-**Recommended: Option A or B.** The existing `POST /catalogs` endpoint handles auth via the
-pluggable `Authenticator`; the UI page just needs to pass the right token in the
-`Authorization` header.
-
-**Files to touch/create:** `api/app.py` (static mount), `api/ui/index.html` (new),
-`api/ui/app.js` (new).
+http://<host>:<port>/ui      # admin page
+http://<host>:<port>/admin   # redirects → /ui
+```
 
 ---
 

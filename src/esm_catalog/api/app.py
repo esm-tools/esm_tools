@@ -29,6 +29,8 @@ from typing import TYPE_CHECKING, List, Union
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from stac_fastapi.api.app import StacApi
 from stac_fastapi.types.config import ApiSettings
 from starlette.middleware import Middleware
@@ -338,6 +340,15 @@ def create_app(
         pool.close_all()
 
     api.app.router.lifespan_context = lifespan
+
+    # Serve catalog management UI at /ui
+    _ui_dir = Path(__file__).parent / "ui"
+    if _ui_dir.is_dir():
+        api.app.mount("/ui", StaticFiles(directory=str(_ui_dir), html=True), name="ui")
+
+    @api.app.api_route("/admin", methods=["GET", "HEAD"], include_in_schema=False)
+    def admin_redirect():
+        return RedirectResponse(url="/ui")
 
     return api
 

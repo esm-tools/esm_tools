@@ -92,3 +92,34 @@ class ErrorResponse(BaseModel):
     detail: str
     code: str | None = None
     correlation_id: str | None = None
+
+
+class ExperimentLink(BaseModel):
+    rel: str
+    href: str
+    type: str = "application/json"
+    title: str | None = None
+
+
+class ExperimentCatalog(BaseModel):
+    """STAC Catalog object for a single experiment (type='Catalog')."""
+    type: str = "Catalog"
+    id: str
+    stac_version: str = "1.0.0"
+    description: str
+    title: str | None = None
+    links: list[ExperimentLink] = Field(default_factory=list)
+
+
+class ExperimentSummary(BaseModel):
+    id: str
+    title: str
+    collection_count: int
+    href: str
+
+
+class ExperimentsListResponse(BaseModel):
+    experiments: list[ExperimentSummary]
+    numberMatched: int
+    numberReturned: int
+    links: list[ExperimentLink] = Field(default_factory=list)

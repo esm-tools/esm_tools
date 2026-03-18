@@ -37,6 +37,10 @@ from starlette.requests import Request
 from esm_catalog.api.auth import Authenticator, NoAuthenticator
 from esm_catalog.api.cache import CollectionCache, QueryablesCache
 from esm_catalog.api.catalog_routes import create_catalog_router
+from esm_catalog.api.experiment_routes import (
+    create_collection_experiment_router,
+    create_experiment_router,
+)
 from esm_catalog.api.personal_routes import create_personal_router
 from esm_catalog.api.client import (
     DuckDBCatalogClient,
@@ -137,16 +141,24 @@ def create_app(
     catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
     api.app.include_router(catalog_router)
 
+    # Add experiment hierarchy routes
+    experiment_router = create_experiment_router(client)
+    api.app.include_router(experiment_router)
+
+    # Add collection → experiment shortcut route
+    collection_experiment_router = create_collection_experiment_router(client)
+    api.app.include_router(collection_experiment_router)
+
     # Add personal collections routes
     try:
         from esm_catalog.storage.personal import PersonalCollectionStore
 
-        personal_db_path = os.environ.get(
-            "ESM_PERSONAL_DB",
+        _default_personal_db = (
             str(Path(registry_persist_path).parent / "personal.duckdb")
             if registry_persist_path
-            else "/tmp/esm-personal-collections.duckdb",
+            else str(Path.home() / ".cache" / "esm-catalog" / "personal.duckdb")
         )
+        personal_db_path = os.environ.get("ESM_PERSONAL_DB", _default_personal_db)
         personal_store = PersonalCollectionStore(personal_db_path)
         personal_router = create_personal_router(personal_store, auth)
         api.app.include_router(personal_router)
@@ -364,4 +376,20 @@ def _app_from_env():
     return api.app
 
 
-app = _app_from_env()
+# Lazy module-level ``app`` for direct uvicorn invocation:
+#   uvicorn esm_catalog.api.app:app [--reload]
+#
+# Built on first access rather than at import time so that importing this
+# module (e.g. ``from esm_catalog.api.app import create_app`` in the CLI)
+# does NOT spin up a second app instance alongside the one the CLI creates.
+
+_app_singleton = None
+
+
+def __getattr__(name: str):
+    if name == "app":
+        global _app_singleton
+        if _app_singleton is None:
+            _app_singleton = _app_from_env()
+        return _app_singleton
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

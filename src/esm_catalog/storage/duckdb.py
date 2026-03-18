@@ -136,6 +136,34 @@ class CatalogDB:
         for (data,) in rows:
             yield json.loads(data)
 
+    def iter_experiments(self) -> list[str]:
+        """Return sorted list of distinct experiment IDs in this catalog."""
+        cursor = self.db.cursor()
+        try:
+            rows = cursor.execute("""
+                SELECT DISTINCT json_extract_string(data, '$.experiment')
+                FROM collections
+                WHERE json_extract_string(data, '$.experiment') IS NOT NULL
+                  AND json_extract_string(data, '$.experiment') != ''
+                ORDER BY 1
+            """).fetchall()
+        finally:
+            cursor.close()
+        return [row[0] for row in rows]
+
+    def get_collections_for_experiment(self, experiment_id: str) -> list[dict]:
+        """Return all collection dicts belonging to *experiment_id*."""
+        cursor = self.db.cursor()
+        try:
+            rows = cursor.execute("""
+                SELECT data FROM collections
+                WHERE json_extract_string(data, '$.experiment') = ?
+                ORDER BY id
+            """, [experiment_id]).fetchall()
+        finally:
+            cursor.close()
+        return [json.loads(row[0]) for row in rows]
+
     # ------------------------------------------------------------------
     # Items
     # ------------------------------------------------------------------
@@ -369,13 +397,20 @@ class CatalogDB:
         if field in collection:
             return collection[field]
 
-        # 2. Check namelist parameters (nml:group:key format)
+        # 2. Check namelist parameters.
+        # Queryables exposes these as "nml:group.param" (dot sub-separator)
+        # to avoid double colons that break STAC Browser's filter builder.
+        # The stored key in nml:parameters is "group:param" (colon), so we
+        # try both the incoming key as-is AND with dots converted to colons.
         if field.startswith("nml:"):
             nml_params = collection.get("nml:parameters", {})
-            # Field is "nml:radctl:co2vmr", key in nml:parameters is "radctl:co2vmr"
-            param_key = field[4:]  # Remove "nml:" prefix
+            param_key = field[4:]  # Remove "nml:" prefix → e.g. "radctl.co2vmr"
             if param_key in nml_params:
                 return nml_params[param_key]
+            # Try colon form for backwards compatibility and dot→colon conversion
+            colon_key = param_key.replace(".", ":")  # "radctl.co2vmr" → "radctl:co2vmr"
+            if colon_key in nml_params:
+                return nml_params[colon_key]
 
         # 3. Check item-derived property index (returns set)
         if field in idx:

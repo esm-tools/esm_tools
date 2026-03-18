@@ -147,7 +147,8 @@ def _inject_collection_links(col: dict, base_url: str) -> dict:
         {"rel": "root", "type": "application/json",
          "href": f"{base_url}/"},
         {"rel": "parent", "type": "application/json",
-         "href": f"{base_url}/"},
+         "href": (f"{base_url}/experiments/{col.get('experiment')}"
+                  if col.get("experiment") else f"{base_url}/")},
         {"rel": "items", "type": "application/geo+json",
          "href": f"{base_url}/collections/{cid}/items", "title": "Items"},
         {"rel": "http://www.opengis.net/def/rel/ogc/1.0/queryables",
@@ -155,6 +156,33 @@ def _inject_collection_links(col: dict, base_url: str) -> dict:
          "href": f"{base_url}/collections/{cid}/queryables", "title": "Queryables"},
     ])
     return col
+
+
+def _inject_experiment_catalog_links(
+    experiment_id: str, base_url: str, collections: list[dict]
+) -> dict:
+    """Build a STAC Catalog dict for one experiment with child links per collection."""
+    links = [
+        {"rel": "self",   "type": "application/json",
+         "href": f"{base_url}/experiments/{experiment_id}"},
+        {"rel": "root",   "type": "application/json", "href": f"{base_url}/"},
+        {"rel": "parent", "type": "application/json", "href": f"{base_url}/"},
+    ]
+    for col in collections:
+        cid = col["id"]
+        links.append({
+            "rel": "child", "type": "application/json",
+            "title": col.get("title", cid),
+            "href": f"{base_url}/collections/{cid}",
+        })
+    return {
+        "type": "Catalog",
+        "id": experiment_id,
+        "stac_version": "1.0.0",
+        "description": f"Experiment {experiment_id}",
+        "title": experiment_id,
+        "links": links,
+    }
 
 
 def _make_item_collection(
@@ -342,6 +370,33 @@ class DuckDBCatalogClient(BaseCoreClient):
             return result["summaries"]
         return fetch_summaries()["summaries"]
 
+    def _get_all_experiment_ids(self) -> list[str]:
+        """Return deduplicated sorted experiment IDs across all registered catalogs."""
+        dbs = self._open_catalogs()
+        try:
+            seen: set[str] = set()
+            for db in dbs:
+                for exp_id in db.iter_experiments():
+                    seen.add(exp_id)
+        finally:
+            self._close_catalogs(dbs)
+        return sorted(seen)
+
+    def _get_collections_for_experiment(self, experiment_id: str) -> list[dict]:
+        """Return all collections for *experiment_id* across all catalogs, deduplicated."""
+        dbs = self._open_catalogs()
+        try:
+            result: list[dict] = []
+            seen: set[str] = set()
+            for db in dbs:
+                for col in db.get_collections_for_experiment(experiment_id):
+                    if col["id"] not in seen:
+                        result.append(col)
+                        seen.add(col["id"])
+        finally:
+            self._close_catalogs(dbs)
+        return result
+
     # ------------------------------------------------------------------
     # Federated search with correct pagination
     # ------------------------------------------------------------------
@@ -432,6 +487,15 @@ class DuckDBCatalogClient(BaseCoreClient):
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
 
+        # Remove the stac-fastapi default `rel=data` link that points to
+        # /collections. STAC Browser Browse mode uses BOTH the `data` link
+        # (which triggers GET /collections → all component collections) AND
+        # `child` links. Removing `data` keeps Browse showing only the
+        # experiment-level tree; Search still works via direct API calls.
+        lp["links"] = [
+            lnk for lnk in lp["links"] if lnk.get("rel") != "data"
+        ]
+
         # Queryables link - STAC Browser checks for the full OGC rel URI
         lp["links"].append({
             "rel": _OGC_QUERYABLES_REL,
@@ -440,13 +504,13 @@ class DuckDBCatalogClient(BaseCoreClient):
             "href": f"{base_url}/queryables",
         })
 
-        # Add child links for each collection (uses cache if available)
-        for col_summary in self._get_all_collection_summaries():
+        # Add child links for each experiment (uses experiment hierarchy)
+        for exp_id in self._get_all_experiment_ids():
             lp["links"].append({
                 "rel": "child",
                 "type": "application/json",
-                "title": col_summary["title"],
-                "href": f"{base_url}/collections/{col_summary['id']}",
+                "title": exp_id,
+                "href": f"{base_url}/experiments/{exp_id}",
             })
 
         return lp

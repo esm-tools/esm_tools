@@ -18,6 +18,7 @@ Roles grant the following permissions:
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 from enum import Enum
@@ -130,6 +131,8 @@ class PersonalCollectionStore:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.db = duckdb.connect(str(self.path))
+        _duckdb_threads = int(os.environ.get("ESM_CATALOG_DUCKDB_THREADS", "4"))
+        self.db.execute(f"SET threads = {_duckdb_threads}")
         self.db.execute("SET TimeZone='UTC'")
         self._init_schema()
 

@@ -1,6 +1,7 @@
 """DuckDB-backed catalog storage: insert, query, and update STAC objects."""
 
 import json
+import os
 from pathlib import Path
 
 import duckdb
@@ -26,6 +27,12 @@ class CatalogDB:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.db = duckdb.connect(str(self.path))
+        # Limit internal worker threads. DuckDB defaults to one thread per logical
+        # CPU; on a 256-core HPC node that spawns 256 threads per connection, which
+        # quickly exhausts the per-user process/thread limit (ulimit -u).
+        # 4 threads is ample for the read-heavy STAC API workload.
+        _duckdb_threads = int(os.environ.get("ESM_CATALOG_DUCKDB_THREADS", "4"))
+        self.db.execute(f"SET threads = {_duckdb_threads}")
         self.db.execute("SET TimeZone='UTC'")  # all TIMESTAMPTZ reads return UTC
         self._init_schema()
 

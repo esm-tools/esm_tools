@@ -310,6 +310,20 @@ class PersonalCollectionStore:
             """,
             [col.id, col.owner, col.name, col.description_md, col.parent_id, col.created_at, col.updated_at],
         )
+        # Mirror the collection as a tree node so it appears in the sidebar.
+        tree_node = TreeNode(
+            owner=owner,
+            name=name,
+            type="collection",
+            collection_id=col.id,
+            parent_id=parent_id,
+        )
+        self.db.execute(
+            "INSERT INTO tree_nodes (id, owner, name, type, collection_id, parent_id, position) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [tree_node.id, tree_node.owner, tree_node.name, tree_node.type,
+             tree_node.collection_id, tree_node.parent_id, tree_node.position],
+        )
         logger.debug("Created personal collection {!r} for user {!r}", col.id, owner)
         return col
 
@@ -706,6 +720,70 @@ class PersonalCollectionStore:
             [parent_id, position, node_id],
         )
         logger.debug("Moved tree node {!r} to parent={!r} position={}", node_id, parent_id, position)
+
+    def create_folder(
+        self, owner: str, name: str, parent_id: str | None = None
+    ) -> TreeNode:
+        """Create a folder node in the user's sidebar tree."""
+        node = TreeNode(owner=owner, name=name, type="folder", parent_id=parent_id)
+        self.db.execute(
+            "INSERT INTO tree_nodes (id, owner, name, type, collection_id, parent_id, position) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?)",
+            [node.id, node.owner, node.name, node.type,
+             node.collection_id, node.parent_id, node.position],
+        )
+        logger.debug("Created folder {!r} for user {!r}", node.id, owner)
+        return node
+
+    def rename_tree_node(self, owner: str, node_id: str, name: str) -> None:
+        """Rename a tree node (folder or collection reference)."""
+        cursor = self.db.cursor()
+        try:
+            row = cursor.execute(
+                "SELECT id FROM tree_nodes WHERE id = ? AND owner = ?",
+                [node_id, owner],
+            ).fetchone()
+        finally:
+            cursor.close()
+        if row is None:
+            raise KeyError(f"Tree node {node_id!r} not found for user {owner!r}")
+        self.db.execute("UPDATE tree_nodes SET name = ? WHERE id = ?", [name, node_id])
+        logger.debug("Renamed tree node {!r} to {!r}", node_id, name)
+
+    def delete_tree_node(self, owner: str, node_id: str) -> None:
+        """Delete a folder node and all its descendants recursively.
+
+        Only folder nodes can be deleted this way; collection nodes are
+        removed automatically when the underlying collection is deleted.
+        """
+        cursor = self.db.cursor()
+        try:
+            row = cursor.execute(
+                "SELECT id FROM tree_nodes WHERE id = ? AND owner = ? AND type = 'folder'",
+                [node_id, owner],
+            ).fetchone()
+        finally:
+            cursor.close()
+        if row is None:
+            raise KeyError(f"Folder node {node_id!r} not found for user {owner!r}")
+        self._delete_tree_node_recursive(owner, node_id)
+        logger.debug("Deleted folder tree node {!r}", node_id)
+
+    def _delete_tree_node_recursive(self, owner: str, node_id: str) -> None:
+        cursor = self.db.cursor()
+        try:
+            child_ids = [
+                r[0]
+                for r in cursor.execute(
+                    "SELECT id FROM tree_nodes WHERE parent_id = ? AND owner = ?",
+                    [node_id, owner],
+                ).fetchall()
+            ]
+        finally:
+            cursor.close()
+        for child_id in child_ids:
+            self._delete_tree_node_recursive(owner, child_id)
+        self.db.execute("DELETE FROM tree_nodes WHERE id = ?", [node_id])
 
     # ------------------------------------------------------------------
     # Lifecycle

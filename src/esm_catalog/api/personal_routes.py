@@ -566,20 +566,37 @@ def create_personal_router(
         body: TreeNodeUpdateRequest,
         request: Request,
     ) -> TreeResponse:
-        """Move or reorder a node within the user's collection tree."""
+        """Create, rename, delete, or move nodes in the user's collection tree."""
         await _require_owner_or_admin(request, username)
         try:
-            store.update_tree_node(
-                owner=username,
-                node_id=body.node_id,
-                parent_id=body.parent_id,
-                position=body.position,
-            )
-        except KeyError:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Tree node '{body.node_id}' not found",
-            )
+            if body.action == "create_folder":
+                if not body.name:
+                    raise HTTPException(status_code=422, detail="'name' is required for create_folder")
+                store.create_folder(
+                    owner=username,
+                    name=body.name,
+                    parent_id=body.parent_id,
+                )
+            elif body.action == "rename":
+                if not body.node_id or not body.name:
+                    raise HTTPException(status_code=422, detail="'node_id' and 'name' are required for rename")
+                store.rename_tree_node(owner=username, node_id=body.node_id, name=body.name)
+            elif body.action == "delete_folder":
+                if not body.node_id:
+                    raise HTTPException(status_code=422, detail="'node_id' is required for delete_folder")
+                store.delete_tree_node(owner=username, node_id=body.node_id)
+            else:  # "move"
+                if not body.node_id:
+                    raise HTTPException(status_code=422, detail="'node_id' is required for move")
+                parent_id = body.target_folder_id if body.target_folder_id is not None else body.parent_id
+                store.update_tree_node(
+                    owner=username,
+                    node_id=body.node_id,
+                    parent_id=parent_id,
+                    position=body.position,
+                )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc))
         # Return the updated tree.
         flat_nodes = store.get_tree(owner=username)
         roots = _build_tree_hierarchy(flat_nodes)

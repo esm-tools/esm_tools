@@ -8,6 +8,7 @@ are mapped to/from these at the route level.
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -164,10 +165,21 @@ class TreeResponse(BaseModel):
 
 
 class TreeNodeUpdateRequest(BaseModel):
-    """PATCH body for reordering a tree node."""
+    """PATCH body for tree node operations.
 
-    node_id: str
+    The ``action`` field selects the operation:
+
+    * ``move``          – move *node_id* to *target_folder_id* (or root if null)
+    * ``create_folder`` – create a new folder with *name* under *parent_id*
+    * ``rename``        – rename *node_id* to *name*
+    * ``delete_folder`` – delete the folder *node_id* and all descendants
+    """
+
+    action: Literal["move", "create_folder", "rename", "delete_folder"] = "move"
+    node_id: str | None = None
+    name: str | None = None
     parent_id: str | None = None
+    target_folder_id: str | None = None  # used by "move" action
     position: int = 0
 
 

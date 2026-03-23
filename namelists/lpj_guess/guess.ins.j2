@@ -28,9 +28,9 @@ ifbvoc 1
 
 ! AWI-ESM3 - override spinup parameters from ecearth.ins
 ! nyear_spinup must be > freenyears to avoid fatal error
-! Default: nyear_spinup=1, freenyears=0 (no spinup, no N limitation delay)
-nyear_spinup {{lpj_guess.nyear_spinup | default(1)}}
-freenyears {{lpj_guess.freenyears | default(0)}}
+! Default: nyear_spinup=500, freenyears=100 (matching vendor branch)
+nyear_spinup {{lpj_guess.nyear_spinup | default(500)}}
+freenyears {{lpj_guess.freenyears | default(100)}}
 
 ! ecev3 - set to 1
 ifintercropgrass 1	! Whether to grow grass as cover crop between growing periods
@@ -104,7 +104,7 @@ coordinates_precision 6
 
 ! optimesm & rescue TESTING
 ! PaulM ECE4 hack - changed below
-npatch 5                                ! number of replicate patches to simulate
+npatch 5                                ! number of replicate patches to simulate (ecearth.ins value: 15)
 
 ! LUH3 NetCDF land use input (0 = use text files, 1 = use NetCDF LUH3 files)
 use_luh3_input {{lpj_guess.use_luh3_input | default(0)}}

@@ -187,6 +187,11 @@ def create_personal_router(
         if authenticator is None:
             return None
 
+        # When no real authentication is required (e.g. NoAuthenticator),
+        # return None so the caller uses the URL username for ownership checks.
+        if not authenticator.requires_auth("personal_collections", "read"):
+            return None
+
         user = await authenticator.authenticate(request)
         if user is None:
             raise HTTPException(status_code=401, detail="Authentication required")

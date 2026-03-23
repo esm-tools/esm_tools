@@ -426,7 +426,34 @@ http://<host>:<port>/admin   # redirects → /ui
 
 ---
 
-## TODO 5: LLM & MCP Capabilities
+## TODO 5 (added): Personal Collections — "My Collections" ✅ DONE (core); 🔲 sharing UX pending
+
+**Goal:** Allow users to curate personal lists of catalog items, organise them into folders,
+label them, and optionally share them with other users.
+
+**Implementation (complete):**
+
+- **`storage/personal.py`** — `PersonalCollectionStore` (DuckDB-backed): collections, items,
+  labels, shares, tree nodes (folders + collection references). RBAC: owner/maintainer/developer/viewer.
+- **`api/personal_models.py`** — Pydantic request/response models.
+- **`api/personal_routes.py`** — Full REST API under `/users/{user}/...`.
+- **`api/app.py`** — Mounts personal router; uses `ESM_PERSONAL_DB` env var for DB path.
+- **`stac-browser/PersonalCollections.vue`** — "My Collections" sidebar tab: tree view, folders,
+  drag-and-drop, labels, share dialog, item viewer (clickable links), notifications.
+- **`stac-browser/AddToCollection.vue`** — "Add to Collection" button on item/collection pages.
+- **`stac-browser/TreeNode.vue`** — Recursive tree node component with drag-drop, edit/delete/share actions.
+
+**Pending (needs design discussion with Paul):**
+
+- "Shared with me" browser view — backend supports it; UI not built yet
+- Username validation (LDAP?) in the share dialog — currently accepts arbitrary strings
+- Shareable link format — currently shows raw API URL; no browser-navigable share page
+
+See task #1 in Claude Code task list for full design questions.
+
+---
+
+## TODO 6: LLM & MCP Capabilities
 
 **Goal:** Integrate Large Language Model (LLM) and Model Context Protocol (MCP) capabilities
 into the catalog, enabling natural-language search, auto-summarization of experiments, and

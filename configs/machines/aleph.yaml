@@ -71,6 +71,7 @@ computer:
             - "load fftw/2.1.5.9"
             - "load nco/4.9.4"
             - "load proj4/5.1.0"
+            - "load python/3.9.1"
             - "list"
 
     export_vars:

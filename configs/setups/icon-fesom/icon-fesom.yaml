@@ -50,10 +50,6 @@ fesom:
          all_directions: link
       forcing:
          all_directions: link
-      restart_in:
-         all_directions: link
-      restart_out:
-         all_directions: move
       outdata:
          all_directions: move
       unknown:

@@ -29,6 +29,7 @@ rnfmap:
     - foci211
     - v1.0
     - v1.1
+    - v1.2
 
     runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -63,6 +64,12 @@ rnfmap:
         runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_new.nc'
       v1.1:
         branch: enthalpy_on_ocean_side
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+      v1.2:
+        branch: '1.2'
         further_reading:
           - rnfmap/rnfmap.env.yaml
         destination: rnfmap

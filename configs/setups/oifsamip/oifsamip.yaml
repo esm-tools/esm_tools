@@ -9,6 +9,8 @@ general:
 
         lresume: False
         coupled_setup: True
+        with_co2_oce_coupling: False
+        with_co2_veg_coupling: False
 
         include_models:
                 - amip
@@ -33,6 +35,7 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
+        parallel_file_movements: 'threads'
 
         reusable_filetypes: [input, bin, src]
 

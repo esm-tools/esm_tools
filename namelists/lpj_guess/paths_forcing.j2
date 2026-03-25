@@ -28,3 +28,20 @@ param "flux_dir"      (str "{{lpj_guess.forcing_dir}}/2013_02_12/euroflux/")
 
 ! Location of subset of WATCH diurnal data
 param "watch_dir"     (str "{{lpj_guess.forcing_dir}}/2013_02_12/watch_subset")
+
+{% if lpj_guess.use_luh3_input is defined and lpj_guess.use_luh3_input == 1 %}
+! ============================================================================
+! LUH3 NetCDF land use forcing (CMIP7)
+! Note: run_landcover 1 is set in landcover.ins, not here
+! ============================================================================
+use_luh3_input 1
+file_luh3_states "{{general.work_dir}}/landuse/luh3_states.nc"
+file_luh3_transitions "{{general.work_dir}}/landuse/luh3_transitions.nc"
+file_luh3_management "{{general.work_dir}}/landuse/luh3_management.nc"
+
+! Override LUH2 text files to empty strings when using LUH3 NetCDF
+param "file_lu" (str "")
+param "file_lucrop" (str "")
+param "file_Nfert" (str "")
+param "file_grossLUC" (str "")
+{% endif %}

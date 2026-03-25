@@ -321,7 +321,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
         Relative paths of the file in the ``last_tested`` folder
     """
     # File types to check
-    some_compare_files = [".run", "finished_config"]
+    some_compare_files = [".run", "finished_config", "hostfile_"]
     # Load relevant variables from ``info``
     user_info = info["user"]
     # Initialize ``subpaths`` list
@@ -345,6 +345,7 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
     elif cfile in some_compare_files:
         files_to_folders = {
             ".run": "scripts",
+            "hostfile_": "scripts",
             "finished_config": "config",
             "prepcompute_filelist": "log",
         }
@@ -370,24 +371,6 @@ def get_rel_paths_compare_files(info, cfile, v, this_test_dir):
                 ):
                     num = 1
                 subpaths.append(f"{cf_path}/{cfiles[num].split('/')[-1]}")
-                break
-    elif cfile == "hostfiles":
-        # Collect all hostfile_* files from the scripts folder of the first run_ directory
-        ctype = "scripts"
-        ldir = os.listdir(f"{user_info['test_dir']}/{this_test_dir}")
-        ldir.sort()
-        for f in ldir:
-            # Take the first run directory
-            if "run_" in f:
-                cf_path = f"{this_test_dir}/{f}/{ctype}/"
-                cfiles = glob.glob(f"{user_info['test_dir']}/{cf_path}/hostfile_*")
-                # If not found, try in the general directory
-                if len(cfiles) == 0:
-                    cf_path = f"{this_test_dir}/{ctype}/"
-                    cfiles = glob.glob(f"{user_info['test_dir']}/{cf_path}/hostfile_*")
-                cfiles.sort()
-                for hf in cfiles:
-                    subpaths.append(f"{cf_path}/{hf.split('/')[-1]}")
                 break
     elif cfile == "namelists":
         # Get path of the finished_config

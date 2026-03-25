@@ -2272,6 +2272,8 @@ computer:
                   # type error (int(8) vs int (4) in oifs)
                   compiler_mpi: gnu11_ompi4 
                   iolibraries: system_gnu_libs 
+                  load_libaec: True
+                  load_tbb: True
                   # intel2022 for focioifs-4.1.1
                   # oifs43r3 has a compile error with gfortran
                   #compiler_mpi: intel2022_openmpi
@@ -2300,6 +2302,8 @@ computer:
                levante:
                   compiler_mpi: gnu11_ompi4 
                   iolibraries: system_gnu_libs 
+                  load_libaec: True
+                  load_tbb: True
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:

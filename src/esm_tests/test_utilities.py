@@ -158,7 +158,7 @@ def combine_folders(source_dir, target_dir):
             shutil.copy2(source_dir, target_dir)
 
 
-def clean_user_specific_info(info, str2clean):
+def clean_user_specific_info(info, str2clean, protected_strings=[]):
     """
     Given a string, perform user- and computer-specific cleanups.
 
@@ -166,6 +166,9 @@ def clean_user_specific_info(info, str2clean):
     ----------
     str2clean : str
         String to be cleaned
+    protected_strings : list, optional
+        Strings that must not be modified during cleanup (e.g. hardcoded
+        test-data paths in runscripts).
 
     Returns
     -------
@@ -188,15 +191,32 @@ def clean_user_specific_info(info, str2clean):
     # Do the cleaning
     new_clean_str = []
     for line in clean_str:
-        for key, string in info["rm_user_info"].items():
-            if not string:
+        # Shield protected strings from substitution via temporary tokens.
+        tokens = {}
+        for i, s in enumerate(protected_strings):
+            if s in line:
+                token = f"__PROTECTED_{i}__"
+                tokens[token] = s
+                line = line.replace(s, token)
+
+        for key, value in info["rm_user_info"].items():
+            if not value:
                 continue
-            line = line.replace(f"{mnt}{string}", f"<{key}>")
-            line = line.replace(string, f"<{key}>")
+            strings = value if isinstance(value, list) else [value]
+            for string in strings:
+                if not string:
+                    continue
+                line = line.replace(f"{mnt}{string}", f"<{key}>")
+                line = line.replace(string, f"<{key}>")
             # Collapse double slashes after <key>
             line = re.sub(rf"<{key}>//+", f"<{key}>/", line)
             # Ensure there is a one slash after <key>
             line = re.sub(rf"<{key}>(?=[^/\s])", f"<{key}>/", line)
+
+        # Restore protected strings
+        for token, original in tokens.items():
+            line = line.replace(token, original)
+
         new_clean_str.append(line)
     clean_str = new_clean_str
 

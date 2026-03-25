@@ -548,6 +548,7 @@ def check(info, mode, model, version, out, script, v):
         logger.error(
             f"Missing '{mode}' section in '{os.path.dirname(v['path'])}/config.yaml'!"
         )
+    protected_strings = config_test.get("protected_strings", [])
     config_test = config_test[config_mode]
 
     # Set mode variables
@@ -649,6 +650,7 @@ def check(info, mode, model, version, out, script, v):
                         f"{user_info['test_dir']}/{sp}",
                         sp,
                         ignore_lines,
+                        protected_strings,
                     )
                     success += identical
                     # Update state dictionaries

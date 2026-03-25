@@ -2281,8 +2281,10 @@ computer:
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  #compiler_mpi: intel2021_impi2021
                   #compiler_mpi: intel2023_ompi416
+                  #compiler_mpi: gcc14_ompi417 # compiles nemo,xios,oasis,but not oifs
+                  compiler_mpi: gcc11_ompi417
                   iolibraries: system_libs
                   #compiler_mpi: intel2021_impi2019
                   #iolibraries: spack_libs
@@ -2298,6 +2300,9 @@ computer:
                FOCI_USE_CPLNG: "active"
                FESOM_USE_CPLNG: "no"
                ECE_USE_CPLNG: "no"
+               # required on glogin where eccodes is not available for
+               # all compiler versions
+               PATH: '$PATH:${general.model_dir}/${oifs.destination}/install/bin'
             choose_computer.name:
                levante:
                   #compiler_mpi: gnu11_ompi4 
@@ -2310,7 +2315,9 @@ computer:
                   compiler_mpi: intel2024_impi2021
                glogin:
                   #compiler_mpi: intel2023_ompi416
-                  compiler_mpi: intel2023_impi2021
+                  #compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: gcc14_ompi417 # compiles nemo,xios,oasis,but not oifs
+                  compiler_mpi: gcc11_ompi417
                   iolibraries: system_libs
                   #compiler_mpi: intel2021_impi2019
                   #iolibraries: spack_libs

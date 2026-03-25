@@ -183,8 +183,8 @@ xios:
         choose_computer.name:
           glogin:
             choose_computer.compiler_mpi:
-              gcc11_ompi416:
-                archfile: ESMTOOLS_generic_oasis_GNU
+              gcc11_ompi417:
+                archfile: ESMTOOLS_generic_oasis_gnu
               '*':
                 archfile: ESMTOOLS_generic_oasis_intel
           '*':
@@ -206,8 +206,11 @@ xios:
                 archfile: ESMTOOLS_generic_oasis_intel
           glogin:
             choose_computer.compiler_mpi:
-              gcc11_ompi416:
-                archfile: ESMTOOLS_generic_oasis_GNU
+              # glogin's gcc14 environent
+              gcc14_ompi417:
+                archfile: ESMTOOLS_generic_oasis_gnu
+              gcc11_ompi417:
+                archfile: ESMTOOLS_generic_oasis_gnu
               '*':
                 archfile: ESMTOOLS_generic_oasis_intel
           '*':

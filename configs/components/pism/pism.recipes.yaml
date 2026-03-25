@@ -30,7 +30,7 @@ pism:
 
               #- "add_batch_hostfile"
             - "copy_files_to_work"
-            - "compute_and_log_file_checksums"
+            - "log_files_in_target_to_yaml"
               #- "write_simple_runscript"
             - "report_missing_files"
             #- "add_vcs_info"

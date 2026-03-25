@@ -10,9 +10,15 @@ from loguru import logger
 
 from . import coupler, database_actions, helpers, logfiles
 from .filelists import copy_files, resolve_symlinks
+from .file_tracker import FileTracker
 
 
 def run_job(config):
+    # Re-initialize the FileTracker for tidy phase
+    compute_checksums = config["general"].get("compute_file_checksums", False)
+    config["general"]["file_tracker"] = FileTracker(compute_checksums=compute_checksums, phase="tidy")
+    logger.debug(f" tidy run_job: Created FileTracker for tidy phase with checksums={compute_checksums}")
+
     config["general"]["relevant_filetypes"] = [
         "log",
         "mon",
@@ -293,7 +299,16 @@ def throw_away_some_infiles(config):
 
 
 def copy_all_results_to_exp(config):
-    logger.debug("Copying stuff to main experiment folder")
+    logger.debug("Copying results to experiment directory")
+
+    # Track files during tidy phase for logging
+    config["general"]["files_moved_for_tidy"] = []
+    config["general"]["files_linked_for_tidy"] = []
+
+    # Get the file tracker
+    file_tracker = config["general"].get("file_tracker")
+    logger.debug(f" copy_all_results_to_exp: file_tracker = {type(file_tracker)}")
+
     for root, dirs, files in os.walk(config["general"]["thisrun_dir"], topdown=False):
         logger.debug("Working on folder: " + root)
         if root.startswith(config["general"]["thisrun_work_dir"]) or root.endswith(
@@ -348,14 +363,41 @@ def copy_all_results_to_exp(config):
                             )
                             os.rename(source, newdestination)
                             os.symlink(newdestination, destination)
+                            config["general"]["files_moved_for_tidy"].append({
+                                "source": source,
+                                "destination": newdestination,
+                            })
+                            if file_tracker is not None:
+                                logger.debug(f" copy_all_results_to_exp: Recording move {source} -> {newdestination}")
+                                file_tracker.record(
+                                    source=source,
+                                    destination=newdestination,
+                                    operation="move",
+                                    phase="tidy",
+                                    filetype="outdata",
+                                )
                             continue
                 try:
                     logger.debug(f"Moving file {source} to {destination}")
+                    operation = "move"
                     try:
                         os.rename(source, destination)
-                    except:  # Fill is still open... create a hard (!) link instead
+                    except:  # File is still open... create a hard (!) link instead
                         os.link(source, destination)
-
+                        operation = "hardlink"
+                    config["general"]["files_moved_for_tidy"].append({
+                        "source": source,
+                        "destination": destination,
+                    })
+                    if file_tracker is not None:
+                        logger.debug(f" copy_all_results_to_exp: Recording {operation} {source} -> {destination}")
+                        file_tracker.record(
+                            source=source,
+                            destination=destination,
+                            operation=operation,
+                            phase="tidy",
+                            filetype="outdata",
+                        )
                 except:
                     logger.critical(
                         f">>>>>>>>>  Something went wrong moving {source} to "
@@ -378,6 +420,20 @@ def copy_all_results_to_exp(config):
                         destination + "_" + config["general"]["last_run_datestamp"],
                     )
                 os.symlink(linkdest, destination)
+                config["general"]["files_linked_for_tidy"].append({
+                    "source": source,
+                    "destination": destination,
+                })
+                if file_tracker is not None:
+                    logger.debug(f" copy_all_results_to_exp: Recording link {linkdest} -> {destination}")
+                    file_tracker.record(
+                        source=linkdest,
+                        destination=destination,
+                        operation="link",
+                        phase="tidy",
+                        filetype="outdata",
+                    )
+    logger.debug(f" copy_all_results_to_exp: Done. FileTracker now has {len(file_tracker) if file_tracker else 0} operations")
     return config
 
 

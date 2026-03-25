@@ -841,15 +841,16 @@ def log_used_files(config):
     return config
 
 
-def compute_and_log_file_checksums(config):
+def log_files_in_target_to_yaml(config):
     """
-    This function computes the checksums of the files in the ``work`` directory and
-    logs them to a YAML file in the ``thisrun_log_dir`` directory. The file is named
-    as follows: ``{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml``
-    and contains the following information:
+    This function logs the files in the target directory to a YAML file in the
+    ``thisrun_log_dir`` directory. The file is named as follows:
+    ``{expid}_{it_coupled_model_name}filelist_{datestamp}`` and contains the
+    following information:
 
     - The source, intermediate, and target files for each file category
-    - The checksum of each file
+    - The checksum of each file if the ``general.compute_file_checksums`` flag is set
+      to ``True``
 
     Files are grouped by component/model and file category as a dictionary of
     dictionaries.
@@ -866,26 +867,32 @@ def compute_and_log_file_checksums(config):
     Returns
     -------
     config : dict
-        The experiment configuration with the file checksums computed and logged
+        The experiment configuration
     """
-    compute_file_checksums = config["general"].get("compute_file_checksums", False)
     target = config["general"]["files_target"]
-    if not compute_file_checksums:
-        return config
+    compute_file_checksums = config["general"].get("compute_file_checksums", False)
 
-    logger.debug("\n::: Computing file checksums in ``{target}``")
+    logger.debug("\n::: Computing file log for ``{target}``")
     jobtype = config["general"].get("jobtype", "unknown")
     filetypes = config["general"]["relevant_filetypes"]
     expid = config["general"]["expid"]
     it_coupled_model_name = config["general"]["iterative_coupled_model"]
     datestamp = config["general"]["run_datestamp"]
     thisrun_log_dir = config["general"]["thisrun_log_dir"]
+    # Name of the yaml file log to be written
     flist_file_yaml = f"{thisrun_log_dir}/{expid}_{it_coupled_model_name}{jobtype}_filelist_{datestamp}.yaml"
     all_files = {}
 
+    # List all the files in the target directory
+    files_in_dir = _list_files_in_dir(config, target)
+    files_not_handled_by_filelists = copy.deepcopy(files_in_dir)
+
     # Compute checksums of all files in a the target directory
-    checksums = _compute_checksums_for_dir(config, target)
-    files_not_handled_by_filelists = copy.deepcopy(checksums)
+    if compute_file_checksums:
+        logger.debug("\n::: Computing checksums for files in ``{target}``")
+        checksums = _compute_checksums_for_dir(files_in_dir)
+    else:
+        checksums = {}
 
     # Loop over all components, file types, and files
     for component in esm_parser.get_components(config):
@@ -897,11 +904,12 @@ def compute_and_log_file_checksums(config):
                 target_file = component_config[f"{filetype}_targets"][f]
                 p_target_file = str(pathlib.Path(target_file).absolute())
 
-                # Load the corresponding checksum and remove the file from the
-                # files_not_handled_by_filelists if it is found
-                checksum = checksums.get(p_target_file, None)
-                if checksum and files_not_handled_by_filelists.get(p_target_file):
-                    del files_not_handled_by_filelists[p_target_file]
+                # Remove the file from the files_not_handled_by_filelists if it is found
+                if p_target_file in files_not_handled_by_filelists:
+                    exists = True
+                    files_not_handled_by_filelists.remove(p_target_file)
+                else:
+                    exists = False
 
                 # Add all the file information to the component_files dictionary
                 component_files[f] = {
@@ -909,7 +917,8 @@ def compute_and_log_file_checksums(config):
                     "intermediate": component_config[f"{filetype}_intermediate"][f],
                     "target": target_file,
                     "kind": filetype,
-                    "checksum": checksum,
+                    "checksum": checksums.get(p_target_file, None),
+                    "exists": exists,
                 }
 
                 # Log the file information
@@ -922,13 +931,14 @@ def compute_and_log_file_checksums(config):
 
     # Add the files not handled by the filelists to the all_files dictionary
     all_files["not_handled_by_filelists"] = {}
-    for f, checksum in files_not_handled_by_filelists.items():
+    for file_path in files_not_handled_by_filelists:
         all_files["not_handled_by_filelists"][os.path.basename(f)] = {
             "source": "unknown",
             "intermediate": "unknown",
-            "target": f,
+            "target": file_path,
             "kind": "not_handled_by_filelists",
-            "checksum": checksum,
+            "checksum": checksums.get(file_path, None),
+            "exists": True,
         }
 
     # Dump the all_files dictionary to a yaml file
@@ -937,21 +947,22 @@ def compute_and_log_file_checksums(config):
     return config
 
 
-def _compute_checksums_for_dir(config, target):
+def _list_files_in_dir(config, target):
     """
-    Compute the checksums of all files in the ``work`` directory.
+    List all the files in the target directory. Currently only the ``work`` directory
+    is supported.
 
     Parameters
     ----------
     config : dict
         The experiment configuration
     target : str
-        The target directory to compute the checksums for
+        The target directory to list the files for
 
     Returns
     -------
-    checksums : dict
-        A dictionary containing the checksums of all files in the target directory
+    file_paths : list
+        A list of absolute paths of all the files in the target directory
     """
 
     if target == "work":
@@ -963,10 +974,28 @@ def _compute_checksums_for_dir(config, target):
         ]
     else:
         logger.error(
-            f"Checksums of files in ``{target}`` directory types are not yet "
-            "supported. Only files in the ``work`` directory currently supported. "
+            f"Listing files in ``{target}`` directory types are not yet supported. "
+            "Supported targets: ``work``, ``exp``. "
         )
         exit(1)
+
+    return file_paths
+
+
+def _compute_checksums_for_dir(file_paths):
+    """
+    Compute the checksums of all files listed in ``file_paths``.
+
+    Parameters
+    ----------
+    file_paths : list
+        A list of absolute paths of all the files in the target directory
+
+    Returns
+    -------
+    checksums : dict
+        A dictionary containing the checksums of all files in the target directory
+    """
 
     # Compute the checksums of all files in the target directory
     # TODO: parallelize this
@@ -1100,8 +1129,23 @@ def copy_files(config, filetypes, source, target):
     parallel_file_movements = config["general"].get("parallel_file_movements", False)
     dask_scheduler_json = config["dask"]["scheduler_json"]
 
+    # Get the file tracker for logging operations
+    file_tracker = config["general"].get("file_tracker")
+
+    # Determine phase based on source/target
+    if source == "init" and target in ["thisrun", "work"]:
+        phase = "prepare"
+    elif source == "thisrun" and target == "work":
+        phase = "prepare"
+    elif source == "work" and target == "thisrun":
+        phase = "tidy"
+    else:
+        phase = "unknown"
+
     successful_files = []
     missing_files = {}
+    # Metadata for tracking: maps (source, target) to operation info
+    file_metadata = {}
 
     # Save the source and target for later use in other methods
     config["general"]["files_source"] = source
@@ -1252,6 +1296,14 @@ def copy_files(config, filetypes, source, target):
                                 config, file_source, file_target
                             )
 
+                        # Store metadata for file tracking (after avoid_overwriting modifies file_target)
+                        operation_name = _get_operation_name(movement_method)
+                        file_metadata[(file_source, file_target)] = {
+                            "operation": operation_name,
+                            "component": model,
+                            "filetype": filetype,
+                        }
+
                         # Execute movement with or without futures (parallelization on/off)
                         if config["general"].get("parallel_file_movements", False) in [
                             "threads",
@@ -1290,6 +1342,19 @@ def copy_files(config, filetypes, source, target):
             result = movement_output
         if result:
             successful_files.append(file_source)
+            # Record operation in file tracker
+            logger.debug(f" copy_files: result=True, file_tracker={file_tracker is not None}, key_in_metadata={(file_source, file_target) in file_metadata}")
+            if file_tracker is not None and (file_source, file_target) in file_metadata:
+                metadata = file_metadata[(file_source, file_target)]
+                logger.debug(f" copy_files: Recording {metadata['operation']} {file_source} -> {file_target}")
+                file_tracker.record(
+                    source=file_source,
+                    destination=file_target,
+                    operation=metadata["operation"],
+                    phase=phase,
+                    filetype=metadata["filetype"],
+                    component=metadata["component"],
+                )
         else:
             missing_files.update({file_target: file_source})
 
@@ -1539,6 +1604,29 @@ def get_method(movement):
     return actually_copy
 
 
+def _get_operation_name(movement_method):
+    """
+    Get the operation name string from the movement method function.
+
+    Parameters
+    ----------
+    movement_method : function
+        The movement function (actually_copy, actually_link, actually_move)
+
+    Returns
+    -------
+    str
+        The operation name: "copy", "link", or "move"
+    """
+    if movement_method == actually_copy:
+        return "copy"
+    elif movement_method == actually_link:
+        return "link"
+    elif movement_method == actually_move:
+        return "move"
+    return "copy"  # default
+
+
 def movement(func):
     def inner(config, source_path, target_path):
         try:
@@ -1727,6 +1815,64 @@ def get_movement(config, model, category, filetype, source, target):
         logger.error(f"Error: Unknown file movement from {source} to {target}")
         helpers.print_datetime(config)
         sys.exit(42)
+
+
+def dump_file_tracker_log(config):
+    """
+    Dump the file tracker log to a YAML file.
+
+    This function writes all tracked file operations (copy, move, link, hardlink)
+    to a YAML file in the ``experiment_log_dir`` directory. The file is named:
+    ``{expid}_{it_coupled_model_name}_file_operations_{datestamp}.yaml``
+
+    The log is organized by phase (prepare, tidy) and includes:
+    - Source and destination paths
+    - Operation type
+    - File type and component
+    - Checksums (if enabled via ``general.compute_file_checksums``)
+
+    Parameters
+    ----------
+    config : dict
+        The experiment configuration
+
+    Returns
+    -------
+    config : dict
+        The experiment configuration (unchanged)
+    """
+    file_tracker = config["general"].get("file_tracker")
+    logger.debug(f": file_tracker type = {type(file_tracker)}, value = {file_tracker}")
+    if file_tracker is None:
+        logger.info("No file tracker found, skipping file operations log dump")
+        return config
+
+    logger.debug(f": file_tracker length = {len(file_tracker)}")
+    if len(file_tracker) == 0:
+        logger.info("File tracker is empty, skipping file operations log dump")
+        return config
+
+    expid = config["general"]["expid"]
+    setup_name = config["general"]["setup_name"]
+    datestamp = config["general"]["run_datestamp"]
+    experiment_log_dir = config["general"]["experiment_log_dir"]
+    phase = file_tracker.phase
+
+    log_file_path = (
+        f"{experiment_log_dir}/{expid}_{setup_name}_file_operations_{phase}_{datestamp}.yaml"
+    )
+
+    logger.debug(f" dump_file_tracker_log: Writing to {log_file_path}")
+    file_tracker.dump_yaml(log_file_path)  # Uses OutputFormat.FILEDICTS by default
+    logger.debug(f" dump_file_tracker_log: Write complete")
+
+    summary = file_tracker.summary()
+    logger.info(
+        f"File operations logged: {summary['copy']} copies, {summary['move']} moves, "
+        f"{summary['link']} links, {summary['hardlink']} hardlinks"
+    )
+
+    return config
 
 
 def assemble(config):

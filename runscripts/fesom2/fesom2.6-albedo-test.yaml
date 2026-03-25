@@ -1,0 +1,26 @@
+general:
+    user: !ENV ${USER}
+    account: "computing.computing"
+    setup_name: fesom
+    compute_time: "00:30:00"
+    initial_date: "1958-01-01"
+    final_date: "1958-04-30"
+    base_dir: "/albedo/work/user/${user}/experiments/${general.setup_name}-${general.version}/"
+    nyear: 0
+    nmonth: 1
+    use_venv: True
+    install_esm_tools_branch: "feat/write_files_yaml"
+    compute_file_checksums: True
+    parallel_file_movements: "dask"
+
+fesom:
+    version: 2.6
+    model_dir: "/albedo/work/user/${user}/Models/fesom-2.6/"
+    mesh_dir: "/albedo/pool/FESOM2/core2/"
+    forcing_data_dir: "/albedo/work/projects/p_pool_fesom1/forcing/"
+    restart_rate: 1
+    restart_first: 1
+    restart_unit: "m"
+    resolution: "CORE2"
+    lresume: false
+    time_step: 1800

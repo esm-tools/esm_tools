@@ -32,6 +32,7 @@ choose_job_type:
                         - "restore_protected_last_minute_changes"
                         - "add_submission_info"
                         - "initialize_batch_system"
+                        - "initialize_file_tracker"
                         - "initialize_coupler"
                         - "set_logfile"
                         - "check_config_for_warnings_errors"
@@ -71,6 +72,7 @@ choose_job_type:
                         - "throw_away_some_infiles"
                         - "copy_stuff_back_from_work"
                         - "copy_all_results_to_exp"
+                        - "dump_file_tracker_log"
                         - "clean_run_dir"
 
         prepcompute:
@@ -87,8 +89,9 @@ choose_job_type:
                         - "modify_namelists"
                         - "modify_files"
                         - "copy_files_to_work"
+                        - "dump_file_tracker_log"
                         - "report_missing_files"
-                        - "compute_and_log_file_checksums"
+                        - "log_files_in_target_to_yaml"
                         #- "add_vcs_info"
                         #- "check_vcs_info_against_last_run"
                         - "_write_finalized_config"

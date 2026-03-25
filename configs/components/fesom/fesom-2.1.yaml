@@ -624,6 +624,7 @@ fesom:
         - "throw_away_some_infiles"
         - "copy_stuff_back_from_work"
         - "copy_all_results_to_exp"
+        - "dump_file_tracker_log"
         - "clean_run_dir"
 
 computer:

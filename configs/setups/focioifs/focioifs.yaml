@@ -20,7 +20,7 @@ general:
            - "modify_files"
            - "copy_files_to_work"
            - "report_missing_files"
-           - "compute_and_log_file_checksums"
+           - "log_files_in_target_to_yaml"
            # not working, bug already reported at https://github.com/esm-tools/esm_tools/discussions/774
            # - "add_vcs_info"
            # - "check_vcs_info_against_last_run"

@@ -15,7 +15,9 @@ Supports remote filesystems via fsspec/UPath::
 
 from __future__ import annotations
 
+import queue
 import sys
+import threading
 from pathlib import Path
 
 import rich_click as click
@@ -218,42 +220,47 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
         ok = 0
         errors = 0
         scanned = 0
+        discovered = 0
+        discovery_done = False
 
-        # Phase 1: Discover all files
-        logger.info("Discovering files...")
-        files = []
+        # Resolve discovery parameters
         if is_file(root):
-            files = [root]
+            file_source = "single"
         elif is_dir(root):
-            # Determine whether to include extension-less files
+            file_source = "dir"
             if include_extensionless is None:
                 include_ext = not is_remote
             else:
                 include_ext = include_extensionless
-
             if not include_ext and is_remote:
                 logger.info("Skipping extension-less files for remote scan")
-
-            files = list(file_candidates(root, include_extensionless=include_ext))
         else:
             logger.error("Path does not exist or is not accessible: {}", path)
             return
 
-        total_files = len(files)
-        logger.info("Found {} files to scan", total_files)
+        # File discovery queue: background thread discovers, main thread consumes
+        file_q: queue.Queue = queue.Queue(maxsize=2000)
+        _SENTINEL = None
 
-        if total_files == 0:
-            logger.info("No files to scan")
-            return
+        def _discovery_worker():
+            """Run file discovery in background, feeding file_q."""
+            nonlocal discovered
+            if file_source == "single":
+                file_q.put(root)
+                discovered = 1
+            else:
+                for fp in file_candidates(root, include_extensionless=include_ext):
+                    file_q.put(fp)
+                    discovered += 1
+            file_q.put(_SENTINEL)
 
-        # Phase 2: Scan files in parallel
-        # Default: ProcessPoolExecutor (lightweight, works on login nodes)
-        # --distributed: dask.distributed (heavier, but scalable to SLURM)
+        discovery_thread = threading.Thread(target=_discovery_worker, daemon=True)
+
+        # Progress display -- total is unknown initially, updates as files are discovered
         progress = Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
             BarColumn(),
-            TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
             TextColumn("({task.completed}/{task.total})"),
             TimeElapsedColumn(),
         )
@@ -287,7 +294,6 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                     ok += 1
                     messages.append((f"✓ {fname}", "green"))
                 except RestartFileError:
-                    # Restart files are silently skipped (not counted as errors)
                     messages.append((f"- {fname} (restart, skipped)", "dim"))
                 except Exception as e:
                     errors += 1
@@ -298,23 +304,90 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             elif status == "unsupported":
                 messages.append((f"- {fname} (skipped)", "dim"))
 
+        def _drain_queue(max_items=100):
+            """Drain up to max_items from the discovery queue. Returns (files, sentinel_seen)."""
+            items = []
+            for _ in range(max_items):
+                try:
+                    item = file_q.get_nowait()
+                except queue.Empty:
+                    break
+                if item is _SENTINEL:
+                    return items, True
+                items.append(item)
+            return items, False
+
+        logger.info("Starting streaming scan ({} workers)...", jobs)
         logger.disable("esm_catalog")
+
+        discovery_thread.start()
 
         try:
             with Live(make_display(), refresh_per_second=4) as live:
-                task_id = progress.add_task("[cyan]Scanning...[/cyan]", total=total_files)
+                task_id = progress.add_task("[cyan]Discovering & scanning...[/cyan]", total=None)
 
                 if use_dask:
-                    # dask.distributed - heavier but scalable to SLURM
                     from dask.distributed import Client, LocalCluster, as_completed as dask_as_completed
+                    import time as _time
 
                     with LocalCluster(n_workers=jobs, processes=True, threads_per_worker=1) as cluster:
                         with Client(cluster) as client:
-                            futures = client.map(_scan_file_worker, [str(fp) for fp in files])
+                            pending = []
 
-                            for future in dask_as_completed(futures):
+                            while not discovery_done or pending:
+                                # Submit newly discovered files
+                                batch, sentinel = _drain_queue(max_items=200)
+                                if sentinel:
+                                    discovery_done = True
+                                if batch:
+                                    new_futures = client.map(_scan_file_worker, [str(fp) for fp in batch])
+                                    pending.extend(new_futures)
+
+                                # Harvest completed futures
+                                still_pending = []
+                                for f in pending:
+                                    if f.done():
+                                        try:
+                                            fp_str, status, data = f.result()
+                                        except Exception as e:
+                                            errors += 1
+                                            scanned += 1
+                                            messages.append((f"✗ Error: {e}", "red"))
+                                        else:
+                                            process_scan_result(fp_str, status, data)
+                                    else:
+                                        still_pending.append(f)
+                                pending = still_pending
+
+                                # Update progress display
+                                desc = "[cyan]Scanning...[/cyan]" if discovery_done else "[cyan]Discovering & scanning...[/cyan]"
+                                total = discovered if discovery_done else None
+                                progress.update(task_id, description=desc, total=total, completed=scanned)
+                                live.update(make_display())
+
+                                if not discovery_done and not batch and not any(f.done() for f in pending):
+                                    _time.sleep(0.05)
+                else:
+                    import time as _time
+
+                    with ProcessPoolExecutor(max_workers=jobs) as executor:
+                        pending = {}  # future -> None
+
+                        while not discovery_done or pending:
+                            # Submit newly discovered files
+                            batch, sentinel = _drain_queue(max_items=200)
+                            if sentinel:
+                                discovery_done = True
+                            for fp in batch:
+                                fut = executor.submit(_scan_file_worker, str(fp))
+                                pending[fut] = None
+
+                            # Harvest completed futures
+                            done_futures = [f for f in pending if f.done()]
+                            for f in done_futures:
+                                del pending[f]
                                 try:
-                                    fp_str, status, data = future.result()
+                                    fp_str, status, data = f.result()
                                 except Exception as e:
                                     errors += 1
                                     scanned += 1
@@ -322,33 +395,20 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                                 else:
                                     process_scan_result(fp_str, status, data)
 
-                                progress.update(task_id, completed=scanned)
-                                live.update(make_display())
-                else:
-                    # ProcessPoolExecutor - lightweight, works on login nodes
-                    with ProcessPoolExecutor(max_workers=jobs) as executor:
-                        future_to_path = {
-                            executor.submit(_scan_file_worker, str(fp)): fp
-                            for fp in files
-                        }
-
-                        for future in futures_as_completed(future_to_path):
-                            try:
-                                fp_str, status, data = future.result()
-                            except Exception as e:
-                                errors += 1
-                                scanned += 1
-                                messages.append((f"✗ Error: {e}", "red"))
-                            else:
-                                process_scan_result(fp_str, status, data)
-
-                            progress.update(task_id, completed=scanned)
+                            # Update progress display
+                            desc = "[cyan]Scanning...[/cyan]" if discovery_done else "[cyan]Discovering & scanning...[/cyan]"
+                            total = discovered if discovery_done else None
+                            progress.update(task_id, description=desc, total=total, completed=scanned)
                             live.update(make_display())
 
-                progress.update(task_id, description="[green]Done[/green]")
+                            if not discovery_done and not batch and not done_futures:
+                                _time.sleep(0.05)
+
+                progress.update(task_id, description="[green]Done[/green]", total=discovered, completed=scanned)
                 live.update(make_display())
         finally:
             logger.enable("esm_catalog")
+            discovery_thread.join(timeout=5)
 
     logger.info("Scanned {} files: {} cataloged, {} errors", scanned, ok, errors)
 

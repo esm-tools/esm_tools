@@ -224,8 +224,11 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
         discovery_done = False
 
         # Resolve discovery parameters
+        _EXP_MARKER = ".top_of_exp_tree"
+
         if is_file(root):
             file_source = "single"
+            scan_roots = [root]
         elif is_dir(root):
             file_source = "dir"
             if include_extensionless is None:
@@ -234,6 +237,30 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                 include_ext = include_extensionless
             if not include_ext and is_remote:
                 logger.info("Skipping extension-less files for remote scan")
+
+            # Auto-detect experiment trees via .top_of_exp_tree marker
+            root_path = Path(str(root))
+            if (root_path / _EXP_MARKER).exists():
+                # Root itself is an experiment -- scan it directly
+                scan_roots = [root]
+                logger.info("Experiment tree detected: {}", root_path.name)
+            else:
+                # Check for experiment subdirectories
+                exp_dirs = sorted(
+                    d for d in root_path.iterdir()
+                    if d.is_dir() and (d / _EXP_MARKER).exists()
+                )
+                if exp_dirs:
+                    scan_roots = [parse_uri(str(d)) for d in exp_dirs]
+                    logger.info(
+                        "Found {} experiment trees: {}",
+                        len(exp_dirs),
+                        ", ".join(d.name for d in exp_dirs),
+                    )
+                else:
+                    # No markers found -- fall back to scanning everything
+                    scan_roots = [root]
+                    logger.info("No .top_of_exp_tree markers found, scanning entire directory")
         else:
             logger.error("Path does not exist or is not accessible: {}", path)
             return
@@ -246,12 +273,13 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             """Run file discovery in background, feeding file_q."""
             nonlocal discovered
             if file_source == "single":
-                file_q.put(root)
+                file_q.put(scan_roots[0])
                 discovered = 1
             else:
-                for fp in file_candidates(root, include_extensionless=include_ext):
-                    file_q.put(fp)
-                    discovered += 1
+                for scan_root in scan_roots:
+                    for fp in file_candidates(scan_root, include_extensionless=include_ext):
+                        file_q.put(fp)
+                        discovered += 1
             file_q.put(_SENTINEL)
 
         discovery_thread = threading.Thread(target=_discovery_worker, daemon=True)

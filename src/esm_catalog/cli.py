@@ -188,6 +188,7 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     def file_candidates(root, include_extensionless=True):
         """Yield file candidates: known extensions first, then extension-less files."""
         seen = set()
+        count = 0
 
         # First: files with known extensions (fast path)
         for fp in list_files(root):
@@ -195,6 +196,9 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             if key not in seen:
                 seen.add(key)
                 if not should_exclude(key):
+                    count += 1
+                    if count % 1000 == 0:
+                        logger.info("  ... discovered {:,} files so far", count)
                     yield fp
 
         # Second: extension-less files (magic byte detection happens in worker)
@@ -205,6 +209,9 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                 if key not in seen and fp.suffix.lower() not in known_exts:
                     seen.add(key)
                     if not should_exclude(key):
+                        count += 1
+                        if count % 1000 == 0:
+                            logger.info("  ... discovered {:,} files so far", count)
                         yield fp
 
     with CatalogDB(db_path) as catalog_db:

@@ -369,12 +369,14 @@ def _create_gridded_plot(
         coord in data_array.coords for coord in ["lat", "latitude", "lon", "longitude"]
     )
 
-    if HAS_GEOVIEWS and has_geo_coords:
-        # Use GeoViews for proper geographic projection
+    # Check if data is on a proper 2D grid (has two spatial dims that are
+    # coordinates, not a flat "values" dimension from spectral harmonics)
+    has_proper_grid = data_array.ndim >= 2 and "values" not in data_array.dims
+    title = data_array.attrs.get("long_name", data_array.name or "Data")
+
+    if HAS_GEOVIEWS and has_geo_coords and has_proper_grid:
         if projection is None:
             projection = ccrs.Robinson()
-
-        # Create quadmesh with geographic projection
         plot = data_array.hvplot.quadmesh(
             x="lon" if "lon" in data_array.coords else "longitude",
             y="lat" if "lat" in data_array.coords else "latitude",
@@ -385,34 +387,28 @@ def _create_gridded_plot(
             frame_width=700,
             frame_height=400,
             colorbar=True,
-            title=data_array.attrs.get("long_name", data_array.name or "Data"),
+            title=title,
         )
-    elif data_array.ndim >= 2:
-        # Fall back to regular hvplot quadmesh for 2D+ data
-        try:
-            plot = data_array.hvplot.quadmesh(
-                cmap=cmap_obj,
-                frame_width=700,
-                frame_height=400,
-                colorbar=True,
-                title=data_array.attrs.get("long_name", data_array.name or "Data"),
-            )
-        except Exception:
-            # quadmesh failed (e.g. no proper grid coordinates), try image
-            plot = data_array.hvplot(
-                kind="image",
-                cmap=cmap_obj,
-                frame_width=700,
-                frame_height=400,
-                colorbar=True,
-                title=data_array.attrs.get("long_name", data_array.name or "Data"),
-            )
-    else:
-        # 1D data or flat arrays -- line plot
+    elif has_proper_grid:
+        plot = data_array.hvplot.quadmesh(
+            cmap=cmap_obj,
+            frame_width=700,
+            frame_height=400,
+            colorbar=True,
+            title=title,
+        )
+    elif data_array.ndim >= 1:
+        # Flat data (e.g. spectral harmonics on "values" dim) -- line plot
         plot = data_array.hvplot.line(
             frame_width=700,
             frame_height=400,
-            title=data_array.attrs.get("long_name", data_array.name or "Data"),
+            title=f"{title} (spectral / non-gridded)",
+        )
+    else:
+        plot = data_array.hvplot(
+            frame_width=700,
+            frame_height=400,
+            title=title,
         )
 
     return plot

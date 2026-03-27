@@ -672,8 +672,8 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
         # add_api_websocket_route.  The latter wraps the handler in FastAPI's
         # dependency injection, which fails on bokeh-fastapi's *args/**kwargs
         # handler signature (Starlette >=1.0 / FastAPI >=0.115).
-        import bokeh_fastapi as _bf
-        _bf._STARLETTE_GE_1_0_0 = False
+        import bokeh_fastapi.application as _bfa
+        _bfa._STARLETTE_GE_1_0_0 = False
 
         @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview",
                          websocket_origin=ws_origins)

@@ -668,23 +668,12 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
             ws_origins = ["*"]
         logger.info(f"Panel websocket origins: {ws_origins}")
 
-        # Patch WSHandler.create_factory to log and bypass subprotocol check
-        from bokeh_fastapi.handler import WSHandler
-        _orig_create_factory = WSHandler.create_factory
-
-        @classmethod
-        def _patched_create_factory(cls, application, application_context):
-            orig_handler = _orig_create_factory.__func__(cls, application, application_context)
-            async def patched_handler(websocket):
-                subprotos = websocket.scope.get("subprotocols", [])
-                logger.info(f"WS handler: subprotocols={subprotos}")
-                try:
-                    return await orig_handler(websocket)
-                except Exception as e:
-                    logger.error(f"WS handler exception: {type(e).__name__}: {e}")
-                    raise
-            return patched_handler
-        WSHandler.create_factory = _patched_create_factory
+        # Patch BokehFastAPI to use add_websocket_route instead of
+        # add_api_websocket_route.  The latter wraps the handler in FastAPI's
+        # dependency injection, which fails on bokeh-fastapi's *args/**kwargs
+        # handler signature (Starlette >=1.0 / FastAPI >=0.115).
+        import bokeh_fastapi as _bf
+        _bf._STARLETTE_GE_1_0_0 = False
 
         @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview",
                          websocket_origin=ws_origins)

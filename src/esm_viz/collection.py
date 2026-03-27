@@ -136,14 +136,12 @@ def _build_datatree(
     collection_id: str, stac_api: str
 ) -> tuple[xr.DataTree, dict[str, Any]]:
     """
-    Build an ``xr.DataTree`` from a STAC collection.
+    Build a skeleton ``xr.DataTree`` from STAC collection metadata.
 
-    Items are grouped by their ``properties.variable`` field.  Within each
-    group the data files are opened with ``xr.open_mfdataset`` along the
-    ``time`` dimension with Dask lazy loading.
-
-    The second return value is a metadata dict carrying FESOM mesh info
-    (if applicable) and the raw item list for downstream use.
+    No data files are opened.  Each variable discovered via
+    ``cube:variables`` gets an empty node in the tree.  Actual datasets
+    are loaded on demand by :func:`_ensure_loaded` when a variable is
+    selected in the UI.
 
     Parameters
     ----------
@@ -155,9 +153,8 @@ def _build_datatree(
     Returns
     -------
     tuple[xr.DataTree, dict]
-        (tree, meta) where *tree* groups datasets by variable name and
-        *meta* contains ``"items"``, ``"mesh"`` (lon, lat, elem or None),
-        and ``"is_unstructured"`` flag.
+        (tree, meta) where *tree* has one empty child per variable and
+        *meta* carries the variable-to-file index, mesh info, and format.
     """
     cache_key = _collection_cache_key(collection_id, stac_api)
     if cache_key in _datatree_cache:
@@ -168,8 +165,7 @@ def _build_datatree(
     if not items:
         raise ValueError(f"No items found in collection '{collection_id}'")
 
-    # Group items by cube:variables keys — each variable maps to the files
-    # that contain it, regardless of how many variables are in each file.
+    # Build variable-to-files index from cube:variables keys.
     var_groups: dict[str, list[str]] = defaultdict(list)
     fmt = "netcdf"
     for item in items:
@@ -187,6 +183,11 @@ def _build_datatree(
     if not var_groups:
         raise ValueError("No data assets found in collection items")
 
+    # Deduplicate paths per variable.
+    var_index: dict[str, list[str]] = {}
+    for var_name, hrefs in var_groups.items():
+        var_index[var_name] = sorted(set(_strip_file_uri(h) for h in hrefs))
+
     # Detect FESOM mesh from the first item that has mesh metadata
     mesh = None
     unstructured = False
@@ -198,9 +199,9 @@ def _build_datatree(
 
     # If mesh detection via STAC failed, check the first dataset directly
     if not unstructured:
-        first_href = next(iter(next(iter(var_groups.values()))))
+        first_href = next(iter(next(iter(var_index.values()))))
         try:
-            _ds_probe = xr.open_dataset(_strip_file_uri(first_href), chunks="auto")
+            _ds_probe = xr.open_dataset(first_href, chunks="auto")
             unstructured = is_unstructured(_ds_probe)
             _ds_probe.close()
         except Exception:
@@ -208,66 +209,75 @@ def _build_datatree(
 
     engine = "cfgrib" if fmt == "grib" else "netcdf4"
 
-    # Group variables by their file set so we open each unique set only once.
-    # Many variables share the same files (e.g., 143 vars in the same GRIB).
-    fileset_to_vars: dict[tuple[str, ...], list[str]] = defaultdict(list)
-    for var_name, hrefs in var_groups.items():
-        paths = tuple(sorted(set(_strip_file_uri(h) for h in hrefs)))
-        fileset_to_vars[paths].append(var_name)
+    # Build skeleton DataTree -- empty Dataset per variable, no I/O.
+    tree = xr.DataTree.from_dict(
+        {var_name: xr.Dataset() for var_name in sorted(var_index)}
+    )
 
-    tree_dict: dict[str, xr.Dataset] = {}
-    for paths, var_names in fileset_to_vars.items():
-        logger.info(
-            f"Opening {len(paths)} file(s) for {len(var_names)} variable(s)"
-        )
-        try:
-            ds = xr.open_mfdataset(
-                list(paths),
-                concat_dim="time",
-                combine="nested",
-                chunks="auto",
-                data_vars="minimal",
-                coords="minimal",
-                compat="override",
-                engine=engine,
-            )
-        except Exception as e:
-            logger.warning(
-                f"Could not open multi-file dataset: {e}. "
-                "Trying first file only."
-            )
-            try:
-                ds = xr.open_dataset(paths[0], chunks="auto", engine=engine)
-            except Exception as e2:
-                logger.error(f"Skipping {len(var_names)} variables: {e2}")
-                continue
-
-        for var_name in var_names:
-            if var_name in ds.data_vars:
-                tree_dict[var_name] = ds[[var_name]]
-            else:
-                logger.debug(f"Variable '{var_name}' not found in dataset, skipping")
-
-    if not tree_dict:
-        raise ValueError("Could not open any datasets from collection items")
-
-    tree = xr.DataTree.from_dict(tree_dict)
     meta: dict[str, Any] = {
         "items": items,
         "mesh": mesh,
         "is_unstructured": unstructured,
         "collection_id": collection_id,
+        "stac_api": stac_api,
         "n_items": len(items),
-        "n_variables": len(tree_dict),
+        "n_variables": len(var_index),
+        "var_index": var_index,
+        "engine": engine,
     }
 
-    # Populate cache
     _datatree_cache[cache_key] = (tree, meta)
     logger.info(
-        f"Built DataTree with {len(tree_dict)} variables for collection "
-        f"'{collection_id}'"
+        f"Built skeleton DataTree with {len(var_index)} variables for "
+        f"collection '{collection_id}'"
     )
     return tree, meta
+
+
+# Cache of loaded datasets keyed on (cache_key, var_name).
+_loaded_vars: dict[tuple[str, str], xr.Dataset] = {}
+
+
+def _ensure_loaded(
+    tree: xr.DataTree, meta: dict, var_name: str, cache_key: str
+) -> xr.Dataset:
+    """Load a single variable's dataset on demand and attach it to the tree.
+
+    Returns the single-variable ``xr.Dataset``.  Subsequent calls for the
+    same variable return the cached result without any I/O.
+    """
+    key = (cache_key, var_name)
+    if key in _loaded_vars:
+        return _loaded_vars[key]
+
+    var_index = meta["var_index"]
+    engine = meta["engine"]
+    paths = var_index.get(var_name, [])
+    if not paths:
+        raise ValueError(f"No files found for variable '{var_name}'")
+
+    logger.info(f"Loading {len(paths)} file(s) for variable '{var_name}'")
+    try:
+        ds = xr.open_mfdataset(
+            paths,
+            concat_dim="time",
+            combine="nested",
+            chunks="auto",
+            data_vars="minimal",
+            coords="minimal",
+            compat="override",
+            engine=engine,
+        )
+    except Exception as e:
+        logger.warning(f"open_mfdataset failed for '{var_name}': {e}. Trying first file.")
+        ds = xr.open_dataset(paths[0], chunks="auto", engine=engine)
+
+    if var_name in ds.data_vars:
+        ds = ds[[var_name]]
+
+    tree[var_name].dataset = ds
+    _loaded_vars[key] = ds
+    return ds
 
 
 def _extract_href(item: dict) -> str | None:
@@ -343,35 +353,30 @@ def create_collection_preview_app(
         tree, meta = _datatree_cache[cache_key]
         return _create_collection_content(tree, meta, collection_id)
 
-    # Show loading indicator, then build DataTree in background
-    container = pn.Column(sizing_mode="stretch_width")
-    container.append(_create_loading_indicator(collection_id))
-
-    def _load_and_replace():
-        try:
-            tree, meta = _build_datatree(collection_id, stac_api)
-            content = _create_collection_content(tree, meta, collection_id)
-            container.clear()
-            container.append(content)
-        except Exception as e:
-            logger.error(f"Failed to build DataTree: {e}")
-            container.clear()
-            container.append(pn.pane.Markdown("# ESM-Viz Collection Preview"))
-            container.append(
-                pn.pane.Alert(
-                    f"Failed to load collection data: {e}",
-                    alert_type="danger",
-                )
-            )
-
-    pn.state.execute(_load_and_replace)
-    return container
+    # Building the skeleton is instant (no I/O), so no loading screen needed.
+    try:
+        tree, meta = _build_datatree(collection_id, stac_api)
+        return _create_collection_content(tree, meta, collection_id)
+    except Exception as e:
+        logger.error(f"Failed to build DataTree: {e}")
+        return pn.Column(
+            pn.pane.Markdown("# ESM-Viz Collection Preview"),
+            pn.pane.Alert(
+                f"Failed to load collection data: {e}",
+                alert_type="danger",
+            ),
+        )
 
 
 def _create_collection_content(
     tree: xr.DataTree, meta: dict, collection_id: str
 ) -> pn.viewable.Viewable:
     """Build the actual collection preview UI from a DataTree."""
+
+    cache_key = _collection_cache_key(
+        meta.get("collection_id", collection_id),
+        meta.get("stac_api", ""),
+    )
 
     # Gather variable names from the tree (top-level children)
     variable_names = sorted(tree.children.keys())
@@ -386,22 +391,21 @@ def _create_collection_content(
     mesh = meta.get("mesh")
     unstructured = meta.get("is_unstructured", False)
 
-    # Determine global time range across all variables
+    # We don't know the global time range without loading data.
+    # Use a reasonable default; the slider updates when a variable is selected.
     global_n_times = 1
-    for var_name in variable_names:
-        ds = tree[var_name].dataset
-        for dim in ("time", "t"):
-            if dim in ds.dims:
-                global_n_times = max(global_n_times, ds.sizes[dim])
-                break
 
     # Determine initial variable and its properties
     initial_var = variable_names[0]
     initial_cmap = get_smart_colormap(initial_var)
 
+    def _get_ds(var_name: str) -> xr.Dataset:
+        """Get the dataset for a variable, loading on demand."""
+        return _ensure_loaded(tree, meta, var_name, cache_key)
+
     def _n_levels_for(var_name: str) -> int:
         """Return the number of vertical levels for a given variable node."""
-        ds = tree[var_name].dataset
+        ds = _get_ds(var_name)
         level_dims = {"level", "lev", "depth", "z", "nz", "nz1"}
         for dv in ds.data_vars.values():
             for dim in dv.dims:
@@ -410,7 +414,7 @@ def _create_collection_content(
         return 1
 
     def _n_times_for(var_name: str) -> int:
-        ds = tree[var_name].dataset
+        ds = _get_ds(var_name)
         for dim in ("time", "t"):
             if dim in ds.dims:
                 return ds.sizes[dim]
@@ -543,8 +547,7 @@ def _create_collection_content(
         cmap: str,
     ) -> Any:
         try:
-            ds = tree[var_name].dataset
-            # Identify the data variable inside this single-variable dataset
+            ds = _get_ds(var_name)
             data_var = _pick_data_var(ds, var_name)
             da = ds[data_var]
 
@@ -601,7 +604,7 @@ def _create_collection_content(
         width=320,
     )
 
-    plot_area = pn.panel(_render_plot, sizing_mode="stretch_both")
+    plot_area = pn.panel(_render_plot, sizing_mode="stretch_both", loading_indicator=True)
 
     app = pn.Column(
         pn.pane.Markdown("# ESM-Viz Collection Preview"),
@@ -765,9 +768,15 @@ def create_comparison_preview_app(
     # For difference plots, both must be on the same grid type
     can_difference = (unstructured_a == unstructured_b)
 
+    cache_key_a = _collection_cache_key(collection_a, stac_api)
+    cache_key_b = _collection_cache_key(collection_b, stac_api)
+
+    def _get_ds_for(tree: xr.DataTree, meta: dict, var_name: str, ck: str) -> xr.Dataset:
+        return _ensure_loaded(tree, meta, var_name, ck)
+
     # Time range helpers per collection
-    def _n_times_for(tree: xr.DataTree, var_name: str) -> int:
-        ds = tree[var_name].dataset
+    def _n_times_for(tree: xr.DataTree, meta: dict, var_name: str, ck: str) -> int:
+        ds = _get_ds_for(tree, meta, var_name, ck)
         for dim in ("time", "t"):
             if dim in ds.dims:
                 return ds.sizes[dim]
@@ -776,8 +785,8 @@ def create_comparison_preview_app(
     initial_var = common_vars[0]
     initial_cmap = get_smart_colormap(initial_var)
 
-    n_t_a = _n_times_for(tree_a, initial_var)
-    n_t_b = _n_times_for(tree_b, initial_var)
+    n_t_a = _n_times_for(tree_a, meta_a, initial_var, cache_key_a)
+    n_t_b = _n_times_for(tree_b, meta_b, initial_var, cache_key_b)
 
     # Widgets
     var_selector = pn.widgets.Select(
@@ -832,8 +841,8 @@ def create_comparison_preview_app(
     # Update sliders when variable changes
     @pn.depends(var_selector.param.value, watch=True)
     def _on_var_change(var_name: str) -> None:
-        n_a = _n_times_for(tree_a, var_name)
-        n_b = _n_times_for(tree_b, var_name)
+        n_a = _n_times_for(tree_a, meta_a, var_name, cache_key_a)
+        n_b = _n_times_for(tree_b, meta_b, var_name, cache_key_b)
         range_a.end = max(0, n_a - 1)
         range_a.value = (0, max(0, n_a - 1))
         range_b.end = max(0, n_b - 1)
@@ -841,7 +850,7 @@ def create_comparison_preview_app(
 
         # Level slider
         n_l = 1
-        ds_a = tree_a[var_name].dataset
+        ds_a = _get_ds_for(tree_a, meta_a, var_name, cache_key_a)
         level_dims = {"level", "lev", "depth", "z", "nz", "nz1"}
         for dv in ds_a.data_vars.values():
             for dim in dv.dims:
@@ -857,10 +866,10 @@ def create_comparison_preview_app(
             cmap_selector.value = smart_cmap
 
     # Plotting helper
-    def _make_plot(tree: xr.DataTree, meta: dict, var_name: str,
+    def _make_plot(tree: xr.DataTree, meta: dict, ck: str, var_name: str,
                    time_range: tuple[int, int], level_idx: int,
                    cmap: str, title: str) -> Any:
-        ds = tree[var_name].dataset
+        ds = _get_ds_for(tree, meta, var_name, ck)
         data_var = _pick_data_var(ds, var_name)
         da = ds[data_var]
         da = _isel_level(da, level_idx)
@@ -899,7 +908,7 @@ def create_comparison_preview_app(
     def plot_a(var_name: str, tr: tuple, level_idx: int, cmap: str) -> Any:
         try:
             title = f"{collection_a}: {var_name} mean (t[{tr[0]}:{tr[1]}])"
-            return _make_plot(tree_a, meta_a, var_name, tr, level_idx, cmap, title)
+            return _make_plot(tree_a, meta_a, cache_key_a, var_name, tr, level_idx, cmap, title)
         except Exception as e:
             logger.error(f"Plot A failed: {e}")
             return pn.pane.Alert(f"Plot A failed: {e}", alert_type="danger")
@@ -914,7 +923,7 @@ def create_comparison_preview_app(
     def plot_b(var_name: str, tr: tuple, level_idx: int, cmap: str) -> Any:
         try:
             title = f"{collection_b}: {var_name} mean (t[{tr[0]}:{tr[1]}])"
-            return _make_plot(tree_b, meta_b, var_name, tr, level_idx, cmap, title)
+            return _make_plot(tree_b, meta_b, cache_key_b, var_name, tr, level_idx, cmap, title)
         except Exception as e:
             logger.error(f"Plot B failed: {e}")
             return pn.pane.Alert(f"Plot B failed: {e}", alert_type="danger")
@@ -935,8 +944,8 @@ def create_comparison_preview_app(
                 alert_type="warning",
             )
         try:
-            ds_a = tree_a[var_name].dataset
-            ds_b = tree_b[var_name].dataset
+            ds_a = _get_ds_for(tree_a, meta_a, var_name, cache_key_a)
+            ds_b = _get_ds_for(tree_b, meta_b, var_name, cache_key_b)
             dv_a = _pick_data_var(ds_a, var_name)
             dv_b = _pick_data_var(ds_b, var_name)
 

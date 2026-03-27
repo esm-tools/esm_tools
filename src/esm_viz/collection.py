@@ -493,6 +493,17 @@ def _create_collection_content(
         width=280,
     )
 
+    def _update_mesh_type(var_name: str) -> None:
+        """Update the info panel mesh type based on the selected variable."""
+        try:
+            ds = _get_ds(var_name)
+            mesh_label = "Unstructured (FESOM)" if is_unstructured(ds) else "Gridded"
+        except Exception:
+            mesh_label = "Unknown"
+        info_pane.object = _build_info_md(
+            meta, variable_names, _n_times_for(var_name), mesh_label
+        )
+
     # ---- Reactive callbacks ----
 
     @pn.depends(view_mode.param.value, watch=True)
@@ -525,6 +536,8 @@ def _create_collection_content(
         smart_cmap = get_smart_colormap(var_name)
         if smart_cmap in AVAILABLE_COLORMAPS:
             cmap_selector.value = smart_cmap
+
+        _update_mesh_type(var_name)
 
     # ---- Plot function ----
 
@@ -677,17 +690,19 @@ def _build_info_md(
     meta: dict[str, Any],
     variables: list[str],
     global_n_times: int,
+    mesh_type: str | None = None,
 ) -> str:
     """Build a Markdown info block for the sidebar."""
     coll_id = meta.get("collection_id", "unknown")
     n_items = meta.get("n_items", 0)
     n_vars = meta.get("n_variables", 0)
-    mesh_type = "Unstructured (FESOM)" if meta.get("is_unstructured") else "Gridded"
+    if mesh_type is None:
+        mesh_type = "Unstructured (FESOM)" if meta.get("is_unstructured") else "Gridded"
     return (
         f"**Collection:** `{coll_id}`\n\n"
         f"- Items: {n_items}\n"
         f"- Variables: {n_vars}\n"
-        f"- Max time steps: {global_n_times}\n"
+        f"- Time steps: {global_n_times}\n"
         f"- Mesh type: {mesh_type}\n"
     )
 

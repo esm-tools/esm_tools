@@ -387,13 +387,31 @@ def _create_gridded_plot(
             colorbar=True,
             title=data_array.attrs.get("long_name", data_array.name or "Data"),
         )
+    elif data_array.ndim >= 2:
+        # Fall back to regular hvplot quadmesh for 2D+ data
+        try:
+            plot = data_array.hvplot.quadmesh(
+                cmap=cmap_obj,
+                frame_width=700,
+                frame_height=400,
+                colorbar=True,
+                title=data_array.attrs.get("long_name", data_array.name or "Data"),
+            )
+        except Exception:
+            # quadmesh failed (e.g. no proper grid coordinates), try image
+            plot = data_array.hvplot(
+                kind="image",
+                cmap=cmap_obj,
+                frame_width=700,
+                frame_height=400,
+                colorbar=True,
+                title=data_array.attrs.get("long_name", data_array.name or "Data"),
+            )
     else:
-        # Fall back to regular hvplot quadmesh
-        plot = data_array.hvplot.quadmesh(
-            cmap=cmap_obj,
+        # 1D data or flat arrays -- line plot
+        plot = data_array.hvplot.line(
             frame_width=700,
             frame_height=400,
-            colorbar=True,
             title=data_array.attrs.get("long_name", data_array.name or "Data"),
         )
 

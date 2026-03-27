@@ -6,6 +6,7 @@ from climate datasets referenced in STAC catalogs. Also serves
 interactive Panel applications for data exploration.
 """
 
+import os
 from pathlib import Path
 from typing import Annotated
 from functools import partial
@@ -627,7 +628,11 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
     try:
         from panel.io.fastapi import add_application
 
-        @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview")
+        ws_origins = os.environ.get("BOKEH_ALLOW_WS_ORIGIN", "").split(",")
+        ws_origins = [o.strip() for o in ws_origins if o.strip()]
+
+        @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview",
+                         websocket_origin=ws_origins)
         def panel_app_factory():
             """Panel app factory -- reads query params from Bokeh session context."""
             try:

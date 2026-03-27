@@ -52,6 +52,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Debug middleware: log all websocket connections
+from starlette.types import ASGIApp, Receive, Scope, Send
+
+class WSDebugMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] == "websocket":
+            logger.info(f"WS middleware: path={scope.get('path')} subprotocols={scope.get('subprotocols', [])}")
+        await self.app(scope, receive, send)
+
+app.add_middleware(WSDebugMiddleware)
+
 # Mount compute cluster management routes
 app.include_router(create_compute_router())
 
@@ -634,7 +648,7 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
             ws_origins = ["*"]
         logger.info(f"Panel websocket origins: {ws_origins}")
 
-        # Debug: log websocket subprotocols on connection
+        # Patch WSHandler to log subprotocols before add_application binds it
         from bokeh_fastapi.handler import WSHandler
         _orig_ws_connect = WSHandler.ws_connect
         async def _debug_ws_connect(self, websocket):

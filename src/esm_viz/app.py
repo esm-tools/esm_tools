@@ -630,6 +630,18 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
 
         ws_origins = os.environ.get("BOKEH_ALLOW_WS_ORIGIN", "").split(",")
         ws_origins = [o.strip() for o in ws_origins if o.strip()]
+        if not ws_origins:
+            ws_origins = ["*"]
+        logger.info(f"Panel websocket origins: {ws_origins}")
+
+        # Debug: log websocket subprotocols on connection
+        from bokeh_fastapi.handler import WSHandler
+        _orig_ws_connect = WSHandler.ws_connect
+        async def _debug_ws_connect(self, websocket):
+            subprotos = websocket.scope.get("subprotocols", [])
+            logger.info(f"WS connect: subprotocols={subprotos} (count={len(subprotos)})")
+            return await _orig_ws_connect(self, websocket)
+        WSHandler.ws_connect = _debug_ws_connect
 
         @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview",
                          websocket_origin=ws_origins)

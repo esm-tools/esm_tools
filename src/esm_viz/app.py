@@ -43,15 +43,6 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-from starlette.websockets import WebSocket as StarletteWebSocket
-
-@app.websocket("/ws-test")
-async def ws_test(websocket: StarletteWebSocket):
-    logger.info(f"WS test: subprotocols={websocket.scope.get('subprotocols')}")
-    await websocket.accept()
-    await websocket.send_text("hello")
-    await websocket.close()
-
 # Enable CORS for browser access
 app.add_middleware(
     CORSMiddleware,
@@ -60,31 +51,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-
-# Debug middleware: log all websocket connections
-from starlette.types import ASGIApp, Receive, Scope, Send
-
-class WSDebugMiddleware:
-    def __init__(self, app: ASGIApp):
-        self.app = app
-    async def __call__(self, scope: Scope, receive: Receive, send: Send):
-        if scope["type"] == "websocket":
-            logger.info(f"WS middleware: path={scope.get('path')} subprotocols={scope.get('subprotocols', [])}")
-            # Track what the inner app sends back
-            async def _send_wrapper(message):
-                if message.get("type") == "websocket.close":
-                    logger.info(f"WS inner app sent close: code={message.get('code')}")
-                elif message.get("type") == "websocket.accept":
-                    logger.info(f"WS inner app sent accept: subprotocol={message.get('subprotocol')}")
-                elif message.get("type") == "websocket.http.response.start":
-                    logger.info(f"WS inner app sent HTTP response: status={message.get('status')}")
-                await send(message)
-            await self.app(scope, receive, _send_wrapper)
-            return
-        await self.app(scope, receive, send)
-
-app.add_middleware(WSDebugMiddleware)
 
 # Mount compute cluster management routes
 app.include_router(create_compute_router())
@@ -660,34 +626,6 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
         The FastAPI application to add routes to.
     """
     try:
-        # Patch BEFORE importing panel.io.fastapi -- bokeh_fastapi uses
-        # add_api_websocket_route on Starlette >=1.0 which wraps handlers
-        # in FastAPI's dependency injection, breaking bokeh-fastapi's
-        # *args/**kwargs handler signature.
-        import bokeh_fastapi.application as _bfa
-        _bfa._STARLETTE_GE_1_0_0 = False
-
-        # Override create_factory so each new handler logs before calling ws_connect
-        from bokeh_fastapi.handler import WSHandler
-        _orig_factory = WSHandler.create_factory.__func__
-
-        @classmethod
-        def _new_factory(cls, application, application_context):
-            async def logging_handler(*args, **kwargs):
-                logger.info(f"WS factory handler called: args={len(args)}")
-                inst = cls(application, application_context)
-                if args:
-                    ws = args[0]
-                    sp = ws.scope.get("subprotocols", []) if hasattr(ws, 'scope') else []
-                    logger.info(f"WS subprotocols: {sp}")
-                try:
-                    return await inst.ws_connect(*args, **kwargs)
-                except Exception as e:
-                    logger.error(f"ws_connect error: {type(e).__name__}: {e}")
-                    raise
-            return logging_handler
-        WSHandler.create_factory = _new_factory
-
         from panel.io.fastapi import add_application
 
         ws_origins = os.environ.get("BOKEH_ALLOW_WS_ORIGIN", "").split(",")

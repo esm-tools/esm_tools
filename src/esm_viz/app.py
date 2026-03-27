@@ -666,7 +666,45 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
         # *args/**kwargs handler signature.
         import bokeh_fastapi.application as _bfa
         _bfa._STARLETTE_GE_1_0_0 = False
-        logger.info(f"Patched bokeh_fastapi: _STARLETTE_GE_1_0_0=False")
+
+        # Patch ws_connect to log every check
+        from bokeh_fastapi.handler import WSHandler
+        import calendar
+        import datetime as dt
+        from bokeh.core.serialization import Buffer
+        from bokeh.util.token import get_token_payload, get_session_id, check_token_signature
+
+        _orig_ws_connect = WSHandler.ws_connect
+        async def _debug_ws_connect(self, websocket):
+            sp = websocket.scope.get("subprotocols", [])
+            logger.info(f"PATCHED ws_connect: {len(sp)} subprotocols")
+            if len(sp) != 2:
+                logger.error(f"Bad subprotocol count: {sp}")
+                await websocket.close()
+                return
+            subprotocol, token = sp
+            logger.info(f"subprotocol={subprotocol}, token_len={len(token)}")
+            if subprotocol != "bokeh":
+                logger.error(f"Bad subprotocol: {subprotocol}")
+                await websocket.close()
+                return
+            try:
+                payload = get_token_payload(token)
+                logger.info(f"Token payload keys: {list(payload.keys())}")
+                now = calendar.timegm(dt.datetime.now(tz=dt.timezone.utc).timetuple())
+                expiry = payload.get("session_expiry", 0)
+                logger.info(f"Token expiry: {expiry}, now: {now}, expired: {now >= expiry}")
+                sig_ok = check_token_signature(
+                    token,
+                    signed=self.application.sign_sessions,
+                    secret_key=self.application.secret_key,
+                )
+                logger.info(f"Token signature valid: {sig_ok}")
+            except Exception as e:
+                logger.error(f"Token check error: {e}")
+            return await _orig_ws_connect(self, websocket)
+        WSHandler.ws_connect = _debug_ws_connect
+        logger.info("Patched WSHandler.ws_connect with debug logging")
 
         from panel.io.fastapi import add_application
 

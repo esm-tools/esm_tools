@@ -43,6 +43,15 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+from starlette.websockets import WebSocket as StarletteWebSocket
+
+@app.websocket("/ws-test")
+async def ws_test(websocket: StarletteWebSocket):
+    logger.info(f"WS test: subprotocols={websocket.scope.get('subprotocols')}")
+    await websocket.accept()
+    await websocket.send_text("hello")
+    await websocket.close()
+
 # Enable CORS for browser access
 app.add_middleware(
     CORSMiddleware,

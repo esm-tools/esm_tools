@@ -43,6 +43,20 @@ universal_pathlib = ">=0.2"
 paramiko = ">=3.0"
 distributed = ">=2024.1"  # dask.distributed for parallel scanning
 
+# esm_viz dependencies
+matplotlib = ">=3.8"
+cartopy = ">=0.22"
+scipy = ">=1.12"
+panel = ">=1.5"
+hvplot = ">=0.9"
+holoviews = ">=1.18"
+bokeh = ">=3.3"
+geoviews = ">=1.11"
+cmocean = ">=4.0"
+pydantic-settings = ">=2.1"
+numpy = ">=1.26"
+
 [pypi-dependencies]
 stac-fastapi-api = ">=3.0"
 stac-fastapi-types = ">=3.0"
+"panel[fastapi]" = ">=1.5.0"

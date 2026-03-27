@@ -648,14 +648,19 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
             ws_origins = ["*"]
         logger.info(f"Panel websocket origins: {ws_origins}")
 
-        # Patch WSHandler to log subprotocols before add_application binds it
+        # Patch WSHandler.create_factory to log and bypass subprotocol check
         from bokeh_fastapi.handler import WSHandler
-        _orig_ws_connect = WSHandler.ws_connect
-        async def _debug_ws_connect(self, websocket):
-            subprotos = websocket.scope.get("subprotocols", [])
-            logger.info(f"WS connect: subprotocols={subprotos} (count={len(subprotos)})")
-            return await _orig_ws_connect(self, websocket)
-        WSHandler.ws_connect = _debug_ws_connect
+        _orig_create_factory = WSHandler.create_factory
+
+        @classmethod
+        def _patched_create_factory(cls, application, application_context):
+            orig_handler = _orig_create_factory.__func__(cls, application, application_context)
+            async def patched_handler(websocket):
+                subprotos = websocket.scope.get("subprotocols", [])
+                logger.info(f"WS handler: subprotocols={subprotos}")
+                return await orig_handler(websocket)
+            return patched_handler
+        WSHandler.create_factory = _patched_create_factory
 
         @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview",
                          websocket_origin=ws_origins)

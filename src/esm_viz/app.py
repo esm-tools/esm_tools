@@ -660,6 +660,14 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
         The FastAPI application to add routes to.
     """
     try:
+        # Patch BEFORE importing panel.io.fastapi -- bokeh_fastapi uses
+        # add_api_websocket_route on Starlette >=1.0 which wraps handlers
+        # in FastAPI's dependency injection, breaking bokeh-fastapi's
+        # *args/**kwargs handler signature.
+        import bokeh_fastapi.application as _bfa
+        _bfa._STARLETTE_GE_1_0_0 = False
+        logger.info(f"Patched bokeh_fastapi: _STARLETTE_GE_1_0_0=False")
+
         from panel.io.fastapi import add_application
 
         ws_origins = os.environ.get("BOKEH_ALLOW_WS_ORIGIN", "").split(",")
@@ -667,27 +675,6 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
         if not ws_origins:
             ws_origins = ["*"]
         logger.info(f"Panel websocket origins: {ws_origins}")
-
-        # Patch BokehFastAPI to use add_websocket_route instead of
-        # add_api_websocket_route.  The latter wraps the handler in FastAPI's
-        # dependency injection, which fails on bokeh-fastapi's *args/**kwargs
-        # handler signature (Starlette >=1.0 / FastAPI >=0.115).
-        import bokeh_fastapi.application as _bfa
-        _bfa._STARLETTE_GE_1_0_0 = False
-
-        from bokeh_fastapi.handler import WSHandler
-        _orig_ws = WSHandler.ws_connect
-        async def _traced_ws(self, websocket):
-            sp = websocket.scope.get("subprotocols", [])
-            logger.info(f"ws_connect called: n_subprotocols={len(sp)}")
-            if len(sp) == 2:
-                logger.info(f"ws_connect: subprotocol={sp[0]}, token_len={len(sp[1])}")
-            try:
-                return await _orig_ws(self, websocket)
-            except Exception as e:
-                logger.error(f"ws_connect raised: {type(e).__name__}: {e}")
-                raise
-        WSHandler.ws_connect = _traced_ws
 
         @add_application("/_panel", fastapi_app, title="ESM-Viz Interactive Preview",
                          websocket_origin=ws_origins)

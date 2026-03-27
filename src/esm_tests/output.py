@@ -19,11 +19,11 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {
     "comp": ["comp-"],
-    "run": [".run", "finished_config", "namelists", "hostfiles"],
+    "run": [".run", "finished_config", "namelists", "hostfile_"],
 }
 
 
-def print_diff(info, sfile, tfile, name, ignore_lines):
+def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     """
     Prints the differences between two equivalent configuration files. Ignores the
     provenance comments.
@@ -40,6 +40,9 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
         Relative path to the file, for printing purposes.
     ignore_lines : list
         List of strings for lines containing them to be ignored in the comparison.
+    protected_strings : list, optional
+        Strings that must not be modified during cleanup (e.g. hardcoded
+        test-data paths in runscripts).
     """
     file_s = open(sfile).readlines()
     file_t = open(tfile).readlines()
@@ -49,7 +52,7 @@ def print_diff(info, sfile, tfile, name, ignore_lines):
         file_t = del_ignore_dicts(info, file_t)
 
     # Substitute user lines in target string
-    file_t = clean_user_specific_info(info, file_t)
+    file_t = clean_user_specific_info(info, file_t, protected_strings)
 
     # Pattern of provenance
     provenance_pattern = r'\s*#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
@@ -217,6 +220,7 @@ def save_files(info, user_choice):
             logger.error(f"'{model_config}' not found!")
         with open(model_config, "r") as c:
             config_test = yaml.load(c, Loader=yaml.FullLoader)
+        protected_strings = config_test.get("protected_strings", [])
         # Get name patters from the files to be compared
         compare_files_comp = copy.deepcopy(compare_files["comp"])
         compare_files_comp.extend(
@@ -263,7 +267,7 @@ def save_files(info, user_choice):
 
                         # Modify lines containing user-specific information
                         with open(target_path) as f:
-                            stext = clean_user_specific_info(info, f.read())
+                            stext = clean_user_specific_info(info, f.read(), protected_strings)
                         with open(target_path, "w") as f:
                             f.write(stext)
 

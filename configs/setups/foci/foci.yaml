@@ -41,7 +41,10 @@ general:
         - fs_oasismct4
         - default_oasismct4
         - default_oasismct5
+        - moz 
+        - moz_mct2 
         - mops_oasismct4
+        - mops_lmu
         - agrif
         - agrif_oasismct4
         - agrif_mops_oasismct4
@@ -74,13 +77,29 @@ general:
           default_oasismct5:
             couplings:
             - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT5+echam-6.3.05p2-foci_oasismct5
+          # includes echam-moz (stratospheric chemistry based on Schmidt et al., 2009 and Schultz et al. 20xx) 
+          moz:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW_OASISMCT5+echam-6.3.05p2-moz
+          # includes echam-moz (stratospheric chemistry based on Schmidt et al., 2009 and Schultz et al. 20xx) 
+          moz_mct2:
+            couplings:
+            - nemo-ORCA05_LIM2_KCM_AOW+echam-6.3.05p2-moz_mct2
           # includes MOPS in the ocean, uses OASISMCT4. IMPORTANT: uses different coupling
           # settings and interpolation methods w.r.t mops with OASISMCT2.8 (only available in old
           # mkexp based setup of FOCI)
           mops_oasismct4:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_oasismct4
-          # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, no AOW tracer
+          # includes MOPS in the ocean, changes to JSBACH from LMU Munich, 12 tiles for JSBACH, uses OASISMCT5 
+          mops_lmu:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_MOPS+echam-6.3.05p2-foci_lmu
+          # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, no AOW tracer    
+          agrif_noaow:
+            couplings:
+            - nemo-ORCA05_LIM2_FOCI_AGRIF+echam-6.3.05p2-foci
+          # FOCI with AGRIF using old file based coupling based on OASISMCT2.8, with AOW tracer    
           agrif:
             couplings:
             - nemo-ORCA05_LIM2_FOCI_AGRIF+echam-6.3.05p2-foci
@@ -100,28 +119,81 @@ general:
 #########################################################################################
 
 echam:
+
         choose_general.version:
+                "*":
+                        atm_file_tags: "echam accw co2"
                 default:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_autotools:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 fs:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 fs_oasismct4:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci_oasismct4"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_oasismct4:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci_oasismct4"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 default_oasismct5:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci_oasismct4"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+                moz:
+                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag temraw"
+                        version: "6.3.05p2-moz"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              radctl:
+                                 ico2: 1
+                                 io3: 1
+
+                        add_restartstreams:
+                           - tracer
+                           - vphysc 
+                        add_streams:
+                           - tracer
+                           - alltrm
+                           - moz
+                           - tdiag
+                           - temraw
+
+                moz_mct2:
+                        atm_file_tags: "echam accw co2 tracer alltrm moz tdiag temraw"
+                        version: "6.3.05p2-moz"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              radctl:
+                                 ico2: 1
+                                 io3: 1
+
+                        add_restartstreams:
+                           - tracer
+                           - vphysc 
+                        add_streams:
+                           - tracer
+                           - alltrm
+                           - moz
+                           - tdiag
+                           - temraw
 
                 mops_oasismct4:
+                        atm_file_tags: "echam accw co2 tracer"
                         version: "6.3.05p2-foci_oasismct4"
+                        # with mops we use a different namelist template that as a mvstream namelist
+                        # entry for tracer output. An entire mvstreamctl namelist block can't be added
+                        # as f90nml does not fully support the duplicate mvstreamctl entries
+                        namelist_dir: "${general.esm_namelist_dir}/echam/6.3.05p2-foci-withtracer/${echam.scenario_type}"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
                            namelist.echam:
@@ -137,15 +209,53 @@ echam:
 
                         add_streams:
                            - tracer
+
+                mops_lmu:
+                        atm_file_tags: "echam co2 tracer accw echamday co2day echam6hr echam6hrpt spday" 
+                        version: "6.3.05p2-foci_lmu"
+                        foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+                        add_namelist_changes:
+                           namelist.echam:
+                              runctl:   
+                                 lcouple_co2: true
+                              submodelctl:
+                                 lco2: true
+                              radctl:
+                                 ico2: 1
+                        # due to the setup in jsbach.yaml all output streams are added to the restart
+                        # streams as well, hence we have to remove them here, I'm sure there are better
+                        # ways to do this, but hey, it works and I don't need to touch jsbach.yaml
+                        #remove_streams:
+                        #   - echamday
+                        #   - co2day
+
+                        add_restartstreams:
+                           - tracer
+
+                        add_streams:
+                           - tracer
+                           - echamday
+                           - co2day
+                           - echam6hr
+                           - echam6hrpt
+                           - spday
+
                 agrif:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
                 agrif_oasismct4:
+                        atm_file_tags: "echam accw co2"
                         version: "6.3.05p2-foci_oasismct4"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
                 agrif_mops_oasismct4:
+                        atm_file_tags: "echam accw co2 tracer"
                         version: "6.3.05p2-foci_oasismct4"
+                        # with mops we use a different namelist template that as a mvstream namelist
+                        # entry for tracer output. An entire mvstreamctl namelist block can't be added
+                        # as f90nml does not fully support the duplicate mvstreamctl entries
+                        namelist_dir: "${general.esm_namelist_dir}/echam/6.3.05p2-foci-withtracer/${echam.scenario_type}"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
                         add_namelist_changes:
                            namelist.echam:
@@ -186,8 +296,7 @@ echam:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -311,8 +420,8 @@ echam:
                      time_step: 450
                      _nx: 192
                      _ny: 96
-                     nproca: ${nproca}
-                     nprocb: ${nprocb}
+                     nproca: 24 
+                     nprocb: 24 
 
         forcing_additional_information:
                 aerocoarse:
@@ -328,14 +437,17 @@ echam:
                      - need_year_before
                      - need_year_after
 
+        restart_in_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_in_sources:
-              #"[[streams-->STREAM]]": restart_${parent_expid}_${pseudo_start_date!syear!smonth!sday}_STREAM.nc
               "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        restart_in_in_work:
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
+        restart_out_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_out_sources:
-              #"[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday}_STREAM.nc
               "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
-
         restart_out_in_work:
               "[[restartstreams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
@@ -367,6 +479,7 @@ echam:
                 grid: atmo
 
         # Postprocessing
+        postprocessingscript: "echam_postprocessing.sh"
         choose_general.postprocessing:
                 True:
                         workflow:
@@ -380,11 +493,13 @@ echam:
                                                 script_dir: ${general.esm_function_dir}/setups/foci
                                                 submit_to_batch_system: True
                                                 script: "
-                                                    echam_postprocessing.sh
+                                                    ${echam.postprocessingscript} 
                                                     -r ${general.expid}
                                                     -s ${start_date!syear}
                                                     -e ${end_date!syear}
-                                                    -p ${general.base_dir}"
+                                                    -p ${general.base_dir}
+                                                    -a '${echam.atm_file_tags}'
+                                                    -l '${jsbach.land_file_tags}' "
                                                 nproc: 1
                                         echam_monitoring:
                                                 batch_or_shell: shell
@@ -397,6 +512,7 @@ echam:
                                                     echam_monitoring.sh
                                                     -r ${general.expid}
                                                     -i ${initial_date!syear}
+                                                    -p ${general.base_dir}
                                                     -o ${computer.pool_directories.focipool}/OBS_MONITORING/T63/
                                                     "
                                                 nproc: 1
@@ -416,8 +532,7 @@ hdmodel:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -436,6 +551,13 @@ jsbach:
         version: "3.20p1"
         # directories
         pool_dir: "${computer.pool_directories.focipool}/ECHAM6_${echam.resolution}/JSBACH/"
+        choose_echam.use_moz:
+            true:
+                choose_dynamic_vegetations:
+                    true:
+                        namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/dynveg-moz"
+                    false:
+                        namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/${echam.scenario_type}/no_dynveg-moz"
         input_dir_couple: "${pool_dir}/input/"
         choose_computer.name:
                ollie:
@@ -451,8 +573,7 @@ jsbach:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -506,22 +627,54 @@ jsbach:
         pseudo_start_date: $((${start_date} - ${time_step}seconds))
         pseudo_end_date: $((${next_date} - ${time_step}seconds - ${time_step}seconds))
 
+        restart_in_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_in_sources:
-              "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+              "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+        restart_in_in_work:
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
+        restart_out_files:
+              "[[restartstreams-->STREAM]]": STREAM
         restart_out_sources:
-              "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
-
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${pseudo_end_date!syear!smonth!sday}.nc
         restart_out_in_work:
-              "[[streams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+              "[[restartstreams-->STREAM]]": restart_${general.expid}_${pseudo_end_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
         streams:
-              - jsbach
-              - nitro
-              - veg
-              - yasso
-              - surf
-              - land
+          - jsbach
+          - nitro
+          - veg
+          - yasso
+          - surf
+          - land
+
+        restartstreams:
+          - jsbach
+          - nitro
+          - veg
+          - yasso
+          - surf
+
+        choose_general.version:
+            "*":
+                land_file_tags: "land jsbach veg surf yasso nitro"
+            mops_lmu:
+                land_file_tags: "veg surf yasso nitro jsbachday vegday landday yassoday nitroday land jsbach"
+                add_streams:
+                  - jsbachday
+                  - nitroday
+                  - vegday
+                  - yassoday
+                  - landday
+            moz:
+                land_file_tags: "land jsbach nitro veg yasso"
+                add_forcing_sources:
+                    lightning_renamed: "${input_dir}/${echam.resolution}/spitfire/LISOTD_HRMC_V2.2_${echam.resolution}_renamed.nc"
+                add_forcing_files:
+                    lightning: lightning_renamed
+                remove_streams:
+                    - surf
 
 nemo:
         choose_general.version:
@@ -552,6 +705,20 @@ nemo:
                             namsbc_cpl:
                               sn_rcv_emp: ['kcm_lim_2','no','','','']
                               sn_rcv_rnf: ['none','no','','','']
+                moz:
+                        version: "ORCA05_LIM2_KCM_AOW_FS_OASISMCT4"
+                        add_namelist_changes:
+                          namelist_cfg:
+                            namsbc_cpl:
+                              sn_rcv_emp: ['kcm_lim_2','no','','','']
+                              sn_rcv_rnf: ['none','no','','','']
+                moz_mct2:
+                        version: "ORCA05_LIM2_KCM_AOW"
+                        add_namelist_changes:
+                          namelist_cfg:
+                            namsbc_cpl:
+                              sn_rcv_emp: ['kcm_lim_2','no','','','']
+                              sn_rcv_rnf: ['none','no','','','']
                 agrif_aow:
                         version: "ORCA05_LIM2_FOCI_AGRIF_AOW"
                 agrif:
@@ -561,6 +728,8 @@ nemo:
                 agrif_mops_oasismct4:
                         version: "ORCA05_LIM2_FOCI_AGRIF_MOPS_OASISMCT4"
                 mops_oasismct4:
+                        version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
+                mops_lmu:
                         version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
 
         model_dir: ${general.model_dir}/nemo-${nemo.version}
@@ -572,8 +741,7 @@ nemo:
               all_directions: copy
            config:
               init_to_exp: copy
-              exp_to_run: link
-              run_to_work: link
+              run_to_work: copy
            forcing:
               all_directions: link
            log:
@@ -615,12 +783,14 @@ nemo:
 
 
 xios:
+        version: 2.5_r1910
         nproc: ${computer.partitions.compute.cores_per_node}
 
 #########################################################################################
 
 oasis3mct:
-
+        remove_config_files:
+          - cf
         model_dir: ${general.model_dir}/oasis
         input_dir: ${computer.pool_directories.focipool}/OASIS3_ECHAM6${echam.resolution}_${nemo.resolution}/input/${echam.resolution}_${nemo.resolution}/
         process_ordering:
@@ -645,6 +815,7 @@ oasis3mct:
         coupling_time_step: 10800
 
         #export_mode_a2o: EXPORTED
+
         choose_general.version:
                 default:
                         version: "foci"
@@ -820,33 +991,100 @@ oasis3mct:
                         export_mode_a2o: EXPORTED
 
                         coupling_target_fields:
-
                            sstocean:
-                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
-                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
-                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
-                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
-                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
-                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
-                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
                            flxatmos:
-                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
-                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
-                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
-                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
-                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
-                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
-                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
-                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
-                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
-                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
-                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
-                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap'
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
 
                         add_input_files:
-                           rmp_ot2a: rmp_ot2a
-                           rmp_a2oc: rmp_a2oc
-                           rmp_a2ot: rmp_a2ot
+                           rmp_a2n_B_mct5: rmp_a2n_B_mct5
+                           rmp_a2n_C_mct5: rmp_a2n_C_mct5
+                           rmp_n2a_C_mct5: rmp_n2a_C_mct5
+
+                moz:
+
+                        norestart: "T"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap'
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_a2n_B_mct5: rmp_a2n_B_mct5
+                           rmp_a2n_C_mct5: rmp_a2n_C_mct5
+                           rmp_n2a_C_mct5: rmp_n2a_C_mct5
+
+                moz_mct2:
+                        version: "foci"
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+                           sstocean:
+                              - 'AIceFrac <--conserv-- OIceFrac'
+                              - 'A_SSTSST <--conserv-- O_SSTSST'
+                              - 'A_TepIce <--conserv-- O_TepIce'
+                              - 'A_IceTck <--conserv-- O_IceTck'
+                              - 'A_SnwTck <--conserv-- O_SnwTck'
+                              - 'A_OCurx1 <--conserv-- O_OCurx1'
+                              - 'A_OCury1 <--conserv-- O_OCury1'
+                           flxatmos:
+                              - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                              - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                              - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                              - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                              - 'O_QsrIce <--conserv2-- A_QsrIce'
+                              - 'O_QsrMix <--conserv3-- A_QsrMix'
+                              - 'O_QnsIce <--conserv2-- A_QnsIce'
+                              - 'O_QnsMix <--conserv3-- A_QnsMix'
+                              - 'OTotRain <--conserv4-- ATotRain'
+                              - 'OTotSnow <--conserv2-- ATotSnow'
+                              - 'OIceEvap <--conserv2-- AIceEvap'
+                              - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+
+                        add_input_files:
+                           rmp_a2n_B: rmp_a2n_B
+                           rmp_a2n_C: rmp_a2n_C
+                           rmp_n2a_C: rmp_n2a_C
 
                 mops_oasismct4:
 
@@ -885,6 +1123,55 @@ oasis3mct:
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
                               - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
                               - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+
+                mops_lmu:
+
+                        norestart: "T"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
+
+                        export_mode_a2o: EXPORTED
+
+                        coupling_target_fields:
+
+                           sstocean:
+                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                              - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
+                              - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
+                              - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+
+                           flxatmos:
+                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+                              - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
+                              - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+
+                        add_input_files:
+                           rmp_ot2a: rmp_ot2a 
+                           rmp_a2oc: rmp_a2oc
+                           rmp_a2ot: rmp_a2ot
+
 
                 agrif_oasismct4:
 
@@ -1236,6 +1523,11 @@ oasis3mct:
                 rmp_a2n_B: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_a2n_C: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_n2a_C: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+
+                rmp_a2n_B_mct5: rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2n_C_mct5: rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_n2a_C_mct5: rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+
                 areas: areas.nc
                 masks: masks.nc
                 grids: grids.nc
@@ -1250,6 +1542,11 @@ oasis3mct:
                 rmp_a2n_B: ${input_dir}/rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_a2n_C: ${input_dir}/rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
                 rmp_n2a_C: ${input_dir}/rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
+                # CONSERV and BICUBIC remapping files generated with OASISMCT5 in 09/2025
+                # not sure whether they actually differ from the old ones. No time to check :-()
+                rmp_a2n_B_mct5: ${input_dir}/MCT5/rmp_atmo_to_opat_BICUBIC_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_a2n_C_mct5: ${input_dir}/MCT5/rmp_atmo_to_opac_CONSERV_FRACNNEI_D_${echam.resolution}_${nemo.resolution}.nc
+                rmp_n2a_C_mct5: ${input_dir}/MCT5/rmp_opat_to_atmo_CONSERV_FRACNNEI_${echam.resolution}_${nemo.resolution}.nc
 
                 areas: ${input_dir}/areas_${echam.resolution}_${nemo.resolution}_frac.nc
                 masks: ${input_dir}/masks_${echam.resolution}_${nemo.resolution}_frac.nc
@@ -1320,20 +1617,25 @@ computer:
                 ECHAM6_THREADS: 1
                 NEMO_THREADS: 1
                 I_MPI_DEBUG: 1
+                IO_LIB_ROOT: /mnt/lustre-emmy-hdd/projects/shk00060/foci_input2/HPC_libraries
     choose_general.execution_mode:
         compile:
             choose_computer.name:
                levante:
-                  #compiler_mpi: intel2022_impi2021
+                   #compiler_mpi: intel2022_impi2021
+                   #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
+                  load_libaec: True
+                  load_tbb: True
                juwels:
                   #compiler_mpi: intel2019_impi2019
                   compiler_mpi: intel2022_psmpi2022
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2025_impi2021
                nesh:
                   compiler_mpi: intel2019_impi2019
 
@@ -1341,8 +1643,12 @@ computer:
             add_choose_computer.name:
                levante:
                   #compiler_mpi: intel2022_impi2021
+                  #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
+                  load_libaec: True
+                  load_tbb: True
+                  launcher_flags: "-l --cpu-bind=cores --distribution=cyclic:cyclic"
                juwels:
                   compiler_mpi: intel2022_psmpi2022
                   #compiler_mpi: intel2019_impi2019
@@ -1355,7 +1661,8 @@ computer:
                   compiler_mpi: intel2019_impi2019_nemo4
                   #compiler_mpi: intel2021_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2025_impi2021
                   #compiler_mpi: intel2019_impi2019_nemo4
                   add_module_actions:
                      - "source $I_MPI_ROOT/../../setvars.sh"

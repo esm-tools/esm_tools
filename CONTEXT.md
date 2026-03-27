@@ -1,6 +1,14 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to coding agents when working with code in this repository.
+
+## Context files
+
+Add these files to memory:
+
+- CONTEXT.md: This file, with the context for coding agents abour the tool. Expand it with relevante information about ESM-Tools is discovered during a claude-code session. Make sure it is still brief and useful for general purpose context of the tools.
+- CHANGES.md: summary of the changes carried out in the currend development. To be updated while changes are applied. Changes will be removed at the end of the development, so there might not be a CHANGES.md file. In that case create it.
+- Other md files in the root directory might describe a feature or contain a plan. Do a fast search for those files and read them for context.
 
 ## Project Overview
 
@@ -69,7 +77,7 @@ user_error("ErrorType", "message", exit_code=1, hints=["hint1"])
 
 ### ESM-Tests (`src/esm_tests/`)
 
-Testing framework for compilation scripts and simulation runs. Reference data lives in a git submodule (`src/esm_tests/resources/` → `esm_tests_info` repo) with `runscripts/` and `last_tested/` directories.
+Testing framework for compilation scripts and simulation runs. Reference data lives in a git submodule (`src/esm_tests/resources/` → `esm_tests_info` repo) with `runscripts/` and `last_tested/` directories. Machine/user-specific paths are replaced with placeholders (`<TEST_DIR>`, `<NAMELIST_PATH>`, `<RUNSCRIPT_PATH>`, `<HOME_DIR>`, `<USER_ACCOUNT>`) via `rm_user_info` in `cli.py`; order matters — specific paths before `HOME_DIR`.
 
 ## Docstring Conventions
 

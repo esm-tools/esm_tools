@@ -62,6 +62,17 @@ class WSDebugMiddleware:
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "websocket":
             logger.info(f"WS middleware: path={scope.get('path')} subprotocols={scope.get('subprotocols', [])}")
+            # Track what the inner app sends back
+            async def _send_wrapper(message):
+                if message.get("type") == "websocket.close":
+                    logger.info(f"WS inner app sent close: code={message.get('code')}")
+                elif message.get("type") == "websocket.accept":
+                    logger.info(f"WS inner app sent accept: subprotocol={message.get('subprotocol')}")
+                elif message.get("type") == "websocket.http.response.start":
+                    logger.info(f"WS inner app sent HTTP response: status={message.get('status')}")
+                await send(message)
+            await self.app(scope, receive, _send_wrapper)
+            return
         await self.app(scope, receive, send)
 
 app.add_middleware(WSDebugMiddleware)

@@ -490,11 +490,7 @@ def scan_grib(path: "Union[Path, UPath, str]") -> dict:
     # Pattern: expid_YYYYMM.NN_STREAM or expid_YYYYMM.NN_STREAM_DATERANGE
     stream_type = _extract_stream_type(path)
 
-    # Primary variable: first extracted variable name, or stream type as fallback
-    primary_var = all_variables[0]["name"] if all_variables else stream_type
-
     return {
-        "variable":       primary_var,
         "stream":         stream_type,  # ECHAM output stream (echam, accw, co2)
         "variables":      all_variables,
         "cf_parameters":  _cf_parameters(all_variables),

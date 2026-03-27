@@ -86,7 +86,6 @@ def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
         global_attrs = _extract_global_attributes(ds)
 
     return {
-        "variable": primary_var,
         "variables": variables,
         "cf_parameters": _cf_parameters(variables),
         "dimensions": dimensions,

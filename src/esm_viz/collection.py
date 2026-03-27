@@ -168,13 +168,21 @@ def _build_datatree(
     if not items:
         raise ValueError(f"No items found in collection '{collection_id}'")
 
-    # Group items by variable name
+    # Group items by cube:variables keys — each variable maps to the files
+    # that contain it, regardless of how many variables are in each file.
     var_groups: dict[str, list[str]] = defaultdict(list)
+    fmt = "netcdf"
     for item in items:
-        var_name = item.get("properties", {}).get("variable", "unknown")
+        props = item.get("properties", {})
+        cube_vars = props.get("cube:variables", {})
         href = _extract_href(item)
-        if href:
-            var_groups[var_name].append(href)
+        if props.get("format") == "grib":
+            fmt = "grib"
+        if href and cube_vars:
+            for var_name in cube_vars:
+                var_groups[var_name].append(href)
+        elif href:
+            var_groups["unknown"].append(href)
 
     if not var_groups:
         raise ValueError("No data assets found in collection items")
@@ -198,10 +206,12 @@ def _build_datatree(
         except Exception:
             pass
 
+    engine = "cfgrib" if fmt == "grib" else "netcdf4"
+
     # Build per-variable datasets
     tree_dict: dict[str, xr.Dataset] = {}
     for var_name, hrefs in sorted(var_groups.items()):
-        paths = [_strip_file_uri(h) for h in hrefs]
+        paths = sorted(set(_strip_file_uri(h) for h in hrefs))
         logger.info(
             f"Opening {len(paths)} file(s) for variable '{var_name}'"
         )
@@ -214,7 +224,10 @@ def _build_datatree(
                 data_vars="minimal",
                 coords="minimal",
                 compat="override",
+                engine=engine,
             )
+            if var_name in ds.data_vars:
+                ds = ds[[var_name]]
             tree_dict[var_name] = ds
         except Exception as e:
             logger.warning(
@@ -223,7 +236,9 @@ def _build_datatree(
             )
             # Fallback: open just the first file
             try:
-                ds = xr.open_dataset(paths[0], chunks="auto")
+                ds = xr.open_dataset(paths[0], chunks="auto", engine=engine)
+                if var_name in ds.data_vars:
+                    ds = ds[[var_name]]
                 tree_dict[var_name] = ds
             except Exception as e2:
                 logger.error(f"Skipping variable '{var_name}': {e2}")

@@ -42,11 +42,11 @@ def make_item(
         from esm_catalog.scan.upath import parse_uri
         path = parse_uri(path)
 
-    variable = metadata.get("variable", "unknown")
     stream = metadata.get("stream")  # GRIB stream type (echam, accw, co2)
+    variables_list = metadata.get("variables", [])
+    first_var = variables_list[0]["name"] if variables_list else "unknown"
     dt_str = metadata.get("datetime_str", "000000")
-    # For GRIB files, use stream type for item ID; otherwise use variable
-    id_prefix = stream if stream else variable
+    id_prefix = stream if stream else first_var
     item_id = _make_id(id_prefix, ctx.component, dt_str, path)
 
     dt_start = metadata.get("datetime_start")
@@ -70,7 +70,6 @@ def make_item(
     # Build properties
     properties: dict = {
         "datetime": item_datetime,
-        "variable": variable,
         "experiment": ctx.experiment_id,
         "component": ctx.component,
         "file:size": metadata.get("file_size"),  # STAC File extension

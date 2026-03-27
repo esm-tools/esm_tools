@@ -175,7 +175,7 @@ class CatalogDB:
         INSERT OR IGNORE avoids duplicates.
         """
         props = item.get("properties", {})
-        index_keys = ("variable", "experiment", "component", "format",
+        index_keys = ("experiment", "component", "format",
                       "hpc:facility", "hpc:system", "hpc:storage_tier")
         for key in index_keys:
             val = props.get(key)
@@ -188,6 +188,16 @@ class CatalogDB:
                     """,
                     [collection_id, key, str(val)],
                 )
+        cube_vars = props.get("cube:variables", {})
+        for var_name in cube_vars:
+            self.db.execute(
+                """
+                INSERT OR IGNORE INTO collection_item_props
+                    (collection_id, property, value)
+                VALUES (?, ?, ?)
+                """,
+                [collection_id, "variable", str(var_name)],
+            )
 
     def get_collection_item_props(self, collection_id: str) -> dict:
         """Return {property: set_of_values} index for *collection_id*."""
@@ -242,6 +252,14 @@ class CatalogDB:
                     if field in ("id", "collection", "experiment"):
                         conditions.append(f"{field} IN ({placeholders})")
                         params.extend(val)
+                    elif field == "variable":
+                        or_clauses = " OR ".join(
+                            "list_contains("
+                            "json_keys(json_extract(data, '$.properties.\"cube:variables\"')), ?)"
+                            for _ in val
+                        )
+                        conditions.append(f"({or_clauses})")
+                        params.extend(str(v) for v in val)
                     else:
                         # JSON path query for item properties
                         conditions.append(
@@ -256,6 +274,12 @@ class CatalogDB:
                     col = "datetime"
                     conditions.append(f"{col} {op} ?::TIMESTAMPTZ")
                     params.append(val)
+                elif field == "variable":
+                    conditions.append(
+                        "list_contains("
+                        "json_keys(json_extract(data, '$.properties.\"cube:variables\"')), ?)"
+                    )
+                    params.append(str(val))
                 else:
                     # JSON path query for item properties
                     conditions.append(

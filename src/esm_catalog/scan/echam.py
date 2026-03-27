@@ -387,11 +387,7 @@ def scan_echam(path: "Union[Path, UPath, str]") -> dict:
     bbox = _extract_bbox(messages)
     stream_type = _extract_stream_type(path)
 
-    # Primary variable is first in list
-    primary_var = variables[0]["name"] if variables else "unknown"
-
     return {
-        "variable": primary_var,
         "stream": stream_type,
         "variables": variables,
         "cf_parameters": _cf_parameters(variables),

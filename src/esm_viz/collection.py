@@ -257,12 +257,6 @@ def _ensure_loaded(
         raise ValueError(f"No files found for variable '{var_name}'")
 
     logger.info(f"Loading {len(paths)} file(s) for variable '{var_name}'")
-    extra_kwargs = {}
-    if engine == "cfgrib":
-        extra_kwargs["backend_kwargs"] = {
-            "filter_by_keys": {"shortName": var_name},
-            "indexpath": "",
-        }
     try:
         ds = xr.open_mfdataset(
             paths,
@@ -273,11 +267,10 @@ def _ensure_loaded(
             coords="minimal",
             compat="override",
             engine=engine,
-            **extra_kwargs,
         )
     except Exception as e:
         logger.warning(f"open_mfdataset failed for '{var_name}': {e}. Trying first file.")
-        ds = xr.open_dataset(paths[0], chunks="auto", engine=engine, **extra_kwargs)
+        ds = xr.open_dataset(paths[0], chunks="auto", engine=engine)
 
     if var_name in ds.data_vars:
         ds = ds[[var_name]]

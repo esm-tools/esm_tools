@@ -669,7 +669,11 @@ def setup_panel_routes(fastapi_app: FastAPI) -> None:
             async def patched_handler(websocket):
                 subprotos = websocket.scope.get("subprotocols", [])
                 logger.info(f"WS handler: subprotocols={subprotos}")
-                return await orig_handler(websocket)
+                try:
+                    return await orig_handler(websocket)
+                except Exception as e:
+                    logger.error(f"WS handler exception: {type(e).__name__}: {e}")
+                    raise
             return patched_handler
         WSHandler.create_factory = _patched_create_factory
 

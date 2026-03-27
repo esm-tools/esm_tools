@@ -6,6 +6,8 @@ platforms = ["osx-arm64"]
 version = "0.1.0"
 
 [tasks]
+esm-catalog = "python -m esm_catalog.cli"
+esm-viz = "python -m esm_viz.cli"
 test-catalog = "pytest src/esm_catalog/tests/ -v"
 
 [dependencies]

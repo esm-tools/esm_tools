@@ -208,16 +208,21 @@ def _build_datatree(
 
     engine = "cfgrib" if fmt == "grib" else "netcdf4"
 
-    # Build per-variable datasets
+    # Group variables by their file set so we open each unique set only once.
+    # Many variables share the same files (e.g., 143 vars in the same GRIB).
+    fileset_to_vars: dict[tuple[str, ...], list[str]] = defaultdict(list)
+    for var_name, hrefs in var_groups.items():
+        paths = tuple(sorted(set(_strip_file_uri(h) for h in hrefs)))
+        fileset_to_vars[paths].append(var_name)
+
     tree_dict: dict[str, xr.Dataset] = {}
-    for var_name, hrefs in sorted(var_groups.items()):
-        paths = sorted(set(_strip_file_uri(h) for h in hrefs))
+    for paths, var_names in fileset_to_vars.items():
         logger.info(
-            f"Opening {len(paths)} file(s) for variable '{var_name}'"
+            f"Opening {len(paths)} file(s) for {len(var_names)} variable(s)"
         )
         try:
             ds = xr.open_mfdataset(
-                paths,
+                list(paths),
                 concat_dim="time",
                 combine="nested",
                 chunks="auto",
@@ -226,22 +231,22 @@ def _build_datatree(
                 compat="override",
                 engine=engine,
             )
-            if var_name in ds.data_vars:
-                ds = ds[[var_name]]
-            tree_dict[var_name] = ds
         except Exception as e:
             logger.warning(
-                f"Could not open multi-file dataset for '{var_name}': {e}. "
-                "Trying individual files."
+                f"Could not open multi-file dataset: {e}. "
+                "Trying first file only."
             )
-            # Fallback: open just the first file
             try:
                 ds = xr.open_dataset(paths[0], chunks="auto", engine=engine)
-                if var_name in ds.data_vars:
-                    ds = ds[[var_name]]
-                tree_dict[var_name] = ds
             except Exception as e2:
-                logger.error(f"Skipping variable '{var_name}': {e2}")
+                logger.error(f"Skipping {len(var_names)} variables: {e2}")
+                continue
+
+        for var_name in var_names:
+            if var_name in ds.data_vars:
+                tree_dict[var_name] = ds[[var_name]]
+            else:
+                logger.debug(f"Variable '{var_name}' not found in dataset, skipping")
 
     if not tree_dict:
         raise ValueError("Could not open any datasets from collection items")
@@ -283,6 +288,25 @@ def _extract_href(item: dict) -> str | None:
 # ---------------------------------------------------------------------------
 
 
+def _create_loading_indicator(collection_id: str) -> pn.Column:
+    """Create a loading screen shown while the DataTree is being built."""
+    return pn.Column(
+        pn.pane.Markdown(
+            f"# ESM-Viz Collection Preview\n"
+            f"**Collection:** `{collection_id}`",
+        ),
+        pn.indicators.LoadingSpinner(
+            value=True, size=50, name="Building DataTree..."
+        ),
+        pn.pane.Markdown(
+            "_Loading and indexing data files. This may take a minute "
+            "for collections with many variables._",
+            styles={"color": "#888"},
+        ),
+        sizing_mode="stretch_width",
+    )
+
+
 def create_collection_preview_app(
     collection_id: str,
     stac_api: str,
@@ -313,19 +337,41 @@ def create_collection_preview_app(
         f"Creating collection preview app: collection={collection_id}"
     )
 
-    # Build or retrieve cached DataTree
-    try:
-        tree, meta = _build_datatree(collection_id, stac_api)
-    except Exception as e:
-        logger.error(f"Failed to build DataTree: {e}")
-        return pn.Column(
-            pn.pane.Markdown("# ESM-Viz Collection Preview"),
-            pn.pane.Alert(
-                f"Failed to load collection data: {e}",
-                alert_type="danger",
-            ),
-            sizing_mode="stretch_width",
-        )
+    # Check cache first -- if already built, skip loading screen
+    cache_key = _collection_cache_key(collection_id, stac_api)
+    if cache_key in _datatree_cache:
+        tree, meta = _datatree_cache[cache_key]
+        return _create_collection_content(tree, meta, collection_id)
+
+    # Show loading indicator, then build DataTree in background
+    container = pn.Column(sizing_mode="stretch_width")
+    container.append(_create_loading_indicator(collection_id))
+
+    def _load_and_replace():
+        try:
+            tree, meta = _build_datatree(collection_id, stac_api)
+            content = _create_collection_content(tree, meta, collection_id)
+            container.clear()
+            container.append(content)
+        except Exception as e:
+            logger.error(f"Failed to build DataTree: {e}")
+            container.clear()
+            container.append(pn.pane.Markdown("# ESM-Viz Collection Preview"))
+            container.append(
+                pn.pane.Alert(
+                    f"Failed to load collection data: {e}",
+                    alert_type="danger",
+                )
+            )
+
+    pn.state.execute(_load_and_replace)
+    return container
+
+
+def _create_collection_content(
+    tree: xr.DataTree, meta: dict, collection_id: str
+) -> pn.viewable.Viewable:
+    """Build the actual collection preview UI from a DataTree."""
 
     # Gather variable names from the tree (top-level children)
     variable_names = sorted(tree.children.keys())

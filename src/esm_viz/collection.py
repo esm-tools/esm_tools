@@ -573,7 +573,7 @@ def _create_collection_content(
                     logger.debug("Using distributed client for compute")
                 da = da.compute()
 
-            if unstructured and mesh is not None:
+            if mesh is not None and is_unstructured(ds):
                 lon, lat, elem = mesh
                 plot = create_interactive_fesom_plot(
                     da, lon, lat, elem, cmap=cmap, title=plot_title
@@ -884,9 +884,8 @@ def create_comparison_preview_app(
             da = da.compute()
 
         mesh = meta.get("mesh")
-        unstructured = meta.get("is_unstructured", False)
 
-        if unstructured and mesh is not None:
+        if mesh is not None and is_unstructured(ds):
             lon, lat, elem = mesh
             plot = create_interactive_fesom_plot(
                 da, lon, lat, elem, cmap=cmap, title=title
@@ -967,9 +966,8 @@ def create_comparison_preview_app(
             title = f"Difference: {collection_b} - {collection_a}"
 
             mesh = meta_a.get("mesh") or meta_b.get("mesh")
-            unstructured = meta_a.get("is_unstructured") or meta_b.get("is_unstructured")
 
-            if unstructured and mesh is not None:
+            if mesh is not None and is_unstructured(ds_a):
                 lon, lat, elem = mesh
                 plot = create_interactive_fesom_plot(
                     diff, lon, lat, elem, cmap=cmap, title=title

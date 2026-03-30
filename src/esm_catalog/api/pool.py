@@ -82,9 +82,9 @@ class CatalogPool:
                 logger.debug("Catalog not found: {}", path_str)
                 return None
 
-            # Open new connection
+            # Open new connection (read-only for serving queries)
             try:
-                db = CatalogDB(path_str)
+                db = CatalogDB(path_str, read_only=True)
                 self._connections[path_str] = db
                 logger.debug("Opened catalog connection: {}", path_str)
                 return db

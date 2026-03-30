@@ -22,12 +22,15 @@ class CatalogDB:
         See: https://duckdb.org/docs/stable/guides/python/multiple_threads
     """
 
-    def __init__(self, path: Path | str):
+    def __init__(self, path: Path | str, read_only: bool = False):
         self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.db = duckdb.connect(str(self.path))
+        self.read_only = read_only
+        if not read_only:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.db = duckdb.connect(str(self.path), read_only=read_only)
         self.db.execute("SET TimeZone='UTC'")  # all TIMESTAMPTZ reads return UTC
-        self._init_schema()
+        if not read_only:
+            self._init_schema()
 
     # ------------------------------------------------------------------
     # Schema

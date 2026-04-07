@@ -1,55 +1,207 @@
 """Scan a NetCDF file and return a metadata dict for STAC Item construction.
 
 Supports both local paths and remote URIs via fsspec/UPath.
+
+Fast path (local files): uses netCDF4.Dataset directly for header-only reads.
+Fallback (remote or on error): uses xr.open_dataset.
 """
 
 from __future__ import annotations
 
+import os
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Union
 
 import numpy as np
-import xarray as xr
 from loguru import logger
 
 if TYPE_CHECKING:
+    import xarray as xr
     from upath import UPath
 
+# Default bbox -- almost all ESM output is global.
+# Override via ESM_CATALOG_SCAN_EXTENT="-180,-90,180,90"
+_DEFAULT_EXTENT = os.environ.get("ESM_CATALOG_SCAN_EXTENT", "-180,-90,180,90")
+
+
+def _parse_default_extent() -> tuple[list, dict]:
+    parts = [float(x) for x in _DEFAULT_EXTENT.split(",")]
+    bbox = parts[:4]
+    return bbox, _bbox_to_polygon(bbox)
+
+
+def _is_remote(path) -> bool:
+    return hasattr(path, "protocol") and path.protocol and path.protocol != "file"
+
+
+# ------------------------------------------------------------------
+# Fast path: netCDF4.Dataset (header only, no xarray)
+# ------------------------------------------------------------------
+
+def _scan_netcdf_fast(path: Path) -> dict | None:
+    """Extract metadata using netCDF4 directly. No xarray, no coord data reads.
+
+    Returns None on any failure (caller falls back to xarray).
+    """
+    try:
+        import netCDF4
+    except ImportError:
+        return None
+
+    try:
+        ds = netCDF4.Dataset(str(path), "r")
+    except Exception:
+        return None
+
+    try:
+        # Variables
+        variables = []
+        coord_names = set()
+        for dim_name in ds.dimensions:
+            if dim_name in ds.variables:
+                coord_names.add(dim_name)
+
+        for name, var in ds.variables.items():
+            if name in coord_names:
+                continue
+            entry = {"name": name}
+            for attr in ("standard_name", "long_name", "units", "description"):
+                if hasattr(var, attr):
+                    entry[attr] = getattr(var, attr)
+            entry["dimensions"] = list(var.dimensions)
+            variables.append(entry)
+
+        # Dimensions
+        dimensions = {}
+        for name, dim in ds.dimensions.items():
+            entry = {"type": "spatial", "extent": [None, None]}
+            if name in ("time",) or "time" in name.lower():
+                entry["type"] = "temporal"
+            elif name in ("lat", "latitude", "nav_lat", "y"):
+                entry["type"] = "spatial"
+                entry["axis"] = "y"
+            elif name in ("lon", "longitude", "nav_lon", "x"):
+                entry["type"] = "spatial"
+                entry["axis"] = "x"
+            elif name in ("lev", "level", "depth", "z"):
+                entry["type"] = "spatial"
+                entry["axis"] = "z"
+            dimensions[name] = entry
+
+        # Time range: read only first and last value
+        dt_start, dt_end = _extract_time_range_nc4(ds)
+
+        # Bbox: use default (global) extent -- skip coordinate reads
+        bbox, geometry = _parse_default_extent()
+
+        # Global attributes
+        global_attrs = {}
+        for attr_name in ds.ncattrs():
+            try:
+                val = ds.getncattr(attr_name)
+                if isinstance(val, str) and len(val) > 1000:
+                    continue
+                if isinstance(val, np.ndarray):
+                    if val.size > 10:
+                        continue
+                    val = val.tolist()
+                if hasattr(val, "item"):
+                    val = val.item()
+                global_attrs[attr_name] = val
+            except Exception:
+                continue
+
+        conventions = global_attrs.pop("Conventions", "")
+
+        return {
+            "variables": variables,
+            "cf_parameters": _cf_parameters(variables),
+            "dimensions": dimensions,
+            "bbox": bbox,
+            "geometry": geometry,
+            "datetime_start": dt_start,
+            "datetime_end": dt_end,
+            "datetime_str": _datetime_str(path, dt_start),
+            "file_size": 0,  # captured by worker via os.stat
+            "conventions": conventions,
+            "format": "netcdf",
+            "global_attributes": global_attrs,
+        }
+    except Exception as e:
+        logger.debug("Fast NetCDF scan failed for {}: {}, falling back to xarray", path, e)
+        return None
+    finally:
+        ds.close()
+
+
+def _extract_time_range_nc4(ds) -> tuple[datetime | None, datetime | None]:
+    """Read time[0] and time[-1] from a netCDF4.Dataset. Two values only."""
+    try:
+        if "time" not in ds.variables:
+            return None, None
+
+        time_var = ds.variables["time"]
+        n = len(time_var)
+        if n == 0:
+            return None, None
+
+        import cftime
+
+        units = getattr(time_var, "units", "")
+        calendar = getattr(time_var, "calendar", "standard")
+        if not units:
+            return None, None
+
+        t0_raw = float(time_var[0])
+        t1_raw = float(time_var[-1])
+
+        decoded = cftime.num2date([t0_raw, t1_raw], units=units, calendar=calendar)
+        t0, t1 = decoded[0], decoded[1]
+
+        if hasattr(t0, "year"):
+            t0 = datetime(t0.year, t0.month, t0.day, t0.hour, t0.minute, t0.second,
+                          tzinfo=timezone.utc)
+            t1 = datetime(t1.year, t1.month, t1.day, t1.hour, t1.minute, t1.second,
+                          tzinfo=timezone.utc)
+
+        return t0, t1
+    except Exception:
+        return None, None
+
+
+# ------------------------------------------------------------------
+# Full path: xr.open_dataset (remote files, fallback)
+# ------------------------------------------------------------------
 
 def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
-    """Open *path* with xarray and extract STAC-relevant metadata.
+    """Open *path* and extract STAC-relevant metadata.
 
-    Supports local paths and remote URIs (ssh://, scoutfs://, s3://, etc.).
-
-    Args:
-        path: Local path, UPath, or URI string to scan
-        timeout: Max seconds to wait for remote file operations (default: 120)
-
-    Returns a dict with keys:
-        variable, variables, cf_parameters, dimensions, bbox, geometry,
-        datetime_start, datetime_end, datetime_str, file_size, conventions,
-        format, global_attributes
-
-    All NetCDF global attributes are extracted and stored in 'global_attributes'
-    for inclusion in STAC item properties, enabling search by any metadata
-    present in the file (model version, mesh path, advection scheme, etc.).
+    For local files, tries the fast netCDF4.Dataset path first (header-only,
+    no xarray overhead). Falls back to xr.open_dataset for remote files or
+    on any error.
     """
-    # Handle string paths
     if isinstance(path, str):
         from esm_catalog.scan.upath import parse_uri
         path = parse_uri(path)
 
     logger.debug("Scanning NetCDF: {}", path)
 
-    # xarray can open URIs directly via fsspec, or we can use h5netcdf with file object
-    # For remote files, convert to string URI which xarray handles via fsspec
-    if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
-        # Remote file - reconstruct full URI with hostname
+    # Fast path for local files
+    if not _is_remote(path):
+        result = _scan_netcdf_fast(Path(path))
+        if result is not None:
+            logger.debug("Fast path OK: {}", path)
+            return result
+        logger.debug("Fast path failed, falling back to xarray: {}", path)
+
+    # Full xarray path (remote or fast-path failure)
+    import xarray as xr
+
+    if _is_remote(path):
         from esm_catalog.scan.upath import to_uri
         uri = to_uri(path)
         logger.debug("Opening remote file: {}", uri)
-        # Use fsspec storage options for SSH to handle timeout
         storage_options = {"timeout": timeout}
         open_kwargs = dict(
             decode_times=True, engine="h5netcdf",
@@ -57,12 +209,9 @@ def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
         )
         open_path = uri
     else:
-        # Local file - use standard approach
         open_kwargs = dict(decode_times=True)
         open_path = str(path)
 
-    # Try opening with time decoding; if that fails (non-standard calendar/units),
-    # retry without time decoding and handle times manually
     try:
         ds = xr.open_dataset(open_path, **open_kwargs)
     except ValueError as e:
@@ -76,13 +225,8 @@ def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
     with ds:
         variables = _extract_variables(ds)
         dimensions = _extract_dimensions(ds)
-        bbox, geometry = _extract_bbox(ds)
+        bbox, geometry = _parse_default_extent()
         dt_start, dt_end = _extract_time_range(ds)
-
-        # Primary variable: first data variable (non-coordinate)
-        primary_var = next(iter(ds.data_vars), "unknown")
-
-        # Extract ALL global attributes for queryable metadata
         global_attrs = _extract_global_attributes(ds)
 
     return {

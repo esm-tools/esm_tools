@@ -170,83 +170,122 @@ def to_uri(path: "UPath | Path") -> str:
         return f"file://{resolved}"
 
 
-def list_files(
+def walk_files(
     root: "UPath | Path | str",
-    patterns: list[str] | None = None,
+    known_extensions: set[str] | None = None,
+    skip_extensions: set[str] | None = None,
+    exclude_dirs: list[str] | None = None,
+    include_extensionless: bool = True,
     **storage_options,
-) -> Iterator["UPath"]:
-    """Recursively list files matching patterns under root.
+) -> Iterator[tuple["UPath", bool]]:
+    """Walk the directory tree ONCE and yield all candidate files.
+
+    Single walk via os.walk (local) or rglob (remote). Each file is
+    yielded as ``(path, has_known_ext)`` so the caller can distinguish
+    files that matched by extension (fast) from extensionless files
+    that need magic-byte sniffing.
 
     Args:
-        root: Root directory (UPath, Path, or URI string)
-        patterns: Glob patterns to match (default: ["*.nc", "*.nc4", "*.grb", "*.grb2"])
-        **storage_options: Protocol-specific options
+        root: Root directory (UPath, Path, or URI string).
+        known_extensions: Extensions that identify scannable files
+            (default: .nc, .nc4, .grb, .grb2, .grib, .grib2).
+        skip_extensions: Extensions to skip entirely
+            (default: .codes, .txt, .log, .sh, .py, .yaml, .yml, .json).
+        exclude_dirs: Directory name substrings to prune (e.g. ["restart", "input"]).
+        include_extensionless: If True, also yield files whose extension is
+            neither in *known_extensions* nor in *skip_extensions*.
 
     Yields:
-        UPath objects for each matching file
+        ``(UPath, True)`` for known-extension files,
+        ``(UPath, False)`` for extensionless/unknown-extension files.
     """
+    import os
+
     UPath = _get_upath()
 
-    if patterns is None:
-        patterns = ["*.nc", "*.nc4", "*.grb", "*.grb2", "*.grib", "*.grib2"]
+    if known_extensions is None:
+        known_extensions = {".nc", ".nc4", ".nc3", ".cdf", ".h5", ".hdf5", ".hdf",
+                            ".grb", ".grb2", ".grib", ".grib2"}
+    if skip_extensions is None:
+        skip_extensions = {".codes", ".txt", ".log", ".sh", ".py", ".yaml", ".yml", ".json"}
 
-    # Convert to UPath if needed
+    # Extensionless GRIB files only live in specific model output directories.
+    # Default: echam, jsbach. Override via ESM_CATALOG_GRIB_DIRS env var.
+    grib_dirs = set(
+        os.environ.get("ESM_CATALOG_GRIB_DIRS", "echam,jsbach").split(",")
+    )
+
     if isinstance(root, str):
         root = parse_uri(root, **storage_options)
     elif isinstance(root, Path) and not hasattr(root, "protocol"):
         root = UPath(root)
 
-    logger.debug("Listing files in {} with patterns {}", root, patterns)
+    is_remote = hasattr(root, "protocol") and root.protocol and root.protocol != "file"
 
-    seen: set[str] = set()
-
-    for pattern in patterns:
+    if is_remote:
         try:
-            logger.debug("Searching for pattern: {}", pattern)
-            for match in root.rglob(pattern):
-                # Deduplicate by string path
-                key = str(match)
-                if key not in seen:
-                    seen.add(key)
-                    logger.debug("Found: {}", match.name)
-                    yield match
+            for match in root.rglob("*"):
+                if not match.is_file():
+                    continue
+                suffix = match.suffix.lower()
+                if suffix in known_extensions:
+                    yield match, True
+                elif include_extensionless and suffix not in skip_extensions:
+                    yield match, False
         except Exception as e:
-            logger.warning("Error listing {} with pattern {}: {}", root, pattern, e)
+            logger.warning("Error listing files in {}: {}", root, e)
+    else:
+        root_str = str(root)
+        for dirpath, dirnames, filenames in os.walk(root_str):
+            if exclude_dirs:
+                dirnames[:] = [
+                    d for d in dirnames
+                    if not any(pat in d for pat in exclude_dirs)
+                ]
+
+            # Check once whether this directory is under a GRIB-relevant subtree
+            _in_grib_dir = any(gd in dirpath for gd in grib_dirs)
+
+            for fname in filenames:
+                suffix = os.path.splitext(fname)[1].lower()
+                if suffix in known_extensions:
+                    yield UPath(os.path.join(dirpath, fname)), True
+                elif include_extensionless and suffix not in skip_extensions and _in_grib_dir:
+                    yield UPath(os.path.join(dirpath, fname)), False
+
+
+# Keep the old names as thin wrappers for backward compatibility
+def list_files(
+    root: "UPath | Path | str",
+    patterns: list[str] | None = None,
+    exclude_dirs: list[str] | None = None,
+    **storage_options,
+) -> Iterator["UPath"]:
+    """Recursively list files with known data extensions under root."""
+    for fp, _known in walk_files(
+        root,
+        exclude_dirs=exclude_dirs,
+        include_extensionless=False,
+        **storage_options,
+    ):
+        yield fp
 
 
 def list_all_files(
     root: "UPath | Path | str",
     skip_extensions: set[str] | None = None,
+    exclude_dirs: list[str] | None = None,
     **storage_options,
 ) -> Iterator["UPath"]:
-    """Recursively list all files under root (for magic-byte detection).
-
-    Args:
-        root: Root directory
-        skip_extensions: Extensions to skip (e.g., {".log", ".txt"})
-        **storage_options: Protocol-specific options
-
-    Yields:
-        UPath objects for each file
-    """
-    UPath = _get_upath()
-
-    if skip_extensions is None:
-        skip_extensions = {".codes", ".txt", ".log", ".sh", ".py", ".yaml", ".yml", ".json"}
-
-    if isinstance(root, str):
-        root = parse_uri(root, **storage_options)
-    elif isinstance(root, Path) and not hasattr(root, "protocol"):
-        root = UPath(root)
-
-    try:
-        for match in root.rglob("*"):
-            if match.is_file():
-                suffix = match.suffix.lower()
-                if suffix not in skip_extensions:
-                    yield match
-    except Exception as e:
-        logger.warning("Error listing all files in {}: {}", root, e)
+    """Recursively list all files under root (for magic-byte detection)."""
+    for fp, _known in walk_files(
+        root,
+        skip_extensions=skip_extensions,
+        exclude_dirs=exclude_dirs,
+        include_extensionless=True,
+        **storage_options,
+    ):
+        yield fp
 
 
 @contextmanager

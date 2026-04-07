@@ -25,6 +25,7 @@ class CatalogDB:
     def __init__(self, path: Path | str, read_only: bool = False):
         self.path = Path(path)
         self.read_only = read_only
+        self._collection_cache: set[str] = set()
         if not read_only:
             self.path.parent.mkdir(parents=True, exist_ok=True)
         self.db = duckdb.connect(str(self.path), read_only=read_only)
@@ -97,12 +98,17 @@ class CatalogDB:
     # ------------------------------------------------------------------
 
     def collection_exists(self, collection_id: str) -> bool:
+        if collection_id in self._collection_cache:
+            return True
         cursor = self.db.cursor()
         try:
             row = cursor.execute(
                 "SELECT 1 FROM collections WHERE id = ?", [collection_id]
             ).fetchone()
-            return row is not None
+            if row is not None:
+                self._collection_cache.add(collection_id)
+                return True
+            return False
         finally:
             cursor.close()
 
@@ -111,6 +117,7 @@ class CatalogDB:
             "INSERT OR REPLACE INTO collections (id, data) VALUES (?, ?)",
             [collection["id"], json.dumps(collection)],
         )
+        self._collection_cache.add(collection["id"])
         logger.debug("Inserted collection: {}", collection["id"])
 
     def get_collection(self, collection_id: str) -> dict | None:
@@ -184,6 +191,115 @@ class CatalogDB:
             ],
         )
         logger.debug("Upserted item: {}", item["id"])
+
+    def insert_items_batch(self, items: list[dict]):
+        """Insert multiple items in a single transaction."""
+        if not items:
+            return
+        import time as _t
+        t0 = _t.monotonic()
+        self.db.begin()
+        try:
+            for item in items:
+                props = item.get("properties", {})
+                dt_str = props.get("datetime") or props.get("start_datetime")
+                bbox = item.get("bbox")
+                self.db.execute(
+                    """
+                    INSERT INTO items (id, collection, experiment, datetime, bbox, data)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE SET
+                        collection = EXCLUDED.collection,
+                        experiment = EXCLUDED.experiment,
+                        datetime = EXCLUDED.datetime,
+                        bbox = EXCLUDED.bbox,
+                        data = EXCLUDED.data
+                    """,
+                    [
+                        item["id"],
+                        item.get("collection"),
+                        props.get("experiment"),
+                        dt_str,
+                        bbox,
+                        json.dumps(item),
+                    ],
+                )
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+        logger.debug(
+            "Batch inserted {} items in {:.3f}s",
+            len(items), _t.monotonic() - t0,
+        )
+
+    def upsert_collection_item_props_batch(self, pairs: list[tuple[str, dict]]):
+        """Batch-index item properties in a single transaction.
+
+        Args:
+            pairs: list of (collection_id, item) tuples.
+        """
+        if not pairs:
+            return
+        index_keys = ("experiment", "component", "format",
+                      "hpc:facility", "hpc:system", "hpc:storage_tier")
+        self.db.begin()
+        try:
+            for collection_id, item in pairs:
+                props = item.get("properties", {})
+                for key in index_keys:
+                    val = props.get(key)
+                    if val is not None:
+                        self.db.execute(
+                            """
+                            INSERT OR IGNORE INTO collection_item_props
+                                (collection_id, property, value)
+                            VALUES (?, ?, ?)
+                            """,
+                            [collection_id, key, str(val)],
+                        )
+                cube_vars = props.get("cube:variables", {})
+                for var_name in cube_vars:
+                    self.db.execute(
+                        """
+                        INSERT OR IGNORE INTO collection_item_props
+                            (collection_id, property, value)
+                        VALUES (?, ?, ?)
+                        """,
+                        [collection_id, "variable", str(var_name)],
+                    )
+            self.db.commit()
+        except Exception:
+            self.db.rollback()
+            raise
+
+    def update_collection_extents_bulk(self, collection_ids: set[str]):
+        """Recompute extents for all given collections in one pass.
+
+        Reads all items per collection from DB and computes the merged
+        spatial/temporal extent, then writes each collection once.
+        """
+        from esm_catalog.stac.collection import update_collection_extent
+
+        for cid in collection_ids:
+            collection = self.get_collection(cid)
+            if collection is None:
+                continue
+            cursor = self.db.cursor()
+            try:
+                rows = cursor.execute(
+                    "SELECT data FROM items WHERE collection = ?", [cid]
+                ).fetchall()
+            finally:
+                cursor.close()
+            for (data,) in rows:
+                item = json.loads(data)
+                collection = update_collection_extent(collection, item)
+            self.db.execute(
+                "UPDATE collections SET data = ? WHERE id = ?",
+                [json.dumps(collection), cid],
+            )
+        logger.debug("Updated extents for {} collections", len(collection_ids))
 
     def upsert_collection_item_props(self, collection_id: str, item: dict):
         """Index item properties for fast collection search.

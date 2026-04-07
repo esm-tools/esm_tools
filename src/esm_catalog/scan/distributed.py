@@ -115,9 +115,10 @@ def run_scan(
     Returns:
         Dict with ``{"ok": int, "errors": int, "skipped": int, "total": int}``.
     """
+    import time as _t
     from dask.distributed import as_completed
 
-    console = console or Console()
+    interactive = console is not None
     stats = {"ok": 0, "errors": 0, "skipped": 0, "total": len(file_paths)}
 
     if not file_paths:
@@ -131,64 +132,98 @@ def run_scan(
         len(client.scheduler_info().get("workers", {})),
     )
 
-    # Progress bar with ETA
-    progress = Progress(
-        SpinnerColumn(),
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(bar_width=40),
-        MofNCompleteColumn(),
-        TextColumn("({task.percentage:>3.0f}%)"),
-        TimeElapsedColumn(),
-        TextColumn("eta"),
-        TimeRemainingColumn(),
-        console=console,
-    )
+    def _process_future(future):
+        """Process one completed future, update stats."""
+        try:
+            result = future.result()
+            fp_str, status, data = result
+            msg = result_handler(fp_str, status, data)
+            if status == "ok":
+                stats["ok"] += 1
+            elif status == "error":
+                stats["errors"] += 1
+            else:
+                stats["skipped"] += 1
+            return msg
+        except Exception as exc:
+            stats["errors"] += 1
+            return (f"x Worker crash: {exc}", "red")
 
-    messages: deque[tuple[str, str]] = deque(maxlen=8)
+    completed = 0
+    total = len(file_paths)
+    ac = as_completed(futures, raise_errors=False)
 
-    def _make_display():
-        parts = [progress]
-        if messages:
-            msg_lines = [
-                Text(msg, style=style) for msg, style in messages
-            ]
-            panel = Panel(
-                Text("\n").join(msg_lines),
-                title="Activity",
-                border_style="dim",
-                height=10,
-            )
-            parts.append(panel)
-        return Group(*parts)
+    if interactive:
+        # Interactive: Rich progress bar with activity panel
+        if console is None:
+            console = Console()
 
-    task_id = progress.add_task("Scanning files", total=len(file_paths))
+        progress = Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            BarColumn(bar_width=40),
+            MofNCompleteColumn(),
+            TextColumn("({task.percentage:>3.0f}%)"),
+            TimeElapsedColumn(),
+            TextColumn("eta"),
+            TimeRemainingColumn(),
+            console=console,
+        )
 
-    with Live(_make_display(), console=console, refresh_per_second=8) as live:
-        # as_completed yields futures in completion order; .batches() groups
-        # futures that completed between polls for efficiency
-        ac = as_completed(futures, raise_errors=False)
-        for batch in ac.batches():
-            for future in batch:
-                try:
-                    result = future.result()
-                    fp_str, status, data = result
-                    msg = result_handler(fp_str, status, data)
+        messages: deque[tuple[str, str]] = deque(maxlen=8)
+
+        def _make_display():
+            parts = [progress]
+            if messages:
+                msg_lines = [
+                    Text(msg, style=style) for msg, style in messages
+                ]
+                panel = Panel(
+                    Text("\n").join(msg_lines),
+                    title="Activity",
+                    border_style="dim",
+                    height=10,
+                )
+                parts.append(panel)
+            return Group(*parts)
+
+        task_id = progress.add_task("Scanning files", total=total)
+
+        with Live(_make_display(), console=console, refresh_per_second=8) as live:
+            for batch in ac.batches():
+                for future in batch:
+                    msg = _process_future(future)
                     if msg:
                         messages.append(msg)
-                    if status == "ok":
-                        stats["ok"] += 1
-                    elif status == "error":
-                        stats["errors"] += 1
-                    else:
-                        stats["skipped"] += 1
-                except Exception as exc:
-                    # Worker crash (OOM, segfault, serialization error)
-                    stats["errors"] += 1
-                    messages.append((f"x Worker crash: {exc}", "red"))
-                progress.advance(task_id)
-            live.update(_make_display())
+                    progress.advance(task_id)
+                    completed += 1
+                live.update(_make_display())
 
-        progress.update(task_id, description="[green]Scan complete[/green]")
-        live.update(_make_display())
+            progress.update(task_id, description="[green]Scan complete[/green]")
+            live.update(_make_display())
+    else:
+        # Non-interactive (SLURM/pipe): log-based progress
+        t_last_log = _t.monotonic()
+        LOG_INTERVAL = 30  # seconds between progress log lines
+
+        for batch in ac.batches():
+            for future in batch:
+                _process_future(future)
+                completed += 1
+
+            now = _t.monotonic()
+            if now - t_last_log >= LOG_INTERVAL:
+                pct = 100.0 * completed / total if total else 0
+                logger.info(
+                    "Progress: {:,}/{:,} ({:.0f}%) | ok={:,} err={:,} skip={:,}",
+                    completed, total, pct,
+                    stats["ok"], stats["errors"], stats["skipped"],
+                )
+                t_last_log = now
+
+        logger.info(
+            "Scan complete: {:,}/{:,} | ok={:,} err={:,} skip={:,}",
+            completed, total, stats["ok"], stats["errors"], stats["skipped"],
+        )
 
     return stats

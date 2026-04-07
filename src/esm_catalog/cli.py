@@ -43,18 +43,41 @@ def _scan_file_worker(fp_str: str) -> tuple[str, str, dict | None]:
 
     Must be module-level for ProcessPoolExecutor pickling.
     """
+    import time as _t
+    t0 = _t.monotonic()
+
+    import os
     import warnings
     from pathlib import Path
     from esm_catalog.scan.detect import UnsupportedFormatError, scan_file
 
-    # Suppress xarray warnings about ambiguous date strings (e.g., "1-1-1" vs "0001-1-1")
-    # These are common in climate model output and harmless
+    t_import = _t.monotonic() - t0
+
     warnings.filterwarnings("ignore", message=".*Ambiguous reference date.*")
     warnings.filterwarnings("ignore", message=".*Unable to decode time axis.*")
 
     fp = Path(fp_str)
     try:
+        # Capture stat in the worker so the main thread doesn't re-stat
+        try:
+            st = os.stat(fp_str)
+            stat_info = {
+                "file_size": st.st_size,
+                "file_mtime": st.st_mtime,
+                "file_atime": st.st_atime,
+            }
+        except OSError:
+            stat_info = {}
+
+        t1 = _t.monotonic()
         metadata = scan_file(fp)
+        t_scan = _t.monotonic() - t1
+
+        metadata.update(stat_info)
+        metadata["_timing"] = {
+            "import_s": round(t_import, 3),
+            "scan_s": round(t_scan, 3),
+        }
         return (fp_str, "ok", metadata)
     except UnsupportedFormatError:
         return (fp_str, "unsupported", None)
@@ -126,10 +149,10 @@ def main(ctx, verbose):
 @click.option(
     "--exclude", "exclude_patterns",
     multiple=True,
-    default=("/run_", "/input/", "/unknown/", "/restart/"),
+    default=("/run_", "/input/"),
     show_default=True,
     help="Directory patterns to exclude (can be specified multiple times). "
-         "Default excludes run_*/, input/, unknown/, and restart/ directories.",
+         "Default excludes run_*/ and input/ directories.",
 )
 @click.option(
     "--no-exclude",
@@ -137,8 +160,14 @@ def main(ctx, verbose):
     default=False,
     help="Disable default exclusions and scan all directories.",
 )
+@click.option(
+    "--no-dask",
+    is_flag=True,
+    default=False,
+    help="Force ProcessPoolExecutor even if dask.distributed is available.",
+)
 @click.pass_context
-def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensionless, use_dask, scheduler_address, exclude_patterns, no_exclude):
+def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensionless, use_dask, scheduler_address, exclude_patterns, no_exclude, no_dask):
     """Scan PATH (file or directory) into the catalog at DB.
 
     PATH can be a local path or a remote URI:
@@ -154,11 +183,20 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     from esm_catalog.scan.context import resolve_context, RestartFileError
     from esm_catalog.scan.detect import UnsupportedFormatError, scan_file
     from esm_catalog.scan.upath import (
-        parse_uri, list_files, list_all_files, is_file, is_dir, get_protocol,
+        parse_uri, walk_files, is_file, is_dir, get_protocol,
     )
     from esm_catalog.stac.extensions.hpc import add_hpc_extension
     from esm_catalog.stac.item import make_item
     from esm_catalog.storage.duckdb import CatalogDB
+
+    import time as _time
+
+    t_total_start = _time.monotonic()
+
+    # Detect non-interactive (SLURM, pipe, redirect) -- skip Rich Live display
+    interactive = sys.stderr.isatty()
+    if not interactive:
+        logger.info("Non-interactive mode (SLURM/pipe): using log-based progress")
 
     config = load_config(config_path) if config_path else None
 
@@ -167,11 +205,21 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     protocol = get_protocol(path)
     is_remote = protocol != "file"
 
+    # Auto-detect Dask as default backend when available
+    if not use_dask and scheduler_address is None and not no_dask:
+        try:
+            import dask.distributed  # noqa: F401
+            use_dask = True
+            logger.debug("dask.distributed available, using as default backend")
+        except ImportError:
+            pass
+
+    backend = "dask" if (use_dask or scheduler_address) else "ProcessPoolExecutor"
     if is_remote:
         logger.info("Scanning remote filesystem: {} (protocol: {})", path, protocol)
         logger.warning("Remote scanning is slow. Consider: rsync first, then scan locally.")
     else:
-        logger.info("Scanning local filesystem: {} ({} workers)", path, jobs)
+        logger.info("Scanning local filesystem: {} ({} workers, backend: {})", path, jobs, backend)
 
     known_exts = {".nc", ".nc4", ".nc3", ".cdf", ".h5", ".hdf5", ".hdf",
                   ".grb", ".grb2", ".grib", ".grib2"}
@@ -184,6 +232,12 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
     if active_excludes:
         logger.debug("Excluding paths matching: {}", active_excludes)
 
+    # Extract directory name fragments for os.walk pruning.
+    # e.g. "/restart/" -> "restart", "/run_" -> "run_", "/input/" -> "input"
+    exclude_dir_names = [
+        pat.strip("/") for pat in active_excludes
+    ] if active_excludes else []
+
     def should_exclude(fp_str: str) -> bool:
         """Check if file path matches any exclusion pattern."""
         for pattern in active_excludes:
@@ -192,35 +246,23 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
         return False
 
     def file_candidates(root, include_extensionless=True):
-        """Yield file candidates: known extensions first, then extension-less files."""
-        seen = set()
+        """Yield file candidates via a single directory walk."""
         count = 0
+        for fp, _has_known_ext in walk_files(
+            root,
+            known_extensions=known_exts,
+            skip_extensions=skip_exts,
+            exclude_dirs=exclude_dir_names,
+            include_extensionless=include_extensionless,
+        ):
+            count += 1
+            if count % 1000 == 0:
+                logger.info("  ... discovered {:,} files so far", count)
+            yield fp
 
-        # First: files with known extensions (fast path)
-        for fp in list_files(root):
-            key = str(fp)
-            if key not in seen:
-                seen.add(key)
-                if not should_exclude(key):
-                    count += 1
-                    if count % 1000 == 0:
-                        logger.info("  ... discovered {:,} files so far", count)
-                    yield fp
-
-        # Second: extension-less files (magic byte detection happens in worker)
-        # Skip for remote scans - GRIB (most extension-less files) can't be scanned remotely anyway
-        if include_extensionless:
-            for fp in list_all_files(root, skip_extensions=skip_exts):
-                key = str(fp)
-                if key not in seen and fp.suffix.lower() not in known_exts:
-                    seen.add(key)
-                    if not should_exclude(key):
-                        count += 1
-                        if count % 1000 == 0:
-                            logger.info("  ... discovered {:,} files so far", count)
-                        yield fp
-
+    t_db_start = _time.monotonic()
     with CatalogDB(db_path) as catalog_db:
+        logger.debug("DB opened in {:.2f}s: {}", _time.monotonic() - t_db_start, db_path)
         ok = 0
         errors = 0
         include_ext = True  # default; overridden below for directories
@@ -263,10 +305,25 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             logger.error("Path does not exist or is not accessible: {}", path)
             return
 
-        # Shared result handler -- processes each scan result into the DB.
-        # Used by both the distributed and local code paths.
+        # Batch accumulation for DB writes
+        BATCH_SIZE = 500
+        _item_batch: list[dict] = []
+        _prop_batch: list[tuple[str, dict]] = []
+        _seen_collections: set[str] = set()
+        _timing_import: list[float] = []
+        _timing_scan: list[float] = []
+
+        def _flush_batch():
+            """Write accumulated items to DB in a single transaction."""
+            if not _item_batch:
+                return
+            catalog_db.insert_items_batch(_item_batch)
+            catalog_db.upsert_collection_item_props_batch(_prop_batch)
+            _item_batch.clear()
+            _prop_batch.clear()
+
         def handle_result(fp_str, status, data):
-            """Resolve context, build STAC item, insert into DB.
+            """Resolve context, build STAC item, accumulate for batch insert.
 
             Returns (message, rich_style) for the activity panel, or None.
             """
@@ -275,14 +332,22 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             fname = fp.name
 
             if status == "ok":
+                # Collect timing diagnostics
+                timing = (data or {}).pop("_timing", None)
+                if timing:
+                    _timing_import.append(timing["import_s"])
+                    _timing_scan.append(timing["scan_s"])
+
                 try:
                     ctx_col = resolve_context(fp, config=config, db=catalog_db)
                     item = make_item(fp, data, ctx_col, config=config)
-                    item = add_hpc_extension(item, fp)
-                    catalog_db.insert_item(item)
-                    catalog_db.update_collection_extent(ctx_col.collection_id, item)
-                    catalog_db.upsert_collection_item_props(ctx_col.collection_id, item)
+                    item = add_hpc_extension(item, fp, metadata=data)
+                    _item_batch.append(item)
+                    _prop_batch.append((ctx_col.collection_id, item))
+                    _seen_collections.add(ctx_col.collection_id)
                     ok += 1
+                    if len(_item_batch) >= BATCH_SIZE:
+                        _flush_batch()
                     return ("+ " + fname, "green")
                 except RestartFileError:
                     return ("- " + fname + " (restart, skipped)", "dim")
@@ -307,13 +372,14 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
         if use_dask or scheduler_address:
             from esm_catalog.scan.distributed import get_client, run_scan
 
-            console = Console()
+            console = Console() if interactive else None
 
             # Phase 1: discover all files
+            t_discovery = _time.monotonic()
             all_files: list[str] = []
             if file_source == "single":
                 all_files = [str(scan_roots[0])]
-            else:
+            elif interactive:
                 with console.status("[cyan]Discovering files...") as spinner:
                     for scan_root in scan_roots:
                         for fp in file_candidates(
@@ -325,20 +391,37 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                                     f"[cyan]Discovering files... "
                                     f"({len(all_files):,} found)"
                                 )
-            console.print(
-                f"Discovered [bold]{len(all_files):,}[/bold] files"
-            )
+            else:
+                for scan_root in scan_roots:
+                    for fp in file_candidates(
+                        scan_root, include_extensionless=include_ext
+                    ):
+                        all_files.append(str(fp))
+                        if len(all_files) % 5000 == 0:
+                            logger.info("  ... discovered {:,} files", len(all_files))
+            t_discovery = _time.monotonic() - t_discovery
+            logger.info("Discovery: {:,} files in {:.1f}s", len(all_files), t_discovery)
 
             if not all_files:
                 logger.info("No files found to scan")
                 return
 
-            # Phase 2: scan with Dask
+            # Phase 2: connect to Dask
+            t_dask_start = _time.monotonic()
             client, cluster = get_client(
                 scheduler=scheduler_address,
                 n_workers=jobs,
             )
-            logger.disable("esm_catalog")
+            logger.info(
+                "Dask ready in {:.1f}s ({} workers)",
+                _time.monotonic() - t_dask_start,
+                len(client.scheduler_info().get("workers", {})),
+            )
+
+            # Phase 3: scan files
+            t_scan_start = _time.monotonic()
+            if interactive:
+                logger.disable("esm_catalog")
             try:
                 stats = run_scan(
                     client,
@@ -348,12 +431,18 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                     console=console,
                 )
             finally:
-                logger.enable("esm_catalog")
+                if interactive:
+                    logger.enable("esm_catalog")
                 client.close()
                 if cluster is not None:
                     cluster.close()
 
+            t_scan = _time.monotonic() - t_scan_start
             scanned = stats["total"]
+            logger.info(
+                "Scan phase: {:.1f}s ({:,.0f} files/s)",
+                t_scan, scanned / t_scan if t_scan > 0 else 0,
+            )
 
         # ==============================================================
         # Path B: ProcessPoolExecutor (default, no Dask dependency)
@@ -427,16 +516,82 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                     items.append(item)
                 return items, False
 
-            logger.info("Starting streaming scan ({} workers)...", jobs)
-            logger.disable("esm_catalog")
+            t_scan_start = _time.monotonic()
+            logger.info("Starting streaming scan ({} workers, ProcessPoolExecutor)...", jobs)
+            if interactive:
+                logger.disable("esm_catalog")
             discovery_thread.start()
 
             try:
-                with Live(make_display(), refresh_per_second=4) as live:
-                    task_id = progress.add_task(
-                        "[cyan]Discovering & scanning...[/cyan]", total=None
-                    )
-                    import time as _time
+                if interactive:
+                    # Interactive: Rich Live display
+                    with Live(make_display(), refresh_per_second=4) as live:
+                        task_id = progress.add_task(
+                            "[cyan]Discovering & scanning...[/cyan]", total=None
+                        )
+
+                        with ProcessPoolExecutor(max_workers=jobs) as executor:
+                            pending: dict = {}
+
+                            while not discovery_done or pending:
+                                batch, sentinel = _drain_queue(max_items=200)
+                                if sentinel:
+                                    discovery_done = True
+                                for fp in batch:
+                                    fut = executor.submit(
+                                        _scan_file_worker, str(fp)
+                                    )
+                                    pending[fut] = None
+
+                                done_futures = [f for f in pending if f.done()]
+                                for f in done_futures:
+                                    del pending[f]
+                                    try:
+                                        fp_str, status, data = f.result()
+                                    except Exception as e:
+                                        errors += 1
+                                        scanned += 1
+                                        messages.append(
+                                            ("x Error: " + str(e), "red")
+                                        )
+                                    else:
+                                        scanned += 1
+                                        msg = handle_result(fp_str, status, data)
+                                        if msg:
+                                            messages.append(msg)
+
+                                desc = (
+                                    "[cyan]Scanning...[/cyan]"
+                                    if discovery_done
+                                    else "[cyan]Discovering & scanning...[/cyan]"
+                                )
+                                total = discovered if discovery_done else None
+                                progress.update(
+                                    task_id,
+                                    description=desc,
+                                    total=total,
+                                    completed=scanned,
+                                )
+                                live.update(make_display())
+
+                                if (
+                                    not discovery_done
+                                    and not batch
+                                    and not done_futures
+                                ):
+                                    _time.sleep(0.05)
+
+                        progress.update(
+                            task_id,
+                            description="[green]Done[/green]",
+                            total=discovered,
+                            completed=scanned,
+                        )
+                        live.update(make_display())
+                else:
+                    # Non-interactive (SLURM/pipe): log-based progress
+                    LOG_INTERVAL = 30
+                    t_last_log = _time.monotonic()
 
                     with ProcessPoolExecutor(max_workers=jobs) as executor:
                         pending: dict = {}
@@ -459,28 +614,18 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                                 except Exception as e:
                                     errors += 1
                                     scanned += 1
-                                    messages.append(
-                                        ("x Error: " + str(e), "red")
-                                    )
                                 else:
                                     scanned += 1
-                                    msg = handle_result(fp_str, status, data)
-                                    if msg:
-                                        messages.append(msg)
+                                    handle_result(fp_str, status, data)
 
-                            desc = (
-                                "[cyan]Scanning...[/cyan]"
-                                if discovery_done
-                                else "[cyan]Discovering & scanning...[/cyan]"
-                            )
-                            total = discovered if discovery_done else None
-                            progress.update(
-                                task_id,
-                                description=desc,
-                                total=total,
-                                completed=scanned,
-                            )
-                            live.update(make_display())
+                            now = _time.monotonic()
+                            if now - t_last_log >= LOG_INTERVAL:
+                                total_str = f"/{discovered:,}" if discovery_done else "+?"
+                                logger.info(
+                                    "Progress: {:,}{} scanned | ok={:,} err={:,} | pending={:,}",
+                                    scanned, total_str, ok, errors, len(pending),
+                                )
+                                t_last_log = now
 
                             if (
                                 not discovery_done
@@ -489,18 +634,47 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                             ):
                                 _time.sleep(0.05)
 
-                    progress.update(
-                        task_id,
-                        description="[green]Done[/green]",
-                        total=discovered,
-                        completed=scanned,
-                    )
-                    live.update(make_display())
             finally:
-                logger.enable("esm_catalog")
+                if interactive:
+                    logger.enable("esm_catalog")
                 discovery_thread.join(timeout=5)
 
-    logger.info("Scanned {} files: {} cataloged, {} errors", scanned, ok, errors)
+            t_scan = _time.monotonic() - t_scan_start
+            logger.info(
+                "Scan phase: {:.1f}s ({:,.0f} files/s)",
+                t_scan, scanned / t_scan if t_scan > 0 else 0,
+            )
+
+        # Flush remaining items and compute collection extents
+        t_flush = _time.monotonic()
+        _flush_batch()
+        logger.info("Final batch flush: {:.2f}s", _time.monotonic() - t_flush)
+
+        if _seen_collections:
+            t_extent = _time.monotonic()
+            logger.info("Updating extents for {} collections...", len(_seen_collections))
+            catalog_db.update_collection_extents_bulk(_seen_collections)
+            logger.info("Extent update: {:.2f}s", _time.monotonic() - t_extent)
+
+    t_total = _time.monotonic() - t_total_start
+    logger.info(
+        "Done: {} files scanned, {} cataloged, {} errors in {:.1f}s",
+        scanned, ok, errors, t_total,
+    )
+
+    # Worker timing summary
+    if _timing_import:
+        import_first = max(_timing_import)
+        import_avg = sum(_timing_import) / len(_timing_import)
+        scan_avg = sum(_timing_scan) / len(_timing_scan)
+        scan_min = min(_timing_scan)
+        scan_max = max(_timing_scan)
+        logger.info(
+            "Worker stats ({} samples): import max={:.1f}s avg={:.3f}s | "
+            "scan avg={:.3f}s min={:.3f}s max={:.3f}s",
+            len(_timing_import), import_first, import_avg,
+            scan_avg, scan_min, scan_max,
+        )
 
 
 # ------------------------------------------------------------------

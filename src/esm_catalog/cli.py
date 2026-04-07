@@ -312,6 +312,9 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
         _seen_collections: set[str] = set()
         _timing_import: list[float] = []
         _timing_scan: list[float] = []
+        restart_skipped = 0
+        unsupported_skipped = 0
+        context_errors = 0
 
         def _flush_batch():
             """Write accumulated items to DB in a single transaction."""
@@ -327,7 +330,7 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
 
             Returns (message, rich_style) for the activity panel, or None.
             """
-            nonlocal ok, errors
+            nonlocal ok, errors, restart_skipped, unsupported_skipped, context_errors
             fp = Path(fp_str)
             fname = fp.name
 
@@ -350,14 +353,17 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                         _flush_batch()
                     return ("+ " + fname, "green")
                 except RestartFileError:
+                    restart_skipped += 1
                     return ("- " + fname + " (restart, skipped)", "dim")
                 except Exception as e:
+                    context_errors += 1
                     errors += 1
                     return ("x " + fname + ": " + str(e), "red")
             elif status == "error":
                 errors += 1
                 return ("x " + fname + ": " + str(data), "yellow")
             elif status == "unsupported":
+                unsupported_skipped += 1
                 return ("- " + fname + " (skipped)", "dim")
             return None
 
@@ -658,8 +664,9 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
 
     t_total = _time.monotonic() - t_total_start
     logger.info(
-        "Done: {} files scanned, {} cataloged, {} errors in {:.1f}s",
-        scanned, ok, errors, t_total,
+        "Done in {:.1f}s: {} scanned, {} cataloged, {} restart-skipped, "
+        "{} unsupported, {} errors",
+        t_total, scanned, ok, restart_skipped, unsupported_skipped, errors,
     )
 
     # Worker timing summary

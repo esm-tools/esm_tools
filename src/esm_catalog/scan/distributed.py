@@ -84,6 +84,13 @@ def get_client(
     )
     client = Client(cluster)
     logger.info("LocalCluster dashboard: {}", client.dashboard_link)
+
+    # Wait for workers to actually start (LocalCluster spawns async)
+    logger.info("Waiting for workers to start...")
+    client.wait_for_workers(n_workers=n_workers, timeout=120)
+    n = len(client.scheduler_info().get("workers", {}))
+    logger.info("{} workers ready", n)
+
     return client, cluster
 
 

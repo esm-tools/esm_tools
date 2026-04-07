@@ -72,6 +72,10 @@ echo "  Job ID:     ${SLURM_JOB_ID:-local}"
 echo "  Array task: ${SLURM_ARRAY_TASK_ID:-N/A}"
 echo "============================================"
 
+# ── Locate esm-tools checkout ─────────────────────────────────
+# Adjust ESM_TOOLS_DIR if your checkout is elsewhere.
+ESM_TOOLS_DIR="${ESM_TOOLS_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+
 # ── Run scan ──────────────────────────────────────────────────
 # ProcessPoolExecutor spawns 126 worker processes, each opening
 # files with xarray independently. For 393k files this means
@@ -79,7 +83,8 @@ echo "============================================"
 #
 # Add --distributed for Dask LocalCluster (marginally more
 # overhead but gives you the dashboard at http://node:8787).
-esm-catalog scan "${EXP_PATH}" \
+cd "${ESM_TOOLS_DIR}"
+pixi run esm-catalog scan "${EXP_PATH}" \
     --db "${DB_PATH}" \
     -j "${WORKERS}" \
     -v

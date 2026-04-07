@@ -6,9 +6,9 @@ platforms = ["osx-arm64", "linux-64"]
 version = "0.1.0"
 
 [tasks]
-esm-catalog = "python -m esm_catalog.cli"
-esm-viz = "python -m esm_viz.cli"
-test-catalog = "pytest src/esm_catalog/tests/ -v"
+esm-catalog = { cmd = "python -m esm_catalog.cli", env = { PYTHONPATH = "src" } }
+esm-viz = { cmd = "python -m esm_viz.cli", env = { PYTHONPATH = "src" } }
+test-catalog = { cmd = "pytest src/esm_catalog/tests/ -v", env = { PYTHONPATH = "src" } }
 
 [dependencies]
 python = "3.11.*"

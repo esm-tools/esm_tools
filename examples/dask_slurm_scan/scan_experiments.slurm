@@ -3,6 +3,7 @@
 #SBATCH --partition=mpp
 #SBATCH --cpus-per-task=128
 #SBATCH --mem=0
+#SBATCH --qos=12h
 #SBATCH --time=08:00:00
 #SBATCH --output=scan-%A_%a.log
 #
@@ -74,7 +75,7 @@ echo "============================================"
 
 # ── Locate esm-tools checkout ─────────────────────────────────
 # Adjust ESM_TOOLS_DIR if your checkout is elsewhere.
-ESM_TOOLS_DIR="${ESM_TOOLS_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
+ESM_TOOLS_DIR="${ESM_TOOLS_DIR:-/albedo/work/projects/paleo_work/esm-catalog/software/github.com/esm-tools/esm_tools}"
 
 # ── Run scan ──────────────────────────────────────────────────
 # ProcessPoolExecutor spawns 126 worker processes, each opening
@@ -83,8 +84,8 @@ ESM_TOOLS_DIR="${ESM_TOOLS_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 #
 # Add --distributed for Dask LocalCluster (marginally more
 # overhead but gives you the dashboard at http://node:8787).
+echo "Running in ESM_TOOLS_DIR=${ESM_TOOLS_DIR}"
 cd "${ESM_TOOLS_DIR}"
-pixi run esm-catalog scan "${EXP_PATH}" \
+pixi run esm-catalog --verbose scan "${EXP_PATH}" \
     --db "${DB_PATH}" \
-    -j "${WORKERS}" \
-    -v
+    -j "${WORKERS}"

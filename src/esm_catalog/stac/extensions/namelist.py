@@ -136,12 +136,20 @@ def _flatten_for_search(namelists: dict) -> dict:
     return result
 
 
+# Cache: experiment_path -> flattened {prop_key: value} dict
+# Namelists are the same for every file in an experiment, so parse once.
+_namelist_cache: dict[str, dict] = {}
+
+
 def add_namelist_item_extension(item: dict, ctx) -> dict:
     """Inject namelist parameters into a STAC item for queryable filtering.
 
     This propagates namelist parameters from ALL components in the experiment
     to each item, enabling cross-component queries like "find ocean files
     that ran with CO2 = X" (where CO2 is an atmosphere parameter).
+
+    Results are cached per experiment_path -- namelists are parsed once
+    and reused for all files in the same experiment.
 
     Args:
         item: STAC item dict to modify.
@@ -153,14 +161,27 @@ def add_namelist_item_extension(item: dict, ctx) -> dict:
     if ctx.experiment_path is None:
         return item
 
+    cache_key = str(ctx.experiment_path)
+
+    # Check cache first
+    if cache_key in _namelist_cache:
+        cached = _namelist_cache[cache_key]
+        if cached:
+            item["properties"].update(cached)
+            url = EXTENSION_URLS.get("namelist")
+            if url and url not in item.get("stac_extensions", []):
+                item.setdefault("stac_extensions", []).append(url)
+        return item
+
     config_root = ctx.experiment_path / "config"
     if not config_root.is_dir():
+        _namelist_cache[cache_key] = {}
         return item
 
     try:
         from esm_catalog.scan.namelist import scan_namelist_directory
 
-        total_params = 0
+        flattened: dict = {}
 
         # Scan ALL component config directories, not just the current component
         for component_dir in config_root.iterdir():
@@ -188,11 +209,13 @@ def add_namelist_item_extension(item: dict, ctx) -> dict:
                                 continue
 
                         prop_key = f"nml:{component_name}:{group_name}:{key}"
-                        item["properties"][prop_key] = value
-                        total_params += 1
+                        flattened[prop_key] = value
 
-        # Register extension if we added any parameters
-        if total_params > 0:
+        # Cache the result
+        _namelist_cache[cache_key] = flattened
+
+        if flattened:
+            item["properties"].update(flattened)
             url = EXTENSION_URLS.get("namelist")
             if url and url not in item.get("stac_extensions", []):
                 item.setdefault("stac_extensions", []).append(url)

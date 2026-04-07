@@ -24,7 +24,7 @@ ldiag_curl_vel3   = .false.  ! enables 'curl_u' output (relative vorticity from 
 ldiag_Ri          = .false.  ! enables Richardson number diagnostics ('shear', 'Ri')
 ldiag_turbflux    = .false.  ! enables turbulent flux diagnostics ('KvdTdz', 'KvdSdz')
 ldiag_salt3D      = .false.  ! enables 3D salinity diagnostics
-ldiag_dMOC        = .false.  ! enables 'dMOC' output (density MOC diagnostics)
+ldiag_dMOC        = .true.  ! enables 'dMOC' output (density MOC diagnostics)
 ldiag_DVD         = .false.  ! enables 'DVD' output (Discrete Variance Decay diagnostics)
 ldiag_forc        = .false.  ! enables 'FORC' output (comprehensive forcing diagnostics)
 ldiag_extflds     = .false.  ! enables extended field diagnostics
@@ -32,15 +32,15 @@ ldiag_destine     = .false.  ! enables heat content computation ('hc300m', 'hc70
 ldiag_trflx       = .false.  ! enables tracer flux diagnostics ('utemp', 'vtemp', 'usalt', 'vsalt')
 ldiag_uvw_sqr     = .false.  ! enables 'UVW_SQR' output (squared velocities: u2, v2, w2)
 ldiag_trgrd_xyz   = .false.  ! enables 'TRGRD_XYZ' output (horizontal & vertical tracer gradients)
-ldiag_cmor        = .true.   ! enables CMOR diagnostics for CMIP6/CMIP7 ('tos', 'sos', 'pbo', 'volo', etc.)
+ldiag_cmor        = .true.  ! enables CMOR diagnostics for CMIP6/CMIP7 ('tos', 'sos', 'pbo', 'volo', etc.)
 /
 
 ! ============================================================================
 ! GENERAL OUTPUT SETTINGS
 ! ============================================================================
 &nml_general
-io_listsize       = 120      ! total number of streams to allocate. Shall be larger or equal to the number of streams in &nml_list (max. 150)
-vec_autorotate    = .false.  ! unrotate vector fields (velocities, winds) before writing to output files
+io_listsize       = 150      ! total number of streams to allocate. Shall be larger or equal to the number of streams in &nml_list (max. 150)
+vec_autorotate    = .true.   ! unrotate vector fields (velocities, winds) before writing to output files
 compression_level = 1        ! compression level for netCDF output (1=fastest, 9=smallest)
 /
 
@@ -53,17 +53,26 @@ compression_level = 1        ! compression level for netCDF output (1=fastest, 9
 !   precision  = 4 (single precision) or 8 (double precision)
 ! ============================================================================
 &nml_list
-io_list =  'sst       ',1, 'm', 4,
-           'sss       ',1, 'm', 4,
-           'ssh       ',1, 'm', 4,
-           'uice      ',1, 'm', 4,
-           'vice      ',1, 'm', 4,
-           'a_ice     ',1, 'm', 4,
+! --- Daily output (variables needed at daily AND monthly frequency) ---
+! Monthly pycmor rules will use timeavg to downsample from daily data.
+! FESOM2 can only output one frequency per variable.
+io_list =  'sst       ',1, 'd', 4,
+           'sss       ',1, 'd', 4,
+           'ssh       ',1, 'd', 4,
+           'uice      ',1, 'd', 4,
+           'vice      ',1, 'd', 4,
+           'a_ice     ',1, 'd', 4,
+           'm_snow    ',1, 'd', 4,
+           'ist       ',1, 'd', 4,
+           'MLD3      ',1, 'd', 4,
+           'unod      ',1, 'd', 4,
+           'vnod      ',1, 'd', 4,
+! --- Monthly-only output ---
            'm_ice     ',1, 'm', 4,
-           'm_snow    ',1, 'm', 4,
+           'h_ice     ',1, 'm', 4,
+           'h_snow    ',1, 'm', 4,
            'MLD1      ',1, 'm', 4,
            'MLD2      ',1, 'm', 4,
-           'MLD3      ',1, 'm', 4,
            'tx_sur    ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
            'temp      ',1, 'm', 4,
@@ -72,9 +81,8 @@ io_list =  'sst       ',1, 'm', 4,
            'Kv        ',1, 'm', 4,
            'u         ',1, 'm', 4,
            'v         ',1, 'm', 4,
-           'unod      ',1, 'm', 4,
-           'vnod      ',1, 'm', 4,
            'w         ',1, 'm', 4,
+           'hnode     ',1, 'm', 4,
            'Av        ',1, 'm', 4,
            'bolus_u   ',1, 'm', 4,
            'bolus_v   ',1, 'm', 4,
@@ -82,6 +90,35 @@ io_list =  'sst       ',1, 'm', 4,
            'fw        ',1, 'm', 4,
            'fh        ',1, 'm', 4,
            'otracers  ',1, 'm', 4,
+           'thdgrarea ',1, 'm', 4,
+           'dyngrarea ',1, 'm', 4,
+           'thdgrice  ',1, 'm', 4,
+           'dyngrice  ',1, 'm', 4,
+           'thdgrsn   ',1, 'm', 4,
+           'strength_ice',1, 'm', 4,
+           'atmice_x  ',1, 'm', 4,
+           'atmice_y  ',1, 'm', 4,
+           'iceoce_x  ',1, 'm', 4,
+           'iceoce_y  ',1, 'm', 4,
+           'fw_ice    ',1, 'm', 4,
+           'fw_snw    ',1, 'm', 4,
+           'virtsalt  ',1, 'm', 4,
+           'realsalt  ',1, 'm', 4,
+           'qcon      ',1, 'm', 4,
+           'apnd      ',1, 'm', 4,
+           'hpnd      ',1, 'm', 4,
+           'ipnd      ',1, 'm', 4,
+           'evap      ',1, 'm', 4,
+           'relaxsalt ',1, 'm', 4,
+           'sgm11     ',1, 'm', 4,
+           'sgm12     ',1, 'm', 4,
+           'sgm22     ',1, 'm', 4,
+           'osalttend ',1, 'm', 8,
+           'opottemprmadvect',1, 'm', 8,
+           'opottempdiff',1, 'm', 8,
+           'osaltrmadvect',1, 'm', 8,
+           'osaltdiff ',1, 'm', 8,
+           'rsdoabsorb',1, 'm', 4,
 /
 
 ! ============================================================================

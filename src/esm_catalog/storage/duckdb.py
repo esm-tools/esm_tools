@@ -67,11 +67,25 @@ class CatalogDB:
                 PRIMARY KEY (collection_id, property, value)
             )
         """)
+        self.db.execute("""
+            CREATE TABLE IF NOT EXISTS experiment_issues (
+                id            TEXT PRIMARY KEY,
+                collection_id TEXT NOT NULL,
+                title         TEXT NOT NULL,
+                body          TEXT,
+                status        TEXT DEFAULT 'open',
+                labels        TEXT,
+                created_by    TEXT,
+                created_at    TIMESTAMPTZ DEFAULT now(),
+                updated_at    TIMESTAMPTZ DEFAULT now()
+            )
+        """)
         # Indexes (CREATE IF NOT EXISTS not supported; use try/except)
         for stmt in [
             "CREATE INDEX idx_collection ON items(collection)",
             "CREATE INDEX idx_experiment ON items(experiment)",
             "CREATE INDEX idx_datetime   ON items(datetime)",
+            "CREATE INDEX idx_issues_collection ON experiment_issues(collection_id)",
         ]:
             try:
                 self.db.execute(stmt)
@@ -509,6 +523,87 @@ class CatalogDB:
             return actual_str >= expected_str
 
         return False
+
+    # ------------------------------------------------------------------
+    # Issues
+    # ------------------------------------------------------------------
+
+    def _require_writable(self):
+        if self.read_only:
+            raise RuntimeError("Cannot modify issues in read-only mode")
+
+    def create_issue(
+        self, collection_id: str, title: str, body: str | None = None,
+        labels: str | None = None, created_by: str | None = None,
+    ) -> dict:
+        import uuid as _uuid
+
+        self._require_writable()
+        issue_id = str(_uuid.uuid4())[:8]
+        cursor = self.db.cursor()
+        try:
+            cursor.execute(
+                """INSERT INTO experiment_issues (id, collection_id, title, body, status, labels, created_by)
+                   VALUES (?, ?, ?, ?, 'open', ?, ?)""",
+                [issue_id, collection_id, title, body, labels, created_by],
+            )
+        finally:
+            cursor.close()
+        return self.get_issue(issue_id)
+
+    def get_issues(self, collection_id: str, status: str | None = None) -> list[dict]:
+        cursor = self.db.cursor()
+        try:
+            if status and status != "all":
+                rows = cursor.execute(
+                    "SELECT * FROM experiment_issues WHERE collection_id = ? AND status = ? ORDER BY created_at DESC",
+                    [collection_id, status],
+                ).fetchall()
+            else:
+                rows = cursor.execute(
+                    "SELECT * FROM experiment_issues WHERE collection_id = ? ORDER BY created_at DESC",
+                    [collection_id],
+                ).fetchall()
+            columns = [desc[0] for desc in cursor.description]
+        finally:
+            cursor.close()
+        return [dict(zip(columns, row)) for row in rows]
+
+    def get_issue(self, issue_id: str) -> dict | None:
+        cursor = self.db.cursor()
+        try:
+            row = cursor.execute(
+                "SELECT * FROM experiment_issues WHERE id = ?", [issue_id]
+            ).fetchone()
+            if row is None:
+                return None
+            columns = [desc[0] for desc in cursor.description]
+        finally:
+            cursor.close()
+        return dict(zip(columns, row))
+
+    def update_issue(self, issue_id: str, **kwargs) -> dict | None:
+        self._require_writable()
+        allowed = {"title", "body", "status", "labels"}
+        updates = {k: v for k, v in kwargs.items() if k in allowed}
+        if not updates:
+            return self.get_issue(issue_id)
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        values = list(updates.values()) + [issue_id]
+        cursor = self.db.cursor()
+        try:
+            cursor.execute(
+                f"UPDATE experiment_issues SET {set_clause}, updated_at = now() WHERE id = ?",
+                values,
+            )
+        finally:
+            cursor.close()
+        return self.get_issue(issue_id)
+
+    def close_issue(self, issue_id: str) -> dict | None:
+        return self.update_issue(issue_id, status="closed")
+
+    # ------------------------------------------------------------------
 
     def close(self):
         self.db.close()

@@ -137,6 +137,10 @@ def create_app(
     catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
     api.app.include_router(catalog_router)
 
+    # Add experiment issue tracking routes
+    from esm_catalog.api.issue_routes import create_issue_router
+    api.app.include_router(create_issue_router(registry, pool))
+
     # Add personal collections routes
     try:
         from esm_catalog.storage.personal import PersonalCollectionStore

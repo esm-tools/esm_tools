@@ -6,6 +6,37 @@ from pathlib import Path
 from loguru import logger
 
 
+def make_experiment_collection(experiment_id: str, experiment_path: Path | str | None = None) -> dict:
+    """Return a STAC Collection dict for the experiment itself (parent of component collections).
+
+    This is the top-level experiment entity. Component collections (fesom, echam, etc.)
+    are children of this collection via child links, which are added as components are discovered.
+
+    Args:
+        experiment_id: The experiment identifier (e.g., "basic-001").
+        experiment_path: Optional path to experiment root.
+
+    Returns:
+        STAC Collection dict for the experiment.
+    """
+    return {
+        "type": "Collection",
+        "id": experiment_id,
+        "stac_version": "1.0.0",
+        "stac_extensions": [],
+        "title": experiment_id,
+        "description": f"Experiment {experiment_id}",
+        "license": "proprietary",
+        "extent": {
+            "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
+            "temporal": {"interval": [[None, None]]},
+        },
+        "links": [],
+        "keywords": [],
+        "summaries": {},
+    }
+
+
 def make_collection(ctx, experiment_path: Path | str | None = None) -> dict:
     """Return a STAC Collection dict for the given CollectionContext.
 

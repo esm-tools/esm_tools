@@ -299,15 +299,55 @@ def _make_ctx(
 
 
 def _ensure_collection(ctx: CollectionContext, db) -> None:
-    """Create and insert the collection if it does not exist yet."""
-    from esm_catalog.stac.collection import make_collection
+    """Create and insert the component collection and its parent experiment collection if needed."""
+    from esm_catalog.stac.collection import make_collection, make_experiment_collection
 
-    if db.collection_exists(ctx.collection_id):
+    # Ensure the parent experiment collection exists
+    if not db.collection_exists(ctx.experiment_id):
+        exp_collection = make_experiment_collection(ctx.experiment_id, ctx.experiment_path)
+        db.insert_collection(exp_collection)
+        logger.info("Created experiment collection: {}", ctx.experiment_id)
+
+    # Ensure the component collection exists
+    if not db.collection_exists(ctx.collection_id):
+        collection = make_collection(ctx, experiment_path=ctx.experiment_path)
+        db.insert_collection(collection)
+        logger.info("Created component collection: {}", ctx.collection_id)
+
+        # Add child link from experiment to component
+        _add_child_link(db, ctx.experiment_id, ctx.collection_id, ctx.collection_title)
+
+
+def _add_child_link(db, parent_id: str, child_id: str, child_title: str) -> None:
+    """Add a child link from the parent experiment collection to a component collection."""
+    import json
+
+    parent = db.get_collection(parent_id)
+    if parent is None:
         return
 
-    collection = make_collection(ctx, experiment_path=ctx.experiment_path)
-    db.insert_collection(collection)
-    logger.info("Created collection: {}", ctx.collection_id)
+    # Check if child link already exists
+    for link in parent.get("links", []):
+        if link.get("rel") == "child" and link.get("href", "").endswith(child_id):
+            return
+
+    parent.setdefault("links", []).append({
+        "rel": "child",
+        "href": f"#collections/{child_id}",
+        "type": "application/json",
+        "title": child_title,
+    })
+
+    # Write back
+    cursor = db.db.cursor()
+    try:
+        cursor.execute(
+            "UPDATE collections SET data = ? WHERE id = ?",
+            [json.dumps(parent), parent_id],
+        )
+    finally:
+        cursor.close()
+    logger.debug("Added child link {} -> {}", parent_id, child_id)
 
 
 def _rindex(seq: tuple, value: str) -> int:

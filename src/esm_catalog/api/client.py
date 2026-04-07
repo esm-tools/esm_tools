@@ -22,6 +22,7 @@ Usage::
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
@@ -125,6 +126,14 @@ def _inject_item_links(item: dict, base_url: str) -> dict:
     ])
 
     return item
+
+
+def _is_child_collection(col: dict) -> bool:
+    """Return True if this collection is a component (has a parent collection link)."""
+    for link in col.get("links", []):
+        if link.get("rel") == "parent" and link.get("href", "").startswith("#"):
+            return True
+    return False
 
 
 def _inject_collection_links(col: dict, base_url: str) -> dict:
@@ -440,6 +449,25 @@ class DuckDBCatalogClient(BaseCoreClient):
             "href": f"{base_url}/queryables",
         })
 
+        # Advertise optional services (discovered by STAC Browser)
+        viz_url = os.environ.get("ESM_VIZ_SERVER")
+        if viz_url:
+            lp["links"].append({
+                "rel": "preview-service",
+                "type": "application/json",
+                "title": "Data Visualization Server",
+                "href": viz_url.rstrip("/"),
+            })
+
+        dask_url = os.environ.get("ESM_DASK_SCHEDULER")
+        if dask_url:
+            lp["links"].append({
+                "rel": "dask-scheduler",
+                "type": "text/html",
+                "title": "Dask Dashboard",
+                "href": dask_url.rstrip("/"),
+            })
+
         # Add child links for each collection (uses cache if available)
         for col_summary in self._get_all_collection_summaries():
             lp["links"].append({
@@ -483,6 +511,10 @@ class DuckDBCatalogClient(BaseCoreClient):
                 )
                 for col in matched:
                     if col["id"] not in seen:
+                        # Skip component collections (those with a parent collection link)
+                        # They are only reachable via child links from their experiment
+                        if _is_child_collection(col):
+                            continue
                         all_cols.append(_inject_collection_links(col, base_url))
                         seen.add(col["id"])
         finally:

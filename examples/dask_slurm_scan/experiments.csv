@@ -1,0 +1,6 @@
+# experiment_path
+# One experiment per line. Lines starting with # are skipped.
+# Each experiment is scanned by one SLURM array task using all available cores.
+/albedo/work/projects/p_paleo_compute/stepanek/esm_tools_6_PlioMIP3_production/PlioMIP3_experiments/mis31
+/albedo/work/projects/p_paleo_compute/stepanek/esm_tools_6_PlioMIP3_production/PlioMIP3_experiments/eoi400
+/albedo/work/projects/p_paleo_compute/stepanek/esm_tools_6_PlioMIP3_production/PlioMIP3_experiments/lig127k

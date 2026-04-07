@@ -249,8 +249,7 @@ def _from_path(path) -> CollectionContext | None:
         parts = path.parts
 
     # Try multiple directory markers in order of preference
-    # outdata is preferred (actual output), restart is secondary
-    for marker in ("outdata", "restart"):
+    for marker in ("outdata", "restart", "unknown"):
         try:
             marker_idx = _rindex(parts, marker)
         except ValueError:

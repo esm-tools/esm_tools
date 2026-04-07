@@ -55,11 +55,11 @@ DB_PATH="${OUTPUT_DIR}/${EXP_NAME}.duckdb"
 
 mkdir -p "${OUTPUT_DIR}"
 
-# ── Workers = available cores (leave 2 for main + OS) ─────────
-WORKERS=$(( ${SLURM_CPUS_PER_TASK:-128} - 2 ))
-if [[ ${WORKERS} -lt 1 ]]; then
-    WORKERS=1
-fi
+# ── Workers ───────────────────────────────────────────────────
+# 32 Dask worker processes is a good balance: each gets ~4 cores
+# and ~8GB RAM. More workers = more memory overhead from Python
+# imports (numpy, xarray, netCDF4 per process).
+WORKERS="${SCAN_WORKERS:-32}"
 
 echo "============================================"
 echo "  Experiment: ${EXP_PATH}"

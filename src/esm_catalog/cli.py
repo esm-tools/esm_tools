@@ -119,9 +119,9 @@ def main(ctx, verbose):
 )
 @click.option(
     "--jobs", "-j",
-    default=4,
+    default=32,
     show_default=True,
-    help="Number of parallel workers for processing results",
+    help="Number of parallel workers for file scanning",
 )
 @click.option(
     "--ssh-connections", "-c",
@@ -342,7 +342,7 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
                     _timing_scan.append(timing["scan_s"])
 
                 try:
-                    ctx_col = resolve_context(fp, config=config, db=catalog_db)
+                    ctx_col = resolve_context(fp, config=config, db=catalog_db, allow_restart=True)
                     item = make_item(fp, data, ctx_col, config=config)
                     item = add_hpc_extension(item, fp, metadata=data)
                     _item_batch.append(item)
@@ -439,9 +439,13 @@ def scan(ctx, path, db_path, config_path, jobs, ssh_connections, include_extensi
             finally:
                 if interactive:
                     logger.enable("esm_catalog")
+                # Shut down gracefully to avoid heartbeat errors in logs
+                import logging
+                logging.getLogger("distributed").setLevel(logging.CRITICAL)
                 client.close()
                 if cluster is not None:
                     cluster.close()
+                logging.getLogger("distributed").setLevel(logging.WARNING)
 
             t_scan = _time.monotonic() - t_scan_start
             scanned = stats["total"]

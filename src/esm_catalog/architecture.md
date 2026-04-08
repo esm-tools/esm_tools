@@ -20,12 +20,13 @@ src/esm_catalog/
 │   ├── catalog_routes.py   # /catalogs REST endpoints
 │   ├── client.py           # DuckDB-backed stac-fastapi CoreClient
 │   ├── cql2.py             # CQL2 filter parsing
+│   ├── experiment_routes.py # /experiments and /collections/{id}/experiment endpoints
 │   ├── helpers.py          # Utility functions
 │   ├── interfaces.py       # Protocol-based abstractions
 │   ├── middleware.py       # CORS etc.
 │   ├── paleo_presets.py    # Paleoclimate filter presets
 │   ├── personal_models.py  # Pydantic models for personal collections
-│   ├── personal_routes.py  # /users/{user}/collections REST endpoints
+│   ├── personal_routes.py  # /users/{user}/... REST endpoints (collections, labels, tree, shares)
 │   ├── pool.py             # Connection pool for multiple DuckDB catalogs
 │   ├── queryables.py       # STAC queryables endpoint
 │   ├── registry.py         # Dynamic catalog registry with persistence
@@ -46,7 +47,7 @@ src/esm_catalog/
 ├── storage/                # Storage backends
 │   ├── duckdb.py           # DuckDB catalog (main storage engine)
 │   ├── export.py           # Parquet export/import for batch mode
-│   └── personal.py         # SQLite-backed personal collections
+│   └── personal.py         # DuckDB-backed personal collections (collections, labels, shares, tree)
 ├── scan/                   # File format detection and metadata extraction
 │   ├── context.py          # Resolve file → (experiment, component, collection)
 │   ├── detect.py           # Format dispatch (NetCDF, GRIB, ECHAM)
@@ -173,6 +174,9 @@ FastAPI (stac-fastapi)
 | PATCH | `/catalogs/{id}` | Update catalog metadata |
 | POST | `/catalogs/{id}/refresh` | Reconnect to updated DuckDB |
 | DELETE | `/catalogs/{id}` | Unregister catalog |
+| GET | `/experiments` | List all experiments (virtual, derived from collection metadata) |
+| GET | `/experiments/{id}` | STAC Catalog for one experiment with child collection links |
+| GET | `/collections/{id}/experiment` | Parent experiment catalog for a component collection |
 | GET | `/health` | Health check |
 | GET, HEAD | `/admin` | Redirect → `/ui` |
 | GET | `/ui` | Admin web UI (register/list/delete catalogs) |
@@ -183,12 +187,19 @@ FastAPI (stac-fastapi)
 |--------|------|---------|
 | GET | `/users/{user}/collections` | List user's collections |
 | POST | `/users/{user}/collections` | Create personal collection |
-| GET | `/users/{user}/collections/{id}` | Collection detail |
-| PATCH | `/users/{user}/collections/{id}` | Update collection |
-| POST | `/users/{user}/collections/{id}/items` | Add items |
+| GET | `/users/{user}/collections/{id}` | Collection detail (includes item paths) |
+| PATCH | `/users/{user}/collections/{id}` | Update collection name/description/parent |
+| DELETE | `/users/{user}/collections/{id}` | Delete collection |
+| POST | `/users/{user}/collections/{id}/items` | Add items (browser paths stored as item_ids) |
 | DELETE | `/users/{user}/collections/{id}/items/{item_id}` | Remove item |
-| POST | `/users/{user}/collections/{id}/share` | Share with user |
-| PATCH/DELETE | `/users/{user}/collections/{id}/share/{user}` | Update/revoke share |
+| POST | `/users/{user}/collections/{id}/shares` | Grant another user access |
+| GET | `/users/{user}/collections/{id}/shares` | List share grants |
+| DELETE | `/users/{user}/collections/{id}/shares/{share_id}` | Revoke share grant |
+| GET | `/users/{user}/labels` | List user's labels |
+| POST | `/users/{user}/labels` | Create label |
+| DELETE | `/users/{user}/labels/{label_id}` | Delete label |
+| GET | `/users/{user}/tree` | Hierarchical folder+collection tree |
+| PATCH | `/users/{user}/tree` | Create/rename/move/delete folders and collections in tree |
 
 ---
 
@@ -236,7 +247,7 @@ are indexed for fast filtering without JSON parsing.
 | `CatalogRegistry` | `api/registry.py` | Registry of catalog paths; optional JSON persistence |
 | `DuckDBCatalogClient` | `api/client.py` | stac-fastapi CoreClient implementation |
 | `CollectionContext` | `scan/context.py` | Resolved (experiment, component) for one file |
-| `PersonalCollection` | `storage/personal.py` | User-curated collection with RBAC |
+| `PersonalCollectionStore` | `storage/personal.py` | DuckDB-backed store for collections, labels, shares, tree |
 | `Authenticator` | `api/auth.py` | Pluggable auth base class |
 
 ---
@@ -426,7 +437,7 @@ http://<host>:<port>/admin   # redirects → /ui
 
 ---
 
-## TODO 5 (added): Personal Collections — "My Collections" ✅ DONE (core); 🔲 sharing UX pending
+## TODO 5 (added): Personal Collections — "My Collections" ✅ DONE
 
 **Goal:** Allow users to curate personal lists of catalog items, organise them into folders,
 label them, and optionally share them with other users.
@@ -436,20 +447,19 @@ label them, and optionally share them with other users.
 - **`storage/personal.py`** — `PersonalCollectionStore` (DuckDB-backed): collections, items,
   labels, shares, tree nodes (folders + collection references). RBAC: owner/maintainer/developer/viewer.
 - **`api/personal_models.py`** — Pydantic request/response models.
-- **`api/personal_routes.py`** — Full REST API under `/users/{user}/...`.
+- **`api/personal_routes.py`** — Full REST API under `/users/{user}/...` (collections, labels,
+  shares, tree).
 - **`api/app.py`** — Mounts personal router; uses `ESM_PERSONAL_DB` env var for DB path.
 - **`stac-browser/PersonalCollections.vue`** — "My Collections" sidebar tab: tree view, folders,
   drag-and-drop, labels, share dialog, item viewer (clickable links), notifications.
-- **`stac-browser/AddToCollection.vue`** — "Add to Collection" button on item/collection pages.
+- **`stac-browser/AddToCollection.vue`** — Star button on item/collection cards; stores the STAC
+  Browser path (e.g. `/experiments/basic-001`) as the item reference so links resolve correctly.
 - **`stac-browser/TreeNode.vue`** — Recursive tree node component with drag-drop, edit/delete/share actions.
 
-**Pending (needs design discussion with Paul):**
+**Pending:**
 
 - "Shared with me" browser view — backend supports it; UI not built yet
 - Username validation (LDAP?) in the share dialog — currently accepts arbitrary strings
-- Shareable link format — currently shows raw API URL; no browser-navigable share page
-
-See task #1 in Claude Code task list for full design questions.
 
 ---
 

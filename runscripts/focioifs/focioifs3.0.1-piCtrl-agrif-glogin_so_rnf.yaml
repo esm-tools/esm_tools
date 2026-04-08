@@ -70,8 +70,22 @@ oasis3mct:
    mct_version: "5.0" 
    norestart: F
    use_lucia: True
-   debug_level: 50 
+   debug_level: 1 
    #export_mode: EXPOUT
+   # coupling methods
+   a2o_remap_method: "gauswgt"
+   o2a_remap_method: "gauswgt"
+   c2o_remap_method: "bilinear"
+
+   # Remapping OpenIFS runoff to runoff mapper (land)
+   a2r_remap_method: "gauswgt"
+   r2o_remap_method: "loccunif"
+
+   # Remapping AGRIF1 mask from NEMO grid to OpenIFS
+   a2agr1_remap_method: "gauswgt"
+   agr12a_remap_method: "bilinear"
+
+   o2a_agr1m_remap_method: "distwgt"  
    pool_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/
    ini_parent_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/
    oasis_date_stamp: "_18400101-18500101"   
@@ -93,6 +107,7 @@ nemo:
    jpnj: 24
    nproc: 864
    nest1: viking10
+   loccunif_nb_nest: 12
    
    add_namelist_changes:
       namelist_cfg:

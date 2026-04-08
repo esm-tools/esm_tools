@@ -12,9 +12,9 @@ general:
    version: "moz"
    homedir: !ENV ${HOME}
 
-   compute_time: "03:00:00"
+   compute_time: "03:30:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2014-01-01T00:00:00"         # Final date of the experiment
+   final_date: "2000-01-01T00:00:00"         # Final date of the experiment
    postprocessing: true
    scenario: "no_scenario" 
    perpetual_year: "2020"
@@ -28,9 +28,9 @@ general:
    clean_runs: 3
 
    lresume: True
-   ini_parent_exp_id: "FOCI3.0-SW103"
+   ini_parent_exp_id: "FOCI3.0-SW102"
    ini_parent_date: "20191231"
-   ini_nemo_restart_steps: 0 # to be defined 
+   ini_nemo_restart_steps: 2980368 # to be defined 
    ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
 
 foci:
@@ -68,9 +68,15 @@ echam:
       namelist.echam:
          radctl:
              yr_perp: "remove_from_namelist"
+             isolrad: 6 # piControl solar forcing
+             iaero: 3
+             ico2: 1
+             ich4: 1
+             in2o: 1
+             icfc: 1
              co2vmr: ${co2vmr} 
-             ch4vmr: ${co2vmr} 
-             n2ovmr: ${co2vmr} 
+             ch4vmr: ${ch4vmr} 
+             n2ovmr: ${n2ovmr} 
              cfcvmr(1): ${cfcvmr1} 
              cfcvmr(2): ${cfcvmr2} 
          runctl:
@@ -99,6 +105,8 @@ echam:
 
 jsbach:
    namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/PI-CTRL/dynveg-moz"
+   add_input_files:
+      jsbach: jsbach_1976
    add_forcing_sources:
       # ${general.perpetual_year} control forcing
       Ndepo_perpetual_year: "${input_dir}/${echam.resolution}/ndepo/Ndepo_ssp370.${general.pyear_m1}.nc"
@@ -124,11 +132,11 @@ nemo:
                nn_euler: 1
            namsbc:
                nn_fsbc: 2
-                   #namdyn_ldf:
-                   #rn_ahm_0_blp: -1.709e12
+               #namdyn_ldf:
+               #rn_ahm_0_blp: -1.709e12
            namtra_ldf:
                rn_aht_0: 300
-                   #rn_aeiv_scale: 0.5
+               #rn_aeiv_scale: 0.5
            namsbc_cpl:
                sn_rcv_rnf: ['none', 'no', '', '', '']
                sn_rcv_emp: ['kcm_lim_2', 'no', '', '', '']

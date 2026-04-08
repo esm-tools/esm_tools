@@ -6,7 +6,7 @@
 /
 !
 &parallel_nml
- nproma                  = 8
+ nproma                  = 6
  p_test_run              = .FALSE.
  l_fast_sum              = .FALSE.
  l_test_openmp           = .FALSE.
@@ -36,14 +36,14 @@
  msg_level               = 7                    ! detailed report during integration (5-7 or 13 incl. seaice prints)
  output                  = 'nml'
  check_uuid_gracefully   = .TRUE.
- Restart_filename        = "tpPi210_restart_atm_<rsttime>.nc"
+ Restart_filename        = "icon_restart_atm_<rsttime>.mfr"
 /
 &dynamics_nml
  lcoriolis               = .TRUE.
  divavg_cntrwgt          = 0.50
 /
 &initicon_nml
- ifs2icon_filename       = ''
+ ifs2icon_filename       = 'ifs2icon.nc'
 /
 &diffusion_nml
  hdiff_order             = 5
@@ -247,7 +247,7 @@
  dom                     = -1                        
  mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
  include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "tpPi210_jsb_2d"       ! file name base
+ output_filename         = "icon_jsb_2d"       ! file name base
  filename_format         = "<output_filename>_<datetime2>"
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid
@@ -266,7 +266,7 @@
  dom                     = -1                        
  mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
  include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "tpPi210_lnd_mon"      ! file name base
+ output_filename         = "icon_lnd_mon"      ! file name base
  filename_format         = "<output_filename>_<datetime2>"
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid

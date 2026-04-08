@@ -28,4 +28,6 @@ yac:
         coupling_yaml: ${icon.input_dir}/coupling.yaml
     input_files:
         coupling_yaml: coupling_yaml 
+    input_in_work:
+        coupling_yaml: coupling.yaml 
 

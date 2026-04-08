@@ -54,7 +54,7 @@ fesom:
       forcing:
          all_directions: link
       restart_in:
-         all_directions: link
+         all_directions: copy 
       restart_out:
          all_directions: move
       outdata:

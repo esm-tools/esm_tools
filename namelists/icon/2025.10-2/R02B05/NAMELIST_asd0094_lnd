@@ -3,7 +3,7 @@
   npft                 = 12
   use_lakes            = .TRUE.
   enforce_water_budget = 'logging'  		! write water balance issue in logfile
-  fract_filename       = 'bc_land_frac_12pfts_1850.nc'
+  fract_filename       = 'bc_land_frac.nc'
   !output_tiles         =      ! List of tiles to output
   init_from_ifs        = .FALSE.		! always start Jsbach from its initial file	
 /

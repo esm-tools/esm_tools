@@ -22,6 +22,9 @@ general:
         v2.0:
             couplings:
             - fesom-2.6.2-yac+icon-2025.04-public
+        v3.0:
+            couplings:
+            - fesom-2.6.2-yac+icon-2025.10-public
 
     prepcompute_recipe:
         - "compile_model"

@@ -25,7 +25,7 @@ fesom:
 
     choose_version:
       "2.6.2-yac":
-        branch: "yac"
+        branch: "main"
         comp_command: '. env/levante.dkrz.de/shell.intel ;
             FESOM_ROOT=$(pwd) ;
             mkdir -p build; cd build; 
@@ -204,6 +204,7 @@ fesom:
                     beta_evp: 500           # constant that control numerical stability of mEVP.
             DARS:
                     nx: 3160340
+                    mesh_dir: "${fesom.mesh_base_dir}/dars/"
                     whichEVP: 1
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
                     beta_evp: 500           # constant that control numerical stability of mEVP.

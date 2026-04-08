@@ -227,10 +227,13 @@ def choose_needed_files(config):
             new_sources = new_targets = {}
             for category, name in config[model][filetype + "_files"].items():
                 # TODO: change with user_error()
+                # TODO: better fix than str(name) instead of name for the
+                # TypeError: can only concatenate str (not "NoneWithProvenance") to str
+                # error ()
                 if not name in config[model][filetype + "_sources"]:
                     logger.error(
                         "Implementation "
-                        + name
+                        + str(name)
                         + " not found for filetype "
                         + filetype
                         + " of model "

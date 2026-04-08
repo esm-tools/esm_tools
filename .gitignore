@@ -155,3 +155,6 @@ calnoro
 # pixi environments
 .pixi/*
 !.pixi/config.toml
+
+# LLM Things
+**/.claude/

@@ -258,18 +258,23 @@ def _from_path(path) -> CollectionContext | None:
         if marker_idx < 1 or marker_idx + 1 >= len(parts):
             continue
 
-        component = parts[marker_idx + 1]
+        # For "unknown", files sit directly in the directory (no component subdir).
+        # For "outdata" and "restart", the next directory is the component name.
+        if marker == "unknown":
+            component = "unknown"
+        else:
+            # Check if the next part is a file (last part) or a directory.
+            # For restart/fesom/fesom.5501.oce.restart/ssh.nc, component is "fesom".
+            component = parts[marker_idx + 1]
 
         # Experiment: prefer the "experiments/{experiment}" convention
         exp_idx = _rindex_before(parts, "experiments", marker_idx)
         if exp_idx is not None and exp_idx + 1 < marker_idx:
             experiment_id = parts[exp_idx + 1]
-            # Experiment path is everything up to and including the experiment name
             experiment_path = Path(*parts[: exp_idx + 2])
         else:
             # Fallback: use the parent directory of the marker
             experiment_id = parts[marker_idx - 1]
-            # Experiment path is the directory containing the marker
             experiment_path = Path(*parts[:marker_idx])
 
         return _make_ctx(experiment_id, component, experiment_path)

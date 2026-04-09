@@ -1,2 +1,2 @@
 use_database: false
-system_components: ["general", "dask", "computer", "defaults"]
+system_components: ["general", "dask", "computer", "defaults", "_blackdict"]

@@ -77,6 +77,7 @@ else:
 # Always import externals before any non standard library imports
 
 # Third-Party Imports
+import colorama
 import numpy
 import yaml
 from loguru import logger
@@ -337,6 +338,35 @@ def complete_config(user_config):
     return user_config
 
 
+def _missing_section_header_example(key, source_file):
+    """
+    Return a short diff-like string showing the problem and a suggested fix.
+
+    Lines prefixed with ``-`` (red) show the current (broken) structure;
+    lines prefixed with ``+`` (green) show what the file should look like.
+    """
+    RED = colorama.Fore.RED
+    GREEN = colorama.Fore.GREEN
+    RESET = colorama.Style.RESET_ALL
+    DIM = colorama.Style.DIM
+
+    # Read the first few lines of the offending file
+    try:
+        with open(source_file) as fh:
+            raw_lines = [l.rstrip() for l in fh.readlines()[:5]]
+    except OSError:
+        raw_lines = [f"{key}:", "  ..."]
+
+    before = "\n".join(f"  {RED}-{RESET} {DIM}{l}{RESET}" for l in raw_lines)
+
+    comment = f"{DIM}# replace <section> with the appropriate section name{RESET}"
+    section_line = f"<section>:  {comment}"
+    after_lines = [section_line] + [f"  {l}" for l in raw_lines]
+    after = "\n".join(f"  {GREEN}+{RESET} {l}" for l in after_lines)
+
+    return f"{before}\n\n{after}"
+
+
 def validate_config_sections(config):
     """
     Validates that every top-level key in ``config`` is a known section.
@@ -381,16 +411,19 @@ def validate_config_sections(config):
             f"  - ``{key}``: {source}" for key, source in invalid.items()
         )
         valid_examples = ", ".join(f"``{k}``" for k in valid_keys)
+
+        first_key, first_source = next(iter(invalid.items()))
+        example = _missing_section_header_example(first_key, first_source)
+
         user_error(
             "Missing section headers",
             (
                 f"The following top-level keys are not valid "
                 f"sections:\n\n{details}\n\n"
                 f"Since esm-tools 6.54, all yaml files must use section names "
-                f"as their root keys. Valid sections for this run are: "
+                f"as their root keys. Valid ``sections`` for this experiment are: "
                 f"{valid_examples}.\n\n"
-                "Please, nest the file's content under the appropriate section key "
-                f"and try again. For example, in ``{invalid}``:"
+                f"Example fix for ``{first_source}``:\n\n{example}"
             ),
         )
 

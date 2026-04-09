@@ -154,7 +154,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     return loader
 
 
-def yaml_file_to_dict(filepath):
+def yaml_file_to_dict(filepath, register_sections=True):
     """
     Given a yaml file, returns a corresponding dictionary.
 
@@ -174,6 +174,12 @@ def yaml_file_to_dict(filepath):
     ----------
     filepath : str
         Where to get the YAML file from
+    register_sections : bool, optional
+        If True (default), records each root-level key and its source file in
+        ``general.sections`` so that ``validate_config_sections`` can later
+        identify which file introduced any unexpected top-level key. Set to
+        False in tests that compare the raw loaded dict and do not need
+        section tracking.
 
     Returns
     -------
@@ -217,12 +223,13 @@ def yaml_file_to_dict(filepath):
             # Turn list export_vars into dictionaries
             esm_environment.turn_export_vars_into_dict(yaml_load)
 
-            # Register each root-level key and its source file in
-            # general.sections so that validate_config_sections can later
-            # identify which file introduced any unexpected top-level key.
-            loaded_filepath = f"{filepath}{extension}"
-            sections = yaml_load.setdefault("general", {}).setdefault("sections", {})
-            sections.update({k: loaded_filepath for k in yaml_load if k != "general"})
+            if register_sections:
+                # Register each root-level key and its source file in
+                # general.sections so that validate_config_sections can later
+                # identify which file introduced any unexpected top-level key.
+                loaded_filepath = f"{filepath}{extension}"
+                sections = yaml_load.setdefault("general", {}).setdefault("sections", {})
+                sections.update({k: loaded_filepath for k in yaml_load if k != "general"})
 
             return yaml_load
 

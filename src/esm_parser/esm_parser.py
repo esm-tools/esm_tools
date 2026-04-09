@@ -67,6 +67,7 @@ import socket
 import subprocess
 import sys
 import warnings
+from pathlib import Path
 
 if sys.version_info > (3, 9):
     from collections.abc import Mapping
@@ -334,6 +335,64 @@ def complete_config(user_config):
             break
 
     return user_config
+
+
+def validate_config_sections(config):
+    """
+    Validates that every top-level key in ``config`` is a known section.
+
+    Valid sections are those listed in ``config["general"]["valid_setup_names"]``,
+    ``config["general"]["valid_model_names"]``, and
+    ``config["general"]["system_components"]`` (defined in ``defaults/general.yaml``
+    and extended at runtime).
+
+    Any key outside this set indicates that a yaml file placed content at the
+    wrong level without nesting it under a section header. Since esm-tools 6.54,
+    every yaml file must use section names as its root keys. The source file is
+    identified via ``config["general"]["sections"]``, which is populated by
+    ``yaml_file_to_dict`` every time a file is loaded.
+
+    Parameters
+    ----------
+    config : dict
+        Fully-assembled configuration (top-level keys are expected to be
+        section names).
+
+    Raises
+    ------
+    SystemExit
+        Via ``user_error`` if any top-level key is not a recognised section.
+    """
+    general = config.get("general", {})
+    valid_keys = (
+        set(general.get("valid_setup_names", []))
+        | set(general.get("valid_model_names", []))
+        | set(general.get("system_components", []))
+    )
+    sections = general.get("sections", {})
+
+    invalid = {}
+    for key in config:
+        if key not in valid_keys:
+            invalid[key] = sections.get(key, "unknown source")
+
+    if invalid:
+        details = "\n".join(
+            f"  - ``{key}``: {source}" for key, source in invalid.items()
+        )
+        valid_examples = ", ".join(f"``{k}``" for k in valid_keys)
+        user_error(
+            "Missing section headers",
+            (
+                f"The following top-level keys are not valid "
+                f"sections:\n\n{details}\n\n"
+                f"Since esm-tools 6.54, all yaml files must use section names "
+                f"as their root keys. Valid sections for this run are: "
+                f"{valid_examples}.\n\n"
+                "Please, nest the file's content under the appropriate section key "
+                f"and try again. For example, in ``{invalid}``:"
+            ),
+        )
 
 
 def pprint_config(config):  # pragma: no cover
@@ -3266,6 +3325,8 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             key_path=[],
             verbose=self.config["general"].get("verbose", False),
         )
+
+        validate_config_sections(self.config)
 
         # sys.exit(0)
 

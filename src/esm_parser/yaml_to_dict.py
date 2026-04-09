@@ -217,6 +217,13 @@ def yaml_file_to_dict(filepath):
             # Turn list export_vars into dictionaries
             esm_environment.turn_export_vars_into_dict(yaml_load)
 
+            # Register each root-level key and its source file in
+            # general.sections so that validate_config_sections can later
+            # identify which file introduced any unexpected top-level key.
+            loaded_filepath = f"{filepath}{extension}"
+            sections = yaml_load.setdefault("general", {}).setdefault("sections", {})
+            sections.update({k: loaded_filepath for k in yaml_load if k != "general"})
+
             return yaml_load
 
         except IOError as error:

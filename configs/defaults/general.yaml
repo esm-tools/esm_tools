@@ -1,4 +1,2 @@
 use_database: false
-
-general:
-  system_components: ["general", "dask"]
+system_components: ["general", "dask", "computer", "defaults"]

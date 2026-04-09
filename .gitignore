@@ -152,3 +152,6 @@ pack
 unpack
 jsbach_init_file
 calnoro
+# pixi environments
+.pixi/*
+!.pixi/config.toml

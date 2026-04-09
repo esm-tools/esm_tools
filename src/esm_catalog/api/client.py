@@ -7,8 +7,16 @@ together; results are merged and returned as standard STAC responses.
 Usage::
 
     from esm_catalog.api.client import DuckDBCatalogClient
-    client = DuckDBCatalogClient(catalogs=["/work/exp1/catalog.duckdb",
-                                           "/work/exp2/catalog.duckdb"])
+    from esm_catalog.api.pool import CatalogPool
+    from esm_catalog.api.registry import CatalogRegistry
+
+    # With registry (dynamic catalog management)
+    registry = CatalogRegistry(initial_catalogs=["/work/exp1/catalog.duckdb"])
+    pool = CatalogPool()
+    client = DuckDBCatalogClient(registry=registry, pool=pool)
+
+    # Legacy mode (static catalog list)
+    client = DuckDBCatalogClient(catalogs=["/work/exp1/catalog.duckdb"])
 """
 
 from __future__ import annotations
@@ -16,16 +24,25 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import attr
-from fastapi import HTTPException
+from fastapi import HTTPException, Query
+from loguru import logger
 from pydantic import Field
+from stac_fastapi.api.models import ItemCollectionUri
 from stac_fastapi.types import stac
 from stac_fastapi.types.core import BASE_CONFORMANCE_CLASSES, BaseCoreClient
 from stac_fastapi.types.search import BaseSearchPostRequest
+from typing import Annotated
 
-from esm_catalog.storage.duckdb import CatalogDB
+from esm_catalog.api.cql2 import parse_cql2_json, parse_filter, parse_datetime
+
+if TYPE_CHECKING:
+    from esm_catalog.api.cache import CollectionCache
+    from esm_catalog.api.pool import CatalogPool
+    from esm_catalog.api.registry import CatalogRegistry
+    from esm_catalog.storage.duckdb import CatalogDB
 
 # Extra conformance classes beyond the stac-fastapi defaults.
 # STAC Browser 5 checks for the OGC CQL2 classes to decide whether to show
@@ -34,210 +51,15 @@ _EXTRA_CONFORMANCE = [
     "https://api.stacspec.org/v1.0.0/collection-search",
     "https://api.stacspec.org/v1.0.0/collection-search#filter",
     "https://api.stacspec.org/v1.0.0/item-search#filter",
-    # OGC API – Features Part 3 (CQL2) conformance classes
+    # OGC API - Features Part 3 (CQL2) conformance classes
     "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/filter",
     "http://www.opengis.net/spec/ogcapi-features-3/1.0/conf/features-filter",
     "http://www.opengis.net/spec/cql2/1.0/conf/cql2-text",
     "http://www.opengis.net/spec/cql2/1.0/conf/cql2-json",
 ]
 
-# OGC rel for queryables link — STAC Browser checks for this exact URI
+# OGC rel for queryables link - STAC Browser checks for this exact URI
 _OGC_QUERYABLES_REL = "http://www.opengis.net/def/rel/ogc/1.0/queryables"
-
-# Operator mapping from CQL2-JSON op names to SQL operators
-_CQL2_OP_MAP: dict[str, str] = {
-    "eq": "=", "=": "=",
-    "neq": "!=", "!=": "!=", "<>": "!=",
-    "lt": "<", "<": "<",
-    "lte": "<=", "<=": "<=",
-    "gt": ">", ">": ">",
-    "gte": ">=", ">=": ">=",
-    "like": "LIKE",
-}
-_CQL2_OP_INVERSE: dict[str, str] = {
-    "<": ">", "<=": ">=", ">": "<", ">=": "<=", "=": "=", "!=": "!=", "LIKE": "LIKE",
-}
-# Logical negation of operators (for NOT wrapping): = → !=, < → >=, etc.
-_CQL2_OP_INVERT: dict[str, str] = {
-    "=": "!=", "!=": "=",
-    "<": ">=", "<=": ">", ">": "<=", ">=": "<",
-}
-
-
-def _cql2_value(val: Any) -> Any:
-    """Unwrap a CQL2 literal object into a plain Python value.
-
-    CQL2-JSON represents temporal literals as ``{"timestamp": "..."}`` or
-    ``{"date": "..."}`` dicts rather than bare strings.  Return the inner
-    string so the DB layer receives a value it can bind as TIMESTAMPTZ.
-    """
-    if isinstance(val, dict):
-        if "timestamp" in val:
-            return val["timestamp"]
-        if "date" in val:
-            return val["date"]
-    return val
-
-
-def _parse_cql2_json(expr: dict | None, negate: bool = False) -> dict:
-    """Parse a CQL2-JSON filter expression into a flat ``filter_props`` dict.
-
-    Handles AND combinations, OR combinations, comparison operators, and NOT
-    wrappers.
-
-    Returns:
-        Dict mapping field name → value where value is:
-        - ``(sql_op, value)`` for a single condition
-        - ``[(sql_op, v1), (sql_op, v2), ...]`` for AND duplicates
-        - ``[v1, v2, ...]`` (plain values) for OR equality conditions → IN clause
-    """
-    if not expr:
-        return {}
-    op = str(expr.get("op", "")).lower()
-    args = expr.get("args", [])
-
-    if op == "and":
-        result: dict = {}
-        for arg in args:
-            for k, v in _parse_cql2_json(arg, negate=negate).items():
-                if k in result:
-                    # Same field appears in multiple AND branches — collect both
-                    # so search_items can emit two separate SQL conditions.
-                    existing = result[k]
-                    result[k] = (existing if isinstance(existing, list) else [existing]) + [v]
-                else:
-                    result[k] = v
-        return result
-
-    if op == "or":
-        # Collect same-field equality values as a plain list for IN-clause OR.
-        or_result: dict = {}
-        for arg in args:
-            for k, v in _parse_cql2_json(arg, negate=negate).items():
-                # Extract plain value from equality tuple for OR semantics
-                plain = v[1] if isinstance(v, tuple) and v[0] == "=" else v
-                if k in or_result:
-                    existing = or_result[k]
-                    or_result[k] = (existing if isinstance(existing, list) else [existing]) + [plain]
-                else:
-                    or_result[k] = [plain]
-        return or_result
-
-    if op == "not" and len(args) == 1:
-        return _parse_cql2_json(args[0], negate=not negate)
-
-    sql_op = _CQL2_OP_MAP.get(op)
-    if sql_op and len(args) == 2:
-        left, right = args
-        if negate:
-            sql_op = _CQL2_OP_INVERT.get(sql_op, sql_op)
-        if isinstance(left, dict) and "property" in left:
-            return {left["property"]: (sql_op, _cql2_value(right))}
-        if isinstance(right, dict) and "property" in right:
-            # Reversed — invert the operator direction as well
-            inv = _CQL2_OP_INVERSE.get(sql_op, sql_op)
-            return {right["property"]: (inv, _cql2_value(left))}
-
-    # Spatial ops or unknown — return empty (no-op filter)
-    return {}
-
-
-# Well-known property names that are always lowercased for DB lookup.
-_CQL2_TEXT_KNOWN = frozenset({"variable", "experiment", "model", "component", "collection"})
-
-_CQL2_TEXT_PAT = re.compile(
-    r"\b(\w+)\s*(<=|>=|<>|!=|<|>|=)\s*(?:'([^']*)'|\"([^\"]*)\"|(\S+?)(?:\s|$|AND|OR))",
-    re.IGNORECASE,
-)
-
-
-def _parse_cql2_text(expr: str, negate: bool = False) -> dict:
-    """Parse a CQL2-text filter expression into a flat ``filter_props`` dict.
-
-    Handles simple equality and comparison expressions generated by STAC
-    Browser, e.g.::
-
-        variable = 'ssh'
-        experiment = 'basic-001' AND variable = 'sst'
-        variable = 'ssh' OR variable = 'sst'
-        NOT (variable = 'sst')
-
-    The ``NOT (...)`` wrapper (produced by the "Negate filter" checkbox) is
-    detected and all operators inside are inverted so the storage layer
-    sees ``!=`` instead of ``=``, etc.
-
-    Returns the same ``{field: (sql_op, value)}`` structure as
-    :func:`_parse_cql2_json` so callers are format-agnostic.  OR equality
-    conditions are returned as plain lists ``[v1, v2, ...]`` for IN-clause
-    matching; AND duplicates are ``[(op, v1), (op, v2), ...]``.
-    """
-    # Detect top-level NOT (...) and recurse with negate=True
-    stripped = expr.strip()
-    not_match = re.match(r'^NOT\s*\((.+)\)\s*$', stripped, re.IGNORECASE | re.DOTALL)
-    if not_match:
-        return _parse_cql2_text(not_match.group(1), negate=not negate)
-
-    # Detect top-level OR (STAC Browser "Match any filters" generates flat OR)
-    or_parts = re.split(r'\bOR\b', stripped, flags=re.IGNORECASE)
-    if len(or_parts) > 1:
-        or_result: dict = {}
-        for part in or_parts:
-            for m in _CQL2_TEXT_PAT.finditer(part):
-                prop = m.group(1)
-                if prop.upper() in ("AND", "OR", "NOT"):
-                    continue
-                op = m.group(2)
-                value = m.group(3) if m.group(3) is not None else (
-                    m.group(4) if m.group(4) is not None else (m.group(5) or "").strip()
-                )
-                key = prop.lower() if prop.lower() in _CQL2_TEXT_KNOWN else prop
-                # Collect plain values for OR → IN clause
-                if key in or_result:
-                    existing = or_result[key]
-                    or_result[key] = (existing if isinstance(existing, list) else [existing]) + [value]
-                else:
-                    or_result[key] = [value]
-        return or_result
-
-    # AND expression (or single condition)
-    result: dict = {}
-    for m in _CQL2_TEXT_PAT.finditer(expr):
-        prop = m.group(1)
-        if prop.upper() in ("AND", "OR", "NOT"):
-            continue
-        op = m.group(2)
-        # Prefer single-quoted, then double-quoted, then bare token
-        value = m.group(3) if m.group(3) is not None else (
-            m.group(4) if m.group(4) is not None else (m.group(5) or "").strip()
-        )
-        key = prop.lower() if prop.lower() in _CQL2_TEXT_KNOWN else prop
-        sql_op = _CQL2_OP_MAP.get(op.lower(), op)
-        if negate:
-            sql_op = _CQL2_OP_INVERT.get(sql_op, sql_op)
-        cond = (sql_op, value)
-        if key in result:
-            existing = result[key]
-            result[key] = (existing if isinstance(existing, list) else [existing]) + [cond]
-        else:
-            result[key] = cond
-    return result
-
-
-def _parse_cql2_filter(raw: str | None, lang: str | None) -> dict:
-    """Dispatch to the correct CQL2 parser based on *lang*.
-
-    Accepts both ``cql2-json`` and ``cql2-text`` (the default sent by STAC
-    Browser for GET requests).  Returns an empty dict on any parse failure.
-    """
-    if not raw:
-        return {}
-    try:
-        if lang and "json" in lang.lower():
-            return _parse_cql2_json(json.loads(raw))
-        return _parse_cql2_text(raw)
-    except Exception:
-        return {}
-
 
 class FilteredSearchPostRequest(BaseSearchPostRequest):
     """POST /search request model extended with CQL2 filter fields.
@@ -250,123 +72,118 @@ class FilteredSearchPostRequest(BaseSearchPostRequest):
     # Use model_fields alias because JSON key contains a hyphen
     filter: Optional[Dict[str, Any]] = Field(default=None)
     filter_lang: Optional[str] = Field(default=None, alias="filter-lang")
-    # Opaque pagination token — encodes the integer offset of the next page.
+    # Opaque pagination token - encodes the integer offset of the next page.
     # STAC Browser follows the ``next`` link body which includes this field.
     token: Optional[str] = Field(default=None)
 
     model_config = {"populate_by_name": True}
 
 
+@attr.s
+class ItemCollectionUriWithToken(ItemCollectionUri):
+    """Extended ItemCollectionUri that includes pagination token.
+
+    The upstream stac-fastapi ItemCollectionUri model does not include a token
+    field, which means pagination tokens in GET /collections/{id}/items requests
+    are silently dropped. This model adds the token field so pagination works.
+    """
+
+    token: Annotated[
+        Optional[str],
+        Query(
+            description="Pagination token (opaque string encoding offset)",
+            example="10",
+        ),
+    ] = attr.ib(default=None)
+
+
 def _inject_item_links(item: dict, base_url: str) -> dict:
-    """Return a copy of *item* with absolute self, root, parent and collection links.
+    """Inject absolute URLs into item links.
 
-    Items stored in the DB have only a fragment ``collection`` link
-    (``href: "#collection-id"``).  STAC Browser needs absolute URLs to render
-    item cards and navigate to the parent collection.  A ``parent`` link
-    (= the collection) is added so STAC validation passes.
+    Items are stored with relative/fragment links because we don't know
+    the API base URL at scan time. This injects the runtime base URL.
 
-    Asset hrefs that are bare filesystem paths (starting with ``/``) are
-    prefixed with ``file://`` so they satisfy the ``iri-reference`` format
-    required by the STAC JSON schema.
+    Note: keywords and file:// hrefs are set at insert time in stac/item.py.
     """
     item = dict(item)
     cid = item.get("collection", "")
     iid = item.get("id", "")
 
-    # Inject collection ID as a keyword so STAC Browser renders it as a
-    # colored chip/badge on item cards.  This keeps the item ID as the
-    # primary heading while still showing which collection an item belongs
-    # to — useful when viewing cross-collection search results.
-    props = item.get("properties", {})
-    if cid:
-        item["properties"] = dict(props)
-        existing = list(props.get("keywords", []) or [])
-        if cid not in existing:
-            existing.insert(0, cid)
-        item["properties"]["keywords"] = existing
-
+    # Replace links with absolute URLs
     item["links"] = [
         lnk for lnk in item.get("links", [])
         if lnk.get("rel") not in ("self", "root", "parent", "collection")
     ]
     item["links"].extend([
-        {"rel": "self",       "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items/{iid}"},
-        {"rel": "root",       "type": "application/json",     "href": f"{base_url}/"},
-        {"rel": "parent",     "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
-        {"rel": "collection", "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
+        {"rel": "self", "type": "application/geo+json",
+         "href": f"{base_url}/collections/{cid}/items/{iid}"},
+        {"rel": "root", "type": "application/json",
+         "href": f"{base_url}/"},
+        {"rel": "parent", "type": "application/json",
+         "href": f"{base_url}/collections/{cid}"},
+        {"rel": "collection", "type": "application/json",
+         "href": f"{base_url}/collections/{cid}"},
     ])
-    # Fix asset hrefs: bare absolute paths must be proper file:// URIs
-    if item.get("assets"):
-        fixed_assets = {}
-        for key, asset in item["assets"].items():
-            href = asset.get("href", "")
-            if href.startswith("/"):
-                asset = dict(asset)
-                asset["href"] = "file://" + href
-            fixed_assets[key] = asset
-        item["assets"] = fixed_assets
-
-    # Rewrite the HPC extension URL to our local schema endpoint so STAC
-    # Browser can actually fetch and validate against it.
-    _HPC_GITHUB_URL = "https://esm-tools.github.io/stac-hpc-extension/v0.1.0/schema.json"
-    _hpc_local = f"{base_url}/stac-extensions/hpc/v0.1.0/schema.json"
-    if base_url and _HPC_GITHUB_URL in item.get("stac_extensions", []):
-        item["stac_extensions"] = [
-            _hpc_local if u == _HPC_GITHUB_URL else u
-            for u in item["stac_extensions"]
-        ]
 
     return item
 
 
 def _inject_collection_links(col: dict, base_url: str) -> dict:
-    """Return a copy of *col* with self, root, parent, and items links set.
+    """Return a copy of *col* with self, root, parent, items, and queryables links.
 
-    Collections stored in DuckDB have only a fragment ``parent`` link
-    (e.g. ``href: "#basic-001"``).  Replace it with the absolute root URL so
-    the STAC Browser "Up" button navigates to the landing page and STAC
-    validation passes (fragment-only hrefs fail the iri-reference format check).
+    Collections stored in DuckDB have only a fragment ``parent`` link.
+    STAC Browser needs absolute URLs for navigation and the ``queryables``
+    link for per-collection CQL2 filtering.
     """
     col = dict(col)
     cid = col["id"]
-    # Strip all links we manage so stale / fragment hrefs don't leak through
+    # Remove managed links, then re-add with absolute URLs
     col["links"] = [
         lnk for lnk in col.get("links", [])
         if lnk.get("rel") not in ("self", "root", "parent", "items", "queryables")
     ]
     col["links"].extend([
-        {"rel": "self",        "type": "application/json",     "href": f"{base_url}/collections/{cid}"},
-        {"rel": "root",        "type": "application/json",     "href": f"{base_url}/"},
-        {"rel": "parent",      "type": "application/json",     "href": f"{base_url}/"},
-        {"rel": "items",       "type": "application/geo+json", "href": f"{base_url}/collections/{cid}/items",
-         "title": "Items"},
-        {"rel": "queryables",  "type": "application/schema+json",
-         "href": f"{base_url}/collections/{cid}/queryables",
-         "title": "Queryables"},
+        {"rel": "self", "type": "application/json",
+         "href": f"{base_url}/collections/{cid}"},
+        {"rel": "root", "type": "application/json",
+         "href": f"{base_url}/"},
+        {"rel": "parent", "type": "application/json",
+         "href": (f"{base_url}/experiments/{col.get('experiment')}"
+                  if col.get("experiment") else f"{base_url}/")},
+        {"rel": "items", "type": "application/geo+json",
+         "href": f"{base_url}/collections/{cid}/items", "title": "Items"},
+        {"rel": "http://www.opengis.net/def/rel/ogc/1.0/queryables",
+         "type": "application/schema+json",
+         "href": f"{base_url}/collections/{cid}/queryables", "title": "Queryables"},
     ])
     return col
 
 
-def _parse_datetime_filter(datetime_str: str | None) -> dict:
-    """Convert STAC datetime parameter to filter_props entries.
-
-    Handles:
-    - Single timestamp:  ``"2000-01-01T00:00:00Z"``
-    - Open-ended range:  ``"2000-01-01T00:00:00Z/.."`` or ``"../2005-12-31"``
-    - Closed range:      ``"2000-01-01/2005-12-31"``
-    """
-    if not datetime_str:
-        return {}
-    if "/" in datetime_str:
-        parts = datetime_str.split("/", 1)
-        start, end = parts[0], parts[1]
-        filt: dict = {}
-        if start and start != "..":
-            filt["datetime"] = (">=", start)
-        if end and end != "..":
-            filt["datetime_end"] = ("<=", end)
-        return filt
-    return {"datetime": ("=", datetime_str)}
+def _inject_experiment_catalog_links(
+    experiment_id: str, base_url: str, collections: list[dict]
+) -> dict:
+    """Build a STAC Catalog dict for one experiment with child links per collection."""
+    links = [
+        {"rel": "self",   "type": "application/json",
+         "href": f"{base_url}/experiments/{experiment_id}"},
+        {"rel": "root",   "type": "application/json", "href": f"{base_url}/"},
+        {"rel": "parent", "type": "application/json", "href": f"{base_url}/"},
+    ]
+    for col in collections:
+        cid = col["id"]
+        links.append({
+            "rel": "child", "type": "application/json",
+            "title": col.get("title", cid),
+            "href": f"{base_url}/collections/{cid}",
+        })
+    return {
+        "type": "Catalog",
+        "id": experiment_id,
+        "stac_version": "1.0.0",
+        "description": f"Experiment {experiment_id}",
+        "title": experiment_id,
+        "links": links,
+    }
 
 
 def _make_item_collection(
@@ -405,15 +222,19 @@ def _make_item_collection(
                 links.append({"rel": "prev", "type": "application/geo+json",
                               "method": "POST", "href": href_base, "body": prev_body})
             else:
-                prev_href = f"{href_base}?token={prev_offset}&limit={limit}" if prev_offset > 0 else href_base
-                links.append({"rel": "prev", "type": "application/geo+json", "href": prev_href})
+                prev_href = (f"{href_base}?token={prev_offset}&limit={limit}"
+                             if prev_offset > 0 else href_base)
+                links.append({"rel": "prev", "type": "application/geo+json",
+                              "href": prev_href})
 
         # next
         next_offset = offset + returned
         if next_offset < total:
             if method == "POST" and search_body is not None:
-                next_body = {**{k: v for k, v in search_body.items() if k != "token"},
-                             "token": str(next_offset)}
+                next_body = {
+                    **{k: v for k, v in search_body.items() if k != "token"},
+                    "token": str(next_offset),
+                }
                 links.append({"rel": "next", "type": "application/geo+json",
                               "method": "POST", "href": href_base, "body": next_body})
             else:
@@ -438,49 +259,219 @@ def _make_item_collection(
 class DuckDBCatalogClient(BaseCoreClient):
     """stac-fastapi core client backed by one or more DuckDB catalog files.
 
+    Supports two modes:
+    1. **Registry mode** (recommended): Use a CatalogRegistry and CatalogPool
+       for dynamic catalog management and connection pooling.
+    2. **Legacy mode**: Provide a static list of catalog paths.
+
     Attributes:
-        catalogs: Paths to ``catalog.duckdb`` files to serve.  At least one
-                  must be provided; an empty list raises :exc:`ValueError`.
+        catalogs: Static list of catalog paths (legacy mode).
+        registry: CatalogRegistry for dynamic catalog management.
+        pool: CatalogPool for connection pooling.
     """
 
+    # Legacy mode: static catalog list
     catalogs: List[Union[str, Path]] = attr.ib(factory=list)
+
+    # Registry mode: dynamic catalog management with pooling
+    registry: Optional["CatalogRegistry"] = attr.ib(default=None)
+    pool: Optional["CatalogPool"] = attr.ib(default=None)
+
+    # Optional collection cache for landing page performance
+    collection_cache: Optional["CollectionCache"] = attr.ib(default=None)
+
     base_conformance_classes: List[str] = attr.ib(
         factory=lambda: BASE_CONFORMANCE_CLASSES + _EXTRA_CONFORMANCE
     )
 
-    def __attrs_post_init__(self):
-        if not self.catalogs:
-            raise ValueError("DuckDBCatalogClient requires at least one catalog path")
-        # Validate all paths exist; warn if not (server may start before first run)
-        from loguru import logger
-        for p in self.catalogs:
-            if not Path(p).exists():
-                logger.warning("Catalog not found (will be served when created): {}", p)
+    def __attrs_post_init__(self) -> None:
+        # If using legacy mode, validate that we have at least one catalog
+        # Registry mode allows starting with zero catalogs (added via API)
+        if self.registry is None and not self.catalogs:
+            logger.warning(
+                "DuckDBCatalogClient initialized with no catalogs. "
+                "Use registry mode or provide catalog paths."
+            )
+
+        # In legacy mode, warn about missing catalogs
+        if self.registry is None:
+            for p in self.catalogs:
+                if not Path(p).exists():
+                    logger.warning(
+                        "Catalog not found (will be served when created): {}", p
+                    )
 
     # ------------------------------------------------------------------
-    # Helpers
+    # Catalog access helpers
     # ------------------------------------------------------------------
 
-    def _open_catalogs(self) -> list[CatalogDB]:
-        """Open all configured catalogs, skipping missing files."""
-        dbs = []
-        for p in self.catalogs:
-            if Path(p).exists():
-                dbs.append(CatalogDB(p))
+    @property
+    def _catalog_paths(self) -> list[str]:
+        """Return current catalog paths from registry or static list."""
+        if self.registry is not None:
+            return self.registry.get_paths()
+        return [str(p) for p in self.catalogs]
+
+    def _open_catalogs(self) -> list["CatalogDB"]:
+        """Open all configured catalogs, using pool if available.
+
+        In registry mode with a pool, connections are cached and reused.
+        In legacy mode, connections are opened fresh each time.
+        """
+        from esm_catalog.storage.duckdb import CatalogDB
+
+        dbs: list[CatalogDB] = []
+        paths = self._catalog_paths
+
+        if self.pool is not None:
+            # Pool mode: use cached connections
+            for p in paths:
+                db = self.pool.get(p)
+                if db is not None:
+                    dbs.append(db)
+        else:
+            # Legacy mode: open fresh connections
+            for p in paths:
+                if Path(p).exists():
+                    dbs.append(CatalogDB(p))
+
         return dbs
 
-    def _all_collections_from_dbs(self, dbs: list[CatalogDB]) -> list[dict]:
-        collections = []
-        seen: set[str] = set()
-        for db in dbs:
-            for col in db.iter_collections():
-                if col["id"] not in seen:
-                    collections.append(col)
-                    seen.add(col["id"])
-        return collections
+    def _close_catalogs(self, dbs: list["CatalogDB"]) -> None:
+        """Close catalogs if not using pool (legacy mode only)."""
+        if self.pool is None:
+            for db in dbs:
+                db.close()
+
+    def _get_all_collection_summaries(self) -> list[dict]:
+        """Get summary info (id, title) for all collections across all catalogs.
+
+        Uses collection_cache if available to avoid repeated database queries.
+        Returns a list of dicts with 'id' and 'title' keys.
+        """
+        def fetch_summaries() -> dict:
+            dbs = self._open_catalogs()
+            try:
+                summaries: list[dict] = []
+                seen: set[str] = set()
+                for db in dbs:
+                    for col in db.iter_collections():
+                        if col["id"] not in seen:
+                            summaries.append({
+                                "id": col["id"],
+                                "title": col.get("title", col["id"]),
+                            })
+                            seen.add(col["id"])
+                return {"summaries": summaries}
+            finally:
+                self._close_catalogs(dbs)
+
+        if self.collection_cache is not None:
+            result = self.collection_cache.get_or_compute("summaries", fetch_summaries)
+            return result["summaries"]
+        return fetch_summaries()["summaries"]
+
+    def _get_all_experiment_ids(self) -> list[str]:
+        """Return deduplicated sorted experiment IDs across all registered catalogs."""
+        dbs = self._open_catalogs()
+        try:
+            seen: set[str] = set()
+            for db in dbs:
+                for exp_id in db.iter_experiments():
+                    seen.add(exp_id)
+        finally:
+            self._close_catalogs(dbs)
+        return sorted(seen)
+
+    def _get_collections_for_experiment(self, experiment_id: str) -> list[dict]:
+        """Return all collections for *experiment_id* across all catalogs, deduplicated."""
+        dbs = self._open_catalogs()
+        try:
+            result: list[dict] = []
+            seen: set[str] = set()
+            for db in dbs:
+                for col in db.get_collections_for_experiment(experiment_id):
+                    if col["id"] not in seen:
+                        result.append(col)
+                        seen.add(col["id"])
+        finally:
+            self._close_catalogs(dbs)
+        return result
 
     # ------------------------------------------------------------------
-    # Landing page — override to add child links for STAC Browser Browse
+    # Federated search with correct pagination
+    # ------------------------------------------------------------------
+
+    def _federated_search(
+        self,
+        filter_props: dict,
+        limit: int,
+        offset: int = 0,
+    ) -> tuple[list[dict], int]:
+        """Execute a federated search across multiple catalogs with correct pagination.
+
+        This implements a two-phase query approach:
+        1. Get total counts from each catalog
+        2. Calculate which catalogs contribute to the requested page and query
+           only those with correct local offsets
+
+        Args:
+            filter_props: Filter parameters for search_items.
+            limit: Maximum items to return.
+            offset: Global offset into combined result set.
+
+        Returns:
+            Tuple of (items_list, total_count).
+        """
+        dbs = self._open_catalogs()
+        if not dbs:
+            return [], 0
+
+        try:
+            # Phase 1: Get total counts from each catalog
+            counts: list[int] = []
+            for db in dbs:
+                _, count = db.search_items(filter_props, limit=0, offset=0)
+                counts.append(count)
+
+            total = sum(counts)
+
+            if offset >= total:
+                return [], total
+
+            # Phase 2: Determine which catalogs contribute to this page
+            items: list[dict] = []
+            global_offset = offset
+            remaining_limit = limit
+
+            for db, count in zip(dbs, counts):
+                if remaining_limit <= 0:
+                    break
+
+                if global_offset >= count:
+                    # Skip this entire catalog
+                    global_offset -= count
+                    continue
+
+                # This catalog contributes to the result
+                local_offset = global_offset
+                local_limit = min(remaining_limit, count - local_offset)
+
+                db_items, _ = db.search_items(
+                    filter_props, limit=local_limit, offset=local_offset
+                )
+                items.extend(db_items)
+
+                remaining_limit -= len(db_items)
+                global_offset = 0  # Subsequent catalogs start at offset 0
+
+            return items, total
+
+        finally:
+            self._close_catalogs(dbs)
+
+    # ------------------------------------------------------------------
+    # Landing page - override to add child links for STAC Browser Browse
     # ------------------------------------------------------------------
 
     def landing_page(self, **kwargs) -> stac.LandingPage:
@@ -489,12 +480,24 @@ class DuckDBCatalogClient(BaseCoreClient):
         STAC Browser Browse mode navigates via ``child`` links.  stac-fastapi's
         default landing page only includes a ``data`` link to ``/collections``;
         without explicit ``child`` links the Browse view is empty.
+
+        Uses collection_cache if available to avoid repeated database queries
+        on every landing page request.
         """
         lp = super().landing_page(**kwargs)
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
 
-        # Queryables link — STAC Browser checks for the full OGC rel URI
+        # Remove the stac-fastapi default `rel=data` link that points to
+        # /collections. STAC Browser Browse mode uses BOTH the `data` link
+        # (which triggers GET /collections → all component collections) AND
+        # `child` links. Removing `data` keeps Browse showing only the
+        # experiment-level tree; Search still works via direct API calls.
+        lp["links"] = [
+            lnk for lnk in lp["links"] if lnk.get("rel") != "data"
+        ]
+
+        # Queryables link - STAC Browser checks for the full OGC rel URI
         lp["links"].append({
             "rel": _OGC_QUERYABLES_REL,
             "type": "application/schema+json",
@@ -502,23 +505,15 @@ class DuckDBCatalogClient(BaseCoreClient):
             "href": f"{base_url}/queryables",
         })
 
-        dbs = self._open_catalogs()
-        try:
-            seen: set[str] = set()
-            for db in dbs:
-                for col in db.iter_collections():
-                    if col["id"] in seen:
-                        continue
-                    seen.add(col["id"])
-                    lp["links"].append({
-                        "rel": "child",
-                        "type": "application/json",
-                        "title": col.get("title", col["id"]),
-                        "href": f"{base_url}/collections/{col['id']}",
-                    })
-        finally:
-            for db in dbs:
-                db.close()
+        # Add child links for each experiment (uses experiment hierarchy)
+        for exp_id in self._get_all_experiment_ids():
+            lp["links"].append({
+                "rel": "child",
+                "type": "application/json",
+                "title": exp_id,
+                "href": f"{base_url}/experiments/{exp_id}",
+            })
+
         return lp
 
     # ------------------------------------------------------------------
@@ -526,10 +521,10 @@ class DuckDBCatalogClient(BaseCoreClient):
     # ------------------------------------------------------------------
 
     def all_collections(self, **kwargs) -> stac.Collections:
-        """GET /collections — return all collections across all catalogs.
+        """GET /collections - return all collections across all catalogs.
 
         Supports CQL2-JSON filtering via the ``filter`` query parameter so
-        STAC Browser "Search for Collections → Additional filters" works.
+        STAC Browser "Search for Collections -> Additional filters" works.
         """
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
@@ -537,11 +532,11 @@ class DuckDBCatalogClient(BaseCoreClient):
         filter_props: dict = {}
         if request is not None:
             qp = request.query_params
-            # CQL2 filter via ?filter=...&filter-lang=cql2-json|cql2-text
+            # CQL2 filter via ?filter=<expr>&filter-lang=<cql2-json|cql2-text>
             raw_filter = qp.get("filter")
             filter_lang = qp.get("filter-lang")
             if raw_filter:
-                filter_props = _parse_cql2_filter(raw_filter, filter_lang)
+                filter_props = parse_filter(raw_filter, filter_lang)
 
         dbs = self._open_catalogs()
         try:
@@ -556,19 +551,22 @@ class DuckDBCatalogClient(BaseCoreClient):
                         all_cols.append(_inject_collection_links(col, base_url))
                         seen.add(col["id"])
         finally:
-            for db in dbs:
-                db.close()
+            self._close_catalogs(dbs)
+
+        # Include queryables link so STAC Browser shows "Additional filters"
+        # in the "Search for Collections" tab
+        links = [
+            {
+                "rel": _OGC_QUERYABLES_REL,
+                "href": f"{base_url}/queryables",
+                "type": "application/schema+json",
+                "title": "Queryables",
+            }
+        ]
 
         return stac.Collections(
             collections=all_cols,
-            links=[
-                {
-                    "rel": _OGC_QUERYABLES_REL,
-                    "href": f"{base_url}/queryables",
-                    "type": "application/schema+json",
-                    "title": "Queryable properties",
-                }
-            ],
+            links=links,
             numberMatched=len(all_cols),
             numberReturned=len(all_cols),
         )
@@ -586,9 +584,11 @@ class DuckDBCatalogClient(BaseCoreClient):
                     col = _inject_collection_links(col, base_url)
                     return stac.Collection(**col)
         finally:
-            for db in dbs:
-                db.close()
-        raise HTTPException(status_code=404, detail=f"Collection '{collection_id}' not found")
+            self._close_catalogs(dbs)
+
+        raise HTTPException(
+            status_code=404, detail=f"Collection '{collection_id}' not found"
+        )
 
     def item_collection(
         self,
@@ -617,7 +617,7 @@ class DuckDBCatalogClient(BaseCoreClient):
         filter_props: dict = {"collection": collection_id}
         if bbox:
             filter_props["bbox"] = bbox
-        filter_props.update(_parse_datetime_filter(datetime))
+        filter_props.update(parse_datetime(datetime))
 
         # CQL2 filter via ?filter=...&filter-lang=cql2-json|cql2-text
         # Sent by STAC Browser's "Additional Filters" CQL2 builder when browsing
@@ -627,21 +627,11 @@ class DuckDBCatalogClient(BaseCoreClient):
             raw_filter = request.query_params.get("filter")
             filter_lang = request.query_params.get("filter-lang")
             if raw_filter:
-                filter_props.update(_parse_cql2_filter(raw_filter, filter_lang))
+                filter_props.update(parse_filter(raw_filter, filter_lang))
 
-        items: list[dict] = []
-        total = 0
-        dbs = self._open_catalogs()
-        try:
-            for db in dbs:
-                db_items, db_total = db.search_items(filter_props, limit=limit, offset=offset)
-                items.extend(db_items)
-                total += db_total
-        finally:
-            for db in dbs:
-                db.close()
+        items, total = self._federated_search(filter_props, limit, offset)
+        patched = [_inject_item_links(it, base_url) for it in items]
 
-        patched = [_inject_item_links(it, base_url) for it in items[:limit]]
         return _make_item_collection(
             patched, total, limit,
             offset=offset,
@@ -655,16 +645,37 @@ class DuckDBCatalogClient(BaseCoreClient):
         base_url = str(request.base_url).rstrip("/") if request else ""
 
         dbs = self._open_catalogs()
+        if not dbs:
+            logger.warning(
+                "get_item: No catalogs available for lookup "
+                "(collection={!r}, item={!r})",
+                collection_id, item_id
+            )
+            raise HTTPException(
+                status_code=404,
+                detail=f"Item '{item_id}' not found in collection '{collection_id}'",
+            )
+
         try:
             for db in dbs:
                 results, _ = db.search_items(
                     {"collection": collection_id, "id": item_id}, limit=1
                 )
                 if results:
+                    logger.debug(
+                        "get_item: Found item {!r} in collection {!r}",
+                        item_id, collection_id
+                    )
                     return stac.Item(**_inject_item_links(results[0], base_url))
         finally:
-            for db in dbs:
-                db.close()
+            self._close_catalogs(dbs)
+
+        # Item not found - log additional debug info to help diagnose
+        logger.warning(
+            "get_item: Item not found (collection={!r}, item={!r}). "
+            "Checked {} catalog(s).",
+            collection_id, item_id, len(dbs)
+        )
         raise HTTPException(
             status_code=404,
             detail=f"Item '{item_id}' not found in collection '{collection_id}'",
@@ -682,11 +693,23 @@ class DuckDBCatalogClient(BaseCoreClient):
     ) -> stac.ItemCollection:
         """GET /search"""
         filter_props: dict = {}
-        if collections and len(collections) == 1:
-            filter_props["collection"] = collections[0]
-        if ids and len(ids) == 1:
-            filter_props["id"] = ids[0]
-        filter_props.update(_parse_datetime_filter(datetime))
+
+        # Support single or multiple collections
+        if collections:
+            if len(collections) == 1:
+                filter_props["collection"] = collections[0]
+            else:
+                filter_props["collection"] = ("IN", collections)
+
+        # Support single or multiple IDs
+        if ids:
+            if len(ids) == 1:
+                filter_props["id"] = ids[0]
+            else:
+                filter_props["id"] = ("IN", ids)
+
+        filter_props.update(parse_datetime(datetime))
+
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
         token = kwargs.get("token", "")
@@ -696,26 +719,37 @@ class DuckDBCatalogClient(BaseCoreClient):
             raw_filter = request.query_params.get("filter")
             filter_lang = request.query_params.get("filter-lang")
             if raw_filter:
-                filter_props.update(_parse_cql2_filter(raw_filter, filter_lang))
+                filter_props.update(parse_filter(raw_filter, filter_lang))
         return self._run_search(filter_props, limit or 10, base_url, offset=offset)
 
     def post_search(
         self, search_request: BaseSearchPostRequest, **kwargs
     ) -> stac.ItemCollection:
-        """POST /search — handles standard fields plus CQL2 ``filter``."""
+        """POST /search - handles standard fields plus CQL2 ``filter``."""
         filter_props: dict = {}
-        if search_request.collections and len(search_request.collections) == 1:
-            filter_props["collection"] = search_request.collections[0]
-        if search_request.ids and len(search_request.ids) == 1:
-            filter_props["id"] = search_request.ids[0]
-        filter_props.update(_parse_datetime_filter(search_request.datetime))
+
+        # Support single or multiple collections
+        if search_request.collections:
+            if len(search_request.collections) == 1:
+                filter_props["collection"] = search_request.collections[0]
+            else:
+                filter_props["collection"] = ("IN", search_request.collections)
+
+        # Support single or multiple IDs
+        if search_request.ids:
+            if len(search_request.ids) == 1:
+                filter_props["id"] = search_request.ids[0]
+            else:
+                filter_props["id"] = ("IN", search_request.ids)
+
+        filter_props.update(parse_datetime(search_request.datetime))
 
         offset = 0
         search_body: dict | None = None
         if isinstance(search_request, FilteredSearchPostRequest):
             # CQL2-JSON filter from STAC Browser "Additional filters" builder
             if search_request.filter:
-                filter_props.update(_parse_cql2_json(search_request.filter))
+                filter_props.update(parse_cql2_json(search_request.filter))
             # Pagination token encodes the integer offset
             if search_request.token and search_request.token.isdigit():
                 offset = int(search_request.token)
@@ -725,7 +759,7 @@ class DuckDBCatalogClient(BaseCoreClient):
                 search_body["filter"] = search_request.filter
                 search_body["filter-lang"] = search_request.filter_lang or "cql2-json"
             if search_request.collections:
-                search_body["collections"] = search_request.collections
+                search_body["collections"] = list(search_request.collections)
             if search_request.datetime:
                 search_body["datetime"] = search_request.datetime
 
@@ -734,6 +768,7 @@ class DuckDBCatalogClient(BaseCoreClient):
         limit = search_request.limit or 10
         if search_body is not None:
             search_body["limit"] = limit
+
         return self._run_search(
             filter_props, limit, base_url,
             offset=offset, method="POST", search_body=search_body,
@@ -752,18 +787,10 @@ class DuckDBCatalogClient(BaseCoreClient):
         method: str = "GET",
         search_body: dict | None = None,
     ) -> stac.ItemCollection:
-        items: list[dict] = []
-        total = 0
-        dbs = self._open_catalogs()
-        try:
-            for db in dbs:
-                db_items, db_total = db.search_items(filter_props, limit=limit, offset=offset)
-                items.extend(db_items)
-                total += db_total
-        finally:
-            for db in dbs:
-                db.close()
-        patched = [_inject_item_links(it, base_url) for it in items[:limit]]
+        """Execute a search with correct federated pagination."""
+        items, total = self._federated_search(filter_props, limit, offset)
+        patched = [_inject_item_links(it, base_url) for it in items]
+
         return _make_item_collection(
             patched, total, limit,
             offset=offset, base_url=base_url, method=method, search_body=search_body,

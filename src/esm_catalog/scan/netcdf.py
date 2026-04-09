@@ -1,35 +1,90 @@
-"""Scan a NetCDF file and return a metadata dict for STAC Item construction."""
+"""Scan a NetCDF file and return a metadata dict for STAC Item construction.
 
-import os
+Supports both local paths and remote URIs via fsspec/UPath.
+"""
+
+from __future__ import annotations
+
 from datetime import datetime, timezone
-from pathlib import Path
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, Union
 
 import numpy as np
 import xarray as xr
 from loguru import logger
 
+if TYPE_CHECKING:
+    from upath import UPath
 
-def scan_netcdf(path: Path) -> dict:
+
+def scan_netcdf(path: "Union[Path, UPath, str]", timeout: int = 120) -> dict:
     """Open *path* with xarray and extract STAC-relevant metadata.
+
+    Supports local paths and remote URIs (ssh://, scoutfs://, s3://, etc.).
+
+    Args:
+        path: Local path, UPath, or URI string to scan
+        timeout: Max seconds to wait for remote file operations (default: 120)
 
     Returns a dict with keys:
         variable, variables, cf_parameters, dimensions, bbox, geometry,
-        datetime_start, datetime_end, datetime_str, file_size, conventions
+        datetime_start, datetime_end, datetime_str, file_size, conventions,
+        format, global_attributes
+
+    All NetCDF global attributes are extracted and stored in 'global_attributes'
+    for inclusion in STAC item properties, enabling search by any metadata
+    present in the file (model version, mesh path, advection scheme, etc.).
     """
-    path = Path(path)
+    # Handle string paths
+    if isinstance(path, str):
+        from esm_catalog.scan.upath import parse_uri
+        path = parse_uri(path)
+
     logger.debug("Scanning NetCDF: {}", path)
 
-    ds = xr.open_dataset(str(path), decode_times=True)
+    # xarray can open URIs directly via fsspec, or we can use h5netcdf with file object
+    # For remote files, convert to string URI which xarray handles via fsspec
+    if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
+        # Remote file - reconstruct full URI with hostname
+        from esm_catalog.scan.upath import to_uri
+        uri = to_uri(path)
+        logger.debug("Opening remote file: {}", uri)
+        # Use fsspec storage options for SSH to handle timeout
+        storage_options = {"timeout": timeout}
+        open_kwargs = dict(
+            decode_times=True, engine="h5netcdf",
+            backend_kwargs={"storage_options": storage_options}
+        )
+        open_path = uri
+    else:
+        # Local file - use standard approach
+        open_kwargs = dict(decode_times=True)
+        open_path = str(path)
 
-    variables = _extract_variables(ds)
-    dimensions = _extract_dimensions(ds)
-    bbox, geometry = _extract_bbox(ds)
-    dt_start, dt_end = _extract_time_range(ds)
+    # Try opening with time decoding; if that fails (non-standard calendar/units),
+    # retry without time decoding and handle times manually
+    try:
+        ds = xr.open_dataset(open_path, **open_kwargs)
+    except ValueError as e:
+        if "unable to decode time" in str(e) or "Failed to decode" in str(e):
+            logger.debug("Time decode failed for {}, retrying without decode_times", path)
+            open_kwargs["decode_times"] = False
+            ds = xr.open_dataset(open_path, **open_kwargs)
+        else:
+            raise
 
-    # Primary variable: first data variable (non-coordinate)
-    primary_var = next(iter(ds.data_vars), "unknown")
+    with ds:
+        variables = _extract_variables(ds)
+        dimensions = _extract_dimensions(ds)
+        bbox, geometry = _extract_bbox(ds)
+        dt_start, dt_end = _extract_time_range(ds)
 
-    ds.close()
+        # Primary variable: first data variable (non-coordinate)
+        primary_var = next(iter(ds.data_vars), "unknown")
+
+        # Extract ALL global attributes for queryable metadata
+        global_attrs = _extract_global_attributes(ds)
+        output_frequency = _infer_output_frequency(ds, path)
 
     return {
         "variable": primary_var,
@@ -41,10 +96,43 @@ def scan_netcdf(path: Path) -> dict:
         "datetime_start": dt_start,
         "datetime_end": dt_end,
         "datetime_str": _datetime_str(path, dt_start),
-        "file_size": os.path.getsize(path),
-        "conventions": ds.attrs.get("Conventions", ""),
+        "file_size": _get_file_size(path),
+        "conventions": global_attrs.pop("Conventions", ""),
         "format": "netcdf",
+        "output_frequency": output_frequency,
+        "global_attributes": global_attrs,
     }
+
+
+def _get_file_size(path: "Union[Path, UPath]") -> int:
+    """Get file size, works for both local Path and remote UPath."""
+    try:
+        return path.stat().st_size
+    except Exception:
+        return 0
+
+
+def _extract_global_attributes(ds: xr.Dataset) -> dict:
+    """Extract all global attributes from the dataset.
+
+    Filters out attributes that are too large (> 1000 chars) or non-scalar.
+    Converts numpy types to Python native types.
+    """
+    attrs = {}
+    for key, value in ds.attrs.items():
+        # Skip very long values (e.g., large arrays or binary data)
+        if isinstance(value, str) and len(value) > 1000:
+            continue
+        # Skip non-scalar numpy arrays
+        if isinstance(value, np.ndarray):
+            if value.size > 10:
+                continue
+            value = value.tolist()
+        # Convert numpy scalars to Python types
+        if hasattr(value, "item"):
+            value = value.item()
+        attrs[key] = value
+    return attrs
 
 
 def _extract_variables(ds: xr.Dataset) -> list[dict]:
@@ -232,7 +320,7 @@ def _cf_parameters(variables: list[dict]) -> list[dict]:
     return params
 
 
-def _datetime_str(path: Path, dt: datetime | None) -> str:
+def _datetime_str(path: "Union[Path, UPath]", dt: datetime | None) -> str:
     """Return a compact datetime string for use in item IDs."""
     if dt is not None:
         return dt.strftime("%Y%m")
@@ -252,3 +340,102 @@ def _to_python(val):
     if hasattr(val, "item"):
         return val.item()
     return val
+
+
+def _infer_output_frequency(ds: xr.Dataset, path) -> str | None:
+    """Return a CF-style output frequency code for this file, or None if unknown.
+
+    Priority order:
+    1. Global attribute ``frequency`` or ``output_frequency`` (CF / CMIP convention).
+    2. Step size calculated from ≥2 time-coordinate values.
+    3. Filename numeric suffix length heuristic (YYYYMM = 6 digits → "mon",
+       YYYYMMDD / YYYYDDD = 7–8 digits → "day").
+
+    Files with no time coordinate at all (e.g. OASIS coupling exchange files)
+    return None — they have no temporal frequency.
+    """
+    import re
+
+    # 1. Global attribute (CF / CMIP standard)
+    for attr_name in ("frequency", "output_frequency"):
+        freq = ds.attrs.get(attr_name)
+        if freq and isinstance(freq, str):
+            return freq.lower()
+
+    # 2. No time coordinate → non-temporal file → no frequency
+    time_coord = ds.coords.get("time")
+    if time_coord is None:
+        return None
+
+    times = time_coord.values
+    if len(times) == 0:
+        return None
+
+    # 3. Multi-timestep → calculate step and map to code
+    if len(times) >= 2:
+        step_days = _calc_time_step_days(times, time_coord)
+        if step_days is not None:
+            return _step_days_to_frequency(step_days)
+
+    # 4. Single timestep — fall back to filename numeric suffix length
+    stem = getattr(path, "stem", str(path))
+    m = re.search(r"\b(\d{6,8})\b", stem)
+    if m:
+        n = len(m.group(1))
+        if n == 6:
+            return "mon"
+        if n in (7, 8):
+            return "day"
+
+    return None
+
+
+def _calc_time_step_days(times, time_coord) -> float | None:
+    """Return the step in days between the first two time values, or None."""
+    t0, t1 = times[0], times[1]
+
+    if np.issubdtype(times.dtype, np.integer):
+        units = time_coord.attrs.get("units", "").lower()
+        diff = float(t1 - t0)
+        if "day" in units:
+            return diff
+        if "hour" in units:
+            return diff / 24.0
+        if "minute" in units:
+            return diff / 1440.0
+        if "second" in units:
+            return diff / 86400.0
+        return None
+
+    if hasattr(t0, "year"):
+        # cftime objects
+        try:
+            import cftime
+            cal = time_coord.attrs.get("calendar", "standard")
+            d0 = cftime.date2num(t0, "days since 2000-01-01", calendar=cal)
+            d1 = cftime.date2num(t1, "days since 2000-01-01", calendar=cal)
+            return float(d1 - d0)
+        except Exception:
+            return None
+
+    # numpy datetime64
+    try:
+        return float((t1 - t0) / np.timedelta64(1, "D"))
+    except Exception:
+        return None
+
+
+def _step_days_to_frequency(step_days: float) -> str:
+    """Map a time step (in days) to a CF-style frequency code."""
+    hours = step_days * 24
+    if hours < 1.5:
+        return "subhr"
+    if hours < 2.0:
+        return "1hr"
+    if hours < 4.5:
+        return "3hr"
+    if hours < 12.0:
+        return "6hr"
+    if step_days < 2.0:
+        return "day"
+    return "mon"

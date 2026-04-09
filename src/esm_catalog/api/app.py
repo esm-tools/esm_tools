@@ -8,6 +8,13 @@ Typical use::
     from esm_catalog.api.app import create_app
     app = create_app(catalogs=["/work/exp/catalog.duckdb"])
 
+    # With dynamic catalog management
+    from esm_catalog.api.app import create_app
+    app = create_app(
+        catalogs=["/work/exp/catalog.duckdb"],
+        registry_persist_path="/var/lib/esm-catalog/registry.json",
+    )
+
     # Direct uvicorn run:
     #   uvicorn esm_catalog.api.app:app
     # (uses ESM_CATALOG_DB env var or the default path)
@@ -17,17 +24,38 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import List, Union
+from typing import TYPE_CHECKING, List, Union
 
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware import Middleware
-from starlette.requests import Request
+from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from stac_fastapi.api.app import StacApi
 from stac_fastapi.types.config import ApiSettings
+from starlette.middleware import Middleware
+from starlette.requests import Request
 
-from esm_catalog.api.client import DuckDBCatalogClient, FilteredSearchPostRequest
+from esm_catalog.api.auth import Authenticator, NoAuthenticator
+from esm_catalog.api.cache import CollectionCache, QueryablesCache
+from esm_catalog.api.catalog_routes import create_catalog_router
+from esm_catalog.api.experiment_routes import (
+    create_collection_experiment_router,
+    create_experiment_router,
+)
+from esm_catalog.api.personal_routes import create_personal_router
+from esm_catalog.api.client import (
+    DuckDBCatalogClient,
+    FilteredSearchPostRequest,
+    ItemCollectionUriWithToken,
+)
+from esm_catalog.api.pool import CatalogPool
+from esm_catalog.api.queryables import get_collection_queryables, get_queryables
+from esm_catalog.api.registry import CatalogRegistry
 
+if TYPE_CHECKING:
+    pass
 
 _DEFAULT_TITLE = "ESM-Tools STAC Catalog"
 _DEFAULT_DESCRIPTION = (
@@ -38,7 +66,9 @@ _DEFAULT_VERSION = "1.0"
 
 
 def create_app(
-    catalogs: List[Union[str, Path]],
+    catalogs: List[Union[str, Path]] | None = None,
+    registry_persist_path: str | Path | None = None,
+    authenticator: Authenticator | None = None,
     title: str = _DEFAULT_TITLE,
     description: str = _DEFAULT_DESCRIPTION,
     version: str = _DEFAULT_VERSION,
@@ -47,18 +77,35 @@ def create_app(
     """Create and return a configured :class:`~stac_fastapi.api.app.StacApi` instance.
 
     Args:
-        catalogs:     Paths to ``catalog.duckdb`` files to serve.
-        title:        Landing-page title.
-        description:  Landing-page description.
-        version:      API version string.
-        cors_origins: List of allowed CORS origins.  Defaults to ``["*"]``
-                      (allow all) which is needed for STAC Browser access.
+        catalogs: Paths to ``catalog.duckdb`` files to serve initially.
+        registry_persist_path: Optional JSON file for persisting dynamic catalog
+            registrations. If not provided, catalog changes are in-memory only.
+        authenticator: Optional authenticator for access control on catalog
+            management endpoints. Defaults to NoAuthenticator (open access).
+        title: Landing-page title.
+        description: Landing-page description.
+        version: API version string.
+        cors_origins: List of allowed CORS origins. Defaults to ``["*"]``
+            (allow all) which is needed for STAC Browser access.
 
     Returns:
         A :class:`StacApi` instance ready to be passed to uvicorn.
     """
     if cors_origins is None:
         cors_origins = ["*"]
+
+    if catalogs is None:
+        catalogs = []
+
+    # Create shared components
+    registry = CatalogRegistry(
+        initial_catalogs=[str(c) for c in catalogs],
+        persist_path=registry_persist_path,
+    )
+    pool = CatalogPool()
+    auth = authenticator or NoAuthenticator()
+    queryables_cache = QueryablesCache(ttl_seconds=300)  # 5 minute cache
+    collection_cache = CollectionCache(ttl_seconds=300)  # 5 minute cache
 
     settings = ApiSettings(
         stac_fastapi_title=title,
@@ -67,14 +114,17 @@ def create_app(
         stac_fastapi_landing_id="esm-tools-stac",
     )
 
-    client = DuckDBCatalogClient(catalogs=[str(c) for c in catalogs])
+    # Create client with registry and pool for dynamic catalog management
+    client = DuckDBCatalogClient(
+        registry=registry, pool=pool, collection_cache=collection_cache
+    )
 
     middlewares = [
         Middleware(
             CORSMiddleware,
             allow_origins=cors_origins,
             allow_credentials=True,
-            allow_methods=["GET", "POST", "OPTIONS"],
+            allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
             allow_headers=["*"],
         )
     ]
@@ -87,11 +137,41 @@ def create_app(
         description=description,
         api_version=version,
         search_post_request_model=FilteredSearchPostRequest,
+        items_get_request_model=ItemCollectionUriWithToken,
     )
 
-    # /queryables endpoint — required for STAC Browser "Additional Filtering" CQL2 builder.
+    # Add catalog management routes
+    catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
+    api.app.include_router(catalog_router)
+
+    # Add experiment hierarchy routes
+    experiment_router = create_experiment_router(client)
+    api.app.include_router(experiment_router)
+
+    # Add collection → experiment shortcut route
+    collection_experiment_router = create_collection_experiment_router(client)
+    api.app.include_router(collection_experiment_router)
+
+    # Add personal collections routes
+    try:
+        from esm_catalog.storage.personal import PersonalCollectionStore
+
+        _default_personal_db = (
+            str(Path(registry_persist_path).parent / "personal.duckdb")
+            if registry_persist_path
+            else str(Path.home() / ".cache" / "esm-catalog" / "personal.duckdb")
+        )
+        personal_db_path = os.environ.get("ESM_PERSONAL_DB", _default_personal_db)
+        personal_store = PersonalCollectionStore(personal_db_path)
+        personal_router = create_personal_router(personal_store, auth)
+        api.app.include_router(personal_router)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Personal collections not available: {e}")
+
+    # /queryables endpoint - required for STAC Browser "Additional Filtering" CQL2 builder.
     # The landing page advertises rel=http://www.opengis.net/def/rel/ogc/1.0/queryables
-    # pointing here.  We populate enum lists from the live catalogs so STAC Browser
+    # pointing here. We populate enum lists from the live catalogs so STAC Browser
     # shows dropdown pickers rather than free-text fields.
     @api.app.get(
         "/queryables",
@@ -101,80 +181,14 @@ def create_app(
         tags=["STAC API - Filter Extension"],
     )
     def queryables(request: Request):
-        base_url = str(request.base_url).rstrip("/")
+        # Use cache to avoid expensive DISTINCT queries on every request
+        # Cache key is "global" since queryables are the same for all requests
+        return queryables_cache.get_or_compute(
+            "global",
+            lambda: get_queryables(request, registry.get_paths(), pool),
+        )
 
-        # Collect unique values via DISTINCT queries on the items table.
-        # Summaries on collections are often empty; the items table is the
-        # authoritative source for what values actually exist.
-        from esm_catalog.storage.duckdb import CatalogDB
-
-        def _distinct(db, json_path: str) -> list[str]:
-            """Return sorted distinct non-null string values for a JSON property."""
-            rows = db.db.execute(
-                f"SELECT DISTINCT json_extract_string(data, '{json_path}') AS v "
-                f"FROM items WHERE v IS NOT NULL ORDER BY v"
-            ).fetchall()
-            return [r[0] for r in rows if r[0]]
-
-        experiments: set[str] = set()
-        components: set[str] = set()
-        variables: set[str] = set()
-        all_variables: set[str] = set()
-        collections: set[str] = set()
-        for path in catalogs:
-            p = Path(path)
-            if not p.exists():
-                continue
-            db = CatalogDB(p)
-            try:
-                collections.update(_distinct(db, "$.collection"))
-                experiments.update(_distinct(db, "$.properties.experiment"))
-                components.update(_distinct(db, "$.properties.component"))
-                variables.update(_distinct(db, "$.properties.variable"))
-
-                # Collect all variable names from multi-variable files.
-                # $.properties.variables is a JSON array; flatten via Python.
-                rows = db.db.execute(
-                    "SELECT json_extract_string(data, '$.properties.variables') "
-                    "FROM items "
-                    "WHERE json_array_length(data, '$.properties.variables') > 0"
-                ).fetchall()
-                for (arr_str,) in rows:
-                    if arr_str:
-                        try:
-                            names = json.loads(arr_str)
-                            if isinstance(names, list):
-                                all_variables.update(n for n in names if n)
-                        except Exception:
-                            pass
-            finally:
-                db.close()
-
-        def _str_prop(title: str, enum: list[str]) -> dict:
-            p: dict = {"title": title, "type": "string"}
-            if enum:
-                p["enum"] = sorted(enum)
-            return p
-
-        return {
-            "$schema": "https://json-schema.org/draft/2019-09/schema",
-            "$id": f"{base_url}/queryables",
-            "type": "object",
-            "title": "Queryable properties for ESM-Tools STAC Catalog",
-            "properties": {
-                "datetime":   {"title": "Datetime",       "type": "string", "format": "date-time"},
-                "collection": _str_prop("Collection",     sorted(collections)),
-                "experiment": _str_prop("Experiment ID",  sorted(experiments)),
-                "component":  _str_prop("Model Component", sorted(components)),
-                "variable":   _str_prop("Variable",       sorted(variables)),
-                "variables":  _str_prop("Any Variable (multi-var files)", sorted(all_variables)),
-            },
-        }
-
-    # /collections/{collection_id}/queryables — per-collection queryables for the
-    # CQL2 "Additional Filters" section that appears when browsing a collection's
-    # items.  Returns the same schema as /queryables but with enum values scoped
-    # to items that belong to the requested collection.
+    # Per-collection queryables - enum values scoped to items in that collection
     @api.app.get(
         "/collections/{collection_id}/queryables",
         response_model=None,
@@ -183,149 +197,22 @@ def create_app(
         tags=["STAC API - Filter Extension"],
     )
     def collection_queryables(collection_id: str, request: Request):
-        from esm_catalog.storage.duckdb import CatalogDB
-        from fastapi.responses import JSONResponse
+        # Cache per collection
+        result = queryables_cache.get_or_compute(
+            f"collection:{collection_id}",
+            lambda: get_collection_queryables(
+                request, collection_id, registry.get_paths(), pool
+            ),
+        )
+        if result is None:
+            from fastapi import HTTPException
+            raise HTTPException(
+                status_code=404,
+                detail=f"Collection '{collection_id}' not found",
+            )
+        return result
 
-        base_url = str(request.base_url).rstrip("/")
-
-        def _distinct(db, json_path: str, cid: str) -> list[str]:
-            rows = db.db.execute(
-                f"SELECT DISTINCT json_extract_string(data, '{json_path}') AS v "
-                f"FROM items "
-                f"WHERE json_extract_string(data, '$.collection') = ? AND v IS NOT NULL "
-                f"ORDER BY v",
-                [cid],
-            ).fetchall()
-            return [r[0] for r in rows if r[0]]
-
-        # Verify collection exists and collect distinct values across all DBs.
-        found = False
-        experiments: set[str] = set()
-        components: set[str] = set()
-        variables: set[str] = set()
-        all_variables: set[str] = set()
-        for path in catalogs:
-            p = Path(path)
-            if not p.exists():
-                continue
-            db = CatalogDB(p)
-            try:
-                # Check if this collection exists in this DB
-                row = db.db.execute(
-                    "SELECT COUNT(*) FROM items "
-                    "WHERE json_extract_string(data, '$.collection') = ?",
-                    [collection_id],
-                ).fetchone()
-                if row and row[0] > 0:
-                    found = True
-                experiments.update(_distinct(db, "$.properties.experiment", collection_id))
-                components.update(_distinct(db, "$.properties.component", collection_id))
-                variables.update(_distinct(db, "$.properties.variable", collection_id))
-
-                rows = db.db.execute(
-                    "SELECT json_extract_string(data, '$.properties.variables') "
-                    "FROM items "
-                    "WHERE json_extract_string(data, '$.collection') = ? "
-                    "  AND json_array_length(data, '$.properties.variables') > 0",
-                    [collection_id],
-                ).fetchall()
-                for (arr_str,) in rows:
-                    if arr_str:
-                        try:
-                            names = json.loads(arr_str)
-                            if isinstance(names, list):
-                                all_variables.update(n for n in names if n)
-                        except Exception:
-                            pass
-            finally:
-                db.close()
-
-        if not found:
-            return JSONResponse(status_code=404, content={"detail": f"Collection '{collection_id}' not found"})
-
-        def _str_prop(title: str, enum: list[str]) -> dict:
-            p: dict = {"title": title, "type": "string"}
-            if enum:
-                p["enum"] = sorted(enum)
-            return p
-
-        return {
-            "$schema": "https://json-schema.org/draft/2019-09/schema",
-            "$id": f"{base_url}/collections/{collection_id}/queryables",
-            "type": "object",
-            "title": f"Queryable properties for collection {collection_id!r}",
-            "properties": {
-                "datetime":   {"title": "Datetime",       "type": "string", "format": "date-time"},
-                "experiment": _str_prop("Experiment ID",  sorted(experiments)),
-                "component":  _str_prop("Model Component", sorted(components)),
-                "variable":   _str_prop("Variable",       sorted(variables)),
-                "variables":  _str_prop("Any Variable (multi-var files)", sorted(all_variables)),
-            },
-        }
-
-    # GET /stac-extensions/hpc/v0.1.0/schema.json
-    # Serves the HPC storage extension schema locally so STAC Browser can
-    # validate items against it.  The canonical URL
-    # (https://esm-tools.github.io/stac-hpc-extension/v0.1.0/schema.json)
-    # is not yet published; items' stac_extensions are rewritten at serve time
-    # to point here instead.
-    @api.app.get(
-        "/stac-extensions/hpc/v0.1.0/schema.json",
-        response_model=None,
-        include_in_schema=False,
-    )
-    def hpc_schema(request: Request):
-        base_url = str(request.base_url).rstrip("/")
-        schema_id = f"{base_url}/stac-extensions/hpc/v0.1.0/schema.json"
-        return {
-            "$schema": "http://json-schema.org/draft-07/schema#",
-            "$id": schema_id,
-            "title": "HPC Storage Extension",
-            "description": "STAC extension for HPC facility and storage-tier metadata.",
-            "oneOf": [{"$ref": "#/definitions/stac_item"}],
-            "definitions": {
-                "stac_item": {
-                    "allOf": [
-                        {"$ref": "#/definitions/hpc_props"},
-                        {"$ref": "#/definitions/hpc_assets"},
-                    ]
-                },
-                "hpc_props": {
-                    "type": "object",
-                    "properties": {
-                        "properties": {
-                            "type": "object",
-                            "properties": {
-                                "hpc:facility":     {"type": "string",  "title": "HPC facility name"},
-                                "hpc:system":       {"type": "string",  "title": "HPC system name"},
-                                "hpc:storage_tier": {"type": "string",  "title": "Storage tier",
-                                                     "enum": ["hot", "warm", "cold"]},
-                                "hpc:last_access":  {"type": "string",  "title": "Last access time",
-                                                     "format": "date-time"},
-                            },
-                        }
-                    },
-                },
-                "hpc_assets": {
-                    "type": "object",
-                    "properties": {
-                        "assets": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "object",
-                                "properties": {
-                                    "hpc:storage_type":       {"type": "string"},
-                                    "hpc:state":              {"type": "string"},
-                                    "hpc:recall_time_estimate": {"type": "string"},
-                                },
-                            },
-                        }
-                    },
-                },
-            },
-        }
-
-    # POST /format — OGC CQL2 format-negotiation probe issued by STAC Browser.
+    # POST /format - OGC CQL2 format-negotiation probe issued by STAC Browser.
     # Not required for filtering to work (filters travel as CQL2-JSON in /search),
     # but returning 200 silences the 404 log noise.
     @api.app.post(
@@ -338,6 +225,134 @@ def create_app(
         # Accept anything and echo back an empty 200 to silence log noise.
         return {}
 
+    # Health check endpoint for basic liveness probes
+    @api.app.get(
+        "/health",
+        response_model=None,
+        include_in_schema=True,
+        summary="Basic health check",
+        tags=["System"],
+    )
+    def health():
+        return {
+            "status": "ok",
+            "catalogs_registered": len(registry),
+            "pool_connections": len(pool),
+        }
+
+    # Readiness probe for Kubernetes
+    @api.app.get(
+        "/readiness",
+        response_model=None,
+        include_in_schema=True,
+        summary="Kubernetes readiness probe",
+        tags=["System"],
+    )
+    def readiness():
+        paths = registry.get_paths()
+        accessible = sum(1 for p in paths if Path(p).exists())
+        return {
+            "ready": accessible > 0 or len(paths) == 0,
+            "catalogs_accessible": accessible,
+            "catalogs_total": len(paths),
+        }
+
+    # Paleo time presets endpoints for climate scientist UX
+    @api.app.get(
+        "/paleo-presets",
+        response_model=None,
+        include_in_schema=True,
+        summary="Get available paleo time period presets",
+        tags=["Climate Science"],
+    )
+    def get_paleo_presets():
+        """Return available paleo time period presets.
+
+        Presets include commonly simulated periods like LGM, Mid-Holocene, Eemian, etc.
+        These can be used for filtering collections by paleo time period.
+        """
+        from esm_catalog.api.paleo_presets import get_presets
+
+        return {"presets": get_presets()}
+
+    @api.app.post(
+        "/paleo-presets",
+        response_model=None,
+        include_in_schema=True,
+        summary="Add a user-defined paleo time preset",
+        tags=["Climate Science"],
+    )
+    def add_paleo_preset(preset: dict):
+        """Add a user-defined paleo time preset.
+
+        Required fields in body:
+        - id: Unique identifier (e.g., "my_period")
+        - name: Human-readable name (e.g., "My Custom Period")
+        - display: Display string (e.g., "15.0 ka")
+        - years_bp: Years before present (1950 CE)
+        - description: Optional description
+        """
+        from esm_catalog.api.paleo_presets import add_preset
+
+        result = add_preset(
+            preset_id=preset.get("id", ""),
+            name=preset.get("name", ""),
+            display=preset.get("display", ""),
+            years_bp=preset.get("years_bp", 0),
+            description=preset.get("description", ""),
+        )
+        return {"status": "created", "preset": result}
+
+    @api.app.delete(
+        "/paleo-presets/{preset_id}",
+        response_model=None,
+        include_in_schema=True,
+        summary="Delete a user-added paleo time preset",
+        tags=["Climate Science"],
+    )
+    def delete_paleo_preset(preset_id: str):
+        """Delete a user-added paleo time preset.
+
+        Only user-added presets can be deleted. Built-in presets are protected.
+        """
+        from esm_catalog.api.paleo_presets import delete_preset
+
+        deleted = delete_preset(preset_id)
+        if deleted:
+            return {"status": "deleted", "id": preset_id}
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=404,
+            detail=f"Preset '{preset_id}' not found or is a built-in preset",
+        )
+
+    # Register lifespan handler for cleanup on shutdown
+    # We wrap any existing lifespan from StacApi to ensure proper chaining
+    original_lifespan = api.app.router.lifespan_context
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # Startup: chain to original lifespan if present
+        if original_lifespan is not None:
+            async with original_lifespan(app):
+                yield
+        else:
+            yield
+        # Shutdown: close all pool connections
+        pool.close_all()
+
+    api.app.router.lifespan_context = lifespan
+
+    # Serve catalog management UI at /ui
+    _ui_dir = Path(__file__).parent / "ui"
+    if _ui_dir.is_dir():
+        api.app.mount("/ui", StaticFiles(directory=str(_ui_dir), html=True), name="ui")
+
+    @api.app.api_route("/admin", methods=["GET", "HEAD"], include_in_schema=False)
+    def admin_redirect():
+        return RedirectResponse(url="/ui")
+
     return api
 
 
@@ -346,11 +361,15 @@ def create_app(
 #   uvicorn esm_catalog.api.app:app [--reload]
 #
 # Configure via environment variables:
-#   ESM_CATALOG_DB   — colon-separated list of catalog.duckdb paths
+#   ESM_CATALOG_DB       - colon-separated list of catalog.duckdb paths
+#   ESM_CATALOG_REGISTRY - path to registry persistence file (optional)
 # ---------------------------------------------------------------------------
+
 
 def _app_from_env():
     db_env = os.environ.get("ESM_CATALOG_DB", "")
+    registry_env = os.environ.get("ESM_CATALOG_REGISTRY", "")
+
     catalogs = [p for p in db_env.split(":") if p] if db_env else []
     if not catalogs:
         # Development fallback: look for catalog.duckdb in cwd
@@ -358,9 +377,33 @@ def _app_from_env():
         if default.exists():
             catalogs = [str(default)]
         else:
-            catalogs = [str(default)]  # Will warn but still start
-    api = create_app(catalogs)
+            # No default found - start with empty catalog list
+            # Server will serve empty results until catalogs are added via API
+            catalogs = []
+
+    registry_path = registry_env if registry_env else None
+
+    api = create_app(
+        catalogs=catalogs,
+        registry_persist_path=registry_path,
+    )
     return api.app
 
 
-app = _app_from_env()
+# Lazy module-level ``app`` for direct uvicorn invocation:
+#   uvicorn esm_catalog.api.app:app [--reload]
+#
+# Built on first access rather than at import time so that importing this
+# module (e.g. ``from esm_catalog.api.app import create_app`` in the CLI)
+# does NOT spin up a second app instance alongside the one the CLI creates.
+
+_app_singleton = None
+
+
+def __getattr__(name: str):
+    if name == "app":
+        global _app_singleton
+        if _app_singleton is None:
+            _app_singleton = _app_from_env()
+        return _app_singleton
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

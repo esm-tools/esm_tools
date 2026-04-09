@@ -1,6 +1,5 @@
 """HPC storage STAC extension: tape state, recall time, storage tier."""
 
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -9,7 +8,7 @@ from esm_catalog.hpc.state import get_hsm_state
 from esm_catalog.stac.extensions.registry import EXTENSION_URLS
 
 
-def add_hpc_extension(item: dict, path: Path) -> dict:
+def add_hpc_extension(item: dict, path) -> dict:
     """Inject HPC storage extension fields into *item* for *path*.
 
     Item-level fields (item["properties"]):
@@ -17,8 +16,16 @@ def add_hpc_extension(item: dict, path: Path) -> dict:
 
     Asset-level fields (item["assets"]["data"]):
         hpc:storage_type, hpc:state, hpc:recall_time_estimate
+
+    Works with both local Path and remote UPath objects.
     """
-    path = Path(path)
+    # Check if remote path (UPath with protocol)
+    is_remote = hasattr(path, "protocol") and path.protocol and path.protocol != "file"
+
+    # For local paths, convert to Path; for remote, keep as-is
+    if not is_remote:
+        path = Path(path)
+
     storage_info = detect_hpc_storage(path)
 
     # Item-level properties
@@ -35,14 +42,14 @@ def add_hpc_extension(item: dict, path: Path) -> dict:
         state = storage_info.get("hpc:state", "online")
         props["hpc:storage_tier"] = _derive_tier(storage_type, state)
 
-    # Last access time from stat
+    # Last access time from stat (works for both local Path and UPath)
     try:
-        stat = os.stat(path)
+        stat = path.stat()  # UPath and Path both support .stat()
         props["hpc:last_access"] = datetime.fromtimestamp(
             stat.st_atime, tz=timezone.utc
         ).isoformat()
-    except OSError:
-        pass
+    except (OSError, Exception):
+        pass  # Remote stat may fail for some protocols
 
     # Asset-level fields
     asset = item["assets"].get("data", {})

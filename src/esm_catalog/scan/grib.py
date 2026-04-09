@@ -1,13 +1,22 @@
-"""Scan a GRIB file and return a metadata dict for STAC Item construction."""
+"""Scan a GRIB file and return a metadata dict for STAC Item construction.
 
-import os
+Note: GRIB scanning currently requires local file access due to eccodes limitations.
+Remote files will be cached locally before scanning.
+"""
+
+from __future__ import annotations
+
 import re
 import warnings
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING, Union
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 
 # -----------------------------------------------------------------------------
@@ -61,21 +70,56 @@ def _parse_codes_file(codes_path: Path) -> dict[int, dict]:
     return params
 
 
+def _extract_stream_type(path: Path) -> str:
+    """Extract ECHAM stream type from filename.
+
+    Examples:
+        basic-001_185001.01_echam -> echam
+        basic-001_185001.01_co2 -> co2
+        basic-001_185001.01_accw -> accw
+        basic-001_185002.01_echam_18500201-18500228 -> echam
+
+    Note: ECHAM filenames contain dots that aren't extensions (e.g., .01),
+    so we use .name not .stem to avoid truncation.
+    """
+    name = path.name
+    # Strip date range suffix if present
+    name = re.sub(r"_\d{6,8}-\d{6,8}$", "", name)
+    # Get the last part after underscore (stream type)
+    parts = name.rsplit("_", 1)
+    if len(parts) == 2:
+        return parts[1]
+    return name
+
+
 def _find_codes_file(grib_path: Path) -> Path | None:
     """Find the associated .codes file for a GRIB file.
 
     Search order:
     1. {grib_filename}.codes in same directory
-    2. echam6.codes, echam.codes in same directory
-    3. Any *.codes file in same directory
+    2. {grib_filename_without_date_range}.codes (strips _YYYYMMDD-YYYYMMDD suffix)
+    3. echam6.codes, echam.codes in same directory
+    4. Any *.codes file in same directory
     """
+    # Try exact match first
     codes_path = grib_path.parent / (grib_path.name + ".codes")
     if codes_path.exists():
         return codes_path
+
+    # Try stripping date range suffix: _YYYYMMDD-YYYYMMDD or _YYYYMM-YYYYMM
+    base_name = re.sub(r"_\d{6,8}-\d{6,8}$", "", grib_path.name)
+    if base_name != grib_path.name:
+        codes_path = grib_path.parent / (base_name + ".codes")
+        if codes_path.exists():
+            return codes_path
+
+    # Try generic ECHAM codes files
     for name in ("echam6.codes", "echam.codes"):
         codes_path = grib_path.parent / name
         if codes_path.exists():
             return codes_path
+
+    # Fall back to any .codes file in directory
     codes_files = list(grib_path.parent.glob("*.codes"))
     if codes_files:
         return codes_files[0]
@@ -91,7 +135,7 @@ def _scan_grib_structure(file_path: Path) -> dict:
 
     Returns:
         {(gridType, levelType): {paramId: {shortName, name, dataDate, dataTime,
-                                           gridDimensions}}}
+                                           gridDimensions, indicatorOfParameter}}}
     """
     import eccodes
 
@@ -107,6 +151,11 @@ def _scan_grib_structure(file_path: Path) -> dict:
                 param_id   = eccodes.codes_get(gid, "paramId")
                 short_name = eccodes.codes_get(gid, "shortName")
                 name       = eccodes.codes_get(gid, "name")
+                # Get indicatorOfParameter as fallback for paramId=0 cases
+                try:
+                    indicator = eccodes.codes_get(gid, "indicatorOfParameter")
+                except Exception:
+                    indicator = None
                 try:
                     data_date = eccodes.codes_get(gid, "dataDate")
                     data_time = eccodes.codes_get(gid, "dataTime")
@@ -123,6 +172,7 @@ def _scan_grib_structure(file_path: Path) -> dict:
                     "dataDate": data_date,
                     "dataTime": data_time,
                     "gridDimensions": (ni, nj) if ni and nj else None,
+                    "indicatorOfParameter": indicator,
                 }
             finally:
                 eccodes.codes_release(gid)
@@ -148,33 +198,41 @@ def _open_grib_datasets(
 
     Returns:
         {(gridType, levelType): xr.Dataset}
+
+    Note: Caller is responsible for closing all returned datasets.
     """
     import xarray as xr
 
     datasets = {}
-    for (grid_type, level_type) in structure:
-        filter_keys = {"gridType": grid_type, "typeOfLevel": level_type}
-        try:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", message=".*ecCodes provides no.*")
-                warnings.filterwarnings("ignore", category=UserWarning)
-                ds = xr.open_dataset(
-                    str(file_path),
-                    engine="cfgrib",
-                    backend_kwargs={
-                        "filter_by_keys": filter_keys,
-                        "errors": "ignore",
-                        "indexpath": "",
-                        "decode_times": False,
-                    },
+    try:
+        for (grid_type, level_type) in structure:
+            filter_keys = {"gridType": grid_type, "typeOfLevel": level_type}
+            try:
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message=".*ecCodes provides no.*")
+                    warnings.filterwarnings("ignore", category=UserWarning)
+                    ds = xr.open_dataset(
+                        str(file_path),
+                        engine="cfgrib",
+                        backend_kwargs={
+                            "filter_by_keys": filter_keys,
+                            "errors": "ignore",
+                            "indexpath": "",
+                            "decode_times": False,
+                        },
+                    )
+                datasets[(grid_type, level_type)] = ds
+                logger.debug(
+                    "  ({}, {}): {} variables",
+                    grid_type, level_type, list(ds.data_vars),
                 )
-            datasets[(grid_type, level_type)] = ds
-            logger.debug(
-                "  ({}, {}): {} variables",
-                grid_type, level_type, list(ds.data_vars),
-            )
-        except Exception as e:
-            logger.debug("  Skipping ({}, {}): {}", grid_type, level_type, e)
+            except Exception as e:
+                logger.debug("  Skipping ({}, {}): {}", grid_type, level_type, e)
+    except BaseException:
+        # Clean up any opened datasets on unexpected exception (e.g., KeyboardInterrupt)
+        for ds in datasets.values():
+            ds.close()
+        raise
 
     return datasets
 
@@ -186,10 +244,12 @@ def _open_grib_datasets(
 def _extract_variables(
     datasets: dict,
     codes_table: dict[int, dict] | None,
+    structure: dict | None = None,
 ) -> list[dict]:
     """Collect variable metadata across all hypercube datasets.
 
     Enriches from the .codes table when available; falls back to GRIB attrs.
+    Uses indicatorOfParameter from structure when paramId is 0.
     Adds grid_type, level_type, and shape per variable.
 
     Special case — ECHAM accw/co2 files store all parameters under paramId=0,
@@ -203,33 +263,20 @@ def _extract_variables(
         for var_name, da in ds.data_vars.items():
             param_id = da.attrs.get("GRIB_paramId")
 
-            # paramId=0 means eccodes couldn't identify the parameter. When a
-            # codes_table is available it contains the real variable definitions,
-            # so expand the single collapsed entry into one per codes parameter.
-            if var_name == "unknown" and param_id == 0 and codes_table:
-                dims   = list(da.dims)
-                shape  = list(da.shape)
-                for cpid, code_info in sorted(codes_table.items()):
-                    exp: dict = {
-                        "name":            code_info["shortName"],
-                        "long_name":       code_info["longName"],
-                        "units":           code_info["units"],
-                        "original_name":   "unknown",
-                        "metadata_source": "codes_table_expanded",
-                        "GRIB_paramId":    cpid,
-                        "grid_type":       grid_type,
-                        "level_type":      level_type,
-                        "dimensions":      dims,
-                        "shape":           shape,
-                    }
-                    cf = _grib_to_cf(exp["name"])
-                    if cf:
-                        exp["standard_name"] = cf
-                    result.append(exp)
-                continue  # skip normal single-entry path for this variable
+            # Try to find code_info from codes_table
+            code_info = None
+            if codes_table:
+                if param_id and param_id in codes_table:
+                    code_info = codes_table[param_id]
+                elif param_id == 0 and structure:
+                    # Fallback: use indicatorOfParameter when paramId is 0
+                    hypercube = structure.get((grid_type, level_type), {})
+                    msg_info = hypercube.get(0, {})
+                    indicator = msg_info.get("indicatorOfParameter")
+                    if indicator and indicator in codes_table:
+                        code_info = codes_table[indicator]
 
-            if codes_table and param_id and param_id in codes_table:
-                code_info = codes_table[param_id]
+            if code_info:
                 entry = {
                     "name":            code_info["shortName"],
                     "long_name":       code_info["longName"],
@@ -472,7 +519,7 @@ def _extract_dimensions_grib(datasets: dict) -> dict:
 # Public entry point
 # -----------------------------------------------------------------------------
 
-def scan_grib(path: Path) -> dict:
+def scan_grib(path: "Union[Path, UPath, str]") -> dict:
     """Scan *path* with eccodes + cfgrib and return a STAC-ready metadata dict.
 
     Strategy:
@@ -482,8 +529,23 @@ def scan_grib(path: Path) -> dict:
     3. Merge variables, bbox, and datetimes across all hypercubes.
     4. Enrich variable names/units from the companion .codes file if present.
 
+    Note: eccodes requires local file access. Remote files are not yet supported
+    for GRIB scanning and will raise an error.
+
     Returns a dict with the same schema as scan_netcdf.
     """
+    # Handle string paths
+    if isinstance(path, str):
+        from esm_catalog.scan.upath import parse_uri
+        path = parse_uri(path)
+
+    # Check if remote - eccodes doesn't support remote files
+    if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
+        raise ValueError(
+            f"GRIB scanning requires local file access. Remote path not supported: {path}\n"
+            "Download the file locally first, or use NetCDF format for remote scanning."
+        )
+
     path = Path(path)
     logger.debug("Scanning GRIB: {}", path)
 
@@ -498,21 +560,32 @@ def scan_grib(path: Path) -> dict:
     if not datasets:
         raise ValueError(f"Could not open any hypercube from: {path}")
 
-    all_variables: list[dict] = _extract_variables(datasets, codes_table)
+    all_variables: list[dict] = _extract_variables(datasets, codes_table, structure)
     bbox = [-180.0, -90.0, 180.0, 90.0]
     all_datetimes: list[datetime] = []
     dimensions = _extract_dimensions_grib(datasets)
-    for ds in datasets.values():
-        bbox = _update_bbox(ds, bbox)
-        all_datetimes.extend(_extract_datetimes(ds))
-        ds.close()
+    try:
+        for ds in datasets.values():
+            bbox = _update_bbox(ds, bbox)
+            all_datetimes.extend(_extract_datetimes(ds))
+    finally:
+        # Ensure all datasets are closed even if exception occurs
+        for ds in datasets.values():
+            ds.close()
 
     dt_start = min(all_datetimes) if all_datetimes else None
     dt_end   = max(all_datetimes) if all_datetimes else None
-    primary_var = all_variables[0]["name"] if all_variables else "unknown"
+
+    # Extract stream type from filename (echam, accw, co2, etc.)
+    # Pattern: expid_YYYYMM.NN_STREAM or expid_YYYYMM.NN_STREAM_DATERANGE
+    stream_type = _extract_stream_type(path)
+
+    # Primary variable: first extracted variable name, or stream type as fallback
+    primary_var = all_variables[0]["name"] if all_variables else stream_type
 
     return {
         "variable":       primary_var,
+        "stream":         stream_type,  # ECHAM output stream (echam, accw, co2)
         "variables":      all_variables,
         "cf_parameters":  _cf_parameters(all_variables),
         "dimensions":     dimensions,
@@ -521,7 +594,7 @@ def scan_grib(path: Path) -> dict:
         "datetime_start": dt_start,
         "datetime_end":   dt_end,
         "datetime_str":   dt_start.strftime("%Y%m") if dt_start else "000000",
-        "file_size":      os.path.getsize(path),
+        "file_size":      path.stat().st_size,
         "conventions":    "CF-1.6",
         "format":         "grib",
     }

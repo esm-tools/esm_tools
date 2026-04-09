@@ -1,9 +1,19 @@
-"""Auto-detect file format and dispatch to the correct scanner."""
+"""Auto-detect file format and dispatch to the correct scanner.
 
-from pathlib import Path
+Supports both local paths and remote URIs via fsspec/UPath.
+"""
 
+from __future__ import annotations
+
+from pathlib import Path, PurePosixPath
+from typing import TYPE_CHECKING, Union
+
+from esm_catalog.scan.echam import is_echam_file, scan_echam
 from esm_catalog.scan.grib import scan_grib
 from esm_catalog.scan.netcdf import scan_netcdf
+
+if TYPE_CHECKING:
+    from upath import UPath
 
 
 class UnsupportedFormatError(ValueError):
@@ -21,12 +31,32 @@ _MAGIC_NC3  = b"CDF\x01"
 _MAGIC_NC4  = b"CDF\x02"
 
 
-def _sniff_format(path: Path) -> str | None:
-    """Return 'grib', 'netcdf', or None by reading the first 4 magic bytes."""
+def _dispatch_grib(path: "Union[Path, UPath]") -> dict:
+    """Dispatch GRIB file to appropriate scanner.
+
+    Uses ECHAM scanner if the file has a companion .codes file,
+    otherwise falls back to generic GRIB scanner.
+    """
+    from pathlib import Path as LocalPath
+
+    # Convert to local Path for is_echam_file check
+    local_path = LocalPath(path) if not isinstance(path, LocalPath) else path
+
+    if is_echam_file(local_path):
+        return scan_echam(path)
+    return scan_grib(path)
+
+
+def _sniff_format(path: "Union[Path, UPath]") -> str | None:
+    """Return 'grib', 'netcdf', or None by reading the first 4 magic bytes.
+
+    Works with both local Path and remote UPath objects.
+    """
     try:
-        with open(path, "rb") as fh:
+        # UPath and Path both support .open()
+        with path.open("rb") as fh:
             magic = fh.read(4)
-    except OSError:
+    except (OSError, IOError):
         return None
     if magic == _MAGIC_GRIB:
         return "grib"
@@ -35,8 +65,10 @@ def _sniff_format(path: Path) -> str | None:
     return None
 
 
-def scan_file(path: Path) -> dict:
+def scan_file(path: "Union[Path, UPath, str]") -> dict:
     """Detect the format of *path* and return its metadata dict.
+
+    Supports local paths and remote URIs (ssh://, scoutfs://, s3://, etc.).
 
     Detection order:
     1. File extension (fast path for conventionally named files).
@@ -44,19 +76,24 @@ def scan_file(path: Path) -> dict:
 
     Raises UnsupportedFormatError for unknown or unsupported formats.
     """
-    path = Path(path)
-    suffix = path.suffix.lower()
+    # Handle string paths (convert to UPath if URI, Path if local)
+    if isinstance(path, str):
+        from esm_catalog.scan.upath import parse_uri
+        path = parse_uri(path)
+
+    # Get suffix (works for both Path and UPath)
+    suffix = PurePosixPath(str(path)).suffix.lower()
 
     if suffix in _NETCDF_SUFFIXES:
         return scan_netcdf(path)
 
     if suffix in _GRIB_SUFFIXES:
-        return scan_grib(path)
+        return _dispatch_grib(path)
 
     # Extension is absent or non-standard — try magic bytes
     fmt = _sniff_format(path)
     if fmt == "grib":
-        return scan_grib(path)
+        return _dispatch_grib(path)
     if fmt == "netcdf":
         return scan_netcdf(path)
 

@@ -40,6 +40,7 @@ foci:
 # set input_dir for oasis grids, masks and areas
 # only required as long as we generate the remapping files on the fly 
 oasis3mct:
+   interpolation: conserv
    input_dir: "${computer.pool_directories.focipool}/OASIS3_ECHAM6T63_ORCA05/input/T63_ORCA05_${nemo.nest1}/"
    # test settings, write out coupling files
    # export_mode_a2o: "EXPOUT"

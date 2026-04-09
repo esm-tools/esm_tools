@@ -28,9 +28,22 @@ def create_server(catalog_url: str):
         "ESM Catalog",
         instructions=(
             "You have access to an ESM (Earth System Model) catalog containing climate "
-            "simulation output files. Use list_collections to discover available experiments, "
-            "get_collection_info to understand a dataset, search_items to find specific files, "
-            "and run_python to analyse data or create plots with xarray and matplotlib."
+            "simulation output files stored on an HPC cluster.\n\n"
+            "Available tools:\n"
+            "- list_collections: discover available experiments\n"
+            "- get_collection_info: get variables, time range, spatial extent, item count\n"
+            "- search_items: find file paths by collection, variable, and date range\n"
+            "- run_python: execute Python code using xarray and matplotlib\n\n"
+            "RULES YOU MUST FOLLOW:\n"
+            "1. When the user asks to open, load, analyse, or plot data, you MUST call "
+            "run_python to actually execute the code. Never write code blocks for the user "
+            "to run manually.\n"
+            "2. Before calling run_python, always call search_items first to obtain real "
+            "file paths. Use the exact paths from search_items results — never use "
+            "placeholder strings like 'path/to/file.nc'.\n"
+            "3. The correct workflow for analysis is: search_items → run_python.\n"
+            "4. If a question requires looking at multiple collections, call the tools "
+            "once per collection."
         ),
     )
 

@@ -691,6 +691,12 @@ class DuckDBCatalogClient(BaseCoreClient):
         base_url = str(request.base_url).rstrip("/") if request else ""
         token = kwargs.get("token", "")
         offset = int(token) if token and str(token).isdigit() else 0
+        # CQL2 filter via ?filter=...&filter-lang=cql2-text|cql2-json
+        if request is not None:
+            raw_filter = request.query_params.get("filter")
+            filter_lang = request.query_params.get("filter-lang")
+            if raw_filter:
+                filter_props.update(_parse_cql2_filter(raw_filter, filter_lang))
         return self._run_search(filter_props, limit or 10, base_url, offset=offset)
 
     def post_search(

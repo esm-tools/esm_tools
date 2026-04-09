@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 import tempfile
 import uuid
 from pathlib import Path
@@ -168,17 +169,21 @@ def get_collection_info(catalog_url: str, collection_id: str) -> str:
 
 
 def run_python(code: str, timeout: int = 120) -> str:
-    """Execute Python code for analysis or plotting.
+    """Execute Python code for data analysis or plotting.
 
     xarray, numpy, matplotlib, and pandas are available.
-    Save plots to /tmp/plot_<uuid>.png and return the file path.
+    Call plt.show() to save a plot — it returns the file path automatically.
+
+    IMPORTANT: always obtain real file paths first by calling search_items, then
+    paste the actual path strings directly into the code. Never use placeholder
+    strings like 'path/to/file.nc' — use the exact paths returned by search_items.
 
     Args:
-        code: Python source code to execute.
+        code: Python source code to execute. Must use real file paths.
         timeout: Execution timeout in seconds (default 120).
 
     Returns:
-        JSON with stdout, stderr, and a list of generated PNG file paths.
+        JSON with stdout, stderr, returncode, and a list of generated PNG file paths.
     """
     plot_dir = Path(tempfile.gettempdir())
     plot_id = uuid.uuid4().hex[:8]
@@ -226,7 +231,7 @@ plt.show = _auto_savefig
 
     try:
         result = subprocess.run(
-            ["python", script_path],
+            [sys.executable, script_path],
             capture_output=True,
             text=True,
             timeout=timeout,

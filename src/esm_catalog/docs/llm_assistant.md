@@ -17,17 +17,60 @@ Open WebUI  :3000       ← Apptainer (no Docker daemon needed)
       ↓  MCP stdio
 esm-catalog mcp         ← this guide
       ↓  HTTP
-STAC API  :23100        ← esm-catalog serve (existing)
+STAC API  :23006        ← esm-catalog serve (already running)
       ↓
 catalog.duckdb
 
-Open WebUI also connects to:
-Ollama  :11434          ← GPU SLURM job (qwen2.5:72b or llama3.3:70b)
+Open WebUI also connects to one of:
+vLLM   :8000   (OpenAI-compatible)  ← recommended: models pre-downloaded
+Ollama :11434                       ← alternative: pull models on first use
 ```
+
+The MCP server code is LLM-agnostic — the same `esm-catalog mcp` command works with both backends.
 
 ---
 
-## Step 1: Start Ollama on a GPU node
+## Step 1: Start the LLM backend on a GPU node
+
+Choose one backend. **vLLM is recommended** — model weights are already downloaded to
+`/albedo/work/projects/paleo_work/esm-catalog/llm-models`.
+
+### Option A: vLLM (recommended — models pre-downloaded)
+
+```bash
+MODELS_DIR=/albedo/work/projects/paleo_work/esm-catalog/llm-models
+
+# Start Qwen 2.5 72B AWQ (default)
+bash ${MODELS_DIR}/start_qwen.sh
+
+# Or start Llama 3.3 70B AWQ
+sbatch --export=MODEL=llama ${MODELS_DIR}/serve-llm.slurm
+```
+
+Watch the log until the server is ready:
+
+```bash
+# Find the job ID
+squeue -u $USER | grep vllm-serve
+
+# Tail the log (path printed by sbatch)
+tail -f /albedo/work/projects/paleo_work/esm-catalog/llm-models/serve-vllm-serve-<JOBID>.log
+# Ready when you see: "Application startup complete."
+
+# Note the GPU node name
+squeue -j <JOBID> -o "%N"   # e.g. gpu01
+```
+
+vLLM exposes an **OpenAI-compatible API** at `http://<node>:8000/v1`.
+
+Verify it is up:
+
+```bash
+GPU_NODE=gpu01
+curl -s http://${GPU_NODE}:8000/v1/models | python3 -m json.tool
+```
+
+### Option B: Ollama (alternative — requires model download on first use)
 
 Submit a SLURM job that allocates a GPU and runs `ollama serve`.
 
@@ -42,51 +85,35 @@ Save as `slurm_ollama.sh`:
 #SBATCH --mem=64G
 #SBATCH --output=ollama_%j.log
 
-# Point Ollama at a writable model directory (quota-safe)
 export OLLAMA_MODELS=$HOME/.ollama/models
-
 ollama serve --host 0.0.0.0
 ```
 
-Submit and note the assigned node name:
-
 ```bash
 sbatch slurm_ollama.sh
-# Watch the log until "Listening on 0.0.0.0:11434"
-tail -f ollama_<JOBID>.log
+tail -f ollama_<JOBID>.log   # wait for "Listening on 0.0.0.0:11434"
+squeue -j <JOBID> -o "%N"    # note GPU node name
 
-# Note the node name
-squeue -j <JOBID> -o "%N"   # e.g. gpu01
-```
-
-Pull the model (run once; weights are cached in `$OLLAMA_MODELS`):
-
-```bash
-# From the GPU node or via ssh
-ollama pull qwen2.5:72b      # recommended — strong tool-use and coding
-# Alternative smaller model:
-# ollama pull llama3.3:70b
+# Pull model once (weights cached in $OLLAMA_MODELS)
+ollama pull qwen2.5:72b
 ```
 
 ---
 
-## Step 2: Start the STAC API
+## Step 2: Verify the STAC API is reachable
 
-This is the existing `esm-catalog serve` command — skip if it is already running.
+The STAC API is already running at port **23006**. Confirm it responds:
 
 ```bash
-esm-catalog serve \
-    --catalog ~/experiments/picontrol/catalog.duckdb \
-    --port 23100
+curl -s http://localhost:23006/collections | python3 -m json.tool
 ```
 
-For multiple experiments, pass `--catalog` multiple times:
+If it is not running, start it:
 
 ```bash
 esm-catalog serve \
     --catalog ~/experiments/picontrol/catalog.duckdb \
-    --catalog ~/experiments/historical/catalog.duckdb \
-    --port 23100
+    --port 23006
 ```
 
 ---
@@ -96,10 +123,11 @@ esm-catalog serve \
 ```bash
 pip install 'esm-catalog[mcp]'   # first time only
 
-esm-catalog mcp --catalog-url http://localhost:23100
+esm-catalog mcp --catalog-url http://localhost:23006
 ```
 
-This runs in the foreground using stdio transport.  Keep it running in a terminal or tmux pane.
+This runs in the foreground using stdio transport. Keep it running in a terminal or tmux pane.
+Open WebUI will launch it automatically as a child process once registered (see Step 4).
 
 ### Transport options
 
@@ -113,48 +141,116 @@ This runs in the foreground using stdio transport.  Keep it running in a termina
 ## Step 4: Start Open WebUI
 
 [Open WebUI](https://github.com/open-webui/open-webui) provides the browser-based chat interface.
-On HPC systems without Docker daemon access, use Apptainer.
+On HPC systems without a Docker daemon, use Apptainer.
+
+### With vLLM (Option A)
+
+Pull the image once to the shared work directory (avoids home quota):
 
 ```bash
-# Set GPU node hostname (from Step 1)
-GPU_NODE=gpu01
-
-apptainer run --nv \
-    --env OLLAMA_BASE_URL=http://${GPU_NODE}:11434 \
-    --env WEBUI_SECRET_KEY=$(openssl rand -hex 32) \
-    --bind /tmp:/tmp \
+module load apptainer
+apptainer pull \
+    /albedo/work/projects/paleo_work/esm-catalog/containers/open-webui.sif \
     docker://ghcr.io/open-webui/open-webui:main
 ```
 
-Open WebUI listens on port 3000.
+Create a persistent data directory and launch (Open WebUI listens on port **8080**):
+
+```bash
+GPU_NODE=gpu-005   # node from Step 1
+mkdir -p /albedo/work/projects/paleo_work/esm-catalog/containers/open-webui-data
+
+module load apptainer
+apptainer exec \
+    --pwd /app/backend \
+    --env OPENAI_API_BASE_URL=http://${GPU_NODE}:8000/v1 \
+    --env OPENAI_API_KEY=not-used \
+    --env WEBUI_SECRET_KEY=$(openssl rand -hex 32) \
+    --env DATA_DIR=/data \
+    --bind /albedo/work/projects/paleo_work/esm-catalog/containers/open-webui-data:/data \
+    --bind /tmp:/tmp \
+    /albedo/work/projects/paleo_work/esm-catalog/containers/open-webui.sif \
+    bash start.sh
+```
+
+Notes:
+- `--pwd /app/backend` is required — Apptainer does not inherit Docker's `WORKDIR`.
+- Read-only filesystem errors for static files on startup are cosmetic and can be ignored.
+- The image is already pulled to the path above on albedo.
+
+In Open WebUI, add the connection manually if it is not auto-detected:
+
+1. **Settings → Connections → OpenAI API**
+2. Set **API Base URL**: `http://<GPU_NODE>:8000/v1`
+3. Set **API Key**: `not-used` (any non-empty value)
+4. Click **Save** — the model `qwen2.5-72b` or `llama3.3-70b` should appear in the model selector.
+
+### With Ollama (Option B)
+
+```bash
+GPU_NODE=gpu01
+mkdir -p /albedo/work/projects/paleo_work/esm-catalog/containers/open-webui-data
+
+module load apptainer
+apptainer exec \
+    --pwd /app/backend \
+    --env OLLAMA_BASE_URL=http://${GPU_NODE}:11434 \
+    --env WEBUI_SECRET_KEY=$(openssl rand -hex 32) \
+    --env DATA_DIR=/data \
+    --bind /albedo/work/projects/paleo_work/esm-catalog/containers/open-webui-data:/data \
+    --bind /tmp:/tmp \
+    /albedo/work/projects/paleo_work/esm-catalog/containers/open-webui.sif \
+    bash start.sh
+```
+
+Open WebUI listens on port **8080** in both cases.
 
 ### Register the MCP server in Open WebUI
 
-1. Open **Settings → Tools → Add MCP Server**
-2. Set **Name**: `ESM Catalog`
-3. Set **Command**: `esm-catalog mcp --catalog-url http://localhost:23100`
-4. Click **Save**
+Open WebUI's **Manage Tool Servers** expects an OpenAPI-compatible HTTP endpoint, not a
+stdio command. Use `mcpo` as a bridge:
 
-Open WebUI will launch the command as a child process and communicate via stdio.
+```bash
+pip install mcpo   # first time only
+mcpo --port 8001 -- esm-catalog mcp --catalog-url http://localhost:23006
+```
+
+This exposes the MCP tools as an OpenAPI server at `http://localhost:8001`.
+Keep it running in a separate terminal or tmux pane.
+
+Then in Open WebUI:
+
+1. Open **Settings → Integrations → Manage Tool Servers → + (Add)**
+2. Set **Name**: `ESM Catalog`
+3. Set **URL**: `http://localhost:8001`
+4. Leave **OpenAPI Spec** as `URL → openapi.json` (default)
+5. Click **Save** — the connection check should pass
+
+In each chat, click the **+** icon in the message input bar and enable **ESM Catalog**
+before sending your first message.
 
 ---
 
 ## Step 5: Access from your laptop
 
-The browser and STAC API run on albedo login or compute nodes inside the AWI network.
-Forward the Open WebUI port to your laptop:
+The STAC browser, STAC API, and Open WebUI run on albedo nodes inside the AWI network.
+Forward all relevant ports to your laptop in one SSH command:
 
 ```bash
-ssh -L 3000:localhost:3000 albedo0
+# Open WebUI only
+ssh -L 8080:localhost:8080 albedo0
+
+# Open WebUI + STAC API + STAC browser
+ssh -L 8080:localhost:8080 -L 23006:localhost:23006 -L 23005:localhost:23005 albedo0
 ```
 
-Then open `http://localhost:3000` in your browser.
+Then open:
 
-If you also want direct STAC API access (e.g. for pystac-client scripts):
-
-```bash
-ssh -L 3000:localhost:3000 -L 23100:localhost:23100 albedo0
-```
+| Service | URL |
+|---|---|
+| Chat (Open WebUI) | `http://localhost:8080` |
+| STAC Browser | `http://localhost:23005` |
+| STAC API | `http://localhost:23006` |
 
 ---
 
@@ -200,42 +296,90 @@ LLM:   [calls search_items("picontrol-fesom", variable="ssh",
 pip install 'esm-catalog[mcp]'
 ```
 
-### Ollama connection refused
+### vLLM not responding
 
-Check that the SLURM job is still running and Ollama is listening:
+```bash
+# Check the job is still running
+squeue -u $USER | grep vllm-serve
+
+# Check the log for errors
+tail -50 /albedo/work/projects/paleo_work/esm-catalog/llm-models/serve-vllm-serve-<JOBID>.log
+
+# Test the API directly from the login node
+curl -s http://${GPU_NODE}:8000/v1/models
+```
+
+### Ollama connection refused
 
 ```bash
 squeue -u $USER | grep ollama
 ssh ${GPU_NODE} curl -s http://localhost:11434/api/tags
 ```
 
+### Open WebUI cannot reach the LLM
+
+Ensure the URL uses the GPU node hostname, not `localhost`, since Open WebUI runs in a container:
+
+```bash
+# vLLM — correct
+--env OPENAI_API_BASE_URL=http://gpu01:8000/v1
+
+# Ollama — correct
+--env OLLAMA_BASE_URL=http://gpu01:11434
+
+# Wrong in both cases (resolves to the container itself)
+--env OPENAI_API_BASE_URL=http://localhost:8000/v1
+```
+
 ### MCP server cannot reach the STAC API
 
-Verify the API is running and the URL is correct:
-
 ```bash
-curl http://localhost:23100/collections
+curl -s http://localhost:23006/collections
 ```
 
-### Open WebUI cannot reach Ollama
+### Open WebUI shows no model after restarting vLLM
 
-Ensure `OLLAMA_BASE_URL` uses the node hostname (not `localhost`) since Open WebUI runs
-in a container:
+Each SLURM job may land on a different GPU node. When restarting vLLM, check the new node:
 
 ```bash
---env OLLAMA_BASE_URL=http://gpu01:11434   # correct
---env OLLAMA_BASE_URL=http://localhost:11434  # wrong inside container
+squeue -u $USER | grep vllm-serve   # note the NODELIST column, e.g. gpu-003
 ```
+
+Then restart Open WebUI with the updated `OPENAI_API_BASE_URL`:
+
+```bash
+--env OPENAI_API_BASE_URL=http://gpu-003:8000/v1
+```
+
+### Model not appearing in Open WebUI (vLLM)
+
+The model name in the selector matches `--served-model-name` in `serve-llm.slurm`
+(`qwen2.5-72b` or `llama3.3-70b`). If it does not appear, refresh the connections page
+or restart Open WebUI after the vLLM server is fully up.
 
 ---
 
 ## Model recommendations
 
-| Model | Size | Notes |
+### vLLM (pre-downloaded at `/albedo/work/projects/paleo_work/esm-catalog/llm-models`)
+
+| Model | Served name | Notes |
 |---|---|---|
-| `qwen2.5:72b` | 72B | Best tool-use and code generation; recommended |
-| `llama3.3:70b` | 70B | Strong alternative; similar capability |
-| `qwen2.5:32b` | 32B | Faster; fits on a single A100 40GB |
-| `qwen2.5-coder:32b` | 32B | Code-optimised; good for `run_python` heavy sessions |
+| Qwen 2.5 72B AWQ | `qwen2.5-72b` | Best tool-use and code generation; default |
+| Llama 3.3 70B AWQ | `llama3.3-70b` | Strong alternative |
+
+Start with `bash start_qwen.sh` (Qwen) or `sbatch --export=MODEL=llama serve-llm.slurm` (Llama).
+
+**Quantization note:** the slurm script uses `--quantization awq_marlin`, which automatically
+converts AWQ weights to the faster Marlin kernel at load time. This gives significantly higher
+token throughput on A100s compared to plain `--quantization awq`. Do not change it back to `awq`.
+
+### Ollama (pulled on demand)
+
+| Model | Pull command | Notes |
+|---|---|---|
+| `qwen2.5:72b` | `ollama pull qwen2.5:72b` | Recommended |
+| `llama3.3:70b` | `ollama pull llama3.3:70b` | Strong alternative |
+| `qwen2.5:32b` | `ollama pull qwen2.5:32b` | Faster; fits A100 40GB |
 
 Smaller models (7B–14B) can work but produce less reliable tool calls for complex queries.

@@ -12,7 +12,7 @@ from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
 from esm_tools import user_error, user_note
 
-from . import batch_system, helpers
+from . import batch_system, filelists, helpers
 
 
 def run_job(config):
@@ -399,7 +399,7 @@ def _add_all_folders(config):
 
     config["general"]["all_model_filetypes"] = all_model_filetypes
 
-    for model in config["general"]["valid_model_names"]:
+    for model in filelists.get_file_components(config):
         for filetype in all_model_filetypes:
             if "restart" in filetype:
                 filedir = "restart"

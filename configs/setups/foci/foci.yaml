@@ -257,6 +257,7 @@ echam:
                         # as f90nml does not fully support the duplicate mvstreamctl entries
                         namelist_dir: "${general.esm_namelist_dir}/echam/6.3.05p2-foci-withtracer/${echam.scenario_type}"
                         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+                        #foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT, MODCO2_A]
                         add_namelist_changes:
                            namelist.echam:
                               runctl:
@@ -279,15 +280,6 @@ echam:
         restart_firstlast: "last"
         nproca: 24
         nprocb: 24
-
-        add_compile_infos:
-            add_choose_version:
-                6.3.05p2-foci_oasismct4:
-                    add_export_vars:
-                        MPEU_Fortran_INCLUDE_DIRECTORIES: "${oasis3mct.model_dir}/INSTALL_OASIS.ESMTOOLS/include"
-                        MPEU_Fortran_LIBRARIES: "${oasis3mct.model_dir}/INSTALL_OASIS.ESMTOOLS/lib"
-                        #MPEU_Fortran_INCLUDE_DIRECTORIES: "/home/shktkeme/esm/models/foci-agrif_mops_oasismct4/oasis/INSTALL_OASIS.ESMTOOLS/include"
-                        #MPEU_Fortran_LIBRARIES: "/home/shktkeme/esm/models/foci-agrif_mops_oasismct4/oasis/INSTALL_OASIS.ESMTOOLS/lib"
 
         # do we want to link files or copy. For ECHAM6 we can't link the restart file
         # as hdrestart.nc is named the same for input and output. Another crazy habbit of ECHAM6
@@ -474,6 +466,7 @@ echam:
         #foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT]
 
         foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT]
+        #foci_fields: [AIceFrac, A_SSTSST, A_TepIce, A_IceTck, A_SnwTck, A_OCurx1, A_OCury1, A_OTaux1, A_OTauy1, A_ITaux1, A_ITauy1, A_QsrIce, A_QsrMix, A_QnsIce, A_QnsMix, ATotRain, ATotSnow, AIceEvap, A_dQnsdT, A_CO2OCE, CO2TRAAT, FFOCE_A, CO2CONAT, CO2FLXAT, MODCO2_A]
         coupling_fields:
             "[[foci_fields-->FIELD]]":
                 grid: atmo
@@ -789,6 +782,9 @@ xios:
 #########################################################################################
 
 oasis3mct:
+        interpolation: gauswgt # other option implemented is conserv
+        # only used with agrif_mops currently
+
         remove_config_files:
           - cf
         model_dir: ${general.model_dir}/oasis
@@ -1176,8 +1172,8 @@ oasis3mct:
                 agrif_oasismct4:
 
                         norestart: "T"
-                        mct_version: "4.0"
-                        version: "4.0-geomar"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
 
                         export_mode_a2o: EXPORTED
 
@@ -1209,26 +1205,26 @@ oasis3mct:
                               - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
                               - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
                               - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
-                           # TODO: test if the naming of the remapping file works
+                           
                            flxatmos_1:
-                              - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
-                              - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
-                              - '1_O_ITaux1 <--gauswgt-- A_ITaux1'
-                              - '1_O_ITauy1 <--gauswgt-- A_ITauy1'
-                              - '1_O_QsrIce <--gauswgt-- A_QsrIce'
-                              - '1_O_QsrMix <--gauswgt-- A_QsrMix'
-                              - '1_O_QnsIce <--gauswgt-- A_QnsIce'
-                              - '1_O_QnsMix <--gauswgt-- A_QnsMix'
-                              - '1_OTotRain <--gauswgt-- ATotRain'
-                              - '1_OTotSnow <--gauswgt-- ATotSnow'
-                              - '1_OIceEvap <--gauswgt-- AIceEvap'
-                              - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
+                              - '1_O_OTaux1 <--gauswgt_agr1-- A_OTaux1'
+                              - '1_O_OTauy1 <--gauswgt_agr1-- A_OTauy1'
+                              - '1_O_ITaux1 <--gauswgt_agr1-- A_ITaux1'
+                              - '1_O_ITauy1 <--gauswgt_agr1-- A_ITauy1'
+                              - '1_O_QsrIce <--gauswgt_agr1-- A_QsrIce'
+                              - '1_O_QsrMix <--gauswgt_agr1-- A_QsrMix'
+                              - '1_O_QnsIce <--gauswgt_agr1-- A_QnsIce'
+                              - '1_O_QnsMix <--gauswgt_agr1-- A_QnsMix'
+                              - '1_OTotRain <--gauswgt_agr1-- ATotRain'
+                              - '1_OTotSnow <--gauswgt_agr1-- ATotSnow'
+                              - '1_OIceEvap <--gauswgt_agr1-- AIceEvap'
+                              - '1_O_dQnsdT <--gauswgt_agr1-- A_dQnsdT'
 
-                        add_input_files:
-                           rmp_ot2a: rmp_ot2a
-                           rmp_a2oc: rmp_a2oc
-                           rmp_a2ot: rmp_a2ot
-                           rmp_a2agr1: rmp_a2agr1
+                        #add_input_files:
+                           #rmp_ot2a: rmp_ot2a
+                           #rmp_a2oc: rmp_a2oc
+                           #rmp_a2ot: rmp_a2ot
+                           #rmp_a2agr1: rmp_a2agr1
 
                 fs_oasismct4:
 
@@ -1270,8 +1266,8 @@ oasis3mct:
                 agrif_mops_oasismct4:
 
                         norestart: "T"
-                        mct_version: "4.0"
-                        version: "4.0-geomar"
+                        mct_version: "5.0"
+                        version: "5.0-geomar"
 
                         export_mode_a2o: EXPORTED
 
@@ -1280,51 +1276,99 @@ oasis3mct:
                         add_restart_out_files:
                            flxatmos1: flxatmos1
 
-                        coupling_target_fields:
+                        choose_interpolation:
+                           conserv:
+                              coupling_target_fields:
 
-                           sstocean:
-                              - 'AIceFrac <--gauswgt_average-- OIceFrac'
-                              - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
-                              - 'A_TepIce <--gauswgt_average-- O_TepIce'
-                              - 'A_IceTck <--gauswgt_average-- O_IceTck'
-                              - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
-                              - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
-                              - 'A_OCury1 <--gauswgt_average-- O_OCury1'
-                              - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
-                              - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
-                              - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+                                 sstocean:
+                                    - 'AIceFrac <--conserv-- OIceFrac'
+                                    - 'A_SSTSST <--conserv-- O_SSTSST'
+                                    - 'A_TepIce <--conserv-- O_TepIce'
+                                    - 'A_IceTck <--conserv-- O_IceTck'
+                                    - 'A_SnwTck <--conserv-- O_SnwTck'
+                                    - 'A_OCurx1 <--conserv-- O_OCurx1'
+                                    - 'A_OCury1 <--conserv-- O_OCury1'
+                                    - 'A_CO2OCE <--conserv-- CO2OCEAN'
+                                    - 'CO2TRAAT <--conserv-- CO2TRA'
+                                    - 'FFOCE_A <--conserv-- FF_OCE'
+                                    #- 'MODCO2_A <--gauswgt_average-- MODCO2OC'
+                                 flxatmos:
+                                    - 'O_OTaux1 <--bicubic-- A_OTaux1'
+                                    - 'O_OTauy1 <--bicubic-- A_OTauy1'
+                                    - 'O_ITaux1 <--bicubic-- A_ITaux1'
+                                    - 'O_ITauy1 <--bicubic-- A_ITauy1'
+                                    - 'O_QsrIce <--conserv2-- A_QsrIce'
+                                    - 'O_QsrMix <--conserv3-- A_QsrMix'
+                                    - 'O_QnsIce <--conserv2-- A_QnsIce'
+                                    - 'O_QnsMix <--conserv3-- A_QnsMix'
+                                    - 'OTotRain <--conserv4-- ATotRain'
+                                    - 'OTotSnow <--conserv2-- ATotSnow'
+                                    - 'OIceEvap <--conserv2-- AIceEvap'
+                                    - 'O_dQnsdT <--conserv2-- A_dQnsdT'
+                                    - 'O_AtmCO2 <--conserv2-- CO2CONAT'
+                                    - 'CO2FLXOC <--conserv2-- CO2FLXAT'
+                                 flxatmos_1:
+                                    - '1_O_OTaux1 <--gauswgt_agr1-- A_OTaux1'
+                                    - '1_O_OTauy1 <--gauswgt_agr1-- A_OTauy1'
+                                    - '1_O_ITaux1 <--gauswgt_agr1-- A_ITaux1'
+                                    - '1_O_ITauy1 <--gauswgt_agr1-- A_ITauy1'
+                                    - '1_O_QsrIce <--gauswgt_agr1-- A_QsrIce'
+                                    - '1_O_QsrMix <--gauswgt_agr1-- A_QsrMix'
+                                    - '1_O_QnsIce <--gauswgt_agr1-- A_QnsIce'
+                                    - '1_O_QnsMix <--gauswgt_agr1-- A_QnsMix'
+                                    - '1_OTotRain <--gauswgt_agr1-- ATotRain'
+                                    - '1_OTotSnow <--gauswgt_agr1-- ATotSnow'
+                                    - '1_OIceEvap <--gauswgt_agr1-- AIceEvap'
+                                    - '1_O_dQnsdT <--gauswgt_agr1-- A_dQnsdT'
+                                    - '1_O_AtmCO2 <--gauswgt_agr1-- CO2CONAT'
+                                    - '1_CO2FLXOC <--gauswgt_agr1-- CO2FLXAT'
+                                    #- '1_MODCO2_A <--gauswgt_agr1-- 1_MODCO2OC'
 
-                           flxatmos:
-                              - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
-                              - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
-                              - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
-                              - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
-                              - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
-                              - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
-                              - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
-                              - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
-                              - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
-                              - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
-                              - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
-                              - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
-                              - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
-                              - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
-
-                           flxatmos_1:
-                              - '1_O_OTaux1 <--gauswgt-- A_OTaux1'
-                              - '1_O_OTauy1 <--gauswgt-- A_OTauy1'
-                              - '1_O_ITaux1 <--gauswgt-- A_ITaux1'
-                              - '1_O_ITauy1 <--gauswgt-- A_ITauy1'
-                              - '1_O_QsrIce <--gauswgt-- A_QsrIce'
-                              - '1_O_QsrMix <--gauswgt-- A_QsrMix'
-                              - '1_O_QnsIce <--gauswgt-- A_QnsIce'
-                              - '1_O_QnsMix <--gauswgt-- A_QnsMix'
-                              - '1_OTotRain <--gauswgt-- ATotRain'
-                              - '1_OTotSnow <--gauswgt-- ATotSnow'
-                              - '1_OIceEvap <--gauswgt-- AIceEvap'
-                              - '1_O_dQnsdT <--gauswgt-- A_dQnsdT'
-                              - '1_O_AtmCO2 <--gauswgt-- CO2CONAT'
-                              - '1_CO2FLXOC <--gauswgt-- CO2FLXAT'
+                           gauswgt:
+                              coupling_target_fields:
+                                 sstocean:
+                                    - 'AIceFrac <--gauswgt_average-- OIceFrac'
+                                    - 'A_SSTSST <--gauswgt_average-- O_SSTSST'
+                                    - 'A_TepIce <--gauswgt_average-- O_TepIce'
+                                    - 'A_IceTck <--gauswgt_average-- O_IceTck'
+                                    - 'A_SnwTck <--gauswgt_average-- O_SnwTck'
+                                    - 'A_OCurx1 <--gauswgt_average-- O_OCurx1'
+                                    - 'A_OCury1 <--gauswgt_average-- O_OCury1'
+                                    - 'A_CO2OCE <--gauswgt_average-- CO2OCEAN'
+                                    - 'CO2TRAAT <--gauswgt_average-- CO2TRA'
+                                    - 'FFOCE_A <--gauswgt_average-- FF_OCE'
+                                    #- 'MODCO2_A <--gauswgt_average-- MODCO2OC'
+                                 flxatmos:
+                                   - 'O_OTaux1 <--a2ot_gauswgt-- A_OTaux1'
+                                   - 'O_OTauy1 <--a2ot_gauswgt-- A_OTauy1'
+                                   - 'O_ITaux1 <--a2ot_gauswgt-- A_ITaux1'
+                                   - 'O_ITauy1 <--a2ot_gauswgt-- A_ITauy1'
+                                   - 'O_QsrIce <--a2oc_gauswgt-- A_QsrIce'
+                                   - 'O_QsrMix <--a2oc_gauswgt_glbpos-- A_QsrMix'
+                                   - 'O_QnsIce <--a2oc_gauswgt-- A_QnsIce'
+                                   - 'O_QnsMix <--a2oc_gauswgt_glbpos-- A_QnsMix'
+                                   - 'OTotRain <--a2oc_gauswgt_global-- ATotRain'
+                                   - 'OTotSnow <--a2oc_gauswgt-- ATotSnow'
+                                   - 'OIceEvap <--a2oc_gauswgt-- AIceEvap'
+                                   - 'O_dQnsdT <--a2oc_gauswgt-- A_dQnsdT'
+                                   - 'O_AtmCO2 <--a2oc_gauswgt-- CO2CONAT'
+                                   - 'CO2FLXOC <--a2oc_gauswgt_global-- CO2FLXAT'
+                                 flxatmos_1:
+                                    - '1_O_OTaux1 <--gauswgt_agr1-- A_OTaux1'
+                                    - '1_O_OTauy1 <--gauswgt_agr1-- A_OTauy1'
+                                    - '1_O_ITaux1 <--gauswgt_agr1-- A_ITaux1'
+                                    - '1_O_ITauy1 <--gauswgt_agr1-- A_ITauy1'
+                                    - '1_O_QsrIce <--gauswgt_agr1-- A_QsrIce'
+                                    - '1_O_QsrMix <--gauswgt_agr1-- A_QsrMix'
+                                    - '1_O_QnsIce <--gauswgt_agr1-- A_QnsIce'
+                                    - '1_O_QnsMix <--gauswgt_agr1-- A_QnsMix'
+                                    - '1_OTotRain <--gauswgt_agr1-- ATotRain'
+                                    - '1_OTotSnow <--gauswgt_agr1-- ATotSnow'
+                                    - '1_OIceEvap <--gauswgt_agr1-- AIceEvap'
+                                    - '1_O_dQnsdT <--gauswgt_agr1-- A_dQnsdT'
+                                    - '1_O_AtmCO2 <--gauswgt_agr1-- CO2CONAT'
+                                    - '1_CO2FLXOC <--gauswgt_agr1-- CO2FLXAT'
+                                    #- '1_MODCO2_A <--gauswgt_agr1-- 1_MODCO2OC'
 
         coupling_directions:
                 'opat->atmo':
@@ -1448,7 +1492,7 @@ oasis3mct:
                 # TODO: implement the remapping in a clean way
                 # 1. make remapping weights restart again
                 # 2. for default_oasismct4 and agrif_oasismct4 implement the mapping: correctly
-                gauswgt:
+                gauswgt_agr1:
                         time_transformation: instant
                         remapping:
                                 - gauswgt:
@@ -1456,8 +1500,18 @@ oasis3mct:
                                         nb_of_neighbours: 9
                                         weight: 2.0
                                 - mapping:
-                                        mapname: rmp_atmo_to_opat_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
-                                        map_regrid_on: src
+                                       mapname: rmp_atmo_to_${nemo.nest1}_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                                       map_regrid_on: src
+                gauswgt:
+                        time_transformation: instant
+                        remapping:
+                                - gauswgt:
+                                        search_bin: latitude
+                                        nb_of_neighbours: 9
+                                        weight: 2.0
+                                          #- mapping:
+                                          #mapname: rmp_atmo_to_opat_GAUSWGT_${echam.resolution}_${nemo.resolution}.nc
+                                          #map_regrid_on: src
 
                 a2ot_gauswgt:
                         time_transformation: instant

@@ -42,11 +42,13 @@ class coupler_class:
                 lucia=full_config["oasis3mct"].get("use_lucia", False),
             )
         elif name == "yac":
-            logger.info(f"coupler : {name} is used.")
+            pass
 
         else:
             logger.error(f"Unknown coupler : {name}")
             sys.exit(0)
+
+        logger.info(f"coupler : {name} is used.")
 
     def prepare(self, full_config, destination_dir):
 

@@ -1085,10 +1085,16 @@ def clean_provenance(data, nested=False):
     elif isinstance(data, list):
         return [clean_provenance(item, nested=True) for item in data]
     elif isinstance(data, dict):
-        return {
-            clean_provenance(key, nested=True): clean_provenance(value, nested=True)
-            for key, value in data.items()
-        }
+        result = {}
+        for key, value in data.items():
+            cleaned_key = clean_provenance(key, nested=True)
+            # Use the internal _key attribute for f90nml cogroups (e.g.
+            # for ICON's output_nml that can be duplicated in the same namelist file
+            # use the '_key' '_grp_output_nml_0' instead of 'output_naml') when present
+            # to keep each group as a separate entry
+            dict_key = getattr(cleaned_key, "_key", cleaned_key)
+            result[dict_key] = clean_provenance(value, nested=True)
+        return result
     # Clean vars in objects
     elif hasattr(data, "__dict__"):
         for key, value in vars(data).items():

@@ -604,40 +604,40 @@ fesom:
             lib: "${fesom.model_dir}/build/lib/libfesom.so"
 
     config_files:
-            config:  config
-            cvmix:   cvmix
-            dyn:     dyn
-            forcing: forcing
-            ice:     ice
-            icepack: icepack
-            io:      io
-            oce:     oce
-            tra:     tra
-            transit: transit
+            config:         config
+            cvmix:          cvmix
+            dyn:            dyn
+            nml_forcing:    nml_forcing
+            ice:            ice
+            icepack:        icepack
+            io:             io
+            oce:            oce
+            tra:            tra
+            transit:        transit
 
     config_sources:
-            config:  "${namelist_dir}/namelist.config"
-            cvmix:   "${namelist_dir}/namelist.cvmix"
-            dyn:     "${namelist_dir}/namelist.dyn"
-            forcing: "${namelist_dir}/namelist.forcing"
-            ice:     "${namelist_dir}/namelist.ice"
-            icepack: "${namelist_dir}/namelist.icepack"
-            io:      "${namelist_dir}/namelist.io"
-            oce:     "${namelist_dir}/namelist.oce"
-            tra:     "${namelist_dir}/namelist.tra"
-            transit: "${namelist_dir}/namelist.transit"
+            config:        "${namelist_dir}/namelist.config"
+            cvmix:         "${namelist_dir}/namelist.cvmix"
+            dyn:           "${namelist_dir}/namelist.dyn"
+            nml_forcing:   "${namelist_dir}/namelist.forcing"
+            ice:           "${namelist_dir}/namelist.ice"
+            icepack:       "${namelist_dir}/namelist.icepack"
+            io:            "${namelist_dir}/namelist.io"
+            oce:           "${namelist_dir}/namelist.oce"
+            tra:           "${namelist_dir}/namelist.tra"
+            transit:       "${namelist_dir}/namelist.transit"
 
     config_in_work:
-            config:  "namelist.config"
-            cvmix:   "namelist.cvmix"
-            dyn:     "namelist.dyn"
-            forcing: "namelist.forcing"
-            ice:     "namelist.ice"
-            icepack: "namelist.icepack"
-            io:      "namelist.io"
-            oce:     "namelist.oce"
-            tra:     "namelist.tra"
-            transit: "namelist.transit"
+            config:        "namelist.config"
+            cvmix:         "namelist.cvmix"
+            dyn:           "namelist.dyn"
+            nml_forcing:   "namelist.forcing"
+            ice:           "namelist.ice"
+            icepack:       "namelist.icepack"
+            io:            "namelist.io"
+            oce:           "namelist.oce"
+            tra:           "namelist.tra"
+            transit:       "namelist.transit"
 
     coupling_fields:
             sst_feom:

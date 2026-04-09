@@ -1680,6 +1680,8 @@ computer:
                    #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
+                  load_libaec: True
+                  load_tbb: True
                juwels:
                   #compiler_mpi: intel2019_impi2019
                   compiler_mpi: intel2022_psmpi2022
@@ -1698,6 +1700,8 @@ computer:
                   #iolibraries: geomar_system_libs
                   compiler_mpi: intel2022_openmpi
                   iolibraries: system_libs
+                  load_libaec: True
+                  load_tbb: True
                   launcher_flags: "-l --cpu-bind=cores --distribution=cyclic:cyclic"
                juwels:
                   compiler_mpi: intel2022_psmpi2022

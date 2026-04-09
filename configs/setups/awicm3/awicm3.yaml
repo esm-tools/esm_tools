@@ -1020,6 +1020,8 @@ computer:
                     levante:
                         iolibraries: system_libs
                         compiler_mpi: intel2022_openmpi
+                        add_export_vars:
+                            ECCODESROOT: $IO_LIB_ROOT
 
         choose_general.execution_mode:
             run:

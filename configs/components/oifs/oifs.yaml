@@ -847,7 +847,7 @@ oifs:
             # XIOS output
             oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
             atm: atm_*
-            atmos: atmos.*
+            atmos: atmos_*
 
     outdata_sources:
             # old grib based output
@@ -858,7 +858,7 @@ oifs:
             # XIOS output
             oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
             atm: atm_*
-            atmos: atmos.*
+            atmos: atmos_*
 
 
     #======================================================================================

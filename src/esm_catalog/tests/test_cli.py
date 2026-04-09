@@ -95,7 +95,7 @@ class TestScanCommand:
         result = runner.invoke(
             main, ["scan", str(outdata_nc), "--db", str(tmp_path / "c.duckdb")]
         )
-        assert "Scanned 1/1" in result.output
+        assert "Scanned 1 files: 1 cataloged" in result.output
 
     def test_creates_db_file(self, runner, tmp_path, outdata_nc):
         db_path = tmp_path / "catalog.duckdb"
@@ -131,7 +131,7 @@ class TestScanCommand:
             main, ["scan", str(outdata_dir), "--db", str(db_path)]
         )
         assert result.exit_code == 0
-        assert "Scanned 2/2" in result.output
+        assert "Scanned 2 files: 2 cataloged" in result.output
 
     def test_idempotent_no_duplicates(self, runner, tmp_path, outdata_nc):
         """Running scan twice on the same file must not create duplicate items."""
@@ -151,7 +151,7 @@ class TestScanCommand:
             "--config", str(config_yaml),
         ])
         assert result.exit_code == 0
-        assert "Scanned 1/1" in result.output
+        assert "Scanned 1 files: 1 cataloged" in result.output
 
     def test_config_sets_correct_experiment(self, runner, tmp_path, outdata_nc, config_yaml):
         """With --config the experiment_id comes from general.expid, not the path."""
@@ -175,7 +175,7 @@ class TestScanCommand:
             main, ["scan", str(empty), "--db", str(tmp_path / "c.duckdb")]
         )
         assert result.exit_code == 0
-        assert "No supported files" in result.output
+        assert "No files to scan" in result.output
 
     def test_skips_unsupported_extensions(self, runner, tmp_path):
         """Files with skip extensions (.txt, .log, .yaml ...) are never added."""
@@ -186,8 +186,8 @@ class TestScanCommand:
         db_path = tmp_path / "catalog.duckdb"
         result = runner.invoke(main, ["scan", str(tmp_path), "--db", str(db_path)])
         assert result.exit_code == 0
-        # No recognised extensions found → early exit with "No supported files" warning
-        assert "No supported files" in result.output
+        # .txt/.log are in skip_exts → nothing cataloged, no errors
+        assert "0 cataloged" in result.output
 
     def test_skips_non_outdata_paths(self, runner, tmp_path, outdata_nc):
         """Files outside outdata/ are skipped via CollectionContextError (DEBUG)."""
@@ -198,9 +198,9 @@ class TestScanCommand:
         shutil.copy(outdata_nc, config_dir / "settings.nc")
         db_path = tmp_path / "catalog.duckdb"
         result = runner.invoke(main, ["scan", str(tmp_path), "--db", str(db_path)])
-        # The real outdata file is scanned; the config copy is skipped
+        # The real outdata file is cataloged; the config copy fails context resolution
         assert result.exit_code == 0
-        assert "Scanned 1/" in result.output
+        assert "1 cataloged" in result.output
 
     def test_verbose_flag_produces_debug_output(self, runner, tmp_path, outdata_nc):
         db_path = tmp_path / "catalog.duckdb"
@@ -211,16 +211,20 @@ class TestScanCommand:
         # DEBUG messages include "Resolved context" in verbose mode
         assert "DEBUG" in result.output
 
-    def test_zero_byte_files_skipped(self, runner, tmp_path):
-        """Zero-size files are never added to the scan list."""
+    def test_zero_byte_files_not_cataloged(self, runner, tmp_path):
+        """Zero-size .nc files are attempted but fail and are never cataloged."""
+        from esm_catalog.storage.duckdb import CatalogDB
         nc_dir = tmp_path / "experiments" / "zero" / "outdata" / "fesom"
         nc_dir.mkdir(parents=True)
         (nc_dir / "empty.nc").write_bytes(b"")
         db_path = tmp_path / "catalog.duckdb"
         result = runner.invoke(main, ["scan", str(tmp_path), "--db", str(db_path)])
         assert result.exit_code == 0
-        # Zero-byte file is filtered before the files list is built → "No supported files"
-        assert "No supported files" in result.output
+        # Zero-byte file is attempted but fails; nothing is added to the catalog
+        assert "0 cataloged" in result.output
+        with CatalogDB(db_path) as db:
+            count = db.db.execute("SELECT COUNT(*) FROM items").fetchone()[0]
+        assert count == 0
 
 
 # ---------------------------------------------------------------------------
@@ -400,10 +404,16 @@ class TestMergeParquetCommand:
 
 class TestServeCommand:
 
-    def test_requires_catalog_option(self, runner):
-        """serve with no --catalog must fail with a usage error."""
-        result = runner.invoke(main, ["serve"])
-        assert result.exit_code != 0
+    def test_serve_without_catalog_starts(self, runner, monkeypatch):
+        """serve with no --catalog is valid — catalogs can be added dynamically."""
+        import sys
+        from unittest.mock import MagicMock
+        mock_uvicorn = MagicMock()
+        with monkeypatch.context() as m:
+            m.setitem(sys.modules, "uvicorn", mock_uvicorn)
+            result = runner.invoke(main, ["serve"])
+        assert result.exit_code == 0
+        mock_uvicorn.run.assert_called_once()
 
     def test_missing_uvicorn_exits_with_code_1(self, runner, tmp_path, monkeypatch):
         """If uvicorn is not installed, serve exits 1 and logs an error."""

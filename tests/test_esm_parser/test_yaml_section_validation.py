@@ -28,7 +28,7 @@ def make_valid_keys(model_names=(), setup_names=(), system_components=None):
     return {
         "valid_model_names": list(model_names),
         "valid_setup_names": list(setup_names),
-        "system_components": list(system_components or ["general", "dask", "computer", "defaults"]),
+        "system_components": list(system_components or ["general", "dask"]),
     }
 
 

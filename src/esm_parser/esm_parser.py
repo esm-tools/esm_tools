@@ -393,11 +393,16 @@ def validate_config_sections(config):
     SystemExit
         Via ``user_error`` if any top-level key is not a recognised section.
     """
+    # Backend keys that are used internally by esm-tools and may appear at the
+    # top level of the assembled config without being yaml section headers.
+    internal_keys = {"_blackdict"}
+
     general = config.get("general", {})
     valid_keys = (
         set(general.get("valid_setup_names", []))
         | set(general.get("valid_model_names", []))
         | set(general.get("system_components", []))
+        | internal_keys
     )
     sections = general.get("sections", {})
 

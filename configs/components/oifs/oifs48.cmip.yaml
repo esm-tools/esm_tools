@@ -41,6 +41,7 @@ oifs:
                             NAMECECMIP:
                                 SCENARIONAME: "SSP1-2.6"
         "cmip7":
+            output_step_freq: $(( 3600 / ${time_step} * 1 ))
             choose_scenario:
                 "piControl":
                     spinup_year: 1850

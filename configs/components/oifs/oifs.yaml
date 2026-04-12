@@ -1371,7 +1371,11 @@ oifs:
     # OUTPUT CONFIG
     #======================================================================================
 
-    output_step_freq: $(( 3600 / ${time_step} * 6 ))
+    choose_mip:
+            "cmip7":
+                    output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "*":
+                    output_step_freq: $(( 3600 / ${time_step} * 6 ))
     choose_output:
             "1hr":
                      output_step_freq: $(( 3600 / ${time_step} * 1 ))

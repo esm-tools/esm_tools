@@ -1,15 +1,20 @@
 """MCP server exposing ESM catalog tools via FastMCP.
 
-Start with stdio transport (default — used by Open WebUI and most MCP clients):
-    esm-catalog mcp
+Start with streamable-http transport (Open WebUI "MCP Streamable HTTP"):
+    esm-catalog mcp --transport streamable-http --port 23007
+    → endpoint: http://localhost:23007/mcp
 
-Start with SSE transport (HTTP-based MCP clients):
-    esm-catalog mcp --transport sse --port 8001
+Start with SSE transport:
+    esm-catalog mcp --transport sse --port 23007
+
+Start with stdio transport (default — process-based MCP clients):
+    esm-catalog mcp
 """
 
 from __future__ import annotations
 
-from functools import partial
+import json as _json
+from pathlib import Path as _Path
 
 from . import tools as _tools
 
@@ -33,17 +38,29 @@ def create_server(catalog_url: str):
             "- list_collections: discover available experiments\n"
             "- get_collection_info: get variables, time range, spatial extent, item count\n"
             "- search_items: find file paths by collection, variable, and date range\n"
+            "- open_and_run: find the first matching file and run Python code on it in one step\n"
             "- run_python: execute Python code using xarray and matplotlib\n\n"
             "RULES YOU MUST FOLLOW:\n"
-            "1. When the user asks to open, load, analyse, or plot data, you MUST call "
-            "run_python to actually execute the code. Never write code blocks for the user "
-            "to run manually.\n"
-            "2. Before calling run_python, always call search_items first to obtain real "
-            "file paths. Use the exact paths from search_items results — never use "
-            "placeholder strings like 'path/to/file.nc'.\n"
-            "3. The correct workflow for analysis is: search_items → run_python.\n"
-            "4. If a question requires looking at multiple collections, call the tools "
-            "once per collection."
+            "1. ANY request that involves files or data — open, load, read, find, inspect, "
+            "examine, print, check, analyse, visualise, or plot — MUST be handled by calling "
+            "a tool. Do NOT write code blocks in your response. "
+            "Do NOT show Python code to the user. ALWAYS call the tool and report the output.\n"
+            "2. PREFERRED: use open_and_run(collection, variable, code) for all single-file "
+            "analysis and plots. Write {path} in your code where the file path belongs — "
+            "it is substituted automatically. You do NOT need to call search_items first.\n"
+            "3. Only use search_items + run_python when you need to inspect multiple files "
+            "or need the file listing before writing code.\n"
+            "4. If a tool returns an error, call another tool to fix it. "
+            "Do NOT write a text response explaining what you would do.\n\n"
+            "FESOM UNSTRUCTURED GRID — spatial plots MUST use mesh coordinates:\n"
+            "  import numpy as np, matplotlib.pyplot as plt\n"
+            "  mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1, 2))\n"
+            "  lon, lat = mesh[:, 0], mesh[:, 1]\n"
+            "  sst_mean = ds['sst'].mean('time').values\n"
+            "  plt.figure(figsize=(14, 7))\n"
+            "  plt.tripcolor(lon, lat, sst_mean, cmap='coolwarm', shading='gouraud')\n"
+            "  plt.colorbar(label='SST (°C)'); plt.title('Mean SST'); plt.show()\n"
+            "NEVER use ds['sst'].plot() directly — it plots vs node index, not geography."
         ),
     )
 
@@ -82,26 +99,123 @@ def create_server(catalog_url: str):
         return _tools.search_items(catalog_url, collection, variable, start_date, end_date, limit)
 
     @mcp.tool()
-    def run_python(code: str) -> str:
+    def open_and_run(
+        collection: str,
+        code: str,
+        variable: str = None,
+        start_date: str = None,
+        end_date: str = None,
+    ):
+        """Find matching files and run Python code on them — one step, no search needed.
+
+        Two placeholders are substituted in code before execution:
+          {path}  — first matching file path (for single-file analysis)
+          {paths} — Python list of all matching paths (for multi-file with open_mfdataset)
+
+        FESOM data is on an UNSTRUCTURED grid. For any spatial plot you MUST load
+        the mesh node coordinates and use plt.tripcolor — NEVER use ds[var].plot():
+
+            import numpy as np, matplotlib.pyplot as plt, xarray as xr
+            mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1,2))
+            lon, lat = mesh[:,0], mesh[:,1]
+            ds = xr.open_mfdataset({paths}, combine='by_coords')
+            sst = ds['sst'].mean('time').values
+            plt.figure(figsize=(14,7))
+            plt.tripcolor(lon, lat, sst, cmap='coolwarm', shading='gouraud')
+            plt.colorbar(label='SST (°C)'); plt.title('Mean SST'); plt.show()
+
+        Args:
+            collection: Collection ID (e.g. "basic-001-fesom").
+            code: Python code with {path} or {paths} placeholder.
+            variable: Variable name to filter by (e.g. "SST"). Optional.
+            start_date: ISO-8601 start date. Optional.
+            end_date: ISO-8601 end date. Optional.
+        """
+        from mcp.server.fastmcp import Image
+
+        result_json = _tools.open_and_run(
+            catalog_url, collection, code, variable, start_date, end_date
+        )
+        try:
+            data = _json.loads(result_json)
+        except Exception:
+            return result_json
+
+        plots = data.get("plots", [])
+        if not plots:
+            return result_json
+
+        contents: list = [result_json]
+        for png_path in plots:
+            try:
+                contents.append(Image(path=png_path))
+            except Exception:
+                pass
+        return contents
+
+    @mcp.tool()
+    def run_python(code: str):
         """Execute Python for data analysis or plotting.
 
         xarray, numpy, matplotlib, and pandas are available.
-        Call plt.show() to save a plot — it returns the file path automatically.
+        Call plt.show() to save a plot — the image is returned automatically.
         Return values are captured in stdout; use print() to communicate results.
 
+        PREREQUISITE: You MUST call search_items first to obtain real file paths.
+        Embed the exact 'path' string from those results directly in the code.
+        If this tool returns REJECTED, call search_items immediately — do NOT
+        write a text response explaining what you would do.
+
         Args:
-            code: Python source code to execute.
+            code: Python source code to execute. Must contain literal file paths
+                  obtained from search_items, never placeholders.
         """
-        return _tools.run_python(code)
+        from mcp.server.fastmcp import Image
+
+        result_json = _tools.run_python(code)
+        try:
+            data = _json.loads(result_json)
+        except Exception:
+            return result_json
+
+        plots = data.get("plots", [])
+        if not plots:
+            return result_json
+
+        contents: list = [result_json]
+        for png_path in plots:
+            try:
+                contents.append(Image(path=png_path))
+            except Exception:
+                pass
+        return contents
 
     return mcp
 
 
 def run(catalog_url: str, transport: str = "stdio", port: int = 8001) -> None:
-    """Start the MCP server with the given transport."""
+    """Start the MCP server with the given transport.
+
+    transport="streamable-http" — FastMCP Streamable HTTP; endpoint at /mcp
+                                   Open WebUI "MCP Streamable HTTP" integration
+    transport="openapi"         — FastAPI REST server; /openapi.json for Open WebUI
+    transport="sse"             — FastMCP SSE server
+    transport="stdio"           — FastMCP stdio; process-based MCP clients (default)
+    """
+    if transport == "openapi":
+        from .openapi_server import run as openapi_run
+
+        openapi_run(catalog_url=catalog_url, port=port)
+        return
+
     mcp = create_server(catalog_url)
 
-    if transport == "sse":
+    if transport == "streamable-http":
+        mcp.settings.host = "0.0.0.0"
+        mcp.settings.port = port
+        mcp.run(transport="streamable-http")
+    elif transport == "sse":
+        mcp.settings.host = "0.0.0.0"
         mcp.settings.port = port
         mcp.run(transport="sse")
     else:

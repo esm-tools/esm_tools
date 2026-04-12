@@ -168,11 +168,136 @@ def get_collection_info(catalog_url: str, collection_id: str) -> str:
     return json.dumps(summary, indent=2)
 
 
+import re as _re
+
+_PLACEHOLDER_PATTERNS = [
+    "REPLACE_WITH_FILE_PATH",
+    "REPLACE_WITH_PATH",
+    "PATH_FROM_SEARCH",
+    "FILE_FROM_SEARCH",
+    "FILE_PATH_HERE",
+    "/path/to/file",
+    "path/to/file",
+    "your_file_path",
+    "<file_path>",
+    "<path>",
+    # lowercase variants commonly produced by weaker models
+    "'file_path'",
+    '"file_path"',
+    "'path_to_file'",
+    '"path_to_file"',
+    "'actual_path'",
+    '"actual_path"',
+    "= 'file_path'",
+    '= "file_path"',
+]
+
+# Match any ALL_CAPS_SNAKE_CASE token ≥6 chars used as a string literal —
+# these are almost always placeholders the model forgot to substitute.
+_PLACEHOLDER_RE = _re.compile(r"""['"][A-Z][A-Z0-9_]{5,}['"]""")
+
+
+def open_and_run(
+    catalog_url: str,
+    collection: str,
+    code: str,
+    variable: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    timeout: int = 120,
+) -> str:
+    """Find matching files and execute Python code on them.
+
+    Placeholders substituted in code before execution:
+      {path}  — path of the first matching file (string)
+      {paths} — Python list of all matching file paths, e.g. ['/a.nc', '/b.nc']
+
+    Use {path} for single-file analysis, {paths} for multi-file with open_mfdataset.
+
+    Example (single file):
+        ds = open_dataset('{path}')
+        print(ds['SST'].min().values, ds['SST'].max().values)
+
+    Example (all files — FESOM, correct geographic plot):
+        import numpy as np, matplotlib.pyplot as plt, xarray as xr
+        mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1,2))
+        lon, lat = mesh[:,0], mesh[:,1]
+        ds = xr.open_mfdataset({paths}, combine='by_coords')
+        sst = ds['sst'].mean('time').values
+        plt.figure(figsize=(14,7))
+        plt.tripcolor(lon, lat, sst, cmap='coolwarm', shading='gouraud')
+        plt.colorbar(label='SST (°C)'); plt.title('Mean SST'); plt.show()
+
+    Args:
+        collection: Collection ID (e.g. "basic-001-fesom").
+        code: Python source code. Use {path} or {paths} as placeholders.
+        variable: Filter by variable name (e.g. "SST", "ssh"). Optional.
+        start_date: ISO-8601 start date. Optional.
+        end_date: ISO-8601 end date. Optional.
+        timeout: Execution timeout in seconds (default 120).
+    """
+    # FESOM guard: unstructured-grid collections require plt.tripcolor, not .plot()
+    if "fesom" in collection.lower() and ".plot(" in code and "tripcolor" not in code:
+        return json.dumps({
+            "error": (
+                "REJECTED: FESOM data is on an unstructured grid — .plot() would produce "
+                "a 1-D node-index chart, not a geographic map.\n"
+                "You MUST use plt.tripcolor with mesh node coordinates. "
+                "Call open_and_run again with this pattern:\n\n"
+                "    import numpy as np, matplotlib.pyplot as plt, xarray as xr\n"
+                "    mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1,2))\n"
+                "    lon, lat = mesh[:,0], mesh[:,1]\n"
+                "    ds = xr.open_mfdataset({paths}, combine='by_coords')\n"
+                "    sst = ds['sst'].mean('time').values\n"
+                "    plt.figure(figsize=(14,7))\n"
+                "    plt.tripcolor(lon, lat, sst, cmap='coolwarm', shading='gouraud')\n"
+                "    plt.colorbar(label='SST (°C)'); plt.title('Mean SST'); plt.show()\n\n"
+                "Replace 'sst' with the actual variable name if different."
+            ),
+            "stdout": "",
+            "stderr": "",
+            "plots": [],
+        })
+
+    # Use limit=1 for {path}-only code, full fetch when {paths} is needed
+    limit = 200 if "{paths}" in code else 1
+    result = json.loads(
+        search_items(catalog_url, collection, variable, start_date, end_date, limit=limit)
+    )
+    items = result.get("items", [])
+    if not items:
+        return json.dumps({
+            "error": (
+                f"No files found for collection='{collection}'"
+                + (f", variable='{variable}'" if variable else "")
+            ),
+            "stdout": "",
+            "stderr": "",
+            "plots": [],
+        })
+
+    first_path = items[0].get("path", "")
+    if not first_path:
+        return json.dumps({
+            "error": "search_items returned an item with no path",
+            "stdout": "",
+            "stderr": "",
+            "plots": [],
+        })
+
+    all_paths = [it.get("path", "") for it in items if it.get("path")]
+
+    resolved_code = code.replace("{path}", first_path)
+    resolved_code = resolved_code.replace("{paths}", repr(all_paths))
+    return run_python(resolved_code, timeout=timeout)
+
+
 def run_python(code: str, timeout: int = 120) -> str:
     """Execute Python code for data analysis or plotting.
 
     xarray, numpy, matplotlib, and pandas are available.
-    Call plt.show() to save a plot — it returns the file path automatically.
+    Use open_dataset(path) (not xr.open_dataset) to open NetCDF files — it
+    handles engine selection automatically. Call plt.show() to save a plot.
 
     IMPORTANT: always obtain real file paths first by calling search_items, then
     paste the actual path strings directly into the code. Never use placeholder
@@ -185,6 +310,37 @@ def run_python(code: str, timeout: int = 120) -> str:
     Returns:
         JSON with stdout, stderr, returncode, and a list of generated PNG file paths.
     """
+    for pat in _PLACEHOLDER_PATTERNS:
+        if pat in code:
+            return json.dumps({
+                "error": (
+                    f"REJECTED: code contains placeholder '{pat}'. "
+                    "⚠️ DO NOT write a text response. You MUST use the tools: "
+                    "Step 1 — call search_items with the relevant collection and variable to get real file paths. "
+                    "Step 2 — copy the exact 'path' string from those results into the code. "
+                    "Step 3 — call run_python again with the literal path embedded. "
+                    "Never invent, guess, or use placeholder strings for paths."
+                ),
+                "stdout": "",
+                "stderr": "",
+                "plots": [],
+            })
+    m = _PLACEHOLDER_RE.search(code)
+    if m:
+        return json.dumps({
+            "error": (
+                f"REJECTED: code contains unsubstituted placeholder {m.group()}. "
+                "⚠️ DO NOT write a text response. You MUST use the tools: "
+                "Step 1 — call search_items with the relevant collection and variable to get real file paths. "
+                "Step 2 — copy the exact 'path' string from those results into the code. "
+                "Step 3 — call run_python again with the literal path embedded. "
+                "Never invent, guess, or use placeholder strings for paths."
+            ),
+            "stdout": "",
+            "stderr": "",
+            "plots": [],
+        })
+
     plot_dir = Path(tempfile.gettempdir())
     plot_id = uuid.uuid4().hex[:8]
     plot_prefix = f"plot_{plot_id}"
@@ -198,6 +354,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 try:
     import xarray as xr
+    _xr_open_dataset_orig = xr.open_dataset
+
+    def open_dataset(path, **kwargs):
+        # Open a NetCDF file, trying netcdf4/h5netcdf engines automatically.
+        kwargs.setdefault("decode_times", True)
+        for engine in ("netcdf4", "h5netcdf", "scipy"):
+            try:
+                return _xr_open_dataset_orig(path, engine=engine, **kwargs)
+            except Exception:
+                pass
+        return _xr_open_dataset_orig(path, **kwargs)
+
+    # Patch xr.open_dataset so both open_dataset() and xr.open_dataset() work
+    xr.open_dataset = open_dataset
 except ImportError:
     pass
 try:

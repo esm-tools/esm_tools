@@ -558,16 +558,20 @@ def serve(catalog_paths, registry_path, host, port, jupyterhub, write_groups):
 )
 @click.option(
     "--transport",
-    type=click.Choice(["stdio", "sse"]),
+    type=click.Choice(["stdio", "sse", "streamable-http", "openapi"]),
     default="stdio",
     show_default=True,
-    help="MCP transport: stdio (for Open WebUI / process-based clients) or sse (HTTP)",
+    help=(
+        "MCP transport: stdio (process-based), "
+        "streamable-http (Open WebUI 'MCP Streamable HTTP' — endpoint at /mcp), "
+        "sse (HTTP MCP clients), or openapi (Open WebUI Tool Servers)"
+    ),
 )
 @click.option(
     "--port",
     default=8001,
     show_default=True,
-    help="Port for SSE transport (ignored when transport=stdio)",
+    help="Port for sse/streamable-http/openapi transport (ignored when transport=stdio)",
 )
 def mcp(catalog_url, transport, port):
     """Start the MCP server for LLM tool access to the catalog.

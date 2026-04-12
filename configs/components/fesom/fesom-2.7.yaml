@@ -519,6 +519,8 @@ fesom:
                                     run_config:
                                             use_cavity: true
 
+    with_xios: false
+
     use_landice_water: False
     choose_general.iterative_coupling:
             true:

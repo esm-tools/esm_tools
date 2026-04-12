@@ -289,10 +289,18 @@ fesom:
             recom_comp_flag: ""
 
     build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
-    comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                 -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
-                -j `nproc --all`
+    with_xios: true
+    choose_with_xios:
+        true:
+            comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                         -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                        ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        -j `nproc --all`
+        false:
+            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                         -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                        ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        -j `nproc --all`
     choose_general.oasis_with_yac:
         true:
             yac_flag: "-DOASIS_WITH_YAC=ON"
@@ -576,6 +584,12 @@ xios:
 
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}
+    choose_fesom.with_xios:
+        true:
+            nproc: "$(( ${computer.partitions.compute.cores_per_node} / 8 ))"
+            omp_num_threads: 8
+        false:
+            nproc: 1
 
 rnfmap:
     pool_dir: ${general.pool_dir}

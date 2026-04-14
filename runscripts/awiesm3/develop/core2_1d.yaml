@@ -1,14 +1,14 @@
 general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
-    version: "develop-cc"
-    account: "ab0246"
-    compute_time: "00:20:00"
+    version: "develop"
+    account: "ba0989"
+    compute_time: "00:10:00"
     initial_date: "1900-01-01"
-    final_date: "1900-01-04"
+    final_date: "1900-01-03"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
-    nday: 0
-    nmonth: 1
+    nday: 2
+    nmonth: 0
     nyear: 0
 
 computer:
@@ -19,24 +19,21 @@ awiesm3:
     model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
-    resolution: "CORE3"
-    restart_rate: 1
-    restart_unit: "m"
-    restart_first: 1
+    resolution: "CORE2"
+    restart_rate: 2
+    restart_unit: "d"
+    restart_first: 2
     lresume: false
-    time_step: 600
-    nproc: 1792 #originally 512 but worked with 1152
-    omp_num_threads: 1 # originally 4 but worked with 1
+    time_step: 1800
+    nproc: 768 #originally 512 but worked with 1152
+    omp_num_threads: 2 # originally 4 but worked with 1
     tar_binary_restarts: true
-    add_namelist_changes:
-        namelist.config:
-            run_config:
-                use_cavity: true
 
 lpj_guess:
     nproc: 8 # originally 16
     omp_num_threads: 8
-    lresume: false
+    lresume: false    
+    mip: "cmip7"
 
 oifs:
     resolution: TCO95
@@ -46,14 +43,20 @@ oifs:
     wam: true
     lresume: false
     time_step: 3600
-    nproc: 128
-    omp_num_threads: 2
+    nproc: 384
+    omp_num_threads: 4
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850
     add_namelist_changes:
         fort.4:
             NAMECECMIP:
-                NCMIPFIXYR: 1990
+                LCMIP6: False
+                LCMIP7: True
+                CMIP7DATADIR: '/work/bb1469/a270089/input/oifs-48r1/cmip-data/'
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
             NAERAD:
                 NRADFR: -3
                 NDECOLAT: 0
@@ -74,3 +77,7 @@ xios:
         - fesom
     nproc: 4
     omp_num_threads: 32
+    xml_dir: /home/a/a270092/esm_tools/namelists/oifs/48r1/xios/cmip7/
+    config_sources:
+        file_def: ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
+        field_def: ${xml_dir}/field_def_cmip7.xml

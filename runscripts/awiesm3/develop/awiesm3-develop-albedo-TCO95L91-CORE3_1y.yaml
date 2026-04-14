@@ -98,6 +98,8 @@ oasis3mct:
     norestart: T #Do i restart from vegin or not?
 
 xios:
-    with_model: oifs
+    with_model:
+        - oifs
+        - fesom
     nproc: 4
     omp_num_threads: 32

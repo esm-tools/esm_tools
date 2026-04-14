@@ -3,13 +3,13 @@ general:
     setup_name: "awiesm3"
     version: "develop"
     account: "ba0989"
-    compute_time: "00:30:00"
+    compute_time: "08:00:00"
     initial_date: "1900-01-01"
-    final_date: "1900-03-01"
+    final_date: "1910-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
     nday: 0
-    nmonth: 2
-    nyear: 0
+    nmonth: 0
+    nyear: 10
 
 computer:
     taskset: true
@@ -20,9 +20,9 @@ awiesm3:
 
 fesom:
     resolution: "CORE2"
-    restart_rate: 2
-    restart_unit: "m"
-    restart_first: 2
+    restart_rate: 10
+    restart_unit: "y"
+    restart_first: 10
     lresume: false
     time_step: 1800
     nproc: 768 #originally 512 but worked with 1152

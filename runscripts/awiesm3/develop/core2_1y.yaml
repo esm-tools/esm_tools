@@ -3,7 +3,7 @@ general:
     setup_name: "awiesm3"
     version: "develop"
     account: "ba0989"
-    compute_time: "08:00:00"
+    compute_time: "01:00:00"
     initial_date: "1900-01-01"
     final_date: "1901-01-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
@@ -47,6 +47,7 @@ oifs:
     omp_num_threads: 4
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850
+    cmip7_cmor_output: true   # full CMIP7 CMOR-style XIOS output for OIFS
     add_namelist_changes:
         fort.4:
             NAMECECMIP:
@@ -77,9 +78,3 @@ xios:
         - fesom
     nproc: 32
     omp_num_threads: 8
-    xml_dir: /home/a/a270092/esm_tools/namelists/oifs/48r1/xios/cmip7/
-    fesom_xml_dir: ${fesom.model_dir}/docs/xios_xml
-    config_sources:
-        # OIFS overrides (CMIP7 templates)
-        file_def:  ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
-        field_def: ${xml_dir}/field_def_cmip7.xml.j2

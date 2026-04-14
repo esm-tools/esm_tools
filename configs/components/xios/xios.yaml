@@ -385,7 +385,13 @@ xios:
 
     # Auto-add FESOM XIOS XML files when FESOM is compiled/run with XIOS.
     # Mirrors the choose_general.setup_name: oifs pattern above.
+    # Default: minimal FESOM XIOS output (mirrors upstream config/namelist.io
+    # from FESOM/fesom2:main — monthly, ~28 variables). Opt in to the heavy
+    # CMIP7-style set via `fesom.cmip7_cmor_output: true` (see below).
     fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml"
+    choose_fesom.cmip7_cmor_output:
+        true:
+            fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml_cmip7"
     choose_fesom.with_xios:
         true:
             add_config_files:

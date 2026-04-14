@@ -3,7 +3,7 @@ general:
     setup_name: "awiesm3"
     version: "develop"
     account: "ba0989"
-    compute_time: "00:30:00"
+    compute_time: "00:10:00"
     initial_date: "1900-01-01"
     final_date: "1900-03-01"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
@@ -28,10 +28,11 @@ fesom:
     nproc: 768 #originally 512 but worked with 1152
     omp_num_threads: 2 # originally 4 but worked with 1
     tar_binary_restarts: true
+    cmip7_cmor_output: true   # full CMIP7 XIOS output set for FESOM
 
 lpj_guess:
-    nproc: 8 # originally 16
-    omp_num_threads: 8
+    nproc: 64 # originally 16
+    omp_num_threads: 4
     lresume: false    
     mip: "cmip7"
 
@@ -45,8 +46,9 @@ oifs:
     time_step: 3600
     nproc: 384
     omp_num_threads: 4
-    mpi: cmip6 #for cmip6 simulations!
+    mpi: cmip7
     scenario: piControl #solar radiation is going to be taken always from 1850
+    cmip7_cmor_output: true   # full CMIP7 CMOR-style XIOS output for OIFS
     add_namelist_changes:
         fort.4:
             NAMECECMIP:
@@ -77,32 +79,3 @@ xios:
         - fesom
     nproc: 32
     omp_num_threads: 8
-    xml_dir: /home/a/a270092/esm_tools/namelists/oifs/48r1/xios/cmip7/
-    fesom_xml_dir: ${fesom.model_dir}/docs/xios_xml
-    add_config_files:
-        context_fesom:    context_fesom
-        axis_def_fesom:   axis_def_fesom
-        domain_def_fesom: domain_def_fesom
-        grid_def_fesom:   grid_def_fesom
-        field_def_fesom:  field_def_fesom
-        file_def_fesom:   file_def_fesom
-    config_sources:
-        # OIFS overrides (CMIP7 templates)
-        file_def:  ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
-        field_def: ${xml_dir}/field_def_cmip7.xml.j2
-        # Merged AWI-ESM3 iodef referencing both context_ifs.xml and context_fesom.xml
-        io_def: ${fesom_xml_dir}/iodef.xml
-        # FESOM per-component XMLs (unique names so they don't collide with OIFS)
-        context_fesom:    ${fesom_xml_dir}/context_fesom.xml
-        axis_def_fesom:   ${fesom_xml_dir}/axis_def_fesom.xml
-        domain_def_fesom: ${fesom_xml_dir}/domain_def_fesom.xml
-        grid_def_fesom:   ${fesom_xml_dir}/grid_def_fesom.xml
-        field_def_fesom:  ${fesom_xml_dir}/field_def_fesom.xml
-        file_def_fesom:   ${fesom_xml_dir}/file_def_fesom.xml
-    config_in_work:
-        context_fesom:    context_fesom.xml
-        axis_def_fesom:   axis_def_fesom.xml
-        domain_def_fesom: domain_def_fesom.xml
-        grid_def_fesom:   grid_def_fesom.xml
-        field_def_fesom:  field_def_fesom.xml
-        file_def_fesom:   file_def_fesom.xml

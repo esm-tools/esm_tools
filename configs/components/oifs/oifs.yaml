@@ -376,6 +376,10 @@ oifs:
     prepifs_expid: gu5a
     prepifs_startdate: 19820101
     mip: "cmip7"
+    # Opt-in switch: when true, route OIFS XIOS file_def/field_def to the
+    # CMIP7 CMOR-style j2 templates. Independent of `mip:` (which drives
+    # CMIP7 *forcings*). Default off: cmip7 forcings but default OIFS output.
+    cmip7_cmor_output: false
     o3_scheme: "default"
     scenario: "amip-prepifs"
     output: "default"

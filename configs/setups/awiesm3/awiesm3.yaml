@@ -563,12 +563,12 @@ xios:
             regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"
     cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
     choose_cmip7_cmor_output:
-        "cmip7_spinup":
+        True:
             config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2
-                file_def: ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
-                field_def: ${xml_dir}/field_def_cmip7.xml.j2
+                file_def: ${xml_dir}/cmip7/file_def_oifs_cmip7_spinup.xml.j2
+                field_def: ${xml_dir}/cmip7/field_def_cmip7.xml.j2
         "*":
             config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2

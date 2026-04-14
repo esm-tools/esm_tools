@@ -47,6 +47,7 @@ oifs:
     omp_num_threads: 4
     mpi: cmip6 #for cmip6 simulations!
     scenario: piControl #solar radiation is going to be taken always from 1850
+    cmip7_cmor_output: true   # full CMIP7 CMOR-style XIOS output for OIFS
     add_namelist_changes:
         fort.4:
             NAMECECMIP:
@@ -77,7 +78,3 @@ xios:
         - fesom
     nproc: 4
     omp_num_threads: 32
-    xml_dir: /home/a/a270092/esm_tools/namelists/oifs/48r1/xios/cmip7/
-    config_sources:
-        file_def: ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
-        field_def: ${xml_dir}/field_def_cmip7.xml

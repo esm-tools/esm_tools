@@ -520,6 +520,10 @@ fesom:
                                             use_cavity: true
 
     with_xios: false
+    # Opt-in switch: when true, route FESOM XIOS file_def/field_def to the
+    # CMIP7-style XMLs (many variables, multiple frequencies). Default off:
+    # upstream-namelist.io-style minimal monthly output.
+    cmip7_cmor_output: false
     choose_with_xios:
             true:
                     # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work

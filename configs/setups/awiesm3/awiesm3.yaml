@@ -259,9 +259,6 @@ fesom:
     lresume: false
     nproc: 72
     omp_num_threads: 1
-    choose_general.major_version:
-        "v3.4":
-            with_xios: true
     choose_general.with_co2_oce_coupling:
         true:
             branch: fesom2.6_recom_awiesm3_co2_coupling
@@ -341,6 +338,7 @@ fesom:
 
     choose_general.major_version:
         "v3.4":
+            with_xios: true
             add_namelist_changes:
                 namelist.config:
                     geometry:

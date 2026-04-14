@@ -383,6 +383,34 @@ xios:
                             grid_def: grid_def
 
 
+    # Auto-add FESOM XIOS XML files when FESOM is compiled/run with XIOS.
+    # Mirrors the choose_general.setup_name: oifs pattern above.
+    fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml"
+    choose_fesom.with_xios:
+        true:
+            add_config_files:
+                context_fesom:    context_fesom
+                axis_def_fesom:   axis_def_fesom
+                domain_def_fesom: domain_def_fesom
+                grid_def_fesom:   grid_def_fesom
+                field_def_fesom:  field_def_fesom
+                file_def_fesom:   file_def_fesom
+            add_config_sources:
+                io_def:           ${fesom_xios_xml_dir}/iodef.xml
+                context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
+                axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
+                domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml
+                grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
+                field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml
+                file_def_fesom:   ${fesom_xios_xml_dir}/file_def_fesom.xml
+            add_config_in_work:
+                context_fesom:    context_fesom.xml
+                axis_def_fesom:   axis_def_fesom.xml
+                domain_def_fesom: domain_def_fesom.xml
+                grid_def_fesom:   grid_def_fesom.xml
+                field_def_fesom:  field_def_fesom.xml
+                file_def_fesom:   file_def_fesom.xml
+
     config_sources:
             domain_def: ${xml_dir}/domain_def.xml
             field_def: ${xml_dir}/field_def.xml

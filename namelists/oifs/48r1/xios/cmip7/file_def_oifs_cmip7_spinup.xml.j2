@@ -80,7 +80,8 @@
 
             <field_group grid_ref="regular_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="geopotential_height__zg"/>
-                <field field_ref="relative_humidity_pct__hur"/>
+                <field field_ref="air_temperature__ta"/>
+                <field field_ref="specific_humidity__hus"/>
             </field_group>
         </file>
 
@@ -94,7 +95,8 @@
 
             <field_group grid_ref="regular_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="geopotential_height__zg"/>
-                <field field_ref="relative_humidity_pct__hur"/>
+                <field field_ref="air_temperature__ta"/>
+                <field field_ref="specific_humidity__hus"/>
             </field_group>
         </file>
 
@@ -507,6 +509,7 @@
                 <field field_ref="surface_upwelling_shortwave_flux_cs__rsuscs"/>
                 <field field_ref="surface_downwelling_longwave_flux__rlds"/>
                 <field field_ref="surface_downwelling_longwave_flux_cs__rldscs"/>
+                <field field_ref="surface_downwelling_shortwave_flux__rsds"/>
                 <field field_ref="surface_downwelling_shortwave_flux_cs__rsdscs"/>
                 <field field_ref="toa_outgoing_longwave_flux__rlut"/>
                 <field field_ref="toa_outgoing_longwave_flux_cs__rlutcs"/>
@@ -689,6 +692,7 @@
                 <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
                 <field field_ref="ssrd" name="ssrd" long_name="Surface solar radiation downwards"/>
                 <field field_ref="tp" name="tp" long_name="Total precipitation"/>
+                <field field_ref="ci" name="ci" long_name="Sea ice area fraction"/>
             </field_group>
         </file>
 

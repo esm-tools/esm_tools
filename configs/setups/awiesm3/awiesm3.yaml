@@ -569,6 +569,8 @@ xios:
                 domain_def: ${xml_dir}/domain_def.xml.j2
                 file_def: ${xml_dir}/cmip7/file_def_oifs_cmip7_spinup.xml.j2
                 field_def: ${xml_dir}/cmip7/field_def_cmip7.xml.j2
+                axis_def: ${xml_dir}/cmip7/axis_def.xml
+                grid_def: ${xml_dir}/cmip7/grid_def.xml
         "*":
             config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2

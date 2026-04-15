@@ -92,6 +92,10 @@
     <file id="f_v"       name="v.fesom"       par_access="independent"><field field_ref="v"      /></file>
     <file id="f_bolus_u" name="bolus_u.fesom" par_access="independent"><field field_ref="bolus_u"/></file>
     <file id="f_bolus_v" name="bolus_v.fesom" par_access="independent"><field field_ref="bolus_v"/></file>
+    <file id="f_utemp"   name="utemp.fesom"   par_access="independent"><field field_ref="utemp"  /></file>
+    <file id="f_vtemp"   name="vtemp.fesom"   par_access="independent"><field field_ref="vtemp"  /></file>
+    <file id="f_usalt"   name="usalt.fesom"   par_access="independent"><field field_ref="usalt"  /></file>
+    <file id="f_vsalt"   name="vsalt.fesom"   par_access="independent"><field field_ref="vsalt"  /></file>
 
     <!-- 3D elements, interface levels -->
     <file id="f_Av" name="Av.fesom" par_access="independent"><field field_ref="Av"/></file>

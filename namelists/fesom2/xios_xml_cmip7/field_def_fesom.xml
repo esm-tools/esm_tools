@@ -83,6 +83,10 @@
     <field id="v"       long_name="meridional velocity at elements"  unit="m s-1"/>
     <field id="bolus_u" long_name="GM bolus zonal velocity"          unit="m s-1"/>
     <field id="bolus_v" long_name="GM bolus meridional velocity"     unit="m s-1"/>
+    <field id="utemp"   long_name="u*T tracer flux at elements"      unit="m s-1 degC"/>
+    <field id="vtemp"   long_name="v*T tracer flux at elements"      unit="m s-1 degC"/>
+    <field id="usalt"   long_name="u*S tracer flux at elements"      unit="m s-1 psu"/>
+    <field id="vsalt"   long_name="v*S tracer flux at elements"      unit="m s-1 psu"/>
   </field_group>
 
   <!-- 3D fields on ELEMENTS, interface levels -->

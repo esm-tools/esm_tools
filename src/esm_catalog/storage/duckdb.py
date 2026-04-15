@@ -569,6 +569,18 @@ class CatalogDB:
         if actual is None:
             return False
 
+        # Handle boolean values (e.g. nml:run_config.use_ice = true).
+        # Must be checked BEFORE numeric conversion because float(True)=1.0
+        # but the filter value is the string "true"/"false", not "1"/"0".
+        if isinstance(actual, bool):
+            expected_lower = str(expected).lower()
+            if op in ("=", "!=", "<>"):
+                expected_bool = expected_lower in ("true", "1", "yes")
+                matches = actual == expected_bool
+                return matches if op == "=" else not matches
+            # Booleans don't support ordered comparisons
+            return False
+
         # Try numeric comparison first
         try:
             actual_num = float(actual)

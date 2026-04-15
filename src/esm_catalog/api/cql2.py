@@ -52,9 +52,10 @@ _KNOWN_PROPERTIES = frozenset({
     "variable", "experiment", "model", "component", "collection", "stream"
 })
 
-# Regex for parsing CQL2-text expressions
+# Regex for parsing CQL2-text expressions.
+# Property names may include colons and dots (e.g. "nml:run_config.use_ice").
 _TEXT_PATTERN = re.compile(
-    r"\b(\w+)\s*(<=|>=|<>|!=|<|>|=)\s*(?:'([^']*)'|\"([^\"]*)\"|(\S+?)(?:\s|$|AND|OR))",
+    r"\b([\w:.]+)\s*(<=|>=|<>|!=|<|>|=)\s*(?:'([^']*)'|\"([^\"]*)\"|(\S+?)(?:\s|$|AND|OR))",
     re.IGNORECASE,
 )
 

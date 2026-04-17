@@ -1,0 +1,59 @@
+<field_definition level="1" prec="4" enabled="true" operation="average" default_value="9.969209968386869e+36">
+
+  <!-- Minimal FESOM-2 field definition: mirrors the 28 variables requested by
+       the upstream default config/namelist.io on FESOM/fesom2:main (otracers
+       is omitted — it is a placeholder for optional passive tracers). -->
+
+  <!-- 2D fields on NODES -->
+  <field_group id="fesom_2d_nod" grid_ref="grid_2d_nod" prec="4">
+    <field id="sst"    long_name="sea surface temperature"            standard_name="sea_surface_temperature"        unit="degC"/>
+    <field id="sss"    long_name="sea surface salinity"               standard_name="sea_surface_salinity"           unit="1e-3"/>
+    <field id="ssh"    long_name="sea surface height"                 standard_name="sea_surface_height_above_geoid" unit="m"/>
+    <field id="uice"   long_name="sea-ice zonal velocity"             unit="m s-1" detect_missing_value="true"/>
+    <field id="vice"   long_name="sea-ice meridional velocity"        unit="m s-1" detect_missing_value="true"/>
+    <field id="a_ice"  long_name="sea-ice area fraction"              standard_name="sea_ice_area_fraction" unit="1" detect_missing_value="true"/>
+    <field id="m_ice"  long_name="sea-ice mass per area"              standard_name="sea_ice_thickness"     unit="m" detect_missing_value="true"/>
+    <field id="m_snow" long_name="snow on ice mass per area"          standard_name="surface_snow_thickness" unit="m" detect_missing_value="true"/>
+    <field id="MLD1"   long_name="mixed layer depth (Large 1997)"     unit="m"/>
+    <field id="MLD2"   long_name="mixed layer depth (Levitus)"        unit="m"/>
+    <field id="MLD3"   long_name="mixed layer depth (Griffies)"       unit="m"/>
+    <field id="fw"     long_name="freshwater flux"                    unit="m s-1"/>
+    <field id="fh"     long_name="surface heat flux"                  unit="W m-2"/>
+  </field_group>
+
+  <!-- 2D fields on ELEMENTS -->
+  <field_group id="fesom_2d_elem" grid_ref="grid_2d_elem" prec="4">
+    <field id="tx_sur" long_name="zonal surface stress to ocean"      unit="N m-2"/>
+    <field id="ty_sur" long_name="meridional surface stress to ocean" unit="N m-2"/>
+  </field_group>
+
+  <!-- 3D fields on NODES, cell-center / nz-1 -->
+  <field_group id="fesom_3d_nod" grid_ref="grid_3d_nod" prec="4">
+    <field id="temp" long_name="sea water potential temperature" unit="degC"/>
+    <field id="salt" long_name="sea water salinity"              unit="1e-3" prec="8"/>
+    <field id="unod" long_name="zonal velocity at nodes"         unit="m s-1"/>
+    <field id="vnod" long_name="meridional velocity at nodes"    unit="m s-1"/>
+  </field_group>
+
+  <!-- 3D fields on NODES, interface levels / nl -->
+  <field_group id="fesom_3d_nod_nz1" grid_ref="grid_3d_nod_nz1" prec="4">
+    <field id="w"       long_name="vertical velocity"               unit="m s-1"/>
+    <field id="bolus_w" long_name="GM bolus vertical velocity"      unit="m s-1"/>
+    <field id="N2"      long_name="Brunt-Vaisala frequency squared" unit="s-2"/>
+    <field id="Kv"      long_name="vertical tracer diffusivity"     unit="m2 s-1"/>
+  </field_group>
+
+  <!-- 3D fields on ELEMENTS, cell-center -->
+  <field_group id="fesom_3d_elem" grid_ref="grid_3d_elem" prec="4">
+    <field id="u"       long_name="zonal velocity at elements"      unit="m s-1"/>
+    <field id="v"       long_name="meridional velocity at elements" unit="m s-1"/>
+    <field id="bolus_u" long_name="GM bolus zonal velocity"         unit="m s-1"/>
+    <field id="bolus_v" long_name="GM bolus meridional velocity"    unit="m s-1"/>
+  </field_group>
+
+  <!-- 3D fields on ELEMENTS, interface levels -->
+  <field_group id="fesom_3d_elem_nz1" grid_ref="grid_3d_elem_nz1" prec="4">
+    <field id="Av" long_name="vertical momentum viscosity" unit="m2 s-1"/>
+  </field_group>
+
+</field_definition>

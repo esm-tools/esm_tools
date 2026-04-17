@@ -645,6 +645,7 @@ fesom:
     further_reading:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE
@@ -659,4 +660,3 @@ fesom:
     - "copy_stuff_back_from_work"
     - "copy_all_results_to_exp"
     - "clean_run_dir"
-

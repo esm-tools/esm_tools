@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<file_definition type="one_file" format="netcdf4" par_access="collective"
+                 compression_level="1"
+                 time_counter_name="time" time_counter="exclusive">
+
+  <!-- Minimal FESOM-2 file definition: monthly output only, matching the
+       upstream default config/namelist.io on FESOM/fesom2:main. One file
+       per variable, split yearly. -->
+
+  <file_group id="fesom_1mo" output_freq="1mo" split_freq="1y" enabled="true">
+
+    <!-- 2D nodes -->
+    <file id="f_sst"    name="sst.fesom"   ><field field_ref="sst"   /></file>
+    <file id="f_sss"    name="sss.fesom"   ><field field_ref="sss"   /></file>
+    <file id="f_ssh"    name="ssh.fesom"   ><field field_ref="ssh"   /></file>
+    <file id="f_uice"   name="uice.fesom"  ><field field_ref="uice"  /></file>
+    <file id="f_vice"   name="vice.fesom"  ><field field_ref="vice"  /></file>
+    <file id="f_a_ice"  name="a_ice.fesom" ><field field_ref="a_ice" /></file>
+    <file id="f_m_ice"  name="m_ice.fesom" ><field field_ref="m_ice" /></file>
+    <file id="f_m_snow" name="m_snow.fesom"><field field_ref="m_snow"/></file>
+    <file id="f_MLD1"   name="MLD1.fesom"  ><field field_ref="MLD1"  /></file>
+    <file id="f_MLD2"   name="MLD2.fesom"  ><field field_ref="MLD2"  /></file>
+    <file id="f_MLD3"   name="MLD3.fesom"  ><field field_ref="MLD3"  /></file>
+    <file id="f_fw"     name="fw.fesom"    ><field field_ref="fw"    /></file>
+    <file id="f_fh"     name="fh.fesom"    ><field field_ref="fh"    /></file>
+
+    <!-- 2D elements -->
+    <file id="f_tx_sur" name="tx_sur.fesom" par_access="independent"><field field_ref="tx_sur"/></file>
+    <file id="f_ty_sur" name="ty_sur.fesom" par_access="independent"><field field_ref="ty_sur"/></file>
+
+    <!-- 3D nodes, cell-center -->
+    <file id="f_temp" name="temp.fesom"><field field_ref="temp"/></file>
+    <file id="f_salt" name="salt.fesom"><field field_ref="salt"/></file>
+    <file id="f_unod" name="unod.fesom"><field field_ref="unod"/></file>
+    <file id="f_vnod" name="vnod.fesom"><field field_ref="vnod"/></file>
+
+    <!-- 3D nodes, interface levels -->
+    <file id="f_w"       name="w.fesom"      ><field field_ref="w"      /></file>
+    <file id="f_bolus_w" name="bolus_w.fesom"><field field_ref="bolus_w"/></file>
+    <file id="f_N2"      name="N2.fesom"     ><field field_ref="N2"     /></file>
+    <file id="f_Kv"      name="Kv.fesom"     ><field field_ref="Kv"     /></file>
+
+    <!-- 3D elements, cell-center -->
+    <file id="f_u"       name="u.fesom"       par_access="independent"><field field_ref="u"      /></file>
+    <file id="f_v"       name="v.fesom"       par_access="independent"><field field_ref="v"      /></file>
+    <file id="f_bolus_u" name="bolus_u.fesom" par_access="independent"><field field_ref="bolus_u"/></file>
+    <file id="f_bolus_v" name="bolus_v.fesom" par_access="independent"><field field_ref="bolus_v"/></file>
+
+    <!-- 3D elements, interface levels -->
+    <file id="f_Av" name="Av.fesom" par_access="independent"><field field_ref="Av"/></file>
+
+  </file_group>
+
+</file_definition>

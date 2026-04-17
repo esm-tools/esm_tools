@@ -270,12 +270,18 @@ class coupler_class:
                     if dym_issue:
                         sys.exit(0)
 
+                # Prepare both restart files (main and _recv)
                 self.coupler.prepare_restarts(
                     restart_file, all_rights, all_rightmodels, full_config
                 )
                 self.coupler.prepare_restarts(
                     restart_file + "_recv", all_lefts, all_leftmodels, full_config
                 )
+                
+                # After both files are created, merge _recv into main if configured
+                merge_recv_list = full_config[self.name].get("merge_recv_restarts", [])
+                if restart_file in merge_recv_list:
+                    self.coupler.merge_restart_files(restart_file, full_config)
 
     def add_couplings(self, full_config):
         self.coupler.next_coupling = 1

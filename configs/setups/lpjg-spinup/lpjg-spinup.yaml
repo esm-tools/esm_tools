@@ -15,9 +15,18 @@ general:
         - oasis3mct
 
     available_versions:
+        - 'v3.4.0'
         - 'develop'
 
     choose_version:
+        v3.4.0:
+            couplings:
+                - lpjg-spinup_v3.4.0
+            major_version: v3.4
+            oasis_with_yac: false
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
         develop:
             couplings:
                 - lpj_guess-4.1.2+oasis
@@ -46,7 +55,7 @@ general:
         aleph:
             pool_dir: "/proj/awi/input"
         albedo:
-            pool_dir: "/albedo/scratch/user/mandresm/test_pool/input"
+            pool_dir: "/albedo/pool/"
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
@@ -59,6 +68,7 @@ general:
 
 
 lpj_guess:
+    version: "4.1.2"
     #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=DEBUG; make -j8; cd .." #original comp_command.
     comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=RELEASE;
         make -j8; cd .."                                                                                          #without debug.
@@ -68,16 +78,19 @@ lpj_guess:
     resolution: TL255
     fesom_resolution: CORE2
     openifsspinup: true
-
-    choose_general.major_version:
-        "v3.4":
-            version: "4.1.2"
+    daily_output: false
+    
+    # Disable CMIP N-Dep file reading for spinup - use pre-industrial constant values instead
+    ndep_cmip_dir: ""
 
     nproc: 128
     proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
     proc_list: $(( ${proc_list_entry} ))
 
+    # run_year: Chunk start year - used for restart file naming
     run_year: ${start_date!syear}
+    # initial_year: Experiment start year - used for continuous output years
+    initial_year: ${initial_date!syear}
     run_month: 1
     run_day: 1
     runtime_seconds: "$(( ${next_date} - ${start_date} ))"
@@ -88,70 +101,64 @@ lpj_guess:
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1
-
-
+    # nyear_spinup and freenyears should only apply to the first leg.
+    # For continuation legs, disable the internal spinup to avoid
+    # re-running N-free years and causing soil C discontinuities.
+    choose_general.run_number:
+        1:
+            nyear_spinup: ${nyear}
+            # freenyears: N limitation delay years (must be <= nyear_spinup)
+            # Set equal to nyear_spinup for full N limitation delay during spinup
+            freenyears: ${nyear}
+        "*":
+            nyear_spinup: 1
+            freenyears: 0
 
     config_sources:
         tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
         ins_files: ${namelist_dir}/*.ins
-        ece_gridlist:
-            ${lpj_guess.input_dir}/gridlists/gridlist_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.txt                   #is this the correct file for ece_gridlist.txt?
-        lpjg_cmip6_output_ins: ${namelist_dir}/lpjg_default_cmip6_output.ins
+        lpjg_output_ins: ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
         "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
-        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins.j2
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
-        "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip6_output.ins
-        "ece_gridlist_[[proc_list-->PROC_NUM]]":
-            ${lpj_guess.input_dir}/gridlists/gridlist_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.txt                                              #is this the correct file for ece_gridlist.txt?
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2 
-        temp_namcouple: /home/a/a270270/temp_confiles/namcouple
         "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
     config_in_work:
         tmp_yaml_file: lpjg_steps.yaml
         ins_files: /*.ins
-        ece_gridlist: ece_gridlist.txt         #is this the correct file?
-        lpjg_cmip6_output_ins: lpjg_cmip6_output.ins
+        lpjg_output_ins: lpjg_output.ins
         "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
         "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
         "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
         "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
-        "lpjg_cmip6_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_cmip6_output.ins
-        "ece_gridlist_[[proc_list-->PROC_NUM]]": runPROC_NUM/ece_gridlist.txt         #is this the correct file?
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_output.ins
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
 
-        temp_namcouple: namcouple
         "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
-
 
     forcing_sources:
         oifs_forcing: ${lpj_guess.input_dir}/oifs_forcing/AM04_atm_cmip6_1d_1990-1999_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
-        soil_layer_type: ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        CO2:
-            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-        "oifs_forcing_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/oifs_forcing/AM04_atm_cmip6_1d_1990-1999_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
-        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/slt/slt_${mygrid}.nc
-        "CO2_[[proc_list-->PROC_NUM]]":
-            ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${lpj_guess.fesom_resolution}.nc
 
     forcing_in_work:
-        oifs_forcing: AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
-        soil_layer_type: slt_${mygrid}.nc
-        CO2: mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
-        "oifs_forcing_[[proc_list-->PROC_NUM]]": runPROC_NUM/AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
-        "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
-        "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
+        oifs_forcing: ifs_spinup_forcing/AM04_atm_cmip6_1d_1990-1999_fast_lpjgforcing.nc
+        soil_layer_type: slt_${lpj_guess.resolution}.nc
+
+    add_forcing_files:
+        oifs_forcing: oifs_forcing
 
     # Create empty folders for landuse and fire in work
     create_folders:
         - ${work_dir}/landuse
         - ${work_dir}/fire
 
+    # Disable output copying for spinup runs
+    outdata_files: {}
 
-    choose_general.with_co2_veg_coupling:
-        true:
-            co2_coupling: 1
+
 
 oasis3mct:
     input_dir: ${oasis3mct.pool_dir}/oasis/cy48r1/${lpj_guess.resolution}-${lpj_guess.fesom_resolution}

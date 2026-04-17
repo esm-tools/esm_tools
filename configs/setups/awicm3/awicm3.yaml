@@ -28,6 +28,8 @@ general:
         - 'v3.2.1'
         - 'v3.2.2'
         - 'v3.3.0'
+        - 'v3.4.0'
+        - 'v3.4.1'
         - 'develop'
         - 'frontiers-xios'
 
@@ -98,6 +100,22 @@ general:
             major_version: v3.3
             couplings:
             - fesom-2.6.8+oifs-43r3-awicm-3.2.4+xios-2.5
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          v3.4.0:
+            major_version: v3.4
+            couplings:
+            - awicm3_v3.4.0
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          v3.4.1:
+            major_version: v3.4
+            couplings:
+            - awicm3_v3.4.0
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -359,7 +377,7 @@ fesom:
                         nproc: 144
                 TL159_CORE2:
                         nproc: 72
-        build_type: "Release"
+        build_type: "Release"    # Available options: Release, Debug, Bit
         comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${yac_flag} -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
         choose_general.oasis_with_yac:
             True:
@@ -386,6 +404,7 @@ fesom:
 
         restart_unit: "d"
         leapyear: True
+        tar_binary_restarts: false
 
 
         # Move in the future to fesom-2.0.yaml
@@ -468,27 +487,23 @@ fesom:
                                                 albi: 0.6
                                                 albim: 0.43
                 "v3.4":
-                        version: "2.6-main"
+                        version: "2.7"
                         append_icmcl: ""
                         add_namelist_changes:
-                                namelist.config:
-                                        ale_def:
-                                                which_ALE: 'zstar'
-                                        #geometry:
-                                                #metric_factor_zero: True
-                                namelist.oce:
-                                        oce_dyn:
-                                                SPP: true
-                                                k_gm_max: 3000
-                                                k_gm_rampmax: 40.0
-                                                k_gm_rampmin: 30
-                                                scaling_ferreira: true
-                                                scaling_fesom14: true
                                 namelist.tra:
                                         tracer_phys:
                                                 surf_relax_s: "${surf_relax_s}"
-                                                use_momix: false
-                                                kv0_const: false
+                                namelist.config:
+                                        geometry:
+                                                metric_factor_zero: True
+                                        ale_def:
+                                                which_ale: 'linfs'
+                                        restart_log:
+                                                raw_restart_length_unit: "off"
+                                                bin_restart_length_unit: "off"
+                                namelist.ice:
+                                        ice_therm:
+                                                use_meltponds: true
 
                 "frontiers-xios":
                         model_tag: "frontiers"
@@ -722,7 +737,7 @@ oasis3mct:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.4':
-                        mct_version: 4.0
+                        mct_version: "5.0"
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos'
                         rstas_file_name: 'rstas'

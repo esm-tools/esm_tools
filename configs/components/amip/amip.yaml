@@ -17,7 +17,7 @@ amip:
     ##
     clean_command: rm -rf bin; cd src; make clean; cd ..
     comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/amip-forcing.exe ./bin/amip
-    git-repository: https://gitlab.dkrz.de/ec-earth/amip-forcing.git
+    git-repository: https://gitlab.dkrz.de/ec-earth/amip-forcing-ece4.git
     install_bins: bin/amip
     ##
     ## Directories
@@ -79,7 +79,7 @@ amip:
             namelist.amip:
                     NAMAMIP:
                             RunLengthSec: "${runtime_seconds}"
-                            TimeStepSec: "84600"
+                            TimeStepSec: "86400"
                             FixYear: "0"
                             StartYear: "1850"
                             FileListSST: ${input_in_work.sst_forcing}

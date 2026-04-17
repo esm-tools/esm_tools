@@ -128,6 +128,13 @@ fesom:
                     whichEVP: 0
                     alpha_evp: 250          # constant that control numerical stability of mEVP.
                     beta_evp: 250           # constant that control numerical stability of mEVP.
+            CORE3:
+                    nx: 211567
+                    mesh_dir: "${fesom.mesh_base_dir}/core3/"
+                    nproc: 128
+                    whichEVP: 1
+                    alpha_evp: 300          # constant that control numerical stability of mEVP.
+                    beta_evp: 300           # constant that control numerical stability of mEVP.
             pi:
                     nx: 3140
                     mesh_dir: "${fesom.mesh_base_dir}/pi/"
@@ -580,8 +587,6 @@ fesom:
             bin: "${bin_dir}/${comp_executable}"
             lib: "${fesom.model_dir}/build/lib/libfesom.so"
 
-
-
     config_files:
             config:  config
             cvmix:   cvmix
@@ -709,6 +714,7 @@ fesom:
     further_reading:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

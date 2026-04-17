@@ -76,7 +76,6 @@ import os
 import pprint
 
 import click
-import emoji
 
 from .esm_archiving import (
     archive_mistral,
@@ -129,7 +128,7 @@ def main(ctx, write_local_config=False, write_config=False):
 def create(base_dir, start_date, end_date, force, interactive):
     session = Session()
     click.secho(
-        emoji.emojize(":file_cabinet:") + " Creating archives for:", color="green"
+        " Creating archives for:", color="green"
     )
     click.secho(base_dir, color="green")
     click.secho("From: %s" % start_date, color="green")
@@ -161,8 +160,7 @@ def create(base_dir, start_date, end_date, force, interactive):
                 pp.pprint(missing)
         for model in files:
             click.secho(
-                emoji.emojize(":open_file_folder: --> :package:", use_aliases=True)
-                + f" Packing up files for {model} ({filetype})"
+                f" Packing up files for {model} ({filetype})"
             )
             archive_name = os.path.join(
                 base_dir, f"{model}_{filetype}_{start_date}_{end_date}.tgz"

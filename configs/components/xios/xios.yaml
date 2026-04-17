@@ -34,6 +34,7 @@ xios:
     - 2.5_r1910_ogcm
     - 2.5_smhi
     - 2.5_ece
+    - 2.5.1
     - "3.0"
 
     branch: esm-tools
@@ -145,6 +146,47 @@ xios:
         use_oasis: --use_oasis oasis3_mct
         branch: main
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --use_cxx --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+      # XIOS with oasis dependencies and oasis support
+      2.5.1:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        # MA: yet another block, this time for albedo. We cannot fix this now, but in the
+        # future we should adopt the compiler suite logic for the other computers. Already
+        # included in ESM-Tools clickup
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        # JS: On levante this switch has yet another name. Again only the compiler part matters.
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.1
+        comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
       # XIOS with oasis dependencies and oasis support
       "2.5-yac":
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
@@ -360,6 +402,40 @@ xios:
                             grid_def: grid_def
 
 
+    # Auto-add FESOM XIOS XML files when FESOM is compiled/run with XIOS.
+    # Mirrors the choose_general.setup_name: oifs pattern above.
+    # Default: minimal FESOM XIOS output (mirrors upstream config/namelist.io
+    # from FESOM/fesom2:main — monthly, ~28 variables). Opt in to the heavy
+    # CMIP7-style set via `fesom.cmip7_cmor_output: true` (see below).
+    fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml"
+    choose_fesom.cmip7_cmor_output:
+        true:
+            fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml_cmip7"
+    choose_fesom.with_xios:
+        true:
+            add_config_files:
+                context_fesom:    context_fesom
+                axis_def_fesom:   axis_def_fesom
+                domain_def_fesom: domain_def_fesom
+                grid_def_fesom:   grid_def_fesom
+                field_def_fesom:  field_def_fesom
+                file_def_fesom:   file_def_fesom
+            add_config_sources:
+                io_def:           ${fesom_xios_xml_dir}/iodef.xml
+                context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
+                axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
+                domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml
+                grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
+                field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml
+                file_def_fesom:   ${fesom_xios_xml_dir}/file_def_fesom.xml
+            add_config_in_work:
+                context_fesom:    context_fesom.xml
+                axis_def_fesom:   axis_def_fesom.xml
+                domain_def_fesom: domain_def_fesom.xml
+                grid_def_fesom:   grid_def_fesom.xml
+                field_def_fesom:  field_def_fesom.xml
+                file_def_fesom:   file_def_fesom.xml
+
     config_sources:
             domain_def: ${xml_dir}/domain_def.xml
             field_def: ${xml_dir}/field_def.xml
@@ -393,5 +469,5 @@ xios:
     bin_sources:
             server: ${bin_dir}/xios.x
 
-    further_reading:
-            - xios/xios.env.yaml
+    #further_reading:
+    #        - xios/xios.env.yaml

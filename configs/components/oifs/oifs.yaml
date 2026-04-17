@@ -1,10 +1,14 @@
 #
 #OIFS standalone YAML FILE
 #
+#general:     # missing when doing esm_master get-oifs-48r1
+#  with_co2_oce_coupling: false
+#  with_co2_veg_coupling: false
+#
 oifs:
     model: oifs
     executable: oifs
-    execution_command: ${executable} -e ${oifs.input_expid}
+    execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
     version: 43r3
     major_version: 43r3
     source_code_permissions: 700
@@ -53,10 +57,8 @@ oifs:
     namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
     cmip5_data_dir: ${input_dir}/../cmip5_data
     cmip6_data_dir: ${input_dir}/../cmip6_data
-    cmip7_data_dir: ${input_dir}/../cmip7_data
     cmip5_data_dir_nml: ${cmip5_data_dir}
     cmip6_data_dir_nml: ${cmip6_data_dir}
-    cmip7_data_dir_nml: ${cmip7_data_dir}
     restart_dir: ""
     in_date_folder: "${parent_date!syear!smonth!sday}"
     out_date_folder: "${end_date!syear!smonth!sday}"
@@ -115,6 +117,8 @@ oifs:
     - 43r3-v1
     - 43r3-v2
     - 48r1
+    - 48r1v1
+    - 48r1v2
 
     choose_version:
       40r1:
@@ -330,13 +334,31 @@ oifs:
         - xios-trunk
         major_version: 43r3
       48r1:
-        branch: 'macv2sp_cmip7'
-        #branch: 'main'
+        branch: 'feat/add-ssrdc-strdc-xios-mapping'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS
-        #git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
-        git-repository: https://git.smhi.se/e7845/oifs48r1
+        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+      48r1v1:
+        branch: '48r1v1'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+      48r1v2:
+        branch: '48r1v3' # Hotfix while we wait on the real fix, which will then before version 48r1v3
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
         install_bins: install/bin/OpenIFS
         destination: oifs-48r1
         with_xios: false
@@ -353,7 +375,11 @@ oifs:
     nlev: ${levels_number}
     prepifs_expid: gu5a
     prepifs_startdate: 19820101
-    mip: "cmip5"
+    mip: "cmip7"
+    # Opt-in switch: when true, route OIFS XIOS file_def/field_def to the
+    # CMIP7 CMOR-style j2 templates. Independent of `mip:` (which drives
+    # CMIP7 *forcings*). Default off: cmip7 forcings but default OIFS output.
+    cmip7_cmor_output: false
     o3_scheme: "default"
     scenario: "amip-prepifs"
     output: "default"
@@ -825,6 +851,7 @@ oifs:
             # XIOS output
             oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
             atm: atm_*
+            atmos: atmos_*
 
     outdata_sources:
             # old grib based output
@@ -835,6 +862,7 @@ oifs:
             # XIOS output
             oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
             atm: atm_*
+            atmos: atmos_*
 
 
     #======================================================================================
@@ -859,6 +887,7 @@ oifs:
                     outdata_files:
                             oifsnc: oifsnc
                             atm: atm
+                            atmos: atmos
             0:
                     outdata_files:
                             ICMGG: ICMGG
@@ -1137,6 +1166,7 @@ oifs:
                                     NAMPPC:
                                             LRSACC: ".true." # reset accumulation of fluxes
                     further_reading:
+                            - oifs/oifs48.tuning.yaml
                             - oifs/oifs48.env.yaml
                             - oifs/oifs48.cmip.yaml
 
@@ -1345,7 +1375,11 @@ oifs:
     # OUTPUT CONFIG
     #======================================================================================
 
-    output_step_freq: $(( 3600 / ${time_step} * 6 ))
+    choose_mip:
+            "cmip7":
+                    output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "*":
+                    output_step_freq: $(( 3600 / ${time_step} * 6 ))
     choose_output:
             "1hr":
                      output_step_freq: $(( 3600 / ${time_step} * 1 ))
@@ -1363,7 +1397,6 @@ oifs:
     # as general.run_number, but for branchoff experiments should be 0 so that the 3rd
     # preprocessing option is used, instead of the options 1 or 2.
     branchoff: false
-    ini_pseudo_initial_date: "${initial_date}" #${prev_run.general.start_date}"
     eternal_run_number: "$((
             0 if (${lresume} and ${general.run_number} == 1)
                 or (${general.run_number} == 2 and ${prev_run.oifs.branchoff})
@@ -1382,6 +1415,8 @@ oifs:
     #
     # When we branch off from an existing experiment, we must set ini_pseudo_initial_date
     # in the runscript to inform ESM-Tools what initial_date it should trick OpenIFS it is.
+    # ini_pseudo_initial_date is set automatically to prev_run.general.start_date a few
+    # lines below, but can also be set manually from the runscript.
     # For example, a piControl may start from 1850 and run to 2850.
     # A historical run would then start from 2850 of the existing run, but we would set
     # start_date for the new run to be 1850 and also trick OpenIFS to think initial_date is 1849.
@@ -1393,6 +1428,7 @@ oifs:
     choose_eternal_run_number:
             0:
                     # If we are branching off from an existing run
+                    ini_pseudo_initial_date: "${prev_run.general.start_date}"
                     pseudo_initial_date: "${ini_pseudo_initial_date}"
                     start_ndays_source: "${prev_run.oifs.next_ndays}"
                     branchoff: true

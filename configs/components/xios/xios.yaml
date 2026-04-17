@@ -421,7 +421,7 @@ xios:
                 field_def_fesom:  field_def_fesom
                 file_def_fesom:   file_def_fesom
             add_config_sources:
-                io_def:           ${fesom_xios_xml_dir}/iodef.xml
+                io_def:           ${fesom_xios_xml_dir}/iodef.xml.j2
                 context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
                 axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
                 domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml
@@ -469,5 +469,5 @@ xios:
     bin_sources:
             server: ${bin_dir}/xios.x
 
-    #further_reading:
-    #        - xios/xios.env.yaml
+    further_reading:
+            - xios/xios.env.yaml

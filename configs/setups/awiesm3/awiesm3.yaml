@@ -49,7 +49,7 @@ general:
         develop:
             major_version: v3.4
             couplings:
-                - fesom-2.6-main+oifs-48r1+xios-3.0+lpj_guess-4.1.2
+                - fesom-2.7-main+oifs-48r1+xios-3.0+lpj_guess-4.1.2
             add_include_models:
                 - xios
             oasis_with_yac: false

@@ -963,6 +963,8 @@ specific actions when certain patterns are detected. This is useful for:
 * ``method``: Action to take when pattern is found:
   - ``warn``: Log a warning message
   - ``kill``: Terminate the job and log an error
+  - ``recover``: Terminate the job, apply a small fix to the configuration, and
+    resubmit the same run (see `Automatic recovery`_ below)
 * ``message``: Custom message to log when pattern is found
 * ``frequency``: How often to check the log file (in seconds)
 
@@ -993,3 +995,67 @@ specific actions when certain patterns are detected. This is useful for:
 1. Use specific patterns to avoid false positives
 2. Include helpful error messages that explain the issue
 3. Test error conditions to ensure they're properly detected
+
+.. _Automatic recovery:
+
+Automatic recovery (``method: recover``)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When ``method: recover`` is used, ESM-Tools will, upon detecting the pattern:
+
+1. Cancel the running compute job (``scancel``)
+2. Persist a recovery state file next to the experiment's ``.date`` file
+   (``<expid>_<setup>.recovery.json``)
+3. Resubmit a fresh ``prepcompute`` → ``compute`` cycle for the **same
+   run_number and date** (no date increment, no loss of progress)
+4. Apply the configured ``fix`` to the component's namelists before the model
+   runs again
+
+The attempt counter is bumped on every retry for the same trigger; once
+``max_retries`` is exceeded, the job is killed like ``method: kill``.
+
+A clean run (no ``recover`` trigger firing) clears the state file
+automatically, so the counter resets for the next unrelated crash.
+
+**Additional parameters**
+
+* ``max_retries``: Maximum number of automatic retries for this trigger
+  (default: 3). Once exhausted, the behaviour falls back to ``kill``.
+* ``fix``: Dict describing the change to apply before resubmission. May
+  contain either or both of:
+
+  - ``namelist_changes``: nested ``namelist -> group -> key: absolute_value``
+    mapping, using the same syntax as the regular ``add_namelist_changes``
+  - ``namelist_deltas``: nested ``namelist -> group -> key: delta`` mapping.
+    The delta is **added** to the current value read from the namelist in
+    ``thisrun_config_dir`` at retry time, and the result is merged into
+    ``namelist_changes``. Useful for tiny perturbations that knock a model
+    off a numerically unstable trajectory without changing its physics.
+
+**Example — FESOM temperature blow-up**
+
+FESOM occasionally crashes with
+``--STOP--> found temperture becomes NaN or <-5.0, >60`` when a bit-reproducible
+trajectory hits a numerical edge case. Perturbing ``K_GM_max`` by ``+0.001``
+is usually enough to nudge the trajectory onto a nearby, stable path.
+
+.. code-block:: yaml
+
+   fesom:
+       check_error:
+           "temperture becomes NaN":
+               method: "recover"
+               message: "FESOM blow-up detected; perturbing K_GM_max and retrying"
+               frequency: 60
+               max_retries: 3
+               fix:
+                   namelist_deltas:
+                       namelist.oce:
+                           oce_dyn:
+                               K_GM_max: 0.001
+
+On each subsequent retry of the same trigger, the perturbation is re-applied
+to the (already perturbed) value, so attempt N ends up at ``K_GM_max + N*0.001``.
+
+To cancel an in-flight recovery manually, remove the ``*.recovery.json`` file
+from the experiment's ``scripts`` directory.

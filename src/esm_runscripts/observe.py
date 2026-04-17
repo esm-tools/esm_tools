@@ -5,7 +5,7 @@ import time
 import psutil
 from loguru import logger
 
-from . import database_actions, helpers, logfiles
+from . import database_actions, helpers, logfiles, recovery
 
 
 def run_job(config):
@@ -62,16 +62,22 @@ def init_observe_logs(config):
 def wait_and_observe(config):
     if config["general"]["submitted"]:
         thistime = 0
-        error_check_list = assemble_error_list(config)
+        config = assemble_error_list(config)
         while job_is_still_running(config):
             logger.debug("still running")
             config["general"]["next_test_time"] = thistime
             config = check_for_errors(config)
+            if config["general"].get("recovery_pending"):
+                # A ``recover`` trigger fired; compute was scancelled. Stop
+                # polling and let observe finish so maybe_resubmit can pick up
+                # the pending recovery state.
+                break
             thistime = thistime + 10
             time.sleep(10)
         thistime = thistime + 100000000
         config["general"]["next_test_time"] = thistime
-        config = check_for_errors(config)
+        if not config["general"].get("recovery_pending"):
+            config = check_for_errors(config)
     return config
 
 
@@ -91,6 +97,14 @@ def wake_up_call(config):
             # once the log buffer is not needed anymore, after having flushed
             # its content to stdout.
             os.remove(logger.stdout_sink.path)
+    # A retried run that completes without another ``recover`` trigger clears
+    # any stale recovery state so that attempt counters reset for the next run.
+    if (
+        config["general"]["jobtype"] == "observe_compute"
+        and not config["general"].get("recovery_pending")
+        and recovery.load_state(config)
+    ):
+        recovery.clear_state(config)
     logger.debug("job ended, starting to tidy up now \n")
     return config
 
@@ -104,7 +118,7 @@ def assemble_error_list(config):
         config["general"]["error_list"] = []
         return config
 
-    known_methods = ["warn", "kill"]
+    known_methods = ["warn", "kill", "recover"]
 
     stdout = (
         gconfig["thisrun_log_dir"]
@@ -120,44 +134,63 @@ def assemble_error_list(config):
     )
 
     error_list = [
-        ("error", stdout, "warn", 60, 60, "keyword error detected, watch out")
+        {
+            "model": "general",
+            "trigger": "error",
+            "file": stdout,
+            "method": "warn",
+            "next_check": 60,
+            "frequency": 60,
+            "message": "keyword error detected, watch out",
+            "trigger_cfg": {},
+        }
     ]
 
     for model in config:
-        if "check_error" in config[model]:
-            for trigger in config[model]["check_error"]:
-                search_file = stdout
-                method = "warn"
-                frequency = 60
-                message = "keyword " + trigger + " detected, watch out"
-                if isinstance(config[model]["check_error"][trigger], dict):
-                    if "file" in config[model]["check_error"][trigger]:
-                        search_file = config[model]["check_error"][trigger]["file"]
-                        if search_file == "stdout" or search_file == "stderr":
-                            search_file = stdout
-                        elif "@jobid@" in search_file:
-                            search_file = search_file.replace(
-                                "@jobid@", config["general"]["jobid"]
-                            )
-                    if "method" in config[model]["check_error"][trigger]:
-                        method = config[model]["check_error"][trigger]["method"]
-                        if method not in known_methods:
-                            method = "warn"
-                    if "message" in config[model]["check_error"][trigger]:
-                        message = config[model]["check_error"][trigger]["message"]
-                    if "frequency" in config[model]["check_error"][trigger]:
-                        frequency = config[model]["check_error"][trigger]["frequency"]
-                        try:
-                            frequency = int(frequency)
-                        except:
-                            frequency = 60
-                elif isinstance(config[model]["check_error"][trigger], str):
-                    pass
-                else:
-                    continue
-                error_list.append(
-                    (trigger, search_file, method, frequency, frequency, message)
-                )
+        if not isinstance(config[model], dict) or "check_error" not in config[model]:
+            continue
+        for trigger in config[model]["check_error"]:
+            trigger_cfg = config[model]["check_error"][trigger]
+            search_file = stdout
+            method = "warn"
+            frequency = 60
+            message = "keyword " + trigger + " detected, watch out"
+            if isinstance(trigger_cfg, dict):
+                if "file" in trigger_cfg:
+                    search_file = trigger_cfg["file"]
+                    if search_file == "stdout" or search_file == "stderr":
+                        search_file = stdout
+                    elif "@jobid@" in search_file:
+                        search_file = search_file.replace(
+                            "@jobid@", config["general"]["jobid"]
+                        )
+                if "method" in trigger_cfg:
+                    method = trigger_cfg["method"]
+                    if method not in known_methods:
+                        method = "warn"
+                if "message" in trigger_cfg:
+                    message = trigger_cfg["message"]
+                if "frequency" in trigger_cfg:
+                    try:
+                        frequency = int(trigger_cfg["frequency"])
+                    except (TypeError, ValueError):
+                        frequency = 60
+            elif isinstance(trigger_cfg, str):
+                trigger_cfg = {}
+            else:
+                continue
+            error_list.append(
+                {
+                    "model": model,
+                    "trigger": trigger,
+                    "file": search_file,
+                    "method": method,
+                    "next_check": frequency,
+                    "frequency": frequency,
+                    "message": message,
+                    "trigger_cfg": trigger_cfg if isinstance(trigger_cfg, dict) else {},
+                }
+            )
     config["general"]["error_list"] = error_list
     return config
 
@@ -171,14 +204,13 @@ def check_for_errors(config):
     new_list = []
     error_check_list = config["general"]["error_list"]
     time = config["general"]["next_test_time"]
-    for (
-        trigger,
-        search_file,
-        method,
-        next_check,
-        frequency,
-        message,
-    ) in error_check_list:
+    for entry in error_check_list:
+        trigger = entry["trigger"]
+        search_file = entry["file"]
+        method = entry["method"]
+        next_check = entry["next_check"]
+        frequency = entry["frequency"]
+        message = entry["message"]
         warned = 0
         if next_check <= time:
             if os.path.isfile(search_file):
@@ -197,11 +229,42 @@ def check_for_errors(config):
                                 database_actions.database_entry_crashed(config)
                                 os.system(cancel_job)
                                 sys.exit(42)
+                            elif method == "recover":
+                                logger.error(f"ERROR: {message}")
+                                state = recovery.record_trigger(
+                                    config,
+                                    entry["model"],
+                                    trigger,
+                                    entry["trigger_cfg"],
+                                )
+                                if state is None:
+                                    logger.error(
+                                        "Recovery retry budget exhausted; "
+                                        "killing the run."
+                                    )
+                                    logger.stdout_sink.flush_to_stdout()
+                                    database_actions.database_entry_crashed(config)
+                                    os.system(
+                                        f"scancel {config['general']['jobid']}"
+                                    )
+                                    sys.exit(42)
+                                logger.error(
+                                    "Cancelling the compute job; a fresh "
+                                    "prepcompute will be submitted with the "
+                                    "configured fix applied."
+                                )
+                                logger.stdout_sink.flush_to_stdout()
+                                database_actions.database_entry_crashed(config)
+                                os.system(
+                                    f"scancel {config['general']['jobid']}"
+                                )
+                                config["general"]["recovery_pending"] = True
+                                return config
             next_check += frequency
         if warned == 0:
-            new_list.append(
-                (trigger, search_file, method, next_check, frequency, message)
-            )
+            entry = dict(entry)
+            entry["next_check"] = next_check
+            new_list.append(entry)
     config["general"]["error_list"] = new_list
     return config
 

@@ -5,6 +5,7 @@ import time
 
 from loguru import logger
 
+from . import recovery
 from .batch_system import batch_system
 from .filelists import copy_files, log_used_files
 from .helpers import evaluate
@@ -153,6 +154,16 @@ def modify_files(config):
     #         if filetype == "restart":
     #             nothing = "nothing"
     return config
+
+
+def apply_recovery_fix(config):
+    """
+    If a recovery state file is present, merge its ``fix`` block into the
+    target component's ``namelist_changes`` so that the subsequent
+    ``modify_namelists`` step writes the perturbed values into the namelist.
+    No-op when no recovery is pending.
+    """
+    return recovery.apply_fix_to_config(config)
 
 
 def modify_namelists(config):

@@ -16,6 +16,7 @@ general:
         - rnfmap
         - lpj_guess
         - oasis3mct
+        - xios
 
     available_versions:
         - 'v3.4.0'
@@ -28,8 +29,6 @@ general:
             major_version: v3.4
             couplings:
                 - awiesm3_v3.4.0
-            add_include_models:
-                - xios
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
@@ -39,8 +38,6 @@ general:
             major_version: v3.4
             couplings:
                 - awiesm3_v3.4.1
-            add_include_models:
-                - xios
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
@@ -50,20 +47,16 @@ general:
             major_version: v3.4
             couplings:
                 - fesom-2.7-main+oifs-48r1+xios-3.0+lpj_guess-4.1.2
-            add_include_models:
-                - xios
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
             with_co2_oce_coupling: false
             with_co2_veg_coupling: false
-            
+
         develop-cc:
             major_version: v3.4
             couplings:
-                - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
-            add_include_models:
-                - xios
+                - fesom-2.7-main+oifs-48r1+xios-3.0+lpj_guess-4.1.2
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: true
@@ -558,6 +551,15 @@ xios:
     xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
     interpolation_order: 1
     compression_level: 1
+    # XIOS 3 is the default for AWI-ESM3 from `develop` onward. The
+    # existing pinned releases (v3.4.0, v3.4.1) still use XIOS 2.5.
+    choose_general.version:
+        v3.4.0:
+            version: "2.5_r1910"
+        v3.4.1:
+            version: "2.5_r1910"
+        "*":
+            version: "3.0"
     truncation: "${oifs.truncation}"
     choose_truncation:
         TCO:

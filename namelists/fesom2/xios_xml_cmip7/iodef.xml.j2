@@ -1,41 +1,61 @@
 <?xml version="1.0"?>
 <simulation>
-  <!-- Merged AWI-ESM3 iodef: one simulation, one <context id="xios"> global
-       tuning block, one context per model component. Each component context
-       is kept in its own file and referenced via src=. This mirrors the
-       EC-Earth4 pattern. -->
+  <!-- Merged AWI-ESM3 iodef: one <simulation>, one <context id="xios">
+       global tuning block, one context per model component. Each
+       component context is kept in its own file and referenced via
+       src=.
 
-  <context id="oifs"  src="./context_ifs.xml" />
-  <context id="fesom" src="./context_fesom.xml" />
+       XIOS 3 tuning mirrors the XIOS 2.5 baseline (/work/.../
+       cmip7_speedtest_no6hml/) that ran 2 months in ~5 minutes:
+         * ratio_server2=75           (24 of 32 ranks -> writers)
+         * number_pools_server2=1     (one collective-writer pool, not
+                                       one pool per rank -- avoids the
+                                       per-file single-writer bottleneck)
+         * no transport_protocol      (use XIOS 3 default, not p2p)
+       With the flattened FESOM-style file_def (one variable per file,
+       no timeseries="only") these are compression-safe because no file
+       mixes par_access="independent" with compressed variables. -->
 
   <context id="xios">
     <variable_definition>
-      <variable_group id="server"> <!-- Tune 2-level servers for performance purposes -->
-        <variable id="using_server2"                  type="bool"  >true </variable>
+      <variable_group id="buffer"> <!-- Tune buffer variables for performance purposes -->
+        <variable id="optimal_buffer_size" type="string">performance</variable>
+        <variable id="buffer_size_factor"  type="double">4.0        </variable>
+        <!-- XIOS 3 defaults to min_buffer_size = 1024 * sizeof(double) = 8 KB
+             per client-server connection. With our per-file output pattern
+             that tiny buffer never grows, forcing ~12 M lock_exclusive ops
+             per server rank and ~50% of runtime spent in MPI_Win locks.
+             Raise the floor so each exchange carries enough payload that the
+             MPI_Win lock amortises across many fields per transfer. XIOS 2.5
+             reports 11.9 MB per connection on the same workload -- mirror. -->
+        <variable id="min_buffer_size"     type="int"   >10485760   </variable> <!-- 10 MB -->
+        <variable id="max_buffer_size"     type="int"   >104857600  </variable> <!-- 100 MB -->
+      </variable_group>
+
+      <variable_group id="server"> <!-- 2-level-server tuning, applied for both XIOS 2 and 3 -->
         <variable id="ratio_server2"                  type="int"   >75   </variable>
-        <variable id="number_pools_server2"           type="int"   >0    </variable>
+        <variable id="number_pools_server2"           type="int"   >24   </variable>
         <variable id="server2_dist_file_memory"       type="bool"  >false</variable>
         <variable id="server2_dist_file_memory_ratio" type="double">0.5  </variable>
       </variable_group>
 
-      <variable_group id="buffer"> <!-- Tune both "buffer" variables for performance purposes -->
-        <variable id="optimal_buffer_size" type="string">performance</variable>
-        <variable id="buffer_size_factor"  type="double">2.0        </variable>
-      </variable_group>
-
       <variable_group id="parameters">
         <variable id="using_server"   type="bool"  >true    </variable>
+        <variable id="using_server2"  type="bool"  >true    </variable>
         <variable id="using_oasis"    type="bool"  >true    </variable>
 {%- if (xios.version | string).startswith("3") %}
         <!-- XIOS 3: oasis_codes_id was renamed to clients_code_id; call_oasis_enddef is a XIOS 3-only flag -->
-        <variable id="call_oasis_enddef" type="bool"  >true    </variable>
-        <variable id="clients_code_id"   type="string">OpenIFS,fesom</variable>
+        <variable id="call_oasis_enddef"  type="bool"  >true    </variable>
+        <variable id="clients_code_id"    type="string">OpenIFS,fesom</variable>
 {%- else %}
-        <variable id="oasis_codes_id"    type="string">OpenIFS,fesom</variable>
+        <variable id="oasis_codes_id"     type="string">OpenIFS,fesom</variable>
 {%- endif %}
-        <variable id="info_level"     type="int"   >100     </variable>
+        <variable id="info_level"     type="int"   >50      </variable>
         <variable id="print_file"     type="bool"  >true    </variable>
       </variable_group>
     </variable_definition>
   </context>
+
+  <context id="oifs"  src="./context_ifs.xml" />
+  <context id="fesom" src="./context_fesom.xml" />
 </simulation>

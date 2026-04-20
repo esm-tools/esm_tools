@@ -556,6 +556,22 @@ xios:
         xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
         interpolation_order: 1
         compression_level: 1
+        # XIOS 3 is the default for AWI-CM3 from `develop` onward. All
+        # existing pinned releases still use XIOS 2.5.
+        choose_general.version:
+                v3.0:           { version: "2.5_r1910" }
+                v3.1:           { version: "2.5_r1910" }
+                v3.1.1:         { version: "2.5_r1910" }
+                v3.1.2:         { version: "2.5_r1910" }
+                v3.1.3:         { version: "2.5_r1910" }
+                v3.2:           { version: "2.5_r1910" }
+                v3.2.1:         { version: "2.5_r1910" }
+                v3.2.2:         { version: "2.5_r1910" }
+                v3.3.0:         { version: "2.5_r1910" }
+                v3.4.0:         { version: "2.5_r1910" }
+                v3.4.1:         { version: "2.5_r1910" }
+                frontiers-xios: { version: "2.5_r1910" }
+                "*":            { version: "3.0" }
         regular_res_lat: 192 
         regular_res_lon: 400
         config_sources:

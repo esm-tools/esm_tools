@@ -263,7 +263,7 @@ xios:
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
       "3.0":
         git-repository: https://git.smhi.se/jan.streffing/xios3
-        branch: esm_tools_modifications
+        branch: cmip7_optimizations
         archfile: ESMTOOLS_generic_oasis_intel
         choose_computer.useMPI: # JS: This entire block is a missnomer. It's not the MPI thats imporant but the compiler cray ftn vs intel.
           cray_mpich:

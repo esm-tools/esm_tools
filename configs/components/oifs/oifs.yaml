@@ -334,7 +334,7 @@ oifs:
         - xios-trunk
         major_version: 43r3
       48r1:
-        branch: 'feat/add-ssrdc-strdc-xios-mapping'
+        branch: 'local_combined_fixes'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS

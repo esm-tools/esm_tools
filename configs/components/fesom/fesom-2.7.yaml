@@ -30,7 +30,7 @@ fesom:
       "2.7.3":
         branch: "2.7.3"
       "2.7-main":
-        branch: "main"
+        branch: "xios3_support"
         #namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.7"

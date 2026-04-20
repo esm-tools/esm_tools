@@ -123,14 +123,8 @@
         <file id="f_strdc_1m" name="atm_remapped_strdc_1m"><field field_ref="strdc" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="strdc" long_name="Surface thermal radiation downward clear-sky"/></file>
 {% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2of_1m" name="atm_remapped_co2of_1m"><field field_ref="co2of" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2of" long_name="Ocean flux of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2nbf_1m" name="atm_remapped_co2nbf_1m"><field field_ref="co2nbf" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2apf_1m" name="atm_remapped_co2apf_1m"><field field_ref="co2apf" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2fire_1m" name="atm_remapped_co2fire_1m"><field field_ref="co2fire" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/></file>
 {% endif %}
         <file id="f_macv2sp_taod550_1m" name="atm_remapped_macv2sp_taod550_1m"><field field_ref="macv2sp_taod550" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="macv2sp_taod550" long_name="Total Aerosol Optical Depth at 550nm from MACV2SP"/></file>
@@ -229,14 +223,8 @@
         <file id="f_tsrc_1d" name="atm_remapped_tsrc_1d"><field field_ref="tsrc" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="tsrc" long_name="Top net solar radiation, clear sky"/></file>
 {% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2of_1d" name="atm_remapped_co2of_1d"><field field_ref="co2of" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2of" long_name="Ocean flux of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2nbf_1d" name="atm_remapped_co2nbf_1d"><field field_ref="co2nbf" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2apf_1d" name="atm_remapped_co2apf_1d"><field field_ref="co2apf" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2fire_1d" name="atm_remapped_co2fire_1d"><field field_ref="co2fire" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/></file>
 {% endif %}
     </file_group>
@@ -271,14 +259,8 @@
         <file id="f_tsrc_6h_legacy" name="atm_remapped_tsrc_6h_legacy" enabled="true"><field field_ref="tsrc" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant" name="tsrc" long_name="Top net solar radiation, clear sky"/></file>
 {% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2of_6h_legacy" name="atm_remapped_co2of_6h_legacy" enabled="true"><field field_ref="co2of" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant" name="co2of" long_name="Ocean flux of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2nbf_6h_legacy" name="atm_remapped_co2nbf_6h_legacy" enabled="true"><field field_ref="co2nbf" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2apf_6h_legacy" name="atm_remapped_co2apf_6h_legacy" enabled="true"><field field_ref="co2apf" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/></file>
-{% endif %}
-{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
         <file id="f_co2fire_6h_legacy" name="atm_remapped_co2fire_6h_legacy" enabled="true"><field field_ref="co2fire" grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/></file>
 {% endif %}
     </file_group>

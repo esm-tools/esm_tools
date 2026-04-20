@@ -2,13 +2,24 @@
 Auto-recovery plugin for ``esm-runscripts``.
 
 Implements the ``recover`` method of the ``check_error`` feature: when a
-configured error pattern is found in a model log, the compute job is killed and
-a small fix (absolute namelist override and/or additive delta) is applied
-before the same run is resubmitted.
+configured error pattern is found in a model log, the running compute
+launcher is stopped and a small fix (absolute namelist override and/or
+additive delta) is applied before the same run is resubmitted.
 
-State persists across process boundaries in a JSON file next to the
-experiment's ``.date`` file so that a fresh ``SimulationSetup`` (spawned by
-``resubmit.maybe_resubmit``) can pick up the pending fix.
+Two pieces of state are written to the experiment's ``scripts`` directory:
+
+* ``<expid>_<setup>.recovery.json`` — short-lived JSON that carries the
+  pending fix across the ``observe`` → ``maybe_resubmit`` → fresh
+  ``SimulationSetup`` → ``prepcompute`` boundary. Removed once a retried run
+  finishes without firing a ``recover`` trigger again.
+
+* ``<expid>_<setup>.recovery_status.dat`` — long-lived per-year log of
+  every run that needed recovery, which namelist entries were perturbed, and
+  whether the retry eventually succeeded. The file is generic: any keys
+  present in the trigger's ``fix.namelist_changes`` / ``fix.namelist_deltas``
+  are flattened to ``<namelist>:<group>:<key>`` tokens and appended to the
+  row for that year. Setup-specific post-processing (e.g. plotting FESOM's
+  ``K_GM_max`` history) can read it without requiring any changes here.
 """
 
 import json
@@ -26,11 +37,11 @@ def _state_path(config):
     )
 
 
-def _k_gm_max_status_path(config):
+def _status_path(config):
     return (
         f"{config['general']['experiment_scripts_dir']}"
         f"/{config['general']['expid']}_{config['general']['setup_name']}"
-        f".recovery_k_gm_max_status.dat"
+        f".recovery_status.dat"
     )
 
 
@@ -60,8 +71,21 @@ def clear_state(config):
         logger.info(f"Cleared recovery state at {path}")
 
 
-def _format_numeric(value):
-    return f"{float(value):.15g}"
+def _format_value(value):
+    if isinstance(value, float):
+        return f"{value:.15g}"
+    return str(value)
+
+
+def _parse_value(text):
+    try:
+        return int(text)
+    except ValueError:
+        pass
+    try:
+        return float(text)
+    except ValueError:
+        return text
 
 
 def _tracking_year(config, state=None):
@@ -84,8 +108,15 @@ def _tracking_year(config, state=None):
     return None
 
 
-def _load_k_gm_max_status_entries(config):
-    path = _k_gm_max_status_path(config)
+def _load_status_entries(config):
+    """
+    Parse the recovery status file. Each non-empty line has the form::
+
+        <year> <status> [<namelist>:<group>:<key>=<value> ...]
+
+    Returns ``{year: {"status": int, "values": {flat_key: value}}}``.
+    """
+    path = _status_path(config)
     entries = {}
     if not os.path.isfile(path):
         return entries
@@ -96,119 +127,126 @@ def _load_k_gm_max_status_entries(config):
             if not stripped:
                 continue
             parts = stripped.split()
-            if len(parts) != 3:
+            if len(parts) < 2:
                 logger.warning(
-                    f"Malformed recovery k_gm_max status line {lineno} in {path}; "
-                    "expected 3 columns."
+                    f"Malformed recovery status line {lineno} in {path}; "
+                    "expected at least <year> <status>."
                 )
                 continue
             try:
                 year = int(parts[0])
-                value = float(parts[1])
-                status = int(parts[2])
+                status = int(parts[1])
             except ValueError:
                 logger.warning(
-                    f"Malformed recovery k_gm_max status line {lineno} in {path}; "
-                    "could not parse numeric fields."
+                    f"Malformed recovery status line {lineno} in {path}; "
+                    "could not parse year/status."
                 )
                 continue
-            entries[year] = (value, status)
+            values = {}
+            for item in parts[2:]:
+                if "=" not in item:
+                    continue
+                key, _, raw = item.partition("=")
+                values[key] = _parse_value(raw)
+            entries[year] = {"status": status, "values": values}
     return entries
 
 
-def _write_k_gm_max_status_entries(config, entries):
-    path = _k_gm_max_status_path(config)
+def _write_status_entries(config, entries):
+    path = _status_path(config)
     with open(path, "w") as fh:
         for year in sorted(entries):
-            value, status = entries[year]
-            fh.write(f"{year} {_format_numeric(value)} {int(status)}\n")
-    logger.info(f"Recovery k_gm_max status written to {path}")
+            entry = entries[year]
+            tokens = [str(year), str(int(entry["status"]))]
+            for key in sorted(entry.get("values", {})):
+                tokens.append(f"{key}={_format_value(entry['values'][key])}")
+            fh.write(" ".join(tokens) + "\n")
+    logger.info(f"Recovery status written to {path}")
 
 
-def has_k_gm_max_status_entry(config, year=None):
+def has_recovery_status_entry(config, year=None):
     if year is None:
         year = _tracking_year(config)
     if year is None:
         return False
-    return year in _load_k_gm_max_status_entries(config)
+    return year in _load_status_entries(config)
 
 
-def _read_k_gm_max_from_namelist(path):
-    if not path or not os.path.isfile(path):
-        return None
-    try:
-        nml = f90nml.read(path)
-        return nml["oce_dyn"]["k_gm_max"]
-    except (OSError, KeyError, TypeError, ValueError) as e:
-        logger.warning(f"Could not read k_gm_max from {path}: {e}")
-        return None
-
-
-def _current_k_gm_max(config):
-    work_dir = config["general"].get("thisrun_work_dir")
-    if work_dir:
-        value = _read_k_gm_max_from_namelist(os.path.join(work_dir, "namelist.oce"))
-        if value is not None:
-            return value
-
-    fesom_cfg = config.get("fesom", {})
-    cfg_dir = fesom_cfg.get("thisrun_config_dir")
-    if cfg_dir:
-        value = _read_k_gm_max_from_namelist(os.path.join(cfg_dir, "namelist.oce"))
-        if value is not None:
-            return value
-
-    return None
-
-
-def _pending_k_gm_max(target_changes):
-    return (
-        target_changes.get("namelist.oce", {})
-        .get("oce_dyn", {})
-        .get("k_gm_max")
-    )
-
-
-def update_k_gm_max_status(config, status, value=None, year=None):
+def update_recovery_status(config, status, values=None, year=None):
+    """
+    Update (or create) the status row for ``year``. ``values`` is an optional
+    flat ``{namelist:group:key: value}`` mapping that is merged into the row's
+    existing values. ``status`` is ``1`` on success, ``0`` for
+    failure / still-pending.
+    """
     if year is None:
         year = _tracking_year(config)
     if year is None:
-        logger.warning("Could not determine year for recovery k_gm_max status.")
+        logger.warning("Could not determine year for recovery status.")
         return
 
-    entries = _load_k_gm_max_status_entries(config)
-    if value is None and year in entries:
-        value = entries[year][0]
-    if value is None:
-        value = _current_k_gm_max(config)
-    if value is None:
-        logger.warning(
-            f"Could not determine k_gm_max for year {year}; skipping status update."
-        )
+    entries = _load_status_entries(config)
+    merged_values = dict(entries.get(year, {}).get("values", {}))
+    if values:
+        merged_values.update(values)
+    entries[year] = {"status": int(status), "values": merged_values}
+    _write_status_entries(config, entries)
+
+
+def _flatten_fix_values(fix, resolved_deltas):
+    """
+    Flatten the ``fix`` block to ``{namelist:group:key: value}`` entries. The
+    ``namelist_deltas`` section contributes the *resolved* absolute value (not
+    the delta itself) so the log records what actually ended up in the
+    namelist.
+    """
+    flat = {}
+
+    absolute = (fix or {}).get("namelist_changes", {}) or {}
+    for nml, groups in absolute.items():
+        for group, entries in (groups or {}).items():
+            for key, value in (entries or {}).items():
+                flat[f"{nml}:{group}:{key}"] = value
+
+    deltas = (fix or {}).get("namelist_deltas", {}) or {}
+    for nml, groups in deltas.items():
+        for group, entries in (groups or {}).items():
+            for key in (entries or {}):
+                resolved = (
+                    resolved_deltas.get(nml, {})
+                    .get(group, {})
+                    .get(key)
+                )
+                if resolved is not None:
+                    flat[f"{nml}:{group}:{key}"] = resolved
+
+    return flat
+
+
+def record_pending_recovery(config, state, resolved_deltas):
+    """
+    Persist the resolved fix values for the current retry as a status row with
+    ``status=0`` (pending). Called from ``apply_fix_to_config`` so the values
+    survive across process boundaries regardless of which component is being
+    patched.
+    """
+    flat = _flatten_fix_values(state.get("fix", {}), resolved_deltas)
+    if not flat:
         return
-
-    entries[year] = (float(value), int(status))
-    _write_k_gm_max_status_entries(config, entries)
-
-
-def record_pending_k_gm_max(config, state, target_changes):
-    value = _pending_k_gm_max(target_changes)
-    if value is None:
-        return
-    update_k_gm_max_status(
+    update_recovery_status(
         config,
         status=0,
-        value=value,
+        values=flat,
         year=_tracking_year(config, state),
     )
 
 
 def record_success(config):
-    update_k_gm_max_status(config, status=1)
+    update_recovery_status(config, status=1)
 
 
 def record_failure(config):
-    update_k_gm_max_status(config, status=0)
+    update_recovery_status(config, status=0)
 
 
 def record_trigger(config, component, trigger, trigger_cfg):
@@ -298,8 +336,10 @@ def _get_recovery_namelist_path(config, component, nml_name):
 def _resolve_deltas(config, component, deltas):
     """
     Turn a nested delta spec into absolute namelist_changes by reading the
-    current value from the namelist file in ``thisrun_config_dir`` and adding
-    the delta. Keeps integer/float typing consistent with the source value.
+    current value from the component's namelist and adding the delta. Prefers
+    the value from ``thisrun_work_dir`` (so additive deltas accumulate across
+    same-run retries) and falls back to ``thisrun_config_dir``. Keeps
+    integer/float typing consistent with the source value.
     """
     resolved = {}
     cfg_dir = config[component].get("thisrun_config_dir")
@@ -350,7 +390,8 @@ def apply_fix_to_config(config):
     """
     Called from prepcompute. If a recovery state is active, merges its ``fix``
     block into the target component's ``namelist_changes`` so that the normal
-    ``Namelist.nmls_modify`` step picks it up.
+    ``Namelist.nmls_modify`` step picks it up, and appends the resolved values
+    to the long-lived recovery status log.
     """
     state = load_state(config)
     if not state or not state.get("active"):
@@ -392,7 +433,7 @@ def apply_fix_to_config(config):
     target = config[component].setdefault("namelist_changes", {})
     _merge_namelist_changes(target, absolute)
     _merge_namelist_changes(target, resolved_deltas)
-    record_pending_k_gm_max(config, state, target)
+    record_pending_recovery(config, state, resolved_deltas)
 
     return config
 

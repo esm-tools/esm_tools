@@ -989,6 +989,8 @@ specific actions when certain patterns are detected. This is useful for:
 - When a pattern is found:
   - For ``method: warn``: Logs a warning message
   - For ``method: kill``: Terminates the job and logs an error
+  - For ``method: recover``: Stops the compute launcher, applies a fix, and
+    resubmits the same run (see `Automatic recovery`_ below)
 
 **Best Practices**
 
@@ -1003,19 +1005,29 @@ Automatic recovery (``method: recover``)
 
 When ``method: recover`` is used, ESM-Tools will, upon detecting the pattern:
 
-1. Cancel the running compute job (``scancel``)
-2. Persist a recovery state file next to the experiment's ``.date`` file
-   (``<expid>_<setup>.recovery.json``)
+1. Stop the running compute launcher (and its children) while **keeping the
+   ``observe`` process alive**, so control can reach ``maybe_resubmit``.
+   The enclosing batch job is *not* ``scancel``-ed.
+2. Persist a short-lived recovery state file next to the experiment's
+   ``.date`` file (``<expid>_<setup>.recovery.json``) that carries the
+   pending fix to the next process.
 3. Resubmit a fresh ``prepcompute`` → ``compute`` cycle for the **same
-   run_number and date** (no date increment, no loss of progress)
-4. Apply the configured ``fix`` to the component's namelists before the model
-   runs again
+   run_number and date** (no date increment, no loss of progress).
+4. Apply the configured ``fix`` to the component's namelists in the new
+   ``prepcompute`` step (via the ``apply_recovery_fix`` recipe entry) before
+   the model runs again.
+5. Append a row to the long-lived status log
+   (``<expid>_<setup>.recovery_status.dat``) so that every recovered year
+   — and the values that were applied — are visible for later inspection
+   or plotting.
 
 The attempt counter is bumped on every retry for the same trigger; once
-``max_retries`` is exceeded, the job is killed like ``method: kill``.
+``max_retries`` is exceeded, the state is marked as failed in the status
+log and the job is killed like ``method: kill``.
 
-A clean run (no ``recover`` trigger firing) clears the state file
-automatically, so the counter resets for the next unrelated crash.
+A clean run (no ``recover`` trigger firing) marks the year's status row
+as successful (``status=1``) and clears the short-lived state file, so the
+attempt counter resets for the next unrelated crash.
 
 **Additional parameters**
 
@@ -1025,19 +1037,42 @@ automatically, so the counter resets for the next unrelated crash.
   contain either or both of:
 
   - ``namelist_changes``: nested ``namelist -> group -> key: absolute_value``
-    mapping, using the same syntax as the regular ``add_namelist_changes``
+    mapping, using the same syntax as the regular ``add_namelist_changes``.
   - ``namelist_deltas``: nested ``namelist -> group -> key: delta`` mapping.
-    The delta is **added** to the current value read from the namelist in
-    ``thisrun_config_dir`` at retry time, and the result is merged into
-    ``namelist_changes``. Useful for tiny perturbations that knock a model
-    off a numerically unstable trajectory without changing its physics.
+    The delta is **added** to the current value of the namelist entry and
+    the result is merged into ``namelist_changes`` before the namelist is
+    written. The baseline is read from ``thisrun_work_dir`` when available
+    (so repeated same-year retries **accumulate** — attempt *N* ends up at
+    ``value + N*delta``) and falls back to ``thisrun_config_dir`` otherwise.
+    Useful for tiny perturbations that knock a model off a numerically
+    unstable trajectory without changing its physics.
+
+**Files written by the recovery plugin**
+
+* ``<expid>_<setup>.recovery.json`` (scripts dir) — short-lived JSON that
+  carries the pending fix between ``observe`` and the next ``prepcompute``.
+  Removed automatically after a retried run completes cleanly. Deleting it
+  by hand cancels an in-flight recovery.
+* ``<expid>_<setup>.recovery_status.dat`` (scripts dir) — long-lived,
+  append-on-write per-year log. One row per calendar year that ever
+  triggered recovery, of the form::
+
+      <year> <status> [<namelist>:<group>:<key>=<value> ...]
+
+  ``status`` is ``1`` for a year that eventually completed cleanly and
+  ``0`` for a year that is still pending or whose retries were exhausted.
+  Entries (one ``namelist:group:key=value`` token per perturbed field) are
+  generated automatically from the ``fix`` block — whatever the trigger
+  modifies ends up in the log, so this file works for any setup, not just
+  FESOM.
 
 **Example — FESOM temperature blow-up**
 
 FESOM occasionally crashes with
-``--STOP--> found temperture becomes NaN or <-5.0, >60`` when a bit-reproducible
-trajectory hits a numerical edge case. Perturbing ``K_GM_max`` by ``+0.001``
-is usually enough to nudge the trajectory onto a nearby, stable path.
+``--STOP--> found temperture becomes NaN or <-5.0, >60`` when a
+bit-reproducible trajectory hits a numerical edge case. Perturbing
+``K_GM_max`` by ``+0.001`` is usually enough to nudge the trajectory onto
+a nearby, stable path.
 
 .. code-block:: yaml
 
@@ -1054,8 +1089,18 @@ is usually enough to nudge the trajectory onto a nearby, stable path.
                            oce_dyn:
                                K_GM_max: 0.001
 
-On each subsequent retry of the same trigger, the perturbation is re-applied
-to the (already perturbed) value, so attempt N ends up at ``K_GM_max + N*0.001``.
+On each subsequent retry of the same trigger, the perturbation is
+re-applied on top of the perturbed ``work`` namelist, so attempt *N* ends
+up at ``K_GM_max + N*0.001``. The resolved absolute value for each
+attempt is written to ``<expid>_<setup>.recovery_status.dat`` as the
+token ``namelist.oce:oce_dyn:K_GM_max=<value>``, giving a
+post-processable history of the perturbation sequence.
 
-To cancel an in-flight recovery manually, remove the ``*.recovery.json`` file
-from the experiment's ``scripts`` directory.
+**Canceling / cleaning up**
+
+- To cancel an in-flight recovery manually, remove the
+  ``<expid>_<setup>.recovery.json`` file from the experiment's scripts
+  directory.
+- The status file ``<expid>_<setup>.recovery_status.dat`` is purely
+  informational; deleting it only discards the history log and does not
+  affect whether or how a future recovery runs.

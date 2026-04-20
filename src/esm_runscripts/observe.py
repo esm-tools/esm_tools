@@ -104,7 +104,7 @@ def wake_up_call(config):
         and not config["general"].get("recovery_pending")
     ):
         state = recovery.load_state(config)
-        if state or recovery.has_k_gm_max_status_entry(config):
+        if state or recovery.has_recovery_status_entry(config):
             recovery.record_success(config)
         if state:
             recovery.clear_state(config)

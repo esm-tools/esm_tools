@@ -26,6 +26,14 @@ def _state_path(config):
     )
 
 
+def _k_gm_max_status_path(config):
+    return (
+        f"{config['general']['experiment_scripts_dir']}"
+        f"/{config['general']['expid']}_{config['general']['setup_name']}"
+        f".recovery_k_gm_max_status.dat"
+    )
+
+
 def load_state(config):
     path = _state_path(config)
     if not os.path.isfile(path):
@@ -50,6 +58,157 @@ def clear_state(config):
     if os.path.isfile(path):
         os.remove(path)
         logger.info(f"Cleared recovery state at {path}")
+
+
+def _format_numeric(value):
+    return f"{float(value):.15g}"
+
+
+def _tracking_year(config, state=None):
+    if state and state.get("run_date"):
+        try:
+            return int(str(state["run_date"])[:4])
+        except (TypeError, ValueError):
+            pass
+
+    current_date = config["general"].get("current_date")
+    if current_date is not None:
+        try:
+            return int(current_date.year)
+        except AttributeError:
+            try:
+                return int(str(current_date)[:4])
+            except (TypeError, ValueError):
+                pass
+
+    return None
+
+
+def _load_k_gm_max_status_entries(config):
+    path = _k_gm_max_status_path(config)
+    entries = {}
+    if not os.path.isfile(path):
+        return entries
+
+    with open(path) as fh:
+        for lineno, line in enumerate(fh, start=1):
+            stripped = line.strip()
+            if not stripped:
+                continue
+            parts = stripped.split()
+            if len(parts) != 3:
+                logger.warning(
+                    f"Malformed recovery k_gm_max status line {lineno} in {path}; "
+                    "expected 3 columns."
+                )
+                continue
+            try:
+                year = int(parts[0])
+                value = float(parts[1])
+                status = int(parts[2])
+            except ValueError:
+                logger.warning(
+                    f"Malformed recovery k_gm_max status line {lineno} in {path}; "
+                    "could not parse numeric fields."
+                )
+                continue
+            entries[year] = (value, status)
+    return entries
+
+
+def _write_k_gm_max_status_entries(config, entries):
+    path = _k_gm_max_status_path(config)
+    with open(path, "w") as fh:
+        for year in sorted(entries):
+            value, status = entries[year]
+            fh.write(f"{year} {_format_numeric(value)} {int(status)}\n")
+    logger.info(f"Recovery k_gm_max status written to {path}")
+
+
+def has_k_gm_max_status_entry(config, year=None):
+    if year is None:
+        year = _tracking_year(config)
+    if year is None:
+        return False
+    return year in _load_k_gm_max_status_entries(config)
+
+
+def _read_k_gm_max_from_namelist(path):
+    if not path or not os.path.isfile(path):
+        return None
+    try:
+        nml = f90nml.read(path)
+        return nml["oce_dyn"]["k_gm_max"]
+    except (OSError, KeyError, TypeError, ValueError) as e:
+        logger.warning(f"Could not read k_gm_max from {path}: {e}")
+        return None
+
+
+def _current_k_gm_max(config):
+    work_dir = config["general"].get("thisrun_work_dir")
+    if work_dir:
+        value = _read_k_gm_max_from_namelist(os.path.join(work_dir, "namelist.oce"))
+        if value is not None:
+            return value
+
+    fesom_cfg = config.get("fesom", {})
+    cfg_dir = fesom_cfg.get("thisrun_config_dir")
+    if cfg_dir:
+        value = _read_k_gm_max_from_namelist(os.path.join(cfg_dir, "namelist.oce"))
+        if value is not None:
+            return value
+
+    return None
+
+
+def _pending_k_gm_max(target_changes):
+    return (
+        target_changes.get("namelist.oce", {})
+        .get("oce_dyn", {})
+        .get("k_gm_max")
+    )
+
+
+def update_k_gm_max_status(config, status, value=None, year=None):
+    if year is None:
+        year = _tracking_year(config)
+    if year is None:
+        logger.warning("Could not determine year for recovery k_gm_max status.")
+        return
+
+    entries = _load_k_gm_max_status_entries(config)
+    if value is None and year in entries:
+        value = entries[year][0]
+    if value is None:
+        value = _current_k_gm_max(config)
+    if value is None:
+        logger.warning(
+            f"Could not determine k_gm_max for year {year}; skipping status update."
+        )
+        return
+
+    entries[year] = (float(value), int(status))
+    _write_k_gm_max_status_entries(config, entries)
+
+
+def record_pending_k_gm_max(config, state, target_changes):
+    value = _pending_k_gm_max(target_changes)
+    if value is None:
+        return
+    update_k_gm_max_status(
+        config,
+        status=0,
+        value=value,
+        year=_tracking_year(config, state),
+    )
+
+
+def record_success(config):
+    update_k_gm_max_status(config, status=1)
+
+
+def record_failure(config):
+    update_k_gm_max_status(config, status=0)
 
 
 def record_trigger(config, component, trigger, trigger_cfg):
@@ -110,6 +269,32 @@ def _merge_namelist_changes(target, addition):
             target[nml_name][group].update(entries or {})
 
 
+def _get_recovery_namelist_path(config, component, nml_name):
+    """
+    Return the best namelist path to use as the baseline for additive recovery
+    deltas.
+
+    For retries of the SAME run, ``copy_files_to_thisrun`` refreshes the
+    ``thisrun_config_dir`` from the original inputs before ``apply_recovery_fix``
+    runs. To make additive perturbations accumulate across retries, prefer the
+    namelist from the existing ``work`` directory when present, and fall back to
+    ``thisrun_config_dir`` otherwise.
+    """
+    work_dir = config["general"].get("thisrun_work_dir")
+    if work_dir:
+        work_path = os.path.join(work_dir, nml_name)
+        if os.path.isfile(work_path):
+            return work_path
+
+    cfg_dir = config[component].get("thisrun_config_dir")
+    if cfg_dir:
+        cfg_path = os.path.join(cfg_dir, nml_name)
+        if os.path.isfile(cfg_path):
+            return cfg_path
+
+    return None
+
+
 def _resolve_deltas(config, component, deltas):
     """
     Turn a nested delta spec into absolute namelist_changes by reading the
@@ -118,18 +303,23 @@ def _resolve_deltas(config, component, deltas):
     """
     resolved = {}
     cfg_dir = config[component].get("thisrun_config_dir")
-    if not cfg_dir or not os.path.isdir(cfg_dir):
+    work_dir = config["general"].get("thisrun_work_dir")
+    if (
+        (not cfg_dir or not os.path.isdir(cfg_dir))
+        and (not work_dir or not os.path.isdir(work_dir))
+    ):
         logger.warning(
             f"Cannot apply namelist_deltas for '{component}': "
-            f"thisrun_config_dir unavailable."
+            f"neither thisrun_config_dir nor thisrun_work_dir is available."
         )
         return resolved
 
     for nml_name, groups in (deltas or {}).items():
-        nml_path = os.path.join(cfg_dir, nml_name)
-        if not os.path.isfile(nml_path):
+        nml_path = _get_recovery_namelist_path(config, component, nml_name)
+        if not nml_path:
             logger.warning(
-                f"Recovery delta targets missing namelist: {nml_path}; skipping."
+                f"Recovery delta targets missing namelist '{nml_name}' in "
+                f"thisrun_work_dir/thisrun_config_dir; skipping."
             )
             continue
         nml = f90nml.read(nml_path)
@@ -151,7 +341,7 @@ def _resolve_deltas(config, component, deltas):
                 )
                 logger.info(
                     f"Recovery perturbation: {nml_name}:{group}:{key} "
-                    f"{current} -> {new_value} (delta {delta:+})"
+                    f"{current} -> {new_value} (delta {delta:+}; source {nml_path})"
                 )
     return resolved
 
@@ -202,6 +392,7 @@ def apply_fix_to_config(config):
     target = config[component].setdefault("namelist_changes", {})
     _merge_namelist_changes(target, absolute)
     _merge_namelist_changes(target, resolved_deltas)
+    record_pending_k_gm_max(config, state, target)
 
     return config
 

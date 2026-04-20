@@ -102,11 +102,56 @@ def wake_up_call(config):
     if (
         config["general"]["jobtype"] == "observe_compute"
         and not config["general"].get("recovery_pending")
-        and recovery.load_state(config)
     ):
-        recovery.clear_state(config)
+        state = recovery.load_state(config)
+        if state or recovery.has_k_gm_max_status_entry(config):
+            recovery.record_success(config)
+        if state:
+            recovery.clear_state(config)
     logger.debug("job ended, starting to tidy up now \n")
     return config
+
+
+def stop_launcher_process(config, timeout=15):
+    """
+    Stop the monitored compute launcher without cancelling the whole batch job.
+
+    ``recover`` runs inside ``observe_compute``, which itself is executed from the
+    same batch script as the model launcher. Cancelling the full job would kill
+    the observer before it reaches ``maybe_resubmit``.
+    """
+    launcher_pid = config["general"].get("launcher_pid")
+    if launcher_pid in [None, -666]:
+        logger.warning("No launcher PID available for recovery shutdown.")
+        return
+
+    try:
+        launcher = psutil.Process(launcher_pid)
+    except psutil.Error as e:
+        logger.warning(f"Could not attach to launcher PID {launcher_pid}: {e}")
+        return
+
+    procs = launcher.children(recursive=True)
+    procs.append(launcher)
+
+    logger.warning(
+        f"Stopping compute launcher PID {launcher_pid} while keeping observe alive."
+    )
+    for proc in reversed(procs):
+        try:
+            proc.terminate()
+        except psutil.Error:
+            pass
+
+    _, alive = psutil.wait_procs(procs, timeout=timeout)
+    for proc in alive:
+        try:
+            proc.kill()
+        except psutil.Error:
+            pass
+
+    if alive:
+        psutil.wait_procs(alive, timeout=5)
 
 
 def assemble_error_list(config):
@@ -244,21 +289,20 @@ def check_for_errors(config):
                                     )
                                     logger.stdout_sink.flush_to_stdout()
                                     database_actions.database_entry_crashed(config)
+                                    recovery.record_failure(config)
                                     os.system(
                                         f"scancel {config['general']['jobid']}"
                                     )
                                     sys.exit(42)
                                 logger.error(
-                                    "Cancelling the compute job; a fresh "
+                                    "Stopping the compute launcher; a fresh "
                                     "prepcompute will be submitted with the "
                                     "configured fix applied."
                                 )
                                 logger.stdout_sink.flush_to_stdout()
                                 database_actions.database_entry_crashed(config)
-                                os.system(
-                                    f"scancel {config['general']['jobid']}"
-                                )
                                 config["general"]["recovery_pending"] = True
+                                stop_launcher_process(config)
                                 return config
             next_check += frequency
         if warned == 0:

@@ -30,6 +30,11 @@
              reports 11.9 MB per connection on the same workload -- mirror. -->
         <variable id="min_buffer_size"     type="int"   >10485760   </variable> <!-- 10 MB -->
         <variable id="max_buffer_size"     type="int"   >104857600  </variable> <!-- 100 MB -->
+{%- if (xios.version | string).startswith("3") %}
+        <!-- AWI perf knobs (cmip7_optimizations branch); absent in stock XIOS 3 trunk and XIOS 2.5. -->
+        <variable id="notification_loop_latency"  type="double">5e-2</variable>
+        <variable id="buffer_from_client_latency" type="double">5e-1</variable>
+{%- endif %}
       </variable_group>
 
       <variable_group id="server"> <!-- 2-level-server tuning, applied for both XIOS 2 and 3 -->

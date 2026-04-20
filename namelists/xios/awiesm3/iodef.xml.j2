@@ -16,9 +16,14 @@
         <variable id="ratio_server2" type="int">50</variable>
         <variable id="number_pools_server2" type="int">1</variable>
         <variable id="using_oasis" type="bool">true</variable>
+{%- if (xios.version | string).startswith("3") %}
+        <!-- XIOS 3: oasis_codes_id was renamed to clients_code_id; call_oasis_enddef is a XIOS 3-only flag -->
         <variable id="call_oasis_enddef" type="bool">true</variable>
         <!-- Empty clients_code_id disables file-based MPI discovery, using OASIS comms instead -->
         <variable id="clients_code_id" type="string"></variable>
+{%- else %}
+        <variable id="oasis_codes_id" type="string"></variable>
+{%- endif %}
         <variable id="info_level" type="int">50</variable>
         <variable id="print_file" type="bool">true</variable>
       </variable_group>

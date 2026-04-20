@@ -3091,8 +3091,8 @@ nemo:
                 # 1) OIceFrac is now OIceFrc
                 # 2) O_AlbIce is added 
                 # 3) O_SnwTck, O_IceTck are now OSnwTck, OIceTck 
-                opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
-                opac_fields: [O_QsrMix, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_QsrIce, O_QnsIce, O_dQnsdT]
+                opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1, O_QsrMix, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_QsrIce, O_QnsIce, O_dQnsdT]
+                opac_fields: []
                 agr1_t_fields: [1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_OIceTck, 1_OSnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
 
                 # in NEMO 4, the periodic points, i.e. i=1, i=imax
@@ -3837,7 +3837,7 @@ nemo:
                     agr1_rc_fields: [1_OCalving]
                     add_coupling_fields:
                             "[[ornf_fields-->FIELD]]":
-                                    grid: opac
+                                    grid: opat
                             "[[ocal_fields-->FIELD]]":
                                     grid: opaa
                             "[[agr1_r_fields-->FIELD]]":
@@ -3852,7 +3852,7 @@ nemo:
                     agr1_rc_fields: [1_OCalving]
                     add_coupling_fields:
                             "[[ornf_fields-->FIELD]]":
-                                    grid: opac
+                                    grid: opat
                             "[[ocal_fields-->FIELD]]":
                                     grid: opaa
                             "[[agr1_r_fields-->FIELD]]":

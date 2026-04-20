@@ -143,7 +143,7 @@ oasis3mct:
    lresume: True
    #pool_dir: "/work/bb1460/foci_input2/create_oasis_files_focioifs_eINALT20_L120_OpenIFS319_L137_OpenIFS48/"
    #pool_dir: "/work/bb1460/foci_input2/create_oasis_files_focioifs_eINALT20_L120_OpenIFS319_L137_OpenIFS48_smallnest/"
-   pool_dir: "/work/bb1460/b383103/eINALT20_reduced/create_oasis_files_focioifs/"
+   pool_dir: "/work/bb1460/foci_input2/AGRIF/agrif_${nemo.nest1}/create_oasis_files_focioifs/"
    #### "/work/bb1460/b383103/smallnest/test/"
    # This would be for a cold start (SST = 0C,etc)
    ini_parent_dir: "${pool_dir}" 
@@ -167,15 +167,15 @@ oasis3mct:
 nemo:
    time_step: 1200
    generation: "5.0"
-   nest1: eINALT20_reduced
+   nest1: eINALT20r
    lresume: ${general.lresume}
    #ini_parent_exp_id: "${general.ini_parent_exp_id}"
    #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
    #ini_parent_date: "${prev_date}"
    #input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
    pool_dir: "/work/bb1460/foci_input2" 
-   input_dir: "/work/bb1460/b383103/eINALT20_reduced/"
-   agrif_dir: "/work/bb1460/b383103/eINALT20_reduced/" 
+   input_dir: "${pool_dir}/AGRIF/agrif_${nest1}/"
+   agrif_dir: "${input_dir}" 
    resolution: "eORCA025"
    #version: "eORCA05_Z75_SI3_COUPLED" 
    # 64x51 = 3264 

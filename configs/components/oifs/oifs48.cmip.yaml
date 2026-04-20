@@ -52,6 +52,35 @@ oifs:
                                 LCMIP_STRATAER_CMIP7: True
                                 LCMIP_STRATAER_BCKGD: False
                                 NCMIPFIXYR: '${spinup_year}'
+                "abrupt4xCO2":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                                LANxCO2: True
+                                RNxCO2: 4.00
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+                "1pctCO2":
+                    spinup_year: 1850
+                    add_namelist_changes:
+                        fort.4:
+                            NAMECECMIP:
+                                NCMIPFIXYR: '${spinup_year}'
+                                L1pctCO2: True
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
+                                NCMIPFIXYR: '${spinup_year}'
+                "historical":
+                    add_namelist_changes:
+                        fort.4:
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
             add_namelist_changes:
                 fort.4:
                     NAMECECMIP:

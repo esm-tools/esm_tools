@@ -13,13 +13,12 @@ Two pieces of state are written to the experiment's ``scripts`` directory:
   ``SimulationSetup`` → ``prepcompute`` boundary. Removed once a retried run
   finishes without firing a ``recover`` trigger again.
 
-* ``<expid>_<setup>.recovery_status.dat`` — long-lived per-year log of
+* ``<expid>_<setup>.recovery_status.jsonl`` — long-lived per-year log of
   every run that needed recovery, which namelist entries were perturbed, and
-  whether the retry eventually succeeded. The file is generic: any keys
-  present in the trigger's ``fix.namelist_changes`` / ``fix.namelist_deltas``
-  are flattened to ``<namelist>:<group>:<key>`` tokens and appended to the
-  row for that year. Setup-specific post-processing (e.g. plotting FESOM's
-  ``K_GM_max`` history) can read it without requiring any changes here.
+  whether the retry eventually succeeded. Each line is a self-describing
+  JSON object (JSONL format) with keys ``year``, ``status``, and
+  ``values``. Setup-specific post-processing (e.g. plotting FESOM's
+  ``K_GM_max`` history) can read it with any JSON-aware tool.
 """
 
 import json
@@ -41,7 +40,7 @@ def _status_path(config):
     return (
         f"{config['general']['experiment_scripts_dir']}"
         f"/{config['general']['expid']}_{config['general']['setup_name']}"
-        f".recovery_status.dat"
+        f".recovery_status.jsonl"
     )
 
 
@@ -71,23 +70,6 @@ def clear_state(config):
         logger.info(f"Cleared recovery state at {path}")
 
 
-def _format_value(value):
-    if isinstance(value, float):
-        return f"{value:.15g}"
-    return str(value)
-
-
-def _parse_value(text):
-    try:
-        return int(text)
-    except ValueError:
-        pass
-    try:
-        return float(text)
-    except ValueError:
-        return text
-
-
 def _tracking_year(config, state=None):
     if state and state.get("run_date"):
         try:
@@ -110,11 +92,10 @@ def _tracking_year(config, state=None):
 
 def _load_status_entries(config):
     """
-    Parse the recovery status file. Each non-empty line has the form::
+    Parse the JSONL recovery status file. Each line is a JSON object with
+    keys ``year``, ``status``, and ``values``.
 
-        <year> <status> [<namelist>:<group>:<key>=<value> ...]
-
-    Returns ``{year: {"status": int, "values": {flat_key: value}}}``.
+    Returns ``{year: {"status": str, "values": {flat_key: value}}}``.
     """
     path = _status_path(config)
     entries = {}
@@ -126,29 +107,26 @@ def _load_status_entries(config):
             stripped = line.strip()
             if not stripped:
                 continue
-            parts = stripped.split()
-            if len(parts) < 2:
+            try:
+                record = json.loads(stripped)
+            except json.JSONDecodeError as exc:
                 logger.warning(
-                    f"Malformed recovery status line {lineno} in {path}; "
-                    "expected at least <year> <status>."
+                    f"Malformed JSONL on line {lineno} in {path}: {exc}"
                 )
                 continue
             try:
-                year = int(parts[0])
-                status = int(parts[1])
-            except ValueError:
+                year = int(record["year"])
+                status = str(record["status"])
+            except (KeyError, ValueError, TypeError) as exc:
                 logger.warning(
-                    f"Malformed recovery status line {lineno} in {path}; "
-                    "could not parse year/status."
+                    f"Missing or invalid year/status on line {lineno} "
+                    f"in {path}: {exc}"
                 )
                 continue
-            values = {}
-            for item in parts[2:]:
-                if "=" not in item:
-                    continue
-                key, _, raw = item.partition("=")
-                values[key] = _parse_value(raw)
-            entries[year] = {"status": status, "values": values}
+            entries[year] = {
+                "status": status,
+                "values": record.get("values", {}),
+            }
     return entries
 
 
@@ -157,10 +135,12 @@ def _write_status_entries(config, entries):
     with open(path, "w") as fh:
         for year in sorted(entries):
             entry = entries[year]
-            tokens = [str(year), str(int(entry["status"]))]
-            for key in sorted(entry.get("values", {})):
-                tokens.append(f"{key}={_format_value(entry['values'][key])}")
-            fh.write(" ".join(tokens) + "\n")
+            record = {
+                "year": year,
+                "status": entry["status"],
+                "values": entry.get("values", {}),
+            }
+            fh.write(json.dumps(record) + "\n")
     logger.info(f"Recovery status written to {path}")
 
 
@@ -176,8 +156,8 @@ def update_recovery_status(config, status, values=None, year=None):
     """
     Update (or create) the status row for ``year``. ``values`` is an optional
     flat ``{namelist:group:key: value}`` mapping that is merged into the row's
-    existing values. ``status`` is ``1`` on success, ``0`` for
-    failure / still-pending.
+    existing values. ``status`` is one of ``"success"``, ``"pending"``, or
+    ``"failed"``.
     """
     if year is None:
         year = _tracking_year(config)
@@ -189,7 +169,7 @@ def update_recovery_status(config, status, values=None, year=None):
     merged_values = dict(entries.get(year, {}).get("values", {}))
     if values:
         merged_values.update(values)
-    entries[year] = {"status": int(status), "values": merged_values}
+    entries[year] = {"status": status, "values": merged_values}
     _write_status_entries(config, entries)
 
 
@@ -235,18 +215,18 @@ def record_pending_recovery(config, state, resolved_deltas):
         return
     update_recovery_status(
         config,
-        status=0,
+        status="pending",
         values=flat,
         year=_tracking_year(config, state),
     )
 
 
 def record_success(config):
-    update_recovery_status(config, status=1)
+    update_recovery_status(config, status="success")
 
 
 def record_failure(config):
-    update_recovery_status(config, status=0)
+    update_recovery_status(config, status="failed")
 
 
 def record_trigger(config, component, trigger, trigger_cfg):

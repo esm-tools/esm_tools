@@ -1017,7 +1017,7 @@ When ``method: recover`` is used, ESM-Tools will, upon detecting the pattern:
    ``prepcompute`` step (via the ``apply_recovery_fix`` recipe entry) before
    the model runs again.
 5. Append a row to the long-lived status log
-   (``<expid>_<setup>.recovery_status.dat``) so that every recovered year
+   (``<expid>_<setup>.recovery_status.jsonl``) so that every recovered year
    — and the values that were applied — are visible for later inspection
    or plotting.
 
@@ -1026,7 +1026,7 @@ The attempt counter is bumped on every retry for the same trigger; once
 log and the job is killed like ``method: kill``.
 
 A clean run (no ``recover`` trigger firing) marks the year's status row
-as successful (``status=1``) and clears the short-lived state file, so the
+as successful (``status="success"``) and clears the short-lived state file, so the
 attempt counter resets for the next unrelated crash.
 
 **Additional parameters**
@@ -1053,18 +1053,19 @@ attempt counter resets for the next unrelated crash.
   carries the pending fix between ``observe`` and the next ``prepcompute``.
   Removed automatically after a retried run completes cleanly. Deleting it
   by hand cancels an in-flight recovery.
-* ``<expid>_<setup>.recovery_status.dat`` (scripts dir) — long-lived,
-  append-on-write per-year log. One row per calendar year that ever
-  triggered recovery, of the form::
+* ``<expid>_<setup>.recovery_status.jsonl`` (scripts dir) — long-lived,
+  append-on-write per-year log in `JSONL <https://jsonlines.org>`_ format.
+  Each line is a self-describing JSON object::
 
-      <year> <status> [<namelist>:<group>:<key>=<value> ...]
+      {"year": 2384, "status": "success", "values": {"namelist.oce:oce_dyn:K_GM_max": 2000.001}}
 
-  ``status`` is ``1`` for a year that eventually completed cleanly and
-  ``0`` for a year that is still pending or whose retries were exhausted.
-  Entries (one ``namelist:group:key=value`` token per perturbed field) are
-  generated automatically from the ``fix`` block — whatever the trigger
-  modifies ends up in the log, so this file works for any setup, not just
-  FESOM.
+  ``status`` is ``"success"`` for a year that completed cleanly,
+  ``"pending"`` for a retry in progress, or ``"failed"`` when retries
+  were exhausted.
+  The ``values`` dict maps each perturbed field (as
+  ``namelist:group:key``) to its resolved absolute value. Generated
+  automatically from the ``fix`` block, so this file works for any setup,
+  not just FESOM.
 
 **Example — FESOM temperature blow-up**
 
@@ -1092,15 +1093,15 @@ a nearby, stable path.
 On each subsequent retry of the same trigger, the perturbation is
 re-applied on top of the perturbed ``work`` namelist, so attempt *N* ends
 up at ``K_GM_max + N*0.001``. The resolved absolute value for each
-attempt is written to ``<expid>_<setup>.recovery_status.dat`` as the
-token ``namelist.oce:oce_dyn:K_GM_max=<value>``, giving a
-post-processable history of the perturbation sequence.
+attempt is written to ``<expid>_<setup>.recovery_status.jsonl`` as a JSON
+object with the key ``namelist.oce:oce_dyn:K_GM_max`` in its ``values``
+dict, giving a machine-readable history of the perturbation sequence.
 
 **Canceling / cleaning up**
 
 - To cancel an in-flight recovery manually, remove the
   ``<expid>_<setup>.recovery.json`` file from the experiment's scripts
   directory.
-- The status file ``<expid>_<setup>.recovery_status.dat`` is purely
+- The status file ``<expid>_<setup>.recovery_status.jsonl`` is purely
   informational; deleting it only discards the history log and does not
   affect whether or how a future recovery runs.

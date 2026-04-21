@@ -20,7 +20,7 @@
     <variable_definition>
       <variable_group id="buffer"> <!-- Tune buffer variables for performance purposes -->
         <variable id="optimal_buffer_size" type="string">performance</variable>
-        <variable id="buffer_size_factor"  type="double">4.0        </variable>
+        <variable id="buffer_size_factor"  type="double">2.0        </variable>
         <!-- XIOS 3 defaults to min_buffer_size = 1024 * sizeof(double) = 8 KB
              per client-server connection. With our per-file output pattern
              that tiny buffer never grows, forcing ~12 M lock_exclusive ops

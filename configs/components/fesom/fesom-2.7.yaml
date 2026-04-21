@@ -2,8 +2,9 @@
 #
 fesom:
     model: fesom
-    branch: "2.6"
-    version: "2.6"
+    branch: "2.7.0"
+    version: "2.7.0"
+    destination: "fesom-2.7.0"
     type: ocean
 
     comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
@@ -22,72 +23,12 @@ fesom:
 
     required_plugins:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
-
+            
     choose_version:
-      "2.6.2-yac":
-        branch: "yac"
-        comp_command: '. env/levante.dkrz.de/shell.intel ;
-            FESOM_ROOT=$(pwd) ;
-            mkdir -p build; cd build; 
-            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
-            spack load /y24c4jj ;
-            cmake .. -DCMAKE_INSTALL_PREFIX=../ 
-                  -DCMAKE_BUILD_TYPE=RelWithDebInfo 
-                  -DUSE_YAC=ON 
-                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
-            make install -j `nproc --all`'
-
-      "2.6.2-yac-sveta":
-        git-repository: "https://github.com/sveta-loza/fesom2.git"
-        branch: "fesom2-with-yac"
-        comp_command: '. env/levante.dkrz.de/shell.intel ;
-            FESOM_ROOT=$(pwd) ;
-            mkdir -p build; cd build; 
-            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
-            spack load /y24c4jj ;
-            cmake .. -DCMAKE_INSTALL_PREFIX=../ 
-                  -DCMAKE_BUILD_TYPE=RelWithDebInfo 
-                  -DUSE_YAC=ON 
-                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
-            make install -j `nproc --all`'
-
-            #       -DCMAKE_SHARED_LINKER_FLAGS="$CMAKE_SHARED_LINKER_FLAGS";
-      "2.6":
-        branch: "2.6.10"
-
-      "2.6-paleodyn":
-        branch: "2.6.7"
-        wiso_code: true
-        icb_code: true
-        namelist_dir: "${model_dir}/config/"
-
-      "2.6.5":
-        branch: "2.6.5"
-
-      "2.6.7":
-        branch: "2.6.7"
-
-      "2.6.8":
-        branch: "2.6.8"
-
-      "2.6.9":
-        branch: "2.6.9"
-
-      "2.6.10":
-        branch: "2.6.10"
-
-      "2.6.11":
-        branch: "2.6.11"
-
-      "2.6.12":
-        branch: "2.6.12"
-        namelist_dir: "${model_dir}/config/"
-        
-      "2.6-main":
-        branch: "main"
-        namelist_dir: "${model_dir}/config/"
-
-    destination: "fesom-2.6"
+        "2.7.3":
+            branch: "2.7.3"
+            destination: "fesom-2.7.3"
+  
     install_bins: bin/fesom.x
     git-repository:
     - https://github.com/FESOM/fesom2.git
@@ -129,7 +70,8 @@ fesom:
     forcing_data_dir: "${pool_dir}/forcing/"
     mesh_base_dir: "${pool_dir}/FESOM2/meshes/"
     ini_data_dir: "${pool_dir}/pool-data/"
-    namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
+    #namelist_dir: "${esm_namelist_dir}/fesom2/${version}/"
+    namelist_dir: "${model_dir}/config/" # always be up-to-date with fesom repo
 
     opbnd_dir: "somepath"
     tide_forcing_dir: "somepath"
@@ -544,9 +486,12 @@ fesom:
 
                             nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
                             nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
+                            nm_chl_data_file: "${forcing_data_dir}/${chl_data_source}/${chl_data_file}"
 
                             runoff_data_source: ${runoff_data_source}
                             sss_data_source: ${sss_data_source}
+                            chl_data_source: ${chl_data_source}
+
             namelist.ice:
                     ice_dyn:
                             whichEVP: ${whichEVP}

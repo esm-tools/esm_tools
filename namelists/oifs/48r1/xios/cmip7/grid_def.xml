@@ -31,6 +31,18 @@
       <domain domain_ref="reduced_gaussian" />
       <axis axis_ref="pressure_levels" />
     </grid>
+    <grid id="reduced_pl3" description="3D model grid with 3 pressure levels (plev3)" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="pressure_levels_3" />
+    </grid>
+    <grid id="reduced_pl6" description="3D model grid with 6 pressure levels (plev6, lower troposphere)" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="pressure_levels_6" />
+    </grid>
+    <grid id="reduced_pl7h" description="3D model grid with 7 pressure levels (plev7h)" >
+      <domain domain_ref="reduced_gaussian" />
+      <axis axis_ref="pressure_levels_7h" />
+    </grid>
     <grid id="regular_pl" description="3D interpolated regular grid with pressure levels" >
       <domain domain_ref="regular" />
       <axis axis_ref="pressure_levels" />

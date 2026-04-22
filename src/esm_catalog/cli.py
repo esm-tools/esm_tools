@@ -579,7 +579,17 @@ def serve(catalog_paths, registry_path, host, port, jupyterhub, write_groups):
     show_default=True,
     help="ESM Visualization Service URL (enables preview_item tool, e.g. http://localhost:23001)",
 )
-def mcp(catalog_url, transport, port, viz_url):
+@click.option(
+    "--base-url",
+    default=None,
+    show_default=True,
+    help=(
+        "Public base URL of this server, used to build image links in openapi transport "
+        "(e.g. http://albedo.dmawi.de:23007). Defaults to http://localhost:<port>. "
+        "Only relevant for --transport openapi."
+    ),
+)
+def mcp(catalog_url, transport, port, viz_url, base_url):
     """Start the MCP server for LLM tool access to the catalog.
 
     Exposes four tools to connected LLMs:
@@ -591,7 +601,7 @@ def mcp(catalog_url, transport, port, viz_url):
         from esm_catalog.mcp.server import run as mcp_run
 
         logger.info("Starting MCP server (transport={}, catalog={}, viz={})", transport, catalog_url, viz_url or "disabled")
-        mcp_run(catalog_url=catalog_url, transport=transport, port=port, viz_url=viz_url)
+        mcp_run(catalog_url=catalog_url, transport=transport, port=port, viz_url=viz_url, base_url=base_url)
     except ImportError as e:
         logger.error(
             "Missing dependency for mcp command: {}\n"

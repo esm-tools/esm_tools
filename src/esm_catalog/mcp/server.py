@@ -19,6 +19,88 @@ from pathlib import Path as _Path
 from . import tools as _tools
 
 
+def _with_images(result_json: str):
+    """Attach Image objects for any PNG paths listed in a tool result JSON."""
+    from mcp.server.fastmcp import Image
+
+    try:
+        data = _json.loads(result_json)
+    except Exception:
+        return result_json
+
+    plots = data.get("plots", [])
+    if not plots:
+        return result_json
+
+    contents: list = [result_json]
+    for png_path in plots:
+        try:
+            contents.append(Image(path=png_path))
+        except Exception:
+            pass
+    return contents
+
+
+def _build_instructions(viz_url: str | None) -> str:
+    viz_available = viz_url is not None
+    viz_tool_line = (
+        "- preview_item: PREFERRED for spatial plots — renders a variable directly "
+        "via the viz server (handles FESOM grids, land-sea mask, projections automatically)\n"
+        if viz_available else ""
+    )
+    rule_3 = (
+        "3. For spatial/map plots, ALWAYS call preview_item first.\n"
+        if viz_available else
+        "3. For analysis and plots, use open_and_run.\n"
+    )
+    return (
+        "You have access to an ESM (Earth System Model) catalog containing climate "
+        "simulation output files stored on an HPC cluster.\n\n"
+        "Available tools:\n"
+        "- list_collections: discover available experiments\n"
+        "- search_collections: find collections by run configuration / namelist parameters\n"
+        "- get_collection_info: get variables, time range, spatial extent, item count\n"
+        "- search_items: find file paths by collection, variable, and date range\n"
+        + viz_tool_line +
+        "- compare_collections: side-by-side NML parameter comparison across multiple collections\n"
+        "- open_and_run: find files and run Python code on them\n"
+        "- run_python: execute arbitrary Python code\n\n"
+        "RULES — FOLLOW EXACTLY:\n"
+        "1. NEVER write a text response before calling a tool. "
+        "Call the tool FIRST, THEN summarise the results. "
+        "Do NOT say 'I don't have enough information' — you have tools; use them.\n"
+        "2. ANY request involving files or data (find, open, inspect, analyse, plot) "
+        "MUST be answered by calling a tool. "
+        "NEVER output a Python code block (```python ... ```) to the user under any circumstances. "
+        "If you need to run code, call open_and_run or run_python — do NOT show the code.\n"
+        + rule_3 +
+        "4. If a tool returns an error or 0 results, call another tool to fix it — "
+        "do NOT write a text explanation. If search_items returns 0, retry with "
+        "lowercase variable name (e.g. 'sst' not 'SST').\n"
+        "5. To find collections by namelist/NML parameter, call search_collections with a "
+        "CQL2-text filter (e.g. nml:run_config.use_ice = true). "
+        "To find collections by variable, call search_collections(variable='sst').\n"
+        "6. When search_collections returns multiple collections, call compare_collections "
+        "with their IDs to show what NML parameters differ between the runs.\n"
+        "7. When a tool returns a list of N results, ALWAYS report ALL N results in your "
+        "response. NEVER truncate, abbreviate, or say 'and X more' — list every item.\n\n"
+        "FESOM UNSTRUCTURED GRID — if you must use open_and_run for FESOM spatial plots, "
+        "you MUST load elem2d.out for the triangulation (nod2d.out alone causes artifacts):\n"
+        "  import numpy as np, matplotlib.pyplot as plt, matplotlib.tri as tri\n"
+        "  import cartopy.crs as ccrs, cartopy.feature as cfeature\n"
+        "  mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1,2))\n"
+        "  lon, lat = mesh[:,0], mesh[:,1]\n"
+        "  elems = np.loadtxt('/albedo/pool/FESOM2/core2/elem2d.out', skiprows=1, dtype=int) - 1\n"
+        "  triang = tri.Triangulation(lon, lat, triangles=elems)\n"
+        "  lon_tri = lon[elems]; triang.set_mask(np.max(lon_tri,axis=1)-np.min(lon_tri,axis=1)>180)\n"
+        "  fig = plt.figure(figsize=(14,7)); ax = fig.add_subplot(111, projection=ccrs.Robinson())\n"
+        "  ax.set_global(); im = ax.tripcolor(triang, values, cmap='RdBu_r', transform=ccrs.PlateCarree())\n"
+        "  ax.add_feature(cfeature.LAND, color='lightgray', zorder=1)\n"
+        "  ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=2)\n"
+        "  plt.colorbar(im, ax=ax); plt.show()"
+    )
+
+
 def create_server(catalog_url: str, viz_url: str | None = None):
     """Build and return a configured FastMCP server instance."""
     try:
@@ -29,64 +111,7 @@ def create_server(catalog_url: str, viz_url: str | None = None):
             "Install with: pip install 'esm-catalog[mcp]'"
         ) from e
 
-    _viz_available = viz_url is not None
-
-    _viz_instruction = (
-        f"- preview_item: PREFERRED for spatial plots — renders a variable directly "
-        f"via the viz server (handles FESOM grids, land-sea mask, projections automatically)\n"
-        if _viz_available else ""
-    )
-
-    mcp = FastMCP(
-        "ESM Catalog",
-        instructions=(
-            "You have access to an ESM (Earth System Model) catalog containing climate "
-            "simulation output files stored on an HPC cluster.\n\n"
-            "Available tools:\n"
-            "- list_collections: discover available experiments\n"
-            "- search_collections: find collections by run configuration / namelist parameters\n"
-            "- get_collection_info: get variables, time range, spatial extent, item count\n"
-            "- search_items: find file paths by collection, variable, and date range\n"
-            + _viz_instruction +
-            "- open_and_run: find files and run Python code on them\n"
-            "- run_python: execute arbitrary Python code\n\n"
-            "RULES — FOLLOW EXACTLY:\n"
-            "1. NEVER write a text response before calling a tool. "
-            "Call the tool FIRST, THEN summarise the results. "
-            "Do NOT say 'I don't have enough information' — you have tools; use them.\n"
-            "2. ANY request involving files or data (find, open, inspect, analyse, plot) "
-            "MUST be answered by calling a tool. "
-            "NEVER output a Python code block (```python ... ```) to the user under any circumstances. "
-            "If you need to run code, call open_and_run or run_python — do NOT show the code.\n"
-            + (
-                "3. For spatial/map plots, ALWAYS call preview_item first.\n"
-                if _viz_available else
-                "3. For analysis and plots, use open_and_run.\n"
-            ) +
-            "4. If a tool returns an error or 0 results, call another tool to fix it — "
-            "do NOT write a text explanation. If search_items returns 0, retry with "
-            "lowercase variable name (e.g. 'sst' not 'SST').\n"
-            "5. To find collections by namelist/NML parameter, call search_collections with a "
-            "CQL2-text filter (e.g. nml:run_config.use_ice = true). "
-            "To find collections by variable, call search_collections(variable='sst').\n"
-            "6. When a tool returns a list of N results, ALWAYS report ALL N results in your "
-            "response. NEVER truncate, abbreviate, or say 'and X more' — list every item.\n\n"
-            "FESOM UNSTRUCTURED GRID — if you must use open_and_run for FESOM spatial plots, "
-            "you MUST load elem2d.out for the triangulation (nod2d.out alone causes artifacts):\n"
-            "  import numpy as np, matplotlib.pyplot as plt, matplotlib.tri as tri\n"
-            "  import cartopy.crs as ccrs, cartopy.feature as cfeature\n"
-            "  mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1,2))\n"
-            "  lon, lat = mesh[:,0], mesh[:,1]\n"
-            "  elems = np.loadtxt('/albedo/pool/FESOM2/core2/elem2d.out', skiprows=1, dtype=int) - 1\n"
-            "  triang = tri.Triangulation(lon, lat, triangles=elems)\n"
-            "  lon_tri = lon[elems]; triang.set_mask(np.max(lon_tri,axis=1)-np.min(lon_tri,axis=1)>180)\n"
-            "  fig = plt.figure(figsize=(14,7)); ax = fig.add_subplot(111, projection=ccrs.Robinson())\n"
-            "  ax.set_global(); im = ax.tripcolor(triang, values, cmap='RdBu_r', transform=ccrs.PlateCarree())\n"
-            "  ax.add_feature(cfeature.LAND, color='lightgray', zorder=1)\n"
-            "  ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=2)\n"
-            "  plt.colorbar(im, ax=ax); plt.show()"
-        ),
-    )
+    mcp = FastMCP("ESM Catalog", instructions=_build_instructions(viz_url))
 
     # Bind catalog_url into each tool so the LLM only needs to supply scientific parameters.
     @mcp.tool()
@@ -127,7 +152,7 @@ def create_server(catalog_url: str, viz_url: str | None = None):
         """
         return _tools.search_collections(catalog_url, filter_expr, variable)
 
-    if _viz_available:
+    if viz_url is not None:
         @mcp.tool()
         def preview_item(
             collection: str,
@@ -152,28 +177,12 @@ def create_server(catalog_url: str, viz_url: str | None = None):
                 start_date: ISO-8601 start date to select a specific item. Optional.
                 end_date: ISO-8601 end date to select a specific item. Optional.
             """
-            from mcp.server.fastmcp import Image
-
-            result_json = _tools.preview_item(
-                catalog_url, viz_url, collection, variable, time, level, cmap,
-                start_date, end_date,
+            return _with_images(
+                _tools.preview_item(
+                    catalog_url, viz_url, collection, variable, time, level, cmap,
+                    start_date, end_date,
+                )
             )
-            try:
-                data = _json.loads(result_json)
-            except Exception:
-                return result_json
-
-            plots = data.get("plots", [])
-            if not plots:
-                return result_json
-
-            contents: list = [result_json]
-            for png_path in plots:
-                try:
-                    contents.append(Image(path=png_path))
-                except Exception:
-                    pass
-            return contents
 
     @mcp.tool()
     def search_items(
@@ -193,6 +202,23 @@ def create_server(catalog_url: str, viz_url: str | None = None):
             limit: Maximum number of items to return (default 20, max 200).
         """
         return _tools.search_items(catalog_url, collection, variable, start_date, end_date, limit)
+
+    @mcp.tool()
+    def compare_collections(collection_ids: list[str]) -> str:
+        """Compare NML parameters side-by-side across multiple collections.
+
+        Call this after search_collections returns several matching IDs to understand
+        what scientifically distinguishes each run — which parameters are identical
+        across all experiments and which vary.
+
+        Returns per-collection metadata plus a split view:
+          - identical_across_all: NML params with the same value in every collection
+          - varying: params that differ, with each collection's value shown
+
+        Args:
+            collection_ids: List of collection IDs (e.g. from search_collections results).
+        """
+        return _tools.compare_collections(catalog_url, collection_ids)
 
     @mcp.tool()
     def open_and_run(
@@ -227,27 +253,9 @@ def create_server(catalog_url: str, viz_url: str | None = None):
             start_date: ISO-8601 start date. Optional.
             end_date: ISO-8601 end date. Optional.
         """
-        from mcp.server.fastmcp import Image
-
-        result_json = _tools.open_and_run(
-            catalog_url, collection, code, variable, start_date, end_date
+        return _with_images(
+            _tools.open_and_run(catalog_url, collection, code, variable, start_date, end_date)
         )
-        try:
-            data = _json.loads(result_json)
-        except Exception:
-            return result_json
-
-        plots = data.get("plots", [])
-        if not plots:
-            return result_json
-
-        contents: list = [result_json]
-        for png_path in plots:
-            try:
-                contents.append(Image(path=png_path))
-            except Exception:
-                pass
-        return contents
 
     @mcp.tool()
     def run_python(code: str):
@@ -266,30 +274,18 @@ def create_server(catalog_url: str, viz_url: str | None = None):
             code: Python source code to execute. Must contain literal file paths
                   obtained from search_items, never placeholders.
         """
-        from mcp.server.fastmcp import Image
-
-        result_json = _tools.run_python(code)
-        try:
-            data = _json.loads(result_json)
-        except Exception:
-            return result_json
-
-        plots = data.get("plots", [])
-        if not plots:
-            return result_json
-
-        contents: list = [result_json]
-        for png_path in plots:
-            try:
-                contents.append(Image(path=png_path))
-            except Exception:
-                pass
-        return contents
+        return _with_images(_tools.run_python(code))
 
     return mcp
 
 
-def run(catalog_url: str, transport: str = "stdio", port: int = 8001, viz_url: str | None = None) -> None:
+def run(
+    catalog_url: str,
+    transport: str = "stdio",
+    port: int = 8001,
+    viz_url: str | None = None,
+    base_url: str | None = None,
+) -> None:
     """Start the MCP server with the given transport.
 
     transport="streamable-http" — FastMCP Streamable HTTP; endpoint at /mcp
@@ -301,7 +297,7 @@ def run(catalog_url: str, transport: str = "stdio", port: int = 8001, viz_url: s
     if transport == "openapi":
         from .openapi_server import run as openapi_run
 
-        openapi_run(catalog_url=catalog_url, port=port)
+        openapi_run(catalog_url=catalog_url, port=port, base_url=base_url)
         return
 
     mcp = create_server(catalog_url, viz_url=viz_url)

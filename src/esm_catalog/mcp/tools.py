@@ -8,12 +8,141 @@ via HTTP (pystac_client.Client).
 from __future__ import annotations
 
 import json
+import re as _re
 import subprocess
 import sys
 import tempfile
 import uuid
 from pathlib import Path
 
+
+# ---------------------------------------------------------------------------
+# Placeholder detection — catches LLMs that forget to substitute real paths
+# ---------------------------------------------------------------------------
+
+# ALL_CAPS strings in quotes (≥6 chars) are almost always unsubstituted
+# placeholders (e.g. "REPLACE_WITH_FILE_PATH"). Explicit patterns below cover
+# lowercase/special-char cases the regex cannot catch.
+_PLACEHOLDER_PATTERNS = [
+    # Common template-style placeholders
+    "/path/to/file",
+    "path/to/file",
+    "your_file_path",
+    "<file_path>",
+    "<path>",
+    # open_and_run substitution tokens — different error message
+    "'{path}'",
+    '"{path}"',
+    "'{paths}'",
+    '"{paths}"',
+    "{path}",
+    "{paths}",
+    # Lowercase string literals produced by weaker models
+    "('path'",
+    '("path"',
+    "= 'path'",
+    '= "path"',
+    "['path'",
+    '["path"',
+    "'file_path'",
+    '"file_path"',
+    "'path_to_file'",
+    '"path_to_file"',
+    "'actual_path'",
+    '"actual_path"',
+]
+
+_PLACEHOLDER_RE = _re.compile(r"""['"][A-Z][A-Z0-9_]{5,}['"]""")
+_OPEN_AND_RUN_TOKENS = frozenset(("{path}", "{paths}"))
+
+
+def _check_placeholder(code: str) -> str | None:
+    """Return a REJECTED error JSON string if code contains a placeholder path.
+
+    Returns None if the code looks clean.
+    """
+    for pat in _PLACEHOLDER_PATTERNS:
+        if pat in code:
+            if pat.strip("'\"") in _OPEN_AND_RUN_TOKENS:
+                msg = (
+                    f"REJECTED: code contains unsubstituted open_and_run token '{pat}'. "
+                    "⚠️ You called run_python directly with a {path}/{paths} token that only "
+                    "open_and_run substitutes. DO NOT call run_python directly for catalog data. "
+                    "Call open_and_run instead — it finds the files and substitutes {path}/{paths} "
+                    "before executing the code."
+                )
+            else:
+                msg = (
+                    f"REJECTED: code contains placeholder '{pat}'. "
+                    "⚠️ DO NOT write a text response. You MUST use the tools: "
+                    "Step 1 — call search_items with the relevant collection and variable to get real file paths. "
+                    "Step 2 — copy the exact 'path' string from those results into the code. "
+                    "Step 3 — call run_python again with the literal path embedded. "
+                    "Never invent, guess, or use placeholder strings for paths."
+                )
+            return json.dumps({"error": msg, "stdout": "", "stderr": "", "plots": []})
+
+    m = _PLACEHOLDER_RE.search(code)
+    if m:
+        return json.dumps({
+            "error": (
+                f"REJECTED: code contains unsubstituted placeholder {m.group()}. "
+                "⚠️ DO NOT write a text response. You MUST use the tools: "
+                "Step 1 — call search_items with the relevant collection and variable to get real file paths. "
+                "Step 2 — copy the exact 'path' string from those results into the code. "
+                "Step 3 — call run_python again with the literal path embedded. "
+                "Never invent, guess, or use placeholder strings for paths."
+            ),
+            "stdout": "",
+            "stderr": "",
+            "plots": [],
+        })
+
+    return None
+
+
+# Error returned when FESOM code omits elem2d.out or misuses .plot().
+_FESOM_REJECTION = json.dumps({
+    "error": (
+        "REJECTED: FESOM data is on an unstructured grid — .plot() would produce "
+        "a 1-D node-index chart, not a geographic map.\n"
+        "You MUST use plt.tripcolor with the FESOM mesh triangulation from elem2d.out. "
+        "Using nod2d.out alone (without elem2d.out) creates spurious triangles across "
+        "land and poles, producing streak artifacts and no land-sea mask.\n"
+        "Call open_and_run again with this pattern:\n\n"
+        "    import numpy as np, matplotlib.pyplot as plt, matplotlib.tri as tri\n"
+        "    import xarray as xr\n"
+        "    import cartopy.crs as ccrs, cartopy.feature as cfeature\n"
+        "    # Load mesh nodes and triangulation\n"
+        "    mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1,2))\n"
+        "    lon, lat = mesh[:,0], mesh[:,1]\n"
+        "    elems = np.loadtxt('/albedo/pool/FESOM2/core2/elem2d.out', skiprows=1, dtype=int) - 1\n"
+        "    triang = tri.Triangulation(lon, lat, triangles=elems)\n"
+        "    # Mask triangles that span the dateline (pole artifacts)\n"
+        "    lon_tri = lon[elems]\n"
+        "    triang.set_mask(np.max(lon_tri, axis=1) - np.min(lon_tri, axis=1) > 180)\n"
+        "    # Load data\n"
+        "    ds = xr.open_mfdataset({paths}, combine='by_coords')\n"
+        "    sst = ds['sst'].mean('time').values\n"
+        "    # Plot with cartopy for land masking\n"
+        "    fig = plt.figure(figsize=(14,7))\n"
+        "    ax = fig.add_subplot(111, projection=ccrs.Robinson())\n"
+        "    ax.set_global()\n"
+        "    im = ax.tripcolor(triang, sst, cmap='coolwarm', transform=ccrs.PlateCarree())\n"
+        "    ax.add_feature(cfeature.LAND, color='lightgray', zorder=1)\n"
+        "    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=2)\n"
+        "    plt.colorbar(im, ax=ax, label='SST (°C)'); ax.set_title('Mean SST'); plt.show()\n\n"
+        "Replace 'sst' with the actual variable name if different."
+    ),
+    "stdout": "",
+    "stderr": "",
+    "plots": [],
+})
+
+
+# ---------------------------------------------------------------------------
+# Catalog helpers
+# ---------------------------------------------------------------------------
 
 def _client(catalog_url: str):
     """Return a pystac_client.Client for the given catalog URL."""
@@ -141,12 +270,9 @@ def search_items(
         end = end_date or ".."
         params["datetime"] = f"{start}/{end}"
 
-    filter_parts = []
     if variable:
         # Variable names are stored lowercase; normalise to avoid 0-result misses
-        filter_parts.append(f"variable = '{variable.lower()}'")
-    if filter_parts:
-        params["filter"] = " AND ".join(filter_parts)
+        params["filter"] = f"variable = '{variable.lower()}'"
         params["filter-lang"] = "cql2-text"
 
     resp = httpx.get(f"{catalog_url}/search", params=params, timeout=30)
@@ -197,7 +323,7 @@ def get_collection_info(catalog_url: str, collection_id: str) -> str:
     # Fetch variable list (queryables with item-scan fallback)
     variables = _get_collection_variables(catalog_url, collection_id)
 
-    # Item count via search with limit=0 (use numberMatched)
+    # Item count via search with limit=1 (use numberMatched)
     item_count = None
     try:
         iresp = httpx.get(
@@ -223,7 +349,7 @@ def get_collection_info(catalog_url: str, collection_id: str) -> str:
         "variables": variables,
         "spatial_extent": spatial[0] if spatial else None,
         "temporal_extent": temporal[0] if temporal else None,
-        "nml_parameter_count": len(nml_params),
+        "nml_parameters": nml_params,
     }
     return json.dumps(summary, indent=2)
 
@@ -303,48 +429,76 @@ def search_collections(
     return json.dumps({"total_matched": total, "collections": summary}, indent=2)
 
 
-import re as _re
+def compare_collections(
+    catalog_url: str,
+    collection_ids: list[str],
+) -> str:
+    """Compare NML parameters and metadata across multiple collections.
 
-_PLACEHOLDER_PATTERNS = [
-    "REPLACE_WITH_FILE_PATH",
-    "REPLACE_WITH_PATH",
-    "PATH_FROM_SEARCH",
-    "FILE_FROM_SEARCH",
-    "FILE_PATH_HERE",
-    "/path/to/file",
-    "path/to/file",
-    "your_file_path",
-    "<file_path>",
-    "<path>",
-    # open_and_run substitution tokens — if seen in run_python, the model
-    # skipped open_and_run and forgot to substitute the path
-    "'{path}'",
-    '"{path}"',
-    "'{paths}'",
-    '"{paths}"',
-    "{path}",
-    "{paths}",
-    # bare 'path' or "path" as a string literal — placeholder the model forgot to fill
-    "('path'",
-    '("path"',
-    "= 'path'",
-    '= "path"',
-    "['path'",
-    '["path"',
-    # lowercase variants commonly produced by weaker models
-    "'file_path'",
-    '"file_path"',
-    "'path_to_file'",
-    '"path_to_file"',
-    "'actual_path'",
-    '"actual_path"',
-    "= 'file_path'",
-    '= "file_path"',
-]
+    For each collection, fetches its namelist parameters and temporal extent.
+    Then computes which NML parameters are identical across all collections
+    and which vary — making it easy to understand what distinguishes each run.
 
-# Match any ALL_CAPS_SNAKE_CASE token ≥6 chars used as a string literal —
-# these are almost always placeholders the model forgot to substitute.
-_PLACEHOLDER_RE = _re.compile(r"""['"][A-Z][A-Z0-9_]{5,}['"]""")
+    Call this after search_collections returns a list of matching IDs to get
+    a side-by-side scientific comparison.
+
+    Args:
+        catalog_url: STAC API base URL.
+        collection_ids: List of collection IDs to compare (e.g. from search_collections).
+    """
+    import httpx
+
+    records = []
+    for cid in collection_ids:
+        try:
+            resp = httpx.get(f"{catalog_url}/collections/{cid}", timeout=30)
+            resp.raise_for_status()
+            col = resp.json()
+        except Exception as e:
+            records.append({"id": cid, "error": str(e)})
+            continue
+
+        nml_raw = col.get("nml:parameters", {})
+        # Flatten {"run_config": {"use_ice": true}} → {"run_config.use_ice": true}
+        nml_flat: dict = {}
+        for group, params in nml_raw.items():
+            if isinstance(params, dict):
+                for k, v in params.items():
+                    nml_flat[f"{group}.{k}"] = v
+            else:
+                nml_flat[group] = params
+
+        extent = col.get("extent", {})
+        temporal = extent.get("temporal", {}).get("interval", [[]])
+
+        records.append({
+            "id": cid,
+            "title": col.get("title", ""),
+            "temporal_extent": temporal[0] if temporal else None,
+            "nml_parameters": nml_flat,
+        })
+
+    # Compute which NML params are identical vs varying across all valid records
+    valid = [r for r in records if "nml_parameters" in r]
+    all_keys = sorted({k for r in valid for k in r["nml_parameters"]})
+
+    identical: dict = {}
+    varying: dict = {}
+    for key in all_keys:
+        values = {r["id"]: r["nml_parameters"].get(key) for r in valid}
+        if len({str(v) for v in values.values()}) == 1:
+            identical[key] = next(iter(values.values()))
+        else:
+            varying[key] = values
+
+    return json.dumps({
+        "total": len(records),
+        "collections": records,
+        "nml_comparison": {
+            "identical_across_all": identical,
+            "varying": varying,
+        },
+    }, indent=2)
 
 
 def open_and_run(
@@ -393,42 +547,7 @@ def open_and_run(
     _bad_plot = ".plot(" in code and "tripcolor" not in code
     _bad_tripcolor = "tripcolor" in code and "elem2d.out" not in code
     if _fesom and (_bad_plot or _bad_tripcolor):
-        return json.dumps({
-            "error": (
-                "REJECTED: FESOM data is on an unstructured grid — .plot() would produce "
-                "a 1-D node-index chart, not a geographic map.\n"
-                "You MUST use plt.tripcolor with the FESOM mesh triangulation from elem2d.out. "
-                "Using nod2d.out alone (without elem2d.out) creates spurious triangles across "
-                "land and poles, producing streak artifacts and no land-sea mask.\n"
-                "Call open_and_run again with this pattern:\n\n"
-                "    import numpy as np, matplotlib.pyplot as plt, matplotlib.tri as tri\n"
-                "    import xarray as xr\n"
-                "    import cartopy.crs as ccrs, cartopy.feature as cfeature\n"
-                "    # Load mesh nodes and triangulation\n"
-                "    mesh = np.loadtxt('/albedo/pool/FESOM2/core2/nod2d.out', skiprows=1, usecols=(1,2))\n"
-                "    lon, lat = mesh[:,0], mesh[:,1]\n"
-                "    elems = np.loadtxt('/albedo/pool/FESOM2/core2/elem2d.out', skiprows=1, dtype=int) - 1\n"
-                "    triang = tri.Triangulation(lon, lat, triangles=elems)\n"
-                "    # Mask triangles that span the dateline (pole artifacts)\n"
-                "    lon_tri = lon[elems]\n"
-                "    triang.set_mask(np.max(lon_tri, axis=1) - np.min(lon_tri, axis=1) > 180)\n"
-                "    # Load data\n"
-                "    ds = xr.open_mfdataset({paths}, combine='by_coords')\n"
-                "    sst = ds['sst'].mean('time').values\n"
-                "    # Plot with cartopy for land masking\n"
-                "    fig = plt.figure(figsize=(14,7))\n"
-                "    ax = fig.add_subplot(111, projection=ccrs.Robinson())\n"
-                "    ax.set_global()\n"
-                "    im = ax.tripcolor(triang, sst, cmap='coolwarm', transform=ccrs.PlateCarree())\n"
-                "    ax.add_feature(cfeature.LAND, color='lightgray', zorder=1)\n"
-                "    ax.add_feature(cfeature.COASTLINE, linewidth=0.5, zorder=2)\n"
-                "    plt.colorbar(im, ax=ax, label='SST (°C)'); ax.set_title('Mean SST'); plt.show()\n\n"
-                "Replace 'sst' with the actual variable name if different."
-            ),
-            "stdout": "",
-            "stderr": "",
-            "plots": [],
-        })
+        return _FESOM_REJECTION
 
     # Use limit=1 for {path}-only code, full fetch when {paths} is needed
     limit = 200 if "{paths}" in code else 1
@@ -457,9 +576,7 @@ def open_and_run(
         })
 
     all_paths = [it.get("path", "") for it in items if it.get("path")]
-
-    resolved_code = code.replace("{path}", first_path)
-    resolved_code = resolved_code.replace("{paths}", repr(all_paths))
+    resolved_code = code.replace("{path}", first_path).replace("{paths}", repr(all_paths))
     return run_python(resolved_code, timeout=timeout)
 
 
@@ -559,47 +676,9 @@ def run_python(code: str, timeout: int = 120) -> str:
     Returns:
         JSON with stdout, stderr, returncode, and a list of generated PNG file paths.
     """
-    _OPEN_AND_RUN_TOKENS = {"{path}", "{paths}", "'{path}'", '"{path}"', "'{paths}'", '"{paths}"'}
-    for pat in _PLACEHOLDER_PATTERNS:
-        if pat in code:
-            if pat.strip("'\"") in ("{path}", "{paths}"):
-                msg = (
-                    f"REJECTED: code contains unsubstituted open_and_run token '{pat}'. "
-                    "⚠️ You called run_python directly with a {path}/{paths} token that only "
-                    "open_and_run substitutes. DO NOT call run_python directly for catalog data. "
-                    "Call open_and_run instead — it finds the files and substitutes {path}/{paths} "
-                    "before executing the code."
-                )
-            else:
-                msg = (
-                    f"REJECTED: code contains placeholder '{pat}'. "
-                    "⚠️ DO NOT write a text response. You MUST use the tools: "
-                    "Step 1 — call search_items with the relevant collection and variable to get real file paths. "
-                    "Step 2 — copy the exact 'path' string from those results into the code. "
-                    "Step 3 — call run_python again with the literal path embedded. "
-                    "Never invent, guess, or use placeholder strings for paths."
-                )
-            return json.dumps({
-                "error": msg,
-                "stdout": "",
-                "stderr": "",
-                "plots": [],
-            })
-    m = _PLACEHOLDER_RE.search(code)
-    if m:
-        return json.dumps({
-            "error": (
-                f"REJECTED: code contains unsubstituted placeholder {m.group()}. "
-                "⚠️ DO NOT write a text response. You MUST use the tools: "
-                "Step 1 — call search_items with the relevant collection and variable to get real file paths. "
-                "Step 2 — copy the exact 'path' string from those results into the code. "
-                "Step 3 — call run_python again with the literal path embedded. "
-                "Never invent, guess, or use placeholder strings for paths."
-            ),
-            "stdout": "",
-            "stderr": "",
-            "plots": [],
-        })
+    rejection = _check_placeholder(code)
+    if rejection:
+        return rejection
 
     plot_dir = Path(tempfile.gettempdir())
     plot_id = uuid.uuid4().hex[:8]

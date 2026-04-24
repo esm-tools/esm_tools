@@ -490,9 +490,9 @@ class DuckDBCatalogClient(BaseCoreClient):
 
         # Remove the stac-fastapi default `rel=data` link that points to
         # /collections. STAC Browser Browse mode uses BOTH the `data` link
-        # (which triggers GET /collections → all component collections) AND
+        # (which triggers GET /collections → flat list of all collections) AND
         # `child` links. Removing `data` keeps Browse showing only the
-        # experiment-level tree; Search still works via direct API calls.
+        # experiment cards; Search still works via direct API calls.
         lp["links"] = [
             lnk for lnk in lp["links"] if lnk.get("rel") != "data"
         ]
@@ -505,13 +505,17 @@ class DuckDBCatalogClient(BaseCoreClient):
             "href": f"{base_url}/queryables",
         })
 
-        # Add child links for each experiment (uses experiment hierarchy)
+        # Add child links directly to the collection for each experiment.
+        # With Option A (one collection per experiment, collection_id == experiment_id)
+        # the /experiments/{id} catalog layer has a single child — itself — which
+        # adds a redundant navigation hop. Linking straight to /collections/{id}
+        # takes the user from the landing page to items in one click.
         for exp_id in self._get_all_experiment_ids():
             lp["links"].append({
                 "rel": "child",
                 "type": "application/json",
                 "title": exp_id,
-                "href": f"{base_url}/experiments/{exp_id}",
+                "href": f"{base_url}/collections/{exp_id}",
             })
 
         return lp

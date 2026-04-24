@@ -191,15 +191,19 @@ vis-server (external)
 |------------------------------------------------+----------------------------------+---------------------------------------------------------------------------------------------|
 | **A: Stock browser only**                      | Zero                             | Sections 1–2–5–7 fully; 3 (API only, no NML UI); lose Sections 4 browser viz, 6 UI, 8 fixes |
 | **B: Stock browser + upstream PR for NOT fix** | Minimal                          | Same as A plus CQL2 NOT queries in browser                                                  |
-| **C: Custom browser fork maintained**          | High (JS/Vue, upstream tracking) | All implemented features                                                                    |
+| **C: Custom browser fork maintained** ✅ **DECIDED** | High (JS/Vue, upstream tracking) | All implemented features                                                               |
 | **D: No browser at all (API + MCP only)**      | Zero                             | Everything except browser-based exploration; LLM path covers most discovery and viz         |
+
+> **Team decision (2026-04-24)**: Option C selected. NML search UI, CQL2 NOT fix, visualization panel, and Python code snippets panel are all deemed necessary. Custom browser fork will be maintained as part of WP SimCat scope.
 
 ---
 
-## Open Questions for Discussion
+## Open Questions — Resolved / Remaining
 
-1. **Who are the primary users?** If they are comfortable with Python/scripting, Option D (API + MCP) may be sufficient. If the catalog is meant for non-programmers, a browser UI is critical.
-2. **Is the CQL2 NOT fix worth upstreaming?** A PR to the STAC Browser project would recover the most critical browser bug without maintaining a fork.
-3. **Is the visualization panel a must-have in the browser, or is MCP sufficient?** The vis-server and MCP tools provide the same plots; the question is the interface.
-4. **Does Helmholtz metadata-only access (7.2) require a custom deployment or just API configuration?** This is independent of the browser decision.
-5. **Funding: if NML search must be in the browser**, is there budget to maintain the fork long-term, or should effort go into improving the MCP/LLM path instead?
+- [x] ~~Is maintaining a JS/Vue browser fork sustainable?~~ → **Yes, decided 2026-04-24**
+- [x] ~~Is the CQL2 NOT fix worth upstreaming?~~ → **Moot; fork is maintained**
+- [x] ~~Is the visualization panel a must-have?~~ → **Yes, deemed necessary**
+- [ ] Does the Helmholtz public metadata tier (7.2) require any browser changes, or is it purely API-side?
+- [ ] Multi-site: is metadata-only cross-site serving sufficient, or is data access needed too?
+- [ ] Data locality: is a lightweight `update-state` sweep command worth implementing, or is periodic re-scan sufficient?
+- [ ] Data locality: for hard archive moves (Case B) — is this common at AWI/DKRZ, or do HSM setups keep paths stable?

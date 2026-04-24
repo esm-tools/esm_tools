@@ -589,7 +589,16 @@ def serve(catalog_paths, registry_path, host, port, jupyterhub, write_groups):
         "Only relevant for --transport openapi."
     ),
 )
-def mcp(catalog_url, transport, port, viz_url, base_url):
+@click.option(
+    "--path",
+    default=None,
+    show_default=True,
+    help=(
+        "HTTP path for streamable-http transport (default: /mcp). "
+        "Use a sub-path to namespace multiple servers, e.g. /mcp/esm-catalog."
+    ),
+)
+def mcp(catalog_url, transport, port, viz_url, base_url, path):
     """Start the MCP server for LLM tool access to the catalog.
 
     Exposes four tools to connected LLMs:
@@ -600,8 +609,8 @@ def mcp(catalog_url, transport, port, viz_url, base_url):
     try:
         from esm_catalog.mcp.server import run as mcp_run
 
-        logger.info("Starting MCP server (transport={}, catalog={}, viz={})", transport, catalog_url, viz_url or "disabled")
-        mcp_run(catalog_url=catalog_url, transport=transport, port=port, viz_url=viz_url, base_url=base_url)
+        logger.info("Starting MCP server (transport={}, catalog={}, viz={}, path={})", transport, catalog_url, viz_url or "disabled", path or "/mcp")
+        mcp_run(catalog_url=catalog_url, transport=transport, port=port, viz_url=viz_url, base_url=base_url, path=path)
     except ImportError as e:
         logger.error(
             "Missing dependency for mcp command: {}\n"

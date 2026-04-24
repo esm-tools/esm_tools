@@ -140,6 +140,16 @@ def create_app(
         items_get_request_model=ItemCollectionUriWithToken,
     )
 
+    # stac-fastapi's middlewares parameter is not always reliable; add CORS
+    # directly to the FastAPI app to guarantee the headers are present.
+    api.app.add_middleware(
+        CORSMiddleware,
+        allow_origins=cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["*"],
+    )
+
     # Add catalog management routes
     catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
     api.app.include_router(catalog_router)

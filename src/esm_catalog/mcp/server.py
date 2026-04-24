@@ -111,7 +111,10 @@ def create_server(catalog_url: str, viz_url: str | None = None):
             "Install with: pip install 'esm-catalog[mcp]'"
         ) from e
 
-    mcp = FastMCP("ESM Catalog", instructions=_build_instructions(viz_url))
+    # Use host="0.0.0.0" at construction to prevent FastMCP from auto-enabling
+    # DNS rebinding protection (which would reject non-localhost Host headers
+    # from reverse proxies such as Traefik).
+    mcp = FastMCP("ESM Catalog", instructions=_build_instructions(viz_url), host="0.0.0.0")
 
     # Bind catalog_url into each tool so the LLM only needs to supply scientific parameters.
     @mcp.tool()
@@ -285,10 +288,11 @@ def run(
     port: int = 8001,
     viz_url: str | None = None,
     base_url: str | None = None,
+    path: str | None = None,
 ) -> None:
     """Start the MCP server with the given transport.
 
-    transport="streamable-http" — FastMCP Streamable HTTP; endpoint at /mcp
+    transport="streamable-http" — FastMCP Streamable HTTP; endpoint at /mcp (or --path)
                                    Open WebUI "MCP Streamable HTTP" integration
     transport="openapi"         — FastAPI REST server; /openapi.json for Open WebUI
     transport="sse"             — FastMCP SSE server
@@ -305,6 +309,8 @@ def run(
     if transport == "streamable-http":
         mcp.settings.host = "0.0.0.0"
         mcp.settings.port = port
+        if path is not None:
+            mcp.settings.streamable_http_path = path
         mcp.run(transport="streamable-http")
     elif transport == "sse":
         mcp.settings.host = "0.0.0.0"

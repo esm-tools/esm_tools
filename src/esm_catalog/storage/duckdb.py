@@ -143,6 +143,23 @@ class CatalogDB:
         for (data,) in rows:
             yield json.loads(data)
 
+    def add_component_to_collection(self, collection_id: str, component: str) -> None:
+        """Append *component* to the collection's components list if not already present."""
+        collection = self.get_collection(collection_id)
+        if collection is None:
+            return
+        components = collection.get("components", [])
+        if component not in components:
+            components = sorted(set(components) | {component})
+            collection["components"] = components
+            self.db.execute(
+                "UPDATE collections SET data = ? WHERE id = ?",
+                [json.dumps(collection), collection_id],
+            )
+            logger.debug(
+                "Added component '{}' to collection '{}'", component, collection_id
+            )
+
     def iter_experiments(self) -> list[str]:
         """Return sorted list of distinct experiment IDs in this catalog."""
         cursor = self.db.cursor()

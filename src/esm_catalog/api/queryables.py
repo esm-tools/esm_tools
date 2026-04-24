@@ -63,9 +63,11 @@ _SPECIAL_PROPERTIES: dict[str, dict] = {
     },
 }
 
-# Collection-level properties to expose as queryables (for collection search)
+# Collection-level properties to expose as queryables (for collection search).
+# "model" was removed in Option A (collapsed collections): model components are
+# now stored as "components" (list) on the collection and as "component" on each
+# item, where they are auto-discovered by the item-property discovery loop.
 _COLLECTION_PROPERTIES: list[str] = [
-    "model",       # Model component (ECHAM, FESOM, etc.)
     "experiment",  # Experiment ID
 ]
 

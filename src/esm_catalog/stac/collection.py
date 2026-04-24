@@ -22,13 +22,11 @@ def make_collection(ctx, experiment_path: Path | str | None = None) -> dict:
     """
     collection = {
         "type": "Collection",
-        "id": ctx.collection_id,
+        "id": ctx.collection_id,          # == ctx.experiment_id (Option A)
         "stac_version": "1.0.0",
         "stac_extensions": [],
-        "title": ctx.collection_title,
-        "description": (
-            f"Output from {ctx.component} for experiment {ctx.experiment_id}"
-        ),
+        "title": ctx.experiment_id,
+        "description": f"All model output for experiment {ctx.experiment_id}",
         "license": "proprietary",
         "extent": {
             "spatial": {"bbox": [[-180.0, -90.0, 180.0, 90.0]]},
@@ -39,7 +37,10 @@ def make_collection(ctx, experiment_path: Path | str | None = None) -> dict:
         ],
         # Custom fields for collection-level search
         "experiment": ctx.experiment_id,
-        "model": ctx.component,
+        # components: list of model component names present in this experiment.
+        # Populated with the first component at creation; subsequent components
+        # are appended by CatalogDB.add_component_to_collection() as they are scanned.
+        "components": [ctx.component],
     }
 
     # Scan namelists if experiment path is provided

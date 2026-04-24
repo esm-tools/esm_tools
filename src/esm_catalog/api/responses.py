@@ -114,7 +114,7 @@ class ExperimentCatalog(BaseModel):
 class ExperimentSummary(BaseModel):
     id: str
     title: str
-    collection_count: int
+    components: list[str]
     href: str
 
 

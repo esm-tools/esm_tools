@@ -296,8 +296,11 @@ def _make_ctx(
     component: str,
     experiment_path: Path | None = None,
 ) -> CollectionContext:
-    collection_id = f"{experiment_id}-{component}"
-    collection_title = f"{experiment_id} / {component}"
+    # Option A: one collection per experiment — collection_id == experiment_id.
+    # The component is preserved on every item as properties.component and is
+    # used as a facet filter rather than as a collection discriminator.
+    collection_id = experiment_id
+    collection_title = experiment_id
     return CollectionContext(
         experiment_id=experiment_id,
         component=component,
@@ -308,10 +311,15 @@ def _make_ctx(
 
 
 def _ensure_collection(ctx: CollectionContext, db) -> None:
-    """Create and insert the collection if it does not exist yet."""
+    """Create and insert the collection if it does not exist yet.
+
+    If the collection already exists (experiment seen before), register the new
+    component so the collection's components list stays up to date.
+    """
     from esm_catalog.stac.collection import make_collection
 
     if db.collection_exists(ctx.collection_id):
+        db.add_component_to_collection(ctx.collection_id, ctx.component)
         return
 
     collection = make_collection(ctx, experiment_path=ctx.experiment_path)

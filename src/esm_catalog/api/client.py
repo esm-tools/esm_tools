@@ -488,14 +488,12 @@ class DuckDBCatalogClient(BaseCoreClient):
         request = kwargs.get("request")
         base_url = str(request.base_url).rstrip("/") if request else ""
 
-        # Remove the stac-fastapi default `rel=data` link that points to
-        # /collections. STAC Browser Browse mode uses BOTH the `data` link
-        # (which triggers GET /collections → flat list of all collections) AND
-        # `child` links. Removing `data` keeps Browse showing only the
-        # experiment cards; Search still works via direct API calls.
-        lp["links"] = [
-            lnk for lnk in lp["links"] if lnk.get("rel") != "data"
-        ]
+        # Keep the stac-fastapi default `rel=data` link to /collections.
+        # STAC Browser uses this link to enable the "Search for Experiments"
+        # tab (canSearchCollections checks for getApiCollectionsLink() which
+        # looks for rel=data). With apiCatalogPriority='collections' in the
+        # browser config, Browse also uses this link for the card grid, so no
+        # separate child links are needed and there are no duplicate cards.
 
         # Queryables link - STAC Browser checks for the full OGC rel URI
         lp["links"].append({
@@ -504,19 +502,6 @@ class DuckDBCatalogClient(BaseCoreClient):
             "title": "Queryables",
             "href": f"{base_url}/queryables",
         })
-
-        # Add child links directly to the collection for each experiment.
-        # With Option A (one collection per experiment, collection_id == experiment_id)
-        # the /experiments/{id} catalog layer has a single child — itself — which
-        # adds a redundant navigation hop. Linking straight to /collections/{id}
-        # takes the user from the landing page to items in one click.
-        for exp_id in self._get_all_experiment_ids():
-            lp["links"].append({
-                "rel": "child",
-                "type": "application/json",
-                "title": exp_id,
-                "href": f"{base_url}/collections/{exp_id}",
-            })
 
         return lp
 

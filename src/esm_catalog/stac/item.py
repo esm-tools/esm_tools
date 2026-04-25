@@ -159,6 +159,9 @@ def make_item(
     # Apply contacts extension (optional, requires config)
     item = add_contacts_extension(item, config)
 
+    # Derive experiment_type from start year and experiment name
+    item = _add_experiment_type(item, ctx.experiment_id)
+
     return item
 
 
@@ -197,3 +200,56 @@ def _to_href(path: "Union[Path, UPath]") -> str:
 def _get_filename(path: "Union[Path, UPath]") -> str:
     """Get the filename from a path (works for both Path and UPath)."""
     return PurePosixPath(str(path)).name
+
+
+def _add_experiment_type(item: dict, experiment_id: str) -> dict:
+    """Derive experiment_type and paleo:years_bp and add them to item properties.
+
+    This runs AFTER add_namelist_item_extension so nml:echam:runctl:dt_start
+    is available.  Both properties use the same start-year logic:
+
+    experiment_type classification:
+    - year < 1800  → "paleo"    (deep-time or pre-industrial paleo)
+    - 1800–1950    → "control"  (pre-industrial control / spinup)
+    - year > 1950  → "historical"
+
+    paleo:years_bp = 1950 - start_year  (years before present, present = 1950 CE)
+    Examples: 1850 → 100 BP, -21000 → 22950 BP, 1960 → -10 BP
+
+    Start year priority:
+    1. nml:echam:runctl:dt_start (most authoritative — experiment config)
+    2. Item start_datetime / datetime (GRIB/NetCDF time coordinate)
+    """
+    from esm_catalog.stac.extensions.paleo import _parse_year_from_iso
+
+    props = item["properties"]
+    start_year = None
+
+    # 1. From namelist dt_start (already added by add_namelist_item_extension)
+    dt_start_nml = props.get("nml:echam:runctl:dt_start")
+    if isinstance(dt_start_nml, list) and dt_start_nml:
+        try:
+            start_year = int(dt_start_nml[0])
+        except (TypeError, ValueError):
+            pass
+
+    # 2. Fallback: item datetime (set before namelist extension runs)
+    if start_year is None:
+        dt_str = props.get("start_datetime") or props.get("datetime")
+        if dt_str:
+            start_year = _parse_year_from_iso(dt_str)
+
+    # Classify experiment type and compute years BP
+    if start_year is not None:
+        if start_year < 1800:
+            exp_type = "paleo"
+        elif start_year <= 1950:
+            exp_type = "control"
+        else:
+            exp_type = "historical"
+        props["paleo:years_bp"] = 1950 - start_year
+    else:
+        exp_type = "control"
+
+    props["experiment_type"] = exp_type
+    return item

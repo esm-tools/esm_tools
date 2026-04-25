@@ -62,14 +62,14 @@ def add_paleo_extension(
     """
     props = item["properties"]
 
-    # Determine the geological year
+    # Determine the geological year for full paleo extension fields
     geo_year = _resolve_paleo_year(item, config, paleo_year)
 
     if geo_year is None:
-        # Not a paleoclimate simulation
+        # Not an explicitly configured paleoclimate simulation
         return item
 
-    # Add paleo properties
+    # Add full paleo properties
     props["paleo:year"] = geo_year
     props["paleo:display"] = _format_geological(geo_year, reference_year)
     props["paleo:reference_year"] = reference_year

@@ -54,6 +54,8 @@ def add_hpc_extension(item: dict, path) -> dict:
     # Asset-level fields
     asset = item["assets"].get("data", {})
     asset["hpc:storage_type"] = storage_info.get("hpc:storage_type", "posix")
+    if "hpc:system" in storage_info:
+        asset["hpc:system"] = storage_info["hpc:system"]
 
     # Only query HSM state if file appears to be on tape
     if storage_info.get("hpc:storage_type") in ("hpss", "dmf"):

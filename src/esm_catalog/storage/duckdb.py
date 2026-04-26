@@ -376,10 +376,19 @@ class CatalogDB:
                         )
                         params.append(val)
                     else:
-                        conditions.append(
-                            f"json_extract(data, '$.properties.{field}') {op} ?"
-                        )
-                        params.append(json.dumps(val))
+                        if isinstance(val, (int, float)):
+                            # Numeric comparison: cast JSON to DOUBLE for correct
+                            # ordering.  Without this, DuckDB compares JSON vs
+                            # VARCHAR lexicographically: '100' >= '90' → False.
+                            conditions.append(
+                                f"CAST(json_extract(data, '$.properties.{field}') AS DOUBLE) {op} ?"
+                            )
+                            params.append(float(val))
+                        else:
+                            conditions.append(
+                                f"json_extract(data, '$.properties.{field}') {op} ?"
+                            )
+                            params.append(json.dumps(val))
 
         where = " AND ".join(conditions)
 

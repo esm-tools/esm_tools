@@ -283,7 +283,7 @@ def create_app(
         """
         from esm_catalog.api.paleo_presets import get_presets
 
-        return {"presets": get_presets()}
+        return {"presets": [p.to_dict() for p in get_presets()]}
 
     @api.app.post(
         "/paleo-presets",
@@ -311,7 +311,7 @@ def create_app(
             years_bp=preset.get("years_bp", 0),
             description=preset.get("description", ""),
         )
-        return {"status": "created", "preset": result}
+        return {"status": "created", "preset": result.to_dict()}
 
     @api.app.delete(
         "/paleo-presets/{preset_id}",

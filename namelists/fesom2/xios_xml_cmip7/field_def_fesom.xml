@@ -47,6 +47,8 @@
     <field id="osalttend"        long_name="tendency of sea water salinity"           unit="psu m s-1" prec="8"/>
     <field id="osaltrmadvect"    long_name="salinity tendency due to advection"       unit="psu m s-1" prec="8"/>
     <field id="osaltdiff"        long_name="salinity tendency due to diffusion"       unit="psu m s-1" prec="8"/>
+    <field id="unod_sfc"         long_name="zonal surface velocity at nodes"          standard_name="sea_water_x_velocity_at_sea_surface"      unit="m s-1"/>
+    <field id="vnod_sfc"         long_name="meridional surface velocity at nodes"     standard_name="sea_water_y_velocity_at_sea_surface"      unit="m s-1"/>
   </field_group>
 
   <!-- 2D fields on ELEMENTS -->

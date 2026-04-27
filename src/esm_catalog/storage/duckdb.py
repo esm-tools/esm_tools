@@ -241,25 +241,31 @@ class CatalogDB:
                     [collection_id, key, str(val)],
                 )
 
-        # Index each variable name in multi-variable files (GRIB/NetCDF).
-        # variables is a list of dicts {"name": ..., "long_name": ..., ...};
-        # extract the name string so the index stores "ssh" not "{'name':'ssh',...}".
+        # Index variable names under the "variables" property so the queryables
+        # dropdown and filter cover both multi-variable files (properties.variables
+        # array) and single-variable files (properties.variable string).
+        var_names_to_index: list[str] = []
         for var in props.get("variables", []):
             if isinstance(var, dict):
-                var_name = var.get("name")
+                name = var.get("name")
             elif isinstance(var, str):
-                var_name = var
+                name = var
             else:
                 continue
-            if var_name:
-                self.db.execute(
-                    """
-                    INSERT OR IGNORE INTO collection_item_props
-                        (collection_id, property, value)
-                    VALUES (?, ?, ?)
-                    """,
-                    [collection_id, "variables", str(var_name)],
-                )
+            if name:
+                var_names_to_index.append(name)
+        # Single-variable files only have the singular "variable" field.
+        if not var_names_to_index and props.get("variable"):
+            var_names_to_index.append(str(props["variable"]))
+        for var_name in var_names_to_index:
+            self.db.execute(
+                """
+                INSERT OR IGNORE INTO collection_item_props
+                    (collection_id, property, value)
+                VALUES (?, ?, ?)
+                """,
+                [collection_id, "variables", var_name],
+            )
 
     def reindex_variables_prop(self) -> int:
         """Rebuild the ``variables`` rows in collection_item_props from item data.
@@ -288,18 +294,25 @@ class CatalogDB:
             for collection_id, data_str in rows:
                 item = json.loads(data_str) if isinstance(data_str, str) else data_str
                 props = item.get("properties", {})
+                var_names: list[str] = []
                 for var in props.get("variables", []):
                     if isinstance(var, dict):
-                        var_name = var.get("name")
+                        name = var.get("name")
                     elif isinstance(var, str):
-                        var_name = var
+                        name = var
                     else:
                         continue
-                    if var_name and collection_id:
+                    if name:
+                        var_names.append(name)
+                # Single-variable files only set "variable" (singular).
+                if not var_names and props.get("variable"):
+                    var_names.append(str(props["variable"]))
+                for var_name in var_names:
+                    if collection_id:
                         self.db.execute(
                             "INSERT OR IGNORE INTO collection_item_props"
                             " (collection_id, property, value) VALUES (?, ?, ?)",
-                            [collection_id, "variables", str(var_name)],
+                            [collection_id, "variables", var_name],
                         )
                 total += 1
             offset += batch_size
@@ -358,12 +371,17 @@ class CatalogDB:
                         conditions.append(f"({' OR '.join(or_conds)})")
                         params.extend(vals)
                     elif field == "variables":
-                        # variables is stored as a plain string array, e.g.
-                        # ["ssh", "sst"]. Use list_contains on the array directly.
+                        # Check both multi-var array (properties.variables) and
+                        # single-var field (properties.variable) so all items are
+                        # covered regardless of how many variables they contain.
                         or_conds = [
                             "list_contains("
-                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
-                            "    ?)"
+                            "    COALESCE("
+                            "        TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]),"
+                            "        CASE WHEN json_extract_string(data, '$.properties.variable') IS NOT NULL"
+                            "             THEN list_value(json_extract_string(data, '$.properties.variable'))"
+                            "             ELSE []::VARCHAR[] END"
+                            "    ), ?)"
                             for _ in vals
                         ]
                         conditions.append(f"({' OR '.join(or_conds)})")
@@ -392,8 +410,12 @@ class CatalogDB:
                         elif field == "variables":
                             or_conds = [
                                 "list_contains("
-                                "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
-                                "    ?)"
+                                "    COALESCE("
+                                "        TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]),"
+                                "        CASE WHEN json_extract_string(data, '$.properties.variable') IS NOT NULL"
+                                "             THEN list_value(json_extract_string(data, '$.properties.variable'))"
+                                "             ELSE []::VARCHAR[] END"
+                                "    ), ?)"
                                 for _ in val
                             ]
                             conditions.append(f"({' OR '.join(or_conds)})")
@@ -424,8 +446,12 @@ class CatalogDB:
                     elif field == "variables":
                         conditions.append(
                             "list_contains("
-                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
-                            "    ?"
+                            "    COALESCE("
+                            "        TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]),"
+                            "        CASE WHEN json_extract_string(data, '$.properties.variable') IS NOT NULL"
+                            "             THEN list_value(json_extract_string(data, '$.properties.variable'))"
+                            "             ELSE []::VARCHAR[] END"
+                            "    ), ?"
                             ")"
                         )
                         params.append(val)

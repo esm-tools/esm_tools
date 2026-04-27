@@ -812,5 +812,35 @@ def catalogs(server, as_json):
         sys.exit(1)
 
 
+# ------------------------------------------------------------------
+# reindex (repair collection_item_props for existing catalogs)
+# ------------------------------------------------------------------
+
+@main.command()
+@click.argument("catalog", type=click.Path(exists=True))
+@click.pass_context
+def reindex(ctx, catalog):
+    """Rebuild the variables index in an existing catalog DuckDB file.
+
+    Fixes stale collection_item_props entries created by older code that stored
+    variable metadata dicts as strings instead of variable name strings.
+    Run this once against each catalog after upgrading.
+
+    Example:
+        esm-catalog reindex /work/paleo/all-experiments-v2.duckdb
+    """
+    from esm_catalog.storage.duckdb import CatalogDB
+    from rich.console import Console
+
+    console = Console()
+    console.print(f"Reindexing variables in [bold]{catalog}[/bold] ...")
+    db = CatalogDB(catalog)
+    try:
+        n = db.reindex_variables_prop()
+        console.print(f"[green]Done.[/green] Processed {n} items.")
+    finally:
+        db.close()
+
+
 if __name__ == "__main__":
     main()

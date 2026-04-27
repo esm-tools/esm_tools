@@ -241,9 +241,16 @@ class CatalogDB:
                     [collection_id, key, str(val)],
                 )
 
-        # Index each variable name in multi-variable files (GRIB).
-        # Stored individually so collection-level searches also work.
-        for var_name in props.get("variables", []):
+        # Index each variable name in multi-variable files (GRIB/NetCDF).
+        # variables is a list of dicts {"name": ..., "long_name": ..., ...};
+        # extract the name string so the index stores "ssh" not "{'name':'ssh',...}".
+        for var in props.get("variables", []):
+            if isinstance(var, dict):
+                var_name = var.get("name")
+            elif isinstance(var, str):
+                var_name = var
+            else:
+                continue
             if var_name:
                 self.db.execute(
                     """
@@ -253,6 +260,51 @@ class CatalogDB:
                     """,
                     [collection_id, "variables", str(var_name)],
                 )
+
+    def reindex_variables_prop(self) -> int:
+        """Rebuild the ``variables`` rows in collection_item_props from item data.
+
+        Previous code stored ``str({"name": "ssh", ...})`` (dict repr) instead of
+        the variable name string.  This method clears and rebuilds those rows so
+        the queryables dropdown and variables filter work correctly.
+
+        Returns:
+            Number of items processed.
+        """
+        # Remove stale entries (dict-as-string values are unusable)
+        self.db.execute(
+            "DELETE FROM collection_item_props WHERE property = 'variables'"
+        )
+        total = 0
+        batch_size = 500
+        offset = 0
+        while True:
+            rows = self.db.execute(
+                "SELECT collection, data FROM items LIMIT ? OFFSET ?",
+                [batch_size, offset],
+            ).fetchall()
+            if not rows:
+                break
+            for collection_id, data_str in rows:
+                item = json.loads(data_str) if isinstance(data_str, str) else data_str
+                props = item.get("properties", {})
+                for var in props.get("variables", []):
+                    if isinstance(var, dict):
+                        var_name = var.get("name")
+                    elif isinstance(var, str):
+                        var_name = var
+                    else:
+                        continue
+                    if var_name and collection_id:
+                        self.db.execute(
+                            "INSERT OR IGNORE INTO collection_item_props"
+                            " (collection_id, property, value) VALUES (?, ?, ?)",
+                            [collection_id, "variables", str(var_name)],
+                        )
+                total += 1
+            offset += batch_size
+        logger.info("reindex_variables_prop: processed {} items", total)
+        return total
 
     def get_collection_item_props(self, collection_id: str) -> dict:
         """Return {property: set_of_values} index for *collection_id*."""
@@ -306,9 +358,11 @@ class CatalogDB:
                         conditions.append(f"({' OR '.join(or_conds)})")
                         params.extend(vals)
                     elif field == "variables":
+                        # variables is a list of dicts; use JSONPath wildcard to
+                        # extract all name strings, then check containment.
                         or_conds = [
                             "list_contains("
-                            "    json_extract(data, '$.properties.variables')::VARCHAR[],"
+                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables[*].name') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
                             "    ?)"
                             for _ in vals
                         ]
@@ -338,7 +392,7 @@ class CatalogDB:
                         elif field == "variables":
                             or_conds = [
                                 "list_contains("
-                                "    json_extract(data, '$.properties.variables')::VARCHAR[],"
+                                "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables[*].name') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
                                 "    ?)"
                                 for _ in val
                             ]
@@ -370,7 +424,7 @@ class CatalogDB:
                     elif field == "variables":
                         conditions.append(
                             "list_contains("
-                            "    json_extract(data, '$.properties.variables')::VARCHAR[],"
+                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables[*].name') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
                             "    ?"
                             ")"
                         )
@@ -479,7 +533,7 @@ class CatalogDB:
                 if native_val is not None and str(native_val) in [str(v) for v in val]:
                     continue
                 indexed_vals = idx.get(field, set())
-                if any(str(v) in indexed_vals for v in val):
+                if indexed_vals and all(str(v) in indexed_vals for v in val):
                     continue
                 return False
 

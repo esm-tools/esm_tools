@@ -49,7 +49,7 @@ _OP_NEGATE: dict[str, str] = {
 
 # Well-known property names that are always lowercased
 _KNOWN_PROPERTIES = frozenset({
-    "variable", "experiment", "model", "component", "collection", "stream"
+    "variable", "variables", "experiment", "model", "component", "collection", "stream"
 })
 
 # Regex for parsing CQL2-text expressions.
@@ -58,6 +58,25 @@ _TEXT_PATTERN = re.compile(
     r"\b([\w:.]+)\s*(<=|>=|<>|!=|<|>|=)\s*(?:'([^']*)'|\"([^\"]*)\"|(\S+?)(?:\s|$|AND|OR))",
     re.IGNORECASE,
 )
+
+# Regex for CQL2-text IN operator: field IN ('v1','v2',...)
+_IN_PATTERN = re.compile(
+    r"\b([\w:.]+)\s+IN\s*\(([^)]*)\)",
+    re.IGNORECASE,
+)
+
+
+def _parse_in_values(raw: str) -> list:
+    """Parse comma-separated values from a CQL2-text IN list.
+
+    Handles both quoted (``'v1','v2'``) and unquoted (``v1,v2``) forms.
+    """
+    values = []
+    for part in raw.split(","):
+        v = part.strip().strip("'\"")
+        if v:
+            values.append(v)
+    return values
 
 
 def _unwrap_literal(val: Any) -> Any:
@@ -184,6 +203,14 @@ def parse_cql2_text(expr: str, negate: bool = False) -> dict:
                     or_result[key] = (existing if isinstance(existing, list) else [existing]) + [value]
                 else:
                     or_result[key] = [value]
+            for m in _IN_PATTERN.finditer(part):
+                prop = m.group(1)
+                if prop.upper() in ("AND", "OR", "NOT"):
+                    continue
+                key = prop.lower() if prop.lower() in _KNOWN_PROPERTIES else prop
+                values = _parse_in_values(m.group(2))
+                if values:
+                    or_result[key] = values
         return or_result
 
     # AND expression or single condition
@@ -204,6 +231,14 @@ def parse_cql2_text(expr: str, negate: bool = False) -> dict:
             result[key] = (existing if isinstance(existing, list) else [existing]) + [cond]
         else:
             result[key] = cond
+    for m in _IN_PATTERN.finditer(expr):
+        prop = m.group(1)
+        if prop.upper() in ("AND", "OR", "NOT"):
+            continue
+        key = prop.lower() if prop.lower() in _KNOWN_PROPERTIES else prop
+        values = _parse_in_values(m.group(2))
+        if values and not negate:
+            result[key] = ("IN", values)
     return result
 
 

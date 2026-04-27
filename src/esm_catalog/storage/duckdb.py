@@ -358,11 +358,11 @@ class CatalogDB:
                         conditions.append(f"({' OR '.join(or_conds)})")
                         params.extend(vals)
                     elif field == "variables":
-                        # variables is a list of dicts; use JSONPath wildcard to
-                        # extract all name strings, then check containment.
+                        # variables is stored as a plain string array, e.g.
+                        # ["ssh", "sst"]. Use list_contains on the array directly.
                         or_conds = [
                             "list_contains("
-                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables[*].name') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
+                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
                             "    ?)"
                             for _ in vals
                         ]
@@ -392,7 +392,7 @@ class CatalogDB:
                         elif field == "variables":
                             or_conds = [
                                 "list_contains("
-                                "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables[*].name') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
+                                "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
                                 "    ?)"
                                 for _ in val
                             ]
@@ -424,7 +424,7 @@ class CatalogDB:
                     elif field == "variables":
                         conditions.append(
                             "list_contains("
-                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables[*].name') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
+                            "    COALESCE(TRY_CAST(json_extract(data, '$.properties.variables') AS VARCHAR[]), ARRAY[]::VARCHAR[]),"
                             "    ?"
                             ")"
                         )

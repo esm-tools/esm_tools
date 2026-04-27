@@ -83,6 +83,12 @@ _EXCLUDED_PROPERTIES: frozenset[str] = frozenset({
 # Maximum number of enum values to include (avoid huge dropdowns)
 _MAX_ENUM_VALUES = 100
 
+# Properties individually indexed in collection_item_props as strings.
+# For these, fetch from the index (not from the raw JSON array value)
+# so the browser gets a usable string enum rather than an unusable array type.
+# These bypass _MAX_ENUM_VALUES since they are known-categorical (bounded sets).
+_INDEX_AS_STRING: frozenset = frozenset({"variables"})
+
 # Maximum number of properties to discover (performance limit)
 _MAX_PROPERTIES = 200
 
@@ -315,6 +321,26 @@ def _get_distinct_values(db: "CatalogDB", prop_name: str, limit: int = 100) -> l
         return []
 
 
+def _get_indexed_values(db: "CatalogDB", prop_name: str) -> list[str]:
+    """Get distinct values for a property from the collection_item_props index.
+
+    Used for array-valued item properties (e.g. ``variables``) that are
+    individually indexed as string rows rather than stored as a list.
+    Returns each unique indexed value as a plain string.
+    """
+    if not is_safe_property_name(prop_name):
+        return []
+    try:
+        rows = db.db.execute(
+            "SELECT DISTINCT value FROM collection_item_props WHERE property = ? ORDER BY value",
+            [prop_name],
+        ).fetchall()
+        return [r[0] for r in rows if r[0]]
+    except Exception as e:
+        logger.debug("Failed to get indexed values for {}: {}", prop_name, e)
+        return []
+
+
 def _get_collection_distinct_values(db: "CatalogDB") -> list[str]:
     """Get distinct collection IDs."""
     try:
@@ -509,6 +535,12 @@ def get_queryables(
                 collection_props[key] = set()
             collection_props[key].update(values)
 
+    # nml:* properties are handled by the dedicated nml_params path below.
+    # Remove them from all_keys to prevent them inflating the count and
+    # randomly evicting ordinary properties (variable, stream, etc.) when
+    # the set is truncated to _MAX_PROPERTIES.
+    all_keys = {k for k in all_keys if not k.startswith("nml:")}
+
     # Limit number of properties for performance
     all_keys = set(list(all_keys)[:_MAX_PROPERTIES])
 
@@ -521,7 +553,10 @@ def get_queryables(
         for path in catalog_paths:
             db = pool.get(path)
             if db:
-                values.extend(_get_distinct_values(db, prop_name))
+                if prop_name in _INDEX_AS_STRING:
+                    values.extend(_get_indexed_values(db, prop_name))
+                else:
+                    values.extend(_get_distinct_values(db, prop_name))
         # Deduplicate while preserving order-ish
         seen: set = set()
         unique_values = []
@@ -530,7 +565,9 @@ def get_queryables(
             if key not in seen:
                 seen.add(key)
                 unique_values.append(v)
-        property_values[prop_name] = unique_values[:_MAX_ENUM_VALUES + 1]
+        # Indexed properties are known-categorical; allow a larger enum limit.
+        limit = 1000 if prop_name in _INDEX_AS_STRING else _MAX_ENUM_VALUES + 1
+        property_values[prop_name] = unique_values[:limit]
 
     # Build properties dict
     properties: dict = {}
@@ -562,9 +599,21 @@ def get_queryables(
     # Add discovered item properties
     for prop_name in sorted(all_keys):
         values = property_values.get(prop_name, [])
+
+        if prop_name in _INDEX_AS_STRING:
+            # Indexed array properties: always expose as sorted string enum.
+            prop_schema: dict = {
+                "title": _make_title(prop_name),
+                "type": "string",
+            }
+            if values:
+                prop_schema["enum"] = sorted(str(v) for v in values)
+            properties[prop_name] = prop_schema
+            continue
+
         schema_type, enum_values = _infer_json_schema_type(values)
 
-        prop_schema: dict = {
+        prop_schema = {
             "title": _make_title(prop_name),
             "type": schema_type,
         }
@@ -784,8 +833,8 @@ def get_collection_queryables(
     if not collection_found:
         return None
 
-    # Filter to safe property names and limit count
-    all_keys = {k for k in all_keys if is_safe_property_name(k)}
+    # Filter to safe property names; remove nml: (handled separately) and excluded
+    all_keys = {k for k in all_keys if is_safe_property_name(k) and not k.startswith("nml:")}
     all_keys = set(list(all_keys)[:_MAX_PROPERTIES])
     all_keys -= _EXCLUDED_PROPERTIES
 
@@ -795,9 +844,21 @@ def get_collection_queryables(
         for path in catalog_paths:
             db = pool.get(path)
             if db:
-                values.extend(_get_collection_distinct_values_filtered(
-                    db, prop_name, collection_id
-                ))
+                if prop_name in _INDEX_AS_STRING:
+                    # Fetch individual indexed string values for this collection
+                    try:
+                        rows = db.db.execute(
+                            "SELECT DISTINCT value FROM collection_item_props "
+                            "WHERE collection_id = ? AND property = ? ORDER BY value",
+                            [collection_id, prop_name],
+                        ).fetchall()
+                        values.extend(r[0] for r in rows if r[0])
+                    except Exception as e:
+                        logger.debug("Failed indexed values for {}/{}: {}", collection_id, prop_name, e)
+                else:
+                    values.extend(_get_collection_distinct_values_filtered(
+                        db, prop_name, collection_id
+                    ))
         # Deduplicate
         seen: set = set()
         unique_values = []
@@ -806,7 +867,9 @@ def get_collection_queryables(
             if key not in seen:
                 seen.add(key)
                 unique_values.append(v)
-        property_values[prop_name] = unique_values[:_MAX_ENUM_VALUES + 1]
+        # Indexed properties are known-categorical; allow a larger enum limit.
+        limit = 1000 if prop_name in _INDEX_AS_STRING else _MAX_ENUM_VALUES + 1
+        property_values[prop_name] = unique_values[:limit]
 
     # Build properties dict
     properties: dict = {}
@@ -818,9 +881,21 @@ def get_collection_queryables(
     # Add discovered properties
     for prop_name in sorted(all_keys):
         values = property_values.get(prop_name, [])
+
+        if prop_name in _INDEX_AS_STRING:
+            # Indexed array properties: always expose as sorted string enum.
+            prop_schema: dict = {
+                "title": _make_title(prop_name),
+                "type": "string",
+            }
+            if values:
+                prop_schema["enum"] = sorted(str(v) for v in values)
+            properties[prop_name] = prop_schema
+            continue
+
         schema_type, enum_values = _infer_json_schema_type(values)
 
-        prop_schema: dict = {
+        prop_schema = {
             "title": _make_title(prop_name),
             "type": schema_type,
         }

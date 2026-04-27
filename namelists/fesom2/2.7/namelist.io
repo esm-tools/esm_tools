@@ -25,6 +25,8 @@ ldiag_Ri          = .false.  ! enables Richardson number diagnostics ('shear', '
 ldiag_turbflux    = .false.  ! enables turbulent flux diagnostics ('KvdTdz', 'KvdSdz')
 ldiag_salt3D      = .false.  ! enables 3D salinity diagnostics
 ldiag_dMOC        = .true.  ! enables 'dMOC' output (density MOC diagnostics)
+dmoc_call_freq      = 1     ! call dMOC diagnostic every N units (default 1)
+dmoc_call_freq_unit = 's'   ! unit: 's'=steps, 'h'=hours, 'd'=days, 'm'=months
 ldiag_DVD         = .false.  ! enables 'DVD' output (Discrete Variance Decay diagnostics)
 ldiag_forc        = .false.  ! enables 'FORC' output (comprehensive forcing diagnostics)
 ldiag_extflds     = .false.  ! enables extended field diagnostics

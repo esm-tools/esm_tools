@@ -6,4 +6,10 @@
     <axis id="nz"     long_name="depth below sea level at layer mid-points" standard_name="depth" />
     <axis id="nz1"    long_name="depth below sea level at layer interfaces" standard_name="depth" />
   </axis_group>
+
+  <!-- Density-coordinate axis for dMOC diagnostics.
+       n_glo and value (89 sigma-2 density classes) are set at runtime. -->
+  <axis_group id="fesom_dens_axes" unit="kg m-3" axis_type="Z">
+    <axis id="std_dens" long_name="potential density referenced to 2000 m" standard_name="sea_water_sigma_2" />
+  </axis_group>
 </axis_definition>

@@ -23,7 +23,7 @@
       <variable id="ldiag_Ri"          type="bool">false</variable>
       <variable id="ldiag_TurbFlux"    type="bool">false</variable>
       <variable id="ldiag_salt3D"      type="bool">false</variable>
-      <variable id="ldiag_dMOC"        type="bool">false</variable>
+      <variable id="ldiag_dMOC"        type="bool">true </variable>
       <variable id="ldiag_DVD"         type="bool">false</variable>
       <variable id="ldiag_forc"        type="bool">false</variable>
       <variable id="ldiag_extflds"     type="bool">false</variable>

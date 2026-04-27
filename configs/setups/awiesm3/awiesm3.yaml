@@ -132,8 +132,9 @@ oifs:
             build_type: 'release'
             comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
                 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios
-                --build-type=${build_type} --install; chmod -R ${source_code_permissions} .; 
-                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+                --build-type=${build_type} --install;
+                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS;
+                nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
             wam: true
             add_add_namelist_changes:
@@ -269,9 +270,9 @@ fesom:
             add_config_files:
                 recom:     recom
             add_config_sources:
-                recom:     "${namelist_dir}/namelist.recom.${recom_setting}"
-                tra:       "${namelist_dir}/namelist.tra.recom.${recom_setting}"
-                io:        "${namelist_dir}/namelist.io.recom.${recom_setting}"
+                recom:     "${namelist_dir}/bin_${recom_setting}/namelist.recom"
+                tra:       "${namelist_dir}/bin_${recom_setting}/namelist.tra"
+                io:        "${namelist_dir}/bin_${recom_setting}/namelist.io"
             add_config_in_work:
                 recom:     "namelist.recom"
             recom_input_path: '/work/ab0246/a270092/input/fesom2/recom/'
@@ -335,6 +336,11 @@ fesom:
             restart_log:
                 restart_length_unit: "${restart_unit}"
                 restart_length: "${restart_rate}"
+        namelist.io:
+            diag_list:
+                ldiag_dMOC: true
+                dmoc_call_freq: 3
+                dmoc_call_freq_unit: "h"
 
     choose_general.major_version:
         "v3.4":
@@ -593,6 +599,8 @@ xios:
             omp_num_threads: 8
         false:
             nproc: 1
+further_reading:
+      - xios/xios.env.yaml
 
 rnfmap:
     pool_dir: ${general.pool_dir}

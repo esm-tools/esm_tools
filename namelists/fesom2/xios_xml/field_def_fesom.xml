@@ -56,4 +56,27 @@
     <field id="Av" long_name="vertical momentum viscosity" unit="m2 s-1"/>
   </field_group>
 
+  <!-- dMOC density-coordinate fields on ELEMENTS (std_dens_N sigma-2 classes) -->
+  <field_group id="fesom_rho_elem" grid_ref="grid_rho_elem" prec="4">
+    <field id="U_rho_x_DZ"    long_name="zonal velocity transport within density class"      unit="m2 s-1"/>
+    <field id="V_rho_x_DZ"    long_name="meridional velocity transport within density class" unit="m2 s-1"/>
+    <field id="std_heat_flux"  long_name="heat buoyancy flux within density class"           unit="kg m s-1"/>
+    <field id="std_rest_flux"  long_name="restoring buoyancy flux within density class"      unit="kg m s-1"/>
+    <field id="std_frwt_flux"  long_name="freshwater buoyancy flux within density class"     unit="kg m s-1"/>
+    <field id="std_dens_dVdT"  long_name="rate of change of density class volume"           unit="m3 s-1"/>
+    <field id="std_dens_Z"     long_name="mean depth of density class"                      unit="m"/>
+    <field id="std_dens_H"     long_name="thickness of density class"                       unit="m"/>
+  </field_group>
+
+  <!-- dMOC density-coordinate fields on NODES (std_dens_N sigma-2 classes) -->
+  <field_group id="fesom_rho_nod" grid_ref="grid_rho_nod" prec="4">
+    <field id="std_dens_DIV"      long_name="divergence within density class"          unit="m3 s-1"/>
+    <field id="std_dens_DIVbolus" long_name="GM bolus divergence within density class" unit="m3 s-1"/>
+  </field_group>
+
+  <!-- dMOC sigma-2 density on z-levels (grid_3d_nod, nl-1 levels) -->
+  <field_group id="fesom_dmoc_dens" grid_ref="grid_3d_nod" prec="4">
+    <field id="density_dMOC" long_name="potential density referenced to 2000 m" unit="kg m-3"/>
+  </field_group>
+
 </field_definition>

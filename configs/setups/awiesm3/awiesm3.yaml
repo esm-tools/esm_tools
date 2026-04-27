@@ -599,8 +599,6 @@ xios:
             omp_num_threads: 8
         false:
             nproc: 1
-further_reading:
-      - xios/xios.env.yaml
 
 rnfmap:
     pool_dir: ${general.pool_dir}

@@ -144,7 +144,17 @@ xios:
                         foo: bar
         use_oasis: --use_oasis oasis3_mct
         branch: main
-        comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+        # After XIOS itself is built, inline-clone and compile the hdf5-blosc
+        # filter plugin into ${model_dir}/hdf5-blosc/plugin/ if HDF5_ROOT and
+        # C_BLOSC_ROOT are exported by xios.env.yaml for this HPC. XIOS 2.5
+        # patched at netCdfInterface.cpp calls nc_def_var_filter(id=32001)
+        # for blosc+zstd; HDF5 loads libh5blosc.so from $HDF5_PLUGIN_PATH
+        # at runtime (set in xios.env.yaml). Pattern mirrors oasis3mct's
+        # 6.0-YAC inline build of yaxt+yac.
+        # Idempotent: re-runs are a no-op once libh5blosc.so exists.
+        # clean_command above does not touch hdf5-blosc/, so a make clean
+        # of XIOS does not trigger a plugin rebuild.
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && gcc -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
       # XIOS with oasis dependencies and oasis support
       2.5.1:
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git

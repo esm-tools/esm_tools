@@ -1136,12 +1136,24 @@ oifs:
                     o3_scheme: none
                     cloudfixer: none
                     massfixer: 3
+                    # prog_oifs.sh / script_oifs.sh are covered by the
+                    # framework-wide prog_*.sh / script_*.sh globs in
+                    # filelists.py:check_for_unknown_files.
                     ignore_files:
                             drhook: drhook
+                            meminfo: meminfo
+                            ece_gridlist: ece_gridlist
+                            gstats: gstats
                     ignore_in_work:
                             drhook: drhook*
+                            meminfo: "meminfo.txt"
+                            ece_gridlist: "ece_gridlist_*.txt"
+                            gstats: "gstats.xml"
                     ignore_sources:
                             drhook: drhook*
+                            meminfo: "meminfo.txt"
+                            ece_gridlist: "ece_gridlist_*.txt"
+                            gstats: "gstats.xml"
                     icmcl_dir: ${input_dir}/climate.v020/${res_number_tl}/
                     icmcl_file: ICMCLawi3INIT
                     append_icmcl: ""

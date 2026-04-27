@@ -977,21 +977,50 @@ def _compute_checksums_for_dir(config, target):
 
 def check_for_unknown_files(config):
     # files = os.listdir(config["general"]["thisrun_work_dir"])
+    work_dir = config["general"]["thisrun_work_dir"]
     all_files = glob.iglob(
-        config["general"]["thisrun_work_dir"] + "**/*", recursive=True
+        work_dir + "**/*", recursive=True
     )
 
     known_files = [
-        config["general"]["thisrun_work_dir"] + "/" + "hostfile_srun",
-        config["general"]["thisrun_work_dir"] + "/" + "namcouple",
-        config["general"]["thisrun_work_dir"] + "/" + "coupling.xml",
+        work_dir + "/" + "hostfile_srun",
+        work_dir + "/" + "namcouple",
+        work_dir + "/" + "coupling.xml",
     ]
+
+    # Framework-generated runtime artifacts that exist for every run
+    # regardless of which components are active: SLURM hostlists and the
+    # per-component prog_/script_ launcher wrappers written by
+    # esm_runscripts. Globbed against the work dir; non-matching patterns
+    # are no-ops.
+    framework_runtime_globs = [
+        "hostlist",
+        "prog_*.sh",
+        "script_*.sh",
+    ]
+    for pattern in framework_runtime_globs:
+        known_files += glob.glob(os.path.join(work_dir, pattern))
 
     for filetype in config["general"]["all_model_filetypes"]:
         for model in config["general"]["valid_model_names"] + ["general"]:
             if filetype + "_sources" in config[model]:
                 known_files += list(config[model][filetype + "_sources"].values())
                 known_files += list(config[model][filetype + "_targets"].values())
+
+    # Expand ``ignore_in_work`` glob patterns from each component config and
+    # treat the matched files as known. Without this, components like
+    # lpj_guess that intentionally leave large numbers of intermediate
+    # output files in ``work/`` see them all copied to ``unknown/`` at tidy
+    # time. Patterns are matched recursively relative to ``work_dir``.
+    for model in config["general"]["valid_model_names"] + ["general"]:
+        ignore_in_work = config[model].get("ignore_in_work", {})
+        if not isinstance(ignore_in_work, dict):
+            continue
+        for pattern in ignore_in_work.values():
+            if not isinstance(pattern, str):
+                continue
+            full_pattern = os.path.join(work_dir, pattern)
+            known_files += glob.glob(full_pattern, recursive=True)
 
     known_files = [os.path.realpath(known_file) for known_file in known_files]
     known_files = list(dict.fromkeys(known_files))

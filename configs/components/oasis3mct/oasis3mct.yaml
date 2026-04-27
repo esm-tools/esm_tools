@@ -263,23 +263,33 @@ oasis3mct:
             masks: masks.nc
             grids: grids.nc
 
+    # Patterns globbed recursively relative to thisrun_work_dir by
+    # check_for_unknown_files (filelists.py); files matching any of these
+    # are not copied to the experiment unknown/ directory at tidy time.
+    # ignore_in_work and ignore_sources must use the same keys.
     ignore_files:
             debug.root: debug.root
             debug.notroot: debug.notroot
             lucia: lucia
             nout: nout
+            timeline: timeline
+            load_balancing: load_balancing
 
     ignore_in_work:
             debug.root: debug.root*
             debug.notroot: debug.notroot*
             lucia: lucia.*
             nout: nout.000000
+            timeline: "timeline_*.nc"
+            load_balancing: "load_balancing_info.txt"
 
     ignore_sources:
             debug.root: debug.root*
             debug.notroot: debug.notroot*
             lucia: lucia.*
             nout: nout.000000
+            timeline: "timeline_*.nc"
+            load_balancing: "load_balancing_info.txt"
 
 
     # transformations:

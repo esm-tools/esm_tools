@@ -108,17 +108,40 @@ lpj_guess:
             ignore_files:
                 outputs: outputs
                 log: log
+                monthly_catalog: monthly_catalog
+                landuse_dir: landuse_dir
+                landuse_contents: landuse_contents
+                landuse_ins: landuse_ins
+                run_dirs: run_dirs
+                guess_per_run_log: guess_per_run_log
+                timeline_lpjg_per_run: timeline_lpjg_per_run
+            # ignore_in_work and ignore_sources must use matching keys
+            # (framework looks up ignore_files values in ignore_sources).
+            # Patterns are globbed recursively relative to thisrun_work_dir
+            # by check_for_unknown_files (filelists.py); files matching these
+            # are not copied to the experiment unknown/ directory at tidy time.
+            # prog_lpj_guess.sh / script_lpj_guess.sh are covered by the
+            # framework-wide prog_*.sh / script_*.sh globs in filelists.py.
             ignore_in_work:
-                # Ignore output files with the same name
-                outputs: "output/*.out"
-                # Ignore log files
+                outputs: "run*/output/*.out"
                 log: "*.log"
-                # Ignore input directories (created during setup)
-                ndep_dir: "ndep"
+                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
                 landuse_dir: "landuse"
+                landuse_contents: "landuse/**/*"
+                landuse_ins: "landuse.ins"
+                run_dirs: "run*"
+                guess_per_run_log: "run*/guess*.log"
+                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
             ignore_sources:
-                outputs: "output/*.out"
+                outputs: "run*/output/*.out"
                 log: "*.log"
+                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
+                landuse_dir: "landuse"
+                landuse_contents: "landuse/**/*"
+                landuse_ins: "landuse.ins"
+                run_dirs: "run*"
+                guess_per_run_log: "run*/guess*.log"
+                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
 
             # Output data - enumerate over all run directories to preserve structure
             # Uses proc_list enumeration (defined above via nproc)
@@ -138,14 +161,40 @@ lpj_guess:
             ignore_files:
                 outputs: outputs
                 log: log
+                monthly_catalog: monthly_catalog
+                landuse_dir: landuse_dir
+                landuse_contents: landuse_contents
+                landuse_ins: landuse_ins
+                run_dirs: run_dirs
+                guess_per_run_log: guess_per_run_log
+                timeline_lpjg_per_run: timeline_lpjg_per_run
+            # ignore_in_work and ignore_sources must use matching keys
+            # (framework looks up ignore_files values in ignore_sources).
+            # Patterns are globbed recursively relative to thisrun_work_dir
+            # by check_for_unknown_files (filelists.py); files matching these
+            # are not copied to the experiment unknown/ directory at tidy time.
+            # prog_lpj_guess.sh / script_lpj_guess.sh are covered by the
+            # framework-wide prog_*.sh / script_*.sh globs in filelists.py.
             ignore_in_work:
-                outputs: "output/*.out"
+                outputs: "run*/output/*.out"
                 log: "*.log"
-                ndep_dir: "ndep"
+                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
                 landuse_dir: "landuse"
+                landuse_contents: "landuse/**/*"
+                landuse_ins: "landuse.ins"
+                run_dirs: "run*"
+                guess_per_run_log: "run*/guess*.log"
+                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
             ignore_sources:
-                outputs: "output/*.out"
+                outputs: "run*/output/*.out"
                 log: "*.log"
+                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
+                landuse_dir: "landuse"
+                landuse_contents: "landuse/**/*"
+                landuse_ins: "landuse.ins"
+                run_dirs: "run*"
+                guess_per_run_log: "run*/guess*.log"
+                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
 
             outdata_files: {}
             outdata_in_work: {}

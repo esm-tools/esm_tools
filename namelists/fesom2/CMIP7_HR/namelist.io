@@ -62,11 +62,8 @@ compression_level = 1        ! compression level for netCDF output (1=fastest, 9
 !   sivoln/sivols                 via ldiag_cmor=.true.
 !   utemp, vtemp, usalt, vsalt    via ldiag_trflx=.true. (default monthly)
 !
-! --- 3-hourly output ---
-io_list =  'tx_sur    ',3, 'h', 4,
-           'ty_sur    ',3, 'h', 4,
 ! --- Daily output ---
-           'sst       ',1, 'd', 4,
+io_list =  'sst       ',1, 'd', 4,
            'sss       ',1, 'd', 4,
            'ssh       ',1, 'd', 4,
            'uice      ',1, 'd', 4,
@@ -113,6 +110,8 @@ io_list =  'tx_sur    ',3, 'h', 4,
            'osaltrmadvect',1, 'm', 8,
            'osaltdiff ',1, 'm', 8,
 ! --- Monthly 2D elements ---
+           'tx_sur    ',1, 'm', 4,
+           'ty_sur    ',1, 'm', 4,
            'strength_ice',1, 'm', 4,
            'sgm11     ',1, 'm', 4,
            'sgm12     ',1, 'm', 4,

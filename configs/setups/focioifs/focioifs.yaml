@@ -236,8 +236,8 @@ general:
 
 oifs:
 
-        version: "48r1-foci5"
-        major_version: "48r1"
+        #version: "48r1-foci5"
+        #major_version: "48r1"
 
         # This is 0 (off) by default in oifs.yaml
         # but should always be 2 for coupled runs
@@ -2281,7 +2281,8 @@ computer:
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2023_impi2021
                   #compiler_mpi: intel2023_ompi416
                   iolibraries: system_libs
                   #compiler_mpi: intel2021_impi2019
@@ -2308,7 +2309,8 @@ computer:
                   compiler_mpi: intel2024_impi2021
                glogin:
                   #compiler_mpi: intel2023_ompi416
-                  compiler_mpi: intel2023_impi2021
+                  compiler_mpi: intel2021_impi2021
+                  #compiler_mpi: intel2023_impi2021
                   iolibraries: system_libs
                   #compiler_mpi: intel2021_impi2019
                   #iolibraries: spack_libs

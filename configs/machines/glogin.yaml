@@ -148,7 +148,7 @@ computer:
     # Default compiler
     # NOTE: THE COMPILER DEFAULT IS OFTEN SET FOR EACH MODEL, E.G. configs/setups/focioifs.yaml
     # SO THIS LINE MAY NOT ACTUALLY DO ANYTHING
-    compiler_mpi: intel2023_impi2021
+    compiler_mpi: intel2021_impi2021
 
     # Do we use modules available on the system
     # or install our own (geomar_libs)

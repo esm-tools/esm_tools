@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import subprocess
@@ -163,7 +164,11 @@ def get_dask_cluster_status(
     # Read tcp address from dask_scheduler_json
     if os.path.isfile(dask_scheduler_json):
         with open(dask_scheduler_json, "r") as f:
-            scheduler_info = json.load(f)
+            try:
+                scheduler_info = json.load(f)
+            except json.JSONDecodeError as e:
+                logger.trace(f"Invalid JSON in dask scheduler file {dask_scheduler_json}: {e}")
+                return (DaskStatus.MISSING_JSON, n_workers)
             tcp_address = scheduler_info.get("address", None)
     else:
         logger.trace(f"Missing dask scheduler json file {dask_scheduler_json}")
@@ -179,12 +184,12 @@ def get_dask_cluster_status(
         n_workers = len(client.scheduler_info().get("workers", []))
     except Exception as e:
         logger.trace(f"Could not get dask workers info: {e}")
-        client.close()
+        _close_client(client)
         return (DaskStatus.WORKERS_ERROR, n_workers)
 
     if n_workers == 0:
         logger.trace(f"No dask workers connected to scheduler at {tcp_address}")
-        client.close()
+        _close_client(client)
         return (DaskStatus.NO_WORKERS, n_workers)
     elif submit_test_task:
         status = DaskStatus.RUNNING
@@ -196,12 +201,20 @@ def get_dask_cluster_status(
             status = DaskStatus.TESTED
         except Exception as e:
             logger.trace(f"Dask test task failed: {e}")
-        client.close()
+        _close_client(client)
         return (status, n_workers)
     else:
         logger.trace(f"Dask cluster running with {n_workers} workers at {tcp_address}")
-        client.close()
+        _close_client(client)
         return (DaskStatus.RUNNING, n_workers)
+
+
+def _close_client(client):
+    """Helper function to close a dask client with error handling."""
+    try:
+        client.close()
+    except asyncio.exceptions.TimeoutError as e:
+        logger.trace(f"Timeout while closing dask client: {e}")
 
 
 def shutdown_dask_cluster(config):

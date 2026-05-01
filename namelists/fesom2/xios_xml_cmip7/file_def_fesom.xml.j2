@@ -8,112 +8,119 @@
        are "<var>.fesom" + XIOS split suffix. -->
 
   <!-- ================= Daily ================= -->
+  <!-- freq_op="1d" (matching output_freq) makes XIOS request samples once per day
+       via xios_field_is_active. FESOM sends daily; XIOS averages over 1 sample
+       (= identity = the value FESOM sent). cell_methods="time: mean (interval: 1 d)".
+       Replaces the prior pattern where FESOM's hardcoded freq_unit='s' override
+       fired write_mean every model step (558k calls/rank/month → ~430). -->
   <file_group id="fesom_1d" output_freq="1d" split_freq="1y" enabled="true">
-    <file id="f_sst"    name="sst.fesom"   ><field field_ref="sst"   /></file>
-    <file id="f_sss"    name="sss.fesom"   ><field field_ref="sss"   /></file>
-    <file id="f_ssh"    name="ssh.fesom"   ><field field_ref="ssh"   /></file>
-    <file id="f_uice"   name="uice.fesom"  ><field field_ref="uice"  /></file>
-    <file id="f_vice"   name="vice.fesom"  ><field field_ref="vice"  /></file>
-    <file id="f_a_ice"  name="a_ice.fesom" ><field field_ref="a_ice" /></file>
-    <file id="f_m_snow" name="m_snow.fesom"><field field_ref="m_snow"/></file>
-    <file id="f_ist"    name="ist.fesom"   ><field field_ref="ist"   /></file>
-    <file id="f_MLD3"   name="MLD3.fesom"  ><field field_ref="MLD3"  /></file>
-    <file id="f_h_ice"  name="h_ice.fesom" ><field field_ref="h_ice" /></file>
-    <file id="f_h_snow" name="h_snow.fesom"><field field_ref="h_snow"/></file>
-    <file id="f_unod_sfc" name="unod_sfc.fesom"><field field_ref="unod_sfc"/></file>
-    <file id="f_vnod_sfc" name="vnod_sfc.fesom"><field field_ref="vnod_sfc"/></file>
+    <file id="f_sst"    name="sst.fesom"   ><field field_ref="sst"      freq_op="1d"/></file>
+    <file id="f_sss"    name="sss.fesom"   ><field field_ref="sss"      freq_op="1d"/></file>
+    <file id="f_ssh"    name="ssh.fesom"   ><field field_ref="ssh"      freq_op="1d"/></file>
+    <file id="f_uice"   name="uice.fesom"  ><field field_ref="uice"     freq_op="1d"/></file>
+    <file id="f_vice"   name="vice.fesom"  ><field field_ref="vice"     freq_op="1d"/></file>
+    <file id="f_a_ice"  name="a_ice.fesom" ><field field_ref="a_ice"    freq_op="1d"/></file>
+    <file id="f_m_snow" name="m_snow.fesom"><field field_ref="m_snow"   freq_op="1d"/></file>
+    <file id="f_ist"    name="ist.fesom"   ><field field_ref="ist"      freq_op="1d"/></file>
+    <file id="f_MLD3"   name="MLD3.fesom"  ><field field_ref="MLD3"     freq_op="1d"/></file>
+    <file id="f_h_ice"  name="h_ice.fesom" ><field field_ref="h_ice"    freq_op="1d"/></file>
+    <file id="f_h_snow" name="h_snow.fesom"><field field_ref="h_snow"   freq_op="1d"/></file>
+    <file id="f_unod_sfc" name="unod_sfc.fesom"><field field_ref="unod_sfc" freq_op="1d"/></file>
+    <file id="f_vnod_sfc" name="vnod_sfc.fesom"><field field_ref="vnod_sfc" freq_op="1d"/></file>
   </file_group>
 
   <!-- ================= Monthly ================= -->
+  <!-- freq_op="1mo" (matching output_freq) → XIOS asks once per month, FESOM sends
+       once. operation="average" with 1 sample = identity. cell_methods correct. -->
   <file_group id="fesom_1mo" output_freq="1mo" split_freq="1y" enabled="true">
 
     <!-- 2D nodes -->
-    <file id="f_m_ice"           name="m_ice.fesom"          ><field field_ref="m_ice"          /></file>
-    <file id="f_MLD1"            name="MLD1.fesom"           ><field field_ref="MLD1"           /></file>
-    <file id="f_MLD2"            name="MLD2.fesom"           ><field field_ref="MLD2"           /></file>
-    <file id="f_fw"              name="fw.fesom"             ><field field_ref="fw"             /></file>
-    <file id="f_fh"              name="fh.fesom"             ><field field_ref="fh"             /></file>
-    <file id="f_thdgrarea"       name="thdgrarea.fesom"      ><field field_ref="thdgrarea"      /></file>
-    <file id="f_dyngrarea"       name="dyngrarea.fesom"      ><field field_ref="dyngrarea"      /></file>
-    <file id="f_thdgrice"        name="thdgrice.fesom"       ><field field_ref="thdgrice"       /></file>
-    <file id="f_dyngrice"        name="dyngrice.fesom"       ><field field_ref="dyngrice"       /></file>
-    <file id="f_thdgrsnw"        name="thdgrsnw.fesom"       ><field field_ref="thdgrsnw"       /></file>
-    <file id="f_atmice_x"        name="atmice_x.fesom"       ><field field_ref="atmice_x"       /></file>
-    <file id="f_atmice_y"        name="atmice_y.fesom"       ><field field_ref="atmice_y"       /></file>
-    <file id="f_iceoce_x"        name="iceoce_x.fesom"       ><field field_ref="iceoce_x"       /></file>
-    <file id="f_iceoce_y"        name="iceoce_y.fesom"       ><field field_ref="iceoce_y"       /></file>
-    <file id="f_fw_ice"          name="fw_ice.fesom"         ><field field_ref="fw_ice"         /></file>
-    <file id="f_fw_snw"          name="fw_snw.fesom"         ><field field_ref="fw_snw"         /></file>
-    <file id="f_virtsalt"        name="virtsalt.fesom"       ><field field_ref="virtsalt"       /></file>
-    <file id="f_realsalt"        name="realsalt.fesom"       ><field field_ref="realsalt"       /></file>
-    <file id="f_relaxsalt"       name="relaxsalt.fesom"      ><field field_ref="relaxsalt"      /></file>
-    <file id="f_qcon"            name="qcon.fesom"           ><field field_ref="qcon"           /></file>
-    <file id="f_apnd"            name="apnd.fesom"           ><field field_ref="apnd"           /></file>
-    <file id="f_hpnd"            name="hpnd.fesom"           ><field field_ref="hpnd"           /></file>
-    <file id="f_ipnd"            name="ipnd.fesom"           ><field field_ref="ipnd"           /></file>
-    <file id="f_evap"            name="evap.fesom"           ><field field_ref="evap"           /></file>
-    <file id="f_prec"            name="prec.fesom"           ><field field_ref="prec"           /></file>
-    <file id="f_snow"            name="snow.fesom"           ><field field_ref="snow"           /></file>
-    <file id="f_runoff"          name="runoff.fesom"         ><field field_ref="runoff"         /></file>
-    <file id="f_pbo"             name="pbo.fesom"            ><field field_ref="pbo"            /></file>
-    <file id="f_opottemptend"    name="opottemptend.fesom"   ><field field_ref="opottemptend"   /></file>
-    <file id="f_opottemprmadvect" name="opottemprmadvect.fesom"><field field_ref="opottemprmadvect"/></file>
-    <file id="f_opottempdiff"    name="opottempdiff.fesom"   ><field field_ref="opottempdiff"   /></file>
-    <file id="f_osalttend"       name="osalttend.fesom"      ><field field_ref="osalttend"      /></file>
-    <file id="f_osaltrmadvect"   name="osaltrmadvect.fesom"  ><field field_ref="osaltrmadvect"  /></file>
-    <file id="f_osaltdiff"       name="osaltdiff.fesom"      ><field field_ref="osaltdiff"      /></file>
+    <file id="f_m_ice"           name="m_ice.fesom"          ><field field_ref="m_ice"           freq_op="1mo"/></file>
+    <file id="f_MLD1"            name="MLD1.fesom"           ><field field_ref="MLD1"            freq_op="1mo"/></file>
+    <file id="f_MLD2"            name="MLD2.fesom"           ><field field_ref="MLD2"            freq_op="1mo"/></file>
+    <file id="f_fw"              name="fw.fesom"             ><field field_ref="fw"              freq_op="1mo"/></file>
+    <file id="f_fh"              name="fh.fesom"             ><field field_ref="fh"              freq_op="1mo"/></file>
+    <file id="f_thdgrarea"       name="thdgrarea.fesom"      ><field field_ref="thdgrarea"       freq_op="1mo"/></file>
+    <file id="f_dyngrarea"       name="dyngrarea.fesom"      ><field field_ref="dyngrarea"       freq_op="1mo"/></file>
+    <file id="f_thdgrice"        name="thdgrice.fesom"       ><field field_ref="thdgrice"        freq_op="1mo"/></file>
+    <file id="f_dyngrice"        name="dyngrice.fesom"       ><field field_ref="dyngrice"        freq_op="1mo"/></file>
+    <file id="f_thdgrsnw"        name="thdgrsnw.fesom"       ><field field_ref="thdgrsnw"        freq_op="1mo"/></file>
+    <file id="f_atmice_x"        name="atmice_x.fesom"       ><field field_ref="atmice_x"        freq_op="1mo"/></file>
+    <file id="f_atmice_y"        name="atmice_y.fesom"       ><field field_ref="atmice_y"        freq_op="1mo"/></file>
+    <file id="f_iceoce_x"        name="iceoce_x.fesom"       ><field field_ref="iceoce_x"        freq_op="1mo"/></file>
+    <file id="f_iceoce_y"        name="iceoce_y.fesom"       ><field field_ref="iceoce_y"        freq_op="1mo"/></file>
+    <file id="f_fw_ice"          name="fw_ice.fesom"         ><field field_ref="fw_ice"          freq_op="1mo"/></file>
+    <file id="f_fw_snw"          name="fw_snw.fesom"         ><field field_ref="fw_snw"          freq_op="1mo"/></file>
+    <file id="f_virtsalt"        name="virtsalt.fesom"       ><field field_ref="virtsalt"        freq_op="1mo"/></file>
+    <file id="f_realsalt"        name="realsalt.fesom"       ><field field_ref="realsalt"        freq_op="1mo"/></file>
+    <file id="f_relaxsalt"       name="relaxsalt.fesom"      ><field field_ref="relaxsalt"       freq_op="1mo"/></file>
+    <file id="f_qcon"            name="qcon.fesom"           ><field field_ref="qcon"            freq_op="1mo"/></file>
+    <file id="f_apnd"            name="apnd.fesom"           ><field field_ref="apnd"            freq_op="1mo"/></file>
+    <file id="f_hpnd"            name="hpnd.fesom"           ><field field_ref="hpnd"            freq_op="1mo"/></file>
+    <file id="f_ipnd"            name="ipnd.fesom"           ><field field_ref="ipnd"            freq_op="1mo"/></file>
+    <file id="f_evap"            name="evap.fesom"           ><field field_ref="evap"            freq_op="1mo"/></file>
+    <file id="f_prec"            name="prec.fesom"           ><field field_ref="prec"            freq_op="1mo"/></file>
+    <file id="f_snow"            name="snow.fesom"           ><field field_ref="snow"            freq_op="1mo"/></file>
+    <file id="f_runoff"          name="runoff.fesom"         ><field field_ref="runoff"          freq_op="1mo"/></file>
+    <file id="f_pbo"             name="pbo.fesom"            ><field field_ref="pbo"             freq_op="1mo"/></file>
+    <file id="f_opottemptend"    name="opottemptend.fesom"   ><field field_ref="opottemptend"    freq_op="1mo"/></file>
+    <file id="f_opottemprmadvect" name="opottemprmadvect.fesom"><field field_ref="opottemprmadvect" freq_op="1mo"/></file>
+    <file id="f_opottempdiff"    name="opottempdiff.fesom"   ><field field_ref="opottempdiff"    freq_op="1mo"/></file>
+    <file id="f_osalttend"       name="osalttend.fesom"      ><field field_ref="osalttend"       freq_op="1mo"/></file>
+    <file id="f_osaltrmadvect"   name="osaltrmadvect.fesom"  ><field field_ref="osaltrmadvect"   freq_op="1mo"/></file>
+    <file id="f_osaltdiff"       name="osaltdiff.fesom"      ><field field_ref="osaltdiff"       freq_op="1mo"/></file>
 
     <!-- 2D elements -->
-    <file id="f_tx_sur"       name="tx_sur.fesom"      ><field field_ref="tx_sur"      /></file>
-    <file id="f_ty_sur"       name="ty_sur.fesom"      ><field field_ref="ty_sur"      /></file>
-    <file id="f_strength_ice" name="strength_ice.fesom"><field field_ref="strength_ice"/></file>
-    <file id="f_sgm11"        name="sgm11.fesom"       ><field field_ref="sgm11"       /></file>
-    <file id="f_sgm12"        name="sgm12.fesom"       ><field field_ref="sgm12"       /></file>
-    <file id="f_sgm22"        name="sgm22.fesom"       ><field field_ref="sgm22"       /></file>
+    <file id="f_tx_sur"       name="tx_sur.fesom"      ><field field_ref="tx_sur"       freq_op="1mo"/></file>
+    <file id="f_ty_sur"       name="ty_sur.fesom"      ><field field_ref="ty_sur"       freq_op="1mo"/></file>
+    <file id="f_strength_ice" name="strength_ice.fesom"><field field_ref="strength_ice" freq_op="1mo"/></file>
+    <file id="f_sgm11"        name="sgm11.fesom"       ><field field_ref="sgm11"        freq_op="1mo"/></file>
+    <file id="f_sgm12"        name="sgm12.fesom"       ><field field_ref="sgm12"        freq_op="1mo"/></file>
+    <file id="f_sgm22"        name="sgm22.fesom"       ><field field_ref="sgm22"        freq_op="1mo"/></file>
 
     <!-- 3D nodes, cell-center -->
-    <file id="f_temp"       name="temp.fesom"      ><field field_ref="temp"      /></file>
-    <file id="f_salt"       name="salt.fesom"      ><field field_ref="salt"      /></file>
-    <file id="f_unod"       name="unod.fesom"      ><field field_ref="unod"      /></file>
-    <file id="f_vnod"       name="vnod.fesom"      ><field field_ref="vnod"      /></file>
-    <file id="f_hnode"      name="hnode.fesom"     ><field field_ref="hnode"     /></file>
-    <file id="f_rsdoabsorb" name="rsdoabsorb.fesom"><field field_ref="rsdoabsorb"/></file>
+    <file id="f_temp"       name="temp.fesom"      ><field field_ref="temp"       freq_op="1mo"/></file>
+    <file id="f_salt"       name="salt.fesom"      ><field field_ref="salt"       freq_op="1mo"/></file>
+    <file id="f_unod"       name="unod.fesom"      ><field field_ref="unod"       freq_op="1mo"/></file>
+    <file id="f_vnod"       name="vnod.fesom"      ><field field_ref="vnod"       freq_op="1mo"/></file>
+    <file id="f_hnode"      name="hnode.fesom"     ><field field_ref="hnode"      freq_op="1mo"/></file>
+    <file id="f_rsdoabsorb" name="rsdoabsorb.fesom"><field field_ref="rsdoabsorb"  freq_op="1mo"/></file>
 
     <!-- 3D nodes, interface levels -->
-    <file id="f_w"       name="w.fesom"      ><field field_ref="w"      /></file>
-    <file id="f_bolus_w" name="bolus_w.fesom"><field field_ref="bolus_w"/></file>
-    <file id="f_N2"      name="N2.fesom"     ><field field_ref="N2"     /></file>
-    <file id="f_Kv"      name="Kv.fesom"     ><field field_ref="Kv"     /></file>
+    <file id="f_w"       name="w.fesom"      ><field field_ref="w"        freq_op="1mo"/></file>
+    <file id="f_bolus_w" name="bolus_w.fesom"><field field_ref="bolus_w"  freq_op="1mo"/></file>
+    <file id="f_N2"      name="N2.fesom"     ><field field_ref="N2"       freq_op="1mo"/></file>
+    <file id="f_Kv"      name="Kv.fesom"     ><field field_ref="Kv"       freq_op="1mo"/></file>
 
     <!-- 3D elements, cell-center -->
-    <file id="f_u"       name="u.fesom"      ><field field_ref="u"      /></file>
-    <file id="f_v"       name="v.fesom"      ><field field_ref="v"      /></file>
-    <file id="f_bolus_u" name="bolus_u.fesom"><field field_ref="bolus_u"/></file>
-    <file id="f_bolus_v" name="bolus_v.fesom"><field field_ref="bolus_v"/></file>
-    <file id="f_utemp"   name="utemp.fesom"  ><field field_ref="utemp"  /></file>
-    <file id="f_vtemp"   name="vtemp.fesom"  ><field field_ref="vtemp"  /></file>
-    <file id="f_usalt"   name="usalt.fesom"  ><field field_ref="usalt"  /></file>
-    <file id="f_vsalt"   name="vsalt.fesom"  ><field field_ref="vsalt"  /></file>
+    <file id="f_u"       name="u.fesom"      ><field field_ref="u"        freq_op="1mo"/></file>
+    <file id="f_v"       name="v.fesom"      ><field field_ref="v"        freq_op="1mo"/></file>
+    <file id="f_bolus_u" name="bolus_u.fesom"><field field_ref="bolus_u"  freq_op="1mo"/></file>
+    <file id="f_bolus_v" name="bolus_v.fesom"><field field_ref="bolus_v"  freq_op="1mo"/></file>
+    <file id="f_utemp"   name="utemp.fesom"  ><field field_ref="utemp"    freq_op="1mo"/></file>
+    <file id="f_vtemp"   name="vtemp.fesom"  ><field field_ref="vtemp"    freq_op="1mo"/></file>
+    <file id="f_usalt"   name="usalt.fesom"  ><field field_ref="usalt"    freq_op="1mo"/></file>
+    <file id="f_vsalt"   name="vsalt.fesom"  ><field field_ref="vsalt"    freq_op="1mo"/></file>
 
     <!-- 3D elements, interface levels -->
-    <file id="f_Av" name="Av.fesom"><field field_ref="Av"/></file>
+    <file id="f_Av" name="Av.fesom"><field field_ref="Av" freq_op="1mo"/></file>
 
     <!-- dMOC density-coordinate fields (elements) -->
-    <file id="f_U_rho_x_DZ"    name="U_rho_x_DZ.fesom"   ><field field_ref="U_rho_x_DZ"   /></file>
-    <file id="f_V_rho_x_DZ"    name="V_rho_x_DZ.fesom"   ><field field_ref="V_rho_x_DZ"   /></file>
-    <file id="f_std_heat_flux"  name="std_heat_flux.fesom" ><field field_ref="std_heat_flux" /></file>
-    <file id="f_std_rest_flux"  name="std_rest_flux.fesom" ><field field_ref="std_rest_flux" /></file>
-    <file id="f_std_frwt_flux"  name="std_frwt_flux.fesom" ><field field_ref="std_frwt_flux" /></file>
-    <file id="f_std_dens_dVdT"  name="std_dens_dVdT.fesom" ><field field_ref="std_dens_dVdT" /></file>
-    <file id="f_std_dens_Z"     name="std_dens_Z.fesom"    ><field field_ref="std_dens_Z"    /></file>
-    <file id="f_std_dens_H"     name="std_dens_H.fesom"    ><field field_ref="std_dens_H"    /></file>
+    <file id="f_U_rho_x_DZ"    name="U_rho_x_DZ.fesom"   ><field field_ref="U_rho_x_DZ"    freq_op="1mo"/></file>
+    <file id="f_V_rho_x_DZ"    name="V_rho_x_DZ.fesom"   ><field field_ref="V_rho_x_DZ"    freq_op="1mo"/></file>
+    <file id="f_std_heat_flux"  name="std_heat_flux.fesom" ><field field_ref="std_heat_flux"  freq_op="1mo"/></file>
+    <file id="f_std_rest_flux"  name="std_rest_flux.fesom" ><field field_ref="std_rest_flux"  freq_op="1mo"/></file>
+    <file id="f_std_frwt_flux"  name="std_frwt_flux.fesom" ><field field_ref="std_frwt_flux"  freq_op="1mo"/></file>
+    <file id="f_std_dens_dVdT"  name="std_dens_dVdT.fesom" ><field field_ref="std_dens_dVdT"  freq_op="1mo"/></file>
+    <file id="f_std_dens_Z"     name="std_dens_Z.fesom"    ><field field_ref="std_dens_Z"     freq_op="1mo"/></file>
+    <file id="f_std_dens_H"     name="std_dens_H.fesom"    ><field field_ref="std_dens_H"     freq_op="1mo"/></file>
 
     <!-- dMOC density-coordinate fields (nodes) -->
-    <file id="f_std_dens_DIV"      name="std_dens_DIV.fesom"     ><field field_ref="std_dens_DIV"     /></file>
-    <file id="f_std_dens_DIVbolus" name="std_dens_DIVbolus.fesom"><field field_ref="std_dens_DIVbolus"/></file>
+    <file id="f_std_dens_DIV"      name="std_dens_DIV.fesom"     ><field field_ref="std_dens_DIV"      freq_op="1mo"/></file>
+    <file id="f_std_dens_DIVbolus" name="std_dens_DIVbolus.fesom"><field field_ref="std_dens_DIVbolus" freq_op="1mo"/></file>
 
     <!-- dMOC sigma-2 density on z-levels -->
-    <file id="f_density_dMOC" name="density_dMOC.fesom"><field field_ref="density_dMOC"/></file>
+    <file id="f_density_dMOC" name="density_dMOC.fesom"><field field_ref="density_dMOC" freq_op="1mo"/></file>
 
   </file_group>
 

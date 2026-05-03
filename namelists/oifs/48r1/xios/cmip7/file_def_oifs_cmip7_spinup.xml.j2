@@ -30,43 +30,16 @@
                 <field field_ref="toa_outgoing_longwave_flux__rlut"/>
                 <field field_ref="toa_outgoing_shortwave_flux_cs__rsutcs"/>
                 <field field_ref="toa_outgoing_longwave_flux_cs__rlutcs"/>
-                <!-- Surface radiation -->
-                <field field_ref="surface_downwelling_shortwave_flux__rsds"/>
-                <field field_ref="surface_upwelling_shortwave_flux__rsus"/>
-                <field field_ref="surface_downwelling_longwave_flux__rlds"/>
-                <field field_ref="surface_upwelling_longwave_flux__rlus"/>
-                <!-- Turbulent fluxes -->
-                <field field_ref="surface_upward_latent_heat_flux__hfls"/>
-                <field field_ref="surface_upward_sensible_heat_flux__hfss"/>
                 <!-- Surface stress -->
                 <field field_ref="surface_downward_eastward_stress__tauu"/>
                 <field field_ref="surface_downward_northward_stress__tauv"/>
-                <!-- Precipitation fluxes -->
-                <field field_ref="precipitation_flux__pr"/>
+                <!-- Convective precipitation (downsampled raw 1h pr does not split conv/large-scale) -->
                 <field field_ref="convective_precipitation_flux__prc"/>
-                <field field_ref="snowfall_flux__prsn"/>
                 <!-- Surface radiation (clear-sky) — requires ssrdc/strdc in model output -->
                 <field field_ref="surface_downwelling_shortwave_flux_cs__rsdscs"/>
                 <field field_ref="surface_upwelling_shortwave_flux_cs__rsuscs"/>
                 <field field_ref="surface_downwelling_longwave_flux_cs__rldscs"/>
                 <field field_ref="surface_upwelling_longwave_flux_cs__rluscs"/>
-                <!-- Cloud cover (%) -->
-                <field field_ref="cloud_area_fraction__clt"/>
-            </field_group>
-        </file>
-
-        <!-- Daily CMOR-ready 2D surface fields -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="1d"
-            name_suffix="_day"
-            description="AWI-ESM3-VEG-HR daily surface CMOR fields">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="surface_downwelling_shortwave_flux__rsds"/>
-                <field field_ref="precipitation_flux__pr"/>
-                <field field_ref="cloud_area_fraction__clt"/>
             </field_group>
         </file>
 
@@ -131,7 +104,6 @@
             description="AWI-ESM3-VEG-HR monthly model-level CMOR fields">
 
             <field_group grid_ref="reduced_ml" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="cloud_area_fraction_ml__cl"/>
                 <field field_ref="mass_fraction_cloud_ice__cli"/>
                 <field field_ref="mass_fraction_cloud_liquid__clw"/>
             </field_group>
@@ -168,19 +140,6 @@
             </field_group>
         </file>
 
-        <!-- 3hr averaged precipitation (CMOR-ready) -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="3h"
-            name_suffix="_3h_pr"
-            description="AWI-ESM3-VEG-HR 3-hourly precipitation">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="precipitation_flux_3h__pr"/>
-            </field_group>
-        </file>
-
         <!-- 1hr averaged precipitation (CMOR-ready) -->
         <file
             enabled="true"
@@ -191,19 +150,6 @@
 
             <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="precipitation_flux_1h__pr"/>
-            </field_group>
-        </file>
-
-        <!-- 1hr averaged near-surface temperature (extra_land: tas 1hr 30S-90S) -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="1h"
-            name_suffix="_1h_tas"
-            description="AWI-ESM3-VEG-HR 1-hourly near-surface temperature">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
             </field_group>
         </file>
 
@@ -231,33 +177,6 @@
             </field_group>
         </file>
 
-        <!-- 1hr instantaneous boundary layer depth (extra_atm) -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="1h"
-            name_suffix="_1h_bldep"
-            description="AWI-ESM3-VEG-HR 1-hourly boundary layer depth">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
-                <field field_ref="blh" name="bldep" long_name="Boundary Layer Depth"/>
-            </field_group>
-        </file>
-
-        <!-- 6hr averaged surface fields (for hurs computation) -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="6h"
-            name_suffix="_6h"
-            description="AWI-ESM3-VEG-HR 6-hourly surface fields">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
-                <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
-            </field_group>
-        </file>
-
         <!-- 6hr instantaneous pressure-level fields (plev3) -->
         <file
             enabled="true"
@@ -275,24 +194,6 @@
 
         <!-- ========== VEG additional output sections ========== -->
 
-        <!-- 3hr averaged radiation and turbulent flux fields -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="3h"
-            name_suffix="_3h_rad"
-            description="AWI-ESM3-VEG-HR 3-hourly radiation and turbulent fluxes">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="surface_upward_latent_heat_flux_3h__hfls"/>
-                <field field_ref="surface_upward_sensible_heat_flux_3h__hfss"/>
-                <field field_ref="surface_downwelling_longwave_flux_3h__rlds"/>
-                <field field_ref="surface_upwelling_longwave_flux_3h__rlus"/>
-                <field field_ref="surface_downwelling_shortwave_flux_3h__rsds"/>
-                <field field_ref="surface_upwelling_shortwave_flux_3h__rsus"/>
-            </field_group>
-        </file>
-
         <!-- 3hr instantaneous plev6 fields (lower troposphere: 950-700 hPa) -->
         <file
             enabled="false"
@@ -307,32 +208,6 @@
                 <field field_ref="v_pl" name="va"/>
                 <field field_ref="w_pl" name="wap"/>
                 <field field_ref="q_pl" name="hus"/>
-            </field_group>
-        </file>
-
-        <!-- 3hr instantaneous boundary layer depth -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="3h"
-            name_suffix="_3h_bldep"
-            description="AWI-ESM3-VEG-HR 3-hourly boundary layer depth">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
-                <field field_ref="blh" name="bldep" long_name="Boundary Layer Depth"/>
-            </field_group>
-        </file>
-
-        <!-- 6hr averaged snowfall flux -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="6h"
-            name_suffix="_6h_prsn"
-            description="AWI-ESM3-VEG-HR 6-hourly snowfall flux">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="snowfall_flux_6h__prsn"/>
             </field_group>
         </file>
 
@@ -476,19 +351,6 @@
             </field_group>
         </file>
 
-        <!-- 3hr instantaneous surface temperature (extra_atm: ts) -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="3h"
-            name_suffix="_3h_ts"
-            description="AWI-ESM3-VEG-HR 3-hourly surface temperature">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
-                <field field_ref="surface_temperature__ts"/>
-            </field_group>
-        </file>
-
         <!-- ========== CAP7 additional output sections ========== -->
 
         <!-- Daily CMOR-ready surface radiation, fluxes, precip (cap7_atm) -->
@@ -500,16 +362,10 @@
             description="AWI-ESM3-VEG-HR daily CMOR surface fields for CAP7">
 
             <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <!-- Radiation -->
-                <field field_ref="surface_upward_latent_heat_flux__hfls"/>
-                <field field_ref="surface_upward_sensible_heat_flux__hfss"/>
-                <field field_ref="surface_upwelling_longwave_flux__rlus"/>
-                <field field_ref="surface_upwelling_shortwave_flux__rsus"/>
+                <!-- Clear-sky radiation (no all-sky equivalent; cs is its own field) -->
                 <field field_ref="surface_upwelling_longwave_flux_cs__rluscs"/>
                 <field field_ref="surface_upwelling_shortwave_flux_cs__rsuscs"/>
-                <field field_ref="surface_downwelling_longwave_flux__rlds"/>
                 <field field_ref="surface_downwelling_longwave_flux_cs__rldscs"/>
-                <field field_ref="surface_downwelling_shortwave_flux__rsds"/>
                 <field field_ref="surface_downwelling_shortwave_flux_cs__rsdscs"/>
                 <field field_ref="toa_outgoing_longwave_flux__rlut"/>
                 <field field_ref="toa_outgoing_longwave_flux_cs__rlutcs"/>
@@ -518,7 +374,6 @@
                 <field field_ref="toa_outgoing_shortwave_flux_cs__rsutcs"/>
                 <!-- Precipitation -->
                 <field field_ref="convective_precipitation_flux__prc"/>
-                <field field_ref="snowfall_flux__prsn"/>
                 <!-- Column water -->
                 <field field_ref="atmosphere_water_vapor_content__prw"/>
                 <field field_ref="atmosphere_cloud_ice_content__clivi"/>
@@ -584,19 +439,6 @@
             </field_group>
         </file>
 
-        <!-- 1hr maximum wind gust at 10m (cap7_atm: wsg) -->
-        <file
-            enabled="true"
-            timeseries="only"
-            output_freq="1h"
-            name_suffix="_1h_wsg"
-            description="AWI-ESM3-VEG-HR 1-hourly maximum wind gust at 10m">
-
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="maximum">
-                <field field_ref="10fg" name="wsg10" long_name="Maximum Wind Speed of Gust at 10m"/>
-            </field_group>
-        </file>
-
         <!-- 6hr instantaneous surface fields (cap7_atm: ps, psl, ts) -->
         <file
             enabled="true"
@@ -643,7 +485,6 @@
                 <field field_ref="v_pl" name="va"/>
                 <field field_ref="q_pl" name="hus"/>
                 <field field_ref="z_pl" name="zg"/>
-                <field field_ref="w_pl" name="wap"/>
             </field_group>
         </file>
 
@@ -656,7 +497,6 @@
             description="AWI-ESM3-VEG-HR monthly model-level fields for CAP7">
 
             <field_group grid_ref="reduced_ml" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="pres" name="pfull" long_name="Pressure at Model Full-Levels"/>
                 <field field_ref="t" name="ta" long_name="Air Temperature"/>
                 <field field_ref="q" name="hus" long_name="Specific Humidity"/>
                 <field field_ref="relative_humidity_ml__hur"/>

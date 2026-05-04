@@ -52,7 +52,7 @@
             description="AWI-ESM3-VEG-HR monthly pressure-level CMOR fields">
 
             <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="geopotential_height__zg"/>
+                <field field_ref="zg_pl"/>
                 <field field_ref="air_temperature__ta"/>
                 <field field_ref="specific_humidity__hus"/>
             </field_group>
@@ -67,7 +67,7 @@
             description="AWI-ESM3-VEG-HR daily pressure-level CMOR fields">
 
             <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
-                <field field_ref="geopotential_height__zg"/>
+                <field field_ref="zg_pl"/>
                 <field field_ref="air_temperature__ta"/>
                 <field field_ref="specific_humidity__hus"/>
             </field_group>
@@ -458,7 +458,7 @@
                 <field field_ref="u" name="ua" long_name="Eastward Wind"/>
                 <field field_ref="v" name="va" long_name="Northward Wind"/>
                 <field field_ref="q" name="hus" long_name="Specific Humidity"/>
-                <field field_ref="geopotential_height_ml__zg"/>
+                <field field_ref="zg_ml"/>
             </field_group>
         </file>
 
@@ -475,7 +475,7 @@
                 <field field_ref="u_pl" name="ua"/>
                 <field field_ref="v_pl" name="va"/>
                 <field field_ref="q_pl" name="hus"/>
-                <field field_ref="z_pl" name="zg"/>
+                <field field_ref="zg_pl"/>
             </field_group>
         </file>
 

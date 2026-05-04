@@ -429,7 +429,7 @@
     <field id="cc_pl"     long_name="cloud cover"                               standard_name="cloud_cover"                               unit="1" />
     <field id="co2_pl"    long_name="co2 mass mixing ration"                    standard_name="co2_mass_mixing_ratio"                     unit="kg*kg-1" />
     <!-- Geopotential height: m2 s-2 → m (divide by g) — pressure levels -->
-    <field id="geopotential_height__zg" name="zg" field_ref="z_pl" standard_name="geopotential_height" long_name="Geopotential Height" unit="m" >
+    <field id="zg_pl" name="zg" field_ref="z_pl" standard_name="geopotential_height" long_name="Geopotential Height" unit="m" >
         z_pl/9.80665
     </field>
     <!-- Relative humidity: fraction → percentage — pressure levels -->
@@ -445,7 +445,7 @@
   <!-- Model-level derived CMOR fields -->
   <field_group id="3D_ml_cmor" grid_ref="reduced_ml" freq_op="{{ oifs.output_step_freq }}ts" >
     <!-- Geopotential height on model levels: z/g -->
-    <field id="geopotential_height_ml__zg" name="zg" field_ref="z" standard_name="geopotential_height" long_name="Geopotential Height" unit="m" >
+    <field id="zg_ml" name="zg" field_ref="z" standard_name="geopotential_height" long_name="Geopotential Height" unit="m" >
         z/9.80665
     </field>
     <!-- Relative humidity on model levels: fraction → percentage -->

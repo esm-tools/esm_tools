@@ -94,8 +94,8 @@ io_list =  'sst       ',1, 'd', 4,
            'fw_ice    ',1, 'm', 4,
            'fw_snw    ',1, 'm', 4,
            'virtsalt  ',1, 'm', 4,
-           'realsalt  ',1, 'm', 4,
-           'relaxsalt ',1, 'm', 4,
+!          'realsalt  ',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (use_virt_salt=.true., real-salt branch in ice_thermo_cpl.F90 unreachable); re-enable for non-linfs runs
+!          'relaxsalt ',1, 'm', 4,  ! disabled: legitimately ~0 in coupled runs (no SSS restoring); re-enable for stand-alone runs
            'qcon      ',1, 'm', 4,
            'apnd      ',1, 'm', 4,
            'hpnd      ',1, 'm', 4,
@@ -112,7 +112,7 @@ io_list =  'sst       ',1, 'd', 4,
 ! --- Monthly 2D elements ---
            'tx_sur    ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
-           'strength_ice',1, 'm', 4,
+!          'strength_ice',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (ice_EVP.F90 ice_strength block is gated off); re-enable for non-linfs runs
            'sgm11     ',1, 'm', 4,
            'sgm12     ',1, 'm', 4,
            'sgm22     ',1, 'm', 4,

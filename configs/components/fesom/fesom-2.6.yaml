@@ -152,8 +152,8 @@ restart_in_sources:
         fesom_bin_restart_info: fesom_bin_restart/*.info
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear!month}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: "iceberg.restart_${parent_date!syear}0101-${parent_date!syear}1231"
+        icb_restart_ISM: "iceberg.restart.ISM_${parent_date!syear}0101-${parent_date!syear}1231"
 
 restart_out_files:
         par_oce_restart: par_oce_restart
@@ -185,8 +185,8 @@ restart_out_sources:
         fesom_bin_restart: fesom_bin_restart/np${nproc}/*
         fesom_bin_restart_tar: fesom_bin_restart.tar.*
         wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
-        icb_restart: iceberg.restart #.${parent_date!syear}
-        icb_restart_ISM: iceberg.restart.ISM
+        icb_restart: "iceberg.restart_${end_date!syear}0101-${end_date!syear}1231"
+        icb_restart_ISM: "iceberg.restart.ISM_${end_date!syear}0101-${end_date!syear}1231"
 
 outdata_sources:
         fesom: "*.fesom.*.nc"
@@ -207,10 +207,10 @@ choose_with_icb:
             - "assemble"
             - "log_used_files"
             - "wait_for_iterative_coupling"
-            - "prep_icebergs"                       # Plugin
+            #- "prep_icebergs"                       # Plugin
             - "copy_files_to_thisrun"
             - "modify_namelists"
-            - "apply_iceberg_calving_to_namelists"  # Plugin
+            #- "apply_iceberg_calving_to_namelists"  # Plugin
             - "modify_files"
             - "copy_files_to_work"
             - "report_missing_files"
@@ -218,7 +218,6 @@ choose_with_icb:
             - "_write_finalized_config"
             - "database_entry"
 
-            use_icebergs: True                 # turns on icebergs
             use_icesheet_coupling: True        # initializes new icebergs every restart
             update_icebergs: True
 
@@ -289,7 +288,7 @@ choose_with_icb:
                     height: "height"
                     scaling: "scaling"
                     felem: "felem"
-                    #num_non_melted_icb_file: "num_non_melted_icb_file"
+                    num_non_melted_icb_file: "num_non_melted_icb_file"
             
 
 log_files:
@@ -376,8 +375,8 @@ namelist_changes:
                 run_config:
                         lwiso: "${with_wiso}"
                 icebergs:
-                        use_icebergs: "${use_icebergs}"
-                        use_icesheet_coupling: "${use_icesheet_coupling}"
+                        use_icebergs: "${with_icb}"
+                        use_icesheet_coupling: "${with_icb}"
                         steps_per_ib_step: 8
 
 

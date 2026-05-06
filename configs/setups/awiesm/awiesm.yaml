@@ -147,10 +147,15 @@ general:
                 T63_REF:
                         compute_time: "02:00:00"
 
-        choose_general.iterative_coupling:
-            True:
-                required_plugins:
-                    - "https://github.com/esm-tools-plugins/esm_pism"
+        
+        
+       #choose_general.iterative_coupling:
+       #    True:
+       #        with_pism: "$(( 'pism' in ${model2.setup_name} ))"   # Anything inside a $(( )) will be evaluated by python after substitution of the ${variables}
+       #        choose_with_pism:
+       #            True:
+       #                required_plugins:
+       #                    - "https://github.com/esm-tools-plugins/esm_pism"
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################

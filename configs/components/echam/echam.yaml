@@ -514,7 +514,12 @@ choose_lresume:
                                   # - fdate "<--set_dim--" ${year_before_date}
                                   # - ndate "<--set_dim--" ${steps_in_year_before}
         True:
-                # pseudo_start_date: $(( ${start_date} - ${time_step} ))
+                #pseudo_start_date: $(( ${start_date} - ${time_step} ))
+                #restart_in_modifications:
+                #        "[[streams-->STREAM]]":
+                #                - "vdate <--set_global_attr-- ${start_date!syear!smonth!sday}"
+                #                - fdate "<--set_dim--" ${year_before_date}
+                #                - ndate "<--set_dim--" ${steps_in_year_before}
                 add_namelist_changes:
                         namelist.echam:
                                 runctl:
@@ -762,6 +767,8 @@ streams:
         - glim
         - spim
         - ism
+        - echam6hrpt
+        - echam6hr
 
 streamsnc:
         - aclcim
@@ -784,6 +791,8 @@ streamsnc:
         - aeropt
         - co2
         - tdiag
+        - echam6hrpt
+        - echam6hr
 
 
 other_date: $(( ${next_date} - ${time_step}seconds ))

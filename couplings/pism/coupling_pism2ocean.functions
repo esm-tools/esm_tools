@@ -10,8 +10,8 @@ function pism2ocean {
     echo "PISM_TO_OCEAN=${PISM_TO_OCEAN:-0}"
     if [[ $PISM_TO_OCEAN -le 0 ]]; then
         echo " NOT generating ice forcing for ocean model"
-	echo "   since PISM_TO_OCEAN=${PISM_TO_OCEAN}"
-	return
+	    echo " since PISM_TO_OCEAN=${PISM_TO_OCEAN}"
+	    return
     fi
 
     #

@@ -299,7 +299,8 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
         echo ""; echo " *   build files on propper grid with longitude, latitude, and depth"
         echo ""; echo " *   using python version $(python --version)"
 
-	pyfesom_script=${FUNCTION_PATH:-${FPATH}}/../utils/fesom_scalar_array_to_LonLat.py
+    script_name=${script_name:-"fesom_scalar_array_to_LonLat.py"}
+	pyfesom_script=${FUNCTION_PATH:-${FPATH}}/../utils/${script_name} #fesom_scalar_array_to_LonLat.py
 	if [ ! -f $pyfesom_script ] ; then
 	    echo "     - Missing pyfesom_script ${pyfesom_script}"
 	    echo " S T O P  5  (coupling_fesom2ice.functions::fesom_ice_fesom_build_grid_with_lonlat_depth)" ; exit 5

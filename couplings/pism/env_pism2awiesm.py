@@ -18,6 +18,7 @@ def prepare_environment(config):
             "EXE_pism": config[config["general"]["setup_name"]]["executable"],
             "RES_pism": config[config["general"]["setup_name"]]["resolution"],
             "RUN_NUMBER_pism": config["general"]["run_number"],
+            "CHUNK_NUMBER_pism": config["general"]["chunk_number"],
             "EX_INT": config["pism"]["ex_interval"],
 
             "YR0_pism": config["general"]["start_date"].syear,
@@ -49,7 +50,6 @@ def prepare_environment(config):
             "SPINUP_FILE_pism": config[config["general"]["setup_name"]]["spinup_file"],
             #"MESH_DIR_fesom": config["general"]["mesh_dir"],
             "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
-            "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],
             "account_all_fw_input": config[config["general"]["setup_name"]].get("account_all_fw_input", 0), 

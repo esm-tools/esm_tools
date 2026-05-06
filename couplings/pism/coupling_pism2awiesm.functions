@@ -42,5 +42,8 @@ pism2awiesm() {
 
     echo "*** Starting pis2atmosphere ***"
     pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
-    #pism2ocean
+    
+    echo "*** Starting pis2ocean ***"
+    pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
+
 }

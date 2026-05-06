@@ -60,12 +60,39 @@ define_echam_names() {
 
 ## @fn iterative_coupling_ice_echam6_update_orography() 
 iterative_coupling_ice_echam6_update_orography() { 
-        echo "                Updating orography and gravity wave drag parameterization in echam6"
-        update_orography_select_field
-        if [ "$MACHINE" == "levante" ]; then
-            hi_res_init_oro="/pool/data/ECHAM5/T511/T511_jan_surf.nc"
+        if [ ! -f ${COUPLE_DIR}/ice_orog.nc ]
+        then
+            echo "                Updating orography and gravity wave drag parameterization in echam6"
+            update_orography_select_field
         fi
-        if [ -f ${hi_res_init_oro} ]
+        if [ "$MACHINE" == "levante" ]; then
+            if [ "$paleo_time" == "eot" ]; then
+                echo " time $paleo_time"
+                hi_res_init_oro="/work/ab0246/a270124/for_hanna/EOT.high_res_oromea.T511.nc"
+            elif [ "$paleo_time" == "omt" ]; then
+                echo " time $paleo_time"
+            else
+                echo " time $paleo_time"
+                hi_res_init_oro="/pool/data/ECHAM5/T511/T511_jan_surf.nc"
+            fi
+        fi
+        if [ -f ${COUPLE_DIR}/ice_orog.nc ]
+        then
+            cdo -s remapbil,T63grid ${COUPLE_DIR}/ice_orog.nc ${COUPLE_DIR}/ice_orog_T63grid.nc
+            cdo -s gtc,0 ${COUPLE_DIR}/ice_orog_T63grid.nc ${COUPLE_DIR}/ice_orog_T63grid.mask.nc
+            cdo -s ifthen ${COUPLE_DIR}/ice_orog_T63grid.mask.nc ${COUPLE_DIR}/ice_orog_T63grid.nc tmp
+            mv tmp ${COUPLE_DIR}/ice_orog_T63grid.nc
+            cdo -chname,usurf,delta_usurf -sub ${COUPLE_DIR}/ice_orog_T63grid.nc -selname,orog ${COUPLE_DIR}/atmosphere_file_for_ice.nc ${COUPLE_DIR}/ice_orog_difference_T63grid.nc
+            
+            cdo remapbil,T511grid ${COUPLE_DIR}/ice_orog.nc ${COUPLE_DIR}/ice_orog_T511grid.nc
+            cdo -s gtc,0 ${COUPLE_DIR}/ice_orog_T511grid.nc ${COUPLE_DIR}/ice_orog_T511grid.mask.nc
+            cdo -s ifthen ${COUPLE_DIR}/ice_orog_T511grid.mask.nc ${COUPLE_DIR}/ice_orog_T511grid.nc tmp
+            mv tmp ${COUPLE_DIR}/ice_orog_T511grid.nc
+            cdo -chname,usurf,delta_usurf -sub ${COUPLE_DIR}/ice_orog_T511grid.nc -remapbil,T511grid -selname,orog ${COUPLE_DIR}/atmosphere_file_for_ice.nc ${COUPLE_DIR}/ice_orog_difference_T511grid.nc
+            update_orography_apply_orography_anomaly_high_res
+            update_orography_prepare_calnoro_high_res
+        #fi
+        elif [ -f ${hi_res_init_oro} ] 
         then
             regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil T511
             regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil 
@@ -149,7 +176,7 @@ if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
 else
         rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
 fi
-cdo -L -sp2gp -gp2sp -add -selvar,GEOSP ${rfile} -mulc,${ECHAM_g} /
+cdo -L -timmean -sp2gp -gp2sp -add -selvar,GEOSP ${rfile} -mulc,${ECHAM_g} /
         ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc /
         ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
 mv geosp.nc ${output_dir}/input/echam6/GEOSP_${paleo_time}_${RES_echam}.nc
@@ -206,7 +233,7 @@ update_orography_apply_orography_anomaly() {
         ifile=${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc
         ofile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
         ncrename -v ${ice_orography_difference_name},oromea $ifile
-        cdo -s -setmisstoc,0 $ifile tmp; mv tmp $ifile
+        cdo --reduce_dim -s -timmean -setmisstoc,0 $ifile tmp; mv tmp $ifile
         if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
                 rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
         else
@@ -228,6 +255,9 @@ update_orography_prepare_calnoro_high_res() {
                  -chname,oromea,OROMEA \
                  $ifile \
                  $ofile 2>>cdo_stderr_ice2echam
+        
+        ncwa -a time $ofile tmp
+        mv tmp $ofile
 }
 
 ## @fn update_orography_prepare_calnoro() 
@@ -241,6 +271,9 @@ update_orography_prepare_calnoro() {
                  -chname,oromea,OROMEA \
                  $ifile \
                  $ofile 2>>cdo_stderr_ice2echam
+        
+        ncwa -a time $ofile tmp
+        mv tmp $ofile
 }
 
 ## @fn update_orography_run_calnoro() 
@@ -467,6 +500,130 @@ update_orography_generate_target_orography_file() {
                 cdo -s merge ${COUPLE_DIR}/*.orotmp ${COUPLE_DIR}/ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
                 cdo -s replace ${ofile} ${COUPLE_DIR}/ORO_merged ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
                  #
+        
+        elif [ "x${oro_update_mod}" == "x6" ]; then # masked: new coupling scheme: OROXXX from T511, OROMEA from T63
+                echo " * use oro_update_mod ${oro_update_mod}"
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        tmp 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                ncwa -a time ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc tmp
+                mv tmp ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                
+                if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                        rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+                else
+                        rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+                fi
+               
+                if [[ -f  ${INIT_DIR_echam}/unit.24 ]]
+                then
+                    echo " *  ${INIT_DIR_echam}/unit.24 found!"
+                else
+                    echo " *  ${INIT_DIR_echam}/unit.24 not found!"
+                fi
+
+                cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_T63grid.nc -gtc,0 \
+                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \
+                        ${COUPLE_DIR}/mask_oro_update.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+#                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
+                for VAR in "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
+                do
+                    cdo -s ifthenelse -setmisstoc,0 ${COUPLE_DIR}/mask_oro_update.nc \
+                            -selname,${VAR} ${ofile} \
+                            -selname,${VAR} ${INIT_DIR_echam}/unit.24 ${COUPLE_DIR}/${VAR}.orotmp
+
+                done
+                
+                if [[ -f ${COUPLE_DIR}/ORO_merged ]]
+                then
+                    rm ${COUPLE_DIR}/ORO_merged
+                fi
+
+                cdo -s merge ${COUPLE_DIR}/*.orotmp ${COUPLE_DIR}/ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
+                cdo -s replace ${ofile} ${COUPLE_DIR}/ORO_merged ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
+                cdo -s replace ${ofile} -chname,oromea,OROMEA -selname,oromea ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
+        
+        elif [ "x${oro_update_mod}" == "x7" ]; then # masked: new coupling scheme: OROMEA and GEOSP from high-res input
+                echo " * use oro_update_mod ${oro_update_mod}"
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        tmp 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                cdo -s -sp2gp -gp2sp ${ifile} tmp
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                
+                if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                        rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+                else
+                        rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+                fi
+               
+                if [[ -f  ${INIT_DIR_echam}/unit.24 ]]
+                then
+                    echo " *  ${INIT_DIR_echam}/unit.24 found!"
+                else
+                    echo " *  ${INIT_DIR_echam}/unit.24 not found!"
+                fi
+
+                cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_T63grid.nc -gtc,0 \
+                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \
+                        ${COUPLE_DIR}/mask_oro_update.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+#                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
+                for VAR in "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
+                do
+                    cdo -s ifthenelse -setmisstoc,0 ${COUPLE_DIR}/mask_oro_update.nc \
+                            -selname,${VAR} ${ofile} \
+                            -selname,${VAR} ${INIT_DIR_echam}/unit.24 ${COUPLE_DIR}/${VAR}.orotmp
+
+                done
+                
+                if [[ -f ${COUPLE_DIR}/ORO_merged ]]
+                then
+                    rm ${COUPLE_DIR}/ORO_merged
+                fi
+
+                cdo -s merge ${COUPLE_DIR}/*.orotmp ${COUPLE_DIR}/ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
+                cdo -s replace ${ofile} ${COUPLE_DIR}/ORO_merged ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
+                cdo -s replace ${ofile} -chname,oromea,OROMEA -selname,oromea ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
         fi
         ############################################################
         ln -sf ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_target_orography.nc
@@ -1321,6 +1478,10 @@ distribute_total_discharge_over_ocean() {
 
         python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE}" "${HOSING_FILE_LANDICE_LOSS}"
         module unload python3
+        if [ -f "${COUPLE_DIR}/landice_nodes_in_region_2.out" ]; then
+            echo >> ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out 
+            cat ${second_HOSING_FILE_LANDICE_LOSS} >> ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
+        fi
         echo; echo "            * Finished apply_hosing_correction.py "
 #
 #        

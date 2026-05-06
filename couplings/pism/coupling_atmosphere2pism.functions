@@ -681,7 +681,7 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         else
                 #elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
                 elev_hi_file=elev_hi.nc
-		echo "UKK2: elev_hi=" ${elev_hi_file}
+		        echo "UKK2: elev_hi=" ${elev_hi_file}
                 echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 echo " * LA DEBUG: INPUT_FILE_NAME_BASE_pism = ${INPUT_FILE_NAME_BASE_pism%.*}"
                 ${cdo} -s \
@@ -693,6 +693,8 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         fi
         cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
         ${cdo} -s sub ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        cp ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_lo.nc_${CHUNK_START_YEAR_pism}
+        cp ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_hi.nc_${CHUNK_START_YEAR_pism}
 	#UKK generate elevation differences for desertification scheme 
 	#the idea is to prevent that the ice sheet grows unlimited, if the HR (high res
 	#resolution) ice sheet exceeds the height of the LR ice sheet and gets too
@@ -1954,13 +1956,13 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
         #        rm smb.nc
         #else
                 # apply mask
-                for var in SNH ME SMB RZ A tsurf; do
+                for var in SNH ME SMB RZ A tsurf SF; do
                         cdo -s -f nc -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                 done
-                cdo -s -O merge SNH ME SMB RZ A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+                cdo -s -O merge SNH ME SMB RZ A tsurf SF surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
 
                 cp ${COUPLE_DIR}/uta_smb.nc ${COUPLE_DIR}/uta_surface_mass_balance_masked3.nc
-                cdo -selvar,SNH,ME,SMB,RZ,A,tsurf ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/surface_mass_balance_masked.nc
+                cdo -selvar,SNH,ME,SMB,RZ,A,tsurf,SF ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/surface_mass_balance_masked.nc
           
                 rm SNH ME SMB RZ A tsurf
                 rm smb.nc

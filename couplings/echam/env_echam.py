@@ -27,12 +27,14 @@ def prepare_environment(config):
             "MACHINE": config["computer"]["name"],
             "MESH_PATH_FESOM": config["fesom"]["mesh_dir"],
             "HOSING_FILE_LANDICE_LOSS": config["fesom"].get("fwf_path", config["general"]["experiment_couple_dir"]),
+            "second_HOSING_FILE_LANDICE_LOSS": config["fesom"].get("second_landice_file", ""),
             "HOSING_CORRECTION": int(config["echam"].get("hosing_correction", False).__bool__()), # LA: Not needed anymore with Lu's ECHAM gfw fix
             "CELL_AREA_FESOM_FILE": config["fesom"].get("fesom_cell_area_file", "fesom.mesh.diag.nc"),
             "ECHAM_ALBEDO_ON_GLACIERS": config["echam"].get("albedo_on_glaciers", 0.7),
             "ECHAM_GLACIAL_THRESHOLD": config["echam"].get("glacial_threshold", 0.5),
             "oro_update_mod": config["echam"].get("oro_update_mod", 2),
             "oro_update_var": config["echam"].get("oro_update_var", "geosp"),
+            "paleo_time": config["echam"].get("paleo_time", "pi"),
             }
     
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:

@@ -30,6 +30,7 @@ def prepare_environment(config):
             "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
+            "iter_coup_interact_method_oce2ice": config[config["general"]["setup_name"]].get("iter_coup_interact_method_oce2ice", "OCEANTEMPSALT"),
             "MACHINE": config["computer"]["name"],
             "DOMAIN_pism": config[config["general"]["setup_name"]]["domain"],
             "RES_pism": config[config["general"]["setup_name"]]["resolution"],
@@ -43,7 +44,7 @@ def prepare_environment(config):
             "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 
             "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             "MULTI_YEAR_MEAN_SMB": config[config["general"]["setup_name"]].get("multi_year_mean_smb", 1),
-            #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
+            "PISM_OCEAN_PICO_BASINS_FILE": config[config["general"]["setup_name"]].get("basin_file", ""),
 
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),

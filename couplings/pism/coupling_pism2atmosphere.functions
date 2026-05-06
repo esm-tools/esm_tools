@@ -182,7 +182,10 @@ function pism_atmosphere_update_domain_mask {
 function pism_atmosphere_generate_orography_anomaly {
         echo; echo "                 Generating orography anomaly..."
         generate_orography_anomaly_over_pism_run
-        correct_lonlat_order ${COUPLE_DIR}/ice_orog_difference.nc
+        if [ "x${orog_reference_pism}" != "x2" ] && [ "x${orog_reference_pism}" != "x4" ]
+        then
+            correct_lonlat_order ${COUPLE_DIR}/ice_orog_difference.nc
+        fi
         echo; echo "                  ...done."
 }
 
@@ -205,7 +208,15 @@ function pism_atmosphere_generate_runoff {
 
 function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
-        files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_orog_difference.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
+        if [ "x${orog_reference_pism}" == "x2" ]
+        then
+            files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
+        elif [ "x${orog_reference_pism}" == "x4" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ] 
+        then
+            files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
+        else
+            files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_orog_difference.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
+        fi
         cdo -s -O merge $files_needed ${COUPLE_DIR}/ice_file_for_atmosphere.nc
 	    ncwa -a time ${COUPLE_DIR}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/ice_file_for_atmosphere.nc
         #rm $files_needed $rmlist
@@ -346,7 +357,10 @@ function generate_orography_anomaly_over_pism_run {
                     $ifile2 \
                     $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         # LA: now new use difference between elev_lo (ECHAM orography) and PISM restart for orography change 
-        elif [[ "x${orog_reference_pism}" == "x1" ]]; then 
+        elif [ "x${orog_reference_pism}" == "x1" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ]; then 
+            echo " * you are in chunk number ${CHUNK_NUMBER_pism}"
+            echo " * and orog_reference_pism is set to ${orog_reference_pism}"
+            echo " * use elev_lo.nc for updating orography"
             ifile2="${COUPLE_DIR}/elev_lo.nc"
             ofile=${COUPLE_DIR}/ice_orog_difference.nc
             cdo -s -sub \
@@ -356,13 +370,67 @@ function generate_orography_anomaly_over_pism_run {
                     -selname,"orog" \
                     $ifile2 \
                     $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        elif [[ "x${orog_reference_pism}" == "x2" ]]; then 
+            #ifile2="${COUPLE_DIR}/elev_lo.nc"
+            ofile=${COUPLE_DIR}/ice_orog.nc
+            cdo -s  \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+           # cdo -s \
+           #         -gtc,0 $ofiel mask.tmp.nc
+           # cdo -s \
+           #         -setmisstoc,0 \
+           #         -ifthen mask.tmp.nc $ofile tmp
+           # mv tmp $ofile
+            ncwa -a time $ofile tmp
+            mv tmp $ofile
+        elif [ "x${orog_reference_pism}" == "x3" ]; then 
+            ifile2="${COUPLE_DIR}/elev_lo.nc"
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -selname,"orog" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        elif [ "x${orog_reference_pism}" == "x4" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ]; then 
+            #ifile2="${COUPLE_DIR}/elev_lo.nc"
+            ofile=${COUPLE_DIR}/ice_orog.nc
+            cdo -s  \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+           # cdo -s \
+           #         -gtc,0 $ofiel mask.tmp.nc
+           # cdo -s \
+           #         -setmisstoc,0 \
+           #         -ifthen mask.tmp.nc $ofile tmp
+           # mv tmp $ofile
+            ncwa -a time $ofile tmp
+            mv tmp $ofile
         else
-           echo " * choose 0 or 1"
-           echo " * EXIT "
-           exit 42 
+            if [ -f ${COUPLE_DIR}/ice_orog.nc ]
+            then
+                mv ${COUPLE_DIR}/ice_orog.nc ${COUPLE_DIR}/ice_orog.nc_BAK
+            fi
+            
+            ifile2=${first_year_in_chunk_input}
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+           echo " * continue with only ice thk diff approach"
+           #echo " * EXIT "
+           #exit 42 
         fi
 
-        ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        ncks -O -x -v GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         mv tmp.nc $ofile
 }
 

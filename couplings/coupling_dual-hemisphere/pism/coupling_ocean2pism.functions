@@ -15,7 +15,12 @@ function ocean2pism {
 
     INTERPOL_TYPE_OCE=${INTERPOL_TYPE_OCE:-"dis"} #Standard=dis : "bil" "con" "dis" "nn", "bil" doesn't work for FESOM
     WEIGHTS_OCE2ICE=${WEIGHTS_OCE2ICE:-weights_oce2ice.${INTERPOL_TYPE_OCE}.nc}
-    GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+    if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes ]]
+    then
+        GRIDDES_ICE=${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes
+    else
+        GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+    fi
     GRIDDES_OCE=${GRIDDES_OCE:-ocean.griddes}
     PISM_OCEAN_FORCING_FILE=${COUPLE_DIR}/${PISM_HEMISPHERE}/"ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc"
 

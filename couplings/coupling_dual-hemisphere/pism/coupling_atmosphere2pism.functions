@@ -409,7 +409,12 @@ ic_atm2pism_prepare_define_constants() {
     echo; echo -e "\t\t* Defining constants"
     INTERPOL_TYPE_ATM="bil"  #"bil" "con" "dis" "nn"
     WEIGHTS_ATM2ICE=weights_atm2ice.${INTERPOL_TYPE_ATM}.nc
-    GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+    if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes ]]
+    then
+        GRIDDES_ICE=${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes
+    else
+        GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+    fi
     GRIDDES_ATM=atmosphere.griddes
 
     NOCOLOR='\033[0m'

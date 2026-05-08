@@ -158,7 +158,6 @@ computer:
     export_vars:
         # Basics:
         LC_ALL: en_US.UTF-8
-        HDF5_USE_FILE_LOCKING: "FALSE"
 
         # Compilers:
         FC: ${fc}

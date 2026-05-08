@@ -49,13 +49,13 @@
     <field id="osaltdiff"        long_name="salinity tendency due to diffusion"       unit="psu m s-1" prec="8"/>
     <field id="unod_sfc"         long_name="zonal surface velocity at nodes"          standard_name="sea_water_x_velocity_at_sea_surface"      unit="m s-1"/>
     <field id="vnod_sfc"         long_name="meridional surface velocity at nodes"     standard_name="sea_water_y_velocity_at_sea_surface"      unit="m s-1"/>
+    <field id="strength_ice"     long_name="ice strength"                             unit="N m-1" detect_missing_value="true"/>
   </field_group>
 
   <!-- 2D fields on ELEMENTS -->
   <field_group id="fesom_2d_elem" grid_ref="grid_2d_elem" prec="4">
     <field id="tx_sur"       long_name="zonal surface stress to ocean"           unit="N m-2"/>
     <field id="ty_sur"       long_name="meridional surface stress to ocean"      unit="N m-2"/>
-    <field id="strength_ice" long_name="ice strength"                            unit="N m-1" detect_missing_value="true"/>
     <field id="sgm11"        long_name="ice stress sigma11"                      unit="N m-1" detect_missing_value="true"/>
     <field id="sgm12"        long_name="ice stress sigma12"                      unit="N m-1" detect_missing_value="true"/>
     <field id="sgm22"        long_name="ice stress sigma22"                      unit="N m-1" detect_missing_value="true"/>
@@ -117,6 +117,18 @@
   <!-- dMOC sigma-2 density on z-levels (grid_3d_nod, nl-1 levels) -->
   <field_group id="fesom_dmoc_dens" grid_ref="grid_3d_nod" prec="4">
     <field id="density_dMOC" long_name="potential density referenced to 2000 m" unit="kg m-3"/>
+  </field_group>
+
+  <field_group id="fesom_scalar" grid_ref="grid_scalar" prec="8" operation="average">
+    <field id="volo"      long_name="sea water volume"                          unit="m3"/>
+    <field id="soga"      long_name="global mean sea water salinity"            unit="psu"/>
+    <field id="thetaoga"  long_name="global mean sea water potential temperature" unit="degC"/>
+    <field id="siarean"   long_name="sea ice area northern hemisphere"          unit="1e12 m2"/>
+    <field id="siareas"   long_name="sea ice area southern hemisphere"          unit="1e12 m2"/>
+    <field id="siextentn" long_name="sea ice extent northern hemisphere"        unit="1e12 m2"/>
+    <field id="siextents" long_name="sea ice extent southern hemisphere"        unit="1e12 m2"/>
+    <field id="sivoln"    long_name="sea ice volume northern hemisphere"        unit="1e9 m3"/>
+    <field id="sivols"    long_name="sea ice volume southern hemisphere"        unit="1e9 m3"/>
   </field_group>
 
 </field_definition>

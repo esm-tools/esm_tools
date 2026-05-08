@@ -1,5 +1,9 @@
 <grid_definition>
 
+  <grid id="grid_scalar" description="0D scalar (global)">
+    <scalar scalar_ref="scalar_global"/>
+  </grid>
+
   <!-- 2D grids -->
   <grid id="grid_2d_nod"  description="2D grid on FESOM nodes">
     <domain domain_ref="nodes"/>

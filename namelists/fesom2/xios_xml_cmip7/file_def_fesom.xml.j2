@@ -54,8 +54,11 @@
     <file id="f_virtsalt"        name="virtsalt.fesom"       ><field field_ref="virtsalt"        freq_op="1mo"/></file>
     <!-- f_realsalt disabled: dead under which_ale='linfs' (use_virt_salt=.true., real-salt branch in ice_thermo_cpl.F90 unreachable); re-enable for non-linfs runs -->
     <!-- <file id="f_realsalt"        name="realsalt.fesom"       ><field field_ref="realsalt"        freq_op="1mo"/></file> -->
-    <!-- f_relaxsalt disabled: legitimately ~0 in coupled runs (no SSS restoring); re-enable for stand-alone runs -->
-    <!-- <file id="f_relaxsalt"       name="relaxsalt.fesom"      ><field field_ref="relaxsalt"       freq_op="1mo"/></file> -->
+    <!-- f_relaxsalt: enabled. Output is identically 0 in coupled HR (no SSS restoring active);
+         CMIP vsfcorr correctly reports the absence of any virtual salt flux correction. The
+         zero field IS the right answer — it's a positive demonstration that no flux
+         correction is being applied, not a missing diagnostic. -->
+    <file id="f_relaxsalt"       name="relaxsalt.fesom"      ><field field_ref="relaxsalt"       freq_op="1mo"/></file>
     <file id="f_qcon"            name="qcon.fesom"           ><field field_ref="qcon"            freq_op="1mo"/></file>
     <file id="f_apnd"            name="apnd.fesom"           ><field field_ref="apnd"            freq_op="1mo"/></file>
     <file id="f_hpnd"            name="hpnd.fesom"           ><field field_ref="hpnd"            freq_op="1mo"/></file>
@@ -75,11 +78,28 @@
     <!-- 2D elements -->
     <file id="f_tx_sur"       name="tx_sur.fesom"      ><field field_ref="tx_sur"       freq_op="1mo"/></file>
     <file id="f_ty_sur"       name="ty_sur.fesom"      ><field field_ref="ty_sur"       freq_op="1mo"/></file>
-    <!-- f_strength_ice disabled: dead under which_ale='linfs' (ice_EVP.F90 ice_strength block is gated off); re-enable for non-linfs runs -->
-    <!-- <file id="f_strength_ice" name="strength_ice.fesom"><field field_ref="strength_ice" freq_op="1mo"/></file> -->
+    <!-- f_strength_ice: enabled. NOTE: at the time of writing, mEVP (whichEVP=1) and aEVP
+         (whichEVP=2) in ice_maEVP.F90 use a local 'pressure' / 'pressure_fac' variable and
+         leave the shared ice%work%ice_strength array at the zero init from MOD_ICE.F90:828.
+         Only whichEVP=0 (original EVP, ice_EVP.F90:518-522) currently writes it. The output
+         stream is wired up here so that once ice_maEVP.F90 is patched to populate
+         ice%work%ice_strength alongside its local pressure variable (TODO, separately),
+         CMIP sicompstren produces correct values with no XML/namelist change required. -->
+    <file id="f_strength_ice" name="strength_ice.fesom"><field field_ref="strength_ice" freq_op="1mo"/></file>
     <file id="f_sgm11"        name="sgm11.fesom"       ><field field_ref="sgm11"        freq_op="1mo"/></file>
     <file id="f_sgm12"        name="sgm12.fesom"       ><field field_ref="sgm12"        freq_op="1mo"/></file>
     <file id="f_sgm22"        name="sgm22.fesom"       ><field field_ref="sgm22"        freq_op="1mo"/></file>
+
+    <!-- 0D scalars routed through XIOS at file_def cadence -->
+    <file id="f_volo"      name="volo.fesom"     ><field field_ref="volo"      freq_op="1mo"/></file>
+    <file id="f_soga"      name="soga.fesom"     ><field field_ref="soga"      freq_op="1mo"/></file>
+    <file id="f_thetaoga"  name="thetaoga.fesom" ><field field_ref="thetaoga"  freq_op="1mo"/></file>
+    <file id="f_siarean"   name="siarean.fesom"  ><field field_ref="siarean"   freq_op="1mo"/></file>
+    <file id="f_siareas"   name="siareas.fesom"  ><field field_ref="siareas"   freq_op="1mo"/></file>
+    <file id="f_siextentn" name="siextentn.fesom"><field field_ref="siextentn" freq_op="1mo"/></file>
+    <file id="f_siextents" name="siextents.fesom"><field field_ref="siextents" freq_op="1mo"/></file>
+    <file id="f_sivoln"    name="sivoln.fesom"   ><field field_ref="sivoln"    freq_op="1mo"/></file>
+    <file id="f_sivols"    name="sivols.fesom"   ><field field_ref="sivols"    freq_op="1mo"/></file>
 
     <!-- 3D nodes, cell-center -->
     <file id="f_temp"       name="temp.fesom"      ><field field_ref="temp"       freq_op="1mo"/></file>

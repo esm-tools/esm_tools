@@ -5,6 +5,9 @@
   <file_definition   src="./file_def_fesom.xml"/>
   <axis_definition   src="./axis_def_fesom.xml"/>
   <domain_definition src="./domain_def_fesom.xml"/>
+  <scalar_definition>
+    <scalar id="scalar_global"/>
+  </scalar_definition>
   <grid_definition   src="./grid_def_fesom.xml"/>
 
   <variable_definition>

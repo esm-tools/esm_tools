@@ -13,24 +13,27 @@ general:
    homedir: !ENV ${HOME}
 
    compute_time: "03:30:00"
-   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2000-01-01T00:00:00"         # Final date of the experiment
+   initial_date: "1900-01-01T00:00:00"       # Initial exp. date
+   final_date: "1901-01-01T00:00:00"         # Final date of the experiment
    postprocessing: true
-   scenario: "no_scenario" 
-   perpetual_year: "2020"
+   scenario: "fixedyear"  # do not change for SOLVe runs 
+   perpetual_year: "2100" # set to 2000 or 2100, for 1850 use piControl template 
+   # see echam section below for what the switch actually does.
+   solarforcing: "maunder" # use "maunder" of anything else for piControl
    # in 2100 we use 2099 for some forcing files
    choose_general.perpetual_year:
        "2020":
            pyear_m1: "2020"
        "2100":
            pyear_m1: "2099"
+
    nmonth: 12
    clean_runs: 3
 
    lresume: True
-   ini_parent_exp_id: "FOCI3.0-SW102"
-   ini_parent_date: "20191231"
-   ini_nemo_restart_steps: 2980368 # to be defined 
+   ini_parent_exp_id: "FOCI3.0-SW105"
+   ini_parent_date: "18991231"
+   ini_nemo_restart_steps: 876576 
    ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
 
 foci:
@@ -64,11 +67,27 @@ echam:
           n2ovmr: 421.828979492188e-09
           cfcvmr1: 52.5617866516113e-12
           cfcvmr2: 211.545959472656e-12
+
+   choose_general.solarforcing:
+      maunder:
+         isolrad_switch: 1
+         photolysis_dir: ${input_dir}/HAMMOZ/photolysis_${general.solarforcing}
+         add_forcing_sources:
+            swflux_pictl_low: "${input_dir}/solar_irradiance_maunder/swflux_14band_cmip6_Maunder_type2.7.nc" 
+         add_forcing_files:
+            swflux: swflux_pictl_low 
+            moz_photolysis: moz_photolysis
+         add_forcing_in_work:
+            swflux: "swflux_@YEAR@.nc"
+            moz_photolysis: etfphot_@YEAR@.nc
+      "*":
+         isolrad_switch: 6 # piControl (default)
+
    namelist_changes:
       namelist.echam:
          radctl:
              yr_perp: "remove_from_namelist"
-             isolrad: 6 # piControl solar forcing
+             isolrad: ${isolrad_switch} # piControl solar forcing
              iaero: 3
              ico2: 1
              ich4: 1
@@ -86,22 +105,25 @@ echam:
              iomode: 2
              nprocio: ${nprocio}
 
-   add_forcing_sources:
-      # ${general.perpetual_year} control forcing
-      moz_lbc_perpetual_year: "${input_dir}/HAMMOZ_${echam.resolution}/hammoz_lbc_perpetual_${general.perpetual_year}_CMIP6_CCMI2_${echam.resolution}.nc"
-      moz_sad_sulf_perpetual_year: "${input_dir}/HAMMOZ_${echam.resolution}/moz_sad_sulf_perpetual_${general.perpetual_year}_c080220_${echam.resolution}${echam.levels}.nc"
-      ozone_perpetual_year: "${forcing_dir}/ozone/${resolution}_ozone_ssp370_${general.pyear_m1}.nc"
+   choose_general.scenario:
+      fixedyear:
+         add_forcing_sources:
+            # ${general.perpetual_year} control forcing
+            moz_lbc_perpetual_year: "${input_dir}/HAMMOZ_${echam.resolution}/hammoz_lbc_perpetual_${general.perpetual_year}_CMIP6_CCMI2_${echam.resolution}.nc"
+            moz_sad_sulf_perpetual_year: "${input_dir}/HAMMOZ_${echam.resolution}/moz_sad_sulf_perpetual_${general.perpetual_year}_c080220_${echam.resolution}${echam.levels}.nc"
+            ozone_perpetual_year: "${forcing_dir}/ozone/${resolution}_ozone_ssp370_${general.pyear_m1}.nc"
 
-   add_forcing_files:
-      moz_lbc: moz_lbc_perpetual_year
-      moz_sad_sulf: moz_sad_sulf_perpetual_year
-      ozone: ozone_perpetual_year
-      aerocoarse: piaerocoarse
-      aerofin: piaerofin
-      aerofarir: piaerofarir
-   add_forcing_in_work:
-      moz_lbc: "moz_lbc.${echam.resolution}.nc"
-      moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"
+         add_forcing_files:
+            moz_lbc: moz_lbc_perpetual_year
+            moz_sad_sulf: moz_sad_sulf_perpetual_year
+            ozone: ozone_perpetual_year
+            aerocoarse: piaerocoarse
+            aerofin: piaerofin
+            aerofarir: piaerofarir
+
+         add_forcing_in_work:
+            moz_lbc: "moz_lbc.${echam.resolution}.nc"
+            moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"
 
 jsbach:
    namelist_dir: "${general.esm_namelist_dir}/jsbach/${version}/PI-CTRL/dynveg-moz"

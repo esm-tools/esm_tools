@@ -26,7 +26,7 @@ OCEAN_CONVERT_NETCDF4=true
 OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T diaptr2D diaptr3D grid_U_vsum"
 
 # Other settings
-max_jobs=20
+max_jobs=12
 #
 ###############################################################################
 # END OF USER INTERFACE

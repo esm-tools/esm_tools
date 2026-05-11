@@ -64,7 +64,8 @@ yac:
         coupling_yaml: ${computer.pool_directories.focipool}/ICON-FESOM/ICON/coupling.yaml  
 
 icon:
-   monitoring: False
+   monitoring: True 
+   monitoringscript: "run_qp_driver_r2b5_icon-esm-tools.sh"
    # As icon insist on having the restart files in link that points to a directory
    # we have to run this pre_run_command, this can hopefully change in the future
    pre_run_commands: 
@@ -87,10 +88,10 @@ icon:
    
    dtime: 450 # 450 used with R02B04 900 is the current default in icon.yaml
    #dtime: 60 
-   # monthly restart and output interval
+   # yearly restart and monthyl output interval
    checkpoint_interval: P01Y
    restart_interval: P01Y
-   output_interval: P01Y
+   output_interval: P01M
    # yearly restart and output interval
    #checkpoint_interval: P${general.runlength}${general.unitUpper}
    #restart_interval: ${checkpoint_interval}

@@ -25,6 +25,8 @@ ldiag_Ri          = .false.  ! enables Richardson number diagnostics ('shear', '
 ldiag_turbflux    = .false.  ! enables turbulent flux diagnostics ('KvdTdz', 'KvdSdz')
 ldiag_salt3D      = .false.  ! enables 3D salinity diagnostics
 ldiag_dMOC        = .true.  ! enables 'dMOC' output (density MOC diagnostics)
+dmoc_call_freq      = 1     ! call dMOC diagnostic every N units (default 1)
+dmoc_call_freq_unit = 's'   ! unit: 's'=steps, 'h'=hours, 'd'=days, 'm'=months
 ldiag_DVD         = .false.  ! enables 'DVD' output (Discrete Variance Decay diagnostics)
 ldiag_forc        = .false.  ! enables 'FORC' output (comprehensive forcing diagnostics)
 ldiag_extflds     = .false.  ! enables extended field diagnostics
@@ -95,7 +97,7 @@ io_list =  'sst       ',1, 'd', 4,
            'thdgrice  ',1, 'm', 4,
            'dyngrice  ',1, 'm', 4,
            'thdgrsnw  ',1, 'm', 4,
-           'strength_ice',1, 'm', 4,
+!          'strength_ice',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (ice_EVP.F90 ice_strength block is gated off); re-enable for non-linfs runs
            'atmice_x  ',1, 'm', 4,
            'atmice_y  ',1, 'm', 4,
            'iceoce_x  ',1, 'm', 4,
@@ -103,7 +105,7 @@ io_list =  'sst       ',1, 'd', 4,
            'fw_ice    ',1, 'm', 4,
            'fw_snw    ',1, 'm', 4,
            'virtsalt  ',1, 'm', 4,
-           'realsalt  ',1, 'm', 4,
+!          'realsalt  ',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (use_virt_salt=.true., real-salt branch in ice_thermo_cpl.F90 unreachable); re-enable for non-linfs runs
            'qcon      ',1, 'm', 4,
            'apnd      ',1, 'm', 4,
            'hpnd      ',1, 'm', 4,
@@ -112,7 +114,7 @@ io_list =  'sst       ',1, 'd', 4,
            'prec      ',1, 'm', 4,
            'snow      ',1, 'm', 4,
            'runoff    ',1, 'm', 4,
-           'relaxsalt ',1, 'm', 4,
+!          'relaxsalt ',1, 'm', 4,  ! disabled: legitimately ~0 in coupled runs (no SSS restoring); re-enable for stand-alone runs
            'sgm11     ',1, 'm', 4,
            'sgm12     ',1, 'm', 4,
            'sgm22     ',1, 'm', 4,

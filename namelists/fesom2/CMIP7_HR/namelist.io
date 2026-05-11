@@ -25,11 +25,13 @@ ldiag_Ri          = .false.  ! enables Richardson number diagnostics ('shear', '
 ldiag_turbflux    = .false.  ! enables turbulent flux diagnostics ('KvdTdz', 'KvdSdz')
 ldiag_salt3D      = .false.  ! enables 3D salinity diagnostics
 ldiag_dMOC        = .true.  ! enables 'dMOC' output (density MOC diagnostics)
+dmoc_call_freq      = 1     ! call dMOC diagnostic every N units (default 1)
+dmoc_call_freq_unit = 's'   ! unit: 's'=steps, 'h'=hours, 'd'=days, 'm'=months
 ldiag_DVD         = .false.  ! enables 'DVD' output (Discrete Variance Decay diagnostics)
 ldiag_forc        = .false.  ! enables 'FORC' output (comprehensive forcing diagnostics)
 ldiag_extflds     = .false.  ! enables extended field diagnostics
 ldiag_destine     = .false.  ! enables heat content computation ('hc300m', 'hc700m', 'hc')
-ldiag_trflx       = .false.  ! enables tracer flux diagnostics ('utemp', 'vtemp', 'usalt', 'vsalt')
+ldiag_trflx       = .true.   ! enables tracer flux diagnostics ('utemp', 'vtemp', 'usalt', 'vsalt')
 ldiag_uvw_sqr     = .false.  ! enables 'UVW_SQR' output (squared velocities: u2, v2, w2)
 ldiag_trgrd_xyz   = .false.  ! enables 'TRGRD_XYZ' output (horizontal & vertical tracer gradients)
 ldiag_cmor        = .true.  ! enables CMOR diagnostics for CMIP6/CMIP7 ('tos', 'sos', 'pbo', 'volo', etc.)
@@ -53,9 +55,14 @@ compression_level = 1        ! compression level for netCDF output (1=fastest, 9
 !   precision  = 4 (single precision) or 8 (double precision)
 ! ============================================================================
 &nml_list
-! --- Daily output (variables needed at daily AND monthly frequency) ---
-! Monthly pycmor rules will use timeavg to downsample from daily data.
-! FESOM2 can only output one frequency per variable.
+! This list mirrors the FESOM CMIP7 XIOS file_def (xios_xml_cmip7/file_def_fesom.xml.j2)
+! for use when XIOS is disabled for FESOM (fesom.with_xios=false).
+! Auto-emitted via flags (not listed here):
+!   pbo, opottemptend, volo, soga, thetaoga, siarean/siareas/siextentn/siextents/
+!   sivoln/sivols                 via ldiag_cmor=.true.
+!   utemp, vtemp, usalt, vsalt    via ldiag_trflx=.true. (default monthly)
+!
+! --- Daily output ---
 io_list =  'sst       ',1, 'd', 4,
            'sss       ',1, 'd', 4,
            'ssh       ',1, 'd', 4,
@@ -65,37 +72,21 @@ io_list =  'sst       ',1, 'd', 4,
            'm_snow    ',1, 'd', 4,
            'ist       ',1, 'd', 4,
            'MLD3      ',1, 'd', 4,
-           'unod      ',1, 'd', 4,
-           'vnod      ',1, 'd', 4,
-! --- Monthly-only output ---
+           'h_ice     ',1, 'd', 4,
+           'h_snow    ',1, 'd', 4,
+           'unod_sfc  ',1, 'd', 4,
+           'vnod_sfc  ',1, 'd', 4,
+! --- Monthly 2D nodes ---
            'm_ice     ',1, 'm', 4,
-           'h_ice     ',1, 'm', 4,
-           'h_snow    ',1, 'm', 4,
            'MLD1      ',1, 'm', 4,
            'MLD2      ',1, 'm', 4,
-           'tx_sur    ',1, 'm', 4,
-           'ty_sur    ',1, 'm', 4,
-           'temp      ',1, 'm', 4,
-           'salt      ',1, 'm', 8,
-           'N2        ',1, 'm', 4,
-           'Kv        ',1, 'm', 4,
-           'u         ',1, 'm', 4,
-           'v         ',1, 'm', 4,
-           'w         ',1, 'm', 4,
-           'hnode     ',1, 'm', 4,
-           'Av        ',1, 'm', 4,
-           'bolus_u   ',1, 'm', 4,
-           'bolus_v   ',1, 'm', 4,
-           'bolus_w   ',1, 'm', 4,
            'fw        ',1, 'm', 4,
            'fh        ',1, 'm', 4,
-           'otracers  ',1, 'm', 4,
            'thdgrarea ',1, 'm', 4,
            'dyngrarea ',1, 'm', 4,
            'thdgrice  ',1, 'm', 4,
            'dyngrice  ',1, 'm', 4,
-           'thdgrsn   ',1, 'm', 4,
-           'strength_ice',1, 'm', 4,
+           'thdgrsnw  ',1, 'm', 4,
            'atmice_x  ',1, 'm', 4,
            'atmice_y  ',1, 'm', 4,
            'iceoce_x  ',1, 'm', 4,
@@ -103,22 +94,49 @@ io_list =  'sst       ',1, 'd', 4,
            'fw_ice    ',1, 'm', 4,
            'fw_snw    ',1, 'm', 4,
            'virtsalt  ',1, 'm', 4,
-           'realsalt  ',1, 'm', 4,
+!          'realsalt  ',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (use_virt_salt=.true., real-salt branch in ice_thermo_cpl.F90 unreachable); re-enable for non-linfs runs
+!          'relaxsalt ',1, 'm', 4,  ! disabled: legitimately ~0 in coupled runs (no SSS restoring); re-enable for stand-alone runs
            'qcon      ',1, 'm', 4,
            'apnd      ',1, 'm', 4,
            'hpnd      ',1, 'm', 4,
            'ipnd      ',1, 'm', 4,
            'evap      ',1, 'm', 4,
-           'relaxsalt ',1, 'm', 4,
+           'prec      ',1, 'm', 4,
+           'snow      ',1, 'm', 4,
+           'runoff    ',1, 'm', 4,
+           'opottemprmadvect',1, 'm', 8,
+           'opottempdiff',1, 'm', 8,
+           'osalttend ',1, 'm', 8,
+           'osaltrmadvect',1, 'm', 8,
+           'osaltdiff ',1, 'm', 8,
+! --- Monthly 2D elements ---
+           'tx_sur    ',1, 'm', 4,
+           'ty_sur    ',1, 'm', 4,
+!          'strength_ice',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (ice_EVP.F90 ice_strength block is gated off); re-enable for non-linfs runs
            'sgm11     ',1, 'm', 4,
            'sgm12     ',1, 'm', 4,
            'sgm22     ',1, 'm', 4,
-           'osalttend ',1, 'm', 8,
-           'opottemprmadvect',1, 'm', 8,
-           'opottempdiff',1, 'm', 8,
-           'osaltrmadvect',1, 'm', 8,
-           'osaltdiff ',1, 'm', 8,
+! --- Monthly 3D nodes, cell-center ---
+           'temp      ',1, 'm', 4,
+           'salt      ',1, 'm', 8,
+           'unod      ',1, 'm', 4,
+           'vnod      ',1, 'm', 4,
+           'hnode     ',1, 'm', 4,
            'rsdoabsorb',1, 'm', 4,
+! --- Monthly 3D nodes, interface levels ---
+           'w         ',1, 'm', 4,
+           'bolus_w   ',1, 'm', 4,
+           'N2        ',1, 'm', 4,
+           'Kv        ',1, 'm', 4,
+! --- Monthly 3D elements, cell-center ---
+           'u         ',1, 'm', 4,
+           'v         ',1, 'm', 4,
+           'bolus_u   ',1, 'm', 4,
+           'bolus_v   ',1, 'm', 4,
+! --- Monthly 3D elements, interface levels ---
+           'Av        ',1, 'm', 4,
+! --- Density MOC (expands to 11 streams via CASE('dMOC') when ldiag_dMOC=.true.) ---
+           'dMOC      ',1, 'm', 4,
 /
 
 ! ============================================================================

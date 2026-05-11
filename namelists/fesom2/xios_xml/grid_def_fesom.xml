@@ -29,4 +29,14 @@
     <domain domain_ref="elements"/>
   </grid>
 
+  <!-- dMOC density-coordinate grids (std_dens_N density classes) -->
+  <grid id="grid_rho_nod"  description="density-class grid on FESOM nodes">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_rho_elem" description="density-class grid on FESOM elements">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="elements"/>
+  </grid>
+
 </grid_definition>

@@ -26,6 +26,15 @@ fixed_CO2: {{lpj_guess.fixed_CO2 | default(-1)}}
 fixed_ndep: {{lpj_guess.fixed_ndep | default(-1)}}
 fixed_LU: {{lpj_guess.fixed_landuse_year | default(lpj_guess.fixed_LU) | default(-1)}}
 
+# CO2 forcing filename (read by patched readco2_cmip in eceframework.cpp;
+# the .ins file is not parsed before CO2 is read in the coupled path).
+# The file's first calendar year is auto-detected from the NetCDF
+# time:units attribute, so this works for historical, piControl, and any
+# ScenarioMIP file without further configuration.
+{% if lpj_guess.co2_work_file is defined %}
+co2_file: {{lpj_guess.co2_work_file}}
+{% endif %}
+
 # CMIP version - provide both for compatibility with old and new binaries
 # New binaries read 'mip', old binaries read 'cmip_co2_version'
 mip: {{lpj_guess.mip | default("cmip6")}}

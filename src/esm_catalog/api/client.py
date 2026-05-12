@@ -159,6 +159,55 @@ def _inject_collection_links(col: dict, base_url: str) -> dict:
     return col
 
 
+def _enrich_collection_with_nml(col: dict, db) -> dict:
+    """Inject nml:parameters into a collection derived from its items.
+
+    Collapsed collections store namelist data only on items
+    (as nml:{component}:{group}:{key} in item.properties).
+    This reconstructs nml:parameters for the collection so the browser
+    can show the Nml section at the collection level.
+
+    Returns a shallow copy of col; the original is not modified.
+    """
+    # Fetch enough items to find one with nml: properties; the first item
+    # returned may be a coupler/OASIS file that carries no namelist keys.
+    items, _ = db.search_items(
+        filter_props={"collection": col["id"]}, limit=50, offset=0
+    )
+    if not items:
+        return col
+
+    nml_item = next(
+        (it for it in items
+         if any(k.startswith("nml:") for k in it.get("properties", {}))),
+        items[0],
+    )
+    props = nml_item.get("properties", {})
+    nml_props = {k: v for k, v in props.items() if k.startswith("nml:")}
+    if not nml_props:
+        return col
+
+    # Build nml:parameters dict keyed as "{component}:{group}:{param}",
+    # which NamelistTree renders as component → group:param tree.
+    parameters: dict = {}
+    groups: set[str] = set()
+    for key, value in nml_props.items():
+        # key format: nml:{component}:{group}:{param}
+        parts = key.split(":", 3)
+        if len(parts) == 4:
+            _, component, group, param = parts
+            parameters[f"{component}:{group}:{param}"] = value
+            groups.add(f"{component}:{group}")
+
+    if not parameters:
+        return col
+
+    col = dict(col)
+    col["nml:parameters"] = parameters
+    col["nml:groups"] = sorted(groups)
+    return col
+
+
 def _inject_experiment_catalog_links(
     experiment_id: str, base_url: str, collections: list[dict]
 ) -> dict:
@@ -570,6 +619,8 @@ class DuckDBCatalogClient(BaseCoreClient):
             for db in dbs:
                 col = db.get_collection(collection_id)
                 if col is not None:
+                    if "nml:parameters" not in col:
+                        col = _enrich_collection_with_nml(col, db)
                     col = _inject_collection_links(col, base_url)
                     return stac.Collection(**col)
         finally:

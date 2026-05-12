@@ -1,0 +1,26 @@
+# Runtime artifacts produced by test.sh and the cavity-coupling pipeline.
+# These all land in TEST_WORK_DIR now, but anything that escapes (e.g. when
+# a user runs build_submesh from the source dir) gets ignored here too.
+
+# Outputs of mesh_flags.py
+topo_raw.txt
+cavity_raw.txt
+mask.txt
+
+# gfortran build artifacts from fesom_submesh.F90
+fesom_submesh.x
+*.mod
+
+# Run logs / stderr captures
+*.log
+stderr_*
+test_run.log
+cdo_stderr_*
+
+# Test scratch tree (only relevant if someone overrides TEST_WORK_DIR to here)
+test_couple/
+submesh_*/
+
+# Convenience symlinks/copies of large reference inputs
+core2_griddes_nodes.nc
+core2_zaxis.txt

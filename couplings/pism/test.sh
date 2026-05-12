@@ -55,8 +55,23 @@ export PATH="/sw/spack-levante/singularity-3.8.5-w53g5a/bin/:${PATH}"
 export PATH="${PATH}:/usr/bin/"
 export PATH2COUPLE="${COUPLE_DIR}"
 export MAX_MESH='/work/ba0989/a270124/PalModII/experiments/ICEBERGS/mesh_core2/'
+export MAXMESH_DIR_fesom="${MAX_MESH}"
 export CHANGE_OCEAN='1'
 export ICE_TO_FESOM=1
+
+# remap_fesom_restart inputs.
+# RESTART_DIR_fesom is the dir holding the old-mesh restart .nc files
+# (temp.nc, salt.nc, ...). In production this comes from env_fesom.py
+# (config["fesom"]["experiment_restart_in_dir"]). For the test, point at the
+# reference restart directly.
+export RESTART_DIR_fesom='/work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled2/restart/fesom/fesom.5076.oce.restart'
+
+# Pre-build remap_restart if the binary is missing.
+REMAP_BIN="${SCRIPT_DIR}/../fesom/remap_restart/remap_restart"
+if [ ! -x "${REMAP_BIN}" ]; then
+    echo "[SETUP] Building remap_restart..."
+    bash "${SCRIPT_DIR}/../fesom/remap_restart/build.sh"
+fi
 
 # Override FUNCTION_PATH (env_pism2awiesm.txt points to a stale tree) so this
 # test exercises the *local* esm_tools sources, not the captured one.

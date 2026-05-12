@@ -5,6 +5,7 @@ def prepare_environment(config):
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
             "DATA_DIR_fesom": config["fesom"]["experiment_outdata_dir"],
+            "RESTART_DIR_fesom": config["fesom"]["experiment_restart_in_dir"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "number_of_years_for_forcing": config["model1"]["chunk_size"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],

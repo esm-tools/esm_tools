@@ -1,26 +1,28 @@
 #!/bin/ksh
 
 function ice2fesom {
-    echo " *** S T A R T I N G    ice2fesom ***)"
+    echo " *** S T A R T I N G    ice2fesom ***"
 
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
     . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
 
     echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
-    if [[ "x$ICE_TO_FESOM" == "x0" ]]; then
-        echo " NOT generating ice forcing for ocean model"
-	    echo " since ICE_TO_FESOM=${ICE_TO_FESOM}"
-#	    return
+    if [[ "x${ICE_TO_FESOM:-0}" == "x0" ]]; then
+        echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
     else
-        echo " Only generating iceberg forcing so far ..."
         iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
-        return
     fi
-    if [[ "x$CHANGE_OCEAN" == "x1" ]]; then
-       echo " building new submesh from MAXMESH"
-       build_submesh
+
+    # When the dynamic submesh has been (re)built by pism2esm, the FESOM
+    # restart from the previous chunk lives on the old mesh and must be
+    # remapped onto the new mesh before the next FESOM run can pick it up.
+    if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
+        remap_fesom_restart
     fi
+
+    return
+    # ---- legacy regrid path below (unreachable) ----
     #
     # ==> if [[ $ICE_TO_FESOM -ge 1 ]]; then
     #x
@@ -141,6 +143,65 @@ function build_submesh {
     cp mesh_cst_tmp.nc ${mesh_dir}/mesh_cst.nc
     rm -f *.out *_tmp.nc
     echo "     ...done."
+}
+
+function remap_fesom_restart {
+    echo " *** Remapping FESOM restart from old to new mesh ***"
+
+    local remap_bin=${FUNCTION_PATH}/../fesom/remap_restart/remap_restart
+    if [ ! -x "${remap_bin}" ]; then
+        echo " *   binary not found: ${remap_bin}"
+        echo " *   build with: bash ${FUNCTION_PATH}/../fesom/remap_restart/build.sh"
+        return 1
+    fi
+
+    local nod2d_base
+    nod2d_base=$(head -1 ${MAXMESH_DIR_fesom}/nod2d.out | awk '{print $1}')
+
+    # First chunk fallback: no previous_submesh -> stage a synthetic copy of
+    # the mother mesh with an identity map_nod.out (every base node maps to
+    # itself), since the F90 tool requires map_nod.out to exist.
+    local path_old
+    if [ -d "${COUPLE_DIR}/previous_submesh" ]; then
+        path_old="${COUPLE_DIR}/previous_submesh/"
+        echo " *   old mesh: previous_submesh"
+    else
+        path_old="${COUPLE_DIR}/mother_as_old/"
+        echo " *   old mesh: mother mesh staged at ${path_old}"
+        mkdir -p "${path_old}"
+        for f in nod2d.out elem2d.out aux3d.out nlvls.out elvls.out edgenum.out edges.out edge_tri.out; do
+            [ -e "${MAXMESH_DIR_fesom}/${f}" ] && ln -sf "${MAXMESH_DIR_fesom}/${f}" "${path_old}/${f}"
+        done
+        seq 1 ${nod2d_base} > "${path_old}/map_nod.out"
+    fi
+
+    local restart_year=${CHUNK_START_DATE_fesom%%-*}
+    local outdir=${COUPLE_DIR}/restart_remapped
+    mkdir -p ${outdir}
+
+    cat > ${COUPLE_DIR}/namelist.remap <<NML
+&remap_config
+    path_base        = '${MAXMESH_DIR_fesom}/'
+    path_old         = '${path_old}'
+    path_new         = '${COUPLE_DIR}/latest_submesh/'
+    path_restart_old = '${RESTART_DIR_fesom}/'
+    path_restart_new = '${outdir}/'
+    restart_year     = ${restart_year}
+    nod2D_base       = ${nod2d_base}
+/
+NML
+
+    echo " *   running ${remap_bin}"
+    # Large temp arrays inside remap_restart can blow the default stack
+    # (Levante netcdf-fortran is known to need this — same setting as FESOM).
+    ( cd ${COUPLE_DIR} && ulimit -s unlimited && ${remap_bin} )
+    local rc=$?
+    if [ ${rc} -ne 0 ]; then
+        echo " *   remap_restart FAILED (rc=${rc})"
+        return ${rc}
+    fi
+
+    echo "     ...done. remapped restart -> ${outdir}"
 }
 
 function iterative_coupling_ice_fesom1x_write_names {

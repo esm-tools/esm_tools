@@ -76,82 +76,71 @@ function ice2fesom {
 }
 
 function build_submesh {
-      echo "===================================================================="
-      echo "[BUILD_SUBMESH] Starting dynamic submesh generation"
-      echo "===================================================================="
-      SUBMESH_DIR=submesh_${CHUNK_END_DATE_fesom}/
-      
-      echo "[BUILD_SUBMESH] Target submesh directory: ${SUBMESH_DIR}"
-       MAXMESH_DIR_fesom=$MAX_MESH
-      echo "[BUILD_SUBMESH] Current MESH_DIR: ${MESH_DIR}"
-      echo "[BUILD_SUBMESH] Maximum mesh directory: ${MAXMESH_DIR_fesom}"
-      mkdir -p $SUBMESH_DIR
-      rm -rf $SUBMESH_DIR/*
-	
-      echo "[BUILD_SUBMESH] Step 1: Regridding ice geometry to ocean resolution..."
-      cdo -setmisstoc,5 -remapbil,T512grid ${COUPLE_DIR}/latest_ice_geometry.nc tmp1.nc
-      cdo -remapnn,core2_griddes_nodes.nc tmp1.nc tmp2.nc
-      ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
-      rm tmp1.nc tmp2.nc
-      echo "[BUILD_SUBMESH] Step 2: Generating mesh flags from PISM ice geometry..."
-      python3 mesh_flags.py > output.txt 2>&1
-    echo "[BUILD_SUBMESH] Step 3: Copying mesh text files and compiling Fortran submesh tool..."
+    echo " *** Building dynamic submesh from MAXMESH ***"
+    SUBMESH_DIR=submesh_${CHUNK_END_DATE_fesom}/
+    MAXMESH_DIR_fesom=$MAX_MESH
+    echo " *   target submesh dir: ${SUBMESH_DIR}"
+    echo " *   max mesh dir:       ${MAXMESH_DIR_fesom}"
+    mkdir -p $SUBMESH_DIR
+    rm -rf $SUBMESH_DIR/*
+
+    # 1. Regrid PISM ice geometry to ocean resolution and onto the max-mesh nodes
+    echo " *   regridding ice geometry to max-mesh nodes"
+    cdo -setmisstoc,5 -remapbil,T512grid ${COUPLE_DIR}/latest_ice_geometry.nc tmp1.nc
+    cdo -remapnn,core2_griddes_nodes.nc tmp1.nc tmp2.nc
+    ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
+    rm tmp1.nc tmp2.nc
+
+    # 2. Derive node flags (topo_raw, cavity_raw, mask) from the regridded geometry
+    echo " *   generating mesh flags (mesh_flags.py)"
+    export PATH2COUPLE=${COUPLE_DIR}
+    export GEOMETRY_FILE=latest_ice_geometry_for_fesom.nc
+    python3 ${FUNCTION_PATH}/../pism/mesh_flags.py > mesh_flags.log 2>&1
+
+    # 3. Compile and run the mesh-reduction tool to carve a submesh out of the max mesh
+    echo " *   compiling fesom_submesh.x and running mesh reduction"
     cp ${MESH_DIR_fesom}/*.txt .
-    gfortran -o fesom_submesh.x fesom_submesh_UKK.F90 > compile_submesh.log 2>&1
+    gfortran -o fesom_submesh.x ${FUNCTION_PATH}/../pism/fesom_submesh.F90 > compile_submesh.log 2>&1
     rm -rf ${COUPLE_DIR}/${SUBMESH_DIR}/*
-    echo "[BUILD_SUBMESH] Step 4: Running mesh reduction algorithm..."
-    echo "[BUILD_SUBMESH]   Command: ./fesom_submesh.x ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/"
-    ./fesom_submesh.x  ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/
+    ./fesom_submesh.x ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/
     rm -rf ${COUPLE_DIR}/latest_submesh
-    echo "[BUILD_SUBMESH] Mesh directory (FESOM): ${MESH_DIR_fesom}"
-    echo "[BUILD_SUBMESH] Step 5: Running mesh partitioning with Singularity..."
-    echo "[BUILD_SUBMESH]   Container: paul.gierz/meshtools-creator:dev"
-    echo "[BUILD_SUBMESH]   Partitions: 288, Using cavity: yes"
-    singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-partition oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev --mesh-dir ${SUBMESH_DIR} --n-part 288 --use-cavity
-    echo "[BUILD_SUBMESH] Step 6: Creating mesh grid description file..."
-    singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-griddes oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev --mesh-dir ${SUBMESH_DIR} --ofile mesh_cst.nc
-    rm tmp*.nc
+
+    # 4. Partition the submesh and produce a grid-description file
+    echo " *   partitioning submesh and generating mesh griddes"
+    singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-partition \
+        oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev \
+        --mesh-dir ${SUBMESH_DIR} --n-part 288 --use-cavity
+    singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-griddes \
+        oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev \
+        --mesh-dir ${SUBMESH_DIR} --ofile mesh_cst.nc
+    rm -f tmp*.nc
     mv ${COUPLE_DIR}/mesh_cst.nc ${COUPLE_DIR}/${SUBMESH_DIR}/
     ln -s ${COUPLE_DIR}/submesh_$CHUNK_END_DATE_echam ${COUPLE_DIR}/latest_submesh
     mesh_dir=${COUPLE_DIR}/${SUBMESH_DIR}
 
-if [ -f "${mesh_dir}/cavity_nlvls.out" ]; then
-    echo "[BUILD_SUBMESH] Step 7: Processing ice shelf cavity levels..."
-    echo "[BUILD_SUBMESH]   Found cavity_nlvls.out -> building OCE_flag mask"
-    # Convert text to NetCDF
-    cdo -L -f nc -b F64 input,${mesh_dir}/mesh_cst.nc cavity_nlvls_tmp.nc < ${mesh_dir}/cavity_nlvls.out
+    # 5. Build OCE_flag / GLAC_flag masks from the cavity-level file, if any
+    if [ -f "${mesh_dir}/cavity_nlvls.out" ]; then
+        echo " *   cavity_nlvls.out found -> building OCE_flag/GLAC_flag from cavity levels"
+        cdo -L -f nc -b F64 input,${mesh_dir}/mesh_cst.nc cavity_nlvls_tmp.nc < ${mesh_dir}/cavity_nlvls.out
+        cdo -L -f nc -b F64 -setname,OCE_flag -setvrange,0.99,1.01 cavity_nlvls_tmp.nc OCE_flag_tmp.nc
+        cdo -L -f nc -b F64 -setname,GLAC_flag -setrtoc,1.01,100,1 -setrtomiss,0.99,1.01 cavity_nlvls_tmp.nc GLAC_flag_tmp.nc
+        cdo -L -f nc -b F64 -merge ${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc
+    else
+        echo " *   no cavity_nlvls.out -> OCE_flag set to 1 everywhere"
+        cdo -L -f nc -b F64 -setname,OCE_flag -const,1,${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc
+        cdo -L -f nc -b F64 -setname,GLAC_flag -setctomiss,1 -const,1,${mesh_dir}/mesh_cst.nc GLAC_flag_tmp.nc
+        cdo -L -f nc -b F64 -merge ${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc
+    fi
 
-    # Apply mask rules (values 1 -> 1, everything else -> NaN)
-    cdo -L -f nc -b F64 -setname,OCE_flag -setvrange,0.99,1.01 cavity_nlvls_tmp.nc OCE_flag_tmp.nc
-    cdo -L -f nc -b F64 -setname,GLAC_flag -setrtoc,1.01,100,1 -setrtomiss,0.99,1.01 cavity_nlvls_tmp.nc GLAC_flag_tmp.nc
+    # Rename cavity_depth.out to pyfesom2-standard name (cavity_depth@node.out)
+    if [[ -f ${mesh_dir}/cavity_depth.out ]]; then
+        mv ${mesh_dir}/cavity_depth.out ${mesh_dir}/cavity_depth@node.out
+        echo " *   renamed cavity_depth.out -> cavity_depth@node.out"
+    fi
 
-    # Merge mask into mesh	
-     cdo -L -f nc -b F64 -merge ${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc
-else
-    echo "[BUILD_SUBMESH] Step 7: No cavity detected..."
-    echo "[BUILD_SUBMESH]   No cavity_nlvls.out -> OCE_flag is constant 1 everywhere"
-    # Create a constant mask variable OCE_flag = 1 on the mesh grid
-    cdo -L -f nc -b F64 -setname,OCE_flag -const,1,${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc
-    cdo -L -f nc -b F64 -setname,GLAC_flag -setctomiss,1 -const,1,${mesh_dir}/mesh_cst.nc GLAC_flag_tmp.nc
-
-    # Merge mask into mesh
-    cdo -L -f nc -b F64 -merge ${mesh_dir}/mesh_cst.nc OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc
-fi
-
-cp mesh_cst_tmp.nc ${mesh_dir}/mesh_cst.nc
-
-# Rename cavity_depth.out to pyfesom2-standard name
-if [[ -f ${mesh_dir}/cavity_depth.out ]]; then
-    mv ${mesh_dir}/cavity_depth.out ${mesh_dir}/cavity_depth@node.out
-    echo "[BUILD_SUBMESH] Renamed cavity_depth.out -> cavity_depth@node.out"
-fi
-
-# clean up
-echo "[BUILD_SUBMESH] Cleaning up temporary files..."
-rm *.out *_tmp.nc
-echo "[BUILD_SUBMESH] Submesh generation completed successfully!"
-echo "===================================================================="
-
+    cp mesh_cst_tmp.nc ${mesh_dir}/mesh_cst.nc
+    rm -f *.out *_tmp.nc
+    echo "     ...done."
 }
 
 function iterative_coupling_ice_fesom1x_write_names {
@@ -278,43 +267,37 @@ function iterative_coupling_ice_fesom_rename_vars {
 # Lars Ackermann 07.09.2020
 ########################################################################
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
-    # iceberg coupling LA
-    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+    echo " *** preparing iceberg-model forcing from PISM discharge ***"
+
+    # Resolve the PISM output dir from OUTPUT_DIR_pism (set by esm-tools / test
+    # harness); fall back to the conventional sibling-of-COUPLE_DIR layout for
+    # back-compat with older runscripts.
+    local pism_outdir=${OUTPUT_DIR_pism:-${COUPLE_DIR}/../outdata/pism}
+    local latest_pism_output=${pism_outdir}/latest_ex_file_pism.nc
 
     counter=0
     COUNT_MAX=12
-    while [ ${counter} -lt ${COUNT_MAX} ]
-    do
-        echo "[ICEBERG_FORCING] Checking for PISM output file (attempt ${counter}/${COUNT_MAX})..."
-        if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
-            echo "[ICEBERG_FORCING] PISM output file found!"
+    while [ ${counter} -lt ${COUNT_MAX} ]; do
+        if [ -f ${latest_pism_output} ]; then
             break
         fi
-
-        echo "[ICEBERG_FORCING] File not found: ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc"
-        echo "[ICEBERG_FORCING] Waiting 10 seconds before retry..."
+        echo " *   waiting for ${latest_pism_output} (attempt ${counter}/${COUNT_MAX})"
         sleep 10
         counter=$((counter+1))
     done
 
-    latest_pism_output=${COUPLE_DIR}/../outdata/pism//latest_ex_file_pism.nc
     if [[ -f ${latest_pism_output} ]]; then
-        pism_discharge_file=${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc
-        #pism_discharge_file=${latest_pism_output}
+        pism_discharge_file=${latest_pism_output}
     elif [[ -f ${SPINUP_FILE_pism} ]]; then
         pism_discharge_file=${SPINUP_FILE_pism}
     fi
-
-    echo "[ICEBERG_FORCING] Configuration:"
-    echo "[ICEBERG_FORCING]   CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
-    echo "[ICEBERG_FORCING]   COUPLE_DIR: ${COUPLE_DIR}"
-    echo "[ICEBERG_FORCING]   PISM_DISCHARGE_FILE: ${pism_discharge_file}"
-    echo "[ICEBERG_FORCING] Processing iceberg discharge data with CDO..."
+    echo " *   PISM discharge file: ${pism_discharge_file}"
 
     cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
-    
+
     use_icesheet_coupling=1
+    echo "     ...done."
 }
 
 ############################################################################

@@ -50,6 +50,17 @@ export PATH2COUPLE=${COUPLE_DIR}
 export MAX_MESH='/work/ba0989/a270124/PalModII/experiments/ICEBERGS/mesh_core2/'
 export CHANGE_OCEAN='1'
 export ICE_TO_FESOM=1
+
+# Override FUNCTION_PATH (env_pism2awiesm.txt points to a stale tree) so this
+# test exercises the *local* esm_tools sources, not the captured one.
+export FUNCTION_PATH="${SCRIPT_DIR}"
+
+# build_submesh needs core2_griddes_nodes.nc in cwd; it is too large for git so
+# symlink it from the reference tree when missing.
+if [ ! -e ${SCRIPT_DIR}/core2_griddes_nodes.nc ]; then
+    ln -sf /work/ab0246/a270122/lars_and_paul/esm_tools/couplings/pism/core2_griddes_nodes.nc \
+           ${SCRIPT_DIR}/core2_griddes_nodes.nc
+fi
 export SUBMESH_DIR="submesh_5007-12-31T00:00:00"
 echo $PATH
 
@@ -74,15 +85,23 @@ export OCP_FESOM_RES="CORE2"
 
 # Source local updated coupling functions (use SCRIPT_DIR captured before PWD override)
 . ${SCRIPT_DIR}/coupling_pism2esm.functions
-. ${SCRIPT_DIR}/../fesom/coupling_ice2fesomUKK.functions
+. ${SCRIPT_DIR}/../fesom/coupling_ice2fesom_interactive_mesh.functions
 . ${SCRIPT_DIR}/../oifs/coupling_ice2oifs.functions
 
 echo "[TEST] Running pism2esm coupling..."
 pism2esm 2>> ./stderr_awiesm
 echo "[TEST] Running ice2fesom coupling..."
 ice2fesom 2>> ./stderr_fesom
+echo "[TEST] Activating ocp-tool conda env..."
+source "${ORIG_HOME}/loadconda.sh"
+conda activate ocp-tool2
+# ocp_tool is checked out as a source tree (not pip-installed into the env)
+export PYTHONPATH="/work/ab0246/a270092/software/ocp-tool:${PYTHONPATH}"
+
 echo "[TEST] Running ice2oifs (ocp-tool) coupling..."
 ice2oifs 2>> ./stderr_oifs
+
+conda deactivate
 #pism2ocean 2>> ./stderr_pism2ocean
 
 exit

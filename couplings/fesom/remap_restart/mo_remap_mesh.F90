@@ -38,6 +38,13 @@ module mo_remap_mesh
         integer, allocatable  :: nod_map(        :)  ! (nod2D)      -> base mesh index
         integer, allocatable  :: map_base_to_mesh(:)  ! (nod2D_base) -> this mesh index
                                                        ! 0 = not present
+
+        !_______________________________________________________________________
+        ! reverse adjacency in CSR form: incident elements per node.
+        ! elements incident to node n are stored at:
+        !   nod_in_elem2D( nod_in_elem2D_num(n) : nod_in_elem2D_num(n+1)-1 )
+        integer, allocatable  :: nod_in_elem2D(:)
+        integer, allocatable  :: nod_in_elem2D_num(:)  ! (nod2D+1) CSR offsets
     end type t_mesh_remap
 
     public :: t_mesh_remap, read_mesh_remap, WP
@@ -166,10 +173,54 @@ contains
                              ' -- required for remapping')
         end if
 
+        !_______________________________________________________________________
+        ! Build reverse adjacency (node -> incident elements, CSR layout).
+        ! Used by find_old_elem to look up an element by its three node ids in
+        ! O(degree) rather than O(elem2D).
+        call build_nod_in_elem2D(mesh)
+
         write(*,*) '   mesh read: nod2D=', mesh%nod2D, &
                    ' elem2D=', mesh%elem2D, ' nl=', mesh%nl
 
     end subroutine read_mesh_remap
+
+    !===========================================================================
+    subroutine build_nod_in_elem2D(mesh)
+        type(t_mesh_remap), intent(inout) :: mesh
+        integer :: e, j, n
+        integer, allocatable :: counter(:)
+
+        allocate(mesh%nod_in_elem2D_num(mesh%nod2D + 1))
+        mesh%nod_in_elem2D_num = 0
+
+        ! count incidences (offset by one for the CSR prefix sum)
+        do e = 1, mesh%elem2D
+            do j = 1, 3
+                n = mesh%elem2D_nodes(j, e)
+                mesh%nod_in_elem2D_num(n + 1) = mesh%nod_in_elem2D_num(n + 1) + 1
+            end do
+        end do
+
+        ! prefix sum -> CSR offsets, 1-indexed
+        mesh%nod_in_elem2D_num(1) = 1
+        do n = 2, mesh%nod2D + 1
+            mesh%nod_in_elem2D_num(n) = &
+                mesh%nod_in_elem2D_num(n) + mesh%nod_in_elem2D_num(n - 1)
+        end do
+
+        ! fill incident-element list
+        allocate(mesh%nod_in_elem2D(3 * mesh%elem2D))
+        allocate(counter(mesh%nod2D))
+        counter(1:mesh%nod2D) = mesh%nod_in_elem2D_num(1:mesh%nod2D)
+        do e = 1, mesh%elem2D
+            do j = 1, 3
+                n = mesh%elem2D_nodes(j, e)
+                mesh%nod_in_elem2D(counter(n)) = e
+                counter(n) = counter(n) + 1
+            end do
+        end do
+        deallocate(counter)
+    end subroutine build_nod_in_elem2D
 
     !===========================================================================
     subroutine remap_abort(msg)

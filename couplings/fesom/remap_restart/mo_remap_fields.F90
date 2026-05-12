@@ -36,6 +36,9 @@ contains
         cnt_drop      = 0
 
         !_______________________________________________________________________
+        !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag) PRIVATE(i_new, i_old, n_base) &
+        !$OMP   REDUCTION(+:cnt_unchanged, cnt_vert, cnt_new)
         do i_new = 1, mesh_new%nod2D
             n_base = mesh_new%nod_map(i_new)
             i_old  = mesh_old%map_base_to_mesh(n_base)
@@ -56,13 +59,17 @@ contains
                 cnt_unchanged = cnt_unchanged + 1
             end if
         end do
+        !$OMP END PARALLEL DO
 
         !_______________________________________________________________________
         ! count dropped nodes
+        !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
+        !$OMP   SHARED(mesh_old, mesh_new) PRIVATE(i_old, n_base) REDUCTION(+:cnt_drop)
         do i_old = 1, mesh_old%nod2D
             n_base = mesh_old%nod_map(i_old)
             if (mesh_new%map_base_to_mesh(n_base) == 0) cnt_drop = cnt_drop + 1
         end do
+        !$OMP END PARALLEL DO
 
         write(*,*) ' --> node classification:'
         write(*,*) '     unchanged         : ', cnt_unchanged
@@ -156,6 +163,9 @@ contains
         allocate(field_new(nz_old, mesh_new%nod2D))
         field_new = 0.0_WP
 
+        !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, set_new_to_zero) &
+        !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, k, ul_new, nl_new, ul_old, nl_old, dz, cf_a, cf_b, z_k)
         do i_new = 1, mesh_new%nod2D
             n_base = mesh_new%nod_map(i_new)
             i_old  = mesh_old%map_base_to_mesh(n_base)
@@ -232,6 +242,7 @@ contains
 
             end select
         end do
+        !$OMP END PARALLEL DO
 
     end subroutine remap_node_field_3d
 
@@ -255,6 +266,9 @@ contains
         allocate(field_new(mesh_new%nod2D))
         field_new = 0.0_WP
 
+        !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, set_new_to_zero) &
+        !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, dist, dist_min, alpha, lon_new, lat_new)
         do i_new = 1, mesh_new%nod2D
             n_base = mesh_new%nod_map(i_new)
             i_old  = mesh_old%map_base_to_mesh(n_base)
@@ -289,6 +303,7 @@ contains
 
             end select
         end do
+        !$OMP END PARALLEL DO
 
     end subroutine remap_node_field_2d
 
@@ -312,6 +327,9 @@ contains
         allocate(field_new(mesh_new%nl-1, mesh_new%elem2D))
         field_new = 0.0_WP
 
+        !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new) &
+        !$OMP   PRIVATE(e_new, e_old, k, nodes_new, nodes_old, ul_new, nl_new, ul_old, nl_old, n_base, i_old, j, all_unchanged)
         do e_new = 1, mesh_new%elem2D
             nodes_new = mesh_new%elem2D_nodes(1:3, e_new)
 
@@ -347,33 +365,34 @@ contains
             end if
 
         end do
+        !$OMP END PARALLEL DO
 
     end subroutine remap_elem_field_3d
 
     !===========================================================================
     ! Find old element index given three old node indices.
-    ! Searches nod_in_elem for the first node and checks the others.
+    ! Iterates elements incident to nodes_old(1) (typically <= 6 of them on a
+    ! triangulated mesh) and returns the one that also contains node(2) and
+    ! node(3). O(degree) instead of O(elem2D).
     ! Returns -1 if not found.
     subroutine find_old_elem(nodes_old, mesh_old, e_old)
         integer,            intent(in)  :: nodes_old(3)
         type(t_mesh_remap), intent(in)  :: mesh_old
         integer,            intent(out) :: e_old
 
-        integer :: e, j
-        logical :: found
+        integer :: i, e, n1
+        integer :: enodes(3)
 
         e_old = -1
-        ! brute force search -- could be optimized with nod_in_elem2D
-        ! but is only called for unchanged elements so acceptable
-        do e = 1, mesh_old%elem2D
-            found = .true.
-            do j = 1, 3
-                if (.not. any(mesh_old%elem2D_nodes(1:3, e) == nodes_old(j))) then
-                    found = .false.
-                    exit
-                end if
-            end do
-            if (found) then
+        n1 = nodes_old(1)
+        if (n1 < 1 .or. n1 > mesh_old%nod2D) return
+
+        do i = mesh_old%nod_in_elem2D_num(n1), &
+               mesh_old%nod_in_elem2D_num(n1 + 1) - 1
+            e = mesh_old%nod_in_elem2D(i)
+            enodes = mesh_old%elem2D_nodes(1:3, e)
+            if (any(enodes == nodes_old(2)) .and. &
+                any(enodes == nodes_old(3))) then
                 e_old = e
                 return
             end if

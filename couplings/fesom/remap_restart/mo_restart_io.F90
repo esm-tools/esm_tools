@@ -16,6 +16,7 @@ contains
     real(kind=8),     allocatable, intent(out) :: data_out(:)  ! (nnodes)
 
     integer            :: ncid, varid, dimid, nrecords, nnodes
+    integer            :: ndims, dimids(2)
     character(len=512) :: filepath
 
     filepath = trim(dirpath)//'/'//trim(varname)//'.nc'
@@ -23,6 +24,10 @@ contains
     call check( nf90_inq_dimid(ncid, 'time', dimid) )
     call check( nf90_inquire_dimension(ncid, dimid, len=nrecords) )
     call check( nf90_inq_varid(ncid, varname, varid) )
+    ! Resolve the node-dimension length from the variable's first dim
+    ! (was previously left uninitialized, leading to garbage allocations).
+    call check( nf90_inquire_variable(ncid, varid, ndims=ndims, dimids=dimids) )
+    call check( nf90_inquire_dimension(ncid, dimids(1), len=nnodes) )
     allocate(data_out(nnodes))
     call check( nf90_get_var(ncid, varid, data_out, &
                              start = [1,              nrecords], &

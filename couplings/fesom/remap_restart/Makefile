@@ -1,5 +1,5 @@
 FC      ?= gfortran
-FFLAGS  ?= -O2 -g
+FFLAGS  ?= -O3 -march=native -fopenmp -g
 NETCDF_F = $(shell nf-config --prefix)
 NETCDF_C = $(shell nc-config --prefix)
 

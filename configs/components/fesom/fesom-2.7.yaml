@@ -519,6 +519,40 @@ fesom:
                                     run_config:
                                             use_cavity: true
 
+    with_xios: false
+    # Opt-in switch: when true, route FESOM XIOS file_def/field_def to the
+    # CMIP7-style XMLs (many variables, multiple frequencies). Default off:
+    # upstream-namelist.io-style minimal monthly output.
+    cmip7_cmor_output: false
+    choose_with_xios:
+            true:
+                    # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work
+                    # dir. Collect those alongside the legacy pattern so tidy
+                    # copies them into outdata/fesom, then a post-tidy subjob
+                    # renames them to the old "<var>.fesom.<year>.nc" scheme.
+                    add_outdata_sources:
+                            fesom_xios: "*.fesom_*.nc"
+                    add_outdata_targets:
+                            fesom_xios: "*.fesom_*.nc"
+
+                    scripts_files:
+                            rename_xios: rename_xios
+                    scripts_sources:
+                            rename_xios: "${esm_function_dir}/components/fesom/rename_xios_fesom.sh"
+                    scripts_targets:
+                            rename_xios: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom.sh"
+
+                    workflow:
+                            next_run_triggered_by: tidy
+                            subjobs:
+                                    Rename_XIOS_FESOM:
+                                            batch_or_shell: shell
+                                            order_in_cluster: concurrent
+                                            run_after: tidy
+                                            script_dir: ${general.experiment_scripts_dir}/${model}
+                                            script: "rename_xios_fesom.sh ${fesom.experiment_outdata_dir}"
+                                            nproc: 1
+
     use_landice_water: False
     choose_general.iterative_coupling:
             true:

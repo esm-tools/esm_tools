@@ -3,12 +3,12 @@ general:
     setup_name: "awiesm3"
     version: "develop"
     #account: "ab0995" #original account
-    account: "ba0989" #new account if it works
+    #account: "ba0989" #new account if it works
+    account: "ab0246" #new account if it works
     compute_time: "08:00:00"
     initial_date: "1850-01-01"
-    final_date: "2000-01-01"
-    #base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
-    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-v3.4/"
+    final_date: "1900-01-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
     nmonth: 0
     nyear: 10 #should be 10
@@ -37,6 +37,12 @@ fesom:
         namelist.ice:
             ice_therm:
                 use_meltponds: true
+        namelist.tra:
+            tracer_phys:
+                use_momix: false
+        namelist.oce:
+            oce_dyn:
+                spp: false
 
 lpj_guess:
     lresume: false 
@@ -97,6 +103,8 @@ oasis3mct:
     norestart: false #Do i restart from vegin or not?
 
 xios:
-    with_model: oifs
+    with_model:
+        - oifs
+        - fesom
     nproc: 4 # should be 4
     omp_num_threads: 32 # should be 32

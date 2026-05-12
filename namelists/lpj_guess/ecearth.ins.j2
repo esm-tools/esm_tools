@@ -103,7 +103,8 @@ file_est_limits "est_limits.out"
 
 !///////////////////////////////////////////////////////////////////////////////////////
 !// Add CMIP output 
-import "lpjg_default_cmip6_output.ins"
+!import "lpjg_default_cmip6_output.ins"
+import "lpjg_output.ins"
 
 
 !///////////////////////////////////////////////////////////////////////////////////////
@@ -180,7 +181,7 @@ ifcarbonfreeze 1		! Whether to allow some decomposition below 0 degC in upland s
 ifinundationstress 1		! Whether to reduce daily GPP if there's inundation on peatlands (1), or not (0)
 wetland_runon 0			! Extra daily water input to (>0), or output from (<0), wetlands (mm/day). 
 				! 0 by default, non-zero for site specific studies.
-ifmethane 0			! Whether to run the methane model and calculate methane fluxes
+ifmethane 1			! Whether to run the methane model and calculate methane fluxes
 ifsaturatewetlands 1		! Whether to take water from runoff in association with the (default) 
 				! saturation of low latitude wetlands (1), or not (0)
 

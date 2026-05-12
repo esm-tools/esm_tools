@@ -6,7 +6,7 @@
              ECMWF Parameter database https://apps.ecmwf.int/codes/grib/param-db -->
 
     <file_group
-        type="multiple_file"
+        type="one_file"
         format="netcdf4"
         par_access="collective"
         name="atm"
@@ -162,7 +162,7 @@
     </file_group>
 
     <file_group
-        type="multiple_file"
+        type="one_file"
         format="netcdf4"
         par_access="collective"
         name="atm_remapped"
@@ -184,10 +184,12 @@
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
                 <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
                 <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
                 <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
                 <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
+{% endif %}
             </field_group>
         </file>
 
@@ -212,10 +214,12 @@
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
                 <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
                 <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
                 <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
                 <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
                 <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
+{% endif %}
             </field_group>
         </file>
 
@@ -285,10 +289,12 @@
                 <field field_ref="stl4" name="stl4" long_name="Soil temperature level 4"/>
                 <field field_ref="tsn" name="tsn" long_name="Temperature of snow layer"/>
                 <field field_ref="fal" name="fal" long_name="Forecast albedo"/>
+{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
                 <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
                 <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
                 <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
                 <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
+{% endif %}
             </field_group>
         </file>
 
@@ -309,7 +315,9 @@
                 <field field_ref="clwc" name="clwc"/>
                 <field field_ref="ciwc" name="ciwc"/>
                 <field field_ref="cc" name="cc"/>
-                <!-- <field field_ref="co2" name="co2" long_name="CO2 mass mixing ratio"/> -->
+{% if general.with_co2_tracer | default(false) %}
+                <field field_ref="co2" name="co2" long_name="CO2 mass mixing ratio"/>
+{% endif %}
             </field_group>
         </file>
 
@@ -329,7 +337,9 @@
                 <field field_ref="w_pl" name="w"/>
                 <field field_ref="vo_pl" name="vo"/>
                 <field field_ref="r_pl" name="r"/>
+{% if general.with_co2_tracer | default(false) %}
                 <field field_ref="co2_pl" name="co2" long_name="CO2 mass mixing ratio"/>
+{% endif %}
             </field_group>
         </file>
 
@@ -349,7 +359,9 @@
                 <field field_ref="w_pl" name="w"/>
                 <field field_ref="vo_pl" name="vo"/>
                 <field field_ref="r_pl" name="r"/>
+{% if general.with_co2_tracer | default(false) %}
                 <field field_ref="co2_pl" name="co2" long_name="CO2 mass mixing ratio"/>
+{% endif %}
             </field_group>
         </file>
 

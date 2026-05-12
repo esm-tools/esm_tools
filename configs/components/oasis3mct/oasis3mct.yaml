@@ -88,7 +88,7 @@ oasis3mct:
       4.0-awicm-frontiers:
         branch: awicm-3-frontiers
       5.0-smhi:
-        branch: cray_ftn_fixes
+        branch: local_combined_fixes
         git-repository: https://git.smhi.se/jan.streffing/oasis3-mct-5
         comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
       5.0-geomar:
@@ -263,23 +263,33 @@ oasis3mct:
             masks: masks.nc
             grids: grids.nc
 
+    # Patterns globbed recursively relative to thisrun_work_dir by
+    # check_for_unknown_files (filelists.py); files matching any of these
+    # are not copied to the experiment unknown/ directory at tidy time.
+    # ignore_in_work and ignore_sources must use the same keys.
     ignore_files:
             debug.root: debug.root
             debug.notroot: debug.notroot
             lucia: lucia
             nout: nout
+            timeline: timeline
+            load_balancing: load_balancing
 
     ignore_in_work:
             debug.root: debug.root*
             debug.notroot: debug.notroot*
             lucia: lucia.*
             nout: nout.000000
+            timeline: "timeline_*.nc"
+            load_balancing: "load_balancing_info.txt"
 
     ignore_sources:
             debug.root: debug.root*
             debug.notroot: debug.notroot*
             lucia: lucia.*
             nout: nout.000000
+            timeline: "timeline_*.nc"
+            load_balancing: "load_balancing_info.txt"
 
 
     # transformations:

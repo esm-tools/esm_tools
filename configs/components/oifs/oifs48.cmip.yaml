@@ -63,7 +63,13 @@ oifs:
                     NAERAD:
                         NO3CMIP: 7
                         CO3DATADIR: '${cmip7_data_dir}'
-                        CCMIP_STRAT_FULL: '/work/ab0246/a270092/input/oifs-48r1/cmip7-data/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_historical_1750-2023_2-2-1_${levels}.nc'
-                        CCMIP_STRAT_FULL_CLIM: '/work/ab0246/a270092/input/oifs-48r1/cmip7-data/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_climatology2-2-1_${levels}.nc'
-                    NAMMCC:
-                        LRDALB: True
+                        CCMIP_STRAT_FULL: '${cmip7_data_dir}/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_historical_1750-2023_2-2-1_${levels}.nc'
+                        CCMIP_STRAT_FULL_CLIM: '${cmip7_data_dir}/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_climatology2-2-1_${levels}.nc'
+                    NAEPHY:
+                        LRDALB: False
+            add_input_files:
+                dust_clim: dust_clim
+            add_input_sources:
+                dust_clim: ${cmip7_data_dir}/dust/onlinedust_v4_rmp.nc
+            add_input_in_work:
+                dust_clim: composition/onlinedust_v4_rmp.nc

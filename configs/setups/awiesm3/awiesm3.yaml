@@ -134,8 +134,9 @@ oifs:
             build_type: 'release'
             comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
                 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios
-                --build-type=${build_type} --install; chmod -R ${source_code_permissions} .; 
-                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+                --build-type=${build_type} --install;
+                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS;
+                nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
             wam: true
             add_add_namelist_changes:
@@ -271,9 +272,9 @@ fesom:
             add_config_files:
                 recom:     recom
             add_config_sources:
-                recom:     "${namelist_dir}/namelist.recom.${recom_setting}"
-                tra:       "${namelist_dir}/namelist.tra.recom.${recom_setting}"
-                io:        "${namelist_dir}/namelist.io.recom.${recom_setting}"
+                recom:     "${namelist_dir}/bin_${recom_setting}/namelist.recom"
+                tra:       "${namelist_dir}/bin_${recom_setting}/namelist.tra"
+                io:        "${namelist_dir}/bin_${recom_setting}/namelist.io"
             add_config_in_work:
                 recom:     "namelist.recom"
             recom_input_path: '/work/ab0246/a270092/input/fesom2/recom/'
@@ -291,10 +292,18 @@ fesom:
             recom_comp_flag: ""
 
     build_type: Release #Available options: Debug Release RelWithDebInfo MinSizeRel
-    comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
-                 -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
-                -j `nproc --all`
+    with_xios: true
+    choose_with_xios:
+        true:
+            comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                         -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                        ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        -j `nproc --all`
+        false:
+            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+                         -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
+                        ${yac_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        -j `nproc --all`
     choose_general.oasis_with_yac:
         true:
             yac_flag: "-DOASIS_WITH_YAC=ON"
@@ -329,9 +338,15 @@ fesom:
             restart_log:
                 restart_length_unit: "${restart_unit}"
                 restart_length: "${restart_rate}"
+        namelist.io:
+            diag_list:
+                ldiag_dMOC: true
+                dmoc_call_freq: 3
+                dmoc_call_freq_unit: "h"
 
     choose_general.major_version:
         "v3.4":
+            with_xios: true
             add_namelist_changes:
                 namelist.config:
                     geometry:
@@ -347,6 +362,11 @@ fesom:
                 namelist.ice:
                     ice_therm:
                         use_meltponds: true
+
+    # aEVP default for develop branches — reverses HR sithick drift (Koldunov 2019 JAMES)
+    choose_general.version:
+        develop:    {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        develop-cc: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
 
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
@@ -556,12 +576,14 @@ xios:
             regular_res_lon: "$(( (${oifs.res_number}+1)*4 ))"
     cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
     choose_cmip7_cmor_output:
-        "cmip7_spinup":
+        True:
             config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2
-                file_def: ${xml_dir}/file_def_oifs_cmip7_spinup.xml.j2
-                field_def: ${xml_dir}/field_def_cmip7.xml
+                file_def: ${xml_dir}/cmip7/file_def_oifs_cmip7_spinup.xml.j2
+                field_def: ${xml_dir}/cmip7/field_def_cmip7.xml.j2
+                axis_def: ${xml_dir}/cmip7/axis_def.xml
+                grid_def: ${xml_dir}/cmip7/grid_def.xml
         "*":
             config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2
@@ -578,6 +600,12 @@ xios:
 
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}
+    choose_fesom.with_xios:
+        true:
+            nproc: "$(( ${computer.partitions.compute.cores_per_node} / 8 ))"
+            omp_num_threads: 8
+        false:
+            nproc: 1
 
 rnfmap:
     pool_dir: ${general.pool_dir}
@@ -677,8 +705,11 @@ oasis3mct:
                       sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                     - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 vegin.nc:
+                    # BUG FIX (2025-03-16): GUE_TYPH and GUE_FRAL were swapped, causing IFS to receive? Investigate further and check if this has any impact on the results. The old (wrong) configuration is included here for reference.
+                    # TypeHigh (int, e.g. 6) as FracLow (CVL), clamped to 1.0 → wrong albedo over deserts? 
+                    # Old: GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL
                     - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
-                      GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL'
+                      GUE_LLAI:GUE_HLAI:GUE_FRAL:GUE_FRAH:GUE_TYPL:GUE_TYPH'
                     - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
                     - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
                     - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'

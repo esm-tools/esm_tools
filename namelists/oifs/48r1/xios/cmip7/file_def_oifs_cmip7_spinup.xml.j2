@@ -1,0 +1,672 @@
+<?xml version="1.0"?>
+
+<file_definition>
+    <!-- variables for CMIP7 spinup run -->
+	<!-- names and long_names according to
+             ECMWF Parameter database https://apps.ecmwf.int/codes/grib/param-db -->
+
+<!-- Remapped output on regular surface grid 'regular_sfs'-->
+    <!-- ********** CMIP7 output (derived CMOR-ready fields) *************** -->
+    <file_group
+        type="one_file"
+        format="netcdf4"
+        par_access="collective"
+        name="atmos"
+        compression_level="{{xios.compression_level}}"
+        split_freq="1y">
+
+        <!-- Monthly CMOR-ready 2D surface fields -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1mo"
+            name="atmos_mon"
+            description="AWI-ESM3-VEG-HR monthly surface CMOR fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <!-- TOA radiation -->
+                <field field_ref="toa_incoming_shortwave_flux__rsdt"/>
+                <field field_ref="toa_outgoing_shortwave_flux__rsut"/>
+                <field field_ref="toa_outgoing_longwave_flux__rlut"/>
+                <field field_ref="toa_outgoing_shortwave_flux_cs__rsutcs"/>
+                <field field_ref="toa_outgoing_longwave_flux_cs__rlutcs"/>
+                <!-- Surface stress -->
+                <field field_ref="surface_downward_eastward_stress__tauu"/>
+                <field field_ref="surface_downward_northward_stress__tauv"/>
+                <!-- Convective precipitation (downsampled raw 1h pr does not split conv/large-scale) -->
+                <field field_ref="convective_precipitation_flux__prc"/>
+                <!-- Surface radiation (clear-sky) — requires ssrdc/strdc in model output -->
+                <field field_ref="surface_downwelling_shortwave_flux_cs__rsdscs"/>
+                <field field_ref="surface_upwelling_shortwave_flux_cs__rsuscs"/>
+                <field field_ref="surface_downwelling_longwave_flux_cs__rldscs"/>
+                <field field_ref="surface_upwelling_longwave_flux_cs__rluscs"/>
+            </field_group>
+        </file>
+
+        <!-- Monthly CMOR-ready 3D pressure-level fields -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1mo"
+            name="atmos_mon_pl"
+            description="AWI-ESM3-VEG-HR monthly pressure-level CMOR fields">
+
+            <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="zg_pl"/>
+                <field field_ref="air_temperature__ta"/>
+                <field field_ref="specific_humidity__hus"/>
+            </field_group>
+        </file>
+
+        <!-- Daily CMOR-ready 3D pressure-level fields -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day_pl"
+            description="AWI-ESM3-VEG-HR daily pressure-level CMOR fields">
+
+            <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="zg_pl"/>
+                <field field_ref="air_temperature__ta"/>
+                <field field_ref="specific_humidity__hus"/>
+            </field_group>
+        </file>
+
+        <!-- Monthly CMOR-ready land surface fields -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1mo"
+            name="atmos_mon_land"
+            description="AWI-ESM3-VEG-HR monthly land CMOR fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="water_evapotranspiration_flux__evspsbl"/>
+                <field field_ref="runoff_flux__mrro"/>
+                <field field_ref="surface_runoff_flux__mrros"/>
+                <field field_ref="surface_snow_amount__snw"/>
+                <field field_ref="leaf_area_index__lai"/>
+                <field field_ref="soil_moisture_content__mrso"/>
+                <field field_ref="moisture_content_of_soil_layer__mrsol"/>
+                <field field_ref="surface_altitude__orog"/>
+                <field field_ref="potential_evapotranspiration__evspsblpot"/>
+                <field field_ref="sublimation_flux__sbl"/>
+            </field_group>
+        </file>
+
+        <!-- Monthly CMOR-ready 3D model-level fields -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1mo"
+            name="atmos_mon_ml"
+            description="AWI-ESM3-VEG-HR monthly model-level CMOR fields">
+
+            <field_group grid_ref="reduced_ml" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="mass_fraction_cloud_ice__cli"/>
+                <field field_ref="mass_fraction_cloud_liquid__clw"/>
+                <field field_ref="t" name="ta" long_name="Air Temperature"/>
+                <field field_ref="q" name="hus" long_name="Specific Humidity"/>
+                <field field_ref="relative_humidity_ml__hur"/>
+            </field_group>
+        </file>
+
+        <!-- Daily tasmax/tasmin (operation=maximum/minimum on 2t) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day_minmax"
+            description="AWI-ESM3-VEG-HR daily min/max surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts">
+                <field field_ref="2t" name="tasmax" long_name="Daily Maximum Near-Surface Air Temperature" operation="maximum"/>
+                <field field_ref="2t" name="tasmin" long_name="Daily Minimum Near-Surface Air Temperature" operation="minimum"/>
+                <field field_ref="u10m" name="sfcWindmax" long_name="Daily Maximum Near-Surface Wind Speed" operation="maximum">
+                    sqrt(@u10m*@u10m + @v10m*@v10m)
+                </field>
+            </field_group>
+        </file>
+
+        <!-- 3hr instantaneous surface fields (3hrPt) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="3h"
+            name="atmos_3h_pt"
+            description="AWI-ESM3-VEG-HR 3-hourly instantaneous surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+                <field field_ref="sp" name="sp" long_name="Surface pressure"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+            </field_group>
+        </file>
+
+        <!-- 1hr averaged precipitation (CMOR-ready) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1h"
+            name="atmos_1h_pr"
+            description="AWI-ESM3-VEG-HR 1-hourly precipitation">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="precipitation_flux_1h__pr"/>
+            </field_group>
+        </file>
+
+        <!-- 1hr averaged surface fluxes and radiation (extra_atm) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1h"
+            name="atmos_1h_sfc"
+            description="AWI-ESM3-VEG-HR 1-hourly surface fluxes and radiation">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="surface_upward_latent_heat_flux__hfls"/>
+                <field field_ref="surface_upward_sensible_heat_flux__hfss"/>
+                <field field_ref="surface_upwelling_longwave_flux__rlus"/>
+                <field field_ref="surface_upwelling_shortwave_flux__rsus"/>
+                <field field_ref="surface_downwelling_longwave_flux__rlds"/>
+                <field field_ref="surface_downwelling_shortwave_flux__rsds"/>
+                <field field_ref="cloud_area_fraction__clt"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="sp" name="sp" long_name="Surface pressure"/>
+            </field_group>
+        </file>
+
+        <!-- 6hr instantaneous pressure-level fields (plev3) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="6h"
+            name="atmos_6h_pl3"
+            description="AWI-ESM3-VEG-HR 6-hourly pressure-level fields (plev3)">
+
+            <field_group grid_ref="reduced_pl3" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="t_pl" name="t"/>
+                <field field_ref="u_pl" name="u"/>
+                <field field_ref="v_pl" name="v"/>
+            </field_group>
+        </file>
+
+        <!-- ========== VEG additional output sections ========== -->
+
+        <!-- 3hr instantaneous plev6 fields (lower troposphere: 950-700 hPa) -->
+        <file
+            enabled="false"
+            timeseries="only"
+            output_freq="3h"
+            name="atmos_3h_pl6"
+            description="AWI-ESM3-VEG-HR 3-hourly instantaneous plev6 fields">
+
+            <field_group grid_ref="reduced_pl6" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="t_pl" name="ta"/>
+                <field field_ref="u_pl" name="ua"/>
+                <field field_ref="v_pl" name="va"/>
+                <field field_ref="w_pl" name="wap"/>
+                <field field_ref="q_pl" name="hus"/>
+            </field_group>
+        </file>
+
+        <!-- Monthly net radiation fields (Emon) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1mo"
+            name="atmos_mon_netrad"
+            description="AWI-ESM3-VEG-HR monthly net surface radiation">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="surface_net_downward_longwave_flux__rls"/>
+                <field field_ref="surface_net_downward_shortwave_flux__rss"/>
+                <field field_ref="tclw" name="lwp" long_name="Liquid Water Path"/>
+            </field_group>
+        </file>
+
+        <!-- Daily snow diagnostics -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day_snow"
+            description="AWI-ESM3-VEG-HR daily snow diagnostics">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="tsn" name="tsns" long_name="Snow Surface Temperature"/>
+                <field field_ref="surface_snow_melt_flux__snmsl"/>
+            </field_group>
+        </file>
+
+        <!-- ========== VEG_LAND additional output sections ========== -->
+
+        <!-- 3hr land surface hydrology -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="3h"
+            name="atmos_3h_land"
+            description="AWI-ESM3-VEG-HR 3-hourly land surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="runoff_flux__mrro"/>
+                <field field_ref="surface_runoff_flux__mrros"/>
+                <field field_ref="snow_evaporation_flux__esn"/>
+                <field field_ref="net_surface_radiation__srfrad"/>
+                <field field_ref="ground_heat_flux__hfdsl"/>
+            </field_group>
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="skt" name="tslsi" long_name="Surface Temperature Where Land or Sea Ice"/>
+            </field_group>
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="moisture_content_of_soil_layer_100cm__mrsol"/>
+            </field_group>
+        </file>
+
+        <!-- Daily land surface hydrology -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day_land"
+            description="AWI-ESM3-VEG-HR daily land surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="potential_evapotranspiration__evspsblpot"/>
+                <field field_ref="subsurface_runoff_flux__mrrob"/>
+                <field field_ref="sublimation_flux__sbl"/>
+                <field field_ref="surface_snow_melt_flux__snm"/>
+                <field field_ref="soil_moisture_content__mrso"/>
+            </field_group>
+            <!-- Raw fields for pycmor temporal differencing (dgw, dsn, dsw, mrtws) -->
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="swvl1" name="swvl1"/>
+                <field field_ref="swvl2" name="swvl2"/>
+                <field field_ref="swvl3" name="swvl3"/>
+                <field field_ref="swvl4" name="swvl4"/>
+                <field field_ref="sd" name="sd" long_name="Snow depth (water equivalent)"/>
+                <field field_ref="src" name="src" long_name="Skin reservoir content"/>
+                <field field_ref="rsn" name="rsn" long_name="Snow density"/>
+            </field_group>
+        </file>
+
+        <!-- Monthly static land fields for fx derivation (sftgif, mrsofc, rootd) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1mo"
+            name="atmos_mon_land_static"
+            description="AWI-ESM3-VEG-HR monthly static land fields for fx derivation">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="tvl" name="tvl" long_name="Type of low vegetation"/>
+                <field field_ref="tvh" name="tvh" long_name="Type of high vegetation"/>
+                <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>
+                <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>
+                <field field_ref="slt" name="slt" long_name="Soil type"/>
+            </field_group>
+        </file>
+
+        <!-- Daily model-level fields (extra_atm: cl, pfull) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day_ml"
+            description="AWI-ESM3-VEG-HR daily model-level fields">
+
+            <field_group grid_ref="reduced_ml" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="cloud_area_fraction_ml__cl"/>
+                <field field_ref="pres" name="pfull" long_name="Pressure at Model Full-Levels"/>
+            </field_group>
+        </file>
+
+        <!-- Daily surface radiation and evaporation (extra_atm: rls, rss, evspsbl) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day_rad"
+            description="AWI-ESM3-VEG-HR daily surface radiation and evaporation">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="surface_net_downward_longwave_flux__rls"/>
+                <field field_ref="surface_net_downward_shortwave_flux__rss"/>
+                <field field_ref="water_evapotranspiration_flux__evspsbl"/>
+            </field_group>
+        </file>
+
+        <!-- Monthly maximum wind gust at 10m (extra_atm: wsg) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1mo"
+            name="atmos_mon_gust"
+            description="AWI-ESM3-VEG-HR monthly maximum wind gust">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="maximum">
+                <field field_ref="10fg" name="wsg10" long_name="Maximum Wind Speed of Gust at 10m"/>
+            </field_group>
+        </file>
+
+        <!-- ========== CAP7 additional output sections ========== -->
+
+        <!-- Daily CMOR-ready surface radiation, fluxes, precip (cap7_atm) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day"
+            description="AWI-ESM3-VEG-HR daily CMOR surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <!-- Clear-sky radiation (no all-sky equivalent; cs is its own field) -->
+                <field field_ref="surface_upwelling_longwave_flux_cs__rluscs"/>
+                <field field_ref="surface_upwelling_shortwave_flux_cs__rsuscs"/>
+                <field field_ref="surface_downwelling_longwave_flux_cs__rldscs"/>
+                <field field_ref="surface_downwelling_shortwave_flux_cs__rsdscs"/>
+                <field field_ref="toa_outgoing_longwave_flux__rlut"/>
+                <field field_ref="toa_outgoing_longwave_flux_cs__rlutcs"/>
+                <field field_ref="toa_incoming_shortwave_flux__rsdt"/>
+                <field field_ref="toa_outgoing_shortwave_flux__rsut"/>
+                <field field_ref="toa_outgoing_shortwave_flux_cs__rsutcs"/>
+                <!-- Precipitation -->
+                <field field_ref="convective_precipitation_flux__prc"/>
+                <!-- Column water -->
+                <field field_ref="atmosphere_water_vapor_content__prw"/>
+                <field field_ref="atmosphere_cloud_ice_content__clivi"/>
+                <field field_ref="surface_snow_amount__snw"/>
+                <!-- Raw fields for pipeline: daily tclw for clwvi computation -->
+                <field field_ref="tclw" name="tclw" long_name="Total column cloud liquid water"/>
+            </field_group>
+        </file>
+
+        <!-- 3hr averaged snowfall -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="3h"
+            name="atmos_3h_prsn"
+            description="AWI-ESM3-VEG-HR 3-hourly snowfall flux">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="snowfall_flux_3h__prsn"/>
+            </field_group>
+        </file>
+
+        <!-- 1hr instantaneous surface fields (cap7_atm: psl, uas, vas) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1h"
+            name="atmos_1h_pt"
+            description="AWI-ESM3-VEG-HR 1-hourly instantaneous surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+            </field_group>
+        </file>
+
+        <!-- 1hr averaged surface temperature (cap7_atm: ts average) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1h"
+            name="atmos_1h_ts"
+            description="AWI-ESM3-VEG-HR 1-hourly averaged surface temperature">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="surface_temperature__ts"/>
+            </field_group>
+        </file>
+
+        <!-- 6hr instantaneous surface fields (cap7_atm: ps, psl, ts) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="6h"
+            name="atmos_6h_pt"
+            description="AWI-ESM3-VEG-HR 6-hourly instantaneous surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="sp" name="sp" long_name="Surface pressure"/>
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="surface_temperature__ts"/>
+            </field_group>
+        </file>
+
+        <!-- 6hr instantaneous model-level fields (cap7_atm) -->
+        <file
+            enabled="false"
+            timeseries="only"
+            output_freq="6h"
+            name="atmos_6h_ml"
+            description="AWI-ESM3-VEG-HR 6-hourly instantaneous model-level fields">
+
+            <field_group grid_ref="reduced_ml" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="t" name="ta" long_name="Air Temperature"/>
+                <field field_ref="u" name="ua" long_name="Eastward Wind"/>
+                <field field_ref="v" name="va" long_name="Northward Wind"/>
+                <field field_ref="q" name="hus" long_name="Specific Humidity"/>
+                <field field_ref="zg_ml"/>
+            </field_group>
+        </file>
+
+        <!-- 6hr instantaneous plev7h fields (cap7_atm) -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="6h"
+            name="atmos_6h_pl7h"
+            description="AWI-ESM3-VEG-HR 6-hourly instantaneous plev7h fields">
+
+            <field_group grid_ref="reduced_pl7h" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="t_pl" name="ta"/>
+                <field field_ref="u_pl" name="ua"/>
+                <field field_ref="v_pl" name="va"/>
+                <field field_ref="q_pl" name="hus"/>
+                <field field_ref="zg_pl"/>
+            </field_group>
+        </file>
+
+    </file_group>
+    <!-- *********************************************- -->
+
+    <!-- ********** Minimum output for cmpi and reval Tools. *************** -->
+    <file_group
+        type="one_file"
+        format="netcdf4"
+        par_access="collective"
+        name="atm_remapped"
+        compression_level="{{xios.compression_level}}"
+        split_freq="1y">
+    <!-- Daily raw fields for pycmor processing -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atm_remapped_1d"
+            description="AWI-ESM3-VEG-HR daily raw surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="sp" name="sp" long_name="Surface pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+                <field field_ref="ssrd" name="ssrd" long_name="Surface solar radiation downwards"/>
+                <field field_ref="tp" name="tp" long_name="Total precipitation"/>
+                <field field_ref="ci" name="ci" long_name="Sea ice area fraction"/>
+            </field_group>
+        </file>
+
+    <!-- Daily raw pressure-level fields for pycmor processing -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atm_remapped_1d_pl"
+            description="AWI-ESM3-VEG-HR daily raw pressure-level fields">
+
+            <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="z_pl" name="z"/>
+                <field field_ref="t_pl" name="t"/>
+                <field field_ref="u_pl" name="u"/>
+                <field field_ref="v_pl" name="v"/>
+                <field field_ref="q_pl" name="q"/>
+                <field field_ref="w_pl" name="w"/>
+                <field field_ref="r_pl" name="r"/>
+            </field_group>
+        </file>
+
+    <!-- Six hourly snap-shots (legacy, disabled) -->
+        <file
+            enabled="false"
+	        timeseries="only"
+	        output_freq="6h"
+            name="atm_remapped_6h_legacy"
+            description="ECE4/OIFS 6hourly surface fields">
+
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+                <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+                <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+                <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+                <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+                <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+                <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
+                <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
+                <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
+                <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
+                <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
+{% endif %}
+            </field_group>
+        </file>
+
+    <!-- Monthly averages over six hourly values -->
+        <file
+            enabled="true"
+	        timeseries="only"
+	        output_freq="1mo"
+            name="atm_remapped_1m"
+            description="ECE4/OIFS monthly surface fields">
+
+          <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+              <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>
+              <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>
+              <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
+              <field field_ref="ci" name="ci" long_name="Sea ice area fraction"/>
+              <field field_ref="ttr" name="ttr" long_name="Top net thermal radiation"/>
+              <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
+              <field field_ref="cp" name="cp" long_name="Convective precipitation"/>
+              <field field_ref="lsp" name="lsp" long_name="Large-scale precipitation"/>
+              <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
+              <field field_ref="10v" name="10v" long_name="10 metre V wind component"/>
+              <field field_ref="lai_lv" name="lai_lv" long_name="Leaf area index, low vegetation"/>
+              <field field_ref="lai_hv" name="lai_hv" long_name="Leaf area index, high vegetation"/>
+              <field field_ref="sro" name="sro" long_name="Surface runoff"/>
+              <field field_ref="sz" name="sz" long_name="Geopotential at surface"/>
+
+              <field field_ref="lcc" name="lcc" long_name="Low cloud cover"/>
+              <field field_ref="hcc" name="hcc" long_name="High cloud cover"/>
+              <field field_ref="ttrc" name="ttrc" long_name="Top net thermal radiation, clear sky"/> 
+              <field field_ref="ssrd" name="ssrd" long_name="Surface solar radiation downwards"/>
+              <field field_ref="tsrc" name="tsrc" long_name="Top net solar radiation, clear sky"/>
+
+              <field field_ref="2d" name="2d" long_name="2 metre dewpoint temperature"/>
+              <field field_ref="mn2t" name="mn2t" long_name="Minimum temperature at 2 metres since previous post-processing"/>
+              <field field_ref="mx2t" name="mx2t" long_name="Maximum temperature at 2 metres since previous post-processing"/>
+              <field field_ref="stl1" name="stl1" long_name="Soil temperature level 1"/>
+              <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
+              <field field_ref="sd" name="sd" long_name="Snow depth"/>
+              <field field_ref="asn" name="asn" long_name="Snow albedo"/>
+              <field field_ref="tsn" name="tsn" long_name="Temperature of snow layer"/>
+              <field field_ref="sshf" name="sshf" long_name="Surface sensible heat flux"/>
+              <field field_ref="slhf" name="slhf" long_name="Surface latent heat flux"/>
+              <field field_ref="sf" name="sf" long_name="Snowfall"/>
+              <field field_ref="tcwv" name="tcwv" long_name="Total column water vapour"/>
+              <field field_ref="tclw" name="tclw" long_name="Total column cloud liquid water"/>
+              <field field_ref="e" name="e" long_name="Evaporation"/>
+              <field field_ref="ewss" name="ewss" long_name="Eastward turbulent surface stress"/>
+              <field field_ref="nsss" name="nsss" long_name="Northward turbulent surface stress"/>
+
+              <field field_ref="rsn" name="rsn" long_name="Snow density"/>
+              <field field_ref="ssr" name="ssr" long_name="Surface net solar radiation"/>
+              <field field_ref="str" name="str" long_name="Surface net thermal radiation"/>
+              <field field_ref="tsr" name="tsr" long_name="Top net solar radiation"/>
+
+              <field field_ref="sstk" name="sst" long_name="Sea surface temperature"/>
+              <field field_ref="istl1" name="istl1" long_name="Ice temperature layer 1"/>
+              <field field_ref="swvl1" name="swvl1" long_name="Volumetric soil water layer 1"/>
+              <field field_ref="swvl2" name="swvl2" long_name="Volumetric soil water layer 2"/>
+              <field field_ref="swvl3" name="swvl3" long_name="Volumetric soil water layer 3"/>
+              <field field_ref="swvl4" name="swvl4" long_name="Volumetric soil water layer 4"/>
+              <field field_ref="tciw" name="tciw" long_name="Total column cloud ice water"/>
+              <field field_ref="tcw" name="tcw" long_name="Total column water"/>
+              <field field_ref="stl2" name="stl2" long_name="Soil temperature level 2"/>
+              <field field_ref="strd" name="strd" long_name="Surface thermal radiation downwards"/>
+              <field field_ref="stl3" name="stl3" long_name="Soil temperature level 3"/>
+              <field field_ref="mcc" name="mcc" long_name="Medium cloud cover"/>
+              <field field_ref="ro" name="ro" long_name="Runoff"/>
+              <field field_ref="ssrc" name="ssrc" long_name="Surface net solar radiation, clear sky"/>
+              <field field_ref="strc" name="strc" long_name="Surface net thermal radiation, clear sky"/>
+              <field field_ref="tisr" name="tisr" long_name="TOA incident solar radiation"/>
+              <field field_ref="skt" name="skt" long_name="Skin temperature"/>
+              <field field_ref="stl4" name="stl4" long_name="Soil temperature level 4"/>
+              <field field_ref="fal" name="fal" long_name="Forecast albedo"/>
+              <field field_ref="sp" name="sp" long_name="Surface pressure"/>
+              <field field_ref="tp" name="tp" long_name="Total precipitation"/>
+              <field field_ref="lsm" name="lsm" long_name="Land-sea mask"/>
+              <field field_ref="ssrdc" name="ssrdc" long_name="Surface solar radiation downward clear-sky"/>
+              <field field_ref="strdc" name="strdc" long_name="Surface thermal radiation downward clear-sky"/>
+{% if general.with_co2_oce_coupling | default(false) or general.with_co2_veg_coupling | default(false) %}
+              <field field_ref="co2of" name="co2of" long_name="Ocean flux of Carbon Dioxide"/>
+              <field field_ref="co2nbf" name="co2nbf" long_name="Natural biosphere flux of Carbon Dioxide"/>
+              <field field_ref="co2apf" name="co2apf" long_name="Anthropogenic emissions of Carbon Dioxide"/>
+              <field field_ref="co2fire" name="co2fire" long_name="Wildfire flux of Carbon Dioxide"/>
+{% endif %}
+              <field field_ref="macv2sp_taod550" name="macv2sp_taod550" long_name="Total Aerosol Optical Depth at 550nm from MACV2SP"/>
+              <field field_ref="tco3" name="tco3" long_name="Total column ozone"/>
+          </field_group>
+        </file>
+
+<!-- Remapped output on regular pressure level grid 'regular_pl'-->
+    <!-- Monthly averages over six hourly values -->
+        <file
+            enabled="true"
+	        timeseries="only"
+	        output_freq="1mo"
+            name="atm_remapped_1m_pl"
+            description="ECE4/OIFS 6hourly pressure level fields">
+
+            <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="z_pl" name="z"/>
+                <field field_ref="t_pl" name="t"/>
+                <field field_ref="u_pl" name="u"/>
+                <field field_ref="v_pl" name="v"/>
+                <field field_ref="q_pl" name="q"/>
+                <field field_ref="w_pl" name="w"/>
+                <field field_ref="vo_pl" name="vo"/>
+                <field field_ref="r_pl" name="r"/>
+{% if general.with_co2_tracer | default(false) %}
+                <field field_ref="co2_pl" name="co2" long_name="CO2 mass mixing ratio"/>
+{% endif %}
+            </field_group>
+        </file>
+    </file_group>
+    <!-- *********************************************- -->
+</file_definition>

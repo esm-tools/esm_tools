@@ -129,7 +129,9 @@ oasis3mct:
     norestart: true #Should lpj-guess restart from vegin or not?
 
 xios:
-    with_model: oifs
+    with_model:
+        - oifs
+        - fesom
     nproc: 4
     omp_num_threads: 32
     #config_sources:

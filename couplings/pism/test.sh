@@ -46,7 +46,7 @@ echo $PATH
 
 # Source local updated coupling functions (use SCRIPT_DIR captured before PWD override)
 . ${SCRIPT_DIR}/coupling_pism2esm.functions
-. ${SCRIPT_DIR}/../fesom/coupling_ice2fesomUKK.functions
+. ${SCRIPT_DIR}/../fesom/coupling_ice2fesom_interactive_mesh.functions
 
 echo "[TEST] Running pism2esm coupling..."
 pism2esm 2>> ./stderr_awiesm

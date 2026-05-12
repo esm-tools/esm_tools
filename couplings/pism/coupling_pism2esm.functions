@@ -1,59 +1,41 @@
 #!/usr/bin/ksh
 pism2esm() {
-    echo "===================================================================="
-    echo "[PISM2ESM] Starting PISM to ESM coupling"
-    echo "===================================================================="
-    echo "[PISM2ESM] Loaded modules:"
+    echo " *** S T A R T I N G    pism2esm *** "
+    echo "modules loaded:"
     echo $(module list)
-    echo "[PISM2ESM] Loading coupling functions..."
+
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/general_helpers.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
-   # if [ -f ${COUPLE_DIR}/latest_gfw_atmo.nc ]; then
-   #     rm ${COUPLE_DIR}/latest_gfw_atmo.nc
-   # fi
-    
-    #if [ -f ${COUPLE_DIR}/latest_jsbach_init_file.nc ]; then
-    #    rm ${COUPLE_DIR}/latest_jsbach_init_file.nc
-    #fi
-    #
-    #if [ -f ${COUPLE_DIR}/latest_jsbach_restart_file.nc ]; then
-    #    rm ${COUPLE_DIR}/latest_jsbach_restart_file.nc
-    #fi
-    #
-    #if [ -f ${COUPLE_DIR}/latest_veg_restart_file.nc ]; then
-    #    rm ${COUPLE_DIR}/latest_veg_restart_file.nc
-    #fi
-    
-   # if [ -f ${COUPLE_DIR}/latest_target_orography.nc ]; then
-   #     rm ${COUPLE_DIR}/latest_target_orography.nc
-   # fi
-
-    #echo "LA DEBUG: MIN_MON_SELECT=${MIN_MON_SELECT}"
-    #if [ "x${MIN_MON_SELECT}" == "x1" ]; then
-    #    echo "LA DEBUG: Hier"
     . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions
-    #else
-    #    echo "LA DEBUG: Oder hier"
-    #    . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions.origin
     . ${FUNCTION_PATH}/coupling_pism2ocean.functions
+    . ${FUNCTION_PATH}/../fesom/coupling_ice2fesom_interactive_mesh.functions
 
-    echo "[PISM2ESM] Extracting ice geometry variables from PISM output..."
-    echo "[PISM2ESM]   Input file: ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
-    echo "[PISM2ESM]   Output file: ${COUPLE_DIR}/latest_ice_geometry.nc"
+    # Extract the ice-geometry variables PISM hands to the rest of the system.
+    # ice_subNN = (usurf - thk) on floating ice (mask==3) is the cavity-roof depth
+    # consumed by mesh_flags.py to flag max-mesh nodes.
+    echo " *   extracting ice geometry variables from PISM output"
+    echo " *     input:  ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
+    echo " *     output: ${COUPLE_DIR}/latest_ice_geometry.nc"
     if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
-	    echo "cdo seltimestep,1  -expr,ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=(mask==2); mask=mask; ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/latest_ice_geometry.nc"
-	    cdo seltimestep,1  -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
-              ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/latest_ice_geometry.nc
+        cdo seltimestep,1 \
+            -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
+            ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc \
+            ${COUPLE_DIR}/latest_ice_geometry.nc
     else
-        echo "[PISM2ESM] WARNING: PISM output file not found!"
+        echo " *   WARNING: PISM output file not found, skipping ice-geometry extraction"
     fi
 
-    #    env > env_pism2awiesm.txt
-    #pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
-    echo "[PISM2ESM] Calling pism2atmosphere coupling..."
- #   pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
-    #pism2ocean
-    echo "[PISM2ESM] PISM to ESM coupling completed"
-    echo "===================================================================="
+    echo " *   calling pism2atmosphere"
+    pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+
+    echo " *   calling pism2ocean"
+    pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
+
+    if [[ "x$CHANGE_OCEAN" == "x1" ]]; then
+        echo " *   CHANGE_OCEAN=1 -> building new FESOM submesh from MAXMESH"
+        build_submesh
+    fi
+
+    echo " *** pism2esm done *** "
 }

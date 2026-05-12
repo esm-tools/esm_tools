@@ -9,7 +9,7 @@ This coupling system enables dynamic interaction between the PISM ice sheet mode
 ### Bash/Shell Scripts
 
 - **`coupling_pism2esm.functions`** - Main PISM→ESM coupling orchestrator
-- **`coupling_ice2fesomUKK.functions`** - Ice→FESOM coupling with dynamic submesh generation
+- **`coupling_ice2fesom_interactive_mesh.functions`** - Ice→FESOM coupling with dynamic submesh generation
 - **`test.sh`** - Test harness for coupling workflow
 - **`env_pism2awiesm.txt`** - Runtime environment snapshot (atmosphere coupling)
 - **`env_pism2ocean.txt`** - Runtime environment snapshot (ocean coupling)
@@ -23,7 +23,7 @@ This coupling system enables dynamic interaction between the PISM ice sheet mode
 
 ### Fortran Program
 
-- **`fesom_submesh_UKK.F90`** - Mesh reduction algorithm
+- **`fesom_submesh.F90`** - Mesh reduction algorithm
   - Creates ocean submesh from maximum mesh based on ice extent
   - Handles ice shelf cavity geometry
   - Tracks node/element mappings
@@ -45,7 +45,7 @@ test.sh (Test Entry Point)
 │    └─── pism2ocean()  [coupling_pism2ocean.functions]
 │         └─── (ocean forcing preparation)
 │
-└─── ice2fesom()  [coupling_ice2fesomUKK.functions]
+└─── ice2fesom()  [coupling_ice2fesom_interactive_mesh.functions]
      │
      ├─── IF (CHANGE_OCEAN == 1):
      │    │

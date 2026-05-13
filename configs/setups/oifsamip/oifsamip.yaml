@@ -8,19 +8,35 @@ general:
         model_dir: ${esm_master_dir}/oifsamip
 
         lresume: False
+        time_step: 86400
         coupled_setup: True
         with_co2_oce_coupling: False
         with_co2_veg_coupling: False
+        #        output_step_freq: ${oifs.output_step_freq}
+        choose_mip:
+            "cmip7":
+                output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "*":
+                output_step_freq: $(( 3600 / ${time_step} * 6 ))
+                #choose_output:
+                #    "1hr":
+                #        output_step_freq: $(( 3600 / ${time_step} * 1 ))
+                #    "3hr":
+                #        output_step_freq: $(( 3600 / ${time_step} * 3 ))
+                #    "12hr":
+                #        output_step_freq: $(( 3600 / ${time_step} * 12 ))
 
         include_models:
                 - amip
                 - oifs
                 - xios
                 - oasis3mct
+                - lpj_guess
 
         available_versions:
                 - 'cy43'
                 - 'cy48'
+                - 'cy48cmip7'
         choose_version:
           cy43:
             couplings:
@@ -28,8 +44,12 @@ general:
           cy48:
             couplings:
               - oifs-48r1+amip-v1
+          cy48cmip7:
+            couplings:
+              - oifs-48r1+amip-v1+lpj_guess-4.1.2
 
-        version: "cy48"
+        version: "cy48cmip"
+        mip: "cmip7"
         scenario: "piControl"
         resolution: ${oifs.resolution}
         postprocessing: false
@@ -61,6 +81,10 @@ general:
                         further_reading:
                                 - oifs/oifs48.env.yaml
                                 - xios/xios.env.yaml
+                "cy48cmip":
+                        further_reading:
+                                - oifs/oifs48.env.yaml
+                                - xios/xios.env.yaml
 
 
 
@@ -78,6 +102,7 @@ oifs:
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
+        with_xios: true
 
         mip: "cmip6"
         scenario: "historical"
@@ -122,7 +147,24 @@ oifs:
                                         NAEPHY:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3
-
+                "cy48cmip":
+                        version: "48r1"
+                        append_icmcl: ""
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMECECFG:
+                                                ECE_CPL_NEMO_LIM: ".false."
+                                                ECE_CPL_FESOM_FESIM: ".false."
+                                                ECE_CPL_AMIP: ".true."
+                                        NAMMCC:
+                                                LNEMOLIMCUR: ".false."
+                                                LNEMOSICOUP: ".false."
+                                        NAEPHY:
+                                                LECURR: ".false."
+                                                #NALBEDOSCHEME: 3
 
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -242,6 +284,10 @@ oasis3mct:
                         coupling_target_fields:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac <--gauswgt_i-- AMIP_sst:AMIP_sic'
+                'cy48cmip':
+                        coupling_target_fields:
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac <--gauswgt_i-- AMIP_sst:AMIP_sic'
 
         coupling_directions:
                 'AMIP->atma':
@@ -339,3 +385,54 @@ computer:
                         OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
                         OIFS_CFLAG: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
                         OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'
+
+lpj_guess:
+    version: "4.1.2"
+    build_type: Release # Available options: Debug, Release
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .."
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=${build_type}; make -j8; cd .."
+    execution_command: ${executable} -parallel ${runscript_name}
+
+    daily_output: true
+
+    # Automatically set mygrid to match OIFS resolution
+    mygrid: ${oifs.resolution}
+
+    veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
+        TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ,
+        SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ,
+        TMIN_LPJ, TMAX_LPJ, GUE_CNPP, GUE_CANT, GUE_CNAT, CO2_LPJG]
+
+    coupling_fields:
+        "[[veg_atm_fields-->FIELD]]":
+            grid: ${lpj_guess.mygrid}-land
+
+    resolution: ${oifs.resolution}
+    grids:
+        ${resolution}-land:
+            name: ${resolution}-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        lpjg:
+            name: lpjg
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TL159-land:
+            name: TL159-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TL255-land:
+            name: TL255-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"

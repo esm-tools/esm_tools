@@ -1,6 +1,6 @@
 #!/usr/bin/ksh
 
-module load nco
+module list -t 2>&1 | grep -q "/nco/" || module load nco
 . ${FUNCTION_PATH}/../general/general_lists.functions
 
 cdo=cdo

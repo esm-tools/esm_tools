@@ -13,18 +13,21 @@ ice2echam_1st() {
         ISM_TO_ECHAM_update_land_runoff=${ISM_TO_ECHAM_update_land_runoff:-1}
         HOSING_CORRECTION=${HOSING_CORRECTION:-0}
 
+        COUPLE_DIR="${COUPLE_DIR%/}"
+        RESTART_DIR_echam="${RESTART_DIR_echam%/}"
         :> nco_stderr_ice2echam; :> cdo_stderr_ice2echam
+        rm -f tmp tmp.nc tmp_oromea
 
         counter=0
         COUNT_MAX=30
         while [ ${counter} -lt ${COUNT_MAX} ]
         do
             echo "          * inside while loop "
-            if [ -f ${COUPLE_DIR}/../outdata//${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc  ]; then
+            if [ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc  ]; then
                 break
             fi
 
-            echo; echo "        * File ${COUPLE_DIR}/../outdata//${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc  not found. Waiting for 10 seconds ..."
+            echo; echo "        * File ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc  not found. Waiting for 10 seconds ..."
             sleep 10
             counter=$((counter+1))
         done
@@ -48,6 +51,9 @@ ice2echam_1st() {
 ice2echam_2nd() {
         echo "                =================================================================="
         echo "                 *** S T A R T I N G    ice2echam_2nd for ${PISM_HEMISPHERE} *** "; echo
+        COUPLE_DIR="${COUPLE_DIR%/}"
+        RESTART_DIR_echam="${RESTART_DIR_echam%/}"
+        rm -f tmp tmp.nc tmp_oromea
 
         if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_orography_2nd
@@ -131,8 +137,8 @@ cdo -L -chvar,var51,OROMEA,var52,OROSTD,var53,OROSIG,var54,OROGAM,var55,OROTHE,v
 cdo -L -mul -selvar,OROMEA ${ofile} -gtc,0. -selvar,OROMEA ${ofile} oromea.tmp
 # save geosp and oro-xxx in different files. why oromea from original file @PG?
 cdo -L -replace ${ofile} oromea.tmp dummy.nc; mv dummy.nc ${ofile}
-rm oromea.tmp
-rm oromea_pi_r720x360.nc anom_topo_r720x360.nc oromea_r720x360.nc topodata.nc sso_par_fil.srv calnoro_output.nc
+rm -f oromea.tmp
+rm -f oromea_pi_r720x360.nc anom_topo_r720x360.nc oromea_r720x360.nc topodata.nc sso_par_fil.srv calnoro_output.nc
 }
 
 
@@ -141,20 +147,27 @@ update_orography_apply_orography_anomaly_high_res() {
         echo; echo "                *   applying surface height changes to high-resolution echam topography"
         ifile=${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_T511grid.nc
         ofile=${COUPLE_DIR}/${PISM_HEMISPHERE}/echam6_new_orography_before_calnoro_high_res.nc
-        ncrename -v ${ice_orography_difference_name},oromea $ifile
-        cdo -s -setmisstoc,0 $ifile tmp; mv tmp $ifile
-        if [[ -f ${ofile} ]]
-        then
-            rfile=${ofile}
-            ncks -O -v oromea $rfile tmp_oromea
-        else
-            rfile=${hi_res_init_oro}
-            ncks -O -v OROMEA $rfile tmp_oromea
-            ncrename -v OROMEA,oromea tmp_oromea
-        fi
+        ncrename -v .${ice_orography_difference_name},oromea $ifile
+        # CDO setmisstoc cannot process variables without a time dimension; use NCO.
+        # .fill() is not supported in all NCO builds; use where() instead.
+        ncap2 -O -s 'where(oromea < -1.0e+30) oromea=0.0f' $ifile tmp && mv tmp $ifile || true
+        # Always start from the T511 reference; never reuse a stale per-run file.
+        # rm -f first: a previous pass leaves tmp_oromea at T63 resolution; ncks -O
+        # may silently skip the write on Lustre, causing ncbo to see a dimension mismatch.
+        rm -f tmp_oromea
+        ncks -O -v OROMEA ${hi_res_init_oro} tmp_oromea 2>> nco_stderr_ice2echam
+        ncrename -v OROMEA,oromea tmp_oromea 2>> nco_stderr_ice2echam
         change_lonlat $ifile oromea
-        # LA: need to backup echam6_new_orography_before_calnoro!!!
-        ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
+        # Only overwrite ofile after ncbo succeeds; if tmp_oromea is missing (ncks
+        # failed) preserve whatever ofile exists from the previous coupling pass.
+        if [ -f tmp_oromea ]; then
+            rm -f ${ofile}
+            cdo -s add -setmisstoc,0 -seltimestep,1 $ifile -setgrid,T511grid tmp_oromea $ofile 2>> cdo_stderr_ice2echam
+#            ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
+            rm -f tmp_oromea
+        else
+            echo "WARNING: update_orography_apply_orography_anomaly_high_res: ncks failed to extract OROMEA from ${hi_res_init_oro}; keeping existing ${ofile}" >&2
+        fi
 
         update_orography_apply_orography_anomaly
 }
@@ -168,15 +181,23 @@ iterative_coupling_ice_echam6_update_glacial_mask_1st() {
 ## @fn iterative_coupling_ice_echam6_update_glacial_mask_2nd)
 iterative_coupling_ice_echam6_update_glacial_mask_2nd() {
         set_glacial_mask_echam_restart_file_2nd $ifile
-        if [ -d ${COUPLE_DIR}/jsbach_init_file_modifications ]; then
-                rm -rf ${COUPLE_DIR}/jsbach_init_file_modifications
-        fi
-        mkdir ${COUPLE_DIR}/jsbach_init_file_modifications
-        here=$(pwd)
+        rm -rf ${COUPLE_DIR}/jsbach_init_file_modifications 2>/dev/null || true
+        mkdir -p ${COUPLE_DIR}/jsbach_init_file_modifications
+        find ${COUPLE_DIR}/jsbach_init_file_modifications -mindepth 1 -delete
+        _glacmask2nd_here=$(pwd)
         cd ${COUPLE_DIR}/jsbach_init_file_modifications
+        # On Lustre a freshly mkdir'd directory may not accept writes immediately
+        # (MDS metadata not yet propagated to client cache).  Spin until a test
+        # file can be created — cp/ln inside the directory will then succeed.
+        _cdwr=0
+        until touch .cdtest_$$ 2>/dev/null || [ $_cdwr -ge 15 ]; do
+            sleep 2
+            _cdwr=$((_cdwr+1))
+        done
+        rm -f .cdtest_$$; unset _cdwr
         set_glacial_mask_echam_make_dummy_jan_surf
         set_glacial_mask_jsbach_update_init_file
-        cd $here
+        cd $_glacmask2nd_here
         rm -rf ${COUPLE_DIR}/jsbach_init_file_modifications
         set_glacial_mask_jsbach_update_restart_jsbach
         set_glacial_mask_jsbach_update_restart_veg
@@ -211,7 +232,7 @@ update_orography_select_field() {
         cdo -s selvar,${ice_orography_difference_name} \
                 ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc \
                 ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference.nc
-        rmlist="$rmlist ${COUPLE_DIR}/ice_orog_difference.nc"
+        rmlist="$rmlist ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference.nc"
 }
 
 ## @fn update_orography_apply_orography_anomaly()
@@ -219,14 +240,28 @@ update_orography_apply_orography_anomaly() {
         echo; echo "                *   applying surface height changes to echam topography"
         ifile=${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_${RES_echam}grid.nc
         ofile=${COUPLE_DIR}/${PISM_HEMISPHERE}/echam6_new_orography_before_calnoro_low_res.nc
-        ncrename -v ${ice_orography_difference_name},oromea $ifile
-        cdo -s -setmisstoc,0 $ifile tmp; mv tmp $ifile
+        _orog_retry=0
+        while [ $_orog_retry -lt 15 ] && [ ! -f "$ifile" ]; do
+            sleep 2
+            _orog_retry=$(( _orog_retry + 1 ))
+        done
+        unset _orog_retry
+        ncrename -v .${ice_orography_difference_name},oromea $ifile
+        # CDO setmisstoc cannot process variables without a time dimension; use NCO.
+        # .fill() is not supported in all NCO builds; use where() instead.
+        ncap2 -O -s 'where(oromea < -1.0e+30) oromea=0.0f' $ifile tmp && mv tmp $ifile || true
+        # Always start from the ECHAM restart reference; never reuse a stale per-run file.
+        rm -f ${ofile}
         if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
                 rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
         else
                 rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
         fi
-        ncks -O -v oromea $rfile tmp_oromea
+        rm -f tmp_oromea
+        if ! ncks -O -v oromea $rfile tmp_oromea 2>/dev/null; then
+                ncks -O -v OROMEA $rfile tmp_oromea 2>> nco_stderr_ice2echam
+                ncrename -v OROMEA,oromea tmp_oromea
+        fi
         change_lonlat $ifile oromea
         ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
 }
@@ -236,7 +271,7 @@ update_orography_prepare_calnoro_high_res() {
         echo; echo "                *   preparing for external program CALNORO"
         ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
         ofile=topodata.nc
-        cdo -s -P 28 \
+        cdo -s -P 28 --reduce_dim \
                  -remapnn,r720x360 \
                  -setgrid,T511grid \
                  -chname,oromea,OROMEA \
@@ -249,7 +284,7 @@ update_orography_prepare_calnoro() {
         echo; echo "                *   preparing for external program CALNORO"
         ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
         ofile=topodata.nc
-        cdo -s -P 28 \
+        cdo -s -P 28 --reduce_dim \
                  -remapnn,r720x360 \
                  -setgrid,${RES_echam}grid \
                  -chname,oromea,OROMEA \
@@ -317,9 +352,9 @@ update_orography_generate_target_orography_file() {
         orography_names[var56]=OROPIC
         orography_names[var57]=OROVAL
 
-        for varname in "${!orography_names[@]}"; do
-                ncrename -v ${varname},${orography_names[$varname]} ${ifile} tmp; mv tmp ${ifile}
-        done
+        ncrename -v .var51,OROMEA -v .var52,OROSTD -v .var53,OROSIG \
+                 -v .var54,OROGAM -v .var55,OROTHE -v .var56,OROPIC \
+                 -v .var57,OROVAL ${ifile}
 
         ## Ensure that we use the OROMEA from the "raw" PISM-corrected orography,
         ## not what is given from the calnoro program
@@ -335,12 +370,16 @@ update_orography_generate_target_orography_file() {
         #   5: update orography but change sub-grid scale parameters only in ice domain where ice mask or change of ice mask (ice loss/ice gain) 
 
         if [ "x${oro_update_mod}" == "x1" ]; then # according to Martins script: OROMEA from calnoro; GEOSP from input
-                
+
                 ECHAM_g=9.80665
-                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
-                        -remapnn,${RES_echam}grid \
+                _geosp_clean=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res_T63nomiss.nc
+                cdo -s -setmisstoc,0 -remapnn,${RES_echam}grid \
                         ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        ${_geosp_clean} 2>>cdo_stderr_ice2echam
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        ${_geosp_clean} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+                rm -f ${_geosp_clean}; unset _geosp_clean
 
                 # Make sure dimension order is correct:
                 change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
@@ -357,13 +396,17 @@ update_orography_generate_target_orography_file() {
                 mv tmp ${ifile}
 
                 # Take the GEOSP field from the "raw" PISM-corrected orography, and not
-                # what is given from the calnoro program 
-                
+                # what is given from the calnoro program
+
                 ECHAM_g=9.80665
-                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
-                        -remapnn,${RES_echam}grid \
+                _geosp_clean=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res_T63nomiss.nc
+                cdo -s -setmisstoc,0 -remapnn,${RES_echam}grid \
                         ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        ${_geosp_clean} 2>>cdo_stderr_ice2echam
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        ${_geosp_clean} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+                rm -f ${_geosp_clean}; unset _geosp_clean
 
                 # Make sure dimension order is correct:
                 change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
@@ -380,13 +423,17 @@ update_orography_generate_target_orography_file() {
                 mv tmp ${ifile}
 
                 # Take the GEOSP field from the "raw" PISM-corrected orography, and not
-                # what is given from the calnoro program 
-                
+                # what is given from the calnoro program
+
                 ECHAM_g=9.80665
-                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
-                        -remapnn,${RES_echam}grid \
+                _geosp_clean=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res_T63nomiss.nc
+                cdo -s -setmisstoc,0 -remapnn,${RES_echam}grid \
                         ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${_geosp_clean} 2>>cdo_stderr_ice2echam
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        ${_geosp_clean} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+                rm -f ${_geosp_clean}; unset _geosp_clean
 
                 # Make sure dimension order is correct:
                 change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
@@ -407,10 +454,14 @@ update_orography_generate_target_orography_file() {
                 # what is given from the calnoro program 
                 
                 ECHAM_g=9.80665
-                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
-                        -remapnn,${RES_echam}grid \
+                _geosp_clean=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res_T63nomiss.nc
+                cdo -s -setmisstoc,0 -remapnn,${RES_echam}grid \
                         ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${_geosp_clean} 2>>cdo_stderr_ice2echam
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        ${_geosp_clean} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+                rm -f ${_geosp_clean}; unset _geosp_clean
 
                 # Make sure dimension order is correct:
                 change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
@@ -419,7 +470,7 @@ update_orography_generate_target_orography_file() {
                         ${ifile} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
                         ${ofile} 2>>cdo_stderr_ice2echam
-                
+
                 cdo -s replace ${ofile} ${INIT_DIR_echam}/unit.24 tmp_replace; mv tmp_replace ${ofile}
                  #
         
@@ -434,10 +485,14 @@ update_orography_generate_target_orography_file() {
                 # what is given from the calnoro program 
                 
                 ECHAM_g=9.80665
-                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
-                        -remapnn,${RES_echam}grid \
+                _geosp_clean=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res_T63nomiss.nc
+                cdo -s -setmisstoc,0 -remapnn,${RES_echam}grid \
                         ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${_geosp_clean} 2>>cdo_stderr_ice2echam
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        ${_geosp_clean} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>cdo_stderr_ice2echam
+                rm -f ${_geosp_clean}; unset _geosp_clean
 
                 # Make sure dimension order is correct:
                 change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
@@ -446,7 +501,7 @@ update_orography_generate_target_orography_file() {
                         ${ifile} \
                         ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
                         ${ofile} 2>>cdo_stderr_ice2echam
-                
+
                 if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
                         rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
                 else
@@ -467,6 +522,136 @@ update_orography_generate_target_orography_file() {
                 cdo -s merge *.orotmp ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
                 cdo -s replace ${ofile} ORO_merged tmp; mv tmp ${ofile}
                  #
+        elif [ "x${oro_update_mod}" == "x6" ]; then # masked: new coupling scheme: OROXXX from T511, OROMEA from T63
+                echo " * use oro_update_mod ${oro_update_mod}"
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        tmp 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                # gp2sp aborts on missing values even when setmisstoc is in the
+                # same chain (CDO retains a "has-missing" flag from the input
+                # header).  Write a clean intermediate file first so CDO reads
+                # zero-filled data with no missing-value markers before doing
+                # the spectral round-trip.
+                _geosp_clean=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res_T63nomiss.nc
+                cdo -s -setmisstoc,0 -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${_geosp_clean} 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        ${_geosp_clean} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                rm -f ${_geosp_clean}; unset _geosp_clean
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                ncwa -a time ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc tmp
+                mv tmp ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                
+                if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                        rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+                else
+                        rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+                fi
+               
+                if [[ -f  ${INIT_DIR_echam}/unit.24 ]]
+                then
+                    echo " *  ${INIT_DIR_echam}/unit.24 found!"
+                else
+                    echo " *  ${INIT_DIR_echam}/unit.24 not found!"
+                fi
+
+                cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_T63grid.nc -gtc,0 \
+                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \
+                        ${COUPLE_DIR}/mask_oro_update.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+#                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
+                for VAR in "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
+                do
+                    cdo -s ifthenelse -setmisstoc,0 ${COUPLE_DIR}/mask_oro_update.nc \
+                            -selname,${VAR} ${ofile} \
+                            -selname,${VAR} ${INIT_DIR_echam}/unit.24 ${COUPLE_DIR}/${VAR}.orotmp
+
+                done
+                
+                rm -f ${COUPLE_DIR}/ORO_merged
+
+                cdo -s merge ${COUPLE_DIR}/*.orotmp ${COUPLE_DIR}/ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
+                cdo -s replace ${ofile} ${COUPLE_DIR}/ORO_merged ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
+                cdo -s replace ${ofile} -chname,oromea,OROMEA -selname,oromea ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
+        
+        elif [ "x${oro_update_mod}" == "x7" ]; then # masked: new coupling scheme: OROMEA and GEOSP from high-res input
+                echo " * use oro_update_mod ${oro_update_mod}"
+                cdo -s -replace \
+                        ${ifile} \
+                        -chname,oromea,OROMEA -remapnn,${RES_echam}grid ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc \
+                        tmp 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                mv tmp ${ifile}
+
+                cdo -s -sp2gp -gp2sp ${ifile} tmp
+                mv tmp ${ifile}
+
+                # Take the GEOSP field from the "raw" PISM-corrected orography, and not
+                # what is given from the calnoro program 
+                
+                ECHAM_g=9.80665
+                _geosp_clean=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res_T63nomiss.nc
+                cdo -s -setmisstoc,0 -remapnn,${RES_echam}grid \
+                        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc \
+                        ${_geosp_clean} 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                cdo -s -sp2gp -gp2sp -mulc,${ECHAM_g} -chname,oromea,GEOSP \
+                        ${_geosp_clean} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+                rm -f ${_geosp_clean}; unset _geosp_clean
+
+                # Make sure dimension order is correct:
+                change_lonlat ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc GEOSP
+
+                cdo -s -O merge \
+                        ${ifile} \
+                        ${COUPLE_DIR}/echam6_new_GEOSP_for_target_orog.nc \
+                        ${ofile} 2>>cdo_stderr_ice2echam
+                
+                if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
+                        rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
+                else
+                        rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
+                fi
+               
+                if [[ -f  ${INIT_DIR_echam}/unit.24 ]]
+                then
+                    echo " *  ${INIT_DIR_echam}/unit.24 found!"
+                else
+                    echo " *  ${INIT_DIR_echam}/unit.24 not found!"
+                fi
+
+                cdo -s -ifthen ${COUPLE_DIR}/ice_domain_current_T63grid.nc -gtc,0 \
+                        -add ${COUPLE_DIR}/ice_mask_current_T63grid.nc -selname,GLAC ${INIT_DIR_echam}/unit.24 \
+                        ${COUPLE_DIR}/mask_oro_update.nc 2>>${COUPLE_DIR}/cdo_stderr_ice2echam
+#                cdo -s selname,glac ${rfile} ${COUPLE_DIR}/ice_mask_before_T63grid.nc
+                for VAR in "OROSTD" "OROSIG" "OROGAM" "OROTHE" "OROPIC" "OROVAL"
+                do
+                    cdo -s ifthenelse -setmisstoc,0 ${COUPLE_DIR}/mask_oro_update.nc \
+                            -selname,${VAR} ${ofile} \
+                            -selname,${VAR} ${INIT_DIR_echam}/unit.24 ${COUPLE_DIR}/${VAR}.orotmp
+
+                done
+                
+                rm -f ${COUPLE_DIR}/ORO_merged
+
+                cdo -s merge ${COUPLE_DIR}/*.orotmp ${COUPLE_DIR}/ORO_merged #; mv ORO_merged ${ofile}; rm *.orotmp
+                cdo -s replace ${ofile} ${COUPLE_DIR}/ORO_merged ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
+                cdo -s replace ${ofile} -chname,oromea,OROMEA -selname,oromea ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc ${COUPLE_DIR}/tmp; mv ${COUPLE_DIR}/tmp ${ofile}
         fi
         ############################################################
         ln -sf ${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_target_orography.nc
@@ -497,26 +682,38 @@ set_glacial_mask_select_field() {
             -selvar,${ice_glacial_mask_name} \
             ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc \
             ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc 2>> cdo_stderr_ice2echam
-	mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc tmp
-#	# Since conflicting module create a challenge, we save
-#	# the current set of loaded modules, purge the module
-#	# list, load necessary working modules, do the job by
-#	# calling ncdump and ncgen, and restore the former
-#	# purged module list.
-#	#
-#	# MODULE-FIX: 1/2
-#	 module_save_file=/tmp/module2restore_4ncdump_ncgen.$$
-#	 module save -f $module_save_file
-#	 module purge
-#	 module load netcdf-c
-     ncdump tmp | sed 's/byte/float/g' | ncgen -o tmp.nc; mv tmp.nc tmp
-	#
-	# Recover purged modules
-	#
-	# MODULE_FIX: 2/2
-#	 module restore -f $module_save_file && rm $module_save_file
-
-     mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc
+	# Guard against parallel-filesystem metadata delay before the mv.
+	# Polls up to 20 s; aborts loudly if CDO never wrote the file.
+	_sgmsf_retry=0
+	while [ $_sgmsf_retry -lt 10 ] && \
+	      [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc ]; do
+		sleep 2
+		_sgmsf_retry=$(( _sgmsf_retry + 1 ))
+	done
+	if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc ]; then
+		echo "ERROR: CDO failed to create ice_mask_current.nc for" \
+		     "${PISM_HEMISPHERE} -- check cdo_stderr_ice2echam" >&2
+		unset _sgmsf_retry
+		return 1
+	fi
+	unset _sgmsf_retry
+	# Convert byte→float in-place without moving the file to local tmp.
+	# Using mv to a local path triggers Lustre rename() metadata delay:
+	# the renamed file is invisible to the next command.  ncdump+cp avoids
+	# that by never calling rename() on a Lustre-mounted path.
+     rm -f tmp.nc
+     if ncdump "${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc" \
+             | sed 's/byte/float/g' \
+             | ncgen -o tmp.nc 2>/dev/null; then
+         _nc_retry=0
+         while [ $_nc_retry -lt 15 ] && [ ! -f tmp.nc ]; do
+             sleep 2
+             _nc_retry=$(( _nc_retry + 1 ))
+         done
+         [ -f tmp.nc ] && cp tmp.nc "${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc"
+         unset _nc_retry
+     fi
+     rm -f tmp.nc
      rmlist="$rmlist ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc"
 }
 
@@ -535,18 +732,14 @@ set_glacial_mask_echam_restart_file_1st() {
               echo "                                   from: $ifile"
               echo "                           using region: $dfile"
 
-        # Define the entire area where pism is defined:
-        ncrename -v ${ice_glacial_mask_name},ice_mask   $ifile
-        ncrename -v ${ice_glacial_mask_name},ice_domain $dfile
-
         regrid_to_echam $ifile
         regrid_to_echam $dfile
 
         ifile=${ifile%.*}_${RES_echam}grid.nc
         dfile=${dfile%.*}_${RES_echam}grid.nc
 
-        cdo -s -setmisstoc,0 $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile
-        cdo -s -gec,${ECHAM_GLACIAL_THRESHOLD} $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile   # PG: Ensure the mask is binary after regridding.
+        cdo -s -O -setmisstoc,0 $ifile tmp 2>> cdo_stderr_ice2echam && mv tmp $ifile
+        cdo -s -O -gec,${ECHAM_GLACIAL_THRESHOLD} $ifile tmp 2>> cdo_stderr_ice2echam && mv tmp $ifile   # PG: Ensure the mask is binary after regridding.
 
         change_lonlat $ifile ice_mask
         change_lonlat $dfile ice_domain
@@ -555,6 +748,8 @@ set_glacial_mask_echam_restart_file_1st() {
 set_glacial_mask_echam_restart_file_2nd() {
         ifile=${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc
         dfile=${COUPLE_DIR}/ice_domain_current_${RES_echam}grid.nc
+        ncrename -v .${ice_glacial_mask_name},ice_mask   $ifile
+        ncrename -v .${ice_glacial_mask_name},ice_domain $dfile
 
         # Restrict the ice mask on the echam grid to only be valid where echam land
         cdo -s -setmisstoc,0 -ifthen -selvar,slm $ECHAM_RESTART_FILE $ifile tmp 2>> cdo_stderr_ice2echam; mv tmp $ifile
@@ -565,6 +760,11 @@ set_glacial_mask_echam_restart_file_2nd() {
         echo "                -   Preforming replacement"
 
         cdo -s -selvar,glac ${ECHAM_RESTART_FILE} just_glac.nc 2>> cdo_stderr_ice2echam
+        # CDO 2.0.5 ifthenelse aborts (SIGABRT) when mixing F32 and F64 inputs.
+        # After one coupling pass ncap2 has promoted glac to F64 in the restart;
+        # force back to F32 so all three ifthenelse inputs are the same type.
+        { cdo -s -b F32 copy just_glac.nc just_glac_f32.nc 2>> cdo_stderr_ice2echam \
+              && mv just_glac_f32.nc just_glac.nc; } || true
         cdo -s -ifthenelse -setmisstoc,0 $dfile -chname,ice_mask,glac $ifile just_glac.nc just_glac_new.nc 2>> cdo_stderr_ice2echam
 
 #	# Since conflicting module create a challenge, we save
@@ -585,24 +785,44 @@ set_glacial_mask_echam_restart_file_2nd() {
 	# MODULE_FIX: 2/2
 #	 module restore -f $module_save_file && rm $module_save_file
 
-        # This multipliation transforms "float" into "double"
+        # Convert glac to float (F32) to keep the restart's glac as float.
+        # The old "glac*1.0" silently promoted to double; using float() is explicit
+        # and prevents the F32/F64 mismatch that aborts CDO ifthenelse next run.
         ncap=${ncap:-ncap2}
-        $ncap -s "glac=glac*1.0000000000000;" \
+        $ncap -s "glac=float(glac);" -O \
         just_glac_new.nc \
         just_glac_new.tmp.nc
-        ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc
+        # Root cause: ncks -O (new output file) routes through NCO's CDI read
+        # path.  CDI recognises the ECHAM spectral format and silently converts
+        # spc×complex fields to lat×lon×lev, destroying spc=2080 / complex=2.
+        # ncks -A (in-place append) uses libnetcdf directly and leaves every
+        # spectral array bit-for-bit intact — exactly as the single-hemisphere
+        # coupling code does.
+        #
+        # Before the in-place append, collapse CDO's degenerate time=1 axis so
+        # the incoming glac(lat,lon) matches the existing variable's dimensions.
+        # Matching dims means ncks -A needs no new dimension and therefore never
+        # creates an NCO-internal temp file (avoiding the Lustre rename race).
+        # ncwa -O operates on a CDO-format file (not spectral), so CDI converts
+        # CDO→CDO — the spectral restart is not involved.
+        _glac_2d="just_glac_2d_$$.nc"
+        ncwa -O -a time just_glac_new.tmp.nc "$_glac_2d" 2>> nco_stderr_ice2echam \
+            && mv "$_glac_2d" just_glac_new.tmp.nc \
+            || rm -f "$_glac_2d"
+        unset _glac_2d
 
-        #mv echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
-	[ -f ${ECHAM_RESTART_FILE} ] && mv -f ${ECHAM_RESTART_FILE} ${ECHAM_RESTART_FILE}~
-        ncatted -a history_of_appended_files,global,d,, \
-		-a history,global,d,, \
-		-a command,global,d,, \
-		-a source,global,d,, \
-		echam_with_ice_mask.nc ${ECHAM_RESTART_FILE} \
-	    && rm -f ${ECHAM_RESTART_FILE}~ # `ncatted` fails if $ECHAM_RESTART_FILE exists
+        ncks -A just_glac_new.tmp.nc echam_with_ice_mask.nc 2>> nco_stderr_ice2echam
+
+        # ncatted -O uses libnetcdf (not CDI) for variable data, so the spectral
+        # structure survives. Mirror the single-hemisphere approach exactly.
+        ncatted -O -a history_of_appended_files,global,d,, \
+                -a history,global,d,, \
+                -a command,global,d,, \
+                -a source,global,d,, \
+                echam_with_ice_mask.nc ${ECHAM_RESTART_FILE}
         ncrename -v ice_mask,glac $ifile
-        rm just_glac_new.nc
-        rm just_glac_new.tmp.nc
+        rm -f just_glac_new.nc
+        rm -f just_glac_new.tmp.nc
         #rmlist="$rmlist ${COUPLE_DIR}/just_glac_new.nc"
         #rmlist="$rmlist ${COUPLE_DIR}/just_glac_new.tmp.nc"
 }
@@ -613,6 +833,11 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
         # Generates a dummy unit.24 file by modifying a copy of the
         # The echam restart file has already been modified with the "correct"
         # glacial mask", construct a dummy one from the restart
+        rm -f tmp tmp.nc
+        # Lustre client cache can retain a stale directory entry for dummy_jan_surf.nc
+        # from the previous coupling pass even after rm-rf + mkdir of this directory.
+        # Explicit rm -f before cp ensures cp does not hit EEXIST on the stale inode.
+        rm -f dummy_jan_surf.nc
 	#CLEANUP cp ${BASE_DIR}/${EXP_ID}/awicm/input/echam/unit.24 dummy_jan_surf.nc
         cp ${INIT_DIR_echam}/unit.24 dummy_jan_surf.nc
         # Fix Lu: ---------------------------
@@ -620,7 +845,7 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 cdo setclonlatbox,0,0,360,0,90 -selvar,GLAC dummy_jan_surf.nc tmp
                 cdo -replace dummy_jan_surf.nc tmp dummy_jan_surf.nc2
                 mv dummy_jan_surf.nc2 dummy_jan_surf.nc
-                rm tmp
+                rm -f tmp
         fi
         # Fix Lu: ---------------------------
         cdo -s replace dummy_jan_surf.nc \
@@ -628,7 +853,7 @@ set_glacial_mask_echam_make_dummy_jan_surf() {
                 tmp && mv tmp dummy_jan_surf.nc
         # Fix Albedo where there are glaciers:
         #echam_albedo_on_glaciers=0.7
-        echam_albedo_on_glaciers=${ECHAM_ALBEDO_ON_GLACIERS}
+        echam_albedo_on_glaciers=${ECHAM_ALBEDO_ON_GLACIERS:-0.7}
         cdo -s \
                 -setmisstoc,${echam_albedo_on_glaciers} -setrtomiss,-1,2 \
                 ${COUPLE_DIR}/ice_mask_current_${RES_echam}grid.nc \
@@ -896,6 +1121,7 @@ set_glacial_mask_jsbach_update_restart_jsbach() {
                 echo -e "\t\t- >>>INFO<<< No new land or new glaciers, this routine will be skipped..."
                 newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_jsbach.nc)
                 ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_jsbach_restart_file.nc
+                cd $startdir
                 return
         fi
 
@@ -1172,6 +1398,7 @@ set_glacial_mask_jsbach_update_restart_veg() {
                 echo -e "\t\t- >>>INFO<<< No new land or new glaciers, this routine will be skipped..."
                 newest_jsbach_restart_file=$(readlink ${RESTART_DIR_jsbach}/restart_${EXP_ID}_veg.nc)
                 ln -sf ${newest_jsbach_restart_file} ${COUPLE_DIR}/latest_veg_restart_file.nc
+                cd $startdir
                 return
         fi
 
@@ -1382,12 +1609,19 @@ update_land_runoff_fill_missing() {
         echo; echo "                *   filling non-pism areas with 0"
         ifile=${COUPLE_DIR}/ice_discharge_${RES_echam}grid.nc
         ofile=${COUPLE_DIR}/gfw_atmo.nc
+        rm -f ${ofile}
         change_lonlat $ifile $ice_mass_loss_varname
         # multiply by -1 to get signs correct (in ice sheet, ice mass gain is positive, loss is negative
         # in the atmosphere, loss should be positive, gain should be negative)
         # PG: Fix for way too much water:
         # Divide by minus 1000; oasis gives m/s to FESOM, not kg/m2/s.
         cdo -s mulc,-1 -divc,1000 -setmisstoc,0 $ifile $ofile
+        _gfw_wait=0
+        while [ $_gfw_wait -lt 15 ] && [ ! -f ${ofile} ]; do
+            sleep 2
+            _gfw_wait=$(( _gfw_wait + 1 ))
+        done
+        unset _gfw_wait
 }
 
 distribute_total_discharge_over_ocean() {
@@ -1401,9 +1635,7 @@ distribute_total_discharge_over_ocean() {
         echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE} ${HOSING_FILE_LANDICE_LOSS} "
         module load python3
         echo " * HOSING_FILE_LANDICE_LOSS = ${HOSING_FILE_LANDICE_LOSS}"
-        if [ -f "${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out" ]; then
-            rm ${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out
-        fi
+        rm -f "${HOSING_FILE_LANDICE_LOSS}/landice_yearly_mass_loss.out"
 
         python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_PATH_FESOM}/${CELL_AREA_FESOM_FILE}" "${HOSING_FILE_LANDICE_LOSS}"
         module unload python3
@@ -1424,13 +1656,17 @@ distribute_total_discharge_over_ocean() {
 ## @fn update_land_runoff_prepare_for_oasis()
 update_land_runoff_prepare_for_oasis() {
         echo; echo "                *   preparing file for oasis"
+        rm -f tmp tmp.nc
         ifile=${COUPLE_DIR}/gfw_atmo.nc
         ofile=${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc
-        ncrename -v total_ice_mass_loss_flux,gfw_atmo $ifile tmp; mv tmp $ifile
-        ncrename -d lon,nx $ifile tmp; mv tmp $ifile
-        ncrename -d lat,ny $ifile tmp; mv tmp $ifile
+        _gfw_tmp="${ifile%.nc}_oasis_tmp.nc"
+        rm -f "$_gfw_tmp"
+        ncrename -v total_ice_mass_loss_flux,gfw_atmo $ifile $_gfw_tmp && mv $_gfw_tmp $ifile
+        ncrename -d lon,nx $ifile $_gfw_tmp && mv $_gfw_tmp $ifile || true
+        ncrename -d lat,ny $ifile $_gfw_tmp && mv $_gfw_tmp $ifile || true
         ncks -A ${FUNCTION_PATH}/../utils/axis_366.nc $ifile
-        ncpdq -a time,ny,nx $ifile tmp; mv tmp $ifile
+        ncpdq -O -a time,ny,nx $ifile $_gfw_tmp && mv $_gfw_tmp $ifile
+        rm -f "$_gfw_tmp"; unset _gfw_tmp
         mv $ifile $ofile
         cp ${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${WORK_DIR}/gfw_atmo.nc
         ln -sf ${COUPLE_DIR}/gfw_atmo_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc ${COUPLE_DIR}/latest_gfw_atmo.nc
@@ -1481,13 +1717,52 @@ regrid_to_echam() {
         remapper=$2
         RES=${3:-${RES_echam}}
     if [[ "x$remapper" == "x" ]]; then
-		remapper=remapcon2
+		remapper=remapbil #remapcon2
 	fi
 	echo "                -   regridding $FILENAME to echam ${RES} grid with $remapper"
-        cdo -s -P 28 \
+        _rte_out="${FILENAME%.*}_${RES}grid.nc"
+        # Write to a name that has never existed on this Lustre filesystem.
+        # rm-f + reuse of the same name causes CDO to write into the
+        # just-unlinked inode whose directory entry is still visible in the
+        # Lustre client cache; the retry loop then times out waiting for a
+        # file that was written to an unlinked inode.  Using PID alone is
+        # insufficient when the same shell (same PID) calls this function
+        # more than once for the same FILENAME+RES combination (e.g. the
+        # second ice2echam_1st pass for pism_sh in a dual-hemisphere run).
+        # Appending $RANDOM (0-32767) makes the name unique per call.
+        _rte_tmp="${FILENAME%.*}_${RES}grid_rte$$_${RANDOM}.nc"
+        rm -f "$_rte_tmp"
+        cdo -s -P 4 \
                 -$remapper,${RES}grid \
                 -setgrid,${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes \
-                $FILENAME ${FILENAME%.*}_${RES}grid.nc
+                $FILENAME "$_rte_tmp" 2>> cdo_stderr_ice2echam \
+        || { rm -f "$_rte_tmp"
+             cdo -s \
+                -$remapper,${RES}grid \
+                -setgrid,${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes \
+                $FILENAME "$_rte_tmp" 2>> cdo_stderr_ice2echam; }
+        # Wait for CDO's fresh directory entry to propagate on Lustre.
+        _rte_retry=0
+        while [ $_rte_retry -lt 30 ] && [ ! -f "$_rte_tmp" ]; do
+                sleep 2
+                _rte_retry=$(( _rte_retry + 1 ))
+        done
+        if [ -f "$_rte_tmp" ]; then
+                # cp -f creates a new directory entry at _rte_out; avoids the
+                # rename() ENOENT issue when overwriting a Lustre-cached path.
+                # -f handles EEXIST when rm -f left a stale dentry in Lustre cache.
+                rm -f "$_rte_out"
+                cp -f "$_rte_tmp" "$_rte_out" && rm -f "$_rte_tmp"
+        else
+                echo "ERROR: regrid_to_echam: CDO failed to create $_rte_out -- check cdo_stderr_ice2echam" >&2
+        fi
+        # Brief wait for the cp directory entry to propagate.
+        _rte_retry=0
+        while [ $_rte_retry -lt 15 ] && [ ! -f "$_rte_out" ]; do
+                sleep 2
+                _rte_retry=$(( _rte_retry + 1 ))
+        done
+        unset _rte_out _rte_tmp _rte_retry
 }
 
 ## @fn set_in_jsbach_restart_file()
@@ -1539,25 +1814,18 @@ set_in_jsbach_restart_file() {
 change_lonlat() {
         file=$1
         varname=$2
-	# Since conflicting module create a challenge, we save
-	# the current set of loaded modules, purge the module
-	# list, load necessary working modules, do the job by
-	# calling ncdump, and restore the former
-	# purged module list.
-	#
-	# MODULE-FIX: 1/2
-	 module_save_file=/tmp/module2restore_4ncdump.$$
-	 module save -f $module_save_file
+	# Capture current modules, purge, load minimal set, then reload.
+	# Avoids unreliable 'module save/restore -f': that approach silently
+	# fails on repeated calls with the same PID / same save-file path.
+	 _cl_saved_mods=$( module list -t 2>&1 | tail -n +2 | tr '\n' ' ' )
 	 module purge
 	 module load netcdf-c nco
         if ncdump -h $file | grep "${varname}" | grep -q "lon, lat"; then
                 echo "                -   changing lat/lon dimension order for $varname in $file"
-                ncpdq -a lat,lon $file tmp; mv tmp $file 2>> nco_stderr_ice2echam
+                { ncpdq -a lat,lon $file tmp && mv tmp $file; } 2>> nco_stderr_ice2echam
         fi
-	#
-	# Recover purged modules
-	#
-	# MODULE_FIX: 2/2
-	 module restore -f $module_save_file && rm $module_save_file
+	 module purge
+	 [ -n "$_cl_saved_mods" ] && module load $_cl_saved_mods
+	 unset _cl_saved_mods
 
 }

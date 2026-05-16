@@ -60,7 +60,7 @@ echam2ice() {
             fi
         done
 
-        echo "                 *** F I N I S E D      echam2ice *** "
+        echo "                 *** F I N I S H E D    echam2ice *** "
         echo "                =================================================================="
 }
 
@@ -285,6 +285,9 @@ echam_ice_generate_multiyear_mean() {
         CHUNK_START_YEAR_echam=$(date -d "${CHUNK_START_DATE_echam:?Missing_var}" +%Y)
 
         start_year_couple=$(( CHUNK_START_YEAR_echam + 1 ))
+        if [ ${start_year_couple} -gt ${CHUNK_END_YEAR_echam} ]; then
+                start_year_couple=${CHUNK_START_YEAR_echam}
+        fi
         echo "* select years from ${start_year_couple} to ${CHUNK_END_YEAR_echam} "
         ##################################
 

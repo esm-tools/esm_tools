@@ -141,13 +141,13 @@ function pism_atmosphere_get_newest_output {
                         -timmin \
                         -selname,thk \
                         ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
-                        ${COUPLE_DIR}//${PISM_HEMISPHERE}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}//${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm 
+                        ${COUPLE_DIR}/${PISM_HEMISPHERE}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
             else
                 cdo -s \
                         -selmon,${month_to_select} \
                         -ymonmean \
                         ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
-                        ${COUPLE_DIR}//${PISM_HEMISPHERE}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}//${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm 
+                        ${COUPLE_DIR}/${PISM_HEMISPHERE}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2awiesm
             fi
             # LA: get SMB as another criterion for glacial mask; glacial cell if positive SMB
             cdo -s \
@@ -204,7 +204,10 @@ function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
         files_needed="${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_runoff_flux_total.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_runoff_kg_m-2_s-1.nc"
         cdo -s -O merge $files_needed ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
-	    ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc
++        _pasm_tmp="${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere_ncwa_tmp.nc"
++        ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc "$_pasm_tmp" \
++            && mv "$_pasm_tmp" ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc
++        unset _pasm_tmp
 #        rm $files_needed $rmlist
         echo; echo "                  ...done"
         unset files_needed
@@ -242,7 +245,7 @@ function update_domain_mask_constrain_minimum_ice_thickness {
                 ${newest_pism_mask_file} \
                 ${ifile} \
                 ${ofile} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
-        rm $ifile
+        [ -f $ofile ] && rm $ifile
         unset ifile ofile
 } 
 
@@ -400,7 +403,7 @@ function generate_runoff_transform_units {
                 # We need to go from cummulative to delta T
                 # FIXME: What if a user wants to run more than one run in a pism chunk?
                 # Then, we need to find the TOTAL delta T over all the files in this chunk.
-                echo "cdo -mulc,${Gt_to_kg_mult_factor} -mulc,${years_to_seconds_mult_factor} -divc,$CHUNK_SIZE_pism_standalone -sub -seltimestep,-1 $ifile -seltimestep,1 $ifile $ofile"
+                echo "cdo -mulc,${Gt_to_kg_mulc_factor} -divc,${years_to_seconds_divc_factor} -divc,$CHUNK_SIZE_pism_standalone -sub -seltimestep,-1 $ifile -seltimestep,1 $ifile $ofile"
                 cdo -s \
                         -mulc,${Gt_to_kg_mulc_factor} \
                         -divc,${years_to_seconds_divc_factor} \
@@ -505,5 +508,12 @@ function generate_runoff_combine_fields {
 function correct_lonlat_order {
         FILENAME=$1
         echo ""; echo "                 *   correcting $FILENAME lonlat order"
-        ncpdq -a lat,lon $FILENAME tmp; mv tmp $FILENAME
+        _clo_tmp="${FILENAME%.nc}.lonlat_tmp.nc"
+        if ncpdq -a lat,lon "$FILENAME" "$_clo_tmp"; then
+                mv "$_clo_tmp" "$FILENAME"
+        else
+                rm -f "$_clo_tmp"
+                echo "WARNING: correct_lonlat_order ncpdq failed for $FILENAME" >&2
+        fi
+        unset _clo_tmp
 }

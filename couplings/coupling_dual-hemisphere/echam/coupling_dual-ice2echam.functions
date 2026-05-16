@@ -13,33 +13,77 @@ ice2echam() {
         export PISM_HEMISPHERE="pism_nh"
         ice2echam_1st
         wait
-        for FILE in "echam6_new_orography_before_calnoro_high_res.nc" "echam6_new_orography_before_calnoro_low_res.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
-            if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/${FILE} ]]
-            then
-                cdo -s sellonlatbox,0,360,0,90 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_ice2echam 
-                ncecat -O ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
-                ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
-                ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
-            fi
-        done
+#        for FILE in "echam6_new_orography_before_calnoro_high_res.nc" "echam6_new_orography_before_calnoro_low_res.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
+#            if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/${FILE} ]]
+#            then
+#                echo " * processing ${FILE} for ${PISM_HEMISPHERE} ... "
+#                cdo -s sellonlatbox,0,360,0,90 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_ice2echam 
+#                ncecat -O ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+##                ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+#                ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+#            fi
+#        done
         
         echo " * ... now switching to the southern hemisphere"
         export PISM_HEMISPHERE="pism_sh"
         ice2echam_1st
         wait
-        for FILE in "echam6_new_orography_before_calnoro_high_res.nc" "echam6_new_orography_before_calnoro_low_res.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
-            if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/${FILE} ]]
-            then
-                cdo -s sellonlatbox,0,360,-90,0 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_ice2echam
-                ncecat -O ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
-                ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
-                ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
-        
-                ncrcat -O "${COUPLE_DIR}/pism_nh/sellonlatbox.$FILE" "${COUPLE_DIR}/pism_sh/sellonlatbox.$FILE" "${COUPLE_DIR}/$FILE" 2>>${COUPLE_DIR}/nco_ice2echam
-                ncpdq -O -a record,lat,lon ${COUPLE_DIR}/$FILE tmp 2>>${COUPLE_DIR}/nco_ice2echam; mv tmp ${COUPLE_DIR}/$FILE
-                ncwa -O -a record ${COUPLE_DIR}/$FILE tmp 2>>${COUPLE_DIR}/nco_ice2echam; mv tmp ${COUPLE_DIR}/$FILE
+#        for FILE in "echam6_new_orography_before_calnoro_high_res.nc" "echam6_new_orography_before_calnoro_low_res.nc" "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
+#            if [[ -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/${FILE} ]]
+#            then
+#                echo " * processing ${FILE} for ${PISM_HEMISPHERE} ... "
+#                cdo -s sellonlatbox,0,360,-90,0 ${COUPLE_DIR}/${PISM_HEMISPHERE}/$FILE ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_ice2echam
+#                ncecat -O ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+##                ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+#                ncpdq -O -a lat,lon,record ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE tmp 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/nco_ice2echam; mv tmp ${COUPLE_DIR}/${PISM_HEMISPHERE}/sellonlatbox.$FILE
+#        
+#                ncrcat -O "${COUPLE_DIR}/pism_nh/sellonlatbox.$FILE" "${COUPLE_DIR}/pism_sh/sellonlatbox.$FILE" "${COUPLE_DIR}/$FILE" 2>>${COUPLE_DIR}/nco_ice2echam
+#                ncpdq -O -a record,lat,lon ${COUPLE_DIR}/$FILE tmp 2>>${COUPLE_DIR}/nco_ice2echam; mv tmp ${COUPLE_DIR}/$FILE
+#                ncwa -O -a record ${COUPLE_DIR}/$FILE tmp 2>>${COUPLE_DIR}/nco_ice2echam; mv tmp ${COUPLE_DIR}/$FILE
+#            fi
+#        done
+
+        # Combine pism_nh and pism_sh fields into the shared couple/ directory.
+        # Both files live on the same full T63/T511 grid with zeros outside each
+        # model's domain, so cdo add correctly superposes the two hemispheres.
+        # Combine mask/domain/discharge (zeros outside each domain -- cdo add is correct):
+        for FILE in "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
+            _nh=${COUPLE_DIR}/pism_nh/${FILE}
+            _sh=${COUPLE_DIR}/pism_sh/${FILE}
+            _out=${COUPLE_DIR}/${FILE}
+            if [[ -f $_nh ]] && [[ -f $_sh ]]; then
+                echo " * combining ${FILE} for pism_nh and pism_sh ..."
+                rm -f "$_out"
+                cdo -s add $_nh $_sh $_out 2>>${COUPLE_DIR}/cdo_ice2echam
+            elif [[ -f $_nh ]]; then
+                echo " * using pism_nh only for ${FILE} (pism_sh file absent) ..."
+                cp -f $_nh $_out
+            elif [[ -f $_sh ]]; then
+                echo " * using pism_sh only for ${FILE} (pism_nh file absent) ..."
+                cp -f $_sh $_out
             fi
+            unset _nh _sh _out
+        done
+        # Combine orography files correctly: pism_nh full-orog + pism_sh anomaly-only.
+        # Using 'cdo add' on two full-orog files would double the reference topography.
+        for ORO_BASE in "echam6_new_orography_before_calnoro_high_res.nc" "echam6_new_orography_before_calnoro_low_res.nc"; do
+            case $ORO_BASE in
+                *high_res*) _sh_anom=${COUPLE_DIR}/pism_sh/ice_orog_difference_T511grid.nc ;;
+                *low_res*)  _sh_anom=${COUPLE_DIR}/pism_sh/ice_orog_difference_T63grid.nc  ;;
+            esac
+            _nh_base=${COUPLE_DIR}/pism_nh/${ORO_BASE}
+            _out=${COUPLE_DIR}/${ORO_BASE}
+            if [[ -f $_nh_base ]] && [[ -f $_sh_anom ]]; then
+                echo " * combining ${ORO_BASE} (pism_nh full orog + pism_sh anomaly) ..."
+                rm -f "$_out"
+                cdo -s add $_nh_base -setmisstoc,0 $_sh_anom $_out 2>>${COUPLE_DIR}/cdo_ice2echam
+            elif [[ -f $_nh_base ]]; then
+                echo " * using pism_nh only for ${ORO_BASE} (pism_sh anomaly absent) ..."
+                cp -f $_nh_base $_out
+            fi
+            unset _nh_base _sh_anom _out
         done
 
+        unset PISM_HEMISPHERE
         ice2echam_2nd
 }

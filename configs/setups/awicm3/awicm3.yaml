@@ -513,9 +513,14 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
 
-        # aEVP default for develop — reverses HR sithick drift (Koldunov 2019 JAMES)
+        # aEVP only on the high-resolution DARS2 mesh on develop — reverses
+        # HR sithick drift (Koldunov 2019 JAMES). aEVP is unstable on coarse
+        # meshes (e.g. CORE2), so other resolutions keep their per-mesh
+        # whichEVP default from fesom-2.7.yaml.
         choose_general.version:
-                develop: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+                develop:
+                        choose_resolution:
+                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
 
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)

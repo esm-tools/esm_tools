@@ -93,6 +93,8 @@ general:
 
     with_co2_coupling: false
 
+    force_overwrite_in_file_movements: True
+
     choose_computer.name:
         levante:
             pool_dir: "/work/ab0246/a270092/input/"
@@ -156,6 +158,28 @@ oifs:
                     NAEPHY:
                         LECURR: true
 
+    choose_general.version:
+        v3.4.2:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
+        develop:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
+        develop-cc:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
 
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data

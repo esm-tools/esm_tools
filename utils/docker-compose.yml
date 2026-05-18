@@ -1,0 +1,85 @@
+# ESM-Tools Data Services Stack
+# STAC Catalog API + Visualization Service + Browser
+#
+# Usage:
+#   docker-compose up -d
+#   Open http://localhost:8080 for STAC Browser
+#
+# Data volumes:
+#   Mount your climate data directory to /data in both services
+
+version: "3.8"
+
+services:
+  # STAC Catalog API
+  stac-api:
+    build:
+      context: ./esm_catalog
+      dockerfile: Dockerfile
+    image: esm-catalog:latest
+    container_name: esm-stac-api
+    ports:
+      - "23000:23000"
+    environment:
+      - ESM_CATALOG_PORT=23000
+      - ESM_CATALOG_DB=/data/catalog.duckdb
+    volumes:
+      - ${DATA_DIR:-/work}:/data:ro
+      - catalog-db:/var/lib/esm-catalog
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:23000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Visualization Service
+  viz:
+    build:
+      context: ./esm_viz
+      dockerfile: Dockerfile
+    image: esm-viz:latest
+    container_name: esm-viz
+    ports:
+      - "23001:23001"
+    environment:
+      - ESM_VIZ_PORT=23001
+      - STAC_API_URL=http://stac-api:23000
+    volumes:
+      - ${DATA_DIR:-/work}:/data:ro
+    depends_on:
+      stac-api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:23001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # STAC Browser (optional - for local development)
+  browser:
+    image: node:20-slim
+    container_name: esm-stac-browser
+    working_dir: /app
+    ports:
+      - "8080:5173"
+    environment:
+      - VITE_CATALOG_URL=http://stac-api:23000
+      - VITE_VIZ_SERVER=http://viz:23001
+    volumes:
+      - ${BROWSER_DIR:-../stac-browser}:/app:ro
+    command: ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+    depends_on:
+      - stac-api
+      - viz
+    profiles:
+      - with-browser
+
+volumes:
+  catalog-db:
+    driver: local
+
+networks:
+  default:
+    name: esm-data-services

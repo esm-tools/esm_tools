@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ESM-Catalog Admin</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    background: #f5f5f5;
+    color: #222;
+    padding: 20px;
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 10px 16px;
+    margin-bottom: 16px;
+  }
+
+  header h1 { font-size: 16px; font-weight: bold; }
+
+  #api-status {
+    font-size: 13px;
+    padding: 3px 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  #api-status.ok   { color: #28a745; border-color: #28a745; }
+  #api-status.err  { color: #dc3545; border-color: #dc3545; }
+
+  section {
+    background: #fff;
+    border: 1px solid #ccc;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+  }
+
+  section h2 {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+
+  .form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .form-row label {
+    width: 56px;
+    flex-shrink: 0;
+    color: #555;
+  }
+
+  .form-row input {
+    flex: 1;
+    font-family: inherit;
+    font-size: 13px;
+    border: 1px solid #bbb;
+    padding: 4px 7px;
+  }
+
+  .form-row input:focus { outline: 2px solid #0066cc; border-color: #0066cc; }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid #bbb;
+    background: #f0f0f0;
+    padding: 4px 12px;
+  }
+
+  button:hover { background: #e0e0e0; }
+
+  button.primary {
+    background: #0066cc;
+    color: #fff;
+    border-color: #0055aa;
+  }
+
+  button.primary:hover { background: #0055aa; }
+
+  button.danger {
+    background: #dc3545;
+    color: #fff;
+    border-color: #b02a37;
+  }
+
+  button.danger:hover { background: #b02a37; }
+
+  button:disabled { opacity: 0.5; cursor: default; }
+
+  #register-error {
+    color: #dc3545;
+    font-size: 12px;
+    display: none;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 6px;
+  }
+
+  .section-header h2 { border: none; padding: 0; margin: 0; }
+
+  #catalog-list { list-style: none; }
+
+  #catalog-list li {
+    border: 1px solid #ddd;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .cat-status { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .cat-status.active { color: #28a745; }
+  .cat-status.error  { color: #dc3545; }
+
+  .cat-body { flex: 1; min-width: 0; }
+
+  .cat-title {
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cat-path {
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cat-desc {
+    font-size: 12px;
+    color: #444;
+    margin-top: 2px;
+  }
+
+  .cat-actions { display: flex; gap: 6px; flex-shrink: 0; align-items: center; }
+
+  #empty-state {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 20px 0;
+    display: none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ESM-Catalog Admin</h1>
+  <span id="api-status">● checking…</span>
+</header>
+
+<section>
+  <h2>Register New Catalog</h2>
+  <div class="form-row">
+    <label for="reg-path">Path</label>
+    <input id="reg-path" type="text" placeholder="/path/to/catalog.duckdb"
+           oninput="suggestName(this.value)">
+  </div>
+  <div class="form-row">
+    <label for="reg-name">Name</label>
+    <input id="reg-name" type="text" placeholder="auto-suggested from path">
+  </div>
+  <div class="form-row">
+    <label for="reg-desc">Desc</label>
+    <input id="reg-desc" type="text" placeholder="optional description">
+  </div>
+  <div class="form-actions">
+    <span id="register-error"></span>
+    <button class="primary" onclick="registerCatalog()">Register Catalog</button>
+  </div>
+</section>
+
+<section>
+  <div class="section-header">
+    <h2>Registered Catalogs</h2>
+    <button onclick="loadCatalogs()">↻ Refresh</button>
+  </div>
+  <ul id="catalog-list"></ul>
+  <div id="empty-state">No catalogs registered yet.</div>
+</section>
+
+<script>
+const BASE = window.location.origin;
+
+// ── Utilities ────────────────────────────────────────────────────────────────
+
+async function apiFetch(method, path, body) {
+  const opts = { method, headers: {} };
+  if (body !== undefined) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const r = await fetch(BASE + path, opts);
+  return r;
+}
+
+function statusIcon(status) {
+  if (status === 'active') return { symbol: '●', cls: 'active' };
+  return { symbol: '✗', cls: 'error' };
+}
+
+// ── API status badge ─────────────────────────────────────────────────────────
+
+async function checkHealth() {
+  const el = document.getElementById('api-status');
+  try {
+    const r = await fetch(BASE + '/health');
+    if (r.ok) {
+      const d = await r.json();
+      el.textContent = `● API: online (${d.catalogs_registered} catalog${d.catalogs_registered !== 1 ? 's' : ''})`;
+      el.className = 'ok';
+    } else {
+      el.textContent = '✗ API: error';
+      el.className = 'err';
+    }
+  } catch {
+    el.textContent = '✗ API: unreachable';
+    el.className = 'err';
+  }
+}
+
+// ── Name suggestion ──────────────────────────────────────────────────────────
+
+function suggestName(path) {
+  const nameEl = document.getElementById('reg-name');
+  if (nameEl._userEdited) return;
+  const base = path.split('/').filter(Boolean).pop() || '';
+  nameEl.value = base.replace(/\.duckdb$/i, '');
+}
+
+document.getElementById('reg-name').addEventListener('input', function () {
+  this._userEdited = this.value !== '';
+});
+
+// ── Catalog list ─────────────────────────────────────────────────────────────
+
+async function loadCatalogs() {
+  const list = document.getElementById('catalog-list');
+  const empty = document.getElementById('empty-state');
+  try {
+    const r = await apiFetch('GET', '/catalogs');
+    if (!r.ok) { list.innerHTML = ''; empty.style.display = 'block'; empty.textContent = 'Error loading catalogs.'; return; }
+    const data = await r.json();
+    const catalogs = data.catalogs ?? data;
+    list.innerHTML = '';
+    if (!catalogs.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+    for (const cat of catalogs) {
+      list.appendChild(buildRow(cat));
+    }
+  } catch (e) {
+    empty.style.display = 'block';
+    empty.textContent = 'Failed to reach API.';
+  }
+}
+
+function buildRow(cat) {
+  const li = document.createElement('li');
+  li.id = `cat-${cat.id}`;
+  const icon = statusIcon(cat.status || 'active');
+  li.innerHTML = `
+    <span class="cat-status ${icon.cls}">${icon.symbol}</span>
+    <div class="cat-body">
+      <div class="cat-title">${esc(cat.name || cat.id)}</div>
+      <div class="cat-path">${esc(cat.path)}</div>
+      ${cat.description ? `<div class="cat-desc">${esc(cat.description)}</div>` : ''}
+      ${cat.status && cat.status !== 'active' ? `<div class="cat-desc" style="color:#dc3545">status: ${esc(cat.status)}</div>` : ''}
+    </div>
+    <div class="cat-actions">
+      <button onclick="refreshCatalog('${esc(cat.id)}')">Refresh</button>
+      <button class="danger" onclick="deleteCatalog('${esc(cat.id)}', '${esc(cat.name || cat.id)}')">Delete</button>
+    </div>`;
+  return li;
+}
+
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ── Register ─────────────────────────────────────────────────────────────────
+
+async function registerCatalog() {
+  const path = document.getElementById('reg-path').value.trim();
+  const name = document.getElementById('reg-name').value.trim();
+  const desc = document.getElementById('reg-desc').value.trim();
+  const errEl = document.getElementById('register-error');
+  errEl.style.display = 'none';
+
+  if (!path) { showError('Path is required.'); return; }
+
+  const body = { path };
+  if (name) body.name = name;
+  if (desc) body.description = desc;
+
+  const r = await apiFetch('POST', '/catalogs', body);
+  if (r.ok) {
+    document.getElementById('reg-path').value = '';
+    document.getElementById('reg-name').value = '';
+    document.getElementById('reg-name')._userEdited = false;
+    document.getElementById('reg-desc').value = '';
+    await loadCatalogs();
+    await checkHealth();
+  } else {
+    const d = await r.json().catch(() => ({}));
+    showError(d.detail || `Error ${r.status}`);
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('register-error');
+  el.textContent = msg;
+  el.style.display = 'inline';
+}
+
+// ── Refresh single catalog ───────────────────────────────────────────────────
+
+async function refreshCatalog(id) {
+  const r = await apiFetch('POST', `/catalogs/${id}/refresh`);
+  if (r.ok) {
+    const data = await r.json();
+    const existing = document.getElementById(`cat-${id}`);
+    if (existing) {
+      existing.replaceWith(buildRow(data));
+    }
+  } else {
+    const d = await r.json().catch(() => ({}));
+    alert(`Refresh failed: ${d.detail || r.status}`);
+  }
+}
+
+// ── Delete catalog ───────────────────────────────────────────────────────────
+
+async function deleteCatalog(id, name) {
+  if (!confirm(`Delete catalog "${name}"?`)) return;
+  const r = await apiFetch('DELETE', `/catalogs/${id}`);
+  if (r.ok || r.status === 204) {
+    const row = document.getElementById(`cat-${id}`);
+    if (row) row.remove();
+    if (!document.getElementById('catalog-list').children.length) {
+      document.getElementById('empty-state').style.display = 'block';
+      document.getElementById('empty-state').textContent = 'No catalogs registered yet.';
+    }
+    await checkHealth();
+  } else {
+    const d = await r.json().catch(() => ({}));
+    alert(`Delete failed: ${d.detail || r.status}`);
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+checkHealth();
+loadCatalogs();
+</script>
+</body>
+</html>

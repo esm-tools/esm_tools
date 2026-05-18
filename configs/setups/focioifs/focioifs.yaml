@@ -280,6 +280,12 @@ oifs:
 
         # For coupled setups we can use ocean currents
         use_ocean_currents: False
+        choose_nemo.slp_coupling:
+                True:
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMECECFG:
+                                                ECE_CPL_MSLP: true
         choose_use_ocean_currents:
                 True:
                         add_namelist_changes:
@@ -379,7 +385,12 @@ oifs:
                         grid: atmr
            "5.0":
               foci_fields_a: [A_Qs_mix, A_Qns_mix, A_Precip_liquid, A_Evap_total, A_Precip_solid, A_Evap_ice]
-              foci_fields_l: [A_Ice_albedo, A_Ice_frac, A_SST, A_Ice_temp, A_Ice_thickness, A_Snow_thickness, A_CurX, A_CurY,
+              choose_nemo.slp_coupling:
+                 True:
+                     foci_fields_l: [A_MSLP, A_Ice_albedo, A_Ice_frac, A_SST, A_Ice_temp, A_Ice_thickness, A_Snow_thickness, A_CurX, A_CurY,
+                              A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_Qs_ice, A_Qns_ice, A_dQns_dT]
+                 False: 
+                     foci_fields_l: [A_Ice_albedo, A_Ice_frac, A_SST, A_Ice_temp, A_Ice_thickness, A_Snow_thickness, A_CurX, A_CurY,
                               A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_Qs_ice, A_Qns_ice, A_dQns_dT]
               coupling_fields:
                 "[[foci_fields_a-->FIELD]]":
@@ -607,6 +618,11 @@ oifs:
                                                                M01_A_QnsIce, M01_ATotSnow, M01_AIceEvap, M01_A_dQnsdT]
                                                                #fociagrif_fields_a: [M01_A_QsrMix, M01_A_QnsMix, M01_ATotRain]
                                 "5.0":
+                                   #choose_nemo.slp_coupling:
+                                   #    True:
+                                   #       fociagrif_fields_l: [M01_A_MSLP, M01_A_Ice_albedo, M01_A_Ice_frac, M01_A_SST, M01_A_Ice_temp, M01_A_Ice_thickness, 
+                                   #                            M01_A_Snow_thickness, M01_A_CurX, M01_A_CurY]
+                                   #    False:
                                           fociagrif_fields_l: [M01_A_Ice_albedo, M01_A_Ice_frac, M01_A_SST, M01_A_Ice_temp, M01_A_Ice_thickness, 
                                                                M01_A_Snow_thickness, M01_A_CurX, M01_A_CurY]
                                                                # I dont think we need these...ever...
@@ -792,7 +808,7 @@ nemo:
                         loccunif_nb_nest: 400 
                 smallnest:
                         loccunif_nb_nest: 400 
-                eINALT20_reduced:
+                eINALT20r:
                         loccunif_nb_nest: 12 
 
         loccunif_nb_nest: 12
@@ -812,6 +828,12 @@ nemo:
                                 sn_rcv_rnf: ['coupled', 'no', '', '', '']
                                 sn_rcv_emp: ['conservative', 'no', '', '', '']
 
+        choose_nemo.slp_coupling:
+                True:
+                        add_namelist_changes:
+                                namelist_cfg:
+                                        namsbc_cpl:
+                                                sn_rcv_mslp: ['coupled', 'no', '', '', '']
         choose_general.runoff_method:
                 "EM21":
                         runoff_method: "EM21"
@@ -1144,12 +1166,20 @@ oasis3mct:
                  atmflx:
                         - 'O_QsrMix:O_QnsMix:OTotRain:OTotSnow:OIceEvap:OTotEvap <--a2o_cn-- A_QsrMix:A_QnsMix:ATotRain:ATotSnow:AIceEvap:ATotEvap'
            "5.0":
+              choose_nemo.slp_coupling:
+                 True:
+                    add_coupling_target_fields:
+                      # Couple atm fluxes to ocean (non-conserving)
+                       flxatmos:
+                              - 'O_MSLP:O_QsrIce:O_QnsIce:O_dQnsdT <--a2o_nc-- A_MSLP:A_Qs_ice:A_Qns_ice:A_dQns_dT'
+                 False:
+                    add_coupling_target_fields:
+                      # Couple atm fluxes to ocean (non-conserving)
+                       flxatmos:
+                              - 'O_QsrIce:O_QnsIce:O_dQnsdT <--a2o_nc-- A_Qs_ice:A_Qns_ice:A_dQns_dT'
               add_coupling_target_fields:
                  sstocean:
                     - 'A_Ice_albedo:A_Ice_frac:A_SST:A_Ice_temp:A_Ice_thickness:A_Snow_thickness:A_CurX:A_CurY <--o2a_nc-- O_AlbIce:OIceFrc:O_SSTSST:O_TepIce:OIceTck:OSnwTck:O_OCurx1:O_OCury1'
-                # Couple atm fluxes to ocean (non-conserving)
-                 flxatmos:
-                        - 'O_QsrIce:O_QnsIce:O_dQnsdT <--a2o_nc-- A_Qs_ice:A_Qns_ice:A_dQns_dT'
                  # Coupled atm stress to ocean (non-conserving)
                  atmtau:
                         - 'O_OTaux1:O_OTauy1:O_ITaux1:O_ITauy1 <--aw2o_nc-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
@@ -1270,15 +1300,22 @@ oasis3mct:
                                                 flxatmos_1:
                                                         - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr1_nc-- A_QsrIce:A_QnsIce:A_dQnsdT'
                                 "5.0":
-                                        add_coupling_target_fields:
+                                   choose_nemo.slp_coupling:
+                                      True:
+                                          add_coupling_target_fields:
+                                                flxatmos_1:
+                                                   - '1_O_MSLP:1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr1_nc-- A_MSLP:A_Qs_ice:A_Qns_ice:A_dQns_dT'
+                                      False:
+                                          add_coupling_target_fields:
+                                                flxatmos_1:
+                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr1_nc-- A_Qs_ice:A_Qns_ice:A_dQns_dT'
+                                   add_coupling_target_fields:
                                                 sstocean_1:
                                                         - 'M01_A_Ice_frac:M01_A_SST:M01_A_Ice_temp:M01_A_Ice_thickness:M01_A_Snow_thickness:M01_A_CurX:M01_A_CurY:M01_A_Ice_albedo <--agr12a_nc-- 1_OIceFrc:1_O_SSTSST:1_O_TepIce:1_OIceTck:1_OSnwTck:1_O_OCurx1:1_O_OCury1:1_O_AlbIce'
                                                 atmflx_1:
-                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr1_cn-- A_Qs_mix:A_Qns_mix:A_Precip_liquid:A_Precip_solid:A_Evap_total:A_Evap_ice'
+                                                        - '1_O_QsrMix:1_O_QnsMix:1_OTotRain:1_OTotSnow:1_OTotEvap:1_OIceEvap <--a2agr1_nc-- A_Qs_mix:A_Qns_mix:A_Precip_liquid:A_Precip_solid:A_Evap_total:A_Evap_ice'
                                                 atmtau_1:
                                                         - '1_O_OTaux1:1_O_OTauy1:1_O_ITaux1:1_O_ITauy1 <--aw2agr1_nc-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
-                                                flxatmos_1:
-                                                        - '1_O_QsrIce:1_O_QnsIce:1_O_dQnsdT <--a2agr1_nc-- A_Qs_ice:A_Qns_ice:A_dQns_dT'
                 #'*':
                 #        # Couple HTESSEL runoff to river routing
                 #        add_coupling_target_fields:

@@ -1041,9 +1041,9 @@ nemo:
             #1_namelist_top_ref: ${nemo.model_dir}/cfgs/SHARED/namelist_top_ref
             #
             # bfr, subbasins, and domain_cfg 
-            bfr_coef_eorca025_nemo5: ${input_dir}/bfr_coef.nc 
-            subbasins_eorca025_nemo5: ${input_dir}/subbasins.nc
-            domain_cfg_eorca025_nemo5: ${input_dir}/domain_cfg.nc
+            #bfr_coef_eorca025_nemo5: ${input_dir}/bfr_coef.nc 
+            #subbasins_eorca025_nemo5: ${input_dir}/subbasins.nc
+            domain_cfg_eorca025_nemo5: ${agrif_dir}/domain_cfg.nc
 
             # inital data
             data_tem_eorca025_nemo5: ${input_dir}/data_tem.nc
@@ -1062,8 +1062,8 @@ nemo:
 
 
            # bfr, subbasins, and domain_cfg 
-           bfr_coef: bfr_coef_eorca025_nemo5
-           subbasins: subbasins_eorca025_nemo5
+           #bfr_coef: bfr_coef_eorca025_nemo5
+           #subbasins: subbasins_eorca025_nemo5
            domain_cfg: domain_cfg_eorca025_nemo5
 
            # inital data
@@ -2973,6 +2973,8 @@ nemo:
     # calendar:
     leapyear: False
 
+    slp_coupling: false # true --> couple SLP for inverse barometer effect
+
     # Restart or initial run settings
     # values below will be set to false if lresume = true
     ln_tsd_init: true
@@ -3091,9 +3093,16 @@ nemo:
                 # 1) OIceFrac is now OIceFrc
                 # 2) O_AlbIce is added 
                 # 3) O_SnwTck, O_IceTck are now OSnwTck, OIceTck 
-                opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1, O_QsrMix, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_QsrIce, O_QnsIce, O_dQnsdT]
+                choose_slp_coupling:
+                   True:
+                      opat_fields: [O_MSLP, O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1, 
+                              O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
+                      agr1_t_fields: [1_O_MSLP, 1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_OIceTck, 1_OSnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
+                   False:
+                      opat_fields: [O_AlbIce, OIceFrc, O_SSTSST, O_TepIce, OIceTck, OSnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1, 
+                              O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
+                      agr1_t_fields: [1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_OIceTck, 1_OSnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
                 opac_fields: []
-                agr1_t_fields: [1_O_AlbIce, 1_OIceFrc, 1_O_SSTSST, 1_O_TepIce, 1_OIceTck, 1_OSnwTck, 1_O_OCurx1, 1_O_OCury1, 1_O_OTaux1, 1_O_OTauy1, 1_O_ITaux1, 1_O_ITauy1]
 
                 # in NEMO 4, the periodic points, i.e. i=1, i=imax
                 # are not included in the coupling
@@ -3443,7 +3452,7 @@ nemo:
             # nest_refinement MUST (!!!) match the last value
             # in AGRIF_FixedGrids.in
             # for backward compatibility with Joakims settings
-            eINALT20_reduced:
+            eINALT20r:
                     _nx_nest1: 2833
                     _ny_nest1: 2818
                     nest_refinement: 5

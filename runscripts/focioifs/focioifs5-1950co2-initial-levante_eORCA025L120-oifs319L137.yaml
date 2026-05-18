@@ -14,22 +14,15 @@ general:
    resolution: "TCO319_eORCA025"
    version: "5.0"
   
-   # test settings: daily restarts for two days
-   #compute_time: "00:30:00"
-   #initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   #final_date: "1950-01-04T00:00:00"         # Final date of the experiment
-   #nmonth: 0
-   #nday: 1
-   # monthly restarts for 6 months 
-   compute_time: "00:20:00"
+   compute_time: "08:00:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1955-01-03T00:00:00"      #1955-01-01T00:00:00   # Final date of the experiment
-   nday: 1
-   nyear: 0
+   final_date: "1960-01-01T00:00:00"         # Final date of the experiment
    nmonth: 0
+   nday: 0
+   
+   nyear: 1
    hours: 0
-
-   account: bb1460 
+   account: bb1460
    base_dir: /work/bb1460/${general.userdir}/esm-experiments
    #base_dir: /mnt/ceph-ssd/workspaces/ws/shk00060/u11179-esm-experiments-ssd-202603/ 
 
@@ -51,12 +44,12 @@ general:
    oasis_date_stamp: "_19400101-19491231"
    # Previous run config file
    # (should be general enough)
-   # prev_run_config_file: ""
+   prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
 
 focioifs:
    #model_dir: ${general.homedir}/esm/models/focioifs-5.0
    model_dir: /work/bb1460/b350071/models/focioifs-5.0
-
+   
 oifs:
    
    # if you change name=OIFS in file_def*xml you currently have to adjust 
@@ -90,33 +83,34 @@ oifs:
    
    version: "48r1-foci5"
    major_version: "48r1"
-   time_step: 1800
+   time_step: 900
    with_xios: True
    scenario: "piControl"
    copy_forcing: true
    mip: ""
    o3_scheme: default
-   pool_dir: ${computer.pool_dir} 
-   input_dir: "${pool_dir}/openifs_cy48_tco95/"
+   pool_dir: /work/bb1460/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy48_tco319/"
    rtables_dir: "${pool_dir}/openifs_cy48_general/rtables/"
    vtables_dir: "${pool_dir}/openifs_cy48_general/vtables/"
-   tl_o3_data_dir: "${pool_dir}/openifs_cy48_tco95/"
+   tl_o3_data_dir: "${pool_dir}/openifs_cy48_tco319/"
    ifsdata_dir: "${pool_dir}/openifs_cy48_general/ifsdata/"
    cmip5_data_dir: "${pool_dir}/openifs_cy48_general/cmip5_ghg/"
    cmip6_data_dir: "${pool_dir}/openifs_cy48_general/cmip6-data/"
-   icmcl_dir: "${pool_dir}/openifs_cy48_tco95/${prepifs_startdate}00/"
-   icmcl_file: "ICMCLECE4INIT"
+   #cmip7_data_dir: "${pool_dir}/openifs_cy48_general/cmip7-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy48_tco319/${prepifs_startdate}00/"
+   icmcl_file: "ICMCLabooINIT"
    # This would use initial conditions from ERA-Interim 2008-01-01
-   prepifs_expid: ECE4
+   prepifs_expid: aboo
    prepifs_startdate: 19900101
    
    # This uses initial conditions from FOCI_GJK006 4000-01-02
    #prepifs_expid: ECE3 
    #prepifs_startdate: 40000101 
    
-   resolution: TCO95
-   levels: L91
-   nproc: 128
+   resolution: TCO319
+   levels: L137
+   nproc: 948 #1000 #384
    omp_num_threads: 1
    solarspectrum: True 
    ini_pseudo_initial_date: "1859-01-01"
@@ -138,7 +132,7 @@ oasis3mct:
    # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-orca05.git
    # git clone https://git.geomar.de/foci/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05.git
    lresume: True
-   pool_dir: "${computer.pool_dir}/oasis3_openifs48r1-tco95_nemo5-eorca025/"
+   pool_dir: "/work/bb1460/foci_input2/create_oasis_files_focioifs_eORCA025_L120_OpenIFS319_L137_OpenIFS48/"
    # This would be for a cold start (SST = 0C,etc)
    ini_parent_dir: "${pool_dir}" 
    # for a real restart you would use
@@ -146,7 +140,7 @@ oasis3mct:
    
    a2o_remap_method: "bilincub"
    o2a_remap_method: "bilinear"
-   norestart: T
+   norestart: F
    use_lucia: False
    #export_mode: EXPOUT
    #standard debug_level = 1, 20 for debugging
@@ -157,8 +151,10 @@ oasis3mct:
    #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
    #oasis_date_stamp: "${general.oasis_date_stamp}"
    #oasis_date_stamp: "" 
-   
+   coupling_time_step: 900
+
 nemo:
+   slp_coupling: true # true --> couple SLP for inverse barometer effect
    # DONE: 
    # cd /home/b/b383098/_work/foci_input2
    # git clone https://git.geomar.de/foci/foci_input2/nemo4_orca05.git 
@@ -168,7 +164,7 @@ nemo:
    #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
    #ini_parent_date: "${prev_date}"
    #input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
-   input_dir: "${computer.pool_dir}/nemo5_eorca025/"
+   input_dir: "/work/bb1460/foci_input2/nemo5_eorca025/"
    resolution: "eORCA025"
    #version: "eORCA05_Z75_SI3_COUPLED" 
    # 64x51 = 3264 
@@ -182,25 +178,124 @@ nemo:
    jpnj: 0
    #nproca: ${nemo.jpni}
    #nprocb: ${nemo.jpnj}
-   nproc: 256 
+   nproc: 1943
    time_step: 900
    add_namelist_changes:
        namelist_cfg:
-          namctl:
-              ln_timing: ".false."
-          namrun:
-              nn_istate: 0
+          namtsd:
+                cn_dir: '${input_dir}'
+                sn_tem: ['ctemp_an_WOA13_ctemp-eORCA025.L120_' , -1. , 'ctemp_an' , .true. ,  .true. , 'yearly' , '' , '' , '']
+                sn_sal: ['asal_an_WOA13_asal-eORCA025.L120_'  ,     -1.     ,'asal_an',   .true.    , .true. , 'yearly'  ,    ''    ,    ''    ,    '']
           namsbc:
-              ln_rnf: .true. 
-   
+                nn_fsbc: 1
+                ln_traqsr: .true.
+                ln_apr_dyn  : .false.
+                ln_rnf : .true.
+          namtra_qsr:
+                ln_qsr_rgb  : .true.
+                ln_qsr_2bd  : .false.
+                ln_qsr_5bd  : .false.
+                ln_qsr_bio  : .false.
+                rn_abs      :   0.58
+                rn_si0      :   0.35
+                nn_chldta   :      1
+                rn_si1      :   23.0
+                rn_par      :   0.47
+                cn_dir      : '${input_dir}'
+                sn_chl      : ['chl_mob_glo_bgc-chl-eORCA025.L120_2_surface.nc'            ,        -1.        , 'chl'    ,   .true.    , .true. , 'yearly'  , ''               , ''       , '']
+          namsbc_rnf:
+                ln_rnf_mouth : .false.
+                ln_rnf_depth : .false.
+                ln_rnf_depth_ini : .false.
+                rn_rnf_max  : 0.034533
+                rn_dep_max  : 150.  
+                nn_rnf_depth_file : 0
+                cn_dir      : '${input_dir}'
+                sn_dep_rnf  : ['rodepthL137m'               ,       -12.        , 'rodepth' ,   .false.   , .true. , 'yearly'  , ''               , ''       , '']
+          namsbc_apr:
+                rn_pref     : 101000.
+                nn_ref_apr  :   1
+                ln_apr_obc  : .true.
+                cn_dir : '${input_dir}'
+                sn_apr      : ['psl_JRA55do-1.5.0'     ,        3       ,'psl' ,   .true.    , .false. , 'yearly'  , 'weights_jra55do_eORCA025_bilin.nc' , ''    ,  '']
+                sn_apref    : ['NOT USED'             ,         -1.       ,'meanapr'  ,   .true.    , .true. , 'yearly'  ,    ''            ,    ''    ,      '']
+          nam_tide:
+                ln_tide     : .true.
+                nn_tide_var   : 1
+                ln_tide_pot   : .true.
+                rn_tide_gamma : 0.7
+                ln_scal_load  : .false.
+                rn_scal_load : 0.094
+                ln_read_load  : .false.
+                cn_tide_load : 'tide_LOAD_grid_T.nc'
+                ln_tide_ramp  : .false.
+                rn_tide_ramp_dt : 0. 
+                sn_tide_cnames( 1) : 'Mf'
+                sn_tide_cnames( 2) : 'Mm'
+                sn_tide_cnames( 3) : 'Ssa'
+                sn_tide_cnames( 4) : 'Mtm'
+                sn_tide_cnames( 5) : 'Msf'
+                sn_tide_cnames( 6) : 'Msqm'
+                sn_tide_cnames( 7) : 'Sa'
+                sn_tide_cnames( 8) : 'K1'
+                sn_tide_cnames( 9) : 'O1'
+                sn_tide_cnames(10) : 'P1'
+                sn_tide_cnames(11) : 'Q1'
+                sn_tide_cnames(12) : 'J1'
+                sn_tide_cnames(13) : 'S1'
+                sn_tide_cnames(14) : 'M2'
+                sn_tide_cnames(15) : 'S2'
+                sn_tide_cnames(16) : 'N2'
+                sn_tide_cnames(17) : 'K2'
+                sn_tide_cnames(18) : 'nu2'
+                sn_tide_cnames(19) : 'mu2'
+                sn_tide_cnames(20) : '2N2'
+                sn_tide_cnames(21) : 'L2'
+                sn_tide_cnames(22) : 'T2'
+                sn_tide_cnames(23) : 'eps2'
+                sn_tide_cnames(24) : 'lam2'
+                sn_tide_cnames(25) : 'R2'
+                sn_tide_cnames(26) : 'M3'
+                sn_tide_cnames(27) : 'MKS2'
+                sn_tide_cnames(28) : 'MN4'
+                sn_tide_cnames(29) : 'MS4'
+                sn_tide_cnames(30) : 'M4'
+                sn_tide_cnames(31) : 'N4'
+                sn_tide_cnames(32) : 'S4'
+                sn_tide_cnames(33) : 'M6'
+                sn_tide_cnames(34) : 'M8'
+          namdrg:
+                ln_loglayer : .true.
+          nambbc:
+                ln_trabbc   : .true.
+                nn_geoflx     : 2
+                cn_dir      : '${input_dir}'
+                sn_qgh: ['geothermal_forcing_regular'  ,       -12.        , 'heat_flux',   .false.   , .true. , 'yearly'  ,   'weights_ghflux_deLavergne_eORCA025_bilin'             ,   ''     ,   '']
+          nameos:
+                ln_eos80 : .false.
+                ln_teos10 : .true.
+          namtra_ldf:
+                rn_Ud : 0.018
+                rn_Ld : 200.e+3
+          namtra_dmp:
+                ln_tradmp   :  .true.
+                nn_zdmp  :    0
+                cn_resto : '${input_dir}dmp_eORCA025.Z120_med_and_red_outflows_10d.nc'
+          namdyn_ldf:
+                nn_ahm_ijk_t  : 20
+          namzdf:
+                nn_evdm : 0
+                rn_avm0     :   1.2e-4
+                rn_avt0     :   1.2e-5
+
 rnfmap:
    nproc: 1
+   time_step: 900
 
 xios: 
    with_model: focioifs 
    version: 3.0_trunk
-   xml_dir: "${nemo.model_dir}/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/" # results in /work/bb1460/$USER/models/focioifs-5.0/xios-eORCA_SI3_COUPLED_NEMO5/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00 WHY?
-   #xml_dir: "/work/bb1460/b350090/foci/models_intel/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/"
+   xml_dir: /home/b/b383098/_work/b383098/models/focioifs-5.0/nemo-eORCA_SI3_COUPLED_NEMO5/cfgs/eORCA_SI3_COUPLED_NEMO5/EXP00/ 
    nproc: 180
    omp_num_threads: 1
 

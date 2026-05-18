@@ -24,7 +24,7 @@ general:
    #nmonth: 0
    #nday: 1
    # monthly restarts for 6 months 
-   compute_time: "05:00:00"
+   compute_time: "01:08:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
    final_date: "1950-02-01T00:00:00"         # Final date of the experiment
    nmonth: 1
@@ -120,6 +120,7 @@ oifs:
    # Jan Streffing proved that more levels don't help
    # levels: L91
    nproc: 1007
+   #nproc: 256 
    omp_num_threads: 1
    solarspectrum: True 
    ini_pseudo_initial_date: "1859-01-01"
@@ -161,7 +162,7 @@ oasis3mct:
    # in FOCIOIFS all oasis input files are treated as restarts.
    # in FOCI all remapping files are handled as inputs. Both approaches work.
    #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
-   #oasis_date_stamp: "${general.oasis_date_stamp}"
+   oasis_date_stamp: "${general.oasis_date_stamp}"
    #oasis_date_stamp: "" 
       
 nemo:
@@ -174,8 +175,8 @@ nemo:
    #ini_parent_date: "${prev_date}"
    #input_dir: "/work/bb1460/foci_input2/NEMO4_ORCA05_input/"
    pool_dir: "/work/bb1460/foci_input2" 
-   input_dir: "${pool_dir}/AGRIF/agrif_${nest1}/"
-   agrif_dir: "${input_dir}" 
+   agrif_dir: "${pool_dir}/AGRIF/agrif_${nest1}/"
+   input_dir: "${pool_dir}/nemo5_eorca025/" 
    resolution: "eORCA025"
    #version: "eORCA05_Z75_SI3_COUPLED" 
    # 64x51 = 3264 
@@ -190,13 +191,36 @@ nemo:
    #nproca: ${nemo.jpni}
    #nprocb: ${nemo.jpnj}
    nproc: 2460
+   #nproc: 256 
    add_namelist_changes:
+       1_namelist_cfg:
+           namdom:
+              ln_meshmask: false
        namelist_cfg:
-          namctl:
+           namdom:
+              ln_meshmask: false
+           nameos:
+              #ln_teos10: true
+              #ln_eos80: false
+              ln_teos10: false
+              ln_eos80: true
+           #namtsd:
+              # default 
+              #cn_dir: './'
+              #sn_tem: ['data_tem' , -1. , 'votemper' , .true. , .true. , 'yearly' , '' , '' , '']
+              #sn_sal: ['data_sal' , -1. , 'vosaline',  .true.  , .true. , 'yearly' , '' , '' , '']
+              # with the settings below, data_*.nc from work dir are NOT used
+              # requires ln_teos10: true AND ln_eos80: false
+              # I (Sebastian) would prefer if we link the files below to work
+              #cn_dir: '${input_dir}'
+              #sn_tem: ['ctemp_an_WOA13_ctemp-eORCA025.L120_' , -1. , 'ctemp_an' , .true. , .true. , 'yearly' , '' , '' , '']
+              #sn_sal: ['asal_an_WOA13_asal-eORCA025.L120_' ,  -1.    ,'asal_an',  .true.   , .true. , 'yearly' ,   ''   ,   ''   ,   '']
+ 
+           namctl:
               ln_timing: ".false."
-          namrun:
+           namrun:
               nn_istate: 0
-          namsbc:
+           namsbc:
               ln_rnf: .true. 
    
 rnfmap:
@@ -212,10 +236,12 @@ xios:
    version: 3.0_trunk
    xml_dir: "/work/bb1460/b383103/models/focioifs-agrif-5.0/nemo-eORCA_SI3_AGRIF_COUPLED_NEMO5/cfgs/eORCA_SI3_AGRIF_COUPLED_NEMO5/EXP00" 
    nproc: 180
+   #nproc: 24 
    omp_num_threads: 1
    
 computer:
    taskset: true
+   load_python: false
    #additional_flags: '--qos=preempt'
    additional_flags: 
       - '--ntasks-per-node=96'
@@ -227,6 +253,7 @@ computer:
    choose_general.execution_mode:
       run:
          add_export_vars:
+           UCX_IB_DEVX: "n"
            OIFS_DATA_DIR: "/work/bb1460/foci_input2/openifs_48r1_general/"
            GFORTRAN_UNBUFFERED_ALL: 'y'  
            DATA: "${general.work_dir}"

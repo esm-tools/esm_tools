@@ -23,13 +23,13 @@ general:
    # monthly restarts for 6 months 
    compute_time: "00:20:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1955-01-03T00:00:00"      #1955-01-01T00:00:00   # Final date of the experiment
-   nday: 1
-   nyear: 0
+   final_date: "1955-01-01T00:00:00"      #1955-01-01T00:00:00   # Final date of the experiment
    nmonth: 0
+   nday: 0
+   
+   nyear: 1
    hours: 0
-
-   account: bb1460 
+   account: shk00060
    base_dir: /work/bb1460/${general.userdir}/esm-experiments
    #base_dir: /mnt/ceph-ssd/workspaces/ws/shk00060/u11179-esm-experiments-ssd-202603/ 
 
@@ -205,18 +205,17 @@ xios:
    omp_num_threads: 1
 
 computer:
-   taskset: true
-   load_python: false
-   launcher: srun 
-   launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic" 
-   pool_dir: /work/bb1460/foci_input2/
+   #additional_flags: '--qos=preempt'
+   launcher: srun
+   launcher_flags: "-l --kill-on-bad-exit=1 --cpu_bind=cores --distribution=cyclic:cyclic"
+   pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2_whirls/"
+   partition: "standard96"
 
    choose_general.execution_mode:
       run:
          add_export_vars:
-           UCX_IB_DEVX: "n"
-           OIFS_DATA_DIR: "/work/bb1460/foci_input2/openifs_48r1_general/"
-           GFORTRAN_UNBUFFERED_ALL: 'y'  
+           OIFS_DATA_DIR: "${computer.pool_dir}/openifs_48r1_general/"
+           GFORTRAN_UNBUFFERED_ALL: 'y'
            DATA: "${general.work_dir}"
            LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/oifs-48r1/build/lib:$MPI_LIB:$AEC_ROOT/lib:$HDF5ROOT/lib:$NetCDF_C_ROOT/lib:$NETCDF_ROOT/lib:$LD_LIBRARY_PATH'
            GRIB_SAMPLES_PATH: '${model_dir}/oifs-48r1/build/share/eccodes/ifs_samples/grib1_mlgrib2'

@@ -20,6 +20,7 @@ general:
     available_versions:
         - 'v3.4.0'
         - 'v3.4.1'
+        - 'v3.4.2'
         - 'develop'
         - 'develop-cc'
 
@@ -39,6 +40,17 @@ general:
             major_version: v3.4
             couplings:
                 - awiesm3_v3.4.1
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        v3.4.2:
+            major_version: v3.4
+            couplings:
+                - awiesm3_v3.4.2
             add_include_models:
                 - xios
             oasis_with_yac: false

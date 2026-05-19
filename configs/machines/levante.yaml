@@ -201,6 +201,33 @@ computer:
                             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
                             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
+           # Intel oneAPI 2025.3.2 + OpenMPI 5.0.10 stack, added 2026-05-19
+           # to escape the UCX 1.12 MPI_Finalize segfault in the
+           # intel2022_openmpi (openmpi/4.1.2) stack. Pair with
+           # iolibraries: system_libs_oneapi2025_ompi5. Note that
+           # both modules live in /sw/spack-levante/spack/modules-experimental.
+           oneapi2025_openmpi5:
+                    python_version: "python3"
+                    mod_netcdf_c: netcdf-c/4.10.0-openmpi-5.0.10-oneapi-2025.3.2
+                    mod_netcdf_f: netcdf-fortran/4.6.2-openmpi-5.0.10-oneapi-2025.3.2
+                    mod_hdf5: hdf5/1.14.6-openmpi-5.0.10-oneapi-2025.3.2
+                    add_module_actions:
+                            - "load intel-oneapi-compilers/2025.3.2-gcc-13.4.0"
+                            # MKL stays at 2022 — no newer build on Levante;
+                            # backward-compatible with newer oneAPI compilers.
+                            - "load intel-oneapi-mkl/2022.0.1-gcc-11.2.0"
+                            - "load openmpi/5.0.10-oneapi-2025.3.2"
+
+                    add_export_vars:
+                            FC: mpif90
+                            F77: mpif90
+                            MPICC: mpicc
+                            MPIFC: mpif90
+                            CC: mpicc
+                            CXX: mpicxx
+                            MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+                            MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
     choose_iolibraries:
         awi_gnu_libs: #Copy paste from DE IFS env.sh
             add_module_actions:
@@ -333,6 +360,59 @@ computer:
                 # kh 07.03.22 currently required to use Intel MPI
                 LD_LIBRARY_PATH[(2)]: /sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:$LD_LIBRARY_PATH
 
+
+        # Intel oneAPI 2025.3.2 + OpenMPI 5.0.10 IO stack. All modules
+        # live under /sw/spack-levante/spack/modules-experimental. Pair
+        # with compiler_mpi: oneapi2025_openmpi5. Added 2026-05-19
+        # alongside system_libs (4.1.2 stack), not replacing it.
+        system_libs_oneapi2025_ompi5:
+            add_module_actions:
+                - "load netcdf-c/4.10.0-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load netcdf-fortran/4.6.2-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load hdf5/1.14.6-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load eccodes/2.46.0-openmpi-5.0.10-oneapi-2025.3.2"
+                - "load libaec/1.0.5-oneapi-2025.0.4"
+
+            add_export_vars:
+                IO_LIB_ROOT: "/sw/spack-levante"
+                HDF5ROOT: "/sw/spack-levante/hdf5-1.14.6-cz2y6n"
+                HDF5_C_INCLUDE_DIRECTORIES: $HDF5ROOT/include
+                HDF5_ROOT: $HDF5ROOT
+                NETCDFFROOT: /sw/spack-levante/netcdf-fortran-4.6.2-yuo6bc
+                NETCDFROOT: /sw/spack-levante/netcdf-c-4.10.0-wplcog
+                NETCDF_PATH: $NETCDFROOT
+                NETCDF_ROOT: $NETCDFFROOT
+                NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                NETCDF_CXX_LIBRARIES: $NETCDFROOT/lib
+                ECCODESROOT: /sw/spack-levante/eccodes-2.46.0-77f24p
+
+                MPI_HOME: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                MPI_ROOT: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                mpi_ROOT: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                MPI_DIR: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+                mpi_DIR: /sw/spack-levante/openmpi-5.0.10-pjjvwl
+
+                # For OASIS3-MCT5 from CERFACS
+                OASIS_NETCDF: $NETCDFROOT
+                OASIS_NETCDFF: $NETCDFFROOT
+                # flags required for ECHAM6 (and possibly other models)
+                PSMPIFLAGS: '"-lrt -lm -ldl"'
+
+                # Linear Algebra (LAPACK) via MKL
+                LAPACK_LIB: "'-mkl=sequential'"
+
+                ZLIBROOT: /usr
+
+                OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+                PERL5LIB: /usr/lib64/perl5
+
+                LD_LIBRARY_PATH[(0)]: $MPI_HOME/lib:$HDF5ROOT/lib:$NETCDFROOT/lib:$NETCDFFROOT/lib:$ECCODESROOT/lib64:$LD_LIBRARY_PATH
+
+                # Keep MKL on LD_LIBRARY_PATH as in system_libs
+                LD_LIBRARY_PATH[(1)]: /sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:$LD_LIBRARY_PATH
 
         system_intel_libs: # Attempt to make intel work for OpenIFS 48r1, currently disfunctional
             add_module_actions:

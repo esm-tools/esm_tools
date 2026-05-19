@@ -40,6 +40,8 @@
                 <field field_ref="surface_upwelling_shortwave_flux_cs__rsuscs"/>
                 <field field_ref="surface_downwelling_longwave_flux_cs__rldscs"/>
                 <field field_ref="surface_upwelling_longwave_flux_cs__rluscs"/>
+                <!-- Near-surface relative humidity (CMIP7 online; see send_cmip7_rh.F90) -->
+                <field field_ref="near_surface_relative_humidity_pct__hurs"/>
             </field_group>
         </file>
 
@@ -386,6 +388,8 @@
                 <field field_ref="surface_snow_amount__snw"/>
                 <!-- Raw fields for pipeline: daily tclw for clwvi computation -->
                 <field field_ref="tclw" name="tclw" long_name="Total column cloud liquid water"/>
+                <!-- Near-surface relative humidity (CMIP7 online; see send_cmip7_rh.F90) -->
+                <field field_ref="near_surface_relative_humidity_pct__hurs"/>
             </field_group>
         </file>
 

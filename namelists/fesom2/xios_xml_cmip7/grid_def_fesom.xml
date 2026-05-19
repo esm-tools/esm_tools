@@ -12,6 +12,14 @@
     <domain domain_ref="elements"/>
   </grid>
 
+  <!-- 2D regridded surface grids (regular lat/lon via XIOS interpolation) -->
+  <grid id="grid_2d_nod_reg"  description="2D regridded surface grid from FESOM nodes">
+    <domain domain_ref="nodes_reg"/>
+  </grid>
+  <grid id="grid_2d_elem_reg" description="2D regridded surface grid from FESOM elements">
+    <domain domain_ref="elements_reg"/>
+  </grid>
+
   <!-- 3D grids (cell-centred vertical axis).
        Axis-first composition to match Fortran send buffer shape (nz, nn). -->
   <grid id="grid_3d_nod"  description="3D grid on FESOM nodes">

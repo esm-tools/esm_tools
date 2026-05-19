@@ -565,8 +565,10 @@ xios:
         xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
         interpolation_order: 1
         compression_level: 1
-        regular_res_lat: 192 
+        regular_res_lat: 192
         regular_res_lon: 400
+        fesom_regular_res_lon: 360
+        fesom_regular_res_lat: 180
         config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2

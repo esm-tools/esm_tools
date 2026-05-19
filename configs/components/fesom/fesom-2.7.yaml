@@ -526,6 +526,10 @@ fesom:
     # CMIP7-style XMLs (many variables, multiple frequencies). Default off:
     # upstream-namelist.io-style minimal monthly output.
     cmip7_cmor_output: false
+    # Opt-in switch: when true, add monthly regridded (regular lat/lon) output
+    # for all 2D surface fields alongside the native unstructured output.
+    # Requires xios.regular_res_lon/lat and xios.interpolation_order to be set.
+    regrid_surface_output: false
     choose_with_xios:
             true:
                     # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work

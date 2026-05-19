@@ -451,7 +451,7 @@ xios:
                 io_def:           ${fesom_xios_xml_dir}/iodef.xml
                 context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
                 axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
-                domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml
+                domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml.j2
                 grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
                 field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml
                 file_def_fesom:   ${fesom_xios_xml_dir}/file_def_fesom.xml.j2

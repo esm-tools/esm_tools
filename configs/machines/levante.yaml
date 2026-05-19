@@ -112,7 +112,14 @@ computer:
             HCOLL_MAIN_IB: mlx5_0:1
             UCX_IB_ADDR_TYPE: ib_global
             UCX_NET_DEVICES: mlx5_0:1
-            UCX_TLS: mm,knem,cma,dc_mlx5,dc_x,self
+            # Workaround for UCX 1.12 segfault at MPI_Finalize
+            # (uct_mm_iface_t_cleanup → ucs_mpool_cleanup) seen on
+            # Levante with openmpi/4.1.2 — drops `mm` (memory-mapped
+            # SHM) so UCX uses `knem` for intra-node SHM instead. See
+            # the Final_CMIP7_IO_Test_09 segfault backtrace, jobid
+            # 24958748 on 2026-05-19. Revert once UCX≥1.13 / OpenMPI
+            # 4.1.6+ lands as a production module.
+            UCX_TLS: knem,cma,dc_mlx5,dc_x,self
             UCX_UNIFIED_MODE: y
 
     # kh 16.06.22 set appropriate pinning for OpenMP

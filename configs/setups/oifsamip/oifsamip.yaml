@@ -48,7 +48,7 @@ general:
             couplings:
               - oifs-48r1+amip-v1+lpj_guess-4.1.2
 
-        version: "cy48cmip"
+        version: "cy48cmip7"
         mip: "cmip7"
         scenario: "piControl"
         resolution: ${oifs.resolution}
@@ -67,6 +67,9 @@ general:
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
 
+        # Load prepcompute recipe from oifs.yaml
+        prepcompute_recipe: ${oifs.prepcompute_recipe}
+
         # Load compute recipe from oifs.yaml
         compute_recipe: ${oifs.compute_recipe}
 
@@ -81,7 +84,7 @@ general:
                         further_reading:
                                 - oifs/oifs48.env.yaml
                                 - xios/xios.env.yaml
-                "cy48cmip":
+                "cy48cmip7":
                         further_reading:
                                 - oifs/oifs48.env.yaml
                                 - xios/xios.env.yaml
@@ -98,6 +101,7 @@ oifs:
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
+        #version: "48r1"
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
@@ -147,7 +151,7 @@ oifs:
                                         NAEPHY:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3
-                "cy48cmip":
+                "cy48cmip7":
                         version: "48r1"
                         append_icmcl: ""
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
@@ -166,6 +170,7 @@ oifs:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3
 
+        cmip7_data_dir_nml: ${input_dir}/cmip7-data
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
@@ -208,7 +213,7 @@ oifs:
 
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: ""
+        ICMGG_INIT_name: "_AMIP"
 
 
 
@@ -284,7 +289,7 @@ oasis3mct:
                         coupling_target_fields:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac <--gauswgt_i-- AMIP_sst:AMIP_sic'
-                'cy48cmip':
+                'cy48cmip7':
                         coupling_target_fields:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac <--gauswgt_i-- AMIP_sst:AMIP_sic'
@@ -436,3 +441,7 @@ lpj_guess:
             ny: "${ny}"
             oasis_grid_type: "D"
             oyac_grid_type: "LL"
+
+    forcing_sources:
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${resolution}_AMIP.nc
+

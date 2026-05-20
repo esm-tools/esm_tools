@@ -14,13 +14,13 @@ general:
    resolution: "TCO319_eORCA025"
    version: "5.0"
   
-   compute_time: "08:00:00"
+   compute_time: "02:00:00"
    initial_date: "1950-01-01T00:00:00"       # Initial exp. date
-   final_date: "1960-01-01T00:00:00"         # Final date of the experiment
-   nmonth: 0
+   final_date: "1950-03-01T00:00:00"         # Final date of the experiment
+   nmonth: 1
    nday: 0
    
-   nyear: 1
+   nyear: 0
    hours: 0
    account: bb1460
    base_dir: /work/bb1460/${general.userdir}/esm-experiments
@@ -140,7 +140,7 @@ oasis3mct:
    
    a2o_remap_method: "bilincub"
    o2a_remap_method: "bilinear"
-   norestart: F
+   norestart: T
    use_lucia: False
    #export_mode: EXPOUT
    #standard debug_level = 1, 20 for debugging

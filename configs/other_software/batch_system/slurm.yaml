@@ -120,7 +120,7 @@ computer:
     check_error:
             "srun: error:" :
                     frequency: 30
-                    method: "kill"
+                    method: "warn"
                     message: "SLURM ERROR: slurm ended with an error, exiting."
                     file: "stdout"
 

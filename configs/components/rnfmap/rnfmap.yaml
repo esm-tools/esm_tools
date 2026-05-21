@@ -118,8 +118,6 @@ rnfmap:
                     ny: 256
                     time_step: ${oasis3mct.time_step}
 
-    nproca: 1
-    nprocb: 1
 
     runoff_method: "old"
     with_agrif: False

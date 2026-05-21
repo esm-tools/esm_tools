@@ -60,8 +60,8 @@ program fesom_submesh
   call get_command_argument(1, maxmesh%MeshPath )
   call get_command_argument(2, sub_mesh%MeshPath)
 
-  print *, 'UKK Reducing maxmesh and'//adjustl(maxmesh%MeshPath) 
-  print *, 'UKK writing submesh to '//adjustl(sub_mesh%MeshPath)
+  print *, 'Reducing maxmesh '//adjustl(maxmesh%MeshPath)
+  print *, 'writing submesh to '//adjustl(sub_mesh%MeshPath)
 
   call mesh_read(maxmesh)
 
@@ -72,8 +72,8 @@ program fesom_submesh
 
   call read_topo_cavity(maxmesh, topo_raw, cavity_raw, mesh_flag_raw, mask_raw)
 
-  !call mesh_reduce_byflag(maxmesh, mesh_flag_raw, sub_mesh, mask_raw)   
-  call mesh_reduce_byflag(maxmesh, mesh_flag_raw, sub_mesh, mask_raw, cavity_raw, topo_raw) ! UKK we need the depth of the cavity roof here 
+  ! cavity_raw carries the depth of the cavity roof, needed by mesh_reduce_byflag
+  call mesh_reduce_byflag(maxmesh, mesh_flag_raw, sub_mesh, mask_raw, cavity_raw, topo_raw)
 
   call mesh_write(sub_mesh)
 
@@ -231,30 +231,28 @@ end subroutine mesh_write
 
 !===============================================================
 
-subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)   
-!UKK this subroutine needs another list of  nodeflags mask_raw which is 
-!UKK 2 outside of the PISM domain (will never be removed) and
-!UKK 1 within the PISM domain if ocean (only relevant if we update with nflag
-!UKK 0 otherwise
-!UKK might be combined with nflag and might be also used to optimize 
-!UKK  the other element sweeps, if wanted
+subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)
+! mask_raw classifies nodes:
+!   2 = outside of the PISM domain (will never be removed)
+!   1 = within the PISM domain if ocean (only relevant when updating nflag)
+!   0 = otherwise
+! may be combined with nflag and used to optimize the other element sweeps.
 
   use m_mesh
   use ListUtils
   implicit none
- 
+
   type(t_mesh), intent(in)    :: M
   integer, intent(inout)      :: nflag(M%nod2D)
   type(t_mesh), intent(inout) :: Mred
-  integer, intent(inout)      :: mask_raw(M%nod2D) !UKK flags indicating open ocean/potential lakes
-  real, intent(in)            :: cavity_raw(M%nod2D) !UKK flags indicating open ocean/potential lakes
-  real, intent(in)            :: topo_raw(M%nod2D) !UKK flags indicating open ocean/potential lakes
+  integer, intent(inout)      :: mask_raw(M%nod2D)
+  real, intent(in)            :: cavity_raw(M%nod2D)
+  real, intent(in)            :: topo_raw(M%nod2D)
 
-! UKK definitions for floodfill
+  ! floodfill state
   integer, allocatable :: elListLakeCheck(:)
   integer :: NLakeCheck
   logical :: elFound_Open
-  ! UKK end
   integer                   :: bnd(M%nod2D), map(M%nod2D)
   integer                   :: elflag(M%elem2D)
   integer                   :: elflag2(M%elem2D)
@@ -412,7 +410,8 @@ subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)
              endif                                                                   
            enddo
            if (count_bd >= 3) then
-              print *, 'UKK', nod_nod    ! we still need to exclude some elements in this situation 
+              ! we still need to exclude some elements in this situation
+              print *, 'disconnected neighborhood:', nod_nod
            endif        
          endif
        endif  
@@ -458,7 +457,7 @@ subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)
         endif
      enddo
   enddo
-  !3.2 UKK check for elements which are lakes/not connected to the open ocean (floodfill)
+  !3.2 check for elements which are lakes/not connected to the open ocean (floodfill)
   !    Build a list of elements which need to be checked
   ! If the first two sweeps are slow this might be integrated above
    
@@ -515,9 +514,8 @@ subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)
       nflag((M%elem(1:3,el)))=nflag((M%elem(1:3,el)))-1
     end do
   endif
-  ! UKK end
 
-  ! 4. Determine number of elements, nodes in reduced mesh 
+  ! 4. Determine number of elements, nodes in reduced mesh
   !    and build the nod_map from maximum to reduced mesh
   Mred%elem2D = count_elem
 
@@ -658,7 +656,7 @@ subroutine read_topo_cavity(M, topo_raw, cavity_raw, mesh_flag_raw, mask_raw)
                               action = 'read')
   do n=1,M%nod2D
      read(infile_cavity, *) cavity_raw(n)
-     if (cavity_raw(n)<-30) then                   !UKK this is a test
+     if (cavity_raw(n)<-30) then
        topo_raw(n) = -2000+mod(n,2)*1000
        cavity_raw(n) = -2500+mod(n,2)*1000
      end if        

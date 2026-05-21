@@ -145,7 +145,7 @@ param "file_peat" (str "../landuse/peat_frac.txt")
 !printcmip 0            ! Whether to print CMIP output
 !printcmipdaily 0       ! Whether to print daily CMIP output
 
-!ifmethane 1
+ifmethane 1
 {% if lpj_guess.daily_alloc_output | default(0) == 1 %}
 file_daily_alloc "daily_alloc.out"
 {% endif %}

@@ -1,0 +1,46 @@
+<grid_definition>
+
+  <grid id="grid_scalar" description="0D scalar (global)">
+    <scalar scalar_ref="scalar_global"/>
+  </grid>
+
+  <!-- 2D grids -->
+  <grid id="grid_2d_nod"  description="2D grid on FESOM nodes">
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_2d_elem" description="2D grid on FESOM elements">
+    <domain domain_ref="elements"/>
+  </grid>
+
+  <!-- 3D grids (cell-centred vertical axis).
+       Axis-first composition to match Fortran send buffer shape (nz, nn). -->
+  <grid id="grid_3d_nod"  description="3D grid on FESOM nodes">
+    <axis   axis_ref="nz"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_3d_elem" description="3D grid on FESOM elements">
+    <axis   axis_ref="nz"/>
+    <domain domain_ref="elements"/>
+  </grid>
+
+  <!-- 3D grids (interface / w-grid vertical axis, nl levels) -->
+  <grid id="grid_3d_nod_nz1"  description="3D grid on FESOM nodes, w/interface levels">
+    <axis   axis_ref="nz1"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_3d_elem_nz1" description="3D grid on FESOM elements, w/interface levels">
+    <axis   axis_ref="nz1"/>
+    <domain domain_ref="elements"/>
+  </grid>
+
+  <!-- dMOC density-coordinate grids (std_dens_N density classes) -->
+  <grid id="grid_rho_nod"  description="density-class grid on FESOM nodes">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_rho_elem" description="density-class grid on FESOM elements">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="elements"/>
+  </grid>
+
+</grid_definition>

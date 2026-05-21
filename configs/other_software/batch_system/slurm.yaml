@@ -118,16 +118,65 @@ computer:
             hostfile: hostfile_srun
 
     check_error:
+            # `srun: error:` fires for two distinct situations:
+            #   1. Real launch failures (execve, bad host, lost node).
+            #   2. The benign pmix_v3 finalize-race cascade where one rank
+            #      exits MPI_Finalize a few ms before its peer, the
+            #      errhandler fires, slurmstepd cancels the step, and srun
+            #      reports `task X: Killed` for every still-living rank.
+            # Case 2 happens AFTER all compute is done — we don't want to
+            # scancel the job (that would skip tidy and lose all output
+            # recovery). Demote to `warn` here; the specific real-failure
+            # triggers below (oom_kill, Out Of Memory, Segmentation fault,
+            # Aborted, Bus error, DUE TO TIME LIMIT) still kill the job.
             "srun: error:" :
                     frequency: 30
                     method: "warn"
-                    message: "SLURM ERROR: slurm ended with an error, exiting."
+                    message: "SLURM ERROR (benign finalize cascade or real launch failure — specific triggers below decide whether to abort)."
                     file: "stdout"
 
             "slurmstepd: error: execve():" :
                     frequency: 600
                     method: "kill"
                     message: "SLURM ERROR: slurm probably didn't find executable"
+                    file: "stdout"
+
+            # Real failure signatures — these still kill the job so that
+            # tidy does NOT advance the date file on a silent crash.
+            "oom_kill event" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: OOM kill event detected — a rank exceeded its cgroup memory limit."
+                    file: "stdout"
+
+            "Out Of Memory" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: srun reported Out Of Memory on a task."
+                    file: "stdout"
+
+            "Segmentation fault" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: segmentation fault."
+                    file: "stdout"
+
+            "Bus error" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: bus error."
+                    file: "stdout"
+
+            "DUE TO TIME LIMIT" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: job hit SLURM walltime limit."
+                    file: "stdout"
+
+            "Aborted (signal" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: process aborted with a signal."
                     file: "stdout"
 
     # possibility to use less cores than processes. Useful for test runs / debugging

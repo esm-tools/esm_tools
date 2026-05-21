@@ -2168,6 +2168,8 @@ nemo:
        # coupling fields
         opac_mops_fields: [O_AtmCO2, CO2FLXOC]
         opat_mops_fields: [CO2OCEAN, CO2TRA, FF_OCE]
+        #opat_mops_fields: [CO2OCEAN, CO2TRA, FF_OCE, MODCO2OC]
+        #agr1_t_mops_fields: [1_CO2OCEAN, 1_CO2TRA, 1_FF_OCE, 1_MODCO2OC]
 
         add_input_files:
            # reference namelists
@@ -3807,6 +3809,7 @@ nemo:
     sst_grid_name: "opat"
     opat_fields: [OIceFrac, O_SSTSST, O_TepIce, O_IceTck, O_SnwTck, O_OCurx1, O_OCury1, O_OTaux1, O_OTauy1, O_ITaux1, O_ITauy1]
     opat_mops_fields: [CO2OCEAN, CO2TRA, FF_OCE]
+    #opat_mops_fields: [CO2OCEAN, CO2TRA, FF_OCE, MODCO2OC]
 
     opac_fields: [O_QsrIce, O_QsrMix, O_QnsIce, O_QnsMix, OTotRain, OTotSnow, OIceEvap, OTotEvap, O_dQnsdT]
     opac_mops_fields: [O_AtmCO2, CO2FLXOC]
@@ -3851,8 +3854,8 @@ nemo:
                                     grid: opaa
                             "[[agr1_r_fields-->FIELD]]":
                                     grid: agr1
-                            "[[agr1_rc_fields-->FIELD]]":
-                                    grid: agr1c
+                            #"[[agr1_rc_fields-->FIELD]]":
+                                    #grid: agr1
 
             "EM21":
                     ornf_fields: [O_Runoff]
@@ -3866,8 +3869,8 @@ nemo:
                                     grid: opaa
                             "[[agr1_r_fields-->FIELD]]":
                                     grid: agr1
-                            "[[agr1_rc_fields-->FIELD]]":
-                                    grid: agrc
+                            #"[[agr1_rc_fields-->FIELD]]":
+                                    #grid: agrc
 
             # Old method based on remapping runoff to a pre-made
             # runoff mask on the ORCA05 grid (rnfo) or AGRIF (agr1r)

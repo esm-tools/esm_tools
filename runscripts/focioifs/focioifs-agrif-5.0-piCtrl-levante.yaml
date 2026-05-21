@@ -2,6 +2,9 @@
 # Runscript to run FOCI-OpenIFS with NWPAC10
 # on glogin
 #
+computer:
+   add_post_run_commands: "sync"
+
 general:
    check_error:
       "BFD: Dwarf Error":
@@ -78,7 +81,6 @@ oifs:
    add_outdata_sources:
       oifsnc2: OIFS_*_${start_date!syear}*.nc
 
-   post_run_commands: "sync"
    lresume: ${general.lresume}
    # This would be for a traditional restart
    # but not used here

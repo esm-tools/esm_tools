@@ -14,10 +14,12 @@ computer:
     accounting: true
     further_reading:
         - batch_system/slurm.yaml
+    partition_cpn: 128
+
     partitions:
         compute:
             name: mpp
-            cores_per_node: 128
+            cores_per_node: ${computer.partition_cpn}
         pp:
             name: smp
             cores_per_node: 1
@@ -128,6 +130,8 @@ computer:
     module_actions:
         # Ensure a clean environment before start:
         - "purge"
+        # Build systems
+        - "load cmake"
         # Compilers:
         - "load ${compiler_module}"
         - "load ${mkl_module}"

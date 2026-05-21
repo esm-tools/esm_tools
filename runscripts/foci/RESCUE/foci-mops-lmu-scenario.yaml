@@ -28,7 +28,7 @@ general:
    account: shk00060
    # uses workspaces on glogin, see
    # https://git.geomar.de/foci/doc/foci-doc/-/blob/master/README.md?ref_type=heads#q-how-do-i-use-the-workspaces-on-nhr-goettingen
-   base_dir: ${homedir}/esm/esm-experiments-mdc/
+   base_dir: ${homedir}/esm/esm-experiments/
 
    lresume: True
    ini_parent_exp_id: "FOCILMU-SW233"
@@ -208,3 +208,5 @@ nemo:
    
 xios:
    nproc: 12 
+   xml_dir: ${nemo.model_dir}/CONFIG/${nemo.version}/EXP00/RESCUE-output-new/
+   #xml_dir: "/user/sebastian.wahl01/u11179/esm/models/tmp/foci-mops_lmu/nemo-ORCA05_LIM2_FOCI_MOPS_OASISMCT4/CONFIG/ORCA05_LIM2_FOCI_MOPS_OASISMCT4/EXP00/RESCUE-output-new/"

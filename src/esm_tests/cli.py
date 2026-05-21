@@ -3,8 +3,13 @@
 A small wrapper that combines the shell interface and the Python interface
 """
 
+import os
+import sys
+
 # Import from Python Standard Library
 from loguru import logger
+
+import esm_tools
 
 from .info import *
 from .initialization import *
@@ -13,9 +18,6 @@ from .read_shipped_data import *
 from .repos import *
 from .test_utilities import *
 from .tests import *
-
-import os
-import sys
 
 
 def main():
@@ -67,10 +69,17 @@ def main():
     # Get user info for testing
     user_config(info)
 
-    # User-specific info to remove from the files ``last_tested`` files
+    # User-specific info to remove from the files ``last_tested`` files.
+    # IMPORTANT: more specific (longer) paths must come before HOME_DIR so they
+    # are substituted first and HOME_DIR does not consume their prefix.
     info["rm_user_info"] = {
         "TEST_DIR": info["user"]["test_dir"],
-        "HOME_DIR": f"{os.path.expanduser('~')}",
+        "NAMELIST_PATH": str(esm_tools.get_namelist_filepath()).rstrip("/"),
+        "RUNSCRIPT_PATH": str(esm_tools.get_runscript_filepath()).rstrip("/"),
+        "COUPLINGS_PATH": str(esm_tools.get_coupling_filepath()).rstrip("/"),
+        "FUNCTIONS_PATH": str(esm_tools.get_config_filepath()).rstrip("/"),
+        "HOME_DIR": [f"{os.path.expanduser('~')}", os.environ.get("HOME")],
+        "USER_ACCOUNT": os.environ.get("USER", "github_runner"),
     }
 
     # Define lines to be ignored during comparison
@@ -103,6 +112,10 @@ def main():
     # Delete previous test
     if delete_tests:
         del_prev_tests(info)
+
+    # If running on GitHub and USER env var is not defined, export it
+    if info["in_github"] and os.environ.get("USER") is None:
+        os.environ["USER"] = "github_runner"
 
     # Compile
     comp_test(info)

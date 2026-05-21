@@ -236,8 +236,8 @@ general:
 
 oifs:
 
-        version: "48r1-foci5"
-        major_version: "48r1"
+        #version: "48r1-foci5"
+        #major_version: "48r1"
 
         # This is 0 (off) by default in oifs.yaml
         # but should always be 2 for coupled runs
@@ -2311,6 +2311,8 @@ computer:
                   # type error (int(8) vs int (4) in oifs)
                   compiler_mpi: gnu11_ompi4 
                   iolibraries: system_gnu_libs 
+                  load_libaec: True
+                  load_tbb: True
                   # intel2022 for focioifs-4.1.1
                   # oifs43r3 has a compile error with gfortran
                   #compiler_mpi: intel2022_openmpi
@@ -2346,10 +2348,8 @@ computer:
                levante:
                   compiler_mpi: gnu11_ompi4 
                   iolibraries: system_gnu_libs 
-                  #compiler_mpi: intel2022_openmpi
-                  #iolibraries: system_intel_libs
-                  #compiler_mpi: intel2022_impi2021
-                  #iolibraries: system_intel_impi_libs
+                  load_libaec: True
+                  load_tbb: True
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:

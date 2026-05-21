@@ -23,10 +23,10 @@ OCEAN_CONVERT_NETCDF4=true
 # In NEMO 4 we also use diaptr2D, diaptr3D and grid_U_vsum 
 # It should be fine to add them here. The script will search for them
 # if they exist they will be used, if not they will be skipped
-OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T diaptr2D diaptr3D grid_U_vsum"
+OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T diad_T diaptr2D diaptr3D grid_U_vsum"
 
 # Other settings
-max_jobs=20
+max_jobs=12
 #
 ###############################################################################
 # END OF USER INTERFACE
@@ -246,7 +246,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
             echo " Looking for $output " 
-            if [[ -f $output ]] && ! [[ $(ncdump -k $output) =~ "netCDF-4" ]]; then
+            #if [[ -f $output ]] && ! [[ $(ncdump -k $output) =~ "netCDF-4" ]]; then
+            if [[ -f $output ]] ; then
 					mv $output $input
                
 					# If too many jobs run at the same time, wait
@@ -288,7 +289,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 						fi
 					) &
             else
-                echo "NOTE: $output already in netCDF-4 format, no ncks treatment done"
+                #echo "NOTE: $output already in netCDF-4 format, no ncks treatment done"
+                echo "NOTE: $output not available for $EXP_ID"
 				fi
 			done #steps
 		done #filetags
@@ -459,10 +461,10 @@ print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
 # required for interactive use
-cd $(dirname $0)
+cd $(dirname $(realpath $0)) 
 if [[ "$endmonth" == "12" ]] && [[ "$run_monitoring" == "yes" ]] ; then
     print "will now run NEMO monitoring until $enddate"
-   $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 
+    $(dirname $(realpath $0))/nemo_monitoring.sh -r ${EXP_ID} 
 else
    print "NEMO monitoring switched off, use -m to activate it"
 fi

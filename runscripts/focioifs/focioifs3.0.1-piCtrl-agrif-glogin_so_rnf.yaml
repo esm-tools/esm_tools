@@ -24,7 +24,7 @@ general:
   
    # machine specific setup 
    account: shk00060 
-   base_dir: ${general.homedir}/esm/esm-experiments/ 
+   base_dir: ${general.homedir}/esm/esm-experiments-mdc/ 
    pool_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2 
    
    postprocessing: 1
@@ -72,7 +72,8 @@ oasis3mct:
    use_lucia: True
    debug_level: 1 
    #export_mode: EXPOUT
-   # coupling methods
+   # coupling methods, some of them are default but put here
+   # for completeness
    a2o_remap_method: "gauswgt"
    o2a_remap_method: "gauswgt"
    c2o_remap_method: "bilinear"
@@ -84,8 +85,15 @@ oasis3mct:
    # Remapping AGRIF1 mask from NEMO grid to OpenIFS
    a2agr1_remap_method: "gauswgt"
    agr12a_remap_method: "bilinear"
+<<<<<<< HEAD
 
    o2a_agr1m_remap_method: "distwgt"  
+=======
+   o2a_agr1m_remap_method: "distwgt"  
+   # special trick from Joakim, see configs/setups/focioifs/focioifs.yaml for details
+   rmp_c2agr1_file: rmp_rnfs_to_agrc_ZERO.nc
+
+>>>>>>> geomar
    pool_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/
    ini_parent_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/
    oasis_date_stamp: "_18400101-18500101"   
@@ -107,7 +115,11 @@ nemo:
    jpnj: 24
    nproc: 864
    nest1: viking10
+<<<<<<< HEAD
    loccunif_nb_nest: 12
+=======
+   loccunif_nb_nest: 12 # default is now 16 
+>>>>>>> geomar
    
    add_namelist_changes:
       namelist_cfg:

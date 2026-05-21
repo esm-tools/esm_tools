@@ -85,12 +85,37 @@ Runi time variables
    namelist_changes,    <component>,            "Functionality to handle changes in the namelists from the yaml files (see :ref:`yaml:Changing Namelists`)."
    nproc,               <component>,            Number of processors to use for the model.
    nproca/nprocb,       <component>,            "Number of processors for different MPI tasks/ranks. Incompatible with ``nproc``."
+   nnodes_envvar,       computer,               "Name of the environment variable holding the number of allocated nodes (e.g. ``SLURM_JOB_NUM_NODES``)."
    omp_num_threads,     <component>,            "A variable to control the number of OpenMP threads used by a component during an heterogeneous parallelization run. This variable **has to be defined inside the section of the components** for which OpenMP needs to be used. This variable will be ignored if ``computer.heterogeneous_parallelization`` is not set to ``true``."
-   parallel_file_movements,     general,        "A variable indicating whether the file movements should be done in parallel or not. If ``threads`` (default), the file movements will be done in parallel in a single node. If ``False``, the file movements will be done sequentially."
+   parallel_file_movements,     general,        "Controls how file movements are parallelized. ``""dask""`` (default) distributes I/O across all compute nodes via a Dask cluster, ``""threads""`` uses local threads on a single node, ``False`` runs sequentially. See :ref:`esm_runscripts:Parallel File Movements`."
    pool_dir,            general,                "Path to the pool directory to read in mesh data, forcing files, inputs, etc."
    post_processing,     <component>,            Boolean to indicate whether to run postprocessing or not.
+   post_run_commands,   computer,               "Shell commands appended to the job script after the model execution and before resubmission. Can be a ``string`` or a ``list`` of ``strings``."
+   pre_recipe.exclude_job_types,  general,      "List of job types that skip ``pre_recipe.steps`` (default: ``[""prepare"", ""prepexp"", ""observe""]``)."
+   pre_recipe.steps,    general,                "List of recipe step names injected before the main recipe (e.g. ``[""initialize_dask_cluster""]``). Steps listed here run for all job types except those in ``pre_recipe.exclude_job_types``."
+   save_batch_env_patterns,  computer,          "List of grep patterns used to capture and restore batch system environment variables across job script stages (e.g. ``[""SLURM""]`` or ``[""PBS""]``)."
    setup_dir,           general,                "Absolute path of the setup directory (where it was installed by `esm_master`)."
+   system_components,   general,                "List of non-model config sections included in file-list iteration loops (default: ``[""general"", ""dask""]``)."
    time_step,           <component>,            Time step of the component in seconds.
+
+Dask variables
+--------------
+
+Variables in the ``dask`` section control the Dask cluster used for parallel file
+movements. See :ref:`esm_runscripts:Parallel File Movements` for usage details.
+
+.. csv-table::
+   :header: Key, Section, Description
+   :widths: 10, 10, 80
+
+   actions,              dask,           "List of actions that trigger Dask cluster initialization (default: ``[""parallel_file_movements""]``)."
+   client_timeout,       dask,           "Timeout in seconds when probing the Dask scheduler status (default: ``0.05``)."
+   init_scheduler_cmd,   dask,           "Shell command to start the Dask scheduler. Defined per batch system (e.g. in ``slurm.yaml``)."
+   init_workers_cmd,     dask,           "Shell command to start the Dask workers. Defined per batch system (e.g. in ``slurm.yaml``)."
+   parallel_file_movements,  general,    "Controls how file movements are parallelized. ``""dask""`` (default) distributes I/O across all compute nodes via a Dask cluster, ``""threads""`` uses local threads on a single node, ``False`` runs sequentially. See :ref:`esm_runscripts:Parallel File Movements`."
+   poll_interval,        dask,           "Polling interval in seconds for Dask cluster readiness checks (default: ``0.5``)."
+   scheduler_json,       dask,           "Full path to the Dask scheduler JSON file used for client connections (default: ``${general.thisrun_work_dir}/dask_scheduler.json``)."
+   workers_timeout,      dask,           "Maximum time in seconds to wait for Dask workers to become available (default: ``5``)."
 
 Calendar variables
 ------------------

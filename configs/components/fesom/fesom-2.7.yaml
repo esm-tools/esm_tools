@@ -31,6 +31,8 @@ fesom:
         branch: "2.7.3"
       "2.7.4":
         branch: "2.7.4"
+      "2.7.5":
+        branch: "2.7.5"
       "2.7-main":
         branch: "main"
         #namelist_dir: "${model_dir}/config/"

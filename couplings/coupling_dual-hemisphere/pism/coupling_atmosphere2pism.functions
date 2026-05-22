@@ -2004,10 +2004,12 @@ ic_debm2pism_ablation_debm_make_surface_forcing_add_surface_temperature() {
                 -a coordinates,lat,d,, \
                 -a coordinates,lon,d,, \
                 -a coordinates,time,d,, \
-                -a coordinates,time_2,d,, \
                 -a coordinates,x,d,, \
                 -a coordinates,y,d,, \
                 ${COUPLE_DIR}/${PISM_HEMISPHERE}/smb.nc
+        # time_2 only exists in some CDO output variants; suppress the error if absent
+        ncatted -h -a coordinates,time_2,d,, \
+                ${COUPLE_DIR}/${PISM_HEMISPHERE}/smb.nc 2>/dev/null || true
 
         cleanup_list="$cleanup_list ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn2.nc"
         cd $here
@@ -2038,8 +2040,9 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
             echo -e "\t\t\t- First run, you can specify to use DEBM_MASK_FILE to get the mask you want to use"
             DEBM_MASK_FILE=${DEBM_MASK_FILE:-${POOL_DIR_pism}/masks/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_mask_${RES_pism}.nc}
         else
-            $cdo -f nc -selvar,mask ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc $mask_file
-            DEBM_MASK_FILE=${mask_file}
+            debm_mask_tmp=${mask_file%.nc}_from_pism.nc
+            $cdo -f nc -selvar,mask ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc $debm_mask_tmp
+            DEBM_MASK_FILE=$debm_mask_tmp
         fi
 
         echo -e "\t\t\t  DEBM_MASK_FILE=${DEBM_MASK_FILE}"
@@ -2048,6 +2051,7 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
              -setmisstoc,0 -lec,3 -selvar,mask -seltimestep,-1 \
              $DEBM_MASK_FILE \
              $mask_file
+        [ -f "${mask_file%.nc}_from_pism.nc" ] && rm "${mask_file%.nc}_from_pism.nc"
 
         # apply mask
         LIST_OF_DEBM_VARS="SNH ME SMB RZ A tsurf"
@@ -2089,13 +2093,6 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
                 echo -e "\t\t\t\t x miss  $var"
             fi
         done
-
-
-
-
-
-        echo "Use dEBM values across the entire domain (equals skipping a mask)"
-        cp $smb_file surface_mass_balance_masked.nc
 
         if [ "x${debug_apply_ic_atm2debm_mask}" == "x1" ]; then
                 echo -e "\t\t@ DEBUG: Opening the results in ncview for you"

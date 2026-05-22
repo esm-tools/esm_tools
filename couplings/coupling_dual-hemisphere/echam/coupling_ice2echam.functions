@@ -247,9 +247,6 @@ update_orography_apply_orography_anomaly() {
         done
         unset _orog_retry
         ncrename -v .${ice_orography_difference_name},oromea $ifile
-        # CDO setmisstoc cannot process variables without a time dimension; use NCO.
-        # .fill() is not supported in all NCO builds; use where() instead.
-        ncap2 -O -s 'where(oromea < -1.0e+30) oromea=0.0f' $ifile tmp && mv tmp $ifile || true
         # Always start from the ECHAM restart reference; never reuse a stale per-run file.
         rm -f ${ofile}
         if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
@@ -263,7 +260,10 @@ update_orography_apply_orography_anomaly() {
                 ncrename -v OROMEA,oromea tmp_oromea
         fi
         change_lonlat $ifile oromea
-        ncbo -O --operation=add $ifile tmp_oromea $ofile 2>> nco_stderr_ice2echam
+        # Use CDO -setmisstoc,0 to zero fill values in the ice orog difference before
+        # adding to ECHAM oromea.  ncap2 where() + ncbo propagates fill values on
+        # Lustre (ncap2 silently fails to overwrite), corrupting oromea.
+        cdo -s add -setmisstoc,0 -seltimestep,1 $ifile tmp_oromea $ofile 2>> cdo_stderr_ice2echam
 }
 
 ## @fn update_orography_prepare_calnoro_high_res() 

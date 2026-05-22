@@ -263,7 +263,26 @@ echam_ice_concatenate_files() {
 
             latest_restart_file="${RESTART_DIR_echam}/restart_${EXP_ID}_echam_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc"
             echo " * latest_restart_file=${latest_restart_file}"
-          
+
+            # Validate oromea: fill values from a failed orography update appear as
+            # large negative numbers (~-9e33).  Valid sub-sea-level topography can be
+            # as low as ~-500 m, so use -1000 as the corruption threshold.
+            _oromea_min=$(cdo -s output -fldmin -selname,oromea ${latest_restart_file} 2>/dev/null | tr -d ' \n')
+            if [ -z "${_oromea_min}" ] || [ "$(echo "${_oromea_min} < -1000" | bc -l)" -eq 1 ]; then
+                echo " * WARNING: oromea in ${latest_restart_file} is corrupted (min=${_oromea_min})"
+                echo " * Falling back to previous year restart for oromea"
+                _fallback=$(ls ${RESTART_DIR_echam}/restart_${EXP_ID}_echam_*.nc \
+                    | sort | grep -v "${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}" | tail -1)
+                if [ -z "${_fallback}" ]; then
+                    echo " * ERROR: no fallback restart found; oromea may be corrupted"
+                else
+                    latest_restart_file=${_fallback}
+                    echo " * fallback restart: ${latest_restart_file}"
+                fi
+                unset _fallback
+            fi
+            unset _oromea_min
+
             cdo -s chname,oromea,orog -selname,oromea ${latest_restart_file} orog_tmp
             ncks -A -v orog orog_tmp atmosphere_file_for_ice.nc  2>> ${COUPLE_DIR}/nco_stderr_echam2ice
             rm orog_tmp

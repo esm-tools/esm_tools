@@ -199,37 +199,37 @@ function iterative_coupling_ice_fesom_rename_vars {
 ########################################################################
 function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # iceberg coupling LA
-    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
-
-    counter=0
-    COUNT_MAX=12
-    while [ ${counter} -lt ${COUNT_MAX} ]
-    do
-        echo "          * inside while loop "
-        if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
-            break
-        fi
-
-        echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
-        sleep 10
-        counter=$((counter+1))
-    done
-
-    latest_pism_output=${COUPLE_DIR}/../outdata/pism//latest_ex_file_pism.nc
-    if [[ -f ${latest_pism_output} ]]; then
-        pism_discharge_file=${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc
-        #pism_discharge_file=${latest_pism_output}
-    elif [[ -f ${SPINUP_FILE_pism} ]]; then
-        pism_discharge_file=${SPINUP_FILE_pism}
-    fi
-
-    echo "CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
-    echo "COUPLE_DIR: ${COUPLE_DIR}"
-    echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
-
-    cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
-            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
-    
+#    #latest_pism_output=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
+#
+#    counter=0
+#    COUNT_MAX=12
+#    while [ ${counter} -lt ${COUNT_MAX} ]
+#    do
+#        echo "          * inside while loop "
+#        if [ -f ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc ]; then
+#            break
+#        fi
+#
+#        echo; echo "        * File ${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc not found. Waiting for 10 seconds ..."
+#        sleep 10
+#        counter=$((counter+1))
+#    done
+#
+#    latest_pism_output=${COUPLE_DIR}/../outdata/pism//latest_ex_file_pism.nc
+#    if [[ -f ${latest_pism_output} ]]; then
+#        pism_discharge_file=${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc
+#        #pism_discharge_file=${latest_pism_output}
+#    elif [[ -f ${SPINUP_FILE_pism} ]]; then
+#        pism_discharge_file=${SPINUP_FILE_pism}
+#    fi
+#
+#    echo "CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
+#    echo "COUPLE_DIR: ${COUPLE_DIR}"
+#    echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
+#
+#    cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+#            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+#    
     use_icesheet_coupling=1
 }
 

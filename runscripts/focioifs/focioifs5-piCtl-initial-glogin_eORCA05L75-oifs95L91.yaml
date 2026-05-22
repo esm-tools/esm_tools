@@ -220,3 +220,6 @@ computer:
            LD_LIBRARY_PATH: '$LD_LIBRARY_PATH:${model_dir}/oifs-48r1/build/lib:$MPI_LIB:$AEC_ROOT/lib:$HDF5ROOT/lib:$NetCDF_C_ROOT/lib:$NETCDF_ROOT/lib:$LD_LIBRARY_PATH'
            GRIB_SAMPLES_PATH: '${model_dir}/oifs-48r1/build/share/eccodes/ifs_samples/grib1_mlgrib2'
            OIFS_LOGFILE: '${model_dir}/oifs-48r1/build/oifs_test_log.txt'
+           # required on glogin where eccodes is not available for
+           # all compiler versions, specific to oifs48r1
+           PATH: "${general.model_dir}/${oifs.destination}/install/bin"

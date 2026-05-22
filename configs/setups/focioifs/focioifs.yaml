@@ -279,18 +279,13 @@ oifs:
         nproc: 287
 
         # For coupled setups we can use ocean currents
-        use_ocean_currents: False
         choose_nemo.slp_coupling:
                 True:
                         add_namelist_changes:
                                 fort.4:
                                         NAMECECFG:
                                                 ECE_CPL_MSLP: true
-                False:
-                        add_namelist_changes:
-                                fort.4:
-                                        NAMECECFG:
-                                                ECE_CPL_MSLP: false
+        use_ocean_currents: False
         choose_use_ocean_currents:
                 True:
                         add_namelist_changes:
@@ -308,11 +303,18 @@ oifs:
                                                 LECURR: ".false."
 
 
+        choose_major_version:
+           "43r3":
+              choose_resolution:
+                TCO95:
+                   add_namelist_changes:
+                      fort.4:
+                         NAMMCC:
+                            # Lower ocean albedo to increase global surface temp
+                            RALBSEAD_NML: 0.045
         choose_resolution:
                 TCO95:
-                     nproc: 287
-                     choose_major_version:
-                        "48r1":
+                           nproc: 287
                            add_namelist_changes:
                               fort.4:
                                      NAMCLDP:
@@ -321,18 +323,6 @@ oifs:
                                              # This was done to avoid strong cold bias in Tco95
                                              # which was caused by excessive cloud cover
                                              RCLDIFF: 5.e-6 # default 3e-6
-                        "*":
-                           add_namelist_changes:
-                              fort.4:
-                                     NAMCLDP:
-                                             # Increase diffusion rate for clouds
-                                             # see eq 7.47 in IFS 43r3 documentation, part IV
-                                             # This was done to avoid strong cold bias in Tco95
-                                             # which was caused by excessive cloud cover
-                                             RCLDIFF: 5.e-6 # default 3e-6
-                                     NAMMCC:
-                                             # Lower ocean albedo to increase global surface temp
-                                             RALBSEAD_NML: 0.045
 
                 TCO199:
                      nproc: 575
@@ -1448,6 +1438,9 @@ oasis3mct:
                 'rnfm->agr1':
                         lag: ${r2o_lag}
                         seq: 3
+                'rnfs->agrc':
+                        lag: ${r2o_lag}
+                        seq: 3
                 'rnfs->agr1c':
                         lag: ${r2o_lag}
                         seq: 3
@@ -1782,7 +1775,7 @@ oasis3mct:
                                                         nb_of_neighbours: 15
                                                         weight: 0.1
                                                 - mapping:
-                                                        mapname: ${rmp_a2agr1_nc_file:}
+                                                        mapname: ${rmp_a2agr1_nc_file}
                                                         map_regrid_on: src
                                 
                                 aw2agr1_nc:
@@ -2322,10 +2315,10 @@ computer:
                blogin:
                   compiler_mpi: intel2024_impi2021
                glogin:
-                  #compiler_mpi: intel2021_impi2021
+                  compiler_mpi: intel2021_impi2021
                   #compiler_mpi: intel2023_ompi416
                   #compiler_mpi: gcc14_ompi417 # compiles nemo,xios,oasis,but not oifs
-                  compiler_mpi: gcc11_ompi417
+                  #compiler_mpi: gcc11_ompi417
                   iolibraries: system_libs
                   #compiler_mpi: intel2021_impi2019
                   #iolibraries: spack_libs
@@ -2341,9 +2334,6 @@ computer:
                FOCI_USE_CPLNG: "active"
                FESOM_USE_CPLNG: "no"
                ECE_USE_CPLNG: "no"
-               # required on glogin where eccodes is not available for
-               # all compiler versions
-               PATH: '$PATH:${general.model_dir}/${oifs.destination}/install/bin'
             choose_computer.name:
                levante:
                   compiler_mpi: gnu11_ompi4 
@@ -2354,9 +2344,9 @@ computer:
                   compiler_mpi: intel2024_impi2021
                glogin:
                   #compiler_mpi: intel2023_ompi416
-                  #compiler_mpi: intel2021_impi2021
+                  compiler_mpi: intel2021_impi2021
                   #compiler_mpi: gcc14_ompi417 # compiles nemo,xios,oasis,but not oifs
-                  compiler_mpi: gcc11_ompi417
+                  #compiler_mpi: gcc11_ompi417
                   iolibraries: system_libs
                   #compiler_mpi: intel2021_impi2019
                   #iolibraries: spack_libs

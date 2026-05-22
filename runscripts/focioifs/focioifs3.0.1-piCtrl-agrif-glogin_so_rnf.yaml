@@ -39,6 +39,7 @@ focioifs:
 oifs:
    pool_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2 
    version: "43r3"
+   destination: "oifs-43r3-foci30"
    with_xios: True
    scenario: "piControl"
    mip: "cmip6"
@@ -85,15 +86,11 @@ oasis3mct:
    # Remapping AGRIF1 mask from NEMO grid to OpenIFS
    a2agr1_remap_method: "gauswgt"
    agr12a_remap_method: "bilinear"
-<<<<<<< HEAD
 
-   o2a_agr1m_remap_method: "distwgt"  
-=======
    o2a_agr1m_remap_method: "distwgt"  
    # special trick from Joakim, see configs/setups/focioifs/focioifs.yaml for details
    rmp_c2agr1_file: rmp_rnfs_to_agrc_ZERO.nc
 
->>>>>>> geomar
    pool_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/
    ini_parent_dir: /mnt/ceph-hdd/cold/shk00060/foci_input2/oasis3_openifs43r3-tco95_orca05_viking10/
    oasis_date_stamp: "_18400101-18500101"   
@@ -115,11 +112,7 @@ nemo:
    jpnj: 24
    nproc: 864
    nest1: viking10
-<<<<<<< HEAD
-   loccunif_nb_nest: 12
-=======
    loccunif_nb_nest: 12 # default is now 16 
->>>>>>> geomar
    
    add_namelist_changes:
       namelist_cfg:

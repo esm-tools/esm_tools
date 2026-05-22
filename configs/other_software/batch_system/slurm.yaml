@@ -127,8 +127,7 @@ computer:
             # Case 2 happens AFTER all compute is done — we don't want to
             # scancel the job (that would skip tidy and lose all output
             # recovery). Demote to `warn` here; the specific real-failure
-            # triggers below (oom_kill, Out Of Memory, Segmentation fault,
-            # Aborted, Bus error, DUE TO TIME LIMIT) still kill the job.
+            # triggers below still kill the job.
             "srun: error:" :
                     frequency: 30
                     method: "warn"
@@ -155,10 +154,33 @@ computer:
                     message: "MODEL ERROR: srun reported Out Of Memory on a task."
                     file: "stdout"
 
-            "Segmentation fault" :
+            # NOTE: `Segmentation fault` is NOT in the kill list. At HR scale
+            # (Final_CMIP7_IO_Test_14, Test_17 with ~3281 ranks) FESOM rank
+            # 1394 hits a UCX `ucs_mpool_cleanup` NULL-deref SIGSEGV during
+            # MPI_Finalize *after* compute has reached the final step. The
+            # bash exit message is indistinguishable from a real compute
+            # segfault via substring match (esm_tools' check_error is
+            # substring-only, no regex). Killing on it would lose tidy
+            # for a benign teardown bug. The narrower triggers below catch
+            # real Fortran / MPI / heap crashes; raw C-level segfaults
+            # during compute will produce incomplete output detectable on
+            # inspection (output volume / final timestep mismatch).
+            "forrtl: severe" :
                     frequency: 30
                     method: "kill"
-                    message: "MODEL ERROR: segmentation fault."
+                    message: "MODEL ERROR: Intel Fortran runtime error (forrtl: severe ...)."
+                    file: "stdout"
+
+            "MPI_ABORT was invoked" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: explicit MPI_ABORT from a rank."
+                    file: "stdout"
+
+            "BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: OpenMPI BAD TERMINATION (process exited abnormally during compute)."
                     file: "stdout"
 
             "Bus error" :

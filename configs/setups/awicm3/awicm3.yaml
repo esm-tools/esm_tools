@@ -30,6 +30,7 @@ general:
         - 'v3.3.0'
         - 'v3.4.0'
         - 'v3.4.1'
+        - 'v3.4.2'
         - 'develop'
         - 'frontiers-xios'
 
@@ -116,6 +117,14 @@ general:
             major_version: v3.4
             couplings:
             - awicm3_v3.4.0
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          v3.4.2:
+            major_version: v3.4
+            couplings:
+            - awicm3_v3.4.2
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -513,11 +522,14 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
 
-        # aEVP only on the high-resolution DARS2 mesh on develop — reverses
-        # HR sithick drift (Koldunov 2019 JAMES). aEVP is unstable on coarse
-        # meshes (e.g. CORE2), so other resolutions keep their per-mesh
-        # whichEVP default from fesom-2.7.yaml.
+        # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop —
+        # reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is unstable
+        # on coarse meshes (e.g. CORE2), so other resolutions keep their
+        # per-mesh whichEVP default from fesom-2.7.yaml.
         choose_general.version:
+                v3.4.2:
+                        choose_resolution:
+                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
                 develop:
                         choose_resolution:
                                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}

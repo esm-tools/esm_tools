@@ -147,3 +147,10 @@ computer:
                         OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
                         OIFS_CFLAGS: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
                         OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'
+                oneapi2025_openmpi5:
+                    # Same Intel-style flags as intel2022_openmpi; ifx 2025.3.2
+                    # accepts the same flags. Pairs with openmpi/5.0.10-oneapi-2025.3.2 (UCX 1.19.1).
+                    add_export_vars:
+                        OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
+                        OIFS_CFLAGS: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
+                        OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'

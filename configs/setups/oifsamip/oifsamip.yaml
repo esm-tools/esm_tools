@@ -390,7 +390,6 @@ computer:
                         OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
                         OIFS_CFLAG: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
                         OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'
-
 lpj_guess:
     version: "4.1.2"
     build_type: Release # Available options: Debug, Release
@@ -441,7 +440,113 @@ lpj_guess:
             ny: "${ny}"
             oasis_grid_type: "D"
             oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TCO95-land:
+            name: TCO95-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TCO319-land:
+            name: TCO319-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+
+
+    nproc: 128
+    proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
+    proc_list: $(( ${proc_list_entry} ))
+
+    # run_year: Chunk start year - used for restart file naming
+    run_year: ${start_date!syear}
+    # initial_year: Experiment start year - for continuous output years in spinup
+    initial_year: ${initial_date!syear}
+    run_month: 1
+    run_day: 1
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+    co2_coupling: 0
+    fourxCO2: false
+    onepcCO2: false
+    fixed_CO2: -1
+    fixed_ndep: -1
+    fixed_LU: -1
+    nyear_spinup: 1
+    freenyears: 0
+
+
+
+    config_sources:
+        tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
+        ins_files: ${namelist_dir}/*.ins
+        lpjg_output_ins: ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
+        "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins.j2
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2
+
+        "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
+
+    config_in_work:
+        tmp_yaml_file: lpjg_steps.yaml
+        ins_files: /*.ins
+        lpjg_output_ins: lpjg_output.ins
+        "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_output.ins
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
+
+        "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
+
+
+    forcing_files:
+        soil_layer_type: soil_layer_type
+        CO2: CO2
 
     forcing_sources:
-        soil_layer_type: ${lpj_guess.slt_dir}/slt_${resolution}_AMIP.nc
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_AMIP.nc
+        CO2: ${lpj_guess.co2_source_file}
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_AMIP.nc
+        "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
+
+    forcing_in_work:
+        # Work directory files use old naming (slt_ATMO.nc) that LPJ-GUESS binary expects
+        soil_layer_type: slt_${mygrid}.nc
+        CO2: ${lpj_guess.co2_work_file}
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
+        "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/${lpj_guess.co2_work_file}
+
+    # Create empty folders for landuse and fire in work
+    create_folders:
+        - ${work_dir}/landuse
+        - ${work_dir}/fire
+
+    choose_general.run_number:
+        1:
+            input_sources:
+                vegin: ${oasis3mct.input_dir}/vegin.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/vegin.nc
+            input_in_work:
+                vegin: vegin.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc
+            choose_general.with_co2_veg_coupling:
+                true:
+                    add_input_sources:
+                        rst_co2_av: ${oasis3mct.input_dir}/rst_co2_av.nc
+                        "rst_co2_avInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/rst_co2_av.nc
+                    add_in_work:
+                        rst_co2_av: rst_co2_av.nc
+                        "rst_co2_avInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/rst_co2_av.nc
+
+    choose_general.with_co2_veg_coupling:
+        true:
+            co2_coupling: 1
 

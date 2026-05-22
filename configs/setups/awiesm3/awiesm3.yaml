@@ -612,6 +612,7 @@ xios:
     compression_level: 1
     fesom_regular_res_lon: 360
     fesom_regular_res_lat: 180
+    read_weight: false
     truncation: "${oifs.truncation}"
     choose_truncation:
         TCO:

@@ -72,30 +72,4 @@
 
   </file_group>
 
-  <!-- ================= Monthly regridded surface ================= -->
-  <!-- Enabled via fesom.regrid_surface_output: true. Interpolates all 2D
-       surface fields from the unstructured FESOM mesh to a regular lat/lon
-       grid. Resolution from xios.regular_res_lon/lat. -->
-  {% if fesom.regrid_surface_output %}
-  <file_group id="fesom_1mo_reg" output_freq="1mo" split_freq="1y" enabled="true">
-    <!-- 2D node fields -->
-    <file id="f_sst_reg"    name="sst.fesom.reg"   ><field field_ref="sst"    grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_sss_reg"    name="sss.fesom.reg"   ><field field_ref="sss"    grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_ssh_reg"    name="ssh.fesom.reg"   ><field field_ref="ssh"    grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_uice_reg"   name="uice.fesom.reg"  ><field field_ref="uice"   grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_vice_reg"   name="vice.fesom.reg"  ><field field_ref="vice"   grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_a_ice_reg"  name="a_ice.fesom.reg" ><field field_ref="a_ice"  grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_m_ice_reg"  name="m_ice.fesom.reg" ><field field_ref="m_ice"  grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_m_snow_reg" name="m_snow.fesom.reg"><field field_ref="m_snow" grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_MLD1_reg"   name="MLD1.fesom.reg"  ><field field_ref="MLD1"   grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_MLD2_reg"   name="MLD2.fesom.reg"  ><field field_ref="MLD2"   grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_MLD3_reg"   name="MLD3.fesom.reg"  ><field field_ref="MLD3"   grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_fw_reg"     name="fw.fesom.reg"    ><field field_ref="fw"     grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_fh_reg"     name="fh.fesom.reg"    ><field field_ref="fh"     grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <!-- 2D element fields -->
-    <file id="f_tx_sur_reg" name="tx_sur.fesom.reg"><field field_ref="tx_sur" grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_ty_sur_reg" name="ty_sur.fesom.reg"><field field_ref="ty_sur" grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-  </file_group>
-  {% endif %}
-
 </file_definition>

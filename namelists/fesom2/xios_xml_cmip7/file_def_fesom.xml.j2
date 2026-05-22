@@ -147,66 +147,131 @@
 
   </file_group>
 
-  <!-- ================= Monthly regridded surface ================= -->
-  <!-- Enabled via fesom.regrid_surface_output: true. Interpolates all 2D
-       surface fields from the unstructured FESOM mesh to a regular lat/lon
-       grid. Resolution from xios.regular_res_lon/lat. -->
+  <!-- ================= Regridded output (regular lat/lon) ================= -->
+  <!-- Gated by fesom.regrid_surface_output. Field set mirrors the native
+       fesom_1d and fesom_1mo blocks above, at the same frequencies. Each
+       regridded file is named "<var>.fesom.reg" (XIOS appends split suffix).
+       Land cells with no source contribution are written as 0 (see
+       interpolate_domain renormalize="true" in domain_def_fesom.xml.j2). -->
   {% if fesom.regrid_surface_output %}
+
+  <!-- Daily regridded 2D — mirrors fesom_1d -->
+  <file_group id="fesom_1d_reg" output_freq="1d" split_freq="1y" enabled="true">
+    <file id="f_sst_reg"      name="sst.fesom.reg"     ><field field_ref="sst"      grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_sss_reg"      name="sss.fesom.reg"     ><field field_ref="sss"      grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_ssh_reg"      name="ssh.fesom.reg"     ><field field_ref="ssh"      grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_uice_reg"     name="uice.fesom.reg"    ><field field_ref="uice"     grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_vice_reg"     name="vice.fesom.reg"    ><field field_ref="vice"     grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_a_ice_reg"    name="a_ice.fesom.reg"   ><field field_ref="a_ice"    grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_m_snow_reg"   name="m_snow.fesom.reg"  ><field field_ref="m_snow"   grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_ist_reg"      name="ist.fesom.reg"     ><field field_ref="ist"      grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_MLD3_reg"     name="MLD3.fesom.reg"    ><field field_ref="MLD3"     grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_h_ice_reg"    name="h_ice.fesom.reg"   ><field field_ref="h_ice"    grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_h_snow_reg"   name="h_snow.fesom.reg"  ><field field_ref="h_snow"   grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_unod_sfc_reg" name="unod_sfc.fesom.reg"><field field_ref="unod_sfc" grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+    <file id="f_vnod_sfc_reg" name="vnod_sfc.fesom.reg"><field field_ref="vnod_sfc" grid_ref="grid_2d_nod_reg" freq_op="1d"/></file>
+  </file_group>
+
+  <!-- Monthly regridded 2D — mirrors fesom_1mo 2D set (excludes 0D scalars) -->
   <file_group id="fesom_1mo_reg" output_freq="1mo" split_freq="1y" enabled="true">
-    <!-- 2D node fields (all surface nodes from fesom_1d + fesom_1mo) -->
-    <file id="f_sst_reg"             name="sst.fesom.reg"            ><field field_ref="sst"             grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_sss_reg"             name="sss.fesom.reg"            ><field field_ref="sss"             grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_ssh_reg"             name="ssh.fesom.reg"            ><field field_ref="ssh"             grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_a_ice_reg"           name="a_ice.fesom.reg"          ><field field_ref="a_ice"           grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_m_ice_reg"           name="m_ice.fesom.reg"          ><field field_ref="m_ice"           grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_m_snow_reg"          name="m_snow.fesom.reg"         ><field field_ref="m_snow"          grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_uice_reg"            name="uice.fesom.reg"           ><field field_ref="uice"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_vice_reg"            name="vice.fesom.reg"           ><field field_ref="vice"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_ist_reg"             name="ist.fesom.reg"            ><field field_ref="ist"             grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_h_ice_reg"           name="h_ice.fesom.reg"          ><field field_ref="h_ice"           grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_h_snow_reg"          name="h_snow.fesom.reg"         ><field field_ref="h_snow"          grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_MLD1_reg"            name="MLD1.fesom.reg"           ><field field_ref="MLD1"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_MLD2_reg"            name="MLD2.fesom.reg"           ><field field_ref="MLD2"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_MLD3_reg"            name="MLD3.fesom.reg"           ><field field_ref="MLD3"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_fw_reg"              name="fw.fesom.reg"             ><field field_ref="fw"              grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_fh_reg"              name="fh.fesom.reg"             ><field field_ref="fh"              grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_unod_sfc_reg"        name="unod_sfc.fesom.reg"       ><field field_ref="unod_sfc"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_vnod_sfc_reg"        name="vnod_sfc.fesom.reg"       ><field field_ref="vnod_sfc"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_thdgrarea_reg"       name="thdgrarea.fesom.reg"      ><field field_ref="thdgrarea"       grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_dyngrarea_reg"       name="dyngrarea.fesom.reg"      ><field field_ref="dyngrarea"       grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_thdgrice_reg"        name="thdgrice.fesom.reg"       ><field field_ref="thdgrice"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_dyngrice_reg"        name="dyngrice.fesom.reg"       ><field field_ref="dyngrice"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_thdgrsnw_reg"        name="thdgrsnw.fesom.reg"       ><field field_ref="thdgrsnw"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_atmice_x_reg"        name="atmice_x.fesom.reg"       ><field field_ref="atmice_x"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_atmice_y_reg"        name="atmice_y.fesom.reg"       ><field field_ref="atmice_y"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_iceoce_x_reg"        name="iceoce_x.fesom.reg"       ><field field_ref="iceoce_x"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_iceoce_y_reg"        name="iceoce_y.fesom.reg"       ><field field_ref="iceoce_y"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_fw_ice_reg"          name="fw_ice.fesom.reg"         ><field field_ref="fw_ice"          grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_fw_snw_reg"          name="fw_snw.fesom.reg"         ><field field_ref="fw_snw"          grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_virtsalt_reg"        name="virtsalt.fesom.reg"       ><field field_ref="virtsalt"        grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_relaxsalt_reg"       name="relaxsalt.fesom.reg"      ><field field_ref="relaxsalt"       grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_qcon_reg"            name="qcon.fesom.reg"           ><field field_ref="qcon"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_apnd_reg"            name="apnd.fesom.reg"           ><field field_ref="apnd"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_hpnd_reg"            name="hpnd.fesom.reg"           ><field field_ref="hpnd"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_ipnd_reg"            name="ipnd.fesom.reg"           ><field field_ref="ipnd"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_evap_reg"            name="evap.fesom.reg"           ><field field_ref="evap"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_prec_reg"            name="prec.fesom.reg"           ><field field_ref="prec"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_snow_reg"            name="snow.fesom.reg"           ><field field_ref="snow"            grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_runoff_reg"          name="runoff.fesom.reg"         ><field field_ref="runoff"          grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_pbo_reg"             name="pbo.fesom.reg"            ><field field_ref="pbo"             grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_opottemptend_reg"    name="opottemptend.fesom.reg"   ><field field_ref="opottemptend"    grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
+
+    <!-- 2D nodes -->
+    <file id="f_m_ice_reg"            name="m_ice.fesom.reg"           ><field field_ref="m_ice"            grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_MLD1_reg"             name="MLD1.fesom.reg"            ><field field_ref="MLD1"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_MLD2_reg"             name="MLD2.fesom.reg"            ><field field_ref="MLD2"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_fw_reg"               name="fw.fesom.reg"              ><field field_ref="fw"               grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_fh_reg"               name="fh.fesom.reg"              ><field field_ref="fh"               grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_thdgrarea_reg"        name="thdgrarea.fesom.reg"       ><field field_ref="thdgrarea"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_dyngrarea_reg"        name="dyngrarea.fesom.reg"       ><field field_ref="dyngrarea"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_thdgrice_reg"         name="thdgrice.fesom.reg"        ><field field_ref="thdgrice"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_dyngrice_reg"         name="dyngrice.fesom.reg"        ><field field_ref="dyngrice"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_thdgrsnw_reg"         name="thdgrsnw.fesom.reg"        ><field field_ref="thdgrsnw"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_atmice_x_reg"         name="atmice_x.fesom.reg"        ><field field_ref="atmice_x"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_atmice_y_reg"         name="atmice_y.fesom.reg"        ><field field_ref="atmice_y"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_iceoce_x_reg"         name="iceoce_x.fesom.reg"        ><field field_ref="iceoce_x"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_iceoce_y_reg"         name="iceoce_y.fesom.reg"        ><field field_ref="iceoce_y"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_fw_ice_reg"           name="fw_ice.fesom.reg"          ><field field_ref="fw_ice"           grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_fw_snw_reg"           name="fw_snw.fesom.reg"          ><field field_ref="fw_snw"           grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_virtsalt_reg"         name="virtsalt.fesom.reg"        ><field field_ref="virtsalt"         grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_relaxsalt_reg"        name="relaxsalt.fesom.reg"       ><field field_ref="relaxsalt"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_qcon_reg"             name="qcon.fesom.reg"            ><field field_ref="qcon"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_apnd_reg"             name="apnd.fesom.reg"            ><field field_ref="apnd"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_hpnd_reg"             name="hpnd.fesom.reg"            ><field field_ref="hpnd"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_ipnd_reg"             name="ipnd.fesom.reg"            ><field field_ref="ipnd"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_evap_reg"             name="evap.fesom.reg"            ><field field_ref="evap"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_prec_reg"             name="prec.fesom.reg"            ><field field_ref="prec"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_snow_reg"             name="snow.fesom.reg"            ><field field_ref="snow"             grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_runoff_reg"           name="runoff.fesom.reg"          ><field field_ref="runoff"           grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_pbo_reg"              name="pbo.fesom.reg"             ><field field_ref="pbo"              grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_opottemptend_reg"     name="opottemptend.fesom.reg"    ><field field_ref="opottemptend"     grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
     <file id="f_opottemprmadvect_reg" name="opottemprmadvect.fesom.reg"><field field_ref="opottemprmadvect" grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
-    <file id="f_opottempdiff_reg"    name="opottempdiff.fesom.reg"   ><field field_ref="opottempdiff"    grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_osalttend_reg"       name="osalttend.fesom.reg"      ><field field_ref="osalttend"       grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_osaltrmadvect_reg"   name="osaltrmadvect.fesom.reg"  ><field field_ref="osaltrmadvect"   grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <file id="f_osaltdiff_reg"       name="osaltdiff.fesom.reg"      ><field field_ref="osaltdiff"       grid_ref="grid_2d_nod_reg"  freq_op="1mo"/></file>
-    <!-- 2D element fields -->
-    <file id="f_tx_sur_reg"          name="tx_sur.fesom.reg"         ><field field_ref="tx_sur"          grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_ty_sur_reg"          name="ty_sur.fesom.reg"         ><field field_ref="ty_sur"          grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_strength_ice_reg"    name="strength_ice.fesom.reg"   ><field field_ref="strength_ice"    grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_sgm11_reg"           name="sgm11.fesom.reg"          ><field field_ref="sgm11"           grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_sgm12_reg"           name="sgm12.fesom.reg"          ><field field_ref="sgm12"           grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
-    <file id="f_sgm22_reg"           name="sgm22.fesom.reg"          ><field field_ref="sgm22"           grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_opottempdiff_reg"     name="opottempdiff.fesom.reg"    ><field field_ref="opottempdiff"     grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_osalttend_reg"        name="osalttend.fesom.reg"       ><field field_ref="osalttend"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_osaltrmadvect_reg"    name="osaltrmadvect.fesom.reg"   ><field field_ref="osaltrmadvect"    grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+    <file id="f_osaltdiff_reg"        name="osaltdiff.fesom.reg"       ><field field_ref="osaltdiff"        grid_ref="grid_2d_nod_reg" freq_op="1mo"/></file>
+
+    <!-- 2D elements -->
+    <file id="f_tx_sur_reg"           name="tx_sur.fesom.reg"          ><field field_ref="tx_sur"           grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_ty_sur_reg"           name="ty_sur.fesom.reg"          ><field field_ref="ty_sur"           grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_strength_ice_reg"     name="strength_ice.fesom.reg"    ><field field_ref="strength_ice"     grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_sgm11_reg"            name="sgm11.fesom.reg"           ><field field_ref="sgm11"            grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_sgm12_reg"            name="sgm12.fesom.reg"           ><field field_ref="sgm12"            grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+    <file id="f_sgm22_reg"            name="sgm22.fesom.reg"           ><field field_ref="sgm22"            grid_ref="grid_2d_elem_reg" freq_op="1mo"/></file>
+
+  </file_group>
+  {% endif %}
+
+  <!-- ================= 3D regridded output (regular lat/lon × native vertical) -->
+  <!-- Gated separately by fesom.regrid_3d_output. Off by default — 3D
+       regrid is expensive at production resolutions. Field set mirrors
+       the 3D portion of fesom_1mo above. -->
+  {% if fesom.regrid_3d_output %}
+  <file_group id="fesom_1mo_reg_3d" output_freq="1mo" split_freq="1y" enabled="true">
+
+    <!-- 3D nodes, cell-center -->
+    <file id="f_temp_reg"       name="temp.fesom.reg"      ><field field_ref="temp"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+    <file id="f_salt_reg"       name="salt.fesom.reg"      ><field field_ref="salt"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+    <file id="f_unod_reg"       name="unod.fesom.reg"      ><field field_ref="unod"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+    <file id="f_vnod_reg"       name="vnod.fesom.reg"      ><field field_ref="vnod"       grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+    <file id="f_hnode_reg"      name="hnode.fesom.reg"     ><field field_ref="hnode"      grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+    <file id="f_rsdoabsorb_reg" name="rsdoabsorb.fesom.reg"><field field_ref="rsdoabsorb" grid_ref="grid_3d_nod_reg"     freq_op="1mo"/></file>
+
+    <!-- 3D nodes, interface levels -->
+    <file id="f_w_reg"       name="w.fesom.reg"      ><field field_ref="w"       grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
+    <file id="f_bolus_w_reg" name="bolus_w.fesom.reg"><field field_ref="bolus_w" grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
+    <file id="f_N2_reg"      name="N2.fesom.reg"     ><field field_ref="N2"      grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
+    <file id="f_Kv_reg"      name="Kv.fesom.reg"     ><field field_ref="Kv"      grid_ref="grid_3d_nod_reg_nz1" freq_op="1mo"/></file>
+
+    <!-- 3D elements, cell-center -->
+    <file id="f_u_reg"       name="u.fesom.reg"      ><field field_ref="u"       grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_v_reg"       name="v.fesom.reg"      ><field field_ref="v"       grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_bolus_u_reg" name="bolus_u.fesom.reg"><field field_ref="bolus_u" grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_bolus_v_reg" name="bolus_v.fesom.reg"><field field_ref="bolus_v" grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_utemp_reg"   name="utemp.fesom.reg"  ><field field_ref="utemp"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_vtemp_reg"   name="vtemp.fesom.reg"  ><field field_ref="vtemp"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_usalt_reg"   name="usalt.fesom.reg"  ><field field_ref="usalt"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+    <file id="f_vsalt_reg"   name="vsalt.fesom.reg"  ><field field_ref="vsalt"   grid_ref="grid_3d_elem_reg"     freq_op="1mo"/></file>
+
+    <!-- 3D elements, interface levels -->
+    <file id="f_Av_reg"      name="Av.fesom.reg"     ><field field_ref="Av"      grid_ref="grid_3d_elem_reg_nz1" freq_op="1mo"/></file>
+
+    <!-- dMOC density-coordinate (elements) -->
+    <file id="f_U_rho_x_DZ_reg"    name="U_rho_x_DZ.fesom.reg"   ><field field_ref="U_rho_x_DZ"    grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+    <file id="f_V_rho_x_DZ_reg"    name="V_rho_x_DZ.fesom.reg"   ><field field_ref="V_rho_x_DZ"    grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+    <file id="f_std_heat_flux_reg" name="std_heat_flux.fesom.reg"><field field_ref="std_heat_flux" grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+    <file id="f_std_rest_flux_reg" name="std_rest_flux.fesom.reg"><field field_ref="std_rest_flux" grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+    <file id="f_std_frwt_flux_reg" name="std_frwt_flux.fesom.reg"><field field_ref="std_frwt_flux" grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+    <file id="f_std_dens_dVdT_reg" name="std_dens_dVdT.fesom.reg"><field field_ref="std_dens_dVdT" grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+    <file id="f_std_dens_Z_reg"    name="std_dens_Z.fesom.reg"   ><field field_ref="std_dens_Z"    grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+    <file id="f_std_dens_H_reg"    name="std_dens_H.fesom.reg"   ><field field_ref="std_dens_H"    grid_ref="grid_rho_elem_reg" freq_op="1mo"/></file>
+
+    <!-- dMOC density-coordinate (nodes) -->
+    <file id="f_std_dens_DIV_reg"      name="std_dens_DIV.fesom.reg"     ><field field_ref="std_dens_DIV"      grid_ref="grid_rho_nod_reg" freq_op="1mo"/></file>
+    <file id="f_std_dens_DIVbolus_reg" name="std_dens_DIVbolus.fesom.reg"><field field_ref="std_dens_DIVbolus" grid_ref="grid_rho_nod_reg" freq_op="1mo"/></file>
+
+    <!-- dMOC sigma-2 density on z-levels -->
+    <file id="f_density_dMOC_reg"      name="density_dMOC.fesom.reg"     ><field field_ref="density_dMOC"      grid_ref="grid_3d_nod_reg"  freq_op="1mo"/></file>
+
   </file_group>
   {% endif %}
 

@@ -526,13 +526,16 @@ fesom:
         # reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is unstable
         # on coarse meshes (e.g. CORE2), so other resolutions keep their
         # per-mesh whichEVP default from fesom-2.7.yaml.
+        # delta_min must also be raised: aEVP with the default 1e-11 (from
+        # namelist.ice) is too stiff on HR; 2e-9 is the value used in HR
+        # production runs since AWI-ESM3-VEG-HR-CMIP7-Spinup_cont2.
         choose_general.version:
                 v3.4.2:
                         choose_resolution:
-                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2, delta_min: 2.0e-9}}}}
                 develop:
                         choose_resolution:
-                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2, delta_min: 2.0e-9}}}}
 
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)

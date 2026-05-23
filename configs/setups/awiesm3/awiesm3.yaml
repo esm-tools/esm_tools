@@ -610,8 +610,11 @@ xios:
     xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
     interpolation_order: 1
     compression_level: 1
-    fesom_regular_res_lon: 360
-    fesom_regular_res_lat: 180
+    # 0.5deg default for FESOM regridded surface + 3D output. Validated in
+    # HR Test_21 vs 1deg Test_20: +0.4% wall time, +8 GB/year disk for the
+    # full 2D+3D set. Override per-experiment if a coarser grid is wanted.
+    fesom_regular_res_lon: 720
+    fesom_regular_res_lat: 360
     read_weight: false
     truncation: "${oifs.truncation}"
     choose_truncation:

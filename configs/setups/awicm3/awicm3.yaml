@@ -579,8 +579,11 @@ xios:
         compression_level: 1
         regular_res_lat: 192
         regular_res_lon: 400
-        fesom_regular_res_lon: 360
-        fesom_regular_res_lat: 180
+        # 0.5deg default for FESOM regridded surface + 3D output. Validated
+        # in HR Test_21 vs 1deg Test_20: +0.4% wall time, +8 GB/year disk
+        # for the full 2D+3D set. Override per-experiment if needed.
+        fesom_regular_res_lon: 720
+        fesom_regular_res_lat: 360
         config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2

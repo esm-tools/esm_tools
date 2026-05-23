@@ -528,16 +528,21 @@ fesom:
     # CMIP7-style XMLs (many variables, multiple frequencies). Default off:
     # upstream-namelist.io-style minimal monthly output.
     cmip7_cmor_output: false
-    # Opt-in switch: when true, add regridded (regular lat/lon) output for all
-    # 2D fields alongside the native unstructured output. Each regrid file is
-    # produced at the same frequency as its native counterpart (daily for
-    # fesom_1d fields, monthly for fesom_1mo 2D fields). CMIP7 file_def only.
+    # When true, add regridded (regular lat/lon) output for all 2D fields
+    # alongside the native unstructured output. Each regrid file is produced
+    # at the same frequency as its native counterpart (daily for fesom_1d
+    # fields, monthly for fesom_1mo 2D fields). CMIP7 file_def only.
     # Requires xios.fesom_regular_res_lon/lat and xios.interpolation_order.
-    regrid_surface_output: false
-    # Opt-in switch (off by default): regrid 3D fields too (temp, salt, unod,
-    # ..., dMOC density-coord). Expensive at production resolutions; intended
-    # for diagnostics, not for routine runs.
-    regrid_3d_output: false
+    # Default ON for CMIP7: validated <1% wall-time penalty (HR Test_20 vs
+    # baseline) and <1 GB/year disk overhead at 0.5deg.
+    regrid_surface_output: true
+    # When true, also regrid 3D fields (temp, salt, unod, vnod, w, bolus_*,
+    # N2, Kv, u, v, *temp, *salt, Av, dMOC density-coord, ...). Default ON
+    # for CMIP7: HR Test_21 (vs Test_20) measured +0.4% wall time and +8 GB
+    # / simulated year of additional disk volume — essentially free thanks
+    # to XIOS server-rank async IO. Set to false only for diagnostics-style
+    # runs where the 3D regridded set isn't wanted.
+    regrid_3d_output: true
     choose_with_xios:
             true:
                     # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work

@@ -1,8 +1,8 @@
 components:
-- xios-2.5.2
+- xios-2.5.3
 - rnfmap-v1.3
 - oifs-48r1v4
-- fesom-2.7.5
+- fesom-2.7.6
 - oasis3mct-5.2
 coupling_changes:
 - sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml

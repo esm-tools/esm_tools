@@ -558,10 +558,13 @@ fesom:
 
                     scripts_files:
                             rename_xios: rename_xios
+                            rename_xios_reg: rename_xios_reg
                     scripts_sources:
                             rename_xios: "${esm_function_dir}/components/fesom/rename_xios_fesom.sh"
+                            rename_xios_reg: "${esm_function_dir}/components/fesom/rename_xios_fesom_reg.sh"
                     scripts_targets:
                             rename_xios: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom.sh"
+                            rename_xios_reg: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom_reg.sh"
 
                     workflow:
                             next_run_triggered_by: tidy
@@ -572,6 +575,19 @@ fesom:
                                             run_after: tidy
                                             script_dir: ${general.experiment_scripts_dir}/${model}
                                             script: "rename_xios_fesom.sh ${fesom.experiment_outdata_dir}"
+                                            nproc: 1
+                                    # Sibling renamer for regridded XIOS output:
+                                    #   <var>.fesom.reg_<ystart>-<yend>.nc  ->  <var>.fesom.gr.<ystart>.nc
+                                    # Disjoint glob from Rename_XIOS_FESOM (this one needs
+                                    # ".fesom.reg_" literally), safe to run concurrently.
+                                    # Idempotent: skips files already in target form, no-ops
+                                    # if no regridded files are present (eg fesom.regrid_surface_output=false).
+                                    Rename_XIOS_FESOM_REG:
+                                            batch_or_shell: shell
+                                            order_in_cluster: concurrent
+                                            run_after: tidy
+                                            script_dir: ${general.experiment_scripts_dir}/${model}
+                                            script: "rename_xios_fesom_reg.sh ${fesom.experiment_outdata_dir}"
                                             nproc: 1
 
     use_landice_water: False

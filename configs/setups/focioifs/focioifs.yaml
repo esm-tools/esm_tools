@@ -630,7 +630,7 @@ oifs:
                                                 order_in_cluster: concurrent
                                                 run_on_queue: ${computer.partitions.pp.name}
                                                 run_after: tidy
-                                                script_dir: ${general.esm_function_dir}/setups/focioifs/
+                                                script_dir: ${general.esm_configs_dir}/setups/focioifs/
                                                 submit_to_batch_system: True
                                                 script: "
                                                     oifs_postprocessing.sh -m
@@ -853,7 +853,7 @@ nemo:
                                                 order_in_cluster: concurrent
                                                 run_on_queue: ${computer.partitions.pp.name}
                                                 run_after: tidy
-                                                script_dir: ${general.esm_function_dir}/setups/focioifs/
+                                                script_dir: ${general.esm_configs_dir}/setups/focioifs/
                                                 submit_to_batch_system: True
                                                 script: "
                                                     nemo_postprocessing.sh -m

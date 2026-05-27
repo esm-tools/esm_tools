@@ -57,8 +57,8 @@ Compile time variables
    install_bins,       <component>,         "Path inside the component folder, where the component is compiled by default. This path is necessary because, after compilation, ESM-Tools needs to copy the binary from this path to the ``<component/setup_path>/bin`` folder."
    source_code_permissions,     <component>,    "Sets the file permisions for the source code using `chmod <source_code_permissions> -R <source_code_folder>."
 
-Runi time variables
--------------------
+Run-time variables
+------------------
 .. csv-table::
    :header: Key, Section, Description
    :widths: 10, 10, 80

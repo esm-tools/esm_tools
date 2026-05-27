@@ -67,6 +67,10 @@ Runi time variables
    base_dir,            general,                Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
    compute_time,        general,                "Estimated computing time for a run, used for submitting a job with the job scheduler."
    create_folders,      <component>,            "List of absolute paths of the folders to be created. See :ref:`yaml:Create empty folders`."
+   esm_configs_dir,     general,                "Absolute path to the ESM-Tools configs directory (``configs/``). Set automatically by ``esm_parser`` at startup. Use as ``${general.esm_configs_dir}/...`` in YAML files to reference scripts and files under the configs tree."
+   esm_couplings_dir,   general,                "Absolute path to the ESM-Tools couplings directory (``couplings/``). Set automatically by ``esm_parser`` at startup. Use as ``${general.esm_couplings_dir}/...`` in YAML files to reference coupling configurations."
+   esm_namelist_dir,    general,                "Absolute path to the ESM-Tools namelists directory (``namelists/``). Set automatically by ``esm_parser`` at startup. Use as ``${general.esm_namelist_dir}/...`` in YAML files to reference namelist templates."
+   esm_runscript_dir,   general,                "Absolute path to the ESM-Tools runscripts directory (``runscripts/``). Set automatically by ``esm_parser`` at startup. Use as ``${general.esm_runscript_dir}/...`` in YAML files to reference runscripts or ``further_readings``."
    executable,          <component>,            "Name of the component executable file, as it shows in the ``<component/setup_path>/bin`` after compilation."
    execution_command,   <component>,            "Command for executing the component, including ``${executable}`` and the necessary flags."
    execution_mode,      general,                "Takes the value ``run`` during run time. Can be used in ``choose_`` blocks with ``choose_general.execution_mode``."

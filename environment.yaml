@@ -16,7 +16,7 @@ name: esm_tools
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   - Click>=8.0.4
   - dask=2024.8.0
   - distributed=2024.8.0
@@ -29,7 +29,7 @@ dependencies:
   - numpy>=1.19.5
   - packaging>=24.0
   - pandas>=1.1.5
-  - pip=23.3
+  - pip=26.1
   - psutil=5.9.1
   - pytest=7.1.2
   - pyyaml=6.0.1

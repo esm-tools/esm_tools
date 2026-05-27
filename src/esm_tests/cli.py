@@ -77,7 +77,7 @@ def main():
         "NAMELIST_PATH": str(esm_tools.get_namelist_filepath()).rstrip("/"),
         "RUNSCRIPT_PATH": str(esm_tools.get_runscript_filepath()).rstrip("/"),
         "COUPLINGS_PATH": str(esm_tools.get_coupling_filepath()).rstrip("/"),
-        "FUNCTIONS_PATH": str(esm_tools.get_config_filepath()).rstrip("/"),
+        "CONFIGS_PATH": str(esm_tools.get_config_filepath()).rstrip("/"),
         "HOME_DIR": [f"{os.path.expanduser('~')}", os.environ.get("HOME")],
         "USER_ACCOUNT": os.environ.get("USER", "github_runner"),
     }

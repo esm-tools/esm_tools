@@ -566,7 +566,7 @@ def add_vcs_info(config):
 
     # NOTE(PG): There is no good way to get the repo directory from the config,
     # this may at least be a good start:
-    esm_tools_repo = config.get("general", {}).get("esm_function_dir")
+    esm_tools_repo = config.get("general", {}).get("esm_configs_dir")
     if esm_tools_repo is not None:
         vcs_versions["esm_tools"] = helpers.get_all_git_info(f"{esm_tools_repo}/../")
     else:

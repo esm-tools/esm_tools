@@ -3152,7 +3152,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         setup_config["general"].update(
             {
-                "esm_function_dir": CONFIG_PATH,
+                "esm_configs_dir": CONFIG_PATH,
                 "esm_namelist_dir": NAMELIST_DIR,
                 "esm_runscript_dir": RUNSCRIPT_DIR,
                 "esm_couplings_dir": COUPLINGS_DIR,

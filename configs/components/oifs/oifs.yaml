@@ -1434,7 +1434,7 @@ oifs:
                     start_ndays_source: "${prev_run.oifs.next_ndays}"
                     branchoff: true
                     preprocess_method: "
-                        ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${general.esm_configs_dir}/components/oifs/change_icm_date.sh
                             ${thisrun_input_dir}/
                             ${oifs.input_expid}
                             ${oifs.input_expid}
@@ -1444,7 +1444,7 @@ oifs:
                             ${oifs.perturb}
                             ${oifs.nx}
                             ${oifs.ensemble_id};
-                        ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
+                        ${general.esm_configs_dir}/components/oifs/change_rcf_date.sh
                             ${thisrun_work_dir}/
                             ${pseudo_initial_date!syear!smonth!sday}
                             ${oifs.time_step}
@@ -1460,7 +1460,7 @@ oifs:
                     pseudo_initial_date: "${initial_date}"
                     start_ndays_source: "${start_ndays}"
                     preprocess_method: "
-                        ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${general.esm_configs_dir}/components/oifs/change_icm_date.sh
                             ${thisrun_input_dir}/
                             ${oifs.input_expid}
                             ${oifs.input_expid}
@@ -1477,7 +1477,7 @@ oifs:
                     # First restart
                     pseudo_initial_date: "${prev_run.general.start_date}"
                     start_ndays_source: "${start_ndays}"
-                    preprocess_method: "${general.esm_function_dir}/components/oifs/skip.sh;
+                    preprocess_method: "${general.esm_configs_dir}/components/oifs/skip.sh;
                         ${slice_icml}
                         ${append_icmcl}
                         echo 'Run number for internal OpenIFS timekeeping: ${eternal_run_number}'"
@@ -1486,7 +1486,7 @@ oifs:
                     pseudo_initial_date: "${prev_run.general.start_date}"
                     start_ndays_source: "${prev_run.oifs.next_ndays}"
                     preprocess_method: "
-                        ${general.esm_function_dir}/components/oifs/change_icm_date.sh
+                        ${general.esm_configs_dir}/components/oifs/change_icm_date.sh
                             ${thisrun_input_dir}/
                             ${oifs.input_expid}
                             ${oifs.input_expid}
@@ -1496,7 +1496,7 @@ oifs:
                             ${oifs.perturb}
                             ${oifs.nx}
                             ${oifs.ensemble_id};
-                        ${general.esm_function_dir}/components/oifs/change_rcf_date.sh
+                        ${general.esm_configs_dir}/components/oifs/change_rcf_date.sh
                             ${thisrun_work_dir}/
                             ${pseudo_initial_date!syear!smonth!sday}
                             ${oifs.time_step}
@@ -1512,7 +1512,7 @@ oifs:
     choose_general.standalone:
             True:
                     slice_icml: "
-                        ${general.esm_function_dir}/components/oifs/slice_icmcl_file.sh
+                        ${general.esm_configs_dir}/components/oifs/slice_icmcl_file.sh
                             ${thisrun_work_dir}/
                             ${icmcl_dir}/${icmcl_file}
                             ${oifs.input_expid}
@@ -1546,7 +1546,7 @@ oifs:
                                             order_in_cluster: concurrent
                                             run_on_queue: ${computer.partitions.pp.name}
                                             run_after: tidy
-                                            script_dir: ${general.esm_function_dir}/setups/focioifs/
+                                            script_dir: ${general.esm_configs_dir}/setups/focioifs/
                                             submit_to_batch_system: True
                                             script: "
                                                     oifs_postprocessing.sh -m

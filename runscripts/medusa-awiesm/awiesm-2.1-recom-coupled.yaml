@@ -70,7 +70,7 @@ fesom:
                                     ${experiment_outdata_dir}
                                     ${chunk_start_date!syear}
                                     ${chunk_end_date!syear}"
-                            script_dir: ${general.esm_function_dir}/components/medusa
+                            script_dir: ${general.esm_configs_dir}/components/medusa
                             run_only: last_run_in_chunk
                             nproc: 1
 

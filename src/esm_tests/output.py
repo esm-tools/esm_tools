@@ -27,10 +27,10 @@ def _sort_yaml_lines(lines):
     try:
         data = yaml.safe_load("".join(lines))
         if not isinstance(data, dict):
-            return lines
+            return None
         return yaml.dump(data, sort_keys=True, default_flow_style=False).splitlines(keepends=True)
     except yaml.YAMLError:
-        return lines
+        return None
 
 
 def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
@@ -64,8 +64,9 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     # Substitute user lines in target string
     file_t = clean_user_specific_info(info, file_t, protected_strings)
 
-    # Pattern of provenance
-    provenance_pattern = r'\s*#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
+    # Pattern of provenance. Use \s+ (not \s*) so the # must be preceded by at
+    # least one space — prevents matching # inside quoted yaml values like '#SBATCH'.
+    provenance_pattern = r'\s+#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
 
     # Check for ignored lines
     new_file_s = []
@@ -90,8 +91,10 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     file_t = new_file_t
 
     if sfile.endswith(".yaml"):
-        file_s = _sort_yaml_lines(file_s)
-        file_t = _sort_yaml_lines(file_t)
+        sorted_s = _sort_yaml_lines(file_s)
+        sorted_t = _sort_yaml_lines(file_t)
+        if sorted_s is not None and sorted_t is not None:
+            file_s, file_t = sorted_s, sorted_t
 
     diffobj = difflib.SequenceMatcher(a=file_s, b=file_t)
     differences = ""

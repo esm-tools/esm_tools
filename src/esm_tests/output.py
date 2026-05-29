@@ -23,6 +23,16 @@ compare_files = {
 }
 
 
+def _sort_yaml_lines(lines):
+    try:
+        data = yaml.safe_load("".join(lines))
+        if not isinstance(data, dict):
+            return lines
+        return yaml.dump(data, sort_keys=True, default_flow_style=False).splitlines(keepends=True)
+    except yaml.YAMLError:
+        return lines
+
+
 def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     """
     Prints the differences between two equivalent configuration files. Ignores the
@@ -78,6 +88,10 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
         if not ignore_this:
             new_file_t.append(line_no_prov)
     file_t = new_file_t
+
+    if sfile.endswith(".yaml"):
+        file_s = _sort_yaml_lines(file_s)
+        file_t = _sort_yaml_lines(file_t)
 
     diffobj = difflib.SequenceMatcher(a=file_s, b=file_t)
     differences = ""

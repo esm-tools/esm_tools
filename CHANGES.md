@@ -1,5 +1,13 @@
 # Changes
 
+## esm_tests: normalize yaml key order before comparison
+
+**File:** `src/esm_tests/output.py`
+
+**Problem:** `finished_config.yaml` is written by `ruamel.yaml` (via `yaml_dump` in `dict_to_yaml.py`) which preserves Python dict insertion order. When the parsing code changes, key insertion order can shift, producing large diffs in `esm_tests -c` even when all values are identical.
+
+**Fix:** Added `_sort_yaml_lines(lines)` helper that parses a yaml text (after provenance stripping) with `yaml.safe_load` and re-dumps with `sort_keys=True`. Called in `print_diff` for any `.yaml` file, on both the baseline and current file, just before the `difflib` comparison. Falls back silently to the original lines on any parse error. `yaml.safe_load` is safe here because `yaml_dump` converts all non-standard types (dates, batch systems, etc.) to plain strings before writing.
+
 ## esm_tests: add NAMELIST_PATH and RUNSCRIPT_PATH substitutions for machine-agnostic comparison
 
 **File:** `src/esm_tests/cli.py`

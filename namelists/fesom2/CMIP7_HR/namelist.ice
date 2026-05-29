@@ -113,15 +113,15 @@ c_melt         = 0.5            ! constant in concentration equation for melting
 hi_min         = 0.10           ! min ice thickness for ponds to form [m]
 hs1            = 0.03           ! snow-depth threshold for pond reset [m]
                                 !   hsno > hs1 -> ponds reset to 0
-pndaspect      = 0.80           ! pond depth-to-area aspect ratio (CESM default)
+pndaspect      = 1.30           ! pond depth-to-area aspect ratio (CESM default)
                                 !   smaller value -> wider shallower ponds,
                                 !                    more grid darkening per pond volume
 
 ! --- Surface melt retention (fraction of melt water that stays in ponds) ---
 rfracmin       = 0.15           ! min retained fraction (thin ice)
-rfracmax       = 1.00           ! max retained fraction (thick ice, h_i >= 0.5 m)
+rfracmax       = 0.75           ! max retained fraction (thick ice, h_i >= 0.5 m)
 
 ! --- Albedo of pond surface ---
-albpnd         = 0.20           ! open melt pond albedo
+albpnd         = 0.28           ! open melt pond albedo
 albpnd_frz     = 0.36           ! frozen pond albedo (lid >= 1 cm thick)
 /

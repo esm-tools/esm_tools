@@ -76,8 +76,8 @@ fesom:
         Tripy1: Tripy1
         Tripy2: Tripy2
     scripts_sources:
-        Tripy1: "${esm_function_dir}/components/fesom/Subjob_tripy.sh"
-        Tripy2: "${esm_function_dir}/components/fesom/ESM_auto_tripy.yaml"
+        Tripy1: "${esm_configs_dir}/components/fesom/Subjob_tripy.sh"
+        Tripy2: "${esm_configs_dir}/components/fesom/ESM_auto_tripy.yaml"
     scripts_targets:
         Tripy1: "${general.experiment_scripts_dir}/${model}/Subjob_tripy.sh"
         Tripy2: "${general.experiment_scripts_dir}/${model}/ESM_auto_tripy.yaml"

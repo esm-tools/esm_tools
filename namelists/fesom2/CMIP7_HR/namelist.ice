@@ -14,7 +14,7 @@
 ! ============================================================================
 &ice_dyn
 ! --- EVP Rheology Options ---
-whichEVP       = 1              ! EVP solver type:
+whichEVP       = 2              ! EVP solver type:
                                 !   0 = standard EVP
                                 !   1 = modified EVP (mEVP)
                                 !   2 = adaptive EVP (aEVP)

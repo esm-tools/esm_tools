@@ -52,6 +52,12 @@ oifs:
                                 LCMIP_STRATAER_CMIP7: True
                                 LCMIP_STRATAER_BCKGD: False
                                 NCMIPFIXYR: '${spinup_year}'
+                "historical":
+                    add_namelist_changes:
+                        fort.4:
+                            NAERAD:
+                                LCMIP_STRATAER_CMIP7: True
+                                LCMIP_STRATAER_BCKGD: False
             add_namelist_changes:
                 fort.4:
                     NAMECECMIP:

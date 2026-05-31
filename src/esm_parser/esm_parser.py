@@ -401,6 +401,7 @@ def validate_config_sections(config):
         set(general.get("valid_setup_names", []))
         | set(general.get("valid_model_names", []))
         | set(general.get("system_components", []))
+        | set(general.get("valid_components", []))
     )
     all_valid_keys = valid_keys | internal_keys
     sections = general.get("sections", {})
@@ -3147,7 +3148,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             yaml_files.remove("general.yaml")
 
         for yaml_file in yaml_files:
-            file_contents = yaml_file_to_dict(DEFAULTS_DIR + "/" + yaml_file)
+            file_contents = yaml_file_to_dict(
+                f"{DEFAULTS_DIR}/{yaml_file}", register_sections=False
+            )
             default_infos.update(file_contents)
 
         # construct the `defaults` section of the configuration
@@ -3158,7 +3161,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):
             general_config = {
-                "general": yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
+                "general": yaml_file_to_dict(
+                    f"{DEFAULTS_DIR}/general.yaml", register_sections=False
+                )
             }
         else:
             general_config = {"general": {}}
@@ -3331,8 +3336,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         #        new_model_list.append(model.split("-")[0])
         #    setup_config["general"]["models"] = new_model_list
 
+        system_components = setup_config["general"].get("system_components", [])
         for model in list(model_config):
-            if model != "general" and model != "computer":
+            if model not in system_components and model != "computer":
                 setup_config["general"]["valid_model_names"].append(model)
             # valid_model_names.append(list(model_config)) happens automatically
 
@@ -3362,8 +3368,6 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             key_path=[],
             verbose=self.config["general"].get("verbose", False),
         )
-
-        validate_config_sections(self.config)
 
         # sys.exit(0)
 
@@ -3411,6 +3415,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
     def finalize(self):
         self.run_recursive_functions(self)
+        validate_config_sections(self)
         del self._blackdict
 
     def run_recursive_functions(self, config, isblacklist=True):

@@ -24,13 +24,8 @@ compare_files = {
 
 
 def _sort_yaml_lines(lines):
-    try:
-        data = yaml.safe_load("".join(lines))
-        if not isinstance(data, dict):
-            return None
-        return yaml.dump(data, sort_keys=True, default_flow_style=False).splitlines(keepends=True)
-    except yaml.YAMLError:
-        return None
+    data = yaml.safe_load("".join(lines))
+    return yaml.dump(data, sort_keys=True, default_flow_style=False).splitlines(keepends=True)
 
 
 def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
@@ -91,10 +86,8 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     file_t = new_file_t
 
     if sfile.endswith(".yaml"):
-        sorted_s = _sort_yaml_lines(file_s)
-        sorted_t = _sort_yaml_lines(file_t)
-        if sorted_s is not None and sorted_t is not None:
-            file_s, file_t = sorted_s, sorted_t
+        file_s = _sort_yaml_lines(file_s)
+        file_t = _sort_yaml_lines(file_t)
 
     diffobj = difflib.SequenceMatcher(a=file_s, b=file_t)
     differences = ""

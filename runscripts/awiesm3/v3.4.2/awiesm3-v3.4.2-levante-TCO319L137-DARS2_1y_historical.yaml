@@ -30,15 +30,15 @@ fesom:
     restart_rate: 1
     restart_unit: 'y'
     restart_first: 1
-    ini_parent_exp_id: "AWI-ESM3-VEG-HR-CMIP7-piControl"
+    ini_parent_exp_id: "AWI-ESM3-VEG-HR-CMIP7-Spinup_cont3"
     cmip7_cmor_output: True
     ini_parent_date: "${prev_date}"
-    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.2/AWI-ESM3-VEG-HR-CMIP7-piControl/restart/fesom/"
+    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.2/AWI-ESM3-VEG-HR-CMIP7-Spinup_cont3/restart/fesom/"
     choose_general.run_number:
         1:
             restart_in_sources:
-                par_oce_restart: /${ini_restart_dir}/fesom.1849.oce.restart/*.nc
-                par_ice_restart: /${ini_restart_dir}/fesom.1849.ice.restart/*.nc
+                par_oce_restart: /${ini_restart_dir}/fesom.1679.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.1679.ice.restart/*.nc
 
     add_namelist_changes:
         namelist.dyn:
@@ -56,13 +56,13 @@ lpj_guess:
     nproc: 64
     omp_num_threads: 16
     lresume: true
-    ini_parent_exp_id: "AWI-ESM3-VEG-HR-CMIP7-piControl"
+    ini_parent_exp_id: "AWI-ESM3-VEG-HR-CMIP7-Spinup_cont3"
     ini_parent_date: "${prev_date}"
-    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.2/AWI-ESM3-VEG-HR-CMIP7-piControl/restart/lpj_guess/"
+    ini_restart_dir: "/work/bb1469/a270089/runtime/awiesm3-v3.4.2/AWI-ESM3-VEG-HR-CMIP7-Spinup_cont3/restart/lpj_guess/"
     choose_general.run_number:
         1:
             restart_in_sources:
-                state: /${ini_restart_dir}/lpjg_state_1849/*
+                state: /${ini_restart_dir}/lpjg_state_1680/*
 
 oifs:
     resolution: "TCO319"

@@ -119,6 +119,7 @@ oifs:
     - 48r1
     - 48r1v1
     - 48r1v2
+    - 48r1v4
     - 48r1-foci5
 
     choose_version:

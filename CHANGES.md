@@ -1,5 +1,15 @@
 # Changes
 
+## esm_runscripts: exclude system components (dask) from per-model file operations
+
+**Files:** `src/esm_runscripts/filelists.py`, `src/esm_runscripts/prepare.py`
+
+**Problem:** Commit `009ca5f9` introduced `get_file_components()` to fix processing of `general` (a system component) in file operation loops. The function filtered out only `"general"`, so `dask` (also in `system_components`) was still included. This caused `_add_all_folders` in `prepare.py` and all file movement loops in `filelists.py` to add `experiment_*_dir`, `all_filetypes`, and `file_movements` to the `dask` config section, and also consumed/deleted `dask`'s `ignore_files`/`ignore_in_work` keys.
+
+**Fix:** Removed `get_file_components()` entirely. All call sites now use `esm_parser.get_components(config, include_system=False)` directly, which returns only `valid_model_names` (no system components).
+
+
+
 ## esm_tests: normalize yaml key order before comparison
 
 **File:** `src/esm_tests/output.py`

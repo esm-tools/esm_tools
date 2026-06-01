@@ -396,15 +396,9 @@ def validate_config_sections(config):
     # Keys that may legitimately appear at the top level of the assembled config
     internal_keys = {"_blackdict", "defaults"}
 
-    general = config.get("general", {})
-    valid_keys = (
-        set(general.get("valid_setup_names", []))
-        | set(general.get("valid_model_names", []))
-        | set(general.get("system_components", []))
-        | set(general.get("valid_components", []))
-    )
+    valid_keys = get_components(config)
     all_valid_keys = valid_keys | internal_keys
-    sections = general.get("sections", {})
+    sections = config.get("general", {}).get("sections", {})
 
     invalid = {}
     for key in config:
@@ -428,7 +422,14 @@ def validate_config_sections(config):
                 f"Since esm-tools 6.54, all yaml files must use section names "
                 f"as their root keys. Valid ``sections`` for this experiment are: "
                 f"{valid_examples}.\n\n"
-                f"Example fix for ``{first_source}``:\n\n{example}"
+                f"Example fix for ``{first_source}``:\n\n{example}\n\n"
+                f"Alternatively, if the section name is intentional (e.g. a custom "
+                f"tool not part of the model setup), register it in your runscript:\n\n"
+                f"  general:\n"
+                f"      add_other_components:\n"
+                f"          - <section_name>\n\n"
+                f"Note: sections added this way do not participate in file operations. "
+                f"See docs/yaml.rst 'Sections' for more details."
             ),
         )
 
@@ -924,25 +925,58 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
     return receiver
 
 
-def get_components(config, include_system=True):
-    """Get list of components including models and optionally system components.
+def get_components(config, include=None):
+    """
+    Return a list of component names drawn from one or more groups.
 
     Parameters
     ----------
     config : dict
-        The configuration object
-    include_system : bool
-        Whether to include system components like 'general' and 'dask'
+        The fully-assembled configuration dictionary.
+    include : list of str or None
+        Which groups to include.  Any subset of
+        ``["setup", "model", "other", "system"]``.
+        ``None`` (default) returns all four groups.
+
+        * ``"setup"``  — coupled setup name (``general.valid_setup_names``).
+        * ``"model"``  — participating models (``general.valid_model_names``);
+          these are the components that run file operations.
+        * ``"other"``  — user-defined extra sections (``general.other_components``);
+          no file operations.
+        * ``"system"`` — infrastructure components (``general.system_components``,
+          e.g. ``general``, ``dask``); no file operations.
 
     Returns
     -------
-    list
-        List of component names
+    set of str
+        Component names in the requested groups.
+
+    Examples
+    --------
+    All components (used by the section validator):
+
+    >>> get_components(config)
+
+    Model components only (used by file-operation loops):
+
+    >>> get_components(config, include=["model"])
+
+    Everything except system:
+
+    >>> get_components(config, include=["setup", "model", "other"])
     """
-    components = list(config.get('general', {}).get('valid_model_names', []))
-    if include_system:
-        components.extend(config.get('general', {}).get('system_components', ['general']))
-    return components
+    active = set(include) if include is not None else {"setup", "model", "other", "system"}
+    general = config.get("general", {})
+    result = set()
+    if "setup" in active:
+        result.update(general.get("valid_setup_names", []))
+    if "model" in active:
+        result.update(general.get("valid_model_names", []))
+    if "other" in active:
+        result.update(general.get("other_components", []))
+    if "system" in active:
+        result.update(general.get("system_components", ["general"]))
+    return result
 
 
 def find_remove_entries_in_config(mapping, model_name, models=[]):

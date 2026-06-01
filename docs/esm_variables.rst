@@ -100,6 +100,7 @@ Run-time variables
    save_batch_env_patterns,  computer,          "List of grep patterns used to capture and restore batch system environment variables across job script stages (e.g. ``[""SLURM""]`` or ``[""PBS""]``)."
    setup_dir,           general,                "Absolute path of the setup directory (where it was installed by `esm_master`)."
    system_components,   general,                "List of non-model config sections included in file-list iteration loops (default: ``[""general"", ""dask""]``)."
+   other_components,    general,                "Additional section names accepted at the root level of the assembled config (validation only — these sections do **not** participate in file operations). Extend it with ``add_other_components`` in a runscript or config file. See :ref:`yaml:Sections`."
    time_step,           <component>,            Time step of the component in seconds.
 
 Dask variables

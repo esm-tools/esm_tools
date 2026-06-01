@@ -1,5 +1,24 @@
 # Changes
 
+## esm_parser: refactor get_components() and rename other_components
+
+**Files:** `src/esm_parser/esm_parser.py`, `src/esm_runscripts/filelists.py`,
+`src/esm_runscripts/prepare.py`, `configs/defaults/general.yaml`,
+`configs/components/nemo/nemo.yaml`, `docs/yaml.rst`, `docs/esm_variables.rst`
+
+**Problem:** `get_components()` used a single `include_system` boolean, had no concept of
+user-defined extra sections, and the section validator duplicated the list of valid groups.
+
+**Fix:**
+- Renamed `valid_components` → `other_components` (in `general.yaml` and `nemo.yaml`):
+  the "other" group for sections that are valid in the config but run no file operations.
+- `get_components(config, include=None)` now supports four named groups:
+  `"setup"`, `"model"`, `"other"`, `"system"`. Returns a `set`. Default (`include=None`)
+  returns all four groups.
+- Section validator simplified to `get_components(config) | internal_keys`.
+- All 19 file-operation call sites updated from `include_system=False` to `include=["model"]`.
+- Docs: added "Sections" section to `yaml.rst`; added `other_components` to `esm_variables.rst`.
+
 ## esm_runscripts: exclude system components (dask) from per-model file operations
 
 **Files:** `src/esm_runscripts/filelists.py`, `src/esm_runscripts/prepare.py`

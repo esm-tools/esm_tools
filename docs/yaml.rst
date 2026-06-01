@@ -115,6 +115,68 @@ syntax for `YAML` files including calendar and math operations (see
 The :ref:`yaml:YAML Elements` section lists the `YAML` elements needed for configuration files and
 runscripts.
 
+Sections
+~~~~~~~~
+
+Every root-level key in an ESM-Tools YAML file must be a known **section** — the name of
+a model, setup, or infrastructure component participating in the experiment. The ``esm_parser``
+validates this after full config assembly and raises an error if an unrecognised key is found
+at the root level.
+
+Valid sections are derived from the experiment configuration: the setup name, the participating
+model components, and the infrastructure components (``general``, ``dask``).
+
+To add a model component that also participates in file operations, add it to
+``general.valid_model_names`` in your runscript:
+
+.. code-block:: yaml
+
+   general:
+           add_valid_model_names:
+                   - my_model
+
+To register an extra section that does not need file operations, use ``general.other_components``
+instead (see the ``add_other_components`` example below).
+
+All content must be **nested under a section**:
+
+.. code-block:: yaml
+
+   fesom:
+           time_step: 1800
+           mesh_dir: /pool/meshes/CORE2
+
+   echam:
+           resolution: T63
+
+A bare key at the root level is invalid:
+
+.. code-block:: yaml
+
+   # Wrong: time_step must be nested under a section
+   time_step: 1800
+
+   # Correct
+   fesom:
+           time_step: 1800
+
+If your YAML defines a custom section that is not part of the experiment's model or setup list,
+register it via ``add_other_components`` in your runscript:
+
+.. code-block:: yaml
+
+   general:
+           add_other_components:
+                   - my_postprocessing_tool
+
+.. note::
+   Sections listed in ``other_components`` are accepted by the validator but do **not**
+   participate in file operations (no input/output copying, no file movement entries). For a
+   section that needs file operations it must be a proper model component of the experiment
+   (i.e. appear in ``valid_model_names``).
+
+See :ref:`esm_variables:Tool-Specific Elements/Variables` for details on ``other_components``.
+
 Variable Calls
 ~~~~~~~~~~~~~~
 

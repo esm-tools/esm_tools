@@ -2,7 +2,7 @@
 #
 
 general:
-    add_valid_components:
+    add_other_components:
     - nemobasemodel
 
 nemo:

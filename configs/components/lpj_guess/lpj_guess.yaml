@@ -215,7 +215,7 @@ lpj_guess:
             scripts_files:
                 combine1: combine1
             scripts_sources:
-                combine1: "${esm_function_dir}/components/lpj_guess/subjob_combine.sh"
+                combine1: "${esm_configs_dir}/components/lpj_guess/subjob_combine.sh"
             scripts_targets:
                 combine1: "${general.experiment_scripts_dir}/${model}/subjob_combine.sh"
 

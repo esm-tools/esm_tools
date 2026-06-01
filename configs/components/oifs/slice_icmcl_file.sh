@@ -14,7 +14,7 @@ startdate=$4
 enddate=$5
 outdir=$6
 
-source $indir/../../scripts/env.sh
+source $indir/../scripts/env.sh
 
 echo " OpenIFS preprocessing "
 echo " ===================== "

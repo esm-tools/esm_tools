@@ -562,8 +562,8 @@ fesom:
                             rename_xios: rename_xios
                             rename_xios_reg: rename_xios_reg
                     scripts_sources:
-                            rename_xios: "${esm_function_dir}/components/fesom/rename_xios_fesom.sh"
-                            rename_xios_reg: "${esm_function_dir}/components/fesom/rename_xios_fesom_reg.sh"
+                            rename_xios: "${esm_configs_dir}/components/fesom/rename_xios_fesom.sh"
+                            rename_xios_reg: "${esm_configs_dir}/components/fesom/rename_xios_fesom_reg.sh"
                     scripts_targets:
                             rename_xios: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom.sh"
                             rename_xios_reg: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom_reg.sh"

@@ -1,0 +1,185 @@
+# TODO:
+# land use harvest and land use transitions still wrong links wit piCtl
+# check namelist.echam and namelist.jsbach
+computer:
+   pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/" 
+   # partition: "standard96:test"
+   launcher: "mpirun"
+   launcher_flags: "" 
+
+general:
+   use_venv: False
+   verbose: True 
+   setup_name: "foci"
+   version: "mops_lmu"
+   homedir: !ENV ${HOME}
+
+   # operational settings: yearly restarts
+   compute_time: "02:15:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "2150-01-01T00:00:00"         # Final date of the experiment
+   nmonth: 12
+   clean_runs: 5
+   # test settings, daily restarts
+   #compute_time: "00:15:00"
+   #initial_date: "2015-01-01T00:00:00"       # Initial exp. date
+   #final_date: "2024-01-01T00:00:00"         # Final date of the experiment
+   #nday: 1 
+   
+   postprocessing: True
+   # machine specific setup 
+   account: shk00060
+   base_dir: ${homedir}/esm/esm-experiments/
+
+   lresume: True
+   ini_parent_exp_id: "FOCI1.20.0-CC103_piControl_ESM_250y_spinup2099"
+   ini_parent_date: "20491231" 
+   ini_nemo_restart_steps: 2921960 
+   ini_parent_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+   # ini_parent_dir: "/scratch/usr/shkifmsw/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+   check_error:
+       "check_exit_codes":
+              method: "kill"
+              message: "MPI Init error glogin"
+              file: stdout 
+              frequency: 15 
+       "lookup table overflow":
+              method: "kill"
+              message: "lookup table overflow"
+              file: stdout 
+              frequency: 15 
+       "SIGTERM":
+              method: "kill"
+              message: "SIGTERM found in stdout"
+              file: stdout 
+              frequency: 15 
+       "FINISH called":
+              method: "kill"
+              message: "netcdf error found in stdout"
+              file: stdout 
+              frequency: 15 
+       "netcdf error":
+              method: "kill"
+              message: "netcdf error found in stdout"
+              file: stdout 
+              frequency: 15 
+       "BAD TERMINATION":
+              method: "kill"
+              message: "BAD TERMINATION found in stdout"
+              file: stdout 
+              frequency: 15 
+       "Usage: ./mpiexec":
+              method: "kill"
+              message: "mpirun failed, check for empty hostfile"
+              file: stdout 
+              frequency: 15 
+
+# uncomment to write coupling fields to disc, slow but helpful for debugging the coupling
+oasis3mct:
+#   export_mode_a2o: "EXPOUT"
+#   export_mode: "EXPOUT"
+   debug_level: 0
+
+foci:
+   model_dir: ${general.homedir}/esm/models/foci-mops_lmu/
+   
+jsbach:
+
+   lresume: ${general.lresume} 
+   ini_parent_exp_id: ${general.ini_parent_exp_id}
+   ini_parent_date:  ${general.ini_parent_date}
+   ini_parent_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/FOCI_RESTART/${ini_parent_exp_id}/jsbach_12tiles/"
+
+   dynamic_vegetations: false
+   tiles: 12
+   cdr_measure: hbp
+   cdr_frac: 5
+
+   namelist_changes:
+      namelist.jsbach:
+         jsbach_ctl:
+            ntiles: ${tiles}
+            lcc_forcing_type: 'maps_wood_harv' 
+            file_ztype: 1  
+            with_ffs_mod_forc: true
+            hbp_scheme: 2
+            debug_Cconservation: true
+            debug_Nconservation: true
+
+   add_input_sources:
+      lctlib_foci: "${model_dir}/util/running/adjunct_files/jsbach/lctlib_nlct23_HBP_med.def"
+
+   add_forcing_files:
+        cover_fract: cover_fract_ssp_cdr
+
+   add_forcing_sources:
+      "cover_fract_ssp_cdr":
+          "${computer.pool_dir}/STEPSEC/input/land_use/LUH2/historical_maps/cover_fract_${echam.resolution}_12tiles_${echam.resolution}_hbp_1850.nc":
+             from: 1850
+             to: 2299
+
+echam:
+   # the brute-force approach to the hostfile_srun missing / empty file
+   pre_run_commands: "cp -f ~/FOCILMU-SW231_hostfile_srun ${work_dir}/hostfile_srun"
+   #
+   postprocessingscript: "echam_postprocessing_RESCUE.sh"
+   namelist_dir: "${general.esm_namelist_dir}/echam/${version}/PI-CTRL"
+   # all ssp* scenarios use historical forcing before 2015, i.e. the setting
+   # scenario: "cmip6hist" and # scenario: "ssp???" produce the same results 
+   # until year 2014
+   # available scenarios: 1percCO2, ssp126, ssp245, ssp370, ssp585, ssp585os
+   # technically tested: cmip6hist, ssp370 and ssp585
+   # seb-wahl, 2021-08-11
+   allow_hist2ssp_transition: True
+   scenario: "PI-CTRL"
+   #scenario: "cmip6hist"
+   #scenario: "ssp126"
+   resolution: "T63"
+   # operational settings: yearly restarts
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   # test settings, daily restarts
+   #restart_rate: ${general.nday}
+   #restart_unit: "days"
+   nproca: 24
+   nprocb: 24
+   nprocio: 12
+   # set's the namelist parameters, and links the correct 
+   # carbon_emission.nc file
+   with_lco2_emis: False
+   namelist_changes:
+      namelist.echam:
+         parctl:
+            iomode: 2
+            nprocio: ${nprocio}
+   # change MAC-SP here
+   # below is the file that is used by default, ${input_dir} resolves to
+   # /scratch/usr/shkifmsw/foci_input2/ECHAM6/input/r0008/ on glogin
+   #add_forcing_sources:
+   #   MAC-SP_cdr: "${input_dir}/MAC-SP_${scenario}.nc"
+   #add_forcing_files:
+   #   MAC-SP: MAC-SP_cdr
+
+nemo:
+   resolution: "ORCA05"
+   # overwrite default time step of 1800s 
+   time_step: 2160
+   version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
+   jpni: 28
+   jpnj: 24
+   nproc: 672 
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   # alkalinity masks
+   namelist_changes:
+      namelist_top_cfg:
+         namtrc_rad:
+            ln_trcrad: .false.
+            #ln_alk: false
+   #forcing_dir: /scratch/usr/shktkeme/foci_input/alk_mask/CoastEU/
+   #forcing_sources:
+      #alkalinity: ${forcing_dir}/alkalinity_mask_y@YEAR@.nc
+   #forcing_files:
+      #alkalinity: alkalinity
+   
+xios:
+   nproc: 12 

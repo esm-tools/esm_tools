@@ -49,3 +49,7 @@ lpj_guess:
             fixed_CO2: 1850
             fixed_ndep: 1850
             fixed_LU: 1850
+        "historical":
+            fixed_CO2: -1
+            fixed_ndep: -1
+            fixed_LU: -1

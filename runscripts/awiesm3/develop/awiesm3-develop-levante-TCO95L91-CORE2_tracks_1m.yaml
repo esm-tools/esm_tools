@@ -1,0 +1,105 @@
+# Multi-track 1-month test for the FESOM ship-track / mooring curtain
+# feature. Runs two tracks at daily cadence:
+#   - "transect": 7-vertex polyline subpolar Atlantic -> Fram Strait
+#   - "mosaic":   12-vertex coarse approximation of the Polarstern
+#                 MOSAiC drift across the central Arctic
+#
+# Both at CORE2 LR, daily output for one calendar month -> ~30 records
+# per track. Outputs land in outdata/fesom/temp_track_transect.fesom.*.nc
+# and outdata/fesom/temp_track_mosaic.fesom.*.nc.
+#
+# Requirements before submitting:
+#   1. ${awiesm3.model_dir}/fesom-2.7 on the FESOM feature/tracks branch
+#      (rebuild via esm_master recomp-awiesm3-develop/fesom).
+#   2. fesom.x linked from the local checkout.
+
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "ab0995"
+    compute_time: "00:30:00"
+    initial_date: "1900-01-01"
+    final_date: "1900-01-31"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 1
+    nyear: 0
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE2"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: false
+    time_step: 1800
+    nproc: 128
+    omp_num_threads: 1
+    tar_binary_restarts: true
+
+    # Stage the four CSV fixtures into the FESOM work dir. Filenames
+    # under work/ must match the track_files entries in
+    # namelists/fesom2/tracks/context_fesom.xml. MOSAiC is split into
+    # three Central Observatory windows (CO1, CO2, CO3) so the polyline
+    # densifier never crosses an artificial leg-changeover geodesic.
+    add_input_sources:
+        track_transect_csv:   "${general.esm_namelist_dir}/fesom2/tracks/test_track_core2_transect.csv"
+        track_mosaic_co1_csv: "${general.esm_namelist_dir}/fesom2/tracks/test_track_mosaic_co1.csv"
+        track_mosaic_co2_csv: "${general.esm_namelist_dir}/fesom2/tracks/test_track_mosaic_co2.csv"
+        track_mosaic_co3_csv: "${general.esm_namelist_dir}/fesom2/tracks/test_track_mosaic_co3.csv"
+    add_input_files:
+        track_transect_csv:   "track_transect_csv"
+        track_mosaic_co1_csv: "track_mosaic_co1_csv"
+        track_mosaic_co2_csv: "track_mosaic_co2_csv"
+        track_mosaic_co3_csv: "track_mosaic_co3_csv"
+    add_input_in_work:
+        track_transect_csv:   "track_transect.csv"
+        track_mosaic_co1_csv: "track_mosaic_co1.csv"
+        track_mosaic_co2_csv: "track_mosaic_co2.csv"
+        track_mosaic_co3_csv: "track_mosaic_co3.csv"
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 4
+    omp_num_threads: 32
+
+    # Substitute the tracks-enabled context_fesom.xml: adds the
+    # <variable_group id="fesom_tracks"> block with ltracks=true plus
+    # the track_files / track_vars / track_names / track_resolution_km /
+    # track_output_freq overrides that io_xios_init reads via
+    # xios_getvar(). Everything else inherits from the base XIOS XML.
+    add_config_sources:
+        context_fesom: "${general.esm_namelist_dir}/fesom2/tracks/context_fesom.xml"
+
+lpj_guess:
+    lresume: false
+    nproc: 8
+    omp_num_threads: 8
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 256
+    omp_num_threads: 1
+    mpi: cmip6
+    scenario: piControl
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 7200
+    norestart: false

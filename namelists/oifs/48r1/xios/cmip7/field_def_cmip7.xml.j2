@@ -76,6 +76,10 @@
     <field id="v10m"   field_ref="10v" />
     <field id="2t"     long_name="2m air temperature"                                         standard_name="surface_air_temperature"                                  unit="K" />
     <field id="2d"     long_name="2m dewpoint temperature"                                    standard_name="dew_point_temperature"                                    unit="K" />
+    <!-- CMIP7/CF-conformant near-surface RH (fraction) computed online by arpifs/dia/send_cmip7_rh.F90:
+         Alduchov-Eskridge (1996) Magnus with hard water/ice switch at 273.15 K.
+         Replaces the IFS default which uses FOEEWM mixed-phase QSAT (not CMIP-conformant). -->
+    <field id="hurs_cmip7" long_name="Near-Surface Relative Humidity (CMIP7 online)"          standard_name="relative_humidity"                                        unit="1" />
     <!--TODO: convert to W m-2-->
     <field id="ssrd"   long_name="surface downward solar radiation"                           standard_name="surface_downwelling_shortwave_flux"                       unit="J m-2" />
     <field id="lsm"    long_name="land-sea mask"                                              standard_name="land_fraction"                                            unit="1" />
@@ -199,6 +203,10 @@
     <!-- Cloud cover: fraction → percentage -->
     <field id="cloud_area_fraction__clt" name="clt" field_ref="tcc" standard_name="cloud_area_fraction" long_name="Total Cloud Cover Percentage" unit="%" >
         tcc*100
+    </field>
+    <!-- Near-surface RH (CMIP7 online): fraction → percentage -->
+    <field id="near_surface_relative_humidity_pct__hurs" name="hurs" field_ref="hurs_cmip7" standard_name="relative_humidity" long_name="Near-Surface Relative Humidity" unit="%" >
+        hurs_cmip7*100
     </field>
     <!-- Precipitation at 3h accumulation: m/3h → kg m-2 s-1 (freq_op="{{ oifs.output_step_freq }}ts") -->
     <field id="precipitation_flux_3h__pr" name="pr" field_ref="tp" standard_name="precipitation_flux" long_name="Precipitation" unit="kg m-2 s-1" >
@@ -399,6 +407,10 @@
     <field id="vo"     long_name="relative vorticity"                        standard_name="atmosphere_relative_vorticity"             unit="s-1" />
     <field id="d"      long_name="divergence"                                standard_name="divergence_of_wind"                        unit="s-1" />
     <field id="r"      long_name="relative humidity"                         standard_name="relative_humidity"                         unit="1" />
+    <!-- CMIP7/CF-conformant model-level RH (fraction) computed online by arpifs/dia/send_cmip7_rh.F90:
+         Alduchov-Eskridge (1996) Magnus with hard water/ice switch at 273.15 K.
+         Replaces the IFS default 'r' which uses FOEEWM mixed-phase QSAT (not CMIP-conformant). -->
+    <field id="hur_cmip7" long_name="relative humidity (CMIP7 online)"        standard_name="relative_humidity"                         unit="1" />
     <field id="o3"     long_name="ozone mass mixing ratio"                   standard_name="ozone_mass_mixing_ratio"                   unit="kg*kg-1" />
     <field id="clwc"   long_name="cloud liquid water"                        standard_name="cloud_liquid_water"                        unit="kg*kg-1" />
     <field id="ciwc"   long_name="specific cloud ice water content"          standard_name="specific_cloud_ice_water_content"          unit="kg*kg-1" />
@@ -448,9 +460,11 @@
     <field id="zg_ml" name="zg" field_ref="z" standard_name="geopotential_height" long_name="Geopotential Height" unit="m" >
         z/9.80665
     </field>
-    <!-- Relative humidity on model levels: fraction → percentage -->
-    <field id="relative_humidity_ml__hur" name="hur" field_ref="r" standard_name="relative_humidity" long_name="Relative Humidity" unit="%" >
-        r*100
+    <!-- Relative humidity on model levels: fraction → percentage.
+         Backed by hur_cmip7 (online CMIP7/CF water-or-ice esat); the IFS native
+         'r' uses FOEEWM mixed-phase QSAT and is NOT CMIP-conformant. -->
+    <field id="relative_humidity_ml__hur" name="hur" field_ref="hur_cmip7" standard_name="relative_humidity" long_name="Relative Humidity" unit="%" >
+        hur_cmip7*100
     </field>
   </field_group>
 

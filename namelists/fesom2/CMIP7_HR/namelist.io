@@ -95,7 +95,7 @@ io_list =  'sst       ',1, 'd', 4,
            'fw_snw    ',1, 'm', 4,
            'virtsalt  ',1, 'm', 4,
 !          'realsalt  ',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (use_virt_salt=.true., real-salt branch in ice_thermo_cpl.F90 unreachable); re-enable for non-linfs runs
-!          'relaxsalt ',1, 'm', 4,  ! disabled: legitimately ~0 in coupled runs (no SSS restoring); re-enable for stand-alone runs
+           'relaxsalt ',1, 'm', 4,   ! enabled: ~0 in coupled HR (no SSS restoring) — that zero IS the correct CMIP vsfcorr (no flux correction applied); shipping it as positive proof of correctness.
            'qcon      ',1, 'm', 4,
            'apnd      ',1, 'm', 4,
            'hpnd      ',1, 'm', 4,
@@ -112,7 +112,7 @@ io_list =  'sst       ',1, 'd', 4,
 ! --- Monthly 2D elements ---
            'tx_sur    ',1, 'm', 4,
            'ty_sur    ',1, 'm', 4,
-!          'strength_ice',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (ice_EVP.F90 ice_strength block is gated off); re-enable for non-linfs runs
+           'strength_ice',1, 'm', 4,  ! enabled. NOTE: mEVP (whichEVP=1) / aEVP (whichEVP=2) currently use a local 'pressure' var and leave ice%work%ice_strength at zero; only whichEVP=0 writes it. Stream wired up so a forthcoming ice_maEVP.F90 patch (populate ice%work%ice_strength alongside pressure_fac) makes CMIP sicompstren correct with no further config change.
            'sgm11     ',1, 'm', 4,
            'sgm12     ',1, 'm', 4,
            'sgm22     ',1, 'm', 4,

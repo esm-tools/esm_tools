@@ -1,0 +1,36 @@
+<domain_definition>
+  <!-- FESOM unstructured triangular mesh. The attributes below (ni_glo,
+       ibegin, ni, lonvalue_1d, latvalue_1d, bounds_lon_1d, bounds_lat_1d,
+       nvertex) are filled at runtime by the Fortran side via
+       xios_set_domain_attr / xios_set_domainname_attr.
+
+       Two native domains are exposed:
+         * nodes    - scalar/tracer points at mesh vertices (2D nodes)
+         * elements - vector/velocity points at triangle centres (2D elem)
+  -->
+
+  <domain id="nodes"    type="unstructured" nvertex="6"
+          name="nod2" dim_i_name="nod2"
+          long_name="FESOM mesh nodes (vertices)" />
+
+  <domain id="elements" type="unstructured" nvertex="3"
+          name="elem" dim_i_name="elem"
+          long_name="FESOM mesh elements (triangle centres)" />
+
+  <!-- Regular rectilinear target domains for regridded surface output.
+       XIOS interpolates from nodes/elements unstructured domains above.
+       Resolution and interpolation order from xios.regular_res_* / xios.interpolation_order. -->
+  {% if fesom.regrid_surface_output %}
+  <domain_group id="regular_domains" type="rectilinear">
+    <domain id="nodes_reg"    ni_glo="{{xios.fesom_regular_res_lon}}" nj_glo="{{xios.fesom_regular_res_lat}}">
+      <generate_rectilinear_domain />
+      <interpolate_domain order="{{xios.interpolation_order}}" write_weight="true" {% if xios.read_weight %}read_weight="true" {% endif %}renormalize="true" />
+    </domain>
+    <domain id="elements_reg" ni_glo="{{xios.fesom_regular_res_lon}}" nj_glo="{{xios.fesom_regular_res_lat}}">
+      <generate_rectilinear_domain />
+      <interpolate_domain order="{{xios.interpolation_order}}" write_weight="true" {% if xios.read_weight %}read_weight="true" {% endif %}renormalize="true" />
+    </domain>
+  </domain_group>
+  {% endif %}
+
+</domain_definition>

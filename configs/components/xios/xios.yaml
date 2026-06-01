@@ -35,6 +35,8 @@ xios:
     - 2.5_smhi
     - 2.5_ece
     - 2.5.1
+    - 2.5.2
+    - 2.5.3
 
     branch: esm-tools
 
@@ -196,6 +198,83 @@ xios:
         use_oasis: --use_oasis oasis3_mct
         branch: 2.5.1
         comp_command: export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
+      2.5.2:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI:
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.2
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && gcc -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
+      # 2.5.3: 2.5.2 + the regrid_regular_xios work (cell-bounds-aware
+      # conservative remap for FESOM unstructured -> regular lat/lon) +
+      # magnitude guard in remap update()/move() that fixes NaN propagation
+      # from antipodal-centroid cancellation on global meshes. Required for
+      # CMIP7 regrid output on AWI-ESM3.
+      2.5.3:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        choose_computer.useMPI:
+          cray_mpich:
+            archfile: ESMTOOLS_generic_oasis_cray
+          intelmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          parastationmpi:
+            archfile: ESMTOOLS_generic_oasis_intel
+          "*":
+            foo: bar
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+            juwels:
+                choose_computer.compiler_mpi:
+                    gnu2023_ompi2023:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    gnu2024_ompi2024:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        foo: bar
+        use_oasis: --use_oasis oasis3_mct
+        branch: 2.5.3
+        comp_command: 'export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x; if [ -n "$HDF5_ROOT" ] && [ -n "$C_BLOSC_ROOT" ] && [ ! -f hdf5-blosc/plugin/libh5blosc.so ]; then mkdir -p hdf5-blosc && cd hdf5-blosc && ([ -d src ] || git clone https://github.com/Blosc/hdf5-blosc.git src) && mkdir -p plugin && gcc -O2 -fPIC -shared -I$HDF5_ROOT/include -I$C_BLOSC_ROOT/include src/src/blosc_filter.c src/src/blosc_plugin.c -Wl,-rpath,$HDF5_ROOT/lib -Wl,-rpath,$C_BLOSC_ROOT/lib64 -L$HDF5_ROOT/lib -lhdf5 -L$C_BLOSC_ROOT/lib64 -lblosc -o plugin/libh5blosc.so; fi'
       # XIOS with oasis dependencies and oasis support
       "2.5-yac":
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5.git
@@ -415,7 +494,7 @@ xios:
                 io_def:           ${fesom_xios_xml_dir}/iodef.xml
                 context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
                 axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
-                domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml
+                domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml.j2
                 grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
                 field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml
                 file_def_fesom:   ${fesom_xios_xml_dir}/file_def_fesom.xml.j2

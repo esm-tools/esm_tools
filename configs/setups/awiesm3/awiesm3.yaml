@@ -20,6 +20,7 @@ general:
     available_versions:
         - 'v3.4.0'
         - 'v3.4.1'
+        - 'v3.4.2'
         - 'develop'
         - 'develop-cc'
 
@@ -39,6 +40,17 @@ general:
             major_version: v3.4
             couplings:
                 - awiesm3_v3.4.1
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        v3.4.2:
+            major_version: v3.4
+            couplings:
+                - awiesm3_v3.4.2
             add_include_models:
                 - xios
             oasis_with_yac: false
@@ -80,6 +92,8 @@ general:
     reusable_filetypes: [input, bin, src]
 
     with_co2_coupling: false
+
+    force_overwrite_in_file_movements: True
 
     choose_computer.name:
         levante:
@@ -144,6 +158,28 @@ oifs:
                     NAEPHY:
                         LECURR: true
 
+    choose_general.version:
+        v3.4.2:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
+        develop:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
+        develop-cc:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
 
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -361,6 +397,21 @@ fesom:
                     ice_therm:
                         use_meltponds: true
 
+    # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop
+    # branches — reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is
+    # unstable on coarse meshes (e.g. CORE2), so other resolutions keep
+    # their per-mesh whichEVP default from fesom-2.7.yaml.
+    choose_general.version:
+        v3.4.2:
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        develop:
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        develop-cc:
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
     remove_forcing_files:
@@ -559,6 +610,12 @@ xios:
     xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
     interpolation_order: 1
     compression_level: 1
+    # 0.5deg default for FESOM regridded surface + 3D output. Validated in
+    # HR Test_21 vs 1deg Test_20: +0.4% wall time, +8 GB/year disk for the
+    # full 2D+3D set. Override per-experiment if a coarser grid is wanted.
+    fesom_regular_res_lon: 720
+    fesom_regular_res_lat: 360
+    read_weight: false
     truncation: "${oifs.truncation}"
     choose_truncation:
         TCO:

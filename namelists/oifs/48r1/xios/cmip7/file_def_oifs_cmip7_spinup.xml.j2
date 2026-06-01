@@ -40,6 +40,8 @@
                 <field field_ref="surface_upwelling_shortwave_flux_cs__rsuscs"/>
                 <field field_ref="surface_downwelling_longwave_flux_cs__rldscs"/>
                 <field field_ref="surface_upwelling_longwave_flux_cs__rluscs"/>
+                <!-- Near-surface relative humidity (CMIP7 online; see send_cmip7_rh.F90) -->
+                <field field_ref="near_surface_relative_humidity_pct__hurs"/>
             </field_group>
         </file>
 
@@ -386,6 +388,8 @@
                 <field field_ref="surface_snow_amount__snw"/>
                 <!-- Raw fields for pipeline: daily tclw for clwvi computation -->
                 <field field_ref="tclw" name="tclw" long_name="Total column cloud liquid water"/>
+                <!-- Near-surface relative humidity (CMIP7 online; see send_cmip7_rh.F90) -->
+                <field field_ref="near_surface_relative_humidity_pct__hurs"/>
             </field_group>
         </file>
 
@@ -499,7 +503,7 @@
             name="atm_remapped_1d"
             description="AWI-ESM3-VEG-HR daily raw surface fields">
 
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+            <field_group grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="sp" name="sp" long_name="Surface pressure"/>
@@ -521,7 +525,7 @@
             name="atm_remapped_1d_pl"
             description="AWI-ESM3-VEG-HR daily raw pressure-level fields">
 
-            <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+            <field_group grid_ref="regular_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="z_pl" name="z"/>
                 <field field_ref="t_pl" name="t"/>
                 <field field_ref="u_pl" name="u"/>
@@ -540,7 +544,7 @@
             name="atm_remapped_6h_legacy"
             description="ECE4/OIFS 6hourly surface fields">
 
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+            <field_group grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
                 <field field_ref="msl" name="msl" long_name="Mean sea level pressure"/>
                 <field field_ref="tcc" name="tcc" long_name="Total cloud cover"/>
                 <field field_ref="10u" name="10u" long_name="10 metre U wind component"/>
@@ -565,7 +569,7 @@
             name="atm_remapped_1m"
             description="ECE4/OIFS monthly surface fields">
 
-          <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+          <field_group grid_ref="regular_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
               <field field_ref="cvl" name="cvl" long_name="Low vegetation cover"/>
               <field field_ref="cvh" name="cvh" long_name="High vegetation cover"/>
               <field field_ref="2t" name="2t" long_name="2 metre temperature"/>
@@ -653,7 +657,7 @@
             name="atm_remapped_1m_pl"
             description="ECE4/OIFS 6hourly pressure level fields">
 
-            <field_group grid_ref="reduced_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+            <field_group grid_ref="regular_pl" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="z_pl" name="z"/>
                 <field field_ref="t_pl" name="t"/>
                 <field field_ref="u_pl" name="u"/>

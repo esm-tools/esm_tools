@@ -1,3 +1,4 @@
+from __future__ import annotations
 """HPC storage STAC extension: tape state, recall time, storage tier."""
 
 from datetime import datetime, timezone

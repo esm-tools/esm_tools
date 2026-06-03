@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Contacts STAC extension: authors, ORCID, institution."""
 
 from esm_catalog.stac.extensions.registry import EXTENSION_URLS

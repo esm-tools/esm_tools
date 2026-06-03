@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Detect HPC storage type and facility from a file path or filesystem."""
 
 import os

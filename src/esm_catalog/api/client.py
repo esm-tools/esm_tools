@@ -623,6 +623,20 @@ class DuckDBCatalogClient(BaseCoreClient):
                         col = _enrich_collection_with_nml(col, db)
                     col = _inject_collection_links(col, base_url)
                     return stac.Collection(**col)
+
+            # Not a collection — check if it's an item ID (personal-collection
+            # bookmarks incorrectly link to /collections/{item_id}).
+            for db in dbs:
+                items, _ = db.search_items({"id": collection_id}, limit=1, offset=0)
+                if items:
+                    item = items[0]
+                    cid = item.get("collection", "")
+                    if cid:
+                        raise HTTPException(
+                            status_code=307,
+                            detail="Item found; redirecting to correct URL",
+                            headers={"Location": f"{base_url}/collections/{cid}/items/{collection_id}"},
+                        )
         finally:
             self._close_catalogs(dbs)
 

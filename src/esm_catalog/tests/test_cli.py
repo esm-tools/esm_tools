@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Tests for cli.py — all commands exercised via click.testing.CliRunner."""
 
 import json

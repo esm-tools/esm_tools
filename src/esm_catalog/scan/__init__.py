@@ -1,3 +1,4 @@
+from __future__ import annotations
 """File scanning: extract metadata from NetCDF and GRIB files."""
 
 from esm_catalog.scan.context import (

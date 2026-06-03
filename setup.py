@@ -40,15 +40,6 @@ requirements = [
     "xdgenvpy==2.3.5",
     "pydantic>=1.10.13",
     "h5netcdf>=0.8.1",
-    # New for catalogs
-    "pystac",
-    "shapely",
-    # esm_catalog dependencies
-    "duckdb",
-    "cfgrib",
-    "joblib",
-    "pyarrow",
-    "rich-click",
 ]
 
 setup_requirements = []
@@ -102,6 +93,15 @@ setup(
         "mcp": [
             "mcp>=1.0",
             "httpx>=0.27",
+        ],
+        "catalog": [
+            "cfgrib",
+            "duckdb",
+            "joblib",
+            "pyarrow",
+            "pystac",
+            "rich-click",
+            "shapely",
         ],
     },
     install_requires=requirements,

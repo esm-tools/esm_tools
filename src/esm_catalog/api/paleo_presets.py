@@ -11,7 +11,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import duckdb
+try:
+    import duckdb
+except ImportError:
+    duckdb = None  # type: ignore[assignment]
 from paleodatetime import PaleoDateTime
 
 # In-memory database for paleo presets (survives API lifetime)

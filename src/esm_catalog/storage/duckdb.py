@@ -1,10 +1,14 @@
+from __future__ import annotations
 """DuckDB-backed catalog storage: insert, query, and update STAC objects."""
 
 import json
 import os
 from pathlib import Path
 
-import duckdb
+try:
+    import duckdb
+except ImportError:
+    duckdb = None  # type: ignore[assignment]
 from loguru import logger
 
 

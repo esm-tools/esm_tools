@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Extension URL registry — canonical schema URLs for all STAC extensions used."""
 
 EXTENSION_URLS: dict[str, str] = {

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """ESM Catalog — STAC-based catalog system for ESM-Tools experiment output."""
 
 __version__ = "0.1.0"

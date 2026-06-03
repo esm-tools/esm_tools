@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Experiment-level STAC hierarchy endpoints.
 
 GET /experiments              → list all experiments with component lists

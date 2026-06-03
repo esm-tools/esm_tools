@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Datacube STAC extension: cube:dimensions and cube:variables."""
 
 from esm_catalog.stac.extensions.registry import EXTENSION_URLS

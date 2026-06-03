@@ -45,7 +45,6 @@ requirements = [
     "shapely",
     # esm_catalog dependencies
     "duckdb",
-    "cfgrib",
     "joblib",
     "pyarrow",
     "rich-click",
@@ -102,6 +101,9 @@ setup(
         "mcp": [
             "mcp>=1.0",
             "httpx>=0.27",
+        ],
+        "catalog": [
+            "cfgrib",
         ],
     },
     install_requires=requirements,

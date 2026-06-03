@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Static PNG generation module for climate data visualization.
 

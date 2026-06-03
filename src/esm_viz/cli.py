@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 CLI entry point for the ESM visualization service.
 

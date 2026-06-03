@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 esm_viz - FastAPI-based visualization service for climate data.
 

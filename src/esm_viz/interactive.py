@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 Interactive visualization module using Panel/hvplot.
 

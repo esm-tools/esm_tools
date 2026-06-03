@@ -1,3 +1,4 @@
+from __future__ import annotations
 """HSM (Hierarchical Storage Management) state queries with rate limiting."""
 
 import subprocess

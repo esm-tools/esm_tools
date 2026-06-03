@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Shared pytest fixtures for ESM-Catalog tests."""
 import pytest
 from fastapi.testclient import TestClient

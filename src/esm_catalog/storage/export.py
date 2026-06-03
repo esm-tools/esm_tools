@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Export catalog data to Parquet or JSON for interoperability and batch imports."""
 
 import json

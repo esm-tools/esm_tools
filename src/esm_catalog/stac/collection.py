@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Create and update STAC Collection objects."""
 
 from datetime import datetime

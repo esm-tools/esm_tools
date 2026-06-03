@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Load and parse ESM-Tools finished_config.yaml."""
 
 from pathlib import Path

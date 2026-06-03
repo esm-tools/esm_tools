@@ -1,3 +1,4 @@
+from __future__ import annotations
 """DuckDB-backed catalog storage: insert, query, and update STAC objects."""
 
 import json

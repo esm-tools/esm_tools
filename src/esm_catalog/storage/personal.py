@@ -25,7 +25,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Literal
 
-import duckdb
+try:
+    import duckdb
+except ImportError:
+    duckdb = None  # type: ignore[assignment]
 from loguru import logger
 from pydantic import BaseModel, Field
 

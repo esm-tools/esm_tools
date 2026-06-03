@@ -5,7 +5,10 @@ import json
 import os
 from pathlib import Path
 
-import duckdb
+try:
+    import duckdb
+except ImportError:
+    duckdb = None  # type: ignore[assignment]
 from loguru import logger
 
 

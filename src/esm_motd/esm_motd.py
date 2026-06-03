@@ -127,11 +127,15 @@ class MessageOfTheDayHandler:
                 print()
                 print(self.message_dict[message]["message"])
                 if mypackage == "esm_tools":
-                    esm_tools_path = esm_tools._get_real_dir_from_pth_file("")
+                    try:
+                        esm_tools_path = esm_tools._get_real_dir_from_pth_file("")
+                        cd_step = f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"
+                    except FileNotFoundError:
+                        cd_step = ""
                     print(
                         f"Upgrade ESM-Tools to the version contianing this fix (\x1b[96m{version}\x1b[0m) by:\n"
-                        f"\x1b[96m1.\x1b[0m \x1b[35mcd {esm_tools_path}\x1b[0m\n"
-                        "\x1b[96m2.\x1b[0m Make sure that your git repo is clean (\x1b[35mgit status\x1b[0m)\n"
+                        + cd_step
+                        + "\x1b[96m2.\x1b[0m Make sure that your git repo is clean (\x1b[35mgit status\x1b[0m)\n"
                         "\x1b[96m3.\x1b[0m \x1b[35mgit checkout release\x1b[0m\n"
                         "\x1b[96m4.\x1b[0m \x1b[35mgit pull\x1b[0m\n"
                     )

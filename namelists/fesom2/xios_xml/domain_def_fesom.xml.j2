@@ -24,11 +24,11 @@
   <domain_group id="regular_domains" type="rectilinear">
     <domain id="nodes_reg"    ni_glo="{{xios.fesom_regular_res_lon}}" nj_glo="{{xios.fesom_regular_res_lat}}">
       <generate_rectilinear_domain />
-      <interpolate_domain order="{{xios.interpolation_order}}" write_weight="true" />
+      <interpolate_domain order="{{xios.interpolation_order}}" write_weight="true" renormalize="true" />
     </domain>
     <domain id="elements_reg" ni_glo="{{xios.fesom_regular_res_lon}}" nj_glo="{{xios.fesom_regular_res_lat}}">
       <generate_rectilinear_domain />
-      <interpolate_domain order="{{xios.interpolation_order}}" write_weight="true" />
+      <interpolate_domain order="{{xios.interpolation_order}}" write_weight="true" renormalize="true" />
     </domain>
   </domain_group>
   {% endif %}

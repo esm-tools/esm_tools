@@ -1,0 +1,57 @@
+#########################################################################################
+######################### NAME_VERSION YAML CONFIGURATION FILE ##########################
+#########################################################################################
+computer:
+    choose_computer.name:
+        levante:
+            #compiler_mpi: gnu11_ompi4
+            compiler_mpi: intel2022_openmpi
+general:
+    model: icon-fesom 
+    version: "v1.0"
+    coupled_setup: True
+
+    include_models: # List of models, couplers and componentes of the setup.
+    - icon 
+    - fesom 
+    - yac
+    choose_version:
+        v1.0:
+            couplings:
+            - fesom-2.6.2-yac+icon-2024.10-public
+        v2.0:
+            couplings:
+            - fesom-2.6.2-yac+icon-2025.04-public
+
+    prepcompute_recipe:
+        - "compile_model"
+        - "_show_simulation_info"
+        - "create_new_files"
+        - "create_empty_folders"
+        # no need to prepare coupler files with yac
+        # - "prepare_coupler_files"
+        - "assemble"
+        - "log_used_files"
+        - "wait_for_iterative_coupling"
+        - "copy_files_to_thisrun"
+        - "modify_namelists"
+        - "modify_files"
+        - "copy_files_to_work"
+        - "report_missing_files"
+        - "compute_and_log_file_checksums"
+        - "_write_finalized_config"
+        - "database_entry"
+
+fesom:
+    model_dir: ${general.model_dir}/fesom-2.6
+
+    file_movements:
+      input:
+         all_directions: link
+      forcing:
+         all_directions: link
+      outdata:
+         all_directions: move
+      unknown:
+         all_directions: move
+#yac:

@@ -54,7 +54,7 @@ wsplit_maxcfl      = 1.0         ! maximum allowed vertical CFL criterion (range
 ldiag_KE           = .false.     ! enable kinetic energy diagnostics (requires additional computation)
 
 ! --- Time Stepping ---
-AB_order           = 2           ! Adams-Bashforth time stepping order (2 or 3)
+AB_order           = 3           ! Adams-Bashforth time stepping order (2 or 3)
 
 ! --- Split-Explicit Barotropic Subcycling ---
 use_ssh_se_subcycl = .false.     ! enable split-explicit subcycling for barotropic mode

@@ -28,8 +28,10 @@ general:
         - 'v3.2.1'
         - 'v3.2.2'
         - 'v3.3.0'
+        - 'v3.3.1'
         - 'v3.4.0'
         - 'v3.4.1'
+        - 'v3.4.2'
         - 'develop'
         - 'frontiers-xios'
 
@@ -104,6 +106,14 @@ general:
             - xios
             oasis_with_yac: False
             xios_interp_order: 1
+          v3.3.1:
+            major_version: v3.3
+            couplings:
+            - fesom-2.6.8+oifs-43r3-awicm-3.2.4+xios-2.5
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
           v3.4.0:
             major_version: v3.4
             couplings:
@@ -116,6 +126,14 @@ general:
             major_version: v3.4
             couplings:
             - awicm3_v3.4.0
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          v3.4.2:
+            major_version: v3.4
+            couplings:
+            - awicm3_v3.4.2
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -356,7 +374,7 @@ oifs:
                                                 order_in_cluster: concurrent
                                                 run_on_queue: ${computer.partitions.pp.name}
                                                 run_after: tidy
-                                                script_dir: ${general.esm_function_dir}/setups/awicm3
+                                                script_dir: ${general.esm_configs_dir}/setups/awicm3
                                                 submit_to_batch_system: True
                                                 script: "
                                                     postprocessing.sh
@@ -513,11 +531,14 @@ fesom:
                                         oce_tra:
                                                 surf_relax_s: "${surf_relax_s}"
 
-        # aEVP only on the high-resolution DARS2 mesh on develop — reverses
-        # HR sithick drift (Koldunov 2019 JAMES). aEVP is unstable on coarse
-        # meshes (e.g. CORE2), so other resolutions keep their per-mesh
-        # whichEVP default from fesom-2.7.yaml.
+        # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop —
+        # reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is unstable
+        # on coarse meshes (e.g. CORE2), so other resolutions keep their
+        # per-mesh whichEVP default from fesom-2.7.yaml.
         choose_general.version:
+                v3.4.2:
+                        choose_resolution:
+                                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
                 develop:
                         choose_resolution:
                                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
@@ -567,8 +588,11 @@ xios:
         compression_level: 1
         regular_res_lat: 192
         regular_res_lon: 400
-        fesom_regular_res_lon: 360
-        fesom_regular_res_lat: 180
+        # 0.5deg default for FESOM regridded surface + 3D output. Validated
+        # in HR Test_21 vs 1deg Test_20: +0.4% wall time, +8 GB/year disk
+        # for the full 2D+3D set. Override per-experiment if needed.
+        fesom_regular_res_lon: 720
+        fesom_regular_res_lat: 360
         config_sources:
                 context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2
@@ -600,6 +624,12 @@ rnfmap:
                         choose_general.version:
                                 "v3.3.0":
                                         version: awicm-3.1
+                                "v3.3.1":
+                                        version: awicm-3.1
+                                        add_namelist_changes:
+                                                namelist.runoffmapper:
+                                                        NAMRNFMAP:
+                                                                CalvingEnthalpy: .true.
                                 "*":
                                         version: v1.1
                 "v3.4":
@@ -782,6 +812,8 @@ oasis3mct:
         # This variable is only used for major versions of v3.3
         choose_general.version:
                 "v3.3.0":
+                        calving_coupling_mode: 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                "v3.3.1":
                         calving_coupling_mode: 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                 "*":
                         calving_coupling_mode: 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce' 
@@ -1037,6 +1069,8 @@ computer:
                     levante:
                         iolibraries: system_libs
                         compiler_mpi: intel2022_openmpi
+                        add_export_vars:
+                            ECCODESROOT: $IO_LIB_ROOT
 
         choose_general.execution_mode:
             run:

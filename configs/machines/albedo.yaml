@@ -14,10 +14,12 @@ computer:
     accounting: true
     further_reading:
         - batch_system/slurm.yaml
+    partition_cpn: 128
+
     partitions:
         compute:
             name: mpp
-            cores_per_node: 128
+            cores_per_node: ${computer.partition_cpn}
         pp:
             name: smp
             cores_per_node: 1

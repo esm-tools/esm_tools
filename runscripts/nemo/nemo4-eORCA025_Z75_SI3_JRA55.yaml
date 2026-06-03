@@ -1,13 +1,14 @@
 computer:
-   partition: "standard96"
+#   partition: "standard96"
+    launcher_flags: "-l --distribution=cyclic:cyclic"   
 general:
    use_venv: false
    homedir: !ENV ${HOME}
    setup_name: nemo
    compute_time: "04:59:00"
-   account: shkifmsw
-   initial_date: "1980-01-01T00:00:00"       # Initial exp. date
-   final_date: "1983-01-01T00:00:00"         # Final date of the experiment
+   account: bb0519
+   initial_date: "1958-01-01T00:00:00"       # Initial exp. date
+   final_date: "1960-01-01T00:00:00"         # Final date of the experiment
    leapyear: False
    nyear: 1 
    base_dir: ${homedir}/esm/esm-experiments/ 
@@ -23,6 +24,19 @@ nemo:
    jpnj: 0 
    #time_step: 600
 
+    # override hardcoded path to runoff forcing
+   add_namelist_changes:
+      namelist_cfg:
+         namsbc_blk:
+            cn_dir: "./"
+          # climatological runoff for test runs
+         namsbc_rnf:
+             cn_dir: "./"
+             sn_rnf: ['runoff_b0.2.0_eORCA025_r4.2.0.nc',-12,'sorunoff',.false.,.true.,'yearly','','','']
+             sn_cnf: ['runoff_b0.2.0_eORCA025_r4.2.0.nc',-12,'socoefr',.false.,.true.,'yearly','','','']
+         namsbc_apr:
+             cn_dir: "./"
+
 xios:
-   model_dir: ${general.homedir}/esm/models/nemo-eORCA025.z75.SI3/xios
+   model_dir: ${general.homedir}/esm/models/nemo-${nemo.version}
    nproc: 24

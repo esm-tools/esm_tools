@@ -1,3 +1,7 @@
+computer:
+   pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/"
+   partition: "standard96"
+   launcher: "srun"
 general:
    use_venv: False
    verbose: True 
@@ -6,9 +10,9 @@ general:
    homedir: !ENV ${HOME}
 
    # operational settings: yearly restarts
-   compute_time: "01:15:00"
+   compute_time: "00:59:00"
    initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "2100-01-01T00:00:00"         # Final date of the experiment
+   final_date: "1851-01-01T00:00:00"         # Final date of the experiment
    nmonth: 12
    clean_runs: 2
    # test settings, daily restarts
@@ -19,7 +23,7 @@ general:
    
    postprocessing: 0
    # machine specific setup 
-   account: shk00018
+   account: shk00060
    base_dir: ${homedir}/esm/esm-experiments/
 
    lresume: True
@@ -38,7 +42,7 @@ echam:
    # available scenarios: 1percCO2, ssp126, ssp245, ssp370, ssp585, ssp585os
    # technically tested: cmip6hist, ssp370 and ssp585
    # seb-wahl, 2021-08-11
-   scenario: "ssp585"
+   scenario: "cmip6hist"
    resolution: "T63"
    # operational settings: yearly restarts
    restart_rate: ${general.nmonth}
@@ -48,6 +52,14 @@ echam:
    #restart_unit: "days"
    nproca: 24
    nprocb: 24
+   nprocio: 12
+   namelist_changes:
+      namelist.echam:
+         parctl:
+            iomode: 2 
+            nprocio: ${nprocio}
+         runctl:
+            nproma: 8
    
 nemo:
    resolution: "ORCA05"

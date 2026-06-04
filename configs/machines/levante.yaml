@@ -343,7 +343,7 @@ computer:
                 - "load netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0"
                 - "load libaec/1.0.5-intel-2021.5.0"
             add_export_vars:
-                LD_RUN_PATH: $LD_LIBRARY_PATH
+                LD_RUN_PATH: /sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gcc-11.2.0-bcn7mb/lib64:$LD_LIBRARY_PATH
                 AEC_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
                 aec_ROOT: /sw/spack-levante/libaec-1.0.5-gij7yv
                 UCXROOT: /sw/spack-levante/ucx-1.12.0-nlas56

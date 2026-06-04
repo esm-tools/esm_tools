@@ -29,13 +29,13 @@ pism2esm() {
     echo " *   calling pism2atmosphere"
     pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
 
-    echo " *   calling pism2ocean"
-    pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
-
     if [[ "x$CHANGE_OCEAN" == "x1" ]]; then
         echo " *   CHANGE_OCEAN=1 -> building new FESOM submesh from MAXMESH"
         build_submesh
     fi
+    echo " *   calling pism2ocean"
+    pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
+
 
     echo " *** pism2esm done *** "
 }

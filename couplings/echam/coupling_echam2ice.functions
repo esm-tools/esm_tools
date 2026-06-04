@@ -207,6 +207,7 @@ echam_ice_construct_input_list() {
 ## mass balance schemes, e.g. an EBM.
 echam_ice_select_relevant_variables() {
         echo ""; echo "                *   selecting relevant variables"
+        echo ""; echo "                *   echam6_file_list_for_ice=${echam6_file_list_for_ice}"
 
         processed_echam6_file_list_for_ice=""
         
@@ -220,6 +221,7 @@ echam_ice_select_relevant_variables() {
                                    uv=(u10^2+v10^2)^(1/2)" \
                             -setcodetab,${file}.codes \
                             -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
+                            -monmean \
                             $file \
                             "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
                             #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \
@@ -238,6 +240,7 @@ echam_ice_select_relevant_variables() {
                                    uv=(u10^2+v10^2)^(1/2)" \
                             -setcodetab,${file}.codes \
                             -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
+                            -monmean \
                             $file \
                             "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
                             #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \

@@ -247,22 +247,18 @@ update_orography_apply_orography_anomaly() {
         done
         unset _orog_retry
         ncrename -v .${ice_orography_difference_name},oromea $ifile
-        # Always start from the ECHAM restart reference; never reuse a stale per-run file.
-        rm -f ${ofile}
-        if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
-                rfile=$(readlink ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc)
-        else
-                rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
-        fi
-        rm -f tmp_oromea
-        if ! ncks -O -v oromea $rfile tmp_oromea 2>/dev/null; then
-                ncks -O -v OROMEA $rfile tmp_oromea 2>> nco_stderr_ice2echam
-                ncrename -v OROMEA,oromea tmp_oromea
-        fi
+        # Use unit.24 (static PI reference) as the OROMEA base, not the ECHAM restart.
+        # The restart oromea drifts with coupling errors over multi-century runs; unit.24
+        # is always clean.  Using the restart as base also creates a restart-state
+        # dependency that can crash ECHAM on the first timestep after any correction
+        # (atmospheric spectral fields remain adapted to the old oromea value).
+        rm -f ${ofile} tmp_oromea
+        ncks -O -v OROMEA ${INIT_DIR_echam}/unit.24 tmp_oromea 2>> nco_stderr_ice2echam
+        ncrename -v OROMEA,oromea tmp_oromea 2>> nco_stderr_ice2echam
         change_lonlat $ifile oromea
         # Use CDO -setmisstoc,0 to zero fill values in the ice orog difference before
-        # adding to ECHAM oromea.  ncap2 where() + ncbo propagates fill values on
-        # Lustre (ncap2 silently fails to overwrite), corrupting oromea.
+        # adding to the reference oromea.  ncap2 where() + ncbo propagates fill values
+        # on Lustre (ncap2 silently fails to overwrite), corrupting oromea.
         cdo -s add -setmisstoc,0 -seltimestep,1 $ifile tmp_oromea $ofile 2>> cdo_stderr_ice2echam
 }
 
@@ -271,6 +267,12 @@ update_orography_prepare_calnoro_high_res() {
         echo; echo "                *   preparing for external program CALNORO"
         ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
         ofile=topodata.nc
+        _orog_retry=0
+        while [ $_orog_retry -lt 15 ] && [ ! -f "$ifile" ]; do
+            sleep 2
+            _orog_retry=$(( _orog_retry + 1 ))
+        done
+        unset _orog_retry
         cdo -s -P 28 --reduce_dim \
                  -remapnn,r720x360 \
                  -setgrid,T511grid \
@@ -284,6 +286,12 @@ update_orography_prepare_calnoro() {
         echo; echo "                *   preparing for external program CALNORO"
         ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
         ofile=topodata.nc
+        _orog_retry=0
+        while [ $_orog_retry -lt 15 ] && [ ! -f "$ifile" ]; do
+            sleep 2
+            _orog_retry=$(( _orog_retry + 1 ))
+        done
+        unset _orog_retry
         cdo -s -P 28 --reduce_dim \
                  -remapnn,r720x360 \
                  -setgrid,${RES_echam}grid \

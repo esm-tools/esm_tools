@@ -63,11 +63,16 @@ function pism_atmosphere_get_newest_output {
         if [ "x${fesom_use_iceberg}" == "x1" ]; then
             echo " * use iceberg coupling and exclude iceberg discharge from mass balance"
             CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_discharge"
-        else 
+        else
             echo " * no iceberg coupling"
             CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount"
-        fi 
-        
+        fi
+        # For SH + active cavity: include basal_mass_flux_floating so it survives the ymonmean
+        # selection step and is available in latest_ex_file_pism.nc for the GFW correction.
+        if [[ "${PISM_HEMISPHERE}" == "pism_sh" && "${USE_CAV_fesom:-0}" == "1" ]]; then
+            CDO_SELECT_VAR_LIST="${CDO_SELECT_VAR_LIST},basal_mass_flux_floating"
+        fi
+
         LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
         echo; echo "                 *   OUTPUT_DIR_pism = ${OUTPUT_DIR_pism} "
         if [ -f ${LATEST_PISM_FILE_SINGLE} ]; then
@@ -204,10 +209,10 @@ function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
         files_needed="${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_mask_current.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_runoff_flux_total.nc ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_runoff_kg_m-2_s-1.nc"
         cdo -s -O merge $files_needed ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
-+        _pasm_tmp="${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere_ncwa_tmp.nc"
-+        ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc "$_pasm_tmp" \
-+            && mv "$_pasm_tmp" ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc
-+        unset _pasm_tmp
+        _pasm_tmp="${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere_ncwa_tmp.nc"
+        ncwa -a time ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc "$_pasm_tmp" \
+            && mv "$_pasm_tmp" ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_file_for_atmosphere.nc
+        unset _pasm_tmp
 #        rm $files_needed $rmlist
         echo; echo "                  ...done"
         unset files_needed
@@ -474,8 +479,40 @@ function generate_runoff_combine_fields {
                 #***************************************************************************
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-                    echo " * substracting discharge from runoff ${ifile}"
-                    cdo -s -chname,tendency_of_ice_amount_due_to_discharge,runoff -sub -selname,tendency_of_ice_amount_due_to_discharge ${ifile} -selname,runoff ${ifile} ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm 
+                    # gfw_atmo content must equal "all PISM mass balance components
+                    # minus the iceberg discharge", because the FESOM iceberg model is
+                    # seeded by tendency_of_ice_amount_due_to_discharge and would
+                    # otherwise double-count that freshwater mass.
+                    #
+                    # For PISM 1.x with PISM_MASS_LOSS_VARS="discharge,runoff":
+                    #   total       = runoff + tendency_of_ice_amount_due_to_discharge
+                    #   gfw content = total - tendency_of_ice_amount_due_to_discharge
+                    #               = runoff
+                    # The arithmetic is written explicitly so additional balance
+                    # components can be added to the sum without re-deriving the formula.
+                    #
+                    # The previous implementation used 'cdo sub discharge runoff' which
+                    # (a) produces discharge - runoff with the operands in the wrong
+                    # order vs the comment, and (b) inherits the discharge variable's
+                    # CF attributes (long_name='discharge flux ...'), which become
+                    # misleading once the content is no longer pure discharge.
+                    # Fix both issues here.
+                    echo " * computing gfw_atmo content = (all mass balance components) - iceberg discharge"
+                    _disch_tmp="${ofile%.nc}_disch_tmp.nc"
+                    _runoff_tmp="${ofile%.nc}_runoff_tmp.nc"
+                    _total_tmp="${ofile%.nc}_total_tmp.nc"
+                    # extract iceberg discharge component (renamed to runoff so cdo add
+                    # below operates on a single variable name)
+                    cdo -s -chname,tendency_of_ice_amount_due_to_discharge,runoff \
+                           -selname,tendency_of_ice_amount_due_to_discharge ${ifile} \
+                           ${_disch_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                    # extract surface runoff
+                    cdo -s -selname,runoff ${ifile} ${_runoff_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                    # sum all mass balance components (extend here if more are added)
+                    cdo -s add ${_runoff_tmp} ${_disch_tmp} ${_total_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                    # subtract iceberg discharge component (handled by FESOM iceberg model)
+                    cdo -s sub ${_total_tmp} ${_disch_tmp} ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                    rm -f ${_disch_tmp} ${_runoff_tmp} ${_total_tmp}
                 #***************************************************************************
                 else
 		    # Only need tendency of ice amount, do not need to combine fields.
@@ -498,11 +535,54 @@ function generate_runoff_combine_fields {
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
                     ncrename -v runoff,total_ice_mass_loss_flux $ofile
+                    # The variable inherits whatever attributes 'runoff' carried in
+                    # the PISM extra file (typically no standard_name / long_name).
+                    # Set CF metadata that accurately describes the content so
+                    # downstream consumers do not see the old discharge attributes.
+                    ncatted -O -h \
+                        -a long_name,total_ice_mass_loss_flux,o,c,"mass loss flux to hydrology (all PISM mass balance components except iceberg discharge)" \
+                        -a standard_name,total_ice_mass_loss_flux,o,c,"land_ice_specific_mass_flux_excluding_calving_and_ice_front_melting" \
+                        -a comment,total_ice_mass_loss_flux,o,c,"iceberg discharge is delivered to the ocean separately via the FESOM iceberg model and is subtracted from the sum of mass balance components here to avoid double-counting" \
+                        $ofile
                 else
                     ncrename -v runoff,total_ice_mass_loss_flux $ofile
 		fi
                 ;;
-    	esac
+    esac
+
+    # For Antarctica with active FESOM cavity module: subtract floating basal melt from GFW.
+    # The cavity module delivers this flux directly to the ocean, so including it in the
+    # atmosphere GFW pathway would double-count it.
+    # Activate by setting USE_CAV_fesom=1 in the esm-tools config (analogous to fesom_use_iceberg).
+    if [[ "${PISM_HEMISPHERE}" == "pism_sh" && "${USE_CAV_fesom:-0}" == "1" ]]; then
+        case ${VERSION_pism:--0.1} in
+        "1.0"|"1.1"|"1.2")
+            echo " * GFW cavity correction: subtracting basal_mass_flux_floating for SH (USE_CAV_fesom=1)"
+            _cav_y2s=3.15569e+07  # seconds per year, same factor as generate_runoff_transform_units
+            _cav_bm_tmp="${ofile%.nc}_cav_bm.nc"
+            _cav_gfw_tmp="${ofile%.nc}_before_cav_corr.nc"
+            # basal_mass_flux_floating: units kg m-2 yr-1 (PISM 1.x), negative for melt.
+            # Rename to total_ice_mass_loss_flux so cdo add operates on matching variable names.
+            if cdo -s \
+                -chname,basal_mass_flux_floating,total_ice_mass_loss_flux \
+                -divc,${_cav_y2s} \
+                -selname,basal_mass_flux_floating \
+                ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc \
+                ${_cav_bm_tmp} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm; then
+                mv ${ofile} ${_cav_gfw_tmp}
+                # Adding the (negative) basal melt flux reduces GFW by the cavity-handled amount.
+                cdo -s -add ${_cav_gfw_tmp} ${_cav_bm_tmp} ${ofile} \
+                    2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
+                rm -f ${_cav_bm_tmp} ${_cav_gfw_tmp}
+            else
+                echo " * WARNING: basal_mass_flux_floating not in PISM output; cavity GFW correction skipped"
+                rm -f ${_cav_bm_tmp}
+            fi
+            unset _cav_y2s _cav_bm_tmp _cav_gfw_tmp
+            ;;
+        esac
+    fi
+
 }
 
 function correct_lonlat_order {

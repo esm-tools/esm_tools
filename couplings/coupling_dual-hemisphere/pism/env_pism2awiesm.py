@@ -41,6 +41,7 @@ def prepare_environment(config):
             "PISM_TO_OCEAN": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False).__bool__()),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "fesom_use_iceberg": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False).__bool__()),
+            "USE_CAV_fesom": int(config[config["general"]["setup_name"]].get("USE_CAV_fesom", 0)),
             "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "iter_coup_interact_method_ice2oce": config[config["general"]["setup_name"]].get("iter_coup_interact_method_ice2oce", "BASALSHELF_WATER"),
             "MACHINE": config["computer"]["name"],

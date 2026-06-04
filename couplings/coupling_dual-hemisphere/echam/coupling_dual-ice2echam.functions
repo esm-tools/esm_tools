@@ -44,9 +44,12 @@ ice2echam() {
 #        done
 
         # Combine pism_nh and pism_sh fields into the shared couple/ directory.
-        # Both files live on the same full T63/T511 grid with zeros outside each
-        # model's domain, so cdo add correctly superposes the two hemispheres.
-        # Combine mask/domain/discharge (zeros outside each domain -- cdo add is correct):
+        # The hemisphere files cover the full T63/T511 grid but flag cells outside
+        # the local model domain as MISSING (not zero).  Plain 'cdo add' then
+        # produces missing everywhere (missing + valid = missing for any single
+        # cell, because NH-valid and SH-valid are mutually exclusive masks), so
+        # the combined field is all-NaN and downstream setmisstoc,0 produces an
+        # identically-zero result.  Set missing -> 0 in each input before adding.
         for FILE in "ice_mask_current_T63grid.nc" "ice_domain_current_T63grid.nc" "ice_discharge_T63grid.nc"; do
             _nh=${COUPLE_DIR}/pism_nh/${FILE}
             _sh=${COUPLE_DIR}/pism_sh/${FILE}
@@ -54,7 +57,7 @@ ice2echam() {
             if [[ -f $_nh ]] && [[ -f $_sh ]]; then
                 echo " * combining ${FILE} for pism_nh and pism_sh ..."
                 rm -f "$_out"
-                cdo -s add $_nh $_sh $_out 2>>${COUPLE_DIR}/cdo_ice2echam
+                cdo -s add -setmisstoc,0 $_nh -setmisstoc,0 $_sh $_out 2>>${COUPLE_DIR}/cdo_ice2echam
             elif [[ -f $_nh ]]; then
                 echo " * using pism_nh only for ${FILE} (pism_sh file absent) ..."
                 cp -f $_nh $_out

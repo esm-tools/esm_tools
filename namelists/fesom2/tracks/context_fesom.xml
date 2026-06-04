@@ -44,24 +44,23 @@
       <variable id="ldiag_cmor"        type="bool">true </variable>
     </variable_group>
 
-    <!-- Ship-track / mooring curtain output. Read by io_xios_init
-         (see io_xios.F90, block right after the diag flags).
-         track_files / track_vars / track_names are semicolon-separated
-         lists with the same number of entries (track_names is optional;
-         defaults to "track1", "track2", ...). Each file is resolved
-         relative to the FESOM run work dir; the runscript stages the
-         CSV fixtures there via add_input_*. track_resolution_km is the
-         densification spacing (smaller => more dense samples; output
-         cell count is then the number of unique mesh nodes those
-         samples snap to, after dedupe of consecutive duplicates).
-         track_output_freq is a single global cadence ('1h', '6h', '1d',
-         '1mo', '1y') applied to every track. -->
+    <!-- Ship-track / mooring curtain output (geometry-aware, v2).
+         Read by io_xios_init (see io_xios.F90, block right after the
+         diag flags). track_files / track_vars / track_names are
+         semicolon-separated lists with the same number of entries
+         (track_names is optional; defaults to "track1", "track2", ...).
+         Each file is resolved relative to the FESOM run work dir.
+         Sampling is geometry-aware: for each mesh edge the polyline
+         crosses, the value is linear-interpolated between the two
+         endpoint nodes using the actual crossing parameter t. No
+         densification, no nearest-neighbour snap — output cell count is
+         set by the mesh, not by a user knob. track_output_freq is a
+         single global cadence ('1h', '6h', '1d', '1mo', '1y'). -->
     <variable_group id="fesom_tracks">
       <variable id="ltracks"             type="bool">true</variable>
-      <variable id="track_files"         type="string">track_transect.csv;track_mosaic_co1.csv;track_mosaic_co2.csv;track_mosaic_co3.csv</variable>
-      <variable id="track_vars"          type="string">temp;temp;temp;temp</variable>
-      <variable id="track_names"         type="string">transect;mosaic_co1;mosaic_co2;mosaic_co3</variable>
-      <variable id="track_resolution_km" type="double">5.0</variable>
+      <variable id="track_files"         type="string">track_transect.csv;track_transect.csv;track_transect.csv;track_mosaic_co1.csv;track_mosaic_co2.csv;track_mosaic_co3.csv;track_drake_passage.csv;track_drake_passage.csv;track_drake_passage.csv</variable>
+      <variable id="track_vars"          type="string">temp;u;v;temp;temp;temp;vflx;hflx;sflx</variable>
+      <variable id="track_names"         type="string">transect;transect_u;transect_v;mosaic_co1;mosaic_co2;mosaic_co3;drake;drake_h;drake_s</variable>
       <variable id="track_output_freq"   type="string">3h</variable>
     </variable_group>
   </variable_definition>

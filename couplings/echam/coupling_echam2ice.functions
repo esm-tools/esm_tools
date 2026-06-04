@@ -60,7 +60,7 @@ echam2ice() {
             fi
         done
 
-        echo "                 *** F I N I S E D      echam2ice *** "
+        echo "                 *** F I N I S H E D    echam2ice *** "
         echo "                =================================================================="
 }
 

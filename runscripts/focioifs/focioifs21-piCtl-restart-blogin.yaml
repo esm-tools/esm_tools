@@ -9,7 +9,7 @@ general:
    
    compute_time: "12:00:00"
    initial_date: "4000-01-01T00:00:00"       # Initial exp. date
-   final_date: "4100-01-01T00:00:00"         # Final date of the experiment
+   final_date: "4300-01-01T00:00:00"         # Final date of the experiment
    
    nyear: 10
    nmonth: 0
@@ -75,6 +75,11 @@ oifs:
    use_ocean_currents: 0
    sclct_switch: 2
    initial_date_cold: "4000-01-01"
+   
+   #add_namelist_changes:
+   #    fort.4:
+   #       NAMMCC:
+   #           RALBSEAD_SCALE: 0.6667
 
 oasis3mct:
    lresume: ${general.lresume}

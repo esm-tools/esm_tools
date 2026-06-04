@@ -169,6 +169,93 @@ provenance_feature:
         action: DELAY(1)
         announcement: true
 
+esm_environment_refactoring:
+        package: "esm_tools"
+        versions: "<6.54.0"
+        message: "\x1b[1m\x1b[96mENVIRONMENT HANDLING UPGRADED!\x1b[0m\n
+
+            The \x1b[96mesm_environment\x1b[0m module has been completely \x1b[1mrefactored\x1b[0m with new powerful\n
+            features:\n
+            \x1b[96m→\x1b[0m More \x1b[1mmodular design\x1b[0m with improved error handling\n
+            \x1b[96m→\x1b[0m \x1b[1mAll components now have sections\x1b[0m for standardized configuration!\n
+            \x1b[96m→\x1b[0m \x1b[1mDeprecated \x1b[35menvironment_changes\x1b[0m\x1b[1m removed\x1b[0m - now all files (including components)\n
+            \ \ use the \x1b[35mcomputer\x1b[0m section for environment modifications.\n
+            \x1b[96m→\x1b[0m Smarter \x1b[1m\x1b[35mchoose blocks\x1b[0m\x1b[1m with conflict detection\x1b[0m and better error handling\n
+            \x1b[96m→\x1b[0m Improved \x1b[1mvariable merging\x1b[0m with hierarchy-level conflict detection\n
+            \x1b[96m→\x1b[0m Advanced \x1b[1mcomponent-specific control\x1b[0m with attribute-based selection and order\n
+            \ \ preservation\n
+
+            \ \ \ \ \x1b[31mBEFORE:\x1b[0m\n
+            \ \ \ \ \ \ \x1b[35mfesom\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \x1b[96mtype\x1b[0m: \x1b[31m'ocean'\x1b[0m\n
+            \ \ \ \ \ \ \ \ \x1b[96menvironment_changes\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \ \ \x1b[96madd_export_vars\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \ \ \ \ \x1b[96mNETCDF_DIR\x1b[0m: \x1b[31m'/path/to/netcdf'\x1b[0m\n
+            \ \ \ \x1b[32mNOW:\x1b[0m\n
+            \ \ \ \ \ \ \x1b[35mfesom\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \x1b[96mtype\x1b[0m: \x1b[31m'ocean'\x1b[0m\n
+            \ \ \ \ \ \ \x1b[35mcomputer\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \x1b[96madd_export_vars\x1b[0m:\n
+            \ \ \ \ \ \ \ \ \ \ \x1b[96mNETCDF_DIR\x1b[0m: \x1b[31m'/path/to/netcdf'\x1b[0m\n
+
+            Check out the full documentation of the newly refactored \x1b[96mesm_environment\x1b[0m at:\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/esm_environment.html\x1b[0m\n
+            "
+        action: DELAY(1)
+        announcement: true
+
+parallel_file_movements:
+        package: "esm_tools"
+        versions: "<6.61.0"
+        message: "\x1b[1m\x1b[96mPARALLEL FILE MOVEMENTS WITH DASK!\x1b[0m\n
+
+            File movements (inputs, restarts, outputs, etc.) are now \x1b[96mparallelized by default\x1b[0m\n
+            using \x1b[1mDask\x1b[0m workers distributed across your compute nodes.\n
+
+            This speeds up the file-handling phases significantly, especially on large\n
+            allocations. No configuration changes are needed \x1b[35m- it just works!\x1b[0m hopefully ;)\n
+
+            If you prefer the previous behavior, you can switch to local threads or\n
+            disable parallelization in your runscript:\n
+
+            \ \ \x1b[35mgeneral\x1b[0m:\n
+            \ \ \ \ \x1b[96mparallel_file_movements\x1b[0m: \x1b[31m\"threads\"\x1b[0m \ \ \ \x1b[34m# local threads (good for < 5 nodes)\x1b[0m\n
+            \ \ \ \ \x1b[96mparallel_file_movements\x1b[0m: \x1b[31mFalse\x1b[0m \ \ \ \ \ \ \ \x1b[34m# serial\x1b[0m\n
+
+            This feature only works on SLURM at the moment, but we will very soon add PBS\n
+            support as well.\n
+
+            Read more at:\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/esm_runscripts.html#parallel-file-movements\x1b[0m\n
+            "
+        action: DELAY(1)
+        announcement: true
+
+geomar_merge:
+        package: "esm_tools"
+        versions: "<6.62.0"
+        message: "\x1b[1m\x1b[96mCONTRIBUTIONS FROM GEOMAR!\x1b[0m\n
+
+            This new release was a contribution from our coleagues at \x1b[1m\x1b[96mGEOMAR\x1b[0m. Big thanks to\n
+            them, specially to Sebastian Wahl, who was the main author, but also to Joakim\n
+            Kjellsson for his work on FOCIOFS. This release includes:\n
+            \x1b[96m→\x1b[0m The \x1b[1m\x1b[35mlatest settings from FOCIOIFS-5.0\x1b[0m (OIFS48r1 with NEMO5,
+            without (working) and\n
+            \ \ with (WIP) nest, used in WHIRLS project)\n
+            \x1b[96m→\x1b[0m The latest settings used in \x1b[1m\x1b[35mFOCI-MOZ\x1b[0m (FOCI with interactive
+            stratospheric\n
+            \ \ chemistry in ECHAM6, used in SOLVe project) the latest settings used
+            in the\n
+            \ \ RESCUE project (modified ECHAM6 and JSBACH (12 tiles))\n
+            \x1b[96m→\x1b[0m A draft version of \x1b[1m\x1b[35mICON-FESOM\x1b[0m that compiles and runs under
+            piControl conditions\n
+            \ \ (tuning ongoing)\n
+            \x1b[96m→\x1b[0m Bug fixes and improvements to the backend
+
+            "
+        action: DELAY(1)
+        announcement: true
+
 #online_workshops:
 #        package: "esm_tools"
 #        versions: "<7.0.0"

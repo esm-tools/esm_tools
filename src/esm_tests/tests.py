@@ -19,7 +19,7 @@ be = "\033[0m"
 # Define default files for comparisson
 compare_files = {
     "comp": ["comp-"],
-    "run": [".run", "finished_config", "namelists"],
+    "run": [".run", "finished_config", "namelists", "hostfile_"],
 }
 
 """
@@ -219,10 +219,7 @@ def comp_test(info):
                         elif "pushd" in line and "popd" not in line:
                             found_format = pushd_format.findall(line)
                         if len(found_format) > 0:
-                            if (
-                                ";" not in found_format[0]
-                                and "/" not in found_format[0]
-                            ):
+                            if ";" not in found_format[0]:
                                 folders.append(found_format[0])
                     if len(folders) == 0:
                         logger.warning(
@@ -234,9 +231,9 @@ def comp_test(info):
                     prim_f = folders[0]
                     folders.append(f"{model}-{version}")
                     folders = [x for x in set(folders)]
-                    os.mkdir(prim_f)
+                    os.makedirs(prim_f, exist_ok=True)
                     for folder in folders:
-                        os.mkdir(prim_f + "/" + folder)
+                        os.makedirs(prim_f + "/" + folder, exist_ok=True)
 
                     # Get files from the
                     # ``esm_test/runscripts/<model>/comp_files4check_runs`` (i.e.
@@ -289,7 +286,7 @@ def run_test(info):
     scripts_info = info["scripts"]
     user_info = info["user"]
     actually_run = info["actually_run"]
-    run_errors = ["ERROR:", "slurmstepd: error: *** STEP", "PBS: job killed: walltime"]
+    run_errors = ["ERROR:", "slurmstepd: error: ", "PBS: job killed: walltime"]
 
     # Set the counter to 0
     c = 0
@@ -520,7 +517,7 @@ def check(info, mode, model, version, out, script, v):
     """
     # Set variables
     success = True
-    mode_name = {"comp": "compilation", "submission": "submission", "run": "runtime"}
+    mode_name = {"comp": "compilation", "submission": "submission", "run": "run"}
     last_tested_dir = info["last_tested_dir"]
     this_computer = info["this_computer"]
     user_info = info["user"]
@@ -551,6 +548,7 @@ def check(info, mode, model, version, out, script, v):
         logger.error(
             f"Missing '{mode}' section in '{os.path.dirname(v['path'])}/config.yaml'!"
         )
+    protected_strings = config_test.get("protected_strings", [])
     config_test = config_test[config_mode]
 
     # Set mode variables
@@ -652,6 +650,7 @@ def check(info, mode, model, version, out, script, v):
                         f"{user_info['test_dir']}/{sp}",
                         sp,
                         ignore_lines,
+                        protected_strings,
                     )
                     success += identical
                     # Update state dictionaries
@@ -789,9 +788,9 @@ def exist_files(files, path, version):
         exception_list = find_exceptions(f)
 
         # Command's logic
-        if " except " in f and version in exception_list:
+        if " except " in f and str(version) in exception_list:
             continue
-        elif " in " in f and not version in exception_list:
+        elif " in " in f and not str(version) in exception_list:
             continue
         else:
             f_path = f.split(" ")[0]

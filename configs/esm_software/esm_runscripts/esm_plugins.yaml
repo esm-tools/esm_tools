@@ -63,9 +63,8 @@ core:
                         - "signal_tidy_completion"
                         - "throw_away_some_infiles"
 
-
                 observe:
-                        - "init_monitor_file"
+                        - "init_observe_logs"
                         - "wait_and_observe"
                         - "wake_up_call"
 
@@ -110,4 +109,8 @@ core:
 
                 workflow:
                         - "assemble_workflow"
+
+                dask_cluster:
+                        - "initialize_dask_cluster"
+                        - "shutdown_dask_cluster"
 

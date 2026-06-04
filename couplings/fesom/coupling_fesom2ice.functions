@@ -151,6 +151,32 @@ function iterative_coupling_fesom1x_ice_write_names {
         echo "     ...done."
 }
 
+function fesom_ice_resolve_output_file {
+        # Resolve a FESOM output file for a given variable+year, accepting either
+        # naming scheme:
+        #   legacy : <var>.fesom.<year>.nc
+        #   XIOS   : <var>.fesom_<year>-<yend>.nc
+        # The XIOS split-suffix form is what FESOM/XIOS writes when
+        # cmip7_cmor_output (with_xios) is on; the Rename_XIOS_FESOM subjob later
+        # renames it to the legacy form (ystart -> <year>). That rename runs
+        # concurrently with couple_out, so this step can race it; accepting both
+        # names makes the coupling robust regardless of which has happened yet.
+        # Echoes the first existing match (legacy preferred); returns 1 if none.
+        typeset _var=$1 _year=$2 _legacy _xios
+        _legacy=${DATA_DIR_fesom}/${_var}.fesom.${_year}.nc
+        if [ -f "${_legacy}" ] ; then
+            echo "${_legacy}"
+            return 0
+        fi
+        for _xios in ${DATA_DIR_fesom}/${_var}.fesom_${_year}-*.nc ; do
+            if [ -f "${_xios}" ] ; then
+                echo "${_xios}"
+                return 0
+            fi
+        done
+        return 1
+}
+
 function fesom_ice_construct_input_list {
         echo ""; echo " *   constructing input list"
 
@@ -175,20 +201,20 @@ function fesom_ice_construct_input_list {
 	    #for month in $(seq -f "%02g" 1 12); do
 		day=01
 		variable=temp
-		current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}.nc
-		if [ -f $current_file ] ; then
+		current_file=$(fesom_ice_resolve_output_file ${variable} ${year})
+		if [ -n "$current_file" ] ; then
 		    fesom1x_raw_file3D_T_list_for_ice="$fesom1x_raw_file3D_T_list_for_ice $current_file"
 		else
-		    echo "     - Missing 3D fesom file ${current_file}"
+		    echo "     - Missing 3D fesom file ${DATA_DIR_fesom}/${variable}.fesom.${year}.nc (and XIOS variant ${variable}.fesom_${year}-*.nc)"
 		    echo " S T O P  1  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 1
 		fi
 
 		variable=salt
-		current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}.nc
-		if [ -f $current_file ] ; then
+		current_file=$(fesom_ice_resolve_output_file ${variable} ${year})
+		if [ -n "$current_file" ] ; then
 		    fesom1x_raw_file3D_S_list_for_ice="$fesom1x_raw_file3D_S_list_for_ice $current_file"
 		else
-		    echo "     - Missing 3D fesom file ${current_file}"
+		    echo "     - Missing 3D fesom file ${DATA_DIR_fesom}/${variable}.fesom.${year}.nc (and XIOS variant ${variable}.fesom_${year}-*.nc)"
 		    echo " S T O P  2  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 2
 		fi
 	    #done

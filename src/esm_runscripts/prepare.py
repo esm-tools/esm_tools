@@ -12,7 +12,7 @@ from esm_calendar import Calendar, Date
 from esm_plugin_manager import install_missing_plugins
 from esm_tools import user_error, user_note
 
-from . import batch_system, filelists, helpers
+from . import batch_system, helpers
 
 
 def run_job(config):

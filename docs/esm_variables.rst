@@ -99,9 +99,9 @@ Run-time variables
    pre_recipe.steps,    general,                "List of recipe step names injected before the main recipe (e.g. ``[""initialize_dask_cluster""]``). Steps listed here run for all job types except those in ``pre_recipe.exclude_job_types``."
    save_batch_env_patterns,  computer,          "List of grep patterns used to capture and restore batch system environment variables across job script stages (e.g. ``[""SLURM""]`` or ``[""PBS""]``)."
    setup_dir,           general,                "Absolute path of the setup directory (where it was installed by `esm_master`)."
-   system_components,   general,                "List of non-model config components included in file-list iteration loops (default: ``[""general"", ""dask""]``)."
-   other_components,    general,                "Additional component names accepted at the root level of the assembled config (validation only — these components do **not** participate in file operations). Extend it with ``add_other_components`` in a runscript or config file. See :ref:`yaml:Components`."
-   valid_model_names,   general,                "List of model component names recognised at the root level of the assembled config. Models listed here trigger full file-operation and directory-creation functionality in ``esm_runscripts`` (experiment sub-directories, file movements, tidy-up, etc.). Extend it with ``add_valid_model_names`` in a runscript or config file. See :ref:`yaml:Components`."
+   system_components,   general,                "List of non-model config components not included in file-list iteration loops (default: ``[""general"", ""dask""]``)."
+   other_components,    general,                "Additional section names accepted at the root level of the assembled config (validation only — these sections do **not** participate in file operations). Extend it with ``add_other_components`` in a runscript or config file. See :ref:`yaml:Sections`."
+   valid_model_names,   general,                "List of model components recognised at the root level of the assembled config. Models listed here trigger full file-operation and directory-creation functionality in ``esm_runscripts`` (experiment sub-directories, file movements, tidy-up, etc.). Extend it with ``add_valid_model_names`` in a runscript or config file. See :ref:`yaml:Sections`."
    time_step,           <component>,            Time step of the component in seconds.
 
 Dask variables

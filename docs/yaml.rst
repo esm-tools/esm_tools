@@ -115,67 +115,81 @@ syntax for `YAML` files including calendar and math operations (see
 The :ref:`yaml:YAML Elements` section lists the `YAML` elements needed for configuration files and
 runscripts.
 
-Sections
-~~~~~~~~
+Components
+~~~~~~~~~~
 
-Every root-level key in an ESM-Tools YAML file must be a known **section** — the name of
-a model, setup, or infrastructure component participating in the experiment. The ``esm_parser``
-validates this after full config assembly and raises an error if an unrecognised key is found
-at the root level.
-
-Valid sections are derived from the experiment configuration: the setup name, the participating
-model components, and the infrastructure components (``general``, ``dask``).
-
-To add a model component that also participates in file operations, add it to
-``general.valid_model_names`` in your runscript:
-
-.. code-block:: yaml
-
-   general:
-           add_valid_model_names:
-                   - my_model
-
-To register an extra section that does not need file operations, use ``general.other_components``
-instead (see the ``add_other_components`` example below).
-
-All content must be **nested under a section**:
+Every root-level key in an ESM-Tools YAML file must belong to a known **component** in the of the
+configuration you are using. Components are the main building blocks of the configuration, and they are
+used to group variables related to the same aspect of the configuration and trigger specific functionality
+for these variables. Examples of components are the name of models, coupled-setups, computer names or system
+components. For example:
 
 .. code-block:: yaml
 
    fesom:
-           time_step: 1800
-           mesh_dir: /pool/meshes/CORE2
+       time_step: 1800
+       mesh_dir: /pool/meshes/CORE2
 
    echam:
-           resolution: T63
+       resolution: T63
 
-A bare key at the root level is invalid:
+``fesom`` and ``echam`` are considered componets in the example above.
+
+Different functionality is triggered for the variables nested under these components, depending on the
+component type (e.g. model, coupled-setup, computer, system, etc.).
+
+Components in yaml files are validated by the `esm_parser`, that raises an error if an unrecognised
+key is found at the root level. See this example for an invalid component (in contrast with the valid
+one above):
 
 .. code-block:: yaml
 
-   # Wrong: time_step must be nested under a section
+   # Wrong: time_step must be nested under a component-key
    time_step: 1800
 
    # Correct
    fesom:
-           time_step: 1800
+       time_step: 1800
 
-If your YAML defines a custom section that is not part of the experiment's model or setup list,
-register it via ``add_other_components`` in your runscript:
+Include new components
+----------------------
+
+Valid components are derived from the experiment configuration, and include:
+1. the coupled-setup name (e.g. ``awicm``, ``foci``, ``awiesm3``, ``icon-fesom``, etc.)
+2. the model components (e.g. ``oifs``, ``fesom``, ``echam``, ``pism``, ``oasis3mct``, ``icon``, etc.)
+3. the HPC names (e.g. ``levante``, ``albedo``, ``zib``, etc.)
+4. infrastructure components (``general``, ``dask``)
+
+To **add a model component** include it into ``general.valid_model_names`` in one of
+the yaml files:
 
 .. code-block:: yaml
 
    general:
-           add_other_components:
-                   - my_postprocessing_tool
+       add_valid_model_names:
+           - <my_model>
 
-.. note::
-   Sections listed in ``other_components`` are accepted by the validator but do **not**
-   participate in file operations (no input/output copying, no file movement entries). For a
-   section that needs file operations it must be a proper model component of the experiment
-   (i.e. appear in ``valid_model_names``).
+   <my_model>:
+       [ ... ]
 
-See :ref:`esm_variables:Tool-Specific Elements/Variables` for details on ``other_components``.
+Models are special components in that there is additional functionality that is triggered for
+each of them, such as possible model compilation with ``esm_master``, and in ``esm_runscripts``
+creation of directories with their names inside the experiment dirs, file operations/tidying up after
+the simulation chunks, etc.
+
+If instead you just need to **add a new yaml component** to the configuration, without triggering any
+additional functionality for that component, use ``general.other_components``:
+
+.. code-block:: yaml
+
+   general:
+       other_components:
+           - <my_new_section>
+
+   <my_new_component>:
+       [ ... ]
+
+See :ref:`esm_variables:Tool-Specific Elements/Variables` for details on ``valid_model_names`` and ``other_components``.
 
 Variable Calls
 ~~~~~~~~~~~~~~

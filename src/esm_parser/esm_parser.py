@@ -950,20 +950,6 @@ def get_components(config, include=None):
     -------
     set of str
         Component names in the requested groups.
-
-    Examples
-    --------
-    All components (used by the section validator):
-
-    >>> get_components(config)
-
-    Model components only (used by file-operation loops):
-
-    >>> get_components(config, include=["model"])
-
-    Everything except system:
-
-    >>> get_components(config, include=["setup", "model", "other"])
     """
     active = set(include) if include is not None else {"setup", "model", "other", "system"}
     general = config.get("general", {})

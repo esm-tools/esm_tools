@@ -231,6 +231,18 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/${PISM_HEMISPHERE}/latest_discharge.nc 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2ocean
 
+    # The 08 km antarct_cr griddes (and PISM 1.x's extra files generally) lack
+    # xbounds/ybounds, so 'cdo setgrid' above does not add lat_bnds/lon_bnds to
+    # latest_discharge.nc.  Downstream tooling (icb_apply_distribution_functions.py)
+    # reads lat_bnds/lon_bnds to obtain iceberg cell vertex coordinates, so add
+    # them here by neighbour-averaging the cell-centre lat/lon already in the
+    # file (no projection math required; script is idempotent).
+    echo " * adding lat_bnds/lon_bnds to latest_discharge.nc"
+    module load python3 2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2ocean || true
+    python ${FUNCTION_PATH}/../utils/add_lat_lon_bnds.py \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/latest_discharge.nc \
+            2>>${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2ocean
+
 #    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
 #    use_icesheet_coupling=1
 

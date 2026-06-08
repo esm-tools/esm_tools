@@ -1,41 +1,17 @@
 # Changes
 
-## esm_parser: refactor get_components() and rename other_components
+## esm_parser: section validation
 
-**Files:** `src/esm_parser/esm_parser.py`, `src/esm_runscripts/filelists.py`,
-`src/esm_runscripts/prepare.py`, `configs/defaults/general.yaml`,
-`configs/components/nemo/nemo.yaml`, `docs/yaml.rst`, `docs/esm_variables.rst`
+**Problem:** If a config file contains an unknown top-level key (e.g. `foo: bar`), the error raised is a `KeyError` with a traceback that doesn't name the offending file, making it hard to debug.
 
-**Problem:** `get_components()` used a single `include_system` boolean, had no concept of
-user-defined extra sections, and the section validator duplicated the list of valid groups.
+**Fix:** Added `validate_config_sections()` to `esm_parser` that checks all top-level keys are known sections (e.g. `setup`, `model`, `other`, `system`). If an unknown key is found, a coloured error is raised naming the offending file. The `yaml_file_to_dict()` function now tracks the `general.sections` list to support this validation. For this feature the following changes were made:
 
-**Fix:**
-- Renamed `valid_components` → `other_components` (in `general.yaml` and `nemo.yaml`):
-  the "other" group for sections that are valid in the config but run no file operations.
-- `get_components(config, include=None)` now supports four named groups:
-  `"setup"`, `"model"`, `"other"`, `"system"`. Returns a `set`. Default (`include=None`)
-  returns all four groups.
-- Section validator simplified to `get_components(config) | internal_keys`.
-- All 19 file-operation call sites updated from `include_system=False` to `include=["model"]`.
-- Docs: added "Sections" section to `yaml.rst`; added `other_components` to `esm_variables.rst`.
-
-## esm_runscripts: exclude system components (dask) from per-model file operations
-
-**Files:** `src/esm_runscripts/filelists.py`, `src/esm_runscripts/prepare.py`
-
-**Problem:** Commit `009ca5f9` introduced `get_file_components()` to fix processing of `general` (a system component) in file operation loops. The function filtered out only `"general"`, so `dask` (also in `system_components`) was still included. This caused `_add_all_folders` in `prepare.py` and all file movement loops in `filelists.py` to add `experiment_*_dir`, `all_filetypes`, and `file_movements` to the `dask` config section, and also consumed/deleted `dask`'s `ignore_files`/`ignore_in_work` keys.
-
-**Fix:** Removed `get_file_components()` entirely. All call sites now use `esm_parser.get_components(config, include_system=False)` directly, which returns only `valid_model_names` (no system components).
-
-
-
-## esm_tests: normalize yaml key order before comparison
-
-**File:** `src/esm_tests/output.py`
-
-**Problem:** `finished_config.yaml` is written by `ruamel.yaml` (via `yaml_dump` in `dict_to_yaml.py`) which preserves Python dict insertion order. When the parsing code changes, key insertion order can shift, producing large diffs in `esm_tests -c` even when all values are identical.
-
-**Fix:** Added `_sort_yaml_lines(lines)` helper that parses a yaml text (after provenance stripping) with `yaml.safe_load` and re-dumps with `sort_keys=True`. Called in `print_diff` for any `.yaml` file, on both the baseline and current file, just before the `difflib` comparison. Falls back silently to the original lines on any parse error. `yaml.safe_load` is safe here because `yaml_dump` converts all non-standard types (dates, batch systems, etc.) to plain strings before writing.
+1. **Section validator** — `validate_config_sections()` checks all top-level config keys are known sections; raises a coloured error naming the offending file. `yaml_file_to_dict` now tracks `general.sections` to support this.
+2. **`get_components()` refactor** — `include_system` bool replaced with `include=["setup","model","other","system"]`; returns a `set`. All 19 file-op call sites now use `include=["model"]` to exclude `dask` and `general`.
+3. **`valid_components` → `other_components`** — renamed in `general.yaml` and `nemo.yaml`.
+4. **`sim_objects.py`** — extends `system_components` with `prev_objects` so prior-chunk objects pass section validation.
+5. **`esm_tests`** — YAML key-order normalisation before diff comparison; machine-agnostic `NAMELIST_PATH`/`RUNSCRIPT_PATH` substitutions in truth files.
+6. **New tests + docs** — `test_yaml_section_validation.py`; "Sections" added to `yaml.rst` and `esm_variables.rst`.
 
 ## esm_tests: add NAMELIST_PATH and RUNSCRIPT_PATH substitutions for machine-agnostic comparison
 

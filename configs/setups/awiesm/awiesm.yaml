@@ -47,6 +47,7 @@ general:
                 - "wait_for_iterative_coupling"
                 - "prep_icebergs"                       # Plugin
                 - "copy_files_to_thisrun"
+                - "apply_recovery_fix"
                 - "modify_namelists"
                 - "apply_iceberg_calving_to_namelists"  # Plugin
                 - "modify_files"

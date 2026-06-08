@@ -2,7 +2,7 @@ import os
 
 from loguru import logger
 
-from . import chunky_parts, helpers, logfiles, workflow
+from . import chunky_parts, helpers, logfiles, recovery, workflow
 
 
 def submit(config):
@@ -135,6 +135,13 @@ def check_if_check(config):
 
 def maybe_resubmit(config):
     jobtype = config["general"]["jobtype"]
+
+    # Recovery hook: if observe just detected a recoverable error during this
+    # compute, skip the normal chain (tidy / next run) and resubmit
+    # prepcompute for the SAME run_number and date instead.
+    if jobtype == "compute" and config["general"].get("recovery_pending"):
+        recovery.trigger_recovery_resubmit(config)
+        return config
 
     nextrun = resubmit_recursively(config, jobtype=jobtype)
 

@@ -44,6 +44,7 @@ core:
                         - "assemble_filelists"
                         - "wait_for_iterative_coupling"
                         - "copy_files_to_thisrun"
+                        - "apply_recovery_fix"
                         - "modify_namelists"
                         - "modify_files"
                         - "create_new_files"

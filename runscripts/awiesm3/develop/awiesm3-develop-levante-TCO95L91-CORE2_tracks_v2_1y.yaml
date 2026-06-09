@@ -1,27 +1,21 @@
-# 1-day smoke test for the geometry-aware ship-track / mooring curtain
-# output (mod_tracks_geometry + io_tracks v2). Runs four tracks at the
-# default 3-hourly cadence:
-#   - transect:   subpolar Atlantic -> Fram Strait (7 vertices)
-#   - mosaic_co1: Polarstern ice-camp drift Oct 2019 - May 2020
-#   - mosaic_co2: Polarstern ice-camp drift Jun - Jul 2020
-#   - mosaic_co3: Polarstern ice-camp drift Aug - Sep 2020
-#
-# CORE2 LR, one day -> ~8 records per track. Outputs land in
-# outdata/fesom/temp_track_<name>.fesom.*.nc with dims (time, nz, M)
-# where M is the number of mesh edges the polyline crosses.
+# 1-year run for the per-sub-segment path_nvec_cs fix validation.
+# Outputs vflx for the multi-segment Atlantic->Fram transect and the
+# synthetic 90-deg bend track so we can cross-check io_tracks against
+# tripyview's calc_transect_Xtransp on the same FESOM standard monthly
+# u/v output.
 
 general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "develop"
     account: "ab0995"
-    compute_time: "00:30:00"
+    compute_time: "01:30:00"
     initial_date: "1900-01-01"
-    final_date: "1900-01-01"
+    final_date: "1900-12-31"
     base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
-    nday: 1
+    nday: 0
     nmonth: 0
-    nyear: 0
+    nyear: 1
 
 computer:
     taskset: true
@@ -33,7 +27,7 @@ awiesm3:
 fesom:
     resolution: "CORE2"
     restart_rate: 1
-    restart_unit: "d"
+    restart_unit: "y"
     restart_first: 1
     lresume: false
     time_step: 1800

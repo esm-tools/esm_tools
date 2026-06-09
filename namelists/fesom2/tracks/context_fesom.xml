@@ -58,9 +58,9 @@
          single global cadence ('1h', '6h', '1d', '1mo', '1y'). -->
     <variable_group id="fesom_tracks">
       <variable id="ltracks"             type="bool">true</variable>
-      <variable id="track_files"         type="string">track_transect.csv;track_transect.csv;track_transect.csv;track_mosaic_co1.csv;track_mosaic_co2.csv;track_mosaic_co3.csv;track_drake_passage.csv;track_drake_passage.csv;track_drake_passage.csv</variable>
-      <variable id="track_vars"          type="string">temp;u;v;temp;temp;temp;vflx;hflx;sflx</variable>
-      <variable id="track_names"         type="string">transect;transect_u;transect_v;mosaic_co1;mosaic_co2;mosaic_co3;drake;drake_h;drake_s</variable>
+      <variable id="track_files"         type="string">track_transect.csv;track_transect.csv;track_transect.csv;track_transect.csv;track_mosaic_co1.csv;track_mosaic_co2.csv;track_mosaic_co3.csv;track_drake_passage.csv;track_drake_passage.csv;track_drake_passage.csv;track_bend90.csv</variable>
+      <variable id="track_vars"          type="string">temp;u;v;vflx;temp;temp;temp;vflx;hflx;sflx;vflx</variable>
+      <variable id="track_names"         type="string">transect;transect_u;transect_v;transect_vflx;mosaic_co1;mosaic_co2;mosaic_co3;drake;drake_h;drake_s;bend90</variable>
       <variable id="track_output_freq"   type="string">3h</variable>
     </variable_group>
   </variable_definition>

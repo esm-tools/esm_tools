@@ -156,6 +156,7 @@ Include new sections
 
 Valid sections are derived from the existing components defined in the experiment configuration,
 and include:
+
 1. the coupled-setup section (e.g. ``awicm``, ``foci``, ``awiesm3``, ``icon-fesom``, etc.)
 2. model sections (e.g. ``oifs``, ``fesom``, ``echam``, ``pism``, ``oasis3mct``, ``icon``, etc.)
 3. HPC machine sections (``computer``)

@@ -11,6 +11,7 @@ from esm_parser import find_variable
 from esm_tools import user_error, user_note
 
 from . import dataprocess, helpers, prepare
+from .conda_env import get_conda_info_from_file
 from .pbs import Pbs
 from .slurm import Slurm
 
@@ -399,7 +400,37 @@ class batch_system:
                     + '"post_run_commands" as a "string" or a "list" of "strings".'
                 ),
             )
+
+        # Add conda activate if necessary
+        old_extras = extras
+        extras = []
+        for command in old_extras:
+            if command == "@conda_activate@":
+                extras.extend(batch_system.get_conda_activate_commands(config))
+            else:
+                extras.append(command)
+
         return extras
+
+    @staticmethod
+    def get_conda_activate_commands(config):
+        commands = []
+
+        # Do not mix conda and venvs
+        if config["general"].get("use_venv", False):
+            return commands
+
+        conda_env = config["computer"].get("conda", {}).get("env", False)
+        conda_root = config["computer"].get("conda", {}).get("root", None)
+        if not conda_env:
+            conda_env, conda_root = get_conda_info_from_file(config)
+        if conda_env:
+            commands.append("# Activate conda environment")
+            if conda_root:
+                commands.append(f"source {conda_root}/bin/activate")
+            commands.append(f"conda activate {conda_env}")
+
+        return commands
 
     @staticmethod
     def get_env_capture_commands(config):
@@ -460,7 +491,6 @@ class batch_system:
         return [
             "# Recover batch system environment variables",
             f"source {env_file}; rm {env_file}",
-            "",
         ]
 
     @staticmethod
@@ -669,18 +699,21 @@ class batch_system:
                     cluster
                 ]["next_submit"]
 
+                runfile.write("\n")
+                runfile.write("# Call to esm_runscript to start subjobs:\n")
+                runfile.write("# " + str(subjobs_to_launch) + "\n")
+                runfile.write("process=$!\n\n")
+
+                # Restore batch env vars before resubmission
+                for line in batch_system.get_env_recovery_commands(config):
+                    runfile.write(line + "\n")
+
                 # extra entries for each subjob
                 post_run_commands = batch_system.get_post_run_commands(config)
                 for line in post_run_commands:
                     runfile.write(line + "\n")
 
                 runfile.write("\n")
-                runfile.write("# Call to esm_runscript to start subjobs:\n")
-                runfile.write("# " + str(subjobs_to_launch) + "\n")
-                runfile.write("process=$!\n\n")
-                # Restore batch env vars before resubmission
-                for line in batch_system.get_env_recovery_commands(config):
-                    runfile.write(line + "\n")
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )

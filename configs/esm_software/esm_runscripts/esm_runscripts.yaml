@@ -18,6 +18,7 @@ choose_job_type:
                         # potentially also choosable entries can be overridden via
                         # usermods.yaml (e.g. computer.useMPI: intel18_bullxmpi)
                         - "apply_last_minute_changes"
+                        - "set_launched_with_conda"
                         - "find_openmp"
                         - "resolve_some_choose_blocks"
                         - "_initialize_calendar"
@@ -35,6 +36,7 @@ choose_job_type:
                         - "initialize_coupler"
                         - "set_logfile"
                         - "check_config_for_warnings_errors"
+                        - "write_conda_info_file"
 
         assemble:
                 recipe:

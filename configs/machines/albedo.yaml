@@ -72,7 +72,7 @@ computer:
     mkl_root: /albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-akthm3n/mkl/2022.1.0
     tbb_root: /albedo/soft/sw/spack-sw/intel-oneapi-mkl/2022.1.0-akthm3n/tbb/latest
 
-    mpi_implementation: openmpi_2022
+    mpi_implementation: openmpi_2026
     choose_mpi_implementation:
         intel-oneapi-mpi:
             mpi_module: intel-oneapi-mpi/2021.6.0

@@ -6,6 +6,7 @@ __version__ = "6.62.4"
 
 from .batch_system import *
 from .chunky_parts import *
+from .conda_env import *
 from .dask_cluster import *
 from .database import *
 from .database_actions import *

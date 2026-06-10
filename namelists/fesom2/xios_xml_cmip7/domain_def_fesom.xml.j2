@@ -17,10 +17,12 @@
           name="elem" dim_i_name="elem"
           long_name="FESOM mesh elements (triangle centres)" />
 
-  <!-- Regular rectilinear target domains for regridded surface output.
+  <!-- Regular rectilinear target domains for regridded output.
        XIOS interpolates from nodes/elements unstructured domains above.
+       Required by BOTH the 2D surface (regrid_surface_output) and the 3D
+       (regrid_3d_output) regridded file groups, so emit whenever either is on.
        Resolution and interpolation order from xios.regular_res_* / xios.interpolation_order. -->
-  {% if fesom.regrid_surface_output %}
+  {% if fesom.regrid_surface_output or fesom.regrid_3d_output %}
   <domain_group id="regular_domains" type="rectilinear">
     <domain id="nodes_reg"    ni_glo="{{xios.fesom_regular_res_lon}}" nj_glo="{{xios.fesom_regular_res_lat}}">
       <generate_rectilinear_domain />

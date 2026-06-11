@@ -36,7 +36,6 @@ choose_job_type:
                         - "initialize_coupler"
                         - "set_logfile"
                         - "check_config_for_warnings_errors"
-                        - "write_conda_info_file"
 
         assemble:
                 recipe:
@@ -49,6 +48,7 @@ choose_job_type:
                         - "_create_component_folders"
                         - "initialize_experiment_logfile"
                         - "copy_tools_to_thisrun"
+                        - "write_conda_info_file"
                         # The next step will call esm_runscripts again from the experiment folder,
                         # if the current folder is not the experiment folder already.
                         # If esm_runscripts will be excuted, the following step will be skipped, since

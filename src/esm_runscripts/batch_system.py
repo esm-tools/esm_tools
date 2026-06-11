@@ -595,13 +595,12 @@ class batch_system:
             if batch_or_shell == "batch":
 
                 config = batch_system.calculate_requirements(config, cluster)
-                # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if cluster in reserved_jobtypes and config["computer"].get(
-                    "taskset", False
-                ):
-                    config = config["general"]["batch"].write_het_par_wrappers(config)
-                # Prepare launcher
-                config = config["general"]["batch"].prepare_launcher(config, cluster)
+                if cluster in reserved_jobtypes:
+                    # TODO: remove it once it's not needed anymore (substituted by packjob)
+                    if config["computer"].get("taskset", False):
+                        config = config["general"]["batch"].write_het_par_wrappers(config)
+                    # Prepare launcher (writes hostfile_srun for srun --multi-prog)
+                    config = config["general"]["batch"].prepare_launcher(config, cluster)
                 # Initiate the header
                 header = batch_system.get_batch_header(config, cluster)
 

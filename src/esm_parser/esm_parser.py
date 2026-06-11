@@ -67,6 +67,7 @@ import socket
 import subprocess
 import sys
 import warnings
+from pathlib import Path
 
 if sys.version_info > (3, 9):
     from collections.abc import Mapping
@@ -76,6 +77,7 @@ else:
 # Always import externals before any non standard library imports
 
 # Third-Party Imports
+import colorama
 import numpy
 import yaml
 from loguru import logger
@@ -334,6 +336,102 @@ def complete_config(user_config):
             break
 
     return user_config
+
+
+def _missing_section_header_example(key, source_file):
+    """
+    Return a short diff-like string showing the problem and a suggested fix.
+
+    Lines prefixed with ``-`` (red) show the current (broken) structure;
+    lines prefixed with ``+`` (green) show what the file should look like.
+    """
+    RED = colorama.Fore.RED
+    GREEN = colorama.Fore.GREEN
+    RESET = colorama.Style.RESET_ALL
+    DIM = colorama.Style.DIM
+
+    # Read the first few lines of the offending file
+    try:
+        with open(source_file) as fh:
+            raw_lines = [l.rstrip() for l in fh.readlines()[:5]]
+    except OSError:
+        raw_lines = [f"{key}:", "  ..."]
+
+    before = "\n".join(f"  {RED}-{RESET} {DIM}{l}{RESET}" for l in raw_lines)
+
+    comment = f"{DIM}# replace <section> with the appropriate section name{RESET}"
+    section_line = f"<section>:  {comment}"
+    after_lines = [section_line] + [f"  {l}" for l in raw_lines]
+    after = "\n".join(f"  {GREEN}+{RESET} {l}" for l in after_lines)
+
+    return f"{before}\n\n{after}"
+
+
+def validate_config_sections(config):
+    """
+    Validates that every top-level key in ``config`` is a known section.
+
+    Valid sections are those listed in ``config["general"]["valid_setup_names"]``,
+    ``config["general"]["valid_model_names"]``, and
+    ``config["general"]["system_components"]`` (defined in ``defaults/general.yaml``
+    and extended at runtime).
+
+    Any key outside this set indicates that a yaml file placed content at the
+    wrong level without nesting it under a section header. Since esm-tools 6.54,
+    every yaml file must use section names as its root keys. The source file is
+    identified via ``config["general"]["sections"]``, which is populated by
+    ``yaml_file_to_dict`` every time a file is loaded.
+
+    Parameters
+    ----------
+    config : dict
+        Fully-assembled configuration (top-level keys are expected to be
+        section names).
+
+    Raises
+    ------
+    SystemExit
+        Via ``user_error`` if any top-level key is not a recognised section.
+    """
+    # Keys that may legitimately appear at the top level of the assembled config
+    internal_keys = {"_blackdict", "defaults"}
+
+    valid_keys = get_components(config)
+    all_valid_keys = valid_keys | internal_keys
+    sections = config.get("general", {}).get("sections", {})
+
+    invalid = {}
+    for key in config:
+        if key not in all_valid_keys:
+            invalid[key] = sections.get(key, "unknown source")
+
+    if invalid:
+        details = "\n".join(
+            f"  - ``{key}``: {source}" for key, source in invalid.items()
+        )
+        valid_examples = ", ".join(f"``{k}``" for k in valid_keys)
+
+        first_key, first_source = next(iter(invalid.items()))
+        example = _missing_section_header_example(first_key, first_source)
+
+        user_error(
+            "Missing section headers",
+            (
+                f"The following top-level keys are not valid "
+                f"sections:\n\n{details}\n\n"
+                f"Since esm-tools 6.54, all yaml files must use section names "
+                f"as their root keys. Valid ``sections`` for this experiment are: "
+                f"{valid_examples}.\n\n"
+                f"Example fix for ``{first_source}``:\n\n{example}\n\n"
+                f"Alternatively, if the section name is intentional (e.g. a custom "
+                f"tool not part of the model setup), register it in your runscript:\n\n"
+                f"  general:\n"
+                f"      add_other_components:\n"
+                f"          - <section_name>\n\n"
+                f"Note: sections added this way do not participate in file operations. "
+                f"See docs/yaml.rst 'Sections' for more details."
+            ),
+        )
 
 
 def pprint_config(config):  # pragma: no cover
@@ -827,25 +925,44 @@ def dict_overwrite(sender, receiver, key_path=[], recursion_level=0, verbose=Fal
     return receiver
 
 
-def get_components(config, include_system=True):
-    """Get list of components including models and optionally system components.
+def get_components(config, include=None):
+    """
+    Return a list of component names drawn from one or more groups.
 
     Parameters
     ----------
     config : dict
-        The configuration object
-    include_system : bool
-        Whether to include system components like 'general' and 'dask'
+        The fully-assembled configuration dictionary.
+    include : list of str or None
+        Which groups to include.  Any subset of
+        ``["setup", "model", "other", "system"]``.
+        ``None`` (default) returns all four groups.
+
+        * ``"setup"``  — coupled setup name (``general.valid_setup_names``).
+        * ``"model"``  — participating models (``general.valid_model_names``);
+          these are the components that run file operations.
+        * ``"other"``  — user-defined extra sections (``general.other_components``);
+          no file operations.
+        * ``"system"`` — infrastructure components (``general.system_components``,
+          e.g. ``general``, ``dask``); no file operations.
 
     Returns
     -------
-    list
-        List of component names
+    set of str
+        Component names in the requested groups.
     """
-    components = list(config.get('general', {}).get('valid_model_names', []))
-    if include_system:
-        components.extend(config.get('general', {}).get('system_components', ['general']))
-    return components
+    active = set(include) if include is not None else {"setup", "model", "other", "system"}
+    general = config.get("general", {})
+    result = set()
+    if "setup" in active:
+        result.update(general.get("valid_setup_names", []))
+    if "model" in active:
+        result.update(general.get("valid_model_names", []))
+    if "other" in active:
+        result.update(general.get("other_components", []))
+    if "system" in active:
+        result.update(general.get("system_components", ["general"]))
+    return result
 
 
 def find_remove_entries_in_config(mapping, model_name, models=[]):
@@ -3051,7 +3168,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
             yaml_files.remove("general.yaml")
 
         for yaml_file in yaml_files:
-            file_contents = yaml_file_to_dict(DEFAULTS_DIR + "/" + yaml_file)
+            file_contents = yaml_file_to_dict(
+                f"{DEFAULTS_DIR}/{yaml_file}", register_sections=False
+            )
             default_infos.update(file_contents)
 
         # construct the `defaults` section of the configuration
@@ -3062,7 +3181,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
         if "general.yaml" in os.listdir(DEFAULTS_DIR):
             general_config = {
-                "general": yaml_file_to_dict(f"{DEFAULTS_DIR}/general.yaml")
+                "general": yaml_file_to_dict(
+                    f"{DEFAULTS_DIR}/general.yaml", register_sections=False
+                )
             }
         else:
             general_config = {"general": {}}
@@ -3235,8 +3356,9 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
         #        new_model_list.append(model.split("-")[0])
         #    setup_config["general"]["models"] = new_model_list
 
+        system_components = setup_config["general"].get("system_components", [])
         for model in list(model_config):
-            if model != "general" and model != "computer":
+            if model not in system_components and model != "computer":
                 setup_config["general"]["valid_model_names"].append(model)
             # valid_model_names.append(list(model_config)) happens automatically
 
@@ -3313,6 +3435,7 @@ class ConfigSetup(GeneralConfig):  # pragma: no cover
 
     def finalize(self):
         self.run_recursive_functions(self)
+        validate_config_sections(self)
         del self._blackdict
 
     def run_recursive_functions(self, config, isblacklist=True):

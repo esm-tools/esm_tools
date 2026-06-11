@@ -1,0 +1,120 @@
+#computer:
+#  additional_flags: "--reservation=maintenance_dkrz_infrastructure"
+    
+general:
+   # machine specific setup 
+   account: bb0519
+   base_dir: /work/bb0519/b350071/SOLVE/esm-experiments/
+
+   use_venv: False
+   verbose: False
+   setup_name: "foci"
+   version: "moz"
+   homedir: !ENV ${HOME}
+
+   compute_time: "04:00:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "2014-01-01T00:00:00"         # Final date of the experiment
+   postprocessing: true
+   scenario: "PI-CTRL" 
+   solarforcing: maunder
+   nmonth: 12
+   clean_runs: 3
+
+   lresume: True
+   ini_parent_exp_id: "FOCI3.0-SW103"
+   ini_parent_date: "18991231"
+   ini_nemo_restart_steps: 876576
+   ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+   # ini_parent_exp_id: "FOCI1.16-SW111"
+   # ini_parent_date: "24991231"
+   # ini_nemo_restart_steps: 11395584
+   # ini_parent_dir: "/work/bb0519/foci_input2/FOCI_RESTART/${ini_parent_exp_id}"
+
+foci:
+    model_dir: /work/bb0519/b350071/SOLVE/models/foci-moz/ 
+
+oasis3mct:
+    coupling_time_step: 3600 
+
+echam:
+   resolution: "T63"
+   use_moz: true
+   lresume: ${general.lresume}
+   restart_rate: ${general.nmonth}
+   restart_unit: "months"
+   scenario: ${general.scenario}
+   nproca: 32
+   nprocb: 24
+   nprocio: 12  
+
+   choose_general.solarforcing:
+      maunder:
+         isolrad_switch: 1
+         photolysis_dir: ${input_dir}/HAMMOZ/photolysis_${general.solarforcing}
+         add_forcing_sources:
+            swflux_pictl_low: "${input_dir}/solar_irradiance_maunder/swflux_14band_cmip6_Maunder_type2.7.nc" 
+         add_forcing_files:
+            swflux: swflux_pictl_low 
+            moz_photolysis: moz_photolysis
+         add_forcing_in_work:
+            swflux: "swflux_@YEAR@.nc"
+            moz_photolysis: etfphot_@YEAR@.nc
+      "*":
+         isolrad_switch: 6 # piControl (default)
+
+   namelist_changes:
+      namelist.echam:
+         radctl:
+             isolrad: ${isolrad_switch} 
+             io3: 1
+             ico2: 1
+             ich4: 1
+             in2o: 1
+             icfc: 1
+         runctl:
+            nproma: 32
+            ltimer: true
+         parctl:
+            iomode: 2
+            nprocio: ${nprocio}
+   
+nemo:
+   pre_run_commands: "cp -f ~/FOCI3.0-SW101_hostfile ${work_dir}/hostfile_srun"
+   resolution: "ORCA05"
+   version: "ORCA05_LIM2_KCM_AOW_OASISMCT4"
+   jpni: 32
+   jpnj: 18
+   nproca: ${jpni} 
+   nprocb: ${jpnj} 
+   nproc: 576 
+   add_namelist_changes:
+       namelist_cfg:
+           namrun:
+               nn_euler: 1
+           namsbc:
+               nn_fsbc: 2
+                   #namdyn_ldf:
+                   #rn_ahm_0_blp: -1.709e12
+           namtra_ldf:
+               rn_aht_0: 300
+                   #rn_aeiv_scale: 0.5
+           namsbc_cpl:
+               sn_rcv_rnf: ['none', 'no', '', '', '']
+               sn_rcv_emp: ['kcm_lim_2', 'no', '', '', '']
+           #namdyn_hpg:
+                   #ln_hpg_zps: false    #  z-coordinate - partial steps (interpolation), f if NLFS t else
+                   #ln_hpg_sco: true   #  s-coordinate (standard jacobian formulation), t if NLFS f else
+                   #ln_dynhpg_imp: false #  time stepping: semi-implicit time scheme  (T), f if NLFS t else
+           namdyn_hpg:
+                   ln_hpg_zps: true    #  z-coordinate - partial steps (interpolation), f if NLFS t else
+                   ln_hpg_sco: false  #  s-coordinate (standard jacobian formulation), t if NLFS f else
+                   ln_dynhpg_imp: true #  time stepping: semi-implicit time scheme  (T), f if NLFS t else
+       namelist_top_cfg:
+           namtrc_rad:
+               ln_trcrad: true
+           namtrc_ldf:
+               rn_ahtrc_0: 600 
+   
+xios:
+   nproc: 12

@@ -37,3 +37,5 @@ def write_conda_info_file(config):
     conda_info_file = f'{config["general"]["thisrun_config_dir"]}/conda_info.yaml'
     with open(conda_info_file, "w") as f:
         yaml.dump(conda_info, f)
+        
+    return config

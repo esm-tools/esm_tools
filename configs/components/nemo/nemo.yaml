@@ -1,6 +1,10 @@
 # NEMO YAML CONFIGURATION FILE
 #
 
+general:
+    add_other_components:
+    - nemobasemodel
+
 nemo:
     # DEFAULT VALUES
     model: nemo

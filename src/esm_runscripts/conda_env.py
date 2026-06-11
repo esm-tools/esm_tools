@@ -27,6 +27,9 @@ def get_conda_info_from_file(config):
     return conda_info.get("conda_env"), conda_info.get("conda_root")
 
 def write_conda_info_file(config):
+    if config["general"].get("execution_mode") != "run":
+        return config
+
     conda_env, conda_root = get_conda_info()
 
     if not conda_env:
@@ -37,5 +40,5 @@ def write_conda_info_file(config):
     conda_info_file = f'{config["general"]["thisrun_config_dir"]}/conda_info.yaml'
     with open(conda_info_file, "w") as f:
         yaml.dump(conda_info, f)
-        
+
     return config

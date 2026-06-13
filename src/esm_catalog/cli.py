@@ -47,5 +47,31 @@ def scan(path: str, output: str | None, db: str | None) -> None:
         click.echo(json.dumps(catalog, indent=2, default=str))
 
 
+@main.command()
+@click.argument("shards", nargs=-1, required=True, type=click.Path(exists=True))
+@click.option("--output", "-o", required=True, type=click.Path(),
+              help="Path to the global catalog .duckdb file (created if absent).")
+def merge(shards: tuple[str, ...], output: str) -> None:
+    """Merge per-experiment shard .duckdb files into a single global catalog.
+
+    Each SHARD is a .duckdb file produced by 'esm-catalog scan --db'.
+    Rows are upserted by ID so the command is safe to re-run.
+
+    Example::
+
+        esm-catalog merge exp-alpha/catalog.duckdb exp-beta/catalog.duckdb \\
+            --output global.duckdb
+    """
+    from pathlib import Path as _Path
+
+    from esm_catalog.storage.federation import merge_shards
+
+    n_cols, n_items = merge_shards(list(shards), _Path(output))
+    click.echo(
+        f"Merged {len(shards)} shard(s) into {output}: "
+        f"{n_cols} new collections, {n_items} new items."
+    )
+
+
 if __name__ == "__main__":
     main()

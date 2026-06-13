@@ -97,6 +97,7 @@ setup(
             "numpy",
             "cftime",
             "h5netcdf",
+            "h5py",
             "f90nml",
         ],
     },

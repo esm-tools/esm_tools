@@ -21,6 +21,8 @@ class CollectionContext:
         experiment_id: Experiment name (e.g. "exp-alpha").
         component: Model component for the current scan (e.g. "echam").
         collection_id: STAC collection id (Option A: == experiment_id).
+        collection_title: Human-readable title for the collection (populated
+            by the scan layer).
         experiment_path: Optional path to the experiment root.
         namelists_by_component: Pre-scanned namelists, mapping
             component name -> {filename -> {group -> {key -> value}}}.
@@ -30,5 +32,6 @@ class CollectionContext:
     experiment_id: str
     component: str
     collection_id: str
+    collection_title: str = ""
     experiment_path: Optional[Path] = None
     namelists_by_component: dict = field(default_factory=dict)

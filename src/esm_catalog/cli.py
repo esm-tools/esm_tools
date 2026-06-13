@@ -6,6 +6,9 @@ subsequent feature PRs.
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+
 import click
 
 from esm_catalog import __version__
@@ -17,10 +20,6 @@ def main() -> None:
     """ESM-Tools simulation catalog."""
 
 
-import json as _json
-from pathlib import Path as _Path
-
-
 @main.command()
 @click.argument("path", type=click.Path(exists=True))
 @click.option("--output", "-o", type=click.Path(),
@@ -29,10 +28,10 @@ def scan(path: str, output: str | None) -> None:
     """Scan a run directory and emit an in-memory STAC catalog as JSON."""
     from esm_catalog.scan.ingest import scan_tree
 
-    catalog = scan_tree(_Path(path))
-    text = _json.dumps(catalog, indent=2, default=str)
+    catalog = scan_tree(Path(path))
+    text = json.dumps(catalog, indent=2, default=str)
     if output:
-        _Path(output).write_text(text)
+        Path(output).write_text(text)
         click.echo(f"Wrote {len(catalog['collections'])} collections, "
                    f"{len(catalog['items'])} items to {output}")
     else:

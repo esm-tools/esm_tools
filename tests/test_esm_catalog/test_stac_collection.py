@@ -33,3 +33,11 @@ def test_update_collection_extent_expands_temporal():
             "properties": {"datetime": "2000-01-01T00:00:00"}}
     col = update_collection_extent(col, item)
     assert col["extent"]["temporal"]["interval"][0][0] == "2000-01-01T00:00:00"
+
+
+def test_make_collection_uses_collection_title_when_set():
+    from esm_catalog.context import CollectionContext
+    ctx = CollectionContext(experiment_id="exp", component="echam",
+                            collection_id="exp", collection_title="Nice Title")
+    col = make_collection(ctx)
+    assert col["title"] == "Nice Title"

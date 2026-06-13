@@ -100,6 +100,8 @@ setup(
             "h5netcdf",
             "h5py",
             "f90nml",
+            "cfgrib",
+            "eccodes",
         ],
     },
     install_requires=requirements,

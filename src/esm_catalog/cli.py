@@ -24,18 +24,27 @@ def main() -> None:
 @click.argument("path", type=click.Path(exists=True))
 @click.option("--output", "-o", type=click.Path(),
               help="Write the STAC catalog JSON here (default: stdout).")
-def scan(path: str, output: str | None) -> None:
+@click.option("--db", type=click.Path(),
+              help="Persist the catalog to a DuckDB file at this path.")
+def scan(path: str, output: str | None, db: str | None) -> None:
     """Scan a run directory and emit an in-memory STAC catalog as JSON."""
     from esm_catalog.scan.ingest import scan_tree
 
     catalog = scan_tree(Path(path))
-    text = json.dumps(catalog, indent=2, default=str)
+
+    if db:
+        from esm_catalog.storage.duckdb import persist_tree
+        persist_tree(catalog, Path(db))
+        click.echo(f"Persisted {len(catalog['collections'])} collections, "
+                   f"{len(catalog['items'])} items to {db}")
+
     if output:
+        text = json.dumps(catalog, indent=2, default=str)
         Path(output).write_text(text)
         click.echo(f"Wrote {len(catalog['collections'])} collections, "
                    f"{len(catalog['items'])} items to {output}")
-    else:
-        click.echo(text)
+    elif not db:
+        click.echo(json.dumps(catalog, indent=2, default=str))
 
 
 if __name__ == "__main__":

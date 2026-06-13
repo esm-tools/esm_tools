@@ -102,6 +102,7 @@ setup(
             "f90nml",
             "cfgrib",
             "eccodes",
+            "duckdb>=0.9",
         ],
     },
     install_requires=requirements,

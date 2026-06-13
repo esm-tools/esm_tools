@@ -104,7 +104,8 @@ setup(
             "eccodes",
             "duckdb>=0.9",
             "ruamel.yaml>=0.17",
-            # API serve layer (PR-B1)
+            # API serve layer (PR-B1); personal collections need pytz for DuckDB TIMESTAMPTZ
+            "pytz",
             "stac-fastapi-api>=3.0",
             "stac-fastapi-types>=3.0",
             "fastapi>=0.100",

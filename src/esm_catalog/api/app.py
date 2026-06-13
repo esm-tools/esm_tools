@@ -216,6 +216,26 @@ def create_app(
     catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
     api.app.include_router(catalog_router)
 
+    # Personal collections routes (optional — degraded gracefully if storage unavailable)
+    try:
+        from esm_catalog.api.personal_routes import create_personal_router
+        from esm_catalog.storage.personal import PersonalCollectionStore
+
+        _default_personal_db = (
+            str(Path(registry_persist_path).parent / "personal.duckdb")
+            if registry_persist_path
+            else str(Path.home() / ".cache" / "esm-catalog" / "personal.duckdb")
+        )
+        personal_db_path = os.environ.get("ESM_PERSONAL_DB", _default_personal_db)
+        personal_store = PersonalCollectionStore(personal_db_path)
+        personal_router = create_personal_router(personal_store, auth)
+        api.app.include_router(personal_router)
+    except Exception as _personal_exc:
+        import logging as _logging
+        _logging.getLogger(__name__).warning(
+            "Personal collections not available: %s", _personal_exc
+        )
+
     # Experiment hierarchy routes
     experiment_router = create_experiment_router(client)
     api.app.include_router(experiment_router)

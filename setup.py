@@ -103,6 +103,7 @@ setup(
             "cfgrib",
             "eccodes",
             "duckdb>=0.9",
+            "ruamel.yaml>=0.17",
         ],
     },
     install_requires=requirements,

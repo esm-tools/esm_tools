@@ -26,9 +26,12 @@ jobs:
       - name: Install
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[catalog]"
-          # Base setup.py pins pytest==7.1.2, which predates Python 3.12 support;
-          # install a newer pytest explicitly for the catalog test job.
-          pip install -U "pytest>=7.4"
+          # Install esm_catalog in isolation. A full ".[catalog]" pulls the entire
+          # esm-tools base, which pins ruamel.yaml.clib==0.2.7 — it fails to build
+          # on Python 3.12. The catalog is a standalone component, so we install it
+          # with --no-deps and add only the deps it actually imports (plus a modern
+          # pytest; the base pins pytest==7.1.2, which predates 3.12 support).
+          pip install -e . --no-deps
+          pip install -U "pytest>=7.4" click loguru pystac shapely universal-pathlib
       - name: Run esm_catalog tests
         run: pytest src/esm_catalog/tests -v

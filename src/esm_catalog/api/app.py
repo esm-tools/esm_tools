@@ -35,6 +35,7 @@ from starlette.middleware import Middleware
 from starlette.requests import Request
 
 from esm_catalog.api.auth import Authenticator, NoAuthenticator
+from esm_catalog.api.middleware import RequestLoggingMiddleware
 from esm_catalog.api.cache import CollectionCache, QueryablesCache
 from esm_catalog.api.catalog_routes import create_catalog_router
 from esm_catalog.api.client import (
@@ -109,13 +110,14 @@ def create_app(
     )
 
     middlewares = [
+        Middleware(RequestLoggingMiddleware),
         Middleware(
             CORSMiddleware,
             allow_origins=cors_origins,
             allow_credentials=True,
             allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
             allow_headers=["*"],
-        )
+        ),
     ]
 
     api = StacApi(

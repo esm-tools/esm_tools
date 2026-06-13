@@ -36,15 +36,9 @@ This allows CQL2 queries like:
 
 from __future__ import annotations
 
-from pathlib import Path
-from typing import TYPE_CHECKING
-
 from loguru import logger
 
 from esm_catalog.stac.extensions.registry import EXTENSION_URLS
-
-if TYPE_CHECKING:
-    pass
 
 
 def add_namelist_extension(
@@ -142,7 +136,7 @@ def add_namelist_item_extension(item: dict, ctx) -> dict:
     Reads ctx.namelists_by_component (populated by the scan layer); this
     function performs no scanning and imports nothing from scan/.
     """
-    by_component = getattr(ctx, "namelists_by_component", None) or {}
+    by_component = ctx.namelists_by_component
     total_params = 0
 
     for component_name, namelists in by_component.items():
@@ -170,29 +164,3 @@ def add_namelist_item_extension(item: dict, ctx) -> dict:
     return item
 
 
-def get_namelist_config_path(
-    experiment_path: Path,
-    component: str,
-) -> "Path | None":
-    """Determine the config directory for a component.
-
-    ESM-Tools convention: config/{component}/ contains namelists.
-
-    Args:
-        experiment_path: Path to experiment root (e.g., /exp/basic-001/).
-        component: Component name (e.g., "echam", "fesom").
-
-    Returns:
-        Path to config directory if it exists, None otherwise.
-    """
-    # Try standard ESM-Tools layout
-    config_path = experiment_path / "config" / component
-    if config_path.is_dir():
-        return config_path
-
-    # Try alternative layout (config at experiment root)
-    alt_path = experiment_path / component / "config"
-    if alt_path.is_dir():
-        return alt_path
-
-    return None

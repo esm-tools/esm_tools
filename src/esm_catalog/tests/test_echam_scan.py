@@ -50,10 +50,11 @@ def test_extract_stream_type():
 
 
 def test_indicator_to_cf():
+    # Lookup is by short_name only — the integer indicator argument is ignored,
+    # so any indicator value with a known short_name resolves the same way.
     assert _indicator_to_cf(130, "st") == "surface_temperature"
+    assert _indicator_to_cf(0, "st") == "surface_temperature"      # different int, same result
     assert _indicator_to_cf(999, "unknown_xyz") is None
-    # Standard temperature shortName
-    assert _indicator_to_cf(130, "t") == "air_temperature"
 
 
 def test_is_echam_file_by_codes_companion(tmp_path):

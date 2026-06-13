@@ -60,3 +60,15 @@ def test_scan_grib_datetime():
 def test_scan_file_dispatches_grib():
     md = scan_file(FIX)
     assert md["format"] == "grib"
+
+
+def test_scan_file_dispatches_grib_by_magic_bytes(tmp_path):
+    """Extension-less file with GRIB magic bytes is detected and scanned."""
+    # Copy the fixture's bytes to a filename with NO extension and a name that
+    # does NOT match the ECHAM pattern (so it routes to the generic GRIB scanner,
+    # not scan_echam which would require a companion .codes file).
+    raw = FIX.read_bytes()
+    target = tmp_path / "outputfile"        # no suffix, not ECHAM-shaped
+    target.write_bytes(raw)
+    md = scan_file(target)
+    assert md["format"] == "grib"

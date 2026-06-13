@@ -32,3 +32,7 @@ with open("src/esm_catalog/tests/fixtures/tiny.grib2", "wb") as f:
     eccodes.codes_write(gid, f)
 eccodes.codes_release(gid)
 ```
+
+> **Note:** Regenerating this fixture requires the eccodes samples to be discoverable.
+> The `regular_ll_pl_grib2.tmpl` sample must be on the eccodes samples path; set
+> `GRIB_SAMPLES_PATH` if your eccodes install does not bundle it (the `eccodeslib` wheel does).

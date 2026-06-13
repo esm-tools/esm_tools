@@ -110,6 +110,6 @@ def _parse_iso(s: str | None) -> datetime | None:
     if not s:
         return None
     try:
-        return datetime.fromisoformat(s.rstrip("Z"))
+        return datetime.fromisoformat(s.removesuffix("Z"))
     except (ValueError, AttributeError):
         return None

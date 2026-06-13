@@ -47,6 +47,14 @@ def test_stac_imports_without_scan(monkeypatch):
     import esm_catalog.stac.item
     import esm_catalog.stac.collection
     import esm_catalog.stac.extensions.namelist
+    import esm_catalog.stac.extensions.hpc
+    import esm_catalog.stac.extensions.contacts
+    import esm_catalog.stac.extensions.datacube
+    import esm_catalog.stac.extensions.paleo
     importlib.reload(esm_catalog.stac.item)
     importlib.reload(esm_catalog.stac.collection)
     importlib.reload(esm_catalog.stac.extensions.namelist)
+    importlib.reload(esm_catalog.stac.extensions.hpc)
+    importlib.reload(esm_catalog.stac.extensions.contacts)
+    importlib.reload(esm_catalog.stac.extensions.datacube)
+    importlib.reload(esm_catalog.stac.extensions.paleo)

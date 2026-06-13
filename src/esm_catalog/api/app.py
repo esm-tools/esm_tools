@@ -34,7 +34,9 @@ from stac_fastapi.types.config import ApiSettings
 from starlette.middleware import Middleware
 from starlette.requests import Request
 
+from esm_catalog.api.auth import Authenticator, NoAuthenticator
 from esm_catalog.api.cache import CollectionCache, QueryablesCache
+from esm_catalog.api.catalog_routes import create_catalog_router
 from esm_catalog.api.client import (
     DuckDBCatalogClient,
     FilteredSearchPostRequest,
@@ -59,6 +61,7 @@ _DEFAULT_VERSION = "1.0"
 def create_app(
     catalogs: List[Union[str, Path]] | None = None,
     registry_persist_path: str | Path | None = None,
+    authenticator: Authenticator | None = None,
     title: str = _DEFAULT_TITLE,
     description: str = _DEFAULT_DESCRIPTION,
     version: str = _DEFAULT_VERSION,
@@ -90,6 +93,7 @@ def create_app(
         persist_path=registry_persist_path,
     )
     pool = CatalogPool()
+    auth = authenticator or NoAuthenticator()
     collection_cache = CollectionCache(ttl_seconds=300)
     queryables_cache = QueryablesCache(ttl_seconds=300)
 
@@ -205,6 +209,10 @@ def create_app(
             "catalogs_accessible": accessible,
             "catalogs_total": len(paths),
         }
+
+    # Catalog management routes (CRUD for dynamically adding/removing catalogs)
+    catalog_router = create_catalog_router(registry, pool, auth, queryables_cache)
+    api.app.include_router(catalog_router)
 
     # Experiment hierarchy routes
     experiment_router = create_experiment_router(client)

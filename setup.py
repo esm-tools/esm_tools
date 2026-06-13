@@ -96,6 +96,7 @@ setup(
             "xarray",
             "numpy",
             "cftime",
+            "netCDF4",
             "h5netcdf",
             "h5py",
             "f90nml",

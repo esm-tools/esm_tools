@@ -34,6 +34,6 @@ jobs:
           # with --no-deps and add only the deps it actually imports (plus a modern
           # pytest; the base pins pytest==7.1.2, which predates 3.12 support).
           pip install -e . --no-deps
-          pip install -U "pytest>=7.4" click loguru pystac shapely universal-pathlib xarray numpy cftime netCDF4 h5netcdf h5py f90nml cfgrib eccodes "duckdb>=0.9" "ruamel.yaml>=0.17"
+          pip install -U "pytest>=7.4" click loguru pystac shapely universal-pathlib xarray numpy cftime netCDF4 h5netcdf h5py f90nml cfgrib eccodes "duckdb>=0.9" "ruamel.yaml>=0.17" "stac-fastapi-api>=3.0" "stac-fastapi-types>=3.0" "fastapi>=0.100" "pydantic>=2" attrs uvicorn httpx
       - name: Run esm_catalog tests
         run: pytest tests/test_esm_catalog -v

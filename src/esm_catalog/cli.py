@@ -73,5 +73,37 @@ def merge(shards: tuple[str, ...], output: str) -> None:
     )
 
 
+@main.command()
+@click.argument("catalogs", nargs=-1, type=click.Path())
+@click.option("--host", default="0.0.0.0", show_default=True, help="Bind address.")
+@click.option("--port", default=8000, show_default=True, type=int, help="Port to listen on.")
+@click.option("--registry", type=click.Path(),
+              help="JSON file for persisting dynamic catalog registrations.")
+@click.option("--reload", is_flag=True, default=False,
+              help="Enable auto-reload (development only).")
+def serve(
+    catalogs: tuple[str, ...],
+    host: str,
+    port: int,
+    registry: str | None,
+    reload: bool,
+) -> None:
+    """Start the STAC API server backed by CATALOGS (one or more .duckdb files).
+
+    Example::
+
+        esm-catalog serve /work/exp/catalog.duckdb --port 8080
+    """
+    import uvicorn
+
+    from esm_catalog.api.app import create_app
+
+    api = create_app(
+        catalogs=list(catalogs),
+        registry_persist_path=registry,
+    )
+    uvicorn.run(api.app, host=host, port=port, reload=reload)
+
+
 if __name__ == "__main__":
     main()

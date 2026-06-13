@@ -103,7 +103,6 @@ def is_restart_file(path) -> bool:
 def resolve_context(
     path,
     config: dict | None = None,
-    db=None,
     allow_restart: bool = False,
 ) -> CollectionContext:
     """Resolve collection membership for *path*.
@@ -117,13 +116,9 @@ def resolve_context(
     2. **Path parsing** (fallback — used during batch scan of legacy runs):
        Looks for ".../experiments/{experiment}/outdata/{component}/..." pattern
 
-    If db is provided and the resolved collection does not yet exist in the
-    database, the collection is created and inserted atomically here.
-
     Args:
         path: File path to resolve context for
         config: Optional ESM-Tools config dict
-        db: Optional database connection for collection creation
         allow_restart: If False (default), raise RestartFileError for restart files.
                        If True, allow restart files to be cataloged.
 
@@ -165,9 +160,6 @@ def resolve_context(
         ctx.component,
         ctx.collection_id,
     )
-
-    if db is not None:
-        _ensure_collection(ctx, db)
 
     return ctx
 
@@ -300,43 +292,12 @@ def _make_ctx(
     )
 
 
-def _ensure_collection(ctx: CollectionContext, db) -> None:
-    """Create and insert the collection if it does not exist yet.
-
-    If the collection already exists (experiment seen before), register the new
-    component so the collection's components list stays up to date.
-    """
-    from esm_catalog.stac.collection import make_collection
-    from esm_catalog.scan.namelist import (
-        extract_fesom_mesh_info,
-        get_namelist_config_path,
-        scan_namelist_directory,
-    )
-
-    if db.collection_exists(ctx.collection_id):
-        db.add_component_to_collection(ctx.collection_id, ctx.component)
-        return
-
-    namelists = None
-    fesom_info = None
-    if ctx.experiment_path is not None:
-        cfg = get_namelist_config_path(ctx.experiment_path, ctx.component)
-        if cfg is not None:
-            namelists = scan_namelist_directory(cfg, ctx.component)
-            if ctx.component.lower() in ("fesom", "fesom2"):
-                fesom_info = extract_fesom_mesh_info(cfg)
-    collection = make_collection(ctx, namelists=namelists, fesom_info=fesom_info)
-    db.insert_collection(collection)
-    logger.info("Created collection: {}", ctx.collection_id)
-
-
 def scan_all_namelists(experiment_path) -> dict:
     """Scan every component's config dir under experiment_path/config.
 
     Returns {component_name: {filename: {group: {key: value}}}}, suitable for
     CollectionContext.namelists_by_component (read by the STAC item extension).
     """
-    from pathlib import Path
     from esm_catalog.scan.namelist import scan_namelist_directory
 
     by_component: dict = {}

@@ -25,7 +25,7 @@ def make_collection(ctx, namelists: dict | None = None,
         "id": ctx.collection_id,
         "stac_version": "1.0.0",
         "stac_extensions": [],
-        "title": ctx.experiment_id,
+        "title": ctx.collection_title or ctx.experiment_id,
         "description": f"All model output for experiment {ctx.experiment_id}",
         "license": "proprietary",
         "extent": {

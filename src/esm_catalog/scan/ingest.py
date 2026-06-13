@@ -6,8 +6,6 @@ together: list files -> detect+scan -> resolve context -> build STAC.
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from loguru import logger
 
 from esm_catalog.scan.context import (
@@ -40,9 +38,10 @@ def scan_tree(root, config: dict | None = None) -> dict:
             logger.debug("Skipping {}: {}", path, exc)
             continue
 
-        if ctx.experiment_path not in namelists_cache:
-            namelists_cache[ctx.experiment_path] = scan_all_namelists(ctx.experiment_path)
-        ctx.namelists_by_component = namelists_cache[ctx.experiment_path]
+        if ctx.experiment_path is not None:
+            if ctx.experiment_path not in namelists_cache:
+                namelists_cache[ctx.experiment_path] = scan_all_namelists(ctx.experiment_path)
+            ctx.namelists_by_component = namelists_cache[ctx.experiment_path]
 
         if ctx.collection_id not in collections:
             collections[ctx.collection_id] = _build_collection(ctx)

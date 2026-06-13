@@ -85,6 +85,14 @@ setup(
             "esm_tests=esm_tests.cli:main",
             "esm_tools=esm_tools.cli:main",
             "esm_utilities=esm_utilities.cli:main",
+            "esm-catalog=esm_catalog.cli:main",
+        ],
+    },
+    extras_require={
+        "catalog": [
+            "pystac>=1.8",
+            "shapely>=2.0",
+            "universal-pathlib>=0.2",
         ],
     },
     install_requires=requirements,

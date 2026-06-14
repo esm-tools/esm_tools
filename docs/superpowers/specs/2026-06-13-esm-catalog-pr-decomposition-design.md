@@ -82,10 +82,13 @@ A docker CI workflow, 3 `docs/*.rst`, and a large `examples/` tree — including
 is a `esm-catalog` console script (`esm_catalog.cli:main`) in `setup.py`.
 
 ### Second repo: `esm-tools/stac-browser`
-A **fork** of `radiantearth/stac-browser`. Current branch `feat/data-preview-component`. Custom
+A **fork** of `radiantearth/stac-browser` (forked 2026-03-04). Current branch
+`feat/data-preview-component`. Custom work lives entirely on the feature branch — the fork's `main`
+is an unmodified upstream snapshot (69 commits behind radiantearth main as of 2026-06-14). Custom
 work: comparison grid (AG Grid), NML/quick filters, personal-collections UI, code-snippets panel,
-collapsed-collection cards, viz panel, a CQL2 NOT-operator bug fix. **No `upstream` remote is
-wired locally**, so the true fork delta vs stock is not yet computable.
+collapsed-collection cards, viz panel. **No `upstream` remote is wired locally**, so the full
+delta count vs current upstream stock is not yet confirmed — but the nature of the changes is now
+understood (see §6 note on CQL2).
 
 ### Pre-existing triage artifact
 `src/esm_catalog/esm-tools-plus-simcat-features-checklist.md` already rates every feature
@@ -175,12 +178,23 @@ becomes a clean foundation that `scan` then builds on (one-directional `scan →
 ## 6. The PR stack — `stac-browser` fork (after API core lands)
 
 1. **Wire an `upstream` remote** (`radiantearth/stac-browser`) and compute the true fork delta —
-   prerequisite, not currently possible locally.
+   prerequisite, not currently possible locally. Fork's `main` is 69 commits behind upstream main.
 2. Themed PRs (rebuilt from end-state, same philosophy): collapsed-collection cards →
    quick-filter / NML UI → comparison grid → personal-collections UI → code-snippets panel →
    viz panel.
-3. **CQL2 NOT-operator fix** (checklist 8.1) → submit as a **candidate upstream PR** to
-   `radiantearth/stac-browser` rather than carrying it in the fork indefinitely.
+3. ~~**CQL2 NOT-operator fix** (checklist 8.1) → submit as a **candidate upstream PR** to
+   `radiantearth/stac-browser` rather than carrying it in the fork indefinitely.~~
+   **MOOT** — investigated 2026-06-14. Commit `e1063f90` ("Fully support not operator") was
+   authored by Matthias Mohr and merged upstream via `radiantearth/stac-browser` PR #816 on
+   2026-02-26, six days **before** the fork was created. The fork inherited it automatically; there
+   is nothing to upstream.
+
+   The actual esm-tools-specific CQL fix is `65759b1` ("fix: Cql property name typo when combining
+   manual and quick filters") in `SearchFilter.vue` — a one-char typo (`filters.filter` →
+   `filters.filters`) that caused a crash when a manual CQL expression and quick filters were both
+   active simultaneously. **This fix is not an upstream candidate**: it lives entirely inside
+   `buildQuickFilters()`, a function that doesn't exist in upstream at all. Upstream has no quick
+   filters concept, so the code path can never be reached there.
 
 ---
 
@@ -210,8 +224,8 @@ esm_catalog: Phase A (ingest) ─► Phase B (serve/API core) ─► Phase C (au
 ```
 - **Critical path:** `esm_catalog` Phase A → Phase B. Everything else hangs off the API core.
 - `esm_viz` and the `stac-browser` core UI PRs proceed in parallel once Phase B core (PR-B1) is up.
-- The browser **viz-panel** PR is gated on `esm_viz` PR-V1; the browser **CQL2 NOT fix** is
-  proposed upstream (checklist 8.1), independent of all the above.
+- The browser **viz-panel** PR is gated on `esm_viz` PR-V1. Checklist 8.1 (CQL2 NOT-operator
+  upstream PR) is moot — see §6 note.
 
 ## 9. Risks & cleanups carried by this plan
 
@@ -221,7 +235,7 @@ esm_catalog: Phase A (ingest) ─► Phase B (serve/API core) ─► Phase C (au
 | 17 MB binary `echam_sample.grb` bloats release | Replace with small fixture / downloader | PR-C3 |
 | `api/` too large to review as one unit | Pre-split into B1–B4 | Phase B |
 | Stale base (325 commits behind) | Every PR rebuilds on current `release` | All |
-| Browser fork delta unknown | Wire `upstream` remote before browser stack | Repo 2, step 1 |
+| Browser fork delta unknown | Wire `upstream` remote before browser stack; fork main is 69 commits behind upstream as of 2026-06-14 | Repo 2, step 1 |
 | Existing docs too long to be token-efficient | Thin `AGENTS.md` index instead of more prose | D6 |
 
 ---

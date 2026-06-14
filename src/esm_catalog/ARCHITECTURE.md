@@ -1,1247 +1,499 @@
-# ESM Catalog Architecture
+# ESM-Catalog Architecture
 
 ## Overview
 
-A STAC-based catalog system for ESM-Tools experiment output, with DuckDB storage and HPC awareness.
-
-## Design Principles
-
-1. **Small files, single responsibility** - Each module does one thing, ~50 lines
-2. **DuckDB as primary storage** - One file per experiment, native JSON support
-3. **STAC for interoperability** - Standard format, existing tooling (stac-fastapi, STAC Browser)
-4. **HPC-aware** - Tape state, rate limiting, SLURM integration
-5. **Federated ownership** - Each user owns their experiment's catalog
+ESM-Catalog is a STAC-based (SpatioTemporal Asset Catalog) system for discovering and managing
+climate model output from ESM-Tools experiments. It scans HPC output files (NetCDF, GRIB2),
+builds standardized STAC metadata, stores it in DuckDB, and exposes it via a STAC-compliant
+FastAPI server with custom extensions.
 
 ---
 
 ## Directory Structure
 
 ```
-esm_catalog/
-├── cli.py                    # Entry point, arg parsing only
-│
-├── scan/
-│   ├── __init__.py
-│   ├── grib.py               # Scan GRIB files, return metadata dict
-│   ├── netcdf.py             # Scan NetCDF files, return metadata dict
-│   ├── detect.py             # Auto-detect format, dispatch to scanner
-│   └── context.py            # Resolve collection membership before item creation
-│
-├── stac/
-│   ├── __init__.py
-│   ├── item.py               # metadata dict → STAC Item dict
-│   ├── collection.py         # Create/update STAC Collection; called by scan/context.py on first encounter
-│   └── extensions/
-│       ├── __init__.py
-│       ├── hpc.py            # HPC storage extension (tape state, recall time)
-│       ├── datacube.py       # Datacube extension (cube:dimensions, cube:variables)
-│       ├── contacts.py       # Contacts extension (ORCID, authors)
-│       └── registry.py       # Extension URL registry
-│
-├── storage/
-│   ├── __init__.py
-│   ├── duckdb.py             # Insert/query catalog.duckdb
-│   └── export.py             # Export to JSON/Parquet for interop
-│
-├── hpc/
-│   ├── __init__.py
-│   ├── detect.py             # Detect storage type from path/filesystem
-│   └── state.py              # HSM state queries (dmattr, scoutfs, etc.)
-│
-├── integration/
-│   ├── __init__.py
-│   ├── esm_tools.py          # add_files() - bridge from ESM-Tools tidy phase to catalog
-│   └── config.py             # Load and parse finished_config.yaml
-│
-├── api/
-│   ├── __init__.py
-│   ├── client.py             # DuckDBCatalogClient — BaseCoreClient implementation (6 methods)
-│   └── app.py                # create_app() factory + module-level app for uvicorn
+src/esm_catalog/
+├── api/                    # FastAPI STAC server
+│   ├── app.py              # Application factory + middleware
+│   ├── auth.py             # Pluggable auth (JupyterHub, custom)
+│   ├── cache.py            # QueryablesCache, CollectionCache
+│   ├── catalog_routes.py   # /catalogs REST endpoints
+│   ├── client.py           # DuckDB-backed stac-fastapi CoreClient
+│   ├── cql2.py             # CQL2 filter parsing
+│   ├── experiment_routes.py # /experiments and /collections/{id}/experiment endpoints
+│   ├── helpers.py          # Utility functions
+│   ├── interfaces.py       # Protocol-based abstractions
+│   ├── middleware.py       # CORS etc.
+│   ├── paleo_presets.py    # Paleoclimate filter presets
+│   ├── personal_models.py  # Pydantic models for personal collections
+│   ├── personal_routes.py  # /users/{user}/... REST endpoints (collections, labels, tree, shares)
+│   ├── pool.py             # Connection pool for multiple DuckDB catalogs
+│   ├── queryables.py       # STAC queryables endpoint
+│   ├── registry.py         # Dynamic catalog registry with persistence
+│   ├── responses.py        # FastAPI response models
+│   ├── validation.py       # Request validation
+│   └── ui/                 # Admin web UI (served at /ui)
+│       └── index.html      # Single-file vanilla JS admin page
+├── stac/                   # STAC object builders
+│   ├── collection.py       # Build STAC Collection dicts
+│   ├── item.py             # Build STAC Item dicts
+│   └── extensions/         # Custom STAC extension implementations
+│       ├── registry.py     # Extension URL registry
+│       ├── contacts.py     # Author/contributor info extension
+│       ├── datacube.py     # OGC DataCube extension
+│       ├── hpc.py          # HPC storage tier extension
+│       ├── namelist.py     # Fortran namelist extension
+│       └── paleo.py        # Paleoclimate geological time extension
+├── storage/                # Storage backends
+│   ├── duckdb.py           # DuckDB catalog (main storage engine)
+│   ├── export.py           # Parquet export/import for batch mode
+│   └── personal.py         # DuckDB-backed personal collections (collections, labels, shares, tree)
+├── scan/                   # File format detection and metadata extraction
+│   ├── context.py          # Resolve file → (experiment, component, collection)
+│   ├── detect.py           # Format dispatch (NetCDF, GRIB, ECHAM)
+│   ├── echam.py            # ECHAM GRIB scanner
+│   ├── grib.py             # Generic GRIB2 scanner
+│   ├── namelist.py         # f90nml namelist parser
+│   ├── netcdf.py           # NetCDF/HDF5 scanner
+│   └── upath.py            # Remote filesystem abstraction (fsspec/UPath)
+├── hpc/                    # HPC infrastructure detection
+│   ├── detect.py           # Storage tier detection (Lustre, HPSS, etc.)
+│   └── state.py            # HSM tape state queries
+├── integration/            # ESM-Tools ecosystem integration
+│   ├── config.py           # finished_config.yaml / tidy log parsing
+│   └── esm_tools.py        # Public API: add_files(), add_run()
+├── cli.py                  # Click CLI: scan, serve, register, refresh, ...
+├── __init__.py             # Package root, exports add_files
+├── Dockerfile              # Multi-stage Docker build (port 23000)
+└── environment.yml         # Conda dependencies
 ```
 
 ---
 
-## Core Flow
+## Core Concepts
 
-### Scanning (CLI)
+### STAC Hierarchy
 
-```python
-# What happens when you run: esm-catalog scan file.grb
-
-metadata = scan_grib(path)                    # scan/grib.py - extract variables, time, bbox
-ctx      = resolve_context(path, config)      # scan/context.py - experiment, component → collection id
-item     = make_item(path, metadata, ctx)     # stac/item.py - build STAC Item dict, collection field set
-item     = add_hpc_extension(item, path)      # stac/extensions/hpc.py - add tape state
-db.insert(item, collection=ctx.collection_id) # storage/duckdb.py - collection populated at insert time
+```
+Catalog (DuckDB file, one per experiment)
+└── Collection  →  "{experiment}-{component}"  (e.g. "basic-001-echam")
+    └── Item    →  one file or group of files
+        └── Asset → href to actual data file on disk
 ```
 
-Context resolution (`resolve_context`) must happen **before** item creation. See
-[Collection Context and Assignment](#collection-context-and-assignment) for why this ordering is
-non-negotiable.
+Each experiment gets its own `catalog.duckdb` file. The API federates across multiple catalogs
+transparently at query time.
 
-### Serving (API)
+### Custom STAC Extensions
 
-```python
-# stac-fastapi with DuckDB backend (api/client.py + api/app.py)
-
-# DuckDBCatalogClient implements BaseCoreClient — 6 required abstract methods
-class DuckDBCatalogClient(BaseCoreClient):
-    catalogs: List[str]   # paths to catalog.duckdb files (at least one)
-
-    def all_collections(self, **kwargs):   # GET /collections — supports query param filters
-    def get_collection(self, collection_id, **kwargs):   # GET /collections/{id}
-    def item_collection(self, collection_id, ...):       # GET /collections/{id}/items
-    def get_item(self, item_id, collection_id, **kwargs):  # GET /collections/{id}/items/{item_id}
-    def get_search(self, collections, ids, bbox, datetime, limit, **kwargs):   # GET /search
-    def post_search(self, search_request, **kwargs):     # POST /search
-
-# create_app() wires everything together (api/app.py)
-api = create_app(catalogs=["/work/exp1/catalog.duckdb", "/work/exp2/catalog.duckdb"])
-# CORS allow_origins=["*"] added automatically — required for STAC Browser cross-origin access
-
-# Direct uvicorn invocation:
-#   uvicorn esm_catalog.api.app:app
-# Configure via env:
-#   ESM_CATALOG_DB=/work/exp1/catalog.duckdb:/work/exp2/catalog.duckdb uvicorn esm_catalog.api.app:app
-```
-
-Multi-catalog federation: `DuckDBCatalogClient` opens each `CatalogDB` per request and merges
-results in Python. This is simpler than DuckDB `ATTACH` and avoids alias conflicts across
-independently-named experiments.
-
-Collection-search: `all_collections()` passes any non-pagination query params to
-`db.search_collections()`, which checks both native collection fields and the
-`collection_item_props` index built at scan time.
+| Extension   | Prefix    | What it adds |
+|-------------|-----------|--------------|
+| `hpc`       | `hpc:`    | Storage tier (Lustre/HPSS/tape), HSM state, recall estimate |
+| `paleo`     | `paleo:`  | Geological time (Ma / ka display, reference year) |
+| `namelist`  | `namelist:` | Embedded Fortran namelist parameters from experiment config |
+| `datacube`  | `cube:`   | OGC DataCube dimensions and variables |
+| `contacts`  | —         | Author/contributor info |
+| `file`      | `file:`   | Size, checksum, format conventions |
 
 ---
 
-## Collection Context and Assignment
+## Data Flow
 
-### The design hole
+### Scan → Store
 
-The DuckDB schema requires a `collection` value at insert time:
+```
+File on disk (NetCDF / GRIB2 / HDF5)
+        │
+        ▼
+scan/detect.py::scan_file(path)
+  ├─ netcdf.py → variables, dimensions, bbox, time range, global attrs
+  ├─ grib.py   → stream type, parameter list, levels, time range
+  └─ echam.py  → ECHAM-specific GRIB with .codes companion
+        │
+        ▼
+scan/context.py::resolve_context(path, config)
+  ├─ From finished_config.yaml  (preferred)
+  └─ From path pattern  .../experiments/{exp}/outdata/{comp}/...
+     → CollectionContext(experiment_id, component, collection_id)
+        │
+        ▼
+stac/item.py::make_item(path, metadata, ctx, config)
+  └─ Applies all extensions (hpc, paleo, datacube, contacts, file)
+        │
+        ▼
+storage/duckdb.py::CatalogDB.insert_item(item)
+  └─ items table (JSON) + collection_item_props (queryable index)
+```
+
+### Batch / SLURM Workflow
+
+```
+sbatch array job: scan-batch → per-worker Parquet files
+  └─ merge-parquet → single catalog.duckdb
+```
+
+### API Query Flow
+
+```
+Client (STAC Browser / Python / curl)
+        │
+        ▼
+FastAPI (stac-fastapi)
+  DuckDBCatalogClient.item_collection(filter, bbox, datetime)
+    └─ For each catalog in CatalogRegistry:
+         CatalogPool.get(path) → CatalogDB
+         db.search_items(filter_props, limit, offset)
+    └─ Merge results → paginated FeatureCollection
+```
+
+---
+
+## API Endpoints
+
+### Standard STAC Endpoints (via stac-fastapi)
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/` | Landing page |
+| GET | `/conformance` | OGC conformance classes |
+| GET | `/collections` | List all collections |
+| GET | `/collections/{id}` | Single collection |
+| GET | `/collections/{id}/items` | Items in collection |
+| GET | `/collections/{id}/items/{item_id}` | Single item |
+| GET/POST | `/search` | CQL2-filtered search |
+| GET | `/queryables` | Searchable properties |
+| GET | `/collections/{id}/queryables` | Collection-level queryables |
+
+### Custom ESM-Catalog Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/catalogs` | List registered catalogs |
+| POST | `/catalogs` | Register new catalog |
+| GET | `/catalogs/{id}` | Catalog info |
+| PATCH | `/catalogs/{id}` | Update catalog metadata |
+| POST | `/catalogs/{id}/refresh` | Reconnect to updated DuckDB |
+| DELETE | `/catalogs/{id}` | Unregister catalog |
+| GET | `/experiments` | List all experiments (virtual, derived from collection metadata) |
+| GET | `/experiments/{id}` | STAC Catalog for one experiment with child collection links |
+| GET | `/collections/{id}/experiment` | Parent experiment catalog for a component collection |
+| GET | `/health` | Health check |
+| GET, HEAD | `/admin` | Redirect → `/ui` |
+| GET | `/ui` | Admin web UI (register/list/delete catalogs) |
+
+### Personal Collections Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| GET | `/users/{user}/collections` | List user's collections |
+| POST | `/users/{user}/collections` | Create personal collection |
+| GET | `/users/{user}/collections/{id}` | Collection detail (includes item paths) |
+| PATCH | `/users/{user}/collections/{id}` | Update collection name/description/parent |
+| DELETE | `/users/{user}/collections/{id}` | Delete collection |
+| POST | `/users/{user}/collections/{id}/items` | Add items (browser paths stored as item_ids) |
+| DELETE | `/users/{user}/collections/{id}/items/{item_id}` | Remove item |
+| POST | `/users/{user}/collections/{id}/shares` | Grant another user access |
+| GET | `/users/{user}/collections/{id}/shares` | List share grants |
+| DELETE | `/users/{user}/collections/{id}/shares/{share_id}` | Revoke share grant |
+| GET | `/users/{user}/labels` | List user's labels |
+| POST | `/users/{user}/labels` | Create label |
+| DELETE | `/users/{user}/labels/{label_id}` | Delete label |
+| GET | `/users/{user}/tree` | Hierarchical folder+collection tree |
+| PATCH | `/users/{user}/tree` | Create/rename/move/delete folders and collections in tree |
+
+---
+
+## Storage Schema (DuckDB)
 
 ```sql
 CREATE TABLE items (
-    id         TEXT PRIMARY KEY,
-    collection TEXT,           -- must be set at insert; NULL breaks API navigation
-    ...
-);
-```
-
-The original core flow (`scan → item → db.insert`) contained no step that resolved this value.
-`stac/collection.py` was described as "aggregate items → STAC Collection" but had no defined
-input — it cannot know which items to aggregate, or on what grouping key, without external
-context. This created two concrete failures:
-
-1. **Silent NULL**: Items inserted with `collection = NULL` are stored successfully. DuckDB does
-   not complain. But `GET /collections/{id}/items` returns nothing for those items. They are only
-   reachable via `/search`. STAC Browser's tree navigation is broken; the catalog appears empty.
-
-2. **Ordering contradiction**: Collection creation was implied to happen *after* scanning, but the
-   `collection` column must be populated *during* insert. Any design that creates collections as a
-   post-processing step requires a full second pass over all stored items to backfill the field —
-   an approach that breaks down for incremental scans (new files added to an existing experiment).
-
-### Resolution: `scan/context.py`
-
-Collection membership is resolved from the file path and/or ESM-Tools config **before** the item
-is constructed. `resolve_context(path, config)` returns a `CollectionContext` dataclass:
-
-```python
-@dataclass
-class CollectionContext:
-    experiment_id:   str          # e.g. "basic-001"
-    component:       str          # e.g. "fesom"
-    collection_id:   str          # e.g. "basic-001-fesom"  (experiment + component)
-    collection_title: str
-```
-
-Two resolution strategies, tried in order:
-
-**1. ESM-Tools config** (preferred — used during live tidy phase):
-
-```python
-# config is the finished_config.yaml loaded by ESM-Tools at run time
-ctx = resolve_context(path, config=esm_config)
-# experiment_id from config["general"]["expid"]
-# component    from which component block owns this outdata_dir
-```
-
-**2. Path parsing** (fallback — used during batch scan of legacy runs):
-
-```python
-# Path pattern: .../experiments/{experiment}/outdata/{component}/file.nc
-ctx = resolve_context(path, config=None)
-# experiment_id = path.parts[path.parts.index("experiments") + 1]
-# component     = path.parts[path.parts.index("outdata") + 1]
-```
-
-If neither strategy can resolve the context (path does not match the expected pattern and no
-config is provided), the scan raises a hard error rather than inserting with `collection = NULL`.
-A silent NULL is worse than a failed insert because it produces a catalog that appears to work
-but cannot be navigated.
-
-### Collection creation
-
-`stac/collection.py` is not a post-processing aggregator — it is called *by* `scan/context.py`
-the first time a `collection_id` is encountered:
-
-```python
-# scan/context.py
-if not db.collection_exists(ctx.collection_id):
-    collection = make_collection(ctx)   # stac/collection.py
-    db.insert_collection(collection)    # storage/duckdb.py
-```
-
-Subsequent files for the same `(experiment, component)` pair find the collection already present
-and update its temporal/spatial extent in place. This makes the scan pipeline fully incremental:
-re-running after adding new files extends the existing collection rather than recreating it.
-
-### Collection hierarchy for ESM data
-
-The grouping key `(experiment_id, component)` mirrors the output directory structure that
-ESM-Tools already enforces. The resulting catalog hierarchy is:
-
-```
-Root Catalog  (API root /)
-└── {experiment_id}          Catalog  — one per experiment run
-    └── {experiment}-{component}   Collection  — one per model component
-        └── {variable}.{component}.{YYYYMM}    Item  — one per output file
-```
-
-This is the hierarchy STAC Browser renders as a navigable tree. The intermediate experiment-level
-catalog node is created by `stac/collection.py` alongside the component collection, using the
-experiment metadata from `CollectionContext`.
-
----
-
-## Storage Architecture
-
-### Per-Experiment DuckDB
-
-```
-/work/user/experiments/
-├── picontrol/
-│   ├── outdata/...
-│   └── catalog.duckdb     # User owns this, can write
-├── historical/
-│   ├── outdata/...
-│   └── catalog.duckdb
-```
-
-### Federation via Config
-
-```yaml
-# ~/.esm_catalog.yaml
-catalogs:
-  - /work/ab1234/experiments/picontrol/catalog.duckdb
-  - /work/cd5678/experiments/historical/catalog.duckdb  # read access sufficient
-```
-
-Query tool ATTACHes readable databases at query time:
-
-```sql
-ATTACH '/work/ab1234/.../catalog.duckdb' AS picontrol;
-ATTACH '/work/cd5678/.../catalog.duckdb' AS historical;
-
-WITH all_items AS (
-    SELECT data FROM picontrol.items
-    UNION ALL
-    SELECT data FROM historical.items
-)
-SELECT * FROM all_items
-WHERE json_extract(data, '$.properties.variable') = 'tas';
-```
-
-### DuckDB Schema
-
-```sql
-CREATE TABLE items (
-    id         TEXT PRIMARY KEY,
-    collection TEXT,
-    experiment TEXT,      -- explicit column; avoids json_extract for experiment filter
-    datetime   TIMESTAMP,
-    bbox       DOUBLE[],  -- DOUBLE[4] is not valid DuckDB syntax
-    data       JSON       -- Full STAC Item, query with json_extract()
+  id      TEXT PRIMARY KEY,
+  collection TEXT,
+  experiment TEXT,
+  datetime TIMESTAMPTZ,
+  bbox    DOUBLE[],
+  data    JSON                  -- full STAC Item GeoJSON
 );
 
 CREATE TABLE collections (
-    id   TEXT PRIMARY KEY,
-    data JSON             -- Full STAC Collection
+  id   TEXT PRIMARY KEY,
+  data JSON                     -- full STAC Collection JSON
 );
 
 CREATE TABLE catalogs (
-    id   TEXT PRIMARY KEY,
-    data JSON             -- Experiment-level STAC Catalog nodes (Root → Experiment → Collection)
+  id   TEXT PRIMARY KEY,
+  data JSON
 );
 
--- Pre-aggregated item property index for collection search
--- Populated at insert time; allows /collections?filter= to match item-derived properties
--- (e.g. scenario, variable) that may be null in the collection JSON itself
 CREATE TABLE collection_item_props (
-    collection_id TEXT,
-    property      TEXT,
-    value         TEXT,
-    PRIMARY KEY (collection_id, property, value)
-);
-
--- Indexes
-CREATE INDEX idx_collection ON items(collection);
-CREATE INDEX idx_experiment ON items(experiment);
-CREATE INDEX idx_datetime   ON items(datetime);
-CREATE INDEX idx_variable   ON items(json_extract(data, '$.properties.variable'));
-```
-
----
-
-## Batch Processing (SLURM)
-
-### The Problem
-
-- 10,000 files to scan
-- Can't write to same DuckDB from multiple SLURM jobs
-- Need parallelism without hammering filesystem
-
-### The Solution
-
-```
-Step 1: Parallel scan (SLURM array job)
-        Each job scans batch of files → writes Parquet
-
-Step 2: Serial insert (single job)
-        DuckDB reads all Parquet → single catalog.duckdb
-```
-
-### Snakemake Workflow
-
-```python
-# Snakefile
-
-rule scan_batch:
-    input:
-        files=lambda wc: get_batch_files(wc.batch_id),
-        config=ancient("finished_config.yaml")   # provides collection context to resolve_context()
-    output: "staging/batch_{batch_id}.parquet"
-    resources:
-        runtime=10,
-        mem_mb=4000
-    shell:
-        # --config passed to resolve_context(); falls back to path parsing if omitted
-        "esm-catalog scan-batch {input.files} --config {input.config} --output {output}"
-
-rule merge:
-    input: expand("staging/batch_{i}.parquet", i=range(NUM_BATCHES))
-    output: "catalog.duckdb"
-    shell:
-        "esm-catalog merge-parquet {input} --output {output}"
-```
-
-Run with SLURM:
-
-```bash
-snakemake --executor slurm --jobs 100
-```
-
----
-
-## HPC Storage Extension
-
-### Fields
-
-**Item-level (properties):**
-- `hpc:facility` - AWI, DKRZ, NERSC, etc.
-- `hpc:system` - albedo, levante, perlmutter
-- `hpc:storage_tier` - hot, warm, cold
-
-**Asset-level:**
-- `hpc:storage_type` - lustre, gpfs, hpss, dmf, posix
-- `hpc:state` - online, nearline, offline, migrating, staged
-- `hpc:recall_time_estimate` - seconds
-- `hpc:last_access` - ISO timestamp (populated via `os.stat().st_atime` at scan time; subject to rate limiting — read via `hpc/state.py` which applies the same throttle as HSM queries)
-
-### Detection
-
-```python
-# hpc/detect.py
-
-def detect_hpc_storage(path: Path) -> dict:
-    path_str = str(path.resolve())
-
-    if "/albedo/" in path_str:
-        return {
-            "hpc:facility": "AWI",
-            "hpc:system": "albedo",
-            "hpc:storage_type": "lustre",
-            "hpc:state": "online",
-        }
-
-    if "/arch/" in path_str or "/hpss/" in path_str:
-        return {
-            "hpc:storage_type": "hpss",
-            "hpc:state": "offline",
-            "hpc:recall_time_estimate": 300,
-        }
-
-    # Fallback: detect from filesystem
-    ...
-```
-
----
-
-## ESM-Tools Integration
-
-### Live Path (New Runs)
-
-ESM-Tools tidy phase calls catalog directly - no filesystem scanning needed:
-
-```python
-# In ESM-Tools tidy phase
-from esm_catalog import add_files
-
-add_files(
-    db="/work/user/exp/catalog.duckdb",
-    files=finished_output_files,  # ESM-Tools knows what it wrote
-    experiment_config=config,      # Rich metadata from config
-)
-```
-
-### Batch Path (Legacy Runs)
-
-For existing experiments without catalog:
-
-```bash
-esm-catalog scan /work/user/old_experiment/outdata/ \
-    --rate-limit 10 \
-    --checkpoint \
-    --resume
-```
-
----
-
-## STAC Extensions Used
-
-| Extension | Purpose |
-|-----------|---------|
-| [datacube](https://github.com/stac-extensions/datacube) | `cube:dimensions`, `cube:variables` |
-| [cf](https://github.com/stac-extensions/cf) | CF Standard Names (`cf:parameter`, units, descriptions) |
-| [file](https://github.com/stac-extensions/file) | File size, checksum |
-| [contacts](https://github.com/stac-extensions/contacts) | Authors, ORCID |
-| [scientific](https://github.com/stac-extensions/scientific) | DOI, citations |
-| hpc-storage (custom — spec in `hpc/`) | Tape state, recall time, storage tier |
-
----
-
-## JSON-LD / Linked Data
-
-For linking to controlled vocabularies:
-
-```json
-{
-  "@context": {
-    "variable": "http://vocab.nerc.ac.uk/standard_name/",
-    "creator": "https://orcid.org/"
-  },
-  "variable": "air_temperature",
-  "creator": "0000-0001-1234-5678"
-}
-```
-
-Vocabularies:
-- CF Standard Names for variables
-- CMIP6 CV for experiments, models
-- ORCID for people
-- ROR for institutions
-
-Browser can resolve these to human-readable definitions.
-
----
-
-## API Endpoints (via stac-fastapi)
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/` | GET | Landing page / root catalog + conformance declaration |
-| `/collections` | GET | List/search collections — supports CQL2 filter |
-| `/collections/{id}` | GET | Single collection |
-| `/collections/{id}/items` | GET | Items in collection — supports CQL2 filter; offset pagination via `token` |
-| `/collections/{id}/queryables` | GET | Per-collection JSON Schema — scoped to that collection's actual values; enables "Additional Filters" in collection items view |
-| `/search` | GET/POST | Query items — supports CQL2 filter |
-| `/queryables` | GET | Global JSON Schema of filterable properties with enum lists from live catalog |
-| `/stac-extensions/hpc/v0.1.0/schema.json` | GET | HPC storage extension schema (served locally; published URL not yet live) |
-| `/format` | POST | OGC CQL2 format-negotiation stub (silences STAC Browser 404 probe) |
-| `/docs` | GET | Swagger UI |
-
-**Item search** custom query parameters (`/search`):
-- `variable` - Filter by variable name
-- `experiment` - Filter by experiment
-- `model` - Filter by model component
-- `filter` / `filter-lang` - CQL2-TEXT or CQL2-JSON expression
-
-**Collection search** query parameters (`/collections`):
-- `filter` / `filter-lang` - CQL2-TEXT or CQL2-JSON expression (filters on collection metadata AND item-derived properties)
-- `limit` - Page size (default 100)
-- `token` - Offset-based pagination token
-
----
-
-## Collection Search
-
-### Two search modes
-
-The API exposes two distinct search surfaces, both visible as tabs in STAC Browser's Search view:
-
-| Tab | Endpoint | Finds | Response key |
-|---|---|---|---|
-| Search for Items | `GET/POST /search` | Individual files (STAC Items) | `features` array |
-| Search for Collections | `GET /collections?filter=...` | Experiment × component datasets | `collections` array |
-
-STAC Browser shows a tab only when the API advertises the corresponding conformance class.
-The API **must** declare both in the landing page (`GET /`) `conformsTo` array:
-
-```python
-# stac-fastapi declares these automatically via BaseCoreClient.conformance_classes()
-# The "Search for Collections" tab in STAC Browser appears when the API advertises:
-#   "https://api.stacspec.org/v1.0.0/collection-search"
-# The "Additional filters" CQL2 builder appears when the API advertises:
-#   "https://api.stacspec.org/v1.0.0/item-search#filter"
-# Both are in the base conformance set declared by stac-fastapi-api v6.
-```
-
-If `collection-search` is absent from `conformsTo`, the tab is silently hidden in STAC Browser —
-there is no error, the feature simply does not appear.
-
-### Collection search implementation
-
-Collection search filters on two property sources simultaneously:
-
-1. **Native collection fields** — `title`, `description`, `keywords`, `license`, `model`,
-   `model_type`, `version`, etc. stored in the `collections` DuckDB table.
-
-2. **Item-derived properties** — properties like `scenario`, `experiment`, `variable` that may be
-   null in the collection JSON but are present on every item. These are pre-indexed at scan time
-   into a per-collection property index (`_col_item_props`), keyed by collection ID.
-
-The index is built when items are inserted and stored in DuckDB:
-
-```sql
--- Extend schema: pre-aggregated item property index per collection
-CREATE TABLE collection_item_props (
-    collection_id TEXT,
-    property      TEXT,
-    value         TEXT,
-    PRIMARY KEY (collection_id, property, value)
+  collection_id TEXT,
+  property      TEXT,
+  value         TEXT,
+  PRIMARY KEY (collection_id, property, value)
 );
 ```
 
-At query time, `search_collections()` checks both sources and applies CQL2 constraints using
-OR semantics within a property (any matching value satisfies) and AND semantics across properties
-(all constraints must be satisfied):
+Items are stored as opaque JSON blobs; the surrounding columns (`collection`, `datetime`, `bbox`)
+are indexed for fast filtering without JSON parsing.
 
-```python
-# storage/duckdb.py
-def search_collections(self, filter_props, limit, offset):
-    matched = []
-    for col in self.iter_collections():
-        idx = self.get_collection_item_props(col["id"])  # {prop: {val1, val2, ...}}
-        if filter_props and not collection_matches(idx, filter_props):
-            continue
-        matched.append(col)
-    return matched[offset:offset + limit], len(matched)
+---
+
+## Key Classes
+
+| Class | Location | Role |
+|-------|----------|------|
+| `CatalogDB` | `storage/duckdb.py` | Per-experiment DuckDB (context manager) |
+| `CatalogPool` | `api/pool.py` | Manages live connections across catalogs |
+| `CatalogRegistry` | `api/registry.py` | Registry of catalog paths; optional JSON persistence |
+| `DuckDBCatalogClient` | `api/client.py` | stac-fastapi CoreClient implementation |
+| `CollectionContext` | `scan/context.py` | Resolved (experiment, component) for one file |
+| `PersonalCollectionStore` | `storage/personal.py` | DuckDB-backed store for collections, labels, shares, tree |
+| `Authenticator` | `api/auth.py` | Pluggable auth base class |
+
+---
+
+## Authentication
+
+Pluggable via `Authenticator` protocol. Current implementations:
+- **JupyterHub token auth** — exchanges JupyterHub tokens for `User` objects
+- **No-op** — anonymous access for development
+
+Permissions are checked per-endpoint in `catalog_routes.py` and `personal_routes.py`.
+
+---
+
+## Deployment
+
 ```
-
-### CQL2 filter parsing
-
-Both `/search` and `/collections` accept `filter` (expression) and `filter-lang`
-(`cql2-text` or `cql2-json`). Two dedicated parsers in `api/client.py` translate
-CQL2 expressions into a `filter_props` dict consumed by the DuckDB query layer.
-`_parse_cql2_filter()` dispatches to the correct parser based on `filter-lang`.
-
-**STAC Browser sends different formats depending on context:**
-- Collection items view (`GET /collections/{id}/items`) — sends `cql2-text` as a query param
-- Global Search tab (`POST /search`) — sends `cql2-json` in the POST body
-
-#### `filter_props` dict format
-
-```
-{field: value}           where value is one of:
-  (sql_op, val)          — single condition  → field = val  (AND with others)
-  [(op,v1), (op,v2)]     — AND duplicate list → field=v1 AND field=v2
-  [v1, v2]               — OR value list     → field IN (v1, v2)
-```
-
-#### Supported filter combinations
-
-| Input expression | Parsed `filter_props` | SQL generated |
-|---|---|---|
-| `variable = 'ssh'` | `{'variable': ('=', 'ssh')}` | `json_extract(...) = 'ssh'` |
-| `var = 'a' AND var = 'b'` | `{'variable': [('=','a'), ('=','b')]}` | `... = 'a' AND ... = 'b'` |
-| `var = 'a' OR var = 'b'` | `{'variable': ['a', 'b']}` | `... = 'a' OR ... = 'b'` |
-| `NOT (var = 'ssh')` | `{'variable': ('!=', 'ssh')}` | `json_extract(...) != 'ssh'` |
-| `expr = 'e1' AND var = 'v1'` | `{'experiment': ('=','e1'), 'variable': ('=','v1')}` | `experiment = 'e1' AND ...` |
-
-**OR semantics** (STAC Browser "Match any filters"):
-- `_parse_cql2_json` collects OR branch values as plain lists `['v1', 'v2']`
-- `_parse_cql2_text` splits on `\bOR\b` and collects plain values per field
-- `search_items` detects plain lists (not tuple lists) and emits `IN (?, ?)` SQL
-- `_collection_matches` uses `any(v in indexed_vals ...)` for OR list matching
-
-**NOT semantics** (STAC Browser "Negate filter"):
-- Both parsers support `NOT (...)` wrapper and a `negate` flag
-- Operators are inverted via `_CQL2_OP_INVERT`: `=`→`!=`, `<`→`>=`, etc.
-- `CqlNot.toText()` in stac-browser's `logical.js` is overridden to emit
-  `NOT (inner)` — the base class `join()` on a single-element array drops the
-  operator silently
-
-**Temporal literal unwrapping:** STAC Browser sends datetime values as CQL2-JSON
-objects (`{"timestamp": "2000-01-01T00:00:00Z"}`) rather than bare strings.
-`_cql2_value()` unwraps these before passing values to DuckDB so that TIMESTAMPTZ
-binding works correctly.
-
-### Response formats
-
-**Item search** (`/search`):
-```json
-{ "type": "FeatureCollection", "features": [...], "links": [...] }
-```
-
-**Collection search** (`/collections?filter=...`):
-```json
-{
-  "collections": [...],
-  "links": [...],
-  "numberMatched": 12,
-  "numberReturned": 10
-}
+Docker:   mambaorg/micromamba:1.5-jammy, port 23000
+Conda:    environment.yml (Python 3.11)
+CLI:      esm-catalog serve --catalog ... --host 0.0.0.0 --port 23000
+Reverse proxy: optional nginx in front
 ```
 
 ---
 
-## STAC Browser
+---
 
-A fork of STAC Browser lives at `~/repos/esm_tools/stac-browser` and is served
-locally (e.g. `npm start -- --port 23005`).  Two bugs were fixed in the fork and
-one visual enhancement was added:
+# TODO: Planned Features
 
-### Fork changes
-
-**`src/models/cql2/operators/logical.js` — `CqlNot.toText()` fix:**
-The base-class `join(" NOT ")` on a single-element array returns the element alone
-(separator is dropped for length-1 arrays).  `CqlNot.toText()` now overrides this to
-always emit `NOT (inner)`:
-
-```javascript
-toText() {
-  if (this.args && this.args.length === 1) {
-    return `NOT (${this.args[0].toText()})`;
-  }
-  return super.toText();
-}
-```
-
-**`src/components/Item.vue` — collection badge on item cards:**
-A `variant="info"` badge showing the collection ID is injected as the first element
-in the card intro section.  This is especially useful when viewing cross-collection
-search results (e.g. "Additional filters" spans multiple collections).
-
-> **Note:** Vite's HMR does not always hot-reload utility modules (`utils.js`,
-> `logical.js`).  After editing these files restart the dev server fully.
-
-### API-side activation
-
-| Feature | What enables it |
-|---|---|
-| "Search for Collections" tab | API declares `collection-search` conformance class |
-| "Additional filters" in Items tab | API declares `item-search#filter` + OGC CQL2 conformance classes **and** `GET /collections/{id}/queryables` returns 200 |
-| "Additional filters" in Collections tab | API declares `collection-search#filter` + OGC CQL2 conformance classes **and** `GET /collections` response includes a `rel=queryables` link |
-
-The conformance classes are advertised automatically by `stac-fastapi`.
-`GET /collections/{id}/queryables` must exist (404 silently hides the "Additional
-Filters" section for the collection items view — no error shown).
-The queryables link in `GET /collections` must be added explicitly — STAC Browser's
-`SearchFilter.vue` fetches queryables for the Collections tab from that embedded link.
-
-### Usage
-
-```bash
-# Start the dev server
-cd ~/repos/esm_tools/stac-browser && npm start -- --port 23005
-# Point at the running API
-# http://localhost:23005/#/search/external/http://localhost:23003
-```
-
-The API runs inside the AWI internal network; access via VPN.  Because the browser
-runs on a different origin, **CORS must be open** — `create_app()` already sets
-`allow_origins=["*"]`.
+The items below come from `/albedo/work/projects/paleo_work/esm-catalog/TODO.md`.
+Each section explains what the feature means in the context of the current architecture
+and sketches an implementation plan.
 
 ---
 
-## Data Portal & Self-Registration (Proposal)
+## TODO 1: Tree-like Structure for Catalogs ✅ DONE
 
-> **Status: design proposal — not yet implemented. See Phase 6 in the phase plan.**
-
-### The problem
-
-Once a researcher's SLURM job finishes and a `catalog.duckdb` exists, there is no
-frictionless path to make that catalog visible to others.  The current approach
-(`esm-catalog serve --port XXXX` + manually editing `servers.json`) puts
-unnecessary burden on researchers and requires port coordination across users.
-
-### Design goals
-
-1. Researcher runs **one command** to publish a catalog.  No ports, no server admin.
-2. The portal and STAC Browser are **always running** — never need restarting when
-   a new catalog is added.
-3. Researchers never think about port numbers or which process owns their catalog.
-
-### Architecture: one API, one registry
-
-The key insight: once the catalog list is dynamic (read from `registry.json` on
-every request), **there is no reason to run more than one STAC API process**.
-A single process already handles all catalogs — splitting by department into separate
-processes just rebuilds the old "one port per DuckDB" model with extra steps.
+**Goal:** Present the catalog hierarchy visually as a tree, e.g.:
 
 ```
-Fixed infrastructure (one-time setup by sysadmin / long-running SLURM job):
-
-  Port 23000  ── Data Portal
-                  nginx serves stac-portal/ (bind-mounted from host)
-                  Shows all registered catalogs as browsable cards
-                  Researcher never edits this
-
-  Port 23000/stac/  ── STAC Browser SPA (built into Apptainer image)
-
-  Port 23100  ── Single STAC API  (all users, all experiments)
-                  Reads /shared/registry.json on every request
-                  → any newly registered catalog appears on the next HTTP hit
-
-Researcher action (runs anywhere, takes <1 second):
-
-  esm-catalog register ~/experiments/picontrol/catalog.duckdb \
-      --name "PI Control 1000yr" \
-      --description "FESOM + ECHAM6 pre-industrial control run"
-  → appends entry to /shared/registry.json atomically
-  → immediately visible in STAC Browser without any restart
+exp/
+  echam/
+  fesom/
+exp2/
+  echam/
+exp4/
+  echam/
+  fesom/
 ```
 
-Department "isolation" is not a routing concern — it is a filter.  STAC Browser's
-collection search lets any researcher find their group's data by `experiment`,
-`model`, `variable`, or any other catalog property.  No per-department ports or
-processes are needed.
+**Implementation (complete):** Experiments are derived dynamically from the `experiment` field
+on each collection JSON object — no DuckDB schema changes required.
 
-### Why hot-reload is nearly free
+### New endpoints
 
-`DuckDBCatalogClient._open_catalogs()` already opens catalog files
-**per request** — it holds no connection state between requests.  If the list of
-paths it reads changes (because `registry.json` was updated), the very next HTTP
-request picks up the new catalog automatically.  No file-watch thread, no server
-restart, no signal handling required.
+| Endpoint | Description |
+|----------|-------------|
+| `GET /experiments` | Paginated list of all experiments with collection counts |
+| `GET /experiments/{id}` | STAC Catalog object for one experiment with child links |
 
-```python
-# api/client.py — proposed extension
-def _open_catalogs(self) -> list[CatalogDB]:
-    if self.registry:                               # new: registry-aware path
-        paths = _read_registry(self.registry)       # parse JSON, extract paths
-    else:
-        paths = self.catalogs                       # legacy: static list
-    return [CatalogDB(p) for p in paths if Path(p).exists()]
-```
+### Changes made
 
-Reading a small JSON file per request costs microseconds.  For a research portal
-with tens of concurrent users, this overhead is negligible.
+- **`storage/duckdb.py`** — Added `iter_experiments()` and `get_collections_for_experiment()`
+  methods. Both follow the existing cursor-close-in-finally pattern for thread safety.
 
-### When multiple API processes make sense
+- **`api/client.py`** — Added `_inject_experiment_catalog_links()` module-level helper;
+  added `_get_all_experiment_ids()` and `_get_collections_for_experiment()` methods to
+  `DuckDBCatalogClient`; updated `landing_page()` to emit experiment child links instead of
+  collection child links.
 
-A separate STAC API process per department is still reasonable if:
+- **`api/responses.py`** — Added `ExperimentLink`, `ExperimentCatalog`, `ExperimentSummary`,
+  and `ExperimentsListResponse` Pydantic models.
 
-- **Access control**: a department needs to restrict which catalogs are visible to
-  which users (a single shared registry has no ACL mechanism).
-- **Admin autonomy**: a group wants to manage their own portal independently (their
-  own `registry.json`, their own port, their own uptime SLA).
-- **Load isolation**: one group's heavy query workload should not affect others
-  (unlikely at research-portal scale, but possible).
+- **`api/experiment_routes.py`** — New file; FastAPI router with both endpoints.
 
-In these cases each group runs `esm-catalog serve --registry /shared/<dept>/registry.json --port 231XX`.
-Researchers `register` into their department's registry.  The data portal `servers.json`
-lists all group APIs as browsable cards.  This is purely opt-in — the default remains
-one shared API.
+- **`api/app.py`** — Mounts the experiment router after the catalog router.
 
-### Registry file format
+### Collection parent link fix
 
-`/shared/registry.json` — edited only by `esm-catalog register`:
+Collection `parent` links now point to `/experiments/{experiment}` instead of bare `/`.
+Collections without an `experiment` field fall back to `/` (backwards compatible).
 
-```json
-{
-  "catalogs": [
-    {
-      "id": "pasili001-picontrol",
-      "name": "PI Control 1000yr",
-      "description": "FESOM + ECHAM6 pre-industrial control run",
-      "path": "/albedo/home/pasili001/experiments/picontrol/catalog.duckdb",
-      "owner": "pasili001",
-      "registered_at": "2026-03-13T09:00:00Z"
-    }
-  ]
-}
-```
+### Landing page child links
 
-`esm-catalog register` writes this file atomically (write to `.tmp`, then
-`os.rename`) and takes a file lock so concurrent registrations from multiple users
-are safe.
+`GET /` now lists experiments as children (not individual collections), enabling STAC Browser
+Browse mode to show the experiment tree.
 
-### Complete researcher lifecycle
+### No schema change
 
-```
-1. SLURM job runs (catalog building):
-   esm-catalog scan /experiments/picontrol/outdata/
-   → creates catalog.duckdb
+Experiments are a virtual layer derived from the `experiment` field on each collection.
+No new DuckDB tables or columns are required.
 
-2. Researcher publishes (one command, runs on login node):
-   esm-catalog register ~/experiments/picontrol/catalog.duckdb \
-       --name "PI Control 1000yr"
-   → appends entry to /shared/registry.json atomically
-
-3. Portal (nothing to do):
-   STAC API on :23100 reads registry.json on next request
-   New collections appear in STAC Browser automatically
-   No restarts, no admin, no port juggling
-```
-
-### Open design questions
-
-- **Registry location**: should `--registry` be explicit or inferred from a
-  `~/.esm_catalog.yaml` user config (so researchers don't need to know the path)?
-- **Deregistration**: should `esm-catalog deregister` exist, or is stale-entry
-  cleanup handled manually / by health-check timeouts in the portal?
-- **Portal placement**: the portal itself must be always-on.  A login-node process
-  is the pragmatic first step; a systemd unit managed by IT would be the production
-  answer.
+See `docs/experiment-hierarchy.md` for full user-facing documentation.
 
 ---
 
-## Paleo Time as a Searchable Attribute (Proposal)
+## TODO 2: Autocomplete for Item Metadata Search ✅ DONE
 
-> **Status: design proposal — awaiting feedback from Paul Gierz.**
-> Related library: [`paleodatetime`](https://github.com/pgierz/paleodatetime)
+**Goal:** The item detail page (`MetadataGroups.vue`) has a `metadata.search` text input that
+filters the displayed metadata fields. With items carrying 394+ namelist fields (all prefixed
+`nml:`), users have no guidance on what names to type.
 
-### The problem
+**Solution implemented:** Added `<datalist>` autocomplete to the metadata search input. As the
+user types, the browser shows dropdown suggestions for all available property labels in that
+item. Selecting a suggestion instantly filters the accordion to show matching fields.
 
-Paleo simulations represent geological time far outside the range of standard
-datetime types.  A 65 Ma run (`-65_000_000` CE) overflows DuckDB's `TIMESTAMPTZ`
-column (range ≈ ±290,000 years) and is outside RFC 3339 entirely.  Researchers
-need to filter items by geological age — e.g. "show me all LGM runs" or "all
-Cretaceous experiments" — which is not possible with the existing `datetime` field.
+**What was done:**
 
-### Why a plain integer works
+- **`stac-browser/src/components/MetadataGroups.vue`** — Added a `searchSuggestions` computed
+  property that collects all unique property labels from `formattedData` and sorts them
+  alphabetically. Added a `<datalist>` element bound to the search input via the HTML `list`
+  attribute. Uses `$.uid` for a unique datalist ID when multiple MetadataGroups appear on
+  the same page (e.g. asset metadata + item metadata).
 
-`paleodatetime.PaleoDateTime` stores time internally as a large signed integer year.
-The cleanest catalog representation is the same: a plain integer property
-`paleo_year` on each item.  No special column type, no schema migration — it
-participates in the existing `json_extract` query path without any changes to the
-filter machinery.
-
-```json
-{
-  "properties": {
-    "datetime":    "1850-01-01T00:00:00Z",  ← model simulation clock (unchanged)
-    "paleo_year":  -65000000,               ← geological age (year number, negative = past)
-    "paleo_age_ma": 65.0                    ← human-readable display value in Ma (optional)
-  }
-}
-```
-
-**Why `paleo_year` and not `paleo:year`?**
-The STAC extension colon-prefix convention (`paleo:year`) is valid JSON but
-unreliable in DuckDB JSON path syntax — `json_extract(data, '$.properties.paleo:year')`
-is ambiguous.  Using an underscore (`paleo_year`) is simpler and consistent with how
-`experiment`, `variable`, etc. are stored.  Alternatively a dedicated
-`paleo_year BIGINT` column in the `items` table (mirroring `datetime`) would be the
-cleanest approach for efficient range queries.
-
-### Where does the value come from at scan time?
-
-NetCDF output files use a model calendar (e.g. year 1850 for a PI-control), not the
-geological age the simulation represents.  The geological age is experiment-level
-metadata.  Three candidate sources, in preference order:
-
-1. **`finished_config.yaml`** — Paul adds a `paleo_reference_year: -65000000` field
-   to the experiment config.  `integration/esm_tools.py` reads it automatically
-   during the ESM-Tools tidy phase and injects it into every item in that experiment.
-   This is the right long-term home.
-
-2. **CLI flag** — `esm-catalog scan /outdata/ --paleo-year -65000000`.  A practical
-   fallback for batch scanning of legacy runs where no config is available.
-
-3. **NetCDF time coordinate auto-detection** — some paleo models encode time as
-   `"years since -65000000-01-01"` with a non-standard `calendar` attribute.
-   `scan/netcdf.py` could detect this and extract the reference year automatically.
-   Worth checking during implementation whether FESOM/ECHAM output uses this pattern.
-
-### Filter examples (CQL2-text)
-
-```
-paleo_year >= -70000000 AND paleo_year <= -60000000   ← Cretaceous slice
-paleo_year >= -26000 AND paleo_year <= -19000          ← Last Glacial Maximum
-paleo_year = -65000000                                  ← single snapshot
-```
-
-STAC Browser exposes `paleo_year` as a numeric range picker in "Additional Filters"
-automatically once it is declared in `/queryables` with `"type": "integer"`.
-
-### What needs to change
-
-| Layer | Change needed |
-|---|---|
-| `stac/item.py` | Read `paleo_year` from metadata dict, include in `properties` |
-| `integration/esm_tools.py` | Extract `paleo_reference_year` from `finished_config.yaml` |
-| `scan/netcdf.py` | Optionally detect paleo reference from time coordinate `units` attribute |
-| `storage/duckdb.py` | Add `paleo_year` to `upsert_collection_item_props`; optionally add `paleo_year BIGINT` column |
-| `api/app.py` | Expose `paleo_year` in `/queryables` with `"type": "integer"`, `minimum`/`maximum` from live catalog |
-| Filter machinery | **No changes needed** — `paleo_year` is handled generically like any other JSON property |
-
-### Open question for Paul
-
-Where is the geological age best declared in the ESM-Tools configuration?
-Is `finished_config.yaml` the right place, or is there a higher-level experiment
-descriptor file that already holds this kind of metadata?
+No API changes needed — this is a pure client-side UX improvement.
 
 ---
 
-## VirtualiZarr Integration (Future Enhancement)
+## TODO 3: Return Complete Experiment from Component-Level Query ✅ DONE
 
-> **Status: no implementation needed now — documented as a consumer-side workflow.**
-> See [`docs/virtualizarr_workflow.md`](docs/virtualizarr_workflow.md) for the
-> step-by-step guide.
-> Related library: [`VirtualiZarr`](https://github.com/zarr-developers/VirtualiZarr)
+**Goal:** When a user queries at the component level (e.g. fetches all items in collection
+`basic-001-echam`), provide a way to get or navigate to the full experiment — all components
+(`basic-001-echam`, `basic-001-fesom`, etc.) and their metadata — in one response.
 
-### What it is
+### New endpoint
 
-VirtualiZarr creates a **manifest of byte-range references** into existing
-NetCDF/HDF5/GRIB files — no data is copied or reformatted.  The manifest maps Zarr
-chunk coordinates to `(file_path, byte_offset, byte_length)` tuples.  A consumer
-opens the manifest with xarray and gets a fully lazy, chunked dataset backed by the
-original files read on demand.
+| Endpoint | Description |
+|----------|-------------|
+| `GET /collections/{id}/experiment` | Returns the parent experiment STAC Catalog for the given component collection |
 
-### Why it fits with this catalog
+### Changes made
 
-The two tools occupy different layers and compose naturally:
+- **`api/experiment_routes.py`** — Added `create_collection_experiment_router()` factory.
+  The new route looks up the collection across all catalogs, extracts its `experiment` field,
+  then returns the same `ExperimentCatalog` JSON as `GET /experiments/{id}`.
+  Returns 404 if the collection is not found or has no `experiment` field.
+
+- **`api/app.py`** — Mounts the collection-experiment router after the experiment router.
+
+### Navigation chain
+
+The full STAC navigation chain is now resolvable in both directions:
 
 ```
-STAC catalog  →  "what exists, where, and what does it contain?"  (discovery)
-VirtualiZarr  →  "how do I open all those files as a single cube?"  (access)
+GET /                              → landing page (child links → experiments)
+  GET /experiments/{id}            → experiment catalog (child links → collections)
+    GET /collections/{id}          → collection (parent link → /experiments/{id})
+      GET /collections/{id}/items  → items
+      GET /collections/{id}/experiment  → shortcut back to experiment catalog
 ```
 
-**Multi-file virtual aggregation** is the compelling workflow.  A STAC search returns
-a list of items — say, all FESOM SSH files from a 1000-year PI control.  VirtualiZarr
-can concatenate all of them into a single virtual time-series cube, purely in the
-manifest, with no data movement:
+### No schema change
 
-```python
-items = catalog.search(collections=["basic-001-fesom"],
-                       filter="variable='ssh'").items()
-paths = [item.assets["data"].href.removeprefix("file://") for item in items]
-vds   = xr.concat([open_virtual_dataset(p, parser=HDFParser()) for p in paths],
-                  dim="time")
-```
-
-### Integration points (when triggered)
-
-| Trigger | Integration point |
-|---|---|
-| Now (zero cost) | Document the workflow — see `docs/virtualizarr_workflow.md` |
-| Files move to S3 / cold storage | Store Kerchunk/Icechunk manifest as a second STAC asset alongside the raw NetCDF href |
-| Files accessed cross-site | Manifest path in STAC item becomes the shareable access handle |
-| Python snippet in STAC Browser | `PythonCodeBox` offers a second tab: "Open as virtual Zarr" |
-
-### Current limitations on HPC
-
-VirtualiZarr's main benefit is cloud-native byte-range reads over HTTP/S3.  For local
-Lustre, opening NetCDF directly is already efficient.  On tape, virtual manifests do
-not help with recall latency — that remains the `hpc/` extension's domain.  The
-integration becomes high-value once files live on object storage.
+The route is a pure read-only shortcut over the existing
+`get_collections_for_experiment()` storage method.
 
 ---
 
-## Universal Pathlib / fsspec Integration (Decision Note)
+## TODO 4: Web UI for Catalog Management ✅ DONE
 
-> **Decision: do not add as a dependency yet — but design interfaces to accommodate it.**
-> Related library: [`universal_pathlib`](https://github.com/fsspec/universal_pathlib)
+**Goal:** Replace the CLI command `esm-catalog register ...` / `deploy_albedo.sh register`
+with a browser-based web UI page where users can register a catalog path with the running
+server, view all registered catalogs, and manage them without using `curl`.
 
-### What it is
+### What was done
 
-`universal_pathlib` provides `UPath` — a drop-in replacement for `pathlib.Path` that
-works transparently with any fsspec-backed filesystem: S3, GCS, Azure, SFTP, HTTP,
-ZIP archives, and more.  Code written against the standard pathlib API (`path / "sub"`,
-`path.read_bytes()`, `path.glob("**/*.nc")`) runs unchanged against any backend.
+- **`api/ui/index.html`** — New single-file vanilla JS admin page. No build step, no
+  external dependencies. Served by FastAPI as a static mount.
+  - Header with live `GET /health` API status badge
+  - Register form: path input with auto-suggested name (strips `.duckdb`), name, description
+  - Catalog list loaded from `GET /catalogs` on page load with status icons (green `●` active,
+    red `✗` missing/error)
+  - Per-catalog **Refresh** (`POST /catalogs/{id}/refresh`) and **Delete**
+    (`DELETE /catalogs/{id}`) buttons with confirm dialog
+  - All API calls use `window.location.origin` as base — no hardcoded URLs
 
-### Where it would help this project
+- **`api/app.py`** — Added imports for `StaticFiles` and `RedirectResponse`; mounted
+  `StaticFiles(directory=ui_dir, html=True)` at `/ui`; added `/admin` → `/ui` redirect
+  (GET + HEAD).
 
-**Asset hrefs as proper cross-system URIs.**
-`_inject_item_links` currently hacks bare filesystem paths by prepending `file://` at
-serve time.  If files ever live on S3, Swift object storage, or SFTP at a partner
-institute, the catalog already stores the href string — it just needs to store a
-proper URI from the start.  A consumer using `UPath(asset_href)` would open the file
-regardless of protocol.
-
-**Cross-site federation.**
-A catalog entry with `sftp://albedo.awi.de/path/to/file.nc` or
-`s3://awi-cold-storage/...` as the asset href is meaningful to any researcher with
-network access — not just to processes running on the originating cluster.  This is
-the long-term direction for a federated catalog across AWI, DKRZ, and other sites.
-
-**Scanning files that are not locally mounted.**
-Replacing `Path` with `UPath` in `scan/netcdf.py` and `scan/grib.py` would allow
-scanning data on S3, SFTP, or HTTP without a local mount.  Both xarray and cfgrib
-already accept fsspec-compatible file objects, so the scanner itself needs only a
-one-line change.
-
-### Where it does not help
-
-**Tape/HSM state detection.**
-`UPath` has no concept of HSM states (online / nearline / offline), dmattr queries,
-scoutfs, or recall initiation.  The logic in `hpc/state.py` and `hpc/detect.py` must
-remain custom regardless.  The two layers are orthogonal:
+### Access
 
 ```
-UPath          — how to open a file given a URI (transport layer)
-hpc/ extension — whether the file is accessible right now (accessibility layer)
+http://<host>:<port>/ui      # admin page
+http://<host>:<port>/admin   # redirects → /ui
 ```
 
-**Lustre/GPFS performance.**
-UPath treats Lustre as plain POSIX.  No striping hints, collective I/O, or
-filesystem-specific optimisations — not a regression, but not an improvement either.
+---
 
-**The catalog database.**
-DuckDB is always local; no benefit.
+## TODO 5 (added): Personal Collections — "My Collections" ✅ DONE
 
-### What to do now (zero-cost preparation)
+**Goal:** Allow users to curate personal lists of catalog items, organise them into folders,
+label them, and optionally share them with other users.
 
-Do not add `upath` as a dependency today.  Instead, keep interfaces compatible so the
-swap is trivial when the time comes:
+**Implementation (complete):**
 
-1. **Type-hint path arguments as `os.PathLike`** rather than `pathlib.Path` in
-   `scan/netcdf.py`, `scan/grib.py`, and `scan/detect.py`.  `UPath` is already
-   `os.PathLike`, so this is a documentation change only.
+- **`storage/personal.py`** — `PersonalCollectionStore` (DuckDB-backed): collections, items,
+  labels, shares, tree nodes (folders + collection references). RBAC: owner/maintainer/developer/viewer.
+- **`api/personal_models.py`** — Pydantic request/response models.
+- **`api/personal_routes.py`** — Full REST API under `/users/{user}/...` (collections, labels,
+  shares, tree).
+- **`api/app.py`** — Mounts personal router; uses `ESM_PERSONAL_DB` env var for DB path.
+- **`stac-browser/PersonalCollections.vue`** — "My Collections" sidebar tab: tree view, folders,
+  drag-and-drop, labels, share dialog, item viewer (clickable links), notifications.
+- **`stac-browser/AddToCollection.vue`** — Star button on item/collection cards; stores the STAC
+  Browser path (e.g. `/experiments/basic-001`) as the item reference so links resolve correctly.
+- **`stac-browser/TreeNode.vue`** — Recursive tree node component with drag-drop, edit/delete/share actions.
 
-2. **Store asset hrefs as full URI strings at write time** — `file:///absolute/path`
-   rather than `/absolute/path` — so the API layer does not need to fix them up.
-   Currently `_inject_item_links` prepends `file://` at serve time; moving this
-   earlier (to `stac/item.py` or `storage/duckdb.py`) is cleaner and makes hrefs
-   valid in the stored JSON.
+**Pending:**
 
-3. **Keep storage detection separate from path handling** in `hpc/detect.py`.
-   When S3 or Swift arrives, `UPath.protocol` would be the natural complement to
-   `hpc:storage_type` — the detect logic just needs to branch on protocol rather
-   than path prefix.
-
-### Trigger conditions to actually add the dependency
-
-Add `upath` when any of these become real requirements:
-
-- Files are migrated to S3 / Swift cold storage and the catalog needs to point there
-- Cross-institute catalog federation where asset hrefs must be resolvable remotely
-- Scanning data that is not locally mounted (remote S3, SFTP, HTTP collections)
+- "Shared with me" browser view — backend supports it; UI not built yet
+- Username validation (LDAP?) in the share dialog — currently accepts arbitrary strings
 
 ---
 
-## Dependencies
+## TODO 6: LLM & MCP Capabilities
 
-**Core:**
-- `duckdb` - Storage and query
-- `pystac` - STAC object model
-- `pystac-client` - STAC API client (used in generated Python snippets)
-- `xarray` - Read NetCDF/GRIB
-- `cfgrib` / `eccodes` - GRIB support
-- `ruamel.yaml` - Load `finished_config.yaml` (preserves comments; used by `integration/config.py`)
-- `joblib` - Parallel file scanning in batch path
+**Goal:** Integrate Large Language Model (LLM) and Model Context Protocol (MCP) capabilities
+into the catalog, enabling natural-language search, auto-summarization of experiments, and
+AI-assisted metadata enrichment.
 
-**API:**
-- `stac-fastapi` - STAC API framework (custom DuckDB backend; not pgstac or sqlalchemy)
-- `uvicorn` - ASGI server
-- `fastapi[cors]` - CORS middleware for STAC Browser cross-origin requests
+**Current state:** No LLM/MCP integration exists. The `esm-tools-plus/simcat/llm-mcp` branch
+exists in the repo and appears to be the designated development space for this work.
 
-**CLI:**
-- `click` / `rich-click` - CLI framework
-- `loguru` - Logging
+**Possible capabilities:**
 
-**Batch processing:**
-- `snakemake` - Workflow orchestration
-- `pyarrow` - Parquet I/O
+1. **Natural-language search** — Translate a plain English query like
+   *"find temperature output from the last glacial maximum experiments"* into a CQL2 filter
+   and execute it against the catalog. The LLM acts as a query planner.
 
-**Browser (stacbrowser2 fork):**
-- `highlight.js` - Python syntax highlighting in PythonCodeBox
+2. **MCP server** — Expose catalog search, collection listing, and item retrieval as MCP tools
+   so that AI agents (Claude, Cursor, etc.) can query the catalog directly in their context.
+   This is likely the primary use case given the existing `llm-mcp` branch.
 
----
+3. **Metadata summarization** — Auto-generate human-readable descriptions for collections
+   and experiments based on their STAC metadata (variables, time range, spatial extent, etc.).
 
-## Collaboration Notes (Pavan's Work)
+4. **Semantic search / embeddings** — Index collection metadata as embeddings (e.g. via
+   fastembed — note: `.fastembed_cache/` directory already exists in `src/esm_catalog/`)
+   and support vector similarity search alongside keyword search.
 
-Pavan (siligam) built the initial proof-of-concept (`fesom_stac2`), which established:
-- The stac-fastapi serving approach (carried forward into `api/server.py`)
-- The Catalog → Collection → Item hierarchy with experiment × component as the grouping key
-- Datacube and CF extension usage on items
-- Snakemake as the batch orchestration layer
+**Note on fastembed cache:** The presence of `.fastembed_cache/` and `.rtk/` in `src/esm_catalog/`
+suggests embedding-based search has already been prototyped. This work likely lives on the
+`llm-mcp` branch and should be reviewed before designing the MCP integration here.
 
-**What was incorporated:**
-- stac-fastapi as the API framework
-- STAC hierarchy (Catalog → Collection → Item)
-- Datacube + CF extensions
-- Experiment × component as the collection grouping key
-
-**What this architecture adds beyond fesom_stac2:**
-- DuckDB backend (replaces static JSON files on disk)
-- `scan/context.py` for collection assignment at insert time
-- HPC storage extension (`hpc/`)
-- GRIB support (`scan/grib.py`)
-- Federation across multiple per-experiment DuckDB files
-- STAC Browser fork with PythonCodeBox and context-aware code generation
+**Files to touch:** New `api/mcp.py` or `mcp/` subpackage, `api/app.py` (mount MCP routes),
+`storage/embeddings.py` (if embedding-based search is added).
 
 ---
-
-## Phase Plan
-
-### Phase 1: Core (MVP) ✅ COMPLETE
-- [x] Clean module structure
-- [x] GRIB + NetCDF scanning (magic-byte fallback for extension-less ECHAM output; 0–360° longitude normalisation)
-- [x] DuckDB storage
-- [x] Basic CLI
-- [x] Collection context (`scan/context.py`) — design hole identified and resolved
-- [x] Pytest tests: `tests/test_hpc.py`, `tests/test_scan.py`, `tests/test_stac.py`, `tests/test_storage.py`, `tests/test_integration.py` (137 passing)
-- [x] User documentation: `CLI.md` — command reference with examples for all CLI subcommands
-
-### Phase 2: ESM-Tools Integration ✅ COMPLETE
-- [x] `integration/esm_tools.py` — `add_files()` bridge for tidy phase
-- [x] `integration/config.py` — `finished_config.yaml` loader (`load_config`); plus `find_finished_configs`, `get_outdata_files`, `extract_stac_metadata` helpers
-- [x] Bug fix: `scan/context.py` `_find_component_for_path()` now checks `experiment_outdata_dir` (the key used in real finished_config files; `outdata_dir` is `None` in practice)
-- [x] Pytest tests: `tests/test_integration.py` — 51 tests covering `load_config`, `find_finished_configs`, `get_outdata_files`, `extract_stac_metadata`, `find_file_operations_log`, `get_outdata_from_file_operations`, `add_files()` (with checksums), `add_run()` (177 total tests passing)
-- [x] `integration/config.py` — `find_file_operations_log()` + `get_outdata_from_file_operations()`: primary source for catalog construction (MD5 checksums included); falls back to `finished_config.yaml` outdata_targets
-- [x] `integration/esm_tools.py` — `add_files()` `checksums` param injects `file:checksum` into item assets; `add_run()` implements the priority chain (file_operations_tidy → finished_config)
-- [x] User documentation: `docs/esm_tools_integration.md` — how to enable cataloging in a run script, `add_files()` API reference, all three config helpers, `finished_config.yaml` keys used, collection naming convention
-
-### Phase 3: API ✅ COMPLETE
-- [x] `api/client.py` — `DuckDBCatalogClient` (BaseCoreClient, 6 abstract methods)
-- [x] `api/app.py` — `create_app()` factory; module-level `app` for `uvicorn esm_catalog.api.app:app`
-- [x] Multi-catalog federation across per-experiment `catalog.duckdb` files
-- [x] CORS middleware (`allow_origins=["*"]`) for STAC Browser cross-origin access
-- [x] `ESM_CATALOG_DB` env var for colon-separated catalog paths
-- [x] `storage/duckdb.py` — `search_items()` extended with `id` and `datetime`/`datetime_end` native column filters
-- [x] CLI `serve` command wired to `create_app()` (was referencing stub `api.server`)
-- [x] Pytest tests: `tests/test_api.py` — 34 tests covering landing page, conformance, collections CRUD, items CRUD, GET/POST search with datetime range, multi-catalog federation, CORS headers, client init validation (211 total tests passing)
-- [x] Decision: STAC Browser is **external** — use radiantearth hosted instance; no fork required in this repo
-- [x] CQL2-JSON filtering for `/search` (POST body `filter` field) and `/collections` (query param)
-- [x] `GET /queryables` — JSON Schema with enum lists populated via `DISTINCT` queries on live catalog; enables STAC Browser dropdown pickers in "Additional filters"
-- [x] `GET /stac-extensions/hpc/v0.1.0/schema.json` — serves HPC extension schema locally; canonical GitHub Pages URL rewired in `stac_extensions` at serve time so STAC Browser can validate
-- [x] `POST /format` — OGC CQL2 format-negotiation stub; accepts raw body (plain-text CQL2 or JSON) to always return 200; silences log noise from STAC Browser probe
-- [x] Absolute link injection for collections (`self`, `root`, `parent`, `items`) and items (`self`, `root`, `parent`, `collection`) — stored fragment links are not valid IRIs and break STAC validation and Browser navigation
-- [x] Asset `href` normalisation — bare filesystem paths prefixed with `file://` to pass `iri-reference` format validation
-- [x] Pagination for POST `/search` — `numberMatched`, `numberReturned`, and `first`/`prev`/`next` links with full body replay; token encodes integer offset
-- [x] Pagination for GET `/collections/{id}/items` — `token` and `limit` read directly from `request.query_params` (stac-fastapi does not forward unknown query params via method signature)
-- [x] CQL2 temporal literal unwrapping (`_cql2_value`) — STAC Browser sends `{"timestamp": "..."}` dicts; unwrapped before DuckDB binding
-- [x] `GET /collections` response includes `rel=queryables` link — required for STAC Browser to load queryables and show "Additional filters" CQL2 builder in the "Search for Collections" tab (without this link the tab shows no filter controls even when `collection-search#filter` is declared)
-- [x] `GET /collections/{id}/queryables` — per-collection queryables endpoint; scoped enum values for that collection; enables "Additional Filters" section in collection items view (STAC Browser silently hides the section if this returns 404)
-- [x] CQL2-text parser `_parse_cql2_text()` — handles `variable = 'ssh'`, `A AND B`, `A OR B`, `NOT (A)` as generated by STAC Browser GET requests on collection items view
-- [x] CQL2 NOT filter — `_CQL2_OP_INVERT` dict inverts operators under negation; `CqlNot.toText()` fixed in stac-browser fork (`logical.js`) to emit `NOT (inner)` instead of dropping the operator
-- [x] CQL2 AND with duplicate fields — `_parse_cql2_json` and `_parse_cql2_text` collect multiple conditions on the same field as `[(op,v1), (op,v2)]` tuple lists; `search_items` iterates them as separate AND clauses
-- [x] CQL2 OR filter — values collected as plain lists `[v1, v2]`; `search_items` detects plain vs tuple lists and emits `IN (?, ?)` SQL; `_collection_matches` uses `any()` for OR matching
-- [x] Collection badge injection — `_inject_item_links` inserts the collection ID as the first keyword in item properties; STAC Browser renders keywords as colored chips, giving a visual collection indicator on item cards; also added as a Vue badge in stac-browser `Item.vue` (fork)
-- [x] CLI tests — 31 CLI tests covering all four commands (`scan`, `serve`, `info`, `export`) added in `tests/test_cli.py`
-- [ ] JSON-LD vocabulary links (deferred to Phase 5)
-- [ ] User documentation: `docs/api_and_browser.md` — federation config, `esm-catalog serve` usage, STAC Browser URL pattern, supported filter syntax
-
-### Phase 4: HPC Features
-- [ ] Tape state detection (`hpc/state.py` — dmattr, scoutfs)
-- [ ] Batch scanning with SLURM (Snakemake + `--config` context passing)
-- [ ] Rate limiting
-- [ ] Recall initiation
-- [ ] Pytest tests: `tests/test_hpc.py` — dmattr/scoutfs mocks, rate-limiter throttle, recall initiation
-- [ ] User documentation: `docs/hpc_batch_scanning.md` — Snakemake workflow, `scan-batch` + `merge-parquet` recipe, `--rate-limit`/`--checkpoint`/`--resume` flags, storage tier reference table
-
-### Phase 5: Hardening
-- [ ] Unstructured grid representation (FESOM — see Open Questions)
-- [x] ECHAM GRIB support (`scan/grib.py`):
-  - `_extract_dimensions_grib()` — builds `cube:dimensions` from all open hypercube datasets; handles temporal, spatial (lat/lon/vertical), spectral (`values`), and ordinal axes
-  - paramId=0 expansion — ECHAM `_accw`/`_co2` files store all parameters under paramId=0; cfgrib collapses them to a single "unknown" variable; when a `.codes` table is available, that entry is expanded into one variable per codes table parameter (all share the same grid/dimensions)
-  - `CollectionContextError(ValueError)` in `scan/context.py` — non-outdata paths (work/, restart/, input/, etc.) now caught at DEBUG level, not ERROR; genuine errors still log at ERROR
-- [ ] `hpc-storage` extension spec document (currently undocumented custom extension)
-- [ ] Checkpoint/resume for interrupted batch scans
-- [ ] Pytest tests: `tests/test_scan_grib.py` — ECHAM GRIB fixtures; `tests/test_scan_unstructured.py` — FESOM mesh datacube representation
-- [ ] User documentation: `docs/supported_formats.md` — NetCDF, GRIB, unstructured grid caveats; update `hpc-storage` extension spec with full field definitions
-
-### Phase 7: LLM Assistant ✅ COMPLETE
-
-A natural-language interface to the catalog via a local LLM, using the Model Context Protocol (MCP).
-See [`docs/llm_assistant.md`](docs/llm_assistant.md) for the full setup guide.
-
-#### Architecture
-
-```
-Researcher (browser)
-      ↓
-Open WebUI  :3000       ← Apptainer (no Docker daemon)
-      ↓  MCP stdio
-esm-catalog mcp         ← new CLI subcommand (mcp/server.py)
-      ↓  HTTP (httpx)
-STAC API  :23100        ← existing esm-catalog serve
-      ↓
-catalog.duckdb
-
-Open WebUI also connects to:
-Ollama  :11434          ← GPU SLURM job (qwen2.5:72b or llama3.3:70b)
-```
-
-All data and model weights stay on-cluster — no external API calls.
-
-#### MCP tools
-
-| Tool | What it does |
-|---|---|
-| `list_collections` | List all experiment collections |
-| `get_collection_info` | Variables, time range, spatial extent, item count for a collection |
-| `search_items` | Find files by collection, variable, date range; returns file paths |
-| `run_python` | Execute Python with xarray/matplotlib; returns plot paths |
-
-#### Implementation
-
-| File | Role |
-|---|---|
-| `mcp/__init__.py` | Package marker |
-| `mcp/server.py` | FastMCP server; tool registration; `run()` entry point |
-| `mcp/tools.py` | Tool implementations (pure functions; no MCP dependency) |
-| `cli.py` | `esm-catalog mcp` subcommand — `--catalog-url`, `--transport`, `--port` |
-| `setup.py` | `[mcp]` optional extra: `mcp>=1.0`, `httpx>=0.27` |
-
-- [x] `mcp/` package (`__init__.py`, `server.py`, `tools.py`)
-- [x] `cli.py` — `mcp` subcommand with `--catalog-url`, `--transport`, `--port`
-- [x] `setup.py` — `[mcp]` optional extra
-- [x] `docs/llm_assistant.md` — Ollama SLURM job, Apptainer Open WebUI, SSH tunnel, model recommendations
-
-### Phase 6: Data Portal & Self-Registration (Proposed)
-
-> Pending review and approval — see [Data Portal & Self-Registration](#data-portal--self-registration-proposal) section.
-
-- [ ] `esm-catalog register` command — atomic append to `registry.json` with file locking; `--name`, `--description`, `--owner` flags; optional `--registry` override (defaults from `~/.esm_catalog.yaml`)
-- [ ] `esm-catalog deregister` command — remove own entry from registry by path
-- [ ] Registry-aware `DuckDBCatalogClient` — reads `registry.json` per request when `--registry` flag is given to `esm-catalog serve`
-- [ ] Single shared API as default — one `esm-catalog serve --registry /shared/registry.json --port 23100`; per-department instances remain optional for access-control / admin-autonomy use cases
-- [ ] Apptainer image (`stac-browser.sif`) built and verified — portal on :23000, STAC Browser at `/stac/`
-- [ ] `run-portal.sh` / SLURM job script for always-on portal
-- [ ] End-to-end test: `register` → catalog appears in STAC Browser without API restart
-- [ ] User documentation: `docs/data_portal.md` — register/deregister commands, shared registry path, optional per-department setup, SSH tunnel instructions
-
----
-
-## Open Questions
-
-1. **ECHAM GRIB support** — Substantially addressed: `_extract_dimensions_grib()` populates `cube:dimensions` from all hypercube datasets; paramId=0 expansion recovers variable names for `_accw`/`_co2` files via the companion `.codes` table. Remaining gap: variables whose paramId is non-zero but not in the standard eccodes tables appear as "unknown" within mixed datasets (e.g. the `regular_gg+surface` hypercube of the main `_echam` file contains some unrecognised parameters). These residual unknowns do not block catalog construction — they simply appear as `unknown` in `cube:variables` alongside properly-named variables.
-
-2. **Unstructured grids** - FESOM uses unstructured mesh. How to represent in datacube extension?
-
-3. **Restart files** - Catalog them? Separate collection? Ignore?
-
-4. **Derived data** - User-computed anomalies, regridded data. How to track provenance?
-
-5. **Annotations** - "Don't use this run, ocean crashed" - where does this go?
-
----
-
-*Document created: 2025-03-08*
-*Based on architecture discussion between Paul Gierz and Claude*

@@ -498,9 +498,7 @@ and it's strongly recommended for production runs.
 
 .. warning::
    Refrain from using this feature if you have installed ESM-Tools within a conda
-   environment. Conda enviroment installation is still in its testing phase and we
-   cannot evaluate yet which conflicts might arise from combining both the venv of
-   this feature and the environment from conda.
+   environment.
 
 If you choose to use a virtual environment, a local installation will be created in the experiment tree at the begining of the first run into the folder named ``.venv_esmtools``.  **That** installation will be used for the experiment. It will be installed at the root of your experiment and contains all the Python libraries used by ESM-Tools. The installation at the beginning of the experiment will induce a small overhead (~2-3 minutes).
 
@@ -543,6 +541,32 @@ ESM-Tools behave. To create a virtual environment with ESM-Tools installed in
    folder .venv_esmtools listed above and **not** from your user install directory.
    You should make **all** changes to the namelists and config files via your user
    runscript (:ref:`yaml:Changing Namelists`). This is recommended in all cases!!!
+
+Running an experiment with conda
+---------------------------------
+
+If you submit ``esm_runscripts`` from within an active conda environment, that
+same environment is automatically activated inside the generated job script
+before the model runs. **You don't need to do anything** for this to work.
+
+If you need finer control (e.g. the environment used on the compute nodes
+should differ from the one used to launch ``esm_runscripts``, or conda is not
+on the default ``PATH`` of the compute nodes), you can specify it explicitly in
+a ``conda`` section of your runscript:
+
+.. code-block:: yaml
+
+   conda:
+       env: /path/to/your/conda/env
+       root: /path/to/conda  # optional, needed if "conda" is not already on PATH
+
+See ``conda.env``, ``conda.root``, and ``launched_with_conda`` in
+:ref:`esm_variables:Run-time variables` for details.
+
+.. warning::
+   Do not combine this feature with the virtual environment feature described
+   above (``use_venv``); mixing a conda environment with a venv created by
+   ESM-Tools may cause conflicts.
 
 Logging and verbosity
 ---------------------

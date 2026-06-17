@@ -109,6 +109,7 @@ setup(
             "stac-fastapi-types>=3.0",
             "fastapi>=0.100",
             "pydantic>=2",
+            "eval_type_backport",  # pydantic v2 needs this to resolve `X | None` on Python <3.10
             "attrs",
             "uvicorn",
             "httpx",

@@ -19,8 +19,16 @@ function ice2fesom {
     # chunk's FESOM restart from the old mesh onto the new submesh before the
     # next FESOM run picks it up.
     if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
-        build_submesh        || { echo " *** ice2fesom FAILED: build_submesh ***"; exit 1; }
-        remap_fesom_restart  || { echo " *** ice2fesom FAILED: remap_fesom_restart ***"; exit 1; }
+        build_submesh           || { echo " *** ice2fesom FAILED: build_submesh ***"; exit 1; }
+        remap_fesom_restart     || { echo " *** ice2fesom FAILED: remap_fesom_restart ***"; exit 1; }
+        # The FESOM node count changed, so the OASIS feom grid description and the
+        # feom remap weights baked for the previous mesh are stale (MCT aborts on
+        # the first exchange: length of x /= columns of sMat). Regenerate them for
+        # the new submesh. Gated on REGEN_OASIS_WEIGHTS so setups without pyOASIS
+        # are unaffected.
+        if [[ "x${REGEN_OASIS_WEIGHTS:-0}" == "x1" ]]; then
+            regenerate_oasis_weights || { echo " *** ice2fesom FAILED: regenerate_oasis_weights ***"; exit 1; }
+        fi
     fi
 
     return
@@ -222,6 +230,55 @@ NML
     fi
 
     echo "     ...done. remapped restart -> ${outdir}"
+}
+
+function regenerate_oasis_weights {
+    # Regenerate the OASIS feom grid description and the feom remap weights for
+    # the new submesh, using ocp-tool driving the coupled model's own pyOASIS.
+    # Output goes to ${COUPLE_DIR}/oasis_regen/ (grids.nc/masks.nc/areas.nc +
+    # rmp_*feom*.nc); the awiesm3 compute leg stages these via an oasis3mct input
+    # redirect gated on chunk_number>1.
+    #
+    # Required environment (exported by env_fesom.py / the runscript):
+    #   OASIS_BUILD_PATH          model OASIS build (has python/pyoasis + lib/liboasis.cbind.so)
+    #   OCP_TOOL_DIR              ocp-tool source dir (added to PYTHONPATH)
+    #   OCP_WEIGHTGEN_DRIVER_PY   python with pyfesom2 (regenerates the feom grid)
+    #   OCP_WEIGHTGEN_WORKER_PY   python with OpenMPI mpi4py + pyoasis (srun worker)
+    #   OASIS_TEMPLATE_DIR        dir with grids/masks/areas providing A096 + RnfO
+    # Optional: OASIS_REMAP_METHOD (existing|conserv, default existing),
+    #           OCP_WEIGHTGEN_THREADS (default 8)
+    echo " *   regenerating OASIS feom grid + remap weights for the new submesh"
+    : "${OASIS_BUILD_PATH:?regenerate_oasis_weights: OASIS_BUILD_PATH not set}"
+    : "${OCP_TOOL_DIR:?regenerate_oasis_weights: OCP_TOOL_DIR not set}"
+    : "${OCP_WEIGHTGEN_DRIVER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_DRIVER_PY not set}"
+    : "${OCP_WEIGHTGEN_WORKER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_WORKER_PY not set}"
+    : "${OASIS_TEMPLATE_DIR:?regenerate_oasis_weights: OASIS_TEMPLATE_DIR not set}"
+
+    local out_dir=${COUPLE_DIR}/oasis_regen
+    local submesh=${COUPLE_DIR}/latest_submesh
+    rm -rf "${out_dir}"
+
+    export PYTHONNOUSERSITE=1
+    export LD_LIBRARY_PATH=${OASIS_BUILD_PATH}/lib:${LD_LIBRARY_PATH}
+    export PYTHONPATH=${OASIS_BUILD_PATH}/python:${OCP_TOOL_DIR}:${PYTHONPATH}
+
+    ${OCP_WEIGHTGEN_DRIVER_PY} -c "
+from ocp_tool.oasis_weights import regenerate_for_mesh
+regenerate_for_mesh('${submesh}', '${OASIS_TEMPLATE_DIR}', '${out_dir}',
+                    method='${OASIS_REMAP_METHOD:-existing}',
+                    threads=${OCP_WEIGHTGEN_THREADS:-8},
+                    worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
+                    oasis_build_path='${OASIS_BUILD_PATH}')
+" || { echo " *   regenerate_oasis_weights: ocp-tool weight generation FAILED"; return 1; }
+
+    # Sanity: all four feom remap-weight files must be present.
+    local n
+    n=$(ls "${out_dir}"/rmp_*feom*.nc 2>/dev/null | wc -l)
+    if [ "${n}" -lt 4 ]; then
+        echo " *   regenerate_oasis_weights: expected 4 rmp_*feom*.nc, found ${n}"
+        return 1
+    fi
+    echo "     ...done. regenerated OASIS grids+weights -> ${out_dir}"
 }
 
 function iterative_coupling_ice_fesom1x_write_names {

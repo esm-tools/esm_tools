@@ -14,11 +14,13 @@ function ice2fesom {
         iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
     fi
 
-    # When the dynamic submesh has been (re)built by pism2esm, the FESOM
-    # restart from the previous chunk lives on the old mesh and must be
-    # remapped onto the new mesh before the next FESOM run can pick it up.
+    # Build the dynamic submesh from the max-mesh and the PISM ice geometry
+    # (latest_ice_geometry.nc, produced by pism2esm), then remap the previous
+    # chunk's FESOM restart from the old mesh onto the new submesh before the
+    # next FESOM run picks it up.
     if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
-        remap_fesom_restart
+        build_submesh        || { echo " *** ice2fesom FAILED: build_submesh ***"; exit 1; }
+        remap_fesom_restart  || { echo " *** ice2fesom FAILED: remap_fesom_restart ***"; exit 1; }
     fi
 
     return
@@ -89,7 +91,7 @@ function build_submesh {
     # 1. Regrid PISM ice geometry to ocean resolution and onto the max-mesh nodes
     echo " *   regridding ice geometry to max-mesh nodes"
     cdo -setmisstoc,5 -remapbil,T512grid ${COUPLE_DIR}/latest_ice_geometry.nc tmp1.nc
-    cdo -remapnn,core2_griddes_nodes.nc tmp1.nc tmp2.nc
+    cdo -remapnn,${MAXMESH_DIR_fesom}/${MESH_GRIDDES_fesom} tmp1.nc tmp2.nc
     ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
     rm tmp1.nc tmp2.nc
 
@@ -109,15 +111,18 @@ function build_submesh {
 
     # 4. Partition the submesh and produce a grid-description file
     echo " *   partitioning submesh and generating mesh griddes"
+    if ! command -v singularity >/dev/null 2>&1; then
+        module load singularity 2>/dev/null || module load apptainer 2>/dev/null
+    fi
     singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-partition \
         oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev \
-        --mesh-dir ${SUBMESH_DIR} --n-part 288 --use-cavity
+        --mesh-dir ${SUBMESH_DIR} --n-part ${NPROC_fesom} --use-cavity
     singularity run -B ${COUPLE_DIR}:/scif/data --app mesh-griddes \
         oras://registry.hzdr.de/paul.gierz/meshtools-creator:dev \
         --mesh-dir ${SUBMESH_DIR} --ofile mesh_cst.nc
     rm -f tmp*.nc
     mv ${COUPLE_DIR}/mesh_cst.nc ${COUPLE_DIR}/${SUBMESH_DIR}/
-    ln -s ${COUPLE_DIR}/submesh_$CHUNK_END_DATE_echam ${COUPLE_DIR}/latest_submesh
+    ln -sf ${COUPLE_DIR}/submesh_$CHUNK_END_DATE_fesom ${COUPLE_DIR}/latest_submesh
     mesh_dir=${COUPLE_DIR}/${SUBMESH_DIR}
 
     # 5. Build OCE_flag / GLAC_flag masks from the cavity-level file, if any
@@ -142,6 +147,15 @@ function build_submesh {
 
     cp mesh_cst_tmp.nc ${mesh_dir}/mesh_cst.nc
     rm -f *.out *_tmp.nc
+
+    # Verify the submesh has the files the restart remap and FESOM need. The
+    # partition/griddes steps (singularity) can fail silently, so guard here.
+    for f in nod2d.out elem2d.out aux3d.out nlvls.out mesh_cst.nc; do
+        if [ ! -s "${mesh_dir}/${f}" ]; then
+            echo " *   build_submesh ERROR: missing ${mesh_dir}/${f}"
+            return 1
+        fi
+    done
     echo "     ...done."
 }
 
@@ -150,9 +164,12 @@ function remap_fesom_restart {
 
     local remap_bin=${FUNCTION_PATH}/../fesom/remap_restart/remap_restart
     if [ ! -x "${remap_bin}" ]; then
-        echo " *   binary not found: ${remap_bin}"
-        echo " *   build with: bash ${FUNCTION_PATH}/../fesom/remap_restart/build.sh"
-        return 1
+        echo " *   binary not found, building: ${remap_bin}"
+        bash ${FUNCTION_PATH}/../fesom/remap_restart/build.sh
+        if [ ! -x "${remap_bin}" ]; then
+            echo " *   build FAILED: ${remap_bin}"
+            return 1
+        fi
     fi
 
     local nod2d_base
@@ -176,6 +193,9 @@ function remap_fesom_restart {
     fi
 
     local restart_year=${CHUNK_START_DATE_fesom%%-*}
+    # FESOM resumes year <restart_year> from the restart written at the end of
+    # the previous year, stored in fesom.<restart_year-1>.oce.restart/.
+    local restart_year_old=$(( restart_year - 1 ))
     local outdir=${COUPLE_DIR}/restart_remapped
     mkdir -p ${outdir}
 
@@ -184,7 +204,7 @@ function remap_fesom_restart {
     path_base        = '${MAXMESH_DIR_fesom}/'
     path_old         = '${path_old}'
     path_new         = '${COUPLE_DIR}/latest_submesh/'
-    path_restart_old = '${RESTART_DIR_fesom}/'
+    path_restart_old = '${RESTART_DIR_fesom}/fesom.${restart_year_old}.oce.restart/'
     path_restart_new = '${outdir}/'
     restart_year     = ${restart_year}
     nod2D_base       = ${nod2d_base}

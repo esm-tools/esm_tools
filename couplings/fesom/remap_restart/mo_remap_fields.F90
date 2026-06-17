@@ -620,6 +620,31 @@ contains
         deallocate(field_old_3d, field_new_3d)
 
         !_______________________________________________________________________
+        ! temp_M1.nc, salt_M1.nc  -- previous-timestep fields, remapped with full
+        ! extrapolation for new/extended nodes (same strategy as temp.nc/salt.nc)
+        write(*,*) ' --> temp_M1.nc'
+        fin  = trim(path_old)//'temp_M1.nc'
+        fout = trim(path_new)//'temp_M1.nc'
+        call read_restart_var_3d(path_old, 'temp_M1', field_old_3d)
+        call remap_node_field_3d(field_old_3d, field_new_3d, &
+                                  mesh_old, mesh_new, node_flag, &
+                                  set_new_to_zero=.false.)
+        call write_nc_3d(fout, 'temp_M1', 'potential temperature M1', 'degC', &
+                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
+        deallocate(field_old_3d, field_new_3d)
+
+        write(*,*) ' --> salt_M1.nc'
+        fin  = trim(path_old)//'salt_M1.nc'
+        fout = trim(path_new)//'salt_M1.nc'
+        call read_restart_var_3d(path_old, 'salt_M1', field_old_3d)
+        call remap_node_field_3d(field_old_3d, field_new_3d, &
+                                  mesh_old, mesh_new, node_flag, &
+                                  set_new_to_zero=.false.)
+        call write_nc_3d(fout, 'salt_M1', 'salinity M1', 'psu', &
+                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
+        deallocate(field_old_3d, field_new_3d)
+
+        !_______________________________________________________________________
         ! temp_AB.nc, salt_AB.nc  -- set new nodes to zero (simpler, one timestep effect)
         write(*,*) ' --> temp_AB.nc'
         fin  = trim(path_old)//'temp_AB.nc'

@@ -1,9 +1,18 @@
 def prepare_environment(config):
     environment_dict = {
             "ICE_TO_FESOM": int(config["fesom"].get("use_icebergs", False).__bool__()),
+            "CHANGE_OCEAN": int(config["fesom"].get("change_ocean", False).__bool__()),
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
+            # Max-mesh the dynamic submesh is carved from. Defaults to the
+            # running mesh (mesh_dir) but can be overridden per experiment via
+            # `fesom: { max_mesh: /path/to/larger_mesh/ }` in the runscript.
+            "MAX_MESH": config["fesom"].get("max_mesh", config["fesom"]["mesh_dir"]),
+            # Node grid-description of the max-mesh, expected inside MAX_MESH.
+            "MESH_GRIDDES_fesom": config["fesom"].get("griddes_nodes", "core2_griddes_nodes.nc"),
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
+            # Number of FESOM MPI tasks; the submesh must be partitioned to match.
+            "NPROC_fesom": config["fesom"]["nproc"],
             "DATA_DIR_fesom": config["fesom"]["experiment_outdata_dir"],
             "RESTART_DIR_fesom": config["fesom"]["experiment_restart_in_dir"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],

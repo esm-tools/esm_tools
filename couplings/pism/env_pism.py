@@ -43,12 +43,14 @@ def prepare_environment(config):
             "REDUCE_TEMP_BY": config[config["general"]["setup_name"]].get("reduce_temp_by", 1), 
             "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             "MULTI_YEAR_MEAN_SMB": config[config["general"]["setup_name"]].get("multi_year_mean_smb", 1),
+            "CHANGE_OCEAN":config[config["general"]["setup_name"]].get("change_ocean", 1),  
+            # UKK new environment variable: change_oceacn -------------- ^^^^^^^^^^^^
             #"PISM_OCEAN_PICO_BASINS_FILE": "/home/ollie/lackerma/pool_pism/basins/antarctica.16km.nc",
 
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             "TEMP2_BIAS_FILE": config[config["general"]["setup_name"]].get("temp2_bias_file"),
             "DOWNSCALING_LAPSE_RATE": config[config["general"]["setup_name"]].get("lapse_rate", -0.005),
-            "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 1),
+            "DOWNSCALE_PRECIP": config[config["general"]["setup_name"]].get("downscale_precip", 0),
 
             # OCP-tool variables (for ice2oifs coupling)
             "OCP_POOL_DIR": config["general"].get("pool_dir", ""),

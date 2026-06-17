@@ -17,21 +17,17 @@ pism2esm() {
     echo " *   extracting ice geometry variables from PISM output"
     echo " *     input:  ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
     echo " *     output: ${COUPLE_DIR}/latest_ice_geometry.nc"
-    if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
-        cdo seltimestep,1 \
-            -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
-            ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc \
-            ${COUPLE_DIR}/latest_ice_geometry.nc
-    else
-        echo " *   WARNING: PISM output file not found, skipping ice-geometry extraction"
-    fi
 
     echo " *   calling pism2atmosphere"
     pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-
-    if [[ "x$CHANGE_OCEAN" == "x1" ]]; then
-        echo " *   CHANGE_OCEAN=1 -> building new FESOM submesh from MAXMESH"
-        build_submesh
+    if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ]]; then
+        cdo seltimestep,-1 \
+            -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
+            ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
+            ${COUPLE_DIR}/latest_ice_geometry.nc
+        echo "coming soon: change ocean= $CHANGE_OCEAN"
+    else
+        echo " *   WARNING: PISM output file not found, skipping ice-geometry extraction"
     fi
     echo " *   calling pism2ocean"
     pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean

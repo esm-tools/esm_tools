@@ -1,0 +1,9 @@
+#!/bin/ksh
+function just_copy() 
+{
+echo "888888 copying 88888888"	
+echo "${COUPLE_DIR}"	
+cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/atmosphere_file_for_ice.nc ${COUPLE_DIR}/. 
+cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/atmosphere_names_for_ice.dat ${COUPLE_DIR}/. 
+}
+

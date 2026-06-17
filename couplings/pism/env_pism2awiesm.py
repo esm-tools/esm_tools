@@ -19,6 +19,7 @@ def prepare_environment(config):
             "RES_pism": config[config["general"]["setup_name"]]["resolution"],
             "RUN_NUMBER_pism": config["general"]["run_number"],
             "EX_INT": config["pism"]["ex_interval"],
+            "orog_reference_pism": config["pism"].get("orog_reference_pism",1),
 
             "YR0_pism": config["general"]["start_date"].syear,
             "M0_pism": config["general"]["start_date"].smonth,

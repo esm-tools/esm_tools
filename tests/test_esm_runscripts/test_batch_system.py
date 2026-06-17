@@ -42,10 +42,12 @@ class TestGetEnvRecoveryCommands:
     def test_returns_source_and_rm(self):
         config = _make_config(["SLURM"])
         result = batch_system.get_env_recovery_commands(config)
-        assert len(result) == 3
-        assert "source" in result[1]
-        assert "rm" in result[1]
-        assert "/work/ab1234/run_01/batch_system.env" in result[1]
+        assert len(result) == 2
+        assert result[0] == "# Recover batch system environment variables"
+        assert (
+            result[1]
+            == "source /work/ab1234/run_01/batch_system.env; rm /work/ab1234/run_01/batch_system.env"
+        )
 
     def test_empty_patterns_returns_empty(self):
         config = _make_config([])

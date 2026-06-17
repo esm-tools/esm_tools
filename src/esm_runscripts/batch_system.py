@@ -362,6 +362,11 @@ class batch_system:
         or a list of strings. These are shell commands appended to the job
         script after the model execution and before the resubmission call.
 
+        The special token ``@conda_activate@`` may appear in the list and is
+        expanded by :meth:`get_conda_activate_commands` into the appropriate
+        ``conda activate`` shell commands. It is injected by default via
+        ``configs/esm_software/esm_runscripts/defaults.yaml``.
+
         Parameters
         ----------
         config : dict
@@ -414,14 +419,41 @@ class batch_system:
 
     @staticmethod
     def get_conda_activate_commands(config):
+        """
+        Build the shell commands needed to activate the conda environment in the job script.
+
+        The conda environment to activate is determined in the following priority order:
+
+        1. ``conda.env`` (and optionally ``conda.root``) set explicitly in the runscript
+           or machine config.
+        2. The ``conda_info.yaml`` file written to the run config directory by
+           :func:`~esm_runscripts.conda_env.write_conda_info_file` during
+           ``prepexp``, which captures the environment that was active when
+           ESM-Tools was launched.
+
+        Returns an empty list when no conda environment can be determined or when
+        ``general.use_venv`` is ``True`` (to avoid mixing virtual environments).
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        commands : list of str
+            Shell lines to source the conda initialisation script (if a conda
+            root is known) and to run ``conda activate <env>``. Empty if conda
+            is not in use.
+        """
         commands = []
 
         # Do not mix conda and venvs
         if config["general"].get("use_venv", False):
             return commands
 
-        conda_env = config["computer"].get("conda", {}).get("env", False)
-        conda_root = config["computer"].get("conda", {}).get("root", None)
+        conda_env = config.get("conda", {}).get("env", False)
+        conda_root = config.get("conda", {}).get("root", None)
         if not conda_env:
             conda_env, conda_root = get_conda_info_from_file(config)
         if conda_env:

@@ -79,10 +79,14 @@ general:
             major_version: v3.4
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
+            # NB: pism + debm are built via the coupling above, but must NOT be
+            # added as awiesm3 runtime models. add_include_models launches them in
+            # the awiesm3 OASIS/MPMD job, where pismr would join MPI_COMM_WORLD
+            # without being one of OASIS's components ($NBMODEL: fesom OpenIFS
+            # guess rnfma xios.x) -> OASIS deadlocks at init. PISM runs as model2
+            # of the iterative coupling; dEBM is invoked from PISM's coupler.
             add_include_models:
                 - xios
-                - pism
-                - debm
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false

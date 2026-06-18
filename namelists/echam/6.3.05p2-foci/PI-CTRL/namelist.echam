@@ -65,6 +65,11 @@
 /
 
 &mvstreamctl
+    filetag = 'tracer'
+    source = 'tracer'
+/
+
+&mvstreamctl
     filetag = 'veg'
     source = 'veg'
 /

@@ -74,7 +74,11 @@ pism:
     lresume: false
 
 
-    model_dir: "${general.esm_master.dir}/pism-${version}"
+    # model_dir is set by esm_master (compile_info.py) for both standalone and
+    # coupled builds; an active line here referencing ${esm_master_dir} breaks the
+    # runscript finalize when pism is an included model (the var is unresolved in
+    # that context), so leave it commented like echam/fesom/oasis do.
+    # model_dir: "${esm_master_dir}/pism-${version}"
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
     pool_dir: "${computer.pool_directories.pool}/pool_pism"

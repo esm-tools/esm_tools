@@ -28,6 +28,36 @@ def prepare_environment(config):
             "MACHINE": config["computer"]["name"],
             "ICEBERG_DIR": config["fesom"].get("iceberg_dir", ""),
 
+            # --- OASIS feom grid + remap-weight regeneration (ice2fesom) ---
+            # Opt-in (default off) so non-dynamic setups are unaffected. When on,
+            # ice2fesom regenerates grids/masks/areas + rmp_*feom* for the new
+            # submesh into ${COUPLE_DIR}/oasis_regen via ocp-tool. The driver and
+            # srun-worker pythons (and ocp-tool dir / template oasis dir) are
+            # site-specific and set in the runscript fesom block.
+            "REGEN_OASIS_WEIGHTS": int(config["fesom"].get("regen_oasis_weights", False).__bool__()),
+            # Coupled model's OASIS build (has python/pyoasis + lib/liboasis.cbind.so).
+            # Defaults to the oasis3mct model_dir; override with
+            # `fesom: { oasis_build_path: ... }` if pyOASIS lives in another build.
+            "OASIS_BUILD_PATH": config["fesom"].get(
+                "oasis_build_path", config.get("oasis3mct", {}).get("model_dir", "")),
+            "OCP_TOOL_DIR": config["fesom"].get("ocp_tool_dir", ""),
+            "OCP_WEIGHTGEN_DRIVER_PY": config["fesom"].get("ocp_weightgen_driver_py", ""),
+            "OCP_WEIGHTGEN_WORKER_PY": config["fesom"].get("ocp_weightgen_worker_py", ""),
+            "OCP_WEIGHTGEN_THREADS": config["fesom"].get("ocp_weightgen_threads", 8),
+            # Account/partition for the weight-gen srun when ice2fesom runs on the
+            # login node (no allocation to inherit).
+            "OCP_WEIGHTGEN_ACCOUNT": config["general"].get("account", ""),
+            "OCP_WEIGHTGEN_PARTITION": config["fesom"].get("ocp_weightgen_partition", "compute"),
+            "OASIS_REMAP_METHOD": config["fesom"].get("oasis_remap_method", "existing"),
+            # Dir providing the atmosphere (A096) + runoff (RnfO) OASIS grids to
+            # seed from; feom is overwritten for the new submesh.
+            "OASIS_TEMPLATE_DIR": config["fesom"].get("oasis_template_dir", ""),
+            # Dir with the existing rmp_*.nc. ocp-tool only regenerates the
+            # mesh-dependent (feom) weights; the unchanged ones (e.g. runoff
+            # R096->RnfA) are symlinked into oasis_regen from here so the OASIS
+            # staging finds the complete set.
+            "OASIS_RMP_TEMPLATE_DIR": config["fesom"].get("oasis_rmp_template_dir", ""),
+
             #"FESOM_GRID_input": config["fesom"]["grid_input"],
             #"solidearth_ice_thickness_file":(
             #    config["general"]["experiment_couple_dir"] +

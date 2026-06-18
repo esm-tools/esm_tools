@@ -257,19 +257,50 @@ function regenerate_oasis_weights {
     local out_dir=${COUPLE_DIR}/oasis_regen
     local submesh=${COUPLE_DIR}/latest_submesh
     rm -rf "${out_dir}"
+    mkdir -p "${out_dir}"
 
     export PYTHONNOUSERSITE=1
     export LD_LIBRARY_PATH=${OASIS_BUILD_PATH}/lib:${LD_LIBRARY_PATH}
     export PYTHONPATH=${OASIS_BUILD_PATH}/python:${OCP_TOOL_DIR}:${PYTHONPATH}
 
-    ${OCP_WEIGHTGEN_DRIVER_PY} -c "
+    # Driver: pyfesom2 feom-grid regen + pyOASIS per-link weight gen.
+    local pyscript=${out_dir}/run_regen.py
+    cat > "${pyscript}" <<PYEOF
 from ocp_tool.oasis_weights import regenerate_for_mesh
 regenerate_for_mesh('${submesh}', '${OASIS_TEMPLATE_DIR}', '${out_dir}',
                     method='${OASIS_REMAP_METHOD:-existing}',
                     threads=${OCP_WEIGHTGEN_THREADS:-8},
                     worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
                     oasis_build_path='${OASIS_BUILD_PATH}')
-" || { echo " *   regenerate_oasis_weights: ocp-tool weight generation FAILED"; return 1; }
+PYEOF
+
+    local nlinks=${OCP_WEIGHTGEN_NLINKS:-4}
+    if [ -n "${SLURM_JOB_ID:-}" ]; then
+        # Already inside an allocation (couple_in on a compute node): the per-link
+        # srun steps run within it (concurrent if it has >= nlinks nodes/tasks).
+        ${OCP_WEIGHTGEN_DRIVER_PY} "${pyscript}" \
+            || { echo " *   regenerate_oasis_weights: weight generation FAILED"; return 1; }
+    else
+        # No allocation (couple_in on the login node): submit ONE sized job and
+        # wait, so all links run concurrently across nlinks nodes -- one queue
+        # wait, not one per link. --export=ALL carries the env (modules etc.).
+        local sb=${out_dir}/run_weightgen.sbatch
+        cat > "${sb}" <<SBEOF
+#!/bin/bash -l
+#SBATCH --job-name=ocpw_regen
+#SBATCH --nodes=${nlinks}
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=${OCP_WEIGHTGEN_THREADS:-8}
+#SBATCH --time=${OCP_WEIGHTGEN_TIME:-00:30:00}
+#SBATCH --account=${OCP_WEIGHTGEN_ACCOUNT}
+#SBATCH --partition=${OCP_WEIGHTGEN_PARTITION:-compute}
+#SBATCH --output=${out_dir}/weightgen_%j.log
+${OCP_WEIGHTGEN_DRIVER_PY} ${pyscript}
+SBEOF
+        echo " *   submitting weight-gen as one ${nlinks}-node job (sbatch --wait)"
+        sbatch --wait "${sb}" \
+            || { echo " *   regenerate_oasis_weights: weight-gen sbatch FAILED"; tail -30 ${out_dir}/weightgen_*.log 2>/dev/null; return 1; }
+    fi
 
     # Sanity: all four feom remap-weight files must be present.
     local n
@@ -277,6 +308,18 @@ regenerate_for_mesh('${submesh}', '${OASIS_TEMPLATE_DIR}', '${out_dir}',
     if [ "${n}" -lt 4 ]; then
         echo " *   regenerate_oasis_weights: expected 4 rmp_*feom*.nc, found ${n}"
         return 1
+    fi
+
+    # Carry over the mesh-independent remap weights (e.g. runoff R096->RnfA) by
+    # symlinking them from the existing rmp set, so the OASIS staging finds the
+    # complete rmp_*.nc set in oasis_regen. The regenerated feom weights already
+    # present are left untouched.
+    if [ -n "${OASIS_RMP_TEMPLATE_DIR}" ]; then
+        for f in "${OASIS_RMP_TEMPLATE_DIR}"/rmp_*.nc; do
+            [ -e "${f}" ] || continue
+            local bn; bn=$(basename "${f}")
+            [ -e "${out_dir}/${bn}" ] || ln -sf "${f}" "${out_dir}/${bn}"
+        done
     fi
     echo "     ...done. regenerated OASIS grids+weights -> ${out_dir}"
 }

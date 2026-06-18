@@ -242,17 +242,19 @@ function regenerate_oasis_weights {
     # Required environment (exported by env_fesom.py / the runscript):
     #   OASIS_BUILD_PATH          model OASIS build (has python/pyoasis + lib/liboasis.cbind.so)
     #   OCP_TOOL_DIR              ocp-tool source dir (added to PYTHONPATH)
-    #   OCP_WEIGHTGEN_DRIVER_PY   python with pyfesom2 (regenerates the feom grid)
+    #   OCP_WEIGHTGEN_DRIVER_PY   python with pyfesom2 + eccodes (runs ocp-tool)
     #   OCP_WEIGHTGEN_WORKER_PY   python with OpenMPI mpi4py + pyoasis (srun worker)
-    #   OASIS_TEMPLATE_DIR        dir with grids/masks/areas providing A096 + RnfO
+    #   OCP_TEMPLATE_CONFIG       ocp-tool config template (e.g. configs/TCO95_CORE2.yaml)
+    #                             whose input/ dirs hold the base ICMGG to modify
     # Optional: OASIS_REMAP_METHOD (existing|conserv, default existing),
-    #           OCP_WEIGHTGEN_THREADS (default 8)
-    echo " *   regenerating OASIS feom grid + remap weights for the new submesh"
+    #           OCP_WEIGHTGEN_THREADS (default 8),
+    #           OCP_REGEN_GRID_TAG (output tag + ICMGG suffix, default feomdyn)
+    echo " *   regenerating atm-side LSM (OASIS grids/masks + ICMGG + runoff + slt) + feom weights for the new submesh"
     : "${OASIS_BUILD_PATH:?regenerate_oasis_weights: OASIS_BUILD_PATH not set}"
     : "${OCP_TOOL_DIR:?regenerate_oasis_weights: OCP_TOOL_DIR not set}"
     : "${OCP_WEIGHTGEN_DRIVER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_DRIVER_PY not set}"
     : "${OCP_WEIGHTGEN_WORKER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_WORKER_PY not set}"
-    : "${OASIS_TEMPLATE_DIR:?regenerate_oasis_weights: OASIS_TEMPLATE_DIR not set}"
+    : "${OCP_TEMPLATE_CONFIG:?regenerate_oasis_weights: OCP_TEMPLATE_CONFIG not set}"
 
     local out_dir=${COUPLE_DIR}/oasis_regen
     local submesh=${COUPLE_DIR}/latest_submesh
@@ -263,15 +265,44 @@ function regenerate_oasis_weights {
     export LD_LIBRARY_PATH=${OASIS_BUILD_PATH}/lib:${LD_LIBRARY_PATH}
     export PYTHONPATH=${OASIS_BUILD_PATH}/python:${OCP_TOOL_DIR}:${PYTHONPATH}
 
-    # Driver: pyfesom2 feom-grid regen + pyOASIS per-link weight gen.
+    # Driver: full ocp-tool atm-side LSM regen for the submesh, then pyOASIS
+    # per-link weight gen. A moving coastline means the OIFS land-sea mask (ICMGG
+    # lsm/slt), the OASIS A096 atmosphere mask, the runoff LSM and the LPJ-GUESS
+    # slt must all come from the SAME new mask as the feom ocean grid, so we drive
+    # the whole ocp-tool pipeline (one process_land_sea_mask -> consistent set)
+    # rather than only refreshing feom. Weights are generated in a second step
+    # because ocp-tool's built-in rmp call can't reach the model's pyOASIS build
+    # or the OpenMPI worker interpreter.
+    local grid_tag=${OCP_REGEN_GRID_TAG:-feomdyn}
     local pyscript=${out_dir}/run_regen.py
     cat > "${pyscript}" <<PYEOF
-from ocp_tool.oasis_weights import regenerate_for_mesh
-regenerate_for_mesh('${submesh}', '${OASIS_TEMPLATE_DIR}', '${out_dir}',
-                    method='${OASIS_REMAP_METHOD:-existing}',
-                    threads=${OCP_WEIGHTGEN_THREADS:-8},
-                    worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
-                    oasis_build_path='${OASIS_BUILD_PATH}')
+from pathlib import Path
+from ocp_tool.dynamic_regen import regenerate_for_submesh
+from ocp_tool.oasis_weights import (
+    generate_weights, _set_feom_mask_active, _strip_feom_corners)
+
+method = '${OASIS_REMAP_METHOD:-existing}'
+use_corners = (method == 'conserv')
+
+# 1. Consistent grids/masks/areas (updated A096 + feom) + modified ICMGG + runoff
+#    LSM + LPJ-GUESS slt for the new submesh. No weights yet (generate_rmp=False).
+regenerate_for_submesh(
+    mesh_dir='${submesh}', grid_name='${grid_tag}', out_dir='${out_dir}',
+    template='${OCP_TEMPLATE_CONFIG}', ocp_tool_dir='${OCP_TOOL_DIR}',
+    python_exe='${OCP_WEIGHTGEN_DRIVER_PY}', generate_rmp=False)
+
+# 2. Prep feom for the weight gen: ocp-tool writes feom corners, which the
+#    centre-based (non-conservative) profile must not pass as a source grid;
+#    forcing feom.msk=0 is a safety no-op (ocp-tool already writes it active).
+_set_feom_mask_active(Path('${out_dir}') / 'masks.nc', prefix='feom')
+if not use_corners:
+    _strip_feom_corners(Path('${out_dir}') / 'grids.nc', prefix='feom')
+
+# 3. rmp weights using the model's own pyOASIS build + OpenMPI worker interpreter.
+generate_weights('${out_dir}', atm_grid='A096', method=method,
+                 threads=${OCP_WEIGHTGEN_THREADS:-8}, use_corners=use_corners,
+                 worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
+                 oasis_build_path='${OASIS_BUILD_PATH}')
 PYEOF
 
     local nlinks=${OCP_WEIGHTGEN_NLINKS:-4}
@@ -321,7 +352,16 @@ SBEOF
             [ -e "${out_dir}/${bn}" ] || ln -sf "${f}" "${out_dir}/${bn}"
         done
     fi
-    echo "     ...done. regenerated OASIS grids+weights -> ${out_dir}"
+    # The modified OIFS gridpoint init lands in ${out_dir} as ICMGG<expid>INIT_<tag>;
+    # the next awiesm3 leg stages it for OIFS via an oifs input redirect (chunk>1).
+    local icmgg
+    icmgg=$(ls "${out_dir}"/ICMGG*INIT_* 2>/dev/null | head -1)
+    if [ -n "${icmgg}" ]; then
+        echo "     ...regenerated modified OIFS init: $(basename "${icmgg}")"
+    else
+        echo " *   WARNING: no regenerated ICMGG*INIT_* found in ${out_dir} (OIFS LSM will be stale)"
+    fi
+    echo "     ...done. regenerated atm-side LSM set + feom weights -> ${out_dir}"
 }
 
 function iterative_coupling_ice_fesom1x_write_names {

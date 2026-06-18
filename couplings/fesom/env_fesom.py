@@ -57,6 +57,13 @@ def prepare_environment(config):
             # R096->RnfA) are symlinked into oasis_regen from here so the OASIS
             # staging finds the complete set.
             "OASIS_RMP_TEMPLATE_DIR": config["fesom"].get("oasis_rmp_template_dir", ""),
+            # ocp-tool config template (e.g. configs/TCO95_CORE2.yaml) driving the
+            # full per-submesh atm-side regen (OASIS A096/feom/RnfO masks + the
+            # modified OIFS ICMGG lsm/slt + runoff LSM + LPJ-GUESS slt). Its
+            # input/ dirs must hold the base ICMGG<expid>INIT to modify.
+            "OCP_TEMPLATE_CONFIG": config["fesom"].get("ocp_template_config", ""),
+            # Output tag for the regenerated grid (output subdir + ICMGG suffix).
+            "OCP_REGEN_GRID_TAG": config["fesom"].get("ocp_regen_grid_tag", "feomdyn"),
 
             #"FESOM_GRID_input": config["fesom"]["grid_input"],
             #"solidearth_ice_thickness_file":(

@@ -78,7 +78,7 @@ general:
         develop-is:
             major_version: v3.4
             couplings:
-                - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+                - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
             add_include_models:
                 - xios
                 - pism

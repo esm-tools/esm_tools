@@ -22,6 +22,7 @@ general:
         - 'v3.4.1'
         - 'develop'
         - 'develop-cc'
+        - 'develop-is'
 
     choose_version:
         v3.4.0:
@@ -69,6 +70,24 @@ general:
             with_co2_tracer: true
             with_co2_oce_coupling: true
             with_co2_veg_coupling: true
+
+        # Ice-sheet coupled variant: same as develop, but additionally builds
+        # PISM and dEBM so the awiesm3<->PISM dynamic-ocean coupling can be run
+        # (and reproduced by any user) from a single esm_master target:
+        #   esm_master comp-awiesm3-develop-is
+        develop-is:
+            major_version: v3.4
+            couplings:
+                - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+            add_include_models:
+                - xios
+                - pism
+                - debm
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
 
     version: "v3.4"
     resolution: ${oifs.resolution}_${fesom.resolution}

@@ -28,6 +28,12 @@ function ice2fesom {
         # are unaffected.
         if [[ "x${REGEN_OASIS_WEIGHTS:-0}" == "x1" ]]; then
             regenerate_oasis_weights || { echo " *** ice2fesom FAILED: regenerate_oasis_weights ***"; exit 1; }
+            # Carry the OASIS coupling state across the mesh change: remap the feom
+            # fields in the coupling restarts (rstos/rstas) onto the new node set,
+            # same node correspondence as the FESOM restart. Without this they would
+            # mismatch the new feom grid and $NNOREST T would zero them (a coupling
+            # transient at the first exchange of every mesh-change leg).
+            remap_oasis_restart  || { echo " *** ice2fesom FAILED: remap_oasis_restart ***"; exit 1; }
         fi
     fi
 
@@ -230,6 +236,52 @@ NML
     fi
 
     echo "     ...done. remapped restart -> ${outdir}"
+}
+
+function remap_oasis_restart {
+    # Remap the OASIS coupling restarts (rstos.nc, rstas.nc) onto the new feom
+    # node set, using the same old/new submesh node correspondence as the FESOM
+    # ocean restart. The feom-grid fields (sst_feom, sie_feom, ... in rstos; the
+    # atm->feom fields in rstas) carry the coupling state across the mesh change;
+    # the fixed A096/atm-grid fields are left untouched. Output replaces the
+    # stale (old node count) restarts the oasis3mct staging would otherwise pick.
+    echo " *** Remapping OASIS coupling restarts (rstos/rstas) to the new submesh ***"
+    local py=${OCP_WEIGHTGEN_DRIVER_PY:-python}   # needs xarray (+ scipy for nn-fill)
+    local script=${FUNCTION_PATH}/../fesom/remap_restart/remap_oasis_restart.py
+    local outdir=${COUPLE_DIR}/restart_remapped
+    mkdir -p ${outdir}
+
+    # Same old/new node maps that remap_fesom_restart used.
+    local new_map=${COUPLE_DIR}/latest_submesh/map_nod.out
+    local old_map
+    if [ -f "${COUPLE_DIR}/previous_submesh/map_nod.out" ]; then
+        old_map=${COUPLE_DIR}/previous_submesh/map_nod.out
+    else
+        old_map=${COUPLE_DIR}/mother_as_old/map_nod.out
+    fi
+    if [ ! -f "${new_map}" ] || [ ! -f "${old_map}" ]; then
+        echo " *   node maps missing (${old_map} / ${new_map}); skipping OASIS restart remap"
+        return 0
+    fi
+    local old_n new_n
+    old_n=$(wc -l < "${old_map}")
+    new_n=$(wc -l < "${new_map}")
+    local new_nod2d=${COUPLE_DIR}/latest_submesh/nod2d.out
+
+    # OASIS restarts written by the previous awiesm3 chunk.
+    local oasis_rst_dir=${COUPLE_DIR}/../restart/oasis3mct
+    for rst in rstos rstas; do
+        local src=${oasis_rst_dir}/${rst}.nc
+        if [ ! -f "${src}" ]; then
+            echo " *   ${rst}.nc not found at ${src}; skipping (NNOREST will zero it)"
+            continue
+        fi
+        echo " *   remapping ${rst}.nc (${old_n} -> ${new_n} nodes)"
+        ${py} ${script} "${src}" "${outdir}/${rst}.nc" \
+            "${old_map}" "${new_map}" "${new_nod2d}" "${old_n}" "${new_n}" \
+            || { echo " *   remap_oasis_restart FAILED for ${rst}"; return 1; }
+    done
+    echo "     ...done. remapped OASIS restarts -> ${outdir}"
 }
 
 function regenerate_oasis_weights {

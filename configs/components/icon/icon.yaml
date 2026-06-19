@@ -50,7 +50,7 @@ icon:
       destination: icon
       install_bins: build/bin/icon
       comp_command: 'mkdir -p build ; cd build ; 
-         ../config/dkrz/levante.intel ICON_BUNDLED_CFLAGS="$ICON_BUNDLED_CFLAGS -fpic" ICON_BUNDLED_FCFLAGS="$ICON_BUNDLED_FCFLAGS -fpic" ;
+         ../$ICON_CONFIGURE_COMMAND ICON_BUNDLED_CFLAGS="$ICON_BUNDLED_CFLAGS -fpic" ICON_BUNDLED_FCFLAGS="$ICON_BUNDLED_FCFLAGS -fpic" ;
          make -j32' 
 
    file_movements:

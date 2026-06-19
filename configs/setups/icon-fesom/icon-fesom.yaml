@@ -6,7 +6,17 @@ computer:
         levante:
             #compiler_mpi: gnu11_ompi4
             compiler_mpi: intel2022_openmpi
-            iolibraries: system_libs
+            add_export_vars:
+               NETLIBLAPACKROOT: "/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64"
+               LIBFYAMLROOT: "/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib" 
+               ICON_CONFIGURE_COMMAND: "config/dkrz/levante.intel"
+        nesh:
+            compiler_mpi: intel2023_ompi415
+            add_export_vars:
+               NETLIBLAPACKROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netlib-lapack-3.11.0-krwsdhfz7f26fod7vtcjmzmqpscstyks/"
+               LIBFYAMLROOT: "/gxfs_home/geomar/smomw235/sw/libfyaml-0.9.6/" 
+               ICON_CONFIGURE_COMMAND: "config/nesh/nesh.intel"
+                
 general:
     model: icon-fesom 
     version: "v1.0"

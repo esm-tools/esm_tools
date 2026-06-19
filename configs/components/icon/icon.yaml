@@ -12,11 +12,11 @@
 icon:
 
    model: icon 
-   version: 2024.10-public 
+   version: 2025.10-public 
 
    metadata:
         Institute: MPI-Met 
-        Description: The ICON atmosphere model, major version 2 
+        Description: The ICON atmosphere model 
         Authors: Marco Giorgetta (marco.giorgetta@mpimet.mpg.de), Peter Korn, Christian Reick, Reinhard Budich
         Publications:
                 - 'ICON-A, the Atmosphere Component of the ICON Earth System Model: I. Model Description <https://doi.org/10.1029/2017MS001242>'
@@ -36,14 +36,9 @@ icon:
 
    compile_infos:
       choose_version:
-         2.6.6-nwp: 
-            git-repository: https://gitlab.dkrz.de/icon-geomar/icon-nwp.git 
-            branch: geomar-swahl 
-            comp_command: 'tar zxf externals.tar.gz ; ./config/dkrz/levante.intel --enable-openmp ; make -j 16' 
-         2024.10-public:
-            branch: release-${icon.version} 
-         2025.04-public:
-            branch: release-${icon.version} 
+         2025.04-public-sl:
+            # TODO: update once I know the branch from Sveta
+            branch: release-2025.04-public
          2025.10-public:
             branch: release-${icon.version} 
 
@@ -73,17 +68,17 @@ icon:
          all_directions: move
 
    input_dir: ${computer.input_dir} 
-   input_dir_519: ${computer.input_dir_519} 
-   icon_pool: ${computer.icon_pool} 
+   # the ICON-FESOM input directory on levante does not contain the extpar file
+   # with modis/cdnc data for the modis tuning, so we need to read it from a 
+   # separate directory on levante
+   extpar_file: ${computer.extpar_file} 
+   ozone_dir: ${computer.ozone_dir} 
    aerosol_dir: ${computer.aerosol_dir} 
-   ozone_dir: ${icon_pool}/${icon.grid_id}/ozone/r0002
-   ic_dir: ${computer.ic_dir} 
-   grid_dir: ${computer.grid_dir} 
    jsbach_ic_dir: ${computer.jsbach_ic_dir} 
    jsbach_forcing_dir: ${computer.jsbach_forcing_dir} 
-
    # format start_date/end_date according to ISO_8601 standard used by ICON
-   start_rsttime: ${start_date!syear!smonth!sday}T${start_date!shour!sminute!ssecond}Z
+   start_rsttime: ${parent_date!syear!smonth!sday}T${parent_date!shour!sminute!ssecond}Z
+   #start_rsttime: ${start_date!syear!smonth!sday}T${start_date!shour!sminute!ssecond}Z
    end_rsttime: ${next_date!syear!smonth!sday}T${next_date!shour!sminute!ssecond}Z
    # By default do a cold start
    lresume: false
@@ -134,12 +129,6 @@ icon:
    # 7 = GEMS ozone climatology, no input files needed 
    # 5 = default prescribed ozone
    with_ozone: 7
-   # 0 = no aerosol in radiation
-   # 18 = Kinne background aerosol + Stenchikov volcanic aerosol in the
-   #      stratosphere + MacSP V2 simple plumes
-   # for other options see doc/Namelist_Overview.pdf in the ICON repository
-   # 12 tropospheric ’Kinne’ aerosols, constant in time
-   aerosol: 12 
    # 2 = solar radiation from file, for piControl a file where the same year is repeated
    #     is used
    solarforcing: 2
@@ -198,6 +187,16 @@ icon:
          jsb_fuel_nml:
             active: ${lcarbon}
 
+   choose_icon.resolution:
+       R02B04:
+          pfts: 11 
+       R02B05:
+          choose_icon.version:
+             2025.04-public-sl:
+                pfts: 11
+             "*":
+                pfts: 12 
+   
    choose_jsbach_with_hd:
       yes:
          add_namelist_changes:
@@ -218,55 +217,48 @@ icon:
                jsb_hd_nml:
                   active: false
 
-   choose_solarforcing:
-      2: # piControl solar forcing from file
-         add_namelist_changes:
-            NAMELIST_atm:
-                radiation_nml:
-                   isolrad: 2
+   # irad_aero = 18: Kinne background aerosol + volcanic aerosol in the
+   #      stratosphere + MacSP V2 simple plumes for historical/scenario simulations
+   # irad_aero 12: tropospheric ’Kinne’ aerosols, constant in time used in piControl setup
+   # for other options see doc/Namelist_Overview.pdf in the ICON repository
+   choose_scenario:
+       'PI-CTRL':
+           add_namelist_changes:
+               NAMELIST_atm:
+                   radiation_nml:
+                       irad_aero: 12
+                       irad_o3: ${with_ozone} 
+           add_forcing_files:
+               swflux: swflux_picontrol
+               ozone: ozone_picontrol
+               bc_land_frac: bc_land_frac_picontrol
+               macv2_sp: macv2_sp
+            
+       'cmip7hist':
+           add_namelist_changes:
+               NAMELIST_atm:
+                   radiation_nml:
+                       irad_aero: 18
+                       irad_o3: 5 # cmip7hist only works with irad_o3: 5                
+                       # 3: tanh vert.prof. with vmr_ch4 at surface (def), 4: from greenhouse gas scenario
+                       irad_co2: 4
+                       irad_ch4: 4
+                       irad_n2o: 4
+                       irad_cfc11: 4
+                       irad_cfc12: 4
+                   ccycle_nml:
+                       ccycle_config%ico2conc: 4
 
-         choose_scenario:
-            'PI-CTRL':
-               add_input_files:
-                  swflux: swflux_picontrol
-            # TODO: not yet implemented
-            #'cmip6hist':
-            #   add_forcing_files:
-            #      swflux: swflux_hist
+           add_forcing_files:
+               swflux: swflux_hist
+               ozone: ozone_hist
+               # hist runs need the picontrol fractions
+               bc_land_frac: bc_land_frac_picontrol
+               bc_land_frac_hist: bc_land_frac_hist
+               volc_hist: volc_hist
+               macv2_sp: macv2_sp
+               greenhouse_gases: greenhouse_gases
 
-   choose_with_ozone:
-      5:
-         add_namelist_changes:
-            NAMELIST_atm:
-                radiation_nml:
-                    irad_o3: 5
-
-         choose_scenario:
-            'PI-CTRL':
-               add_forcing_files:
-                  ozone_hist: ozone_picontrol
-            #'cmip6hist':
-            #   add_forcing_files:
-            #      ozone_hist: ozone_hist
-      7:
-         add_namelist_changes:
-            NAMELIST_atm:
-                radiation_nml:
-                    irad_o3: 7
-
-   choose_aerosol:
-      18:
-         add_input_files:
-            kinne_sw: kinne_sw
-            kinne_lw: kinne_lw
-            kinne_fin: kinne_fin
-         add_forcing_files:
-            stenchikov_sw: stenchikov_sw
-      12:
-         add_input_files:
-            kinne_sw: kinne_sw
-            kinne_lw: kinne_lw
-            kinne_fin: kinne_fin
    #
    # output data settings
    #
@@ -288,11 +280,11 @@ icon:
    #restart_in_in_work:
    #    restart_atm_mfr: ${parent_expid}_restart_atm_${start_rsttime}.mfr/* 
    restart_out_sources: 
-      #restart_atm: /path/to/global/restart_atm_DOM01.nc
-      restart_atm_mfr: ${expid}_restart_atm_${end_rsttime}.mfr/*
+      restart_atm_mfr: ${general.expid}_restart_atm_${end_rsttime}.mfr/*
+   #  restart_atm: /path/to/global/restart_atm_DOM01.nc
    #restart_out_targets: 
-      #restart_atm: /path/to/global/restart_atm_DOM01.nc
-      #   restart_atm_mfr: ${expid}_restart_atm_${end_rsttime}.mfr/*
+   #   restart_atm: /path/to/global/restart_atm_DOM01.nc
+   #   restart_atm_mfr: ${expid}_restart_atm_${end_rsttime}.mfr/*
 
    bin_sources:
        bin_tag: ${model_dir}/bin/${executable} # This would be the normal way to do it
@@ -321,13 +313,20 @@ icon:
    #
    # input and forcing files
    # 
+
    choose_lresume:
+      true:
+         choose_general.run_number:
+            1:
+               parent_date: ${ini_parent_date} # this is the default anyways
+            "*":
+               parent_date: ${start_date} # restarts are in a folder matching the start date  
+
       false:
          # JSBACH init?
          init_from_ifs: true
          add_input_files:
             ifs2icon: ifs2icon
-            #initial_state: initial_state
 
    input_files:
       cloud_optics: cloud_optics
@@ -340,9 +339,6 @@ icon:
       atmo_dyn_grid: atmo_dyn_grid 
       atmo_dyn_grid_grfinfo: atmo_dyn_grid_grfinfo 
       extpar: extpar
-     #greenhouse_gases: greenhouse_gases
-      macv2_sp: macv2_sp
-      # swflux: swflux
       sst: sst
       sic: sic
       bc_land_sso: bc_land_sso
@@ -350,80 +346,70 @@ icon:
       bc_land_soil: bc_land_soil
       lctlib: lctlib
       ic_land_soil: ic_land_soil
-
-   forcing_files:
-       bc_land_frac: bc_land_frac
-       # bc_aeropt_kinne_sw_b14_fin_yearly: bc_aeropt_kinne_sw_b14_fin_yearly 
+      kinne_sw: kinne_sw
+      kinne_lw: kinne_lw
+      kinne_fin: kinne_fin
 
    forcing_sources:
 
-      bc_aeropt_kinne_sw_b14_fin_yearly: 
-         "${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_1854.nc":
-            to: 1844
-         "${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
-            from: 1845
-            to: 2014
-         # TODO: do proper scenario setup
-         "${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_2014.nc":
-             from: 2014
-
-      # in the current setup, bc_land_frac is constant 
-      #bc_land_frac:
-      #   "${jsbach_ic_dir}/bc_land_frac_11pfts_1850.nc"
-      bc_land_frac:
-         "${jsbach_ic_dir}/bc_land_frac_12pfts_1850.nc"
-      #bc_land_frac:
-      #   "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_1850.nc":
-      #      to: 1850
-      #   "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_@YEAR@.nc":
-      #      from: 1851
+      # CMIP6 forcing
+      #bc_aeropt_kinne_sw_b14_fin_yearly: 
+      #   "${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_1854.nc":
+      #      to: 1844
+      #   "${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_@YEAR@.nc":
+      #      from: 1845
       #      to: 2014
       #   # TODO: do proper scenario setup
-      #   "${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0001/bc_land_frac_11pfts_2014.nc":
+      #   "${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_2014.nc":
       #       from: 2014
 
-      ozone_picontrol: 
-         "${ozone_dir}/bc_ozone_cmip7_picontrol_v1-2_1850.nc"
+      # in the current setup, bc_land_frac is constant 
+      bc_land_frac_picontrol:
+         "${jsbach_forcing_dir}/bc_land_frac_${pfts}pfts_1850.nc"
 
-      #ozone_hist: 
-         #"${icon_pool}/ozone/cmip6/${resolution}_${grid_label}/bc_ozone_historical_1850.nc":
-         #   to: 1850
-         #"${icon_pool}/ozone/cmip6/${resolution}_${grid_label}/bc_ozone_historical_@YEAR@.nc":
-         #   from: 1851
-         #   to: 2014
-         # TODO: do proper scenario setup
-         #"${icon_pool}/ozone/cmip6/${resolution}_${grid_label}/bc_ozone_historical_2014.nc":
-         #  from: 2014
-      # Stenchikov stratospheric aerosol
-      # see also /pool/data/ICON/grids/private/rene/mpim/independent/CMIP6Forcing, 
-      # is this the extension to other years?
-      stenchikov_sw: 
-         "${icon_pool}/aerosol/stenchikov/bc_aeropt_stenchikov_lw_b16_sw_b14_@YEAR@.nc": 
-            from: 1977
-            to: 1999 
-         "${icon_pool}/aerosol/stenchikov/bc_aeropt_stenchikov_lw_b16_sw_b14_1999.nc": 
-            from: 1999
-      # volcanic aerosol
-      volc_hist: 
-         "${input_dir}/grids/public/mpim/independent/CMIP6Forcing/bc_aeropt_cmip6_volc_lw_b16_sw_b14_1850.nc":
+      # TODO: remove tmp changes once land data is available
+      # for both r2b4 and r2b5
+      bc_land_frac_hist:
+         "${jsbach_forcing_dir}/bc_land_frac_${pfts}pfts_1850.nc":
             to: 1850
-         "${input_dir}/grids/public/mpim/independent/CMIP6Forcing/bc_aeropt_cmip6_volc_lw_b16_sw_b14_@YEAR@.nc":
+         "${jsbach_forcing_dir}/bc_land_frac_${pfts}pfts_@YEAR@.nc":
             from: 1851
-            to: 2014
+            to: 2023
          # TODO: do proper scenario setup
-         "${input_dir}/grids/public/mpim/independent/CMIP6Forcing/bc_aeropt_cmip6_volc_lw_b16_sw_b14_2014.nc":
-            from: 2014
-      # CMIP7 volcano forcing
-      #volcano_dir: "/work/bb1469/b383102/CMIP7_forcings/volcanic_aerosol/v2.2.1"
-      #volc_hist: 
-      #   "${volcano_dir}/bc_aeropt_cmip7_volc_lw_b16_sw_b14_1750.nc":
-      #      to: 1750
-      #   "${volcano_dir}/bc_aeropt_cmip7_volc_lw_b16_sw_b14_@YEAR@.nc":
-      #      from: 1751
-      #      to: 2023
+         "${jsbach_forcing_dir}/bc_land_frac_${pfts}pfts_2024.nc":
+             from: 2024
+      
+      # solar forcing  
+      swflux_picontrol: ${input_dir}/common/solar_radiation/swflux_14band_cmip7_picontrol_v4-6_999-4000.nc
+      swflux_hist: ${input_dir}/common/solar_radiation/swflux_14band_cmip7_picontrol_v4-6_999-4000.nc
+
+      # ozone forcing
+      ozone_picontrol: ${ozone_dir}/bc_ozone_cmip7_picontrol_v1-2_1850.nc
+      # TODO: remove tmp changes once ozone data is available
+      # for both r2b4 and r2b5
+      ozone_hist: 
+         "${ozone_dir}/bc_ozone_cmip7_picontrol_v1-2_1850.nc":
+            to: 1850
+         "${ozone_dir}/bc_ozone_cmip7_historical_v2-0_@YEAR@.nc":
+            from: 1851
+            to: 2023
+         # TODO: do proper scenario setup
+         "${ozone_dir}/bc_ozone_cmip7_historical_v2-0_2023.nc":
+            from: 2024
+         
+      # CMIP7 volcano aerosol forcing
+      volc_hist: 
+         "${input_dir}/common/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_1750.nc":
+            to: 1750
+         "${input_dir}/common/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_@YEAR@.nc":
+            from: 1751
+            to: 2023
       #   # TODO: do proper scenario setup
-      #   "${volcano_dir}/bc_aeropt_cmip7_volc_lw_b16_sw_b14_2023.nc":
-      #      from: 2024
+         "${input_dir}/common/aerosol_volcanic_cmip7/bc_aeropt_cmip7_volc_lw_b16_sw_b14_2023.nc":
+            from: 2024
+
+      macv2_sp: ${input_dir}/common/MACv2_simple_plumes_merged/SPv2.1_1850-2023_CMIP7.nc
+      greenhouse_gases: ${input_dir}/common/greenhouse_gases/greenhouse_gases_cmip7_0001-2023.nc
 
       # SST / SEA ICE 
       #sst_ice: 
@@ -441,32 +427,25 @@ icon:
       socrates_droplet_rrtm: ${model_dir}/icon/externals/ecrad/data/socrates_droplet_scattering_rrtm.nc
       fu_ice_rrtm: ${model_dir}/icon/externals/ecrad/data/fu_ice_scattering_rrtm.nc
       mcica_gamma: ${model_dir}/icon/externals/ecrad/data/mcica_gamma.nc
-      #macv2_sp: ${model_dir}/icon/data/MACv2.0-SP_v1.nc
-      macv2_sp: ${icon_pool}/common/MACv2_simple_plumes_merged/SPv2.1_1850-2023_CMIP7.nc
       # "dictionary" describing the translation of user-defined shortnames with names used
       # in ICON's "add_var" call
       #vardict: ${model_dir}/icon/run/dict.iconam.mpim
       dictlatbc: ${model_dir}/icon/run/dict.latbc
 
       # ICON grid description file
-      #atmo_dyn_grid: ${icon_pool}/grids/${grid_name}.nc 
-      #atmo_dyn_grid_grfinfo: ${icon_pool}/grids/${grid_name}-grfinfo.nc 
-      atmo_dyn_grid: ${icon_pool}/${icon.grid_id}/${grid_name}.nc 
-      atmo_dyn_grid_grfinfo: ${icon_pool}/${icon.grid_id}/${grid_name}-grfinfo.nc 
+      #atmo_dyn_grid: ${input_dir}/grids/${grid_name}.nc 
+      #atmo_dyn_grid_grfinfo: ${input_dir}/grids/${grid_name}-grfinfo.nc 
+      atmo_dyn_grid: ${input_dir}/${icon.grid_id}/${grid_name}.nc 
+      atmo_dyn_grid_grfinfo: ${input_dir}/${icon.grid_id}/${grid_name}-grfinfo.nc 
 
       # initial conditions
       #ifs2icon: ${input_dir}/grids/private/dian/mpim/${grid_id}/initial_condition/r0001/ifs2icon_2000010100_${resolution}_${grid_label}.nc
       #extpar: ${input_dir}/grids/public/mpim/0013/nwp/icon_extpar_${grid_id}_${resolution}_${grid_label}_20180820_tiles.nc
-      #ifs2icon: ${ic_dir}/ifs2icon_${grid_id}_${resolution}_${grid_label}.nc
-      #extpar: ${ic_dir}/icon_extpar_oceLSM_a0012_R02B04_o0035_R02B06_20161124_tiles_jsb.nc
-      #extpar: ${jsbach_ic_dir}/icon_extpar4jsbach_${icon.grid_id}_20250306_tiles_jsb.nc
-      extpar: ${input_dir_519}/extpar/new_extpar_gauss.nc
       ifs2icon: ${input_dir}/${grid_id}/initial_conditions/r0001/ifs2icon_2000010100_${grid_id}_${resolution}_${grid_label}.nc
+
+      extpar: ${extpar_file}  
       # greenhouse gases
-      greenhouse_gases: ${icon_pool}/greenhouse_gases/greenhouse_historical_plus.nc
-      ozone_cariolle: ${icon_pool}/greenhouse_gases/bc_ozone_cariolle.nc
-      # TODO: Don't get why I need an initial ocean state
-      #initial_state: ${ic_dir}/ts_phc3.0_annual.L72sml.nc
+      ozone_cariolle: ${input_dir}/common/greenhouse_gases/bc_ozone_cariolle.nc
 
       # Kinne background aerosol
       kinne_lw: ${aerosol_dir}/bc_aeropt_kinne_lw_b16_coa.nc
@@ -474,12 +453,10 @@ icon:
       # sveta also links 1851 and 1852 for PI-CTRL...
       kinne_fin: ${aerosol_dir}/bc_aeropt_kinne_sw_b14_fin_1850.nc
 
-      # SW radiative CMIP6 forcing
-      swflux_picontrol: ${icon_pool}/common/solar_radiation/swflux_14band_cmip7_picontrol_v4-6_999-4000.nc
       # SST / sea ice
       # TODO: not sure if that works.
-      sic: ${icon_pool}/path/to/data/CI_*_${resolution}_${grid_label}.nc
-      sst: ${icon_pool}/path/to/data/SST_*__${resolution}_${grid_label}.nc
+      sic: ${input_dir}/path/to/data/CI_*_${resolution}_${grid_label}.nc
+      sst: ${input_dir}/path/to/data/SST_*__${resolution}_${grid_label}.nc
 
       # JSBACH
       ic_land_soil: ${jsbach_ic_dir}/ic_land_soil.nc
@@ -490,7 +467,7 @@ icon:
 
       # HD model 
       #bc_land_hd: ${jsbach_ic_dir}/hdpara_${resolution_lc}_0012_CORE2_sc_hfrac_s_v1.nc
-      #bc_land_hd: ${icon_pool}/common/hd/input/05deg/hdpara_vs1_12.nc
+      #bc_land_hd: ${input_dir}/common/hd/input/05deg/hdpara_vs1_12.nc
       bc_land_hd: ${jsbach_ic_dir}/hdpara_${resolution_lc}_${icon.grid_id}_${fesom.resolution}_sc_hfrac_s_v1.nc
 
    input_in_work:
@@ -507,15 +484,12 @@ icon:
       atmo_dyn_grid_grfinfo: icon${resolution}_DOM01-grfinfo.nc
       ifs2icon: ifs2icon.nc
       ic_land_soil: ic_land_soil.nc
-      #greenhouse_gases: bc_greenhouse_gases.nc
       ozone_cariolle: cariolle_coeff.nc
-      macv2_sp: MACv2.0-SP_v1.nc
       kinne_lw: bc_aeropt_kinne_lw_b16_coa.nc 
       kinne_sw: bc_aeropt_kinne_sw_b14_coa.nc 
       kinne_fin: bc_aeropt_kinne_sw_b14_fin.nc 
       sic: bc_sic.nc
       sst: bc_sst.nc
-      swflux: bc_solar_irradiance_sw_b14.nc
       bc_land_sso: bc_land_sso.nc
       bc_land_phys: bc_land_phys.nc
       bc_land_soil: bc_land_soil.nc
@@ -523,19 +497,27 @@ icon:
       bc_land_hd: bc_land_hd.nc
 
    forcing_in_work:
-      ozone_hist: bc_ozone_@YEAR@.nc
+      ozone: bc_ozone_@YEAR@.nc
+      swflux: bc_solar_irradiance_sw_b14.nc
       stenchikov_sw: bc_aeropt_stenchikov_lw_b16_sw_b14_@YEAR@.nc 
-      volc_hist: bc_aeropt_cmip6_volc_lw_b16_sw_b14_@YEAR@.nc
+      volc_hist: bc_aeropt_volc_lw_b16_sw_b14_@YEAR@.nc
+      macv2_sp: MACv2.0-SP_v1.nc
       bc_land_frac: bc_land_frac.nc
+      bc_land_frac_hist: bc_land_frac_${pfts}pfts_@YEAR@.nc 
       bc_aeropt_kinne_sw_b14_fin_yearly: bc_aeropt_kinne_sw_b14_fin_@YEAR@.nc 
+      greenhouse_gases: bc_greenhouse_gases.nc
 
-   #forcing_additional_information:
-      #ozone_hist:
-         #- need_year_before
-         #- need_year_after
-      #stenchikov_sw:
-         #- need_year_before
-         #- need_year_after
+   forcing_additional_information:
+      ozone:
+         - need_year_before
+         - need_year_after
+      volc_hist:
+         - need_year_before
+         - need_year_after
+      bc_land_frac_hist:
+         - need_year_after
+         - need_2years_after
+
         # Postprocessing
    monitoringscript: "run_qp_driver_r2b4_icon-esm-tools.sh"
    choose_monitoring:
@@ -567,13 +549,11 @@ computer:
       compile:
          choose_computer.name:
             levante:
-               input_dir: /work/bb0519/foci_input2/ICON-FESOM/ICON 
-               input_dir_519: /work/bb0519/foci_input2/ICON-FESOM/ICON 
-               icon_pool: ${input_dir} 
-               grid_dir: ${icon_pool}/grids
-               aerosol_dir: ${icon_pool}/${icon.grid_id}/aerosol_kinne/r0001
-               ic_dir: ${icon_pool}/ic
-               jsbach_ic_dir: ${icon_pool}/Coupled/JSBach4ini/0012-CORE2/land/r0001
+               extpar_file: ""
+               input_dir: "" 
+               aerosol_dir: "" 
+               ozone_dir: ""
+               jsbach_ic_dir: "" 
                jsbach_forcing_dir: ${jsbach_ic_dir}
 
                iolibraries: None 
@@ -593,34 +573,22 @@ computer:
       run:
          choose_computer.name:
             levante:
-               #input_dir: /work/bb0519/foci_input2/ICON-FESOM/ICON 
-               input_dir_519: /work/bb0519/foci_input2/ICON-FESOM/ICON 
-               input_dir: /pool/data/icon-xpp 
-               icon_pool: ${input_dir} 
-               grid_dir: ${icon_pool}/grids
-               aerosol_dir: ${icon_pool}/${icon.grid_id}/aerosol_kinne/r0001
-               ic_dir: ${icon_pool}/ic
-               #jsbach_ic_dir: ${icon_pool}/Coupled/JSBach4ini/0012-CORE2/land/r0001
-               #jsbach_ic_dir: ${icon_pool}/0030-0062/land/r0007
-               jsbach_ic_dir: /work/bk1415/a270044/ini_files/${icon.grid_id}-${fesom.resolution}/land/r00xx
+               input_dir: /work/bb0519/foci_input2/ICON-FESOM/icon-xpp 
+               # only the background / piControl aerosol is read from here
+               # in CMIP7 ICON uses backgroud aerosol + volcanic aerosol + MacSP
+               aerosol_dir: ${input_dir}/${icon.grid_id}/aerosol_kinne/r0001
+               ozone_dir: ${input_dir}/${icon.grid_id}/ozone/r0002
+               jsbach_ic_dir: ${input_dir}/${icon.grid_id}-${fesom.resolution}/land/r00xx
                jsbach_forcing_dir: ${jsbach_ic_dir}
+
+               choose_icon.resolution:
+                  R02B04:
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
+                  R02B05:
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
 
                iolibraries: None 
                compiler_mpi: None
-
-               choose_icon.version:
-                  2.6.6-nwp:
-                     input_dir: /pool/data/ICON
-                     icon_pool: ${input_dir}/grids/private/mpim/icon_preprocessing/source
-                     grid_dir: ${input_dir}/grids
-                     aerosol_dir: ${icon_pool}/aerosol_29-06-2018/kinne/${resolution}_${icon.grid_label}
-                     jsbach_ic_dir: ${input_dir}/grids/private/jsbach/mpim/${grid_id}/land/r0002
-                     jsbach_forcing_dir: ${jsbach_ic_dir}
-
-               #add_module_actions:
-               #- purge
-               #- load git
-               #- load intel-oneapi-compilers/2022.0.1-gcc-11.2.0 
 
                add_export_vars:
                   # optimization settings (from DKRZ)

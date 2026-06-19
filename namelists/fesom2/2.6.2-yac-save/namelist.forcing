@@ -1,0 +1,84 @@
+&forcing_exchange_coeff
+    ce_atm_oce = 0.00175
+    ch_atm_oce = 0.00175
+    cd_atm_oce = 0.001
+    ce_atm_ice = 0.00175
+    ch_atm_ice = 0.00175
+    cd_atm_ice = 0.0012
+    swind = 0.0
+/
+
+&forcing_bulk
+    aomip_drag_coeff = .false.
+    ncar_bulk_formulae = .true.
+    ncar_bulk_z_wind = 10
+    ncar_bulk_z_tair = 10
+    ncar_bulk_z_shum = 10
+/
+
+&land_ice
+    use_landice_water = .false.
+    landice_start_mon = 5
+    landice_end_mon = 10
+    fwf_path = './mesh/'
+/
+
+&age_tracer
+    use_age_tracer = .false.
+    use_age_mask = .false.
+    age_tracer_path = './mesh/'
+    age_start_year = 2000
+/
+
+&nam_sbc
+    nm_xwind_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//uas.'
+    nm_ywind_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//vas.'
+    nm_xstre_file = '/pool/data/AWICM/FESOM2/FORCING/JRA55-do-v1.4.0/uas.'
+    nm_ystre_file = '/pool/data/AWICM/FESOM2/FORCING/JRA55-do-v1.4.0/vas.'
+    nm_humi_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//huss.'
+    nm_qsr_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//rsds.'
+    nm_qlw_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//rlds.'
+    nm_tair_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//tas.'
+    nm_prec_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//prra.'
+    nm_snow_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//prsn.'
+    nm_mslp_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//psl.'
+    nm_xwind_var = 'uas'
+    nm_ywind_var = 'vas'
+    nm_xstre_var = 'uas'
+    nm_ystre_var = 'vas'
+    nm_humi_var = 'huss'
+    nm_qsr_var = 'rsds'
+    nm_qlw_var = 'rlds'
+    nm_tair_var = 'tas'
+    nm_prec_var = 'prra'
+    nm_snow_var = 'prsn'
+    nm_mslp_var = 'psl'
+    nm_nc_iyear = 1900
+    nm_nc_imm = 1
+    nm_nc_idd = 1
+    nm_nc_freq = 1
+    nm_nc_tmid = 0
+    l_xwind = .true.
+    l_ywind = .true.
+    l_xstre = .false.
+    l_ystre = .false.
+    l_humi = .true.
+    l_qsr = .true.
+    l_qlw = .true.
+    l_tair = .true.
+    l_prec = .true.
+    l_mslp = .false.
+    l_cloud = .false.
+    l_snow = .true.
+    runoff_data_source = 'CORE2'
+    nm_runoff_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//CORE2_runoff.nc'
+    runoff_climatology = .true.
+    sss_data_source = 'CORE2'
+    nm_sss_data_file = '/pool/data/AWICM//FESOM2/FORCING///JRA55-do-v1.4.0//PHC2_salx.nc'
+    chl_data_source = 'Sweeney'
+    nm_chl_data_file = '/pool/data/AWICM/FESOM2/FORCING/Sweeney/Sweeney_2005.nc'
+    chl_const = 0.1
+    use_runoff_mapper = .false.
+    runoff_basins_file = 'runoff_maps_regular.nc'
+    runoff_radius = 500000.0
+/

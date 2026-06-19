@@ -6,7 +6,7 @@ fesom:
     version: "2.6"
     type: ocean
 
-    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+    comp_command: mkdir -p build; cd build; cmake -DVERBOSE=ON -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
     clean_command: ${defaults.clean_command}
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
@@ -24,9 +24,29 @@ fesom:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
     choose_version:
+      "2.6.2-yac-sl":
+         git-repository:
+            - https://github.com/sveta-loza/fesom2.git 
+         branch: "fesom2-with-yac"
+         comp_command: '. env/levante.dkrz.de/shell.intel ;
+            FESOM_ROOT=$(pwd) ;
+            mkdir -p build; cd build; 
+            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
+            spack load /y24c4jj ;
+            cmake .. -DCMAKE_INSTALL_PREFIX=../ 
+                  -DCMAKE_BUILD_TYPE=RelWithDebInfo 
+                  -DUSE_YAC=ON 
+                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
+            make install -j `nproc --all`'
+
       "2.6.2-yac":
-        branch: "main"
-        comp_command: '. env/levante.dkrz.de/shell.intel ;
+         # TODO: seb-wahl: once fesom-2.7.yaml has been merged, 
+         # rename the config and move it to fesom-2.7.yaml
+         # config/couplings and icon-fesom.yaml need to be updated accordingly
+         branch: "2.7.7"
+         destination: "fesom-2.7"
+         # TODO: simplify the compile command, see the dev done on nesh
+         comp_command: '. env/levante.dkrz.de/shell.intel ;
             FESOM_ROOT=$(pwd) ;
             mkdir -p build; cd build; 
             export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
@@ -37,21 +57,6 @@ fesom:
                   -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
             make install -j `nproc --all`'
 
-      "2.6.2-yac-sveta":
-        git-repository: "https://github.com/sveta-loza/fesom2.git"
-        branch: "fesom2-with-yac"
-        comp_command: '. env/levante.dkrz.de/shell.intel ;
-            FESOM_ROOT=$(pwd) ;
-            mkdir -p build; cd build; 
-            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
-            spack load /y24c4jj ;
-            cmake .. -DCMAKE_INSTALL_PREFIX=../ 
-                  -DCMAKE_BUILD_TYPE=RelWithDebInfo 
-                  -DUSE_YAC=ON 
-                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
-            make install -j `nproc --all`'
-
-            #       -DCMAKE_SHARED_LINKER_FLAGS="$CMAKE_SHARED_LINKER_FLAGS";
       "2.6":
         branch: "2.6.10"
 
@@ -118,6 +123,11 @@ fesom:
         albedo:
             climate_data_dir: "${pool_dir}/FESOM/hydrography/"
             mesh_base_dir: "${pool_dir}/FESOM/meshes_default/"
+        nesh:
+            pool_dir: "${computer.pool_directories.focipool}/ICON-FESOM/"
+            climate_data_dir: "${pool_dir}/FESOM2/INITIAL/phc3.0/"
+            forcing_data_dir: "${pool_dir}/FESOM2/FORCING/" # not available on nesh yet
+            mesh_base_dir: "${pool_dir}/FESOM2/MESHES_FESOM2.1/"
 
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"

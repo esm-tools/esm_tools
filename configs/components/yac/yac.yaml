@@ -24,10 +24,3 @@ yac:
     metadata:
         Information: "For more information about YAC please go to the webpage: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html"
 
-    input_sources:
-        coupling_yaml: ${icon.input_dir}/coupling.yaml
-    input_files:
-        coupling_yaml: coupling_yaml 
-    input_in_work:
-        coupling_yaml: coupling.yaml 
-

@@ -1,0 +1,67 @@
+computer:
+        partition: "standard96:test"
+general:
+        use_venv: False
+        verbose: False
+        clean_runs: 3
+        
+        homedir: !ENV ${HOME}
+        username: !ENV ${USER}
+        workdir: !ENV ${COLD}
+         
+        setup_name: oifs
+        compute_time: "00:10:00"
+        account: shk00060
+        initial_date: "2008-01-01T00:00:00"
+        final_date: "2009-01-01T00:00:00"
+        model_dir: ${homedir}/esm/models/oifs-43r3-v2/
+        base_dir: ${workdir}/${username}/esm-experiments/
+        foci_input2_dir: ${general.workdir}/foci_input2
+        nyear: 1
+        nmonth: 0
+        nday: 0
+
+oifs:
+        version: 43r3
+        with_xios: True 
+        time_step: 1800
+        pool_dir: ${general.foci_input2_dir}
+        input_dir: ${pool_dir}/openifs_cy43_tco95/
+        rtables_dir: ${pool_dir}/openifs_cy43_general/rtables/
+        vtables_dir: ${pool_dir}/openifs_cy43_general/vtables/
+        clim_dir: ${pool_dir}/openifs_cy43_tco95/95_4/
+        ifsdata_dir: ${pool_dir}/openifs_cy43_general/ifsdata/
+        cmip6_data_dir: ${pool_dir}/openifs_cy43_general/cmip6-data/
+        mip: cmip6
+        scenario: historical 
+        # adjust to the new file system
+        icmcl_dir: ${pool_dir}/openifs43r3-tco95-ado/
+        icmcl_file: ICMCLhagwINIT_ADO          
+        prepifs_expid: hagw
+        prepifs_startdate: 20080101
+        
+        resolution: TCO95
+        levels: L91
+        lresume: 0
+        
+        post_processing: 0
+        nproc: 564
+        omp_num_threads: 1 
+        # only required with omp_num_threads > 1 
+        # post_run_commands have moved to the computer section
+        # post_run_commands: "unset SLURM_HOSTFILE"
+        perturb: 0
+        ensemble_id: 1
+        restart_type: eternal
+        
+        # Only for 43r3-v2
+        solarspectrum: 1
+        o3_scheme: cmip6
+        
+        
+xios:
+        # 1m surface + pressure levels
+        xml_dir: ${general.foci_input2_dir}/openifs_cy43_tco95/output_1m_hyacinth/
+        with_model: oifs
+        nproc: 12
+        version: xios_trunk

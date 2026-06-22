@@ -77,6 +77,12 @@ lpj_guess:
             branch: 4.1.5
             install_bins: build/guess
             executable: guess
+        4.1.6:
+            runscript_name: run_coupled_4_1_2.ins
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: 4.1.6
+            install_bins: build/guess
+            executable: guess
 
 
     # Automatically select the source code for esm_master if the command is operating
@@ -215,7 +221,7 @@ lpj_guess:
             scripts_files:
                 combine1: combine1
             scripts_sources:
-                combine1: "${esm_function_dir}/components/lpj_guess/subjob_combine.sh"
+                combine1: "${esm_configs_dir}/components/lpj_guess/subjob_combine.sh"
             scripts_targets:
                 combine1: "${general.experiment_scripts_dir}/${model}/subjob_combine.sh"
 

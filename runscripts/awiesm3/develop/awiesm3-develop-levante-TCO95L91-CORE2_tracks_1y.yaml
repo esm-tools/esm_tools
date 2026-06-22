@@ -73,8 +73,8 @@ xios:
 
     # Substitute the tracks-enabled context_fesom.xml: adds the
     # <variable_group id="fesom_tracks"> block with ltracks=true plus
-    # the track_files / track_vars / track_names / track_resolution_km /
-    # track_output_freq overrides that io_xios_init reads via
+    # the track_files / track_vars / track_names / track_output_freq
+    # overrides that io_xios_init reads via
     # xios_getvar(). Everything else inherits from the base XIOS XML.
     add_config_sources:
         context_fesom: "${general.esm_namelist_dir}/fesom2/tracks/context_fesom.xml"

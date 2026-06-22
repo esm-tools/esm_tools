@@ -28,6 +28,7 @@ general:
         - 'v3.2.1'
         - 'v3.2.2'
         - 'v3.3.0'
+        - 'v3.3.1'
         - 'v3.4.0'
         - 'v3.4.1'
         - 'v3.4.2'
@@ -98,6 +99,14 @@ general:
             oasis_with_yac: True
             xios_interp_order: 1
           v3.3.0:
+            major_version: v3.3
+            couplings:
+            - fesom-2.6.8+oifs-43r3-awicm-3.2.4+xios-2.5
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          v3.3.1:
             major_version: v3.3
             couplings:
             - fesom-2.6.8+oifs-43r3-awicm-3.2.4+xios-2.5
@@ -365,7 +374,7 @@ oifs:
                                                 order_in_cluster: concurrent
                                                 run_on_queue: ${computer.partitions.pp.name}
                                                 run_after: tidy
-                                                script_dir: ${general.esm_function_dir}/setups/awicm3
+                                                script_dir: ${general.esm_configs_dir}/setups/awicm3
                                                 submit_to_batch_system: True
                                                 script: "
                                                     postprocessing.sh
@@ -615,6 +624,12 @@ rnfmap:
                         choose_general.version:
                                 "v3.3.0":
                                         version: awicm-3.1
+                                "v3.3.1":
+                                        version: awicm-3.1
+                                        add_namelist_changes:
+                                                namelist.runoffmapper:
+                                                        NAMRNFMAP:
+                                                                CalvingEnthalpy: .true.
                                 "*":
                                         version: v1.1
                 "v3.4":
@@ -797,6 +812,8 @@ oasis3mct:
         # This variable is only used for major versions of v3.3
         choose_general.version:
                 "v3.3.0":
+                        calving_coupling_mode: 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                "v3.3.1":
                         calving_coupling_mode: 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                 "*":
                         calving_coupling_mode: 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce' 
@@ -1052,6 +1069,8 @@ computer:
                     levante:
                         iolibraries: system_libs
                         compiler_mpi: intel2022_openmpi
+                        add_export_vars:
+                            ECCODESROOT: $IO_LIB_ROOT
 
         choose_general.execution_mode:
             run:

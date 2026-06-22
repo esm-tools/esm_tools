@@ -24,6 +24,34 @@ fesom:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
     choose_version:
+      "2.6.2-yac":
+        branch: "yac"
+        comp_command: '. env/levante.dkrz.de/shell.intel ;
+            FESOM_ROOT=$(pwd) ;
+            mkdir -p build; cd build; 
+            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
+            spack load /y24c4jj ;
+            cmake .. -DCMAKE_INSTALL_PREFIX=../ 
+                  -DCMAKE_BUILD_TYPE=RelWithDebInfo 
+                  -DUSE_YAC=ON 
+                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
+            make install -j `nproc --all`'
+
+      "2.6.2-yac-sveta":
+        git-repository: "https://github.com/sveta-loza/fesom2.git"
+        branch: "fesom2-with-yac"
+        comp_command: '. env/levante.dkrz.de/shell.intel ;
+            FESOM_ROOT=$(pwd) ;
+            mkdir -p build; cd build; 
+            export yac_DIR=$FESOM_ROOT/../icon/build/externals/yac ;
+            spack load /y24c4jj ;
+            cmake .. -DCMAKE_INSTALL_PREFIX=../ 
+                  -DCMAKE_BUILD_TYPE=RelWithDebInfo 
+                  -DUSE_YAC=ON 
+                  -DCMAKE_SHARED_LINKER_FLAGS="-Wl,-rpath,/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib -Wl,-rpath,/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64";
+            make install -j `nproc --all`'
+
+            #       -DCMAKE_SHARED_LINKER_FLAGS="$CMAKE_SHARED_LINKER_FLAGS";
       "2.6":
         branch: "2.6.10"
 
@@ -588,40 +616,40 @@ fesom:
             lib: "${fesom.model_dir}/build/lib/libfesom.so"
 
     config_files:
-            config:  config
-            cvmix:   cvmix
-            dyn:     dyn
-            forcing: forcing
-            ice:     ice
-            icepack: icepack
-            io:      io
-            oce:     oce
-            tra:     tra
-            transit: transit
+            config:         config
+            cvmix:          cvmix
+            dyn:            dyn
+            nml_forcing:    nml_forcing
+            ice:            ice
+            icepack:        icepack
+            io:             io
+            oce:            oce
+            tra:            tra
+            transit:        transit
 
     config_sources:
-            config:  "${namelist_dir}/namelist.config"
-            cvmix:   "${namelist_dir}/namelist.cvmix"
-            dyn:     "${namelist_dir}/namelist.dyn"
-            forcing: "${namelist_dir}/namelist.forcing"
-            ice:     "${namelist_dir}/namelist.ice"
-            icepack: "${namelist_dir}/namelist.icepack"
-            io:      "${namelist_dir}/namelist.io"
-            oce:     "${namelist_dir}/namelist.oce"
-            tra:     "${namelist_dir}/namelist.tra"
-            transit: "${namelist_dir}/namelist.transit"
+            config:        "${namelist_dir}/namelist.config"
+            cvmix:         "${namelist_dir}/namelist.cvmix"
+            dyn:           "${namelist_dir}/namelist.dyn"
+            nml_forcing:   "${namelist_dir}/namelist.forcing"
+            ice:           "${namelist_dir}/namelist.ice"
+            icepack:       "${namelist_dir}/namelist.icepack"
+            io:            "${namelist_dir}/namelist.io"
+            oce:           "${namelist_dir}/namelist.oce"
+            tra:           "${namelist_dir}/namelist.tra"
+            transit:       "${namelist_dir}/namelist.transit"
 
     config_in_work:
-            config:  "namelist.config"
-            cvmix:   "namelist.cvmix"
-            dyn:     "namelist.dyn"
-            forcing: "namelist.forcing"
-            ice:     "namelist.ice"
-            icepack: "namelist.icepack"
-            io:      "namelist.io"
-            oce:     "namelist.oce"
-            tra:     "namelist.tra"
-            transit: "namelist.transit"
+            config:        "namelist.config"
+            cvmix:         "namelist.cvmix"
+            dyn:           "namelist.dyn"
+            nml_forcing:   "namelist.forcing"
+            ice:           "namelist.ice"
+            icepack:       "namelist.icepack"
+            io:            "namelist.io"
+            oce:           "namelist.oce"
+            tra:           "namelist.tra"
+            transit:       "namelist.transit"
 
     coupling_fields:
             sst_feom:

@@ -4,7 +4,6 @@ import pathlib
 import re
 import shutil
 import sys
-import time
 
 import psutil
 from loguru import logger

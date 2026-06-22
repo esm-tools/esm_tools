@@ -53,3 +53,7 @@ lpj_guess:
             fixed_CO2: -1
             fixed_ndep: -1
             fixed_LU: -1
+        "abrupt4xCO2":
+            fourxCO2: true
+        "1pctCO2":
+            onepcCO2: true

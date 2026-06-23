@@ -525,8 +525,8 @@ lpj_guess:
     runtime_seconds: "$(( ${next_date} - ${start_date} ))"
     ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
     co2_coupling: 0
-    fourxCO2: false
-    onepcCO2: false
+    fourxCO2: ${lpj_guess.fourxCO2}
+    onepcCO2: ${lpj_guess.onepcCO2}
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1

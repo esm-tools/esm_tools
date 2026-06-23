@@ -13,8 +13,10 @@ from esm_catalog.integration.config import (
     extract_stac_metadata,
     find_file_operations_log,
     find_finished_configs,
+    find_vcs_info,
     get_outdata_files,
     get_outdata_from_file_operations,
+    load_vcs_info,
 )
 from esm_catalog.integration.esm_tools import add_files
 from esm_catalog.storage.duckdb import CatalogDB
@@ -133,6 +135,81 @@ def test_extract_stac_metadata():
     assert "echam" in result["components"]
     assert "fesom" not in result["components"]
     assert result["components"]["echam"]["institute"] == "AWI"
+
+
+def test_extract_stac_metadata_merges_vcs_info():
+    config = {
+        "general": {"expid": "piControl"},
+        "echam": {
+            "metadata": {"Institute": "AWI", "Authors": "AWI Team"},
+        },
+    }
+    vcs_info = {
+        "echam": {
+            "path": "/work/model_codes/echam-6.3.05p2",
+            "hash": "abc1234",
+            "branch_name": "release-awiesm-2.1",
+            "diffs": "",
+        }
+    }
+    result = extract_stac_metadata(config, vcs_info=vcs_info)
+    echam = result["components"]["echam"]
+    assert echam["hash"] == "abc1234"
+    assert echam["branch_name"] == "release-awiesm-2.1"
+    assert echam["path"] == "/work/model_codes/echam-6.3.05p2"
+
+
+def test_extract_stac_metadata_ignores_non_git_vcs_entry():
+    """A plain string value (e.g. 'Not a git-controlled model!') is skipped."""
+    config = {
+        "general": {"expid": "piControl"},
+        "fesom": {"metadata": {"Institute": "AWI"}},
+    }
+    vcs_info = {"fesom": "Not a git-controlled model!"}
+    result = extract_stac_metadata(config, vcs_info=vcs_info)
+    assert "hash" not in result["components"]["fesom"]
+
+
+def test_extract_stac_metadata_without_vcs_info_unchanged():
+    config = {
+        "general": {"expid": "piControl"},
+        "echam": {"metadata": {"Institute": "AWI"}},
+    }
+    result = extract_stac_metadata(config)
+    assert "hash" not in result["components"]["echam"]
+
+
+def test_find_vcs_info_found(tmp_path):
+    exp_dir = tmp_path / "experiments" / "exp-alpha"
+    log_dir = exp_dir / "log"
+    log_dir.mkdir(parents=True)
+    vcs_file = log_dir / "exp-alpha_vcs_info.yaml"
+    vcs_file.write_text("echam:\n  hash: abc1234\n")
+
+    assert find_vcs_info(exp_dir) == vcs_file
+
+
+def test_find_vcs_info_not_found(tmp_path):
+    exp_dir = tmp_path / "experiments" / "exp-alpha"
+    (exp_dir / "log").mkdir(parents=True)
+    assert find_vcs_info(exp_dir) is None
+
+
+def test_load_vcs_info(tmp_path):
+    vcs_file = tmp_path / "exp-alpha_vcs_info.yaml"
+    vcs_file.write_text(
+        "echam:\n"
+        "  path: /work/model_codes/echam-6.3.05p2\n"
+        "  hash: abc1234\n"
+        "  branch_name: release-awiesm-2.1\n"
+    )
+    info = load_vcs_info(vcs_file)
+    assert info["echam"]["hash"] == "abc1234"
+    assert info["echam"]["branch_name"] == "release-awiesm-2.1"
+
+
+def test_load_vcs_info_none_path():
+    assert load_vcs_info(None) == {}
 
 
 # ---------------------------------------------------------------------------

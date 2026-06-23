@@ -1,0 +1,149 @@
+# TODO:
+# land use harvest and land use transitions still wrong links wit piCtl
+# check namelist.echam and namelist.jsbach
+#computer:
+#    choose_computer.name:
+#       glogin:
+#            pool_dir: "/mnt/ceph-hdd/cold/shk00060/foci_input2/" 
+#            partition: "standard96:test"
+#            launcher: "mpirun"
+#            launcher_flags: "" 
+#       levante:
+#            pool_dir: "/work/bb0519/foci_input2/" 
+
+general:
+   use_venv: False
+   verbose: True 
+   setup_name: "foci"
+   version: "mops_oasismct5"
+   homedir: !ENV ${HOME}
+
+   compute_time: "00:15:00"
+   initial_date: "2015-01-01T00:00:00"       # Initial exp. date
+   final_date: "2015-01-03T00:00:00"         # Final date of the experiment
+   postprocessing: False
+   nday: 1
+   
+   # machine specific setup 
+   account: shk00060
+   base_dir: ${homedir}/esm/esm-experiments/
+
+   lresume: True
+   ini_parent_exp_id: "FOCI1.20.0-CC105_RCP_ESM_spinup2099"
+   ini_parent_date: "20141231" 
+   ini_nemo_restart_steps: 2410600 
+   ini_parent_dir: "${computer.pool_directories.focipool}/FOCI_RESTART/${ini_parent_exp_id}"
+
+   check_error:
+       "check_exit_codes":
+              method: "kill"
+              message: "MPI Init error glogin"
+              file: stdout 
+              frequency: 15 
+       "lookup table overflow":
+              method: "kill"
+              message: "lookup table overflow"
+              file: stdout 
+              frequency: 15 
+       "SIGTERM":
+              method: "kill"
+              message: "SIGTERM found in stdout"
+              file: stdout 
+              frequency: 15 
+       "FINISH called":
+              method: "kill"
+              message: "netcdf error found in stdout"
+              file: stdout 
+              frequency: 15 
+       "netcdf error":
+              method: "kill"
+              message: "netcdf error found in stdout"
+              file: stdout 
+              frequency: 15 
+       "BAD TERMINATION":
+              method: "kill"
+              message: "BAD TERMINATION found in stdout"
+              file: stdout 
+              frequency: 15 
+       "Usage: ./mpiexec":
+              method: "kill"
+              message: "mpirun failed, check for empty hostfile"
+              file: stdout 
+              frequency: 15 
+
+# uncomment to write coupling fields to disc, slow but helpful for debugging the coupling
+oasis3mct:
+#   export_mode_a2o: "EXPOUT"
+#   export_mode: "EXPOUT"
+   debug_level: 0
+   interpolation: conserv 
+
+foci:
+   model_dir: ${general.homedir}/esm/models/foci-${general.version}/
+
+echam:
+   # the brute-force approach to the hostfile_srun missing / empty file
+   # pre_run_commands: "cp -f ~/FOCILMU-SW231_hostfile_srun ${work_dir}/hostfile_srun"
+   #
+   postprocessingscript: "echam_postprocessing.sh"
+   # namelist_dir: "${general.esm_namelist_dir}/echam/${version}/cmip6"
+   # all ssp* scenarios use historical forcing before 2015, i.e. the setting
+   # scenario: "cmip6hist" and # scenario: "ssp???" produce the same results 
+   # until year 2014
+   # available scenarios: 1percCO2, ssp126, ssp245, ssp370, ssp585, ssp585os
+   # technically tested: cmip6hist, ssp370 and ssp585
+   # seb-wahl, 2021-08-11
+   scenario: "ssp370"
+   allow_hist2ssp_transition: True
+   resolution: "T63"
+   restart_rate: ${general.nday}
+   restart_unit: "days"
+   nproca: 8
+   nprocb: 4
+   # set's the namelist parameters, and links the correct 
+   # carbon_emission.nc file
+   with_lco2_emis: True
+   namelist_changes:
+      namelist.echam:
+         runctl:
+            lcouple_co2: True
+            default_output: False
+            ltdiag: True
+         radctl:
+                 iaero: 8
+                 ighg: 1
+                 io3: 4
+                 isolrad: 1
+                 ico2: 1
+                 ich4: 4
+                 in2o: 4
+                 icfc: 4
+         submodelctl:
+            lco2: True
+            lmethox: True
+         co2ctl:
+               lco2_emis: True
+               lco2_2perc: True
+nemo:
+   resolution: "ORCA05"
+   # overwrite default time step of 1800s 
+   time_step: 2160
+   version: "ORCA05_LIM2_FOCI_MOPS_OASISMCT4"
+   nproc: 24 
+   # jpni and jpnj are 0 by default, i.e. automatic distribution on CPUs
+   # alkalinity masks
+   namelist_changes:
+      namelist_top_cfg:
+         namtrc_rad:
+            ln_trcrad: False
+         namtrc:
+            ln_trcdta: False
+            #ln_alk: false
+   #forcing_dir: /scratch/usr/shktkeme/foci_input/alk_mask/CoastEU/
+   #forcing_sources:
+      #alkalinity: ${forcing_dir}/alkalinity_mask_y@YEAR@.nc
+   #forcing_files:
+      #alkalinity: alkalinity
+   
+xios:
+   nproc: 8

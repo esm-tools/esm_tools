@@ -6,9 +6,11 @@ from esm_catalog.integration.config import (
     extract_stac_metadata,
     find_file_operations_log,
     find_finished_configs,
+    find_vcs_info,
     get_outdata_files,
     get_outdata_from_file_operations,
     load_config,
+    load_vcs_info,
 )
 from esm_catalog.integration.esm_tools import add_files, add_run
 from esm_catalog.storage.duckdb import CatalogDB
@@ -231,6 +233,101 @@ class TestExtractStacMetadata:
         meta = extract_stac_metadata({})
         assert meta["expid"] is None
         assert meta["components"] == {}
+
+    def test_merges_vcs_info_into_component(self):
+        vcs_info = {
+            "echam": {
+                "path": "/work/model_codes/echam-6.3.05p2",
+                "hash": "abc1234",
+                "branch_name": "release-awiesm-2.1",
+                "diffs": "",
+            }
+        }
+        meta = extract_stac_metadata(self._make_config(), vcs_info=vcs_info)
+        ec = meta["components"]["echam"]
+        assert ec["hash"] == "abc1234"
+        assert ec["branch_name"] == "release-awiesm-2.1"
+        assert ec["path"] == "/work/model_codes/echam-6.3.05p2"
+
+    def test_vcs_info_for_non_git_model_is_ignored(self):
+        """A string value (e.g. 'Not a git-controlled model!') is skipped, not merged."""
+        vcs_info = {"fesom": "Not a git-controlled model!"}
+        meta = extract_stac_metadata(self._make_config(), vcs_info=vcs_info)
+        fc = meta["components"]["fesom"]
+        assert "hash" not in fc
+        assert "branch_name" not in fc
+
+    def test_no_vcs_info_does_not_add_keys(self):
+        meta = extract_stac_metadata(self._make_config())
+        ec = meta["components"]["echam"]
+        assert "hash" not in ec
+        assert "branch_name" not in ec
+        assert "path" not in ec
+
+    def test_vcs_info_for_unrelated_model_is_ignored(self):
+        """vcs_info entries for models not present in the config are simply unused."""
+        vcs_info = {"jsbach": {"hash": "deadbee", "branch_name": "main", "path": "/x"}}
+        meta = extract_stac_metadata(self._make_config(), vcs_info=vcs_info)
+        assert "jsbach" not in meta["components"]
+
+
+# ---------------------------------------------------------------------------
+# integration/config.py — find_vcs_info / load_vcs_info
+# ---------------------------------------------------------------------------
+
+class TestFindVcsInfo:
+    def _make_exp(self, tmp_path, expid="basic-001"):
+        exp_dir = tmp_path / "experiments" / expid
+        log_dir = exp_dir / "log"
+        log_dir.mkdir(parents=True)
+        return exp_dir, log_dir
+
+    def test_finds_canonical_file(self, tmp_path):
+        exp_dir, log_dir = self._make_exp(tmp_path)
+        vcs_file = log_dir / "basic-001_vcs_info.yaml"
+        vcs_file.write_text("echam:\n  hash: abc1234\n")
+        assert find_vcs_info(exp_dir) == vcs_file
+
+    def test_returns_none_when_missing(self, tmp_path):
+        exp_dir, _ = self._make_exp(tmp_path)
+        assert find_vcs_info(exp_dir) is None
+
+    def test_returns_none_when_log_dir_missing(self, tmp_path):
+        exp_dir = tmp_path / "experiments" / "empty-exp"
+        exp_dir.mkdir(parents=True)
+        assert find_vcs_info(exp_dir) is None
+
+    def test_glob_fallback_finds_different_expid(self, tmp_path):
+        exp_dir, log_dir = self._make_exp(tmp_path)
+        vcs_file = log_dir / "other-expid_vcs_info.yaml"
+        vcs_file.write_text("echam:\n  hash: abc1234\n")
+        assert find_vcs_info(exp_dir) == vcs_file
+
+    def test_accepts_log_dir_directly(self, tmp_path):
+        exp_dir, log_dir = self._make_exp(tmp_path)
+        vcs_file = log_dir / "basic-001_vcs_info.yaml"
+        vcs_file.write_text("echam:\n  hash: abc1234\n")
+        assert find_vcs_info(log_dir) == vcs_file
+
+
+class TestLoadVcsInfo:
+    def test_loads_per_model_git_info(self, tmp_path):
+        vcs_file = tmp_path / "basic-001_vcs_info.yaml"
+        vcs_file.write_text(
+            "echam:\n"
+            "  path: /work/model_codes/echam-6.3.05p2\n"
+            "  hash: abc1234\n"
+            "  branch_name: release-awiesm-2.1\n"
+            "  diffs: ''\n"
+            "fesom: Not a git-controlled model!\n"
+        )
+        info = load_vcs_info(vcs_file)
+        assert info["echam"]["hash"] == "abc1234"
+        assert info["echam"]["branch_name"] == "release-awiesm-2.1"
+        assert info["echam"]["path"] == "/work/model_codes/echam-6.3.05p2"
+
+    def test_returns_empty_dict_for_none_path(self):
+        assert load_vcs_info(None) == {}
 
 
 # ---------------------------------------------------------------------------

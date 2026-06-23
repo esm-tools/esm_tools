@@ -161,7 +161,56 @@ def get_outdata_from_file_operations(path: Path | str) -> list[dict]:
     return records
 
 
-def extract_stac_metadata(config: dict) -> dict:
+def find_vcs_info(experiment_dir: Path | str) -> Path | None:
+    """Find the ``{expid}_vcs_info.yaml`` file for an experiment, if present.
+
+    ESM-Tools writes this file during the prepare step (see
+    ``esm_runscripts.prepare``), recording per-model git info (commit hash,
+    branch name, model directory, uncommitted diff) plus esm_tools' own repo
+    info. Unlike ``finished_config``, it is not date-range-suffixed — it gets
+    overwritten each run and compared against the previous run's copy.
+
+    Args:
+        experiment_dir: Root experiment directory (contains a ``log/``
+            subdirectory) **or** the log directory itself.
+
+    Returns:
+        Path to the file if found, None otherwise.
+    """
+    experiment_dir = Path(experiment_dir)
+    log_dir = experiment_dir / "log"
+    if not log_dir.is_dir():
+        log_dir = experiment_dir  # allow passing log dir directly
+
+    expid = experiment_dir.name
+    candidate = log_dir / f"{expid}_vcs_info.yaml"
+    if candidate.is_file():
+        return candidate
+
+    # Glob fallback in case expid differs from directory name
+    matches = sorted(log_dir.glob("*_vcs_info.yaml"))
+    return matches[0] if matches else None
+
+
+def load_vcs_info(path: Path | str) -> dict:
+    """Load a ``{expid}_vcs_info.yaml`` file.
+
+    Returns a dict keyed by model name (plus ``"esm_tools"`` for the
+    esm-tools repo itself). Each value is either a dict with keys ``path``,
+    ``hash``, ``branch_name``, ``diffs`` (for git-controlled models), or a
+    plain string explaining why no git info is available (e.g. "Not a
+    git-controlled model!").
+
+    Args:
+        path: Path to the ``*_vcs_info.yaml`` file.
+
+    Returns:
+        Dict as loaded by :func:`load_config`, or ``{}`` if *path* is None.
+    """
+    return load_config(path) or {}
+
+
+def extract_stac_metadata(config: dict, vcs_info: dict | None = None) -> dict:
     """Extract STAC-relevant metadata from a finished_config.
 
     Aggregates top-level experiment identity and per-component scientific
@@ -169,6 +218,10 @@ def extract_stac_metadata(config: dict) -> dict:
 
     Args:
         config: Dict loaded by :func:`load_config`.
+        vcs_info: Optional dict loaded by :func:`load_vcs_info`. When given,
+            each component's git ``hash``, ``branch_name``, and model
+            ``path`` (source/binary directory) are merged in under the same
+            keys, for components that have a corresponding entry.
 
     Returns:
         Dict with keys:
@@ -179,12 +232,16 @@ def extract_stac_metadata(config: dict) -> dict:
 
         ``components``
             Nested dict ``{component: {version, institute, authors,
-            description, publications}}`` — populated from each component's
-            ``metadata`` block (e.g. ``config["echam"]["metadata"]``).
-            Only components with a non-empty ``metadata`` block are included.
+            description, publications, hash, branch_name, path}}`` —
+            scientific metadata populated from each component's ``metadata``
+            block (e.g. ``config["echam"]["metadata"]``); ``hash``,
+            ``branch_name``, and ``path`` populated from *vcs_info* when
+            provided and present for that component. Only components with a
+            non-empty ``metadata`` block are included.
     """
     general = config.get("general", {})
     skip_keys = {"general", "computer", "setup", "env", "defaults", "recom"}
+    vcs_info = vcs_info or {}
 
     components: dict[str, dict] = {}
     for key, block in config.items():
@@ -193,13 +250,19 @@ def extract_stac_metadata(config: dict) -> dict:
         meta = block.get("metadata") or {}
         if not isinstance(meta, dict) or not meta:
             continue
-        components[key] = {
+        component = {
             "version": block.get("version"),
             "institute": meta.get("Institute"),
             "authors": meta.get("Authors"),
             "description": meta.get("Description"),
             "publications": meta.get("Publications"),
         }
+        model_vcs = vcs_info.get(key)
+        if isinstance(model_vcs, dict):
+            component["hash"] = model_vcs.get("hash")
+            component["branch_name"] = model_vcs.get("branch_name")
+            component["path"] = model_vcs.get("path")
+        components[key] = component
 
     return {
         "expid": general.get("expid"),

@@ -644,6 +644,13 @@ subroutine read_topo_cavity(M, topo_raw, cavity_raw, mesh_flag_raw, mask_raw)
 
   integer :: n, infile_topo, infile_cavity, infile_mask
 
+  ! TEST ONLY: when .true., replace the real PISM-derived cavity geometry of
+  ! every deep (<-30 m) cavity node with a synthetic node-parity checkerboard
+  ! (-2000/-3000 m bed, -2500/-1500 m draft) to stress the mesh-reduction
+  ! logic (Uta WIP scaffolding). MUST stay .false. in production -- otherwise
+  ! it overwrites the real ice-shelf draft and collapses the cavity.
+  logical, parameter :: l_synthetic_cavity_test = .false.
+
   ! read in files
   open(newunit=infile_topo, file= './topo_raw.txt', status= 'old', &
                             action = 'read')
@@ -656,10 +663,10 @@ subroutine read_topo_cavity(M, topo_raw, cavity_raw, mesh_flag_raw, mask_raw)
                               action = 'read')
   do n=1,M%nod2D
      read(infile_cavity, *) cavity_raw(n)
-     if (cavity_raw(n)<-30) then
+     if (l_synthetic_cavity_test .and. cavity_raw(n)<-30) then
        topo_raw(n) = -2000+mod(n,2)*1000
        cavity_raw(n) = -2500+mod(n,2)*1000
-     end if        
+     end if
   enddo
   close(infile_cavity)
 

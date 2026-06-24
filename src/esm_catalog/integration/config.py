@@ -275,9 +275,24 @@ def extract_stac_metadata(config: dict, vcs_info: dict | None = None) -> dict:
             component["path"] = model_vcs.get("path")
 
         component["is_cold_start"] = not bool(block.get("lresume", False))
-        prev_run_config_file = block.get("prev_run_config_file")
-        if prev_run_config_file:
-            component.update(_parse_prev_run_config_file(str(prev_run_config_file)))
+
+        parent_expid = block.get("ini_parent_exp_id")
+        if parent_expid:
+            component["parent_expid"] = parent_expid
+            branch_off_date = block.get("ini_parent_date")
+            if branch_off_date:
+                component["branch_off_date"] = str(branch_off_date)
+                year_str = str(branch_off_date)[:4]
+                if year_str.isdigit():
+                    component["branch_off_year"] = int(year_str)
+            parent_restart_dir = block.get("ini_parent_dir")
+            if parent_restart_dir:
+                component["parent_restart_dir"] = str(parent_restart_dir)
+        else:
+            prev_run_config_file = block.get("prev_run_config_file")
+            if prev_run_config_file:
+                component.update(_parse_prev_run_config_file(str(prev_run_config_file)))
+
         restart_in = block.get("restart_in_sources") or block.get("restart_in_targets")
         if isinstance(restart_in, dict) and restart_in:
             component["restart_files"] = list(restart_in.values())

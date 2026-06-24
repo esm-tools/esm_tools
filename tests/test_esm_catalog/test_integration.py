@@ -213,7 +213,31 @@ def test_load_vcs_info_none_path():
     assert load_vcs_info(None) == {}
 
 
-def test_extract_stac_metadata_branched_off_lineage():
+def test_extract_stac_metadata_branched_off_lineage_ini_parent_fields():
+    """Primary mechanism, confirmed against a real branched-off AWIESM run
+    on Albedo (branchoff-002, parent basic-002): runscripts populate
+    ini_parent_exp_id/ini_parent_date/ini_parent_dir directly —
+    prev_run_config_file is a separate, rarely-used opt-in mechanism."""
+    config = {
+        "general": {"expid": "exp-002"},
+        "echam": {
+            "metadata": {"Institute": "AWI"},
+            "lresume": True,
+            "ini_parent_exp_id": "basic-002",
+            "ini_parent_date": "1854-12-31",
+            "ini_parent_dir": "/work/exp/basic-002/restart/echam/",
+        },
+    }
+    result = extract_stac_metadata(config)
+    echam = result["components"]["echam"]
+    assert echam["is_cold_start"] is False
+    assert echam["parent_expid"] == "basic-002"
+    assert echam["branch_off_date"] == "1854-12-31"
+    assert echam["branch_off_year"] == 1854
+    assert echam["parent_restart_dir"] == "/work/exp/basic-002/restart/echam/"
+
+
+def test_extract_stac_metadata_branched_off_lineage_falls_back_to_prev_run_config_file():
     config = {
         "general": {"expid": "exp-002"},
         "echam": {
@@ -230,6 +254,24 @@ def test_extract_stac_metadata_branched_off_lineage():
     assert echam["parent_expid"] == "parent-001"
     assert echam["parent_path"] == "/work/exp/parent-001/config"
     assert echam["branch_off_year"] == 1849
+
+
+def test_extract_stac_metadata_ini_parent_exp_id_takes_priority():
+    config = {
+        "general": {"expid": "exp-002"},
+        "echam": {
+            "metadata": {"Institute": "AWI"},
+            "lresume": True,
+            "ini_parent_exp_id": "basic-002",
+            "prev_run_config_file": (
+                "/work/exp/parent-001/config/parent-001_finished_config.yaml_18491201-18491231"
+            ),
+        },
+    }
+    result = extract_stac_metadata(config)
+    echam = result["components"]["echam"]
+    assert echam["parent_expid"] == "basic-002"
+    assert "parent_path" not in echam
 
 
 def test_extract_stac_metadata_cold_start_no_parent_fields():

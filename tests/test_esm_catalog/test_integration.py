@@ -12,6 +12,7 @@ from esm_catalog.integration.config import (
     load_config,
     load_vcs_info,
 )
+from esm_catalog.integration.config import _parse_prev_run_config_file
 from esm_catalog.integration.esm_tools import add_files, add_run
 from esm_catalog.storage.duckdb import CatalogDB
 
@@ -269,6 +270,65 @@ class TestExtractStacMetadata:
         vcs_info = {"jsbach": {"hash": "deadbee", "branch_name": "main", "path": "/x"}}
         meta = extract_stac_metadata(self._make_config(), vcs_info=vcs_info)
         assert "jsbach" not in meta["components"]
+
+    def test_branched_off_component_has_lineage_fields(self):
+        cfg = self._make_config()
+        cfg["echam"]["lresume"] = True
+        cfg["echam"]["prev_run_config_file"] = (
+            "/work/exp/parent-001/config/parent-001_finished_config.yaml_18491201-18491231"
+        )
+        meta = extract_stac_metadata(cfg)
+        ec = meta["components"]["echam"]
+        assert ec["is_cold_start"] is False
+        assert ec["parent_expid"] == "parent-001"
+        assert ec["parent_path"] == "/work/exp/parent-001/config"
+        assert ec["branch_off_year"] == 1849
+
+    def test_cold_start_component_has_no_parent_fields(self):
+        cfg = self._make_config()
+        cfg["echam"]["lresume"] = False
+        meta = extract_stac_metadata(cfg)
+        ec = meta["components"]["echam"]
+        assert ec["is_cold_start"] is True
+        assert "parent_expid" not in ec
+
+    def test_missing_lresume_defaults_to_cold_start(self):
+        """Absence of lresume is treated the same as ESM-Tools' own default (False)."""
+        meta = extract_stac_metadata(self._make_config())
+        assert meta["components"]["echam"]["is_cold_start"] is True
+
+    def test_restart_files_captured_from_restart_in_sources(self):
+        cfg = self._make_config()
+        cfg["fesom"]["restart_in_sources"] = {
+            "fesom.0001.oce.restart": "/work/exp/restart/fesom/fesom.0001.oce.restart.nc",
+        }
+        meta = extract_stac_metadata(cfg)
+        assert meta["components"]["fesom"]["restart_files"] == [
+            "/work/exp/restart/fesom/fesom.0001.oce.restart.nc"
+        ]
+
+    def test_no_restart_files_key_when_absent(self):
+        meta = extract_stac_metadata(self._make_config())
+        assert "restart_files" not in meta["components"]["echam"]
+
+
+class TestParsePrevRunConfigFile:
+    def test_parses_expid_path_and_year(self):
+        info = _parse_prev_run_config_file(
+            "/work/exp/parent-001/config/parent-001_finished_config.yaml_18491201-18491231"
+        )
+        assert info["parent_expid"] == "parent-001"
+        assert info["parent_path"] == "/work/exp/parent-001/config"
+        assert info["branch_off_year"] == 1849
+
+    def test_returns_empty_dict_for_unrecognized_filename(self):
+        assert _parse_prev_run_config_file("/some/random/path.yaml") == {}
+
+    def test_returns_none_year_for_unparseable_daterange(self):
+        info = _parse_prev_run_config_file(
+            "/work/exp/parent-001/config/parent-001_finished_config.yaml_notadate"
+        )
+        assert info["branch_off_year"] is None
 
 
 # ---------------------------------------------------------------------------

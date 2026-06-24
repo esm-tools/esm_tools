@@ -271,7 +271,25 @@ class TestExtractStacMetadata:
         meta = extract_stac_metadata(self._make_config(), vcs_info=vcs_info)
         assert "jsbach" not in meta["components"]
 
-    def test_branched_off_component_has_lineage_fields(self):
+    def test_branched_off_component_uses_ini_parent_fields(self):
+        """Primary mechanism, confirmed against a real branched-off AWIESM run
+        on Albedo (branchoff-002, parent basic-002): runscripts populate
+        ini_parent_exp_id/ini_parent_date/ini_parent_dir directly —
+        prev_run_config_file is a separate, rarely-used opt-in mechanism."""
+        cfg = self._make_config()
+        cfg["echam"]["lresume"] = True
+        cfg["echam"]["ini_parent_exp_id"] = "basic-002"
+        cfg["echam"]["ini_parent_date"] = "1854-12-31"
+        cfg["echam"]["ini_parent_dir"] = "/work/exp/basic-002/restart/echam/"
+        meta = extract_stac_metadata(cfg)
+        ec = meta["components"]["echam"]
+        assert ec["is_cold_start"] is False
+        assert ec["parent_expid"] == "basic-002"
+        assert ec["branch_off_date"] == "1854-12-31"
+        assert ec["branch_off_year"] == 1854
+        assert ec["parent_restart_dir"] == "/work/exp/basic-002/restart/echam/"
+
+    def test_branched_off_component_falls_back_to_prev_run_config_file(self):
         cfg = self._make_config()
         cfg["echam"]["lresume"] = True
         cfg["echam"]["prev_run_config_file"] = (
@@ -283,6 +301,17 @@ class TestExtractStacMetadata:
         assert ec["parent_expid"] == "parent-001"
         assert ec["parent_path"] == "/work/exp/parent-001/config"
         assert ec["branch_off_year"] == 1849
+
+    def test_ini_parent_exp_id_takes_priority_over_prev_run_config_file(self):
+        cfg = self._make_config()
+        cfg["echam"]["lresume"] = True
+        cfg["echam"]["ini_parent_exp_id"] = "basic-002"
+        cfg["echam"]["prev_run_config_file"] = (
+            "/work/exp/parent-001/config/parent-001_finished_config.yaml_18491201-18491231"
+        )
+        meta = extract_stac_metadata(cfg)
+        assert meta["components"]["echam"]["parent_expid"] == "basic-002"
+        assert "parent_path" not in meta["components"]["echam"]
 
     def test_cold_start_component_has_no_parent_fields(self):
         cfg = self._make_config()

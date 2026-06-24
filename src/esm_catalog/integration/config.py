@@ -265,17 +265,34 @@ def extract_stac_metadata(config: dict, vcs_info: dict | None = None) -> dict:
         ``components``
             Nested dict ``{component: {version, institute, authors,
             description, publications, hash, branch_name, path,
-            is_cold_start, parent_expid, parent_path, branch_off_year,
-            restart_files}}`` — scientific metadata populated from each
-            component's ``metadata`` block (e.g. ``config["echam"]["metadata"]``);
-            ``hash``/``branch_name``/``path`` populated from *vcs_info* when
-            provided and present for that component; lineage fields
-            (``is_cold_start``, ``parent_expid``, ``parent_path``,
-            ``branch_off_year``, ``restart_files``) derived from
-            ``config[component]["lresume"]``,
-            ``config[component]["prev_run_config_file"]``, and
-            ``config[component]["restart_in_sources"]``. Only components with
-            a non-empty ``metadata`` block are included.
+            is_cold_start, parent_expid, branch_off_date, branch_off_year,
+            parent_restart_dir, restart_files}}`` — scientific metadata
+            populated from each component's ``metadata`` block (e.g.
+            ``config["echam"]["metadata"]``); ``hash``/``branch_name``/``path``
+            populated from *vcs_info* when provided and present for that
+            component.
+
+            Lineage fields come from two mechanisms, in priority order
+            (confirmed against a real branched-off AWIESM run on Albedo —
+            ``ini_parent_exp_id``/``ini_parent_date``/``ini_parent_dir`` is
+            what real runscripts actually populate; ``prev_run_config_file``
+            is a separate, opt-in mechanism described in
+            ``esm_runscripts.prev_run``):
+
+            1. ``config[component]["ini_parent_exp_id"]`` /
+               ``["ini_parent_date"]`` / ``["ini_parent_dir"]`` → ``parent_expid``,
+               ``branch_off_date`` + derived ``branch_off_year``,
+               ``parent_restart_dir``.
+            2. Falls back to parsing ``config[component]["prev_run_config_file"]``
+               (path to the parent's ``*_finished_config.yaml_<DATE>``) into
+               ``parent_expid``/``parent_path``/``branch_off_year`` when the
+               ``ini_parent_*`` keys are absent.
+
+            ``restart_files`` comes from
+            ``config[component]["restart_in_sources"]`` (or
+            ``restart_in_targets``). ``is_cold_start`` is the negation of
+            ``config[component]["lresume"]``. Only components with a
+            non-empty ``metadata`` block are included.
     """
     general = config.get("general", {})
     skip_keys = {"general", "computer", "setup", "env", "defaults", "recom"}
@@ -302,9 +319,24 @@ def extract_stac_metadata(config: dict, vcs_info: dict | None = None) -> dict:
             component["path"] = model_vcs.get("path")
 
         component["is_cold_start"] = not bool(block.get("lresume", False))
-        prev_run_config_file = block.get("prev_run_config_file")
-        if prev_run_config_file:
-            component.update(_parse_prev_run_config_file(str(prev_run_config_file)))
+
+        parent_expid = block.get("ini_parent_exp_id")
+        if parent_expid:
+            component["parent_expid"] = parent_expid
+            branch_off_date = block.get("ini_parent_date")
+            if branch_off_date:
+                component["branch_off_date"] = str(branch_off_date)
+                year_str = str(branch_off_date)[:4]
+                if year_str.isdigit():
+                    component["branch_off_year"] = int(year_str)
+            parent_restart_dir = block.get("ini_parent_dir")
+            if parent_restart_dir:
+                component["parent_restart_dir"] = str(parent_restart_dir)
+        else:
+            prev_run_config_file = block.get("prev_run_config_file")
+            if prev_run_config_file:
+                component.update(_parse_prev_run_config_file(str(prev_run_config_file)))
+
         restart_in = block.get("restart_in_sources") or block.get("restart_in_targets")
         if isinstance(restart_in, dict) and restart_in:
             component["restart_files"] = list(restart_in.values())

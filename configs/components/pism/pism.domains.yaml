@@ -41,6 +41,26 @@ pism:
                                 nz: 181
                                 bz: 41
                                 grid_edge: 1
+            "antarct_cr":
+                    choose_resolution:
+                            08km:
+                                nx: 761
+                                ny: 761
+                                nz: 101
+                                bz: 21
+                                grid_edge: 8
+                            8km:
+                                nx: 761
+                                ny: 761
+                                nz: 101
+                                bz: 21
+                                grid_edge: 8
+                            16km:
+                                nx: 381
+                                ny: 381
+                                nz: 81
+                                bz: 21
+                                grid_edge: 16
             "greenland":
                     choose_resolution:
                             40km:

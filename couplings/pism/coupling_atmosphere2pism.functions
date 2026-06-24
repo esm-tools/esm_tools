@@ -1691,18 +1691,13 @@ mapping_varname='thk'
 longitude_varname='lon'
 latitude_varname='lat'
 time_varname='time'
-hydmth_str = 10      ! the beginning of the hydrological year, also start month for snow height integration
-                  ! October for Northern Hemisphere
-                  ! April Southern Hemisphere
 stddev=3.5        ! constant standard deviation
 obliquity=${obliquity_value}
-beta_nml=${DEBM_BETA}
-cloud_bias=0.155  ! cloud bias
-Ans    = .845     ! Albedo for new snow
-Ads    = .73      ! Albedo for dry snow
-Aws    = .55      ! Albedo for wet snow
-tau_cs = .75      ! expected clear sky transmissivity
-residual    = 0        ! residual heat flux (e.g. due to flux into the ice sheet
+! NOTE: hydmth_str/beta_nml/cloud_bias/Ans/Ads/Aws/tau_cs/residual removed -
+! the dEBM Fortran-v1.0 binary does not define these in its &debm namelist and
+! aborts with forrtl severe(19) on the first one (hydmth_str). Restore them when
+! a newer dEBM (supporting these params) is built. v1.0 uses its internal
+! defaults for albedo / clear-sky transmissivity / hydrological-year start.
 /
 EOF
 fi

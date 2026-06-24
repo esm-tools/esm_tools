@@ -1,0 +1,14 @@
+#!/bin/ksh
+# Real esm->pism couple_in: actually remaps the FESOM ocean + atmosphere onto the
+# configured PISM grid (ice.griddes = ${DOMAIN_pism}/${RES_pism}, e.g. antarct_cr 8km).
+# Replaces ccoupling_esm2pism.functions, whose fatmosphere2pism/focean2pism are
+# Greenland-Eemian (E130ka) test STUBS that hard-copy forcing from
+# /work/.../a270122/lars_and_paul/experiments/E130ka_coupled3 -> wrong (Greenland) grid.
+function esm2pism() {
+    . ${FUNCTION_PATH}/coupling_atmosphere2pism.functions
+    . ${FUNCTION_PATH}/coupling_ocean2pism.functions
+    . ${FUNCTION_PATH}/../general/pism_helpers.functions   # pism_helpers_create_xy_axis (used by add_xy_array)
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    atmosphere2pism
+    ocean2pism
+}

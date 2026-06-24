@@ -127,7 +127,7 @@ function pism_atmosphere_get_newest_output {
                     "nhem" | "laurentide" | "greenland") 
                             month_to_select=6
                             ;;
-                    "shem" | "antarctica" | "Antarctica")
+                    "shem" | "antarctica" | "Antarctica" | "antarct_cr")
                             month_to_select=12
                             ;;
                     *)

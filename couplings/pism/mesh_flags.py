@@ -27,7 +27,12 @@ sea_level = 0.0
 
 print(f"Reading PISM geometry file: {fname}")
 ds = xr.open_dataset(fname, decode_times=False)
-mask = ds["mask"].values.flatten()
+# build_submesh remaps the PISM ice-type mask (categorical: 2=grounded, 3=floating
+# cavity, 4=ocean, 5=outside-domain) bilinearly, which averages categories into
+# fractional values (e.g. 2.99, 4.0000005). The classification below uses exact
+# integer equality, so round back to the nearest category first -- otherwise
+# shelf-edge nodes land in fractional limbo and the cavity is silently dropped.
+mask = np.round(ds["mask"].values.flatten())
 print(f"  Loaded PISM mask: {mask.shape[0]} nodes, values {np.unique(mask)}")
 
 cavity_depth = np.minimum(ds["ice_subNN"].values.flatten(), 0)

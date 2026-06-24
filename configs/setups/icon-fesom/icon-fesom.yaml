@@ -6,6 +6,18 @@ computer:
         levante:
             #compiler_mpi: gnu11_ompi4
             compiler_mpi: intel2022_openmpi
+            iolibraries: system_libs
+            add_export_vars:
+               NETLIBLAPACKROOT: "/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/"
+               LIBFYAMLROOT: "/sw/spack-levante/libfyaml-0.7.12-fvbhgo/" 
+               ICON_CONFIGURE_COMMAND: "config/dkrz/levante.intel"
+        nesh:
+            compiler_mpi: intel2023_ompi415
+            add_export_vars:
+               NETLIBLAPACKROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netlib-lapack-3.11.0-krwsdhfz7f26fod7vtcjmzmqpscstyks/"
+               LIBFYAMLROOT: "/gxfs_home/geomar/smomw235/sw/libfyaml-0.9.6/" 
+               ICON_CONFIGURE_COMMAND: "config/nesh/nesh.intel"
+                
 general:
     model: icon-fesom 
     version: "v1.0"
@@ -18,12 +30,13 @@ general:
     choose_version:
         v1.0:
             couplings:
-            - fesom-2.6.2-yac+icon-2024.10-public
+            - fesom-2.6.x-yac-sl+icon-2025.04-public-sl
         v2.0:
             couplings:
-            - fesom-2.6.2-yac+icon-2025.04-public
-        v3.0:
-            couplings:
+            # seb-wahls dirty workaroud: we use 2.7.7 but as we rely on the fesom-2.6.yaml we 
+            # need to keep 2.6 in th coupling name until I have a correct fesom-2.7.yaml
+            # see esm_parster around line 158 (def look_for_file)
+            # and fesom-2.6.yaml
             - fesom-2.6.2-yac+icon-2025.10-public
 
     prepcompute_recipe:
@@ -46,7 +59,11 @@ general:
         - "database_entry"
 
 fesom:
-    model_dir: ${general.model_dir}/fesom-2.6
+    choose_general.version:
+       v1.0:
+           model_dir: ${general.model_dir}/fesom-2.6
+       v2.0:
+           model_dir: ${general.model_dir}/fesom-2.7
 
     file_movements:
       input:
@@ -57,4 +74,11 @@ fesom:
          all_directions: move
       unknown:
          all_directions: move
-#yac:
+
+yac:
+    input_sources:
+        coupling_yaml: ${computer.pool_directories.focipool}/ICON-FESOM/YAC/coupling.yaml
+    input_files:
+        coupling_yaml: coupling_yaml 
+    input_in_work:
+        coupling_yaml: coupling.yaml 

@@ -12,7 +12,7 @@
 #    most of the important dependencies for ESM-Tools are already defined in this
 #    file, meaning that pip almost only installs ESM-Tools).
 
-name: esm_tools
+name: esm-tools
 channels:
   - conda-forge
 dependencies:

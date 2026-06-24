@@ -203,6 +203,38 @@ def load_vcs_info(path: Path | str) -> dict:
     return load_config(path) or {}
 
 
+def _parse_prev_run_config_file(path_str: str) -> dict:
+    """Derive parent-simulation lineage info from a ``prev_run_config_file`` path.
+
+    ESM-Tools names finished_config files
+    ``{expid}_finished_config.yaml_{start}-{end}``, so the parent's expid and
+    branch-off year can be recovered from the path alone, without opening it.
+
+    Args:
+        path_str: Value of ``config[component]["prev_run_config_file"]``.
+
+    Returns:
+        Dict with ``parent_expid``, ``parent_path``, ``branch_off_year``
+        (``None`` for any piece that can't be parsed). Empty dict if
+        *path_str* doesn't match the expected naming convention.
+    """
+    marker = "_finished_config.yaml_"
+    p = Path(path_str)
+    name = p.name
+    if marker not in name:
+        return {}
+
+    parent_expid, _, daterange = name.partition(marker)
+    start = daterange.split("-")[0] if daterange else ""
+    branch_off_year = int(start[:4]) if start[:4].isdigit() else None
+
+    return {
+        "parent_expid": parent_expid or None,
+        "parent_path": str(p.parent),
+        "branch_off_year": branch_off_year,
+    }
+
+
 def extract_stac_metadata(config: dict, vcs_info: dict | None = None) -> dict:
     """Extract STAC-relevant metadata from a finished_config.
 
@@ -241,6 +273,15 @@ def extract_stac_metadata(config: dict, vcs_info: dict | None = None) -> dict:
             component["hash"] = model_vcs.get("hash")
             component["branch_name"] = model_vcs.get("branch_name")
             component["path"] = model_vcs.get("path")
+
+        component["is_cold_start"] = not bool(block.get("lresume", False))
+        prev_run_config_file = block.get("prev_run_config_file")
+        if prev_run_config_file:
+            component.update(_parse_prev_run_config_file(str(prev_run_config_file)))
+        restart_in = block.get("restart_in_sources") or block.get("restart_in_targets")
+        if isinstance(restart_in, dict) and restart_in:
+            component["restart_files"] = list(restart_in.values())
+
         components[key] = component
 
     return {

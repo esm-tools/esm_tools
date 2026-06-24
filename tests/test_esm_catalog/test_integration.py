@@ -10,6 +10,7 @@ import pandas as pd
 import xarray as xr
 
 from esm_catalog.integration.config import (
+    _parse_prev_run_config_file,
     extract_stac_metadata,
     find_file_operations_log,
     find_finished_configs,
@@ -210,6 +211,65 @@ def test_load_vcs_info(tmp_path):
 
 def test_load_vcs_info_none_path():
     assert load_vcs_info(None) == {}
+
+
+def test_extract_stac_metadata_branched_off_lineage():
+    config = {
+        "general": {"expid": "exp-002"},
+        "echam": {
+            "metadata": {"Institute": "AWI"},
+            "lresume": True,
+            "prev_run_config_file": (
+                "/work/exp/parent-001/config/parent-001_finished_config.yaml_18491201-18491231"
+            ),
+        },
+    }
+    result = extract_stac_metadata(config)
+    echam = result["components"]["echam"]
+    assert echam["is_cold_start"] is False
+    assert echam["parent_expid"] == "parent-001"
+    assert echam["parent_path"] == "/work/exp/parent-001/config"
+    assert echam["branch_off_year"] == 1849
+
+
+def test_extract_stac_metadata_cold_start_no_parent_fields():
+    config = {
+        "general": {"expid": "exp-001"},
+        "echam": {"metadata": {"Institute": "AWI"}, "lresume": False},
+    }
+    result = extract_stac_metadata(config)
+    echam = result["components"]["echam"]
+    assert echam["is_cold_start"] is True
+    assert "parent_expid" not in echam
+
+
+def test_extract_stac_metadata_restart_files():
+    config = {
+        "general": {"expid": "exp-002"},
+        "fesom": {
+            "metadata": {"Institute": "AWI"},
+            "restart_in_sources": {
+                "fesom.0001.oce.restart": "/work/exp/restart/fesom/fesom.0001.oce.restart.nc",
+            },
+        },
+    }
+    result = extract_stac_metadata(config)
+    assert result["components"]["fesom"]["restart_files"] == [
+        "/work/exp/restart/fesom/fesom.0001.oce.restart.nc"
+    ]
+
+
+def test_parse_prev_run_config_file():
+    info = _parse_prev_run_config_file(
+        "/work/exp/parent-001/config/parent-001_finished_config.yaml_18491201-18491231"
+    )
+    assert info["parent_expid"] == "parent-001"
+    assert info["parent_path"] == "/work/exp/parent-001/config"
+    assert info["branch_off_year"] == 1849
+
+
+def test_parse_prev_run_config_file_unrecognized_name():
+    assert _parse_prev_run_config_file("/some/random/path.yaml") == {}
 
 
 # ---------------------------------------------------------------------------

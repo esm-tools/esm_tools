@@ -4,6 +4,7 @@ import sys
 
 from loguru import logger
 
+import esm_parser
 from esm_motd import check_all_esm_packages
 
 # import logging
@@ -24,6 +25,26 @@ def main():
         nargs="?",
         type=str,
         help="name of the target (leave empty for full list of targets)",
+    )
+    parser.add_argument(
+        "overrides",
+        metavar="key=value",
+        nargs="*",
+        help=(
+            "Override configuration values, e.g. "
+            "'computer.mpi_implementation=openmpi_2026'. Keys are split on "
+            "--separator to address nested sections. Can be given multiple "
+            "times."
+        ),
+    )
+    parser.add_argument(
+        "--separator",
+        default=".",
+        help=(
+            "Character used to split nested keys in the 'key=value' "
+            "overrides (default: '.'). Use a different separator if a key "
+            "itself contains a literal dot, e.g. 'namelist.echam'."
+        ),
     )
     parser.add_argument(
         "--check",
@@ -76,6 +97,9 @@ def main():
     )
 
     parsed_args = vars(parser.parse_args())
+    parsed_args["overrides"] = esm_parser.cli_overrides_to_dict(
+        parsed_args["overrides"], separator=parsed_args["separator"]
+    )
 
     target = ""
     check = False

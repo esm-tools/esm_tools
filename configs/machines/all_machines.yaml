@@ -53,11 +53,12 @@ aleph:
         post_nodes: 'elogin*'
 
 nesh:
-        login_nodes: 'nesh*'
+        login_nodes: 'nesh-login*'
         compute_nodes:
-               - 'neshcl*'
-               - 'nesh-bigmem*'
-        post_nodes: 'neshcl*'
+               - 'nesh-slk*'
+               - 'nesh-clk*'
+               - 'nesh-web*'
+        post_nodes: 'nesh-slk*'
         
 olaf: 
         login_nodes: 'olaf*'

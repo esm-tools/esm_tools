@@ -26,7 +26,7 @@ def example_path2():
 
 @pytest.fixture()
 def config(example_path2):
-    return yaml_to_dict.yaml_file_to_dict(example_path2)
+    return yaml_to_dict.yaml_file_to_dict(example_path2, register_sections=False)
 
 
 @pytest.fixture()

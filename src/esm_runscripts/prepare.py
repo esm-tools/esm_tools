@@ -399,7 +399,7 @@ def _add_all_folders(config):
 
     config["general"]["all_model_filetypes"] = all_model_filetypes
 
-    for model in config["general"]["valid_model_names"]:
+    for model in esm_parser.get_components(config, include=["model"]):
         for filetype in all_model_filetypes:
             if "restart" in filetype:
                 filedir = "restart"

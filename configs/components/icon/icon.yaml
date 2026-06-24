@@ -187,15 +187,11 @@ icon:
          jsb_fuel_nml:
             active: ${lcarbon}
 
-   choose_icon.resolution:
-       R02B04:
-          pfts: 11 
-       R02B05:
-          choose_icon.version:
-             2025.04-public-sl:
-                pfts: 11
-             "*":
-                pfts: 12 
+   choose_icon.version:
+       2025.04-public-sl:
+          pfts: 11
+       "*":
+          pfts: 12 
    
    choose_jsbach_with_hd:
       yes:

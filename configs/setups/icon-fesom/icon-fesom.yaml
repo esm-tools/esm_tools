@@ -6,9 +6,10 @@ computer:
         levante:
             #compiler_mpi: gnu11_ompi4
             compiler_mpi: intel2022_openmpi
+            iolibraries: system_libs
             add_export_vars:
-               NETLIBLAPACKROOT: "/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/lib64"
-               LIBFYAMLROOT: "/sw/spack-levante/libfyaml-0.7.12-fvbhgo/lib" 
+               NETLIBLAPACKROOT: "/sw/spack-levante/netlib-lapack-3.9.1-y24c4j/"
+               LIBFYAMLROOT: "/sw/spack-levante/libfyaml-0.7.12-fvbhgo/" 
                ICON_CONFIGURE_COMMAND: "config/dkrz/levante.intel"
         nesh:
             compiler_mpi: intel2023_ompi415

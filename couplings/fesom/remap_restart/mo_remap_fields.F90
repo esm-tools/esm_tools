@@ -16,7 +16,7 @@ module mo_remap_fields
     integer, parameter :: FLAG_NEW_NODE      =  2
     integer, parameter :: FLAG_DROPPED       = -1
 
-    public :: classify_nodes, remap_all_restarts
+    public :: classify_nodes, remap_all_restarts, remap_ice
 
 contains
 
@@ -806,6 +806,59 @@ contains
         write(*,*) ' --> all restart files remapped.'
 
     end subroutine remap_all_restarts
+
+    !===========================================================================
+    ! Remap the sea-ice restart. All ice fields are 2D node-based (time,node),
+    ! identical in shape to ssh/hbar, so they reuse remap_node_field_2d. New or
+    ! newly-exposed (de-cavitied) ocean nodes get zero ice (set_new_to_zero).
+    ! Reads from path_ice_old (the fesom.<year-1>.ice.restart dir) and writes the
+    ! remapped files into path_new (the flat restart_remapped output dir).
+    subroutine remap_ice(mesh_old, mesh_new, node_flag, &
+                          path_ice_old, path_new, restart_year)
+        type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
+        integer,            intent(in) :: node_flag(:)
+        character(len=*),   intent(in) :: path_ice_old, path_new
+        integer,            intent(in) :: restart_year
+
+        integer  :: nod_new, ivar
+        real(WP) :: time_val
+        integer  :: iter_val
+        character(len=256) :: fin, fout
+        real(WP), allocatable :: field_old_2d(:), field_new_2d(:)
+
+        ! 7 sea-ice restart fields, in fesom.<year>.ice.restart/<name>.nc
+        character(len=16), parameter :: ice_vars(7) = [ character(len=16) :: &
+            'area', 'hice', 'hsnow', 'ice_albedo', 'ice_temp', 'uice', 'vice' ]
+        character(len=32), parameter :: ice_long(7) = [ character(len=32) :: &
+            'ice concentration', 'ice thickness', 'snow thickness', &
+            'ice albedo', 'ice surface temperature', 'zonal ice velocity', &
+            'meridional ice velocity' ]
+        character(len=8), parameter :: ice_unit(7) = [ character(len=8) :: &
+            '-', 'm', 'm', '-', 'K', 'm/s', 'm/s' ]
+
+        nod_new = mesh_new%nod2D
+
+        ! time/iter are shared with the ocean restart; read from area.nc
+        fin = trim(path_ice_old)//'area.nc'
+        call read_time_iter(fin, time_val, iter_val)
+        write(*,*) ' ice time=', time_val, ' iter=', iter_val
+
+        do ivar = 1, 7
+            write(*,*) ' --> '//trim(ice_vars(ivar))//'.nc'
+            fout = trim(path_new)//trim(ice_vars(ivar))//'.nc'
+            call read_restart_var_2d(path_ice_old, trim(ice_vars(ivar)), field_old_2d)
+            call remap_node_field_2d(field_old_2d, field_new_2d, &
+                                      mesh_old, mesh_new, node_flag, &
+                                      set_new_to_zero=.true.)
+            call write_nc_2d(fout, trim(ice_vars(ivar)), trim(ice_long(ivar)), &
+                              trim(ice_unit(ivar)), field_new_2d, nod_new, &
+                              time_val, iter_val)
+            deallocate(field_old_2d, field_new_2d)
+        end do
+
+        write(*,*) ' --> all ice restart files remapped.'
+
+    end subroutine remap_ice
 
     !===========================================================================
     ! hnode needs special treatment: new levels get nominal thickness

@@ -32,6 +32,8 @@ program remap_restart
 
     type(t_mesh_remap)   :: mesh_old, mesh_new
     integer, allocatable :: node_flag(:)
+    character(len=256)   :: path_ice_old
+    integer              :: ipos
     !     type(t_cavity_line)  :: cav_line
 
     !___________________________________________________________________________
@@ -67,8 +69,17 @@ program remap_restart
                    path_restart_old, path_restart_new, restart_year)
 
     write(*,*) ' --> remapping ice restart'
-    !call remap_ice(mesh_old, mesh_new, node_flag, &
-    !               path_restart_old, path_restart_new, restart_year)
+    ! The ice restart lives next to the ocean one, in fesom.<year-1>.ice.restart/.
+    ! Derive its path from path_restart_old by swapping 'oce.restart'->'ice.restart'.
+    path_ice_old = path_restart_old
+    ipos = index(path_ice_old, 'oce.restart')
+    if (ipos > 0) then
+        path_ice_old(ipos:ipos+2) = 'ice'
+        call remap_ice(mesh_old, mesh_new, node_flag, &
+                       path_ice_old, path_restart_new, restart_year)
+    else
+        write(*,*) '     (skipped: could not locate oce.restart in path_restart_old)'
+    end if
 
     write(*,*) '============================================'
     write(*,*) ' remapping done.'

@@ -593,7 +593,14 @@ subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)
         Mred%elem_map(count_elem) = el
      endif
   enddo
-  
+
+  ! The lake-removal floodfill sweep clears elflag(el) without decrementing
+  ! count_elem (unlike the earlier removal loops). That left Mred%elem2D set a
+  ! few elements too high, so elem2d.out got trailing all-zero rows -> the FESOM
+  ! partitioner dereferenced node index 0 and segfaulted in find_edges_ini.
+  ! Re-sync elem2D to the number of elements actually filled above.
+  Mred%elem2D = count_elem
+
   ! No changes for vertical layering so far...
   Mred%num_layers = M%num_layers
   allocate(Mred%layer(Mred%num_layers))

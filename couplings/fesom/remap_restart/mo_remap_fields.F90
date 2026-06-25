@@ -710,8 +710,16 @@ contains
                       'inq dim '//trim(varname))
         call nc_check(nf90_close(ncid), 'close '//trim(fin))
 
-        is_3d    = (ndims >= 3)
         is_elem  = (index(spatial_dim, 'elem') > 0)
+        ! Only remap genuine FESOM fields: the leading dimension must be the mesh
+        ! node or element axis. Anything else in the directory (e.g. a stray or
+        ! non-mesh .nc) is left untouched.
+        if (.not. (is_elem .or. index(spatial_dim, 'nod') > 0)) then
+            write(*,*) '     (skip '//trim(varname)//': leading dim "'// &
+                       trim(spatial_dim)//'" is not node/elem)'
+            return
+        end if
+        is_3d    = (ndims >= 3)
         zero_new = .not. (is_3d .and. .not. is_elem)   ! extrapolate only 3D node fields
 
         if (.not. is_3d) then

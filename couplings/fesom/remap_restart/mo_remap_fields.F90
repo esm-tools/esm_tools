@@ -578,6 +578,14 @@ contains
         real(WP), allocatable :: field_old_3d(:,:), field_new_3d(:,:)
         real(WP), allocatable :: field_old_2d(:),   field_new_2d(:)
 
+        ! Ocean restart fields are discovered from the restart directory at run
+        ! time, so a newly-added prognostic (e.g. an extra tracer) is remapped
+        ! with no code change. remap_field_auto detects each field's rank (2D/3D)
+        ! and node-/element layout from the file and preserves the variable name.
+        ! hnode is the sole exception (special per-level handling, remap_hnode).
+        character(len=64), allocatable :: flds(:)
+        integer :: nflds, ifld
+
         write(year_str,'(I4)') restart_year
         nl1      = mesh_new%nl - 1
         nod_old  = mesh_old%nod2D
@@ -592,209 +600,19 @@ contains
         write(*,*) ' time=', time_val, ' iter=', iter_val
 
         !_______________________________________________________________________
-        ! temp.nc  -- full extrapolation for new/extended nodes
-        write(*,*) ' --> temp.nc'
-        fin  = trim(path_old)//'temp.nc'
-        fout = trim(path_new)//'temp.nc'
-        write(*,*) 'about to read', trim(fin)
-        call read_restart_var_3d(path_old, 'temp', field_old_3d)
-        !call read_nc_3d(fin, 'temp', field_old_3d, nl1, nod_old)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.false.)
-        call write_nc_3d(fout, 'temp', 'potential temperature', 'degC', &
-                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        !_______________________________________________________________________
-        ! salt.nc
-        write(*,*) ' --> salt.nc'
-        fin  = trim(path_old)//'salt.nc'
-        fout = trim(path_new)//'salt.nc'
-        call read_restart_var_3d(path_old, 'salt', field_old_3d)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.false.)
-        call write_nc_3d(fout, 'salt', 'salinity', 'psu', &
-                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        !_______________________________________________________________________
-        ! temp_M1.nc, salt_M1.nc  -- previous-timestep fields, remapped with full
-        ! extrapolation for new/extended nodes (same strategy as temp.nc/salt.nc)
-        write(*,*) ' --> temp_M1.nc'
-        fin  = trim(path_old)//'temp_M1.nc'
-        fout = trim(path_new)//'temp_M1.nc'
-        call read_restart_var_3d(path_old, 'temp_M1', field_old_3d)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.false.)
-        call write_nc_3d(fout, 'temp_M1', 'potential temperature M1', 'degC', &
-                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        write(*,*) ' --> salt_M1.nc'
-        fin  = trim(path_old)//'salt_M1.nc'
-        fout = trim(path_new)//'salt_M1.nc'
-        call read_restart_var_3d(path_old, 'salt_M1', field_old_3d)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.false.)
-        call write_nc_3d(fout, 'salt_M1', 'salinity M1', 'psu', &
-                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        !_______________________________________________________________________
-        ! temp_AB.nc, salt_AB.nc  -- set new nodes to zero (simpler, one timestep effect)
-        write(*,*) ' --> temp_AB.nc'
-        fin  = trim(path_old)//'temp_AB.nc'
-        fout = trim(path_new)//'temp_AB.nc'
-        call read_restart_var_3d(path_old, 'temp', field_old_3d)
-        !call read_nc_3d(fin, 'temp', field_old_3d, nl1, nod_old)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_3d(fout, 'temp', 'potential temperature AB', 'degC', &
-                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        write(*,*) ' --> salt_AB.nc'
-        fin  = trim(path_old)//'salt_AB.nc'
-        fout = trim(path_new)//'salt_AB.nc'
-        call read_restart_var_3d(path_old, 'salt', field_old_3d)
-        !call read_nc_3d(fin, 'salt', field_old_3d, nl1, nod_old)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_3d(fout, 'salt', 'salinity AB', 'psu', &
-                          field_new_3d, nl1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        !_______________________________________________________________________
-        ! u.nc, v.nc  -- element-based, new cavity elements = 0
-        write(*,*) ' --> u.nc'
-        fin  = trim(path_old)//'u.nc'
-        fout = trim(path_new)//'u.nc'
-        call read_restart_var_3d(path_old, 'u', field_old_3d)
-        !call read_nc_3d(fin, 'u', field_old_3d, nl1, elem_old)
-        call remap_elem_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag)
-        call write_nc_3d(fout, 'u', 'zonal velocity', 'm/s', &
-                          field_new_3d, nl1, elem_new, 'elem', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        write(*,*) ' --> v.nc'
-        fin  = trim(path_old)//'v.nc'
-        fout = trim(path_new)//'v.nc'
-        call read_restart_var_3d(path_old, 'v', field_old_3d)
-        !call read_nc_3d(fin, 'v', field_old_3d, nl1, elem_old)
-        call remap_elem_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag)
-        call write_nc_3d(fout, 'v', 'meridional velocity', 'm/s', &
-                          field_new_3d, nl1, elem_new, 'elem', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        !_______________________________________________________________________
-        ! w.nc, w_expl.nc, w_impl.nc  -- node-based, nl levels (not nl-1)
-        ! these have dimension (nl, node) not (nl-1, node)
-        ! treat as nl-1 for simplicity since w(nl,:)=0 always
-        write(*,*) ' --> w.nc'
-        fin  = trim(path_old)//'w.nc'
-        fout = trim(path_new)//'w.nc'
-        call read_restart_var_3d(path_old, 'w', field_old_3d)
-        !call read_nc_3d(fin, 'w', field_old_3d, nl1+1, nod_old)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_3d(fout, 'w', 'vertical velocity', 'm/s', &
-                          field_new_3d, nl1+1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        write(*,*) ' --> w_expl.nc'
-        fin  = trim(path_old)//'w_expl.nc'
-        fout = trim(path_new)//'w_expl.nc'
-        call read_restart_var_3d(path_old, 'w', field_old_3d)
-        !call read_nc_3d(fin, 'w', field_old_3d, nl1+1, nod_old)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_3d(fout, 'w', 'explicit vertical velocity', 'm/s', &
-                          field_new_3d, nl1+1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        write(*,*) ' --> w_impl.nc'
-        fin  = trim(path_old)//'w_impl.nc'
-        fout = trim(path_new)//'w_impl.nc'
-        call read_restart_var_3d(path_old, 'w', field_old_3d)
-        !call read_nc_3d(fin, 'w', field_old_3d, nl1+1, nod_old)
-        call remap_node_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_3d(fout, 'w', 'implicit vertical velocity', 'm/s', &
-                          field_new_3d, nl1+1, nod_new, 'node', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        !_______________________________________________________________________
-        ! urhs_AB.nc, vrhs_AB.nc  -- element-based RHS history, set new to zero
-        write(*,*) ' --> urhs_AB.nc'
-        fin  = trim(path_old)//'urhs_AB.nc'
-        fout = trim(path_new)//'urhs_AB.nc'
-        call read_restart_var_3d(path_old, 'u', field_old_3d)
-        !call read_nc_3d(fin, 'u', field_old_3d, nl1, elem_old)
-        call remap_elem_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag)
-        call write_nc_3d(fout, 'u', 'zonal velocity RHS AB', 'm/s2', &
-                          field_new_3d, nl1, elem_new, 'elem', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        write(*,*) ' --> vrhs_AB.nc'
-        fin  = trim(path_old)//'vrhs_AB.nc'
-        fout = trim(path_new)//'vrhs_AB.nc'
-        call read_restart_var_3d(path_old, 'v', field_old_3d)
-        !call read_nc_3d(fin, 'v', field_old_3d, nl1, elem_old)
-        call remap_elem_field_3d(field_old_3d, field_new_3d, &
-                                  mesh_old, mesh_new, node_flag)
-        call write_nc_3d(fout, 'v', 'meridional velocity RHS AB', 'm/s2', &
-                          field_new_3d, nl1, elem_new, 'elem', time_val, iter_val)
-        deallocate(field_old_3d, field_new_3d)
-
-        !_______________________________________________________________________
-        ! ssh.nc, ssh_rhs_old.nc, hbar.nc  -- 2D node-based
-        write(*,*) ' --> ssh.nc'
-        fin  = trim(path_old)//'ssh.nc'
-        fout = trim(path_new)//'ssh.nc'
-        call read_restart_var_2d(path_old, 'ssh', field_old_2d)
-        !call read_nc_2d(fin, 'ssh', field_old_2d, nod_old)
-        call remap_node_field_2d(field_old_2d, field_new_2d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_2d(fout, 'ssh', 'sea surface height', 'm', &
-                          field_new_2d, nod_new, time_val, iter_val)
-        deallocate(field_old_2d, field_new_2d)
-
-        write(*,*) ' --> ssh_rhs_old.nc'
-        fin  = trim(path_old)//'ssh_rhs_old.nc'
-        fout = trim(path_new)//'ssh_rhs_old.nc'
-        call read_restart_var_2d(path_old, 'ssh', field_old_2d)
-        !call read_nc_2d(fin, 'ssh', field_old_2d, nod_old)
-        call remap_node_field_2d(field_old_2d, field_new_2d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_2d(fout, 'ssh', 'ssh rhs old', 'm', &
-                          field_new_2d, nod_new, time_val, iter_val)
-        deallocate(field_old_2d, field_new_2d)
-
-        write(*,*) ' --> hbar.nc'
-        fin  = trim(path_old)//'hbar.nc'
-        fout = trim(path_new)//'hbar.nc'
-        call read_restart_var_2d(path_old, 'hbar', field_old_2d)
-        !call read_nc_2d(fin, 'hbar', field_old_2d, nod_old)
-        call remap_node_field_2d(field_old_2d, field_new_2d, &
-                                  mesh_old, mesh_new, node_flag, &
-                                  set_new_to_zero=.true.)
-        call write_nc_2d(fout, 'hbar', 'hbar', 'm', &
-                          field_new_2d, nod_new, time_val, iter_val)
-        deallocate(field_old_2d, field_new_2d)
+        ! Discover and remap every ocean restart field generically. Each field's
+        ! rank (2D/3D), node-vs-element layout and new-node fill policy are taken
+        ! from the file (see remap_field_auto), and the variable name is preserved
+        ! on write. hnode is the only special case (handled separately below), so
+        ! adding a new prognostic field needs no change here.
+        call list_restart_fields(path_old, flds, nflds)
+        do ifld = 1, nflds
+            if (trim(flds(ifld)) == 'hnode') cycle      ! special-cased below
+            write(*,*) ' --> '//trim(flds(ifld))//'.nc'
+            call remap_field_auto(path_old, path_new, trim(flds(ifld)), &
+                                  mesh_old, mesh_new, node_flag, time_val, iter_val)
+        end do
+        if (allocated(flds)) deallocate(flds)
 
         !_______________________________________________________________________
         ! hnode.nc  -- 3D node-based layer thickness
@@ -808,11 +626,125 @@ contains
     end subroutine remap_all_restarts
 
     !===========================================================================
-    ! Remap the sea-ice restart. All ice fields are 2D node-based (time,node),
-    ! identical in shape to ssh/hbar, so they reuse remap_node_field_2d. New or
-    ! newly-exposed (de-cavitied) ocean nodes get zero ice (set_new_to_zero).
-    ! Reads from path_ice_old (the fesom.<year-1>.ice.restart dir) and writes the
-    ! remapped files into path_new (the flat restart_remapped output dir).
+    ! Discover the restart fields present in a directory by listing *.nc and
+    ! stripping the suffix (FESOM convention: file <X>.nc holds variable <X>).
+    ! The manifest is written to the current working directory (the coupling
+    ! work dir, writable); the source restart dir may be read-only.
+    subroutine list_restart_fields(dirpath, names, nnames)
+        character(len=*),               intent(in)  :: dirpath
+        character(len=64), allocatable, intent(out) :: names(:)
+        integer,                        intent(out) :: nnames
+
+        character(len=*), parameter :: manifest = '.remap_field_manifest'
+        character(len=1024) :: cmd, line
+        integer :: u, ios, n, p
+
+        cmd = 'ls -1 '//trim(dirpath)//'/*.nc 2>/dev/null | xargs -rn1 basename > '//manifest
+        call execute_command_line(trim(cmd))
+
+        open(newunit=u, file=manifest, status='old', action='read', iostat=ios)
+        if (ios /= 0) then
+            nnames = 0; allocate(names(0)); return
+        end if
+        n = 0
+        do
+            read(u,'(A)', iostat=ios) line
+            if (ios /= 0) exit
+            if (len_trim(line) > 0) n = n + 1
+        end do
+        allocate(names(n))
+        rewind(u)
+        n = 0
+        do
+            read(u,'(A)', iostat=ios) line
+            if (ios /= 0) exit
+            if (len_trim(line) == 0) cycle
+            n = n + 1
+            p = index(line, '.nc', back=.true.)
+            if (p > 1) then
+                names(n) = line(1:p-1)
+            else
+                names(n) = trim(line)
+            end if
+        end do
+        close(u)
+        nnames = n
+    end subroutine list_restart_fields
+
+    !===========================================================================
+    ! Remap one restart field, auto-detecting its layout from the file: 2D vs 3D
+    ! from the variable rank, node- vs element-based from the spatial dimension
+    ! name. The variable name is preserved on write, so an added field is handled
+    ! with no code change and the "wrong output variable name" class of bug cannot
+    ! occur. New/exposed nodes are extrapolated for 3D node-based fields (tracers)
+    ! and zeroed for 2D and element-based fields (ssh, velocities, tendencies).
+    subroutine remap_field_auto(path_old, path_new, varname, &
+                                mesh_old, mesh_new, node_flag, time_val, iter_val)
+        character(len=*),   intent(in) :: path_old, path_new, varname
+        type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
+        integer,            intent(in) :: node_flag(:)
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        integer            :: ncid, varid, ndims, dimids(8), nz, status
+        character(len=64)  :: spatial_dim
+        logical            :: is_3d, is_elem, zero_new
+        character(len=512) :: fin, fout
+        real(WP), allocatable :: f2o(:), f2n(:), f3o(:,:), f3n(:,:)
+
+        fin  = trim(path_old)//trim(varname)//'.nc'
+        fout = trim(path_new)//trim(varname)//'.nc'
+
+        ! Inspect rank + spatial-dimension name. Skip gracefully if the file has
+        ! no variable matching its name (i.e. not a per-field restart file).
+        call nc_check(nf90_open(trim(fin), nf90_nowrite, ncid), 'open '//trim(fin))
+        status = nf90_inq_varid(ncid, varname, varid)
+        if (status /= nf90_noerr) then
+            write(*,*) '     (skip '//trim(varname)//': no matching variable)'
+            status = nf90_close(ncid)
+            return
+        end if
+        call nc_check(nf90_inquire_variable(ncid, varid, ndims=ndims, dimids=dimids), &
+                      'inq var '//trim(varname))
+        call nc_check(nf90_inquire_dimension(ncid, dimids(1), name=spatial_dim), &
+                      'inq dim '//trim(varname))
+        call nc_check(nf90_close(ncid), 'close '//trim(fin))
+
+        is_3d    = (ndims >= 3)
+        is_elem  = (index(spatial_dim, 'elem') > 0)
+        zero_new = .not. (is_3d .and. .not. is_elem)   ! extrapolate only 3D node fields
+
+        if (.not. is_3d) then
+            call read_restart_var_2d(path_old, varname, f2o)
+            call remap_node_field_2d(f2o, f2n, mesh_old, mesh_new, node_flag, &
+                                      set_new_to_zero=zero_new)
+            call write_nc_2d(fout, varname, varname, '-', f2n, &
+                              mesh_new%nod2D, time_val, iter_val)
+            deallocate(f2o, f2n)
+        else if (is_elem) then
+            call read_restart_var_3d(path_old, varname, f3o)
+            call remap_elem_field_3d(f3o, f3n, mesh_old, mesh_new, node_flag)
+            nz = size(f3o, 1)
+            call write_nc_3d(fout, varname, varname, '-', f3n, nz, &
+                              mesh_new%elem2D, 'elem', time_val, iter_val)
+            deallocate(f3o, f3n)
+        else
+            call read_restart_var_3d(path_old, varname, f3o)
+            call remap_node_field_3d(f3o, f3n, mesh_old, mesh_new, node_flag, &
+                                      set_new_to_zero=zero_new)
+            nz = size(f3o, 1)
+            call write_nc_3d(fout, varname, varname, '-', f3n, nz, &
+                              mesh_new%nod2D, 'node', time_val, iter_val)
+            deallocate(f3o, f3n)
+        end if
+    end subroutine remap_field_auto
+
+    !===========================================================================
+    ! Remap the sea-ice restart. The field set is discovered from the ice restart
+    ! directory and dispatched by remap_field_auto (all ice fields are 2D node-
+    ! based, so newly-exposed ocean nodes are zeroed = ice-free). Reads from
+    ! path_ice_old (fesom.<year-1>.ice.restart) and writes into path_new (the
+    ! flat restart_remapped output dir).
     subroutine remap_ice(mesh_old, mesh_new, node_flag, &
                           path_ice_old, path_new, restart_year)
         type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
@@ -820,41 +752,27 @@ contains
         character(len=*),   intent(in) :: path_ice_old, path_new
         integer,            intent(in) :: restart_year
 
-        integer  :: nod_new, ivar
+        character(len=64), allocatable :: flds(:)
+        integer  :: nflds, ifld
         real(WP) :: time_val
         integer  :: iter_val
-        character(len=256) :: fin, fout
-        real(WP), allocatable :: field_old_2d(:), field_new_2d(:)
 
-        ! 7 sea-ice restart fields, in fesom.<year>.ice.restart/<name>.nc
-        character(len=16), parameter :: ice_vars(7) = [ character(len=16) :: &
-            'area', 'hice', 'hsnow', 'ice_albedo', 'ice_temp', 'uice', 'vice' ]
-        character(len=32), parameter :: ice_long(7) = [ character(len=32) :: &
-            'ice concentration', 'ice thickness', 'snow thickness', &
-            'ice albedo', 'ice surface temperature', 'zonal ice velocity', &
-            'meridional ice velocity' ]
-        character(len=8), parameter :: ice_unit(7) = [ character(len=8) :: &
-            '-', 'm', 'm', '-', 'K', 'm/s', 'm/s' ]
+        call list_restart_fields(path_ice_old, flds, nflds)
+        if (nflds == 0) then
+            write(*,*) '     (no ice restart fields in '//trim(path_ice_old)//')'
+            return
+        end if
 
-        nod_new = mesh_new%nod2D
-
-        ! time/iter are shared with the ocean restart; read from area.nc
-        fin = trim(path_ice_old)//'area.nc'
-        call read_time_iter(fin, time_val, iter_val)
+        ! time/iter are shared across the restart; read from the first field.
+        call read_time_iter(trim(path_ice_old)//trim(flds(1))//'.nc', time_val, iter_val)
         write(*,*) ' ice time=', time_val, ' iter=', iter_val
 
-        do ivar = 1, 7
-            write(*,*) ' --> '//trim(ice_vars(ivar))//'.nc'
-            fout = trim(path_new)//trim(ice_vars(ivar))//'.nc'
-            call read_restart_var_2d(path_ice_old, trim(ice_vars(ivar)), field_old_2d)
-            call remap_node_field_2d(field_old_2d, field_new_2d, &
-                                      mesh_old, mesh_new, node_flag, &
-                                      set_new_to_zero=.true.)
-            call write_nc_2d(fout, trim(ice_vars(ivar)), trim(ice_long(ivar)), &
-                              trim(ice_unit(ivar)), field_new_2d, nod_new, &
-                              time_val, iter_val)
-            deallocate(field_old_2d, field_new_2d)
+        do ifld = 1, nflds
+            write(*,*) ' --> '//trim(flds(ifld))//'.nc'
+            call remap_field_auto(path_ice_old, path_new, trim(flds(ifld)), &
+                                  mesh_old, mesh_new, node_flag, time_val, iter_val)
         end do
+        if (allocated(flds)) deallocate(flds)
 
         write(*,*) ' --> all ice restart files remapped.'
 

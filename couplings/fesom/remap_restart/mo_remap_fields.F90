@@ -466,13 +466,18 @@ contains
 
     !===========================================================================
     subroutine write_nc_3d(filename, varname, long_name, units, &
-                        field, nl1, nnod, dim2_name, time_val, iter_val)
+                        field, nl1, nnod, dim2_name, time_val, iter_val, lev_dim_name)
         character(len=*), intent(in) :: filename, varname, long_name, units
         real(WP),         intent(in) :: field(:,:)   ! (nz, nnodes) in memory
         integer,          intent(in) :: nnod, nl1
         character(len=*), intent(in) :: dim2_name    ! 'node' or 'elem'
         real(WP),         intent(in) :: time_val
         integer,          intent(in) :: iter_val
+        ! Name of the vertical dimension, taken verbatim from the source file
+        ! (FESOM uses 'nz_1' for nl-1 mid-level fields but 'nz' for the nl full-
+        ! level fields w/w_expl/w_impl). The FESOM restart reader matches
+        ! dimensions by name, so it is preserved rather than assumed.
+        character(len=*), intent(in) :: lev_dim_name
 
         integer :: ncid, varid, varid_time, varid_iter
         integer :: dim_nz1, dim_nod, dim_time
@@ -481,7 +486,8 @@ contains
                   'create '//trim(filename))
         call nc_check(nf90_def_dim(ncid, 'time', nf90_unlimited, dim_time), 'def_dim time')
         call nc_check(nf90_def_dim(ncid, trim(dim2_name), nnod,  dim_nod),  'def_dim node')
-        call nc_check(nf90_def_dim(ncid, 'nz_1',          nl1,   dim_nz1),  'def_dim nz_1')  
+        call nc_check(nf90_def_dim(ncid, trim(lev_dim_name), nl1, dim_nz1), &
+                  'def_dim '//trim(lev_dim_name))
         call nc_check(nf90_def_var(ncid, 'time', nf90_double, [dim_time], varid_time), 'def_var time')
         call nc_check(nf90_def_var(ncid, 'iter', nf90_int,    [dim_time], varid_iter), 'def_var iter')
         call nc_check(nf90_def_var(ncid, trim(varname), nf90_double, &
@@ -687,7 +693,7 @@ contains
         integer,            intent(in) :: iter_val
 
         integer            :: ncid, varid, ndims, dimids(8), nz, status
-        character(len=64)  :: spatial_dim
+        character(len=64)  :: spatial_dim, lev_dim
         logical            :: is_3d, is_elem, zero_new
         character(len=512) :: fin, fout
         real(WP), allocatable :: f2o(:), f2n(:), f3o(:,:), f3n(:,:)
@@ -708,6 +714,12 @@ contains
                       'inq var '//trim(varname))
         call nc_check(nf90_inquire_dimension(ncid, dimids(1), name=spatial_dim), &
                       'inq dim '//trim(varname))
+        ! For 3D fields capture the vertical-dimension name (dimids(2)) so the
+        ! output preserves it ('nz' vs 'nz_1') -- never assumed.
+        lev_dim = ''
+        if (ndims >= 3) call nc_check( &
+            nf90_inquire_dimension(ncid, dimids(2), name=lev_dim), &
+            'inq level dim '//trim(varname))
         call nc_check(nf90_close(ncid), 'close '//trim(fin))
 
         is_elem  = (index(spatial_dim, 'elem') > 0)
@@ -734,7 +746,7 @@ contains
             call remap_elem_field_3d(f3o, f3n, mesh_old, mesh_new, node_flag)
             nz = size(f3o, 1)
             call write_nc_3d(fout, varname, varname, '-', f3n, nz, &
-                              mesh_new%elem2D, 'elem', time_val, iter_val)
+                              mesh_new%elem2D, 'elem', time_val, iter_val, lev_dim)
             deallocate(f3o, f3n)
         else
             call read_restart_var_3d(path_old, varname, f3o)
@@ -742,7 +754,7 @@ contains
                                       set_new_to_zero=zero_new)
             nz = size(f3o, 1)
             call write_nc_3d(fout, varname, varname, '-', f3n, nz, &
-                              mesh_new%nod2D, 'node', time_val, iter_val)
+                              mesh_new%nod2D, 'node', time_val, iter_val, lev_dim)
             deallocate(f3o, f3n)
         end if
     end subroutine remap_field_auto
@@ -799,11 +811,19 @@ contains
         real(WP), allocatable :: hnode_old(:,:), hnode_new(:,:)
         integer  :: nl1, nod_old, nod_new
         integer  :: i_new, i_old, n_base, k, ul_new, nl_new, ul_old, nl_old
+        integer  :: ncid_h, varid_h, ddids(8)
+        character(len=64) :: lev_dim
 
         nl1     = mesh_new%nl - 1
         nod_old = mesh_old%nod2D
         nod_new = mesh_new%nod2D
         call read_restart_var_3d(trim(path_old), 'hnode', hnode_old)
+        ! preserve hnode's vertical-dimension name from the source file
+        call nc_check(nf90_open(trim(path_old)//'hnode.nc', nf90_nowrite, ncid_h), 'open hnode')
+        call nc_check(nf90_inq_varid(ncid_h, 'hnode', varid_h), 'inq hnode var')
+        call nc_check(nf90_inquire_variable(ncid_h, varid_h, dimids=ddids), 'inq hnode dims')
+        call nc_check(nf90_inquire_dimension(ncid_h, ddids(2), name=lev_dim), 'inq hnode lev dim')
+        call nc_check(nf90_close(ncid_h), 'close hnode')
 
         !call read_nc_3d(trim(path_old)//'hnode.nc', 'hnode', &
          !                hnode_old, nl1, nod_old)
@@ -849,7 +869,7 @@ contains
 
         call write_nc_3d(trim(path_new)//'hnode.nc', 'hnode', &
                           'layer thickness at node', 'm', &
-                          hnode_new, nl1, nod_new, 'node', time_val, iter_val)
+                          hnode_new, nl1, nod_new, 'node', time_val, iter_val, lev_dim)
         deallocate(hnode_old, hnode_new)
 
     end subroutine remap_hnode

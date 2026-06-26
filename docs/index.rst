@@ -23,6 +23,7 @@ Welcome to ESM Tools's documentation!
    esm_tests
    motd
    cookbook
+   glossary
    faq
    packages
    API

@@ -1,0 +1,278 @@
+!///////////////////////////////////////////////////////////////////////////////////////
+!// LPJ-GUESS INSTRUCTION SCRIPT FOR COHORT/INDIVIDUAL MODE
+!// Wetland PFTs
+!// Must include arctic.ins before including this file
+!//
+!// LPJ-GUESS 4.1
+!//
+!///////////////////////////////////////////////////////////////////////////////////////
+
+group "moss"(
+
+	! Parameters common to mosses
+	! As in Wania et al., with modifications
+
+	common
+	lifeform "moss"
+	respcoeff 1
+	leafphysiognomy "broadleaf"
+	gmin 0.1
+	wscal_min 0.0
+	litterme 0.2
+	fireresist 0.5
+	cton_root 50		! Yurova et al. (2006) and Wania et al. (2009b)
+	ltor_max 1.0		! must tune this parameter. 5 means mostly leaves
+	emax 1.0
+	intc 0.01
+	nuptoroot 0.00551
+	rootdist 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+	root_beta 0.0
+	km_volume 0.000001876
+	fnstorage 0.3
+	eps_mon 0.37 0.2 0.23 0.1 0.1 0.09 0.1 0.22 0.19 	! C3G values
+	storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5 	! C3G values
+
+	! optimesm & rescue
+	harv_eff 0
+        res_outtake 0.0
+)
+
+
+! Non peatland moss. Needs to be here since the group moss is here. Copy group moss
+! and pft Np_moss to the instruction file to enable simulations with non-peatland mosses
+pft "Np_moss" (
+
+	include 0
+	moss
+
+	shade_tolerant
+	parff_min 2000000
+	pathway "c3"
+	rootdist 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+	root_beta 0.0
+	phenology "any"
+	leaflong 1
+	turnover_leaf 1
+	turnover_root 1
+	phengdd5ramp 75
+	pstemp_min -5
+	pstemp_low 5
+	pstemp_high 25
+	pstemp_max 38
+	tcmin_surv -1000
+	tcmin_est -1000
+	tcmax_est 15.5
+	twmin_est -1000
+	gdd5min_est 0
+	drought_tolerance 0.82
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	! copied from cushionforblichenmosstundra in arctic.ins
+	eps_iso 1.29
+	seas_iso 0
+	eps_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0		! Fraction from C3G
+	storfrac_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+	ga 0.030
+)
+
+
+pft "pLSE" (
+
+	! Low shrub, evergreen
+	! Typical species: Vaccinium vitis-idaea, Cassiope tet.,
+	! Ledum palustre, Erica spec.
+	! Peatland version
+
+	include 1
+
+	needleleaved
+	lowshrub 		! NB: Overrides k_latosa set in needleleaved
+	boreal
+	evergreen
+
+	landcover "peatland"
+
+ 	leaflong 3
+	turnover_leaf 0.33
+
+	! Found on the driest peatlands, or raised hummocks
+	wtp_max -250
+	inund_duration 5
+
+    	! BVOC values, Tang et al., 2016
+	eps_iso 1.75  		! Jing updated 2020
+	seas_iso 0
+	eps_mon 0.02 0.01 0.01 0.01 0.01 0.00 0.01 0.01 0.01	! Fraction from C3G
+	storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+	ga 0.040
+
+	! optimesm & rescue
+	harv_eff 0
+        res_outtake 0.0
+)
+
+
+pft "pLSS" (
+
+	! Low shrub, summergreen
+	! Typical species: Vaccinium myrtillus, V. uliginosum, Salix hastata, S. glauca etc.
+	! Peatland version
+
+	include 1
+
+	broadleaved
+	lowshrub 		! NB: Overrides k_latosa set in broadleaved
+	boreal
+	summergreen
+
+	landcover "peatland"
+
+	phengdd5ramp 20
+
+	k_latosa 150		! Set to the same relative difference as broadleafed/needleleafed, was 125
+
+	! Found on the driest peatlands, or raised hummocks
+	wtp_max -250
+	inund_duration 5
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 6.9  		! Jing updated 2020
+	seas_iso 1
+	eps_mon 0.17 0.09 0.11 0.05 0.05 0.04 0.05 0.10 0.09	! Fraction from C3G
+	storfrac_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+
+	! optimesm & rescue
+	harv_eff 0
+        res_outtake 0.0
+)
+
+
+pft "pCLM" (
+
+	! Cushion forb, lichen and moss tundra
+	! Found in (tundra, High Arctic) peatlands
+	! Typical species: Saxifragacea, Caryophyllaceae, Papaver, Draba, lichens, mosses
+
+	! Peatland version
+
+	include 1
+	cushionforblichenmosstundra
+	landcover "peatland"
+
+	! optimesm & rescue
+	harv_eff 0
+        res_outtake 0.0
+)
+
+
+pft "WetGRS" (
+
+	! Cool, flood-tolerant (C3) grass
+	! As in Wania et al., with modifications
+	! Found in peatlands
+	! Typical species: Carex spp., Eriophorum spp., Juncus spp., Typha spp.
+
+	include 1
+	grass
+
+	landcover "peatland"
+
+	pathway "c3"
+	turnover_root 0.5 	! Override grass value
+
+	! Wania et al. values
+	pstemp_min -5
+	pstemp_low 5
+	pstemp_high 30
+	pstemp_max 45
+	respcoeff 1
+
+	tcmin_surv -1000
+	tcmin_est -1000
+	tcmax_est 5
+	twmin_est -1000
+	gdd5min_est 0
+
+	! Never suffers from inundation stress
+	wtp_max 100
+	inund_duration 31
+	has_aerenchyma 1 	! This PFT has aerenchyma for gas transport
+
+	! BVOC values - Guy Schurgers, October/November 2011, Tang et al., 2016
+	eps_iso 9.82  		! Jing updated 2020
+	seas_iso 1
+	eps_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0		! Fraction from C3G
+	storfrac_mon 0.4 0.8 0.8 0.4 0.4 0.5 0.8 0.2 0.5
+	ga 0.030
+
+	! optimesm & rescue
+	harv_eff 0
+        res_outtake 0.0
+)
+
+
+pft "pmoss" (
+
+	! moss
+
+	include 1
+	moss
+	landcover "peatland"
+
+	parff_min 1000000 	! Reduces disadvantage RE WetGRS
+	pathway "c3"
+	phenology "any"
+	leaflong 1
+	turnover_leaf 1
+	turnover_root 0.5
+	phengdd5ramp 75
+	pstemp_min -5
+	pstemp_low 5
+	pstemp_high 25
+	pstemp_max 38
+	tcmin_surv -1000
+	tcmin_est -1000
+	tcmax_est 15.5
+	twmin_est -1000
+	gdd5min_est 0
+
+	! Wetland parameters
+	! taken from Annet Wolf's CLM PFT
+	gdd0_max 5000		! A. Wolf's value (2000), but gdd0_max 2000 restricts establishment at Fajemyr
+	wtp_max -50
+	inund_duration 15
+
+	! BVOC values - Guy Schurgers, October/November 2011
+	! copied from cushionforblichenmosstundra in arctic.ins
+	eps_iso 1.29
+	seas_iso 0
+	eps_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0		! Fraction from C3G
+	storfrac_mon 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+	ga 0.030
+)
+
+
+pft "C3G_wet" (
+	include 1
+	C3G
+	tcmin_surv 5		! Ensures that this PFT cannot establish at high latitudes
+	tcmin_est 5
+	landcover "peatland"
+
+	! optimesm & rescue
+	harv_eff 0
+        res_outtake 0.0
+)
+
+
+pft "C4G_wet" (
+	include 1
+	C4G
+	tcmin_surv 5		! Ensures that this PFT cannot establish at high latitudes
+	tcmin_est 5
+	landcover "peatland"
+
+	! optimesm & rescue
+	harv_eff 0
+        res_outtake 0.0
+)

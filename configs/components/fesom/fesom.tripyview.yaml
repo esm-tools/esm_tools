@@ -1,0 +1,96 @@
+# =============================================================================
+# FESOM TRIPYVIEW AUTOMATIC VISUALIZATION CONFIGURATION
+# =============================================================================
+#
+# TriPyView is an automatic visualization and analysis tool for FESOM output.
+# This configuration enables post-processing visualization as a subjob after
+# each model run completes.
+#
+# USAGE
+# -----
+# To enable TriPyView in your experiment, add this to your runscript's
+# further_reading section:
+#
+#   fesom:
+#       further_reading:
+#           - fesom/fesom.tripyview
+#
+# CONFIGURATION OPTIONS
+# ---------------------
+# vis_server       : Hostname of the visualization server to sync results to
+# vis_publicdir    : Public directory path on the visualization server
+# vis_sync         : Enable/disable syncing to visualization server (true/false)
+#
+# EXAMPLE USAGE
+# -------------
+# For Levante (DKRZ), the configuration is automatically applied. For other
+# systems, you can override in your runscript:
+#
+#   fesom:
+#       further_reading:
+#           - fesom/fesom.tripyview
+#       vis_server: your.server.hostname
+#       vis_publicdir: /path/to/public/directory
+#       vis_sync: true
+#
+# WHAT IT DOES
+# ------------
+# The tripyview subjob automatically:
+# - Installs TriPyView in a dedicated conda environment (first run only)
+# - Generates visualization configuration for each model year
+# - Executes TriPyView to create plots and analysis outputs
+# - Syncs results to a viewing server (if enabled)
+#
+# OUTPUT LOCATIONS
+# ----------------
+# - Configs : ${base_dir}/${expid}/config/fesom/
+# - Results : ${base_dir}/${expid}/analysis/fesom/
+#             ${base_dir}/${expid}/viz/fesom/
+#
+# REQUIREMENTS
+# ------------
+# - Conda available on the system
+# - TriPyView: https://github.com/fesom/tripyview
+# - For syncing: SSH access to the visualization server
+#
+# =============================================================================
+
+fesom:
+    vis_project: ${general.account}
+    vis_user: !ENV ${USER}
+    vis_server: NOT_SET
+    vis_publicdir: NOT_SET
+    vis_sync: false
+    tripyview_conda_module: "NOT_SET"
+
+    choose_computer.name:
+        levante:
+            vis_server: modvis.dkrz.de
+            vis_publicdir: /var/www/projects/${fesom.vis_project}/${fesom.vis_user}/${general.expid}
+            vis_sync: true
+            tripyview_conda_module: "python3"  # Provides conda: https://tinyurl.com/3887k99t
+        albedo:
+            tripyview_conda_module: "conda"
+
+    scripts_files:
+        Tripy1: Tripy1
+        Tripy2: Tripy2
+    scripts_sources:
+        Tripy1: "${esm_configs_dir}/components/fesom/Subjob_tripy.sh"
+        Tripy2: "${esm_configs_dir}/components/fesom/ESM_auto_tripy.yaml"
+    scripts_targets:
+        Tripy1: "${general.experiment_scripts_dir}/${model}/Subjob_tripy.sh"
+        Tripy2: "${general.experiment_scripts_dir}/${model}/ESM_auto_tripy.yaml"
+
+    workflow:
+        next_run_triggered_by: tidy
+        subjobs:
+            Tripy_Fesom:
+                batch_or_shell: batch
+                order_in_cluster: concurrent
+                run_on_queue: ${computer.partitions.pp.name}
+                run_after: tidy
+                script_dir: ${base_dir}/${expid}/scripts/fesom
+                submit_to_batch_system: true
+                script: "Subjob_tripy.sh ${fesom.experiment_outdata_dir} ${general.start_date} ${general.next_date} ${general.initial_date} ${general.final_date} ${fesom.mesh_dir} ${general.base_dir} ${general.expid} ${fesom.tripyview_conda_module} ${fesom.vis_sync} ${fesom.vis_server} ${fesom.vis_publicdir}"
+                nproc: 1

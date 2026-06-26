@@ -115,6 +115,84 @@ syntax for `YAML` files including calendar and math operations (see
 The :ref:`yaml:YAML Elements` section lists the `YAML` elements needed for configuration files and
 runscripts.
 
+Sections
+~~~~~~~~
+
+Every root-level key in an ESM-Tools YAML file is a **section** (short for *yaml section*). Sections
+group variables related to the same aspect of the configuration and trigger specific functionality
+for the type of component that that section is associated to. The most common sections are named
+after models, coupled setups, or computers, all considered also categories of components. For example:
+
+.. code-block:: yaml
+
+   fesom:
+       time_step: 1800
+       mesh_dir: /pool/meshes/CORE2
+
+   echam:
+       resolution: T63
+
+``fesom`` and ``echam`` are sections in the example above, associated to the model components ``fesom``
+and ``echam`` respectively.
+
+Different functionality is triggered for the variables nested under these sections, depending on their
+component's type (e.g. model, coupled-setup, computer, system, etc.).
+
+Sections in yaml files are validated by the `esm_parser`, that raises an error if an unrecognised
+key is found at the root level. See this example for an invalid section (in contrast with the valid
+one above):
+
+.. code-block:: yaml
+
+   # Wrong: time_step must be nested under a section
+   time_step: 1800
+
+   # Correct
+   fesom:
+       time_step: 1800
+
+Include new sections
+--------------------
+
+Valid sections are derived from the existing components defined in the experiment configuration,
+and include:
+
+1. the coupled-setup section (e.g. ``awicm``, ``foci``, ``awiesm3``, ``icon-fesom``, etc.)
+2. model sections (e.g. ``oifs``, ``fesom``, ``echam``, ``pism``, ``oasis3mct``, ``icon``, etc.)
+3. HPC machine sections (``computer``)
+4. system sections (``general``, ``dask``)
+
+To **add a model section** include the model component into ``general.valid_model_names`` in one of
+the yaml files:
+
+.. code-block:: yaml
+
+   general:
+       add_valid_model_names:
+           - <my_model>
+
+   <my_model>:
+       [ ... ]
+
+Model sections are special in that there is additional functionality that is triggered for
+each of them, such as possible model compilation with ``esm_master``, and in ``esm_runscripts``
+creation of directories with their names inside the experiment dirs, file operations/tidying up after
+the simulation chunks, etc.
+
+If instead you just need to **add a new yaml section** to the configuration, without triggering any
+additional functionality for that section, use ``general.other_components``:
+
+.. code-block:: yaml
+
+   general:
+       other_components:
+           - <my_new_section>
+
+   <my_new_section>:
+       [ ... ]
+
+See :ref:`esm_variables:Tool-Specific Elements/Variables` for details on ``valid_model_names`` and ``other_components``.
+
 Variable Calls
 ~~~~~~~~~~~~~~
 
@@ -866,33 +944,42 @@ overcome this problem the user needs to specify the **full path** to the
 
     prev_run_config_file: "/<basedir>/<expid>/config/<expid>_finished_config.yaml_<DATE>-<DATE>"
 
-Error-handling and warning syntax
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Error-handling and warnings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This syntax allows for error-handling and raising of warnings from the configuration
-files (i.e. `yaml` files in ``esm_tools/configs``). For including an error or a warning
-under a given condition (e.g. ``choose_`` block for a given selection) use the key
-words ``error`` or ``warning`` respectively (if more than one error/warning is present
-in the section of your file, use ``add_error/warning`` to combine them).
+ESM-Tools provides two distinct mechanisms for handling errors and warnings:
 
-The syntax in the yaml files for triggering warnings or errors is as follows:
+1. **Configuration Errors/Warnings**: For validating configuration during setup
+2. **Runtime Error Detection**: For monitoring model execution and log files
+
+Configuration Errors and Warnings
+---------------------------------
+
+The ``error`` and ``warning`` keys allow you to define validation rules (for example with
+``choose_`` blocks) that are checked during the configuration phase of a simulation.
+These are useful for:
+
+- Validating user input in runscripts
+- Enforcing version requirements
+- Warning about deprecated configurations
+- Preventing invalid combinations of settings
+
+The syntax for defining errors and warnings is as follows:
+
+**Syntax**
 
 .. code-block:: yaml
 
-   warning/error:
-       <name>: # Name for the specific warning or error
-           message: "the message of the warning/error"
-           esm_tools_version: ">/</=/!=/version_number" # trigger it under certain ESM-Tools version conditions
-           ask_user_to_continue: True/False # Ask user about continuing or stopping the process, only for warnings, errors always kill the process
+   # Basic syntax
+   error/warning:
+       <unique_name>:  # A descriptive name for this error/warning. You can use any string you want.
+           message: "Detailed error/warning message"  # The message to be displayed when the error/warning is triggered.
+           esm_tools_version: ">/</=/!=/version_number"  # Optional version constraint for conditional trigerring under certain versions of ESM-Tools.
+           ask_user_to_continue: True/False  # Only for warnings, to ask the user to continue or abort.
 
-* ``<name>``: what is displayed on the title of the error/warning
-* ``message``: the detailed message of the error/warning. You can use `ESM-Tools`
-  variables here (``${<variable>}``)
-* ``esm_tools_version``: only trigger this error/warning under given `ESM-Tools`
-  versions
-* ``ask_user_to_continue``: if true, it asks the user whether they want to continue,
-  after displaying the warning. Only works for warnings as errors halt the simulation
-  without asking
+Note that you can nest errors and warnings inside other blocks, for example inside a ``choose_`` block
+to trigger them based on the value of a variable, and also use ``add_error`` and ``add_warning``
+to add multiple errors and warnings to the final list of errors and warnings.
 
 **Example**
 
@@ -922,3 +1009,65 @@ following:
    Wrong scenario, scenario hist does not exist
 
    ? Do you want to continue (set general.ignore_config_warnings: False to avoid quesitoning)?
+
+Runtime Error Detection (``check_error``)
+-----------------------------------------
+
+The ``check_error`` functionality monitors model output files during execution and can take
+specific actions when certain patterns are detected. This is useful for:
+
+- Detecting model crashes or errors in log files
+- Monitoring for specific warning messages
+- Taking automated actions based on model output
+
+**Syntax**
+
+.. code-block:: yaml
+
+   <component_name>:
+       check_error:
+           <error_pattern>:  # Text pattern to search for in log files
+               file: "path/to/logfile"  # Defaults to model's stdout/stderr
+               method: "warn" or "kill"  # Action to take when pattern is found
+               message: "Custom error message"  # Optional custom message
+               frequency: 60  # Check interval in seconds (default: 60)
+
+**Parameters**
+
+* ``<error_pattern>``: Text or regex pattern to search for in log files
+* ``file``: (Optional) Path to log file to monitor (supports variables)
+  - Special values: ``"stdout"`` or ``"stderr"`` for default model output
+  - Can include variables like ``@jobid@`` which will be replaced
+* ``method``: Action to take when pattern is found:
+  - ``warn``: Log a warning message
+  - ``kill``: Terminate the job and log an error
+* ``message``: Custom message to log when pattern is found
+* ``frequency``: How often to check the log file (in seconds)
+
+**Example**
+
+.. code-block:: yaml
+
+   echam:
+       check_error:
+           "ERROR":
+               method: "kill"
+               message: "Fatal error in ECHAM detected"
+               frequency: 30
+           "WARNING":
+               method: "warn"
+               message: "Warning detected in ECHAM output"
+
+**Behavior**
+
+- The monitoring runs in a background process during model execution
+- Log files are checked at the specified frequency
+- When a pattern is found:
+  - For ``method: warn``: Logs a warning message
+  - For ``method: kill``: Terminates the job and logs an error
+
+**Best Practices**
+
+1. Use specific patterns to avoid false positives
+2. Include helpful error messages that explain the issue
+3. Test error conditions to ensure they're properly detected

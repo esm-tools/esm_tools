@@ -16,25 +16,26 @@ name: esm_tools
 channels:
   - conda-forge
 dependencies:
-  - python=3.9
+  - python=3.10
   - Click>=8.0.4
+  - dask=2024.8.0
+  - distributed=2024.8.0
   - PyGithub=1.55
   - colorama=0.4.5
-  - coloredlogs=15.0.1
-  - emoji=1.7.0
-  - f90nml=1.4.2
-  - gitpython=3.1.41
+  - f90nml=1.4.4
+  - gitpython=3.1.50
   - jinja2=3.1.6
   - loguru=0.6.0
   - numpy>=1.19.5
-  - packaging=21.3
+  - packaging>=24.0
   - pandas>=1.1.5
-  - pip=23.3
+  - pip=26.1
   - psutil=5.9.1
   - pytest=7.1.2
   - pyyaml=6.0.1
   - questionary=1.10.0
   - ruamel.yaml=0.17.32
+  - ruamel.yaml.clib=0.2.7
   - semver=2.13.0
   - setuptools=67.6.1
   - sqlalchemy=1.4.39

@@ -1,0 +1,63 @@
+!
+! Instruction file with global PFTs to be used with the
+! CF I/O module.
+!
+! Make sure to start LPJ-GUESS with -input cf when using this
+! instruction file.
+!
+
+import "global.ins"
+
+!///////////////////////////////////////////////////////////////////////////////////////
+! Forcing Data & gridlists
+!
+
+param "file_gridlist_cf" (str "gridlist.txt")
+
+param "file_co2"      (str "c:/co2/co2_1901_2018.txt")
+
+! N deposition (blank string to use constant pre-industrial level of 2 kgN/ha/year)
+param "file_ndep"     (str "c:/ndep/GlobalNitrogenDeposition.bin")
+
+param "file_temp"     (str "c:/nc/temp.nc")
+param "variable_temp" (str "temp")
+
+param "file_prec"     (str "c:/nc/prec.nc")
+param "variable_prec" (str "prec")
+
+param "file_insol"      (str "c:/nc/insol.nc")
+param "variable_insol"  (str "insol")
+
+param "file_wind" (str "c:/nc/wind.nc")
+param "variable_wind"  (str "Wind_Speed")
+
+param "file_relhum" (str "c:/nc/relhum.nc")
+param "variable_relhum"	(str "relhum")
+
+! Needed if relative humidity is not supplied
+param "file_pres"     (str "")
+param "variable_pres" (str "")
+
+! Needed if relative humidity is not supplied
+param "file_specifichum" (str "")
+param "variable_specifichum" (str "")
+
+! Wet days can only be used with monthly precipitation
+param "file_wetdays"     (str "c:/nc/wetdays.nc")
+param "variable_wetdays" (str "wetdays")
+
+! Min/max temp is required for BVOC,
+! if BVOC is switched off these can be set to ""
+param "file_min_temp"      (str "c:/nc/min_temp.nc")
+param "variable_min_temp"  (str "min_temp")
+
+param "file_max_temp"      (str "c:/nc/max_temp.nc")
+param "variable_max_temp"  (str "max_temp")
+
+! SIMFIRE-BLAZE related files
+param "file_simfire"  (str "c:/fire/SimfireInput.bin")
+
+! Soil map
+param "file_soildata" (str "c:/soil/WISE/soilmap_wise.dat")
+!param "file_soildata" (str "../env/soils_lpj.dat")
+

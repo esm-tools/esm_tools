@@ -7,7 +7,6 @@ the class Namelist as static methods. A deprecated class ``namelist`` (small "n"
 provided, which warns you when it is used.
 """
 
-import logging
 import os
 import sys
 import warnings
@@ -74,7 +73,7 @@ class Namelist:
         mconfig["namelists"] = dict.fromkeys(nmls)
         for nml in nmls:
             if os.path.isfile(os.path.join(mconfig["thisrun_config_dir"], nml)):
-                logging.debug("Loading %s", nml)
+                logger.debug(f"Loading {nml}")
                 try:
                     mconfig["namelists"][nml] = f90nml.read(
                         os.path.join(mconfig["thisrun_config_dir"], nml)
@@ -201,8 +200,8 @@ class Namelist:
         namelist_removes = []
         for namelist in list(namelist_changes):
             changes = namelist_changes[namelist]
-            logging.debug("Determining remove entires for %s", namelist)
-            logging.debug("All changes: %s", changes)
+            logger.debug(f"Determining remove entires for {namelist}")
+            logger.debug(f"All changes: {changes}")
             for change_chapter in list(changes):
                 change_entries = changes[change_chapter]
                 for key in list(change_entries):
@@ -238,16 +237,14 @@ class Namelist:
 
         for remove in namelist_removes:
             namelist, change_chapter, key = remove
-            logging.debug("Removing from %s: %s, %s", namelist, change_chapter, key)
+            logger.debug(f"Removing from {namelist}: {change_chapter}, {key}")
             if key in mconfig["namelists"][namelist].get(change_chapter, {}):
                 del mconfig["namelists"][namelist][change_chapter][key]
             elif "%" in key:
                 namvar, prop = key.split("%")
                 del mconfig["namelists"][namelist][change_chapter][namvar][prop]
             else:
-                logging.debug(
-                    "Unable to remove %s: %s, %s", namelist, change_chapter, key
-                )
+                logger.debug(f"Unable to remove {namelist}: {change_chapter}, {key}")
         return mconfig
 
     @staticmethod
@@ -298,7 +295,13 @@ class Namelist:
         Namelist.nmls_check_changes(namelist_changes)
 
         for namelist, changes in namelist_changes.items():
-            mconfig["namelists"][namelist].patch(changes)
+            try:
+                mconfig["namelists"][namelist].patch(changes)
+            except Exception as e:
+                logger.error(f"An error occured patching namelist {namelist}")
+                logger.error(changes)
+                logger.error(e)
+                sys.exit(1)
         return mconfig
 
     @staticmethod
@@ -528,7 +531,7 @@ class Namelist:
             message = f"\nFinal Contents of {nml_name}:"
             logger.info(message)
             logger.info(len(message) * "-")
-            nml.write(sys.stdout)
+            logger.info(nml)
             logger.info("-" * 80)
             logger.info(f"::: end of the contents of {nml_name}\n")
         return mconfig

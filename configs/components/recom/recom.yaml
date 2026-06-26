@@ -264,6 +264,7 @@ recom:
     choose_computer.name:
             levante:
                     data_path: "/work/ba1103/a270094/MarESys/forcing/CORE2mesh/"
+                    dust_file: "/home/a/a270105/initial_files/pi_init/dust_coremesh/DustClimMonthlyAlbani.nc"
 
     # default recom output, common to all versions
     # 1. variable names are case sensitive

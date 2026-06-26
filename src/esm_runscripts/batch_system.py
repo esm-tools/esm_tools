@@ -636,7 +636,7 @@ class batch_system:
 
                 config = batch_system.calculate_requirements(config, cluster)
                 if cluster in reserved_jobtypes:
-                    if config["computer"].get("hetjob_strategy", "hetjob") == "taskset":
+                    if config["computer"].get("hetjob_strategy", "srunsteps") == "taskset":
                         config = config["general"]["batch"].write_het_par_wrappers(config)
                     # Prepare launcher (writes hostfile_srun for srun --multi-prog)
                     config = config["general"]["batch"].prepare_launcher(config, cluster)

@@ -73,7 +73,7 @@ class Slurm:
         heterogeneous_parallelization = config["computer"].get(
             "heterogeneous_parallelization", False
         )
-        hetjob_strategy = config["computer"].get("hetjob_strategy", "hetjob")
+        hetjob_strategy = config["computer"].get("hetjob_strategy", "srunsteps")
         if not heterogeneous_parallelization or hetjob_strategy == "taskset":
             # Standard/old way of running jobs with slurm
             self.write_one_hostfile(self.path, config)
@@ -90,7 +90,7 @@ class Slurm:
             user_error(
                 "hetjob strategy",
                 f"``{hetjob_strategy}`` is not a valid one. Choose one among "
-                f"``hetjob`` (default), ``srunsteps`` or ``taskset``.",
+                f"``srunsteps`` (default), ``hetjob`` or ``taskset``.",
             )
 
         return config
@@ -222,7 +222,7 @@ class Slurm:
             for heterogeneous parallelization in SLURM.
         """
         # Only modify the headers if ``heterogeneous_parallelization`` is ``True``
-        hetjob_strategy = config["computer"].get("hetjob_strategy", "hetjob")
+        hetjob_strategy = config["computer"].get("hetjob_strategy", "srunsteps")
         if config["computer"].get(
             "heterogeneous_parallelization", False
         ) and hetjob_strategy not in ["taskset", "srunsteps"]:

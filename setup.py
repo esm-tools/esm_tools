@@ -31,6 +31,7 @@ requirements = [
     "pyyaml==6.0.1",
     "questionary==1.10.0",
     "ruamel.yaml==0.17.32",
+    "ruamel.yaml.clib==0.2.7",
     "semver==2.13.0",
     "sqlalchemy>=1.4.39",
     "tabulate==0.8.10",
@@ -118,6 +119,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.58.0",
+    version="6.60.2",
     zip_safe=False,
 )

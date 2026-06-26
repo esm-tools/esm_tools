@@ -99,7 +99,7 @@ def rename_sources_to_targets(config):
                     pass
 
                 elif (not sources and in_work) or (not sources and targets):
-                    logger.error(filetype + "_sources missing in model " + model)
+                    logger.error(f"{filetype}_sources missing in model {model}")
                     helpers.print_datetime(config)
                     sys.exit(-1)
 
@@ -1441,8 +1441,8 @@ def _check_fesom_missing_files(config):
                     if "files_missing_when_preparing_run" not in config["general"]:
                         config["general"]["files_missing_when_preparing_run"] = {}
                     config["general"]["files_missing_when_preparing_run"][
-                        path_key + " (from namelist.config in FESOM)"
-                    ] = path
+                        f"{path_key} (from namelist.config in FESOM)"
+                    ] = path_val
     return config
 
 

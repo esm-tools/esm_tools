@@ -53,7 +53,11 @@ pism:
         branch: stable1.0-awi-dev
         git-repository: swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git
     clean_command: ${defaults.clean_command}
-    comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -f\
+    # PETSc/udunits/fftw/proj deps: pism.compiletime_env_changes.yaml sets these under
+    # choose_computer.name, but esm_master ignores choose_computer at build time, so they
+    # never reach cmake ("PETSc could not be found"). Set levante defaults inline, only
+    # when not already provided by the environment (so other machines are unaffected).
+    comp_command: "mkdir -p build; cd build; if [ -z \"$PETSC_DIR\" ]; then export PETSC_DIR=/sw/spack-levante/petsc-3.16.2-oorrxp/ UDUNITS2_ROOT=/sw/spack-levante/udunits-2.2.28-da6pla/ FFTW_ROOT=/sw/spack-levante/fftw-3.3.10-lnogal/ PROJ_ROOT=/sw/spack-levante/proj-5.2.0-w7auht/; fi; export PISM_INSTALL_PREFIX=$(readlink -f\
       \ $(pwd)/..); cmake \\\n        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \\\n        -DCMAKE_BUILD_TYPE=RelWithDebInfo\
       \ \\\n        -DPism_BUILD_TYPE=RelWithDebInfo \\\n        -DCMAKE_CXX_COMPILER=$CXX\
       \ \\\n        -DCMAKE_CXX_FLAGS=\"-O3 -fp-model precise -no-fast-transcendentals -march=native\"\

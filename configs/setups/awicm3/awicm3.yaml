@@ -991,7 +991,7 @@ oasis3mct:
 
 
 computer:
-        taskset: true
+        hetjob_strategy: taskset
         merge_component_envs:
             compile: True
 
@@ -999,7 +999,7 @@ computer:
             v3.4:
                 choose_name:
                     juwels:
-                        taskset: false
+                        hetjob_strategy: srunsteps
                         iolibraries: system_libs
                         compiler_mpi: gnu2024_ompi2024
                     levante:
@@ -1008,7 +1008,7 @@ computer:
             '*':
                 choose_name:
                     juwels:
-                        taskset: false
+                        hetjob_strategy: srunsteps
                         iolibraries: system_libs
                         compiler_mpi: intel2025_psmpi
                     blogin:

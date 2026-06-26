@@ -88,7 +88,7 @@ computer:
             cpu_bind: "cores"
             srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
 
-    post_run_commands: "unset SLURM_HOSTFILE"
+    #add_post_run_commands: "unset SLURM_HOSTFILE"
 
     choose_launcher:
             srun:

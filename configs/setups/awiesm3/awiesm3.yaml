@@ -804,7 +804,7 @@ computer:
     # Activates the taskset approach for heterogeneous parallelization, by default
     # since hetjob approach doesn't seem to work (second run showing mpi/pmix
     # problems)
-    taskset: true
+    hetjob_strategy: taskset
     merge_component_envs:
         compile: true
 

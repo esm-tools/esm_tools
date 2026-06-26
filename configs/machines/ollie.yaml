@@ -43,10 +43,11 @@ computer:
 
     submitted: false
     hyper_flag: "" # No hyperthreading on ollie
+    hetjob_strategy: taskset
     choose_heterogeneous_parallelization:
             True:
-                    choose_taskset:
-                        False:
+                    choose_hetjob_strategy:
+                        taskset:
                             add_export_vars:
                                 I_MPI_SLURM_EXT: 0
                         "*":

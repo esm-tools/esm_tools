@@ -9,7 +9,7 @@ computer:
 
     # NEED TO EXPLORE HOW TO DO HETEROGENEOUS PARALLELIZATION IN THE FUTURE
     # for now use taskset
-    taskset: true
+    hetjob_strategy: taskset
 
     # hyperthreading options
     choose_use_hyperthreading:

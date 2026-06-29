@@ -22,6 +22,10 @@ fesom:
     required_plugins:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
+    # NOTE: Starting with FESOM 2.7.4, recom is bundled as a git submodule of
+    # the fesom2 repository. Versions >= 2.7.4 (and the main branch) therefore
+    # must be cloned with ``--recurse-submodules`` so that recom is pulled in.
+    # Earlier versions (2.7, 2.7.2, 2.7.3) do not carry the submodule.
     choose_version:
       "2.7":
         branch: "2.7.0"
@@ -31,14 +35,19 @@ fesom:
         branch: "2.7.3"
       "2.7.4":
         branch: "2.7.4"
+        repo_options: "--recurse-submodules"
       "2.7.5":
         branch: "2.7.5"
+        repo_options: "--recurse-submodules"
       "2.7.6":
         branch: "2.7.6"
+        repo_options: "--recurse-submodules"
       "2.7.7":
         branch: "2.7.7"
+        repo_options: "--recurse-submodules"
       "2.7-main":
         branch: "main"
+        repo_options: "--recurse-submodules"
         #namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.7"

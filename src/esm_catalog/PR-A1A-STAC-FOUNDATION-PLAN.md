@@ -8,6 +8,46 @@ then tick its checkbox and update the status.
 
 ---
 
+## File layout convention
+
+All new files live **flat** inside `src/esm_catalog/` — no `stac/` or `extensions/`
+subdirectories. `esm_catalog` IS the STAC catalog layer; the extra nesting is redundant.
+
+```
+src/esm_catalog/
+    context.py      ← PR-A1b
+    uri.py          ← PR-A1b
+    registry.py     ← PR-A1b
+    collection.py   ← PR-A1b
+    item.py         ← PR-A1b
+    hpc.py          ← PR-A1c  (extension + detect logic combined)
+    datacube.py     ← PR-A1d
+    namelist.py     ← PR-A1e
+    paleo.py        ← PR-A1f
+    contacts.py     ← PR-A1g
+```
+
+## Custom STAC extension schemas
+
+The three custom ESM-Tools extensions (`hpc`, `paleo`, `namelist`) need JSON Schema
+files. These live **in this repo** under `configs/stac-extensions/`, not on an external
+site:
+
+```
+configs/stac-extensions/
+    hpc/v1.0.0/schema.json       ← PR-A1c
+    namelist/v1.0.0/schema.json  ← PR-A1e
+    paleo/v1.0.0/schema.json     ← PR-A1f
+```
+
+The URLs in `registry.py` point to `https://esm-tools.github.io/stac-extensions/...`
+as placeholders. Each extension PR must update its URL to the raw GitHub URL
+(`https://raw.githubusercontent.com/esm-tools/esm_tools/release/configs/stac-extensions/...`)
+**after** the schema file is merged to `release`. Do not update the URL on the feature
+branch — the file won't exist at that path until it's on `release`.
+
+---
+
 ## Metadata fields reference
 
 | # | Field | Status | PR |
@@ -57,11 +97,9 @@ No extension calls.
 **Files to create:**
 - `src/esm_catalog/context.py` — `CollectionContext` dataclass (fields: `experiment_id`, `component`, `collection_id`, `experiment_path`, `namelists_by_component`)
 - `src/esm_catalog/uri.py` — `parse_uri`, `to_uri`, `_has_protocol`; keep lazy UPath import but drop the verbose install-hint error message
-- `src/esm_catalog/stac/__init__.py`
-- `src/esm_catalog/stac/extensions/__init__.py`
-- `src/esm_catalog/stac/extensions/registry.py` — `EXTENSION_URLS` dict (keep all URLs; unused ones cost nothing)
-- `src/esm_catalog/stac/collection.py` — `make_collection`, `update_collection_extent`; **no** `add_namelist_extension` call
-- `src/esm_catalog/stac/item.py` — `make_item` with core fields only (1, 3, 5, 8, 10); **no** extension calls, **no** `_add_experiment_type`
+- `src/esm_catalog/registry.py` — `EXTENSION_URLS` dict (keep all URLs; unused ones cost nothing)
+- `src/esm_catalog/collection.py` — `make_collection`, `update_collection_extent`; **no** `add_namelist_extension` call
+- `src/esm_catalog/item.py` — `make_item` with core fields only (1, 3, 5, 8, 10); **no** extension calls, **no** `_add_experiment_type`
 
 **Item properties in this PR:**
 ```
@@ -87,27 +125,23 @@ the starting point but strip everything that belongs to a later PR.
 Fields 19 and 20 (HSM subprocess queries) are permanently dropped.
 
 **Files to create:**
-- `src/esm_catalog/hpc/__init__.py`
-- `src/esm_catalog/hpc/detect.py` — **rewrite required**
-- `src/esm_catalog/stac/extensions/hpc.py` — simplified (no `get_hsm_state` call)
+- `src/esm_catalog/hpc.py` — extension + detect logic combined in one file (no subdirectory).
+  Replaces both `hpc/detect.py` and `stac/extensions/hpc.py` from pr-a1a branch.
+- `configs/stac-extensions/hpc/v1.0.0/schema.json` — JSON Schema for the hpc extension.
+  After this PR is merged to `release`, update the `"hpc"` URL in `registry.py` to the
+  raw GitHub URL.
+- `tests/test_esm_catalog/test_hpc.py` — write new tests
 
 **Key problem with the existing `detect.py` — must be fixed:**
 The current code hardcodes machine names as Python path patterns (`/albedo/` → AWI, `/work/` → DKRZ).
 This is machine-specific and fragile. The right approach:
 - Machine storage info (facility, system, storage_type) belongs in ESM-Tools machine YAML configs.
-- `detect.py` should read from the parsed ESM-Tools config/machine dict, not probe the filesystem.
+- Detection should read from the parsed ESM-Tools config/machine dict, not probe the filesystem.
 - Drop the `ctypes`/`statfs(2)` approach entirely — it is Linux-only and uses raw C struct layouts.
 - Keep `hpc:last_access` from `path.stat().st_atime` (simple, no subprocess).
 
-**Files to delete (vs pr-a1a branch):**
-- `src/esm_catalog/hpc/state.py` — entire file; it only served fields 19 and 20.
-
-**Signature change for `add_hpc_extension`:**
+**Signature for `add_hpc_extension`:**
 ```python
-# Before (current branch):
-add_hpc_extension(item, path)  # detects storage by probing path
-
-# After:
 add_hpc_extension(item, path, machine_config: dict | None = None)
 # machine_config is the parsed ESM-Tools machine section;
 # if None, only hpc:last_access is populated (graceful degradation).
@@ -121,8 +155,11 @@ add_hpc_extension(item, path, machine_config: dict | None = None)
 **Goal:** Add cube:dimensions and cube:variables to items. Fields: 12, 13.
 
 **Files to create:**
-- `src/esm_catalog/stac/extensions/datacube.py` — copy from pr-a1a branch; no changes needed
+- `src/esm_catalog/datacube.py` — copy from `stac/extensions/datacube.py` in pr-a1a branch; no logic changes needed.
 - `tests/test_esm_catalog/test_stac_datacube.py` — write new tests
+
+**Note:** datacube uses an external community schema URL (already resolves); no schema file
+needed in `configs/stac-extensions/`.
 
 ---
 
@@ -132,7 +169,10 @@ add_hpc_extension(item, path, machine_config: dict | None = None)
 **Goal:** Add namelist parameters to items and collections. Field: 31.
 
 **Files to create:**
-- `src/esm_catalog/stac/extensions/namelist.py`
+- `src/esm_catalog/namelist.py` — adapted from `stac/extensions/namelist.py` in pr-a1a branch.
+- `configs/stac-extensions/namelist/v1.0.0/schema.json` — JSON Schema for the namelist extension.
+  After this PR is merged to `release`, update the `"namelist"` URL in `registry.py` to the
+  raw GitHub URL.
 - `tests/test_esm_catalog/test_stac_namelist_ext.py`
 
 **Changes from pr-a1a branch:**
@@ -150,7 +190,10 @@ add_hpc_extension(item, path, machine_config: dict | None = None)
 **Goal:** Add paleo fields and experiment_type. Fields: 21–27.
 
 **Files to create:**
-- `src/esm_catalog/stac/extensions/paleo.py`
+- `src/esm_catalog/paleo.py` — adapted from `stac/extensions/paleo.py` in pr-a1a branch.
+- `configs/stac-extensions/paleo/v1.0.0/schema.json` — JSON Schema for the paleo extension.
+  After this PR is merged to `release`, update the `"paleo"` URL in `registry.py` to the
+  raw GitHub URL.
 - `tests/test_esm_catalog/test_stac_paleo.py` — write new tests
 
 **Changes from pr-a1a branch:**
@@ -170,9 +213,11 @@ add_hpc_extension(item, path, machine_config: dict | None = None)
 **Goal:** Add PI contact information to items. Fields: 28, 29, 30.
 
 **Files to create:**
-- `src/esm_catalog/stac/extensions/contacts.py` — copy from pr-a1a; check that `pi_name`/`PI_name`
-  dual-lookup is consistent with how ESM-Tools configs actually store PI information.
+- `src/esm_catalog/contacts.py` — adapted from `stac/extensions/contacts.py` in pr-a1a branch.
 - `tests/test_esm_catalog/test_stac_contacts.py` — write new tests
+
+**Note:** contacts uses an external community schema URL (already resolves); no schema file
+needed in `configs/stac-extensions/`.
 
 **Open question before implementing:** verify that `general.pi_name` / `general.PI_name` etc. are
 actually present in any existing ESM-Tools runscript configs. If not, define the canonical key name

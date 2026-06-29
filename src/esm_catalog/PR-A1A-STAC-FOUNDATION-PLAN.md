@@ -88,25 +88,30 @@ branch — the file won't exist at that path until it's on `release`.
 
 ## PRs
 
-### [ ] PR-A1b — Core infrastructure
+### [x] PR-A1b — Core infrastructure
+
+**Branch:** `esm-catalog/pr-a1b-core-infrastructure` ✓ merged design decisions:
+- `ESMCollection(dict)` and `ESMItem(dict)` — dict subclasses with instance methods
+- Flat layout: all files directly in `src/esm_catalog/`, no subdirectories
+- `test_no_scan_dependency.py` deferred — add it in the PR that introduces `esm_catalog.scan`
 
 **Branch from:** `release`
 **Goal:** Minimal working STAC Item + Collection with only the confirmed core fields.
 No extension calls.
 
-**Files to create:**
-- `src/esm_catalog/context.py` — `CollectionContext` dataclass (fields: `experiment_id`, `component`, `collection_id`, `experiment_path`, `namelists_by_component`)
-- `src/esm_catalog/uri.py` — `parse_uri`, `to_uri`, `_has_protocol`; keep lazy UPath import but drop the verbose install-hint error message
-- `src/esm_catalog/registry.py` — `EXTENSION_URLS` dict (keep all URLs; unused ones cost nothing)
-- `src/esm_catalog/collection.py` — `make_collection`, `update_collection_extent`; **no** `add_namelist_extension` call
-- `src/esm_catalog/item.py` — `make_item` with core fields only (1, 3, 5, 8, 10); **no** extension calls, **no** `_add_experiment_type`
+**Files created:**
+- `src/esm_catalog/context.py` — `CollectionContext` dataclass
+- `src/esm_catalog/uri.py` — `parse_uri`, `to_uri`, `_has_protocol`
+- `src/esm_catalog/registry.py` — `EXTENSION_URLS` dict
+- `src/esm_catalog/collection.py` — `ESMCollection(dict)` with `update_extent` method
+- `src/esm_catalog/item.py` — `ESMItem(dict)` with `_build_*` methods; core fields only (1, 3, 5, 8, 10)
 
 **Item properties in this PR:**
 ```
 variable, datetime/start_datetime/end_datetime, format, output_frequency, variables (list)
 ```
 
-**Tests to create:**
+**Tests created:**
 - `tests/test_esm_catalog/test_context.py`
 - `tests/test_esm_catalog/test_uri.py`
 - `tests/test_esm_catalog/test_stac_collection.py`

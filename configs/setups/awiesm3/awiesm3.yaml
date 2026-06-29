@@ -777,7 +777,7 @@ oasis3mct:
                 true:
                     add_coupling_target_fields:
                         rst_co2_ao.nc:
-                            - 'XCO2_oce <--gauswgt_c-- A_XCO2_oce'
+                            - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
                             - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
 
             # Specify which restart files need bidirectional merging

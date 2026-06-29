@@ -541,6 +541,15 @@ fesom:
     # CMIP7-style XMLs (many variables, multiple frequencies). Default off:
     # upstream-namelist.io-style minimal monthly output.
     cmip7_cmor_output: false
+
+    # REcoM/BGC XIOS output gates consumed by file_def_fesom.xml.j2. These mirror
+    # the REcoM &parecomsetup logicals (enable_3zoo2det/enable_coccos) and the
+    # per-tracer ltra_diag switch, so the BGC <file> blocks are only enabled when
+    # the corresponding tracers/diagnostics actually exist (avoids fill-only files).
+    # Defaults off; awiesm3 sets the parecomsetup flags from recom_setting.
+    recom_enable_3zoo2det: false
+    recom_enable_coccos: false
+    recom_ltra_diag: false
     # When true, add regridded (regular lat/lon) output for all 2D fields
     # alongside the native unstructured output. Each regrid file is produced
     # at the same frequency as its native counterpart (daily for fesom_1d

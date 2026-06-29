@@ -301,6 +301,22 @@ fesom:
             branch: fesom2.6_recom_awiesm3_co2_coupling
             recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
+            # Derive the REcoM &parecomsetup gates from recom_setting so the BGC
+            # XIOS file_def only enables the tracers/diagnostics that exist for
+            # this configuration (see namelists/fesom2/xios_xml/file_def_fesom.xml.j2).
+            choose_recom_setting:
+                2p1z1d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: false
+                2p3z2d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: false
+                3p3z2d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: false
+                4p3z2d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: true
             add_namelists:
                 - namelist.recom
             add_config_files:

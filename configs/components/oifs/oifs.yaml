@@ -1387,6 +1387,8 @@ oifs:
     # OUTPUT CONFIG
     #======================================================================================
 
+    output_step_freq: $(( 3600 / ${time_step} * 6 ))   # default; overridden by choose_mip/choose_output below (restored for older awicm3 runscripts)
+
     choose_mip:
             "cmip7":
                     output_step_freq: $(( 3600 / ${time_step} * 1 ))

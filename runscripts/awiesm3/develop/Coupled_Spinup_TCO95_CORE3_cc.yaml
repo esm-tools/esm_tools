@@ -104,17 +104,17 @@ oifs:
                 RVICE: 0.16
             NAEPHY:
                 LRDALB: False
-    #        NAMGFL:
+            NAMGFL:
                 # INIUA file has modern CO2 (~403 ppm, paramId 210061).
                 # NREQIN=-1 overrides with REFVALI for pre-industrial.
                 # 4.3144e-4 kg/kg ≈ 284 ppm (year-1850 CO2).
-    #            YGHG_NL(1)%NREQIN: -1
-    #            YGHG_NL(1)%REFVALI: 4.3144e-4
+                YGHG_NL(1)%NREQIN: -1
+                YGHG_NL(1)%REFVALI: 4.3144e-4
                 # Use proportional mass fixer (BETAMFBC=-1) instead of
                 # additive (BETAMFBC=2). The additive fixer with exponent 2
                 # overflows for nearly-uniform CO2 because ZDIFF^2 → 0
                 # makes ZSUMW ≈ 0, so ZLAMBDA = ZDM/ZSUMW → ∞.
-    #            YGHG_NL(1)%BETAMFBC: -1
+                YGHG_NL(1)%BETAMFBC: -1
 
 oasis3mct:
     use_lucia: false

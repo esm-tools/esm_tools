@@ -7,6 +7,9 @@ from datetime import timezone
 from pathlib import Path, PurePosixPath
 from typing import TYPE_CHECKING, Union
 
+from pystac.asset import Asset as PySTACAsset
+from pystac.item import Item as PySTACItem
+
 if TYPE_CHECKING:
     from upath import UPath
 
@@ -24,26 +27,44 @@ def make_item(
         ctx:      CollectionContext with experiment_id, component, collection_id.
 
     Returns:
-        A STAC-conformant Item dict (GeoJSON Feature).
+        pystac.item.Item object representing the STAC Item
     """
     if isinstance(path, str):
         from esm_catalog.uri import parse_uri
+
         path = parse_uri(path)
 
-    return {
-        "type": "Feature",
-        "stac_version": "1.0.0",
-        "stac_extensions": [],
-        "id": _make_id(metadata.get("variable", "unknown"), ctx.component, metadata.get("datetime_str", "000000"), path),
-        "geometry": metadata.get("geometry"),
-        "bbox": metadata.get("bbox"),
-        "properties": _build_properties(metadata, ctx),
-        "assets": _build_assets(path, metadata),
-        "links": [
-            {"rel": "collection", "href": f"#{ctx.collection_id}", "type": "application/json"}
-        ],
-        "collection": ctx.collection_id,
-    }
+    dt_start, dt_end, item_datetime, _, _ = _build_datetime(metadata)
+    id = _make_id(
+        metadata.get("variable", "unknown"),
+        ctx.component,
+        metadata.get("datetime_str", "000000"),
+        path,
+    )
+
+    return PySTACItem(
+        id=id,
+        geometry=metadata.get("geometry"),
+        bbox=metadata.get("bbox"),
+        datetime=item_datetime,
+        properties=_build_properties(metadata, ctx),
+        start_datetime=dt_start,
+        end_datetime=dt_end,
+        stac_extensions=[],
+        extra_fields=dict(
+            type="Feature",
+            stac_version="1.0.0",
+            links=[
+                {
+                    "rel": "collection",
+                    "href": f"#{ctx.collection_id}",
+                    "type": "application/json",
+                }
+            ],
+        ),
+        assets=_build_assets(path, metadata),
+        collection=ctx.collection_id,
+    )
 
 
 def _make_id(
@@ -56,24 +77,19 @@ def _make_id(
 
 def _build_properties(metadata: dict, ctx) -> dict:
     """Assemble the STAC item properties dict from metadata and context."""
-    _, _, item_datetime, start_datetime, end_datetime = _build_datetime(metadata)
 
     properties: dict = {
-        "datetime": item_datetime,
         "variable": metadata.get("variable", "unknown"),
         "experiment": ctx.experiment_id,
         "component": ctx.component,
         "format": metadata.get("format", "unknown"),
     }
-    if start_datetime:
-        properties["start_datetime"] = start_datetime
-    if end_datetime:
-        properties["end_datetime"] = end_datetime
     if metadata.get("output_frequency"):
         properties["output_frequency"] = metadata["output_frequency"]
 
     all_var_names = [
-        v["name"] for v in metadata.get("variables", [])
+        v["name"]
+        for v in metadata.get("variables", [])
         if v.get("name") and v["name"] != "unknown"
     ]
     if len(all_var_names) > 1:
@@ -101,7 +117,9 @@ def _build_datetime(metadata: dict) -> tuple:
     if dt_start == dt_end or dt_end is None:
         return dt_start, dt_end, dt_start.isoformat() if dt_start else None, None, None
     return (
-        dt_start, dt_end, None,
+        dt_start,
+        dt_end,
+        None,
         dt_start.isoformat() if dt_start else None,
         dt_end.isoformat() if dt_end else None,
     )
@@ -112,12 +130,12 @@ def _build_assets(path: "Union[Path, UPath]", metadata: dict) -> dict:
     fmt = metadata.get("format", "")
     media_type = "application/x-grib2" if fmt == "grib" else "application/x-netcdf"
     return {
-        "data": {
-            "href": _to_href(path),
-            "type": media_type,
-            "title": PurePosixPath(str(path)).name,
-            "roles": ["data"],
-        }
+        "data": PySTACAsset(
+            href=_to_href(path),
+            media_type=media_type,
+            title=PurePosixPath(str(path)).name,
+            roles=["data"],
+        )
     }
 
 
@@ -125,5 +143,6 @@ def _to_href(path: "Union[Path, UPath]") -> str:
     """Convert path to a STAC-compatible href (file:// or protocol URI)."""
     if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
         from esm_catalog.uri import to_uri
+
         return to_uri(path)
     return f"file://{Path(path).resolve()}"

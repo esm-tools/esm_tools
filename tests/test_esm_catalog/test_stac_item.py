@@ -1,11 +1,11 @@
-"""Tests for ESMItem."""
+"""Tests for make_item."""
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
 
 from esm_catalog.context import CollectionContext
-from esm_catalog.item import ESMItem
+from esm_catalog.item import make_item
 
 
 def _ctx():
@@ -28,14 +28,14 @@ def _metadata(**kwargs):
 def test_item_is_dict(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = ESMItem(f, _metadata(), _ctx())
+    item = make_item(f, _metadata(), _ctx())
     assert isinstance(item, dict)
 
 
 def test_item_basic_fields(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = ESMItem(f, _metadata(), _ctx())
+    item = make_item(f, _metadata(), _ctx())
     assert item["type"] == "Feature"
     assert item["properties"]["variable"] == "temp"
     assert item["properties"]["format"] == "netcdf"
@@ -46,7 +46,7 @@ def test_item_basic_fields(tmp_path):
 def test_item_single_time_sets_datetime(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = ESMItem(f, _metadata(), _ctx())
+    item = make_item(f, _metadata(), _ctx())
     assert item["properties"]["datetime"] is not None
     assert "start_datetime" not in item["properties"]
 
@@ -58,7 +58,7 @@ def test_item_time_range_sets_interval(tmp_path):
         datetime_start=datetime(2000, 1, 1, tzinfo=timezone.utc),
         datetime_end=datetime(2000, 12, 31, tzinfo=timezone.utc),
     )
-    item = ESMItem(f, meta, _ctx())
+    item = make_item(f, meta, _ctx())
     assert item["properties"]["datetime"] is None
     assert item["properties"]["start_datetime"] is not None
     assert item["properties"]["end_datetime"] is not None

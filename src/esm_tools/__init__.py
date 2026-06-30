@@ -23,7 +23,7 @@ so it's just the dictionary representation of the YAML.
 
 __author__ = """Dirk Barbi, Paul Gierz"""
 __email__ = "dirk.barbi@awi.de"
-__version__ = "6.60.3"
+__version__ = "6.62.4"
 
 import functools
 import inspect
@@ -84,6 +84,60 @@ def _transform(nested_list):
         else:
             regular_list.append([ele])
     return regular_list
+
+
+@caller_wrapper
+def get_esm_tools_root_dir():
+    """
+    Get the root directory of esm_tools installation.
+
+    This function finds the actual root directory of the esm_tools installation,
+    which is useful for providing upgrade instructions or accessing the git repository.
+
+    For editable installs (pip install -e), this returns the git repository directory.
+    For normal installs, this returns the site-packages location.
+
+    Returns
+    -------
+    pathlib.Path or None
+        The root directory of esm_tools, or None if it cannot be determined.
+
+    Notes
+    -----
+    This function is more reliable than _get_real_dir_from_pth_file("") because it:
+    - Works regardless of virtual environment configuration
+    - Doesn't depend on finding .egg-link files
+    - Uses Python's standard __file__ attribute
+    - Handles both editable and normal installations
+    """
+    import pathlib
+
+    try:
+        # Get the location of the esm_tools module
+        # __file__ points to src/esm_tools/__init__.py
+        esm_tools_module_path = pathlib.Path(__file__).parent
+        logger.debug(f"esm_tools module path: {esm_tools_module_path}")
+
+        # For editable install, the structure is typically:
+        # /path/to/repo/src/esm_tools/__init__.py
+        # So we need to go up two levels to get to the repo root
+        potential_root = esm_tools_module_path.parent.parent
+        logger.debug(f"Checking potential root: {potential_root}")
+
+        # Check if this looks like a git repository (editable install)
+        if (potential_root / '.git').exists():
+            logger.debug(f"Found .git directory, returning: {potential_root}")
+            return potential_root
+
+        # For regular install, or if no .git found, return the parent of the module
+        # This is the site-packages or dist-packages directory
+        fallback = esm_tools_module_path.parent
+        logger.debug(f"No .git found, returning fallback: {fallback}")
+        return fallback
+
+    except Exception as e:
+        logger.error(f"Could not determine esm_tools root directory: {e}")
+        return None
 
 
 @caller_wrapper

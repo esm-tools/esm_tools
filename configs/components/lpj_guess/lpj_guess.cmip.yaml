@@ -8,6 +8,9 @@ lpj_guess:
     # Default MIP version and scenario
     mip: "cmip7"
     scenario: piControl
+    fourxCO2: false
+    onepcCO2: false
+
 
     # CO2 forcing file paths
     co2_file_cmip6: ${lpj_guess.input_dir}/cmip6_forcing/mole_fraction_of_carbon_dioxide_in_air_input4MIPs_lpjg.nc
@@ -49,3 +52,11 @@ lpj_guess:
             fixed_CO2: 1850
             fixed_ndep: 1850
             fixed_LU: 1850
+        "historical":
+            fixed_CO2: -1
+            fixed_ndep: -1
+            fixed_LU: -1
+        "abrupt4xCO2":
+            fourxCO2: true
+        "1pctCO2":
+            onepcCO2: true

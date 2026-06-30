@@ -39,7 +39,7 @@ medusa:
         #                                batch_or_shell: shell
         #                                run_after: tidy
         #                                script: dummy_postprocessing.sh
-        #                                script_dir: ${general.esm_function_dir}/components/medusa/
+        #                                script_dir: ${general.esm_configs_dir}/components/medusa/
         #                                #MA: I don't think these are needed
         #                                #call_function:
         #                                #env_preparation:

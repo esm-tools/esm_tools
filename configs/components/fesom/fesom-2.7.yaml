@@ -22,6 +22,10 @@ fesom:
     required_plugins:
     - "git+https://github.com/esm-tools-plugins/tar_binary_restarts"
 
+    # NOTE: Starting with FESOM 2.7.4, recom is bundled as a git submodule of
+    # the fesom2 repository. Versions >= 2.7.4 (and the main branch) therefore
+    # must be cloned with ``--recurse-submodules`` so that recom is pulled in.
+    # Earlier versions (2.7, 2.7.2, 2.7.3) do not carry the submodule.
     choose_version:
       "2.7":
         branch: "2.7.0"
@@ -29,8 +33,21 @@ fesom:
         branch: "2.7.2"
       "2.7.3":
         branch: "2.7.3"
+      "2.7.4":
+        branch: "2.7.4"
+        repo_options: "--recurse-submodules"
+      "2.7.5":
+        branch: "2.7.5"
+        repo_options: "--recurse-submodules"
+      "2.7.6":
+        branch: "2.7.6"
+        repo_options: "--recurse-submodules"
+      "2.7.7":
+        branch: "2.7.7"
+        repo_options: "--recurse-submodules"
       "2.7-main":
         branch: "main"
+        repo_options: "--recurse-submodules"
         #namelist_dir: "${model_dir}/config/"
 
     destination: "fesom-2.7"
@@ -524,6 +541,30 @@ fesom:
     # CMIP7-style XMLs (many variables, multiple frequencies). Default off:
     # upstream-namelist.io-style minimal monthly output.
     cmip7_cmor_output: false
+
+    # REcoM/BGC XIOS output gates consumed by file_def_fesom.xml.j2. These mirror
+    # the REcoM &parecomsetup logicals (enable_3zoo2det/enable_coccos) and the
+    # per-tracer ltra_diag switch, so the BGC <file> blocks are only enabled when
+    # the corresponding tracers/diagnostics actually exist (avoids fill-only files).
+    # Defaults off; awiesm3 sets the parecomsetup flags from recom_setting.
+    recom_enable_3zoo2det: false
+    recom_enable_coccos: false
+    recom_ltra_diag: false
+    # When true, add regridded (regular lat/lon) output for all 2D fields
+    # alongside the native unstructured output. Each regrid file is produced
+    # at the same frequency as its native counterpart (daily for fesom_1d
+    # fields, monthly for fesom_1mo 2D fields). CMIP7 file_def only.
+    # Requires xios.fesom_regular_res_lon/lat and xios.interpolation_order.
+    # Default ON for CMIP7: validated <1% wall-time penalty (HR Test_20 vs
+    # baseline) and <1 GB/year disk overhead at 0.5deg.
+    regrid_surface_output: true
+    # When true, also regrid 3D fields (temp, salt, unod, vnod, w, bolus_*,
+    # N2, Kv, u, v, *temp, *salt, Av, dMOC density-coord, ...). Default ON
+    # for CMIP7: HR Test_21 (vs Test_20) measured +0.4% wall time and +8 GB
+    # / simulated year of additional disk volume — essentially free thanks
+    # to XIOS server-rank async IO. Set to false only for diagnostics-style
+    # runs where the 3D regridded set isn't wanted.
+    regrid_3d_output: true
     choose_with_xios:
             true:
                     # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work
@@ -537,10 +578,13 @@ fesom:
 
                     scripts_files:
                             rename_xios: rename_xios
+                            rename_xios_reg: rename_xios_reg
                     scripts_sources:
-                            rename_xios: "${esm_function_dir}/components/fesom/rename_xios_fesom.sh"
+                            rename_xios: "${esm_configs_dir}/components/fesom/rename_xios_fesom.sh"
+                            rename_xios_reg: "${esm_configs_dir}/components/fesom/rename_xios_fesom_reg.sh"
                     scripts_targets:
                             rename_xios: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom.sh"
+                            rename_xios_reg: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom_reg.sh"
 
                     workflow:
                             next_run_triggered_by: tidy
@@ -551,6 +595,19 @@ fesom:
                                             run_after: tidy
                                             script_dir: ${general.experiment_scripts_dir}/${model}
                                             script: "rename_xios_fesom.sh ${fesom.experiment_outdata_dir}"
+                                            nproc: 1
+                                    # Sibling renamer for regridded XIOS output:
+                                    #   <var>.fesom.reg_<ystart>-<yend>.nc  ->  <var>.fesom.gr.<ystart>.nc
+                                    # Disjoint glob from Rename_XIOS_FESOM (this one needs
+                                    # ".fesom.reg_" literally), safe to run concurrently.
+                                    # Idempotent: skips files already in target form, no-ops
+                                    # if no regridded files are present (eg fesom.regrid_surface_output=false).
+                                    Rename_XIOS_FESOM_REG:
+                                            batch_or_shell: shell
+                                            order_in_cluster: concurrent
+                                            run_after: tidy
+                                            script_dir: ${general.experiment_scripts_dir}/${model}
+                                            script: "rename_xios_fesom_reg.sh ${fesom.experiment_outdata_dir}"
                                             nproc: 1
 
     use_landice_water: False

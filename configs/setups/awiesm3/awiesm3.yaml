@@ -20,6 +20,7 @@ general:
     available_versions:
         - 'v3.4.0'
         - 'v3.4.1'
+        - 'v3.4.2'
         - 'develop'
         - 'develop-cc'
         - 'develop-is'
@@ -40,6 +41,17 @@ general:
             major_version: v3.4
             couplings:
                 - awiesm3_v3.4.1
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+        v3.4.2:
+            major_version: v3.4
+            couplings:
+                - awiesm3_v3.4.2
             add_include_models:
                 - xios
             oasis_with_yac: false
@@ -103,6 +115,8 @@ general:
     reusable_filetypes: [input, bin, src]
 
     with_co2_coupling: false
+
+    force_overwrite_in_file_movements: True
 
     choose_computer.name:
         levante:
@@ -169,6 +183,28 @@ oifs:
                     NAEPHY:
                         LECURR: true
 
+    choose_general.version:
+        v3.4.2:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
+        develop:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
+        develop-cc:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCLDP:
+                        RVICE: 0.16
+                    NAEPHY:
+                        LRDALB: false
 
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -290,6 +326,22 @@ fesom:
             branch: fesom2.6_recom_awiesm3_co2_coupling
             recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
+            # Derive the REcoM &parecomsetup gates from recom_setting so the BGC
+            # XIOS file_def only enables the tracers/diagnostics that exist for
+            # this configuration (see namelists/fesom2/xios_xml/file_def_fesom.xml.j2).
+            choose_recom_setting:
+                2p1z1d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: false
+                2p3z2d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: false
+                3p3z2d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: false
+                4p3z2d:
+                    recom_enable_3zoo2det: true
+                    recom_enable_coccos: true
             add_namelists:
                 - namelist.recom
             add_config_files:
@@ -386,11 +438,14 @@ fesom:
                     ice_therm:
                         use_meltponds: true
 
-    # aEVP only on the high-resolution DARS2 mesh on develop branches —
-    # reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is unstable on
-    # coarse meshes (e.g. CORE2), so other resolutions keep their per-mesh
-    # whichEVP default from fesom-2.7.yaml.
+    # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop
+    # branches — reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is
+    # unstable on coarse meshes (e.g. CORE2), so other resolutions keep
+    # their per-mesh whichEVP default from fesom-2.7.yaml.
     choose_general.version:
+        v3.4.2:
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         develop:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
@@ -511,8 +566,6 @@ lpj_guess:
     runtime_seconds: "$(( ${next_date} - ${start_date} ))"
     ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
     co2_coupling: 0
-    fourxCO2: false
-    onepcCO2: false
     fixed_CO2: -1
     fixed_ndep: -1
     fixed_LU: -1
@@ -596,6 +649,12 @@ xios:
     xml_dir: "${general.esm_namelist_dir}/oifs/${oifs.version}/xios/"
     interpolation_order: 1
     compression_level: 1
+    # 0.5deg default for FESOM regridded surface + 3D output. Validated in
+    # HR Test_21 vs 1deg Test_20: +0.4% wall time, +8 GB/year disk for the
+    # full 2D+3D set. Override per-experiment if a coarser grid is wanted.
+    fesom_regular_res_lon: 720
+    fesom_regular_res_lat: 360
+    read_weight: false
     truncation: "${oifs.truncation}"
     choose_truncation:
         TCO:
@@ -759,7 +818,7 @@ oasis3mct:
                 true:
                     add_coupling_target_fields:
                         rst_co2_ao.nc:
-                            - 'XCO2_oce <--gauswgt_c-- A_XCO2_oce'
+                            - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
                             - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
 
             # Specify which restart files need bidirectional merging

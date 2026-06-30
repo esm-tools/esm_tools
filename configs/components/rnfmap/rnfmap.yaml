@@ -30,6 +30,7 @@ rnfmap:
     - v1.0
     - v1.1
     - v1.2
+    - v1.3
 
     runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -56,6 +57,8 @@ rnfmap:
         branch: runoff
       foci211:
         branch: foci211
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
       v1.0:
         branch: rnfmap_compile_vars
         further_reading:
@@ -74,8 +77,16 @@ rnfmap:
           - rnfmap/rnfmap.env.yaml
         destination: rnfmap
         runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+      v1.3:
+        branch: '1.3'
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
       agrif:
         branch: agrif
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
 
     clean_command: rm -rf bin; cd src; make clean; cd ..
     comp_command: rm -rf bin; mkdir bin; cd src; make ; cd .. ; cp bin/rnfmap.exe ./bin/rnfma
@@ -112,8 +123,6 @@ rnfmap:
                     ny: 256
                     time_step: ${oasis3mct.time_step}
 
-    nproca: 1
-    nprocb: 1
 
     runoff_method: "old"
     with_agrif: False
@@ -244,8 +253,13 @@ computer:
     #
     choose_computer.name:
         levante:
-            fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
-            cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
+            choose_computer.compiler_mpi:
+                gnu11_ompi4:
+                    fflags: -fdefault-real-8 -fdefault-double-8 -O3 -g -march=core-avx2 -mtune=core-avx2
+                    cflags: -g
+                "*":
+                    fflags: -r8 -fp-model precise -align array32byte -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -convert big_endian -fpe0
+                    cflags: -fp-model precise -O3 -march=core-avx2 -mtune=core-avx2 -g -traceback -qopt-report=0 -fpe0
         glogin:
            choose_computer.compiler_mpi:
               gcc11_ompi416:

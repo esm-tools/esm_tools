@@ -1078,6 +1078,11 @@ oifs:
                                             YI_NL%LMASSFIX: ".true."
                                             YL_NL%LMASSFIX: ".true."
                                             YQ_NL%LMASSFIX: ".true."
+                                            # Humidity (q) mass fixer must use the proportional
+                                            # scheme like YI/YL/YR/YS above. The default additive
+                                            # fixer (BETAMFBC=2) overflows and segfaults in cnt4.
+                                            # Affects all OIFS-48r1 setups (massfixer: 3).
+                                            YQ_NL%BETAMFBC: -1
 
             4: #foci5-48r1 settings to avoid duplicate namelist settings
                 # TODO: YR_NL%BETAMFBC = -1 is duplicated if it exists in template namelist fort.4

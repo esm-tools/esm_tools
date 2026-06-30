@@ -865,6 +865,21 @@ contains
                 end do
 
             end select
+
+            ! Safety net: every WET level [ul_new, nl_new-1] must have a
+            ! strictly positive layer thickness. A cavity node whose ice-shelf
+            ! base retreated can be flagged FLAG_UNCHANGED yet inherit hnode=0
+            ! from the old (then-icy) levels via the direct copy above. FESOM's
+            ! ALE divides transport by hnode, so a zero-thickness wet layer makes
+            ! vert_vel_ale produce NaN (which then spreads through the column and
+            ! the partition). Fill any such gap with the nominal reference
+            ! thickness from zbar.
+            do k = ul_new, nl_new-1
+                if (hnode_new(k, i_new) <= 0.0_WP) then
+                    hnode_new(k, i_new) = abs(mesh_new%zbar(k+1) - &
+                                               mesh_new%zbar(k))
+                end if
+            end do
         end do
 
         call write_nc_3d(trim(path_new)//'hnode.nc', 'hnode', &

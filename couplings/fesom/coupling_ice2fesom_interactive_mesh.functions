@@ -200,7 +200,13 @@ function remap_fesom_restart {
         path_old="${COUPLE_DIR}/mother_as_old/"
         echo " *   old mesh: mother mesh staged at ${path_old}"
         mkdir -p "${path_old}"
-        for f in nod2d.out elem2d.out aux3d.out nlvls.out elvls.out edgenum.out edges.out edge_tri.out; do
+        # cavity_nlvls.out is ESSENTIAL: the remap mesh reader loads it into
+        # ulevels_nod2D. Without it the mother mesh is read as cavity-free
+        # (ulevel=1 everywhere), so every submesh node whose cavity retreated is
+        # mis-classified FLAG_UNCHANGED and the remapper naively copies the
+        # mother's dry-cavity ZERO temp/salt into the new wet levels -> zero
+        # salinity -> density blowup -> cfl_z runaway at ocean step 1.
+        for f in nod2d.out elem2d.out aux3d.out nlvls.out elvls.out cavity_nlvls.out cavity_elvls.out edgenum.out edges.out edge_tri.out; do
             [ -e "${MAXMESH_DIR_fesom}/${f}" ] && ln -sf "${MAXMESH_DIR_fesom}/${f}" "${path_old}/${f}"
         done
         seq 1 ${nod2d_base} > "${path_old}/map_nod.out"

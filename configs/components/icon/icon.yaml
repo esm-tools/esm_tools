@@ -576,6 +576,13 @@ computer:
                #   gcc:
                #      add_export_vars:
                #         ICON_CONFIGURE_COMMAND: "'./config/dkrz/levante.gcc'"
+            "*":
+               extpar_file: ""
+               input_dir: "" 
+               aerosol_dir: "" 
+               ozone_dir: ""
+               jsbach_ic_dir: "" 
+               jsbach_forcing_dir: ${jsbach_ic_dir}
       run:
          choose_computer.name:
             levante:

@@ -8,9 +8,8 @@ from pathlib import Path, PurePosixPath
 from typing import Union
 from upath import UPath
 
-from pystac.asset import Asset as PySTACAsset
-from pystac.item import Item as PySTACItem
-from pystac.link import Link as PySTACLink
+from pystac import Asset, Item
+from pystac import Link
 
 def make_item(
     path: Union[Path, UPath, str],
@@ -38,7 +37,7 @@ def make_item(
         path,
     )
 
-    item = PySTACItem(
+    item = Item(
         id=id,
         geometry=metadata.get("geometry"),
         bbox=metadata.get("bbox"),
@@ -52,7 +51,7 @@ def make_item(
     )
 
     item.add_link(
-        PySTACLink(
+        Link(
             rel="collection",
             target=f"#{ctx.collection_id}",
             media_type="application/json",
@@ -125,7 +124,7 @@ def _build_assets(path: Union[Path, UPath], metadata: dict) -> dict:
     fmt = metadata.get("format", "")
     media_type = "application/x-grib2" if fmt == "grib" else "application/x-netcdf"
     return {
-        "data": PySTACAsset(
+        "data": Asset(
             href=_to_href(path),
             media_type=media_type,
             title=PurePosixPath(str(path)).name,

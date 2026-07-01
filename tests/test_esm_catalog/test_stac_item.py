@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from pystac.item import Item as PySTACItem
+from pystac import Item
 
 from esm_catalog.context import CollectionContext
 from esm_catalog.item import _to_href, make_item
@@ -31,7 +31,7 @@ def test_item_is_pystacitem(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
-    assert isinstance(item, PySTACItem)
+    assert isinstance(item, Item)
 
 
 def test_item_to_dict_and_stac_version_and_type(tmp_path):
@@ -39,7 +39,7 @@ def test_item_to_dict_and_stac_version_and_type(tmp_path):
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
     item_dict = item.to_dict()
-    assert item_dict["stac_version"] == "1.0.0"
+    assert item_dict["stac_version"] == "1.1.0"
     assert item_dict["type"] == "Feature"
 
 

@@ -16,7 +16,7 @@ def make_collection(ctx) -> Collection:
     """
     col = Collection(
         id=ctx.collection_id,
-        description=f"All model output for experiment {ctx.experiment_id}",
+        description=ctx.description,
         extent=Extent(
             spatial=SpatialExtent(bboxes=[[-180.0, -90.0, 180.0, 90.0]]),
             temporal=TemporalExtent(intervals=[[None, None]]),

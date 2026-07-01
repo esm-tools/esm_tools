@@ -64,6 +64,11 @@
     source = 'land'
 /
 
+&mvstreamctl ! 'default tracerm'
+    filetag = 'tracer'
+    source = 'tracer'
+/
+
 &mvstreamctl
     filetag = 'veg'
     source = 'veg'

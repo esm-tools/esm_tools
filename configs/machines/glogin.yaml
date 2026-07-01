@@ -69,7 +69,7 @@ computer:
     sh_interpreter: "/bin/bash"
 
     # This is the default partition (96 cores, Intel Cascade Lake)
-    partition: standard96
+    partition: standard96s
 
     # Describe partitions available
     # There are more (48-core nodes etc)

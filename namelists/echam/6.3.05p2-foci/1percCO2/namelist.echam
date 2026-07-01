@@ -59,6 +59,10 @@
     filetag = 'veg'
     source = 'veg'
 /
+&mvstreamctl ! 'default tracerm'
+    filetag = 'tracer'
+    source = 'tracer'
+/
 &mvstreamctl ! 'default surfm'
     filetag = 'surf'
     source = 'surf'

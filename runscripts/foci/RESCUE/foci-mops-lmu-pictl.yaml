@@ -123,6 +123,7 @@ echam:
    pre_run_commands: "cp -f ~/FOCILMU-SW231_hostfile_srun ${work_dir}/hostfile_srun"
    #
    postprocessingscript: "echam_postprocessing_RESCUE.sh"
+   atm_file_tags: "echam co2 tracer accw echamday co2day"
    namelist_dir: "${general.esm_namelist_dir}/echam/${version}/PI-CTRL"
    # all ssp* scenarios use historical forcing before 2015, i.e. the setting
    # scenario: "cmip6hist" and # scenario: "ssp???" produce the same results 

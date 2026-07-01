@@ -404,6 +404,30 @@ SBEOF
             [ -e "${out_dir}/${bn}" ] || ln -sf "${f}" "${out_dir}/${bn}"
         done
     fi
+    # Stage the regenerated submesh OASIS descriptor + weight files into the
+    # experiment's oasis3mct restart dir. That dir (${exp}/restart/oasis3mct/) is
+    # where the next awiesm3 leg's prepcompute actually reads grids/masks/areas +
+    # rmp_*.nc from, via restart_in_sources. The config-level chunk>1 redirect to
+    # oasis_regen cannot reach these: grids/masks/areas stage through
+    # restart_in_sources (an input_sources override is the wrong key), and rmp
+    # goes through a wild-card restart source that drops the override; both would
+    # otherwise fall back to the stale full-mesh (pre-cavity-change) files, and
+    # MCT aborts on the remap-matrix size mismatch. Dereference symlinks (cp -L)
+    # so the restart holds real files, not links into ${out_dir}.
+    local oasis_restart
+    oasis_restart="$(cd "${COUPLE_DIR}/.." 2>/dev/null && pwd)/restart/oasis3mct"
+    if [ -d "${oasis_restart}" ]; then
+        echo "     ...syncing submesh OASIS grids/masks/areas + rmp weights -> ${oasis_restart}"
+        for f in grids.nc masks.nc areas.nc; do
+            [ -e "${out_dir}/${f}" ] && cp -Lf "${out_dir}/${f}" "${oasis_restart}/${f}"
+        done
+        for f in "${out_dir}"/rmp_*.nc; do
+            [ -e "${f}" ] && cp -Lf "${f}" "${oasis_restart}/$(basename "${f}")"
+        done
+    else
+        echo " *   WARNING: oasis3mct restart dir not found (${oasis_restart}); mesh-change OASIS files not staged to restart"
+    fi
+
     # The modified OIFS gridpoint init lands in ${out_dir} as ICMGG<expid>INIT_<tag>;
     # the next awiesm3 leg stages it for OIFS via an oifs input redirect (chunk>1).
     local icmgg

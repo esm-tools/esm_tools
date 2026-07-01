@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pystac.item import Item as PySTACItem
 
 from esm_catalog.context import CollectionContext
-from esm_catalog.item import make_item
+from esm_catalog.item import _to_href, make_item
 
 
 def _ctx():
@@ -51,6 +51,34 @@ def test_item_single_time_sets_datetime(tmp_path):
     item = make_item(f, _metadata(), _ctx())
     assert item.datetime is not None
     assert "start_datetime" not in dir(item)
+
+
+def test_to_href_local_path_is_file_uri(tmp_path):
+    f = tmp_path / "data.nc"
+    f.write_bytes(b"x")
+    assert _to_href(f) == f.as_uri()
+
+
+def test_to_href_remote_path_includes_host():
+    from upath import UPath
+
+    path = UPath("ssh://albedo0.dmawi.de/work/user/exp/file.nc")
+    assert _to_href(path) == "ssh://albedo0.dmawi.de/work/user/exp/file.nc"
+
+
+def test_to_href_remote_path_missing_host_raises():
+    import pytest
+
+    class _HostlessPath:
+        protocol = "ssh"
+        path = "/work/data.nc"
+        storage_options = {}
+
+        def __str__(self):
+            return "ssh:///work/data.nc"
+
+    with pytest.raises(ValueError, match="no host"):
+        _to_href(_HostlessPath())
 
 
 def test_item_time_range_sets_interval(tmp_path):

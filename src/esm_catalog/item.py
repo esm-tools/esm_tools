@@ -5,17 +5,15 @@ from __future__ import annotations
 import hashlib
 from datetime import timezone
 from pathlib import Path, PurePosixPath
-from typing import TYPE_CHECKING, Union
+from typing import Union
+from upath import UPath
 
 from pystac.asset import Asset as PySTACAsset
 from pystac.item import Item as PySTACItem
 
-if TYPE_CHECKING:
-    from upath import UPath
-
 
 def make_item(
-    path: "Union[Path, UPath, str]",
+    path: Union[Path, UPath, str],
     metadata: dict,
     ctx,
 ) -> dict:
@@ -30,9 +28,7 @@ def make_item(
         pystac.item.Item object representing the STAC Item
     """
     if isinstance(path, str):
-        from esm_catalog.uri import parse_uri
-
-        path = parse_uri(path)
+        path = UPath(path if "://" in path else Path(path).resolve())
 
     dt_start, dt_end, item_datetime, _, _ = _build_datetime(metadata)
     id = _make_id(
@@ -68,7 +64,7 @@ def make_item(
 
 
 def _make_id(
-    variable: str, component: str, dt_str: str, path: "Union[Path, UPath]"
+    variable: str, component: str, dt_str: str, path: Union[Path, UPath]
 ) -> str:
     """Return a stable unique item ID: {variable}.{component}.{datetime}.{hash}."""
     path_hash = hashlib.md5(str(path).encode()).hexdigest()[:6]
@@ -125,7 +121,7 @@ def _build_datetime(metadata: dict) -> tuple:
     )
 
 
-def _build_assets(path: "Union[Path, UPath]", metadata: dict) -> dict:
+def _build_assets(path: Union[Path, UPath], metadata: dict) -> dict:
     """Build the STAC assets dict with a single 'data' asset for the source file."""
     fmt = metadata.get("format", "")
     media_type = "application/x-grib2" if fmt == "grib" else "application/x-netcdf"
@@ -139,10 +135,20 @@ def _build_assets(path: "Union[Path, UPath]", metadata: dict) -> dict:
     }
 
 
-def _to_href(path: "Union[Path, UPath]") -> str:
+def _to_href(path: Union[Path, UPath]) -> str:
     """Convert path to a STAC-compatible href (file:// or protocol URI)."""
     if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
-        from esm_catalog.uri import to_uri
-
-        return to_uri(path)
-    return f"file://{Path(path).resolve()}"
+        protocol = path.protocol
+        # UPath 0.3.x omits the host from str(path) for host-based protocols (ssh, sftp).
+        # For bucket-based protocols (s3, gcs), str() is correct and storage_options has no host.
+        host = getattr(path, "storage_options", {}).get("host", "")
+        if host:
+            return f"{protocol}://{host}{path.path}"
+        uri = str(path)
+        if uri.startswith(f"{protocol}:///"):
+            raise ValueError(
+                f"Cannot construct a valid URI for {path!r}: "
+                f"'{protocol}' path has no host in storage_options."
+            )
+        return uri
+    return path.as_uri()

@@ -15,7 +15,8 @@ unset CDPATH
 ulimit -c 0
 
 script_dir=$(cd "$(dirname "$0")"; pwd)
-icon_dir=$(cd "${script_dir}/../.."; pwd)
+#icon_dir=$(cd "${script_dir}/../.."; pwd)
+icon_dir=$(cd "../"; pwd)
 
 ################################################################################
 

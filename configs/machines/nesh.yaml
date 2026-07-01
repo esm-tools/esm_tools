@@ -165,9 +165,9 @@ computer:
                      # CMake required to build some models
                      - "load cmake/3.27.4"
                      # HDF5 and netCDF required by most models
-                     - "load hdf5/1.14.1-2-with-with-oneapi-mpi-2021.10.0"
-                     - "load netcdf-c/4.9.2-with-oneapi-mpi-2021.10.0"
-                     - "load netcdf-fortran/4.6.0-with-oneapi-mpi-2021.10.0"
+                     - "load hdf5/1.14.3-with-openmpi-4.1.5"
+                     - "load netcdf-c/4.9.2-with-openmpi-4.1.5-hdf5-1.14.3"
+                     - "load netcdf-fortran/4.6.0-with-openmpi-4.1.5-hdf5-1.14.3"
                      - "load netlib-lapack/3.11.0"
                      # ecCodes required by OpenIFS
                      #- "load eccodes/2.25.0"

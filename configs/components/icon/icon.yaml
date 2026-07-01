@@ -50,7 +50,7 @@ icon:
       destination: icon
       install_bins: build/bin/icon
       comp_command: 'mkdir -p build ; cd build ; 
-         ../$ICON_CONFIGURE_COMMAND ICON_BUNDLED_CFLAGS="$ICON_BUNDLED_CFLAGS -fpic" ICON_BUNDLED_FCFLAGS="$ICON_BUNDLED_FCFLAGS -fpic" ;
+         $ICON_CONFIGURE_COMMAND ICON_BUNDLED_CFLAGS="$ICON_BUNDLED_CFLAGS -fpic" ICON_BUNDLED_FCFLAGS="$ICON_BUNDLED_FCFLAGS -fpic" ;
          make -j32' 
 
    file_movements:
@@ -544,6 +544,16 @@ computer:
    choose_general.execution_mode:
       compile:
          choose_computer.name:
+            nesh:
+               extpar_file: ""
+               input_dir: "" 
+               aerosol_dir: "" 
+               ozone_dir: ""
+               jsbach_ic_dir: "" 
+               jsbach_forcing_dir: ${jsbach_ic_dir}
+
+               iolibraries: system_libs
+               compiler_mpi: intel2023_ompi415 
             levante:
                extpar_file: ""
                input_dir: "" 
@@ -566,6 +576,13 @@ computer:
                #   gcc:
                #      add_export_vars:
                #         ICON_CONFIGURE_COMMAND: "'./config/dkrz/levante.gcc'"
+            "*":
+               extpar_file: ""
+               input_dir: "" 
+               aerosol_dir: "" 
+               ozone_dir: ""
+               jsbach_ic_dir: "" 
+               jsbach_forcing_dir: ${jsbach_ic_dir}
       run:
          choose_computer.name:
             levante:
@@ -585,6 +602,38 @@ computer:
 
                iolibraries: None 
                compiler_mpi: None
+
+               add_export_vars:
+                  # optimization settings (from DKRZ)
+                  MALLOC_TRIM_THRESHOLD_: "-1" 
+                  SLURM_DIST_PLANESIZE: 32 
+                  OMPI_MCA_btl: self
+                  OMPI_MCA_coll: ^ml,hcoll
+                  OMPI_MCA_io: romio321
+                  OMPI_MCA_osc: ucx
+                  OMPI_MCA_pml: ucx
+                  UCX_HANDLE_ERRORS: bt
+                  UCX_TLS: shm,dc_mlx5,dc_x,self
+                  UCX_UNIFIED_MODE: y
+                  OMPI_MCA_mpi_abort_print_stack: 1
+
+            nesh:
+               input_dir: ${computer.pool_directories.focipool}/ICON-FESOM/icon-xpp 
+               # only the background / piControl aerosol is read from here
+               # in CMIP7 ICON uses backgroud aerosol + volcanic aerosol + MacSP
+               aerosol_dir: ${input_dir}/${icon.grid_id}/aerosol_kinne/r0001
+               ozone_dir: ${input_dir}/${icon.grid_id}/ozone/r0002
+               jsbach_ic_dir: ${input_dir}/${icon.grid_id}-${fesom.resolution}/land/r00xx
+               jsbach_forcing_dir: ${jsbach_ic_dir}
+
+               choose_icon.resolution:
+                  R02B04:
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0012_20250306_tiles_jsb.nc
+                  R02B05:
+                     extpar_file: ${jsbach_ic_dir}/icon_extpar4jsbach_0030_20260113_tiles_jsb.nc
+
+               #iolibraries: None 
+               #compiler_mpi: None
 
                add_export_vars:
                   # optimization settings (from DKRZ)

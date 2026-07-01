@@ -10,7 +10,7 @@ from upath import UPath
 
 from pystac.asset import Asset as PySTACAsset
 from pystac.item import Item as PySTACItem
-
+from pystac.link import Link as PySTACLink
 
 def make_item(
     path: Union[Path, UPath, str],
@@ -38,7 +38,7 @@ def make_item(
         path,
     )
 
-    return PySTACItem(
+    item = PySTACItem(
         id=id,
         geometry=metadata.get("geometry"),
         bbox=metadata.get("bbox"),
@@ -47,20 +47,19 @@ def make_item(
         start_datetime=dt_start,
         end_datetime=dt_end,
         stac_extensions=[],
-        extra_fields=dict(
-            type="Feature",
-            stac_version="1.0.0",
-            links=[
-                {
-                    "rel": "collection",
-                    "href": f"#{ctx.collection_id}",
-                    "type": "application/json",
-                }
-            ],
-        ),
         assets=_build_assets(path, metadata),
         collection=ctx.collection_id,
     )
+
+    item.add_link(
+        PySTACLink(
+            rel="collection",
+            target=f"#{ctx.collection_id}",
+            media_type="application/json",
+        )
+    )
+
+    return item
 
 
 def _make_id(
@@ -111,7 +110,7 @@ def _build_datetime(metadata: dict) -> tuple:
         dt_end = dt_end.replace(tzinfo=timezone.utc)
 
     if dt_start == dt_end or dt_end is None:
-        return dt_start, dt_end, dt_start.isoformat() if dt_start else None, None, None
+        return dt_start, dt_end, dt_start if dt_start else None, None, None
     return (
         dt_start,
         dt_end,

@@ -34,23 +34,34 @@ def test_item_is_pystacitem(tmp_path):
     assert isinstance(item, PySTACItem)
 
 
+def test_item_to_dict_and_stac_version_and_type(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = make_item(f, _metadata(), _ctx())
+    item_dict = item.to_dict()
+    assert item_dict["stac_version"] == "1.0.0"
+    assert item_dict["type"] == "Feature"
+
+
 def test_item_basic_fields(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
-    assert item.extra_fields["type"] == "Feature"
     assert item.properties["variable"] == "temp"
     assert item.properties["format"] == "netcdf"
     assert item.collection_id == "exp-alpha"
     assert item.assets["data"].href.startswith("file://")
+    assert item.links[0].rel == "collection"
+    assert item.links[0].target == "#exp-alpha"
 
 
 def test_item_single_time_sets_datetime(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
-    assert item.datetime is not None
-    assert "start_datetime" not in dir(item)
+    assert item.datetime == datetime(2000, 1, 1, tzinfo=timezone.utc)
+    assert item.properties["start_datetime"] == "2000-01-01T00:00:00Z"
+    assert item.properties["end_datetime"] == "2000-01-01T00:00:00Z"
 
 
 def test_to_href_local_path_is_file_uri(tmp_path):

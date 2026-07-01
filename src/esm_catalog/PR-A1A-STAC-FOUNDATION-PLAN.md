@@ -16,7 +16,6 @@ subdirectories. `esm_catalog` IS the STAC catalog layer; the extra nesting is re
 ```
 src/esm_catalog/
     context.py      ← PR-A1b
-    uri.py          ← PR-A1b
     registry.py     ← PR-A1b
     collection.py   ← PR-A1b
     item.py         ← PR-A1b
@@ -101,10 +100,9 @@ No extension calls.
 
 **Files created:**
 - `src/esm_catalog/context.py` — `CollectionContext` dataclass
-- `src/esm_catalog/uri.py` — `parse_uri`, `to_uri`, `_has_protocol`
 - `src/esm_catalog/registry.py` — `EXTENSION_URLS` dict
 - `src/esm_catalog/collection.py` — `ESMCollection(dict)` with `update_extent` method
-- `src/esm_catalog/item.py` — `ESMItem(dict)` with `_build_*` methods; core fields only (1, 3, 5, 8, 10)
+- `src/esm_catalog/item.py` — `ESMItem(dict)` with `_build_*` methods; core fields only (1, 3, 5, 8, 10); URI conversion inlined in `_to_href` (no separate `uri.py` — UPath 0.3.x drops the SSH host from `str(path)`, workaround uses `storage_options['host']`)
 
 **Item properties in this PR:**
 ```
@@ -113,7 +111,6 @@ variable, datetime/start_datetime/end_datetime, format, output_frequency, variab
 
 **Tests created:**
 - `tests/test_esm_catalog/test_context.py`
-- `tests/test_esm_catalog/test_uri.py`
 - `tests/test_esm_catalog/test_stac_collection.py`
 - `tests/test_esm_catalog/test_stac_item.py`
 - `tests/test_esm_catalog/test_no_scan_dependency.py`

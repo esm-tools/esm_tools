@@ -12,5 +12,6 @@ class CollectionContext:
     component: str
     collection_id: str
     description: str = ""
+    license: str = ""
     experiment_path: Path | None = None
     namelists_by_component: dict = field(default_factory=dict)

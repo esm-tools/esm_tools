@@ -176,6 +176,20 @@ computer:
                     message: "MODEL ERROR: Intel Fortran runtime error (forrtl: severe ...)."
                     file: "stdout"
 
+            # `forrtl: error (NN)` is the Intel Fortran runtime error handler
+            # for non-"severe" faults — floating divide-by-zero / FPE (73),
+            # array-bounds, etc. These are genuine compute crashes (e.g. the
+            # OIFS climaer/radaca FPE on the moving-cavity coastline emits
+            # `forrtl: error (73): floating divide by zero`). Without this the
+            # only Fortran trigger was `forrtl: severe`, so an FPE crash slipped
+            # through as method-less, tidy advanced the date file, and the run
+            # cascaded onto the next chunk on garbage output.
+            "forrtl: error" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: Intel Fortran runtime error (forrtl: error (NN) ... — FPE / bounds / I/O)."
+                    file: "stdout"
+
             "MPI_ABORT was invoked" :
                     frequency: 30
                     method: "kill"

@@ -90,19 +90,21 @@ branch — the file won't exist at that path until it's on `release`.
 ### [x] PR-A1b — Core infrastructure
 
 **Branch:** `esm-catalog/pr-a1b-core-infrastructure` ✓ merged design decisions:
-- `ESMCollection(dict)` and `ESMItem(dict)` — dict subclasses with instance methods
+- Function-based API: `make_item(...)` returns `pystac.Item`; `make_collection(...)` returns `pystac.Collection`; `update_extent(collection, item)` is a standalone function
+- `CollectionContext` dataclass with `production: bool` flag and `__post_init__` validation; required production fields listed in `PRODUCTION_REQUIRED: ClassVar`; `data_license` field (avoids shadowing Python builtin `license`)
 - Flat layout: all files directly in `src/esm_catalog/`, no subdirectories
 - `test_no_scan_dependency.py` deferred — add it in the PR that introduces `esm_catalog.scan`
+- No dependency on `esm_tools` from `esm_catalog` (avoids `pkg_resources` / Python 3.12 CI breakage)
 
 **Branch from:** `release`
 **Goal:** Minimal working STAC Item + Collection with only the confirmed core fields.
 No extension calls.
 
 **Files created:**
-- `src/esm_catalog/context.py` — `CollectionContext` dataclass
+- `src/esm_catalog/context.py` — `CollectionContext` dataclass with production validation
 - `src/esm_catalog/registry.py` — `EXTENSION_URLS` dict
-- `src/esm_catalog/collection.py` — `ESMCollection(dict)` with `update_extent` method
-- `src/esm_catalog/item.py` — `ESMItem(dict)` with `_build_*` methods; core fields only (1, 3, 5, 8, 10); URI conversion inlined in `_to_href` (no separate `uri.py` — UPath 0.3.x drops the SSH host from `str(path)`, workaround uses `storage_options['host']`)
+- `src/esm_catalog/collection.py` — `make_collection(ctx)`, `update_extent(collection, item)`
+- `src/esm_catalog/item.py` — `make_item(path, metadata, ctx)` with `_build_*` helper functions; core fields only (1, 3, 5, 8, 10); URI conversion in `_to_href` (UPath 0.3.x drops SSH host from `str(path)`, workaround uses `storage_options['host']`)
 
 **Item properties in this PR:**
 ```
@@ -113,10 +115,6 @@ variable, datetime/start_datetime/end_datetime, format, output_frequency, variab
 - `tests/test_esm_catalog/test_context.py`
 - `tests/test_esm_catalog/test_stac_collection.py`
 - `tests/test_esm_catalog/test_stac_item.py`
-- `tests/test_esm_catalog/test_no_scan_dependency.py`
-
-**Source to copy from `esm-catalog/pr-a1a-stac-foundation`:** use the existing files as
-the starting point but strip everything that belongs to a later PR.
 
 ---
 

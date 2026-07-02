@@ -6,10 +6,10 @@ import hashlib
 from datetime import timezone
 from pathlib import Path, PurePosixPath
 from typing import Union
+
+from pystac import Asset, Item, Link
 from upath import UPath
 
-from pystac import Asset, Item
-from pystac import Link
 
 def make_item(
     path: Union[Path, UPath, str],

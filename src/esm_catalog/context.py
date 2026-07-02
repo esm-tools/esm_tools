@@ -4,9 +4,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import ClassVar
 
-from esm_tools.error_handling import user_error
-
-
 @dataclass
 class CollectionContext:
     """Identity + pre-scanned context for building a collection's items."""
@@ -32,7 +29,6 @@ class CollectionContext:
     def _check_production_fields(self):
         missing = [f for f in self.PRODUCTION_REQUIRED if getattr(self, f) in (None, "")]
         if missing:
-            user_error(
-                "Production context",
-                f"The following fields are required for production and cannot be empty: {', '.join(missing)}",
+            raise ValueError(
+                f"Production context requires non-empty fields: {', '.join(missing)}"
             )

@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from esm_catalog.context import CollectionContext
-from utils import Capturing
 
 
 def test_context_minimal():
@@ -33,12 +32,10 @@ def test_context_carries_prescanned_namelists():
 
 
 def test_production_context_requires_description():
-    with Capturing() as output:
-        with pytest.raises(SystemExit):
-            CollectionContext(
-                experiment_id="exp-alpha",
-                component="echam",
-                collection_id="exp-alpha",
-                production=True,
-            )
-    assert any("description" in line for line in output)
+    with pytest.raises(ValueError, match="description"):
+        CollectionContext(
+            experiment_id="exp-alpha",
+            component="echam",
+            collection_id="exp-alpha",
+            production=True,
+        )

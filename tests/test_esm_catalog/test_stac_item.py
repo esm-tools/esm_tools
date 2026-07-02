@@ -39,7 +39,7 @@ def test_item_to_dict_and_stac_version_and_type(tmp_path):
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
     item_dict = item.to_dict()
-    assert item_dict["stac_version"] == "1.1.0"
+    assert item_dict["stac_version"] == "1.0.0"
     assert item_dict["type"] == "Feature"
 
 

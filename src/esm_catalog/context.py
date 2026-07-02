@@ -24,10 +24,12 @@ class CollectionContext:
     namelists_by_component: dict = field(default_factory=dict)
 
     def __post_init__(self):
+        """Validate production-required fields immediately after construction."""
         if self.production:
             self._check_production_fields()
 
     def _check_production_fields(self):
+        """Raise ValueError if any PRODUCTION_REQUIRED field is empty or None."""
         missing = [
             f for f in self.PRODUCTION_REQUIRED if getattr(self, f) in (None, "")
         ]

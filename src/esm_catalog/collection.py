@@ -54,4 +54,5 @@ def update_extent(collection: Collection, item: Item) -> None:
 
 
 def _merge_bbox(a: list, b: list) -> list:
+    """Return the smallest bbox that contains both a and b ([west, south, east, north])."""
     return [min(a[0], b[0]), min(a[1], b[1]), max(a[2], b[2]), max(a[3], b[3])]

@@ -22,7 +22,7 @@ def make_collection(ctx) -> Collection:
             temporal=TemporalExtent(intervals=[[None, None]]),
         ),
         title=ctx.experiment_id,
-        license=ctx.license,
+        license=ctx.data_license or "proprietary",
         extra_fields={"experiment": ctx.experiment_id, "components": [ctx.component]},
     )
     col.add_link(Link("parent", f"#{ctx.experiment_id}", media_type="application/json"))

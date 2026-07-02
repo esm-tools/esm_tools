@@ -4,7 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from esm_catalog.context import CollectionContext
+from utils import Capturing
 
 
 def test_context_minimal():
@@ -27,3 +30,15 @@ def test_context_carries_prescanned_namelists():
         namelists_by_component={"echam": {"namelist.echam": {"runctl": {"dt": 450}}}},
     )
     assert ctx.namelists_by_component["echam"]["namelist.echam"]["runctl"]["dt"] == 450
+
+
+def test_production_context_requires_description():
+    with Capturing() as output:
+        with pytest.raises(SystemExit):
+            CollectionContext(
+                experiment_id="exp-alpha",
+                component="echam",
+                collection_id="exp-alpha",
+                production=True,
+            )
+    assert any("description" in line for line in output)

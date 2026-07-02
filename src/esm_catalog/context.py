@@ -11,6 +11,6 @@ class CollectionContext:
     experiment_id: str
     component: str
     collection_id: str
+    description: str = ""
     experiment_path: Path | None = None
     namelists_by_component: dict = field(default_factory=dict)
-    description: str

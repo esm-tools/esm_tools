@@ -106,6 +106,12 @@ oifs:
                                 - ICMCL_INIT
                 "cy48":
                         version: "48r1"
+                        # Build OIFS WITH XIOS output + coupling (like awicm3/awiesm3).
+                        # Without these flags the binary has no XIOS (so no LPJG forcing
+                        # output) and no cplng2, despite LXIOS:TRUE in the namelist.
+                        with_xios: true
+                        build_type: 'release'
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
                         append_icmcl: ""
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         add_namelist_changes:

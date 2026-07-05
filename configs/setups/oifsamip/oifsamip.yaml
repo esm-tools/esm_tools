@@ -12,6 +12,14 @@ general:
         with_co2_oce_coupling: False
         with_co2_veg_coupling: False
 
+        # Promote the OIFS prepcompute recipe to the setup level so the OIFS
+        # `preprocess` step actually runs (change_icm_date.sh re-dates ICMGG/ICMSH/
+        # wave init files to the run's initial_date). Without this, the coupled
+        # oifsamip setup fell back to the default framework recipe which has NO
+        # preprocess step -> init files kept their pool dates -> WAM aborted on the
+        # date mismatch at any start year != the wave-init date. (Matches awicm3.yaml:183.)
+        prepcompute_recipe: ${oifs.prepcompute_recipe}
+
         include_models:
                 - amip
                 - oifs
@@ -79,7 +87,7 @@ oifs:
         restart_firstlast: "last"
         restart_rate: 12
 
-        mip: "cmip6"
+        mip: "cmip7"
         scenario: "historical"
 
         prepifs_expid: h6mv
@@ -172,7 +180,10 @@ oifs:
 
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: ""
+        # AMIP uses the AMIP init (ICMGG${prepifs_expid}INIT_AMIP): the LPJG-capable
+        # OIFS build expects surface fields the base 81-field ICMGG...INIT lacks
+        # (ABOR1 GRID_IN MISSING FIELD 117-120). The _AMIP init (90 flds) supplies them.
+        ICMGG_INIT_name: "_AMIP"
 
 
 

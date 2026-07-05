@@ -441,14 +441,25 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		output="${filename%.*}"_goodgrid.nc
 
 		echo -n "     - >${variable}< from ${file}"
-                python $pyfesom_script ${FESOM_MESH_SWITCHES} \
-		    --FESOM_PATH $DATA_DIR_fesom \
-		    --FESOM_VARIABLE $variable \
-		    --FESOM_MESH ${MESH_DIR_fesom} \
-		    --FESOM_YEARS $start_year_couple $end_year_couple \
-                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
-                    --FESOM_OUTPUT $output > $logfile
-		echo " : STILL alive"
+		# Stage 1b: the goodgrid file is a pure function of the raw FESOM
+		# source. When make_forcing runs its second pass (multiyear- vs
+		# total-mean), the source is unchanged and the goodgrid already
+		# exists from the first pass, so skip the expensive rebuild.
+		_raw_src="${DATA_DIR_fesom}${variable}.fesom.${start_year_couple}.nc"
+		if [ "x${start_year_couple}" == "x${end_year_couple}" ] && \
+		   [ -f "${output}" ] && [ -f "${_raw_src}" ] && [ "${output}" -nt "${_raw_src}" ] ; then
+		    echo " : reusing existing goodgrid (skip rebuild)"
+		else
+                    python $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_VARIABLE $variable \
+		        --FESOM_MESH ${MESH_DIR_fesom} \
+		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
+                        --FESOM_OUTPUT $output > $logfile
+		    echo " : STILL alive"
+		fi
+		unset _raw_src
 
 		test_file_or_exit $output 6
                 processed_fesom1x_file3D_T_list_for_ice="$processed_fesom1x_file3D_T_list_for_ice ${output}"
@@ -460,14 +471,23 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		output="${filename%.*}"_goodgrid.nc
 
 		echo -n "     - >${variable}< from ${file}"
-                python $pyfesom_script ${FESOM_MESH_SWITCHES} \
-		    --FESOM_PATH $DATA_DIR_fesom \
-		    --FESOM_VARIABLE $variable \
-		    --FESOM_MESH ${MESH_DIR_fesom} \
-		    --FESOM_YEARS $start_year_couple $end_year_couple \
-                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
-		    --FESOM_OUTPUT $output > $logfile
-		echo " : STILL alive"
+		# Stage 1b: skip rebuild if goodgrid already built this leg from
+		# the same (unchanged) raw source -- see temp loop above.
+		_raw_src="${DATA_DIR_fesom}${variable}.fesom.${start_year_couple}.nc"
+		if [ "x${start_year_couple}" == "x${end_year_couple}" ] && \
+		   [ -f "${output}" ] && [ -f "${_raw_src}" ] && [ "${output}" -nt "${_raw_src}" ] ; then
+		    echo " : reusing existing goodgrid (skip rebuild)"
+		else
+                    python $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_VARIABLE $variable \
+		        --FESOM_MESH ${MESH_DIR_fesom} \
+		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
+		        --FESOM_OUTPUT $output > $logfile
+		    echo " : STILL alive"
+		fi
+		unset _raw_src
 
 		test_file_or_exit $output 7
                 processed_fesom1x_file3D_S_list_for_ice="$processed_fesom1x_file3D_S_list_for_ice ${output}"

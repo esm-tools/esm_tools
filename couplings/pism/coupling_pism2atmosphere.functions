@@ -1,5 +1,18 @@
 #!/usr/bin/ksh
 
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                'BEGIN{ printf "     [TIMER] %-50s %9.2f s\n", l, (b-a) }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+fi
+
 function pism2atmosphere {
         echo "                =================================================================="
         echo "                 *** S T A R T I N G    pism2atmosphere *** "; echo
@@ -27,12 +40,19 @@ function pism2atmosphere {
         echo "                =================================================================="
 }
 function iterative_coupling_pism_atmosphere_make_forcing {
+        couple_timer "pism2atm: get_newest_output (cat+timmean)"
         pism_atmosphere_get_newest_output
+        couple_timer "pism2atm: update_domain_mask"
         pism_atmosphere_update_domain_mask
+        couple_timer "pism2atm: generate_orography_anomaly"
         pism_atmosphere_generate_orography_anomaly
+        couple_timer "pism2atm: generate_ice_thickness_anomaly"
         pism_atmosphere_generate_ice_thickness_anomaly
+        couple_timer "pism2atm: generate_runoff"
         pism_atmosphere_generate_runoff
+        couple_timer "pism2atm: assemble_final_file"
         pism_atmosphere_assemble_final_file
+        couple_timer "pism2atm: make_forcing DONE"
 }
 
 function iterative_coupling_pism_atmosphere_write_names {

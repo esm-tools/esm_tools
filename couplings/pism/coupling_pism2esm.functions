@@ -1,4 +1,18 @@
 #!/usr/bin/ksh
+
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                'BEGIN{ printf "     [TIMER] %-50s %9.2f s\n", l, (b-a) }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+fi
+
 pism2esm() {
     echo " *** S T A R T I N G    pism2esm *** "
     echo "modules loaded:"
@@ -18,8 +32,10 @@ pism2esm() {
     echo " *     input:  ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
     echo " *     output: ${COUPLE_DIR}/latest_ice_geometry.nc"
 
+    couple_timer "pism2esm: pism2atmosphere"
     echo " *   calling pism2atmosphere"
     pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+    couple_timer "pism2esm: ice-geometry seltimestep/expr"
     if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ]]; then
         cdo seltimestep,-1 \
             -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
@@ -29,9 +45,11 @@ pism2esm() {
     else
         echo " *   WARNING: PISM output file not found, skipping ice-geometry extraction"
     fi
+    couple_timer "pism2esm: pism2ocean"
     echo " *   calling pism2ocean"
     pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
 
+    couple_timer "pism2esm: DONE"
 
     echo " *** pism2esm done *** "
 }

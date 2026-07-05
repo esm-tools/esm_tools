@@ -1,6 +1,20 @@
 #!/usr/bin/ksh
 
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                'BEGIN{ printf "     [TIMER] %-50s %9.2f s\n", l, (b-a) }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+fi
+
 function ocean2pism {
+    couple_timer "ocean2pism: setup+names+prepare-forcing"
     echo " *** S T A R T I N G    ocean2pism *** (PISM version ${VERSION_pism})"
 
     echo $(module list)
@@ -179,9 +193,11 @@ function ocean2pism {
             exit 3
     esac
 
+    couple_timer "ocean2pism: compute-forcing+time-axis+xy"
     #iterative_coupling_ocean_pism_set_options
     iterative_coupling_ocean_pism_regrid_set_time_axis ${PISM_OCEAN_FORCING_FILE}
     iterative_coupling_pism_regrid_add_xy_array ${PISM_OCEAN_FORCING_FILE} "ocean"
+    couple_timer "ocean2pism: DONE (before sleep 10)"
 
     ln -sf "${COUPLE_DIR}/ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc" "${COUPLE_DIR}/latest_ocean_forcing_file.nc"
     
@@ -607,6 +623,7 @@ EOFcdo
 # Regrid: Interpolation and extrapolation
 #
 function iterative_coupling_ocean_pism_regrid_interpolate {
+    couple_timer "ocean2pism: build_weights4remap"
     echo " *   Interpolate GCM forcing..."
 
     ierr=10
@@ -624,6 +641,7 @@ function iterative_coupling_ocean_pism_regrid_interpolate {
 	couple
     test_file_or_exit $WEIGHTS_OCE2ICE 6
 
+    couple_timer "ocean2pism: cdo remap (apply, per-level weights)"
     echo "     => remap,$GRIDDES_ICE,$WEIGHTS_OCE2ICE"
     $cdo remap,$GRIDDES_ICE,$WEIGHTS_OCE2ICE \
 	ocean_file_for_ice.pism_names.nc \
@@ -639,6 +657,7 @@ function iterative_coupling_ocean_pism_regrid_extrapolate {
     # FESOM ocean grid
     regrid_ocean_pism_extrapolate_misstoc=${regrid_ocean_pism_extrapolate_misstoc:-0}
     iterative_coupling_ocean_pism_regrid_extra_type=${iterative_coupling_ocean_pism_regrid_extra_type:-fillmiss2}
+    couple_timer "ocean2pism: extrapolate (${iterative_coupling_ocean_pism_regrid_extra_type})"
     echo " *   Extrapolate GCM forcing with method >>${iterative_coupling_ocean_pism_regrid_extra_type}<< ..."
 
     _cdo_flag=$( return_allowed_cdo_miss_replace_flags ${iterative_coupling_ocean_pism_regrid_extra_type} ${regrid_ocean_pism_extrapolate_misstoc} )

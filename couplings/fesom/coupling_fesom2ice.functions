@@ -1,5 +1,26 @@
 #!/usr/bin/ksh
 
+# ---------------------------------------------------------------------------
+# couple_timer: lightweight per-step profiling timer for the coupling glue.
+#   Call `couple_timer "label"` at each block boundary. It prints the wall
+#   time elapsed since the PREVIOUS mark, tagged with the previous label, as
+#   an indented '[TIMER]' line.  After a run:
+#       grep '\[TIMER\]' <exp>/log/*couple*   ->  per-step cost breakdown
+#   Idempotent (defined once per shell) and side-effect free. Keep the copies
+#   in the other coupling_*2*.functions files in sync.
+# ---------------------------------------------------------------------------
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                'BEGIN{ printf "     [TIMER] %-50s %9.2f s\n", l, (b-a) }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+fi
+
 function fesom2ice {
     FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
@@ -15,8 +36,10 @@ function fesom2ice {
     iter_coup_interact_method_oce2ice=${iter_coup_interact_method_oce2ice:-}
 
     iterative_coupling_fesom1x_ice_make_forcing
+    couple_timer "fesom2ice: write_grid+names"
     iterative_coupling_fesom1x_ice_write_grid
     iterative_coupling_fesom1x_ice_write_names
+    couple_timer "fesom2ice: DONE"
 
     for file in ${cleanup_list} ; do test -f $file && rm $file ; done
     unset cleanup_list file
@@ -28,10 +51,13 @@ function iterative_coupling_fesom1x_ice_make_forcing {
     FESOM_TO_ISM_multiyear_mean=${FESOM_TO_ISM_multiyear_mean:-1}
     FESOM_TO_ISM_total_mean=${FESOM_TO_ISM_total_mean:-1}
 
+    couple_timer "fesom2ice: construct+select (pass1)"
     fesom_ice_construct_input_list
     fesom_ice_select_relevant_variables
     # Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+    couple_timer "fesom2ice: build_grid temp+salt (pass1)"
     fesom_ice_fesom_build_grid_with_lonlat_depth
+    couple_timer "fesom2ice: concat+means (pass1)"
     fesom_ice_concatenate_files
     if [ "x${FESOM_TO_ISM_multiyear_mean:-0}" == "x1" ] ; then
             fesom_ice_generate_multiyear_mean
@@ -61,10 +87,13 @@ function iterative_coupling_fesom1x_ice_make_forcing {
             FESOM_TO_ISM_total_mean=1
     fi
 
+    couple_timer "fesom2ice: construct+select (pass2)"
     fesom_ice_construct_input_list
     fesom_ice_select_relevant_variables
     # Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+    couple_timer "fesom2ice: build_grid temp+salt (pass2)"
     fesom_ice_fesom_build_grid_with_lonlat_depth
+    couple_timer "fesom2ice: concat+means (pass2)"
     fesom_ice_concatenate_files
     if [ "x${FESOM_TO_ISM_multiyear_mean}" == "x1" ] ; then
         fesom_ice_generate_multiyear_mean
@@ -84,6 +113,7 @@ function iterative_coupling_fesom1x_ice_make_forcing {
     #
     # Adding the depth works only for z-coordinates
     #
+    couple_timer "fesom2ice: finalize (rename depth + cp)"
     if [ -f ${FileName_depth4levels_FESOM} ] ; then
 	cp ocean_file_for_ice.nc ocean_file_for_ice.before_add_depth.nc
 	fesom_ice_rename_level2depth_add_depth ${FileName_depth4levels_FESOM} ocean_file_for_ice.nc

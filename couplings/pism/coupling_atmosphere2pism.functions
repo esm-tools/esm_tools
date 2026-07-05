@@ -74,10 +74,24 @@
 ##      1. PDD: Prepares files/flags for the positive degree day scheme
 ##      2. DEBM: Prepares files/flags for the diurnal energy balance model (see here: REF to Uta)
 ##      3. EBM: Prepares files/flags for the SEMIC energy balance model (see here: REF Mario)
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                'BEGIN{ printf "     [TIMER] %-50s %9.2f s\n", l, (b-a) }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+fi
+
 atmosphere2pism() {
+    couple_timer "atmosphere2pism: setup+receive"
     echo -e "\t\t=================================================================="
     echo -e "\t\t*** S T A R T I N G    atmosphere2pism *** "; echo
-    
+
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/general_helpers.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
@@ -604,6 +618,7 @@ ic_atm2pism_regrid_dyn_downscale_transmissivity() {
 ##
 ## After regridding, all files matching variable names in `cdo vardes atmosphere_file_for_ice` are added to the `cleanup_list`
 ic_atm2pism_regrid_downscale_split_names() {
+        couple_timer "atmosphere2pism: regrid+downscale (split_names)"
         echo; echo "                *   spliting names and regridding via ${INTERPOL_TYPE_ATM}"
 
         # Umbau wegen dieser Fehlermeldungen
@@ -1354,6 +1369,7 @@ ic_atm2pism_ablation_pdd_set_options_atmo_given() {
 ## @brief
 ## Prepares a forcing file for the Fortran implementation of the dEBM mass balance model
 ic_atm2debm_ablation_debm_make_forcing() {
+        couple_timer "atmosphere2pism: dEBM prepare forcing file"
         echo; echo -e "\t\t* Preparing forcing file from atmosphere_file_for_ice.nc for the dEBM Mass Balance Model"
         ic_atm2debm_ablation_debm_make_forcing_set_temperature_units
         ic_atm2debm_ablation_debm_make_forcing_set_temperature_below_firn_units
@@ -1378,6 +1394,7 @@ ic_atm2debm_ablation_debm_make_forcing() {
 ## 2) Downloads dEBM code and create dEBM execute binary file; this only do for the first time step
 ## 3) Run the Fortran version of the dEBM
 ic_atm2debm_ablation_debm_run() {
+        couple_timer "atmosphere2pism: dEBM run (compile+execute)"
         echo; echo -e "\t\t* Running dEBM Model"
         ic_atm2debm_ablation_debm_run_modify_nml
         ic_atm2debm_ablation_debm_run_compile_binary

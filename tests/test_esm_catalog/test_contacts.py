@@ -21,8 +21,8 @@ def _ctx(*contacts: Contact) -> CollectionContext:
 
 # --- Contact dataclass ---
 
-def test_contact_from_config_full():
-    c = Contact.from_config({
+def test_contact_from_dict_full():
+    c = Contact.from_dict({
         "name": "Jane Doe",
         "orcid": "0000-0001-2345-6789",
         "institution": "AWI",
@@ -33,8 +33,8 @@ def test_contact_from_config_full():
     assert c.institution == "AWI"
 
 
-def test_contact_from_config_minimal():
-    c = Contact.from_config({"name": "Jane Doe"})
+def test_contact_from_dict_minimal():
+    c = Contact.from_dict({"name": "Jane Doe"})
     assert c.institution is None
     assert c.roles == ["principal_investigator"]
 

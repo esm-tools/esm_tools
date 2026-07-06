@@ -393,24 +393,36 @@ Key readings: (i)~\textbf{Fix 2 works} --- \code{build\_grid} pass~2 fell $140.9
 $\sim$5.6$\times$ slower than the standalone $\sim$25\,s, i.e.\ live-filesystem contention, not the
 algorithm.
 
+\subsection{Fix 3 --- the \code{cdo monmean} was vestigial}
+The \code{movcav6} table flagged \code{fesom\_ice\_select\_relevant\_variables} (a
+\code{cdo monmean} on each raw 3-D \code{temp}/\code{salt} file) as the \#1 cost, $\sim$155\,s/pass
+$\times$2 passes $\approx$310\,s. Tracing it shows the \code{*\_var4ice.nc} it produces is
+\textbf{never read}: the Python builder reads the \emph{raw} file directly and does its own
+time-mean, \code{concatenate} consumes the \code{*\_goodgrid} files, and \code{var4ice} is used
+only to derive the goodgrid \emph{filename} before being deleted. So the monmean --- a full
+read+write of the $\sim$260\,MB yearly file --- is pure overhead, left over from when the Python
+consumed \code{var4ice}. Replaced with an instant \code{ln -sf} (goodgrid name and \code{-f}
+invariants preserved; 2-D paths unchanged; \code{08ea580c}). This removes both passes' monmean
+and takes \code{couple\_out\_fesom} from $\sim$508\,s toward $\sim$200\,s --- i.e.\ the
+\code{fesom2ice} handoff is now $\sim$36\,min\,$\to\sim$3--4\,min across Fixes~1--3.
+
 \subsection{Remaining ranked targets}
 \begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
-  \item \textbf{Skip the redundant pass-2 \code{construct+select}} in \code{fesom2ice}
-        ($\sim$155\,s, free) --- same guard pattern as Fix~2, since the pass-2 \code{*\_var4ice.nc}
-        \code{monmean} outputs are identical to pass~1.
   \item \code{pism2atmosphere} \code{get\_newest\_output} (\code{cat}+\code{timmean}, $\sim$89\,s)
         --- largely \emph{inherent}: 10\,yr of monthly PISM extra output (120 steps,
         $2.36\times10^9$ values). Low-yield/high-risk.
-  \item \code{couple\_in} \textbf{dEBM run ($\sim$65\,s)} --- the Fortran dEBM binary is
-        \emph{recompiled every leg}; cache/skip the compile when the binary already exists.
   \item \code{ocean2pism} \code{cdo remap} ($\sim$48\,s) --- distance-weighted weights are
         regenerated \emph{per depth level} (47$\times$) because the wet/dry source mask varies by
         level; the source geometry is fixed, so the weights could be built once.
   \item Minor: \code{pism2esm} ice-geometry \code{seltimestep} ($\sim$24\,s); \code{ocean2pism}
         \code{fillmiss2} ($\sim$23\,s); a fixed \code{sleep 10} at the end of \code{ocean2pism}.
+  \item \emph{Not} a target: \code{couple\_in} dEBM ($\sim$65\,s) --- the ``compile'' is a fast
+        \code{cp \$DEBM\_EXE}; the time is the dEBM Fortran model \emph{executing} on a 1.1\,GB
+        input, i.e.\ genuine compute.
 \end{enumerate}
-\emph{Net so far:} the \code{fesom2ice} handoff is $\sim$36\,min\,$\to\sim$8.5\,min (Fixes~1+2),
-with a further $\sim$155\,s free once the pass-2 \code{monmean} is skipped.
+\emph{Net:} the \code{fesom2ice} handoff is $\sim$36\,min\,$\to\sim$3--4\,min (Fixes~1--3).
+The remaining PISM-side glue ($\sim$8\,min, mostly inherent large-file CDO) is the next frontier
+if further speedup is wanted.
 
 \bigskip
 \begin{center}

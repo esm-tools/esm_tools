@@ -1,0 +1,728 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage[hidelinks]{hyperref}
+\usepackage{parskip}
+
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{kw}{RGB}{0,90,160}
+\definecolor{cmt}{RGB}{100,120,100}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single,
+  framesep=4pt,
+  rulecolor=\color{gray!40},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  keywordstyle=\color{kw}\bfseries,
+  commentstyle=\color{cmt}\itshape,
+  morekeywords={CALL,SUBROUTINE,IF,THEN,ELSE,ENDIF,DO,ENDDO,INTEGER,REAL,LOGICAL},
+}
+
+\newcommand{\code}[1]{\texttt{\small #1}}
+\newcommand{\file}[1]{\texttt{\footnotesize #1}}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small AWI-ESM3 $\leftrightarrow$ PISM moving-cavity}
+\rhead{\small two coastal-margin blockers}
+\cfoot{\thepage}
+
+\title{\vspace{-1.5em}\textbf{Two Coastal-Margin Blockers in the\\ AWI-ESM3\,$\leftrightarrow$\,PISM Moving-Cavity Coupling}\\[0.3em]
+\large A measurement-driven investigation log\\[0.25em]
+\normalsize \textbf{I.}~OIFS step-0 coastline crash \emph{(resolved)} \quad\textbullet\quad \textbf{II.}~FESOM cavity-margin vertical-CFL instability \emph{(mechanism identified --- melt shock at newly-under-ice nodes; fix drafted, not yet tested --- \S\ref{sec:current}, read first)}}
+\author{Experiment \texttt{movcav4}, chunk-3 (awiesm3 1901)}
+\date{2026-07-05}
+
+\begin{document}
+\maketitle
+\thispagestyle{fancy}
+
+\begin{abstract}
+\noindent
+We are building an end-to-end AWI-ESM3 (FESOM2 + OIFS-48r1 + LPJ-GUESS) $\leftrightarrow$
+Antarctic-PISM \emph{moving-cavity} coupled run driven by \code{esm\_tools}. On each
+mesh-change leg the coupling machinery regenerates the FESOM sub-mesh, the OASIS
+grids/masks/weights, and the OIFS \code{ICMGG} initial file so all components agree on the
+new coastline. The first mesh-change leg (\code{movcav4}, awiesm3 1901) surfaced \textbf{two
+distinct blockers, both localised to the Antarctic coastal margin}. This log records the
+investigation as a sequence of \emph{measurements} rather than hypotheses.
+
+\smallskip\noindent
+\textbf{Blocker I --- an OIFS step-0 surface crash --- is SOLVED.} A floating-point NaN in
+the surface/moist-physics column struck exactly the coastline cells whose land--sea type
+flipped. Root cause: the coupling tool \code{ocp-tool} flipped a cell by setting \emph{only}
+its land--sea mask and soil type, leaving every other surface field at the old type (a
+``half-converted'' column); OIFS faithfully re-ingested that inconsistency from the
+regenerated \code{ICMGG} and NaN'd in the moist physics. Fix: a masked nearest-neighbour
+rebuild of each flipped cell in \code{ocp-tool}, plus the \code{ICMGG} re-ingest on warm
+start. A residual crash then proved \emph{DDH-diagnostic-only}; with DDH off, OIFS runs
+$\sim$700 coupling steps under \code{-fpe0}, so OIFS and the fluxes it sends the ocean are
+finite. Part~II (\S\ref{sec:oifs}\,ff.) is the full record.
+
+\smallskip\noindent
+\textbf{Blocker II --- a FESOM vertical-CFL blowup --- is the LIVE blocker.} Some $5$--$10$
+model days in, FESOM blows up with a vertical-CFL runaway ringing the whole cavity margin.
+Hourly output narrows it to a \textbf{time-growing coastal baroclinic instability on the
+submesh}, fed by progressive \emph{subsurface freshening} at the retreated margin; timestep,
+surface flux, sea ice, and restart corruption are all ruled out with evidence. The root
+cause is not yet found. \textbf{\S\ref{sec:current} is the current truth --- read it first.}
+\end{abstract}
+
+\section{Current state (2026-07-05, rev.~2): a \emph{time-growing} coastal baroclinic instability on the submesh --- \emph{narrowed, not yet root-caused}}\label{sec:current}
+
+\textbf{Read this first.} The OIFS step-0 surface crash that the rest of this document
+dissects (\S\ref{sec:reingest} onward) turned out to be a \emph{self-inflicted regression}
+(a stale, pre-NN-fill \code{ICMGG}); with the correctly regenerated \code{ICMGG} the OIFS
+side \textbf{works}. The live blocker is that the coupled chunk-3 leg (\code{movcav4},
+awiesm3 1901) runs $\sim$5--10 model days and then \textbf{FESOM blows up} with a
+vertical-CFL runaway. \emph{This section is the current truth and supersedes
+\S\ref{sec:reingest}ff.} Today's work \textbf{narrowed the cause substantially}: it is
+\textbf{not} the timestep, \textbf{not} the surface flux/ice, and \textbf{not} a corrupt or
+fresh-capped remapped restart. Hourly output plus a targeted diagnostic run point strongly to a
+\textbf{basal-melt shock where the moving geometry puts new ice over above-freezing open-ocean
+water} (\S\ref{sec:rootcause}). A candidate fix is drafted (freezing-point cap on
+newly-under-ice columns) but has \textbf{not yet been tested} in a run.
+
+\subsection{Symptom}
+A \textbf{vertical-CFL ($\mathrm{CFLz}=w\,\Delta t/\Delta z$) instability that rings the
+entire Antarctic ice-shelf margin and grows over days from a clean start.} First
+\code{CFLz}$>1.75$ warnings appear as early as \code{mstep}$\approx$11 at $\sim$29 fixed
+coastal/cavity locations; \code{CFLz} creeps $1.8\to2\to\dots\to$ tens over days; eventually
+a cell's temperature goes NaN (\code{"found temperture becomes NaN"}) and FESOM
+\code{MPI\_ABORT}s. The blowup \emph{step} is stochastic (MPI/threading): at
+\textbf{1200\,s} it blew at \code{mstep} $311$--$696$ ($4.3$--$9.7$\,d; runs \code{26060316}
+seeded / \code{26055476} unseeded), and the hourly-output run \code{26061910} at
+\code{mstep}$=608$. The \emph{hotspot pattern} is robust and \emph{subsurface} --- $w$ and
+\code{CFLz} peak \textbf{mid-column at $\sim$95--100\,m}, not at the surface. Hotspots
+(glon/glat, peak \code{CFLz}): Totten \textbf{108.7/$-$66.1} ($\sim$8), Amery/Prydz
+71.4/$-$70.0, Ross 165.6/$-$75.0, Weddell/Filchner $-$44.3/$-$77.3 \& $-$57.6/$-$75.9,
+Bellingshausen $-$76.5/$-$72.1, E-Antarctica 93.2/$-$66.0.
+
+\subsection{What we ruled OUT (with evidence)}
+\begin{enumerate}[leftmargin=1.6em,itemsep=3pt]
+  \item \textbf{Anomalous atmosphere heat flux --- NO.} Reproduced with OASIS \code{EXPOUT}
+        (per-coupling-step dump). The coastal OIFS$\to$ocean heat flux peaks
+        $600$--$700$\,W/m$^2$ but is \textbf{almost entirely solar} (\code{A\_Qs\_all};
+        Jan solstice at $-66^\circ$; \file{flux\_decomp.py}); the non-solar part
+        (\code{A\_Qns\_oce}) is a modest $-60$ to $-120$\,W/m$^2$ (normal open-water loss).
+        Flux \emph{leads}, SST \emph{lags}. Forcing is physically correct.
+  \item \textbf{Missing sea ice $\Rightarrow$ solar over-absorption --- tested, NO EFFECT.}
+        Implemented an \textbf{ice-donor NN-fill} in the F90 remap (\S\ref{sec:iceseed}),
+        seeding newly-exposed nodes with the nearest iced neighbour's ice column (run
+        \code{26060316}, verified 47\,455 iced). The \code{CFLz} hotspots came back
+        \textbf{location-, onset- and magnitude-identical} to the unseeded run. Ice changed
+        \emph{nothing} --- the instability is \textbf{ocean-internal}.
+  \item \textbf{Timestep / vertical-CFL artifact --- tested at 600\,s, NO.} Halved the FESOM
+        step to \textbf{600\,s} (\code{step\_per\_day=144}), everything else byte-identical
+        (run \code{26061443}). It \emph{still blew}, at \code{mstep}$=845$
+        $=5.9$ model-days, vs the controlled seeded 1200\,s baseline's $4.3$\,d --- halving
+        $\Delta t$ bought only $\sim$1.5\,d, and \code{CFLz} at blowup was \emph{still}
+        $61$--$71$ at depth (it would \emph{halve} if $\Delta t$ were the driver). So the
+        runaway \emph{generates} the extreme $w$; $\Delta t$ only weakly modulates \emph{when}
+        the NaN trips. \textbf{Not a CFL/timestep artifact.}
+  \item \textbf{Corrupt or fresh-capped remapped restart --- NO} (and a red herring retracted).
+        The \emph{initial} remapped restart is \textbf{clean}: first-wet-level $T$/$S$ normal
+        ($S$ mean $33.7$, no zeros, identical to source), \code{hnode}$\ge0$ with sane column
+        sums, \code{ssh}$\in[-2.1,1.2]$\,m, $w\approx1.7$\,mm/s at Totten, and \textbf{zero
+        NaNs}. \emph{Retraction:} an apparent ``$2649$ nodes with \code{salt}$=0$'' is
+        \textbf{legitimate under-ice cavity masking} (level-index~0 at cavity nodes with
+        \code{ulevels}~$2$--$27$), \emph{not} a fresh cap; at each node's \emph{first wet
+        level} $S$ is normal and matches the source, and \emph{none} of those nodes retreated.
+        The $\sim$12\,PSU seen in the blowup-file profile is the \emph{evolved} state (the
+        symptom), not the initial condition. \textbf{Do not re-chase this.}
+  \item \textbf{Stale OASIS submesh artifacts --- NO.} \file{grids.nc}, \file{masks.nc},
+        \file{areas.nc} (feom \code{srf} $=3.608\times10^{14}$\,m$^2$), \file{rstos.nc} and
+        the \code{\_25} weights are all correct submesh (208\,679). The only full-mesh
+        (211\,567) leftover was the namcouple feom grid-dimension line --- now fixed per-leg
+        (\S\ref{sec:current-fixes}).
+\end{enumerate}
+
+\subsection{What the hourly movie shows (the key new evidence)}\label{sec:movie}
+We added \textbf{hourly, hourly-\emph{split}} output of \code{temp}/\code{salt}/\code{w}
+(\S\ref{sec:current-fixes}) and captured the full onset$\to$blowup. Reading a cross-margin
+level at $\sim$95\,m in the Totten region (\file{movcav4\_crash\_plots/blowup\_TSw\_evolution.mp4};
+Fig.~\ref{fig:mapevo}):
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{Hour~1:} clean --- smooth $T$/$S$, $w\approx0$ everywhere.
+  \item \textbf{$\sim$Day~2:} a \textbf{fresh $+$ cold tongue nucleates at the retreated
+        cavity margin} near 108.7/$-$66.1, with the first up/down $w$ cells beside it.
+  \item \textbf{$\sim$Day~3.5:} the fresh/cold band \textbf{saturates ($<30$\,PSU) and spreads
+        along the whole margin} ($100$--$118^\circ$E); the $w$ dipoles intensify.
+  \item \textbf{$\to$ runaway:} $w$ grows until the \code{CFLz} NaN.
+\end{itemize}
+So the blowup is a \textbf{coastal baroclinic mode that grows \emph{during} the run}, at
+$\sim$95--100\,m, \textbf{fed by progressive freshening at depth along the margin} --- a
+\emph{process}, not a static initial-condition pathology (hour~1 is clean; the restart is
+verified clean).
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{movcav4_crash_plots/fig_map_hour001.png}\\[2pt]
+  \includegraphics[width=\linewidth]{movcav4_crash_plots/fig_map_hour085.png}
+  \caption{\textbf{Map evolution at $\sim$95\,m in the Totten margin} ($T$ | $S$ | $w$; star
+    $=$ crash cell 108.7/$-$66.1). \emph{Top:} hour~1 --- smooth $T$/$S$, $w\approx0$.
+    \emph{Bottom:} hour~85 ($\sim$day~3.5) --- a fresh ($<30$\,PSU) $+$ cold band has grown
+    along the whole retreated margin with intensifying up/down $w$ cells. Frames from
+    \file{blowup\_TSw\_evolution.mp4}.}
+  \label{fig:mapevo}
+\end{figure}
+
+\subsection{Mechanism identified: a basal-melt shock at newly-under-ice nodes (fix drafted, \emph{untested})}\label{sec:rootcause}
+Two parallel workstreams --- verify-on-existing-output and a diagnostic re-run with hourly
+\code{fw}/\code{fh}/\code{N2}/\code{Kv}/\code{u}/\code{v} (run \code{26063909}) --- converge on
+one chain, each step measured:
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+  \item \textbf{Warm water under new ice at $t=0$.} At the Totten front, cavity-base thermal
+        driving $T-T_f$ (median \textbf{+0.84\,\textdegree C}, = global cavity p90, 100\,\%
+        melting). This is \emph{not} a remap-fill artifact: the remapped base $T$ equals the
+        \emph{source} $T$ exactly. Using the real \code{map\_nod.out} correspondence, the mesh
+        change turns \textbf{667 open-ocean nodes into cavity} (``new ice over open water''),
+        ringing the whole margin (lat $-84.8$ to $-64$, drafts to $\sim$490\,m); counting all
+        nodes that gain top ice ($\mathrm{ul}_{\text{new}}>\mathrm{ul}_{\text{old}}$) gives
+        \textbf{1878}. The remap copies the pre-existing \emph{above-freezing} open-ocean water
+        straight under the new ice --- nothing re-initialises it to the ice-shelf equilibrium.
+  \item \textbf{Melt fires there immediately.} \code{fh} heat flux is a sharp
+        $\sim$250\,W/m$^2$ spot \emph{on the crash node at hour~1}, growing to a
+        $\sim$2000\,W/m$^2$ band along the front; \code{fw} freshwater flux is 5$\times$
+        interior, $\approx3.7\times10^{-6}$\,m/s $\approx$ \textbf{100\,m/yr} (vs $\sim$1\,m/yr
+        physical) --- a runaway.
+  \item \textbf{Thin front layers convert it to catastrophic freshening.} The freshwater is
+        dumped into a $\sim$10\,m (min 4.6\,m) top wet layer, giving $\Delta S=-4$ to
+        $-8$\,PSU in 12\,h, \textbf{strongest at the ice base and top-down} (the melt-plume
+        signature; Fig.~\ref{fig:sectevo}).
+  \item \textbf{Buoyant overturning $\to$ CFLz blowup} at the thin-$\Delta z$ front (the w
+        curtain of Fig.~\ref{fig:sectevo}). No pre-existing $w$ anomaly ($t=0$ global max$|w|$
+        is 2000\,km away), so the runaway is \emph{grown}, not inherited.
+\end{enumerate}
+In one line: \textbf{the moving geometry places new ice over above-freezing open-ocean water,
+and FESOM melts against it in a runaway that the thin cavity-front layers turn into a
+vertical-CFL blowup.} Timestep, atmosphere, sea ice, mesh element quality, and the initial
+velocity field are all excluded.
+
+\paragraph{Candidate fix (implemented in the F90 remap, \emph{not yet run}).}
+New subroutine \code{cap\_new\_cavity\_temp} in
+\file{couplings/fesom/remap\_restart/mo\_remap\_fields.F90}, called at the end of
+\code{remap\_all\_restarts} (so it runs inside \code{couple\_in} on every mesh-change leg,
+no extra script/step): for every newly-under-ice node
+($\mathrm{ul}_{\text{new}}>\mathrm{ul}_{\text{old}}$) it caps the wet-level temperature at the
+in-situ freezing point, $T\leftarrow\min(T,\,T_f(S,\text{depth}))$ (salinity untouched), using
+the mesh's own \code{ulevels}, \code{Z} and node map. A standalone prototype confirmed the cap
+drives the front cavity-base $T-T_f$ from $+0.76$ mean\,/\,$+1.41$ max to \textbf{exactly $0$}
+on the 1878 nodes (13\,924 cells) --- i.e.\ it removes the thermal driving. \textbf{Whether it
+prevents the blowup is to be tested by a normal leg resubmission.}
+
+\paragraph{Still-open structural question.} Are the deep-draft open$\to$cavity transitions
+(ul $13$--$20$, i.e.\ $130$--$490$\,m of ice over previously-open ocean in one 10-yr PISM step)
+\emph{physically correct}, or is the submesh \code{cavity\_nlvls} regeneration over-assigning
+ice draft at the moving front? A 490\,m draft advancing over open ocean is implausible, so the
+freezing-cap fix (which stabilises regardless) should be paired with a check of the cavity
+geometry against the PISM ice field.
+
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{movcav4_crash_plots/fig_section_hour001.png}\\[2pt]
+  \includegraphics[width=\linewidth]{movcav4_crash_plots/fig_section_hour101.png}
+  \caption{\textbf{Cross-margin vertical section} at lon\,$\approx$\,108.73$^\circ$E
+    (S\,$\to$\,ice-shelf, N\,$\to$\,open ocean; dashed line $=$ crash latitude $-66.09^\circ$).
+    \emph{Top:} hour~1 --- cavity side is \emph{uniform $\sim$34\,PSU full-depth}, $w\approx0$.
+    \emph{Bottom:} hour~101 ($\sim$day~4.2) --- a \textbf{full-depth fresh ($<29$\,PSU) $+$ cold
+    water mass} has developed on the cavity side, sharply fronted against the $34$--$35$\,PSU
+    open ocean, with the $w$ runaway as a \textbf{vertical curtain at the $-66^\circ$ front}.
+    This is the clearest single view of the instability: it is generated \emph{in time} from a
+    clean start, not present in the restart. Frames from \file{blowup\_section\_evolution.mp4}.}
+  \label{fig:sectevo}
+\end{figure}
+
+\subsection{Diagnostics + infrastructure that landed (keep these)}\label{sec:current-fixes}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item \textbf{Hourly + hourly-\emph{split} FESOM output} of \code{temp}/\code{salt}/\code{w}
+        (the enabler for the movie). \file{namelist.io} \code{io\_list}: those three set to
+        \code{1,'h'}; \file{file\_def\_fesom.xml}: a new \code{fesom\_1h} file\_group with
+        \code{output\_freq="1h" split\_freq="1h"}. The \textbf{hourly \code{split\_freq} is
+        essential} --- XIOS closes+flushes each hour's file to disk, so the blowup
+        \code{MPI\_ABORT} cannot lose it (a monthly/yearly split keeps one file open all run
+        and is lost on the crash). Verified: 136 closed hourly files survived the blowup.
+  \item \textbf{Movie tooling:} \file{make\_movie.py} (3-panel $T$/$S$/$w$ map at $\sim$95\,m
+        per hour $\to$ mp4) and \file{make\_section\_movie.py} (cross-margin depth-vs-latitude
+        section per hour, under-ice levels masked). \code{ffmpeg} at
+        \file{/sw/spack-levante/ffmpeg-4.3.2-rmywep/bin/ffmpeg}.
+  \item \textbf{namcouple feom dimension} $\to$ submesh, per leg: \code{couple\_namcouple}
+        subjob calling \code{fix\_namcouple\_feom\_dim} in
+        \file{coupling\_ice2fesom\_interactive\_mesh.functions}; \code{WORK\_DIR\_fesom} in
+        \file{env\_fesom.py}. Unblocks OASIS \code{EXPOUT}.
+  \item \textbf{Ice-donor NN-fill} in the F90 remap (\S\ref{sec:iceseed}): correct, kept, but
+        does \emph{not} fix the blowup.
+  \item All plots/movies $\to$ \file{/home/a/a270092/esm\_tools/movcav4\_crash\_plots/},
+        git-ignored (\code{*.png}, \code{*.mp4}).
+\end{itemize}
+
+\subsection{Reproduce / resume pointers}\label{sec:iceseed}
+Experiment \code{movcav4}, leg
+\file{/work/ab0246/a270092/pism\_repro/experiments/movcav4/run\_awiesm3\_19010101-19011231}.
+Re-run in place with \file{scripts/movcav4\_compute\_19010101-19011231.run} (it \code{srun}s
+directly in \file{work/}, no prepcompute --- so edits to \file{work/} \code{namelist.*} and
+\code{*.xml} take effect as-is). Blowup runs: \code{26055476} (1200\,s unseeded, m696),
+\code{26060316} (1200\,s seeded, m311), \code{26061443} (600\,s, m845), \code{26061910}
+(1200\,s + hourly output, m608). \textbf{Hourly $T$/$S$/$w$ files} are in \file{work/}
+(\code{temp.1h.fesom\_*}, \code{salt.1h}, \code{w.1h}) --- \emph{grab before the next leg
+overwrites them}. Movie/analysis scripts live in the session scratch; outputs in
+\file{movcav4\_crash\_plots/}. Analysis env:
+\code{/home/a/a270092/.conda/envs/pyfesom2\_env/bin/python} (base python's matplotlib 3.9
+breaks \code{cmocean}; \code{imageio-ffmpeg} also installed there). Crash-plot suite:
+\file{/work/ab0246/a270092/software/fesom2\_crash\_analysis} (config points at the movcav4
+submesh + blowup file). Ice-donor code:
+\file{couplings/fesom/remap\_restart/mo\_remap\_fields.F90} (thresholds
+\code{ICE\_CONC\_THRESH=0.15}, \code{ICE\_FILL\_MAXDIST=150\,km}; rebuild with
+\file{remap\_restart/build.sh} --- \emph{delete stale \code{*.mod} first}).
+
+\section{Goal and setup}
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{Experiment:} \code{movcav4}, an iterative \code{esm\_tools} coupling.
+        Model 1 = AWI-ESM3 (1-year chunks); Model 2 = Antarctic PISM (10-year chunks).
+        The leg under test is \textbf{chunk-3}, AWI-ESM3 year 1901 --- the \emph{first}
+        leg after a PISM step has changed the ice geometry.
+  \item \textbf{Moving cavity:} PISM ice $\to$ FESOM sub-mesh
+        (208\,679 nodes vs.\ 211\,567 on the full CORE3 mesh). A per-leg tool chain
+        (\code{ice2fesom}, \code{ocp-tool}, \code{remap\_restart}) regenerates the OASIS
+        grids/masks/weights (A096 atmosphere grid $=40\,320$ points, \code{feom} ocean
+        grid) and the OIFS \code{ICMGG} file (land--sea mask, soil type, geopotential,
+        \dots).
+  \item \textbf{Paths:}\\
+        model \file{/work/ab0246/a270092/model\_codes/awiesm3-develop-is/oifs-48r1}\\
+        experiment \file{/work/ab0246/a270092/pism\_repro/experiments/movcav4}.
+\end{itemize}
+
+\section{Coupling-glue performance: per-leg cost profiling and the \code{fesom2ice} speedup}\label{sec:perf}
+A separate workstream from the two blockers, recorded here because it governs how fast the
+iterative campaign can iterate. On each leg the two \emph{models} are cheap ($\sim$18\,min for
+a FESOM coupled year, $\sim$18\,min for a 10-yr PISM chunk on 45 nodes), but the \emph{coupling
+glue} between them dominated the per-leg wall clock. The worst offender was
+\code{couple\_out\_fesom} (the \code{fesom2ice} ocean\,$\to$\,ice handoff): $\sim$36\,min on
+\code{movcav5}, run as a single \code{nproc:1} step while a 45-node allocation sat idle. Same
+method as the rest of this log --- measure, then fix.
+
+\subsection{Root cause: 564 redundant whole-file reads, and no interpolation at all}
+The handoff note blamed a FESOM-unstructured\,$\to$\,lon/lat \emph{interpolation}. The code
+refutes that: \file{couplings/utils/fesom\_scalar\_array\_to\_LonLat.py} does \emph{no}
+horizontal regridding --- its output is written on the native FESOM nodes
+(\code{mesh.x2}/\code{mesh.y2}). The cost was pure redundant I/O. A nested
+\code{(time $\times$ level)} loop called \code{pf.get\_data(...)} $\approx 12\times47=564$ times
+\emph{per variable}, and \emph{every} call re-opened and re-read the entire $\sim$262\,MB yearly
+file and recomputed the full time-mean, just to keep one depth level. Worse, because
+\code{how="mean"} averages over all times \emph{inside} each call, the outer time loop stored the
+\emph{identical} annual-mean field into all 12 output slots.
+
+\subsection{Fix 1 --- read once, vectorise (output bit-identical)}
+Replaced the nested loop with a single \code{get\_data(depth=None, how="mean")} read plus a
+vectorised per-level extraction (same \code{ind\_for\_depth} mapping, broadcast across time).
+Validated \textbf{bit-for-bit} against the old script (empty \code{cdo diffn}, identical byte
+size) and golden-equivalent. Standalone: \code{temp} $283\to\sim$10\,s, \code{salt}
+$537\to\sim$13\,s ($\sim$24--42$\times$).
+
+\subsection{Fix 2 --- the whole pipeline ran twice}
+\code{iterative\_coupling\_fesom1x\_ice\_make\_forcing} builds the entire forcing \emph{twice} (a
+multiyear-mean pass and a total-mean pass); only the final CDO mean differs --- the
+\code{*\_goodgrid.nc} files the second pass rebuilds are byte-identical to the first. Guarded the
+\code{temp}/\code{salt} build loops to reuse the existing goodgrid when the raw source is
+unchanged (single-year legs only; rebuilds if the source is newer). \emph{Fixes~1+2 committed:}
+\code{esm\_tools} \code{53afb1f3}, branch \code{development\_interactiv\_mesh\_awiesm3}.
+
+\subsection{Timer instrumentation (\code{[TIMER]})}
+To profile the glue in situ rather than by inference from file mtimes, a lightweight,
+idempotent lap-timer \code{couple\_timer "label"} was added at the block boundaries of the five
+runtime-path coupling files (31 marks total: \file{coupling\_fesom2ice.functions},
+\file{coupling\_pism2esm.functions}, \file{coupling\_pism2atmosphere.functions},
+\file{coupling\_ocean2pism.functions}, \file{coupling\_atmosphere2pism.functions}). After any run,
+\begin{lstlisting}
+grep '[TIMER]' <exp>/log/*couple*
+\end{lstlisting}
+prints a labelled per-step wall-clock breakdown (each mark reports the time since the previous
+one). Side-effect free, no behavioural change (\code{74d67cc7}).
+
+\subsection{Ground truth from \code{movcav6}, and a corrected picture}
+The first instrumented leg (\code{movcav6}) confirms the win \emph{and overturns the assumed
+bottleneck} (Table~\ref{tab:timers}).
+\begin{table}[htbp]
+\centering
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Step (\code{movcav6}, real leg)} & \textbf{Wall / s}\\
+\midrule
+\multicolumn{2}{@{}l}{\emph{\code{couple\_out\_fesom} (fesom2ice) --- $\sim$507\,s total ($\sim$8.5\,min)}}\\
+\quad construct+select (\code{cdo monmean}) --- pass 1 & 158.96\\
+\quad build\_grid \code{temp+salt} --- pass 1 & 140.86\\
+\quad concat+means --- pass 1 & 25.72\\
+\quad construct+select (\code{cdo monmean}) --- pass 2 \emph{(redundant)} & 154.37\\
+\quad build\_grid \code{temp+salt} --- pass 2 \emph{(now skipped, Fix 2)} & 2.63\\
+\quad concat+means --- pass 2 & 23.60\\
+\quad finalize + write grid/names & 1.26\\
+\addlinespace
+\multicolumn{2}{@{}l}{\emph{\code{couple\_in\_pism} --- $\sim$171\,s total}}\\
+\quad atmosphere2pism regrid+downscale & 19.83\\
+\quad dEBM run (compile+execute) & 64.81\\
+\quad ocean2pism \code{cdo remap} (per-level weights, 47$\times$) & 48.33\\
+\quad ocean2pism extrapolate (\code{fillmiss2}) & 22.86\\
+\quad (other atmosphere/ocean steps) & $\sim$15\\
+\addlinespace
+\multicolumn{2}{@{}l}{\emph{\code{couple\_out\_pism} (pism2esm) --- $\sim$119\,s total}}\\
+\quad get\_newest\_output (\code{cat}+\code{timmean}, 120 steps) & 88.58\\
+\quad ice-geometry \code{seltimestep}/\code{expr} & 24.14\\
+\quad (orography/thickness anomalies, runoff, assemble) & $\sim$6\\
+\bottomrule
+\end{tabular}
+\caption{\code{movcav6} per-step coupling-glue timings from the \code{[TIMER]}
+  instrumentation (\code{grep '[TIMER]'} on the \code{couple\_*} logs).}
+\label{tab:timers}
+\end{table}
+Key readings: (i)~\textbf{Fix 2 works} --- \code{build\_grid} pass~2 fell $140.9\to2.6$\,s;
+(ii)~\code{couple\_out\_fesom} overall dropped $\sim$36\,min\,(\code{movcav5})\,$\to\sim$8.5\,min;
+(iii)~\textbf{the real \#1 cost is \code{fesom\_ice\_select\_relevant\_variables} (the
+\code{cdo monmean}), $\sim$155\,s/pass --- which the handoff note called ``sub-second'' --- and it
+\emph{also} runs twice ($\sim$310\,s combined)}; (iv)~\code{build\_grid} in situ (141\,s) is
+$\sim$5.6$\times$ slower than the standalone $\sim$25\,s, i.e.\ live-filesystem contention, not the
+algorithm.
+
+\subsection{Remaining ranked targets}
+\begin{enumerate}[leftmargin=1.6em,itemsep=2pt]
+  \item \textbf{Skip the redundant pass-2 \code{construct+select}} in \code{fesom2ice}
+        ($\sim$155\,s, free) --- same guard pattern as Fix~2, since the pass-2 \code{*\_var4ice.nc}
+        \code{monmean} outputs are identical to pass~1.
+  \item \code{pism2atmosphere} \code{get\_newest\_output} (\code{cat}+\code{timmean}, $\sim$89\,s)
+        --- largely \emph{inherent}: 10\,yr of monthly PISM extra output (120 steps,
+        $2.36\times10^9$ values). Low-yield/high-risk.
+  \item \code{couple\_in} \textbf{dEBM run ($\sim$65\,s)} --- the Fortran dEBM binary is
+        \emph{recompiled every leg}; cache/skip the compile when the binary already exists.
+  \item \code{ocean2pism} \code{cdo remap} ($\sim$48\,s) --- distance-weighted weights are
+        regenerated \emph{per depth level} (47$\times$) because the wet/dry source mask varies by
+        level; the source geometry is fixed, so the weights could be built once.
+  \item Minor: \code{pism2esm} ice-geometry \code{seltimestep} ($\sim$24\,s); \code{ocean2pism}
+        \code{fillmiss2} ($\sim$23\,s); a fixed \code{sleep 10} at the end of \code{ocean2pism}.
+\end{enumerate}
+\emph{Net so far:} the \code{fesom2ice} handoff is $\sim$36\,min\,$\to\sim$8.5\,min (Fixes~1+2),
+with a further $\sim$155\,s free once the pass-2 \code{monmean} is skipped.
+
+\bigskip
+\begin{center}
+\rule{0.92\linewidth}{0.4pt}\\[4pt]
+{\large\bfseries Part~II\,---\,The OIFS step-0 coastline crash}\;\;\emph{\normalfont(resolved; historical record)}\\[4pt]
+\rule{0.92\linewidth}{0.4pt}
+\end{center}
+\noindent\emph{Everything from here to \S\ref{sec:state} documents the first blocker, now
+\textbf{solved}. It is kept as a full record of how the OIFS coastline crash was isolated and
+fixed; \S\ref{sec:current} supersedes it as the live state of the coupling.}
+
+\section{Infrastructure fixes already landed (coupling foundation)}\label{sec:oifs}
+Before the surface crash could be isolated, a series of framework/data bugs had to be
+cleared (all now resolved and validated at run time); these underpin \emph{both} blockers:
+\begin{itemize}[leftmargin=1.4em,itemsep=1pt]
+  \item \textbf{OASIS weights/restarts:} fresh 208\,679-point weights and remapped OASIS
+        restarts are staged in the correct sequence; the MCT sparse-matrix dimension
+        mismatch is gone. \code{rstos} SST is valid (271--305\,K, no zeros); the
+        \code{feom}\,$\to$\,A096 SST remap is exact (all 28\,528 ocean cells row-sum
+        $=1.0$).
+  \item \textbf{ICMGG regeneration:} the regenerated \code{ICMGG} land--sea mask equals
+        the A096 OASIS mask \emph{exactly} (11\,792 land points, zero disagreement).
+  \item \textbf{\code{esm\_tools} guards:} an \code{observe.py} race (compute launching
+        before \code{couple\_in} finished), \code{remap\_oasis\_restart} sanity guards,
+        a shared \code{rmp}-pool write guard, and per-leg \code{plit} generation/wiring.
+\end{itemize}
+\emph{Conclusion of this phase:} every component we \emph{regenerate} agrees on the new
+coastline, so at that point the remaining crash was isolated to the OIFS side at
+initialisation --- pursued through the rest of Part~II.
+
+\section{Symptom: a moving-target step-0 crash}
+The leg dies during step~0, always on the same handful of MPI ranks --- the ones holding
+the Antarctic coastline. As each cause was removed the crash moved \emph{downstream},
+which is itself the main diagnostic signal:
+\begin{center}
+\begin{tabular}{@{}llp{0.42\textwidth}@{}}
+\toprule
+\textbf{Build} & \textbf{Crash} & \textbf{Where / meaning}\\
+\midrule
+baseline & \code{error (73)} divide-by-zero & \code{radaca}: $\rho,\ \mathrm{PTH}/\mathrm{PTH}$ built from skin $T=0$.\\
++skin-T reseed & \code{error (73)} again & skin $T$ re-zeroed: ocean scheme sets skin $T=$ SST, and SST was $0$.\\
++SST reseed & \code{error (65)} floating-invalid & advances past the whole surface/radiation chain; now NaN in \code{cpdyddh:915} (DDH moist-physics budget, $\mathrm{PQR}\times\Delta p$).\\
+\bottomrule
+\end{tabular}
+\end{center}
+So the surface divide-by-zero is \emph{solved}; the live failure is a NaN precipitation
+flux produced by the moist physics on the same cells. (\S\ref{sec:reingest} later revised
+the \emph{attribution} of the first two rows: the reseed acts only on \code{NPROMA}
+padding, and it is Approach~A's ICMGG re-ingest that actually populates the real flipped
+cells --- but the observed crash-migration downstream is real either way.)
+
+\section{Method: measurement over speculation}
+Each of the findings below comes from an instrumented build (a debug \code{WRITE} at a
+specific line), run for five minutes on compute nodes, not from reading the code alone.
+The instrumentation lives behind the \code{ECE\_LANDICE} path so it does not touch
+ordinary runs.
+
+\section{What the measurements established}\label{sec:meas}
+
+\subsection{Skin temperature alone cannot be seeded}
+A step-0 reseed in \file{updtim.F90} that set the skin-T reservoir to the freezing point
+\code{RTT} had \emph{no effect}: the surface scheme re-derives ocean skin temperature from
+the SST later in the step, so with $\mathrm{SST}=0$ the seed is overwritten back to zero
+before the radiation call. The SST field itself has to be seeded.
+
+\subsection{Seeding SST appears to clear the divide-by-zero}
+Adding an SST reseed (\code{SD\_VF\%YSST}$\,\leftarrow\,$\code{RTT} where $<100$\,K)
+coincided with the \code{error (73)} giving way to a downstream failure. Instrumentation
+showed no cell degenerate by the end of \code{UPDTIM} (\code{DBG-UPDTIMEND: 0 cells still
+skinT(MP9)<100}), and the model advanced into
+\code{cpg\_drv}\,$\to$\,\code{cpg}\,$\to$\,\code{cpg\_dia} before failing at
+\begin{lstlisting}
+forrtl: error (65): floating invalid
+  cpdyddh_  915  cpdyddh.F90    ! PDHCV(..)=PQR(JROF,JLEV)*ZDELPREV(..)
+\end{lstlisting}
+The invalid operand is a rain/snow flux \code{PQR}/\code{PQS} out of the moist physics ---
+a genuine physics NaN, not a diagnostic artefact. (\S\ref{sec:reingest} shows the reseed
+was actually a no-op here; the real cells were already valid because of Approach~A. The
+\code{cpdyddh} NaN is the true remaining failure regardless.)
+
+\subsection{The coupler delivers a valid SST to every ocean cell}\label{sec:cplsst}
+The obvious next hypothesis was ``the newly-wet cavity cells receive no SST from FESOM''.
+This was tested directly: in \file{ece\_updclie\_cpl.F90}, at the exact line that applies
+the coupled SST to ocean-gated cells,
+\begin{lstlisting}
+IF (SD_VF(JROF,YLSM%MP,IBL) <= 0.5 .AND. SD_VF(JROF,YCLK%MP,IBL) <= 0.5) THEN
+   SD_VF(JROF,YSST%MP,IBL) = CPL_FLD_SST(IGP)          ! <-- incoming FESOM SST
+\end{lstlisting}
+we counted, per rank, the ocean-gated cells whose \emph{incoming} \code{CPL\_FLD\_SST}
+is degenerate ($<100$\,K), printing each cell's longitude, latitude, masks and \code{plit}.
+Result, run \code{26030286}:
+\begin{lstlisting}
+DBG-CPLSST-TOTAL: 0 ocean-gated cells got coupled SST<100 K, of NGPTOT=105   (x384 ranks)
+\end{lstlisting}
+\textbf{Zero} on all $384$ ranks. The coupler supplies a valid SST to every ocean cell.
+The ``FESOM is not delivering SST'' explanation is therefore \textbf{refuted}, and with it
+the idea that the fix lives on the ocean/OASIS side.
+
+\subsection{The ``degenerate cells'' were \code{NPROMA} padding}
+A per-cell classifier (\code{DBG-FLIP}) in \file{updtim.F90} dumped, for every cell with a
+degenerate skin~$T$ or SST \emph{before} any reseed, its \code{lon}, \code{lat},
+\code{LSM}, \code{CLK}, \code{CI}, \code{SST}, skin~$T$ and \code{plit} --- but guarded on
+the real-grid bound \code{IGP}$\,\le\,$\code{NGPTOT}. The result was decisive:
+\begin{lstlisting}
+DBG-FLIP-TOTAL: 0 real cells degenerate (skinT<100 OR SST<100) before reseed   (x384)
+\end{lstlisting}
+\textbf{Zero real cells}. The ``$\sim$7 degenerate cells per rank'' that the reseed counter
+had been reporting are the \code{NPROMA} \emph{padding} slots beyond \code{NGPTOT} (which
+are legitimately zero); the reseed's \code{DO JROF=1,NPROMA} loop counted them, the
+classifier's \code{NGPTOT} guard excluded them. So the reseed is a no-op on the real grid,
+and the moist-physics NaN is \emph{not} caused by a degenerate skin\,$T$/SST on any real
+cell. This reversed the working picture and forced the next question: what actually differs
+on the crash cells?
+
+\subsection{The crash cells are exactly the cells re-ingested from \code{ICMGG}}\label{sec:reingest}
+The answer was found by realising the tree already contains an implementation of
+\emph{Approach~A} (\S\ref{sec:fixes}): \file{reresf\_part2.F90}, gated on
+\code{ECE\_LANDICE}, reads the regenerated \code{ICMGG} with \code{SUGRIDG} on a warm start
+and re-applies its surface column --- via a new masked \code{PUTALLFLDS\_M} operator in
+\file{surface\_fields\_mix.F90} --- \textbf{only at grid points whose land--sea type
+flipped} ($|\mathrm{LSM}_{\text{icmgg}}-\mathrm{LSM}_{\text{srf}}|>0.5$). Instrumenting it
+(\code{DBG-REINGEST}, run \code{26032081}) shows it is \emph{surgical and physically sane}:
+\begin{lstlisting}
+DBG-REINGEST igp=41 lon=58.97 latsin=-0.919 LSMsrf=6.29E-2 LSMicm=1.00 sktICM=270.4 stl1ICM=270.3
+DBG-REINGEST igp=63 lon= 0.00 latsin=-0.938 LSMsrf=1.00    LSMicm=0.37 sktICM=271.8 stl1ICM=271.8
+... total 70 cells across 16 ranks:  49 sea->land,  21 land->sea
+\end{lstlisting}
+$70$ cells total --- the actual coastline change --- with injected skin/soil temperatures
+of $262$--$272$\,K (all physical, no zeros). And the ranks it touches ($2155$--$2174$) are
+\emph{exactly} the ranks that then NaN in \code{cpdyddh}. This is why \S\ref{sec:cplsst}
+and the padding finding both came back clean: the re-ingest had already given every real
+cell a valid surface column. The problem is not the surface \emph{state} --- it is that
+flipping a cell's land--sea \emph{class} at run time, most acutely the $49$
+sea\,$\to$\,land cells where a warm moist marine atmospheric column is now over frozen
+land, is what the first moist-physics step turns into a NaN.
+\paragraph{Arbiter: the re-ingest is necessary, not harmful.} A build with the re-ingest
+\emph{disabled} (\code{LLREINGEST\_DBG=.FALSE.}) does \emph{not} run further --- it reverts
+to the \emph{original} \code{error (73)} divide-by-zero in \code{radaca} (skin~$T=0$). With
+the re-ingest enabled the model instead advances \emph{past} the whole surface/radiation
+chain and dies one subsystem later in \code{cpdyddh}. So Approach~A is doing real work:
+it repairs the surface so the flipped cells are no longer degenerate. What remained was a
+\emph{second}, independent problem --- pursued in \S\ref{sec:ocptool} and
+\S\ref{sec:ddh}.
+
+\section{Background: why the runtime mask can disagree with \code{ICMGG}}
+Independently of the crash mechanism, it is worth recording that on a warm start the OIFS
+runtime land--sea mask does \emph{not} come from the regenerated \code{ICMGG} at all. The
+restart path (\file{cnt3\_glo.F90}) is:
+\begin{lstlisting}
+IF (NCONF == 1 .OR. NCONF == 302) THEN
+  CALL RERESF_PART1 (...)    ! sets LNF from restart-control file: present -> LNF=.FALSE.
+  CALL RERESF_PART2 (...)    ! srf bulk restore (GPOPER 'PUTALLFLDS'): ALL slots incl. LSM
+ELSE
+  LNF = .TRUE.
+ENDIF
+IF (LNF) CALL CSTA(...)      ! ICMGG read (SUINIF/SUGRIDF/SUGRIDG); ONLY on a cold start
+\end{lstlisting}
+\code{PUTALLFLDS} (\file{surface\_fields\_mix.F90}) copies every \code{NDIM} storage slot
+with no per-field flag, so the land--sea mask is always overwritten from \code{srf}; and
+because a \code{srf} restart is present each leg, \code{LNF=.FALSE.} and \code{CSTA} ---
+the only reader of the regenerated \code{ICMGG} geometry --- never runs. A \code{KTRAJ}
+tagging attempt in \file{su\_surf\_flds.F90} was ruled out: \code{KTRAJ} controls the
+trajectory/FullPos write, not the bulk restore, so it had no effect on the runtime mask.
+This stock behaviour --- a stale, \code{srf}-restored mask on every warm start --- is
+precisely what Approach~A (\S\ref{sec:fixes}, now implemented in \code{RERESF\_PART2}) was
+written to override at the flipped cells.
+
+\section{The two approaches, and where they now stand}\label{sec:fixes}
+Two designs can make OIFS respect the moving coastline. \S\ref{sec:reingest} showed the
+first is \emph{already built and running}; the open question is no longer ``which to
+implement'' but ``is the implemented one physically viable, or must we fall back''.
+
+\paragraph{Approach A --- re-ingest the regenerated \code{ICMGG} geometry on a warm start
+\textnormal{(\emph{implemented, live})}.} \file{reresf\_part2.F90} (gated on
+\code{ECE\_LANDICE}) reads the regenerated \code{ICMGG} via \code{SUGRIDG} and, using the
+new masked \code{PUTALLFLDS\_M} operator (\file{surface\_fields\_mix.F90}), replaces the
+\emph{entire} surface column at the $70$ cells whose land--sea type flipped, leaving every
+other cell on its spun-up \code{srf} state. \S\ref{sec:reingest} confirmed it does exactly
+this, with sane values. \emph{The concern it raises:} it changes a cell's land--sea class
+between two model states in a single step. The atmospheric column above a sea\,$\to$\,land
+cell is still a marine column; the surface beneath it is now frozen land. The first
+moist-physics step over that mismatch is the current NaN suspect. If the disabled-re-ingest
+run comes back clean, this is confirmed and Approach~A needs either a gentler transition
+(e.g.\ only flip where \code{plit} also marks ice, so the cell enters the \emph{glacier}
+path rather than bare-soil land) or a matching adjustment of the near-surface atmosphere.
+
+\paragraph{Approach B --- the established \code{plit} overlay.} EC-Earth's ice-sheet
+coupling (documented in \file{ece4-pism-coupling.md}) does \emph{not} re-read or flip the
+LSM. It keeps the \code{srf} geometry and communicates the evolving ice as a fractional
+mask \code{plit}: \file{suorog.F90} patches the orography from \code{usurf\_oifs} and (with
+\code{ECE\_LANDICE}) reads \code{plit\_oifs} at leg init, and the live \code{PLIT\_<region>}
+OASIS field drives the \emph{glacier} physics via \code{SURFECE\_GET\_LANDICE}. \emph{Pros:}
+it is the design the OIFS ice code was written for, and it never creates the abrupt
+land--sea-class flip that Approach~A does. \emph{Cons:} it depends on \code{plit\_oifs}
+being generated (\code{make\_plit\_oifs.py}), read and applied, and on the live \code{PLIT}
+path (the ISM-mapper OASIS component), which the \code{movcav4} setup may not yet run.
+
+\paragraph{Where the evidence points.} Approach~A is confirmed necessary
+(\S\ref{sec:reingest}), and it is kept. But it faithfully transfers whatever the coupling
+tool chain writes into the \code{ICMGG} --- so if a flipped cell is inconsistent there, the
+re-ingest dutifully installs that inconsistency at run time. That turned out to be the
+actual bug (\S\ref{sec:ocptool}), and it lives in the tool world, not in OIFS.
+
+\section{The real root cause: \code{ocp-tool} leaves flipped cells half-converted}\label{sec:ocptool}
+An FPE-safe operand check at the crash line (\code{DBG-DDH}) showed the non-finite operand
+is \code{PCOVPTOT} (the precipitation-cover fraction from the moist physics), not the
+pressure thickness. Following that upstream to the surface state of the crashing cell (a
+sea\,$\to$\,land cell at $74.3^\circ$S, $257^\circ$E) exposed the flaw --- in the
+regenerated \code{ICMGG} it reads
+\begin{lstlisting}
+lsm=1.00  slt=6  swvl1=0.000  stl1=272.0   ci=0.838  sst=270.6   <-- half ocean, half land
+\end{lstlisting}
+i.e.\ a \emph{land} mask over an otherwise \emph{ocean} column: zero soil moisture, a
+leftover sea-ice fraction and an SST. \code{ocp-tool}'s \file{lsm.py} (\code{modify\_lsm})
+flips a cell by setting \emph{only} the land--sea mask and the soil type
+(\code{slt=6}\,=\,``sandy clay loam''), and leaves \emph{every other surface field} at its
+old-type value. The moist physics over that mongrel column manufactures the NaN.
+
+\paragraph{Fix (tool world, committable).} \code{modify\_lsm} now rebuilds the \emph{whole}
+surface column of each flipped cell from the nearest stable neighbour of its \emph{new}
+type (a masked great-circle nearest-neighbour fill, \code{fill\_flipped\_from\_nearest\_neighbour}).
+A newly-grounded cell then looks like the ice/land around it (\code{slt=1},
+\code{swvl1}$\approx$$0.30$, \code{ci}$=0$, glacier snow), a newly-wet cell like the ocean
+around it --- with the freshly set land--sea mask preserved. Regenerating this leg's
+\code{ICMGG} with the fix turns the crash cell from the mongrel column above into
+\code{lsm=1, slt=1, swvl1=0.302, ci=0.000} --- a self-consistent glacier-land column. This
+is the right home for the fix: OIFS stays generic and the coupling machinery owns coastline
+consistency.
+
+\section{The residual \code{cpdyddh} NaN was DDH-diagnostic-only}\label{sec:ddh}
+With the consistent \code{ICMGG}, the model still stopped at \code{cpdyddh} --- but that
+routine is a \emph{DDH budget diagnostic} (Diagnostics of Horizontal Domains), and the
+crash line accumulates a \emph{passive} precip-cover variable. Disabling DDH in the
+namelist (\code{NAMDDH}: \code{LHDGLB=LHDPRG=LHDHKS=.false.}) removed it, and OIFS then ran
+\textbf{$\sim$700 coupling steps} without any FPE trap. Since OIFS is compiled
+\code{-fpe0} (every \code{arpifs} object carries \code{-fpe0 -fp-model precise}), running
+that far proves its forecast state --- and the fluxes it sends the ocean --- are finite:
+the \code{PCOVPTOT} NaN was confined to the DDH passive-variable accumulation (an
+uninitialised diagnostic slot at step~0), not the real physics. OIFS is no longer the
+blocker.
+
+\section{OIFS crash --- final status (resolved)}\label{sec:state}
+\begin{tabular}{@{}p{0.34\textwidth}p{0.60\textwidth}@{}}
+\toprule
+\textbf{Item} & \textbf{Status}\\
+\midrule
+Coupling machinery (mesh, OASIS, ICMGG regen) & \textbf{Consistent \& validated};
+  ICMGG mask $=$ A096 mask exactly; ocean SST delivery $0/384$ degenerate.\\
+OIFS surface divide-by-zero & \textbf{Solved} by the \code{ICMGG} re-ingest
+  (Approach~A, \code{RERESF\_PART2}), confirmed necessary by the disable arbiter.\\
+Flipped-cell inconsistency (\code{ocp-tool}) & \textbf{Fixed} --- masked nearest-neighbour
+  rebuild of each flipped cell's surface column (\S\ref{sec:ocptool}); verified in the
+  regenerated \code{ICMGG}.\\
+\code{cpdyddh} NaN & \textbf{Diagnostic-only}; disabling DDH (\code{NAMDDH}) let OIFS run
+  $\sim$700 coupling steps under \code{-fpe0}. Real physics/fluxes are finite
+  (\S\ref{sec:ddh}).\\
+\textbf{OIFS overall} & \textbf{No longer the blocker.}\\
+\midrule
+\textbf{New frontier: FESOM} & \textbf{Superseded by \S\ref{sec:current}} (the current
+  truth). This row's open question --- ``finite-but-extreme OIFS forcing'' --- has since
+  been \textbf{ruled out} (\S\ref{sec:current}): the blowup is a \emph{time-growing coastal
+  baroclinic instability} on the submesh, ocean-internal, driven by subsurface freshening
+  at the retreated margin; timestep, flux, ice and restart corruption are all excluded.\\
+\bottomrule
+\end{tabular}
+
+\vspace{1em}
+\noindent\emph{Key files:}
+\file{ocp\_tool/lsm.py} (\code{modify\_lsm}\,+\,\code{fill\_flipped\_from\_nearest\_neighbour}
+--- the tool-world fix),
+\file{arpifs/control/reresf\_part2.F90} + \file{module/surface\_fields\_mix.F90}
+(re-ingest \code{PUTALLFLDS\_M}),
+\file{arpifs/dia/cpdyddh.F90} (DDH crash site),
+\code{NAMDDH} in \file{fort.4} (DDH off).
+Debug instrumentation (\code{DBG-*}) in \file{updtim.F90},
+\file{ece\_updclie\_cpl.F90}, \file{climaer\_layer.F90}, \file{cpdyddh.F90} is to be
+stripped before committing OIFS.
+
+\section{To do}
+\begin{itemize}[leftmargin=1.4em,itemsep=2pt]
+  \item[$\square$] \textbf{\code{ocp-tool} NN fix} --- \emph{done}: committed + pushed,
+        PR \#51 (\code{JanStreffing/ocp-tool}, branch \code{fix/flipped-cell-nn-fill}
+        $\to$ \code{master}).
+  \item[$\square$] \textbf{Commit the OIFS re-ingest} (branch \code{movcav-landice}, SMHI
+        fork). First clean it up:
+    \begin{itemize}[leftmargin=1.2em,itemsep=0pt]
+      \item \emph{keep}: \file{surface\_fields\_mix.F90} (\code{PUTALLFLDS\_M}, no debug),
+            \file{bundle.yml};
+      \item \emph{strip}: the \code{DBG-REINGEST} block and the \code{LLREINGEST\_DBG}
+            toggle in \file{reresf\_part2.F90} --- make the re-ingest unconditional under
+            \code{ECE\_LANDICE};
+      \item \emph{revert entirely} (pure debug / no-op): \file{updtim.F90} (reseed +
+            \code{DBG-FLIP}), \file{ece\_updclie\_cpl.F90} (\code{DBG-CPLSST}),
+            \file{climaer\_layer.F90} (\code{DBG-CLIMAER}), \file{cpdyddh.F90}
+            (\code{DBG-DDH}).
+    \end{itemize}
+  \item[$\square$] \textbf{Make DDH-off permanent} in \code{esm\_tools} --- fold the
+        \code{NAMDDH} \code{LHDGLB=LHDPRG=LHDHKS=.false.} into the OIFS namelist config
+        (likely \file{configs/components/oifs/oifs48.cmip.yaml}) rather than the runtime
+        \file{fort.4}.
+  \item[$\square$] \textbf{Curate + commit the \code{esm\_tools} WIP} (branch
+        \code{development\_interactiv\_mesh\_awiesm3}): the OASIS-regen/\code{plit} wiring
+        in \file{coupling\_ice2fesom\_interactive\_mesh.functions}, the
+        \file{remap\_oasis\_restart.py} guard, the \file{observe.py} race fix, the
+        \file{awiesm3.yaml} pool guard --- split into logical commits.
+  \item[$\square$] \textbf{Root-cause the live FESOM instability} (\S\ref{sec:current}). The
+        frontier is no longer OIFS: it is a time-growing coastal baroclinic mode fed by margin
+        freshening. Next probes, in order: (a)~the sub-shelf \textbf{meltwater/freshwater flux}
+        on the submesh where the cavity was just exposed; (b)~submesh \textbf{element quality /
+        \code{zbar}--\code{hnode} consistency} at the new coastline; (c)~whether the freshening
+        is surface meltwater mixed down or a distributed sub-shelf source (section movie done,
+        \S\ref{sec:movie}).
+\end{itemize}
+
+\end{document}

@@ -297,12 +297,21 @@ function fesom_ice_select_relevant_variables {
     fesom1x_file2D_list_for_ice=""
     fesom1x_file2Dstatic_list_for_ice=""
     
+    # NOTE: the 3-D temp/salt *_var4ice.nc file is VESTIGIAL. It used to feed the
+    # goodgrid builder, but fesom_scalar_array_to_LonLat.py now reads the raw
+    # FESOM file directly (--FESOM_PATH/--FESOM_VARIABLE/--FESOM_YEARS) and does
+    # its own time-mean; downstream concatenate/means consume the *goodgrid*
+    # files, never these. The var4ice file is used only to derive the goodgrid
+    # NAME and is then deleted. So the expensive `cdo monmean` (a full read+write
+    # of the ~260 MB yearly file, ~155 s/pass) is pure overhead -- replace it
+    # with an instant symlink that preserves the filename/-f invariants.
+    # (The 2-D paths below still use monmean; leave them unchanged.)
     variable=temp
     for file in ${fesom1x_raw_file3D_T_list_for_ice} ; do
 	echo -n "     - >${variable}< from ${file}"
         filename=$(basename $file)
 	output="${filename%.*}"_var4ice.nc
-        ${cdo} -s -f nc monmean $file $output
+        ln -sf "$file" "$output"        # was: ${cdo} -s -f nc monmean $file $output  (data unused)
         fesom1x_file3D_T_list_for_ice="$fesom1x_file3D_T_list_for_ice ${output}"
 	echo " : STILL alive"
     done
@@ -312,7 +321,7 @@ function fesom_ice_select_relevant_variables {
 	echo -n "     - >${variable}< from ${file}"
         filename=$(basename $file)
 	output="${filename%.*}"_var4ice.nc
-        ${cdo} -s -f nc monmean $file $output
+        ln -sf "$file" "$output"        # was: ${cdo} -s -f nc monmean $file $output  (data unused)
         fesom1x_file3D_S_list_for_ice="$fesom1x_file3D_S_list_for_ice ${output}"
 	echo " : STILL alive"
     done

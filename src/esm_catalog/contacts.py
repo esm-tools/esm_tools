@@ -2,15 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from esm_catalog.context import CollectionContext
 from esm_catalog.registry import EXTENSION_URLS
 
-if TYPE_CHECKING:
-    from esm_catalog.context import CollectionContext
 
-
-def add_contacts(item: dict, ctx: "CollectionContext") -> None:
+def add_contacts(item: dict, ctx: CollectionContext) -> None:
     """Inject contacts extension fields into *item* from *ctx*.
 
     Reads ``ctx.contacts`` (a list of :class:`~esm_catalog.context.Contact`)

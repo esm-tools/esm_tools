@@ -16,7 +16,7 @@ class Contact:
         roles:       STAC contact roles (defaults to ["principal_investigator"]).
     """
 
-    PRODUCTION_REQUIRED: ClassVar[list[str]] = ["institution"]
+    PRODUCTION_REQUIRED: ClassVar[list[str]] = ["name", "institution"]
 
     name: str
     orcid: str | None = None
@@ -24,8 +24,8 @@ class Contact:
     roles: list = field(default_factory=lambda: ["principal_investigator"])
 
     @classmethod
-    def from_config(cls, entry: dict) -> Contact:
-        """Build a Contact from a runscript config dict entry.
+    def from_dict(cls, entry: dict) -> Contact:
+        """Build a Contact from a dict entry.
 
         Expected keys: name, orcid, institution, roles.
         """

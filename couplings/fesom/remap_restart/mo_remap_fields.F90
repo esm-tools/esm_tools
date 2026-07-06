@@ -293,31 +293,43 @@ contains
                 ul_old = mesh_old%ulevels_nod2D(i_old)
                 nl_old = mesh_old%nlevels_nod2D(i_old)
 
+                if (dn > 0 .and. .not. set_new_to_zero) then
+                    !___________________________________________________________
+                    ! Fully surface-opened column (new ulevels==1, was sub-ice):
+                    ! fill the WHOLE column from the single coherent open-ocean
+                    ! donor and drop the retained sub-ice water. Keeping the old
+                    ! sub-ice column below ul_old left a melt-fresh layer at the
+                    ! shelf base -> a residual density inversion. Hold the donor's
+                    ! deepest value where it is shallower than k.
+                    do k = ul_new, nl_new-1
+                        if (mesh_old%ulevels_nod2D(dn) <= k .and. &
+                            mesh_old%nlevels_nod2D(dn)-1 >= k) then
+                            field_new(k, i_new) = field_old(k, dn)
+                        else
+                            field_new(k, i_new) = &
+                                field_old(mesh_old%nlevels_nod2D(dn)-1, dn)
+                        end if
+                    end do
+                else
                 ! copy levels that exist in old mesh
                 do k = ul_new, nl_new-1
                     if (k >= ul_old .and. k <= nl_old-1) then
                         field_new(k, i_new) = field_old(k, i_old)
 
                     !___________________________________________________________
-                    ! new levels above old shelf base (cavity deepened into ice):
-                    ! find nearest old node valid at this level
+                    ! new levels above old shelf base (cavity thinned but the
+                    ! node is still sub-ice: new ulevels>1, so no open-ocean
+                    ! donor). Hold the node's own OLD top-wet-level (shelf-base)
+                    ! value upward. The old unmasked nearest-node search here
+                    ! pulled melt-fresh cavity water into mid-column -> a large
+                    ! density inversion -> convective cfl_z blowup; the node's
+                    ! own shelf-base water gives a coherent, statically stable
+                    ! (and physically appropriate, cold) column.
                     else if (k < ul_old) then
                         if (set_new_to_zero) then
                             field_new(k, i_new) = 0.0_WP
-                        else if (dn > 0) then
-                            ! coherent open-ocean column (mask-aware); hold the
-                            ! donor's deepest value if it is shallower than k
-                            if (mesh_old%ulevels_nod2D(dn) <= k .and. &
-                                mesh_old%nlevels_nod2D(dn)-1 >= k) then
-                                field_new(k, i_new) = field_old(k, dn)
-                            else
-                                field_new(k, i_new) = &
-                                    field_old(mesh_old%nlevels_nod2D(dn)-1, dn)
-                            end if
                         else
-                            call find_nearest_old_node_at_level( &
-                                i_new, k, mesh_old, mesh_new, i_ref)
-                            field_new(k, i_new) = field_old(k, i_ref)
+                            field_new(k, i_new) = field_old(ul_old, i_old)
                         end if
 
                     !___________________________________________________________
@@ -343,6 +355,7 @@ contains
                         end if
                     end if
                 end do
+                end if
             !___________________________________________________________________
             case (FLAG_NEW_NODE)
                 if (set_new_to_zero) then

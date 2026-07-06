@@ -15,15 +15,14 @@ subdirectories. `esm_catalog` IS the STAC catalog layer; the extra nesting is re
 
 ```
 src/esm_catalog/
-    context.py      ← PR-A1b
+    context.py      ← PR-A1b  (+ Contact dataclass from PR-A1g)
     registry.py     ← PR-A1b
     collection.py   ← PR-A1b
-    item.py         ← PR-A1b
+    item.py         ← PR-A1b  (+ contacts injection from PR-A1g)
     hpc.py          ← PR-A1c  (extension + detect logic combined)
     datacube.py     ← PR-A1d
     namelist.py     ← PR-A1e
     paleo.py        ← PR-A1f
-    contacts.py     ← PR-A1g
 ```
 
 ## Custom STAC extension schemas
@@ -221,9 +220,13 @@ needed in `configs/stac-extensions/`.
   as `namelists_by_component`; scan layer populates, STAC layer reads.
 - Production validation: `CollectionContext(production=True)` requires at least one
   contact with name + institution.
-- `add_contacts(item, ctx)` in `contacts.py` maps contacts to STAC format.
+- No separate `contacts.py` — contacts injection is part of item construction.
+  `_contact_to_stac(contact)` is a private helper in `item.py`; `_build_properties`
+  reads `ctx.contacts` directly; `make_item` adds the extension URL to `stac_extensions`
+  when contacts are present. A dedicated module for a single small function adds
+  indirection without benefit.
 - External community schema URL (already resolves); no schema file needed.
-- 12 tests, 29 total passing.
+- 29 tests passing (Contact tests in `test_context.py`, contacts-via-item tests in `test_stac_item.py`).
 
 **Runscript config convention (new — document in user guide):**
 

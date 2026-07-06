@@ -6,7 +6,9 @@ from datetime import datetime, timezone
 
 from pystac import Item
 
+from esm_catalog.context import CollectionContext
 from esm_catalog.datacube import add_datacube_extension
+from esm_catalog.item import make_item
 from esm_catalog.registry import EXTENSION_URLS
 
 DATACUBE_URL = EXTENSION_URLS["datacube"]
@@ -99,3 +101,43 @@ def test_url_appended_once():
     add_datacube_extension(item, {"dimensions": _dims()})
     add_datacube_extension(item, {"dimensions": _dims()})
     assert item.stac_extensions.count(DATACUBE_URL) == 1
+
+
+# --- wiring through make_item ---
+
+
+def _ctx():
+    return CollectionContext(
+        experiment_id="exp-alpha", component="echam", collection_id="exp-alpha"
+    )
+
+
+def _metadata(**kwargs):
+    base = {
+        "variable": "temp",
+        "format": "netcdf",
+        "datetime_start": datetime(2000, 1, 1, tzinfo=timezone.utc),
+        "datetime_end": datetime(2000, 1, 1, tzinfo=timezone.utc),
+    }
+    base.update(kwargs)
+    return base
+
+
+def test_make_item_without_dims_has_no_datacube(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = make_item(f, _metadata(), _ctx())
+    assert "cube:dimensions" not in item.properties
+    assert item.stac_extensions == []
+
+
+def test_make_item_with_dims_applies_datacube(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    meta = _metadata(
+        dimensions=_dims(), variables=[{"name": "temp", "units": "K"}]
+    )
+    item = make_item(f, meta, _ctx())
+    assert item.properties["cube:dimensions"] == _dims()
+    assert item.properties["cube:variables"]["temp"]["unit"] == "K"
+    assert DATACUBE_URL in item.stac_extensions

@@ -207,21 +207,31 @@ needed in `configs/stac-extensions/`.
 
 ---
 
-### [ ] PR-A1g — Contacts extension
+### [x] PR-A1g — Contacts extension
 
-**Branch from:** `release` (after PR-A1b is merged)
+**Branch:** `esm-catalog/pr-a1g-contacts-extension` (branched from pr-a1b) ✓
+
 **Goal:** Add PI contact information to items. Fields: 28, 29, 30.
 
-**Files to create:**
-- `src/esm_catalog/contacts.py` — adapted from `stac/extensions/contacts.py` in pr-a1a branch.
-- `tests/test_esm_catalog/test_stac_contacts.py` — write new tests
+**Design decisions:**
+- `Contact` dataclass added to `context.py` (name, orcid, institution, roles).
+  `pi_name`/`PI_name` keys from pr-a1a were AI-invented and don't exist in any config;
+  replaced with a structured `general.contacts` list in the runscript config.
+- Contact data flows via `CollectionContext.contacts: list[Contact]` — same pattern
+  as `namelists_by_component`; scan layer populates, STAC layer reads.
+- Production validation: `CollectionContext(production=True)` requires at least one
+  contact with name + institution.
+- `add_contacts(item, ctx)` in `contacts.py` maps contacts to STAC format.
+- External community schema URL (already resolves); no schema file needed.
+- 12 tests, 29 total passing.
 
-**Note:** contacts uses an external community schema URL (already resolves); no schema file
-needed in `configs/stac-extensions/`.
+**Runscript config convention (new — document in user guide):**
 
-**Open question before implementing:** verify that `general.pi_name` / `general.PI_name` etc. are
-actually present in any existing ESM-Tools runscript configs. If not, define the canonical key name
-and document it. Check `configs/` and `runscripts/` in the repo.
+    general:
+        contacts:
+            - name: "Jane Doe"
+              orcid: "0000-0001-2345-6789"   # optional
+              institution: "AWI"             # required in production
 
 ---
 

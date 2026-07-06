@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 
+import pytest
 from pystac import Item
 
 from esm_catalog.context import CollectionContext
@@ -12,6 +15,7 @@ from esm_catalog.item import make_item
 from esm_catalog.registry import EXTENSION_URLS
 
 DATACUBE_URL = EXTENSION_URLS["datacube"]
+SCHEMA_PATH = Path(__file__).parent / "schemas" / "datacube-v2.2.0.json"
 
 
 def _bare_item():
@@ -141,3 +145,23 @@ def test_make_item_with_dims_applies_datacube(tmp_path):
     assert item.properties["cube:dimensions"] == _dims()
     assert item.properties["cube:variables"]["temp"]["unit"] == "K"
     assert DATACUBE_URL in item.stac_extensions
+
+
+def test_item_validates_against_datacube_schema(tmp_path):
+    jsonschema = pytest.importorskip("jsonschema")
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    meta = _metadata(
+        dimensions=_dims(),
+        variables=[
+            {
+                "name": "temp",
+                "units": "K",
+                "long_name": "air temperature",
+                "dimensions": ["time", "lat", "lon"],
+            }
+        ],
+    )
+    item_dict = make_item(f, meta, _ctx()).to_dict()
+    schema = json.loads(SCHEMA_PATH.read_text())
+    jsonschema.validate(instance=item_dict, schema=schema)

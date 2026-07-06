@@ -103,3 +103,64 @@ def test_item_time_range_sets_interval(tmp_path):
     assert item.datetime is None
     assert item.properties["start_datetime"] == "2000-01-01T00:00:00Z"
     assert item.properties["end_datetime"] == "2000-12-31T00:00:00Z"
+
+
+# --- contacts ---
+
+def _ctx_with_contacts(*contacts):
+    from esm_catalog.context import Contact
+    return CollectionContext(
+        experiment_id="exp-alpha", component="echam", collection_id="exp-alpha",
+        contacts=list(contacts),
+    )
+
+
+def test_item_no_contacts_no_extension(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = make_item(f, _metadata(), _ctx())
+    assert "contacts" not in item.properties
+    assert item.stac_extensions == []
+
+
+def test_item_contacts_in_properties(tmp_path):
+    from esm_catalog.context import Contact
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    ctx = _ctx_with_contacts(Contact(name="Jane Doe", orcid="0000-0001-2345-6789", institution="AWI"))
+    item = make_item(f, _metadata(), ctx)
+    contacts = item.properties["contacts"]
+    assert len(contacts) == 1
+    assert contacts[0]["name"] == "Jane Doe"
+    assert contacts[0]["identifier"] == {"scheme": "orcid", "identifier": "0000-0001-2345-6789"}
+    assert contacts[0]["organization"] == "AWI"
+
+
+def test_item_contacts_registers_extension_url(tmp_path):
+    from esm_catalog.context import Contact
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    ctx = _ctx_with_contacts(Contact(name="Jane", institution="AWI"))
+    item = make_item(f, _metadata(), ctx)
+    assert any("contacts" in url for url in item.stac_extensions)
+
+
+def test_item_contacts_orcid_optional(tmp_path):
+    from esm_catalog.context import Contact
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    ctx = _ctx_with_contacts(Contact(name="Jane Doe", institution="AWI"))
+    item = make_item(f, _metadata(), ctx)
+    assert "identifier" not in item.properties["contacts"][0]
+
+
+def test_item_multiple_contacts(tmp_path):
+    from esm_catalog.context import Contact
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    ctx = _ctx_with_contacts(
+        Contact(name="Jane Doe", institution="AWI"),
+        Contact(name="John Smith", institution="DKRZ"),
+    )
+    item = make_item(f, _metadata(), ctx)
+    assert len(item.properties["contacts"]) == 2

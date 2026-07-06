@@ -10,6 +10,8 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.registry import EXTENSION_URLS
+
 
 def make_item(
     path: Union[Path, UPath, str],
@@ -37,6 +39,10 @@ def make_item(
         path,
     )
 
+    stac_extensions = []
+    if ctx.contacts:
+        stac_extensions.append(EXTENSION_URLS["contacts"])
+
     item = Item(
         id=id,
         geometry=metadata.get("geometry"),
@@ -45,7 +51,7 @@ def make_item(
         properties=_build_properties(metadata, ctx),
         start_datetime=dt_start,
         end_datetime=dt_end,
-        stac_extensions=[],
+        stac_extensions=stac_extensions,
         assets=_build_assets(path, metadata),
         collection=ctx.collection_id,
     )
@@ -89,7 +95,20 @@ def _build_properties(metadata: dict, ctx) -> dict:
     if len(all_var_names) > 1:
         properties["variables"] = all_var_names
 
+    if ctx.contacts:
+        properties["contacts"] = [_contact_to_stac(c) for c in ctx.contacts]
+
     return properties
+
+
+def _contact_to_stac(contact) -> dict:
+    """Convert a Contact dataclass to STAC contacts extension format."""
+    entry: dict = {"name": contact.name, "roles": contact.roles}
+    if contact.orcid:
+        entry["identifier"] = {"scheme": "orcid", "identifier": contact.orcid}
+    if contact.institution:
+        entry["organization"] = contact.institution
+    return entry
 
 
 def _build_datetime(metadata: dict) -> tuple:

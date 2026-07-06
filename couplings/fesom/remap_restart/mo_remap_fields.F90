@@ -16,6 +16,27 @@ module mo_remap_fields
     integer, parameter :: FLAG_NEW_NODE      =  2
     integer, parameter :: FLAG_DROPPED       = -1
 
+    !___________________________________________________________________________
+    ! Ice-donor seeding: a newly-surface-exposed node (cavity retreated, or a
+    ! brand-new submesh node) inherits its OLD sub-shelf ice state, which is
+    ! ice-free (area=hice=0). Left as open water it soaks up full summer solar
+    ! -> the shallow coastal column overheats -> vertical-CFL blowup. Instead we
+    ! seed those nodes from the nearest genuinely iced old node (concentration
+    ! above ICE_CONC_THRESH) within ICE_FILL_MAXDIST, copying the whole ice
+    ! column (area/hice/hsnow/uice/vice/ice_temp/ice_albedo) from one donor.
+    real(WP), parameter :: ICE_CONC_THRESH  = 0.15_WP      ! iced if a_ice > this
+    real(WP), parameter :: ICE_FILL_MAXDIST = 150000.0_WP  ! m; skip if no ice within
+
+    !___________________________________________________________________________
+    ! Memoised nearest-old-node-at-level donor map, shared across all 3D node
+    ! fields. find_nearest_old_node_at_level(i_new,k) is a pure function of the
+    ! two meshes (no field data), but the old code recomputed its O(nod2D) great-
+    ! circle search for every restart field (temp/salt/w + AB/M1/expl/impl ~9x),
+    ! which dominated the remap (~19 s/field). Compute each (k,i_new) once here
+    ! and reuse. 0 = not yet computed; each column is written only by the OMP
+    ! thread that owns i_new, so no cross-thread write races on an entry.
+    integer, allocatable :: donor_cache(:,:)   ! (nl, nod2D_new); 0 = uncomputed
+
     public :: classify_nodes, remap_all_restarts, remap_ice
 
 contains
@@ -80,6 +101,67 @@ contains
     end subroutine classify_nodes
 
     !===========================================================================
+    ! Open-ocean donor for 2D surface fields (ssh, hbar) on newly-surface-open
+    ! nodes. A node that becomes surface-open (new ulevels==1) but was sub-ice in
+    ! the old mesh otherwise keeps its stale sub-ice ssh (~0) via the copy path,
+    ! leaving an ssh step vs the open ocean that drives a spurious adjustment.
+    ! Seed it instead from the nearest OLD open-ocean node (old ulevels==1).
+    ! Returns a per-new-node donor index (0 = no override), used by
+    ! remap_node_field_2d via its ice_donor hook.
+    subroutine build_ocean_donor(mesh_old, mesh_new, ocean_donor)
+        type(t_mesh_remap),   intent(in)  :: mesh_old, mesh_new
+        integer, allocatable, intent(out) :: ocean_donor(:)
+
+        integer  :: i_new, i_old, i_ref, n_base, cnt
+        real(WP) :: lon_new, lat_new, dist, dist_min, alpha
+        real(WP), parameter :: r_earth = 6371000.0_WP
+        logical  :: was_open
+
+        allocate(ocean_donor(mesh_new%nod2D))
+        ocean_donor = 0
+        cnt = 0
+        !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(DYNAMIC,64) &
+        !$OMP   SHARED(mesh_old, mesh_new, ocean_donor) &
+        !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, lon_new, lat_new, dist, dist_min, alpha, was_open) &
+        !$OMP   REDUCTION(+:cnt)
+        do i_new = 1, mesh_new%nod2D
+            ! only nodes that are surface-open ocean in the NEW mesh
+            if (mesh_new%ulevels_nod2D(i_new) /= 1) cycle
+            n_base = mesh_new%nod_map(i_new)
+            i_old  = mesh_old%map_base_to_mesh(n_base)
+            ! already open ocean in the old mesh -> stale value is fine, skip
+            was_open = .false.
+            if (i_old > 0) then
+                if (mesh_old%ulevels_nod2D(i_old) == 1) was_open = .true.
+            end if
+            if (was_open) cycle
+            ! newly-surface-open: nearest OLD node that was open ocean (ulevels==1)
+            lon_new  = mesh_new%coord(1, i_new)
+            lat_new  = mesh_new%coord(2, i_new)
+            dist_min = huge(1.0_WP)
+            i_ref    = 0
+            do i_old = 1, mesh_old%nod2D
+                if (mesh_old%ulevels_nod2D(i_old) /= 1) cycle   ! MASK: open-ocean donors only
+                alpha = acos(max(-1.0_WP, min(1.0_WP, &
+                        cos(lat_new)*cos(mesh_old%coord(2,i_old))* &
+                        cos(lon_new-mesh_old%coord(1,i_old)) + &
+                        sin(lat_new)*sin(mesh_old%coord(2,i_old)))))
+                dist = r_earth * abs(alpha)
+                if (dist < dist_min) then
+                    dist_min = dist
+                    i_ref    = i_old
+                end if
+            end do
+            if (i_ref > 0) then
+                ocean_donor(i_new) = i_ref
+                cnt = cnt + 1
+            end if
+        end do
+        !$OMP END PARALLEL DO
+        write(*,*) ' --> open-ocean surface donor: newly-surface-open nodes seeded =', cnt
+    end subroutine build_ocean_donor
+
+    !===========================================================================
     ! For a given node i_new and level k in the new mesh, find the nearest
     ! node in the old mesh that has valid data at level k.
     ! Uses great-circle distance.
@@ -93,6 +175,14 @@ contains
         real(WP) :: lon_new, lat_new, lon_j, lat_j, alpha
 
         real(WP), parameter :: r_earth = 6371000.0_WP
+
+        ! Reuse the donor found for this (k,i_new) by an earlier field, if any.
+        if (allocated(donor_cache)) then
+            if (donor_cache(k, i_new) /= 0) then
+                i_ref = donor_cache(k, i_new)
+                return
+            end if
+        end if
 
         lon_new  = mesh_new%coord(1, i_new)
         lat_new  = mesh_new%coord(2, i_new)
@@ -136,6 +226,9 @@ contains
             end do
         end if
 
+        ! Memoise for the remaining restart fields (safe: this thread owns i_new).
+        if (allocated(donor_cache)) donor_cache(k, i_new) = i_ref
+
     end subroutine find_nearest_old_node_at_level
 
     !===========================================================================
@@ -144,17 +237,24 @@ contains
     ! field_new: (nl-1, nod2D_new)  -- allocated on output
     subroutine remap_node_field_3d(field_old, field_new, &
                                     mesh_old, mesh_new, node_flag, &
-                                    set_new_to_zero)
+                                    set_new_to_zero, ice_donor)
         real(WP),           intent(in)  :: field_old(:,:)  ! (nl-1, nod2D_old)
         real(WP),           allocatable, intent(out) :: field_new(:,:)
         type(t_mesh_remap), intent(in)  :: mesh_old, mesh_new
         integer,            intent(in)  :: node_flag(:)
         logical,            intent(in)  :: set_new_to_zero ! if .true.: new nodes=0
+        ! Optional per-new-node donor column (build_ocean_donor). When >0, newly-
+        ! opened levels of a surface-opened column are filled from that single
+        ! coherent old open-ocean profile instead of the per-level unmasked
+        ! nearest search (which can pull melt-fresh sub-ice water -> density
+        ! inversion -> convective cfl_z blowup). Absent -> old behaviour.
+        integer, optional,  intent(in)  :: ice_donor(:)
 
-        integer  :: i_new, i_old, i_ref, n_base, k
+        integer  :: i_new, i_old, i_ref, n_base, k, dn
         integer  :: ul_new, nl_new, ul_old, nl_old
         integer  :: nz_old
         real(WP) :: dz, cf_a, cf_b, z_k
+        logical  :: have_donor
 
         ! Honour the level dim of the input so node-based fields with full nl
         ! levels (w, w_expl, w_impl) get a matching nl-sized output array
@@ -163,9 +263,11 @@ contains
         allocate(field_new(nz_old, mesh_new%nod2D))
         field_new = 0.0_WP
 
+        have_donor = present(ice_donor)
+
         !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
-        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, set_new_to_zero) &
-        !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, k, ul_new, nl_new, ul_old, nl_old, dz, cf_a, cf_b, z_k)
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, set_new_to_zero, have_donor, ice_donor) &
+        !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, k, dn, ul_new, nl_new, ul_old, nl_old, dz, cf_a, cf_b, z_k)
         do i_new = 1, mesh_new%nod2D
             n_base = mesh_new%nod_map(i_new)
             i_old  = mesh_old%map_base_to_mesh(n_base)
@@ -173,6 +275,10 @@ contains
             nl_new = mesh_new%nlevels_nod2D(i_new)
             ul_old = mesh_old%ulevels_nod2D(i_old)
             nl_old = mesh_old%nlevels_nod2D(i_old)
+
+            ! open-ocean donor node for newly-opened levels (0 = none)
+            dn = 0
+            if (have_donor) dn = ice_donor(i_new)
 
             select case (node_flag(i_new))
 
@@ -198,6 +304,16 @@ contains
                     else if (k < ul_old) then
                         if (set_new_to_zero) then
                             field_new(k, i_new) = 0.0_WP
+                        else if (dn > 0) then
+                            ! coherent open-ocean column (mask-aware); hold the
+                            ! donor's deepest value if it is shallower than k
+                            if (mesh_old%ulevels_nod2D(dn) <= k .and. &
+                                mesh_old%nlevels_nod2D(dn)-1 >= k) then
+                                field_new(k, i_new) = field_old(k, dn)
+                            else
+                                field_new(k, i_new) = &
+                                    field_old(mesh_old%nlevels_nod2D(dn)-1, dn)
+                            end if
                         else
                             call find_nearest_old_node_at_level( &
                                 i_new, k, mesh_old, mesh_new, i_ref)
@@ -232,11 +348,21 @@ contains
                 if (set_new_to_zero) then
                     field_new(ul_new:nl_new-1, i_new) = 0.0_WP
                 else
-                    ! find nearest old node for each level
                     do k = ul_new, nl_new-1
-                        call find_nearest_old_node_at_level( &
-                            i_new, k, mesh_old, mesh_new, i_ref)
-                        field_new(k, i_new) = field_old(k, i_ref)
+                        if (dn > 0) then
+                            ! coherent open-ocean column (mask-aware)
+                            if (mesh_old%ulevels_nod2D(dn) <= k .and. &
+                                mesh_old%nlevels_nod2D(dn)-1 >= k) then
+                                field_new(k, i_new) = field_old(k, dn)
+                            else
+                                field_new(k, i_new) = &
+                                    field_old(mesh_old%nlevels_nod2D(dn)-1, dn)
+                            end if
+                        else
+                            call find_nearest_old_node_at_level( &
+                                i_new, k, mesh_old, mesh_new, i_ref)
+                            field_new(k, i_new) = field_old(k, i_ref)
+                        end if
                     end do
                 end if
 
@@ -251,27 +377,43 @@ contains
     ! New nodes get value from nearest old node.
     subroutine remap_node_field_2d(field_old, field_new, &
                                     mesh_old, mesh_new, node_flag, &
-                                    set_new_to_zero)
+                                    set_new_to_zero, ice_donor)
         real(WP),           intent(in)  :: field_old(:)    ! (nod2D_old)
         real(WP),           allocatable,intent(out) :: field_new(:)
         type(t_mesh_remap), intent(in)  :: mesh_old, mesh_new
         integer,            intent(in)  :: node_flag(:)
         logical,            intent(in)  :: set_new_to_zero
+        ! Optional per-new-node old-mesh donor index (>0). When >0 the node value
+        ! is taken from field_old(donor(i_new)) regardless of its flag: ice fields
+        ! seed newly-exposed nodes from the nearest iced neighbour, ocean surface
+        ! fields (ssh, hbar) from the nearest open-ocean node (build_ocean_donor).
+        integer, optional,  intent(in)  :: ice_donor(:)
 
         integer  :: i_new, i_old, i_ref, n_base
         real(WP) :: dist, dist_min, alpha
         real(WP) :: lon_new, lat_new
         real(WP), parameter :: r_earth = 6371000.0_WP
+        logical  :: have_donor
 
+        have_donor = present(ice_donor)
         allocate(field_new(mesh_new%nod2D))
         field_new = 0.0_WP
 
         !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
-        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, set_new_to_zero) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, set_new_to_zero, have_donor, ice_donor) &
         !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, dist, dist_min, alpha, lon_new, lat_new)
         do i_new = 1, mesh_new%nod2D
             n_base = mesh_new%nod_map(i_new)
             i_old  = mesh_old%map_base_to_mesh(n_base)
+
+            ! Ice-donor override: newly-exposed node inherits the nearest iced
+            ! neighbour (all ice fields share one donor -> consistent column).
+            if (have_donor) then
+                if (ice_donor(i_new) > 0) then
+                    field_new(i_new) = field_old(ice_donor(i_new))
+                    cycle
+                end if
+            end if
 
             select case (node_flag(i_new))
 
@@ -583,6 +725,7 @@ contains
 
         real(WP), allocatable :: field_old_3d(:,:), field_new_3d(:,:)
         real(WP), allocatable :: field_old_2d(:),   field_new_2d(:)
+        integer,  allocatable :: ocean_donor(:)   ! open-ocean seed for 2D surface fields
 
         ! Ocean restart fields are discovered from the restart directory at run
         ! time, so a newly-added prognostic (e.g. an extra tracer) is remapped
@@ -591,6 +734,7 @@ contains
         ! hnode is the sole exception (special per-level handling, remap_hnode).
         character(len=64), allocatable :: flds(:)
         integer :: nflds, ifld
+        integer(8) :: c_rate, c0, c1
 
         write(year_str,'(I4)') restart_year
         nl1      = mesh_new%nl - 1
@@ -605,6 +749,26 @@ contains
         call read_time_iter(fin, time_val, iter_val)
         write(*,*) ' time=', time_val, ' iter=', iter_val
 
+        ! Open-ocean donor map for 2D surface fields (ssh, hbar) on nodes that
+        ! became surface-open ocean this leg. Ignored by the 3D/element paths.
+        call system_clock(count_rate=c_rate)
+        call system_clock(c0)
+        call build_ocean_donor(mesh_old, mesh_new, ocean_donor)
+        call system_clock(c1)
+        write(*,'(A,F8.2,A)') '     [TIMER]   build_ocean_donor : ', real(c1-c0)/c_rate, ' s'
+
+        ! Shared nearest-old-node donor cache: filled by the first 3D field's
+        ! search, reused (no re-search) by the rest. 0 = uncomputed.
+        ! (A/B switch for validation: REMAP_DONOR_MEMO=0 disables it.)
+        block
+          character(len=8) :: memo_env
+          call get_environment_variable('REMAP_DONOR_MEMO', memo_env)
+          if (trim(memo_env) /= '0') then
+              allocate(donor_cache(mesh_new%nl, mesh_new%nod2D))
+              donor_cache = 0
+          end if
+        end block
+
         !_______________________________________________________________________
         ! Discover and remap every ocean restart field generically. Each field's
         ! rank (2D/3D), node-vs-element layout and new-node fill policy are taken
@@ -615,10 +779,16 @@ contains
         do ifld = 1, nflds
             if (trim(flds(ifld)) == 'hnode') cycle      ! special-cased below
             write(*,*) ' --> '//trim(flds(ifld))//'.nc'
+            call system_clock(c0)
             call remap_field_auto(path_old, path_new, trim(flds(ifld)), &
-                                  mesh_old, mesh_new, node_flag, time_val, iter_val)
+                                  mesh_old, mesh_new, node_flag, time_val, iter_val, &
+                                  ice_donor=ocean_donor)
+            call system_clock(c1)
+            write(*,'(A,A16,A,F8.2,A)') '     [TIMER]   field ', trim(flds(ifld)), ' : ', real(c1-c0)/c_rate, ' s'
         end do
         if (allocated(flds)) deallocate(flds)
+        if (allocated(ocean_donor)) deallocate(ocean_donor)
+        if (allocated(donor_cache)) deallocate(donor_cache)
 
         !_______________________________________________________________________
         ! hnode.nc  -- 3D node-based layer thickness
@@ -627,9 +797,79 @@ contains
         call remap_hnode(mesh_old, mesh_new, node_flag, &
                           path_old, path_new, time_val, iter_val)
 
+        !_______________________________________________________________________
+        ! Freezing-point cap on newly-under-ice columns. Where the moving
+        ! geometry puts new ice over previously-open water (ulevels_new >
+        ! ulevels_old), the remap above carries the above-freezing open-ocean
+        ! temperature straight under the new ice shelf; FESOM then melts against
+        ! it in a runaway (large basal heat/freshwater flux into the thin
+        ! ice-base layer) -> cfl_z blowup within a few days, ringing the whole
+        ! margin. Cap T at the in-situ freezing point there (salinity untouched).
+        call cap_new_cavity_temp(mesh_old, mesh_new, path_new, time_val, iter_val)
+
         write(*,*) ' --> all restart files remapped.'
 
     end subroutine remap_all_restarts
+
+    !===========================================================================
+    ! Freezing-point cap for newly-under-ice columns (moving-cavity advance).
+    ! For every node that gained top ice this leg (ulevels_new > ulevels_old),
+    ! cap the wet-level temperature at the in-situ freezing point
+    !   Tf = 0.0901 - 0.0575*S - 7.61e-4*depth
+    ! so water newly placed under the ice shelf carries no spurious thermal
+    ! driving. Salinity is untouched. Operates in place on <path_new>/temp.nc,
+    ! which remap_all_restarts has just written.
+    subroutine cap_new_cavity_temp(mesh_old, mesh_new, path_new, time_val, iter_val)
+        type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
+        character(len=*),   intent(in) :: path_new
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        real(WP), allocatable :: T(:,:), S(:,:)   ! (nz, nod2D_new)
+        integer  :: i_new, i_old, n_base, ul_new, ul_old, nl_new, k, nz
+        integer  :: n_nodes, n_cells
+        logical  :: touched
+        real(WP) :: Tf, depth
+        real(WP), parameter :: A_FRZ = -0.0575_WP, B_FRZ = 0.0901_WP, &
+                               C_FRZ = -7.61e-4_WP
+
+        call read_restart_var_3d(trim(path_new), 'temp', T)
+        call read_restart_var_3d(trim(path_new), 'salt', S)
+        nz = size(T, 1)
+        n_nodes = 0
+        n_cells = 0
+
+        do i_new = 1, mesh_new%nod2D
+            n_base = mesh_new%nod_map(i_new)
+            i_old  = mesh_old%map_base_to_mesh(n_base)
+            if (i_old == 0) cycle                   ! genuinely new node: no old column
+            ul_new = mesh_new%ulevels_nod2D(i_new)
+            ul_old = mesh_old%ulevels_nod2D(i_old)
+            if (ul_new <= ul_old) cycle             ! only nodes that gained ice at the top
+            nl_new = mesh_new%nlevels_nod2D(i_new)
+            touched = .false.
+            do k = ul_new, nl_new - 1
+                if (k < 1 .or. k > nz) cycle
+                depth = abs(mesh_new%Z(k))          ! mid-level depth [m]
+                Tf = B_FRZ + A_FRZ * S(k, i_new) + C_FRZ * depth
+                if (T(k, i_new) > Tf) then
+                    T(k, i_new) = Tf
+                    n_cells = n_cells + 1
+                    touched = .true.
+                end if
+            end do
+            if (touched) n_nodes = n_nodes + 1
+        end do
+
+        write(*,*) ' --> freezing-cap on newly-under-ice columns (ulev_new>ulev_old):'
+        write(*,*) '     nodes capped : ', n_nodes
+        write(*,*) '     cells capped : ', n_cells
+
+        call write_nc_3d(trim(path_new)//'temp.nc', 'temp', 'temp', '-', &
+                         T, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+
+        deallocate(T, S)
+    end subroutine cap_new_cavity_temp
 
     !===========================================================================
     ! Discover the restart fields present in a directory by listing *.nc and
@@ -685,12 +925,16 @@ contains
     ! occur. New/exposed nodes are extrapolated for 3D node-based fields (tracers)
     ! and zeroed for 2D and element-based fields (ssh, velocities, tendencies).
     subroutine remap_field_auto(path_old, path_new, varname, &
-                                mesh_old, mesh_new, node_flag, time_val, iter_val)
+                                mesh_old, mesh_new, node_flag, time_val, iter_val, &
+                                ice_donor)
         character(len=*),   intent(in) :: path_old, path_new, varname
         type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
         integer,            intent(in) :: node_flag(:)
         real(WP),           intent(in) :: time_val
         integer,            intent(in) :: iter_val
+        ! Optional ice-donor map (2D node fields only); forwarded to the 2D
+        ! remapper so ice fields seed newly-exposed nodes from a shared donor.
+        integer, optional,  intent(in) :: ice_donor(:)
 
         integer            :: ncid, varid, ndims, dimids(8), nz, status
         character(len=64)  :: spatial_dim, lev_dim
@@ -736,8 +980,10 @@ contains
 
         if (.not. is_3d) then
             call read_restart_var_2d(path_old, varname, f2o)
+            ! ice_donor is forwarded whether present or not (an absent optional
+            ! stays absent through the call -> ocean 2D fields are unaffected).
             call remap_node_field_2d(f2o, f2n, mesh_old, mesh_new, node_flag, &
-                                      set_new_to_zero=zero_new)
+                                      set_new_to_zero=zero_new, ice_donor=ice_donor)
             call write_nc_2d(fout, varname, varname, '-', f2n, &
                               mesh_new%nod2D, time_val, iter_val)
             deallocate(f2o, f2n)
@@ -750,8 +996,10 @@ contains
             deallocate(f3o, f3n)
         else
             call read_restart_var_3d(path_old, varname, f3o)
+            ! ice_donor (open-ocean donor for ocean fields) fills newly-opened
+            ! levels from a coherent open-ocean column; absent -> old behaviour.
             call remap_node_field_3d(f3o, f3n, mesh_old, mesh_new, node_flag, &
-                                      set_new_to_zero=zero_new)
+                                      set_new_to_zero=zero_new, ice_donor=ice_donor)
             nz = size(f3o, 1)
             call write_nc_3d(fout, varname, varname, '-', f3n, nz, &
                               mesh_new%nod2D, 'node', time_val, iter_val, lev_dim)
@@ -776,6 +1024,13 @@ contains
         integer  :: nflds, ifld
         real(WP) :: time_val
         integer  :: iter_val
+        ! ice-donor seeding (see module header)
+        real(WP), allocatable :: area_old(:)
+        integer,  allocatable :: ice_donor(:)
+        integer  :: i_new, j, i_ref, n_seed
+        real(WP) :: lon_new, lat_new, dist, dist_min, alpha
+        real(WP), parameter :: r_earth = 6371000.0_WP
+        logical  :: has_area, do_ice_seed
 
         call list_restart_fields(path_ice_old, flds, nflds)
         if (nflds == 0) then
@@ -787,11 +1042,64 @@ contains
         call read_time_iter(trim(path_ice_old)//trim(flds(1))//'.nc', time_val, iter_val)
         write(*,*) ' ice time=', time_val, ' iter=', iter_val
 
+        ! Build the ice-donor map from the OLD ice concentration 'area': for each
+        ! newly-surface-exposed node (cavity retreated -> FLAG_VERT_EXTENDED, or a
+        ! brand-new node) find the nearest OLD node genuinely iced
+        ! (a_ice > ICE_CONC_THRESH) within ICE_FILL_MAXDIST. Nodes with no ice
+        ! nearby keep the default remap (legitimately open water).
+        do_ice_seed = .false.
+        has_area = .false.
+        do ifld = 1, nflds
+            if (trim(flds(ifld)) == 'area') has_area = .true.
+        end do
+        if (has_area) then
+            call read_restart_var_2d(path_ice_old, 'area', area_old)
+            allocate(ice_donor(mesh_new%nod2D)); ice_donor = 0; n_seed = 0
+            !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(DYNAMIC) &
+            !$OMP   SHARED(mesh_old, mesh_new, node_flag, area_old, ice_donor) &
+            !$OMP   PRIVATE(i_new, j, i_ref, lon_new, lat_new, dist, dist_min, alpha) &
+            !$OMP   REDUCTION(+:n_seed)
+            do i_new = 1, mesh_new%nod2D
+                if (node_flag(i_new) /= FLAG_VERT_EXTENDED .and. &
+                    node_flag(i_new) /= FLAG_NEW_NODE) cycle
+                lon_new  = mesh_new%coord(1, i_new)
+                lat_new  = mesh_new%coord(2, i_new)
+                dist_min = huge(1.0_WP); i_ref = 0
+                do j = 1, mesh_old%nod2D
+                    if (area_old(j) <= ICE_CONC_THRESH) cycle
+                    alpha = acos(max(-1.0_WP, min(1.0_WP, &
+                            cos(lat_new)*cos(mesh_old%coord(2,j))* &
+                            cos(lon_new-mesh_old%coord(1,j)) + &
+                            sin(lat_new)*sin(mesh_old%coord(2,j)))))
+                    dist = r_earth * abs(alpha)
+                    if (dist < dist_min) then
+                        dist_min = dist; i_ref = j
+                    end if
+                end do
+                if (i_ref > 0 .and. dist_min < ICE_FILL_MAXDIST) then
+                    ice_donor(i_new) = i_ref
+                    n_seed = n_seed + 1
+                end if
+            end do
+            !$OMP END PARALLEL DO
+            do_ice_seed = .true.
+            write(*,*) '     ice-donor: seeded ', n_seed, &
+                       ' newly-exposed nodes from nearest iced neighbour'
+            if (allocated(area_old)) deallocate(area_old)
+        end if
+
         do ifld = 1, nflds
             write(*,*) ' --> '//trim(flds(ifld))//'.nc'
-            call remap_field_auto(path_ice_old, path_new, trim(flds(ifld)), &
-                                  mesh_old, mesh_new, node_flag, time_val, iter_val)
+            if (do_ice_seed) then
+                call remap_field_auto(path_ice_old, path_new, trim(flds(ifld)), &
+                                      mesh_old, mesh_new, node_flag, time_val, iter_val, &
+                                      ice_donor=ice_donor)
+            else
+                call remap_field_auto(path_ice_old, path_new, trim(flds(ifld)), &
+                                      mesh_old, mesh_new, node_flag, time_val, iter_val)
+            end if
         end do
+        if (allocated(ice_donor)) deallocate(ice_donor)
         if (allocated(flds)) deallocate(flds)
 
         write(*,*) ' --> all ice restart files remapped.'

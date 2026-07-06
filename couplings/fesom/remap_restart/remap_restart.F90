@@ -34,6 +34,7 @@ program remap_restart
     integer, allocatable :: node_flag(:)
     character(len=256)   :: path_ice_old
     integer              :: ipos
+    integer(8)           :: clk_rate, clk0, clk1
     !     type(t_cavity_line)  :: cav_line
 
     !___________________________________________________________________________
@@ -45,19 +46,24 @@ program remap_restart
     write(*,*) '============================================'
     write(*,*) ' FESOM2 restart remapping tool'
     write(*,*) '============================================'
+    call system_clock(count_rate=clk_rate)
+    call system_clock(clk0)
 
     !___________________________________________________________________________
     ! read old and new mesh
     write(*,*) ' --> reading old mesh'
     call read_mesh_remap(path_old, nod2D_base, mesh_old)
+    call system_clock(clk1); write(*,'(A,F8.2,A)') '     [TIMER] read old mesh        : ', real(clk1-clk0)/clk_rate, ' s'; clk0=clk1
 
     write(*,*) ' --> reading new mesh'
     call read_mesh_remap(path_new, nod2D_base, mesh_new)
+    call system_clock(clk1); write(*,'(A,F8.2,A)') '     [TIMER] read new mesh        : ', real(clk1-clk0)/clk_rate, ' s'; clk0=clk1
 
     !___________________________________________________________________________
     ! classify nodes and compute cavity line
     write(*,*) ' --> classifying nodes'
     call classify_nodes(mesh_old, mesh_new, node_flag)
+    call system_clock(clk1); write(*,'(A,F8.2,A)') '     [TIMER] classify_nodes       : ', real(clk1-clk0)/clk_rate, ' s'; clk0=clk1
 
     write(*,*) ' --> computing new cavity line'
     !call compute_new_cavity_line(mesh_new, node_flag, cav_line)
@@ -67,6 +73,7 @@ program remap_restart
     write(*,*) ' --> remapping ocean restart'
     call remap_all_restarts(mesh_old, mesh_new, node_flag, &
                    path_restart_old, path_restart_new, restart_year)
+    call system_clock(clk1); write(*,'(A,F8.2,A)') '     [TIMER] remap ocean restart  : ', real(clk1-clk0)/clk_rate, ' s'; clk0=clk1
 
     write(*,*) ' --> remapping ice restart'
     ! The ice restart lives next to the ocean one, in fesom.<year-1>.ice.restart/.
@@ -80,6 +87,7 @@ program remap_restart
     else
         write(*,*) '     (skipped: could not locate oce.restart in path_restart_old)'
     end if
+    call system_clock(clk1); write(*,'(A,F8.2,A)') '     [TIMER] remap ice restart    : ', real(clk1-clk0)/clk_rate, ' s'; clk0=clk1
 
     write(*,*) '============================================'
     write(*,*) ' remapping done.'

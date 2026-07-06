@@ -37,23 +37,51 @@ function ice2fesom {
     if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
         couple_timer "ice2fesom: build_submesh"
         build_submesh           || { echo " *** ice2fesom FAILED: build_submesh ***"; exit 1; }
-        couple_timer "ice2fesom: remap_fesom_restart"
-        remap_fesom_restart     || { echo " *** ice2fesom FAILED: remap_fesom_restart ***"; exit 1; }
         # The FESOM node count changed, so the OASIS feom grid description and the
         # feom remap weights baked for the previous mesh are stale (MCT aborts on
         # the first exchange: length of x /= columns of sMat). Regenerate them for
         # the new submesh. Gated on REGEN_OASIS_WEIGHTS so setups without pyOASIS
         # are unaffected.
         if [[ "x${REGEN_OASIS_WEIGHTS:-0}" == "x1" ]]; then
-            couple_timer "ice2fesom: regenerate_oasis_weights"
-            regenerate_oasis_weights || { echo " *** ice2fesom FAILED: regenerate_oasis_weights ***"; exit 1; }
+            # remap_fesom_restart and regenerate_oasis_weights are independent:
+            # both consume only latest_submesh and write disjoint outputs
+            # (restart_remapped/ vs oasis_regen/). Only remap_oasis_restart needs
+            # both. So overlap them -- run the long (~19 min) weight-gen in the
+            # background while the ~1 min F90 restart remap runs in the foreground,
+            # then wait for the weight-gen before remap_oasis_restart. Backgrounding
+            # a function runs it in a subshell, so its env/cd changes do not leak.
+            couple_timer "ice2fesom: remap_fesom_restart || regenerate_oasis_weights"
+            _rgw_log=${COUPLE_DIR}/regenerate_oasis_weights.bg.log
+            regenerate_oasis_weights > "${_rgw_log}" 2>&1 &
+            _rgw_pid=$!
+
+            if ! remap_fesom_restart ; then
+                echo " *** ice2fesom FAILED: remap_fesom_restart ***"
+                kill ${_rgw_pid} 2>/dev/null ; wait ${_rgw_pid} 2>/dev/null
+                echo "----- backgrounded regenerate_oasis_weights output -----"; cat "${_rgw_log}" 2>/dev/null
+                exit 1
+            fi
+
+            wait ${_rgw_pid} ; _rgw_rc=$?
+            echo "----- regenerate_oasis_weights output (ran concurrently with remap_fesom_restart) -----"
+            cat "${_rgw_log}" 2>/dev/null
+            echo "----- end regenerate_oasis_weights output (rc=${_rgw_rc}) -----"
+            if [ ${_rgw_rc} -ne 0 ] ; then
+                echo " *** ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc}) ***"; exit 1
+            fi
+            unset _rgw_log _rgw_pid _rgw_rc
+
             # Carry the OASIS coupling state across the mesh change: remap the feom
             # fields in the coupling restarts (rstos/rstas) onto the new node set,
             # same node correspondence as the FESOM restart. Without this they would
             # mismatch the new feom grid and $NNOREST T would zero them (a coupling
-            # transient at the first exchange of every mesh-change leg).
+            # transient at the first exchange of every mesh-change leg). Needs BOTH
+            # the remapped FESOM restart and the fresh weights -> after the wait.
             couple_timer "ice2fesom: remap_oasis_restart"
             remap_oasis_restart  || { echo " *** ice2fesom FAILED: remap_oasis_restart ***"; exit 1; }
+        else
+            couple_timer "ice2fesom: remap_fesom_restart"
+            remap_fesom_restart  || { echo " *** ice2fesom FAILED: remap_fesom_restart ***"; exit 1; }
         fi
     fi
     couple_timer "ice2fesom: DONE"

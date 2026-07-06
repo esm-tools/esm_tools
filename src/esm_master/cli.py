@@ -1,4 +1,5 @@
 """Console script for esm_master."""
+
 import argparse
 import sys
 
@@ -43,7 +44,8 @@ def main():
         help=(
             "Character used to split nested keys in the 'key=value' "
             "overrides (default: '.'). Use a different separator if a key "
-            "itself contains a literal dot, e.g. 'namelist.echam'."
+            "itself contains a literal dot, e.g. --separator , "
+            "general,namelist.echam=value."
         ),
     )
     parser.add_argument(

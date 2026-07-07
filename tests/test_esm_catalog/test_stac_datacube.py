@@ -77,9 +77,7 @@ def test_variable_mapping():
         {"name": "precip", "description": "explicit", "long_name": "ignored"},
         {"name": "u10", "standard_name": "eastward_wind"},
     ]
-    add_datacube_extension(
-        item, {"dimensions": _dims(), "variables": variables}
-    )
+    add_datacube_extension(item, {"dimensions": _dims(), "variables": variables})
     cube_vars = item.properties["cube:variables"]
     assert cube_vars["temp"] == {
         "dimensions": ["time", "lat", "lon"],
@@ -94,9 +92,7 @@ def test_variable_mapping():
 def test_variable_without_name_is_skipped():
     item = _bare_item()
     variables = [{"units": "K"}, {"name": "temp"}]
-    add_datacube_extension(
-        item, {"dimensions": _dims(), "variables": variables}
-    )
+    add_datacube_extension(item, {"dimensions": _dims(), "variables": variables})
     assert list(item.properties["cube:variables"]) == ["temp"]
 
 
@@ -138,9 +134,7 @@ def test_make_item_without_dims_has_no_datacube(tmp_path):
 def test_make_item_with_dims_applies_datacube(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    meta = _metadata(
-        dimensions=_dims(), variables=[{"name": "temp", "units": "K"}]
-    )
+    meta = _metadata(dimensions=_dims(), variables=[{"name": "temp", "units": "K"}])
     item = make_item(f, meta, _ctx())
     assert item.properties["cube:dimensions"] == _dims()
     assert item.properties["cube:variables"]["temp"]["unit"] == "K"
@@ -165,3 +159,11 @@ def test_item_validates_against_datacube_schema(tmp_path):
     item_dict = make_item(f, meta, _ctx()).to_dict()
     schema = json.loads(SCHEMA_PATH.read_text())
     jsonschema.validate(instance=item_dict, schema=schema)
+
+
+def test_all_nameless_variables_omit_cube_variables():
+    item = _bare_item()
+    add_datacube_extension(item, {"dimensions": _dims(), "variables": [{"units": "K"}]})
+    assert "cube:variables" not in item.properties
+    assert item.properties["cube:dimensions"] == _dims()
+    assert DATACUBE_URL in item.stac_extensions

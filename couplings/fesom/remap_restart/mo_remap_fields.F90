@@ -37,6 +37,15 @@ module mo_remap_fields
     ! thread that owns i_new, so no cross-thread write races on an entry.
     integer, allocatable :: donor_cache(:,:)   ! (nl, nod2D_new); 0 = uncomputed
 
+    !___________________________________________________________________________
+    ! Nearest-old-element map for CHANGED elements (0 = unchanged/none), shared by
+    ! all element (u/v/rhs) velocity fields. Adopts Finn Heukamp's (SO-ASE) cavity
+    ! velocity handling: a newly-opened element inherits the neighbouring old
+    ! element's (already model-evolved) current instead of being zeroed, so the
+    ! newly-opened front is not left geostrophically unbalanced. Unlike the DARS2
+    ! cold-start our cavity is model-evolved, so we do NOT zero cavity elements.
+    integer, allocatable :: elem_donor(:)      ! (elem2D_new); 0 = unchanged/none
+
     public :: classify_nodes, remap_all_restarts, remap_ice
 
 contains
@@ -318,18 +327,20 @@ contains
 
                     !___________________________________________________________
                     ! new levels above old shelf base (cavity thinned but the
-                    ! node is still sub-ice: new ulevels>1, so no open-ocean
-                    ! donor). Hold the node's own OLD top-wet-level (shelf-base)
-                    ! value upward. The old unmasked nearest-node search here
-                    ! pulled melt-fresh cavity water into mid-column -> a large
-                    ! density inversion -> convective cfl_z blowup; the node's
-                    ! own shelf-base water gives a coherent, statically stable
-                    ! (and physically appropriate, cold) column.
+                    ! node is still sub-ice). Per-level nearest wet old node:
+                    ! laterally ANCHORS the new levels to the neighbouring water
+                    ! mass at that depth (front gradient matches the unchanged
+                    ! neighbours by construction). Vertical stability is enforced
+                    ! afterwards by stabilize_changed_columns (density-monotonic
+                    ! joint T/S adjustment), which removes the old failure mode
+                    ! of melt-fresh donors planting mid-column inversions.
                     else if (k < ul_old) then
                         if (set_new_to_zero) then
                             field_new(k, i_new) = 0.0_WP
                         else
-                            field_new(k, i_new) = field_old(ul_old, i_old)
+                            call find_nearest_old_node_at_level( &
+                                i_new, k, mesh_old, mesh_new, i_ref)
+                            field_new(k, i_new) = field_old(k, i_ref)
                         end if
 
                     !___________________________________________________________
@@ -463,8 +474,60 @@ contains
     end subroutine remap_node_field_2d
 
     !===========================================================================
-    ! Remap a 3D element-based field (u, v, w, urhs_AB, vrhs_AB).
-    ! New cavity elements are set to zero.
+    ! Nearest-old-element map for changed elements (Finn Heukamp SO-ASE velocity
+    ! handling). For every element that has a new/extended node, find the nearest
+    ! old element by centroid; its velocity is later copied so the newly-opened
+    ! cell inherits the neighbouring current instead of being zeroed. Built once,
+    ! reused by all element fields (u/v/rhs).
+    subroutine build_elem_donor(mesh_old, mesh_new, node_flag, edonor)
+        type(t_mesh_remap),   intent(in)  :: mesh_old, mesh_new
+        integer,              intent(in)  :: node_flag(:)
+        integer, allocatable, intent(out) :: edonor(:)
+
+        real(WP), allocatable :: clon_o(:), clat_o(:)
+        integer  :: e_new, eo, e_ref, nodes_new(3), cnt
+        real(WP) :: clon, clat, dist, dist_min, alpha
+        real(WP), parameter :: r_earth = 6371000.0_WP
+
+        allocate(edonor(mesh_new%elem2D)); edonor = 0
+        allocate(clon_o(mesh_old%elem2D), clat_o(mesh_old%elem2D))
+        !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_old, clon_o, clat_o) PRIVATE(eo)
+        do eo = 1, mesh_old%elem2D
+            clon_o(eo) = sum(mesh_old%coord(1, mesh_old%elem2D_nodes(1:3, eo)))/3.0_WP
+            clat_o(eo) = sum(mesh_old%coord(2, mesh_old%elem2D_nodes(1:3, eo)))/3.0_WP
+        end do
+        !$OMP END PARALLEL DO
+        cnt = 0
+        !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(DYNAMIC,64) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, edonor, clon_o, clat_o) &
+        !$OMP   PRIVATE(e_new, eo, e_ref, nodes_new, clon, clat, dist, dist_min, alpha) &
+        !$OMP   REDUCTION(+:cnt)
+        do e_new = 1, mesh_new%elem2D
+            nodes_new = mesh_new%elem2D_nodes(1:3, e_new)
+            if (all(node_flag(nodes_new) == FLAG_UNCHANGED)) cycle   ! unchanged: direct copy
+            clon = sum(mesh_new%coord(1, nodes_new))/3.0_WP
+            clat = sum(mesh_new%coord(2, nodes_new))/3.0_WP
+            dist_min = huge(1.0_WP); e_ref = 0
+            do eo = 1, mesh_old%elem2D
+                alpha = acos(max(-1.0_WP, min(1.0_WP, &
+                        cos(clat)*cos(clat_o(eo))*cos(clon-clon_o(eo)) + &
+                        sin(clat)*sin(clat_o(eo)))))
+                dist = r_earth * abs(alpha)
+                if (dist < dist_min) then
+                    dist_min = dist; e_ref = eo
+                end if
+            end do
+            edonor(e_new) = e_ref
+            cnt = cnt + 1
+        end do
+        !$OMP END PARALLEL DO
+        deallocate(clon_o, clat_o)
+        write(*,*) ' --> element velocity donor: changed elements mapped to nearest old element =', cnt
+    end subroutine build_elem_donor
+
+    !===========================================================================
+    ! Remap a 3D element-based field (u, v, urhs_AB, vrhs_AB).
+    ! Changed elements inherit the nearest old element's velocity (build_elem_donor).
     ! Element e_new corresponds to old element via the three nodes.
     subroutine remap_elem_field_3d(field_old, field_new, &
                                     mesh_old, mesh_new, node_flag)
@@ -483,7 +546,7 @@ contains
         field_new = 0.0_WP
 
         !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
-        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new) &
+        !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, elem_donor) &
         !$OMP   PRIVATE(e_new, e_old, k, nodes_new, nodes_old, ul_new, nl_new, ul_old, nl_old, n_base, i_old, j, all_unchanged)
         do e_new = 1, mesh_new%elem2D
             nodes_new = mesh_new%elem2D_nodes(1:3, e_new)
@@ -515,8 +578,17 @@ contains
                 end if
 
             else
-                ! element has new or extended nodes -> set to zero
-                field_new(:, e_new) = 0.0_WP
+                ! CHANGED element (new/extended nodes): adopt Finn Heukamp's (SO-ASE)
+                ! velocity handling -- inherit the nearest old element's (already
+                ! model-evolved) current so the newly-opened cell is not left at zero
+                ! (geostrophically unbalanced -> the front-adjustment blowup). Our
+                ! cavity is model-evolved, so unlike the DARS2 cold-start we do NOT
+                ! zero cavity elements.
+                if (allocated(elem_donor)) then
+                    if (elem_donor(e_new) > 0) &
+                        field_new(:, e_new) = field_old(:, elem_donor(e_new))
+                end if
+                ! (elem_donor absent or 0 -> field_new stays 0, the old behaviour)
             end if
 
         end do
@@ -782,6 +854,13 @@ contains
           end if
         end block
 
+        ! Element velocity donor (Finn Heukamp SO-ASE handling): nearest old element
+        ! for every changed element. Built once, reused by all u/v/rhs fields.
+        call system_clock(c0)
+        call build_elem_donor(mesh_old, mesh_new, node_flag, elem_donor)
+        call system_clock(c1)
+        write(*,'(A,F8.2,A)') '     [TIMER]   build_elem_donor  : ', real(c1-c0)/c_rate, ' s'
+
         !_______________________________________________________________________
         ! Discover and remap every ocean restart field generically. Each field's
         ! rank (2D/3D), node-vs-element layout and new-node fill policy are taken
@@ -802,6 +881,7 @@ contains
         if (allocated(flds)) deallocate(flds)
         if (allocated(ocean_donor)) deallocate(ocean_donor)
         if (allocated(donor_cache)) deallocate(donor_cache)
+        if (allocated(elem_donor)) deallocate(elem_donor)
 
         !_______________________________________________________________________
         ! hnode.nc  -- 3D node-based layer thickness
@@ -819,6 +899,17 @@ contains
         ! ice-base layer) -> cfl_z blowup within a few days, ringing the whole
         ! margin. Cap T at the in-situ freezing point there (salinity untouched).
         call cap_new_cavity_temp(mesh_old, mesh_new, path_new, time_val, iter_val)
+
+        ! Balance-consistent post-passes (design note balanced_restart_plan):
+        ! N^2>=0 on changed columns, then geostrophic u/v from grad(p) + AB reset.
+        call system_clock(c0)
+        call stabilize_changed_columns(mesh_new, node_flag, path_new, time_val, iter_val)
+        call system_clock(c1)
+        write(*,'(A,F8.2,A)') '     [TIMER]   stabilize_columns : ', real(c1-c0)/c_rate, ' s'
+        call system_clock(c0)
+        call geostrophic_init_changed(mesh_new, node_flag, path_new, time_val, iter_val)
+        call system_clock(c1)
+        write(*,'(A,F8.2,A)') '     [TIMER]   geostrophic_init  : ', real(c1-c0)/c_rate, ' s'
 
         write(*,*) ' --> all restart files remapped.'
 
@@ -883,6 +974,292 @@ contains
 
         deallocate(T, S)
     end subroutine cap_new_cavity_temp
+
+    !===========================================================================
+    ! Density-monotonic (N^2>=0) enforcement on changed columns. The per-level
+    ! lateral anchoring can stack a fresh donor under a denser one; mix T and S
+    ! JOINTLY (thickness-weighted) wherever sigma decreases with depth, sweeping
+    ! until stable. Operates in place on <path_new>/{temp,salt}.nc.
+    subroutine stabilize_changed_columns(mesh_new, node_flag, path_new, time_val, iter_val)
+        type(t_mesh_remap), intent(in) :: mesh_new
+        integer,            intent(in) :: node_flag(:)
+        character(len=*),   intent(in) :: path_new
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        real(WP), allocatable :: T(:,:), S(:,:)
+        real(WP) :: sig1, sig2, dz1, dz2, wt, Tm, Sm
+        integer  :: i, k, nz, ul, nl, it, nmix, nnod
+        logical  :: changed
+        real(WP), parameter :: EPS = 1.0e-4_WP
+        ! linearised EOS (consistent with the offline diagnostics)
+        real(WP), parameter :: R0=1027.0_WP, AT=1.7e-4_WP, BS=7.6e-4_WP
+
+        call read_restart_var_3d(trim(path_new), 'temp', T)
+        call read_restart_var_3d(trim(path_new), 'salt', S)
+        nz = size(T, 1); nmix = 0; nnod = 0
+
+        do i = 1, mesh_new%nod2D
+            if (node_flag(i) == FLAG_UNCHANGED) cycle
+            ul = mesh_new%ulevels_nod2D(i); nl = mesh_new%nlevels_nod2D(i)
+            if (nl-1 <= ul) cycle
+            changed = .false.
+            do it = 1, 10*nz
+                sig2 = 0.0_WP
+                do k = ul, nl-2
+                    sig1 = R0*(1.0_WP - AT*T(k,i)   + BS*(S(k,i)  -35.0_WP))
+                    sig2 = R0*(1.0_WP - AT*T(k+1,i) + BS*(S(k+1,i)-35.0_WP))
+                    if (sig2 < sig1 - EPS) then
+                        dz1 = mesh_new%zbar(k)   - mesh_new%zbar(k+1)
+                        dz2 = mesh_new%zbar(k+1) - mesh_new%zbar(k+2)
+                        wt  = dz1/(dz1+dz2)
+                        Tm  = wt*T(k,i) + (1.0_WP-wt)*T(k+1,i)
+                        Sm  = wt*S(k,i) + (1.0_WP-wt)*S(k+1,i)
+                        T(k,i)=Tm; T(k+1,i)=Tm; S(k,i)=Sm; S(k+1,i)=Sm
+                        nmix = nmix + 1; changed = .true.
+                    end if
+                end do
+                ! converged when a full sweep does no mixing
+                sig1 = 0.0_WP
+                do k = ul, nl-2
+                    sig1 = max(sig1, R0*(1.0_WP - AT*T(k,i) + BS*(S(k,i)-35.0_WP)) &
+                                   - R0*(1.0_WP - AT*T(k+1,i) + BS*(S(k+1,i)-35.0_WP)))
+                end do
+                if (sig1 <= EPS) exit
+            end do
+            if (changed) nnod = nnod + 1
+        end do
+
+        write(*,*) ' --> stabilize_changed_columns: nodes adjusted =', nnod, ' pair-mixes =', nmix
+        call write_nc_3d(trim(path_new)//'temp.nc', 'temp', 'temp', '-', &
+                         T, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+        call write_nc_3d(trim(path_new)//'salt.nc', 'salt', 'salt', '-', &
+                         S, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+        deallocate(T, S)
+    end subroutine stabilize_changed_columns
+
+    !===========================================================================
+    ! Geostrophic velocity on changed elements, computed per level from the full
+    ! hydrostatic pressure (FESOM cavity convention: cavity-occupied levels carry
+    ! a virtual water column with the ice-base T,S; eta=0 under ice enters as
+    ! written):  u_g = (1/(f rho0)) zhat x grad_h p.  One formula per level ---
+    ! contains both the barotropic (eta) and thermal-wind (rho) parts, so no
+    ! reference/neighbour velocity is needed (supersedes the SO-ASE NN fill,
+    ! which remains only where a gradient/f is unusable). Also zeroes the
+    ! Adams-Bashforth history (urhs_AB, vrhs_AB) on changed elements so the
+    ! balanced velocity is not kicked by a foreign tendency at step 1.
+    ! Operates in place on <path_new>/{u,v,urhs_AB,vrhs_AB}.nc.
+    subroutine geostrophic_init_changed(mesh_new, node_flag, path_new, time_val, iter_val)
+        type(t_mesh_remap), intent(in) :: mesh_new
+        integer,            intent(in) :: node_flag(:)
+        character(len=*),   intent(in) :: path_new
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        real(WP), allocatable :: T(:,:), S(:,:), eta(:), U(:,:), V(:,:)
+        real(WP), allocatable :: UAB(:,:), VAB(:,:), p(:,:)
+        integer  :: i, k, nz, ul, nl, e, n1, n2, n3, ule, nle, nelem_done, nclamp
+        logical  :: do_geo
+        real(WP) :: rho, dz, latc, fcor, x2, y2, x3, y3, det, pacc
+        real(WP) :: b1, b2, b3, c1, c2, c3, dpdx, dpdy, ug, vg
+        real(WP), parameter :: R0=1027.0_WP, AT=1.7e-4_WP, BS=7.6e-4_WP
+        real(WP), parameter :: GRAV=9.81_WP, OM=7.2921e-5_WP, RE=6371000.0_WP
+        real(WP), parameter :: UMAX=1.5_WP   ! sanity clamp, counted + reported
+
+        call read_restart_var_3d(trim(path_new), 'temp', T)
+        call read_restart_var_3d(trim(path_new), 'salt', S)
+        call read_restart_var_2d(trim(path_new), 'ssh',  eta)
+        call read_restart_var_3d(trim(path_new), 'u',    U)
+        call read_restart_var_3d(trim(path_new), 'v',    V)
+        call read_restart_var_3d(trim(path_new), 'urhs_AB', UAB)
+        call read_restart_var_3d(trim(path_new), 'vrhs_AB', VAB)
+        nz = size(T,1)
+
+        ! A/B switch: REMAP_GEOSTROPHIC=0 skips the grad-p velocity overwrite
+        ! (keeps the NN fill) but still zeroes AB history and seam-smooths.
+        block
+          character(len=8) :: genv
+          call get_environment_variable('REMAP_GEOSTROPHIC', genv)
+          do_geo = (trim(genv) /= '0')
+        end block
+
+        if (do_geo) then
+        !-----------------------------------------------------------------------
+        ! full hydrostatic pressure at layer mids, all nodes (Eq. pressure of the
+        ! design note): p(k) = rho0 g eta + g sum_{j<k} rho_j dz_j + g rho_k dz_k/2
+        ! with rho_j of the ice-base T,S for cavity-occupied levels j<ulevels.
+        allocate(p(nz, mesh_new%nod2D)); p = huge(1.0_WP)
+        !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_new,T,S,eta,p,nz) &
+        !$OMP   PRIVATE(i,k,ul,nl,rho,dz,pacc)
+        do i = 1, mesh_new%nod2D
+            ul = mesh_new%ulevels_nod2D(i); nl = mesh_new%nlevels_nod2D(i)
+            pacc = R0*GRAV*eta(i)
+            do k = 1, min(nl-1, nz)
+                if (k < ul) then       ! virtual column: ice-base T,S
+                    rho = R0*(1.0_WP - AT*T(ul,i) + BS*(S(ul,i)-35.0_WP))
+                else
+                    rho = R0*(1.0_WP - AT*T(k,i) + BS*(S(k,i)-35.0_WP))
+                end if
+                dz  = mesh_new%zbar(k) - mesh_new%zbar(k+1)
+                p(k,i) = pacc + GRAV*rho*dz*0.5_WP
+                pacc   = pacc + GRAV*rho*dz
+            end do
+        end do
+        !$OMP END PARALLEL DO
+
+        !-----------------------------------------------------------------------
+        ! Lateral smoothing of p on changed nodes (Jacobi, unchanged nodes act as
+        ! fixed anchors). Differentiating the raw reconstructed p at grid-scale
+        ! fronts amplifies donor noise into spurious jets/divergence; a few
+        ! passes remove the noise while keeping the front-scale signal.
+        block
+          real(WP), allocatable :: psm(:,:)
+          integer :: it, j, e2, nn2, nbcnt
+          real(WP) :: nbsum
+          allocate(psm(nz, mesh_new%nod2D))
+          do it = 1, 4
+              psm = p
+              !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_new,node_flag,p,psm,nz) &
+              !$OMP   PRIVATE(i,k,j,e2,nn2,nbsum,nbcnt)
+              do i = 1, mesh_new%nod2D
+                  if (node_flag(i) == FLAG_UNCHANGED) cycle
+                  do k = mesh_new%ulevels_nod2D(i), min(mesh_new%nlevels_nod2D(i)-1, nz)
+                      nbsum = 0.0_WP; nbcnt = 0
+                      do j = mesh_new%nod_in_elem2D_num(i), mesh_new%nod_in_elem2D_num(i+1)-1
+                          e2 = mesh_new%nod_in_elem2D(j)
+                          do nn2 = 1, 3
+                              if (mesh_new%elem2D_nodes(nn2,e2) == i) cycle
+                              if (psm(k, mesh_new%elem2D_nodes(nn2,e2)) < 0.5_WP*huge(1.0_WP)) then
+                                  nbsum = nbsum + psm(k, mesh_new%elem2D_nodes(nn2,e2))
+                                  nbcnt = nbcnt + 1
+                              end if
+                          end do
+                      end do
+                      if (nbcnt > 0) p(k,i) = 0.5_WP*psm(k,i) + 0.5_WP*nbsum/real(nbcnt,WP)
+                  end do
+              end do
+              !$OMP END PARALLEL DO
+          end do
+          deallocate(psm)
+        end block
+
+        !-----------------------------------------------------------------------
+        ! per changed element: P1 gradient of p per level -> geostrophic u,v
+        nelem_done = 0; nclamp = 0
+        !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_new,node_flag,p,U,V,UAB,VAB,nz) &
+        !$OMP   PRIVATE(e,n1,n2,n3,ule,nle,latc,fcor,x2,y2,x3,y3,det,b1,b2,b3,c1,c2,c3, &
+        !$OMP           k,dpdx,dpdy,ug,vg) REDUCTION(+:nelem_done,nclamp)
+        do e = 1, mesh_new%elem2D
+            n1 = mesh_new%elem2D_nodes(1,e); n2 = mesh_new%elem2D_nodes(2,e)
+            n3 = mesh_new%elem2D_nodes(3,e)
+            if (node_flag(n1)==FLAG_UNCHANGED .and. node_flag(n2)==FLAG_UNCHANGED &
+                .and. node_flag(n3)==FLAG_UNCHANGED) cycle
+            ! AB history: zero on every changed element regardless of f/gradient
+            UAB(:,e) = 0.0_WP; VAB(:,e) = 0.0_WP
+            latc = (mesh_new%coord(2,n1)+mesh_new%coord(2,n2)+mesh_new%coord(2,n3))/3.0_WP
+            fcor = 2.0_WP*OM*sin(latc)
+            if (abs(fcor) < 1.0e-5_WP) cycle          ! keep NN fill near the equator
+            ! local metric coords (m), node1 as origin
+            x2 = RE*cos(latc)*(mesh_new%coord(1,n2)-mesh_new%coord(1,n1))
+            y2 = RE*(mesh_new%coord(2,n2)-mesh_new%coord(2,n1))
+            x3 = RE*cos(latc)*(mesh_new%coord(1,n3)-mesh_new%coord(1,n1))
+            y3 = RE*(mesh_new%coord(2,n3)-mesh_new%coord(2,n1))
+            if (abs(x2) > 1.0e6_WP .or. abs(x3) > 1.0e6_WP) cycle  ! dateline-wrapped
+            det = x2*y3 - x3*y2
+            if (abs(det) < 1.0_WP) cycle
+            ! grad of P1 field phi: dphi/dx = b.phi, dphi/dy = c.phi
+            b1 = (y2-y3)/det; b2 = y3/det;  b3 = -y2/det
+            c1 = (x3-x2)/det; c2 = -x3/det; c3 = x2/det
+            ule = max(mesh_new%ulevels_nod2D(n1), mesh_new%ulevels_nod2D(n2), &
+                      mesh_new%ulevels_nod2D(n3))
+            nle = min(mesh_new%nlevels_nod2D(n1), mesh_new%nlevels_nod2D(n2), &
+                      mesh_new%nlevels_nod2D(n3)) - 1
+            do k = ule, min(nle, nz)
+                dpdx = b1*p(k,n1) + b2*p(k,n2) + b3*p(k,n3)
+                dpdy = c1*p(k,n1) + c2*p(k,n2) + c3*p(k,n3)
+                ug = -dpdy/(fcor*R0)
+                vg =  dpdx/(fcor*R0)
+                if (abs(ug) > UMAX .or. abs(vg) > UMAX) then
+                    ug = max(min(ug, UMAX), -UMAX)
+                    vg = max(min(vg, UMAX), -UMAX)
+                    nclamp = nclamp + 1
+                end if
+                U(k,e) = ug
+                V(k,e) = vg
+            end do
+            nelem_done = nelem_done + 1
+        end do
+        !$OMP END PARALLEL DO
+
+        else
+            ! geostrophic overwrite disabled: still zero AB on changed elements
+            allocate(p(1,1))
+            nelem_done = 0; nclamp = 0
+            do e = 1, mesh_new%elem2D
+                n1 = mesh_new%elem2D_nodes(1,e); n2 = mesh_new%elem2D_nodes(2,e)
+                n3 = mesh_new%elem2D_nodes(3,e)
+                if (node_flag(n1)==FLAG_UNCHANGED .and. node_flag(n2)==FLAG_UNCHANGED &
+                    .and. node_flag(n3)==FLAG_UNCHANGED) cycle
+                UAB(:,e) = 0.0_WP; VAB(:,e) = 0.0_WP
+            end do
+        end if
+
+        !-----------------------------------------------------------------------
+        ! Seam smoothing: Jacobi-average the velocity on changed elements with
+        ! their node-sharing neighbours (unchanged elements = fixed anchors from
+        ! the evolved flow). Removes the changed/unchanged velocity seam whose
+        ! discrete divergence would feed deta/dt (the slow eta_n mode).
+        block
+          real(WP), allocatable :: Us(:,:), Vs(:,:)
+          logical,  allocatable :: echg(:)
+          integer :: it, j, nn2, e2, nbcnt, kk, nd
+          real(WP) :: su, sv
+          allocate(Us(nz,mesh_new%elem2D), Vs(nz,mesh_new%elem2D), echg(mesh_new%elem2D))
+          do e = 1, mesh_new%elem2D
+              echg(e) = .not.(node_flag(mesh_new%elem2D_nodes(1,e))==FLAG_UNCHANGED .and. &
+                              node_flag(mesh_new%elem2D_nodes(2,e))==FLAG_UNCHANGED .and. &
+                              node_flag(mesh_new%elem2D_nodes(3,e))==FLAG_UNCHANGED)
+          end do
+          do it = 1, 3
+              Us = U; Vs = V
+              !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_new,echg,U,V,Us,Vs,nz) &
+              !$OMP   PRIVATE(e,kk,j,nn2,e2,nbcnt,su,sv,nd)
+              do e = 1, mesh_new%elem2D
+                  if (.not. echg(e)) cycle
+                  do kk = 1, nz
+                      su = 0.0_WP; sv = 0.0_WP; nbcnt = 0
+                      do nn2 = 1, 3
+                          nd = mesh_new%elem2D_nodes(nn2,e)
+                          do j = mesh_new%nod_in_elem2D_num(nd), mesh_new%nod_in_elem2D_num(nd+1)-1
+                              e2 = mesh_new%nod_in_elem2D(j)
+                              if (e2 == e) cycle
+                              su = su + Us(kk,e2); sv = sv + Vs(kk,e2)
+                              nbcnt = nbcnt + 1
+                          end do
+                      end do
+                      if (nbcnt > 0) then
+                          U(kk,e) = 0.5_WP*Us(kk,e) + 0.5_WP*su/real(nbcnt,WP)
+                          V(kk,e) = 0.5_WP*Vs(kk,e) + 0.5_WP*sv/real(nbcnt,WP)
+                      end if
+                  end do
+              end do
+              !$OMP END PARALLEL DO
+          end do
+          deallocate(Us, Vs, echg)
+        end block
+
+        write(*,*) ' --> geostrophic_init_changed: elements set =', nelem_done, &
+                   ' levels clamped(|u|>2) =', nclamp
+        call write_nc_3d(trim(path_new)//'u.nc', 'u', 'u', '-', &
+                         U, nz, mesh_new%elem2D, 'elem', time_val, iter_val, 'nz_1')
+        call write_nc_3d(trim(path_new)//'v.nc', 'v', 'v', '-', &
+                         V, nz, mesh_new%elem2D, 'elem', time_val, iter_val, 'nz_1')
+        call write_nc_3d(trim(path_new)//'urhs_AB.nc', 'urhs_AB', 'urhs_AB', '-', &
+                         UAB, nz, mesh_new%elem2D, 'elem', time_val, iter_val, 'nz_1')
+        call write_nc_3d(trim(path_new)//'vrhs_AB.nc', 'vrhs_AB', 'vrhs_AB', '-', &
+                         VAB, nz, mesh_new%elem2D, 'elem', time_val, iter_val, 'nz_1')
+        deallocate(T, S, eta, U, V, UAB, VAB, p)
+    end subroutine geostrophic_init_changed
 
     !===========================================================================
     ! Discover the restart fields present in a directory by listing *.nc and
@@ -1130,6 +1507,8 @@ contains
         integer,            intent(in) :: iter_val
 
         real(WP), allocatable :: hnode_old(:,:), hnode_new(:,:)
+        real(WP), allocatable :: eta_new(:)
+        real(WP) :: colsum, target
         integer  :: nl1, nod_old, nod_new
         integer  :: i_new, i_old, n_base, k, ul_new, nl_new, ul_old, nl_old
         integer  :: ncid_h, varid_h, ddids(8)
@@ -1139,6 +1518,10 @@ contains
         nod_old = mesh_old%nod2D
         nod_new = mesh_new%nod2D
         call read_restart_var_3d(trim(path_old), 'hnode', hnode_old)
+        ! staged (already remapped) ssh on the NEW mesh, for ALE consistency:
+        ! changed columns must satisfy sum(hnode) = D + eta (zstar), else the
+        ! mismatch is a standing dh/dt / deta/dt source at t=0.
+        call read_restart_var_2d(trim(path_new), 'ssh', eta_new)
         ! preserve hnode's vertical-dimension name from the source file
         call nc_check(nf90_open(trim(path_old)//'hnode.nc', nf90_nowrite, ncid_h), 'open hnode')
         call nc_check(nf90_inq_varid(ncid_h, 'hnode', varid_h), 'inq hnode var')
@@ -1201,12 +1584,25 @@ contains
                                                mesh_new%zbar(k))
                 end if
             end do
+
+            ! ALE consistency on changed columns: scale so sum(h) = D + eta
+            ! (zstar distribution of eta across the wet column). Unchanged
+            ! columns keep their evolved, already-consistent thicknesses.
+            if (node_flag(i_new) /= FLAG_UNCHANGED) then
+                colsum = sum(hnode_new(ul_new:nl_new-1, i_new))
+                target = (mesh_new%zbar(ul_new) - mesh_new%zbar(nl_new)) &
+                         + eta_new(i_new)
+                if (colsum > 0.0_WP .and. target > 0.0_WP) then
+                    hnode_new(ul_new:nl_new-1, i_new) = &
+                        hnode_new(ul_new:nl_new-1, i_new) * (target/colsum)
+                end if
+            end if
         end do
 
         call write_nc_3d(trim(path_new)//'hnode.nc', 'hnode', &
                           'layer thickness at node', 'm', &
                           hnode_new, nl1, nod_new, 'node', time_val, iter_val, lev_dim)
-        deallocate(hnode_old, hnode_new)
+        deallocate(hnode_old, hnode_new, eta_new)
 
     end subroutine remap_hnode
 

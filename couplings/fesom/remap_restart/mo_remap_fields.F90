@@ -1075,12 +1075,14 @@ contains
         call read_restart_var_3d(trim(path_new), 'vrhs_AB', VAB)
         nz = size(T,1)
 
-        ! A/B switch: REMAP_GEOSTROPHIC=0 skips the grad-p velocity overwrite
-        ! (keeps the NN fill) but still zeroes AB history and seam-smooths.
+        ! Geostrophic grad-p overwrite is OPT-IN (REMAP_GEOSTROPHIC=1): offline
+        ! verification showed the discrete grad-p at grid-scale fronts is noisier
+        ! than the NN fill (transport divergence above baseline). Default = NN
+        ! fill + AB reset + seam smoothing (the gate-passing configuration).
         block
           character(len=8) :: genv
           call get_environment_variable('REMAP_GEOSTROPHIC', genv)
-          do_geo = (trim(genv) /= '0')
+          do_geo = (trim(genv) == '1')
         end block
 
         if (do_geo) then

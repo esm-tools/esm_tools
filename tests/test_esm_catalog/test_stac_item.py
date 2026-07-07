@@ -10,7 +10,7 @@ from pystac import Item, STACError
 from upath import UPath
 
 from esm_catalog.context import CollectionContext
-from esm_catalog.item import _make_id, _to_href, make_item
+from esm_catalog.item import _to_href, make_item
 
 
 def _ctx():
@@ -205,3 +205,19 @@ def test_grib_media_type(tmp_path):
 def test_to_href_bucket_protocol_uri():
     p = UPath("memory://experiments/data/temp.nc")
     assert _to_href(p) == "memory://experiments/data/temp.nc"
+
+
+def test_item_id_defaults_to_unknown_variable(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    meta = _metadata()
+    del meta["variable"]
+    item = make_item(f, meta, _ctx())
+    assert re.fullmatch(r"unknown\.echam\.000000\.[0-9a-f]{6}", item.id)
+
+
+def test_netcdf_media_type_default(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = make_item(f, _metadata(), _ctx())
+    assert item.assets["data"].media_type == "application/x-netcdf"

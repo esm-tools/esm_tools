@@ -1,9 +1,9 @@
 components:
 - xios-2.5-ece
-- oifs-48r1
+- oifs-48r1v4
 - amip-v1
 - oasis3mct-5.0-smhi
-- lpj_guess-4.1.2
+- lpj_guess-4.1.5
 coupling_changes:
 - sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml
 - sed -i 's/xios\/build_ecearth/xios/g' oifs-48r1/bundle.yml

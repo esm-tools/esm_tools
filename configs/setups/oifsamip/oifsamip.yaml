@@ -13,18 +13,19 @@ general:
         with_co2_oce_coupling: False
         with_co2_veg_coupling: False
         #        output_step_freq: ${oifs.output_step_freq}
+        output: ${oifs.output}
         choose_mip:
             "cmip7":
                 output_step_freq: $(( 3600 / ${time_step} * 1 ))
             "*":
                 output_step_freq: $(( 3600 / ${time_step} * 6 ))
-                #choose_output:
-                #    "1hr":
-                #        output_step_freq: $(( 3600 / ${time_step} * 1 ))
-                #    "3hr":
-                #        output_step_freq: $(( 3600 / ${time_step} * 3 ))
-                #    "12hr":
-                #        output_step_freq: $(( 3600 / ${time_step} * 12 ))
+        choose_output:
+            "1hr":
+                output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "3hr":
+                output_step_freq: $(( 3600 / ${time_step} * 3 ))
+            "12hr":
+                output_step_freq: $(( 3600 / ${time_step} * 12 ))
 
         include_models:
                 - amip
@@ -46,7 +47,7 @@ general:
               - oifs-48r1+amip-v1
           cy48cmip7:
             couplings:
-              - oifs-48r1+amip-v1+lpj_guess-4.1.2
+              - oifs-48r1+amip-v1+lpj_guess-4.1.5
 
         version: "cy48cmip7"
         mip: "cmip7"
@@ -101,7 +102,7 @@ oifs:
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
-        #version: "48r1"
+        version: "48r1"
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
@@ -152,7 +153,7 @@ oifs:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3
                 "cy48cmip7":
-                        version: "48r1v4"
+                        version: "48r1"
                         append_icmcl: ""
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         add_namelist_changes:
@@ -605,4 +606,36 @@ lpj_guess:
     choose_general.with_co2_veg_coupling:
         true:
             co2_coupling: 1
+
+    # Fixed LPJ-GUESS restart: read the same state files on every resubmission.
+    # Useful for AMIP runs where vegetation should always start from a fixed
+    # spinup state rather than evolving across resubmission chunks.
+    #
+    # To enable, set in your runscript:
+    #   lpj_guess:
+    #       amip_fixed_lpjg_restart: true
+    #       lpjg_amip_fixed_restart_year: <year>   # e.g. 1901
+    #       lpjg_amip_fixed_restart_source: "<abs_path>/lpjg_state_<year>/*"
+    #
+    # lpjg_amip_fixed_restart_year: the LPJG state year to use (= spinup end
+    #   year + 1, matching the lpjg_state_YYYY naming convention).
+    # lpjg_amip_fixed_restart_source: absolute glob pattern pointing to the
+    #   fixed state files, e.g.:
+    #   /work/.../spinup_exp/restart/lpj_guess/lpjg_state_1901/*
+    amip_fixed_lpjg_restart: false
+    lpjg_amip_fixed_restart_year: "$(( ${initial_date!syear} + 1 ))"
+    lpjg_amip_fixed_restart_source: ""
+
+    choose_amip_fixed_lpjg_restart:
+        true:
+            # Override the dynamically-computed parent state year so that
+            # restart_in_in_work (defined in lpj_guess.yaml as
+            # lpjg_state_${lpjg_parent_state}/*) resolves to the fixed year.
+            lpjg_parent_state: ${lpjg_amip_fixed_restart_year}
+            # Point the restart source to the fixed absolute path instead of
+            # the experiment's own (advancing) restart directory.
+            restart_in_sources:
+                state: ${lpjg_amip_fixed_restart_source}
+            restart_in_in_work:
+                state: lpjg_state_${lpjg_amip_fixed_restart_year}/*
 

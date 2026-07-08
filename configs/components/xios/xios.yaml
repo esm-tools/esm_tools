@@ -526,41 +526,41 @@ xios:
                             file_def: file_def
                             axis_def: axis_def
                             grid_def: grid_def
-
+            awiesm3:
 
     # Auto-add FESOM XIOS XML files when FESOM is compiled/run with XIOS.
     # Mirrors the choose_general.setup_name: oifs pattern above.
     # Default: minimal FESOM XIOS output (mirrors upstream config/namelist.io
     # from FESOM/fesom2:main — monthly, ~28 variables). Opt in to the heavy
     # CMIP7-style set via `fesom.cmip7_cmor_output: true` (see below).
-    fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml"
-    choose_fesom.cmip7_cmor_output:
-        true:
-            fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml_cmip7"
-    choose_fesom.with_xios:
-        true:
-            add_config_files:
-                context_fesom:    context_fesom
-                axis_def_fesom:   axis_def_fesom
-                domain_def_fesom: domain_def_fesom
-                grid_def_fesom:   grid_def_fesom
-                field_def_fesom:  field_def_fesom
-                file_def_fesom:   file_def_fesom
-            add_config_sources:
-                io_def:           ${fesom_xios_xml_dir}/iodef.xml
-                context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
-                axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
-                domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml.j2
-                grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
-                field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml
-                file_def_fesom:   ${fesom_xios_xml_dir}/file_def_fesom.xml.j2
-            add_config_in_work:
-                context_fesom:    context_fesom.xml
-                axis_def_fesom:   axis_def_fesom.xml
-                domain_def_fesom: domain_def_fesom.xml
-                grid_def_fesom:   grid_def_fesom.xml
-                field_def_fesom:  field_def_fesom.xml
-                file_def_fesom:   file_def_fesom.xml
+                fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml"
+                choose_fesom.cmip7_cmor_output:
+                    true:
+                        fesom_xios_xml_dir: "${general.esm_namelist_dir}/fesom2/xios_xml_cmip7"
+                choose_fesom.with_xios:
+                    true:
+                        add_config_files:
+                            context_fesom:    context_fesom
+                            axis_def_fesom:   axis_def_fesom
+                            domain_def_fesom: domain_def_fesom
+                            grid_def_fesom:   grid_def_fesom
+                            field_def_fesom:  field_def_fesom
+                            file_def_fesom:   file_def_fesom
+                        add_config_sources:
+                            io_def:           ${fesom_xios_xml_dir}/iodef.xml
+                            context_fesom:    ${fesom_xios_xml_dir}/context_fesom.xml
+                            axis_def_fesom:   ${fesom_xios_xml_dir}/axis_def_fesom.xml
+                            domain_def_fesom: ${fesom_xios_xml_dir}/domain_def_fesom.xml
+                            grid_def_fesom:   ${fesom_xios_xml_dir}/grid_def_fesom.xml
+                            field_def_fesom:  ${fesom_xios_xml_dir}/field_def_fesom.xml
+                            file_def_fesom:   ${fesom_xios_xml_dir}/file_def_fesom.xml.j2
+                        add_config_in_work:
+                            context_fesom:    context_fesom.xml
+                            axis_def_fesom:   axis_def_fesom.xml
+                            domain_def_fesom: domain_def_fesom.xml
+                            grid_def_fesom:   grid_def_fesom.xml
+                            field_def_fesom:  field_def_fesom.xml
+                            file_def_fesom:   file_def_fesom.xml
 
     config_sources:
             domain_def: ${xml_dir}/domain_def.xml

@@ -8,19 +8,36 @@ general:
         model_dir: ${esm_master_dir}/oifsamip
 
         lresume: False
+        time_step: 86400
         coupled_setup: True
         with_co2_oce_coupling: False
         with_co2_veg_coupling: False
+        #        output_step_freq: ${oifs.output_step_freq}
+        output: ${oifs.output}
+        choose_mip:
+            "cmip7":
+                output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "*":
+                output_step_freq: $(( 3600 / ${time_step} * 6 ))
+        choose_output:
+            "1hr":
+                output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "3hr":
+                output_step_freq: $(( 3600 / ${time_step} * 3 ))
+            "12hr":
+                output_step_freq: $(( 3600 / ${time_step} * 12 ))
 
         include_models:
                 - amip
                 - oifs
                 - xios
                 - oasis3mct
+                - lpj_guess
 
         available_versions:
                 - 'cy43'
                 - 'cy48'
+                - 'cy48cmip7'
         choose_version:
           cy43:
             couplings:
@@ -28,8 +45,12 @@ general:
           cy48:
             couplings:
               - oifs-48r1+amip-v1
+          cy48cmip7:
+            couplings:
+              - oifs-48r1+amip-v1+lpj_guess-4.1.5
 
-        version: "cy48"
+        version: "cy48cmip7"
+        mip: "cmip7"
         scenario: "piControl"
         resolution: ${oifs.resolution}
         postprocessing: false
@@ -47,6 +68,9 @@ general:
                 levante:
                         pool_dir: "/work/ab0246/a270092/input"
 
+        # Load prepcompute recipe from oifs.yaml
+        prepcompute_recipe: ${oifs.prepcompute_recipe}
+
         # Load compute recipe from oifs.yaml
         compute_recipe: ${oifs.compute_recipe}
 
@@ -58,6 +82,10 @@ general:
                                 - oifs/oifs43.env.yaml
                                 - oasis3mct/oasis3mct.env.yaml
                 "cy48":
+                        further_reading:
+                                - oifs/oifs48.env.yaml
+                                - xios/xios.env.yaml
+                "cy48cmip7":
                         further_reading:
                                 - oifs/oifs48.env.yaml
                                 - xios/xios.env.yaml
@@ -74,10 +102,12 @@ oifs:
         execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
 
         pool_dir: ${general.pool_dir}
+        version: "48r1"
         model_dir: ${general.model_dir}/oifs-${oifs.version}
         setup_dir: ${general.model_dir}
         restart_firstlast: "last"
         restart_rate: 12
+        with_xios: true
 
         mip: "cmip6"
         scenario: "historical"
@@ -122,8 +152,35 @@ oifs:
                                         NAEPHY:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3
+                "cy48cmip7":
+                        version: "48r1"
+                        append_icmcl: ""
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAMECECFG:
+                                                ECE_CPL_NEMO_LIM: ".false."
+                                                ECE_CPL_FESOM_FESIM: ".false."
+                                                ECE_CPL_AMIP: ".true."
+                                                ECE_CPL_LPJG: .true.
+                                        NAMMCC:
+                                                LNEMOLIMCUR: ".false."
+                                                LNEMOSICOUP: ".false."
+                                        NAEPHY:
+                                                LECURR: ".false."
+                                                #NALBEDOSCHEME: 3
+                        atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
+                            TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
+                            SoilMVeg.L001, SoilMVeg.L002, SoilMVeg.L003, SoilMVeg.L004, SSRVeg, SLRVeg,
+                            SHUMVeg, PRESVeg, WSPDVeg, TMINVeg, TMAXVeg, XCO2Veg, FCO2NAT, FCO2ANT, FCO2NPP]
+                        coupling_fields:
+                            "[[atm_veg_fields-->FIELD]]":
+                                grid: atma
 
 
+        cmip7_data_dir_nml: ${input_dir}/cmip7-data
         cmip6_data_dir_nml: ${input_dir}/cmip6-data
         cmip5_data_dir_nml: ${input_dir}/cmip5-data
 
@@ -166,7 +223,7 @@ oifs:
 
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: ""
+        ICMGG_INIT_name: "_AMIP"
 
 
 
@@ -209,12 +266,18 @@ oasis3mct:
         model_dir: ${general.model_dir}/oasis
         pool_dir: ${general.pool_dir}/oasis/
         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-AMIP/
-        mct_version: 4.0
+        mct_version: 5.0
         norestart: "F"
+
+        a2v_lag: "${oifs.time_step}"
+        v2a_lag: "${lpj_guess.time_step}"
+        a2v_seq: 2
+        v2a_seq: 2
 
         process_ordering:
                 - amip
                 - oifs
+                - lpj_guess
 
         required_plugins:
                 - "git+https://github.com/esm-tools-plugins/oasis_rmp_rst_to_input"
@@ -242,11 +305,37 @@ oasis3mct:
                         coupling_target_fields:
                                 rstos.nc:
                                         - 'A_SST:A_Ice_frac <--gauswgt_i-- AMIP_sst:AMIP_sic'
+                'cy48cmip7':
+                        coupling_target_fields:
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac <--gauswgt_i-- AMIP_sst:AMIP_sic'
+                                vegin.nc:
+                                        - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
+                                          GUE_LLAI:GUE_HLAI:GUE_FRAL:GUE_FRAH:GUE_TYPL:GUE_TYPH'
+                                        - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
+                                        - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
+                                        - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
+                                        - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg--
+                                          SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
+                                        - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
+                                        - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
+                        merge_recv_restarts:
+                                - vegin.nc
 
         coupling_directions:
                 'AMIP->atma':
                         lag: 0
                         seq: 1
+                'atma->${lpj_guess.mygrid}-land':
+                        lag: ${a2v_lag}
+                        seq: ${a2v_seq}
+                        coupling_time_step: ${oasis3mct.time_step}
+                        lag_overwrite: true
+                '${lpj_guess.mygrid}-land->atma':
+                        lag: ${v2a_lag}
+                        seq: ${v2a_seq}
+                        coupling_time_step: ${oasis3mct.time_step}
+                        lag_overwrite: true
 
 
         coupling_methods:
@@ -258,6 +347,18 @@ oasis3mct:
                                         nb_of_search_bins: 1
                                         nb_of_neighbours: 25
                                         weight: "0.1"
+                loctrans_avg:
+                        time_transformation: average
+                        remapping:
+                                loctrans:
+                loctrans_min:
+                        time_transformation: t_min
+                        remapping:
+                                loctrans:
+                loctrans_max:
+                        time_transformation: t_max
+                        remapping:
+                                loctrans:
 
         input_files: {}
 
@@ -276,10 +377,12 @@ oasis3mct:
         restart_in_files:
                 rmp: rmp
                 rstos.nc: rstos.nc
+                vegin.nc: vegin.nc
 
         restart_in_in_work:
                 rmp: rmp_*.nc
                 rstos.nc: rstos.nc
+                vegin.nc: vegin.nc
 
         choose_lresume:
                 false:
@@ -300,22 +403,27 @@ oasis3mct:
                                         add_restart_in_sources:
                                                 rmp: ${input_dir}/rmp_*.nc
                                                 rstos.nc: ${input_dir}/rstos.nc
+                                                vegin.nc: ${input_dir}/vegin.nc
 
         restart_in_sources:
                 rmp: rmp_*.nc
                 rstos.nc: rstos.nc
+                vegin.nc: vegin.nc
 
         restart_out_files:
                 rmp: rmp
                 rstos.nc: rstos.nc
+                vegin.nc: vegin.nc
 
         restart_out_in_work:
                 rmp: rmp_*.nc
                 rstos.nc: rstos.nc
+                vegin.nc: vegin.nc
 
         restart_out_sources:
                 rmp: rmp_*.nc
                 rstos.nc: rstos.nc
+                vegin.nc: vegin.nc
 
 
 computer:
@@ -339,3 +447,195 @@ computer:
                         OIFS_FFLAGS: '"-r8 -fp-model precise -align array32byte -O3 -qopenmp -g -traceback -convert big_endian -march=core-avx2 -mtune=core-avx2"'
                         OIFS_CFLAG: '"-fp-model precise -O3 -g -traceback -qopt-report=0 -fpe0 -qopenmp -march=core-avx2 -mtune=core-avx2"'
                         OIFS_LFLAGS: '"$MPI_LIB -qopenmp"'
+lpj_guess:
+    version: "4.1.5"
+    build_type: Release # Available options: Debug, Release
+    #comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_Fortran_FLAGS='-g -ggdb -fcheck=all -fbacktrace -fbounds-check -finit-real=snan -ffpe-trap=invalid,zero,overflow' -DCMAKE_C_FLAGS='-g -O0 -fsanitize=address'; make -j8; cd .."
+    comp_command: "mkdir -p build; cd build; cmake .. -DOASIS=ON -DCMAKE_BUILD_TYPE=${build_type}; make -j8; cd .."
+    execution_command: ${executable} -parallel ${runscript_name}
+
+    daily_output: true
+
+    # Automatically set mygrid to match OIFS resolution
+    mygrid: ${oifs.resolution}
+
+    veg_atm_fields: [GUE_LLAI, GUE_HLAI, GUE_FRAL, GUE_FRAH, GUE_TYPH, GUE_TYPL, T2M_LPJG,
+        TPRE_LPJ, SNOC_LPJ, SNOD_LPJ, ST1L_LPJ, ST2L_LPJ, ST3L_LPJ, ST4L_LPJ, SM1L_LPJ,
+        SM2L_LPJ, SM3L_LPJ, SM4L_LPJ, SWNR_LPJ, LWNR_LPJ, SHUM_LPJ, SPRE_LPJ, WSPD_LPJ,
+        TMIN_LPJ, TMAX_LPJ, GUE_CNPP, GUE_CANT, GUE_CNAT, CO2_LPJG]
+
+    coupling_fields:
+        "[[veg_atm_fields-->FIELD]]":
+            grid: ${lpj_guess.mygrid}-land
+
+    resolution: ${oifs.resolution}
+    grids:
+        ${resolution}-land:
+            name: ${resolution}-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        lpjg:
+            name: lpjg
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TL159-land:
+            name: TL159-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TL255-land:
+            name: TL255-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TCO95-land:
+            name: TCO95-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+        TCO319-land:
+            name: TCO319-land
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "D"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+
+
+    nproc: 128
+    proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'
+    proc_list: $(( ${proc_list_entry} ))
+
+    # run_year: Chunk start year - used for restart file naming
+    run_year: ${start_date!syear}
+    # initial_year: Experiment start year - for continuous output years in spinup
+    initial_year: ${initial_date!syear}
+    run_month: 1
+    run_day: 1
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    ndays_per_run: "$(( ${runtime_seconds} / 86400 ))"
+    co2_coupling: 0
+    fourxCO2: false
+    onepcCO2: false
+    fixed_CO2: -1
+    fixed_ndep: -1
+    fixed_LU: -1
+    nyear_spinup: 1
+    freenyears: 0
+
+
+
+    config_sources:
+        tmp_yaml_file: ${namelist_dir}/lpjg_steps.yaml.j2
+        ins_files: ${namelist_dir}/*.ins
+        lpjg_output_ins: ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
+        "all_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/guess.ins.j2
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/ecearth.ins.j2
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2
+
+        "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
+
+    config_in_work:
+        tmp_yaml_file: lpjg_steps.yaml
+        ins_files: /*.ins
+        lpjg_output_ins: lpjg_output.ins
+        "all_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/*.ins
+        "guess_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/guess.ins
+        "ecearth_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/ecearth.ins
+        "globsoil_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/global_soiln.ins
+        "lpjg_output_ins_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_output.ins
+        "tmp_yaml_file_[[proc_list-->PROC_NUM]]": runPROC_NUM/lpjg_steps.yaml
+
+        "mock_[[proc_list-->PROC_NUM]]": runPROC_NUM/output/stdo_stde.log
+
+
+    forcing_files:
+        soil_layer_type: soil_layer_type
+        CO2: CO2
+
+    forcing_sources:
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_AMIP.nc
+        CO2: ${lpj_guess.co2_source_file}
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_AMIP.nc
+        "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
+
+    forcing_in_work:
+        # Work directory files use old naming (slt_ATMO.nc) that LPJ-GUESS binary expects
+        soil_layer_type: slt_${mygrid}.nc
+        CO2: ${lpj_guess.co2_work_file}
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": runPROC_NUM/slt_${mygrid}.nc
+        "CO2_[[proc_list-->PROC_NUM]]": runPROC_NUM/${lpj_guess.co2_work_file}
+
+    # Create empty folders for landuse and fire in work
+    create_folders:
+        - ${work_dir}/landuse
+        - ${work_dir}/fire
+
+    choose_general.run_number:
+        1:
+            input_sources:
+                vegin: ${oasis3mct.input_dir}/vegin.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/vegin.nc
+            input_in_work:
+                vegin: vegin.nc
+                "VegInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/vegin.nc
+            choose_general.with_co2_veg_coupling:
+                true:
+                    add_input_sources:
+                        rst_co2_av: ${oasis3mct.input_dir}/rst_co2_av.nc
+                        "rst_co2_avInit_[[proc_list-->PROC_NUM]]": ${oasis3mct.input_dir}/rst_co2_av.nc
+                    add_in_work:
+                        rst_co2_av: rst_co2_av.nc
+                        "rst_co2_avInit_[[proc_list-->PROC_NUM]]": runPROC_NUM/rst_co2_av.nc
+
+    choose_general.with_co2_veg_coupling:
+        true:
+            co2_coupling: 1
+
+    # Fixed LPJ-GUESS restart: read the same state files on every resubmission.
+    # Useful for AMIP runs where vegetation should always start from a fixed
+    # spinup state rather than evolving across resubmission chunks.
+    #
+    # To enable, set in your runscript:
+    #   lpj_guess:
+    #       amip_fixed_lpjg_restart: true
+    #       lpjg_amip_fixed_restart_year: <year>   # e.g. 1901
+    #       lpjg_amip_fixed_restart_source: "<abs_path>/lpjg_state_<year>/*"
+    #
+    # lpjg_amip_fixed_restart_year: the LPJG state year to use (= spinup end
+    #   year + 1, matching the lpjg_state_YYYY naming convention).
+    # lpjg_amip_fixed_restart_source: absolute glob pattern pointing to the
+    #   fixed state files, e.g.:
+    #   /work/.../spinup_exp/restart/lpj_guess/lpjg_state_1901/*
+    amip_fixed_lpjg_restart: false
+    lpjg_amip_fixed_restart_year: "$(( ${initial_date!syear} + 1 ))"
+    lpjg_amip_fixed_restart_source: ""
+
+    choose_amip_fixed_lpjg_restart:
+        true:
+            # Override the dynamically-computed parent state year so that
+            # restart_in_in_work (defined in lpj_guess.yaml as
+            # lpjg_state_${lpjg_parent_state}/*) resolves to the fixed year.
+            lpjg_parent_state: ${lpjg_amip_fixed_restart_year}
+            # Point the restart source to the fixed absolute path instead of
+            # the experiment's own (advancing) restart directory.
+            restart_in_sources:
+                state: ${lpjg_amip_fixed_restart_source}
+            restart_in_in_work:
+                state: lpjg_state_${lpjg_amip_fixed_restart_year}/*
+

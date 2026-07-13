@@ -4,10 +4,21 @@ def prepare_environment(config):
             "CHANGE_OCEAN": int(config["fesom"].get("change_ocean", False).__bool__()),
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
+            # FESOM install bin/ -- holds the native mesh partitioner
+            # (fesom_meshpart, built for the -is variant via
+            # -DBUILD_MESHPARTITIONER=ON) that build_submesh uses instead of the
+            # meshtools Singularity container (user namespaces disabled on levante).
+            "FESOM_BIN_DIR": config["fesom"]["model_dir"] + "/bin",
             # Max-mesh the dynamic submesh is carved from. Defaults to the
             # running mesh (mesh_dir) but can be overridden per experiment via
             # `fesom: { max_mesh: /path/to/larger_mesh/ }` in the runscript.
             "MAX_MESH": config["fesom"].get("max_mesh", config["fesom"]["mesh_dir"]),
+            # Mesh the FIRST awiesm3 chunk ran on. Normally chunk 1 runs on the full
+            # (max) mesh and this stays empty. If chunk 1 is pre-staged onto a
+            # submesh from the pool (couple_in skipped there), the first mesh-change
+            # leg has no `previous_submesh` to fall back on and would wrongly assume
+            # the old mesh was the full mesh -- set this so it uses the right one.
+            "CHUNK1_MESH": config["fesom"].get("chunk1_mesh", ""),
             # Node grid-description of the max-mesh, expected inside MAX_MESH.
             "MESH_GRIDDES_fesom": config["fesom"].get("griddes_nodes", "core2_griddes_nodes.nc"),
             "MESH_ROTATED_fesom": config["fesom"]["mesh_rotated"],
@@ -16,6 +27,9 @@ def prepare_environment(config):
             "DATA_DIR_fesom": config["fesom"]["experiment_outdata_dir"],
             "RESTART_DIR_fesom": config["fesom"]["experiment_restart_in_dir"],
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
+            # Run work dir (holds the generated namcouple); used by
+            # fix_namcouple_feom_dim to retag the feom grid to the submesh count.
+            "WORK_DIR_fesom": config["general"]["thisrun_work_dir"],
             "number_of_years_for_forcing": config["model1"]["chunk_size"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             "CHUNK_START_DATE_fesom": config["general"]["chunk_start_date"],

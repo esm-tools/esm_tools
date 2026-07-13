@@ -37,6 +37,24 @@ if ! command -v couple_timer >/dev/null 2>&1 ; then
     }
 fi
 
+# --- couple_fail: abort a coupling subjob so the WORKFLOW actually stops --------
+# A coupling function runs as a backgrounded process in the generated .run script,
+# and the observe job that watches it is NOT its parent -- so it can never see the
+# exit code. esm_runscripts additionally disables keyword error checking for every
+# non-compute job (observe.py). So a bare `exit 1` here is invisible: the workflow
+# advances and the next leg runs on stale/half-written coupling files. Drop a
+# sentinel that observe.py checks, then exit.
+if ! command -v couple_fail >/dev/null 2>&1 ; then
+    couple_fail() {
+        echo " *** $1 ***"
+        if [ -n "${COUPLE_DIR:-}" ] ; then
+            mkdir -p "${COUPLE_DIR}" 2>/dev/null
+            echo "$1" > "${COUPLE_DIR}/.coupling_failed"
+        fi
+        exit 1
+    }
+fi
+
 function ice2fesom {
     echo " *** S T A R T I N G    ice2fesom ***"
 
@@ -57,7 +75,7 @@ function ice2fesom {
     # next FESOM run picks it up.
     if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
         couple_timer "ice2fesom: build_submesh"
-        build_submesh           || { echo " *** ice2fesom FAILED: build_submesh ***"; exit 1; }
+        build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
         # The FESOM node count changed, so the OASIS feom grid description and the
         # feom remap weights baked for the previous mesh are stale (MCT aborts on
         # the first exchange: length of x /= columns of sMat). Regenerate them for
@@ -99,10 +117,10 @@ function ice2fesom {
             # transient at the first exchange of every mesh-change leg). Needs BOTH
             # the remapped FESOM restart and the fresh weights -> after the wait.
             couple_timer "ice2fesom: remap_oasis_restart"
-            remap_oasis_restart  || { echo " *** ice2fesom FAILED: remap_oasis_restart ***"; exit 1; }
+            remap_oasis_restart  || couple_fail "ice2fesom FAILED: remap_oasis_restart"
         else
             couple_timer "ice2fesom: remap_fesom_restart"
-            remap_fesom_restart  || { echo " *** ice2fesom FAILED: remap_fesom_restart ***"; exit 1; }
+            remap_fesom_restart  || couple_fail "ice2fesom FAILED: remap_fesom_restart"
         fi
     fi
     couple_timer "ice2fesom: DONE"
@@ -323,6 +341,14 @@ function remap_fesom_restart {
     if [ -d "${COUPLE_DIR}/previous_submesh" ]; then
         path_old="${COUPLE_DIR}/previous_submesh/"
         echo " *   old mesh: previous_submesh"
+    elif [ -n "${CHUNK1_MESH:-}" ] && [ -f "${CHUNK1_MESH}/nod2d.out" ]; then
+        # First mesh-change leg after a chunk-1 that ran on a PRE-STAGED submesh
+        # (pool; couple_in skipped there, so no previous_submesh was ever recorded).
+        # The old mesh is that submesh -- NOT the mother mesh. Getting this wrong
+        # makes remap_oasis_restart read a full-mesh map against a submesh-sized
+        # restart: "old_feom_size=211567 ... Source restart does not match old_map".
+        path_old="${CHUNK1_MESH%/}/"
+        echo " *   old mesh: chunk-1 pre-staged submesh ${path_old} ($(head -1 ${CHUNK1_MESH}/nod2d.out | awk '{print $1}') nodes)"
     else
         path_old="${COUPLE_DIR}/mother_as_old/"
         echo " *   old mesh: mother mesh staged at ${path_old}"

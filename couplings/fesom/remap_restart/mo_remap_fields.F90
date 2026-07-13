@@ -1553,6 +1553,35 @@ contains
         nl1     = mesh_new%nl - 1
         nod_old = mesh_old%nod2D
         nod_new = mesh_new%nod2D
+
+        !___________________________________________________________________________
+        ! GUARD: the SOURCE restart must actually live on the OLD mesh we were given.
+        ! remap_oasis_restart already refuses a mis-sized restart; this path did not,
+        ! and silently produced a full directory of garbage when ice2fesom picked the
+        ! wrong old mesh (it fell back to the full mother mesh while the previous leg
+        ! had run on a pre-staged submesh). Fail loudly instead.
+        block
+          integer :: ncid_g, varid_g, dimids_g(4), nnod_file
+          if (nf90_open(trim(path_old)//'temp.nc', nf90_nowrite, ncid_g) == nf90_noerr) then
+              if (nf90_inq_varid(ncid_g, 'temp', varid_g) == nf90_noerr) then
+                  if (nf90_inquire_variable(ncid_g, varid_g, dimids=dimids_g) == nf90_noerr) then
+                      if (nf90_inquire_dimension(ncid_g, dimids_g(1), len=nnod_file) == nf90_noerr) then
+                          if (nnod_file /= nod_old) then
+                              write(*,*) ' *** REMAP ABORT: source restart does not match the old mesh'
+                              write(*,*) '     old mesh nod2D      = ', nod_old
+                              write(*,*) '     restart node dim    = ', nnod_file
+                              write(*,*) '     path_old            = ', trim(path_old)
+                              write(*,*) '     Refusing to remap -- the wrong old mesh would silently'
+                              write(*,*) '     produce a garbage restart. Check previous_submesh / CHUNK1_MESH.'
+                              call nc_check(nf90_close(ncid_g), 'close guard')
+                              stop 1
+                          end if
+                      end if
+                  end if
+              end if
+              call nc_check(nf90_close(ncid_g), 'close guard')
+          end if
+        end block
         call read_restart_var_3d(trim(path_old), 'hnode', hnode_old)
         ! staged (already remapped) ssh on the NEW mesh, for ALE consistency:
         ! changed columns must satisfy sum(hnode) = D + eta (zstar), else the

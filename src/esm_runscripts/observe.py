@@ -60,7 +60,22 @@ def init_observe_logs(config):
 
 
 def wait_and_observe(config):
-    if config["general"]["submitted"]:
+    # `submitted` is True for batch (compute) jobs launched into a SLURM
+    # allocation. Coupling subjobs (couple_in / couple_out) instead run their
+    # heavy work as a backgrounded process on the login node (`<function> &`),
+    # so `submitted` is False and this observe step would otherwise return
+    # immediately -- triggering the next job (prepcompute) while couple_in is
+    # still running. For a light coupling that finishes before the compute job
+    # clears the queue this is harmless, but a heavy couple_in (e.g. ice2fesom
+    # regenerating a submesh + OASIS weights, ~15 min) then has compute read
+    # half-written coupling files. So also block whenever the monitored PID is a
+    # live local process, regardless of `submitted`.
+    monitor_pid = config["general"].get("launcher_pid")
+    try:
+        have_live_local_job = psutil.pid_exists(int(monitor_pid))
+    except (TypeError, ValueError):
+        have_live_local_job = False
+    if config["general"]["submitted"] or have_live_local_job:
         thistime = 0
         error_check_list = assemble_error_list(config)
         while job_is_still_running(config):
@@ -72,6 +87,44 @@ def wait_and_observe(config):
         thistime = thistime + 100000000
         config["general"]["next_test_time"] = thistime
         config = check_for_errors(config)
+    config = check_coupling_failure(config)
+    return config
+
+
+def check_coupling_failure(config):
+    """Stop the workflow when a coupling subjob failed.
+
+    A coupling function (ice2fesom, fesom2ice, ...) is backgrounded by the generated
+    .run script, and this observe job is NOT its parent -- so it can never see the
+    exit code. ``assemble_error_list`` additionally returns an EMPTY error list for
+    every non-compute job, so the log is not even scanned for keywords. A failing
+    coupling step therefore used to advance the workflow silently, and the next leg
+    would run on stale or half-written coupling files (observed: remap_oasis_restart
+    correctly refused to write a mis-sized OASIS restart, yet the compute leg started
+    anyway on an un-remapped restart).
+
+    The coupling functions drop a ``.coupling_failed`` sentinel in COUPLE_DIR via
+    ``couple_fail``. Honour it here and abort.
+    """
+    jobtype = config["general"].get("jobtype", "")
+    if not jobtype.startswith("observe_couple"):
+        return config
+    couple_dir = config["general"].get("experiment_couple_dir")
+    if not couple_dir:
+        return config
+    sentinel = os.path.join(couple_dir, ".coupling_failed")
+    if os.path.isfile(sentinel):
+        try:
+            with open(sentinel) as fid:
+                reason = fid.read().strip()
+        except OSError:
+            reason = "(unreadable sentinel)"
+        os.remove(sentinel)
+        logger.error("=" * 78)
+        logger.error(f"COUPLING STEP FAILED: {reason}")
+        logger.error(f"({jobtype}) -- refusing to advance the workflow.")
+        logger.error("=" * 78)
+        sys.exit(1)
     return config
 
 
@@ -207,6 +260,10 @@ def check_for_errors(config):
 
 
 def job_is_still_running(config):
-    if psutil.pid_exists(config["general"]["launcher_pid"]):
-        return True
-    return False
+    # launcher_pid arrives from the CLI as a string (argparse has no type=int)
+    # and defaults to -666 when absent; cast defensively so a missing/odd value
+    # reports "not running" instead of raising inside the observe loop.
+    try:
+        return psutil.pid_exists(int(config["general"]["launcher_pid"]))
+    except (TypeError, ValueError):
+        return False

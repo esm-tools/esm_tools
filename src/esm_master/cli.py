@@ -98,7 +98,7 @@ def main():
         action="store_true",
     )
 
-    parsed_args = vars(parser.parse_args())
+    parsed_args = vars(parser.parse_intermixed_args())
     parsed_args["overrides"] = esm_parser.cli_overrides_to_dict(
         parsed_args["overrides"], separator=parsed_args["separator"]
     )

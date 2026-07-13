@@ -458,9 +458,29 @@ function fix_namcouple_feom_dim {
         echo " *   fix_namcouple_feom_dim: no namcouple at ${nc}, skipping"
         return 0
     fi
-    local full sub
-    full=$(head -1 ${MAXMESH_DIR_fesom}/nod2d.out 2>/dev/null | awk '{print $1}')
-    sub=$(head -1 ${COUPLE_DIR}/latest_submesh/nod2d.out 2>/dev/null | awk '{print $1}')
+    local full sub meshpath maxmesh
+    # MAXMESH_DIR_fesom is assigned inside build_submesh (couple_in). This function
+    # runs as its own subjob (couple_namcouple) in a separate shell, where that
+    # assignment never happened -> the var is UNSET, full='' and the guard below
+    # refused to patch. Silently no-op'd on every leg; it only never mattered
+    # because no submesh leg had ever survived to the end-of-leg restart write.
+    # env_fesom.py exports MAX_MESH -- use that (keep the others as fallbacks).
+    maxmesh=${MAX_MESH:-${MAXMESH_DIR_fesom:-${MESH_DIR_fesom}}}
+    full=$(head -1 ${maxmesh}/nod2d.out 2>/dev/null | awk '{print $1}')
+    # Take the node count from the mesh FESOM is ACTUALLY running on, i.e. the
+    # MeshPath in the staged namelist.config. On a mesh-change leg that is
+    # ${COUPLE_DIR}/latest_submesh; on chunk 1 it can be a pre-staged pool mesh
+    # (couple_in is skipped there, so ${COUPLE_DIR}/latest_submesh does not exist
+    # and reading it would leave `sub` empty -> the guard below would refuse to
+    # patch, and OASIS would abort writing the feom restart at the end of the leg).
+    meshpath=$(grep -i "^\s*meshpath" ${WORK_DIR_fesom}/namelist.config 2>/dev/null \
+               | head -1 | sed "s/.*=\s*'\?//; s/'\?\s*$//")
+    if [ -n "${meshpath}" ] && [ -f "${meshpath}/nod2d.out" ]; then
+        sub=$(head -1 "${meshpath}/nod2d.out" 2>/dev/null | awk '{print $1}')
+        echo " *   fix_namcouple_feom_dim: mesh from namelist MeshPath = ${meshpath}"
+    else
+        sub=$(head -1 ${COUPLE_DIR}/latest_submesh/nod2d.out 2>/dev/null | awk '{print $1}')
+    fi
     # HARD guard: both counts MUST be positive integers. If either is empty
     # (e.g. build_submesh failed, so the submesh nod2d.out is missing), a naive
     # `sed s/\b${full}\b/${sub}/g` with an empty pattern wraps EVERY token in the

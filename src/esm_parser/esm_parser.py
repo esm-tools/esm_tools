@@ -849,11 +849,30 @@ def cli_overrides_to_dict(overrides, separator="."):
                 "``computer.mpi_implementation=openmpi_2026``).",
             )
         key, value = override.split("=", 1)
+        try:
+            parsed_value = yaml.safe_load(value)
+        except yaml.YAMLError as e:
+            user_error(
+                "Invalid override value",
+                f"Could not parse value ``{value}`` in override "
+                f"``{override}``: {e}",
+            )
         target = result
         path = key.split(separator)
-        for part in path[:-1]:
-            target = target.setdefault(part, {})
-        target[path[-1]] = yaml.safe_load(value)
+        for indx, part in enumerate(path):
+            existing = target.get(part)
+            if existing is not None and not isinstance(existing, dict):
+                current_path = separator.join(path[: indx + 1])
+                user_error(
+                    "Invalid override",
+                    f"Conflicting overrides: ``{override}`` and "
+                    f"``{current_path}={existing}`` both set values for the same key. "
+                    "Please, remove one of them.",
+                )
+            if indx == len(path) - 1:
+                target[part] = parsed_value
+            else:
+                target = target.setdefault(part, {})
 
     result = DictWithProvenance(result, {})
     result.set_provenance(

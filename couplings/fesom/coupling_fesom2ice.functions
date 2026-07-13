@@ -24,7 +24,25 @@ fi
 function fesom2ice {
     FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
-    echo " LA DEBUG: MESH_PATH=${MESH_DIR_fesom}"
+
+    # Use the mesh FESOM ACTUALLY RAN ON, not the static full mesh. On a
+    # moving-cavity leg FESOM runs on the submesh (fewer nodes), so its output
+    # has n2d = submesh; loading the full mesh here made pyfesom build a
+    # (nt, full_n2d) array and the fill blew up with
+    #   ValueError: could not broadcast input array from shape (208810,) into shape (12,211567)
+    # The authoritative source is the MeshPath in the namelist.config the run used.
+    MESH_DIR_fesom_static=${MESH_DIR_fesom}
+    if [ -f "${WORK_DIR_fesom}/namelist.config" ]; then
+        _rm=$(grep -i "^\s*meshpath" "${WORK_DIR_fesom}/namelist.config" 2>/dev/null \
+              | head -1 | sed "s/.*=\s*'\?//; s/'\?\s*$//")
+        if [ -n "${_rm}" ] && [ -f "${_rm}/nod2d.out" ]; then
+            MESH_DIR_fesom=${_rm}
+        fi
+    fi
+    echo " *   fesom2ice mesh: ${MESH_DIR_fesom} ($(head -1 ${MESH_DIR_fesom}/nod2d.out 2>/dev/null | awk '{print $1}') nodes)"
+    if [ "${MESH_DIR_fesom}" != "${MESH_DIR_fesom_static}" ]; then
+        echo " *   (submesh leg: static mesh was ${MESH_DIR_fesom_static})"
+    fi
 
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions

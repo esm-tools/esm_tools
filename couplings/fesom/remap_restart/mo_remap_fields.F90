@@ -1376,6 +1376,40 @@ contains
             ! stays absent through the call -> ocean 2D fields are unaffected).
             call remap_node_field_2d(f2o, f2n, mesh_old, mesh_new, node_flag, &
                                       set_new_to_zero=zero_new, ice_donor=ice_donor)
+
+            !___________________________________________________________________
+            ! Enforce FESOM's sub-ice free-surface convention: eta == 0 wherever
+            ! the column is under an ice shelf (ulevels_nod2D > 1). A node that
+            ! the mesh change puts NEWLY under ice was open ocean in the old
+            ! restart, so the remap (rightly, for a tracer) carries its old
+            ! open-ocean value across -- but for the free surface that is a
+            ! standing violation of the model's own surface BC: FESOM keeps
+            ! eta=0 under ice (every already-sub-ice node in the source restart
+            ! is exactly 0). Left uncorrected, those nodes enter the ssh solver
+            ! with eta ~ -1.6 m, which it can never satisfy, and the residual
+            ! grows a barotropic mode that NaNs eta_n after a few days --
+            ! independent of the timestep and of the basal-melt fluxes (both
+            ! were falsified as the cause).
+            ! ssh and hbar ONLY: FESOM writes these as exactly 0.0 at every
+            ! already-sub-ice node. It does NOT do so for ssh_rhs_old (the solver
+            ! RHS is nonzero under ice in the model's own restarts), so that one
+            ! must be left alone.
+            if (trim(varname) == 'ssh' .or. trim(varname) == 'hbar') then
+                block
+                  integer :: i2, nzeroed
+                  nzeroed = 0
+                  do i2 = 1, mesh_new%nod2D
+                      if (mesh_new%ulevels_nod2D(i2) > 1 .and. &
+                          abs(f2n(i2)) > 0.0_WP) then
+                          f2n(i2) = 0.0_WP
+                          nzeroed = nzeroed + 1
+                      end if
+                  end do
+                  if (nzeroed > 0) write(*,*) '     --> '//trim(varname)// &
+                      ': zeroed at ', nzeroed, ' sub-ice nodes (eta=0 convention)'
+                end block
+            end if
+
             call write_nc_2d(fout, varname, varname, '-', f2n, &
                               mesh_new%nod2D, time_val, iter_val)
             deallocate(f2o, f2n)

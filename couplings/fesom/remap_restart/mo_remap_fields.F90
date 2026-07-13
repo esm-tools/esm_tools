@@ -344,23 +344,28 @@ contains
                         end if
 
                     !___________________________________________________________
-                    ! new levels below old bottom (bathymetry deepened):
-                    ! linear extrapolation from last two available levels
+                    !___________________________________________________________
+                    ! New levels BELOW the old bottom (this column got deeper).
+                    ! This used to fit a straight line through the last TWO old
+                    ! levels and extrapolate it down, unbounded. Over several new
+                    ! levels a thermocline slope compounds and runs away: an
+                    ! observed column went 1.22, -0.99, -3.19, -5.39, -8.69,
+                    ! -13.09, -18.6, -25.2, -34.01, -45.02 degC, and FESOM died at
+                    ! mstep 1 with "found temperture becomes NaN or <-5.0, >60".
+                    ! Water below the old seabed should look like the NEARBY OCEAN
+                    ! AT THAT DEPTH, not like a continuation of the local gradient.
+                    ! So take it from the nearest old node that is actually wet at
+                    ! this level (the same donor search the rest of the remap uses);
+                    ! hold the deepest old value only if no such node exists.
                     else
                         if (set_new_to_zero) then
-                            field_new(k, i_new) = 0.0_WP    ! UKK is it a good idea to assume zero salinity at the lowest layers?
+                            field_new(k, i_new) = 0.0_WP
                         else
-                            if (nl_old-1 >= ul_old+1) then
-                                dz   =  mesh_old%zbar(nl_old) - &
-                                        mesh_old%zbar(nl_old-1)
-                                cf_a = (field_old(nl_old-1, i_old) - &
-                                        field_old(nl_old-2, i_old)) / dz
-                                cf_b =  field_old(nl_old-1, i_old) - &
-                                        cf_a * mesh_old%zbar(nl_old)
-                                z_k  =  mesh_new%zbar(k)
-                                field_new(k, i_new) = cf_a * z_k + cf_b
+                            call find_nearest_old_node_at_level( &
+                                i_new, k, mesh_old, mesh_new, i_ref)
+                            if (i_ref > 0) then
+                                field_new(k, i_new) = field_old(k, i_ref)
                             else
-                                ! fallback: constant extrapolation
                                 field_new(k, i_new) = field_old(nl_old-1, i_old)
                             end if
                         end if

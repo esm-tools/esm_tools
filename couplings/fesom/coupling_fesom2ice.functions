@@ -774,6 +774,17 @@ function fesom_ice_concatenate_files {
 	${cdo} -s ensmean ${processed_fesom1x_file3D_T_list_for_ice} temp.tmp.nc
 	${cdo} -s ensmean ${processed_fesom1x_file3D_S_list_for_ice} salt.tmp.nc
         ${cdo} -s merge temp.tmp.nc salt.tmp.nc ocean_file_for_ice.nc
+	# Merge the processed 2D surface fields (Tsurf/Ssurf/fh/fw goodgrid) in as
+	# well -- the DIRECT route reads Tsurf/fw from ocean_file_for_ice, and the
+	# historical merge only ever carried temp+salt (the 2D list was always
+	# empty before the FESOM2 bundle synthesizer existed). Different vertical
+	# axes (level=1 vs full) coexist fine in one file.
+	if [ -n "${processed_fesom1x_file2D_list_for_ice// /}" ] ; then
+	    mv ocean_file_for_ice.nc ocean3d.tmp.nc
+	    ${cdo} -s merge ocean3d.tmp.nc ${processed_fesom1x_file2D_list_for_ice} ocean_file_for_ice.nc \
+	        || { mv ocean3d.tmp.nc ocean_file_for_ice.nc ; couple_fail "fesom2ice FAILED: merging 2D surface fields into ocean_file_for_ice"; }
+	    rm -f ocean3d.tmp.nc
+	fi
         #${cdo} -s merge \
 	#    ${processed_fesom1x_file3D_T_list_for_ice} \
 	#    ${processed_fesom1x_file3D_S_list_for_ice} \

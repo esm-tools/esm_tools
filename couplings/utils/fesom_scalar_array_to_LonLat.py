@@ -100,6 +100,16 @@ no_zlevels = np.size(mesh.zlev)
 timedim = 'time' if 'time' in FID.dims else 'T'
 no_timesteps = FID.dims[timedim]
 print("no_timesteps: ", no_timesteps)
+
+# 2-D (surface) variables -- e.g. the DIRECT-route Tsurf/Ssurf/fh/fw fields --
+# have no vertical dimension in the input file. Historically this script only
+# ever ran on 3-D temp/salt (the FESOM1.x-era 2D bundle never existed, so the
+# 2D branch of fesom2ice silently skipped); treat them as a single level.
+_var_dims = FID[args.FESOM_VARIABLE[0]].dims
+IS_2D_FIELD = not any(d in _var_dims for d in ("nz", "nz1", "depth", "level"))
+if IS_2D_FIELD:
+    print('* 2-D surface variable detected (dims: '+str(_var_dims)+') -> single level')
+    no_zlevels = 1
 sizeVert = no_zlevels
 sizeHori = no_hori_elemnt
 
@@ -124,7 +134,7 @@ print('* Loop for each time step through all depth levels')
 #
 ilevel = -1
 #for depth in mesh_diag.zbar.squeeze().values:
-for depth in mesh.zlev:
+for depth in (mesh.zlev if not IS_2D_FIELD else [0.0]):
     # Some information
     idepth = int(depth)
     #
@@ -175,18 +185,24 @@ else:
     mean3d = pf.get_data(args.FESOM_PATH[0], args.FESOM_VARIABLE[0],
                          [int(args.FESOM_YEARS[0]), int(args.FESOM_YEARS[1])], mesh,
                          depth=None, how="mean", use_cftime=True, silent=True)
-mean3d = np.asarray(mean3d)   # shape (nod2, nz1) after get_data's transpose
+mean3d = np.asarray(mean3d)   # shape (nod2, nz1) after get_data's transpose; (nod2,) for 2-D fields
 
-ilevel = -1
-for depth in mesh.zlev[:-1]:
-    idepth = int(depth)
-    ilevel = ilevel + 1
-    print('*   depth='+str(idepth)+' ('+str(depth)+') level='+str(ilevel))
-    dind = pf.ind_for_depth(idepth, mesh)
-    level_data = np.array(mean3d[:, dind], dtype=np.float64)
+if IS_2D_FIELD:
+    # single-level surface field: annual mean broadcast across all time steps
+    level_data = np.array(mean3d, dtype=np.float64)
     level_data[np.where(np.isnan(level_data))] = NAN_REPLACE
-    # how="mean" -> identical annual-mean field for every time step
-    TempFields_out[:, ilevel, :] = level_data
+    TempFields_out[:, 0, :] = level_data
+else:
+    ilevel = -1
+    for depth in mesh.zlev[:-1]:
+        idepth = int(depth)
+        ilevel = ilevel + 1
+        print('*   depth='+str(idepth)+' ('+str(depth)+') level='+str(ilevel))
+        dind = pf.ind_for_depth(idepth, mesh)
+        level_data = np.array(mean3d[:, dind], dtype=np.float64)
+        level_data[np.where(np.isnan(level_data))] = NAN_REPLACE
+        # how="mean" -> identical annual-mean field for every time step
+        TempFields_out[:, ilevel, :] = level_data
 
 
 # ----------------------------------------------------------------
@@ -262,8 +278,8 @@ lon_var.units = "degrees east"
 lat_var.long_name = "latitude"
 lat_var.units = "degrees north"
 
-temp_var.long_name = FID.get(args.FESOM_VARIABLE[0]).long_name
-temp_var.units = FID.get(args.FESOM_VARIABLE[0]).units
+temp_var.long_name = getattr(FID.get(args.FESOM_VARIABLE[0]), 'long_name', args.FESOM_VARIABLE[0])
+temp_var.units = getattr(FID.get(args.FESOM_VARIABLE[0]), 'units', '')
 temp_var.coordinates = "longitude latitude"
 temp_var.description = "" #FID.variables[args.FESOM_VARIABLE[0]].description
 #temp_var.missing_value = NAN_REPLACE
@@ -278,7 +294,7 @@ level_var[:] = np.arange(0, sizeVert, dtype=np.int32)
 hori_var[:] = np.arange(0, sizeHori, dtype=np.int32)
 
 # -- common variables
-depth_var[:] = mesh.zlev
+depth_var[:] = depth_out   # = mesh.zlev for 3-D fields, [0.0] for 2-D surface fields
 #depth_var[:] = mesh_diag.zbar
 lon_var[:] = mesh.x2
 lat_var[:] = mesh.y2

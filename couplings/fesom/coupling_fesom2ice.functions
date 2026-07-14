@@ -351,12 +351,16 @@ function fesom_ice_construct_input_list {
 		            $cdo -O merge tmp_p2d_sst.nc tmp_p2d_sss.nc tmp_p2d_fh.nc tmp_p2d_fw.nc ${current_file}
 		            # Per-variable copies for the 2D interpolation step:
 		            # fesom_scalar_array_to_LonLat.py ignores the bundle path and
-		            # opens ${FESOM_PATH}/<var>.fesom.<year>.nc itself. fh/fw exist
-		            # as real FESOM outputs in DATA_DIR; Tsurf/Ssurf only exist
-		            # synthesized -> stage them per-variable in COUPLE_DIR (the 2D
-		            # loop points FESOM_PATH there for these two).
+		            # opens ${FESOM_PATH}/<var>.fesom.<year>.nc itself. Stage ALL
+		            # FOUR from the synthesized tmp files (the 2D loop points
+		            # FESOM_PATH at COUPLE_DIR when these exist): Tsurf/Ssurf are
+		            # not FESOM outputs at all, and fw here carries the m/s ->
+		            # kg m-2 s-1 conversion -- reading the raw DATA_DIR fw would
+		            # silently hand PISM a flux 1000x too small.
 		            cp -f tmp_p2d_sst.nc ${COUPLE_DIR}/Tsurf.fesom.${year}.nc
 		            cp -f tmp_p2d_sss.nc ${COUPLE_DIR}/Ssurf.fesom.${year}.nc
+		            cp -f tmp_p2d_fh.nc  ${COUPLE_DIR}/fh.fesom.${year}.nc
+		            cp -f tmp_p2d_fw.nc  ${COUPLE_DIR}/fw.fesom.${year}.nc
 		        fi
 		        rm -f tmp_p2d_*.nc
 		    fi

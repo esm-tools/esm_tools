@@ -68,6 +68,29 @@ function fesom2ice {
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
 
+    # --- make failures VISIBLE to the workflow (same rationale as ice2fesom's
+    # couple_fail): this subjob is backgrounded, observe never sees its exit
+    # code, and keyword error checking is off for non-compute jobs -- a bare
+    # exit here lets the workflow advance and the PISM leg then runs without
+    # ocean forcing and dies empty (movcav16 chunk-1->2 handover, 2026-07-14).
+    # Drop the sentinel observe.py checks, then exit. Overrides the shared
+    # test_file_or_exit ONLY inside this subjob's shell.
+    couple_fail() {
+        echo " *** $1 ***"
+        if [ -n "${COUPLE_DIR:-}" ] ; then
+            mkdir -p "${COUPLE_DIR}" 2>/dev/null
+            echo "$1" > "${COUPLE_DIR}/.coupling_failed"
+        fi
+        exit 1
+    }
+    function test_file_or_exit {
+        __file=$1
+        __error_code=$2
+        if [ ! -f ${__file:-/DiesenFileNamenSeheIchSehrSelten_Oder_Fragezeichen} ] ; then
+            couple_fail "fesom2ice FAILED: missing file >>${__file}<< in $(pwd) (code ${__error_code:-998})"
+        fi
+    }
+
     echo "     Starting coupling_fesom2ice.functions ...."
     echo "FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing}"
 
@@ -326,6 +349,14 @@ function fesom_ice_construct_input_list {
 		        done
 		        if [ ${_ok} -eq 1 ]; then
 		            $cdo -O merge tmp_p2d_sst.nc tmp_p2d_sss.nc tmp_p2d_fh.nc tmp_p2d_fw.nc ${current_file}
+		            # Per-variable copies for the 2D interpolation step:
+		            # fesom_scalar_array_to_LonLat.py ignores the bundle path and
+		            # opens ${FESOM_PATH}/<var>.fesom.<year>.nc itself. fh/fw exist
+		            # as real FESOM outputs in DATA_DIR; Tsurf/Ssurf only exist
+		            # synthesized -> stage them per-variable in COUPLE_DIR (the 2D
+		            # loop points FESOM_PATH there for these two).
+		            cp -f tmp_p2d_sst.nc ${COUPLE_DIR}/Tsurf.fesom.${year}.nc
+		            cp -f tmp_p2d_sss.nc ${COUPLE_DIR}/Ssurf.fesom.${year}.nc
 		        fi
 		        rm -f tmp_p2d_*.nc
 		    fi
@@ -626,8 +657,17 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 
 		    echo -n "     - >${variable}< from ${file}"
 		    result_file=tmp_file_$(printf "%04i" $ic)__${variable}
+		    # fesom_scalar_array_to_LonLat.py opens
+		    # ${FESOM_PATH}/<var>.fesom.<year>.nc itself (it ignores the
+		    # bundle path). Tsurf/Ssurf are not FESOM2 outputs -- the
+		    # DIRECT-route synthesizer stages them per-variable in
+		    # COUPLE_DIR (from sst/sss); fh/fw are real outputs in DATA_DIR.
+		    var_path=${DATA_DIR_fesom}
+		    if [ -f "${COUPLE_DIR}/${variable}.fesom.${start_year_couple}.nc" ]; then
+		        var_path=${COUPLE_DIR}/
+		    fi
                     python $pyfesom_script ${FESOM_MESH_SWITCHES} \
-		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_PATH $var_path \
 		        --FESOM_VARIABLE $variable \
 		        --FESOM_MESH ${MESH_DIR_fesom} \
 		        --FESOM_YEARS $start_year_couple $end_year_couple \

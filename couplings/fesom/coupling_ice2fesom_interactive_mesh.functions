@@ -379,6 +379,10 @@ function remap_fesom_restart {
             [ -e "${MAXMESH_DIR_fesom}/${f}" ] && ln -sf "${MAXMESH_DIR_fesom}/${f}" "${path_old}/${f}"
         done
         seq 1 ${nod2d_base} > "${path_old}/map_nod.out"
+        # dist_<nproc> too: remap_oasis_restart needs the mother's rpart.out to
+        # un-permute the runtime-ordered OASIS restart before the nod2d gather.
+        [ -d "${MAXMESH_DIR_fesom}/dist_${NPROC_fesom}" ] && \
+            ln -sfn "${MAXMESH_DIR_fesom}/dist_${NPROC_fesom}" "${path_old}/dist_${NPROC_fesom}"
     fi
 
     local restart_year=${CHUNK_START_DATE_fesom%%-*}
@@ -468,6 +472,20 @@ function remap_oasis_restart {
     new_n=$(wc -l < "${new_map}")
     local new_nod2d=${COUPLE_DIR}/latest_submesh/nod2d.out
 
+    # rpart.out of the old and new meshes: OASIS restarts are RUNTIME-ordered
+    # (Apple partition), the map_nod gather lives in nod2d space, and the
+    # regenerated weights expect new-mesh runtime order -- the remapper needs
+    # both partitions for the un-permute / re-permute sandwich. Missing rpart
+    # is a hard error: a scrambled rstos gives OIFS a jigsaw SST for the first
+    # coupling interval and nondeterministic convection blowups (movcav16
+    # attempts 2/3, forrtl in cubasen.F90).
+    local old_rpart="$(dirname "${old_map}")/dist_${NPROC_fesom}/rpart.out"
+    local new_rpart="$(dirname "${new_map}")/dist_${NPROC_fesom}/rpart.out"
+    if [ ! -f "${old_rpart}" ] || [ ! -f "${new_rpart}" ]; then
+        echo " *   rpart.out missing (${old_rpart} / ${new_rpart}); cannot order-correct OASIS restarts"
+        return 1
+    fi
+
     # OASIS restarts written by the previous awiesm3 chunk.
     local oasis_rst_dir=${COUPLE_DIR}/../restart/oasis3mct
     for rst in rstos rstas; do
@@ -479,6 +497,7 @@ function remap_oasis_restart {
         echo " *   remapping ${rst}.nc (${old_n} -> ${new_n} nodes)"
         ${py} ${script} "${src}" "${outdir}/${rst}.nc" \
             "${old_map}" "${new_map}" "${new_nod2d}" "${old_n}" "${new_n}" \
+            "${old_rpart}" "${new_rpart}" \
             || { echo " *   remap_oasis_restart FAILED for ${rst}"; return 1; }
         # rstos carries the feom-grid fields, so its output MUST be new_n-sized.
         # A silent mis-size (e.g. a stale source that skipped remapping) only

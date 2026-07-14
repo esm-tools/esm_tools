@@ -45,6 +45,9 @@ def prepare_environment(config):
             # column average, which fed it surface water (up to +6.5 degC at the
             # ice base) and collapsed the shelves.
             "iter_coup_interact_method_oce2ice": config["fesom"].get("oce2ice_method", "OCEANTEMPSALT"),
+            # Debug: flip the o2a (rstos-backed) namcouple fields to EXPOUT so
+            # OASIS dumps every exchange to netcdf (see fix_namcouple_feom_dim).
+            "OASIS_EXPOUT_O2A": int(config["fesom"].get("oasis_expout_o2a", False).__bool__()),
             #"BASIN_FILE": config["fesom"].get("basin_file"),
             "MACHINE": config["computer"]["name"],
             "ICEBERG_DIR": config["fesom"].get("iceberg_dir", ""),

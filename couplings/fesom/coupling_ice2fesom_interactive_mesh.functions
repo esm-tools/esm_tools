@@ -548,6 +548,20 @@ function fix_namcouple_feom_dim {
         echo " *   fix_namcouple_feom_dim: no namcouple at ${nc}, skipping"
         return 0
     fi
+
+    # --- Optional instrumentation: EXPOUT on the ocean->atm fields ---------
+    # OASIS then dumps every exchanged o2a field (source and target side) to
+    # netcdf in work/. Debug tool for poisoned-exchange hunts: after a crash,
+    # scan the last records for the insane cell. Opt-in via the runscript
+    # (fesom: oasis_expout_o2a: 1 -> env_fesom.py). EXPOUT = EXPORTED + write,
+    # it does not change the coupling itself.
+    if [ "${OASIS_EXPOUT_O2A:-0}" = "1" ]; then
+        local nflip
+        nflip=$(grep -c 'rstos\.nc EXPORTED' "${nc}" || true)
+        sed -i '/rstos\.nc EXPORTED/s/EXPORTED/EXPOUT/' "${nc}"
+        echo " *   EXPOUT instrumentation: ${nflip} o2a field lines flipped to EXPOUT"
+    fi
+
     local full sub meshpath maxmesh
     # MAXMESH_DIR_fesom is assigned inside build_submesh (couple_in). This function
     # runs as its own subjob (couple_namcouple) in a separate shell, where that

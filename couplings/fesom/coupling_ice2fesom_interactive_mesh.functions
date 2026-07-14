@@ -499,16 +499,24 @@ function remap_oasis_restart {
             "${old_map}" "${new_map}" "${new_nod2d}" "${old_n}" "${new_n}" \
             "${old_rpart}" "${new_rpart}" \
             || { echo " *   remap_oasis_restart FAILED for ${rst}"; return 1; }
-        # rstos carries the feom-grid fields, so its output MUST be new_n-sized.
+        # rstos carries the feom-grid fields, so its output MUST contain the
+        # new node count as a dimension and must NOT still contain the old one.
         # A silent mis-size (e.g. a stale source that skipped remapping) only
         # surfaces as an OASIS 'av gsize mismatch' abort deep in init; catch it
-        # here. (rstas is on the fixed A096 grid, so it is not size-checked.)
+        # here. NOTE the file legitimately holds BOTH grids (OASIS writes the
+        # A096-side A_* fields into the same restart, nx=40320), so checking
+        # "the first nx" is wrong -- the feom fields live on nx_2 or similar.
+        # (rstas is on the fixed A096 grid, so it is not size-checked.)
         if [ "${rst}" = "rstos" ]; then
-            local out_nx
-            out_nx=$(ncdump -h "${outdir}/${rst}.nc" 2>/dev/null \
-                | grep -oE 'nx = [0-9]+' | grep -oE '[0-9]+' | head -1)
-            if [ -n "${out_nx}" ] && [ "${out_nx}" != "${new_n}" ]; then
-                echo " *   remap_oasis_restart: ${rst}.nc output nx=${out_nx} != expected ${new_n}; aborting"
+            local _dims
+            _dims=$(ncdump -h "${outdir}/${rst}.nc" 2>/dev/null \
+                | sed -n '/^dimensions:/,/^variables:/p' | grep -oE '= [0-9]+ ;' | grep -oE '[0-9]+')
+            if ! echo "${_dims}" | grep -qx "${new_n}" ; then
+                echo " *   remap_oasis_restart: ${rst}.nc has no dimension of size ${new_n} (dims: $(echo ${_dims} | tr '\n' ' ')); aborting"
+                return 1
+            fi
+            if [ "${old_n}" != "${new_n}" ] && echo "${_dims}" | grep -qx "${old_n}" ; then
+                echo " *   remap_oasis_restart: ${rst}.nc still contains old node count ${old_n}; aborting"
                 return 1
             fi
         fi

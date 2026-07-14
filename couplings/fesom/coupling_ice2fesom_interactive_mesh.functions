@@ -194,12 +194,25 @@ function build_submesh {
     # silently fell back to the mother (full) mesh. That happens to be right for the
     # first mesh change after a full-mesh chunk 1, and wrong for every leg after that
     # -- it would remap against the wrong old mesh and produce a garbage restart.
+    #
+    # RERUN GUARD: promote ONLY if latest_submesh belongs to a DIFFERENT chunk
+    # than the one being built now. On a rerun of the SAME chunk (couple_in
+    # failed mid-way and was restarted), latest_submesh already points at THIS
+    # chunk's new submesh; promoting it makes old==new, every node classifies
+    # as UNCHANGED, and the remap copies the old restart's sub-ice ZEROS into
+    # the newly-opened levels verbatim -> 0 psu surface water -> density
+    # catastrophe -> CFLz blowup at mstep=1 (movcav16 chunk-3, 2026-07-14).
     if [ -e "${COUPLE_DIR}/latest_submesh" ] ; then
         _prev_target=$(readlink -f "${COUPLE_DIR}/latest_submesh" 2>/dev/null)
         if [ -n "${_prev_target}" ] && [ -f "${_prev_target}/nod2d.out" ] ; then
-            rm -rf "${COUPLE_DIR}/previous_submesh"
-            ln -sfn "${_prev_target}" "${COUPLE_DIR}/previous_submesh"
-            echo " *   previous submesh: ${_prev_target} ($(head -1 ${_prev_target}/nod2d.out | awk '{print $1}') nodes)"
+            if [ "$(basename "${_prev_target}")" = "submesh_${CHUNK_END_DATE_fesom}" ] ; then
+                echo " *   latest_submesh already targets THIS chunk (submesh_${CHUNK_END_DATE_fesom})"
+                echo " *   -> rerun detected; keeping existing previous_submesh untouched"
+            else
+                rm -rf "${COUPLE_DIR}/previous_submesh"
+                ln -sfn "${_prev_target}" "${COUPLE_DIR}/previous_submesh"
+                echo " *   previous submesh: ${_prev_target} ($(head -1 ${_prev_target}/nod2d.out | awk '{print $1}') nodes)"
+            fi
         fi
     fi
 

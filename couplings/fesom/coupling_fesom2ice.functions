@@ -663,28 +663,33 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		    result_file=tmp_file_$(printf "%04i" $ic)__${variable}
 		    # fesom_scalar_array_to_LonLat.py opens
 		    # ${FESOM_PATH}/<var>.fesom.<year>.nc itself (it ignores the
-		    # bundle path). Tsurf/Ssurf are not FESOM2 outputs -- the
-		    # DIRECT-route synthesizer stages them per-variable in
-		    # COUPLE_DIR (from sst/sss); fh/fw are real outputs in DATA_DIR.
+		    # bundle path). All four are staged per-variable in COUPLE_DIR
+		    # by the DIRECT-route synthesizer (fw with its x1000 unit
+		    # conversion); fall back to DATA_DIR for real outputs.
 		    var_path=${DATA_DIR_fesom}
 		    if [ -f "${COUPLE_DIR}/${variable}.fesom.${start_year_couple}.nc" ]; then
 		        var_path=${COUPLE_DIR}/
 		    fi
+		    # Write the per-variable tmp file the loop expects. The legacy
+		    # code wrote --FESOM_OUTPUT ${output} (the merged goodgrid) for
+		    # every variable and then tested/merged tmp_file_NNNN__VAR that
+		    # nothing had created -- this branch had never run (the FESOM1.x
+		    # bundle never existed, so the loop was always empty).
                     python $pyfesom_script ${FESOM_MESH_SWITCHES} \
 		        --FESOM_PATH $var_path \
 		        --FESOM_VARIABLE $variable \
 		        --FESOM_MESH ${MESH_DIR_fesom} \
 		        --FESOM_YEARS $start_year_couple $end_year_couple \
                         --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
-		        --FESOM_OUTPUT $output > $logfile
+		        --FESOM_OUTPUT ${result_file} > $logfile
 		    echo " : STILL alive"
 
 		    test_file_or_exit $result_file 9
 		done
-		$cdo -f nc cat tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]* ${output}
-
-		ncks -Av iter tmp_file_0001__[A-Z,a-z]* ${output} && \
-		    rm tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]*
+		# one variable per tmp file -> combine variables (merge, NOT time-cat)
+		$cdo -O -f nc merge tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]* ${output}
+		test_file_or_exit ${output} 9
+		rm -f tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]*
 
                 processed_fesom1x_file2D_list_for_ice="$processed_fesom1x_file2D_list_for_ice ${output}"
         done

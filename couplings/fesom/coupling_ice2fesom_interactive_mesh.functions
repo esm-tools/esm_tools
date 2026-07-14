@@ -187,6 +187,22 @@ function ice2fesom {
 
 function build_submesh {
     echo " *** Building dynamic submesh from MAXMESH ***"
+
+    # Promote the CURRENT submesh to previous_submesh BEFORE we replace it. The
+    # restart remap needs the mesh the PREVIOUS leg actually ran on. previous_submesh
+    # was read in several places but NEVER created anywhere, so every mesh-change leg
+    # silently fell back to the mother (full) mesh. That happens to be right for the
+    # first mesh change after a full-mesh chunk 1, and wrong for every leg after that
+    # -- it would remap against the wrong old mesh and produce a garbage restart.
+    if [ -e "${COUPLE_DIR}/latest_submesh" ] ; then
+        _prev_target=$(readlink -f "${COUPLE_DIR}/latest_submesh" 2>/dev/null)
+        if [ -n "${_prev_target}" ] && [ -f "${_prev_target}/nod2d.out" ] ; then
+            rm -rf "${COUPLE_DIR}/previous_submesh"
+            ln -sfn "${_prev_target}" "${COUPLE_DIR}/previous_submesh"
+            echo " *   previous submesh: ${_prev_target} ($(head -1 ${_prev_target}/nod2d.out | awk '{print $1}') nodes)"
+        fi
+    fi
+
     SUBMESH_DIR=submesh_${CHUNK_END_DATE_fesom}/
     MAXMESH_DIR_fesom=$MAX_MESH
     echo " *   target submesh dir: ${SUBMESH_DIR}"
@@ -436,6 +452,10 @@ function remap_oasis_restart {
     local old_map
     if [ -f "${COUPLE_DIR}/previous_submesh/map_nod.out" ]; then
         old_map=${COUPLE_DIR}/previous_submesh/map_nod.out
+    elif [ -n "${CHUNK1_MESH:-}" ] && [ -f "${CHUNK1_MESH%/}/map_nod.out" ]; then
+        # chunk 1 ran on a pre-staged (pool) submesh -- that, not the mother mesh,
+        # is the mesh the previous leg's OASIS restart lives on.
+        old_map=${CHUNK1_MESH%/}/map_nod.out
     else
         old_map=${COUPLE_DIR}/mother_as_old/map_nod.out
     fi
@@ -608,6 +628,16 @@ regenerate_for_submesh(
     template='${OCP_TEMPLATE_CONFIG}', ocp_tool_dir='${OCP_TOOL_DIR}',
     python_exe='${OCP_WEIGHTGEN_DRIVER_PY}', generate_rmp=False)
 
+# 2a. Permute feom.* to FESOM's RUNTIME exchange ordering (my_list / Apple
+#     partition) BEFORE the weights are generated. Without this the weights are
+#     built in nod2d.out order and every A096<->feom exchange is geographically
+#     tile-translocated at runtime (the jigsaw ocean: OIFS saw Weddell ice
+#     fraction 0.04 while FESOM had 0.95). Idempotent (stamps feom_node_order).
+import subprocess
+subprocess.check_call(['${OCP_WEIGHTGEN_DRIVER_PY}',
+                       '${FUNCTION_PATH}/permute_feom_to_runtime.py',
+                       '${out_dir}', '${submesh}', '${NPROC_fesom}'])
+
 # 2. Prep feom for the weight gen: ocp-tool writes feom corners, which the
 #    centre-based (non-conservative) profile must not pass as a source grid;
 #    forcing feom.msk=0 is a safety no-op (ocp-tool already writes it active).
@@ -620,6 +650,13 @@ generate_weights('${out_dir}', atm_grid='A096', method=method,
                  threads=${OCP_WEIGHTGEN_THREADS:-8}, use_corners=use_corners,
                  worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
                  oasis_build_path='${OASIS_BUILD_PATH}')
+
+# 4. VALIDATE: apply the fresh weights to the runtime-ordered node latitudes and
+#    require they land at the right latitudes on the other grid. Seconds, and
+#    catches any ordering regression before it can scramble a coupled year.
+subprocess.check_call(['${OCP_WEIGHTGEN_DRIVER_PY}',
+                       '${FUNCTION_PATH}/validate_feom_weights.py',
+                       '${out_dir}', '${submesh}', '${NPROC_fesom}'])
 PYEOF
 
     local nlinks=${OCP_WEIGHTGEN_NLINKS:-4}

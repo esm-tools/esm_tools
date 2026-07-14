@@ -38,6 +38,13 @@ def prepare_environment(config):
             "PYFESOM_PATH": "/pf/a/a270124/pyfesom2/",
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "iter_coup_regrid_method_ice2oce": "INTERPOLATE",
+            # ocean->ice-sheet interaction method. DIRECT = hand PISM FESOM's own
+            # cavity fluxes (fw -> shelfbmassflux, sst@icebase -> shelfbtemp) via
+            # -ocean given: one model owns the ice-ocean interface. The default
+            # OCEANTEMPSALT (-ocean th) makes PISM recompute melt from a T/S
+            # column average, which fed it surface water (up to +6.5 degC at the
+            # ice base) and collapsed the shelves.
+            "iter_coup_interact_method_oce2ice": config[config["general"]["setup_name"]].get("oce2ice_method", "OCEANTEMPSALT"),
             #"BASIN_FILE": config["fesom"].get("basin_file"),
             "MACHINE": config["computer"]["name"],
             "ICEBERG_DIR": config["fesom"].get("iceberg_dir", ""),

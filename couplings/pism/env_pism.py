@@ -2,6 +2,7 @@ def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
     environment_dict = {
             "PISM_TO_OCEAN": 0,
+            "iter_coup_interact_method_oce2ice": config[config["general"]["setup_name"]].get("oce2ice_method", "OCEANTEMPSALT"),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "VERSION_pism": config[config["general"]["setup_name"]]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],

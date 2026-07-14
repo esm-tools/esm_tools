@@ -302,6 +302,34 @@ function fesom_ice_construct_input_list {
 	    month=01
 		day=01
 		current_file=${DATA_DIR_fesom}/${EXP_ID}.${year}.pism.nc
+		if [ ! -f $current_file ] ; then
+		    # FESOM2 does not write the FESOM1.x-era ${EXP_ID}.<year>.pism.nc bundle
+		    # this pipeline expects. Synthesize it from the standard monthly streams:
+		    # sst/sss (level-1 = the ICE-BASE T/S at cavity nodes, per FESOM's
+		    # virtual-column convention) -> Tsurf/Ssurf, plus fh and fw. fw is
+		    # converted m/s (freshwater) -> kg m-2 s-1; SIGN kept: FESOM melt => fw<0,
+		    # and PISM's shelfbmassflux is "positive if ice is freezing on"
+		    # (ConstantPIK.cc) => melt<0 there too.
+		    current_file=${COUPLE_DIR}/${EXP_ID}.${year}.pism.nc
+		    if [ ! -f $current_file ]; then
+		        echo "     - synthesizing 2D flux bundle ${current_file} (sst,sss,fh,fw)"
+		        _ok=1
+		        for _v in sst sss fh fw ; do
+		            _src=$(fesom_ice_resolve_output_file ${_v} ${year})
+		            if [ -z "${_src}" ]; then echo "     - cannot synthesize: missing ${_v}.fesom.${year}"; _ok=0; break; fi
+		            case ${_v} in
+		                sst) $cdo -O chname,sst,Tsurf ${_src} tmp_p2d_${_v}.nc ;;
+		                sss) $cdo -O chname,sss,Ssurf ${_src} tmp_p2d_${_v}.nc ;;
+		                fh)  $cdo -O selvar,fh ${_src} tmp_p2d_${_v}.nc ;;
+		                fw)  $cdo -O setattribute,fw@units="kg m-2 s-1" -expr,'fw=fw*1000.0' ${_src} tmp_p2d_${_v}.nc ;;
+		            esac
+		        done
+		        if [ ${_ok} -eq 1 ]; then
+		            $cdo -O merge tmp_p2d_sst.nc tmp_p2d_sss.nc tmp_p2d_fh.nc tmp_p2d_fw.nc ${current_file}
+		        fi
+		        rm -f tmp_p2d_*.nc
+		    fi
+		fi
 		if [ -f $current_file ] ; then
 		    fesom1x_raw_file2D_list_for_ice="$fesom1x_raw_file2D_list_for_ice $current_file"
 		else

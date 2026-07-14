@@ -746,7 +746,11 @@ function iterative_coupling_ocean_pism_compute_ocean_temp_forcing {
 
 function iterative_coupling_ocean_pism_compute_ocean_tempsalt_forcing {
     _file=$1
-    if [ 0 -eq 1 ] ; then
+    # 150-600 m band: excludes the summer surface layer. The old index-1/20
+    # selection averaged 0-410 m INCLUDING the surface and fed PISM's -ocean th
+    # ice-base water of up to +6.5 degC -> catastrophic melt. Kept as a safety
+    # for anyone still running the th route (the setup default is now DIRECT).
+    if [ 1 -eq 1 ] ; then
 	_action_string=": vertical mean (150-600m) of temperature and salinity" ;
 	cdovert_flag="-sellevel,150/600"
     else

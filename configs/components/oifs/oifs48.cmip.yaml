@@ -1,5 +1,14 @@
 oifs:
     cmip7_data_dir: ${input_dir}/cmip7-data
+    # OIFS opens composition/onlinedust_v4_rmp.nc at init regardless of MIP,
+    # so stage it unconditionally (was previously only in the cmip7 branch,
+    # which crashed cmip6 setups like oifsamip). The file is mip-independent.
+    add_input_files:
+        dust_clim: dust_clim
+    add_input_sources:
+        dust_clim: ${cmip7_data_dir}/dust/onlinedust_v4_rmp.nc
+    add_input_in_work:
+        dust_clim: composition/onlinedust_v4_rmp.nc
     choose_mip:
         "cmip5":
             add_namelist_changes:
@@ -96,9 +105,3 @@ oifs:
                         CCMIP_STRAT_FULL_CLIM: '${cmip7_data_dir}/strat_aer/CMIP7_stratospheric_aerosols_opt_EC_EARTH_climatology2-2-1_${levels}.nc'
                     NAEPHY:
                         LRDALB: False
-            add_input_files:
-                dust_clim: dust_clim
-            add_input_sources:
-                dust_clim: ${cmip7_data_dir}/dust/onlinedust_v4_rmp.nc
-            add_input_in_work:
-                dust_clim: composition/onlinedust_v4_rmp.nc

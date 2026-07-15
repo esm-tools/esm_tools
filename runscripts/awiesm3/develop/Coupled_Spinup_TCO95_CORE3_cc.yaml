@@ -118,8 +118,8 @@ oifs:
 
 oasis3mct:
     use_lucia: false
-    lresume: false
-    #lresume: true
+    #lresume: false
+    lresume: true
     time_step: 7200
 
 xios:

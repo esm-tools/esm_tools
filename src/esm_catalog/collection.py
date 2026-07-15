@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pystac import Collection, Extent, Item, Link, SpatialExtent, TemporalExtent
 
+from esm_catalog.namelist import add_namelist_extension
+
 
 def make_collection(ctx) -> Collection:
     """Construct a pystac Collection for an experiment component.
@@ -26,6 +28,7 @@ def make_collection(ctx) -> Collection:
         extra_fields={"experiment": ctx.experiment_id, "components": [ctx.component]},
     )
     col.add_link(Link("parent", f"#{ctx.experiment_id}", media_type="application/json"))
+    add_namelist_extension(col, ctx.namelists_by_component.get(ctx.component, {}))
     return col
 
 

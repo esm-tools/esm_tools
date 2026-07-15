@@ -1,0 +1,95 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json",
+  "title": "Namelist Extension",
+  "description": "STAC Namelist Extension for STAC Items and Collections, exposing Fortran namelist parameters for search.",
+  "type": "object",
+  "required": [
+    "stac_extensions"
+  ],
+  "properties": {
+    "stac_extensions": {
+      "type": "array",
+      "contains": {
+        "const": "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json"
+      }
+    },
+    "type": {
+      "enum": [
+        "Feature",
+        "Collection"
+      ]
+    }
+  },
+  "if": {
+    "properties": {
+      "type": {
+        "const": "Collection"
+      }
+    }
+  },
+  "then": {
+    "properties": {
+      "nml:files": {
+        "title": "Namelist files",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "nml:groups": {
+        "title": "Namelist groups",
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "nml:parameters": {
+        "title": "Flattened namelist parameters",
+        "description": "Maps 'group:key' to the parameter's scalar value, for CQL2 filtering.",
+        "type": "object",
+        "additionalProperties": {
+          "$ref": "#/definitions/scalar_or_short_list"
+        }
+      }
+    }
+  },
+  "else": {
+    "properties": {
+      "properties": {
+        "type": "object",
+        "patternProperties": {
+          "^nml:": {
+            "$ref": "#/definitions/scalar_or_short_list"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "scalar_or_short_list": {
+      "oneOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        {
+          "type": "array",
+          "maxItems": 10,
+          "items": {
+            "type": [
+              "string",
+              "number",
+              "boolean",
+              "null"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

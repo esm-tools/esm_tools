@@ -10,6 +10,8 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.namelist import add_namelist_item_extension
+
 
 def make_item(
     path: Union[Path, UPath, str],
@@ -57,6 +59,8 @@ def make_item(
             media_type="application/json",
         )
     )
+
+    add_namelist_item_extension(item, ctx)
 
     return item
 

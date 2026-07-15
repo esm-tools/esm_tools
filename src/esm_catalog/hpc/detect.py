@@ -1,8 +1,11 @@
 from __future__ import annotations
 """Detect HPC storage type and facility from a file path or filesystem."""
 
-import os
+import re
+from functools import lru_cache
 from pathlib import Path
+
+import esm_parser
 
 
 # Map filesystem f_type magic numbers to storage type names
@@ -19,12 +22,35 @@ _FS_TYPE_NAMES = {
     0x0BD00BD0: "lustre",  # LUSTRE_SUPER_MAGIC
 }
 
+# storage: entry fields that get copied straight into the returned dict,
+# prefixed with "hpc:".
+_STORAGE_FIELDS = ("facility", "system", "storage_type", "state", "recall_time_estimate")
+
+
+@lru_cache(maxsize=1)
+def _load_storage_entries() -> dict:
+    """Load all `storage:` entries from `configs/machines/*.yaml` and
+    `configs/storage/*.yaml`.
+
+    Returns a dict mapping entry name -> its fields (``path_str`` plus any of
+    ``_STORAGE_FIELDS``), in the order the yaml files were read.
+    """
+    config_root = Path(esm_parser.CONFIG_PATH)
+    entries = {}
+    for subdir in ("machines", "storage"):
+        for yaml_path in sorted((config_root / subdir).glob("*.yaml")):
+            data = esm_parser.yaml_file_to_dict(str(yaml_path))
+            entries.update(data.get("storage") or {})
+    return entries
+
 
 def detect_hpc_storage(path) -> dict:
     """Return HPC storage metadata for *path*.
 
-    Tries path-pattern matching first (fast, no syscall).  Falls back to
-    filesystem statvfs for unknown paths.
+    Tries path-pattern matching first (fast, no syscall), matching against
+    `storage:` entries loaded from `configs/machines/*.yaml` and
+    `configs/storage/*.yaml`.  Falls back to filesystem statvfs for
+    unmatched paths.
 
     Works with both local Path and remote UPath objects.
 
@@ -42,32 +68,14 @@ def detect_hpc_storage(path) -> dict:
     else:
         path_str = str(Path(path).resolve())
 
-    # AWI Albedo cluster (Lustre)
-    if "/albedo/" in path_str:
-        return {
-            "hpc:facility": "AWI",
-            "hpc:system": "albedo",
-            "hpc:storage_type": "lustre",
-            "hpc:state": "online",
-        }
-
-    # DKRZ Levante cluster (Lustre)
-    if "/work/" in path_str and "/levante" not in path_str:
-        # Heuristic: /work/ on DKRZ is Lustre, checked via hostname elsewhere
-        return {
-            "hpc:facility": "DKRZ",
-            "hpc:system": "levante",
-            "hpc:storage_type": "lustre",
-            "hpc:state": "online",
-        }
-
-    # Tape/HPSS archive paths
-    if "/arch/" in path_str or "/hpss/" in path_str:
-        return {
-            "hpc:storage_type": "hpss",
-            "hpc:state": "offline",
-            "hpc:recall_time_estimate": 300,
-        }
+    for fields in _load_storage_entries().values():
+        pattern = fields.get("path_str")
+        if pattern and re.search(pattern, path_str):
+            return {
+                f"hpc:{field}": fields[field]
+                for field in _STORAGE_FIELDS
+                if field in fields
+            }
 
     # Fallback: probe the actual filesystem (only for local paths)
     if is_remote:

@@ -541,3 +541,11 @@ computer:
 
     further_reading:
             - batch_system/slurm.yaml
+
+storage:
+    levante-work:
+        path_str: "^(?!.*/levante).*/work/"
+        facility: "DKRZ"
+        system: "levante"
+        storage_type: "lustre"
+        state: "online"

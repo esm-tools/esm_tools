@@ -1,0 +1,9 @@
+################################################################################
+# Tape/HPSS archive storage, not tied to a specific machine.
+################################################################################
+storage:
+    hpss:
+        path_str: "/arch/|/hpss/"
+        storage_type: "hpss"
+        state: "offline"
+        recall_time_estimate: 300

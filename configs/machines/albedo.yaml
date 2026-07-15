@@ -198,3 +198,11 @@ computer:
 
         PATH[(1)]: "$PERL5LIB/../bin:$PATH"
         PATH[(2)]: "$PATH:$ECCODESROOT/bin"  #$HDF5ROOT/bin:$NETCDFFROOT/bin:$NETCDFROOT/bin:$ECCODESROOT/bin:$PATH
+
+storage:
+    albedo-work:
+        path_str: "/albedo/"
+        facility: "AWI"
+        system: "albedo"
+        storage_type: "lustre"
+        state: "online"

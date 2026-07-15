@@ -396,7 +396,7 @@ fesom:
                 TL159_CORE2:
                         nproc: 72
         build_type: "Release"    # Available options: Release, Debug, Bit
-        comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${yac_flag} -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+        comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${yac_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
         choose_general.oasis_with_yac:
             True:
                 yac_flag: "-DOASIS_WITH_YAC=ON"
@@ -593,10 +593,29 @@ xios:
         # for the full 2D+3D set. Override per-experiment if needed.
         fesom_regular_res_lon: 720
         fesom_regular_res_lat: 360
-        config_sources:
-                context_ifs: ${xml_dir}/context_ifs.xml.j2
-                domain_def: ${xml_dir}/domain_def.xml.j2
-                file_def: ${xml_dir}/file_def.xml.j2
+        cmip7_cmor_output: "${oifs.cmip7_cmor_output}"
+        choose_cmip7_cmor_output:
+                True:
+                        config_sources:
+                                context_ifs: ${xml_dir}/context_ifs.xml.j2
+                                domain_def: ${xml_dir}/domain_def.xml.j2
+                                file_def: ${xml_dir}/cmip7/file_def_oifs_cmip7_spinup.xml.j2
+                                field_def: ${xml_dir}/cmip7/field_def_cmip7.xml.j2
+                                axis_def: ${xml_dir}/cmip7/axis_def.xml
+                                grid_def: ${xml_dir}/cmip7/grid_def.xml
+                "*":
+                        config_sources:
+                                context_ifs: ${xml_dir}/context_ifs.xml.j2
+                                domain_def: ${xml_dir}/domain_def.xml.j2
+                                file_def: ${xml_dir}/file_def.xml.j2
+        add_config_files:
+                context_ifs: context_ifs
+                ifs_xml: ifs_xml
+                domain_def: domain_def
+                field_def: field_def
+                file_def: file_def
+                axis_def: axis_def
+                grid_def: grid_def
         choose_general.major_version:
                 "frontiers-xios":
                         interpolation_order: 2

@@ -117,7 +117,18 @@ variable, datetime/start_datetime/end_datetime, format, output_frequency, variab
 
 ---
 
-### [ ] PR-A1c — HPC storage extension
+### [x] PR-A1c — HPC storage extension
+
+**Branch:** `esm-catalog/pr-a1c-hpc-extension` (PR #1511) ✓ design decisions:
+- No path-pattern matching or filesystem probing at all — the caller resolves its
+  own machine config and passes it down as `machine_config: dict` (keys: facility,
+  system, storage_type). `CollectionContext` gained an optional `machine_config` field.
+- `hpc:storage_tier` derived from storage_type (hpss/dmf/tape → cold, gpfs → warm,
+  else hot); `hpc:storage_type` goes on the data asset's extra_fields.
+- `hpc:last_access` from `path.stat().st_atime`; graceful no-op (beyond last_access)
+  when `machine_config` is None. Fields 19/20 dropped as planned.
+- Schema authored at `configs/stac-extensions/hpc/v1.0.0/schema.json`; tests validate
+  built items against it via jsonschema.
 
 **Branch from:** `release` (after PR-A1b is merged)
 **Goal:** Add HPC storage metadata to items. Fields: 14, 15, 16, 17, 18.
@@ -162,7 +173,15 @@ needed in `configs/stac-extensions/`.
 
 ---
 
-### [ ] PR-A1e — Namelist extension
+### [x] PR-A1e — Namelist extension
+
+**Branch:** `esm-catalog/pr-a1e-namelist-extension` (PR #1512) ✓ design decisions:
+- `nml:raw` dropped, `nml:files`/`nml:groups`/`nml:parameters` kept, 10-item list cap
+  kept, `add_namelist_item_extension` kept as-is — all per plan.
+- Collection-level extension wired into `make_collection` using the collection's own
+  component's entry from `ctx.namelists_by_component`; item-level wired into `make_item`.
+- Schema authored at `configs/stac-extensions/namelist/v1.0.0/schema.json` (if/then/else
+  on type for Collection vs Item shapes); tests validate both against it.
 
 **Branch from:** `release` (after PR-A1b is merged)
 **Goal:** Add namelist parameters to items and collections. Field: 31.
@@ -183,7 +202,22 @@ needed in `configs/stac-extensions/`.
 
 ---
 
-### [ ] PR-A1f — Paleo + experiment classification
+### [x] PR-A1f — Paleo + experiment classification
+
+**Branch:** `esm-catalog/pr-a1f-paleo-extension` (PR #1513) ✓ design decisions:
+- All four planned fixes applied: dead `TYPE_CHECKING` block removed,
+  `detect_paleo_simulation` removed, `_add_experiment_type` no longer reads
+  `nml:echam:runctl:dt_start` (regression test asserts the namelist property is
+  ignored), `paleo:years_bp` only when `experiment_type == "paleo"`.
+- Exposed as `add_paleo_extension(item, paleo_config, paleo_year, reference_year)` and
+  `add_experiment_type(item)` in `paleo.py` (experiment_type logic moved out of item.py).
+- `CollectionContext` gained an optional `paleo_config` field (the `general.paleo`
+  config section as a plain dict: reference_year, epoch, period).
+- `add_experiment_type` prefers the `paleo:year` property over the item's own datetimes,
+  so deep-time runs with meaningless model calendars classify correctly.
+- Schema authored at `configs/stac-extensions/paleo/v1.0.0/schema.json`.
+- Note: #1511/#1512/#1513 all touch the same two spots in `item.py`; the last two to
+  merge each need trivial conflict resolution (keep all import/call lines).
 
 **Branch from:** `release` (after PR-A1b is merged)
 **Goal:** Add paleo fields and experiment_type. Fields: 21–27.

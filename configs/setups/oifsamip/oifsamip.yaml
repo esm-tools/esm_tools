@@ -87,6 +87,16 @@ oifs:
         restart_firstlast: "last"
         restart_rate: 12
 
+        # Flux de-accumulation period (s) used by field_def_lpjg_safe.xml.j2 to
+        # convert OpenIFS accumulated fluxes (ssr/str/tp/tisr/...) into W/m2 and
+        # kg/m2/s. It MUST equal NFRHIS*TSTEP; with NFRHIS=1 (the default) that is
+        # time_step. The retired static field_def_lpjg_safe.xml hard-coded 21600
+        # (6h = the freq_op sampling cadence, NOT the accumulation reset), making
+        # every flux 6x too low -> the offline LPJG spin-up saw ~1/6 NPP (boreal
+        # ~0). Defaulted here so no oifsamip+LPJG runscript can reintroduce it;
+        # override only if NFRHIS!=1.
+        flux_accumulation_period: "${oifs.time_step}"
+
         mip: "cmip7"
         scenario: "historical"
 

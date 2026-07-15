@@ -159,7 +159,15 @@ add_hpc_extension(item, path, machine_config: dict | None = None)
 
 ---
 
-### [ ] PR-A1d — Datacube extension
+### [x] PR-A1d — Datacube extension
+
+**Branch:** `esm-catalog/pr-a1d-datacube-extension` (PR #1507) ✓ design decisions:
+- Ported as planned with one behavioral tightening: the v2.2.0 schema requires
+  `cube:dimensions` whenever the extension URL is declared, so the extension is a
+  no-op unless dimensions are present (variables alone don't trigger it).
+- Wired into `make_item`; tests validate built items against the community
+  datacube v2.2.0 schema via jsonschema (schema vendored under
+  `tests/test_esm_catalog/schemas/`).
 
 **Branch from:** `release` (after PR-A1b is merged)
 **Goal:** Add cube:dimensions and cube:variables to items. Fields: 12, 13.

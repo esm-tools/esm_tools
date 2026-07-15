@@ -1,0 +1,72 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://esm-tools.github.io/stac-extensions/hpc/v1.0.0/schema.json",
+  "title": "HPC Storage Extension",
+  "description": "STAC HPC Storage Extension for STAC Items, describing where on an HPC facility a data file lives.",
+  "type": "object",
+  "required": [
+    "stac_extensions"
+  ],
+  "properties": {
+    "stac_extensions": {
+      "type": "array",
+      "contains": {
+        "const": "https://esm-tools.github.io/stac-extensions/hpc/v1.0.0/schema.json"
+      }
+    },
+    "type": {
+      "const": "Feature"
+    },
+    "properties": {
+      "$ref": "#/definitions/fields"
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/definitions/fields"
+      }
+    }
+  },
+  "definitions": {
+    "fields": {
+      "type": "object",
+      "properties": {
+        "hpc:facility": {
+          "title": "Facility",
+          "description": "The HPC facility operating the system, e.g. 'AWI', 'DKRZ'.",
+          "type": "string"
+        },
+        "hpc:system": {
+          "title": "System",
+          "description": "The name of the HPC system, e.g. 'albedo', 'levante'.",
+          "type": "string"
+        },
+        "hpc:storage_tier": {
+          "title": "Storage tier",
+          "description": "Coarse-grained access-latency tier for the storage backing this file.",
+          "type": "string",
+          "enum": [
+            "hot",
+            "warm",
+            "cold"
+          ]
+        },
+        "hpc:storage_type": {
+          "title": "Storage type",
+          "description": "The filesystem or storage technology backing this file, e.g. 'lustre', 'gpfs', 'hpss'.",
+          "type": "string"
+        },
+        "hpc:last_access": {
+          "title": "Last access time",
+          "description": "ISO 8601 UTC timestamp of the file's last access, as reported by the filesystem.",
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "patternProperties": {
+        "^(?!hpc:)": {}
+      },
+      "additionalProperties": false
+    }
+  }
+}

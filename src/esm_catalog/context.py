@@ -63,6 +63,7 @@ class CollectionContext:
     experiment_path: Path | None = None
     namelists_by_component: dict = field(default_factory=dict)
     contacts: list[Contact] = field(default_factory=list)
+    machine_config: dict | None = None
 
     def __post_init__(self):
         """Validate production-required fields immediately after construction."""

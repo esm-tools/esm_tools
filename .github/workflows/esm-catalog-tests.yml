@@ -5,12 +5,14 @@ on:
     paths:
       - "src/esm_catalog/**"
       - "tests/test_esm_catalog/**"
+      - "configs/stac-extensions/**"
       - ".github/workflows/esm-catalog-tests.yml"
       - "setup.py"
   pull_request:
     paths:
       - "src/esm_catalog/**"
       - "tests/test_esm_catalog/**"
+      - "configs/stac-extensions/**"
       - ".github/workflows/esm-catalog-tests.yml"
       - "setup.py"
 

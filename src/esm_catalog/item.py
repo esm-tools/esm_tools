@@ -11,6 +11,7 @@ from pystac import Asset, Item, Link
 from upath import UPath
 
 from esm_catalog.datacube import add_datacube_extension
+from esm_catalog.hpc import add_hpc_extension
 from esm_catalog.registry import EXTENSION_URLS
 
 
@@ -62,6 +63,7 @@ def make_item(
 
     add_contacts(item, ctx)
     add_datacube_extension(item, metadata)
+    add_hpc_extension(item, path, ctx.machine_config)
 
     return item
 

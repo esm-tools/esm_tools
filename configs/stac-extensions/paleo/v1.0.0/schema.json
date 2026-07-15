@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://esm-tools.github.io/stac-extensions/paleo/v1.0.0/schema.json",
+  "title": "Paleo Extension",
+  "description": "STAC Paleo Extension for STAC Items, mapping model time to geological time for paleoclimate simulations.",
+  "type": "object",
+  "required": [
+    "stac_extensions"
+  ],
+  "properties": {
+    "stac_extensions": {
+      "type": "array",
+      "contains": {
+        "const": "https://esm-tools.github.io/stac-extensions/paleo/v1.0.0/schema.json"
+      }
+    },
+    "type": {
+      "const": "Feature"
+    },
+    "properties": {
+      "type": "object",
+      "properties": {
+        "paleo:year": {
+          "title": "Geological year",
+          "description": "Geological year the simulation represents (negative = past, e.g. -20000 for LGM).",
+          "type": "integer"
+        },
+        "paleo:display": {
+          "title": "Human-readable geological time",
+          "description": "Formatted geological time, e.g. '22.0 ka', '66.0 Ma', '500 BCE'.",
+          "type": "string"
+        },
+        "paleo:reference_year": {
+          "title": "Reference year",
+          "description": "Reference year used for the 'years ago' calculation in paleo:display.",
+          "type": "integer"
+        },
+        "paleo:epoch": {
+          "title": "Geological epoch",
+          "type": "string"
+        },
+        "paleo:period": {
+          "title": "Geological period",
+          "type": "string"
+        },
+        "paleo:years_bp": {
+          "title": "Years before present",
+          "description": "Years before present (present = 1950 CE). Only set for experiment_type 'paleo'.",
+          "type": "integer"
+        },
+        "experiment_type": {
+          "title": "Experiment classification",
+          "type": "string",
+          "enum": [
+            "paleo",
+            "control",
+            "historical"
+          ]
+        }
+      }
+    }
+  }
+}

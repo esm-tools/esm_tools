@@ -10,6 +10,8 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.paleo import add_experiment_type, add_paleo_extension
+
 
 def make_item(
     path: Union[Path, UPath, str],
@@ -57,6 +59,9 @@ def make_item(
             media_type="application/json",
         )
     )
+
+    add_paleo_extension(item, ctx.paleo_config)
+    add_experiment_type(item)
 
     return item
 

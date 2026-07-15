@@ -544,7 +544,7 @@ computer:
 
 storage:
     levante-work:
-        path_str: "^(?!.*/levante).*/work/"
+        path_str: "^/work/[a-z]{2}[0-9]{4}/"
         facility: "DKRZ"
         system: "levante"
         storage_type: "lustre"

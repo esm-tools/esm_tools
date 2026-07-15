@@ -105,6 +105,22 @@ def test_real_levante_config_excludes_levante_substring_in_path():
     assert result.get("hpc:system") != "levante"
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/work/randomdir/output.nc",  # /work/ without a DKRZ project code
+        "/scratch/b/b12345/work/output.nc",  # /work/ nested under an unrelated tree
+    ],
+)
+def test_real_levante_config_does_not_shadow_generic_work_paths(path):
+    # Regression guard: a bare "/work/" match (the pre-refactor heuristic) would
+    # misclassify any non-DKRZ path containing "/work/" as Levante, and could
+    # shadow a later-loaded machine's own "/work/"-based pattern. The pattern
+    # must require the DKRZ project-code shape ("/work/<xx####>/").
+    result = detect.detect_hpc_storage(path)
+    assert result.get("hpc:system") != "levante"
+
+
 def test_real_hpss_config_matches():
     result = detect.detect_hpc_storage("/arch/ab1234/experiment/output.nc")
     assert result == {
@@ -112,3 +128,21 @@ def test_real_hpss_config_matches():
         "hpc:state": "offline",
         "hpc:recall_time_estimate": 300,
     }
+
+
+def test_remote_path_fallback():
+    class DummyRemotePath:
+        def __init__(self, path_str, protocol="s3"):
+            self.path = path_str
+            self.protocol = protocol
+
+    path = DummyRemotePath("/mybucket/exp/output.nc")
+    result = detect.detect_hpc_storage(path)
+    assert result == {"hpc:storage_type": "remote", "hpc:state": "online"}
+
+
+def test_statvfs_fallback_real(tmp_path):
+    # Runs the actual, unmocked statvfs check on a local path.
+    result = detect.detect_hpc_storage(tmp_path)
+    assert "hpc:storage_type" in result
+    assert result["hpc:state"] == "online"

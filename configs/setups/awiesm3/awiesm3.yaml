@@ -10,6 +10,20 @@ general:
     lresume: false
     coupled_setup: true
 
+    # Default off; set true in a runscript to enable the concentration-driven
+    # CO2 spinup mode (see choose_general.with_co2_concdriven in the oifs section).
+    with_co2_concdriven: false
+
+    # PISM<->FESOM dynamic-mesh (ice2fesom) runtime coupling. A feature switch,
+    # NOT tied to the model version: any awiesm3 version can enable it by setting
+    # `interactive_mesh: true` in the runscript, without needing a dedicated -is
+    # version variant. Gates the coupling workflow/config in the fesom, oifs and
+    # oasis3mct sections (choose_general.interactive_mesh). The -is *build* target
+    # (couplings list + meshpart_flag) stays under choose_general.version because
+    # esm_master needs a named compile target; all runtime wiring lives behind
+    # this flag.
+    interactive_mesh: false
+
     include_models:
         - fesom
         - oifs
@@ -247,6 +261,22 @@ oifs:
                 ECE_CPL_FESOM_FESIM: .true.
                 ECE_CPL_LPJG: .true.
 
+    # PISM<->FESOM dynamic-mesh coupling (general.interactive_mesh): copy the OIFS
+    # output the ice-sheet coupler consumes. Version-independent, like the fesom
+    # side. NB: the -is land-ice / ICMGG namelist changes stay in the runscript --
+    # they interleave with the NAMECECFG add_ escalation chain below.
+    choose_general.interactive_mesh:
+        true:
+            workflow:
+                subjobs:
+                    just_copy:
+                        nproc: 1
+                        run_after: tidy
+                        script_dir: ${general.esm_couplings_dir}/oifs
+                        script: just_copy_stuff.functions
+                        call_function: just_copy
+                        env_preparation: env_oifs2ice.py
+
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
@@ -290,6 +320,20 @@ oifs:
                 fort.4:
                     NAMECECFG:
                         ECE_CPL_LPJG_CO2: true
+
+    # Concentration-driven CO2 spinup mode. Feeds the ocean BGC the spatially-
+    # homogeneous CMIP CO2 (RCARDI from ECE_CMIP_GHG) instead of the prognostic
+    # CO2 tracer (ECE_CPL_FESOM_RECOM_CONCDRIVEN), and keeps the tracer out of
+    # radiation (LECO2TRA=.false.). Needs with_co2_oce_coupling (RECOM) and
+    # with_co2_tracer (NGHG=1), both on for develop-cc.
+    choose_general.with_co2_concdriven:
+        true:
+            add_add_add_add_add_add_add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_CPL_FESOM_RECOM_CONCDRIVEN: true
+                    NAERAD:
+                        LECO2TRA: false
 
     choose_general.with_co2_tracer:
         true:
@@ -474,6 +518,51 @@ fesom:
         develop-is:
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 
+    # --- PISM<->FESOM dynamic-mesh runtime coupling (version-independent) ------
+    # Enabled by general.interactive_mesh (see general section), so it is shared by
+    # every awiesm3 version instead of requiring a -is variant. On each leg
+    # ice2fesom (couple_in) builds the new submesh + regenerates the OASIS
+    # grids/masks/areas/rmp and OIFS ICMGG (via ocp-tool, auto-discovered in
+    # couplings/fesom/env_fesom.py); couple_namcouple retags the feom dim;
+    # couple_out (fesom2ice) hands FESOM's cavity fluxes back to PISM.
+    choose_general.interactive_mesh:
+        true:
+            regen_oasis_weights: 1
+            workflow:
+                subjobs:
+                    couple_in:
+                        nproc: 1
+                        run_before: prepcompute
+                        script: coupling_ice2fesom_interactive_mesh.functions
+                        script_dir: ${general.esm_couplings_dir}/fesom
+                        call_function: ice2fesom
+                        env_preparation: env_fesom.py
+                        run_only: first_run_in_chunk
+                        # chunk-1 artifacts derive from PISM's initial geometry and
+                        # are pre-staged from the pool; skipping chunk 1 keeps the
+                        # heavy regen off the launch path (login-node friendly).
+                        skip_chunk_number: 1
+                    couple_namcouple:
+                        # MUST run every leg incl. chunk 1: prepcompute writes the
+                        # namcouple with the static full-mesh feom dim, but FESOM
+                        # runs on the submesh -> OASIS aborts writing the feom
+                        # restart ("av gsize nx ny mismatch") unless retagged here.
+                        nproc: 1
+                        run_after: prepcompute
+                        script: coupling_ice2fesom_interactive_mesh.functions
+                        script_dir: ${general.esm_couplings_dir}/fesom
+                        call_function: fix_namcouple_feom_dim
+                        env_preparation: env_fesom.py
+                        run_only: first_run_in_chunk
+                    couple_out:
+                        nproc: 1
+                        run_after: Rename_XIOS_FESOM
+                        script: coupling_fesom2ice.functions
+                        script_dir: ${general.esm_couplings_dir}/fesom
+                        call_function: fesom2ice
+                        env_preparation: env_fesom.py
+                        run_only: last_run_in_chunk
+                        trigger_next_run: True
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
     remove_forcing_files:

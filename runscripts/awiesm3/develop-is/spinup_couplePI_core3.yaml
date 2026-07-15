@@ -1,0 +1,19 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        user: !ENV ${USER}
+        base_dir: "/work/ab0246/${user}/runtime/"
+        account: ab0246
+        with_recom: False
+
+model1:
+        setup_name: awiesm3
+        runscript: awiesm3_dyn_ocean_core3.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: spinup_pismPI.yaml
+        chunk_size: 10
+        chunk_unit: "years"

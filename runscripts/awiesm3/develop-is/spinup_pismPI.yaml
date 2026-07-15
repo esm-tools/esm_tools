@@ -1,0 +1,110 @@
+general:
+        setup_name: pism
+        compute_time: "00:40:00"
+        initial_date: "1000000-01-01"
+        final_date: "1000040-12-31"
+        user: !ENV ${USER}
+        base_dir: "/work/ab0246/${user}/runtime/"
+        script_dir: "/home/a/a270092/esm_tools/couplings/" #${general.esm_couplings_dir}"
+        nyear: 10
+        change_ocean: 1
+        files_to_wait_for:
+            - "latest_atmo_forcing_file.nc"
+            - "latest_ocean_forcing_file.nc"
+        use_venv: False
+
+pism:
+        version: "github1.2.1"
+        resolution: "5km"
+        domain: "greenland"
+        model_dir: "/work/ab0246/a270092/model_codes/awiesm3-develop-is/pism-github1.2.1/"
+        lresume: 1
+
+        nx: 337
+        ny: 577
+        downscale_precip: 0    #!!!UKK TESTING!!!!
+        ###################
+        # Settings for AWIES - PISM coupling
+        # DEBM
+        debm_path: "/work/ab0246/a270092/model_codes/awiesm3-develop-is/bin/debm"
+        debm_beta: 10
+        # lapse ratedEBM_z_alakeGLAC_2251.nc
+        lapse_rate: -0.005
+        ablation_method: "DEBM"
+        iceberg_coupling: 0
+        thk_threshold: 5.0
+        select_min_glacial_depth: 1
+        account_all_fw_input: 1
+        change_emiss: 0
+        change_emiss_by: 0
+        multi_year_mean: 0
+        change_ocean: 1
+        ###################
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+        spinup_file: "/work/ab0246/a270092/input/pism/spinup/E130ka_coupled_pismr_restart_10000000101-10000091231.nc"
+
+        #/work/ba0989/a270124/PalModII/experiments/piGrSIA5_pism/restart/pism/piGrSIA5_pism_pismr_restart_293600101-293691231.nc"
+        pool_dir: "/work/ab0246/a270092/input/pism/"
+        ts_interval: "1"
+        ex_interval: "monthly"
+        force_bootstrap_first_run: False
+        orog_reference_pism: "1"
+        kv_pairs:
+            stress_balance.model: "ssa+sia"
+            stress_balance.sia.max_diffusivity: 800
+            sia_e: 5.0
+            ssa_e: 1.0
+            basal_resistance.pseudo_plastic.q: 0.25
+            basal_resistance.pseudo_plastic.u_threshold: 100
+            basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden: 0.01
+            basal_yield_stress.mohr_coulomb.till_phi_default: 30
+            basal_yield_stress.mohr_coulomb.till_cohesion: 0
+            basal_yield_stress.mohr_coulomb.till_compressibility_coefficient: 0.12
+            hydrology.tillwat_max: 1
+            bed_deformation.model: "lc"
+            calving.methods: 'eigen_calving,thickness_calving'
+            calving.thickness_calving.threshold: 200
+#            geometry.front_retreat.prescribed.file: "/work/ba1066/a270124/pool_pism/masks/nhem/pismr_nhem_10km_no-tibet_mask.nc"
+            ocean.pik_melt_factor: "1e-2"
+            atmosphere.elevation_change.precip_lapse_rate: 0.0
+            atmosphere.elevation_change.smb_lapse_rate: 0.0
+            dt_max: 0.02
+        flags:
+            - "pik"
+            - "basal_resistance.pseudo_plastic.enabled"
+            - "basal_yield_stress.slippery_grounding_lines"
+
+        couplers:
+            surface:
+                given:
+                    files:
+                        surface_given_file: "latest_atmo_forcing_file.nc"
+                    kv_pairs:
+                        surface_given_period: 1
+            ocean:
+                th:
+                    files:
+                        ocean_th_file: "latest_ocean_forcing_file.nc"
+
+        workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                        nproc: 1
+                        run_before: prepcompute
+                        script: ccoupling_esm2pism.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: esm2pism
+                        env_preparation: env_pism.py
+                        run_only: first_run_in_chunk
+
+                couple_out:
+                        nproc: 1
+                        run_after: tidy
+                        script: coupling_pism2esm.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: pism2esm
+                        env_preparation: env_pism2awiesm.py
+                        run_only: last_run_in_chunk

@@ -95,7 +95,7 @@ oasis3mct:
         # pyOASIS python package is staged under oasis/python/pyoasis (used by
         # ocp-tool to regenerate OASIS grids/weights offline, e.g. for a dynamic
         # FESOM mesh). The coupled model still links the static libraries.
-        comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/; cp build/lib/cbindings/liboasis.cbind.so lib/; mkdir -p python/pyoasis; cp pyoasis/src/*.py python/pyoasis/'
+        comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/; cp build/lib/cbindings/liboasis.cbind.so lib/ 2>/dev/null || true; mkdir -p python/pyoasis; cp pyoasis/src/*.py python/pyoasis/ 2>/dev/null || true'
       5.0-geomar:
         # this version is taken directly from the CERFACS gitlab
         # it compiles in the standard way, i.e. not with cmake

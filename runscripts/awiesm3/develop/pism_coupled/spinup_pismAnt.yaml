@@ -1,0 +1,128 @@
+general:
+        setup_name: pism
+        # This leg's walltime must cover BOTH PISM (10yr, ~17-20min on 2 nodes)
+        # AND the next awiesm3 chunk's couple_in mesh regen (build_submesh +
+        # griddes + OASIS weight-gen + restart remap), which runs as a step in
+        # this same SLURM allocation. 40min was too thin: movcav7's PISM +
+        # couple_in overran and was killed mid-regen (job 26077001, 2026-07-06).
+        compute_time: "02:00:00"
+        initial_date: "1000000-01-01"
+        final_date: "1000040-12-31"
+        base_dir: "/work/ab0246/a270092/pism_repro/experiments/"
+        script_dir: "/home/a/a270092/esm_tools/couplings/"
+        nyear: 10
+        change_ocean: 1
+        files_to_wait_for:
+            - "latest_atmo_forcing_file.nc"
+            - "latest_ocean_forcing_file.nc"
+        use_venv: False
+
+pism:
+        version: "github1.2.1"
+        resolution: "08km"          # 08km == 761x761; matches antarct_cr pool naming (basins/masks/initial are *_08km)
+        domain: "antarct_cr"        # 8km pool files exist under antarct_cr (grid identical to antarctica-8km); domain added to pism.domains.yaml
+        model_dir: "/work/ab0246/a270092/model_codes/awiesm3-develop-is/pism-github1.2.1/"
+        lresume: 1
+
+        nx: 761
+        ny: 761
+
+        # Run PISM on 2 nodes (256 MPI tasks) instead of 1. No -Nx/-Ny is passed,
+        # so PETSc auto-decomposes the 761x761 grid; ~1.5-1.8x faster, which also
+        # keeps the PISM+coupling leg within its compute_time walltime.
+        choose_computer.partitions.compute.cores_per_node:
+                128:
+                        nnodes: 2
+                        nproca: 256
+                        nprocb: 1
+
+        downscale_precip: 0
+        ###################
+        # Settings for AWIES - PISM coupling
+        # DEBM
+        debm_path: "/work/ab0246/a270092/model_codes/awiesm3-develop-is/bin/debm"
+        debm_beta: 10
+        lapse_rate: -0.005
+        ablation_method: "DEBM"
+        iceberg_coupling: 0
+        thk_threshold: 5.0
+        select_min_glacial_depth: 1
+        account_all_fw_input: 1
+        change_emiss: 0
+        change_emiss_by: 0
+        multi_year_mean: 0
+        change_ocean: 1
+        oce2ice_method: "DIRECT"   # consume FESOM's melt via -ocean given (see awiesm3 runscript)
+        ###################
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+        # Antarctic spinup restart (08km, from a270193 1percCO2_b_2640, PI-style state)
+        spinup_file: "/work/ab0246/a270193/esm-experiments/1percCO2_b_2640/restart/pism_sh/1percCO2_b_2640_pismr_restart_627500101-627501231.nc"
+
+        pool_dir: "/work/ab0246/a270092/input/pool_pism_cr/"
+        ts_interval: "1"
+        ex_interval: "monthly"
+        force_bootstrap_first_run: False
+        orog_reference_pism: "1"
+        # Antarctic ice-sheet physics (after a270193 pism_sh; ocean coupling kept as
+        # three-equation 'th' to match my fesom2ice ocean forcing, not PICO).
+        kv_pairs:
+            stress_balance.model: "ssa+sia"
+            stress_balance.sia.max_diffusivity: 64000
+            sia_e: 2.5
+            ssa_e: 0.512
+            sia_n: 3.0
+            ssa_n: 3.0
+            hydrology.tillwat_max: 1
+            basal_resistance.pseudo_plastic.q: 0.25
+            basal_resistance.pseudo_plastic.u_threshold: 100
+            basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden: 0.01
+            basal_yield_stress.mohr_coulomb.till_phi_default: 30
+            bed_deformation.model: "lc"
+            bed_deformation.lc.update_interval: 1
+            calving.methods: 'eigen_calving,thickness_calving'
+            calving.eigen_calving.K: "5.0e17"
+            calving.thickness_calving.threshold: 75
+            ocean.pik_melt_factor: "1e-2"
+            atmosphere.elevation_change.precip_lapse_rate: 0.0
+            atmosphere.elevation_change.smb_lapse_rate: 0.0
+            dt_max: 0.02
+        flags:
+            - "pik"
+            - "basal_resistance.pseudo_plastic.enabled"
+            - "basal_yield_stress.slippery_grounding_lines"
+            - "no_subgl_basal_melt"
+
+        couplers:
+            surface:
+                given:
+                    files:
+                        surface_given_file: "latest_atmo_forcing_file.nc"
+                    kv_pairs:
+                        surface_given_period: 1
+            ocean:
+                th:
+                    files:
+                        ocean_th_file: "latest_ocean_forcing_file.nc"
+
+        workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                        nproc: 1
+                        run_before: prepcompute
+                        script: real_esm2pism.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: esm2pism
+                        env_preparation: env_pism.py
+                        run_only: first_run_in_chunk
+
+                couple_out:
+                        nproc: 1
+                        run_after: tidy
+                        script: coupling_pism2esm.functions
+                        script_dir: ${general.script_dir}/pism
+                        call_function: pism2esm
+                        env_preparation: env_pism2awiesm.py
+                        run_only: last_run_in_chunk

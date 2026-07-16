@@ -39,3 +39,25 @@ def test_production_context_requires_description():
             collection_id="exp-alpha",
             production=True,
         )
+
+
+def test_production_missing_both_fields_names_both():
+    with pytest.raises(ValueError, match="description, data_license"):
+        CollectionContext(
+            experiment_id="exp-alpha",
+            component="echam",
+            collection_id="exp-alpha",
+            production=True,
+        )
+
+
+def test_production_empty_string_counts_as_missing():
+    with pytest.raises(ValueError, match="description"):
+        CollectionContext(
+            experiment_id="exp-alpha",
+            component="echam",
+            collection_id="exp-alpha",
+            production=True,
+            description="",
+            data_license="CC-BY-4.0",
+        )

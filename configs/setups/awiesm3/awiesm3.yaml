@@ -273,7 +273,7 @@ oifs:
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
-        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_CurX, A_CurY, A_WindX, A_WindY, 
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_CurX, A_CurY, A_WindX, A_WindY, 
         A_FCO2_oce, A_XCO2_oce]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
@@ -928,8 +928,8 @@ oasis3mct:
                     - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
                     - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
                 rstos.nc:
-                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i--
-                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo:A_Ice_thickness <--gauswgt_i--
+                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom:sit_feom'
                     - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 vegin.nc:
                     # BUG FIX (2025-03-16): GUE_TYPH and GUE_FRAL were swapped, causing IFS to receive? Investigate further and check if this has any impact on the results. The old (wrong) configuration is included here for reference.

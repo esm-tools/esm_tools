@@ -54,7 +54,14 @@ fesom:
     lresume: true
     ini_parent_exp_id: "core3_spunup_on_pism_cavity"
     ini_parent_date: "1899-12-31"
-    ini_restart_dir: "${general.pool_dir}/fesom2/pism_cavity_ini/restart/"
+    # Clean chunk-1 ice initial state (trial, movcav29+): the pool restart's ice
+    # fields carry a 2.5-2.7 m coastal snow / 190 K ist pile-up inherited from
+    # earlier submesh runs; here they are replaced by the 500-yr-stable v3.4
+    # reference year-1849 state, index-mapped onto the submesh via map_nod.out
+    # (7 Ronne artifact nodes hybridized back to pool values; hsnow max 0.81 m).
+    # Ocean restart unchanged (copy of the pool one). Revert to
+    # "${general.pool_dir}/fesom2/pism_cavity_ini/restart/" for the old state.
+    ini_restart_dir: "/work/ab0246/a270092/pism_repro/prep/clean_ice_ini/"
     time_step: 1200            # zstar tolerates 1200s on the cavity mesh (linfs needs <=180s)
     nproc: 1792                # FESOM stable at 1792 (256 hits a decomposition-sensitive cavity blow); core3/dist_1792 + complete TCO95-CORE3/1792
     omp_num_threads: 2
@@ -69,6 +76,15 @@ fesom:
     # Per-leg mesh + restart-source wiring (chunk_number 1/"*") lives in awiesm3.yaml
     # behind general.interactive_mesh. Only the restart parent stays here (the
     # ini_parent_*/ini_restart_dir above).
+
+    # Coupled-slab mode (pairs with oifs NAMMCC LNEMOLIMTEMP/LNEMOLIMTHK below):
+    # the atmosphere owns the ice surface temperature; FESIM's growth budget
+    # takes the received atmosphere flux directly (Qatmice=-a2ihf) and its own
+    # ist solve is internal-only (albedo/pond state).
+    namelist_changes:
+        namelist.ice:
+            ice_therm:
+                latm_owns_ist: ".true."
 
 lpj_guess:
     nproc: 64 # originally 16
@@ -180,17 +196,39 @@ oifs:
             # trying to open antar_pism2ece.nc. The CMIP/physics/DDH namelists
             # below apply to all chunks.
             #
-            # WEIGHTED_ICE ROLLED BACK (2026-07-16): the ist*a_ice weighting
-            # (gen_forcing_couple.F90 commit 3ddb0af0) was the only ice-coupling
-            # change between movcav8 and movcav16 and did not help, so FESOM now
-            # sends the RAW ist again (reverted) and OIFS must NOT divide.
-            # PAIRING RULE (unchanged): the FESOM send and this flag move together.
-            #   raw ist send  <-> ECE_CPL_NEMO_WEIGHTED_ICE = .false.  (current)
-            #   ist*a_ice send<-> ECE_CPL_NEMO_WEIGHTED_ICE = .true.
+            # WEIGHTED_ICE REINSTATED (2026-07-16 evening, on top of the implicit
+            # FESIM solve): OIFS send-side diagnostics showed the prescribed
+            # ice-tile skin arriving unrepresentatively cold at marginal-ice
+            # cells (raw o2a blend mixes cold pack nodes into low-ci cells),
+            # whose sliver ice tiles then emit multi-kW/m2 sensible/latent
+            # fluxes -- the crash-family driver. Concentration weighting makes
+            # the prescribed tile skin representative of the ice actually
+            # present. PAIRING RULE: the FESOM send and this flag move together.
+            #   ist*a_ice send<-> ECE_CPL_NEMO_WEIGHTED_ICE = .true.   (current)
+            #   raw ist send  <-> ECE_CPL_NEMO_WEIGHTED_ICE = .false.
             # Never mix (a*ist read as a temperature is catastrophically cold;
-            # raw ist divided by ci is also wrong).
+            # raw ist divided by ci is also wrong). rstos.nc convention follows.
             NAMECECFG:
-                ECE_CPL_NEMO_WEIGHTED_ICE: ".false."
+                ECE_CPL_NEMO_WEIGHTED_ICE: ".true."
+            # COUPLED-SLAB MODE (movcav32+): OIFS owns the ice-tile
+            # temperature. LNEMOLIMTEMP=.false. disables the hourly YTL
+            # overwrite from the FESOM ist ingest (ece_updclie_cpl); the ice
+            # temperature evolves in OIFS's own implicit surface solve.
+            # LNEMOLIMTHK=.true. feeds that solve's slab conduction with the
+            # COUPLED FESOM ice thickness (new o2a field sit_feom ->
+            # A_Ice_thickness, weighted convention; ECE_FESIM_GET_ICE_STATE
+            # divides by A_Ice_frac) and the coupled snow thickness
+            # (snt_feom, already exchanged). FESIM's ist becomes internal-only
+            # (albedo/pond state); its growth budget takes the atmosphere flux
+            # directly (fesom namelist.ice latm_owns_ist below).
+            NAMMCC:
+                LNEMOLIMTEMP: ".false."
+                LNEMOLIMTHK: ".true."
+                # .false. = the surface scheme solves the ice-tile skin itself
+                # (with the coupled-thickness conduction) instead of treating
+                # it as strongly-coupled/prescribed from the ocean-ice model.
+                # Also required by the SUMCC guard when LNEMOLIMTEMP=.false.
+                LNEMOSICOUP: ".false."
             NAMECECMIP:
                 LCMIP6: False
                 LCMIP7: True
@@ -238,10 +276,11 @@ oasis3mct:
             restart_in_sources:
                 rmp: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/rmp_*.nc"
                 rstas.nc: "${general.pool_dir}/fesom2/pism_cavity_ini/rstas.nc"
-                # Weighted-ist rollback (2026-07-16): use the RAW-ist rstos backup
-                # (ist_feom min 211 K, not the weighted min-0 a*ist), paired with
-                # the reverted FESOM send + ECE_CPL_NEMO_WEIGHTED_ICE=.false.
-                rstos.nc: "${general.pool_dir}/fesom2/pism_cavity_ini/rstos_unweighted_ist_bak.nc"
+                # Weighted-ist convention + coupled-slab sit_feom: the prep
+                # rstos is the pool weighted rstos.nc plus the new sit_feom
+                # field (=1.5*sie_feom: per-ice 1.5 m for the first exchange,
+                # runtime node order inherited from sie_feom).
+                rstos.nc: "/work/ab0246/a270092/pism_repro/prep/coupled_slab_rstos/rstos.nc"
                 vegin.nc: vegin.nc
         "*":
             input_sources:

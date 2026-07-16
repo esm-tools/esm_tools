@@ -14,14 +14,9 @@ general:
     # CO2 spinup mode (see choose_general.with_co2_concdriven in the oifs section).
     with_co2_concdriven: false
 
-    # PISM<->FESOM dynamic-mesh (ice2fesom) runtime coupling. A feature switch,
-    # NOT tied to the model version: any awiesm3 version can enable it by setting
-    # `interactive_mesh: true` in the runscript, without needing a dedicated -is
-    # version variant. Gates the coupling workflow/config in the fesom, oifs and
-    # oasis3mct sections (choose_general.interactive_mesh). The -is *build* target
-    # (couplings list + meshpart_flag) stays under choose_general.version because
-    # esm_master needs a named compile target; all runtime wiring lives behind
-    # this flag.
+    # PISM<->FESOM dynamic-mesh (ice2fesom) coupling. Feature switch (not version-
+    # tied): any awiesm3 version enables it with interactive_mesh: true. Gates the
+    # coupling config in the fesom/oifs sections (choose_general.interactive_mesh).
     interactive_mesh: false
 
     include_models:
@@ -261,10 +256,8 @@ oifs:
                 ECE_CPL_FESOM_FESIM: .true.
                 ECE_CPL_LPJG: .true.
 
-    # PISM<->FESOM dynamic-mesh coupling (general.interactive_mesh): copy the OIFS
-    # output the ice-sheet coupler consumes. Version-independent, like the fesom
-    # side. NB: the -is land-ice / ICMGG namelist changes stay in the runscript --
-    # they interleave with the NAMECECFG add_ escalation chain below.
+    # PISM<->FESOM dynamic-mesh coupling: copy the OIFS output the ice-sheet coupler
+    # consumes. (The -is land-ice / ICMGG namelist changes stay in the runscript.)
     choose_general.interactive_mesh:
         true:
             workflow:
@@ -468,6 +461,11 @@ fesom:
 
     namelist_changes:
         namelist.config:
+            # Default vertical coord; interactive_mesh overrides to zstar. Plain
+            # (not in a choose_) so only one choose_ block sets which_ale -> no
+            # choose-vs-choose conflict.
+            ale_def:
+                which_ale: 'linfs'
             restart_log:
                 restart_length_unit: "${restart_unit}"
                 restart_length: "${restart_rate}"
@@ -484,8 +482,7 @@ fesom:
                 namelist.config:
                     geometry:
                         metric_factor_zero: True
-                    ale_def:
-                        which_ale: 'linfs'
+                    # which_ale is set in the base namelist_changes above (see there).
                     restart_log:
                         raw_restart_length_unit: "off"
                         bin_restart_length_unit: "off"
@@ -518,13 +515,9 @@ fesom:
         develop-is:
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 
-    # --- PISM<->FESOM dynamic-mesh runtime coupling (version-independent) ------
-    # Enabled by general.interactive_mesh (see general section), so it is shared by
-    # every awiesm3 version instead of requiring a -is variant. On each leg
-    # ice2fesom (couple_in) builds the new submesh + regenerates the OASIS
-    # grids/masks/areas/rmp and OIFS ICMGG (via ocp-tool, auto-discovered in
-    # couplings/fesom/env_fesom.py); couple_namcouple retags the feom dim;
-    # couple_out (fesom2ice) hands FESOM's cavity fluxes back to PISM.
+    # PISM<->FESOM dynamic-mesh coupling (general.interactive_mesh). couple_in
+    # (ice2fesom) builds the submesh + regenerates OASIS/ICMGG; couple_namcouple
+    # retags the feom dim; couple_out (fesom2ice) returns cavity fluxes to PISM.
     choose_general.interactive_mesh:
         true:
             regen_oasis_weights: 1
@@ -563,6 +556,41 @@ fesom:
                         env_preparation: env_fesom.py
                         run_only: last_run_in_chunk
                         trigger_next_run: True
+            # Per-leg mesh + restart-source wiring. The restart PARENT
+            # (ini_parent_exp_id / ini_parent_date / ini_restart_dir) stays in the
+            # runscript. chunk >=2 reads what ice2fesom remapped into the couple dir.
+            choose_general.chunk_number:
+                1:                             # PISM-cavity submesh, zstar warm start
+                    lresume: true
+                    add_namelist_changes:
+                        namelist.config:
+                            ale_def:
+                                which_ale: "zstar"
+                            paths:
+                                MeshPath: "${general.pool_dir}/fesom2/pism_cavity_ini/submesh/"
+                            restart_log:
+                                raw_restart_length_unit: "off"
+                                bin_restart_length_unit: "off"
+                        namelist.dyn:
+                            dynamics_general:
+                                use_wsplit: ".true."
+                "*":
+                    lresume: true
+                    add_namelist_changes:
+                        namelist.config:
+                            ale_def:
+                                which_ale: "zstar"      # match chunk-1 / remapped restart vertical coord
+                            paths:
+                                MeshPath: "${general.experiment_couple_dir}/latest_submesh/"
+                            restart_log:
+                                raw_restart_length_unit: "off"
+                                bin_restart_length_unit: "off"
+                        namelist.dyn:
+                            dynamics_general:   # vertical-velocity splitting: prevents cfl_z blowup at cavity columns
+                                use_wsplit: ".true."
+                    restart_in_sources:      # ice2fesom remapped ocean+ice onto the submesh
+                        par_oce_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
+                        par_ice_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
     remove_forcing_files:

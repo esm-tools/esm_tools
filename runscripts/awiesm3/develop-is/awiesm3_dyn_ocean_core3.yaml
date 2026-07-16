@@ -10,10 +10,12 @@ general:
     compute_time: "00:45:00"
     initial_date: "1900-01-01"
     final_date: "1904-01-01"
-    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
-    # Enable the PISM<->FESOM dynamic-mesh coupling. All the coupling wiring
-    # (fesom/oifs couple_in/out subjobs, regen_oasis_weights, script_dir) lives
-    # behind this flag in configs/setups/awiesm3/awiesm3.yaml -- version-independent.
+    # Shared with pism for iterative coupling -- LITERAL awiesm3-develop-is (both
+    # models must resolve to the SAME experiment_dir; ${setup_name}-${version}
+    # would diverge since pism is a different setup). -> runtime/awiesm3-develop-is/<expid>
+    base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+    # Enable the PISM<->FESOM dynamic-mesh coupling (wiring lives behind this flag
+    # in configs/setups/awiesm3/awiesm3.yaml).
     interactive_mesh: true
     nday: 0
     nmonth: 0
@@ -46,11 +48,13 @@ fesom:
     restart_rate: 1
     restart_unit: "y"
     restart_first: 1
-    # Bisect: WARM-start from fesom.2000 (clean repro: old binary cfl_z~0.6, new cfl_z 2.6).
+    # chunk-1 warm start: the prepared PISM-cavity restart (must match the chunk-1
+    # MeshPath = pism_cavity_ini/submesh in awiesm3.yaml). Ignored on chunk >=2,
+    # where restart_in_sources -> restart_remapped/ takes precedence.
     lresume: true
-    ini_parent_exp_id: "foo"
-    ini_parent_date: "1900-01-01"
-    ini_restart_dir: "/work/ab0246/a270092/input/fesom2/restart/CORE3"
+    ini_parent_exp_id: "core3_spunup_on_pism_cavity"
+    ini_parent_date: "1899-12-31"
+    ini_restart_dir: "${general.pool_dir}/fesom2/pism_cavity_ini/restart/"
     time_step: 1200            # zstar tolerates 1200s on the cavity mesh (linfs needs <=180s)
     nproc: 1792                # FESOM stable at 1792 (256 hits a decomposition-sensitive cavity blow); core3/dist_1792 + complete TCO95-CORE3/1792
     omp_num_threads: 2
@@ -58,79 +62,13 @@ fesom:
     cmip7_cmor_output: false   # CMIP7 output off for now (needs plev39 axis); validate coupling first
     change_ocean: 1
 
-    # The dynamic-mesh coupling (couple_in/out subjobs + regen_oasis_weights) is
-    # enabled by general.interactive_mesh and defined in awiesm3.yaml. The ocp-tool
-    # OASIS-regen toolchain is auto-discovered in couplings/fesom/env_fesom.py
-    # (ocp_tool_dir, driver/worker conda envs, template/build/rmp dirs); set any of
-    # those in this fesom block only to override a discovered default.
+    # The ocp-tool OASIS-regen toolchain (ocp_tool_dir, driver/worker conda envs,
+    # template/build/rmp dirs) is auto-discovered in couplings/fesom/env_fesom.py;
+    # set it in this fesom block only to override a discovered default.
 
-    # Dynamic-ocean coupling: from the 2nd chunk on, FESOM runs on the submesh
-    # built by ice2fesom, with its ocean restart remapped onto it.
-    choose_general.chunk_number:
-        1:             # chunk 1: PISM-cavity submesh + FESOM COLD START.
-                       # Rationale (2026-07-13, proven on the standalone reproducer):
-                       #  * the observed(CORE3)->PISM cavity swap is a MONSTER one-off
-                       #    (max draft change 2711 m; 1579 nodes flip to sub-ice). Remapping
-                       #    the spun-up CORE3 restart across it ALWAYS blows up (day ~4), for
-                       #    every fill strategy tried -- the evolved dynamics spliced against
-                       #    patched changed-node values is the killer.
-                       #  * a COLD start on the very same PISM-cavity submesh, at the full
-                       #    1200 s timestep, is STABLE (worst CFLz 3.44, vs 2.61 on the full
-                       #    mesh) -- so the geometry itself is fine.
-                       # So we cold-start the ocean ON PISM's cavity and never remap across the
-                       # swap at all. From chunk 3 on, each leg carries only a genuine 10-yr
-                       # PISM increment (mean |ddraft| ~22 m), which is what the remap actually
-                       # has to survive in production -- and that is what this run tests.
-            # WARM TRACERS + ZERO DYNAMICS (replaces the cold start, 2026-07-14).
-            # The cold start fixed the dynamics seam but created a worse problem: PHC3
-            # climatology has NO cavity (values under the shelves are extrapolated open
-            # ocean), so the cold-started cavity sat ~0.9 K above freezing, melted the
-            # shelves at ~28 m/yr (30x reality) and collapsed PISM (-24% floating area
-            # per decade). The spun-up CORE3 restart HAS a properly formed cavity
-            # (thermal driving 0.24 K, median 0.14 K -- textbook). So: keep its T/S (the
-            # centuries-old water masses; the expensive part) and zero only the dynamics
-            # (u/v/w/eta/hbar/AB), which the ocean re-derives from rest in days. No seam,
-            # and a realistic cold cavity. Prepared restart: thermal driving 0.06 K mean,
-            # 3.03 K max (Amundsen) -- see /work/ab0246/a270092/input/fesom2/pism_cavity_ini/restart/.
-            lresume: true
-            ini_parent_exp_id: "core3_spunup_on_pism_cavity"
-            ini_parent_date: "1899-12-31"
-            ini_restart_dir: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/restart/"
-            add_namelist_changes:
-                namelist.config:
-                    ale_def:
-                        which_ale: "zstar"
-                    paths:
-                        MeshPath: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/submesh/"
-                    restart_log:
-                        raw_restart_length_unit: "off"
-                        bin_restart_length_unit: "off"
-                namelist.dyn:
-                    dynamics_general:
-                        use_wsplit: ".true."
-        "*":
-            lresume: true
-            add_namelist_changes:
-                namelist.config:
-                    ale_def:
-                        which_ale: "zstar"      # match chunk-1 / remapped restart vertical coord
-                    paths:
-                        MeshPath: "${general.experiment_couple_dir}/latest_submesh/"
-                    restart_log:
-                        raw_restart_length_unit: "off"
-                        bin_restart_length_unit: "off"
-                namelist.dyn:
-                    dynamics_general:   # vertical-velocity splitting: prevents cfl_z blowup at cavity columns (per working 1y_1200s)
-                        use_wsplit: ".true."
-            restart_in_sources:
-                par_oce_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
-                # ice2fesom's remap_restart also remaps the sea-ice restart onto
-                # the submesh (into restart_remapped/); without this redirect the
-                # ice restart stays full-mesh and FESOM aborts reading it.
-                par_ice_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
-
-    # fesom coupling subjobs (couple_in / couple_namcouple / couple_out) now live
-    # in awiesm3.yaml behind general.interactive_mesh.
+    # Per-leg mesh + restart-source wiring (chunk_number 1/"*") lives in awiesm3.yaml
+    # behind general.interactive_mesh. Only the restart parent stays here (the
+    # ini_parent_*/ini_restart_dir above).
 
 lpj_guess:
     nproc: 64 # originally 16
@@ -242,17 +180,17 @@ oifs:
             # trying to open antar_pism2ece.nc. The CMIP/physics/DDH namelists
             # below apply to all chunks.
             #
-            # WEIGHTED_ICE is PAIRED with the patched FESOM binary
-            # (gen_forcing_couple.F90 sends ist*a_ice, fesom-2.7 commit 3ddb0af0):
-            # OIFS divides the received A_Ice_temp by the received ice fraction ->
-            # proper concentration-weighted ice temperature. Cures the marginal-
-            # ice-zone aliasing that ran the FESIM surface solve to 145-183 K and
-            # nondeterministically overflowed OIFS's saturation math (the movcav16
-            # cubasen/vsurf/voskin crash family). NEVER enable with an unpatched
-            # FESOM (raw/ci is wrong); never run the patched FESOM without it
-            # (a*ist read as a temperature is catastrophically cold).
+            # WEIGHTED_ICE ROLLED BACK (2026-07-16): the ist*a_ice weighting
+            # (gen_forcing_couple.F90 commit 3ddb0af0) was the only ice-coupling
+            # change between movcav8 and movcav16 and did not help, so FESOM now
+            # sends the RAW ist again (reverted) and OIFS must NOT divide.
+            # PAIRING RULE (unchanged): the FESOM send and this flag move together.
+            #   raw ist send  <-> ECE_CPL_NEMO_WEIGHTED_ICE = .false.  (current)
+            #   ist*a_ice send<-> ECE_CPL_NEMO_WEIGHTED_ICE = .true.
+            # Never mix (a*ist read as a temperature is catastrophically cold;
+            # raw ist divided by ci is also wrong).
             NAMECECFG:
-                ECE_CPL_NEMO_WEIGHTED_ICE: ".true."
+                ECE_CPL_NEMO_WEIGHTED_ICE: ".false."
             NAMECECMIP:
                 LCMIP6: False
                 LCMIP7: True
@@ -286,21 +224,24 @@ oasis3mct:
     norestart: T #Do i restart from vegin or not?
     debug_level: 1
 
-    # On mesh-change legs (chunk>1) use the OASIS grids + remap weights that
-    # ice2fesom regenerated for the new submesh (in ${couple_dir}/oasis_regen),
-    # instead of the stale pool files baked for the old mesh node count.
+    # Per-leg OASIS files. Kept in the runscript (the shared oasis3mct
+    # load_restart_from_pool machinery also sets rmp/rstas/rstos, so a setup-level
+    # chunk override collides). chunk 1 = pool-staged; chunk >=2 = oasis_regen/ +
+    # restart_remapped/.
     choose_general.chunk_number:
-        1:              # chunk-1: OASIS grids/weights + coupling restarts pre-staged from the POOL
-                        # (fixed: they derive from PISM's initial geometry). couple_in is skipped.
+        1:              # chunk-1: OASIS grids/weights + coupling restarts pre-staged from the pool
             input_sources:
-                grids: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/oasis/grids.nc"
-                masks: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/oasis/masks.nc"
-                areas: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/oasis/areas.nc"
-                rmp: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/oasis/rmp_*.nc"
+                grids: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/grids.nc"
+                masks: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/masks.nc"
+                areas: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/areas.nc"
+                rmp: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/rmp_*.nc"
             restart_in_sources:
-                rmp: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/oasis/rmp_*.nc"
-                rstas.nc: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/rstas.nc"
-                rstos.nc: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/rstos.nc"
+                rmp: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/rmp_*.nc"
+                rstas.nc: "${general.pool_dir}/fesom2/pism_cavity_ini/rstas.nc"
+                # Weighted-ist rollback (2026-07-16): use the RAW-ist rstos backup
+                # (ist_feom min 211 K, not the weighted min-0 a*ist), paired with
+                # the reverted FESOM send + ECE_CPL_NEMO_WEIGHTED_ICE=.false.
+                rstos.nc: "${general.pool_dir}/fesom2/pism_cavity_ini/rstos_unweighted_ist_bak.nc"
                 vegin.nc: vegin.nc
         "*":
             input_sources:

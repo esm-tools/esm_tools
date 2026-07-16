@@ -246,6 +246,39 @@ def prev_chunk_info(config):
 ########################################   END OF API ###############################################
 
 
+def _early_resolve(config, value):
+    """Expand ``${...}`` references in ``value`` against ``config["general"]``
+    (falling back to environment variables), for use BEFORE esm_parser's
+    variable-resolution pass.
+
+    chunky_parts builds filesystem paths (the chunk_date file, the per-model
+    ``.date`` files, the finished_config paths) at SimulationSetup
+    initialization -- earlier than esm_parser resolves variables. A base_dir
+    such as ``/work/ab0246/${user}/runtime/`` would otherwise be probed
+    verbatim; the silent ``isfile()`` miss then makes iterative coupling fall
+    back to model1/chunk 1 and the model handoff never happens.
+
+    Nested references are expanded iteratively; unresolvable references are
+    left in place (and will surface as a missing-file condition downstream).
+    """
+    import re
+
+    def _sub(match):
+        key = match.group(1).split(".")[-1]  # allow ${user} and ${general.user}
+        val = config.get("general", {}).get(key)
+        if val is None:
+            val = os.environ.get(key, os.environ.get(key.upper()))
+        if val is None or not isinstance(val, (str, int, float)):
+            return match.group(0)  # leave unresolved
+        return str(val)
+
+    prev = None
+    while isinstance(value, str) and prev != value:
+        prev = value
+        value = re.sub(r"\$\{([^}$]+)\}", _sub, value)
+    return value
+
+
 def _called_from_tidy_job(config):  # not called from anywhere
     """
     At the beginning of a prepare job, the date file isn't read yet,
@@ -277,13 +310,14 @@ def _store_original_config(config):
 
 def _read_chunk_date_file_if_exists(config):
     config["general"]["chunk_date_file"] = (
-        config["general"]["base_dir"]
+        _early_resolve(config, config["general"]["base_dir"])
         + "/"
         + config["general"]["expid"]
         + "/scripts/"
         + config["general"]["expid"]
         + "_chunk_date"
     )
+    logger.debug(f"chunk_date file probed: {config['general']['chunk_date_file']}")
 
     if os.path.isfile(config["general"]["chunk_date_file"]):
         with open(config["general"]["chunk_date_file"], "r") as chunk_dates:
@@ -331,7 +365,7 @@ def _read_model_date_file(config, model):
         nothing.
     """
     expid = config["general"]["expid"]
-    base_dir = config["general"]["base_dir"]
+    base_dir = _early_resolve(config, config["general"]["base_dir"])
     model_date_file = f"{base_dir}/{expid}/scripts/{expid}_{model}.date"
 
     if os.path.isfile(model_date_file):
@@ -368,7 +402,7 @@ def _find_model_finished_config(config, model, model_date):
         If a more than one file matches the date.
     """
     expid = config["general"]["expid"]
-    base_dir = config["general"]["base_dir"]
+    base_dir = _early_resolve(config, config["general"]["base_dir"])
     file_path = f"{base_dir}/{expid}/config/{expid}_{model}_finished_config.yaml"
     time_stamps = [f"_*-{model_date[:8]}", f"_*-{model_date}", ""]
 

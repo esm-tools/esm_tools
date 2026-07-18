@@ -450,10 +450,34 @@ subroutine mesh_reduce_byflag(M, nflag, Mred, mask_raw, cavity_raw, topo_raw)
            
            ! Last case: less than two neighbours, remove this element
            elflag(el) = 0
-           bnd(M%elem(1:3,el)) = 1  
-           count_elem = count_elem-1                                                           
+           bnd(M%elem(1:3,el)) = 1
+           count_elem = count_elem-1
            nflag(M%elem(1:3,el)) = nflag(M%elem(1:3,el)) -1
            l_element_removed = .true.
+        endif
+     enddo
+
+     ! Coastline hygiene: a node inside the ice domain held by only 1-2
+     ! elements is a fragile coastal sliver (knife-edge cavity columns,
+     ! pinched notches at a reorganizing ice front). Remove its elements;
+     ! the outer do-while iterates until the coastline is clean.
+     do n=1,M%nod2d
+        if (mask_raw(n) >= 2) cycle
+        count_el = 0
+        do j=1,16
+           if (nod_el(j,n) == -1) exit
+           count_el = count_el+1
+        enddo
+        if (count_el >= 1 .and. count_el <= 2) then
+           do j=1,count_el
+              el1 = nod_el(j,n)
+              if (elflag(el1) /= 1) cycle
+              elflag(el1) = 0
+              bnd(M%elem(1:3,el1)) = 1
+              count_elem = count_elem-1
+              nflag(M%elem(1:3,el1)) = nflag(M%elem(1:3,el1)) -1
+              l_element_removed = .true.
+           enddo
         endif
      enddo
   enddo

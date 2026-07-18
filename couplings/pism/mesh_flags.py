@@ -56,27 +56,33 @@ condition = (Mbed_info - cavity_depth) > sea_level
 topo_raw = Mbed_info.copy()
 topo_raw[condition] = 9999
 topo_raw[mask == 2] = 9999  # grounded ice in PISM
+topo_raw[mask == 0] = 9999  # ice-free bedrock in PISM (MASK_ICE_FREE_BEDROCK)
 
-# Node classification:
+# Node classification (PISM Mask.hh: 0=ice-free bedrock, 2=grounded ice,
+# 3=floating ice, 4=ice-free ocean; 5=outside-domain marker set upstream):
 #   1  ice shelf / open ocean
 #   0  grounded ice / ice-free land
 #   2  special (mask == 5)
 #  -1  above sea level
+# mask==0 MUST be land: it is bare bedrock above sea level (e.g. an island
+# whose ice cap has melted away). Defaulting it to ocean deletes the island.
 Mnode_pism = np.ones(Mnode_num)
 Mnode_pism[mask == 3] = 1
 Mnode_pism[mask == 4] = 1
 Mnode_pism[mask == 2] = 0
 Mnode_pism[mask == 1] = 0
+Mnode_pism[mask == 0] = 0
 Mnode_pism[mask == 5] = 2
 Mnode_pism[condition] = -1
 
 print("Node classification:")
-print(f"  Ice shelf  (mask=3): {np.sum(mask == 3)}")
-print(f"  Open ocean (mask=4): {np.sum(mask == 4)}")
-print(f"  Grounded   (mask=2): {np.sum(mask == 2)}")
-print(f"  Ice-free   (mask=1): {np.sum(mask == 1)}")
-print(f"  Special    (mask=5): {np.sum(mask == 5)}")
-print(f"  Excluded above SL:   {np.sum(condition)}")
+print(f"  Ice shelf  (mask=3):        {np.sum(mask == 3)}")
+print(f"  Open ocean (mask=4):        {np.sum(mask == 4)}")
+print(f"  Grounded   (mask=2):        {np.sum(mask == 2)}")
+print(f"  Ice-free bedrock (mask=0):  {np.sum(mask == 0)}")
+print(f"  Ice-free   (mask=1):        {np.sum(mask == 1)}")
+print(f"  Special    (mask=5):        {np.sum(mask == 5)}")
+print(f"  Excluded above SL:          {np.sum(condition)}")
 
 np.savetxt("topo_raw.txt", topo_raw, fmt="%10f")
 np.savetxt("cavity_raw.txt", cavity_depth, fmt="%10f")

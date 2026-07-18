@@ -905,6 +905,11 @@ contains
         ! margin. Cap T at the in-situ freezing point there (salinity untouched).
         call cap_new_cavity_temp(mesh_old, mesh_new, path_new, time_val, iter_val)
 
+        ! Pad the dry levels of the tracer columns (above the ice-shelf base,
+        ! below the bottom) with the nearest wet value instead of zero, so any
+        ! stencil or diagnostic that touches dry levels sees inert values.
+        call pad_dry_tracer_levels(mesh_new, path_new, time_val, iter_val)
+
         ! Balance-consistent post-passes (design note balanced_restart_plan):
         ! N^2>=0 on changed columns, then geostrophic u/v from grad(p) + AB reset.
         call system_clock(c0)
@@ -979,6 +984,44 @@ contains
 
         deallocate(T, S)
     end subroutine cap_new_cavity_temp
+
+    !===========================================================================
+    ! Pad dry tracer levels (above the cavity ice base, below the bottom) with
+    ! the nearest wet value, in place on <path_new>/{temp,salt}.nc.
+    subroutine pad_dry_tracer_levels(mesh_new, path_new, time_val, iter_val)
+        type(t_mesh_remap), intent(in) :: mesh_new
+        character(len=*),   intent(in) :: path_new
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        real(WP), allocatable :: F(:,:)
+        character(len=8)      :: vnames(2)
+        integer :: iv, i_new, ku, kb, nz, n_pad
+
+        vnames(1) = 'temp'
+        vnames(2) = 'salt'
+        do iv = 1, 2
+            call read_restart_var_3d(trim(path_new), trim(vnames(iv)), F)
+            nz    = size(F, 1)
+            n_pad = 0
+            do i_new = 1, mesh_new%nod2D
+                ku = mesh_new%ulevels_nod2D(i_new)      ! first wet level
+                kb = mesh_new%nlevels_nod2D(i_new) - 1  ! last wet level
+                if (ku < 1 .or. kb < ku .or. kb > nz) cycle
+                if (ku > 1) then
+                    F(1:ku-1, i_new) = F(ku, i_new)
+                    n_pad = n_pad + 1
+                end if
+                if (kb < nz) F(kb+1:nz, i_new) = F(kb, i_new)
+            end do
+            write(*,*) ' --> pad_dry_tracer_levels ('//trim(vnames(iv))// &
+                       '): cavity columns padded above ice base: ', n_pad
+            call write_nc_3d(trim(path_new)//trim(vnames(iv))//'.nc', &
+                             trim(vnames(iv)), trim(vnames(iv)), '-', &
+                             F, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+            deallocate(F)
+        end do
+    end subroutine pad_dry_tracer_levels
 
     !===========================================================================
     ! Density-monotonic (N^2>=0) enforcement on changed columns. The per-level

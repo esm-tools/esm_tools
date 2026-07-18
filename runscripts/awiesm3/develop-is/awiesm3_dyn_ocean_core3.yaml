@@ -9,7 +9,7 @@ general:
     # backfilled badly.
     compute_time: "00:45:00"
     initial_date: "1900-01-01"
-    final_date: "1904-01-01"
+    final_date: "1910-01-01"
     # Shared with pism for iterative coupling -- LITERAL awiesm3-develop-is (both
     # models must resolve to the SAME experiment_dir; ${setup_name}-${version}
     # would diverge since pism is a different setup). -> runtime/awiesm3-develop-is/<expid>

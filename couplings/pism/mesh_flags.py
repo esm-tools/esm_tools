@@ -38,6 +38,28 @@ print(f"  Loaded PISM mask: {mask.shape[0]} nodes, values {np.unique(mask)}")
 cavity_depth = np.minimum(ds["ice_subNN"].values.flatten(), 0)
 print(f"  Cavity depth range: [{cavity_depth.min():.1f}, {cavity_depth.max():.1f}] m")
 
+# Rate-limit the per-increment change of the cavity roof against the previous
+# submesh. A reorganizing PISM front can move the roof by O(1 km) in a single
+# decade (front retreat opening 10+ levels at once next to a grounding
+# advance); FESOM absorbs such a step badly. Clamping the roof to within
+# RATE_LIMIT_DRAFT meters of the previous leg's roof spreads violent geometry
+# swings over several legs. Node inclusion (mask) is untouched.
+rate_limit = float(os.getenv("RATE_LIMIT_DRAFT", "75"))
+prev_sub = os.path.join(pathname, "previous_submesh")
+if rate_limit > 0 and os.path.isdir(prev_sub):
+    mp = np.loadtxt(os.path.join(prev_sub, "map_nod.out")).astype(int)
+    prev_roof_sub = np.loadtxt(os.path.join(prev_sub, "cavity_depth@node.out"))
+    prev = np.zeros_like(cavity_depth)
+    prev[mp - 1] = np.minimum(prev_roof_sub, 0.0)
+    lo, hi = prev - rate_limit, np.minimum(prev + rate_limit, 0.0)
+    clamped = np.clip(cavity_depth, lo, hi)
+    changed = np.abs(clamped - cavity_depth) > 1e-6
+    print(f"  Rate limiter ({rate_limit:.0f} m/increment): clamped {int(changed.sum())} nodes, "
+          f"max |droof| {np.abs(cavity_depth - prev).max():.0f} -> {np.abs(clamped - prev).max():.0f} m")
+    cavity_depth = clamped
+else:
+    print("  Rate limiter: off (no previous_submesh or RATE_LIMIT_DRAFT=0)")
+
 print(f"Reading FESOM max-mesh node info: {Mnode_fname}")
 with open(Mnode_fname, "r") as f:
     Mnode_num = int(f.readline().strip())

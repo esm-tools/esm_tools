@@ -256,6 +256,23 @@ function build_submesh {
     gfortran -o fesom_submesh.x ${FUNCTION_PATH}/../pism/fesom_submesh.F90 > compile_submesh.log 2>&1
     rm -rf ${COUPLE_DIR}/${SUBMESH_DIR}/*
     ./fesom_submesh.x ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/
+
+    # Safety valve: the reduced submesh must retain a sane fraction of the
+    # cavity nodes the classifier flagged. A collapse here (e.g. a sweep or
+    # criterion change cascading through the narrow cavity bands) produces a
+    # formally valid but cavity-less ocean that runs "stably" while being
+    # scientifically void. Abort the leg instead.
+    _n_flag=$(python3 -c "
+import numpy as np
+m=np.loadtxt('mask.txt'); c=np.loadtxt('cavity_raw.txt')
+print(int(((m==1)&(c<-1e-3)).sum()))")
+    _n_kept=$(python3 -c "
+import numpy as np
+print(int((np.loadtxt('${COUPLE_DIR}/${SUBMESH_DIR}/cavity_depth.out')<-1e-3).sum()))")
+    echo " *   cavity nodes: classifier-flagged ${_n_flag}, kept in submesh ${_n_kept}"
+    if [ "${_n_flag}" -gt 100 ] && [ $((_n_kept * 2)) -lt "${_n_flag}" ]; then
+        couple_fail "ice2fesom FAILED: submesh kept <50% of flagged cavity nodes (${_n_kept}/${_n_flag}) - cavity amputation guard"
+    fi
     rm -rf ${COUPLE_DIR}/latest_submesh
 
     # 4. Partition the submesh and produce the CDO grid description, NATIVELY.

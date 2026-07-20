@@ -10,6 +10,7 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.datacube import add_datacube_extension
 from esm_catalog.registry import EXTENSION_URLS
 
 
@@ -61,6 +62,7 @@ def make_item(
 
     if ctx.contacts:
         _add_contacts_to_stac_item(item, ctx.contacts)
+    add_datacube_extension(item, metadata)
 
     return item
 

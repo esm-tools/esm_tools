@@ -98,7 +98,7 @@ def _build_properties(metadata: dict, ctx) -> dict:
 
 def _contact_to_stac(contact) -> dict:
     """Convert a Contact dataclass to STAC contacts extension format."""
-    entry: dict = {"name": contact.name, "roles": contact.roles}
+    entry: dict = {"name": contact.name, "roles": list(contact.roles)}
     if contact.orcid:
         orcid = contact.orcid
         if not orcid.startswith("https://orcid.org/"):

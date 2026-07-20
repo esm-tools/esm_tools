@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from pystac import Item
 
-from esm_catalog.context import CollectionContext
+from esm_catalog.context import CollectionContext, Contact
 from esm_catalog.item import _to_href, make_item
 
 
@@ -109,8 +109,6 @@ def test_item_time_range_sets_interval(tmp_path):
 
 
 def _ctx_with_contacts(*contacts):
-    from esm_catalog.context import Contact
-
     return CollectionContext(
         experiment_id="exp-alpha",
         component="echam",
@@ -128,8 +126,6 @@ def test_item_no_contacts_no_extension(tmp_path):
 
 
 def test_item_contacts_in_properties(tmp_path):
-    from esm_catalog.context import Contact
-
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx_with_contacts(
@@ -144,8 +140,6 @@ def test_item_contacts_in_properties(tmp_path):
 
 
 def test_item_contacts_orcid_full_url_passthrough(tmp_path):
-    from esm_catalog.context import Contact
-
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx_with_contacts(
@@ -163,7 +157,6 @@ def test_item_contacts_orcid_full_url_passthrough(tmp_path):
 
 
 def test_item_contacts_registers_extension_url(tmp_path):
-    from esm_catalog.context import Contact
 
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
@@ -173,8 +166,6 @@ def test_item_contacts_registers_extension_url(tmp_path):
 
 
 def test_item_contacts_orcid_optional(tmp_path):
-    from esm_catalog.context import Contact
-
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx_with_contacts(Contact(name="Jane Doe", institution="AWI"))
@@ -183,8 +174,6 @@ def test_item_contacts_orcid_optional(tmp_path):
 
 
 def test_item_multiple_contacts(tmp_path):
-    from esm_catalog.context import Contact
-
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx_with_contacts(

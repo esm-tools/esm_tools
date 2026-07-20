@@ -48,3 +48,8 @@ dask:
     # List of actions that should trigger a dask cluster initialization
     actions:
         - "parallel_file_movements"
+
+computer:
+    post_run_commands:
+        # Activates conda if needed for ESM-Tools
+        - "@conda_activate@"

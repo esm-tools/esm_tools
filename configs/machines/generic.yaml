@@ -19,6 +19,9 @@ computer:
             compute:
                     name: ${computer.partition_name}
                     cores_per_node: ${computer.partition_cpn}
+            pp:
+                    name: pp
+                    cores_per_node: 8
 
     logical_cpus_per_core: 2
 

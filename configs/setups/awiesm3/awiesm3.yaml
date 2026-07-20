@@ -624,6 +624,46 @@ fesom:
 # further_reading:
 #       - fesom/fesom.io.yaml
 
+pism:
+    version: "github1.2.1"
+    # pism is built via the coupling but deliberately kept out of
+    # add_include_models, so pism.compiletime_env_changes.yaml is never read and
+    # cmake cannot find PETSc. Inject the dependency paths here instead.
+    pism_dep_exports: ""
+    choose_computer.name:
+        albedo:
+            pism_dep_exports: "export
+                PETSC_DIR=/albedo/home/lackerma/.spack/sw/petsc/3.17.1-s5b6i2f
+                UDUNITS2_ROOT=/albedo/soft/sw/spack-sw/udunits/2.2.28-nzwb4bf/
+                FFTW_ROOT=/albedo/soft/sw/spack-sw/fftw/3.3.10-pj3kzd2/
+                PROJ_ROOT=/albedo/soft/sw/spack-sw/proj/8.2.1-pq74r7k/
+                GSL_ROOT=/albedo/soft/sw/spack-sw/gsl/2.7.1-r4x7ty2/;"
+        levante:
+            pism_dep_exports: "export
+                PETSC_DIR=/sw/spack-levante/petsc-3.16.2-oorrxp/
+                UDUNITS2_ROOT=/sw/spack-levante/udunits-2.2.28-da6pla/
+                FFTW_ROOT=/sw/spack-levante/fftw-3.3.10-lnogal/
+                PROJ_ROOT=/sw/spack-levante/proj-5.2.0-w7auht/;"
+    comp_command: "mkdir -p build; cd build;
+        ${pism_dep_exports}
+        export PISM_INSTALL_PREFIX=$(readlink -f $(pwd)/..);
+        cmake
+        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        -DPism_BUILD_TYPE=RelWithDebInfo
+        -DCMAKE_CXX_COMPILER=$CXX
+        -DCMAKE_CXX_FLAGS=\"-O3 -fp-model precise -no-fast-transcendentals -march=native\"
+        -DCMAKE_C_COMPILER=$CC
+        -DCMAKE_C_FLAGS=\"-O3 -march=native -fp-model precise -no-fast-transcendentals\"
+        -DPETSC_EXECUTABLE_RUNS:BOOL=ON
+        -DMPI_C_DIR=\"$I_MPI_ROOT\"
+        -DPism_USE_JANSSON:BOOL=NO
+        -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF
+        -DPism_USE_PARALLEL_HDF5:BOOL=ON
+        -DPism_USE_PROJ:BOOL=YES
+        -DPism_BUILD_EXTRA_EXECS:BOOL=ON
+        ..; make -j4; make install;"
+
 lpj_guess:
     version: "4.1.2"
     build_type: Release # Available options: Debug, Release

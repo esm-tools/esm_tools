@@ -293,7 +293,6 @@ oifs:
 
     choose_general.with_co2_tracer:
         true:
-            branch: 'lpj_guess_implementation+co2'
             namelist_changes:
                 fort.4:
                     NAMGFL:

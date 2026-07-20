@@ -1166,5 +1166,6 @@ computer:
                     compiler_mpi: intel2022_openmpi
                 albedo:
                     mpi_implementation: openmpi_2026
+                    load_python: true
         '*':
             foo: bar

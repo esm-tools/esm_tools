@@ -1072,7 +1072,7 @@ computer:
                         iolibraries: system_intel_libs
                         compiler_mpi: intel2022_openmpi
                     albedo:
-                        compiler_suite: gcc
+                        mpi_implementation: openmpi_2026
             '*':
                 choose_name:
                     juwels:

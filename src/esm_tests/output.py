@@ -23,6 +23,11 @@ compare_files = {
 }
 
 
+def _sort_yaml_lines(lines):
+    data = yaml.safe_load("".join(lines))
+    return yaml.dump(data, sort_keys=True, default_flow_style=False).splitlines(keepends=True)
+
+
 def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     """
     Prints the differences between two equivalent configuration files. Ignores the
@@ -54,8 +59,9 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
     # Substitute user lines in target string
     file_t = clean_user_specific_info(info, file_t, protected_strings)
 
-    # Pattern of provenance
-    provenance_pattern = r'\s*#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
+    # Pattern of provenance. Use \s+ (not \s*) so the # must be preceded by at
+    # least one space — prevents matching # inside quoted yaml values like '#SBATCH'.
+    provenance_pattern = r'\s+#\s*([^,]+,line:\d+,col:\d+|no provenance info)'
 
     # Check for ignored lines
     new_file_s = []
@@ -78,6 +84,10 @@ def print_diff(info, sfile, tfile, name, ignore_lines, protected_strings=[]):
         if not ignore_this:
             new_file_t.append(line_no_prov)
     file_t = new_file_t
+
+    if sfile.endswith(".yaml"):
+        file_s = _sort_yaml_lines(file_s)
+        file_t = _sort_yaml_lines(file_t)
 
     diffobj = difflib.SequenceMatcher(a=file_s, b=file_t)
     differences = ""

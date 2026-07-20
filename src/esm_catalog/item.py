@@ -105,7 +105,10 @@ def _contact_to_stac(contact) -> dict:
     """Convert a Contact dataclass to STAC contacts extension format."""
     entry: dict = {"name": contact.name, "roles": contact.roles}
     if contact.orcid:
-        entry["identifier"] = {"scheme": "orcid", "identifier": contact.orcid}
+        orcid = contact.orcid
+        if not orcid.startswith("https://orcid.org/"):
+            orcid = f"https://orcid.org/{orcid}"
+        entry["identifier"] = orcid
     if contact.institution:
         entry["organization"] = contact.institution
     return entry

@@ -43,13 +43,16 @@ def test_production_context_requires_description():
 
 # --- Contact ---
 
+
 def test_contact_from_dict_full():
-    c = Contact.from_dict({
-        "name": "Jane Doe",
-        "orcid": "0000-0001-2345-6789",
-        "institution": "AWI",
-        "roles": ["principal_investigator"],
-    })
+    c = Contact.from_dict(
+        {
+            "name": "Jane Doe",
+            "orcid": "0000-0001-2345-6789",
+            "institution": "AWI",
+            "roles": ["principal_investigator"],
+        }
+    )
     assert c.name == "Jane Doe"
     assert c.orcid == "0000-0001-2345-6789"
     assert c.institution == "AWI"
@@ -62,35 +65,57 @@ def test_contact_from_dict_minimal():
 
 
 def test_contact_validate_passes_with_institution():
-    Contact(name="Jane", institution="AWI").validate()
+    Contact(name="Jane", institution="AWI").validate_production_req()
 
 
 def test_contact_validate_fails_without_institution():
     with pytest.raises(ValueError, match="institution"):
-        Contact(name="Jane").validate()
+        Contact(name="Jane").validate_production_req()
+
+
+def test_contact_validate_fails_with_empty_name():
+    with pytest.raises(ValueError, match="name"):
+        Contact(name="", institution="AWI").validate_production_req()
+
+
+def test_contact_validate_fails_with_none_name():
+    with pytest.raises(ValueError, match="name"):
+        Contact(name=None, institution="AWI").validate_production_req()
 
 
 def test_production_context_requires_contact():
     with pytest.raises(ValueError, match="contact"):
         CollectionContext(
-            experiment_id="exp", component="echam", collection_id="exp",
-            production=True, description="desc", data_license="CC-BY-4.0",
+            experiment_id="exp",
+            component="echam",
+            collection_id="exp",
+            production=True,
+            description="desc",
+            data_license="CC-BY-4.0",
         )
 
 
 def test_production_context_requires_contact_with_institution():
     with pytest.raises(ValueError, match="institution"):
         CollectionContext(
-            experiment_id="exp", component="echam", collection_id="exp",
-            production=True, description="desc", data_license="CC-BY-4.0",
+            experiment_id="exp",
+            component="echam",
+            collection_id="exp",
+            production=True,
+            description="desc",
+            data_license="CC-BY-4.0",
             contacts=[Contact(name="Jane")],
         )
 
 
 def test_production_context_passes_with_valid_contact():
     ctx = CollectionContext(
-        experiment_id="exp", component="echam", collection_id="exp",
-        production=True, description="desc", data_license="CC-BY-4.0",
+        experiment_id="exp",
+        component="echam",
+        collection_id="exp",
+        production=True,
+        description="desc",
+        data_license="CC-BY-4.0",
         contacts=[Contact(name="Jane", institution="AWI")],
     )
     assert ctx.production is True

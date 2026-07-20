@@ -30,13 +30,13 @@ class Contact:
         Expected keys: name, orcid, institution, roles.
         """
         return cls(
-            name=entry["name"],
+            name=entry.get("name"),
             orcid=entry.get("orcid"),
             institution=entry.get("institution"),
             roles=entry.get("roles", ["principal_investigator"]),
         )
 
-    def validate(self) -> None:
+    def validate_production_req(self) -> None:
         """Raise ValueError if production-required fields are missing."""
         missing = [f for f in self.PRODUCTION_REQUIRED if not getattr(self, f)]
         if missing:
@@ -81,4 +81,4 @@ class CollectionContext:
         if not self.contacts:
             raise ValueError("Production context requires at least one contact")
         for contact in self.contacts:
-            contact.validate()
+            contact.validate_production_req()

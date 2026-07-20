@@ -107,10 +107,14 @@ def test_item_time_range_sets_interval(tmp_path):
 
 # --- contacts ---
 
+
 def _ctx_with_contacts(*contacts):
     from esm_catalog.context import Contact
+
     return CollectionContext(
-        experiment_id="exp-alpha", component="echam", collection_id="exp-alpha",
+        experiment_id="exp-alpha",
+        component="echam",
+        collection_id="exp-alpha",
         contacts=list(contacts),
     )
 
@@ -125,19 +129,42 @@ def test_item_no_contacts_no_extension(tmp_path):
 
 def test_item_contacts_in_properties(tmp_path):
     from esm_catalog.context import Contact
+
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx_with_contacts(Contact(name="Jane Doe", orcid="0000-0001-2345-6789", institution="AWI"))
+    ctx = _ctx_with_contacts(
+        Contact(name="Jane Doe", orcid="0000-0001-2345-6789", institution="AWI")
+    )
     item = make_item(f, _metadata(), ctx)
     contacts = item.properties["contacts"]
     assert len(contacts) == 1
     assert contacts[0]["name"] == "Jane Doe"
-    assert contacts[0]["identifier"] == {"scheme": "orcid", "identifier": "0000-0001-2345-6789"}
+    assert contacts[0]["identifier"] == "https://orcid.org/0000-0001-2345-6789"
     assert contacts[0]["organization"] == "AWI"
+
+
+def test_item_contacts_orcid_full_url_passthrough(tmp_path):
+    from esm_catalog.context import Contact
+
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    ctx = _ctx_with_contacts(
+        Contact(
+            name="Jane Doe",
+            orcid="https://orcid.org/0000-0001-2345-6789",
+            institution="AWI",
+        )
+    )
+    item = make_item(f, _metadata(), ctx)
+    assert (
+        item.properties["contacts"][0]["identifier"]
+        == "https://orcid.org/0000-0001-2345-6789"
+    )
 
 
 def test_item_contacts_registers_extension_url(tmp_path):
     from esm_catalog.context import Contact
+
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx_with_contacts(Contact(name="Jane", institution="AWI"))
@@ -147,6 +174,7 @@ def test_item_contacts_registers_extension_url(tmp_path):
 
 def test_item_contacts_orcid_optional(tmp_path):
     from esm_catalog.context import Contact
+
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx_with_contacts(Contact(name="Jane Doe", institution="AWI"))
@@ -156,6 +184,7 @@ def test_item_contacts_orcid_optional(tmp_path):
 
 def test_item_multiple_contacts(tmp_path):
     from esm_catalog.context import Contact
+
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx_with_contacts(

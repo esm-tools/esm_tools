@@ -60,8 +60,7 @@ def make_item(
         )
     )
 
-    if ctx.contacts:
-        _add_contacts_to_stac_item(item, ctx.contacts)
+    add_contacts(item, ctx)
     add_datacube_extension(item, metadata)
 
     return item
@@ -111,10 +110,14 @@ def _contact_to_stac(contact) -> dict:
     return entry
 
 
-def _add_contacts_to_stac_item(item, contacts) -> None:
+def add_contacts(item, ctx) -> None:
     """Inject contacts extension URL and properties into *item*."""
-    item.stac_extensions.append(EXTENSION_URLS["contacts"])
+    contacts = getattr(ctx, "contacts", [])
+    if not contacts:
+        return
+
     item.properties["contacts"] = [_contact_to_stac(c) for c in contacts]
+    item.stac_extensions.append(EXTENSION_URLS["contacts"])
 
 
 def _build_datetime(metadata: dict) -> tuple:

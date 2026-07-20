@@ -39,10 +39,6 @@ def make_item(
         path,
     )
 
-    stac_extensions = []
-    if ctx.contacts:
-        stac_extensions.append(EXTENSION_URLS["contacts"])
-
     item = Item(
         id=id,
         geometry=metadata.get("geometry"),
@@ -51,7 +47,6 @@ def make_item(
         properties=_build_properties(metadata, ctx),
         start_datetime=dt_start,
         end_datetime=dt_end,
-        stac_extensions=stac_extensions,
         assets=_build_assets(path, metadata),
         collection=ctx.collection_id,
     )
@@ -63,6 +58,9 @@ def make_item(
             media_type="application/json",
         )
     )
+
+    if ctx.contacts:
+        _add_contacts_to_stac_item(item, ctx.contacts)
 
     return item
 
@@ -95,9 +93,6 @@ def _build_properties(metadata: dict, ctx) -> dict:
     if len(all_var_names) > 1:
         properties["variables"] = all_var_names
 
-    if ctx.contacts:
-        properties["contacts"] = [_contact_to_stac(c) for c in ctx.contacts]
-
     return properties
 
 
@@ -112,6 +107,12 @@ def _contact_to_stac(contact) -> dict:
     if contact.institution:
         entry["organization"] = contact.institution
     return entry
+
+
+def _add_contacts_to_stac_item(item, contacts) -> None:
+    """Inject contacts extension URL and properties into *item*."""
+    item.stac_extensions.append(EXTENSION_URLS["contacts"])
+    item.properties["contacts"] = [_contact_to_stac(c) for c in contacts]
 
 
 def _build_datetime(metadata: dict) -> tuple:

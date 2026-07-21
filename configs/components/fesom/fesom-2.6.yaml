@@ -234,6 +234,22 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 900          # constant that control numerical stability of mEVP.
                     beta_evp: 900           # constant that control numerical stability of mEVP.
+            jack:
+                    nx: 30041537
+                    whichEVP: 1
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
+            palk:
+                    nx: 1724005
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
+            next:
+                    nx: 12952215
+                    whichEVP: 1
+                    alpha_evp: 800          # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
+
             SO3:
                     nx: 11087062
                     whichEVP: 1

@@ -732,7 +732,7 @@ oasis3mct:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'heat_ico <--bicubic-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
                                         - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
@@ -749,7 +749,7 @@ oasis3mct:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'heat_ico <--bicubic-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
                                         - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'
@@ -767,7 +767,7 @@ oasis3mct:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'heat_ico <--bicubic-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
                                         - 'hydr_oce:enth_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
@@ -785,7 +785,7 @@ oasis3mct:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'heat_ico <--bicubic-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
                                         - ${calving_coupling_mode}
@@ -803,7 +803,7 @@ oasis3mct:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'heat_ico <--bicubic-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
@@ -821,7 +821,7 @@ oasis3mct:
                                 rstas.nc:
                                         - 'heat_oce:heat_swo <--gauswgt_gss-- A_Qns_oce:A_Qs_all'
                                         - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_gss-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
-                                        - 'heat_ico <--gauswgt_gss-- A_Q_ice'
+                                        - 'heat_ico <--bicubic-- A_Q_ice'
                                         - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                                         - 'R_Runoff_atm:R_Calving_atm <--gauswgt_gss-- A_Runoff:A_Calving'
                                         - 'hydr_oce:enth_oce <--gauswgt_gss-- R_Runoff_oce:R_Calving_oce'

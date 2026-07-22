@@ -560,12 +560,18 @@ fesom:
             # (ini_parent_exp_id / ini_parent_date / ini_restart_dir) stays in the
             # runscript. chunk >=2 reads what ice2fesom remapped into the couple dir.
             choose_general.chunk_number:
-                1:                             # PISM-cavity submesh, zstar warm start
+                1:                             # PISM-cavity submesh, linfs warm start
                     lresume: true
                     add_namelist_changes:
                         namelist.config:
                             ale_def:
-                                which_ale: "zstar"
+                                # linfs (fixed layers, use_virt_salt auto-.true.):
+                                # removes the zstar/rigid-lid vertical-coordinate
+                                # seam at the ice front that drove the cavity
+                                # spin-up (standalone: raw remap under linfs decays
+                                # to ~1.7 cm/s, no hnode surgery). Reverts the
+                                # moving-cavity path to the awiesm3 setup default.
+                                which_ale: "linfs"
                             paths:
                                 MeshPath: "${general.pool_dir}/fesom2/pism_cavity_ini/submesh/"
                             restart_log:
@@ -579,7 +585,7 @@ fesom:
                     add_namelist_changes:
                         namelist.config:
                             ale_def:
-                                which_ale: "zstar"      # match chunk-1 / remapped restart vertical coord
+                                which_ale: "linfs"      # match chunk-1 coord; removes the ice-front zstar/rigid-lid seam
                             paths:
                                 MeshPath: "${general.experiment_couple_dir}/latest_submesh/"
                             restart_log:

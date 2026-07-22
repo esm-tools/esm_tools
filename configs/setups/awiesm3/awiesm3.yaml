@@ -368,6 +368,16 @@ fesom:
     lresume: false
     nproc: 72
     omp_num_threads: 1
+    # ocp-tool (the moving-coastline OASIS/ICMGG regen toolchain) is conda-native
+    # -- python-eccodes/python-cdo/basemap from conda-forge -- so it cannot run
+    # from the pip venv; OCP_TOOL_DIR must be a real checkout that carries the code
+    # + configs/ + ICMGG input data, driven by ocp-tool's own conda env. Kept in a
+    # machine block instead of hardcoded; "*" falls back to package auto-discovery.
+    choose_computer.name:
+        levante:
+            ocp_tool_dir: "/work/ab0246/a270092/software/ocp-tool"
+        "*":
+            ocp_tool_dir: ""
     choose_general.with_co2_oce_coupling:
         true:
             branch: fesom2.6_recom_awiesm3_co2_coupling

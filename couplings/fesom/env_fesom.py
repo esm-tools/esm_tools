@@ -1,4 +1,110 @@
+import os
+import subprocess
+import importlib.util
+
+
+def _find_ocp_tool_dir():
+    """Locate the ocp-tool install without hardcoding a path.
+
+    esm_tools installs ocp-tool as the importable ``ocp_tool`` package
+    (``general.required_plugins`` -> pip, see esm_plugin_manager), so we ask
+    Python where it went. The repo root that holds ``configs/`` and
+    ``environment.yaml`` is the parent of the package directory.
+    """
+    try:
+        spec = importlib.util.find_spec("ocp_tool")
+    except (ImportError, ValueError):
+        spec = None
+    if spec and spec.origin:
+        return os.path.dirname(os.path.dirname(spec.origin))
+    return ""
+
+
+def _find_pyfesom_dir():
+    """Locate pyfesom2 without hardcoding a path.
+
+    pyfesom2 is a dependency of ocp-tool (``general.required_plugins`` -> pip), so
+    it installs alongside it and Python can find it. Returns the package directory
+    (so a symlink to it is importable as ``pyfesom2``), or "" if not importable.
+    """
+    try:
+        spec = importlib.util.find_spec("pyfesom2")
+    except (ImportError, ValueError):
+        spec = None
+    if spec and spec.origin:
+        return os.path.dirname(spec.origin)
+    return ""
+
+
+def _ocp_env_name(ocp_tool_dir):
+    """Conda env name ocp-tool declares in its ``environment.yaml`` (``name:``).
+
+    Falls back to ``ocp-tool2`` (the name shipped in the repo) if the file is
+    missing or unreadable.
+    """
+    env_yaml = os.path.join(ocp_tool_dir or "", "environment.yaml")
+    try:
+        with open(env_yaml) as fh:
+            for line in fh:
+                if line.strip().startswith("name:"):
+                    return line.split(":", 1)[1].strip()
+    except OSError:
+        pass
+    return "ocp-tool2"
+
+
+def _conda_env_python(env_name):
+    """Absolute python path for a named conda env, via ``conda env list``.
+
+    Works for any ``envs_dir`` independent of the active base (conda lists every
+    known env by full path; we match on the basename). Returns "" if conda is
+    unavailable or the env is not found, so callers can fall back to an explicit
+    config value.
+    """
+    if not env_name:
+        return ""
+    conda = os.environ.get("CONDA_EXE") or "conda"
+    try:
+        out = subprocess.check_output(
+            [conda, "env", "list"], stderr=subprocess.DEVNULL
+        ).decode()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+    for line in out.splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        path = line.split()[-1]  # named or path-only entries both end in the path
+        if os.path.basename(path) == env_name:
+            py = os.path.join(path, "bin", "python")
+            if os.path.exists(py):
+                return py
+    return ""
+
+
 def prepare_environment(config):
+    # --- Auto-discover the ocp-tool OASIS-regen toolchain (ice2fesom) ---------
+    # esm_tools installs ocp-tool (required_plugin) and the coupled model's OASIS
+    # build, so we derive their locations here instead of hardcoding them in
+    # every runscript. Every value still honours an explicit runscript override.
+    fesom = config["fesom"]
+    general = config["general"]
+
+    ocp_tool_dir = fesom.get("ocp_tool_dir") or _find_ocp_tool_dir()
+    resolution = general.get("resolution") or (
+        f"{config['oifs']['resolution']}_{fesom['resolution']}"
+    )
+    # Driver env: the conda env ocp-tool declares (pyfesom2 + eccodes). Worker
+    # env: the OASIS/mpi4py env (default 'ece4', overridable by NAME). Both are
+    # resolved to their python by conda, so only a stable env name is needed --
+    # not a full path in the runscript.
+    driver_py = fesom.get("ocp_weightgen_driver_py") or _conda_env_python(
+        _ocp_env_name(ocp_tool_dir)
+    )
+    worker_py = fesom.get("ocp_weightgen_worker_py") or _conda_env_python(
+        fesom.get("ocp_weightgen_worker_env", "ece4")
+    )
+
     environment_dict = {
             "ICE_TO_FESOM": int(config["fesom"].get("use_icebergs", False).__bool__()),
             "CHANGE_OCEAN": int(config["fesom"].get("change_ocean", False).__bool__()),
@@ -35,7 +141,7 @@ def prepare_environment(config):
             "CHUNK_START_DATE_fesom": config["general"]["chunk_start_date"],
             "CHUNK_END_DATE_fesom": config["general"]["chunk_end_date"],
             "FUNCTION_PATH": config["fesom"]["workflow"]["subjobs"]["couple_in"]["script_dir"],
-            "PYFESOM_PATH": "/pf/a/a270124/pyfesom2/",
+            "PYFESOM_PATH": config["fesom"].get("pyfesom_path") or _find_pyfesom_dir(),
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "iter_coup_regrid_method_ice2oce": "INTERPOLATE",
             # ocean->ice-sheet interaction method. DIRECT = hand PISM FESOM's own
@@ -60,14 +166,20 @@ def prepare_environment(config):
             # site-specific and set in the runscript fesom block.
             "REGEN_OASIS_WEIGHTS": int(config["fesom"].get("regen_oasis_weights", False).__bool__()),
             # Coupled model's OASIS build (has python/pyoasis + lib/liboasis.cbind.so).
-            # Defaults to the oasis3mct model_dir; override with
-            # `fesom: { oasis_build_path: ... }` if pyOASIS lives in another build.
-            "OASIS_BUILD_PATH": config["fesom"].get(
-                "oasis_build_path", config.get("oasis3mct", {}).get("model_dir", "")),
-            "OCP_TOOL_DIR": config["fesom"].get("ocp_tool_dir", ""),
-            "OCP_WEIGHTGEN_DRIVER_PY": config["fesom"].get("ocp_weightgen_driver_py", ""),
-            "OCP_WEIGHTGEN_WORKER_PY": config["fesom"].get("ocp_weightgen_worker_py", ""),
-            "OCP_WEIGHTGEN_THREADS": config["fesom"].get("ocp_weightgen_threads", 8),
+            # Built by esm_master at ${general.model_dir}/oasis; falls back to the
+            # oasis3mct model_dir. Override with `fesom: { oasis_build_path: ... }`
+            # if pyOASIS lives in another build.
+            "OASIS_BUILD_PATH": (
+                fesom.get("oasis_build_path")
+                or config.get("oasis3mct", {}).get("model_dir")
+                or (general.get("model_dir", "").rstrip("/") + "/oasis")),
+            # Discovered from the installed ocp_tool package (see _find_ocp_tool_dir).
+            "OCP_TOOL_DIR": ocp_tool_dir,
+            # Resolved by conda from the env names (driver = ocp-tool's own
+            # environment.yaml; worker = 'ece4'); see helpers above.
+            "OCP_WEIGHTGEN_DRIVER_PY": driver_py,
+            "OCP_WEIGHTGEN_WORKER_PY": worker_py,
+            "OCP_WEIGHTGEN_THREADS": config["fesom"].get("ocp_weightgen_threads", 64),
             # Account/partition for the weight-gen srun when ice2fesom runs on the
             # login node (no allocation to inherit).
             "OCP_WEIGHTGEN_ACCOUNT": config["general"].get("account", ""),
@@ -79,13 +191,22 @@ def prepare_environment(config):
             # Dir with the existing rmp_*.nc. ocp-tool only regenerates the
             # mesh-dependent (feom) weights; the unchanged ones (e.g. runoff
             # R096->RnfA) are symlinked into oasis_regen from here so the OASIS
-            # staging finds the complete set.
-            "OASIS_RMP_TEMPLATE_DIR": config["fesom"].get("oasis_rmp_template_dir", ""),
-            # ocp-tool config template (e.g. configs/TCO95_CORE2.yaml) driving the
-            # full per-submesh atm-side regen (OASIS A096/feom/RnfO masks + the
-            # modified OIFS ICMGG lsm/slt + runoff LSM + LPJ-GUESS slt). Its
-            # input/ dirs must hold the base ICMGG<expid>INIT to modify.
-            "OCP_TEMPLATE_CONFIG": config["fesom"].get("ocp_template_config", ""),
+            # staging finds the complete set. Derived from the pool layout
+            # (<pool>/oasis/cy<oifs.version>/<oifs.res>-<fesom.res>/<nproc>).
+            "OASIS_RMP_TEMPLATE_DIR": (
+                fesom.get("oasis_rmp_template_dir")
+                or (f"{general.get('pool_dir', '').rstrip('/')}/oasis/"
+                    f"cy{config.get('oifs', {}).get('version', '')}/"
+                    f"{config.get('oifs', {}).get('resolution', '')}-{fesom.get('resolution', '')}/"
+                    f"{fesom.get('nproc', '')}")),
+            # ocp-tool config template driving the full per-submesh atm-side regen
+            # (OASIS A096/feom/RnfO masks + the modified OIFS ICMGG lsm/slt +
+            # runoff LSM + LPJ-GUESS slt). Its input/ dirs must hold the base
+            # ICMGG<expid>INIT to modify. Derived as <ocp_tool_dir>/configs/
+            # <resolution>.yaml (e.g. configs/TCO95_CORE3.yaml).
+            "OCP_TEMPLATE_CONFIG": (
+                fesom.get("ocp_template_config")
+                or f"{ocp_tool_dir}/configs/{resolution}.yaml"),
             # Output tag for the regenerated grid (output subdir + ICMGG suffix).
             "OCP_REGEN_GRID_TAG": config["fesom"].get("ocp_regen_grid_tag", "feomdyn"),
 

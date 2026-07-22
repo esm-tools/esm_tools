@@ -241,6 +241,30 @@ contains
     end subroutine find_nearest_old_node_at_level
 
     !===========================================================================
+    ! Linear interpolation of an old column's values onto a target mid-level
+    ! depth zt, BOUNDED: holds the top/bottom value beyond the wet column (never
+    ! extrapolates -> cannot run away). Z is the mid-level depth array (negative,
+    ! decreasing with index); col/Z share indexing; ul_o/nl_o are the old
+    ! ulevels/nlevels of the column.
+    pure function interp_old_col(col, Z, ul_o, nl_o, zt) result(val)
+        real(WP), intent(in) :: col(:), Z(:), zt
+        integer,  intent(in) :: ul_o, nl_o
+        real(WP) :: val, w
+        integer  :: k
+        if (nl_o-1 <= ul_o) then; val = col(ul_o); return; end if
+        if (zt >= Z(ul_o))   then; val = col(ul_o);   return; end if
+        if (zt <= Z(nl_o-1)) then; val = col(nl_o-1); return; end if
+        do k = ul_o, nl_o-2
+            if (zt <= Z(k) .and. zt >= Z(k+1)) then
+                w   = (zt - Z(k)) / (Z(k+1) - Z(k))
+                val = col(k)*(1.0_WP-w) + col(k+1)*w
+                return
+            end if
+        end do
+        val = col(nl_o-1)
+    end function interp_old_col
+
+    !===========================================================================
     ! Remap a single 3D node-based field.
     ! field_old: (nl-1, nod2D_old)
     ! field_new: (nl-1, nod2D_new)  -- allocated on output
@@ -262,7 +286,7 @@ contains
         integer  :: i_new, i_old, i_ref, n_base, k, dn
         integer  :: ul_new, nl_new, ul_old, nl_old
         integer  :: nz_old
-        real(WP) :: dz, cf_a, cf_b, z_k
+        real(WP) :: dz, cf_a, cf_b, z_k, frac, z_src
         logical  :: have_donor
 
         ! Honour the level dim of the input so node-based fields with full nl
@@ -276,7 +300,7 @@ contains
 
         !$OMP PARALLEL DO DEFAULT(NONE) SCHEDULE(STATIC) &
         !$OMP   SHARED(mesh_old, mesh_new, node_flag, field_old, field_new, set_new_to_zero, have_donor, ice_donor) &
-        !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, k, dn, ul_new, nl_new, ul_old, nl_old, dz, cf_a, cf_b, z_k)
+        !$OMP   PRIVATE(i_new, i_old, i_ref, n_base, k, dn, ul_new, nl_new, ul_old, nl_old, dz, cf_a, cf_b, z_k, frac, z_src)
         do i_new = 1, mesh_new%nod2D
             n_base = mesh_new%nod_map(i_new)
             i_old  = mesh_old%map_base_to_mesh(n_base)
@@ -320,43 +344,32 @@ contains
                         end if
                     end do
                 else
-                ! copy levels that exist in old mesh
+                ! Structure-preserving vertical stretch of the sub-ice cavity
+                ! column: map the OLD ice-base->seabed profile onto the NEW
+                ! ice-base->seabed extent, so the water mass follows the moving
+                ! ice base. The old per-level fill re-sampled neighbours at fixed
+                ! z (planting mid-column water at the freshly-exposed ice base ->
+                ! a spurious near-ice-base horizontal density jump -> a
+                ! barotropic pressure-gradient force that spun the whole cavity
+                ! margin up ~5x and inflated the melt). The stretch INTERPOLATES
+                ! within the old column (bounded; no extrapolation -> the old
+                ! -45degC runaway cannot recur), anchors the seabed value to the
+                ! seabed and the ice-base value to the (new) ice base, and
+                ! degrades to a direct copy for small increments. Levels below
+                ! the old seabed (rare bed change) keep the "nearby ocean at
+                ! depth" lateral fill.
                 do k = ul_new, nl_new-1
-                    if (k >= ul_old .and. k <= nl_old-1) then
-                        field_new(k, i_new) = field_old(k, i_old)
-
-                    !___________________________________________________________
-                    ! new levels above old shelf base (cavity thinned but the
-                    ! node is still sub-ice). Per-level nearest wet old node:
-                    ! laterally ANCHORS the new levels to the neighbouring water
-                    ! mass at that depth (front gradient matches the unchanged
-                    ! neighbours by construction). Vertical stability is enforced
-                    ! afterwards by stabilize_changed_columns (density-monotonic
-                    ! joint T/S adjustment), which removes the old failure mode
-                    ! of melt-fresh donors planting mid-column inversions.
-                    else if (k < ul_old) then
-                        if (set_new_to_zero) then
-                            field_new(k, i_new) = 0.0_WP
+                    if (k <= nl_old-1) then
+                        if (nl_old-1 > ul_new) then
+                            frac = (mesh_old%Z(k)      - mesh_old%Z(ul_new)) / &
+                                   (mesh_old%Z(nl_old-1) - mesh_old%Z(ul_new))
                         else
-                            call find_nearest_old_node_at_level( &
-                                i_new, k, mesh_old, mesh_new, i_ref)
-                            field_new(k, i_new) = field_old(k, i_ref)
+                            frac = 0.0_WP
                         end if
-
-                    !___________________________________________________________
-                    !___________________________________________________________
-                    ! New levels BELOW the old bottom (this column got deeper).
-                    ! This used to fit a straight line through the last TWO old
-                    ! levels and extrapolate it down, unbounded. Over several new
-                    ! levels a thermocline slope compounds and runs away: an
-                    ! observed column went 1.22, -0.99, -3.19, -5.39, -8.69,
-                    ! -13.09, -18.6, -25.2, -34.01, -45.02 degC, and FESOM died at
-                    ! mstep 1 with "found temperture becomes NaN or <-5.0, >60".
-                    ! Water below the old seabed should look like the NEARBY OCEAN
-                    ! AT THAT DEPTH, not like a continuation of the local gradient.
-                    ! So take it from the nearest old node that is actually wet at
-                    ! this level (the same donor search the rest of the remap uses);
-                    ! hold the deepest old value only if no such node exists.
+                        z_src = mesh_old%Z(ul_old) + &
+                                frac*(mesh_old%Z(nl_old-1) - mesh_old%Z(ul_old))
+                        field_new(k, i_new) = interp_old_col( &
+                            field_old(:, i_old), mesh_old%Z, ul_old, nl_old, z_src)
                     else
                         if (set_new_to_zero) then
                             field_new(k, i_new) = 0.0_WP
@@ -896,29 +909,151 @@ contains
                           path_old, path_new, time_val, iter_val)
 
         !_______________________________________________________________________
-        ! Freezing-point cap on newly-under-ice columns. Where the moving
-        ! geometry puts new ice over previously-open water (ulevels_new >
-        ! ulevels_old), the remap above carries the above-freezing open-ocean
-        ! temperature straight under the new ice shelf; FESOM then melts against
-        ! it in a runaway (large basal heat/freshwater flux into the thin
-        ! ice-base layer) -> cfl_z blowup within a few days, ringing the whole
-        ! margin. Cap T at the in-situ freezing point there (salinity untouched).
-        call cap_new_cavity_temp(mesh_old, mesh_new, path_new, time_val, iter_val)
+        ! Seed newly-iced columns from nearby EXISTING cavity water. Where the
+        ! moving geometry puts new ice over previously-open water (ulevels_new >
+        ! ulevels_old, or a brand-new node), the plain remap carries the node's
+        ! own OPEN-OCEAN column -- warm surface water then lands at the new ice
+        ! base and drives a spurious basal-melt runaway (and unphysically warm
+        ! cavity water). Instead fill those columns from the nearest column that
+        ! is cavity in BOTH meshes (already cold, cavity-appropriate ISW),
+        ! depth-matched. This removes the warm-water-under-new-ice problem at its
+        ! source and makes the old freezing cap (cap_new_cavity_temp) unnecessary
+        ! -- the cap also over-cooled deep columns to the pressure freezing point
+        ! (-5.35 C at 4.5 km -> FESOM's -5 C reject, the 1904 blowup).
+        call seed_newly_iced_from_cavity(mesh_old, mesh_new, path_new, time_val, iter_val)
 
-        ! Balance-consistent post-passes (design note balanced_restart_plan):
-        ! N^2>=0 on changed columns, then geostrophic u/v from grad(p) + AB reset.
+        ! Pad the dry levels of the tracer columns (above the ice-shelf base,
+        ! below the bottom) with the nearest wet value instead of zero, so any
+        ! stencil or diagnostic that touches dry levels sees inert values.
+        call pad_dry_tracer_levels(mesh_new, path_new, time_val, iter_val)
+
+        ! Enforce static stability (N^2>=0) on changed columns, then re-init the
+        ! velocity on changed elements (zero AB history + smooth the changed/
+        ! unchanged velocity seam so its divergence does not feed deta/dt).
         call system_clock(c0)
         call stabilize_changed_columns(mesh_new, node_flag, path_new, time_val, iter_val)
         call system_clock(c1)
         write(*,'(A,F8.2,A)') '     [TIMER]   stabilize_columns : ', real(c1-c0)/c_rate, ' s'
         call system_clock(c0)
-        call geostrophic_init_changed(mesh_new, node_flag, path_new, time_val, iter_val)
+        call init_velocity_changed(mesh_new, node_flag, path_new, time_val, iter_val)
         call system_clock(c1)
-        write(*,'(A,F8.2,A)') '     [TIMER]   geostrophic_init  : ', real(c1-c0)/c_rate, ' s'
+        write(*,'(A,F8.2,A)') '     [TIMER]   init_velocity     : ', real(c1-c0)/c_rate, ' s'
+
+        ! Final safety net: no wet level below its in-situ freezing point (a
+        ! remap fill can leave unphysically cold water that FESOM rejects at
+        ! step 1). Runs after every other tracer pass.
+        call floor_temp_freezing(mesh_new, path_new, time_val, iter_val)
 
         write(*,*) ' --> all restart files remapped.'
 
     end subroutine remap_all_restarts
+
+    !===========================================================================
+    ! Seed newly-iced columns (open->cavity, or brand-new cavity nodes) from the
+    ! nearest EXISTING cavity column (cavity in BOTH meshes), depth-matched. The
+    ! plain remap carries the node's own open-ocean water, whose warm surface then
+    ! sits at the new ice base -> spurious basal melt. An adjacent existing cavity
+    ! column is already cold, cavity-appropriate (ISW), and regionally correct
+    ! (nearest neighbour keeps Amundsen-warm / FRIS-cold). Operates on temp,salt
+    ! (and their M1) in place. Donors are cavity-in-both nodes, disjoint from the
+    ! recipients (newly-iced), so the in-place overwrite is race-free.
+    subroutine seed_newly_iced_from_cavity(mesh_old, mesh_new, path_new, time_val, iter_val)
+        type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
+        character(len=*),   intent(in) :: path_new
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        real(WP), allocatable :: T(:,:), S(:,:), TM(:,:), SM(:,:)
+        integer,  allocatable :: donor(:), recip(:)
+        integer :: i, k, kk, nz, ul, nl, uld, nld, ndon, nrec, id, ir
+        integer :: nbase, i_old, dbest
+        real(WP) :: lon, lat, dist, dmin, alpha
+        real(WP), parameter :: r_earth = 6371000.0_WP
+        logical :: is_cav_both
+
+        call read_restart_var_3d(trim(path_new), 'temp', T)
+        call read_restart_var_3d(trim(path_new), 'salt', S)
+        nz = size(T, 1)
+
+        ! classify: donors = cavity in old AND new; recipients = cavity in new but
+        ! open/absent in old (newly iced this leg).
+        ndon = 0; nrec = 0
+        do i = 1, mesh_new%nod2D
+            if (mesh_new%ulevels_nod2D(i) <= 1) cycle
+            nbase = mesh_new%nod_map(i); i_old = mesh_old%map_base_to_mesh(nbase)
+            is_cav_both = .false.
+            if (i_old > 0) then
+                if (mesh_old%ulevels_nod2D(i_old) > 1) is_cav_both = .true.
+            end if
+            if (is_cav_both) then; ndon = ndon + 1; else; nrec = nrec + 1; end if
+        end do
+        if (ndon == 0 .or. nrec == 0) then
+            write(*,'(A,I0,A,I0,A)') '  --> seed_newly_iced_from_cavity: donors=', &
+                ndon, ' recipients=', nrec, ' -- nothing to do'
+            deallocate(T, S); return
+        end if
+        allocate(donor(ndon), recip(nrec)); ndon = 0; nrec = 0
+        do i = 1, mesh_new%nod2D
+            if (mesh_new%ulevels_nod2D(i) <= 1) cycle
+            nbase = mesh_new%nod_map(i); i_old = mesh_old%map_base_to_mesh(nbase)
+            is_cav_both = .false.
+            if (i_old > 0) then
+                if (mesh_old%ulevels_nod2D(i_old) > 1) is_cav_both = .true.
+            end if
+            if (is_cav_both) then
+                ndon = ndon + 1; donor(ndon) = i
+            else
+                nrec = nrec + 1; recip(nrec) = i
+            end if
+        end do
+
+        ! nearest established-cavity donor -> depth-matched profile copy
+        !$OMP PARALLEL DO DEFAULT(NONE) &
+        !$OMP   SHARED(mesh_new, T, S, donor, recip, ndon, nrec, nz) &
+        !$OMP   PRIVATE(ir, i, id, lon, lat, dist, dmin, alpha, dbest, ul, nl, uld, nld, k, kk)
+        do ir = 1, nrec
+            i = recip(ir)
+            lon = mesh_new%coord(1,i); lat = mesh_new%coord(2,i)
+            dmin = huge(1.0_WP); dbest = 0
+            do id = 1, ndon
+                alpha = acos(max(-1.0_WP, min(1.0_WP, &
+                        sin(lat)*sin(mesh_new%coord(2,donor(id))) + &
+                        cos(lat)*cos(mesh_new%coord(2,donor(id)))* &
+                        cos(lon-mesh_new%coord(1,donor(id))))))
+                dist = r_earth * abs(alpha)
+                if (dist < dmin) then; dmin = dist; dbest = donor(id); end if
+            end do
+            if (dbest == 0) cycle
+            ul  = mesh_new%ulevels_nod2D(i);     nl  = mesh_new%nlevels_nod2D(i)
+            uld = mesh_new%ulevels_nod2D(dbest); nld = mesh_new%nlevels_nod2D(dbest)
+            do k = ul, min(nl-1, nz)
+                kk = max(uld, min(k, nld-1))       ! clamp into donor wet range
+                T(k,i) = T(kk,dbest); S(k,i) = S(kk,dbest)
+            end do
+        end do
+        !$OMP END PARALLEL DO
+
+        write(*,'(A,I0,A,I0,A)') '  --> seed_newly_iced_from_cavity: seeded ', &
+            nrec, ' newly-iced columns from ', ndon, ' existing cavity donors'
+        call write_nc_3d(trim(path_new)//'temp.nc', 'temp', 'temp', '-', &
+                         T, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+        call write_nc_3d(trim(path_new)//'salt.nc', 'salt', 'salt', '-', &
+                         S, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+        ! keep M1 consistent at the seeded columns (no step-1 tracer jump)
+        call read_restart_var_3d(trim(path_new), 'temp_M1', TM)
+        call read_restart_var_3d(trim(path_new), 'salt_M1', SM)
+        do ir = 1, nrec
+            i = recip(ir); ul = mesh_new%ulevels_nod2D(i); nl = mesh_new%nlevels_nod2D(i)
+            do k = ul, min(nl-1, nz)
+                TM(k,i) = T(k,i); SM(k,i) = S(k,i)
+            end do
+        end do
+        call write_nc_3d(trim(path_new)//'temp_M1.nc', 'temp_M1', 'temp_M1', '-', &
+                         TM, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+        call write_nc_3d(trim(path_new)//'salt_M1.nc', 'salt_M1', 'salt_M1', '-', &
+                         SM, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+        deallocate(T, S, TM, SM, donor, recip)
+    end subroutine seed_newly_iced_from_cavity
 
     !===========================================================================
     ! Freezing-point cap for newly-under-ice columns (moving-cavity advance).
@@ -938,9 +1073,26 @@ contains
         integer  :: i_new, i_old, n_base, ul_new, ul_old, nl_new, k, nz
         integer  :: n_nodes, n_cells
         logical  :: touched
-        real(WP) :: Tf, depth
+        real(WP) :: Tf, depth, ice_base_depth
+        ! Only cap the ice-base BOUNDARY LAYER, not the whole column. Melt runaway
+        ! happens where warm water meets the ice base; the deep column never
+        ! touches ice. Capping every level to Tf(depth) drags real ~-0.5 C bottom
+        ! water down to the pressure freezing point (-5.35 C at 4.5 km), which is
+        ! unphysical AND trips FESOM's fixed -5 C reject (the 1904 blowup). Keep
+        ! the deep column at its carried values; cap only within this depth of the
+        ! new ice base.
+        real(WP), parameter :: CAP_BL_DEPTH = 300.0_WP
         real(WP), parameter :: A_FRZ = -0.0575_WP, B_FRZ = 0.0901_WP, &
                                C_FRZ = -7.61e-4_WP
+
+        block
+          character(len=8) :: capenv
+          call get_environment_variable('SKIP_CAVITY_CAP', capenv)
+          if (trim(capenv) == '1') then
+              write(*,*) ' --> cap_new_cavity_temp SKIPPED (SKIP_CAVITY_CAP=1)'
+              return
+          end if
+        end block
 
         call read_restart_var_3d(trim(path_new), 'temp', T)
         call read_restart_var_3d(trim(path_new), 'salt', S)
@@ -956,10 +1108,12 @@ contains
             ul_old = mesh_old%ulevels_nod2D(i_old)
             if (ul_new <= ul_old) cycle             ! only nodes that gained ice at the top
             nl_new = mesh_new%nlevels_nod2D(i_new)
+            ice_base_depth = abs(mesh_new%Z(ul_new))
             touched = .false.
             do k = ul_new, nl_new - 1
                 if (k < 1 .or. k > nz) cycle
                 depth = abs(mesh_new%Z(k))          ! mid-level depth [m]
+                if (depth > ice_base_depth + CAP_BL_DEPTH) exit   ! below the ice-base boundary layer: keep real water
                 Tf = B_FRZ + A_FRZ * S(k, i_new) + C_FRZ * depth
                 if (T(k, i_new) > Tf) then
                     T(k, i_new) = Tf
@@ -979,6 +1133,114 @@ contains
 
         deallocate(T, S)
     end subroutine cap_new_cavity_temp
+
+    !===========================================================================
+    ! Physical FLOOR on temperature at the in-situ freezing point
+    !   Tf = 0.0901 - 0.0575*S - 7.61e-4*depth
+    ! Liquid seawater cannot be colder than Tf, so any wet level below it is an
+    ! unphysical remap fill/extrapolation artifact. (Seen at the 1904 increment:
+    ! two cavity columns carried T = -5.35 C, which FESOM rejects at step 1 with
+    ! "temperature <-5".) Floor every wet level at Tf so no sub-freezing water is
+    ! ever written; salinity untouched. Applied to temp AND temp_M1 (the ALE
+    ! previous-step tracer). Reports the count split cavity-vs-total so we can
+    ! tell an isolated artifact (few) from a broader fill problem (many).
+    ! Runs LAST, after all fills, as a final safety net.
+    subroutine floor_temp_freezing(mesh_new, path_new, time_val, iter_val)
+        type(t_mesh_remap), intent(in) :: mesh_new
+        character(len=*),   intent(in) :: path_new
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        real(WP), allocatable :: T(:,:), S(:,:)
+        integer  :: i, k, nz, ul, nl, n_nodes, n_cells, n_cav, iv
+        logical  :: touched
+        real(WP) :: Tf, depth, tmin
+        real(WP), parameter :: A_FRZ = -0.0575_WP, B_FRZ = 0.0901_WP, &
+                               C_FRZ = -7.61e-4_WP
+        ! FESOM rejects any wet T < -5.0 C with a FIXED threshold that ignores
+        ! the pressure freezing-point depression; in a deep column (~4.5 km) the
+        ! physical Tf itself falls below -5, so floor no colder than this to stay
+        ! inside FESOM's sanity check. (Real deep water is ~0 C, so a value that
+        ! cold is a remap fill artifact anyway.)
+        real(WP), parameter :: T_SANITY = -4.9_WP
+        character(len=8) :: vnames(2)
+
+        vnames(1) = 'temp'; vnames(2) = 'temp_M1'
+        call read_restart_var_3d(trim(path_new), 'salt', S)
+        nz = size(S, 1)
+        do iv = 1, 2
+            call read_restart_var_3d(trim(path_new), trim(vnames(iv)), T)
+            n_nodes = 0; n_cells = 0; n_cav = 0; tmin = 1.0e30_WP
+            do i = 1, mesh_new%nod2D
+                ul = mesh_new%ulevels_nod2D(i); nl = mesh_new%nlevels_nod2D(i)
+                touched = .false.
+                do k = ul, min(nl-1, nz)
+                    depth = abs(mesh_new%Z(k))
+                    Tf = B_FRZ + A_FRZ * S(k, i) + C_FRZ * depth
+                    Tf = max(Tf, T_SANITY)      ! never below FESOM's fixed -5 reject
+                    if (T(k, i) < Tf) then
+                        tmin = min(tmin, T(k, i))
+                        T(k, i) = Tf
+                        n_cells = n_cells + 1; touched = .true.
+                        if (ul > 1) n_cav = n_cav + 1
+                    end if
+                end do
+                if (touched) n_nodes = n_nodes + 1
+            end do
+            if (n_cells > 0) then
+                write(*,'(A,A,A,I0,A,I0,A,I0,A,F8.3,A)') &
+                    '  --> freezing FLOOR (', trim(vnames(iv)), '): ', n_cells, &
+                    ' levels at ', n_nodes, ' nodes (', n_cav, &
+                    ' cavity-level); coldest floored T = ', tmin, ' C'
+            else
+                write(*,'(A,A,A)') '  --> freezing FLOOR (', trim(vnames(iv)), &
+                    '): nothing below Tf (clean)'
+            end if
+            call write_nc_3d(trim(path_new)//trim(vnames(iv))//'.nc', &
+                             trim(vnames(iv)), trim(vnames(iv)), '-', &
+                             T, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+            deallocate(T)
+        end do
+        deallocate(S)
+    end subroutine floor_temp_freezing
+
+    !===========================================================================
+    ! Pad dry tracer levels (above the cavity ice base, below the bottom) with
+    ! the nearest wet value, in place on <path_new>/{temp,salt}.nc.
+    subroutine pad_dry_tracer_levels(mesh_new, path_new, time_val, iter_val)
+        type(t_mesh_remap), intent(in) :: mesh_new
+        character(len=*),   intent(in) :: path_new
+        real(WP),           intent(in) :: time_val
+        integer,            intent(in) :: iter_val
+
+        real(WP), allocatable :: F(:,:)
+        character(len=8)      :: vnames(2)
+        integer :: iv, i_new, ku, kb, nz, n_pad
+
+        vnames(1) = 'temp'
+        vnames(2) = 'salt'
+        do iv = 1, 2
+            call read_restart_var_3d(trim(path_new), trim(vnames(iv)), F)
+            nz    = size(F, 1)
+            n_pad = 0
+            do i_new = 1, mesh_new%nod2D
+                ku = mesh_new%ulevels_nod2D(i_new)      ! first wet level
+                kb = mesh_new%nlevels_nod2D(i_new) - 1  ! last wet level
+                if (ku < 1 .or. kb < ku .or. kb > nz) cycle
+                if (ku > 1) then
+                    F(1:ku-1, i_new) = F(ku, i_new)
+                    n_pad = n_pad + 1
+                end if
+                if (kb < nz) F(kb+1:nz, i_new) = F(kb, i_new)
+            end do
+            write(*,*) ' --> pad_dry_tracer_levels ('//trim(vnames(iv))// &
+                       '): cavity columns padded above ice base: ', n_pad
+            call write_nc_3d(trim(path_new)//trim(vnames(iv))//'.nc', &
+                             trim(vnames(iv)), trim(vnames(iv)), '-', &
+                             F, nz, mesh_new%nod2D, 'node', time_val, iter_val, 'nz_1')
+            deallocate(F)
+        end do
+    end subroutine pad_dry_tracer_levels
 
     !===========================================================================
     ! Density-monotonic (N^2>=0) enforcement on changed columns. The per-level
@@ -1044,172 +1306,35 @@ contains
     end subroutine stabilize_changed_columns
 
     !===========================================================================
-    ! Geostrophic velocity on changed elements, computed per level from the full
-    ! hydrostatic pressure (FESOM cavity convention: cavity-occupied levels carry
-    ! a virtual water column with the ice-base T,S; eta=0 under ice enters as
-    ! written):  u_g = (1/(f rho0)) zhat x grad_h p.  One formula per level ---
-    ! contains both the barotropic (eta) and thermal-wind (rho) parts, so no
-    ! reference/neighbour velocity is needed (supersedes the SO-ASE NN fill,
-    ! which remains only where a gradient/f is unusable). Also zeroes the
-    ! Adams-Bashforth history (urhs_AB, vrhs_AB) on changed elements so the
-    ! balanced velocity is not kicked by a foreign tendency at step 1.
-    ! Operates in place on <path_new>/{u,v,urhs_AB,vrhs_AB}.nc.
-    subroutine geostrophic_init_changed(mesh_new, node_flag, path_new, time_val, iter_val)
+    ! Velocity init on changed elements: zero the Adams-Bashforth history
+    ! (urhs_AB, vrhs_AB) so the remapped velocity is not kicked by a foreign
+    ! tendency at step 1, then Jacobi-smooth the changed/unchanged velocity seam
+    ! (unchanged elements act as fixed anchors) so its discrete divergence does
+    ! not feed deta/dt. Operates in place on <path_new>/{u,v,urhs_AB,vrhs_AB}.nc.
+    subroutine init_velocity_changed(mesh_new, node_flag, path_new, time_val, iter_val)
         type(t_mesh_remap), intent(in) :: mesh_new
         integer,            intent(in) :: node_flag(:)
         character(len=*),   intent(in) :: path_new
         real(WP),           intent(in) :: time_val
         integer,            intent(in) :: iter_val
 
-        real(WP), allocatable :: T(:,:), S(:,:), eta(:), U(:,:), V(:,:)
-        real(WP), allocatable :: UAB(:,:), VAB(:,:), p(:,:)
-        integer  :: i, k, nz, ul, nl, e, n1, n2, n3, ule, nle, nelem_done, nclamp
-        logical  :: do_geo
-        real(WP) :: rho, dz, latc, fcor, x2, y2, x3, y3, det, pacc
-        real(WP) :: b1, b2, b3, c1, c2, c3, dpdx, dpdy, ug, vg
-        real(WP), parameter :: R0=1027.0_WP, AT=1.7e-4_WP, BS=7.6e-4_WP
-        real(WP), parameter :: GRAV=9.81_WP, OM=7.2921e-5_WP, RE=6371000.0_WP
-        real(WP), parameter :: UMAX=1.5_WP   ! sanity clamp, counted + reported
+        real(WP), allocatable :: U(:,:), V(:,:), UAB(:,:), VAB(:,:)
+        integer  :: nz, e, n1, n2, n3
 
-        call read_restart_var_3d(trim(path_new), 'temp', T)
-        call read_restart_var_3d(trim(path_new), 'salt', S)
-        call read_restart_var_2d(trim(path_new), 'ssh',  eta)
         call read_restart_var_3d(trim(path_new), 'u',    U)
         call read_restart_var_3d(trim(path_new), 'v',    V)
         call read_restart_var_3d(trim(path_new), 'urhs_AB', UAB)
         call read_restart_var_3d(trim(path_new), 'vrhs_AB', VAB)
-        nz = size(T,1)
+        nz = size(U,1)
 
-        ! Geostrophic grad-p overwrite is OPT-IN (REMAP_GEOSTROPHIC=1): offline
-        ! verification showed the discrete grad-p at grid-scale fronts is noisier
-        ! than the NN fill (transport divergence above baseline). Default = NN
-        ! fill + AB reset + seam smoothing (the gate-passing configuration).
-        block
-          character(len=8) :: genv
-          call get_environment_variable('REMAP_GEOSTROPHIC', genv)
-          do_geo = (trim(genv) == '1')
-        end block
-
-        if (do_geo) then
-        !-----------------------------------------------------------------------
-        ! full hydrostatic pressure at layer mids, all nodes (Eq. pressure of the
-        ! design note): p(k) = rho0 g eta + g sum_{j<k} rho_j dz_j + g rho_k dz_k/2
-        ! with rho_j of the ice-base T,S for cavity-occupied levels j<ulevels.
-        allocate(p(nz, mesh_new%nod2D)); p = huge(1.0_WP)
-        !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_new,T,S,eta,p,nz) &
-        !$OMP   PRIVATE(i,k,ul,nl,rho,dz,pacc)
-        do i = 1, mesh_new%nod2D
-            ul = mesh_new%ulevels_nod2D(i); nl = mesh_new%nlevels_nod2D(i)
-            pacc = R0*GRAV*eta(i)
-            do k = 1, min(nl-1, nz)
-                if (k < ul) then       ! virtual column: ice-base T,S
-                    rho = R0*(1.0_WP - AT*T(ul,i) + BS*(S(ul,i)-35.0_WP))
-                else
-                    rho = R0*(1.0_WP - AT*T(k,i) + BS*(S(k,i)-35.0_WP))
-                end if
-                dz  = mesh_new%zbar(k) - mesh_new%zbar(k+1)
-                p(k,i) = pacc + GRAV*rho*dz*0.5_WP
-                pacc   = pacc + GRAV*rho*dz
-            end do
-        end do
-        !$OMP END PARALLEL DO
-
-        !-----------------------------------------------------------------------
-        ! Lateral smoothing of p on changed nodes (Jacobi, unchanged nodes act as
-        ! fixed anchors). Differentiating the raw reconstructed p at grid-scale
-        ! fronts amplifies donor noise into spurious jets/divergence; a few
-        ! passes remove the noise while keeping the front-scale signal.
-        block
-          real(WP), allocatable :: psm(:,:)
-          integer :: it, j, e2, nn2, nbcnt
-          real(WP) :: nbsum
-          allocate(psm(nz, mesh_new%nod2D))
-          do it = 1, 4
-              psm = p
-              !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_new,node_flag,p,psm,nz) &
-              !$OMP   PRIVATE(i,k,j,e2,nn2,nbsum,nbcnt)
-              do i = 1, mesh_new%nod2D
-                  if (node_flag(i) == FLAG_UNCHANGED) cycle
-                  do k = mesh_new%ulevels_nod2D(i), min(mesh_new%nlevels_nod2D(i)-1, nz)
-                      nbsum = 0.0_WP; nbcnt = 0
-                      do j = mesh_new%nod_in_elem2D_num(i), mesh_new%nod_in_elem2D_num(i+1)-1
-                          e2 = mesh_new%nod_in_elem2D(j)
-                          do nn2 = 1, 3
-                              if (mesh_new%elem2D_nodes(nn2,e2) == i) cycle
-                              if (psm(k, mesh_new%elem2D_nodes(nn2,e2)) < 0.5_WP*huge(1.0_WP)) then
-                                  nbsum = nbsum + psm(k, mesh_new%elem2D_nodes(nn2,e2))
-                                  nbcnt = nbcnt + 1
-                              end if
-                          end do
-                      end do
-                      if (nbcnt > 0) p(k,i) = 0.5_WP*psm(k,i) + 0.5_WP*nbsum/real(nbcnt,WP)
-                  end do
-              end do
-              !$OMP END PARALLEL DO
-          end do
-          deallocate(psm)
-        end block
-
-        !-----------------------------------------------------------------------
-        ! per changed element: P1 gradient of p per level -> geostrophic u,v
-        nelem_done = 0; nclamp = 0
-        !$OMP PARALLEL DO DEFAULT(NONE) SHARED(mesh_new,node_flag,p,U,V,UAB,VAB,nz) &
-        !$OMP   PRIVATE(e,n1,n2,n3,ule,nle,latc,fcor,x2,y2,x3,y3,det,b1,b2,b3,c1,c2,c3, &
-        !$OMP           k,dpdx,dpdy,ug,vg) REDUCTION(+:nelem_done,nclamp)
+        ! zero AB history on every changed element
         do e = 1, mesh_new%elem2D
             n1 = mesh_new%elem2D_nodes(1,e); n2 = mesh_new%elem2D_nodes(2,e)
             n3 = mesh_new%elem2D_nodes(3,e)
             if (node_flag(n1)==FLAG_UNCHANGED .and. node_flag(n2)==FLAG_UNCHANGED &
                 .and. node_flag(n3)==FLAG_UNCHANGED) cycle
-            ! AB history: zero on every changed element regardless of f/gradient
             UAB(:,e) = 0.0_WP; VAB(:,e) = 0.0_WP
-            latc = (mesh_new%coord(2,n1)+mesh_new%coord(2,n2)+mesh_new%coord(2,n3))/3.0_WP
-            fcor = 2.0_WP*OM*sin(latc)
-            if (abs(fcor) < 1.0e-5_WP) cycle          ! keep NN fill near the equator
-            ! local metric coords (m), node1 as origin
-            x2 = RE*cos(latc)*(mesh_new%coord(1,n2)-mesh_new%coord(1,n1))
-            y2 = RE*(mesh_new%coord(2,n2)-mesh_new%coord(2,n1))
-            x3 = RE*cos(latc)*(mesh_new%coord(1,n3)-mesh_new%coord(1,n1))
-            y3 = RE*(mesh_new%coord(2,n3)-mesh_new%coord(2,n1))
-            if (abs(x2) > 1.0e6_WP .or. abs(x3) > 1.0e6_WP) cycle  ! dateline-wrapped
-            det = x2*y3 - x3*y2
-            if (abs(det) < 1.0_WP) cycle
-            ! grad of P1 field phi: dphi/dx = b.phi, dphi/dy = c.phi
-            b1 = (y2-y3)/det; b2 = y3/det;  b3 = -y2/det
-            c1 = (x3-x2)/det; c2 = -x3/det; c3 = x2/det
-            ule = max(mesh_new%ulevels_nod2D(n1), mesh_new%ulevels_nod2D(n2), &
-                      mesh_new%ulevels_nod2D(n3))
-            nle = min(mesh_new%nlevels_nod2D(n1), mesh_new%nlevels_nod2D(n2), &
-                      mesh_new%nlevels_nod2D(n3)) - 1
-            do k = ule, min(nle, nz)
-                dpdx = b1*p(k,n1) + b2*p(k,n2) + b3*p(k,n3)
-                dpdy = c1*p(k,n1) + c2*p(k,n2) + c3*p(k,n3)
-                ug = -dpdy/(fcor*R0)
-                vg =  dpdx/(fcor*R0)
-                if (abs(ug) > UMAX .or. abs(vg) > UMAX) then
-                    ug = max(min(ug, UMAX), -UMAX)
-                    vg = max(min(vg, UMAX), -UMAX)
-                    nclamp = nclamp + 1
-                end if
-                U(k,e) = ug
-                V(k,e) = vg
-            end do
-            nelem_done = nelem_done + 1
         end do
-        !$OMP END PARALLEL DO
-
-        else
-            ! geostrophic overwrite disabled: still zero AB on changed elements
-            allocate(p(1,1))
-            nelem_done = 0; nclamp = 0
-            do e = 1, mesh_new%elem2D
-                n1 = mesh_new%elem2D_nodes(1,e); n2 = mesh_new%elem2D_nodes(2,e)
-                n3 = mesh_new%elem2D_nodes(3,e)
-                if (node_flag(n1)==FLAG_UNCHANGED .and. node_flag(n2)==FLAG_UNCHANGED &
-                    .and. node_flag(n3)==FLAG_UNCHANGED) cycle
-                UAB(:,e) = 0.0_WP; VAB(:,e) = 0.0_WP
-            end do
-        end if
 
         !-----------------------------------------------------------------------
         ! Seam smoothing: Jacobi-average the velocity on changed elements with
@@ -1255,8 +1380,7 @@ contains
           deallocate(Us, Vs, echg)
         end block
 
-        write(*,*) ' --> geostrophic_init_changed: elements set =', nelem_done, &
-                   ' levels clamped(|u|>2) =', nclamp
+        write(*,*) ' --> init_velocity_changed: AB reset + seam smoothed on changed elements'
         call write_nc_3d(trim(path_new)//'u.nc', 'u', 'u', '-', &
                          U, nz, mesh_new%elem2D, 'elem', time_val, iter_val, 'nz_1')
         call write_nc_3d(trim(path_new)//'v.nc', 'v', 'v', '-', &
@@ -1265,8 +1389,8 @@ contains
                          UAB, nz, mesh_new%elem2D, 'elem', time_val, iter_val, 'nz_1')
         call write_nc_3d(trim(path_new)//'vrhs_AB.nc', 'vrhs_AB', 'vrhs_AB', '-', &
                          VAB, nz, mesh_new%elem2D, 'elem', time_val, iter_val, 'nz_1')
-        deallocate(T, S, eta, U, V, UAB, VAB, p)
-    end subroutine geostrophic_init_changed
+        deallocate(U, V, UAB, VAB)
+    end subroutine init_velocity_changed
 
     !===========================================================================
     ! Discover the restart fields present in a directory by listing *.nc and
@@ -1553,6 +1677,7 @@ contains
         integer  :: nl1, nod_old, nod_new
         integer  :: i_new, i_old, n_base, k, ul_new, nl_new, ul_old, nl_old
         integer  :: ncid_h, varid_h, ddids(8)
+        logical  :: geom_changed
         character(len=64) :: lev_dim
 
         nl1     = mesh_new%nl - 1
@@ -1655,17 +1780,35 @@ contains
                 end if
             end do
 
-            ! ALE consistency on changed columns: scale so sum(h) = D + eta
-            ! (zstar distribution of eta across the wet column). Unchanged
-            ! columns keep their evolved, already-consistent thicknesses.
-            if (node_flag(i_new) /= FLAG_UNCHANGED) then
-                colsum = sum(hnode_new(ul_new:nl_new-1, i_new))
-                target = (mesh_new%zbar(ul_new) - mesh_new%zbar(nl_new)) &
-                         + eta_new(i_new)
-                if (colsum > 0.0_WP .and. target > 0.0_WP) then
-                    hnode_new(ul_new:nl_new-1, i_new) = &
-                        hnode_new(ul_new:nl_new-1, i_new) * (target/colsum)
-                end if
+            ! ALE thickness on geometry-changed columns: give them CLEAN NOMINAL
+            ! layer thicknesses (zbar), i.e. a rest-consistent (eta=0) column,
+            ! instead of the previous rescale to D + eta_new. That rescale used
+            ! the STALE remapped chunk-1 eta -- most wrongly at cavity->open
+            ! ("closed") nodes, where the under-ice depressed ssh (~-1.6 m) was
+            ! applied to a now-open column -- which COMPRESSED hnode (~10.0 ->
+            ! 9.2 m) and left a standing dh/dt source at t=0 that spun the whole
+            ! cavity up (median 13-19 vs healthy ~2.6 cm/s). Validated in the
+            ! standalone harness: nominal hnode at the geometry-changed columns
+            ! (keeping the remapped velocity/ssh/tracers) holds the healthy
+            ! cavity. Truly-unchanged columns keep their evolved, consistent
+            ! thicknesses. The tiny eta stretching heals dynamically in hours.
+            !
+            ! CRITICAL: the trigger is a genuine ulevels/nlevels change, NOT
+            ! node_flag. node_flag only marks columns that GAIN wet levels
+            ! (ul decrease / nl increase); it leaves the many ICE-BASE-DEEPENED
+            ! columns (ul increase, ~1183 of the increment here) as UNCHANGED,
+            ! yet their carried hnode is just as inconsistent -- fixing only the
+            ! flagged columns leaves the cavity half-spun-up (~10 vs ~4 cm/s).
+            geom_changed = (node_flag(i_new) == FLAG_NEW_NODE)
+            if (i_old > 0) geom_changed = geom_changed .or. &
+                (mesh_new%ulevels_nod2D(i_new) /= mesh_old%ulevels_nod2D(i_old)) &
+                .or. &
+                (mesh_new%nlevels_nod2D(i_new) /= mesh_old%nlevels_nod2D(i_old))
+            if (geom_changed) then
+                do k = ul_new, nl_new-1
+                    hnode_new(k, i_new) = abs(mesh_new%zbar(k+1) - &
+                                               mesh_new%zbar(k))
+                end do
             end if
         end do
 

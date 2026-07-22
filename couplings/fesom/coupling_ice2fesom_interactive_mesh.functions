@@ -223,13 +223,24 @@ function build_submesh {
     mkdir -p $SUBMESH_DIR
     rm -rf $SUBMESH_DIR/*
 
-    # 1. Regrid PISM ice geometry to ocean resolution and onto the max-mesh nodes
+    # 1. Regrid PISM ice geometry to ocean resolution and onto the max-mesh nodes.
+    # The categorical mask must be remapped nearest-neighbour: bilinear
+    # averaging of categories lets small islands (few ice-free-land cells
+    # surrounded by mask=4 ocean) smear to ~3.x and round to ocean, deleting
+    # the island from the submesh. Continuous fields stay bilinear. remapnn
+    # extrapolates beyond the PISM domain, which would erase the mask=5
+    # outside-domain marker the reduction tool relies on -- rebuild it from a
+    # bilinear domain indicator (valid inside, missing outside).
     couple_timer "ice2fesom: regrid ice geometry"
-    echo " *   regridding ice geometry to max-mesh nodes"
-    cdo -setmisstoc,5 -remapbil,T512grid ${COUPLE_DIR}/latest_ice_geometry.nc tmp1.nc
+    echo " *   regridding ice geometry to max-mesh nodes (mask: remapnn + domain indicator)"
+    cdo -setmisstoc,5 -remapbil,T512grid -delname,mask ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_cont.nc
+    cdo -remapbil,T512grid -expr,"ind=mask*0+1" ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_ind.nc
+    cdo -remapnn,T512grid -selname,mask ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_nn.nc
+    cdo -setmisstoc,5 -mul tmp1_nn.nc tmp1_ind.nc tmp1_mask.nc
+    cdo merge tmp1_cont.nc tmp1_mask.nc tmp1.nc
     cdo -remapnn,${MAXMESH_DIR_fesom}/${MESH_GRIDDES_fesom} tmp1.nc tmp2.nc
     ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
-    rm tmp1.nc tmp2.nc
+    rm tmp1_cont.nc tmp1_ind.nc tmp1_nn.nc tmp1_mask.nc tmp1.nc tmp2.nc
 
     # 2. Derive node flags (topo_raw, cavity_raw, mask) from the regridded geometry
     couple_timer "ice2fesom: mesh_flags.py"
@@ -245,6 +256,23 @@ function build_submesh {
     gfortran -o fesom_submesh.x ${FUNCTION_PATH}/../pism/fesom_submesh.F90 > compile_submesh.log 2>&1
     rm -rf ${COUPLE_DIR}/${SUBMESH_DIR}/*
     ./fesom_submesh.x ${MAXMESH_DIR_fesom} ${COUPLE_DIR}/${SUBMESH_DIR}/
+
+    # Safety valve: the reduced submesh must retain a sane fraction of the
+    # cavity nodes the classifier flagged. A collapse here (e.g. a sweep or
+    # criterion change cascading through the narrow cavity bands) produces a
+    # formally valid but cavity-less ocean that runs "stably" while being
+    # scientifically void. Abort the leg instead.
+    _n_flag=$(python3 -c "
+import numpy as np
+m=np.loadtxt('mask.txt'); c=np.loadtxt('cavity_raw.txt')
+print(int(((m==1)&(c<-1e-3)).sum()))")
+    _n_kept=$(python3 -c "
+import numpy as np
+print(int((np.loadtxt('${COUPLE_DIR}/${SUBMESH_DIR}/cavity_depth.out')<-1e-3).sum()))")
+    echo " *   cavity nodes: classifier-flagged ${_n_flag}, kept in submesh ${_n_kept}"
+    if [ "${_n_flag}" -gt 100 ] && [ $((_n_kept * 2)) -lt "${_n_flag}" ]; then
+        couple_fail "ice2fesom FAILED: submesh kept <50% of flagged cavity nodes (${_n_kept}/${_n_flag}) - cavity amputation guard"
+    fi
     rm -rf ${COUPLE_DIR}/latest_submesh
 
     # 4. Partition the submesh and produce the CDO grid description, NATIVELY.

@@ -714,9 +714,15 @@ function iterative_coupling_ocean_pism_regrid_none {
 #
 function iterative_coupling_ocean_pism_compute_ocean_direct_forcing {
     _file=$1
-    _action_string=": rename file"
+    _action_string=": select given-route fields"
     echo " *   Building direct ocean forcing (${PISM_OCEAN_SWITCH:-Unknown}) $_action_string -> $_file ..."
-    mv -f ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc ${COUPLE_DIR}/$(basename ${_file})
+    # Keep only the fields PISM's '-ocean given' consumes. The 3D
+    # theta/salinity companions carry FESOM's decreasing depth axis, which
+    # PISM rejects if anything makes it parse them.
+    $cdo selname,shelfbtemp,shelfbmassflux \
+	ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc \
+	${COUPLE_DIR}/$(basename ${_file})
+    rm -f ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc
     echo "     ...done."
 }
 

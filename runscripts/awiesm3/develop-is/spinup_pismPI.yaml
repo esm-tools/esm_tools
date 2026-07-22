@@ -7,8 +7,12 @@ general:
         # couple_in overran and was killed mid-regen (job 26077001, 2026-07-06).
         compute_time: "02:00:00"
         initial_date: "1000000-01-01"
-        final_date: "1000040-12-31"
-        base_dir: "/work/ab0246/a270092/pism_repro/experiments/"
+        final_date: "1000099-12-31"
+        user: !ENV ${USER}
+        # Shared with awiesm3 for iterative coupling -- LITERAL awiesm3-develop-is
+        # so BOTH models resolve to the SAME experiment_dir runtime/awiesm3-develop-is/<expid>
+        # (pism's own setup_name-version would put it elsewhere and break the handoff).
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
         script_dir: "/home/a/a270092/esm_tools/couplings/"
         nyear: 10
         change_ocean: 1
@@ -32,8 +36,8 @@ pism:
         # keeps the PISM+coupling leg within its compute_time walltime.
         choose_computer.partitions.compute.cores_per_node:
                 128:
-                        nnodes: 2
-                        nproca: 256
+                        nnodes: 4
+                        nproca: 512
                         nprocb: 1
 
         downscale_precip: 0
@@ -65,8 +69,8 @@ pism:
         ex_interval: "monthly"
         force_bootstrap_first_run: False
         orog_reference_pism: "1"
-        # Antarctic ice-sheet physics (after a270193 pism_sh; ocean coupling kept as
-        # three-equation 'th' to match my fesom2ice ocean forcing, not PICO).
+        # Antarctic ice-sheet physics (after a270193 pism_sh; ocean coupling is
+        # '-ocean given' consuming FESOM's own melt, not 3eqn/PICO).
         kv_pairs:
             stress_balance.model: "ssa+sia"
             stress_balance.sia.max_diffusivity: 64000
@@ -102,9 +106,14 @@ pism:
                     kv_pairs:
                         surface_given_period: 1
             ocean:
-                th:
+                # given = PISM consumes FESOM's own cavity melt directly
+                # (shelfbtemp [degC] + shelfbmassflux [kg m-2 s-1] from the
+                # DIRECT synthesis; Bug-I design). th would re-derive melt
+                # from T/S with the 3eqn model AND rejects the decreasing
+                # FESOM depth axis on the 3D companion fields in this file.
+                given:
                     files:
-                        ocean_th_file: "latest_ocean_forcing_file.nc"
+                        ocean_given_file: "latest_ocean_forcing_file.nc"
 
         workflow:
             next_run_triggered_by: couple_out

@@ -1,0 +1,23 @@
+general:
+        iterative_coupling: True
+        use_venv: False
+        user: !ENV ${USER}
+        # Both iteratively-coupled models MUST resolve to the SAME experiment_dir.
+        # awiesm3 and pism have different setup_name-version, so we pin the LITERAL
+        # awiesm3-develop-is (not ${setup_name}-${version}, which would diverge) in
+        # all three runscripts -> runtime/awiesm3-develop-is/<expid> for both.
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        account: ab0246
+        with_recom: False
+
+model1:
+        setup_name: awiesm3
+        runscript: awiesm3_dyn_ocean_core3.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: spinup_pismPI.yaml
+        chunk_size: 10
+        chunk_unit: "years"

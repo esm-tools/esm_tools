@@ -64,7 +64,7 @@ pism:
         # Antarctic spinup restart (08km, from a270193 1percCO2_b_2640, PI-style state)
         spinup_file: "/work/ab0246/a270193/esm-experiments/1percCO2_b_2640/restart/pism_sh/1percCO2_b_2640_pismr_restart_627500101-627501231.nc"
 
-        pool_dir: "/work/ab0246/a270092/input/pool_pism_cr/"
+        pool_dir: "/work/ab0246/a270092/input/pism/"
         ts_interval: "1"
         ex_interval: "monthly"
         force_bootstrap_first_run: False

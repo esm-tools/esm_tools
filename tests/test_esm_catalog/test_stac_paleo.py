@@ -67,6 +67,19 @@ def test_config_reference_year_and_epoch_period():
     assert item.properties["paleo:period"] == "Quaternary"
 
 
+def test_bare_epoch_period_do_not_write_null():
+    # A bare `epoch:`/`period:` in YAML is present-but-None; it must be skipped,
+    # not written through as a schema-invalid null.
+    item = _bare_item()
+    add_paleo_extension(
+        item,
+        paleo_config={"reference_year": -20000, "epoch": None, "period": None},
+    )
+    assert item.properties["paleo:year"] == -20000
+    assert "paleo:epoch" not in item.properties
+    assert "paleo:period" not in item.properties
+
+
 def test_explicit_year_overrides_config():
     item = _bare_item()
     add_paleo_extension(item, paleo_config={"reference_year": -100}, paleo_year=-20000)

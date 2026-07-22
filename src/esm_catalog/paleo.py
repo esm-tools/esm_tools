@@ -60,9 +60,11 @@ def add_paleo_extension(
     item.properties["paleo:reference_year"] = reference_year
 
     if paleo_config:
-        if "epoch" in paleo_config:
+        # Gate on truthiness, not presence: a bare `epoch:`/`period:` in YAML is
+        # present-but-None and would otherwise write a schema-invalid null.
+        if paleo_config.get("epoch"):
             item.properties["paleo:epoch"] = paleo_config["epoch"]
-        if "period" in paleo_config:
+        if paleo_config.get("period"):
             item.properties["paleo:period"] = paleo_config["period"]
 
     _register(item)

@@ -36,8 +36,8 @@ pism:
         # keeps the PISM+coupling leg within its compute_time walltime.
         choose_computer.partitions.compute.cores_per_node:
                 128:
-                        nnodes: 2
-                        nproca: 256
+                        nnodes: 4
+                        nproca: 512
                         nprocb: 1
 
         downscale_precip: 0

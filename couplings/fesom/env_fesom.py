@@ -1,5 +1,4 @@
 import os
-import sys
 import subprocess
 import importlib.util
 
@@ -83,28 +82,6 @@ def _conda_env_python(env_name):
     return ""
 
 
-def _self_can_drive():
-    """True when running inside a virtual env that already carries the whole
-    ocp-tool weight-regen toolchain.
-
-    In the esm_tools venv the required packages install ocp_tool + pyfesom2 +
-    eccodes right here, so the weight-regen driver should be THIS interpreter:
-    then OCP_TOOL_DIR (discovered by find_spec in this same interpreter) and the
-    driver share one Python and cannot ABI-mismatch a differently-versioned conda
-    env. Guarded on actually being in a venv so non-venv runs are unchanged and
-    keep using the conda env ocp-tool declares.
-    """
-    if sys.prefix == sys.base_prefix:  # not in a venv -> use the conda env
-        return False
-    for mod in ("ocp_tool", "pyfesom2", "eccodes"):
-        try:
-            if importlib.util.find_spec(mod) is None:
-                return False
-        except (ImportError, ValueError):
-            return False
-    return True
-
-
 def prepare_environment(config):
     # --- Auto-discover the ocp-tool OASIS-regen toolchain (ice2fesom) ---------
     # esm_tools installs ocp-tool (required_plugin) and the coupled model's OASIS
@@ -117,16 +94,12 @@ def prepare_environment(config):
     resolution = general.get("resolution") or (
         f"{config['oifs']['resolution']}_{fesom['resolution']}"
     )
-    # Driver interpreter: prefer THIS Python when it already carries the ocp-tool
-    # toolchain (the esm_tools venv, populated by the required packages), so
-    # OCP_TOOL_DIR and the driver stay on one interpreter and cannot ABI-mismatch.
-    # Otherwise fall back to the conda env ocp-tool declares (pyfesom2 + eccodes).
-    # Worker env: the OASIS/mpi4py env (default 'ece4', overridable by NAME). All
-    # resolved to their python here, so no full path is needed in the runscript.
-    driver_py = (
-        fesom.get("ocp_weightgen_driver_py")
-        or (sys.executable if _self_can_drive() else "")
-        or _conda_env_python(_ocp_env_name(ocp_tool_dir))
+    # Driver env: the conda env ocp-tool declares (pyfesom2 + eccodes). Worker
+    # env: the OASIS/mpi4py env (default 'ece4', overridable by NAME). Both are
+    # resolved to their python by conda, so only a stable env name is needed --
+    # not a full path in the runscript.
+    driver_py = fesom.get("ocp_weightgen_driver_py") or _conda_env_python(
+        _ocp_env_name(ocp_tool_dir)
     )
     worker_py = fesom.get("ocp_weightgen_worker_py") or _conda_env_python(
         fesom.get("ocp_weightgen_worker_env", "ece4")

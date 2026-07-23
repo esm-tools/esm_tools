@@ -562,6 +562,19 @@ function remap_oasis_restart {
             fi
         fi
     done
+
+    # --- Sanitize the A096/atm-side fields against the NEW coastline -------
+    # The regenerated ICMGG flips a few atm cells land->ocean; the A096-side
+    # restart fields are carried over untouched, so those cells keep A_SST=0 K
+    # and OIFS's voskin cool-skin scheme overflows at the first step
+    # (forrtl (72), voskin_mod.F90:282). Nearest-ocean-fill A_SST (and floor
+    # A_Ice_temp) at every ocean-per-new-lsm cell holding a stale land value.
+    local new_icmgg=${COUPLE_DIR}/oasis_regen/ICMGGab45INIT_feomdyn
+    if [ -f "${new_icmgg}" ] && [ -f "${outdir}/rstos.nc" ]; then
+        ${py} ${FUNCTION_PATH}/../fesom/remap_restart/sanitize_oasis_restart_atm.py \
+            "${outdir}/rstos.nc" "${new_icmgg}" \
+            || { echo " *   sanitize_oasis_restart_atm FAILED"; return 1; }
+    fi
     echo "     ...done. remapped OASIS restarts -> ${outdir}"
 }
 

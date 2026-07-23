@@ -1,0 +1,80 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop-cc"
+    account: "ab0246"
+    compute_time: "02:00:00"
+    initial_date: "1900-01-01"
+    final_date: "1900-02-01"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 1
+    nyear: 0
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE3"
+    namelist_dir: "${fesom.model_dir}/config/"   # recom bin_${recom_setting}/namelist.recom lives in the FESOM config dir
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: false
+    time_step: 600             # cold-start stable (a270073's 1800 is from a warm restart; develop passed cold at 600)
+    nproc: 1792
+    omp_num_threads: 1
+    tar_binary_restarts: true
+    # develop-cc is a standard (no-cavity, linfs) CORE3 ocean -- keep FESOM defaults.
+    # The only override: REcoM must cold-init (recom_restart=.false.), else it reads a
+    # nonexistent restart and the Alk/DIC/Si tracers blow up the carbonate chemistry.
+    add_namelist_changes:
+        namelist.recom:
+            pavariables:
+                recom_restart: false
+
+lpj_guess:
+    nproc: 8
+    omp_num_threads: 8
+    lresume: false
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 128
+    omp_num_threads: 2
+    mpi: cmip6
+    scenario: piControl
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                NCMIPFIXYR: 1990
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+
+oasis3mct:
+    use_lucia: true
+    lresume: false # cold start: generate the rst files on the first leg
+    time_step: 3600
+    norestart: T
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 4
+    omp_num_threads: 32

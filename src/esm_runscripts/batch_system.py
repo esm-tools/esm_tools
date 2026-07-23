@@ -194,7 +194,7 @@ class batch_system:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
                 if "nproc" in config[model]:
-                    logger.info(f"nproc: {config[model]['nproc']}")
+                    logger.info(f"{model}: nproc: {config[model]['nproc']}")
 
                     # kh 21.04.22 multi group support added, i.e. using (nproc * mpi_num_groups) MPI processes to start a program multiple times
                     # (used for FESOM-REcoM tracer loop parallelization (MPI based))
@@ -245,7 +245,7 @@ class batch_system:
 
                 config[model]["threads"] = config[model]["tasks"] * omp_num_threads
                 tasks += config[model]["tasks"]
-                logger.info(f"tasks: {tasks}")
+                logger.info(f"tasks sum: {tasks}")
                 # Use the number of tasks and threads to update end_proc/core
                 end_proc = start_proc + config[model]["tasks"] - 1
                 end_core = start_core + config[model]["threads"] - 1

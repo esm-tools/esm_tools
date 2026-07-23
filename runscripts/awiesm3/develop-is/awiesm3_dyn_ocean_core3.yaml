@@ -77,14 +77,9 @@ fesom:
     # behind general.interactive_mesh. Only the restart parent stays here (the
     # ini_parent_*/ini_restart_dir above).
 
-    # Coupled-slab mode (pairs with oifs NAMMCC LNEMOLIMTEMP/LNEMOLIMTHK below):
-    # the atmosphere owns the ice surface temperature; FESIM's growth budget
-    # takes the received atmosphere flux directly (Qatmice=-a2ihf) and its own
-    # ist solve is internal-only (albedo/pond state).
-    namelist_changes:
-        namelist.ice:
-            ice_therm:
-                latm_owns_ist: ".true."
+    # Coupled-slab mode is hardwired in the FESOM build (ice_thermo_cpl.F90:
+    # Qatmice=-a2ihf, the atmosphere owns the ice surface temperature); it pairs
+    # with the oifs NAMMCC LNEMOLIMTEMP/LNEMOLIMTHK settings below.
 
 lpj_guess:
     nproc: 64 # originally 16
@@ -220,7 +215,7 @@ oifs:
             # divides by A_Ice_frac) and the coupled snow thickness
             # (snt_feom, already exchanged). FESIM's ist becomes internal-only
             # (albedo/pond state); its growth budget takes the atmosphere flux
-            # directly (fesom namelist.ice latm_owns_ist below).
+            # directly (hardwired in the FESOM build, ice_thermo_cpl.F90).
             NAMMCC:
                 LNEMOLIMTEMP: ".false."
                 LNEMOLIMTHK: ".true."

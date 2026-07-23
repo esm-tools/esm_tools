@@ -46,7 +46,12 @@ fesom:
         branch: "2.7.7"
         repo_options: "--recurse-submodules"
       "2.7-main":
-        branch: "main"
+        # INTERIM (until FESOM PR #957 merges to fesom2 main): the awiesm3 develop*
+        # variants build the coupled-slab ice-surftemp branch that provides the
+        # sit_feom send (so the namcouple's sit_feom is filled -- fixes the -cc
+        # "namcouple variable not used" abort). Only awiesm3 develop* use 2.7-main;
+        # revert branch to "main" once #957 is merged.
+        branch: "awiesm3-implicit-ice-surftemp"
         repo_options: "--recurse-submodules"
         #namelist_dir: "${model_dir}/config/"
 

@@ -204,29 +204,33 @@ oifs:
                         LXIOS: true
                     NAEPHY:
                         LECURR: true
-
-    choose_general.version:
-        v3.4.2:
-            add_add_namelist_changes:
-                fort.4:
+                        LRDALB: false
                     NAMCLDP:
                         RVICE: 0.16
-                    NAEPHY:
-                        LRDALB: false
+
+    choose_general.version:
+        # NAMMCC: coupled-slab mode, pairs with the develop* FESOM build.
         develop:
             add_add_namelist_changes:
                 fort.4:
-                    NAMCLDP:
-                        RVICE: 0.16
-                    NAEPHY:
-                        LRDALB: false
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
         develop-cc:
             add_add_namelist_changes:
                 fort.4:
-                    NAMCLDP:
-                        RVICE: 0.16
-                    NAEPHY:
-                        LRDALB: false
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        develop-is:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
 
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data

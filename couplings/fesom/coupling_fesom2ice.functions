@@ -79,7 +79,7 @@ function fesom2ice {
         echo " *** $1 ***"
         if [ -n "${COUPLE_DIR:-}" ] ; then
             mkdir -p "${COUPLE_DIR}" 2>/dev/null
-            echo "$1" > "${COUPLE_DIR}/.coupling_failed"
+            echo "$1" > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
         fi
         exit 1
     }
@@ -101,6 +101,16 @@ function fesom2ice {
     couple_timer "fesom2ice: write_grid+names"
     iterative_coupling_fesom1x_ice_write_grid
     iterative_coupling_fesom1x_ice_write_names
+
+    # concurrent coupling: publish chunk-tagged copies only (the sibling chain
+    # restages fixed names from the tag it wants; no shared fixed-name writes)
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        for _f in ocean_file_for_ice.nc ocean.griddes ocean_names_for_ice.dat ; do
+            [ -e "${COUPLE_DIR}/${_f}" ] && \
+                mv "${COUPLE_DIR}/${_f}" "${COUPLE_DIR}/${_f}.chunk_${CHUNK_NUMBER}"
+        done
+        unset _f
+    fi
     couple_timer "fesom2ice: DONE"
 
     for file in ${cleanup_list} ; do test -f $file && rm $file ; done

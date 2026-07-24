@@ -49,9 +49,15 @@ pism2esm() {
     # Extract the ice-geometry variables PISM hands to the rest of the system.
     # ice_subNN = (usurf - thk) on floating ice (mask==3) is the cavity-roof depth
     # consumed by mesh_flags.py to flag max-mesh nodes.
+    # Concurrent coupling: write the chunk-tagged name directly (the AWI chain
+    # reads the tag it wants; no shared fixed-name writes).
+    _geom_out=${COUPLE_DIR}/latest_ice_geometry.nc
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        _geom_out=${COUPLE_DIR}/latest_ice_geometry.chunk_${CHUNK_NUMBER}.nc
+    fi
     echo " *   extracting ice geometry variables from PISM output"
     echo " *     input:  ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
-    echo " *     output: ${COUPLE_DIR}/latest_ice_geometry.nc"
+    echo " *     output: ${_geom_out}"
 
     couple_timer "pism2esm: pism2atmosphere"
     echo " *   calling pism2atmosphere"
@@ -61,7 +67,7 @@ pism2esm() {
         cdo seltimestep,-1 \
             -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
             ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
-            ${COUPLE_DIR}/latest_ice_geometry.nc
+            ${_geom_out}
         echo "coming soon: change ocean= $CHANGE_OCEAN"
     else
         echo " *   WARNING: PISM output file not found, skipping ice-geometry extraction"
@@ -69,6 +75,23 @@ pism2esm() {
     couple_timer "pism2esm: pism2ocean"
     echo " *   calling pism2ocean"
     pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
+
+    # concurrent coupling: tagged ex-file for the AWI chain + the cycle marker
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        _ok=1
+        cp "${OUTPUT_DIR_pism}/latest_ex_file_pism.nc" \
+           "${OUTPUT_DIR_pism}/latest_ex_file_pism.chunk_${CHUNK_NUMBER}.nc" || _ok=0
+        [ -e "${_geom_out}" ] || { echo " *** missing ${_geom_out} ***"; _ok=0; }
+        if [ ${_ok} -eq 1 ]; then
+            touch_coupling_marker "${COUPLE_DIR}/pism_chunk_${CHUNK_NUMBER}.done"
+        else
+            echo "incomplete PISM->AWI handoff set for chunk ${CHUNK_NUMBER}" \
+                > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+            exit 1
+        fi
+        unset _ok
+    fi
+    unset _geom_out
 
     couple_timer "pism2esm: DONE"
 

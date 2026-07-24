@@ -98,11 +98,14 @@ def coupling_identity(config):
 
 
 def harvest_environment(config):
-    """Env vars for couplings/general/harvest.functions (serial pool harvest)."""
+    """Env vars for couplings/general/harvest.functions (serial pool harvest)
+    and the concurrent-coupling markers/sentinels."""
     general = config["general"]
+    concurrent = general.get("coupling_mode", "serial") == "concurrent"
     return {
         "COUPLING_MODE": general.get("coupling_mode", "serial"),
         "CHUNK_NUMBER": general.get("chunk_number", 0),
+        "COUPLING_FAIL_SUFFIX": "." + general["setup_name"] if concurrent else "",
         "COUPLING_IDENTITY": coupling_identity(config),
         "HARVEST_PARALLEL_INI": int(bool(general.get("harvest_parallel_ini", False))),
         "HARVEST_POOL_DIR": general.get("harvest_pool_dir") or general.get("pool_dir", ""),

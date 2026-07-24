@@ -1,6 +1,33 @@
+import glob
+import os
+
+
+def _bootstrap_forcing_dir(config):
+    """Chunk-1 forcing set for concurrent mode. 'auto' resolves the newest
+    complete harvest matching this PISM grid under <pism.pool_dir>/coupled_bootstrap."""
+    pism = config[config["general"]["setup_name"]]
+    value = pism.get("bootstrap_forcing_dir", "auto")
+    if value != "auto":
+        return value
+    tag = f"{pism.get('domain', '')}-{pism.get('resolution', '')}"
+    pattern = os.path.join(
+        pism.get("pool_dir", ""), "coupled_bootstrap", f"*{tag}*", "*",
+        ".harvest_complete",
+    )
+    hits = glob.glob(pattern)
+    if not hits:
+        return ""
+    return os.path.dirname(max(hits, key=os.path.getmtime))
+
+
 def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
+    concurrent = config["general"].get("coupling_mode", "serial") == "concurrent"
     environment_dict = {
+            "COUPLING_MODE": config["general"].get("coupling_mode", "serial"),
+            "CHUNK_NUMBER": config["general"].get("chunk_number", 0),
+            "COUPLING_FAIL_SUFFIX": ".pism" if concurrent else "",
+            "PISM_BOOTSTRAP_DIR": _bootstrap_forcing_dir(config) if concurrent else "",
             "PISM_TO_OCEAN": 0,
             "iter_coup_interact_method_oce2ice": config[config["general"]["setup_name"]].get("oce2ice_method", "OCEANTEMPSALT"),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),

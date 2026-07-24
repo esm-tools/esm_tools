@@ -49,7 +49,7 @@ if ! command -v couple_fail >/dev/null 2>&1 ; then
         echo " *** $1 ***"
         if [ -n "${COUPLE_DIR:-}" ] ; then
             mkdir -p "${COUPLE_DIR}" 2>/dev/null
-            echo "$1" > "${COUPLE_DIR}/.coupling_failed"
+            echo "$1" > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
         fi
         exit 1
     }
@@ -67,6 +67,20 @@ function ice2fesom {
         echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
     else
         iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+    fi
+
+    # Concurrent coupling: this leg consumes the sibling's chunk-(N-1) products.
+    # Require the marker (belt-and-braces; the Python park/revive already
+    # guaranteed it), then restage the tagged geometry onto the fixed name this
+    # function reads (fixed name is AWI-chain-private in concurrent mode).
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ] && [ "${CHUNK_NUMBER:-1}" -gt 1 ]; then
+        _i2f_tag=$(( CHUNK_NUMBER - 1 ))
+        require_coupling_marker "${COUPLE_DIR}/pism_chunk_${_i2f_tag}.done"
+        cp "${COUPLE_DIR}/latest_ice_geometry.chunk_${_i2f_tag}.nc" \
+           "${COUPLE_DIR}/latest_ice_geometry.nc" || \
+            couple_fail "ice2fesom FAILED: missing latest_ice_geometry.chunk_${_i2f_tag}.nc"
+        CONCURRENT_EXFILE_TAG=".chunk_${_i2f_tag}"
+        unset _i2f_tag
     fi
 
     # Build the dynamic submesh from the max-mesh and the PISM ice geometry
@@ -1010,7 +1024,9 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # harness); fall back to the conventional sibling-of-COUPLE_DIR layout for
     # back-compat with older runscripts.
     local pism_outdir=${OUTPUT_DIR_pism:-${COUPLE_DIR}/../outdata/pism}
-    local latest_pism_output=${pism_outdir}/latest_ex_file_pism.nc
+    # concurrent mode reads the sibling's tagged ex-file (fixed name is
+    # pism-chain-internal there); serial keeps the fixed name
+    local latest_pism_output=${pism_outdir}/latest_ex_file_pism${CONCURRENT_EXFILE_TAG:-}.nc
 
     counter=0
     COUNT_MAX=12

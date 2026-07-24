@@ -34,10 +34,18 @@ def _log(message):
         logger.info(message)
 
 
+def _couple_dir(config):
+    """Experiment couple dir, also before _add_all_folders has built the paths
+    (entry_park_check runs early in the prepare recipe)."""
+    couple = config["general"].get("experiment_couple_dir")
+    if couple:
+        return couple
+    base = chunky_parts._early_resolve(config, config["general"]["base_dir"])
+    return os.path.join(base, config["general"]["expid"], "couple")
+
+
 def marker_path(config, model, chunk):
-    return os.path.join(
-        config["general"]["experiment_couple_dir"], f"{model}_chunk_{chunk}.done"
-    )
+    return os.path.join(_couple_dir(config), f"{model}_chunk_{chunk}.done")
 
 
 def sibling_name(config):
@@ -54,7 +62,7 @@ def sibling_name(config):
 
 def _park_file(config, chain=None):
     chain = chain or chunky_parts._chain_name(config)
-    return os.path.join(config["general"]["experiment_couple_dir"], f".parked.{chain}")
+    return os.path.join(_couple_dir(config), f".parked.{chain}")
 
 
 def required_marker(config, upcoming_chunk):
@@ -163,4 +171,13 @@ def entry_park_check(config):
         return config
     if park_if_needed(config, config["general"]["chunk_number"]):
         sys.exit(0)
+    # this chain is running, so it is not parked: drop any stale park file (e.g.
+    # restored by a failed revive) so the sibling cannot launch a duplicate
+    stale = _park_file(config)
+    if os.path.isfile(stale):
+        logger.info(f"Concurrent coupling: clearing stale {os.path.basename(stale)}")
+        try:
+            os.remove(stale)
+        except OSError:
+            pass
     return config

@@ -196,8 +196,22 @@ def _fan_out_coupling_chains(parsed_args):
 
     import yaml
 
+    # runscripts carry esm-tools tags (!ENV ...) that SafeLoader rejects; we only
+    # need the modelN setup_names, so resolve unknown tags to their raw value
+    class _TolerantLoader(yaml.SafeLoader):
+        pass
+
+    def _keep_raw(loader, tag_suffix, node):
+        if isinstance(node, yaml.ScalarNode):
+            return loader.construct_scalar(node)
+        if isinstance(node, yaml.SequenceNode):
+            return loader.construct_sequence(node)
+        return loader.construct_mapping(node)
+
+    _TolerantLoader.add_multi_constructor("", _keep_raw)
+
     with open(os.path.realpath(parsed_args["runscript"])) as fid:
-        driver = yaml.safe_load(fid)
+        driver = yaml.load(fid, Loader=_TolerantLoader)
     chains, index = [], 1
     while f"model{index}" in driver:
         chains.append(driver[f"model{index}"]["setup_name"])
@@ -231,13 +245,71 @@ def _fan_out_coupling_chains(parsed_args):
         if arg.startswith("--coupling-chain="):
             continue
         base_command.append(arg)
+
     for chain in chains:
-        if f"{expid}_{chain}" in queued_names:
+        if f"{expid}_{chain}" in queued_names or f"{expid}_{chain}_launch" in queued_names:
             logger.info(f"chain doctor: {chain} already in the queue -- skipping")
             continue
         logger.info(f"chain doctor: launching chain {chain}")
-        subprocess.call(base_command + ["--coupling-chain", chain])
+        _launch_coupling_chain(base_command, chain, expid, driver)
     sys.exit(0)
+
+
+def _launch_coupling_chain(base_command, chain, expid, driver):
+    """Start one chain's esm_runscripts.
+
+    A chain launch runs newrun/couple_in/prepcompute IN-PROCESS, and those
+    coupling steps execute real binaries (dEBM, fesom_meshpart, OASIS weight
+    regen). On a login node the site watchdog kills them, so unless we are
+    already inside an allocation the launch goes through a small batch job.
+    """
+    import shlex
+    import subprocess
+    import tempfile
+
+    command = " ".join(shlex.quote(a) for a in base_command + ["--coupling-chain", chain])
+
+    if os.environ.get("SLURM_JOB_ID"):
+        logger.info("  (inside an allocation -- running inline)")
+        subprocess.call(base_command + ["--coupling-chain", chain])
+        return
+
+    general = driver.get("general", {})
+    account = general.get("account", "")
+    # exclusive node: couple_in runs dEBM + heavy cdo, which OOM on a shared core
+    partition = general.get("coupling_launcher_partition", "compute")
+    walltime = general.get("coupling_launcher_time", "00:30:00")
+    logfile = os.path.join(os.getcwd(), f"{expid}_{chain}_launch_%j.log")
+
+    script = (
+        "#!/bin/bash -l\n"
+        f"#SBATCH --job-name={expid}_{chain}_launch\n"
+        + (f"#SBATCH --account={account}\n" if account else "")
+        + f"#SBATCH --partition={partition}\n"
+        "#SBATCH --nodes=1\n"
+        "#SBATCH --exclusive\n"
+        f"#SBATCH --time={walltime}\n"
+        f"#SBATCH --output={logfile}\n"
+        f"cd {shlex.quote(os.getcwd())}\n"
+        f"{command}\n"
+    )
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=f"_{expid}_{chain}.sbatch", delete=False
+    ) as fid:
+        fid.write(script)
+        sbatch_file = fid.name
+
+    try:
+        out = subprocess.check_output(
+            ["sbatch", "--export=ALL", sbatch_file], stderr=subprocess.STDOUT
+        ).decode().strip()
+        logger.info(f"  {out} (launcher job; chain log -> {logfile})")
+    except (OSError, subprocess.CalledProcessError) as error:
+        logger.warning(
+            f"  sbatch unavailable/failed ({error}); running inline -- note that "
+            f"coupling binaries may be killed on a login node"
+        )
+        subprocess.call(base_command + ["--coupling-chain", chain])
 
 
 def main():

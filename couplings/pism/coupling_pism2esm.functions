@@ -69,6 +69,13 @@ pism2esm() {
             ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
             ${_geom_out}
         echo "coming soon: change ocean= $CHANGE_OCEAN"
+    elif [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        # no PISM output = the leg did not integrate; halt this chain instead of
+        # exiting clean with no marker (the sibling would park forever)
+        echo "pism2esm: no PISM output (${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc) -- leg did not integrate" \
+            > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        echo " *** pism2esm FAILED: no PISM output; chunk ${CHUNK_NUMBER} produced nothing ***"
+        exit 1
     else
         echo " *   WARNING: PISM output file not found, skipping ice-geometry extraction"
     fi

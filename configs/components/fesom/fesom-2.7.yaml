@@ -715,7 +715,7 @@ fesom:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"
             dyn:     "namelist.dyn"
-            forcing: "namelist.forcing"
+            forcing_nml: "namelist.forcing"
             ice:     "namelist.ice"
             icepack: "namelist.icepack"
             io:      "namelist.io"

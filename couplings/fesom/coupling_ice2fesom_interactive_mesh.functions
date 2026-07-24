@@ -125,6 +125,12 @@ function ice2fesom {
     fi
     couple_timer "ice2fesom: DONE"
 
+    # opt-in serial harvest of the AWI-side concurrent bootstrap set (off-path)
+    if [ "${HARVEST_PARALLEL_INI:-0}" = "1" ]; then
+        . ${FUNCTION_PATH}/../general/harvest.functions
+        harvest_awi_bootstrap
+    fi
+
     return
     # ---- legacy regrid path below (unreachable) ----
     #

@@ -5,5 +5,10 @@ echo "888888 copying 88888888"
 echo "${COUPLE_DIR}"	
 cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/atmosphere_file_for_ice.nc ${COUPLE_DIR}/. 
 cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/atmosphere_names_for_ice.dat ${COUPLE_DIR}/. 
-}
 
+# opt-in serial harvest of the PISM-side concurrent bootstrap set (chunk 1 only)
+if [ "${HARVEST_PARALLEL_INI:-0}" = "1" ]; then
+    . ${FUNCTION_PATH}/../general/harvest.functions
+    harvest_pism_bootstrap
+fi
+}

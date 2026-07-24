@@ -17,6 +17,10 @@ general:
     # Enable the PISM<->FESOM dynamic-mesh coupling (wiring lives behind this flag
     # in configs/setups/awiesm3/awiesm3.yaml).
     interactive_mesh: true
+    # Serial-run pool harvest of the concurrent-mode chunk-1 bootstrap sets
+    # (couplings/general/harvest.functions; once per coupling identity).
+    harvest_parallel_ini: True
+    pism_grid_tag: "antarct_cr-08km"
     nday: 0
     nmonth: 0
     nyear: 1

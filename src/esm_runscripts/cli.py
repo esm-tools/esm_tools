@@ -225,8 +225,11 @@ def _fan_out_coupling_chains(parsed_args):
 
     expid = parsed_args["expid"]
     try:
+        # active states only: a COMPLETING/CANCELLED job still shows in squeue and
+        # would make the guard skip a chain that is actually gone
         queued = subprocess.check_output(
-            ["squeue", "-h", "-u", os.environ.get("USER", ""), "-o", "%j"],
+            ["squeue", "-h", "-u", os.environ.get("USER", ""),
+             "-t", "PENDING,RUNNING,CONFIGURING,SUSPENDED", "-o", "%j"],
             stderr=subprocess.DEVNULL,
         ).decode()
         queued_names = set(queued.split())

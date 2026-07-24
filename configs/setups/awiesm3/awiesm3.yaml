@@ -139,6 +139,9 @@ general:
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
+    # Chunk-1 bootstrap set for the dynamic-mesh coupling; override per runscript.
+    pism_cavity_ini_dir: "${general.pool_dir}/fesom2/pism_cavity_ini"
+
         # Load compute recipe from oifs.yaml
     prepcompute_recipe: ${oifs.prepcompute_recipe}
     tidy_recipe: ${fesom.tidy_recipe}
@@ -582,7 +585,7 @@ fesom:
                                 # moving-cavity path to the awiesm3 setup default.
                                 which_ale: "linfs"
                             paths:
-                                MeshPath: "${general.pool_dir}/fesom2/pism_cavity_ini/submesh/"
+                                MeshPath: "${general.pism_cavity_ini_dir}/submesh/"
                             restart_log:
                                 raw_restart_length_unit: "off"
                                 bin_restart_length_unit: "off"

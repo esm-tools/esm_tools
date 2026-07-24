@@ -703,7 +703,7 @@ fesom:
             config:  "${namelist_dir}/namelist.config"
             cvmix:   "${namelist_dir}/namelist.cvmix"
             dyn:     "${namelist_dir}/namelist.dyn"
-            forcing: "${namelist_dir}/namelist.forcing"
+            forcing_nml: "${namelist_dir}/namelist.forcing"
             ice:     "${namelist_dir}/namelist.ice"
             icepack: "${namelist_dir}/namelist.icepack"
             io:      "${namelist_dir}/namelist.io"

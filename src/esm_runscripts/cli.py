@@ -177,7 +177,67 @@ def parse_shargs():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--coupling-chain",
+        help="concurrent iterative coupling: setup_name of the model chain this "
+        "invocation drives (one esm_runscripts chain per model)",
+        default=None,
+        dest="coupling_chain",
+    )
+
     return parser.parse_args()
+
+
+def _fan_out_coupling_chains(parsed_args):
+    """--coupling-chain all: chain doctor. Launch every model chain of the
+    concurrent-coupling driver that is not already in the batch queue. Cold
+    start, crash recovery and post-outage restart are all this one command."""
+    import subprocess
+
+    import yaml
+
+    with open(os.path.realpath(parsed_args["runscript"])) as fid:
+        driver = yaml.safe_load(fid)
+    chains, index = [], 1
+    while f"model{index}" in driver:
+        chains.append(driver[f"model{index}"]["setup_name"])
+        index += 1
+    if not chains:
+        user_error(
+            "Concurrent iterative coupling",
+            f"--coupling-chain all needs an iterative-coupling driver runscript "
+            f"with model1/model2 blocks; ``{parsed_args['runscript']}`` has none.",
+        )
+
+    expid = parsed_args["expid"]
+    try:
+        queued = subprocess.check_output(
+            ["squeue", "-h", "-u", os.environ.get("USER", ""), "-o", "%j"],
+            stderr=subprocess.DEVNULL,
+        ).decode()
+        queued_names = set(queued.split())
+    except (OSError, subprocess.CalledProcessError):
+        queued_names = set()
+        logger.warning("chain doctor: squeue not available -- launching without guard")
+
+    base_command, skip_next = [], False
+    for arg in sys.argv:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg == "--coupling-chain":
+            skip_next = True
+            continue
+        if arg.startswith("--coupling-chain="):
+            continue
+        base_command.append(arg)
+    for chain in chains:
+        if f"{expid}_{chain}" in queued_names:
+            logger.info(f"chain doctor: {chain} already in the queue -- skipping")
+            continue
+        logger.info(f"chain doctor: launching chain {chain}")
+        subprocess.call(base_command + ["--coupling-chain", chain])
+    sys.exit(0)
 
 
 def main():
@@ -221,6 +281,9 @@ def main():
             f"The runscript ``{ARGS.runscript}`` does not exists in folder ``{runscript_dir}``. ",
             dsymbols=["``", "'"],
         )
+
+    if parsed_args.get("coupling_chain") == "all":
+        _fan_out_coupling_chains(parsed_args)
 
     # this might contain the relative path but it will be taken care of later
     command_line_config["original_command"] = original_command.strip()

@@ -160,6 +160,17 @@ class batch_system:
             config, cluster, all_values_flat
         )
 
+        # concurrent coupling: per-chain jobnames (expid_<chain>) so the two
+        # chains are distinguishable in squeue and by the chain-doctor guard
+        if config["general"].get("coupling_mode", "serial") == "concurrent":
+            name_flag = this_batch_system.get("name_flag", "")
+            chain = config["general"].get("coupling_chain", "")
+            if name_flag and chain:
+                all_values_flat = [
+                    v + "_" + chain if v == name_flag else v
+                    for v in all_values_flat
+                ]
+
         # loop over all batch flag values and replace the tags
         for value in all_values_flat:
             for tag, repl in replacement_tags:
@@ -661,6 +672,12 @@ class batch_system:
                         observe_call += (
                             " -m " + config["general"]["modify_config_file_abspath"]
                         )
+
+                # concurrent coupling: chain identity must cross the sbatch boundary
+                if config["general"].get("coupling_mode", "serial") == "concurrent":
+                    observe_call += (
+                        f' --coupling-chain {config["general"]["coupling_chain"]}'
+                    )
 
                 if "--task-log-files" in config["general"]["original_command"]:
                     observe_call += " --task-log-files"

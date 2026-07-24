@@ -815,6 +815,7 @@ fesom:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
             - fesom/fesom.tripyview.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

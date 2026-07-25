@@ -21,7 +21,7 @@ This allows CQL2 queries like:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from esm_catalog.registry import EXTENSION_URLS
 
@@ -31,8 +31,13 @@ if TYPE_CHECKING:
 # Values with more elements than this are skipped when flattening for search.
 _MAX_LIST_LENGTH = 10
 
+# filename -> {group -> {key -> scalar value}}
+NamelistData = dict[str, dict[str, dict[str, Any]]]
 
-def add_namelist_extension(collection: "pystac.Collection", namelists: dict) -> None:
+
+def add_namelist_extension(
+    collection: "pystac.Collection", namelists: NamelistData
+) -> None:
     """Inject namelist extension fields into a STAC collection.
 
     Args:
@@ -60,7 +65,7 @@ def add_namelist_extension(collection: "pystac.Collection", namelists: dict) -> 
         collection.stac_extensions.append(url)
 
 
-def _flatten_for_search(namelists: dict) -> dict:
+def _flatten_for_search(namelists: NamelistData) -> dict[str, Any]:
     """Flatten namelist structure for searchable parameters.
 
     Creates keys in the format "group:key" for CQL2 filtering. Only includes

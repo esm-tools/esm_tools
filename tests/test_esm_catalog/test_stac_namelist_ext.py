@@ -108,6 +108,25 @@ def test_collection_extension_url_appended_once():
     assert col.stac_extensions.count(NAMELIST_URL) == 1
 
 
+def test_collection_extension_accepts_real_f90nml_namelist():
+    # namelists_by_component maps filename -> parsed namelist; the scan layer
+    # hands us the f90nml.Namelist object itself, not a plain dict copy of it.
+    f90nml = pytest.importorskip("f90nml")
+    nml = f90nml.reads(
+        """
+        &runctl
+          delta_time = 450
+          lcouple = .true.
+        /
+        """
+    )
+    col = make_collection(_ctx())
+    add_namelist_extension(col, {"namelist.echam": nml})
+    assert col.extra_fields["nml:parameters"]["runctl:delta_time"] == 450
+    assert col.extra_fields["nml:parameters"]["runctl:lcouple"] is True
+    assert col.extra_fields["nml:groups"] == ["runctl"]
+
+
 # --- add_namelist_item_extension (item-level, all components) ---
 
 

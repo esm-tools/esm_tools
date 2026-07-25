@@ -10,6 +10,7 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.datacube import add_datacube_extension
 from esm_catalog.namelist import add_namelist_item_extension
 
 
@@ -60,6 +61,7 @@ def make_item(
         )
     )
 
+    add_datacube_extension(item, metadata)
     add_namelist_item_extension(item, ctx)
 
     return item

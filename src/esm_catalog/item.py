@@ -10,6 +10,7 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.datacube import add_datacube_extension
 from esm_catalog.paleo import add_experiment_type, add_paleo_extension
 
 
@@ -60,6 +61,7 @@ def make_item(
         )
     )
 
+    add_datacube_extension(item, metadata)
     add_paleo_extension(item, ctx.paleo_config)
     add_experiment_type(item)
 

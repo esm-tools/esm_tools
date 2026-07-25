@@ -206,6 +206,22 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 900          # constant that control numerical stability of mEVP.
                     beta_evp: 900           # constant that control numerical stability of mEVP.
+            jack:
+                    nx: 30041537
+                    whichEVP: 1
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
+            palk:
+                    nx: 1724005
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
+            next:
+                    nx: 12952215
+                    whichEVP: 1
+                    alpha_evp: 800          # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
+
             SO3:
                     nx: 11087062
                     whichEVP: 1
@@ -675,7 +691,7 @@ fesom:
             config:  config
             cvmix:   cvmix
             dyn:     dyn
-            forcing: forcing
+            nml_forcing: nml_forcing
             ice:     ice
             icepack: icepack
             io:      io
@@ -687,7 +703,7 @@ fesom:
             config:  "${namelist_dir}/namelist.config"
             cvmix:   "${namelist_dir}/namelist.cvmix"
             dyn:     "${namelist_dir}/namelist.dyn"
-            forcing: "${namelist_dir}/namelist.forcing"
+            forcing_nml: "${namelist_dir}/namelist.forcing"
             ice:     "${namelist_dir}/namelist.ice"
             icepack: "${namelist_dir}/namelist.icepack"
             io:      "${namelist_dir}/namelist.io"
@@ -699,7 +715,7 @@ fesom:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"
             dyn:     "namelist.dyn"
-            forcing: "namelist.forcing"
+            forcing_nml: "namelist.forcing"
             ice:     "namelist.ice"
             icepack: "namelist.icepack"
             io:      "namelist.io"
@@ -798,6 +814,8 @@ fesom:
     further_reading:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
+            - fesom/fesom.tripyview.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

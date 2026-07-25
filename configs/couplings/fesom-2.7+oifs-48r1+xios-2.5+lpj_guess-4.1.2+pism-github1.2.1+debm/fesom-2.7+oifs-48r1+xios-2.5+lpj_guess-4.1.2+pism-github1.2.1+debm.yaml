@@ -17,3 +17,5 @@ coupling_changes:
 - sed -i 's/xios\/build_ecearth/xios/g' oifs-48r1/bundle.yml
 - sed -i -E 's#xios-[0-9.+]+/build_ecearth#xios#g' oifs-48r1/bundle.yml
 - sed -i 's/oasis3-mct-5.2/oasis/g' oifs-48r1/bundle.yml
+- sed -i '/^ *ENABLE_CUDA=OFF$/d' oifs-48r1/bundle.yml
+- sed -i 's/^\( *\)ATLAS_ENABLE_CUDA=OFF/\1ATLAS_ENABLE_CUDA=OFF\n\1ENABLE_CUDA=OFF/' oifs-48r1/bundle.yml

@@ -280,7 +280,7 @@ oifs:
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
-        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_CurX, A_CurY, A_WindX, A_WindY, 
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_CurX, A_CurY, A_WindX, A_WindY,
         A_FCO2_oce, A_XCO2_oce]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
@@ -784,7 +784,6 @@ lpj_guess:
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
         "lpjg_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2
-
         "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
     config_in_work:
@@ -985,6 +984,7 @@ oasis3mct:
                     - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
                     - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
                     - 'heat_ico <--gauswgt_gsmart-- A_Q_ice'
+                      #                    - 'heat_ico <--bicubic-- A_Q_ice'
                     - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                     - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
                     - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
@@ -1344,5 +1344,8 @@ computer:
                 levante:
                     iolibraries: system_intel_libs
                     compiler_mpi: intel2022_openmpi
+                albedo:
+                    mpi_implementation: openmpi_2026
+                    load_python: true
         '*':
             foo: bar

@@ -99,6 +99,9 @@ def main():
         # Ignore the globbing variables
         info["ignore"]["finished_config"].append("_glob_[0-9]*: ")
 
+    # Ignore conda configs
+    info["ignore"]["finished_config"].append("launched_with_conda:")
+
     logger.debug(f"User info: {info.get('user')}")
     logger.debug(f"Actually compile: {info.get('actually_compile')}")
     logger.debug(f"Actually run: {info.get('actually_run')}")

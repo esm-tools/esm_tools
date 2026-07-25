@@ -22,7 +22,7 @@
       "properties": {
         "paleo:year": {
           "title": "Geological year",
-          "description": "Geological year the simulation represents (negative = past, e.g. -20000 for LGM).",
+          "description": "Geological year the simulation represents (negative = past, e.g. -21000 for LGM).",
           "type": "integer"
         },
         "paleo:display": {

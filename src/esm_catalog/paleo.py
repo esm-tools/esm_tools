@@ -1,7 +1,7 @@
 """Paleoclimate STAC extension: geological time and experiment classification.
 
 Adds properties for paleoclimate simulations where model years represent
-geological time periods (e.g., Last Glacial Maximum at 20,000 years ago,
+geological time periods (e.g., Last Glacial Maximum at 21,000 years ago,
 Eocene at 50 million years ago), plus a coarse experiment_type
 classification for every item.
 
@@ -20,7 +20,7 @@ Properties added by add_experiment_type (every item):
 The paleo configuration is the ``general.paleo`` section of the ESM-Tools
 config, passed down as a plain dict (see CollectionContext.paleo_config)::
 
-    reference_year: -20000  # LGM
+    reference_year: -21000  # LGM
     epoch: "Pleistocene"
     period: "Quaternary"
 """
@@ -28,6 +28,8 @@ config, passed down as a plain dict (see CollectionContext.paleo_config)::
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
+
+from esm_calendar import Date
 
 from esm_catalog.registry import EXTENSION_URLS
 
@@ -107,6 +109,7 @@ def add_experiment_type(item: "pystac.Item") -> None:
 
 
 def _register(item: "pystac.Item") -> None:
+    """Add the paleo extension URL to *item*.stac_extensions, once."""
     url = EXTENSION_URLS["paleo"]
     if url not in item.stac_extensions:
         item.stac_extensions.append(url)
@@ -150,19 +153,16 @@ def _resolve_start_year(item: "pystac.Item") -> Optional[int]:
 def _parse_year_from_iso(dt_str: str) -> Optional[int]:
     """Parse the year from an ISO datetime string, handling large/negative years.
 
-    Standard datetime.fromisoformat() cannot handle years < 1 or > 9999.
+    Uses esm_calendar.Date, which is paleo-aware (negative years), instead of
+    the stdlib datetime, whose year is restricted to [1, 9999].
     """
     if not dt_str:
         return None
 
-    negative = dt_str.startswith("-")
-    body = dt_str[1:] if negative else dt_str
-    year_part = body.split("-", 1)[0]
     try:
-        year = int(year_part)
+        return Date(dt_str).year
     except ValueError:
         return None
-    return -year if negative else year
 
 
 def _format_geological(year: int, reference_year: int = 2024) -> str:

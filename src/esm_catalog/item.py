@@ -112,12 +112,13 @@ def _contact_to_stac(contact) -> dict:
 
 def add_contacts(item, ctx) -> None:
     """Inject contacts extension URL and properties into *item*."""
-    contacts = getattr(ctx, "contacts", [])
-    if not contacts:
+    if not ctx.contacts:
         return
 
-    item.properties["contacts"] = [_contact_to_stac(c) for c in contacts]
-    item.stac_extensions.append(EXTENSION_URLS["contacts"])
+    item.properties["contacts"] = [_contact_to_stac(c) for c in ctx.contacts]
+    url = EXTENSION_URLS["contacts"]
+    if url not in item.stac_extensions:
+        item.stac_extensions.append(url)
 
 
 def _build_datetime(metadata: dict) -> tuple:

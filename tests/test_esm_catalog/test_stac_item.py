@@ -11,12 +11,17 @@ from upath import UPath
 
 from esm_catalog.context import CollectionContext, Contact
 from esm_catalog.item import _to_href, make_item
+from esm_catalog.registry import EXTENSION_URLS
 
 
-def _ctx():
-    return CollectionContext(
-        experiment_id="exp-alpha", component="echam", collection_id="exp-alpha"
-    )
+def _ctx(**overrides):
+    base = {
+        "experiment_id": "exp-alpha",
+        "component": "echam",
+        "collection_id": "exp-alpha",
+    }
+    base.update(overrides)
+    return CollectionContext(**base)
 
 
 def _metadata(**kwargs):
@@ -226,15 +231,6 @@ def test_netcdf_media_type_default(tmp_path):
 # --- contacts ---
 
 
-def _ctx_with_contacts(*contacts):
-    return CollectionContext(
-        experiment_id="exp-alpha",
-        component="echam",
-        collection_id="exp-alpha",
-        contacts=list(contacts),
-    )
-
-
 def test_item_no_contacts_no_extension(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
@@ -246,8 +242,8 @@ def test_item_no_contacts_no_extension(tmp_path):
 def test_item_contacts_in_properties(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx_with_contacts(
-        Contact(name="Jane Doe", orcid="0000-0001-2345-6789", institution="AWI")
+    ctx = _ctx(
+        contacts=[Contact(name="Jane Doe", orcid="0000-0001-2345-6789", institution="AWI")]
     )
     item = make_item(f, _metadata(), ctx)
     contacts = item.properties["contacts"]
@@ -260,12 +256,14 @@ def test_item_contacts_in_properties(tmp_path):
 def test_item_contacts_orcid_full_url_passthrough(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx_with_contacts(
-        Contact(
-            name="Jane Doe",
-            orcid="https://orcid.org/0000-0001-2345-6789",
-            institution="AWI",
-        )
+    ctx = _ctx(
+        contacts=[
+            Contact(
+                name="Jane Doe",
+                orcid="https://orcid.org/0000-0001-2345-6789",
+                institution="AWI",
+            )
+        ]
     )
     item = make_item(f, _metadata(), ctx)
     assert (
@@ -275,18 +273,17 @@ def test_item_contacts_orcid_full_url_passthrough(tmp_path):
 
 
 def test_item_contacts_registers_extension_url(tmp_path):
-
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx_with_contacts(Contact(name="Jane", institution="AWI"))
+    ctx = _ctx(contacts=[Contact(name="Jane", institution="AWI")])
     item = make_item(f, _metadata(), ctx)
-    assert any("contacts" in url for url in item.stac_extensions)
+    assert EXTENSION_URLS["contacts"] in item.stac_extensions
 
 
 def test_item_contacts_orcid_optional(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx_with_contacts(Contact(name="Jane Doe", institution="AWI"))
+    ctx = _ctx(contacts=[Contact(name="Jane Doe", institution="AWI")])
     item = make_item(f, _metadata(), ctx)
     assert "identifier" not in item.properties["contacts"][0]
 
@@ -294,9 +291,11 @@ def test_item_contacts_orcid_optional(tmp_path):
 def test_item_multiple_contacts(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx_with_contacts(
-        Contact(name="Jane Doe", institution="AWI"),
-        Contact(name="John Smith", institution="DKRZ"),
+    ctx = _ctx(
+        contacts=[
+            Contact(name="Jane Doe", institution="AWI"),
+            Contact(name="John Smith", institution="DKRZ"),
+        ]
     )
     item = make_item(f, _metadata(), ctx)
     assert len(item.properties["contacts"]) == 2

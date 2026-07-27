@@ -9,12 +9,28 @@ import pytest
 from esm_catalog.context import CollectionContext, Contact
 
 
-def test_context_minimal():
-    ctx = CollectionContext(
+@pytest.fixture
+def ctx():
+    return CollectionContext(
         experiment_id="exp-alpha",
         component="echam",
         collection_id="exp-alpha",
     )
+
+
+@pytest.fixture
+def production_ctx():
+    return dict(
+        experiment_id="exp",
+        component="echam",
+        collection_id="exp",
+        production=True,
+        description="desc",
+        data_license="CC-BY-4.0",
+    )
+
+
+def test_context_minimal(ctx):
     assert ctx.experiment_id == "exp-alpha"
     assert ctx.experiment_path is None
     assert ctx.namelists_by_component == {}
@@ -105,39 +121,16 @@ def test_contact_validate_fails_with_none_name():
         Contact(name=None, institution="AWI").validate_production_req()
 
 
-def test_production_context_requires_contact():
+def test_production_context_requires_contact(production_ctx):
     with pytest.raises(ValueError, match="contact"):
-        CollectionContext(
-            experiment_id="exp",
-            component="echam",
-            collection_id="exp",
-            production=True,
-            description="desc",
-            data_license="CC-BY-4.0",
-        )
+        CollectionContext(**production_ctx)
 
 
-def test_production_context_requires_contact_with_institution():
+def test_production_context_requires_contact_with_institution(production_ctx):
     with pytest.raises(ValueError, match="institution"):
-        CollectionContext(
-            experiment_id="exp",
-            component="echam",
-            collection_id="exp",
-            production=True,
-            description="desc",
-            data_license="CC-BY-4.0",
-            contacts=[Contact(name="Jane")],
-        )
+        CollectionContext(**production_ctx, contacts=[Contact(name="Jane")])
 
 
-def test_production_context_passes_with_valid_contact():
-    ctx = CollectionContext(
-        experiment_id="exp",
-        component="echam",
-        collection_id="exp",
-        production=True,
-        description="desc",
-        data_license="CC-BY-4.0",
-        contacts=[Contact(name="Jane", institution="AWI")],
-    )
+def test_production_context_passes_with_valid_contact(production_ctx):
+    ctx = CollectionContext(**production_ctx, contacts=[Contact(name="Jane", institution="AWI")])
     assert ctx.production is True

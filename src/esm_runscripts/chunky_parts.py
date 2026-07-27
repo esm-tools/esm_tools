@@ -535,30 +535,34 @@ def _is_last_run_in_chunk(config):
     return config
 
 
+def _gen_set(config, key, val):
+    """Set config["general"][key], preserving provenance when available.
+
+    The v3.4-co2 esm_parser merge yields a plain dict for config["general"] in
+    the prepare recipe (no super_setitem); fall back to plain assignment so
+    iterative coupling works whichever type esm_parser produces.
+    """
+    setter = getattr(config["general"], "super_setitem", None)
+    if callable(setter):
+        setter(key, val)
+    else:
+        config["general"][key] = val
+
+
 def _find_next_model_to_run(config):
     # concurrent: no handoff -- each chain always continues itself
     if _coupling_mode(config) == "concurrent":
-        config["general"].super_setitem(
-            "next_setup_name", config["general"]["setup_name"]
-        )
+        _gen_set(config, "next_setup_name", config["general"]["setup_name"])
     elif config["general"]["last_run_in_chunk"]:
-        config["general"].super_setitem(
-            "next_setup_name", config["general"]["model_named_queue"][0]
-        )
+        _gen_set(config, "next_setup_name", config["general"]["model_named_queue"][0])
     else:
-        config["general"].super_setitem(
-            "next_setup_name", config["general"]["setup_name"]
-        )
+        _gen_set(config, "next_setup_name", config["general"]["setup_name"])
     return config
 
 
 def _find_next_chunk_number(config):
     if config["general"]["last_run_in_chunk"]:
-        config["general"].super_setitem(
-            "next_chunk_number", config["general"]["chunk_number"] + 1
-        )
+        _gen_set(config, "next_chunk_number", config["general"]["chunk_number"] + 1)
     else:
-        config["general"].super_setitem(
-            "next_chunk_number", config["general"]["chunk_number"]
-        )
+        _gen_set(config, "next_chunk_number", config["general"]["chunk_number"])
     return config

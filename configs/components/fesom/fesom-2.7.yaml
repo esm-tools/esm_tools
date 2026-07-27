@@ -691,7 +691,7 @@ fesom:
             config:  config
             cvmix:   cvmix
             dyn:     dyn
-            nml_forcing: nml_forcing
+            forcing_nml: forcing_nml
             ice:     ice
             icepack: icepack
             io:      io

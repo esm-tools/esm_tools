@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import ClassVar
 
 
-@dataclass
+@dataclass(frozen=True)
 class Contact:
     """A single PI or author contact for an experiment.
 

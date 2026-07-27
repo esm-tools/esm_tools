@@ -273,8 +273,12 @@ fesom:
 
     outdata_sources:
             fesom: "*.fesom.*.nc"
+            fesom_xios: "*.fesom_${start_date!syear}-${end_date!syear}.nc"
+            fesom_reg_xios: "*.fesom.reg_${start_date!syear}-${end_date!syear}.nc"
     outdata_targets:
             fesom: "*.fesom.*.nc"
+            fesom_xios: "*.fesom.${start_date!syear}.nc"
+            fesom_reg_xios: "*.fesom.gr.${start_date!syear}.nc"
 
     choose_with_icb:
             True:
@@ -568,47 +572,13 @@ fesom:
     choose_with_xios:
             true:
                     # XIOS writes "<var>.fesom_<ystart>-<yend>.nc" into the work
-                    # dir. Collect those alongside the legacy pattern so tidy
-                    # copies them into outdata/fesom, then a post-tidy subjob
-                    # renames them to the old "<var>.fesom.<year>.nc" scheme.
-                    add_outdata_sources:
-                            fesom_xios: "*.fesom_*.nc"
-                    add_outdata_targets:
-                            fesom_xios: "*.fesom_*.nc"
-
-                    scripts_files:
-                            rename_xios: rename_xios
-                            rename_xios_reg: rename_xios_reg
-                    scripts_sources:
-                            rename_xios: "${esm_configs_dir}/components/fesom/rename_xios_fesom.sh"
-                            rename_xios_reg: "${esm_configs_dir}/components/fesom/rename_xios_fesom_reg.sh"
-                    scripts_targets:
-                            rename_xios: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom.sh"
-                            rename_xios_reg: "${general.experiment_scripts_dir}/${model}/rename_xios_fesom_reg.sh"
-
-                    workflow:
-                            next_run_triggered_by: tidy
-                            subjobs:
-                                    Rename_XIOS_FESOM:
-                                            batch_or_shell: shell
-                                            order_in_cluster: concurrent
-                                            run_after: tidy
-                                            script_dir: ${general.experiment_scripts_dir}/${model}
-                                            script: "rename_xios_fesom.sh ${fesom.experiment_outdata_dir}"
-                                            nproc: 1
-                                    # Sibling renamer for regridded XIOS output:
-                                    #   <var>.fesom.reg_<ystart>-<yend>.nc  ->  <var>.fesom.gr.<ystart>.nc
-                                    # Disjoint glob from Rename_XIOS_FESOM (this one needs
-                                    # ".fesom.reg_" literally), safe to run concurrently.
-                                    # Idempotent: skips files already in target form, no-ops
-                                    # if no regridded files are present (eg fesom.regrid_surface_output=false).
-                                    Rename_XIOS_FESOM_REG:
-                                            batch_or_shell: shell
-                                            order_in_cluster: concurrent
-                                            run_after: tidy
-                                            script_dir: ${general.experiment_scripts_dir}/${model}
-                                            script: "rename_xios_fesom_reg.sh ${fesom.experiment_outdata_dir}"
-                                            nproc: 1
+                    # dir. fesom_xios and fesom_reg_xios file labels account for
+                    # this different name pattern and ensures that the files are
+                    # renamed when copied/moved to the outdata dir with the legacy
+                    # pattern.
+                    add_outdata_files:
+                            fesom_xios: fesom_xios
+                            fesom_reg_xios: fesom_reg_xios
 
     use_landice_water: False
     choose_general.iterative_coupling:
@@ -670,7 +640,7 @@ fesom:
             config:  config
             cvmix:   cvmix
             dyn:     dyn
-            forcing: forcing
+            nml_forcing: nml_forcing
             ice:     ice
             icepack: icepack
             io:      io
@@ -682,7 +652,7 @@ fesom:
             config:  "${namelist_dir}/namelist.config"
             cvmix:   "${namelist_dir}/namelist.cvmix"
             dyn:     "${namelist_dir}/namelist.dyn"
-            forcing: "${namelist_dir}/namelist.forcing"
+            nml_forcing: "${namelist_dir}/namelist.forcing"
             ice:     "${namelist_dir}/namelist.ice"
             icepack: "${namelist_dir}/namelist.icepack"
             io:      "${namelist_dir}/namelist.io"
@@ -694,7 +664,7 @@ fesom:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"
             dyn:     "namelist.dyn"
-            forcing: "namelist.forcing"
+            nml_forcing: "namelist.forcing"
             ice:     "namelist.ice"
             icepack: "namelist.icepack"
             io:      "namelist.io"
@@ -793,6 +763,7 @@ fesom:
     further_reading:
             - fesom/fesom.forcing.yaml
             - fesom/fesom.env.yaml
+            - fesom/fesom.tripyview.yaml
 
     # ------------------------
     # RECIPE

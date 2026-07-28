@@ -48,33 +48,33 @@ class batch_system:
     def job_is_still_running(self, jobid):
         return self.bs.job_is_still_running(jobid)
 
-    def add_pre_launcher_lines(self, config, cluster, runfile):
-        return self.bs.add_pre_launcher_lines(config, cluster, runfile)
+    def add_pre_launcher_lines(self, config, plan, runfile):
+        return self.bs.add_pre_launcher_lines(config, plan, runfile)
 
     # TODO: remove it once it's not needed anymore (substituted by packjob)
     def write_het_par_wrappers(self, config):
         return self.bs.write_het_par_wrappers(config)
 
-    def het_par_headers(self, config, cluster, all_values_flat):
-        return self.bs.het_par_headers(config, cluster, all_values_flat)
+    def het_par_headers(self, config, plan, all_values_flat):
+        return self.bs.het_par_headers(config, plan, all_values_flat)
 
-    def prepare_launcher(self, config, cluster):
-        self.bs.prepare_launcher(config, cluster)
+    def prepare_launcher(self, config, plan):
+        self.bs.prepare_launcher(config, plan)
         return config
 
     @staticmethod
-    def get_run_filename(config, cluster):
+    def get_run_filename(config, plan):
         folder = config["general"]["thisrun_scripts_dir"]
         expid = config["general"]["expid"]
         startdate = config["general"]["current_date"]
         enddate = config["general"]["end_date"]
         run_filename = (
-            f"{folder}/{expid}_{cluster}" f"_{config['general']['run_datestamp']}.run"
+            f"{folder}/{expid}_{plan}" f"_{config['general']['run_datestamp']}.run"
         )
         return run_filename
 
     @staticmethod
-    def get_shell_header(config, cluster):
+    def get_shell_header(config, plan):
         header = []
         coupling_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -86,7 +86,7 @@ class batch_system:
         return header
 
     @staticmethod
-    def get_batch_header(config, cluster):
+    def get_batch_header(config, plan):
         header = []
         this_batch_system = config["computer"]
         if "sh_interpreter" in this_batch_system:
@@ -102,7 +102,7 @@ class batch_system:
         else:
             tasks_nodes_flag = "tasks_flag"
 
-        if cluster == "compute":
+        if plan == "compute":
             partition = config["computer"]["partitions"]["compute"]["name"]
         else:
             partition = config["computer"]["partitions"]["pp"]["name"]
@@ -111,7 +111,7 @@ class batch_system:
             ("@tasks@", tasks),
             ("@nodes@", nodes),
             ("@partition@", partition),
-            ("@jobtype@", cluster),
+            ("@jobtype@", plan),
         ]
 
         all_flags = [
@@ -158,7 +158,7 @@ class batch_system:
         # Call the ``het_par_headers`` method to calculate the heterogeneous
         # parallelization flags, if necessary
         all_values_flat = config["general"]["batch"].het_par_headers(
-            config, cluster, all_values_flat
+            config, plan, all_values_flat
         )
 
         # loop over all batch flag values and replace the tags
@@ -171,7 +171,7 @@ class batch_system:
         return header
 
     @staticmethod
-    def calculate_requirements(config, cluster=None):
+    def calculate_requirements(config, plan=None):
         # get number of tasks for the whole job to be submitted,
         # as well as number of start process and end process for each
         # component (in case a hostfile needs to be written)
@@ -183,13 +183,13 @@ class batch_system:
         start_core = 0
         end_core = 0
 
-        # if not explicitly stated for which cluster we need the
+        # if not explicitly stated for which plan we need the
         # requirements, calculate them for the job we are already in
 
-        if not cluster:
-            cluster = config["general"]["jobtype"]
+        if not plan:
+            plan = config["general"]["jobtype"]
 
-        if cluster in reserved_jobtypes:
+        if plan in reserved_jobtypes:
             for model in config["general"]["valid_model_names"]:
                 omp_num_threads = int(config[model].get("omp_num_threads", 1))
 
@@ -231,7 +231,7 @@ class batch_system:
                     config[model]["tasks"] += config[model].get("nprocio", 0)
 
                 nproc = config[model]["tasks"]
-                if cluster == "compute":
+                if plan == "compute":
                     cores_per_node = config["computer"]["partitions"]["compute"][
                         "cores_per_node"
                     ]
@@ -264,13 +264,13 @@ class batch_system:
             # workflow
 
             if (
-                not cluster
-                or cluster not in config["general"]["workflow"]["subjob_clusters"]
+                not plan
+                or plan not in config["general"]["workflow"]["plans"]
             ):
-                logger.error(f"Unknown or unset cluster: {cluster}.")
+                logger.error(f"Unknown or unset plan: {plan}.")
                 sys.exit(-1)
             # user defined jobtype doing dataprocessing
-            tasks = config["general"]["workflow"]["subjob_clusters"][cluster]["nproc"]
+            tasks = config["general"]["workflow"]["plans"][plan]["nproc"]
             cores_per_node = config["computer"]["partitions"]["pp"]["cores_per_node"]
             nodes = int(tasks / cores_per_node) + ((tasks % cores_per_node) > 0)
 
@@ -281,13 +281,13 @@ class batch_system:
         return config
 
     @staticmethod
-    def get_environment(config, subjob):
+    def get_environment(config, sub_plan):
         environment = []
 
         env = esm_environment.EnvironmentInfos(config, "run")
         commands = env.commands
-        if not subjob.replace("_general", "") in reserved_jobtypes:  # ??? fishy
-            commands += dataprocess.subjob_environment(config, subjob)
+        if not sub_plan.replace("_general", "") in reserved_jobtypes:  # ??? fishy
+            commands += dataprocess.sub_plan_environment(config, sub_plan)
         commands += [""]
 
         return commands
@@ -339,8 +339,8 @@ class batch_system:
                 )
         return extras
 
-    def get_bash_command_to_print_in_progress_log(config, subjob, message):
-        task = subjob.replace("_general", "")
+    def get_bash_command_to_print_in_progress_log(config, sub_plan, message):
+        task = sub_plan.replace("_general", "")
         run_number = config["general"]["run_number"]
         current_date = config["general"]["current_date"]
         jobid = config["general"]["jobid"]
@@ -526,22 +526,22 @@ class batch_system:
         ]
 
     @staticmethod
-    def append_start_statement(config, subjob):
+    def append_start_statement(config, sub_plan):
         return batch_system.get_bash_command_to_print_in_progress_log(
-            config, subjob, "start"
+            config, sub_plan, "start"
         )
 
     @staticmethod
-    def append_done_statement(config, subjob):
+    def append_done_statement(config, sub_plan):
         return batch_system.get_bash_command_to_print_in_progress_log(
-            config, subjob, "done"
+            config, sub_plan, "done"
         )
 
     @staticmethod
-    def get_run_commands(config, subjob, batch_or_shell):  # here or in compute.py?
+    def get_run_commands(config, sub_plan, batch_or_shell):  # here or in compute.py?
 
         commands = []
-        if subjob.startswith("compute"):
+        if sub_plan.startswith("compute"):
             if config["general"].get("submit_to_batch_system", True):
                 batch_system = config["computer"]
                 if "execution_command" in batch_system:
@@ -563,8 +563,8 @@ class batch_system:
                             + f" 2>&1{config['computer'].get('write_execution_log', '')} &"
                         )
         else:
-            subjob_tasks = dataprocess.subjob_tasks(config, subjob, batch_or_shell)
-            for task in subjob_tasks:
+            tasks = dataprocess.sub_plan_tasks(config, sub_plan, batch_or_shell)
+            for task in tasks:
                 commands.append(task)
 
         return commands
@@ -596,52 +596,48 @@ class batch_system:
         return commands
 
     @staticmethod
-    def write_simple_runscript(config, cluster, batch_or_shell="batch"):
+    def write_simple_runscript(config, plan, batch_or_shell="batch"):
 
-        # if no cluster is specified, work on the one we are in
-        # if not cluster:
-        #    cluster = config["general"]["jobtype"]
-
-        clusterconf = None
+        plan_conf = None
         if "workflow" in config["general"]:
-            if "subjob_clusters" in config["general"]["workflow"]:
-                if cluster in config["general"]["workflow"]["subjob_clusters"]:
-                    clusterconf = config["general"]["workflow"]["subjob_clusters"][
-                        cluster
+            if "plans" in config["general"]["workflow"]:
+                if plan in config["general"]["workflow"]["plans"]:
+                    plan_conf = config["general"]["workflow"]["plans"][
+                        plan
                     ]
 
-        if not clusterconf:
-            logger.error(f"No config found for cluster {cluster}.")
+        if not plan_conf:
+            logger.error(f"No config found for plan {plan}.")
             sys.exit(-1)
 
         self = config["general"]["batch"]
-        runfilename = batch_system.get_run_filename(config, cluster)
+        runfilename = batch_system.get_run_filename(config, plan)
 
         logger.debug("still alive")
         logger.debug(f"jobtype: {config['general']['jobtype']}")
-        logger.debug(f"writing run file for: {cluster}")
+        logger.debug(f"writing run file for: {plan}")
 
         with open(runfilename, "w") as runfile:
 
             # batch header (if any)
             if batch_or_shell == "batch":
 
-                config = batch_system.calculate_requirements(config, cluster)
-                if cluster in reserved_jobtypes:
+                config = batch_system.calculate_requirements(config, plan)
+                if plan in reserved_jobtypes:
                     # TODO: remove it once it's not needed anymore (substituted by packjob)
                     if config["computer"].get("taskset", False):
                         config = config["general"]["batch"].write_het_par_wrappers(config)
                     # Prepare launcher (writes hostfile_srun for srun --multi-prog)
-                    config = config["general"]["batch"].prepare_launcher(config, cluster)
+                    config = config["general"]["batch"].prepare_launcher(config, plan)
                 # Initiate the header
-                header = batch_system.get_batch_header(config, cluster)
+                header = batch_system.get_batch_header(config, plan)
 
                 for line in header:
                     runfile.write(line + "\n")
                 runfile.write("\n")
 
             else:
-                header = batch_system.get_shell_header(config, cluster)
+                header = batch_system.get_shell_header(config, plan)
                 for line in header:
                     runfile.write(line + "\n")
                 runfile.write("\n")
@@ -650,43 +646,42 @@ class batch_system:
             # restored before resubmission
             for line in batch_system.get_env_capture_commands(config):
                 runfile.write(line + "\n")
-            if clusterconf:
-                for subjob in clusterconf["subjobs"]:
+            if plan_conf:
+                for sub_plan in plan_conf["sub_plans"]:
 
-                    # environment for each subjob of a cluster
-                    environment = batch_system.get_environment(config, subjob)
+                    # environment for each sub-plan of a plan
+                    environment = batch_system.get_environment(config, sub_plan)
                     batch_system.write_env(config, environment, runfilename)
                     for line in environment:
                         runfile.write(line + "\n")
 
-                    # extra entries for each subjob
+                    # extra entries for each sub-plan
                     extra = batch_system.get_extra(config)
                     for line in extra:
                         runfile.write(line + "\n")
 
                     # Add actual commands
                     commands = batch_system.get_run_commands(
-                        config, subjob, batch_or_shell
+                        config, sub_plan, batch_or_shell
                     )
-                    # commands = clusterconf.get("data_task_list", [])
                     runfile.write("\n")
-                    runfile.write(self.append_start_statement(config, subjob) + "\n")
+                    runfile.write(self.append_start_statement(config, sub_plan) + "\n")
                     runfile.write("\n")
                     runfile.write("cd " + config["general"]["thisrun_work_dir"] + "\n")
-                    if cluster in reserved_jobtypes:
+                    if plan in reserved_jobtypes:
                         config["general"]["batch"].add_pre_launcher_lines(
-                            config, cluster, runfile
+                            config, plan, runfile
                         )
 
                     for line in commands:
                         runfile.write(line + "\n")
 
-            # elif multisrun_stuff: # pauls stuff maybe here? or matching to clusterconf possible?
+            # elif multisrun_stuff: # pauls stuff maybe here? or matching to plan_conf possible?
             #    dummy = 0
             else:  # "normal" case
                 dummy = 0
 
-            if submits_another_job(config, cluster):  # and batch_or_shell == "batch":
+            if submits_another_job(config, plan):  # and batch_or_shell == "batch":
                 # -j ? is that used somewhere? I don't think so, replaced by workflow
                 #   " -j "+ config["general"]["jobtype"]
 
@@ -695,7 +690,7 @@ class batch_system:
                 )
                 observe_call = (
                     f'esm_runscripts {config["general"]["scriptname"]} '
-                    f'-e {config["general"]["expid"]} -t observe_{cluster} '
+                    f'-e {config["general"]["expid"]} -t observe_{plan} '
                     f'-p ${{process}} -s {rundate} -r {config["general"]["run_number"]}'
                     f' -v --last-jobtype {config["general"]["jobtype"]}'
                 )
@@ -726,20 +721,20 @@ class batch_system:
                 if "--task-log-files" in config["general"]["original_command"]:
                     observe_call += " --task-log-files"
 
-                subjobs_to_launch = config["general"]["workflow"]["subjob_clusters"][
-                    cluster
+                plans_to_launch = config["general"]["workflow"]["plans"][
+                    plan
                 ]["next_submit"]
 
                 runfile.write("\n")
-                runfile.write("# Call to esm_runscript to start subjobs:\n")
-                runfile.write("# " + str(subjobs_to_launch) + "\n")
+                runfile.write("# Call to esm_runscript to start plans:\n")
+                runfile.write("# " + str(plans_to_launch) + "\n")
                 runfile.write("process=$!\n\n")
 
                 # Restore batch env vars before resubmission
                 for line in batch_system.get_env_recovery_commands(config):
                     runfile.write(line + "\n")
 
-                # extra entries for each subjob
+                # extra entries for each sub-plan
                 post_run_commands = batch_system.get_post_run_commands(config)
                 for line in post_run_commands:
                     runfile.write(line + "\n")
@@ -753,7 +748,7 @@ class batch_system:
                 )
                 runfile.write(observe_call + "\n")
                 runfile.write("\n")
-                runfile.write(self.append_done_statement(config, subjob) + "\n")
+                runfile.write(self.append_done_statement(config, sub_plan) + "\n")
 
             runfile.write("\n")
             runfile.write("wait\n")
@@ -878,7 +873,7 @@ class batch_system:
                     config[model]["nproc"] = 1
         return config
 
-    def het_par_launcher_lines(self, config, cluster):
+    def het_par_launcher_lines(self, config, plan):
         """
         Loops through the components to generate job launcher flags and execution
         commands, to be appended in substitution to the ``@components@`` tag, in
@@ -890,8 +885,8 @@ class batch_system:
         config : dict
             Configuration dictionary containing information about the experiment and
             experiment directory.
-        cluster : str
-            Type of job cluster.
+        plan : str
+            Type of job plan.
         """
         component_lines = []
         # Read in the separator to be used in between component calls in the job
@@ -910,7 +905,7 @@ class batch_system:
             # kh 24.06.22 workaround: filter hdmodel
             if command and (command != "NONE"):
                 launcher = config["computer"].get("launcher")
-                launcher_flags = self.calc_launcher_flags(config, model, cluster)
+                launcher_flags = self.calc_launcher_flags(config, model, plan)
                 component_lines.append(f"{launcher_flags} ./{command} ")
 
         # Merge each component flags and commands into a single string
@@ -919,11 +914,11 @@ class batch_system:
         config["computer"]["execution_command"] = (
             config["computer"]["execution_command"]
             .replace("@components@", components)
-            .replace("@jobtype@", cluster)
+            .replace("@jobtype@", plan)
         )
 
     @staticmethod
-    def calc_launcher_flags(config, model, cluster):
+    def calc_launcher_flags(config, model, plan):
         """
         Calculates the launcher flags for the job luncher based on the ``nproc`` of the
         different components, with the possibility of using heterogeneous
@@ -959,8 +954,8 @@ class batch_system:
             experiment directory.
         model : str
             Component for which the flags are to be calculated.
-        cluster : str
-            Type of job cluster.
+        plan : str
+            Type of job plan.
 
         Returns
         -------
@@ -972,7 +967,7 @@ class batch_system:
         launcher_flags = config["computer"]["launcher_flags_per_component"]
         # Cores per node
         # cores_per_node = config["computer"]["cores_per_node"]
-        if cluster == "compute":
+        if plan == "compute":
             cores_per_node = config["computer"]["partitions"]["compute"][
                 "cores_per_node"
             ]
@@ -1043,8 +1038,8 @@ class batch_system:
         return launcher_flags
 
 
-def submits_another_job(config, cluster):
-    clusterconf = config["general"]["workflow"]["subjob_clusters"][cluster]
-    if clusterconf.get("next_submit", []) == []:
+def submits_another_job(config, plan):
+    plan_conf = config["general"]["workflow"]["plans"][plan]
+    if plan_conf.get("next_submit", []) == []:
         return False
     return True

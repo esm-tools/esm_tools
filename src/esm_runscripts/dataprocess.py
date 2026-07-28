@@ -2,17 +2,17 @@ import os
 import importlib.util
 
 
-def subjob_environment(config, subjob):
+def sub_plan_environment(config, sub_plan):
 
     task_list = []
-    subjob_config = config["general"]["workflow"]["subjobs"][subjob]
+    sub_plan_config = config["general"]["workflow"]["sub_plans"][sub_plan]
 
-    env_preparation = subjob_config.get("env_preparation", False)
-    scriptdir = subjob_config.get("script_dir", False)
+    env_preparation = sub_plan_config.get("env_preparation", False)
+    scriptdir = sub_plan_config.get("script_dir", False)
 
     if env_preparation:
         env = assemble_filename(env_preparation, scriptdir, config)
-        spec = importlib.util.spec_from_file_location(subjob, env)
+        spec = importlib.util.spec_from_file_location(sub_plan, env)
         envmodule = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(envmodule)
 
@@ -22,26 +22,26 @@ def subjob_environment(config, subjob):
     return task_list
 
 
-def subjob_tasks(config, subjob, batch_or_shell):
+def sub_plan_tasks(config, sub_plan, batch_or_shell):
 
     task_list = []
-    subjob_config = config["general"]["workflow"]["subjobs"][subjob]
+    sub_plan_config = config["general"]["workflow"]["sub_plans"][sub_plan]
 
     old_logfile = config["general"]["logfile_path"]
     logfile_dir = os.path.dirname(old_logfile)
-    if config["general"]["setup_name"] in subjob:
-        bare_subjob = subjob.replace("_" + config["general"]["setup_name"], "")
+    if config["general"]["setup_name"] in sub_plan:
+        bare_sub_plan = sub_plan.replace("_" + config["general"]["setup_name"], "")
     else:
-        bare_subjob = subjob
+        bare_sub_plan = sub_plan
     logfile_name = os.path.basename(old_logfile).replace(
-        config["general"]["jobtype"], bare_subjob
+        config["general"]["jobtype"], bare_sub_plan
     )
 
     new_logfile = os.path.join(logfile_dir, logfile_name)
 
-    scriptdir = subjob_config.get("script_dir", False)
-    script = subjob_config.get("script", False)
-    call_function = subjob_config.get("call_function", False)
+    scriptdir = sub_plan_config.get("script_dir", False)
+    script = sub_plan_config.get("script", False)
+    call_function = sub_plan_config.get("call_function", False)
 
     if script:
         script = assemble_filename(script, scriptdir, config)
@@ -50,7 +50,7 @@ def subjob_tasks(config, subjob, batch_or_shell):
             if "calc_launcher_flags" in dir(config['general']["batch"].bs):
                 launcher_flags = config['general']["batch"].bs.calc_launcher_flags(
                     {
-                        "dataprocess": subjob_config,
+                        "dataprocess": sub_plan_config,
                         "computer": config["computer"]
                     },
                     'dataprocess',

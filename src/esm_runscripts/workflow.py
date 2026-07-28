@@ -472,7 +472,7 @@ def collect_all_workflow_information(config):
                             ):
                                 gw_config["sub_plans"][other_sub_plan][
                                     "run_after"
-                                ] == sub_plan + "_" + model
+                                ] = sub_plan + "_" + model
                         if "run_before" in gw_config["sub_plans"][other_sub_plan]:
                             if (
                                 gw_config["sub_plans"][other_sub_plan]["run_before"]
@@ -480,7 +480,7 @@ def collect_all_workflow_information(config):
                             ):
                                 gw_config["sub_plans"][other_sub_plan][
                                     "run_before"
-                                ] == sub_plan + "_" + model
+                                ] = sub_plan + "_" + model
 
                     # if not in another plan, each sub-plan gets its own
                     if (

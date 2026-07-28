@@ -1,38 +1,116 @@
 import copy
-import os
 import sys
+import warnings
 
 import esm_parser
+from esm_tools.esm_warnings import ConfigKeyRenamedWarning
 from loguru import logger
 
 
-def skip_cluster(cluster, config):
+# Legacy workflow dict keys were renamed to snake_case P-Plan nouns. Runscripts
+# and config YAML in the wild may still use the old spellings, so we translate
+# them to the new keys once, at ingest, before any workflow assembly runs.
+# This keeps existing setups working without touching their files. See
+# :data:`_LEGACY_WORKFLOW_KEYS` below for the rename table; edge keys (Tier 2)
+# are deferred.
+_LEGACY_WORKFLOW_KEYS = {
+    "subjob_clusters": "plans",
+    "subjobs": "sub_plans",
+    "subjob_cluster": "parent_plan",
+}
+
+
+def _rename_legacy_key(container, old):
+    """Rename a legacy ``old`` key to its current spelling in ``container``.
+
+    The current spelling comes from :data:`_LEGACY_WORKFLOW_KEYS`, the single
+    source of truth. Warns once per call site (the ``default`` filter installed
+    by :mod:`esm_tools.esm_warnings` dedups on message + line number); a key
+    rewritten from more than one site -- e.g. ``subjobs``, translated both at
+    the top level and inside each plan -- therefore warns once per site.
+
+    If both the legacy key and its current spelling are present, their values
+    are *merged* rather than dropping the legacy one: dict values are
+    deep-merged with the explicit current key winning on conflict; for a
+    non-dict current value, the current one wins.
+    """
+    if not isinstance(container, dict) or old not in container:
+        return
+    new = _LEGACY_WORKFLOW_KEYS[old]
+    warnings.warn(ConfigKeyRenamedWarning(old, new), stacklevel=2)
+    legacy_value = container.pop(old)
+    if new not in container:
+        container[new] = legacy_value
+    elif isinstance(container[new], dict) and isinstance(legacy_value, dict):
+        # Keep legacy entries; let the explicit current key win on conflict.
+        esm_parser.dict_merge(legacy_value, container[new])
+        container[new] = legacy_value
+    # else: a non-dict current value wins; the legacy value is dropped.
+
+
+def translate_legacy_workflow_keys(config):
+    """Normalise legacy workflow key names to the current P-Plan nouns.
+
+    Cheap, one-pass, behaviour-preserving: walks every ``<model>.workflow``
+    block and rewrites the renamed structural keys in place, driven by
+    :data:`_LEGACY_WORKFLOW_KEYS`.
+    """
+    plans_key = _LEGACY_WORKFLOW_KEYS["subjob_clusters"]  # "plans"
+    sub_plans_key = _LEGACY_WORKFLOW_KEYS["subjobs"]  # "sub_plans"
+
+    for model_config in config.values():
+        if not isinstance(model_config, dict):
+            continue
+        w_config = model_config.get("workflow")
+        if not isinstance(w_config, dict):
+            continue
+
+        # Top-level containers.
+        _rename_legacy_key(w_config, "subjob_clusters")
+        _rename_legacy_key(w_config, "subjobs")
+
+        # subjob_cluster -> parent_plan pointer inside each sub-plan.
+        sub_plans = w_config.get(sub_plans_key)
+        if isinstance(sub_plans, dict):
+            for sub_plan in sub_plans.values():
+                _rename_legacy_key(sub_plan, "subjob_cluster")
+
+        # Inner subjobs list -> sub_plans inside each plan.
+        plans = w_config.get(plans_key)
+        if isinstance(plans, dict):
+            for plan in plans.values():
+                _rename_legacy_key(plan, "subjobs")
+
+    return config
+
+
+def skip_plan(plan, config):
     gw_config = config["general"]["workflow"]
-    clusterconf = gw_config["subjob_clusters"][cluster]
+    plan_conf = gw_config["plans"][plan]
 
     """
-    print(f"run_only {clusterconf.get('run_only', 'Error') }")
-    print(f"skip_chunk_number {clusterconf.get('skip_chunk_number', -999)}")
-    print(f"skip_run_number {clusterconf.get('skip_run_number', -999)}")
+    print(f"run_only {plan_conf.get('run_only', 'Error') }")
+    print(f"skip_chunk_number {plan_conf.get('skip_chunk_number', -999)}")
+    print(f"skip_run_number {plan_conf.get('skip_run_number', -999)}")
     print(f"chunk_number {config['general'].get('chunk_number', -998)}")
     print(f"run_number {config['general'].get('run_number', -998)}")
     print(f"last_run_in_chunk {config['general']['last_run_in_chunk']}")
     print(f"first_run_in_chunk {config['general']['first_run_in_chunk']}")
     """
 
-    if clusterconf.get("run_only", "Error") == "last_run_in_chunk" and not config[
+    if plan_conf.get("run_only", "Error") == "last_run_in_chunk" and not config[
         "general"
     ].get("last_run_in_chunk", False):
         return True
-    if clusterconf.get("run_only", "Error") == "first_run_in_chunk" and not config[
+    if plan_conf.get("run_only", "Error") == "first_run_in_chunk" and not config[
         "general"
     ].get("first_run_in_chunk", False):
         return True
-    if clusterconf.get("skip_chunk_number", -999) == config["general"].get(
+    if plan_conf.get("skip_chunk_number", -999) == config["general"].get(
         "chunk_number", -998
     ):
         return True
-    if clusterconf.get("skip_run_number", -999) == config["general"].get(
+    if plan_conf.get("skip_run_number", -999) == config["general"].get(
         "run_number", -998
     ):
         return True
@@ -42,10 +120,11 @@ def skip_cluster(cluster, config):
 
 def assemble_workflow(config):
     #
+    config = translate_legacy_workflow_keys(config)
     config = init_total_workflow(config)
     config = collect_all_workflow_information(config)
-    config = complete_clusters(config)
-    config = order_clusters(config)
+    config = complete_plans(config)
+    config = order_plans(config)
     config = prepend_newrun_job(config)
 
     if config["general"]["jobtype"] == "unknown":
@@ -66,215 +145,214 @@ def display_nicely(config):
 
 def prepend_newrun_job(config):
     gw_config = config["general"]["workflow"]
-    first_cluster_name = gw_config["first_task_in_queue"]
-    first_cluster = gw_config["subjob_clusters"][first_cluster_name]
+    first_plan_name = gw_config["first_task_in_queue"]
+    first_plan = gw_config["plans"][first_plan_name]
 
-    if not first_cluster.get("batch_or_shell", "Error") == "SimulationSetup":
+    if not first_plan.get("batch_or_shell", "Error") == "SimulationSetup":
 
-        last_cluster_name = gw_config["last_task_in_queue"]
-        last_cluster = gw_config["subjob_clusters"][last_cluster_name]
+        last_plan_name = gw_config["last_task_in_queue"]
+        last_plan = gw_config["plans"][last_plan_name]
 
-        new_first_cluster_name = "newrun"
-        new_first_cluster = {
+        new_first_plan = {
             "newrun": {
-                "called_from": last_cluster_name,
-                "run_before": first_cluster_name,
-                "next_submit": [first_cluster_name],
-                "subjobs": ["newrun_general"],
+                "called_from": last_plan_name,
+                "run_before": first_plan_name,
+                "next_submit": [first_plan_name],
+                "sub_plans": ["newrun_general"],
                 "batch_or_shell": "SimulationSetup",
             }
         }
 
-        last_cluster["next_submit"].append("newrun")
-        last_cluster["next_submit"].remove(first_cluster_name)
+        last_plan["next_submit"].append("newrun")
+        last_plan["next_submit"].remove(first_plan_name)
 
-        first_cluster["called_from"] = "newrun"
+        first_plan["called_from"] = "newrun"
 
         gw_config["first_task_in_queue"] = "newrun"
 
-        new_subjob = {
+        new_sub_plan = {
             "newrun_general": {
                 "nproc": 1,
-                "called_from": last_cluster_name,
-                "run_before": first_cluster_name,
-                "next_submit": [first_cluster_name],
-                "subjob_cluster": "newrun",
+                "called_from": last_plan_name,
+                "run_before": first_plan_name,
+                "next_submit": [first_plan_name],
+                "parent_plan": "newrun",
             }
         }
 
-        gw_config["subjob_clusters"].update(new_first_cluster)
-        gw_config["subjobs"].update(new_subjob)
+        gw_config["plans"].update(new_first_plan)
+        gw_config["sub_plans"].update(new_sub_plan)
 
     return config
 
     #
 
 
-def order_clusters(config):
+def order_plans(config):
     gw_config = config["general"]["workflow"]
 
-    for subjob_cluster in gw_config["subjob_clusters"]:
-        if "next_submit" not in gw_config["subjob_clusters"][subjob_cluster]:
-            gw_config["subjob_clusters"][subjob_cluster]["next_submit"] = []
+    for plan in gw_config["plans"]:
+        if "next_submit" not in gw_config["plans"][plan]:
+            gw_config["plans"][plan]["next_submit"] = []
 
-    for subjob_cluster in gw_config["subjob_clusters"]:
-        if "run_after" not in gw_config["subjob_clusters"][subjob_cluster]:
-            if not ("run_before" in gw_config["subjob_clusters"][subjob_cluster]):
+    for plan in gw_config["plans"]:
+        if "run_after" not in gw_config["plans"][plan]:
+            if not ("run_before" in gw_config["plans"][plan]):
 
-                logger.error(f"Don't know when to execute cluster {subjob_cluster}.")
+                logger.error(f"Don't know when to execute plan {plan}.")
                 logger.error(gw_config)
                 sys.exit(-1)
 
-        if "run_after" in gw_config["subjob_clusters"][subjob_cluster]:
-            if "run_before" in gw_config["subjob_clusters"][subjob_cluster]:
+        if "run_after" in gw_config["plans"][plan]:
+            if "run_before" in gw_config["plans"][plan]:
                 logger.error(
-                    f"Specifying both run_after and run_before for cluster {subjob_cluster} may lead to problems."
+                    f"Specifying both run_after and run_before for plan {plan} may lead to problems."
                 )
                 logger.error(f"Please choose.")
                 sys.exit(-1)
             if (
-                not gw_config["subjob_clusters"][subjob_cluster]["run_after"]
-                in gw_config["subjob_clusters"]
+                not gw_config["plans"][plan]["run_after"]
+                in gw_config["plans"]
             ):
                 logger.error(
-                    f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_after']}."
+                    f"Unknown plan {gw_config['plans'][plan]['run_after']}."
                 )
                 sys.exit(-1)
 
-            calling_cluster = gw_config["subjob_clusters"][subjob_cluster]["run_after"]
+            calling_plan = gw_config["plans"][plan]["run_after"]
 
             if (
-                subjob_cluster
-                not in gw_config["subjob_clusters"][calling_cluster]["next_submit"]
+                plan
+                not in gw_config["plans"][calling_plan]["next_submit"]
             ):
-                gw_config["subjob_clusters"][calling_cluster]["next_submit"].append(
-                    subjob_cluster
+                gw_config["plans"][calling_plan]["next_submit"].append(
+                    plan
                 )
-            gw_config["subjob_clusters"][subjob_cluster][
+            gw_config["plans"][plan][
                 "called_from"
-            ] = calling_cluster
+            ] = calling_plan
 
-            if calling_cluster == gw_config["last_task_in_queue"]:
-                gw_config["last_task_in_queue"] = subjob_cluster
+            if calling_plan == gw_config["last_task_in_queue"]:
+                gw_config["last_task_in_queue"] = plan
 
-        if "run_before" in gw_config["subjob_clusters"][subjob_cluster]:
+        if "run_before" in gw_config["plans"][plan]:
             if (
-                not gw_config["subjob_clusters"][subjob_cluster]["run_before"]
-                in gw_config["subjob_clusters"]
+                not gw_config["plans"][plan]["run_before"]
+                in gw_config["plans"]
             ):
                 logger.error(
-                    f"Unknown cluster {gw_config['subjob_clusters'][subjob_cluster]['run_before']}."
+                    f"Unknown plan {gw_config['plans'][plan]['run_before']}."
                 )
                 sys.exit(-1)
 
-            called_cluster = gw_config["subjob_clusters"][subjob_cluster]["run_before"]
+            called_plan = gw_config["plans"][plan]["run_before"]
 
             if (
-                called_cluster
-                not in gw_config["subjob_clusters"][subjob_cluster]["next_submit"]
+                called_plan
+                not in gw_config["plans"][plan]["next_submit"]
             ):
-                gw_config["subjob_clusters"][subjob_cluster]["next_submit"].append(
-                    called_cluster
+                gw_config["plans"][plan]["next_submit"].append(
+                    called_plan
                 )
-            gw_config["subjob_clusters"][called_cluster]["called_from"] = subjob_cluster
+            gw_config["plans"][called_plan]["called_from"] = plan
 
-            if called_cluster == gw_config["first_task_in_queue"]:
-                gw_config["first_task_in_queue"] = subjob_cluster
+            if called_plan == gw_config["first_task_in_queue"]:
+                gw_config["first_task_in_queue"] = plan
 
     if "next_run_triggered_by" in gw_config:
         gw_config["last_task_in_queue"] = gw_config["next_run_triggered_by"]
 
-    first_cluster_name = gw_config["first_task_in_queue"]
-    first_cluster = gw_config["subjob_clusters"][first_cluster_name]
-    last_cluster_name = gw_config["last_task_in_queue"]
-    last_cluster = gw_config["subjob_clusters"][last_cluster_name]
+    first_plan_name = gw_config["first_task_in_queue"]
+    first_plan = gw_config["plans"][first_plan_name]
+    last_plan_name = gw_config["last_task_in_queue"]
+    last_plan = gw_config["plans"][last_plan_name]
 
-    if first_cluster_name not in last_cluster.get("next_submit", ["Error"]):
-        last_cluster["next_submit"].append(first_cluster_name)
-    if last_cluster_name not in first_cluster.get("called_from", ["Error"]):
-        first_cluster["called_from"] = last_cluster_name
+    if first_plan_name not in last_plan.get("next_submit", ["Error"]):
+        last_plan["next_submit"].append(first_plan_name)
+    if last_plan_name not in first_plan.get("called_from", ["Error"]):
+        first_plan["called_from"] = last_plan_name
 
     return config
 
 
-def complete_clusters(config):
+def complete_plans(config):
     gw_config = config["general"]["workflow"]
 
-    # First, complete the matching subjobs <-> clusters
+    # First, complete the matching sub-plans <-> plans
 
-    for subjob in gw_config["subjobs"]:
-        subjob_cluster = gw_config["subjobs"][subjob]["subjob_cluster"]
-        if subjob_cluster not in gw_config["subjob_clusters"]:
-            gw_config["subjob_clusters"][subjob_cluster] = {}
+    for sub_plan in gw_config["sub_plans"]:
+        plan = gw_config["sub_plans"][sub_plan]["parent_plan"]
+        if plan not in gw_config["plans"]:
+            gw_config["plans"][plan] = {}
 
-        if "subjobs" not in gw_config["subjob_clusters"][subjob_cluster]:
-            gw_config["subjob_clusters"][subjob_cluster]["subjobs"] = []
+        if "sub_plans" not in gw_config["plans"][plan]:
+            gw_config["plans"][plan]["sub_plans"] = []
 
-        gw_config["subjob_clusters"][subjob_cluster]["subjobs"].append(subjob)
+        gw_config["plans"][plan]["sub_plans"].append(sub_plan)
 
-    # Then, complete the resource information per cluster
-    # determine whether a cluster is to be submitted to a batch system
+    # Then, complete the resource information per plan
+    # determine whether a plan is to be submitted to a batch system
 
-    for subjob_cluster in gw_config["subjob_clusters"]:
+    for plan in gw_config["plans"]:
         nproc_sum = nproc_max = 0
-        clusterconf = gw_config["subjob_clusters"][subjob_cluster]
-        for subjob in clusterconf["subjobs"]:
-            subjobconf = gw_config["subjobs"][subjob]
+        plan_conf = gw_config["plans"][plan]
+        for sub_plan in plan_conf["sub_plans"]:
+            sub_plan_conf = gw_config["sub_plans"][sub_plan]
 
-            clusterconf = merge_single_entry_if_possible(
-                "submit_to_batch_system", subjobconf, clusterconf
+            plan_conf = merge_single_entry_if_possible(
+                "submit_to_batch_system", sub_plan_conf, plan_conf
             )
-            clusterconf = merge_single_entry_if_possible(
-                "order_in_cluster", subjobconf, clusterconf
-            )
-
-            if subjobconf.get("submit_to_batch_system", False):
-                clusterconf["batch_or_shell"] = "batch"
-            elif subjobconf.get("script", False):
-                clusterconf["batch_or_shell"] = "shell"
-
-            clusterconf = merge_single_entry_if_possible(
-                "run_on_queue", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_after", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_before", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "run_only", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "skip_run_number", subjobconf, clusterconf
-            )
-            clusterconf = merge_single_entry_if_possible(
-                "skip_chunk_number", subjobconf, clusterconf
+            plan_conf = merge_single_entry_if_possible(
+                "order_in_cluster", sub_plan_conf, plan_conf
             )
 
-            nproc_sum += subjobconf.get("nproc", 1)
-            nproc_max = max(subjobconf.get("nproc", 1), nproc_max)
+            if sub_plan_conf.get("submit_to_batch_system", False):
+                plan_conf["batch_or_shell"] = "batch"
+            elif sub_plan_conf.get("script", False):
+                plan_conf["batch_or_shell"] = "shell"
 
-        if "submit_to_batch_system" not in clusterconf:
-            clusterconf["submit_to_batch_system"] = False
+            plan_conf = merge_single_entry_if_possible(
+                "run_on_queue", sub_plan_conf, plan_conf
+            )
+            plan_conf = merge_single_entry_if_possible(
+                "run_after", sub_plan_conf, plan_conf
+            )
+            plan_conf = merge_single_entry_if_possible(
+                "run_before", sub_plan_conf, plan_conf
+            )
+            plan_conf = merge_single_entry_if_possible(
+                "run_only", sub_plan_conf, plan_conf
+            )
+            plan_conf = merge_single_entry_if_possible(
+                "skip_run_number", sub_plan_conf, plan_conf
+            )
+            plan_conf = merge_single_entry_if_possible(
+                "skip_chunk_number", sub_plan_conf, plan_conf
+            )
+
+            nproc_sum += sub_plan_conf.get("nproc", 1)
+            nproc_max = max(sub_plan_conf.get("nproc", 1), nproc_max)
+
+        if "submit_to_batch_system" not in plan_conf:
+            plan_conf["submit_to_batch_system"] = False
         else:
-            if "run_on_queue" not in clusterconf:
+            if "run_on_queue" not in plan_conf:
                 logger.error(
-                    f"Information on target queue is missing in cluster {clusterconf}."
+                    f"Information on target queue is missing in plan {plan_conf}."
                 )
                 sys.exit(-1)
 
-        if not clusterconf.get("batch_or_shell", False):
-            clusterconf["batch_or_shell"] = "SimulationSetup"
+        if not plan_conf.get("batch_or_shell", False):
+            plan_conf["batch_or_shell"] = "SimulationSetup"
 
-        if "order_in_cluster" not in clusterconf:
-            clusterconf["order_in_cluster"] = "sequential"
+        if "order_in_cluster" not in plan_conf:
+            plan_conf["order_in_cluster"] = "sequential"
 
-        if clusterconf["order_in_cluster"] == "concurrent":
+        if plan_conf["order_in_cluster"] == "concurrent":
             nproc = nproc_sum
         else:
             nproc = nproc_max
-        clusterconf["nproc"] = nproc
+        plan_conf["nproc"] = nproc
 
     return config
 
@@ -282,7 +360,7 @@ def complete_clusters(config):
 def merge_single_entry_if_possible(entry, sourceconf, targetconf):
     if entry in sourceconf:
         if entry in targetconf and not sourceconf[entry] == targetconf[entry]:
-            logger.error(f"Mismatch found in {entry} for cluster {targetconf}")
+            logger.error(f"Mismatch found in {entry} for plan {targetconf}")
             sys.exit(-1)
         targetconf[entry] = sourceconf[entry]
     return targetconf
@@ -332,19 +410,19 @@ def init_total_workflow(config):
 
     if "workflow" not in config["general"]:
         config["general"]["workflow"] = {}
-    if "subjob_clusters" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["subjob_clusters"] = {}
-    if "subjobs" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["subjobs"] = prepcompute
-        config["general"]["workflow"]["subjobs"].update(compute)
-        config["general"]["workflow"]["subjobs"].update(tidy)
+    if "plans" not in config["general"]["workflow"]:
+        config["general"]["workflow"]["plans"] = {}
+    if "sub_plans" not in config["general"]["workflow"]:
+        config["general"]["workflow"]["sub_plans"] = prepcompute
+        config["general"]["workflow"]["sub_plans"].update(compute)
+        config["general"]["workflow"]["sub_plans"].update(tidy)
     else:
-        if "prepcompute" not in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(prepcompute)
-        if "compute" not in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(compute)
-        if "tidy" not in config["general"]["workflow"]["subjobs"]:
-            config["general"]["workflow"]["subjobs"].update(tidy)
+        if "prepcompute" not in config["general"]["workflow"]["sub_plans"]:
+            config["general"]["workflow"]["sub_plans"].update(prepcompute)
+        if "compute" not in config["general"]["workflow"]["sub_plans"]:
+            config["general"]["workflow"]["sub_plans"].update(compute)
+        if "tidy" not in config["general"]["workflow"]["sub_plans"]:
+            config["general"]["workflow"]["sub_plans"].update(tidy)
     if "last_task_in_queue" not in config["general"]["workflow"]:
         config["general"]["workflow"]["last_task_in_queue"] = "tidy"
     if "first_task_in_queue" not in config["general"]["workflow"]:
@@ -363,55 +441,55 @@ def collect_all_workflow_information(config):
             w_config = config[model]["workflow"]
             gw_config = config["general"]["workflow"]
 
-            if "subjob_clusters" in w_config:
-                for cluster in w_config["subjob_clusters"]:
-                    if cluster in gw_config["subjob_clusters"]:
-                        gw_config["subjob_clusters"][cluster] = merge_if_possible(
-                            w_config["subjob_clusters"][cluster],
-                            gw_config["subjob_clusters"][cluster],
+            if "plans" in w_config:
+                for plan in w_config["plans"]:
+                    if plan in gw_config["plans"]:
+                        gw_config["plans"][plan] = merge_if_possible(
+                            w_config["plans"][plan],
+                            gw_config["plans"][plan],
                         )
                     else:
-                        gw_config["subjob_clusters"][cluster] = copy.deepcopy(
-                            w_config["subjob_clusters"][cluster],
+                        gw_config["plans"][plan] = copy.deepcopy(
+                            w_config["plans"][plan],
                         )
 
-            if "subjobs" in w_config:
+            if "sub_plans" in w_config:
                 ref_config = copy.deepcopy(w_config)
-                for subjob in list(copy.deepcopy(w_config["subjobs"])):
+                for sub_plan in list(copy.deepcopy(w_config["sub_plans"])):
 
-                    # subjobs (other than clusters) should be model specific
-                    gw_config["subjobs"][subjob + "_" + model] = copy.deepcopy(
-                        w_config["subjobs"][subjob]
+                    # sub-plans (other than plans) should be model specific
+                    gw_config["sub_plans"][sub_plan + "_" + model] = copy.deepcopy(
+                        w_config["sub_plans"][sub_plan]
                     )
-                    if subjob in gw_config["subjobs"]:
-                        del gw_config["subjobs"][subjob]
-                    # make sure that the run_after and run_before refer to that cluster
-                    for other_subjob in gw_config["subjobs"]:
-                        if "run_after" in gw_config["subjobs"][other_subjob]:
+                    if sub_plan in gw_config["sub_plans"]:
+                        del gw_config["sub_plans"][sub_plan]
+                    # make sure run_after and run_before refer to that sub-plan
+                    for other_sub_plan in gw_config["sub_plans"]:
+                        if "run_after" in gw_config["sub_plans"][other_sub_plan]:
                             if (
-                                gw_config["subjobs"][other_subjob]["run_after"]
-                                == subjob
+                                gw_config["sub_plans"][other_sub_plan]["run_after"]
+                                == sub_plan
                             ):
-                                gw_config["subjobs"][other_subjob][
+                                gw_config["sub_plans"][other_sub_plan][
                                     "run_after"
-                                ] == subjob + "_" + model
-                        if "run_before" in gw_config["subjobs"][other_subjob]:
+                                ] == sub_plan + "_" + model
+                        if "run_before" in gw_config["sub_plans"][other_sub_plan]:
                             if (
-                                gw_config["subjobs"][other_subjob]["run_before"]
-                                == subjob
+                                gw_config["sub_plans"][other_sub_plan]["run_before"]
+                                == sub_plan
                             ):
-                                gw_config["subjobs"][other_subjob][
+                                gw_config["sub_plans"][other_sub_plan][
                                     "run_before"
-                                ] == subjob + "_" + model
+                                ] == sub_plan + "_" + model
 
-                    # if not in another cluster, each subjob gets its own
+                    # if not in another plan, each sub-plan gets its own
                     if (
-                        "subjob_cluster"
-                        not in gw_config["subjobs"][subjob + "_" + model]
+                        "parent_plan"
+                        not in gw_config["sub_plans"][sub_plan + "_" + model]
                     ):
-                        gw_config["subjobs"][subjob + "_" + model][
-                            "subjob_cluster"
-                        ] = subjob  # + "_" + model
+                        gw_config["sub_plans"][sub_plan + "_" + model][
+                            "parent_plan"
+                        ] = sub_plan  # + "_" + model
 
             if "next_run_triggered_by" in w_config:
                 if not gw_config["next_run_triggered_by"] in [
@@ -435,7 +513,7 @@ def merge_if_possible(source, target):
         if entry in target:
             if not source[entry] == target[entry]:
                 logger.error(
-                    f"Mismatch while trying to merge subjob_clusters {source} into {target}"
+                    f"Mismatch while trying to merge plans {source} into {target}"
                 )
                 sys.exit(-1)
         else:

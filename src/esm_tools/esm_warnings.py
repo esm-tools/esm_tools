@@ -56,7 +56,8 @@ class ConfigKeyRenamedWarning(EsmToolsDeprecationWarning):
 
 # Show our own deprecations once per call site. "default" prints the first
 # occurrence for each (message, category, lineno); because our messages embed
-# the offending key, each distinct key warns once. Scoping the filter to
+# the offending key, each key warns once per call site (a key rewritten from
+# several sites warns once per site). Scoping the filter to
 # EsmToolsDeprecationWarning leaves stdlib/third-party DeprecationWarnings
 # silenced as usual. filterwarnings inserts at the front of warnings.filters,
 # so this wins over the default ``ignore::DeprecationWarning`` entry.

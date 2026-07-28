@@ -15,7 +15,9 @@ from esm_catalog.item import make_item
 from esm_catalog.registry import EXTENSION_URLS
 
 HPC_URL = EXTENSION_URLS["hpc"]
-SCHEMA_PATH = Path(__file__).parent / "schemas" / "hpc-v1.0.0.json"
+SCHEMA_PATH = (
+    Path(__file__).parents[2] / "configs" / "stac-extensions" / "hpc" / "v1.0.0" / "schema.json"
+)
 
 
 def _bare_item(with_asset=True):

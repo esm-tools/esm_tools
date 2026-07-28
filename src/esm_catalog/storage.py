@@ -103,10 +103,16 @@ def add_storage_extension(
 
 
 def _get_last_access(path) -> Optional[datetime]:
-    """Return path's last-access time as a UTC datetime, or None."""
+    """Return path's last-access time as a UTC datetime, or None.
+
+    Only OSError (missing file, permission denied, a remote filesystem
+    surfacing a network failure as an OSError, ...) is swallowed. Anything
+    else — a wrong argument type, a bug in the caller — is a real error and
+    should propagate rather than silently produce a missing property.
+    """
     try:
         stat = path.stat()
-    except Exception:
+    except OSError:
         return None
     return datetime.fromtimestamp(stat.st_atime, tz=timezone.utc)
 

@@ -37,12 +37,28 @@ def make_bare_item():
     return _make
 
 
-def test_noop_without_machine_config_or_stat(tmp_path, make_bare_item):
+def test_noop_without_machine_config_or_probe(tmp_path, make_bare_item):
     item = make_bare_item()
     missing = tmp_path / "does-not-exist.nc"
     add_storage_extension(item, missing, machine_config=None)
     assert item.properties == {}
     assert item.stac_extensions == []
+
+
+def test_missing_path_with_probe_omits_last_access_without_raising(tmp_path, make_bare_item):
+    item = make_bare_item()
+    missing = tmp_path / "does-not-exist.nc"
+    add_storage_extension(item, missing, machine_config=None, probe_last_access=True)
+    assert "storage:last_access" not in item.properties
+    assert item.stac_extensions == []
+
+
+def test_non_path_argument_with_probe_raises(make_bare_item):
+    # A caller bug (wrong argument type has no .stat()) should surface as an
+    # error, not silently disappear the way a genuinely missing file does.
+    item = make_bare_item()
+    with pytest.raises(AttributeError):
+        add_storage_extension(item, object(), machine_config=None, probe_last_access=True)
 
 
 def test_last_access_not_probed_by_default(tmp_path, make_bare_item):

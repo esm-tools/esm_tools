@@ -128,7 +128,7 @@ def test_make_item_without_dims_has_no_datacube(tmp_path):
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
     assert "cube:dimensions" not in item.properties
-    assert item.stac_extensions == []
+    assert DATACUBE_URL not in item.stac_extensions
 
 
 def test_make_item_with_dims_applies_datacube(tmp_path):

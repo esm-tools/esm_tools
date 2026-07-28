@@ -94,6 +94,35 @@ def test_gpfs_storage_type_maps_to_warm_tier(tmp_path):
     assert item.properties["storage:tier"] == "warm"
 
 
+def test_unrecognized_storage_type_leaves_tier_unset(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = _bare_item()
+    add_storage_extension(item, f, machine_config={"storage_type": "ceph"})
+    assert "storage:tier" not in item.properties
+    assert item.assets["data"].extra_fields["storage:type"] == "ceph"
+    assert STORAGE_URL in item.stac_extensions
+
+
+def test_explicit_storage_tier_overrides_heuristic(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = _bare_item()
+    add_storage_extension(
+        item, f, machine_config={"storage_type": "gpfs", "storage_tier": "cold"}
+    )
+    assert item.properties["storage:tier"] == "cold"
+
+
+def test_explicit_storage_tier_without_storage_type(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = _bare_item()
+    add_storage_extension(item, f, machine_config={"storage_tier": "warm"})
+    assert item.properties["storage:tier"] == "warm"
+    assert "storage:type" not in item.assets["data"].extra_fields
+
+
 def test_missing_data_asset_does_not_raise(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")

@@ -5,7 +5,7 @@ geological time periods (e.g., Last Glacial Maximum at 21,000 years ago,
 Eocene at 50 million years ago), plus a coarse experiment_type
 classification for every item.
 
-Properties added by add_paleo_extension (paleo simulations only):
+Properties added by add_paleo_data (paleo simulations only):
     paleo:year           - Geological year (negative = past, e.g., -20000)
     paleo:display        - Human-readable format (e.g., "22.0 ka", "66.0 Ma")
     paleo:reference_year - Reference year for "years ago" calculation
@@ -27,18 +27,18 @@ config, passed down as a plain dict (see CollectionContext.paleo_config)::
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional
+from datetime import MAXYEAR, MINYEAR
+from typing import Optional
+
+import pystac
 
 from esm_calendar import Date
 
 from esm_catalog.registry import EXTENSION_URLS
 
-if TYPE_CHECKING:
-    import pystac
 
-
-def add_paleo_extension(
-    item: "pystac.Item",
+def add_paleo_data(
+    item: pystac.Item,
     paleo_config: Optional[dict] = None,
     paleo_year: Optional[int] = None,
     reference_year: int = 2024,
@@ -48,8 +48,10 @@ def add_paleo_extension(
     The geological year is determined in priority order:
     1. Explicit *paleo_year* parameter
     2. ``reference_year`` from *paleo_config*
-    3. Derived from item start_datetime/datetime if the year is extreme
-       (< 0 or > 9999; such values only arrive as pre-formatted ISO strings)
+    3. Derived from item start_datetime/datetime if the year falls outside
+       datetime.MINYEAR..MAXYEAR (1..9999) — the range a stdlib datetime can
+       represent, so a value outside it can only have arrived as a
+       pre-formatted ISO string carrying deep time via esm_calendar.Date
 
     No-op when none of these yield a year (not a paleo simulation).
     """
@@ -72,7 +74,7 @@ def add_paleo_extension(
     _register(item)
 
 
-def add_experiment_type(item: "pystac.Item") -> None:
+def add_experiment_type(item: pystac.Item) -> None:
     """Derive experiment_type (and paleo:years_bp for paleo runs) for *item*.
 
     Classification by start year:
@@ -81,7 +83,7 @@ def add_experiment_type(item: "pystac.Item") -> None:
     - year > 1950  → "historical"
     - unknown      → "control"
 
-    Start year priority: the paleo:year property (set by add_paleo_extension
+    Start year priority: the paleo:year property (set by add_paleo_data
     for explicitly configured paleo runs, where the model calendar may be
     meaningless), then the item's own start_datetime/datetime.
 
@@ -108,7 +110,7 @@ def add_experiment_type(item: "pystac.Item") -> None:
         _register(item)
 
 
-def _register(item: "pystac.Item") -> None:
+def _register(item: pystac.Item) -> None:
     """Add the paleo extension URL to *item*.stac_extensions, once."""
     url = EXTENSION_URLS["paleo"]
     if url not in item.stac_extensions:
@@ -116,7 +118,7 @@ def _register(item: "pystac.Item") -> None:
 
 
 def _resolve_paleo_year(
-    item: "pystac.Item",
+    item: pystac.Item,
     paleo_config: Optional[dict],
     explicit_year: Optional[int],
 ) -> Optional[int]:
@@ -128,12 +130,12 @@ def _resolve_paleo_year(
         return paleo_config["reference_year"]
 
     year = _resolve_start_year(item)
-    if year is not None and (year < 0 or year > 9999):
+    if year is not None and (year < MINYEAR or year > MAXYEAR):
         return year
     return None
 
 
-def _resolve_start_year(item: "pystac.Item") -> Optional[int]:
+def _resolve_start_year(item: pystac.Item) -> Optional[int]:
     """Return the item's start year from its datetime properties.
 
     Checks the start_datetime/datetime property strings first (these can

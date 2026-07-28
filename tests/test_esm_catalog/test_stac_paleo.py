@@ -15,46 +15,52 @@ from esm_catalog.paleo import (
     _format_geological,
     _parse_year_from_iso,
     add_experiment_type,
-    add_paleo_extension,
+    add_paleo_data,
 )
 from esm_catalog.registry import EXTENSION_URLS
 
 PALEO_URL = EXTENSION_URLS["paleo"]
-SCHEMA_PATH = Path(__file__).parent / "schemas" / "paleo-v1.0.0.json"
+SCHEMA_PATH = (
+    Path(__file__).parents[2] / "configs" / "stac-extensions" / "paleo" / "v1.0.0" / "schema.json"
+)
 
 
-def _bare_item(dt=datetime(2000, 1, 1, tzinfo=timezone.utc)):
-    return Item(
-        id="i",
-        geometry=None,
-        bbox=None,
-        datetime=dt,
-        properties={},
-    )
+@pytest.fixture
+def make_bare_item():
+    def _make(dt=datetime(2000, 1, 1, tzinfo=timezone.utc)):
+        return Item(
+            id="i",
+            geometry=None,
+            bbox=None,
+            datetime=dt,
+            properties={},
+        )
+
+    return _make
 
 
-# --- add_paleo_extension ---
+# --- add_paleo_data ---
 
 
-def test_noop_without_config_or_year():
-    item = _bare_item()
-    add_paleo_extension(item)
+def test_noop_without_config_or_year(make_bare_item):
+    item = make_bare_item()
+    add_paleo_data(item)
     assert "paleo:year" not in item.properties
     assert item.stac_extensions == []
 
 
-def test_explicit_paleo_year():
-    item = _bare_item()
-    add_paleo_extension(item, paleo_year=-20000)
+def test_explicit_paleo_year(make_bare_item):
+    item = make_bare_item()
+    add_paleo_data(item, paleo_year=-20000)
     assert item.properties["paleo:year"] == -20000
     assert item.properties["paleo:display"] == "22.0 ka"
     assert item.properties["paleo:reference_year"] == 2024
     assert PALEO_URL in item.stac_extensions
 
 
-def test_config_reference_year_and_epoch_period():
-    item = _bare_item()
-    add_paleo_extension(
+def test_config_reference_year_and_epoch_period(make_bare_item):
+    item = make_bare_item()
+    add_paleo_data(
         item,
         paleo_config={
             "reference_year": -20000,
@@ -67,11 +73,11 @@ def test_config_reference_year_and_epoch_period():
     assert item.properties["paleo:period"] == "Quaternary"
 
 
-def test_bare_epoch_period_do_not_write_null():
+def test_bare_epoch_period_do_not_write_null(make_bare_item):
     # A bare `epoch:`/`period:` in YAML is present-but-None; it must be skipped,
     # not written through as a schema-invalid null.
-    item = _bare_item()
-    add_paleo_extension(
+    item = make_bare_item()
+    add_paleo_data(
         item,
         paleo_config={"reference_year": -20000, "epoch": None, "period": None},
     )
@@ -80,31 +86,41 @@ def test_bare_epoch_period_do_not_write_null():
     assert "paleo:period" not in item.properties
 
 
-def test_explicit_year_overrides_config():
-    item = _bare_item()
-    add_paleo_extension(item, paleo_config={"reference_year": -100}, paleo_year=-20000)
+def test_explicit_year_overrides_config(make_bare_item):
+    item = make_bare_item()
+    add_paleo_data(item, paleo_config={"reference_year": -100}, paleo_year=-20000)
     assert item.properties["paleo:year"] == -20000
 
 
-def test_deep_time_from_start_datetime_string():
+def test_deep_time_from_start_datetime_string(make_bare_item):
     # Years outside 0-9999 can only arrive as pre-formatted ISO strings.
-    item = _bare_item()
+    item = make_bare_item()
     item.properties["start_datetime"] = "-21000-01-01T00:00:00Z"
-    add_paleo_extension(item)
+    add_paleo_data(item)
     assert item.properties["paleo:year"] == -21000
 
 
-def test_normal_datetime_does_not_trigger_paleo():
-    item = _bare_item()
+def test_normal_datetime_does_not_trigger_paleo(make_bare_item):
+    item = make_bare_item()
     item.properties["start_datetime"] = "2000-01-01T00:00:00Z"
-    add_paleo_extension(item)
+    add_paleo_data(item)
     assert "paleo:year" not in item.properties
 
 
-def test_url_appended_once():
-    item = _bare_item()
-    add_paleo_extension(item, paleo_year=-20000)
-    add_paleo_extension(item, paleo_year=-20000)
+def test_year_zero_triggers_paleo(make_bare_item):
+    # datetime.MINYEAR is 1, so year 0 can only have come from a paleo-aware
+    # (esm_calendar.Date) parse, never a stdlib datetime — it should count as
+    # deep time even though it isn't negative.
+    item = make_bare_item()
+    item.properties["start_datetime"] = "0000-01-01T00:00:00Z"
+    add_paleo_data(item)
+    assert item.properties["paleo:year"] == 0
+
+
+def test_url_appended_once(make_bare_item):
+    item = make_bare_item()
+    add_paleo_data(item, paleo_year=-20000)
+    add_paleo_data(item, paleo_year=-20000)
     assert item.stac_extensions.count(PALEO_URL) == 1
 
 
@@ -144,33 +160,33 @@ def test_parse_year_from_iso(dt_str, expected):
 # --- add_experiment_type ---
 
 
-def test_experiment_type_historical():
-    item = _bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
+def test_experiment_type_historical(make_bare_item):
+    item = make_bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "historical"
     assert "paleo:years_bp" not in item.properties
 
 
-def test_experiment_type_control():
-    item = _bare_item(datetime(1850, 1, 1, tzinfo=timezone.utc))
+def test_experiment_type_control(make_bare_item):
+    item = make_bare_item(datetime(1850, 1, 1, tzinfo=timezone.utc))
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "control"
     # years_bp only for paleo items, per plan
     assert "paleo:years_bp" not in item.properties
 
 
-def test_experiment_type_paleo_sets_years_bp():
-    item = _bare_item(datetime(1000, 1, 1, tzinfo=timezone.utc))
+def test_experiment_type_paleo_sets_years_bp(make_bare_item):
+    item = make_bare_item(datetime(1000, 1, 1, tzinfo=timezone.utc))
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "paleo"
     assert item.properties["paleo:years_bp"] == 950
     assert PALEO_URL in item.stac_extensions
 
 
-def test_experiment_type_prefers_paleo_year_property():
+def test_experiment_type_prefers_paleo_year_property(make_bare_item):
     # Deep-time run: model datetime says 2000 but paleo:year says LGM.
-    item = _bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
-    add_paleo_extension(item, paleo_year=-21000)
+    item = make_bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
+    add_paleo_data(item, paleo_year=-21000)
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "paleo"
     assert item.properties["paleo:years_bp"] == 1950 - (-21000)
@@ -186,9 +202,9 @@ def test_experiment_type_defaults_to_control_without_dates():
     assert "paleo:years_bp" not in item.properties
 
 
-def test_experiment_type_does_not_read_namelist_properties():
+def test_experiment_type_does_not_read_namelist_properties(make_bare_item):
     # Plan fix: nml:echam:runctl:dt_start must NOT influence classification.
-    item = _bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
+    item = make_bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
     item.properties["nml:echam:runctl:dt_start"] = [1000, 1, 1]
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "historical"

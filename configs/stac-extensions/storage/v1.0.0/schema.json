@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://esm-tools.github.io/stac-extensions/storage/v1.0.0/schema.json",
   "title": "Storage Extension",
-  "description": "STAC Storage Extension for STAC Items, describing where a data file lives.",
+  "description": "STAC Storage Extension for STAC Items. Describes where a data file lives: institution, system, storage tier, and last-access time.",
   "type": "object",
   "required": [
     "stac_extensions"
@@ -31,9 +31,9 @@
     "fields": {
       "type": "object",
       "properties": {
-        "storage:facility": {
-          "title": "Facility",
-          "description": "The facility operating the system, e.g. 'AWI', 'DKRZ'.",
+        "storage:institution": {
+          "title": "Institution",
+          "description": "The institution operating the system. Prefer a ROR identifier (https://ror.org/), e.g. 'https://ror.org/032e6b942' for AWI, falling back to a plain name (e.g. 'DKRZ') when no ROR record exists.",
           "type": "string"
         },
         "storage:system": {

@@ -1,8 +1,8 @@
-"""Storage STAC extension: facility, system, storage tier, last access.
+"""Storage STAC extension: institution, system, storage tier, last access.
 
 Expects a *machine_config* dict — the parsed ESM-Tools machine section for
 whatever machine the scan is running on — with (any of) these keys:
-    facility, system, storage_type, storage_tier
+    institution, system, storage_type, storage_tier
 
 storage_tier, if given, is used as-is instead of derived from storage_type
 via the hot/warm/cold heuristic in _derive_tier — that heuristic only
@@ -56,7 +56,7 @@ def add_storage_extension(
 ) -> None:
     """Inject storage extension fields into *item* for *path*.
 
-    Item-level fields (item.properties): storage:facility, storage:system,
+    Item-level fields (item.properties): storage:institution, storage:system,
     storage:tier, storage:last_access.
     Asset-level fields (item.assets["data"].extra_fields): storage:type.
 
@@ -71,13 +71,13 @@ def add_storage_extension(
     populated = False
 
     if machine_config:
-        facility = machine_config.get("facility")
+        institution = machine_config.get("institution")
         system = machine_config.get("system")
         storage_type = machine_config.get("storage_type")
         tier = machine_config.get("storage_tier") or _derive_tier(storage_type)
 
-        if facility:
-            item.properties["storage:facility"] = facility
+        if institution:
+            item.properties["storage:institution"] = institution
             populated = True
         if system:
             item.properties["storage:system"] = system

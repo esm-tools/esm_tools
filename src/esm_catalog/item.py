@@ -11,6 +11,7 @@ from pystac import Asset, Item, Link
 from upath import UPath
 
 from esm_catalog.datacube import add_datacube_extension
+from esm_catalog.registry import EXTENSION_URLS
 
 
 def make_item(
@@ -47,7 +48,6 @@ def make_item(
         properties=_build_properties(metadata, ctx),
         start_datetime=dt_start,
         end_datetime=dt_end,
-        stac_extensions=[],
         assets=_build_assets(path, metadata),
         collection=ctx.collection_id,
     )
@@ -60,6 +60,7 @@ def make_item(
         )
     )
 
+    add_contacts(item, ctx)
     add_datacube_extension(item, metadata)
 
     return item
@@ -94,6 +95,30 @@ def _build_properties(metadata: dict, ctx) -> dict:
         properties["variables"] = all_var_names
 
     return properties
+
+
+def _contact_to_stac(contact) -> dict:
+    """Convert a Contact dataclass to STAC contacts extension format."""
+    entry: dict = {"name": contact.name, "roles": list(contact.roles)}
+    if contact.orcid:
+        orcid = contact.orcid
+        if not orcid.startswith("https://orcid.org/"):
+            orcid = f"https://orcid.org/{orcid}"
+        entry["identifier"] = orcid
+    if contact.institution:
+        entry["organization"] = contact.institution
+    return entry
+
+
+def add_contacts(item, ctx) -> None:
+    """Inject contacts extension URL and properties into *item*."""
+    if not ctx.contacts:
+        return
+
+    item.properties["contacts"] = [_contact_to_stac(c) for c in ctx.contacts]
+    url = EXTENSION_URLS["contacts"]
+    if url not in item.stac_extensions:
+        item.stac_extensions.append(url)
 
 
 def _build_datetime(metadata: dict) -> tuple:

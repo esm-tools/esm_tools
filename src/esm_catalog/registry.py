@@ -9,7 +9,7 @@ EXTENSION_URLS: dict[str, str] = {
     "contacts": "https://stac-extensions.github.io/contacts/v0.1.1/schema.json",
     "scientific": "https://stac-extensions.github.io/scientific/v1.0.0/schema.json",
     # Custom ESM-Tools extensions — https://esm-tools.github.io/stac-extensions/
-    "hpc": "https://esm-tools.github.io/stac-extensions/hpc/v1.0.0/schema.json",
+    "storage": "https://esm-tools.github.io/stac-extensions/storage/v1.0.0/schema.json",
     "paleo": "https://esm-tools.github.io/stac-extensions/paleo/v1.0.0/schema.json",
     "namelist": "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json",
 }

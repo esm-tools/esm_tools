@@ -1,4 +1,4 @@
-"""Tests for the hpc STAC extension."""
+"""Tests for the storage STAC extension."""
 
 from __future__ import annotations
 
@@ -10,13 +10,13 @@ import pytest
 from pystac import Asset, Item
 
 from esm_catalog.context import CollectionContext
-from esm_catalog.hpc import add_hpc_extension
 from esm_catalog.item import make_item
 from esm_catalog.registry import EXTENSION_URLS
+from esm_catalog.storage import add_storage_extension
 
-HPC_URL = EXTENSION_URLS["hpc"]
+STORAGE_URL = EXTENSION_URLS["storage"]
 SCHEMA_PATH = (
-    Path(__file__).parents[2] / "configs" / "stac-extensions" / "hpc" / "v1.0.0" / "schema.json"
+    Path(__file__).parents[2] / "configs" / "stac-extensions" / "storage" / "v1.0.0" / "schema.json"
 )
 
 
@@ -36,7 +36,7 @@ def _bare_item(with_asset=True):
 def test_noop_without_machine_config_or_stat(tmp_path):
     item = _bare_item()
     missing = tmp_path / "does-not-exist.nc"
-    add_hpc_extension(item, missing, machine_config=None)
+    add_storage_extension(item, missing, machine_config=None)
     assert item.properties == {}
     assert item.stac_extensions == []
 
@@ -45,61 +45,61 @@ def test_last_access_populated_from_real_path(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = _bare_item()
-    add_hpc_extension(item, f, machine_config=None)
-    assert "hpc:last_access" in item.properties
-    assert HPC_URL in item.stac_extensions
+    add_storage_extension(item, f, machine_config=None)
+    assert "storage:last_access" in item.properties
+    assert STORAGE_URL in item.stac_extensions
     # facility/system/tier are not set without machine_config
-    assert "hpc:facility" not in item.properties
-    assert "hpc:storage_tier" not in item.properties
+    assert "storage:facility" not in item.properties
+    assert "storage:tier" not in item.properties
 
 
 def test_machine_config_sets_facility_system_and_tier(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = _bare_item()
-    add_hpc_extension(
+    add_storage_extension(
         item,
         f,
         machine_config={"facility": "AWI", "system": "albedo", "storage_type": "lustre"},
     )
-    assert item.properties["hpc:facility"] == "AWI"
-    assert item.properties["hpc:system"] == "albedo"
-    assert item.properties["hpc:storage_tier"] == "hot"
-    assert item.assets["data"].extra_fields["hpc:storage_type"] == "lustre"
-    assert HPC_URL in item.stac_extensions
+    assert item.properties["storage:facility"] == "AWI"
+    assert item.properties["storage:system"] == "albedo"
+    assert item.properties["storage:tier"] == "hot"
+    assert item.assets["data"].extra_fields["storage:type"] == "lustre"
+    assert STORAGE_URL in item.stac_extensions
 
 
 def test_hpss_storage_type_maps_to_cold_tier(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = _bare_item()
-    add_hpc_extension(item, f, machine_config={"storage_type": "hpss"})
-    assert item.properties["hpc:storage_tier"] == "cold"
+    add_storage_extension(item, f, machine_config={"storage_type": "hpss"})
+    assert item.properties["storage:tier"] == "cold"
 
 
 def test_gpfs_storage_type_maps_to_warm_tier(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = _bare_item()
-    add_hpc_extension(item, f, machine_config={"storage_type": "gpfs"})
-    assert item.properties["hpc:storage_tier"] == "warm"
+    add_storage_extension(item, f, machine_config={"storage_type": "gpfs"})
+    assert item.properties["storage:tier"] == "warm"
 
 
 def test_missing_data_asset_does_not_raise(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = _bare_item(with_asset=False)
-    add_hpc_extension(item, f, machine_config={"storage_type": "lustre"})
-    assert item.properties["hpc:storage_tier"] == "hot"
+    add_storage_extension(item, f, machine_config={"storage_type": "lustre"})
+    assert item.properties["storage:tier"] == "hot"
 
 
 def test_url_appended_once(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = _bare_item()
-    add_hpc_extension(item, f, machine_config={"facility": "AWI"})
-    add_hpc_extension(item, f, machine_config={"facility": "AWI"})
-    assert item.stac_extensions.count(HPC_URL) == 1
+    add_storage_extension(item, f, machine_config={"facility": "AWI"})
+    add_storage_extension(item, f, machine_config={"facility": "AWI"})
+    assert item.stac_extensions.count(STORAGE_URL) == 1
 
 
 # --- wiring through make_item ---
@@ -126,22 +126,22 @@ def test_make_item_without_machine_config_only_sets_last_access(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
-    assert "hpc:last_access" in item.properties
-    assert "hpc:facility" not in item.properties
+    assert "storage:last_access" in item.properties
+    assert "storage:facility" not in item.properties
 
 
-def test_make_item_with_machine_config_applies_hpc_extension(tmp_path):
+def test_make_item_with_machine_config_applies_storage_extension(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     ctx = _ctx(machine_config={"facility": "AWI", "system": "albedo", "storage_type": "lustre"})
     item = make_item(f, _metadata(), ctx)
-    assert item.properties["hpc:facility"] == "AWI"
-    assert item.properties["hpc:system"] == "albedo"
-    assert item.assets["data"].extra_fields["hpc:storage_type"] == "lustre"
-    assert HPC_URL in item.stac_extensions
+    assert item.properties["storage:facility"] == "AWI"
+    assert item.properties["storage:system"] == "albedo"
+    assert item.assets["data"].extra_fields["storage:type"] == "lustre"
+    assert STORAGE_URL in item.stac_extensions
 
 
-def test_item_validates_against_hpc_schema(tmp_path):
+def test_item_validates_against_storage_schema(tmp_path):
     jsonschema = pytest.importorskip("jsonschema")
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")

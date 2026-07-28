@@ -14,25 +14,18 @@ the caller already knows which machine it is running on, so it resolves and
 passes in that machine's own config section directly. The one exception is
 storage:last_access, which requires an explicit stat() call on *path* and is
 only attempted when the caller opts in via probe_last_access.
-
-Fields storage:state and storage:recall_time_estimate (subprocess-based HSM
-state queries via dmattr/lfs) were dropped: they require machine-specific
-tools and add operational risk for marginal query value.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional
 
+import pystac
 from pystac.utils import datetime_to_str
+from upath import UPath
 
 from esm_catalog.registry import EXTENSION_URLS
-
-if TYPE_CHECKING:
-    import pystac
-    from upath import UPath
 
 # Coarse access-latency tier per storage_type. Anything not listed here is
 # unknown, not "hot" — a site whose storage_type we don't recognize should
@@ -49,8 +42,8 @@ _TIER_BY_STORAGE_TYPE = {
 
 
 def add_storage_extension(
-    item: "pystac.Item",
-    path: Union[Path, "UPath"],
+    item: pystac.Item,
+    path: UPath,
     machine_config: Optional[dict] = None,
     probe_last_access: bool = False,
 ) -> None:
@@ -102,7 +95,7 @@ def add_storage_extension(
             item.stac_extensions.append(url)
 
 
-def _get_last_access(path) -> Optional[datetime]:
+def _get_last_access(path: UPath) -> Optional[datetime]:
     """Return path's last-access time as a UTC datetime, or None.
 
     Only OSError (missing file, permission denied, a remote filesystem

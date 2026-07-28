@@ -30,8 +30,11 @@ def make_item(
     Returns:
         pystac.item.Item object representing the STAC Item
     """
-    if isinstance(path, str):
-        path = UPath(path if "://" in path else Path(path).resolve())
+    if not isinstance(path, UPath):
+        if isinstance(path, str) and "://" in path:
+            path = UPath(path)
+        else:
+            path = UPath(Path(path).resolve())
 
     dt_start, dt_end, item_datetime, _, _ = _build_datetime(metadata)
     id = _make_id(

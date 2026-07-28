@@ -21,6 +21,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Union
 
+from pystac.utils import datetime_to_str
+
 from esm_catalog.registry import EXTENSION_URLS
 
 if TYPE_CHECKING:
@@ -70,7 +72,7 @@ def add_storage_extension(
     if probe_last_access:
         last_access = _get_last_access(path)
         if last_access is not None:
-            item.properties["storage:last_access"] = last_access
+            item.properties["storage:last_access"] = datetime_to_str(last_access)
             populated = True
 
     if populated:
@@ -79,13 +81,13 @@ def add_storage_extension(
             item.stac_extensions.append(url)
 
 
-def _get_last_access(path) -> Optional[str]:
-    """Return path's last-access time as an ISO 8601 UTC string, or None."""
+def _get_last_access(path) -> Optional[datetime]:
+    """Return path's last-access time as a UTC datetime, or None."""
     try:
         stat = path.stat()
     except Exception:
         return None
-    return datetime.fromtimestamp(stat.st_atime, tz=timezone.utc).isoformat()
+    return datetime.fromtimestamp(stat.st_atime, tz=timezone.utc)
 
 
 def _derive_tier(storage_type: str) -> str:

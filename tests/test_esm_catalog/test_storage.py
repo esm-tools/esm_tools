@@ -20,40 +20,44 @@ SCHEMA_PATH = (
 )
 
 
-def _bare_item(with_asset=True):
-    item = Item(
-        id="x",
-        geometry=None,
-        bbox=None,
-        datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
-        properties={},
-    )
-    if with_asset:
-        item.add_asset("data", Asset(href="file:///tmp/x.nc"))
-    return item
+@pytest.fixture
+def make_bare_item():
+    def _make(with_asset=True):
+        item = Item(
+            id="x",
+            geometry=None,
+            bbox=None,
+            datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
+            properties={},
+        )
+        if with_asset:
+            item.add_asset("data", Asset(href="file:///tmp/x.nc"))
+        return item
+
+    return _make
 
 
-def test_noop_without_machine_config_or_stat(tmp_path):
-    item = _bare_item()
+def test_noop_without_machine_config_or_stat(tmp_path, make_bare_item):
+    item = make_bare_item()
     missing = tmp_path / "does-not-exist.nc"
     add_storage_extension(item, missing, machine_config=None)
     assert item.properties == {}
     assert item.stac_extensions == []
 
 
-def test_last_access_not_probed_by_default(tmp_path):
+def test_last_access_not_probed_by_default(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(item, f, machine_config=None)
     assert "storage:last_access" not in item.properties
     assert item.stac_extensions == []
 
 
-def test_last_access_populated_when_probing_opted_in(tmp_path):
+def test_last_access_populated_when_probing_opted_in(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(item, f, machine_config=None, probe_last_access=True)
     assert "storage:last_access" in item.properties
     assert STORAGE_URL in item.stac_extensions
@@ -62,79 +66,79 @@ def test_last_access_populated_when_probing_opted_in(tmp_path):
     assert "storage:tier" not in item.properties
 
 
-def test_machine_config_sets_institution_system_and_tier(tmp_path):
+def test_machine_config_sets_institution_system_and_tier(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(
         item,
         f,
-        machine_config={"institution": "AWI", "system": "albedo", "storage_type": "lustre"},
+        machine_config={"institution": "AWI", "system": "example-hpc", "storage_type": "lustre"},
     )
     assert item.properties["storage:institution"] == "AWI"
-    assert item.properties["storage:system"] == "albedo"
+    assert item.properties["storage:system"] == "example-hpc"
     assert item.properties["storage:tier"] == "hot"
     assert item.assets["data"].extra_fields["storage:type"] == "lustre"
     assert STORAGE_URL in item.stac_extensions
 
 
-def test_hpss_storage_type_maps_to_cold_tier(tmp_path):
+def test_hpss_storage_type_maps_to_cold_tier(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(item, f, machine_config={"storage_type": "hpss"})
     assert item.properties["storage:tier"] == "cold"
 
 
-def test_gpfs_storage_type_maps_to_warm_tier(tmp_path):
+def test_gpfs_storage_type_maps_to_warm_tier(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(item, f, machine_config={"storage_type": "gpfs"})
     assert item.properties["storage:tier"] == "warm"
 
 
-def test_unrecognized_storage_type_leaves_tier_unset(tmp_path):
+def test_unrecognized_storage_type_leaves_tier_unset(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(item, f, machine_config={"storage_type": "ceph"})
     assert "storage:tier" not in item.properties
     assert item.assets["data"].extra_fields["storage:type"] == "ceph"
     assert STORAGE_URL in item.stac_extensions
 
 
-def test_explicit_storage_tier_overrides_heuristic(tmp_path):
+def test_explicit_storage_tier_overrides_heuristic(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(
         item, f, machine_config={"storage_type": "gpfs", "storage_tier": "cold"}
     )
     assert item.properties["storage:tier"] == "cold"
 
 
-def test_explicit_storage_tier_without_storage_type(tmp_path):
+def test_explicit_storage_tier_without_storage_type(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(item, f, machine_config={"storage_tier": "warm"})
     assert item.properties["storage:tier"] == "warm"
     assert "storage:type" not in item.assets["data"].extra_fields
 
 
-def test_missing_data_asset_does_not_raise(tmp_path):
+def test_missing_data_asset_does_not_raise(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item(with_asset=False)
+    item = make_bare_item(with_asset=False)
     add_storage_extension(item, f, machine_config={"storage_type": "lustre"})
     assert item.properties["storage:tier"] == "hot"
 
 
-def test_url_appended_once(tmp_path):
+def test_url_appended_once(tmp_path, make_bare_item):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    item = _bare_item()
+    item = make_bare_item()
     add_storage_extension(item, f, machine_config={"institution": "AWI"})
     add_storage_extension(item, f, machine_config={"institution": "AWI"})
     assert item.stac_extensions.count(STORAGE_URL) == 1
@@ -178,10 +182,10 @@ def test_make_item_with_probe_last_access_sets_last_access(tmp_path):
 def test_make_item_with_machine_config_applies_storage_extension(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx(machine_config={"institution": "AWI", "system": "albedo", "storage_type": "lustre"})
+    ctx = _ctx(machine_config={"institution": "AWI", "system": "example-hpc", "storage_type": "lustre"})
     item = make_item(f, _metadata(), ctx)
     assert item.properties["storage:institution"] == "AWI"
-    assert item.properties["storage:system"] == "albedo"
+    assert item.properties["storage:system"] == "example-hpc"
     assert item.assets["data"].extra_fields["storage:type"] == "lustre"
     assert STORAGE_URL in item.stac_extensions
 
@@ -190,7 +194,7 @@ def test_item_validates_against_storage_schema(tmp_path):
     jsonschema = pytest.importorskip("jsonschema")
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx(machine_config={"institution": "AWI", "system": "albedo", "storage_type": "lustre"})
+    ctx = _ctx(machine_config={"institution": "AWI", "system": "example-hpc", "storage_type": "lustre"})
     item_dict = make_item(f, _metadata(), ctx).to_dict()
     schema = json.loads(SCHEMA_PATH.read_text())
     jsonschema.validate(instance=item_dict, schema=schema)

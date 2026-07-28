@@ -64,6 +64,7 @@ class CollectionContext:
     namelists_by_component: dict = field(default_factory=dict)
     contacts: list[Contact] = field(default_factory=list)
     machine_config: dict | None = None
+    probe_last_access: bool = False
 
     def __post_init__(self):
         """Validate production-required fields immediately after construction."""

@@ -41,11 +41,20 @@ def test_noop_without_machine_config_or_stat(tmp_path):
     assert item.stac_extensions == []
 
 
-def test_last_access_populated_from_real_path(tmp_path):
+def test_last_access_not_probed_by_default(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = _bare_item()
     add_storage_extension(item, f, machine_config=None)
+    assert "storage:last_access" not in item.properties
+    assert item.stac_extensions == []
+
+
+def test_last_access_populated_when_probing_opted_in(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = _bare_item()
+    add_storage_extension(item, f, machine_config=None, probe_last_access=True)
     assert "storage:last_access" in item.properties
     assert STORAGE_URL in item.stac_extensions
     # facility/system/tier are not set without machine_config
@@ -122,12 +131,19 @@ def _metadata(**kwargs):
     return base
 
 
-def test_make_item_without_machine_config_only_sets_last_access(tmp_path):
+def test_make_item_without_machine_config_or_probe_sets_no_storage_fields(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
-    assert "storage:last_access" in item.properties
+    assert "storage:last_access" not in item.properties
     assert "storage:facility" not in item.properties
+
+
+def test_make_item_with_probe_last_access_sets_last_access(tmp_path):
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    item = make_item(f, _metadata(), _ctx(probe_last_access=True))
+    assert "storage:last_access" in item.properties
 
 
 def test_make_item_with_machine_config_applies_storage_extension(tmp_path):

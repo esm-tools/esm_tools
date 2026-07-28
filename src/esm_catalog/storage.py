@@ -6,7 +6,9 @@ whatever machine the scan is running on — with (any of) these keys:
 
 Detection is not done by probing the filesystem or matching path patterns:
 the caller already knows which machine it is running on, so it resolves and
-passes in that machine's own config section directly.
+passes in that machine's own config section directly. The one exception is
+storage:last_access, which requires an explicit stat() call on *path* and is
+only attempted when the caller opts in via probe_last_access.
 
 Fields storage:state and storage:recall_time_estimate (subprocess-based HSM
 state queries via dmattr/lfs) were dropped: they require machine-specific
@@ -30,6 +32,7 @@ def add_storage_extension(
     item: "pystac.Item",
     path: Union[Path, "UPath"],
     machine_config: Optional[dict] = None,
+    probe_last_access: bool = False,
 ) -> None:
     """Inject storage extension fields into *item* for *path*.
 
@@ -38,8 +41,12 @@ def add_storage_extension(
     Asset-level fields (item.assets["data"].extra_fields): storage:type.
 
     *machine_config* is the parsed ESM-Tools machine section for the machine
-    the scan is running on. If None, only storage:last_access is populated
-    (graceful degradation for standalone/test usage).
+    the scan is running on.
+
+    *probe_last_access* opts into calling path.stat() to populate
+    storage:last_access. Defaults to False: for remote or tape-backed
+    paths a stat() call can be slow or trigger a recall, so this extension
+    never touches the filesystem unless the caller explicitly asks for it.
     """
     populated = False
 
@@ -60,10 +67,11 @@ def add_storage_extension(
                 item.assets["data"].extra_fields["storage:type"] = storage_type
             populated = True
 
-    last_access = _get_last_access(path)
-    if last_access is not None:
-        item.properties["storage:last_access"] = last_access
-        populated = True
+    if probe_last_access:
+        last_access = _get_last_access(path)
+        if last_access is not None:
+            item.properties["storage:last_access"] = last_access
+            populated = True
 
     if populated:
         url = EXTENSION_URLS["storage"]

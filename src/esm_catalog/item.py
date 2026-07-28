@@ -63,7 +63,7 @@ def make_item(
 
     add_contacts(item, ctx)
     add_datacube_extension(item, metadata)
-    add_storage_extension(item, path, ctx.machine_config)
+    add_storage_extension(item, path, ctx.machine_config, ctx.probe_last_access)
 
     return item
 

@@ -256,6 +256,26 @@ geomar_merge:
         action: DELAY(1)
         announcement: true
 
+conda_support:
+        package: "esm_tools"
+        versions: "<6.64.0"
+        message: "\x1b[1m\x1b[96mIMPROVED CONDA ENVIRONMENT SUPPORT!\x1b[0m\n
+
+            ESM-Tools now \x1b[96mauto-detects and activates your conda environment\x1b[0m\n
+            inside the generated job scripts, no extra setup required!\n
+
+            If you launch \x1b[35mesm_runscripts\x1b[0m from within an active conda environment,\n
+            the same environment will be sourced on the compute nodes after the model is\n
+            launched, which solves problems of ESM-Tools packages not being found if the\n
+            previous lines of the .run file cleaned up the conda environment.\n
+
+            Read more at:\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/installation.html#installing-in-a-conda-environment\x1b[0m\n
+            \x1b[35mhttps://esm-tools.readthedocs.io/en/latest/esm_runscripts.html#running-an-experiment-with-conda\x1b[0m\n
+            "
+        action: DELAY(1)
+        announcement: true
+
 #online_workshops:
 #        package: "esm_tools"
 #        versions: "<7.0.0"

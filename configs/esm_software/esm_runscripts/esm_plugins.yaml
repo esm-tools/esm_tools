@@ -114,3 +114,6 @@ core:
                         - "initialize_dask_cluster"
                         - "shutdown_dask_cluster"
 
+                conda_env:
+                        - "set_launched_with_conda"
+                        - "write_conda_info_file"

@@ -66,6 +66,8 @@ Run-time variables
    account,             general,                User account of the HPC system to be used to run the experiment.
    base_dir,            general,                Path to the directory that will contain the experiment folder (where the experiment will be run and data will be stored).
    compute_time,        general,                "Estimated computing time for a run, used for submitting a job with the job scheduler."
+   conda.env,           conda,                  "Full path (or name) of a conda environment to activate in the job script. Optional: only needed to override the conda environment auto-detected from the one ESM-Tools was launched with. See :ref:`esm_runscripts:Running an experiment with conda`."
+   conda.root,          conda,                  "Root installation directory of conda (e.g. ``/path/to/conda``), used together with ``conda.env`` to source ``{conda.root}/bin/activate`` before activating the environment. See :ref:`esm_runscripts:Running an experiment with conda`."
    create_folders,      <component>,            "List of absolute paths of the folders to be created. See :ref:`yaml:Create empty folders`."
    esm_configs_dir,     general,                "Absolute path to the ESM-Tools configs directory (``configs/``). Set automatically by ``esm_parser`` at startup. Use as ``${general.esm_configs_dir}/...`` in YAML files to reference scripts and files under the configs tree."
    esm_couplings_dir,   general,                "Absolute path to the ESM-Tools couplings directory (``couplings/``). Set automatically by ``esm_parser`` at startup. Use as ``${general.esm_couplings_dir}/...`` in YAML files to reference coupling configurations."
@@ -81,6 +83,7 @@ Run-time variables
    ini_restart_dir,     <component>,            "Path of the restarted experiment in case the current experiment runs in a different directory. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
    ini_restart_exp_id,  <component>,            "ID of the restarted experiment in case the current experiment has a different ``expid``. For this variable to have an effect ``lresume`` needs to be ``true`` (e.g. the experiment is a restart)."
    install_missing_plugins,     general,        "A boolean to indicate whether ``esm_runscripts`` needs to install missing plugins (``True``, default) or not (``False``). Implemented to solve a problem with the ``esm_tests`` CI in GitHub where we might not have access to some repositories."
+   launched_with_conda, computer,               "Boolean set automatically to ``True`` when ESM-Tools is launched from inside an active conda environment, ``False`` otherwise. Set internally, not meant to be defined by the user. See :ref:`esm_runscripts:Running an experiment with conda`."
    lresume,             <component>,            Boolean to indicate whether the run is an initial run or a restart.
    mail_type,           general/computer,       "Value for the SBATCH flag ``--mail-type`` (see https://slurm.schedmd.com/sbatch.html#OPT_mail-type)"
    mail_user,           general/computer,       "Value for the SBATCH flag ``--mail-user`` (see https://slurm.schedmd.com/sbatch.html#OPT_mail-user)"
@@ -99,7 +102,9 @@ Run-time variables
    pre_recipe.steps,    general,                "List of recipe step names injected before the main recipe (e.g. ``[""initialize_dask_cluster""]``). Steps listed here run for all job types except those in ``pre_recipe.exclude_job_types``."
    save_batch_env_patterns,  computer,          "List of grep patterns used to capture and restore batch system environment variables across job script stages (e.g. ``[""SLURM""]`` or ``[""PBS""]``)."
    setup_dir,           general,                "Absolute path of the setup directory (where it was installed by `esm_master`)."
-   system_components,   general,                "List of non-model config sections included in file-list iteration loops (default: ``[""general"", ""dask""]``)."
+   system_components,   general,                "List of non-model config components not included in file-list iteration loops (default: ``[""general"", ""dask""]``)."
+   other_components,    general,                "Additional section names accepted at the root level of the assembled config (validation only — these sections do **not** participate in file operations). Extend it with ``add_other_components`` in a runscript or config file. See :ref:`yaml:Sections`."
+   valid_model_names,   general,                "List of model components recognised at the root level of the assembled config. Models listed here trigger full file-operation and directory-creation functionality in ``esm_runscripts`` (experiment sub-directories, file movements, tidy-up, etc.). Extend it with ``add_valid_model_names`` in a runscript or config file. See :ref:`yaml:Sections`."
    time_step,           <component>,            Time step of the component in seconds.
 
 Dask variables

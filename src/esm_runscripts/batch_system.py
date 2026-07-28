@@ -11,6 +11,7 @@ from esm_parser import find_variable
 from esm_tools import user_error, user_note
 
 from . import dataprocess, helpers, prepare
+from .conda_env import get_conda_info_from_file
 from .pbs import Pbs
 from .slurm import Slurm
 
@@ -361,6 +362,11 @@ class batch_system:
         or a list of strings. These are shell commands appended to the job
         script after the model execution and before the resubmission call.
 
+        The special token ``@conda_activate@`` may appear in the list and is
+        expanded by :meth:`get_conda_activate_commands` into the appropriate
+        ``conda activate`` shell commands. It is injected by default via
+        ``configs/esm_software/esm_runscripts/defaults.yaml``.
+
         Parameters
         ----------
         config : dict
@@ -399,7 +405,64 @@ class batch_system:
                     + '"post_run_commands" as a "string" or a "list" of "strings".'
                 ),
             )
+
+        # Add conda activate if necessary
+        old_extras = extras
+        extras = []
+        for command in old_extras:
+            if command == "@conda_activate@":
+                extras.extend(batch_system.get_conda_activate_commands(config))
+            else:
+                extras.append(command)
+
         return extras
+
+    @staticmethod
+    def get_conda_activate_commands(config):
+        """
+        Build the shell commands needed to activate the conda environment in the job script.
+
+        The conda environment to activate is determined in the following priority order:
+
+        1. ``conda.env`` (and optionally ``conda.root``) set explicitly in the runscript
+           or machine config.
+        2. The ``conda_info.yaml`` file written to the run config directory by
+           :func:`~esm_runscripts.conda_env.write_conda_info_file` during
+           ``prepexp``, which captures the environment that was active when
+           ESM-Tools was launched.
+
+        Returns an empty list when no conda environment can be determined or when
+        ``general.use_venv`` is ``True`` (to avoid mixing virtual environments).
+
+        Parameters
+        ----------
+        config : dict
+            The simulation configuration dictionary.
+
+        Returns
+        -------
+        commands : list of str
+            Shell lines to source the conda initialisation script (if a conda
+            root is known) and to run ``conda activate <env>``. Empty if conda
+            is not in use.
+        """
+        commands = []
+
+        # Do not mix conda and venvs
+        if config["general"].get("use_venv", False):
+            return commands
+
+        conda_env = config.get("conda", {}).get("env", False)
+        conda_root = config.get("conda", {}).get("root", None)
+        if not conda_env:
+            conda_env, conda_root = get_conda_info_from_file(config)
+        if conda_env:
+            commands.append("# Activate conda environment")
+            if conda_root:
+                commands.append(f"source {conda_root}/bin/activate")
+            commands.append(f"conda activate {conda_env}")
+
+        return commands
 
     @staticmethod
     def get_env_capture_commands(config):
@@ -460,7 +523,6 @@ class batch_system:
         return [
             "# Recover batch system environment variables",
             f"source {env_file}; rm {env_file}",
-            "",
         ]
 
     @staticmethod
@@ -565,13 +627,12 @@ class batch_system:
             if batch_or_shell == "batch":
 
                 config = batch_system.calculate_requirements(config, cluster)
-                # TODO: remove it once it's not needed anymore (substituted by packjob)
-                if cluster in reserved_jobtypes and config["computer"].get(
-                    "taskset", False
-                ):
-                    config = config["general"]["batch"].write_het_par_wrappers(config)
-                # Prepare launcher
-                config = config["general"]["batch"].prepare_launcher(config, cluster)
+                if cluster in reserved_jobtypes:
+                    # TODO: remove it once it's not needed anymore (substituted by packjob)
+                    if config["computer"].get("taskset", False):
+                        config = config["general"]["batch"].write_het_par_wrappers(config)
+                    # Prepare launcher (writes hostfile_srun for srun --multi-prog)
+                    config = config["general"]["batch"].prepare_launcher(config, cluster)
                 # Initiate the header
                 header = batch_system.get_batch_header(config, cluster)
 
@@ -669,18 +730,21 @@ class batch_system:
                     cluster
                 ]["next_submit"]
 
+                runfile.write("\n")
+                runfile.write("# Call to esm_runscript to start subjobs:\n")
+                runfile.write("# " + str(subjobs_to_launch) + "\n")
+                runfile.write("process=$!\n\n")
+
+                # Restore batch env vars before resubmission
+                for line in batch_system.get_env_recovery_commands(config):
+                    runfile.write(line + "\n")
+
                 # extra entries for each subjob
                 post_run_commands = batch_system.get_post_run_commands(config)
                 for line in post_run_commands:
                     runfile.write(line + "\n")
 
                 runfile.write("\n")
-                runfile.write("# Call to esm_runscript to start subjobs:\n")
-                runfile.write("# " + str(subjobs_to_launch) + "\n")
-                runfile.write("process=$!\n\n")
-                # Restore batch env vars before resubmission
-                for line in batch_system.get_env_recovery_commands(config):
-                    runfile.write(line + "\n")
                 runfile.write(
                     "# Comment the following line if you don't want esm_runscripts to restart:\n"
                 )

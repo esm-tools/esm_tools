@@ -4,10 +4,10 @@ Expects a *machine_config* dict — the parsed ESM-Tools machine section for
 whatever machine the scan is running on — with (any of) these keys:
     institution, system, storage_type, storage_tier
 
-storage_tier, if given, is used as-is instead of derived from storage_type
-via the hot/warm/cold heuristic in _derive_tier — that heuristic only
-knows a handful of storage_type values, and defaults to leaving the tier
-unset for anything it doesn't recognize.
+Every field is taken as-is from that config; the Python side makes no
+assumptions about machines or their paths. In particular storage_tier is
+read directly and never derived from storage_type — that mapping belongs in
+the machine YAML, not in hardcoded heuristics here.
 
 Detection is not done by probing the filesystem or matching path patterns:
 the caller already knows which machine it is running on, so it resolves and
@@ -26,19 +26,6 @@ from pystac.utils import datetime_to_str
 from upath import UPath
 
 from esm_catalog.registry import EXTENSION_URLS
-
-# Coarse access-latency tier per storage_type. Anything not listed here is
-# unknown, not "hot" — a site whose storage_type we don't recognize should
-# not be silently assumed fast. Sites with a type outside this list, or a
-# type where the default doesn't hold, can set machine_config["storage_tier"]
-# explicitly to bypass this heuristic entirely.
-_TIER_BY_STORAGE_TYPE = {
-    "hpss": "cold",
-    "dmf": "cold",
-    "tape": "cold",
-    "gpfs": "warm",
-    "lustre": "hot",
-}
 
 
 def add_storage_extension(
@@ -67,7 +54,7 @@ def add_storage_extension(
         institution = machine_config.get("institution")
         system = machine_config.get("system")
         storage_type = machine_config.get("storage_type")
-        tier = machine_config.get("storage_tier") or _derive_tier(storage_type)
+        tier = machine_config.get("storage_tier")
 
         if institution:
             item.properties["storage:institution"] = institution
@@ -108,15 +95,3 @@ def _get_last_access(path: UPath) -> Optional[datetime]:
     except OSError:
         return None
     return datetime.fromtimestamp(stat.st_atime, tz=timezone.utc)
-
-
-def _derive_tier(storage_type: Optional[str]) -> Optional[str]:
-    """Map a known filesystem/storage type to a coarse hot/warm/cold tier.
-
-    Returns None for an unrecognized (or missing) storage_type rather than
-    guessing — callers who know better can pass machine_config["storage_tier"]
-    directly.
-    """
-    if not storage_type:
-        return None
-    return _TIER_BY_STORAGE_TYPE.get(storage_type)

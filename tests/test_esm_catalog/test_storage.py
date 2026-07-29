@@ -59,7 +59,12 @@ def test_machine_config_sets_institution_system_and_tier(item_with_asset, data_f
     add_storage_extension(
         item_with_asset,
         data_file,
-        machine_config={"institution": "AWI", "system": "example-hpc", "storage_type": "lustre"},
+        machine_config={
+            "institution": "AWI",
+            "system": "example-hpc",
+            "storage_type": "lustre",
+            "storage_tier": "hot",
+        },
     )
     assert item_with_asset.properties["storage:institution"] == "AWI"
     assert item_with_asset.properties["storage:system"] == "example-hpc"
@@ -68,25 +73,16 @@ def test_machine_config_sets_institution_system_and_tier(item_with_asset, data_f
     assert STORAGE_URL in item_with_asset.stac_extensions
 
 
-@pytest.mark.parametrize(
-    "storage_type, expected_tier",
-    [
-        ("hpss", "cold"),
-        ("dmf", "cold"),
-        ("tape", "cold"),
-        ("gpfs", "warm"),
-        ("lustre", "hot"),
-        ("ceph", None),  # unrecognized -> tier left unset, not guessed
-    ],
-)
-def test_storage_type_maps_to_tier(item_with_asset, data_file, storage_type, expected_tier):
-    add_storage_extension(item_with_asset, data_file, machine_config={"storage_type": storage_type})
-    assert item_with_asset.properties.get("storage:tier") == expected_tier
-    assert item_with_asset.assets["data"].extra_fields["storage:type"] == storage_type
+def test_storage_type_alone_does_not_set_tier(item_with_asset, data_file):
+    # No Python-side heuristic: storage_type is recorded, but tier is only
+    # set when the machine config states it explicitly.
+    add_storage_extension(item_with_asset, data_file, machine_config={"storage_type": "lustre"})
+    assert "storage:tier" not in item_with_asset.properties
+    assert item_with_asset.assets["data"].extra_fields["storage:type"] == "lustre"
     assert STORAGE_URL in item_with_asset.stac_extensions
 
 
-def test_explicit_storage_tier_overrides_heuristic(item, data_file):
+def test_storage_tier_taken_verbatim_from_config(item, data_file):
     add_storage_extension(
         item, data_file, machine_config={"storage_type": "gpfs", "storage_tier": "cold"}
     )
@@ -100,7 +96,11 @@ def test_explicit_storage_tier_without_storage_type(item_with_asset, data_file):
 
 
 def test_missing_data_asset_does_not_raise(item, data_file):
-    add_storage_extension(item, data_file, machine_config={"storage_type": "lustre"})
+    # item has no "data" asset; storage:type has nowhere to go but the call
+    # must still succeed and set the item-level fields it can.
+    add_storage_extension(
+        item, data_file, machine_config={"storage_type": "lustre", "storage_tier": "hot"}
+    )
     assert item.properties["storage:tier"] == "hot"
 
 

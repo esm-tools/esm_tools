@@ -2,6 +2,11 @@
 
 computer:
     name: levante
+    # Operating institution (facility-wide). Prefer a ROR identifier.
+    institution: "https://ror.org/03ztgj037"  # DKRZ
+    # Storage metadata for the esm_catalog STAC "storage" extension.
+    storage:
+        type: lustre
     #hyper_flag: "--cpus-per-task=1"
     #additional_flags: ["--mem=0"] # TODO@Sebastian: why was this line commented out?
     account: None

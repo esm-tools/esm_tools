@@ -12,6 +12,9 @@
 
 computer:
     name: nesh
+    # Operating institution (facility-wide). Prefer a ROR identifier.
+    institution: "https://ror.org/04v76ef78"  # CAU Kiel
+    # storage.type unknown for nesh (NEC HPC) - left unset until confirmed.
     account: None
 
     # set default for hyperthreading_flag

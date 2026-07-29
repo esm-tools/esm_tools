@@ -3,6 +3,11 @@
 computer:
     # basic setup
     name: juwels
+    # Operating institution (facility-wide). Prefer a ROR identifier.
+    institution: "https://ror.org/04g2j9721"  # Jülich Supercomputing Centre (JSC)
+    # Storage metadata for the esm_catalog STAC "storage" extension.
+    storage:
+        type: gpfs  # JUST / IBM Spectrum Scale
     account: esmtst
     jobtype: compute
     accounting: true

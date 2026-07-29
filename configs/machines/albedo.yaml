@@ -35,6 +35,19 @@ computer:
         focipool: "/dev/null"
     pool_dir: "${computer.pool_directories.pool}"
 
+    # Operating institution (facility-wide). Prefer a ROR identifier.
+    institution: "https://ror.org/032e6b942"  # AWI
+
+    # Storage metadata for the esm_catalog STAC "storage" extension.
+    # albedo's local storage is a NEC GxFS appliance on IBM Spectrum Scale
+    # (GPFS); `type` names the filesystem technology. `tier` is deliberately
+    # NOT set here: both tiers are the same GPFS filesystem (Tier 1 NVMe
+    # "system" vs Tier 2 NL-SAS HDD "data"), so tier is a per-file property
+    # resolved at scan time via `mmlsattr -L <file>` / `info.sh -f <file>`,
+    # not a machine-wide constant.
+    storage:
+        type: gpfs
+
     hyper_flag: "" # No hyperthreading on albedo is supported in esm-tools (yet)!
     choose_heterogeneous_parallelization:
         True:

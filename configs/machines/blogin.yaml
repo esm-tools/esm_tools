@@ -2,6 +2,11 @@
 
 computer:
     name: blogin
+    # Operating institution (facility-wide). Prefer a ROR identifier.
+    institution: "https://ror.org/02eva5865"  # ZIB (HLRN)
+    # Storage metadata for the esm_catalog STAC "storage" extension.
+    storage:
+        type: gpfs  # IBM Storage Scale (former GPFS), 1 PiB NVMe SSD cache
     account: None
 
     # set default for hyperthreading_flag

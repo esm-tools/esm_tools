@@ -1,4 +1,4 @@
-"""Tests for the paleo STAC extension and experiment_type classification."""
+"""Tests for the paleo STAC extension (geological time)."""
 
 from __future__ import annotations
 
@@ -11,18 +11,15 @@ from pystac import Item
 
 from esm_catalog.context import CollectionContext
 from esm_catalog.item import make_item
-from esm_catalog.paleo import (
-    _format_geological,
-    _parse_year_from_iso,
-    add_experiment_type,
-    add_paleo_data,
-)
+from esm_catalog.paleo import add_paleo_data
 from esm_catalog.registry import EXTENSION_URLS
 
 PALEO_URL = EXTENSION_URLS["paleo"]
 SCHEMA_PATH = (
     Path(__file__).parents[2] / "configs" / "stac-extensions" / "paleo" / "v1.0.0" / "schema.json"
 )
+
+LGM = "-21000-01-01T00:00:00"
 
 
 @pytest.fixture
@@ -39,172 +36,68 @@ def item():
 # --- add_paleo_data ---
 
 
-def test_noop_without_config_or_year(item):
+def test_noop_without_config(item):
     add_paleo_data(item)
-    assert "paleo:year" not in item.properties
+    assert "paleo:datetime" not in item.properties
     assert item.stac_extensions == []
 
 
-def test_explicit_paleo_year(item):
-    add_paleo_data(item, paleo_year=-20000)
-    assert item.properties["paleo:year"] == -20000
-    assert item.properties["paleo:display"] == "22.0 ka"
-    assert item.properties["paleo:reference_year"] == 2024
+def test_config_datetime(item):
+    add_paleo_data(item, paleo_config={"datetime": LGM})
+    assert item.properties["paleo:datetime"] == LGM
     assert PALEO_URL in item.stac_extensions
 
 
-def test_config_reference_year_and_epoch_period(item):
-    add_paleo_data(
-        item,
-        paleo_config={
-            "reference_year": -20000,
-            "epoch": "Pleistocene",
-            "period": "Quaternary",
-        },
-    )
-    assert item.properties["paleo:year"] == -20000
-    assert item.properties["paleo:epoch"] == "Pleistocene"
-    assert item.properties["paleo:period"] == "Quaternary"
+def test_ce_datetime_passes_through(item):
+    add_paleo_data(item, paleo_config={"datetime": "1850-01-01T00:00:00"})
+    assert item.properties["paleo:datetime"] == "1850-01-01T00:00:00"
 
 
-def test_bare_epoch_period_do_not_write_null(item):
-    # A bare `epoch:`/`period:` in YAML is present-but-None; it must be skipped,
-    # not written through as a schema-invalid null.
-    add_paleo_data(
-        item,
-        paleo_config={"reference_year": -20000, "epoch": None, "period": None},
-    )
-    assert item.properties["paleo:year"] == -20000
-    assert "paleo:epoch" not in item.properties
-    assert "paleo:period" not in item.properties
+def test_missing_datetime_is_noop(item):
+    # A paleo_config with other keys but no datetime is not a paleo run.
+    add_paleo_data(item, paleo_config={"description": "some paleo setup"})
+    assert "paleo:datetime" not in item.properties
+    assert item.stac_extensions == []
 
 
-def test_explicit_year_overrides_config(item):
-    add_paleo_data(item, paleo_config={"reference_year": -100}, paleo_year=-20000)
-    assert item.properties["paleo:year"] == -20000
-
-
-def test_deep_time_from_start_datetime_string(item):
-    # Years outside 0-9999 can only arrive as pre-formatted ISO strings.
-    item.properties["start_datetime"] = "-21000-01-01T00:00:00Z"
-    add_paleo_data(item)
-    assert item.properties["paleo:year"] == -21000
-
-
-def test_normal_datetime_does_not_trigger_paleo(item):
-    item.properties["start_datetime"] = "2000-01-01T00:00:00Z"
-    add_paleo_data(item)
-    assert "paleo:year" not in item.properties
-
-
-def test_year_zero_triggers_paleo(item):
-    # datetime.MINYEAR is 1, so year 0 can only have come from a paleo-aware
-    # (esm_calendar.Date) parse, never a stdlib datetime — it should count as
-    # deep time even though it isn't negative.
-    item.properties["start_datetime"] = "0000-01-01T00:00:00Z"
-    add_paleo_data(item)
-    assert item.properties["paleo:year"] == 0
+def test_malformed_datetime_raises(item):
+    with pytest.raises(ValueError):
+        add_paleo_data(item, paleo_config={"datetime": "21 ka"})
 
 
 def test_url_appended_once(item):
-    add_paleo_data(item, paleo_year=-20000)
-    add_paleo_data(item, paleo_year=-20000)
+    add_paleo_data(item, paleo_config={"datetime": LGM})
+    add_paleo_data(item, paleo_config={"datetime": LGM})
     assert item.stac_extensions.count(PALEO_URL) == 1
 
 
-# --- _format_geological ---
-
-
-@pytest.mark.parametrize(
-    "year,expected",
-    [
-        (-66_000_000, "66.0 Ma"),
-        (-20000, "22.0 ka"),
-        (-500, "501 BCE"),
-        (0, "1 BCE"),
-        (1492, "1492 CE"),
-    ],
-)
-def test_format_geological(year, expected):
-    assert _format_geological(year, reference_year=2024) == expected
-
-
-# --- _parse_year_from_iso ---
-
-
-@pytest.mark.parametrize(
-    "dt_str,expected",
-    [
-        ("2000-01-01T00:00:00Z", 2000),
-        ("-21000-01-01T00:00:00", -21000),
-        ("", None),
-        ("garbage", None),
-    ],
-)
-def test_parse_year_from_iso(dt_str, expected):
-    assert _parse_year_from_iso(dt_str) == expected
-
-
-# --- add_experiment_type ---
-
-
-def test_experiment_type_historical(item):
-    add_experiment_type(item)
-    assert item.properties["experiment_type"] == "historical"
-    assert "paleo:years_bp" not in item.properties
-
-
-def test_experiment_type_control():
-    item = Item(
-        id="i",
-        geometry=None,
-        bbox=None,
-        datetime=datetime(1850, 1, 1, tzinfo=timezone.utc),
-        properties={},
+def test_transient_range_sets_start_and_end(item):
+    # A deglaciation run: 21 ka BP -> 1850 CE. Separate start_datetime/
+    # end_datetime scalars -> paleo:start/end_datetime, no single paleo:datetime.
+    add_paleo_data(
+        item,
+        paleo_config={"start_datetime": LGM, "end_datetime": "1850-01-01T00:00:00"},
     )
-    add_experiment_type(item)
-    assert item.properties["experiment_type"] == "control"
-    # years_bp only for paleo items, per plan
-    assert "paleo:years_bp" not in item.properties
-
-
-def test_experiment_type_paleo_sets_years_bp():
-    item = Item(
-        id="i",
-        geometry=None,
-        bbox=None,
-        datetime=datetime(1000, 1, 1, tzinfo=timezone.utc),
-        properties={},
-    )
-    add_experiment_type(item)
-    assert item.properties["experiment_type"] == "paleo"
-    assert item.properties["paleo:years_bp"] == 950
+    assert item.properties["paleo:start_datetime"] == LGM
+    assert item.properties["paleo:end_datetime"] == "1850-01-01T00:00:00"
+    assert "paleo:datetime" not in item.properties
     assert PALEO_URL in item.stac_extensions
 
 
-def test_experiment_type_prefers_paleo_year_property(item):
-    # Deep-time run: model datetime says 2000 but paleo:year says LGM.
-    add_paleo_data(item, paleo_year=-21000)
-    add_experiment_type(item)
-    assert item.properties["experiment_type"] == "paleo"
-    assert item.properties["paleo:years_bp"] == 1950 - (-21000)
+def test_half_range_raises(item):
+    # Like STAC's start_datetime/end_datetime, the two must be given together.
+    with pytest.raises(ValueError):
+        add_paleo_data(item, paleo_config={"start_datetime": LGM})
 
 
-def test_experiment_type_defaults_to_control_without_dates():
-    item = Item(
-        id="i", geometry=None, bbox=None, datetime=None,
-        properties={"start_datetime": "garbage", "end_datetime": "garbage"},
-    )
-    add_experiment_type(item)
-    assert item.properties["experiment_type"] == "control"
-    assert "paleo:years_bp" not in item.properties
-
-
-def test_experiment_type_does_not_read_namelist_properties(item):
-    # Plan fix: nml:echam:runctl:dt_start must NOT influence classification.
-    item.properties["nml:echam:runctl:dt_start"] = [1000, 1, 1]
-    add_experiment_type(item)
-    assert item.properties["experiment_type"] == "historical"
+@pytest.mark.parametrize("year", [-65_000_000, -1_070_000, -21000, 0, 850, 1850])
+def test_stored_datetime_parses_in_paleodatetime(item, year):
+    # A paleodatetime-produced string round-trips through the catalog unchanged
+    # and re-parses to the same year on the consumer side.
+    pdt = pytest.importorskip("paleodatetime")
+    s = pdt.PaleoDateTime(year=year, month=1, day=1).isoformat()
+    add_paleo_data(item, paleo_config={"datetime": s})
+    assert pdt.PaleoDateTime.fromisoformat(item.properties["paleo:datetime"]).year == year
 
 
 # --- wiring through make_item ---
@@ -227,23 +120,19 @@ def _metadata(**kwargs):
     return base
 
 
-def test_make_item_sets_experiment_type(tmp_path):
+def test_make_item_without_paleo_config_sets_no_paleo_fields(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item = make_item(f, _metadata(), _ctx())
-    assert item.properties["experiment_type"] == "historical"
-    assert "paleo:year" not in item.properties
+    assert "paleo:datetime" not in item.properties
+    assert PALEO_URL not in item.stac_extensions
 
 
 def test_make_item_with_paleo_config(tmp_path):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx(paleo_config={"reference_year": -20000, "epoch": "Pleistocene"})
-    item = make_item(f, _metadata(), ctx)
-    assert item.properties["paleo:year"] == -20000
-    assert item.properties["paleo:epoch"] == "Pleistocene"
-    assert item.properties["experiment_type"] == "paleo"
-    assert item.properties["paleo:years_bp"] == 1950 - (-20000)
+    item = make_item(f, _metadata(), _ctx(paleo_config={"datetime": LGM}))
+    assert item.properties["paleo:datetime"] == LGM
     assert PALEO_URL in item.stac_extensions
 
 
@@ -251,7 +140,18 @@ def test_make_item_paleo_validates_against_schema(tmp_path):
     jsonschema = pytest.importorskip("jsonschema")
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
-    ctx = _ctx(paleo_config={"reference_year": -20000, "epoch": "Pleistocene"})
-    item_dict = make_item(f, _metadata(), ctx).to_dict()
+    item_dict = make_item(f, _metadata(), _ctx(paleo_config={"datetime": LGM})).to_dict()
     schema = json.loads(SCHEMA_PATH.read_text())
     jsonschema.validate(instance=item_dict, schema=schema)
+
+
+def test_schema_rejects_malformed_paleo_datetime():
+    jsonschema = pytest.importorskip("jsonschema")
+    schema = json.loads(SCHEMA_PATH.read_text())
+    bad = {
+        "type": "Feature",
+        "stac_extensions": [PALEO_URL],
+        "properties": {"paleo:datetime": "21 ka"},
+    }
+    with pytest.raises(jsonschema.ValidationError):
+        jsonschema.validate(instance=bad, schema=schema)

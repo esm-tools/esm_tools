@@ -1,113 +1,99 @@
-"""Paleoclimate STAC extension: geological time and experiment classification.
+"""Paleo STAC extension: geological time for paleoclimate simulations.
 
-Adds properties for paleoclimate simulations where model years represent
-geological time periods (e.g., Last Glacial Maximum at 21,000 years ago,
-Eocene at 50 million years ago), plus a coarse experiment_type
-classification for every item.
+A paleoclimate run represents a point (or span) in geological time that a
+standard RFC3339 datetime cannot express — RFC3339 years are four digits
+(1..9999), while paleo runs reach thousands to millions of years into the
+past. This extension records that geological time in the ``paleo:`` namespace,
+mirroring the shape of STAC core's Date and Time fields::
 
-Properties added by add_paleo_data (paleo simulations only):
-    paleo:year           - Geological year (negative = past, e.g., -20000)
-    paleo:display        - Human-readable format (e.g., "22.0 ka", "66.0 Ma")
-    paleo:reference_year - Reference year for "years ago" calculation
-    paleo:epoch          - Optional geological epoch (e.g., "Pleistocene")
-    paleo:period         - Optional geological period (e.g., "Quaternary")
+    paleo:datetime        - nominal geological time
+    paleo:start_datetime  - start of a transient run's geological span
+    paleo:end_datetime    - end of a transient run's geological span
 
-Properties added by add_experiment_type (every item):
-    experiment_type      - "paleo" | "control" | "historical"
-    paleo:years_bp       - Years before present (present = 1950 CE);
-                           only when experiment_type is "paleo".
+Values are ISO-8601-like strings with an unbounded (optionally negative) year,
+e.g. ``"-21000-01-01T00:00:00"`` for the Last Glacial Maximum (~21 ka). They
+are meant to be parsed and rendered by the ``paleodatetime`` library on the
+consumer side — this catalog stores the datum, not a formatted "21 ka" string.
+Presentation is the consumer's job.
 
-The paleo configuration is the ``general.paleo`` section of the ESM-Tools
-config, passed down as a plain dict (see CollectionContext.paleo_config)::
+The geological time comes only from explicit configuration — the
+``general.paleo`` section (see ``CollectionContext.paleo_config``), whose keys
+mirror the output fields exactly::
 
-    reference_year: -21000  # LGM
-    epoch: "Pleistocene"
-    period: "Quaternary"
+    general:
+      paleo:
+        datetime: "-21000-01-01T00:00:00"          # a time-slice run (LGM)
+        # start_datetime / end_datetime instead     # a transient run
+
+It is never inferred from the item's own datetimes: a paleo run's model
+calendar is internal and does not approximate its geological age.
+
+This extension is only the geological time. The run's name/classification is
+not part of it.
 """
 
 from __future__ import annotations
 
-from datetime import MAXYEAR, MINYEAR
+import re
 from typing import Optional
 
 import pystac
 
-from esm_calendar import Date
-
 from esm_catalog.registry import EXTENSION_URLS
 
+# The paleodatetime ISO form: signed, unbounded year, then -MM-DDTHH:MM:SS.
+# Kept in lockstep with the pattern in the extension's schema.json.
+_PALEO_DATETIME = re.compile(r"^-?[0-9]+-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}$")
 
-def add_paleo_data(
-    item: pystac.Item,
-    paleo_config: Optional[dict] = None,
-    paleo_year: Optional[int] = None,
-    reference_year: int = 2024,
-) -> None:
-    """Inject paleoclimate extension fields into *item*.
 
-    The geological year is determined in priority order:
-    1. Explicit *paleo_year* parameter
-    2. ``reference_year`` from *paleo_config*
-    3. Derived from item start_datetime/datetime if the year falls outside
-       datetime.MINYEAR..MAXYEAR (1..9999) — the range a stdlib datetime can
-       represent, so a value outside it can only have arrived as a
-       pre-formatted ISO string carrying deep time via esm_calendar.Date
+def add_paleo_data(item: pystac.Item, paleo_config: Optional[dict] = None) -> None:
+    """Copy geological time from *paleo_config* onto *item*, or do nothing.
 
-    No-op when none of these yield a year (not a paleo simulation).
+    Config keys (the ``general.paleo`` section) mirror STAC core's Date and
+    Time as separate scalar datetime strings, never an array:
+
+    - ``datetime`` -> ``paleo:datetime`` (a time-slice run, e.g. LGM);
+    - ``start_datetime`` + ``end_datetime`` -> ``paleo:start_datetime`` +
+      ``paleo:end_datetime`` (a transient run). Like STAC's start/end_datetime,
+      the two must be given together.
+
+    Values are passed through unchanged (they are already the paleodatetime
+    strings that belong in the item) after a format check. No-op when no
+    datetime is configured (not a paleo run).
     """
-    geo_year = _resolve_paleo_year(item, paleo_config, paleo_year)
-    if geo_year is None:
+    cfg = paleo_config or {}
+
+    start, end = cfg.get("start_datetime"), cfg.get("end_datetime")
+    if (start is None) != (end is None):
+        raise ValueError(
+            "paleo start_datetime and end_datetime must be given together "
+            f"(got start_datetime={start!r}, end_datetime={end!r})"
+        )
+    if start is not None:
+        item.properties["paleo:start_datetime"] = _checked(start)
+        item.properties["paleo:end_datetime"] = _checked(end)
+        _register(item)
         return
 
-    item.properties["paleo:year"] = geo_year
-    item.properties["paleo:display"] = _format_geological(geo_year, reference_year)
-    item.properties["paleo:reference_year"] = reference_year
-
-    if paleo_config:
-        # Gate on truthiness, not presence: a bare `epoch:`/`period:` in YAML is
-        # present-but-None and would otherwise write a schema-invalid null.
-        if paleo_config.get("epoch"):
-            item.properties["paleo:epoch"] = paleo_config["epoch"]
-        if paleo_config.get("period"):
-            item.properties["paleo:period"] = paleo_config["period"]
-
+    dt = cfg.get("datetime")
+    if dt is None:
+        return
+    item.properties["paleo:datetime"] = _checked(dt)
     _register(item)
 
 
-def add_experiment_type(item: pystac.Item) -> None:
-    """Derive experiment_type (and paleo:years_bp for paleo runs) for *item*.
+def _checked(value: str) -> str:
+    """Return *value* if it is a paleodatetime ISO string, else raise ValueError.
 
-    Classification by start year:
-    - year < 1800  → "paleo"      (deep-time or pre-industrial paleo)
-    - 1800-1950    → "control"    (pre-industrial control / spinup)
-    - year > 1950  → "historical"
-    - unknown      → "control"
-
-    Start year priority: the paleo:year property (set by add_paleo_data
-    for explicitly configured paleo runs, where the model calendar may be
-    meaningless), then the item's own start_datetime/datetime.
-
-    paleo:years_bp = 1950 - start_year, added only for "paleo" items.
+    Fails loudly on a malformed config value (a typo, "21 ka", a bare year)
+    rather than writing a schema-invalid property that ships unchecked.
     """
-    start_year = item.properties.get("paleo:year")
-    if start_year is None:
-        start_year = _resolve_start_year(item)
-
-    if start_year is None:
-        item.properties["experiment_type"] = "control"
-        return
-
-    if start_year < 1800:
-        exp_type = "paleo"
-    elif start_year <= 1950:
-        exp_type = "control"
-    else:
-        exp_type = "historical"
-
-    item.properties["experiment_type"] = exp_type
-    if exp_type == "paleo":
-        item.properties["paleo:years_bp"] = 1950 - start_year
-        _register(item)
+    if not isinstance(value, str) or not _PALEO_DATETIME.match(value):
+        raise ValueError(
+            "paleo datetime must be an ISO-8601-like string "
+            f"'<year>-MM-DDTHH:MM:SS' (unbounded/negative year allowed); got {value!r}"
+        )
+    return value
 
 
 def _register(item: pystac.Item) -> None:
@@ -115,72 +101,3 @@ def _register(item: pystac.Item) -> None:
     url = EXTENSION_URLS["paleo"]
     if url not in item.stac_extensions:
         item.stac_extensions.append(url)
-
-
-def _resolve_paleo_year(
-    item: pystac.Item,
-    paleo_config: Optional[dict],
-    explicit_year: Optional[int],
-) -> Optional[int]:
-    """Determine the geological year for an item, or None if not paleo."""
-    if explicit_year is not None:
-        return explicit_year
-
-    if paleo_config and "reference_year" in paleo_config:
-        return paleo_config["reference_year"]
-
-    year = _resolve_start_year(item)
-    if year is not None and (year < MINYEAR or year > MAXYEAR):
-        return year
-    return None
-
-
-def _resolve_start_year(item: pystac.Item) -> Optional[int]:
-    """Return the item's start year from its datetime properties.
-
-    Checks the start_datetime/datetime property strings first (these can
-    carry deep-time years that datetime objects cannot represent), then the
-    item.datetime object.
-    """
-    dt_str = item.properties.get("start_datetime") or item.properties.get("datetime")
-    if dt_str:
-        year = _parse_year_from_iso(dt_str)
-        if year is not None:
-            return year
-    if item.datetime is not None:
-        return item.datetime.year
-    return None
-
-
-def _parse_year_from_iso(dt_str: str) -> Optional[int]:
-    """Parse the year from an ISO datetime string, handling large/negative years.
-
-    Uses esm_calendar.Date, which is paleo-aware (negative years), instead of
-    the stdlib datetime, whose year is restricted to [1, 9999].
-    """
-    if not dt_str:
-        return None
-
-    try:
-        return Date(dt_str).year
-    except ValueError:
-        return None
-
-
-def _format_geological(year: int, reference_year: int = 2024) -> str:
-    """Format a geological year as a human-readable string.
-
-    Uses Ma (millions of years ago) for dates >= 1 million years ago,
-    ka (thousands of years ago) for dates >= 10,000 years ago,
-    and CE/BCE for more recent dates.
-    """
-    years_ago = reference_year - year
-
-    if abs(years_ago) >= 1_000_000:
-        return f"{years_ago / 1_000_000:.1f} Ma"
-    if abs(years_ago) >= 10_000:
-        return f"{years_ago / 1_000:.1f} ka"
-    if year <= 0:
-        # BCE dates (astronomical year numbering: year 0 = 1 BCE)
-        return f"{1 - year} BCE"
-    return f"{year} CE"

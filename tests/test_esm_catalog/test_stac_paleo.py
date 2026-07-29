@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import jsonschema
 import pytest
 from pystac import Item
 
@@ -20,6 +21,7 @@ SCHEMA_PATH = (
 )
 
 LGM = "-21000-01-01T00:00:00"
+CE1850 = "1850-01-01T00:00:00"
 
 
 @pytest.fixture
@@ -31,6 +33,15 @@ def item():
         datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
         properties={},
     )
+
+
+@pytest.fixture
+def schema():
+    return json.loads(SCHEMA_PATH.read_text())
+
+
+def _instance(props):
+    return {"type": "Feature", "stac_extensions": [PALEO_URL], "properties": props}
 
 
 # --- add_paleo_data ---
@@ -49,19 +60,18 @@ def test_config_datetime(item):
 
 
 def test_ce_datetime_passes_through(item):
-    add_paleo_data(item, paleo_config={"datetime": "1850-01-01T00:00:00"})
-    assert item.properties["paleo:datetime"] == "1850-01-01T00:00:00"
+    add_paleo_data(item, paleo_config={"datetime": CE1850})
+    assert item.properties["paleo:datetime"] == CE1850
 
 
 def test_missing_datetime_is_noop(item):
-    # A paleo_config with other keys but no datetime is not a paleo run.
     add_paleo_data(item, paleo_config={"description": "some paleo setup"})
     assert "paleo:datetime" not in item.properties
     assert item.stac_extensions == []
 
 
 def test_malformed_datetime_raises(item):
-    with pytest.raises(ValueError):
+    with pytest.raises(jsonschema.ValidationError):
         add_paleo_data(item, paleo_config={"datetime": "21 ka"})
 
 
@@ -72,28 +82,23 @@ def test_url_appended_once(item):
 
 
 def test_transient_range_sets_start_and_end(item):
-    # A deglaciation run: 21 ka BP -> 1850 CE. Separate start_datetime/
-    # end_datetime scalars -> paleo:start/end_datetime, no single paleo:datetime.
-    add_paleo_data(
-        item,
-        paleo_config={"start_datetime": LGM, "end_datetime": "1850-01-01T00:00:00"},
-    )
+    # Transient run (deglaciation, 21 ka BP -> 1850 CE): start/end, no datetime.
+    add_paleo_data(item, paleo_config={"start_datetime": LGM, "end_datetime": CE1850})
     assert item.properties["paleo:start_datetime"] == LGM
-    assert item.properties["paleo:end_datetime"] == "1850-01-01T00:00:00"
+    assert item.properties["paleo:end_datetime"] == CE1850
     assert "paleo:datetime" not in item.properties
     assert PALEO_URL in item.stac_extensions
 
 
 def test_half_range_raises(item):
     # Like STAC's start_datetime/end_datetime, the two must be given together.
-    with pytest.raises(ValueError):
+    with pytest.raises(jsonschema.ValidationError):
         add_paleo_data(item, paleo_config={"start_datetime": LGM})
 
 
 @pytest.mark.parametrize("year", [-65_000_000, -1_070_000, -21000, 0, 850, 1850])
 def test_stored_datetime_parses_in_paleodatetime(item, year):
-    # A paleodatetime-produced string round-trips through the catalog unchanged
-    # and re-parses to the same year on the consumer side.
+    # A paleodatetime string round-trips through the catalog and re-parses.
     pdt = pytest.importorskip("paleodatetime")
     s = pdt.PaleoDateTime(year=year, month=1, day=1).isoformat()
     add_paleo_data(item, paleo_config={"datetime": s})
@@ -136,22 +141,26 @@ def test_make_item_with_paleo_config(tmp_path):
     assert PALEO_URL in item.stac_extensions
 
 
-def test_make_item_paleo_validates_against_schema(tmp_path):
-    jsonschema = pytest.importorskip("jsonschema")
+def test_make_item_paleo_validates_against_schema(tmp_path, schema):
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")
     item_dict = make_item(f, _metadata(), _ctx(paleo_config={"datetime": LGM})).to_dict()
-    schema = json.loads(SCHEMA_PATH.read_text())
     jsonschema.validate(instance=item_dict, schema=schema)
 
 
-def test_schema_rejects_malformed_paleo_datetime():
-    jsonschema = pytest.importorskip("jsonschema")
-    schema = json.loads(SCHEMA_PATH.read_text())
-    bad = {
-        "type": "Feature",
-        "stac_extensions": [PALEO_URL],
-        "properties": {"paleo:datetime": "21 ka"},
-    }
-    with pytest.raises(jsonschema.ValidationError):
-        jsonschema.validate(instance=bad, schema=schema)
+@pytest.mark.parametrize(
+    "props, valid",
+    [
+        ({"paleo:datetime": LGM}, True),
+        ({"paleo:start_datetime": LGM, "paleo:end_datetime": CE1850}, True),
+        ({"paleo:datetime": "21 ka"}, False),  # malformed
+        ({"paleo:start_datetime": LGM}, False),  # half range
+        ({"paleo:datetime": LGM, "paleo:start_datetime": LGM, "paleo:end_datetime": CE1850}, False),
+    ],
+)
+def test_schema_constraints(schema, props, valid):
+    if valid:
+        jsonschema.validate(instance=_instance(props), schema=schema)
+    else:
+        with pytest.raises(jsonschema.ValidationError):
+            jsonschema.validate(instance=_instance(props), schema=schema)

@@ -93,6 +93,7 @@ setup(
             "pystac>=1.8",
             "shapely>=2.0",
             "universal-pathlib>=0.2",
+            "jsonschema>=4.0",
         ],
     },
     install_requires=requirements,

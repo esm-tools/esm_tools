@@ -26,31 +26,26 @@ SCHEMA_PATH = (
 
 
 @pytest.fixture
-def make_bare_item():
-    def _make(dt=datetime(2000, 1, 1, tzinfo=timezone.utc)):
-        return Item(
-            id="i",
-            geometry=None,
-            bbox=None,
-            datetime=dt,
-            properties={},
-        )
-
-    return _make
+def item():
+    return Item(
+        id="i",
+        geometry=None,
+        bbox=None,
+        datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
+        properties={},
+    )
 
 
 # --- add_paleo_data ---
 
 
-def test_noop_without_config_or_year(make_bare_item):
-    item = make_bare_item()
+def test_noop_without_config_or_year(item):
     add_paleo_data(item)
     assert "paleo:year" not in item.properties
     assert item.stac_extensions == []
 
 
-def test_explicit_paleo_year(make_bare_item):
-    item = make_bare_item()
+def test_explicit_paleo_year(item):
     add_paleo_data(item, paleo_year=-20000)
     assert item.properties["paleo:year"] == -20000
     assert item.properties["paleo:display"] == "22.0 ka"
@@ -58,8 +53,7 @@ def test_explicit_paleo_year(make_bare_item):
     assert PALEO_URL in item.stac_extensions
 
 
-def test_config_reference_year_and_epoch_period(make_bare_item):
-    item = make_bare_item()
+def test_config_reference_year_and_epoch_period(item):
     add_paleo_data(
         item,
         paleo_config={
@@ -73,10 +67,9 @@ def test_config_reference_year_and_epoch_period(make_bare_item):
     assert item.properties["paleo:period"] == "Quaternary"
 
 
-def test_bare_epoch_period_do_not_write_null(make_bare_item):
+def test_bare_epoch_period_do_not_write_null(item):
     # A bare `epoch:`/`period:` in YAML is present-but-None; it must be skipped,
     # not written through as a schema-invalid null.
-    item = make_bare_item()
     add_paleo_data(
         item,
         paleo_config={"reference_year": -20000, "epoch": None, "period": None},
@@ -86,39 +79,34 @@ def test_bare_epoch_period_do_not_write_null(make_bare_item):
     assert "paleo:period" not in item.properties
 
 
-def test_explicit_year_overrides_config(make_bare_item):
-    item = make_bare_item()
+def test_explicit_year_overrides_config(item):
     add_paleo_data(item, paleo_config={"reference_year": -100}, paleo_year=-20000)
     assert item.properties["paleo:year"] == -20000
 
 
-def test_deep_time_from_start_datetime_string(make_bare_item):
+def test_deep_time_from_start_datetime_string(item):
     # Years outside 0-9999 can only arrive as pre-formatted ISO strings.
-    item = make_bare_item()
     item.properties["start_datetime"] = "-21000-01-01T00:00:00Z"
     add_paleo_data(item)
     assert item.properties["paleo:year"] == -21000
 
 
-def test_normal_datetime_does_not_trigger_paleo(make_bare_item):
-    item = make_bare_item()
+def test_normal_datetime_does_not_trigger_paleo(item):
     item.properties["start_datetime"] = "2000-01-01T00:00:00Z"
     add_paleo_data(item)
     assert "paleo:year" not in item.properties
 
 
-def test_year_zero_triggers_paleo(make_bare_item):
+def test_year_zero_triggers_paleo(item):
     # datetime.MINYEAR is 1, so year 0 can only have come from a paleo-aware
     # (esm_calendar.Date) parse, never a stdlib datetime — it should count as
     # deep time even though it isn't negative.
-    item = make_bare_item()
     item.properties["start_datetime"] = "0000-01-01T00:00:00Z"
     add_paleo_data(item)
     assert item.properties["paleo:year"] == 0
 
 
-def test_url_appended_once(make_bare_item):
-    item = make_bare_item()
+def test_url_appended_once(item):
     add_paleo_data(item, paleo_year=-20000)
     add_paleo_data(item, paleo_year=-20000)
     assert item.stac_extensions.count(PALEO_URL) == 1
@@ -160,32 +148,42 @@ def test_parse_year_from_iso(dt_str, expected):
 # --- add_experiment_type ---
 
 
-def test_experiment_type_historical(make_bare_item):
-    item = make_bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
+def test_experiment_type_historical(item):
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "historical"
     assert "paleo:years_bp" not in item.properties
 
 
-def test_experiment_type_control(make_bare_item):
-    item = make_bare_item(datetime(1850, 1, 1, tzinfo=timezone.utc))
+def test_experiment_type_control():
+    item = Item(
+        id="i",
+        geometry=None,
+        bbox=None,
+        datetime=datetime(1850, 1, 1, tzinfo=timezone.utc),
+        properties={},
+    )
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "control"
     # years_bp only for paleo items, per plan
     assert "paleo:years_bp" not in item.properties
 
 
-def test_experiment_type_paleo_sets_years_bp(make_bare_item):
-    item = make_bare_item(datetime(1000, 1, 1, tzinfo=timezone.utc))
+def test_experiment_type_paleo_sets_years_bp():
+    item = Item(
+        id="i",
+        geometry=None,
+        bbox=None,
+        datetime=datetime(1000, 1, 1, tzinfo=timezone.utc),
+        properties={},
+    )
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "paleo"
     assert item.properties["paleo:years_bp"] == 950
     assert PALEO_URL in item.stac_extensions
 
 
-def test_experiment_type_prefers_paleo_year_property(make_bare_item):
+def test_experiment_type_prefers_paleo_year_property(item):
     # Deep-time run: model datetime says 2000 but paleo:year says LGM.
-    item = make_bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
     add_paleo_data(item, paleo_year=-21000)
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "paleo"
@@ -202,9 +200,8 @@ def test_experiment_type_defaults_to_control_without_dates():
     assert "paleo:years_bp" not in item.properties
 
 
-def test_experiment_type_does_not_read_namelist_properties(make_bare_item):
+def test_experiment_type_does_not_read_namelist_properties(item):
     # Plan fix: nml:echam:runctl:dt_start must NOT influence classification.
-    item = make_bare_item(datetime(2000, 1, 1, tzinfo=timezone.utc))
     item.properties["nml:echam:runctl:dt_start"] = [1000, 1, 1]
     add_experiment_type(item)
     assert item.properties["experiment_type"] == "historical"

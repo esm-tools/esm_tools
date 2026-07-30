@@ -340,9 +340,17 @@ function fesom_ice_construct_input_list {
 		    # this pipeline expects. Synthesize it from the standard monthly streams:
 		    # sst/sss (level-1 = the ICE-BASE T/S at cavity nodes, per FESOM's
 		    # virtual-column convention) -> Tsurf/Ssurf, plus fh and fw. fw is
-		    # converted m/s (freshwater) -> kg m-2 s-1; SIGN kept: FESOM melt => fw<0,
-		    # and PISM's shelfbmassflux is "positive if ice is freezing on"
-		    # (ConstantPIK.cc) => melt<0 there too.
+		    # converted m/s (freshwater) -> kg m-2 s-1. SIGN kept HERE, and
+		    # flipped later: FESOM melt => fw<0 (positive fw = freshwater
+		    # leaving the ocean), but PISM's shelfbmassflux is positive = MELT,
+		    # so the conventions are OPPOSITE. The flip is applied as
+		    # `factor = -1` on the fw entry of the cdo partable, in
+		    # coupling_ocean2pism.functions -- see the comment there for how
+		    # both conventions were established from the data. Do NOT also
+		    # negate fw here; that would double-flip it back.
+		    # (An earlier version of this comment claimed the signs already
+		    # agreed, citing ConstantPIK.cc. That comment in PISM contradicts
+		    # itself and ConstantPIK is not the active ocean model: -ocean given.)
 		    current_file=${COUPLE_DIR}/${EXP_ID}.${year}.pism.nc
 		    if [ ! -f $current_file ]; then
 		        echo "     - synthesizing 2D flux bundle ${current_file} (sst,sss,fh,fw)"

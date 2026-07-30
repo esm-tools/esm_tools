@@ -570,6 +570,28 @@ function iterative_coupling_ocean_pism_fesom2pism_names {
     _oce_heatflux_unit="W m-2 s-1"
 
     # Maximal salinity of 474 g/kg : "Don Juan Pond", Antarctica
+    #
+    # fw carries `factor = -1`: FESOM and PISM use OPPOSITE sign conventions
+    # for the sub-shelf mass flux and nothing else in this pipeline flips it
+    # (remap / fillmiss2 / selname / ncks are all sign-preserving).
+    #   FESOM  fw               : positive = freshwater LEAVING the ocean, so
+    #                             MELT is NEGATIVE. Verified from the global
+    #                             P/E pattern -- ITCZ -1273 mm/yr (precip),
+    #                             subtropics +700 mm/yr (evap).
+    #   PISM   shelfbmassflux   : positive = MELT. Verified by regressing
+    #                             basal_mass_flux_floating ("positive = ice
+    #                             gain") on the forcing: slope -0.877 x SPY,
+    #                             r = -0.95. Confirmed in the source at
+    #                             icemodel/energy.cc:121, where the shelf term
+    #                             is added to grounded_basal_melt_rate (bmelt,
+    #                             positive = loss) with the SAME sign.
+    # Without the factor every melting cell reached PISM as refreezing: the
+    # net cavity flux came out at -769 Gt/yr (accretion) instead of +769.
+    # NB the comment at coupling_fesom2ice.functions:343-345 argues the signs
+    # already agree, citing ConstantPIK.cc. That citation is to a
+    # self-contradictory comment (ConstantPIK.cc:129 says "positive if ice is
+    # freezing on"; line 130 and the code itself say the opposite), and
+    # ConstantPIK is not even the active ocean model here (-ocean given).
 cat > ${_file:-cdo_partable.txt} <<EOFcdo
 &parameter
 name = temp
@@ -618,6 +640,7 @@ out_name = ${_oce_massflux_varn}
 units = "${_oce_massflux_unit}"
 long_name = "shelf basal mass flux"
 standard_name = shelf_basal_mass_flux
+factor = -1
 /
 
 &parameter

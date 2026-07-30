@@ -1,0 +1,13 @@
+# Default chain (prepcompute -> compute -> tidy), legacy ordering keys.
+first_task_in_queue: prepcompute
+last_task_in_queue: tidy
+sub_plans:
+  prepcompute:
+    parent_plan: prepcompute
+    run_before: compute
+  compute:
+    parent_plan: compute
+    run_before: tidy
+  tidy:
+    parent_plan: tidy
+    run_after: compute

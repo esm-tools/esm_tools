@@ -1,0 +1,12 @@
+# Default chain (prepcompute -> compute -> tidy), canonical preceded_by.
+entry_point: prepcompute
+exit_point: tidy
+sub_plans:
+  prepcompute:
+    parent_plan: prepcompute
+  compute:
+    parent_plan: compute
+    preceded_by: prepcompute
+  tidy:
+    parent_plan: tidy
+    preceded_by: compute

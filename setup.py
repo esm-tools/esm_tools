@@ -46,6 +46,8 @@ setup_requirements = []
 
 test_requirements = [
     "pyfakefs==4.6.0",
+    "pytest-datadir>=1.4.0",
+    "pytest-regressions>=2.5.0",
 ]
 
 setup(

@@ -1,26 +1,37 @@
 import copy
 import sys
 import warnings
+from typing import Dict
 
+import deprecation
 import esm_parser
-from esm_tools.esm_warnings import ConfigKeyRenamedWarning
+import esm_tools
+import esm_tools.esm_warnings  # noqa: F401  installs the deprecation visibility filter
 from loguru import logger
 
 
-# Legacy workflow dict keys were renamed to snake_case P-Plan nouns. Runscripts
-# and config YAML in the wild may still use the old spellings, so we translate
-# them to the new keys once, at ingest, before any workflow assembly runs.
-# This keeps existing setups working without touching their files. See
-# :data:`_LEGACY_WORKFLOW_KEYS` below for the rename table; edge keys (Tier 2)
-# are deferred.
-_LEGACY_WORKFLOW_KEYS = {
-    "subjob_clusters": "plans",
-    "subjobs": "sub_plans",
-    "subjob_cluster": "parent_plan",
-}
+_LEGACY_KEYS_SPEC: dict = esm_parser.yaml_file_to_dict(
+    f"{esm_tools.get_config_filepath()}"
+    "/esm_software/esm_runscripts/workflow_legacy_keys.yaml"
+)
+"""Legacy ``general.workflow`` key spec, loaded from
+``configs/esm_software/esm_runscripts/workflow_legacy_keys.yaml``: the rename
+table plus its deprecation schedule, kept as data rather than inline here."""
+
+_LEGACY_WORKFLOW_KEYS: Dict[str, str] = _LEGACY_KEYS_SPEC["renames"]
+"""Maps each legacy ``general.workflow`` key to its current P-Plan spelling.
+Applied once at ingest by :func:`translate_legacy_workflow_keys`. ``run_before``
+is deliberately absent -- it is the inverse of ``preceded_by`` and is flipped
+onto the target sub-plan by :func:`_flip_legacy_run_before`, not a plain rename."""
+
+_KEYS_DEPRECATED_SINCE: str = _LEGACY_KEYS_SPEC["deprecated_since"]
+"""esm_tools version in which the legacy keys became deprecated."""
+
+_KEYS_REMOVED_IN: str = _LEGACY_KEYS_SPEC["removed_in"]
+"""esm_tools version in which support for the legacy keys will be removed."""
 
 
-def _rename_legacy_key(container, old):
+def _rename_legacy_key(container: dict, old: str) -> None:
     """Rename a legacy ``old`` key to its current spelling in ``container``.
 
     The current spelling comes from :data:`_LEGACY_WORKFLOW_KEYS`, the single
@@ -37,7 +48,12 @@ def _rename_legacy_key(container, old):
     if not isinstance(container, dict) or old not in container:
         return
     new = _LEGACY_WORKFLOW_KEYS[old]
-    warnings.warn(ConfigKeyRenamedWarning(old, new), stacklevel=2)
+    warnings.warn(
+        deprecation.DeprecatedWarning(
+            old, _KEYS_DEPRECATED_SINCE, _KEYS_REMOVED_IN, f"Use '{new}' instead."
+        ),
+        stacklevel=2,
+    )
     legacy_value = container.pop(old)
     if new not in container:
         container[new] = legacy_value
@@ -48,12 +64,16 @@ def _rename_legacy_key(container, old):
     # else: a non-dict current value wins; the legacy value is dropped.
 
 
-def translate_legacy_workflow_keys(config):
+def translate_legacy_workflow_keys(config: dict) -> dict:
     """Normalise legacy workflow key names to the current P-Plan nouns.
 
     Cheap, one-pass, behaviour-preserving: walks every ``<model>.workflow``
-    block and rewrites the renamed structural keys in place, driven by
-    :data:`_LEGACY_WORKFLOW_KEYS`.
+    block and rewrites the renamed keys in place, driven by
+    :data:`_LEGACY_WORKFLOW_KEYS`. Covers the structural nouns, the
+    workflow-level ordering keys (``first_task_in_queue`` -> ``entry_point``
+    etc.) and the ordering relations. ``run_after`` maps straight to the single
+    P-Plan ordering property ``preceded_by``; its inverse ``run_before`` is
+    flipped onto the target sub-plan by :func:`_flip_legacy_run_before`.
     """
     plans_key = _LEGACY_WORKFLOW_KEYS["subjob_clusters"]  # "plans"
     sub_plans_key = _LEGACY_WORKFLOW_KEYS["subjobs"]  # "sub_plans"
@@ -65,15 +85,20 @@ def translate_legacy_workflow_keys(config):
         if not isinstance(w_config, dict):
             continue
 
-        # Top-level containers.
+        # Top-level containers and workflow-level ordering keys.
         _rename_legacy_key(w_config, "subjob_clusters")
         _rename_legacy_key(w_config, "subjobs")
+        _rename_legacy_key(w_config, "first_task_in_queue")
+        _rename_legacy_key(w_config, "last_task_in_queue")
+        _rename_legacy_key(w_config, "next_run_triggered_by")
 
-        # subjob_cluster -> parent_plan pointer inside each sub-plan.
+        # Per sub-plan: parent pointer and ordering keys.
         sub_plans = w_config.get(sub_plans_key)
         if isinstance(sub_plans, dict):
             for sub_plan in sub_plans.values():
                 _rename_legacy_key(sub_plan, "subjob_cluster")
+                _rename_legacy_key(sub_plan, "run_after")
+            _flip_legacy_run_before(sub_plans)
 
         # Inner subjobs list -> sub_plans inside each plan.
         plans = w_config.get(plans_key)
@@ -82,6 +107,32 @@ def translate_legacy_workflow_keys(config):
                 _rename_legacy_key(plan, "subjobs")
 
     return config
+
+
+def _flip_legacy_run_before(sub_plans: dict) -> None:
+    """Rewrite the legacy inverse ``run_before`` into the canonical ``preceded_by``.
+
+    P-Plan has a single ordering property (``isPrecededBy``); ``run_before`` is
+    its inverse. ``X.run_before: Y`` ("X runs before Y") is the same edge as
+    ``Y.preceded_by: X``, so we move the assertion to the target sub-plan and
+    drop the inverse key. Runs after the ``run_after`` rename so both directions
+    have collapsed onto ``preceded_by``.
+    """
+    for name, sub_plan in list(sub_plans.items()):
+        if not isinstance(sub_plan, dict) or "run_before" not in sub_plan:
+            continue
+        target = sub_plan.pop("run_before")
+        warnings.warn(
+            deprecation.DeprecatedWarning(
+                "run_before",
+                _KEYS_DEPRECATED_SINCE,
+                _KEYS_REMOVED_IN,
+                "Use 'preceded_by' on the target sub-plan instead.",
+            ),
+            stacklevel=2,
+        )
+        if isinstance(sub_plans.get(target), dict):
+            sub_plans[target]["preceded_by"] = name
 
 
 def skip_plan(plan, config):
@@ -130,9 +181,9 @@ def assemble_workflow(config):
     if config["general"]["jobtype"] == "unknown":
         config["general"]["command_line_config"]["jobtype"] = config["general"][
             "workflow"
-        ]["first_task_in_queue"]
+        ]["entry_point"]
         config["general"]["jobtype"] = config["general"]["workflow"][
-            "first_task_in_queue"
+            "entry_point"
         ]
 
     return config
@@ -145,18 +196,18 @@ def display_nicely(config):
 
 def prepend_newrun_job(config):
     gw_config = config["general"]["workflow"]
-    first_plan_name = gw_config["first_task_in_queue"]
+    first_plan_name = gw_config["entry_point"]
     first_plan = gw_config["plans"][first_plan_name]
 
     if not first_plan.get("batch_or_shell", "Error") == "SimulationSetup":
 
-        last_plan_name = gw_config["last_task_in_queue"]
+        last_plan_name = gw_config["exit_point"]
         last_plan = gw_config["plans"][last_plan_name]
 
         new_first_plan = {
             "newrun": {
                 "called_from": last_plan_name,
-                "run_before": first_plan_name,
+                "preceded_by": last_plan_name,
                 "next_submit": [first_plan_name],
                 "sub_plans": ["newrun_general"],
                 "batch_or_shell": "SimulationSetup",
@@ -168,13 +219,13 @@ def prepend_newrun_job(config):
 
         first_plan["called_from"] = "newrun"
 
-        gw_config["first_task_in_queue"] = "newrun"
+        gw_config["entry_point"] = "newrun"
 
         new_sub_plan = {
             "newrun_general": {
                 "nproc": 1,
                 "called_from": last_plan_name,
-                "run_before": first_plan_name,
+                "preceded_by": last_plan_name,
                 "next_submit": [first_plan_name],
                 "parent_plan": "newrun",
             }
@@ -196,81 +247,48 @@ def order_plans(config):
             gw_config["plans"][plan]["next_submit"] = []
 
     for plan in gw_config["plans"]:
-        if "run_after" not in gw_config["plans"][plan]:
-            if not ("run_before" in gw_config["plans"][plan]):
+        plan_conf = gw_config["plans"][plan]
+        if "preceded_by" not in plan_conf:
+            continue
 
-                logger.error(f"Don't know when to execute plan {plan}.")
-                logger.error(gw_config)
-                sys.exit(-1)
+        predecessor = plan_conf["preceded_by"]
+        if predecessor not in gw_config["plans"]:
+            logger.error(f"Unknown plan {predecessor}.")
+            sys.exit(-1)
 
-        if "run_after" in gw_config["plans"][plan]:
-            if "run_before" in gw_config["plans"][plan]:
-                logger.error(
-                    f"Specifying both run_after and run_before for plan {plan} may lead to problems."
-                )
-                logger.error(f"Please choose.")
-                sys.exit(-1)
-            if (
-                not gw_config["plans"][plan]["run_after"]
-                in gw_config["plans"]
-            ):
-                logger.error(
-                    f"Unknown plan {gw_config['plans'][plan]['run_after']}."
-                )
-                sys.exit(-1)
+        if plan not in gw_config["plans"][predecessor]["next_submit"]:
+            gw_config["plans"][predecessor]["next_submit"].append(plan)
+        plan_conf["called_from"] = predecessor
 
-            calling_plan = gw_config["plans"][plan]["run_after"]
+        # Carry the entry/exit points along the ordering chain.
+        if predecessor == gw_config["exit_point"]:
+            gw_config["exit_point"] = plan
+        if plan == gw_config["entry_point"]:
+            gw_config["entry_point"] = predecessor
 
-            if (
-                plan
-                not in gw_config["plans"][calling_plan]["next_submit"]
-            ):
-                gw_config["plans"][calling_plan]["next_submit"].append(
-                    plan
-                )
-            gw_config["plans"][plan][
-                "called_from"
-            ] = calling_plan
+    # A plan with no predecessor is only valid once it is the entry point (the
+    # entry may have been carried onto it by the loop above).
+    for plan in gw_config["plans"]:
+        if (
+            "preceded_by" not in gw_config["plans"][plan]
+            and plan != gw_config.get("entry_point")
+        ):
+            logger.error(f"Don't know when to execute plan {plan}.")
+            logger.error(gw_config)
+            sys.exit(-1)
 
-            if calling_plan == gw_config["last_task_in_queue"]:
-                gw_config["last_task_in_queue"] = plan
+    if "next_iteration_trigger" in gw_config:
+        gw_config["exit_point"] = gw_config["next_iteration_trigger"]
 
-        if "run_before" in gw_config["plans"][plan]:
-            if (
-                not gw_config["plans"][plan]["run_before"]
-                in gw_config["plans"]
-            ):
-                logger.error(
-                    f"Unknown plan {gw_config['plans'][plan]['run_before']}."
-                )
-                sys.exit(-1)
+    entry_name = gw_config["entry_point"]
+    entry_plan = gw_config["plans"][entry_name]
+    exit_name = gw_config["exit_point"]
+    exit_plan = gw_config["plans"][exit_name]
 
-            called_plan = gw_config["plans"][plan]["run_before"]
-
-            if (
-                called_plan
-                not in gw_config["plans"][plan]["next_submit"]
-            ):
-                gw_config["plans"][plan]["next_submit"].append(
-                    called_plan
-                )
-            gw_config["plans"][called_plan]["called_from"] = plan
-
-            if called_plan == gw_config["first_task_in_queue"]:
-                gw_config["first_task_in_queue"] = plan
-
-    if "next_run_triggered_by" in gw_config:
-        gw_config["last_task_in_queue"] = gw_config["next_run_triggered_by"]
-
-    first_plan_name = gw_config["first_task_in_queue"]
-    first_plan = gw_config["plans"][first_plan_name]
-    last_plan_name = gw_config["last_task_in_queue"]
-    last_plan = gw_config["plans"][last_plan_name]
-
-    if first_plan_name not in last_plan.get("next_submit", ["Error"]):
-        last_plan["next_submit"].append(first_plan_name)
-    if last_plan_name not in first_plan.get("called_from", ["Error"]):
-        first_plan["called_from"] = last_plan_name
+    if entry_name not in exit_plan.get("next_submit", ["Error"]):
+        exit_plan["next_submit"].append(entry_name)
+    if exit_name not in entry_plan.get("called_from", ["Error"]):
+        entry_plan["called_from"] = exit_name
 
     return config
 
@@ -315,10 +333,7 @@ def complete_plans(config):
                 "run_on_queue", sub_plan_conf, plan_conf
             )
             plan_conf = merge_single_entry_if_possible(
-                "run_after", sub_plan_conf, plan_conf
-            )
-            plan_conf = merge_single_entry_if_possible(
-                "run_before", sub_plan_conf, plan_conf
+                "preceded_by", sub_plan_conf, plan_conf
             )
             plan_conf = merge_single_entry_if_possible(
                 "run_only", sub_plan_conf, plan_conf
@@ -385,14 +400,13 @@ def init_total_workflow(config):
     prepcompute = {
         "prepcompute": {
             "nproc": 1,
-            "run_before": "compute",
         }
     }
 
     compute = {
         "compute": {
             "nproc": tasks,
-            "run_before": "tidy",
+            "preceded_by": "prepcompute",
             "submit_to_batch_system": config["general"].get(
                 "submit_to_batch_system", True
             ),
@@ -404,7 +418,7 @@ def init_total_workflow(config):
     tidy = {
         "tidy": {
             "nproc": 1,
-            "run_after": "compute",
+            "preceded_by": "compute",
         }
     }
 
@@ -423,13 +437,13 @@ def init_total_workflow(config):
             config["general"]["workflow"]["sub_plans"].update(compute)
         if "tidy" not in config["general"]["workflow"]["sub_plans"]:
             config["general"]["workflow"]["sub_plans"].update(tidy)
-    if "last_task_in_queue" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["last_task_in_queue"] = "tidy"
-    if "first_task_in_queue" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["first_task_in_queue"] = "prepcompute"
+    if "exit_point" not in config["general"]["workflow"]:
+        config["general"]["workflow"]["exit_point"] = "tidy"
+    if "entry_point" not in config["general"]["workflow"]:
+        config["general"]["workflow"]["entry_point"] = "prepcompute"
 
-    if "next_run_triggered_by" not in config["general"]["workflow"]:
-        config["general"]["workflow"]["next_run_triggered_by"] = "tidy"
+    if "next_iteration_trigger" not in config["general"]["workflow"]:
+        config["general"]["workflow"]["next_iteration_trigger"] = "tidy"
 
     return config
 
@@ -458,51 +472,34 @@ def collect_all_workflow_information(config):
                 for sub_plan in list(copy.deepcopy(w_config["sub_plans"])):
 
                     # sub-plans (other than plans) should be model specific
-                    gw_config["sub_plans"][sub_plan + "_" + model] = copy.deepcopy(
+                    model_sub_plan = f"{sub_plan}_{model}"
+                    gw_config["sub_plans"][model_sub_plan] = copy.deepcopy(
                         w_config["sub_plans"][sub_plan]
                     )
                     if sub_plan in gw_config["sub_plans"]:
                         del gw_config["sub_plans"][sub_plan]
-                    # make sure run_after and run_before refer to that sub-plan
+                    # make sure preceded_by refers to that model-specific sub-plan
                     for other_sub_plan in gw_config["sub_plans"]:
-                        if "run_after" in gw_config["sub_plans"][other_sub_plan]:
-                            if (
-                                gw_config["sub_plans"][other_sub_plan]["run_after"]
-                                == sub_plan
-                            ):
-                                gw_config["sub_plans"][other_sub_plan][
-                                    "run_after"
-                                ] = sub_plan + "_" + model
-                        if "run_before" in gw_config["sub_plans"][other_sub_plan]:
-                            if (
-                                gw_config["sub_plans"][other_sub_plan]["run_before"]
-                                == sub_plan
-                            ):
-                                gw_config["sub_plans"][other_sub_plan][
-                                    "run_before"
-                                ] = sub_plan + "_" + model
+                        other_conf = gw_config["sub_plans"][other_sub_plan]
+                        if other_conf.get("preceded_by") == sub_plan:
+                            other_conf["preceded_by"] = model_sub_plan
 
                     # if not in another plan, each sub-plan gets its own
-                    if (
-                        "parent_plan"
-                        not in gw_config["sub_plans"][sub_plan + "_" + model]
-                    ):
-                        gw_config["sub_plans"][sub_plan + "_" + model][
-                            "parent_plan"
-                        ] = sub_plan  # + "_" + model
+                    if "parent_plan" not in gw_config["sub_plans"][model_sub_plan]:
+                        gw_config["sub_plans"][model_sub_plan]["parent_plan"] = sub_plan
 
-            if "next_run_triggered_by" in w_config:
-                if not gw_config["next_run_triggered_by"] in [
+            if "next_iteration_trigger" in w_config:
+                if not gw_config["next_iteration_trigger"] in [
                     "tidy",
-                    w_config["next_run_triggered_by"],
+                    w_config["next_iteration_trigger"],
                 ]:
                     logger.error(
-                        f"Mismatch found setting next_run_triggered_by for workflow."
+                        "Mismatch found setting next_iteration_trigger for workflow."
                     )
                     sys.exit(-1)
                 else:
-                    gw_config["next_run_triggered_by"] = w_config[
-                        "next_run_triggered_by"
+                    gw_config["next_iteration_trigger"] = w_config[
+                        "next_iteration_trigger"
                     ]
 
     return config

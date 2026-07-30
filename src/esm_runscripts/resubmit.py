@@ -150,7 +150,7 @@ def maybe_resubmit(config):
                 # config = chunky_parts._update_chunk_date_file(config)
                 return config
 
-        plan = config["general"]["workflow"]["first_task_in_queue"]
+        plan = config["general"]["workflow"]["entry_point"]
         nextrun = resubmit_recursively(
             config, list_of_plans=[plan], nextrun_in=True
         )
@@ -170,7 +170,7 @@ def resubmit_recursively(
 
     for plan in list_of_plans:
         if (
-            plan == config["general"]["workflow"]["first_task_in_queue"]
+            plan == config["general"]["workflow"]["entry_point"]
             and not nextrun_in
         ):
             nextrun = True

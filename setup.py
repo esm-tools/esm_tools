@@ -16,6 +16,7 @@ requirements = [
     "Click>=8.0.4",  # Maximum version for Python 3.6 support
     "PyGithub==1.55",
     "colorama==0.4.5",
+    "deprecation>=2.1.0",
     "f90nml==1.4.4",
     "dask[distributed]>=2023.5.0,<=2024.8.0",
     "gfw-creator==0.2.2",

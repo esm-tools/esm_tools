@@ -270,11 +270,20 @@ def _launch_coupling_chain(base_command, chain, expid, driver):
     import subprocess
     import tempfile
 
-    command = " ".join(shlex.quote(a) for a in base_command + ["--coupling-chain", chain])
+    # Run from the driver runscript's OWN directory and pass it by basename, so the
+    # per-model `runscript:` basenames (awiesm3_dyn_ocean_core3.yaml, spinup_pismPI.yaml)
+    # resolve the same way a serial run launched from that directory does. Otherwise the
+    # launch job's CWD (wherever the doctor was invoked) is used and they are not found.
+    cmd = list(base_command); rs_dir = os.getcwd()
+    for i, a in enumerate(cmd):
+        if a.endswith((".yaml", ".yml")) and os.path.exists(a):
+            full = os.path.realpath(a); rs_dir = os.path.dirname(full); cmd[i] = os.path.basename(full); break
+    cmd += ["--coupling-chain", chain]
+    command = " ".join(shlex.quote(a) for a in cmd)
 
     if os.environ.get("SLURM_JOB_ID"):
         logger.info("  (inside an allocation -- running inline)")
-        subprocess.call(base_command + ["--coupling-chain", chain])
+        subprocess.call(cmd, cwd=rs_dir)
         return
 
     general = driver.get("general", {})
@@ -282,7 +291,7 @@ def _launch_coupling_chain(base_command, chain, expid, driver):
     # exclusive node: couple_in runs dEBM + heavy cdo, which OOM on a shared core
     partition = general.get("coupling_launcher_partition", "compute")
     walltime = general.get("coupling_launcher_time", "00:30:00")
-    logfile = os.path.join(os.getcwd(), f"{expid}_{chain}_launch_%j.log")
+    logfile = os.path.join(rs_dir, f"{expid}_{chain}_launch_%j.log")
 
     script = (
         "#!/bin/bash -l\n"
@@ -293,7 +302,7 @@ def _launch_coupling_chain(base_command, chain, expid, driver):
         "#SBATCH --exclusive\n"
         f"#SBATCH --time={walltime}\n"
         f"#SBATCH --output={logfile}\n"
-        f"cd {shlex.quote(os.getcwd())}\n"
+        f"cd {shlex.quote(rs_dir)}\n"
         f"{command}\n"
     )
     with tempfile.NamedTemporaryFile(
@@ -312,7 +321,7 @@ def _launch_coupling_chain(base_command, chain, expid, driver):
             f"  sbatch unavailable/failed ({error}); running inline -- note that "
             f"coupling binaries may be killed on a login node"
         )
-        subprocess.call(base_command + ["--coupling-chain", chain])
+        subprocess.call(cmd, cwd=rs_dir)
 
 
 def main():

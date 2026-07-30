@@ -11,6 +11,9 @@
 # general.harvest_parallel_ini; see general.pism_cavity_ini_dir and
 # pism.bootstrap_forcing_dir).
 general:
+        add_other_components:                       # esm-tools >=6.54: whitelist the model1/model2 root sections
+                - model1
+                - model2
         iterative_coupling: True
         coupling_mode: "concurrent"
         use_venv: False

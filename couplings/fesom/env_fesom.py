@@ -82,6 +82,36 @@ def _conda_env_python(env_name):
     return ""
 
 
+def coupling_identity(config):
+    """Identity tag of a harvested bootstrap set: <fesom-mesh>_<pism-grid>_<oifs-res>.
+
+    Empty if general.pism_grid_tag is unset (harvest then skips with a warning).
+    """
+    pism_tag = config["general"].get("pism_grid_tag", "")
+    if not pism_tag:
+        return ""
+    mesh = os.path.basename(
+        os.path.normpath(config["fesom"].get("max_mesh", config["fesom"]["mesh_dir"]))
+    )
+    oifs_res = config.get("oifs", {}).get("resolution", "")
+    return f"{mesh}_{pism_tag}_{oifs_res}"
+
+
+def harvest_environment(config):
+    """Env vars for couplings/general/harvest.functions (serial pool harvest)
+    and the concurrent-coupling markers/sentinels."""
+    general = config["general"]
+    concurrent = general.get("coupling_mode", "serial") == "concurrent"
+    return {
+        "COUPLING_MODE": general.get("coupling_mode", "serial"),
+        "CHUNK_NUMBER": general.get("chunk_number", 0),
+        "COUPLING_FAIL_SUFFIX": "." + general["setup_name"] if concurrent else "",
+        "COUPLING_IDENTITY": coupling_identity(config),
+        "HARVEST_PARALLEL_INI": int(bool(general.get("harvest_parallel_ini", False))),
+        "HARVEST_POOL_DIR": general.get("harvest_pool_dir") or general.get("pool_dir", ""),
+    }
+
+
 def prepare_environment(config):
     # --- Auto-discover the ocp-tool OASIS-regen toolchain (ice2fesom) ---------
     # esm_tools installs ocp-tool (required_plugin) and the coupled model's OASIS
@@ -234,7 +264,8 @@ def prepare_environment(config):
             #    )
 
             }
-    
+    environment_dict.update(harvest_environment(config))
+
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:
     #    environment_dict["ADD_UNCHANGED_ICE"] = 0
     #elif environment_dict["ADD_UNCHANGED_ICE"] == True:

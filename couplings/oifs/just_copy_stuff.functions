@@ -5,5 +5,33 @@ echo "888888 copying 88888888"
 echo "${COUPLE_DIR}"	
 cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/atmosphere_file_for_ice.nc ${COUPLE_DIR}/. 
 cp /work/ab0246/a270122/lars_and_paul/experiments/E130ka_coupled3/couple/atmosphere_names_for_ice.dat ${COUPLE_DIR}/. 
-}
 
+# concurrent coupling: last couple step of the AWI leg -- publish the tagged
+# atmosphere files, verify the full AWI->PISM set, touch the cycle marker
+if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+    for _f in atmosphere_file_for_ice.nc atmosphere_names_for_ice.dat ; do
+        cp "${COUPLE_DIR}/${_f}" "${COUPLE_DIR}/${_f}.chunk_${CHUNK_NUMBER}"
+    done
+    _ok=1
+    for _f in ocean_file_for_ice.nc ocean.griddes ocean_names_for_ice.dat \
+              atmosphere_file_for_ice.nc atmosphere_names_for_ice.dat ; do
+        [ -e "${COUPLE_DIR}/${_f}.chunk_${CHUNK_NUMBER}" ] || \
+            { echo " *** missing ${_f}.chunk_${CHUNK_NUMBER} ***"; _ok=0; }
+    done
+    if [ ${_ok} -eq 1 ]; then
+        touch_coupling_marker "${COUPLE_DIR}/awiesm3_chunk_${CHUNK_NUMBER}.done"
+    else
+        echo "incomplete AWI->PISM handoff set for chunk ${CHUNK_NUMBER}" \
+            > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        exit 1
+    fi
+    unset _f _ok
+fi
+
+# opt-in serial harvest of the PISM-side concurrent bootstrap set (chunk 1 only)
+if [ "${HARVEST_PARALLEL_INI:-0}" = "1" ]; then
+    . ${FUNCTION_PATH}/../general/harvest.functions
+    harvest_pism_bootstrap
+fi
+}

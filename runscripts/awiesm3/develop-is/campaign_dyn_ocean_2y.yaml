@@ -9,7 +9,7 @@ general:
     # backfilled badly.
     compute_time: "00:45:00"
     initial_date: "1900-01-01"
-    final_date: "1910-01-01"
+    final_date: "1902-01-01"
     # Shared with pism for iterative coupling -- LITERAL awiesm3-develop-is (both
     # models must resolve to the SAME experiment_dir; ${setup_name}-${version}
     # would diverge since pism is a different setup). -> runtime/awiesm3-develop-is/<expid>
@@ -17,10 +17,6 @@ general:
     # Enable the PISM<->FESOM dynamic-mesh coupling (wiring lives behind this flag
     # in configs/setups/awiesm3/awiesm3.yaml).
     interactive_mesh: true
-    # Serial-run pool harvest of the concurrent-mode chunk-1 bootstrap sets
-    # (couplings/general/harvest.functions; once per coupling identity).
-    harvest_parallel_ini: True
-    pism_grid_tag: "antarct_cr-08km"
     nday: 0
     nmonth: 0
     nyear: 1
@@ -37,7 +33,7 @@ fesom:
     # previous_submesh is recorded; without this the first mesh-change leg would
     # assume the old mesh was the full mother mesh and refuse to remap the
     # (submesh-sized) OASIS restart.
-    chunk1_mesh: "${general.pism_cavity_ini_dir}/submesh"
+    chunk1_mesh: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/submesh"
     # ocean->PISM: hand PISM FESOM's own cavity melt (fw -> shelfbmassflux, -ocean
     # given) instead of a T/S column average (-ocean th) that PISM re-melts itself.
     # The th default averaged FESOM levels 1-20 = 0-410 m INCLUDING the summer
@@ -64,7 +60,7 @@ fesom:
     # reference year-1849 state, index-mapped onto the submesh via map_nod.out
     # (7 Ronne artifact nodes hybridized back to pool values; hsnow max 0.81 m).
     # Ocean restart unchanged (copy of the pool one). Revert to
-    # "${general.pism_cavity_ini_dir}/restart/" for the old state.
+    # "${general.pool_dir}/fesom2/pism_cavity_ini/restart/" for the old state.
     ini_restart_dir: "/work/ab0246/a270092/pism_repro/prep/clean_ice_ini/"
     time_step: 1200            # zstar tolerates 1200s on the cavity mesh (linfs needs <=180s)
     nproc: 1792                # FESOM stable at 1792 (256 hits a decomposition-sensitive cavity blow); core3/dist_1792 + complete TCO95-CORE3/1792
@@ -135,8 +131,8 @@ oifs:
             add_input_files:
                 pism2ece_antar: pism2ece_antar
             add_input_sources:
-                ICMGG_INIT: "${general.pism_cavity_ini_dir}/oasis/ICMGGab45INIT_feomdyn"
-                pism2ece_antar: "${general.pism_cavity_ini_dir}/antar_pism2ece.nc"
+                ICMGG_INIT: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/oasis/ICMGGab45INIT_feomdyn"
+                pism2ece_antar: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/antar_pism2ece.nc"
                 wam_grid_tables: "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
                 wam_subgrid_0:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
                 wam_subgrid_1:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
@@ -268,13 +264,13 @@ oasis3mct:
     choose_general.chunk_number:
         1:              # chunk-1: OASIS grids/weights + coupling restarts pre-staged from the pool
             input_sources:
-                grids: "${general.pism_cavity_ini_dir}/oasis/grids.nc"
-                masks: "${general.pism_cavity_ini_dir}/oasis/masks.nc"
-                areas: "${general.pism_cavity_ini_dir}/oasis/areas.nc"
-                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
+                grids: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/grids.nc"
+                masks: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/masks.nc"
+                areas: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/areas.nc"
+                rmp: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/rmp_*.nc"
             restart_in_sources:
-                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
-                rstas.nc: "${general.pism_cavity_ini_dir}/rstas.nc"
+                rmp: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/rmp_*.nc"
+                rstas.nc: "${general.pool_dir}/fesom2/pism_cavity_ini/rstas.nc"
                 # Weighted-ist convention + coupled-slab sit_feom: the prep
                 # rstos is the pool weighted rstos.nc plus the new sit_feom
                 # field (=1.5*sie_feom: per-ice 1.5 m for the first exchange,

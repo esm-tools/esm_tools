@@ -139,6 +139,9 @@ general:
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
 
+    # Chunk-1 bootstrap set for the dynamic-mesh coupling; override per runscript.
+    pism_cavity_ini_dir: "${general.pool_dir}/fesom2/pism_cavity_ini"
+
         # Load compute recipe from oifs.yaml
     prepcompute_recipe: ${oifs.prepcompute_recipe}
     tidy_recipe: ${fesom.tidy_recipe}
@@ -201,29 +204,33 @@ oifs:
                         LXIOS: true
                     NAEPHY:
                         LECURR: true
-
-    choose_general.version:
-        v3.4.2:
-            add_add_namelist_changes:
-                fort.4:
+                        LRDALB: false
                     NAMCLDP:
                         RVICE: 0.16
-                    NAEPHY:
-                        LRDALB: false
+
+    choose_general.version:
+        # NAMMCC: coupled-slab mode, pairs with the develop* FESOM build.
         develop:
             add_add_namelist_changes:
                 fort.4:
-                    NAMCLDP:
-                        RVICE: 0.16
-                    NAEPHY:
-                        LRDALB: false
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
         develop-cc:
             add_add_namelist_changes:
                 fort.4:
-                    NAMCLDP:
-                        RVICE: 0.16
-                    NAEPHY:
-                        LRDALB: false
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        develop-is:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
 
     cmip6_data_dir_nml: ${input_dir}/cmip6-data
     cmip5_data_dir_nml: ${input_dir}/cmip5-data
@@ -273,7 +280,7 @@ oifs:
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
-        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_CurX, A_CurY, A_WindX, A_WindY, 
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_CurX, A_CurY, A_WindX, A_WindY,
         A_FCO2_oce, A_XCO2_oce]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
@@ -330,7 +337,6 @@ oifs:
 
     choose_general.with_co2_tracer:
         true:
-            branch: 'lpj_guess_implementation+co2'
             namelist_changes:
                 fort.4:
                     NAMGFL:
@@ -368,6 +374,16 @@ fesom:
     lresume: false
     nproc: 72
     omp_num_threads: 1
+    # ocp-tool (the moving-coastline OASIS/ICMGG regen toolchain) is conda-native
+    # -- python-eccodes/python-cdo/basemap from conda-forge -- so it cannot run
+    # from the pip venv; OCP_TOOL_DIR must be a real checkout that carries the code
+    # + configs/ + ICMGG input data, driven by ocp-tool's own conda env. Kept in a
+    # machine block instead of hardcoded; "*" falls back to package auto-discovery.
+    choose_computer.name:
+        levante:
+            ocp_tool_dir: "/work/ab0246/a270092/software/ocp-tool"
+        "*":
+            ocp_tool_dir: ""
     choose_general.with_co2_oce_coupling:
         true:
             branch: fesom2.6_recom_awiesm3_co2_coupling
@@ -573,7 +589,7 @@ fesom:
                                 # moving-cavity path to the awiesm3 setup default.
                                 which_ale: "linfs"
                             paths:
-                                MeshPath: "${general.pool_dir}/fesom2/pism_cavity_ini/submesh/"
+                                MeshPath: "${general.pism_cavity_ini_dir}/submesh/"
                             restart_log:
                                 raw_restart_length_unit: "off"
                                 bin_restart_length_unit: "off"
@@ -768,7 +784,6 @@ lpj_guess:
         "globsoil_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/global_soiln.ins
         "lpjg_output_ins_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_default_cmip7_output.ins.j2
         "tmp_yaml_file_[[proc_list-->PROC_NUM]]": ${namelist_dir}/lpjg_steps.yaml.j2
-
         "mock_[[proc_list-->PROC_NUM]]": ${lpj_guess.input_dir}/dirmaker
 
     config_in_work:
@@ -969,6 +984,7 @@ oasis3mct:
                     - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
                     - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
                     - 'heat_ico <--gauswgt_gsmart-- A_Q_ice'
+                      #                    - 'heat_ico <--bicubic-- A_Q_ice'
                     - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
                     - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
                     - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
@@ -1330,5 +1346,6 @@ computer:
                     compiler_mpi: intel2022_openmpi
                 albedo:
                     mpi_implementation: openmpi_2026
+                    load_python: true
         '*':
             foo: bar

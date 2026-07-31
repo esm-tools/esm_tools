@@ -107,6 +107,7 @@ io_list =  'sst       ',1, 'd', 4,
            'virtsalt  ',1, 'm', 4,
 !          'realsalt  ',1, 'm', 4,  ! disabled: dead under which_ale='linfs' (use_virt_salt=.true., real-salt branch in ice_thermo_cpl.F90 unreachable); re-enable for non-linfs runs
            'qcon      ',1, 'm', 4,
+           'alb       ',1, 'm', 4,
            'apnd      ',1, 'm', 4,
            'hpnd      ',1, 'm', 4,
            'ipnd      ',1, 'm', 4,

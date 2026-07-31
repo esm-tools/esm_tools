@@ -112,19 +112,28 @@ def check_coupling_failure(config):
     couple_dir = config["general"].get("experiment_couple_dir")
     if not couple_dir:
         return config
-    sentinel = os.path.join(couple_dir, ".coupling_failed")
-    if os.path.isfile(sentinel):
-        try:
-            with open(sentinel) as fid:
-                reason = fid.read().strip()
-        except OSError:
-            reason = "(unreadable sentinel)"
-        os.remove(sentinel)
-        logger.error("=" * 78)
-        logger.error(f"COUPLING STEP FAILED: {reason}")
-        logger.error(f"({jobtype}) -- refusing to advance the workflow.")
-        logger.error("=" * 78)
-        sys.exit(1)
+    # concurrent mode namespaces the sentinel per chain; the bare name still
+    # trips every chain (fail-stop)
+    sentinels = [os.path.join(couple_dir, ".coupling_failed")]
+    if config["general"].get("coupling_mode", "serial") == "concurrent":
+        sentinels.append(
+            os.path.join(
+                couple_dir, ".coupling_failed." + config["general"]["setup_name"]
+            )
+        )
+    for sentinel in sentinels:
+        if os.path.isfile(sentinel):
+            try:
+                with open(sentinel) as fid:
+                    reason = fid.read().strip()
+            except OSError:
+                reason = "(unreadable sentinel)"
+            os.remove(sentinel)
+            logger.error("=" * 78)
+            logger.error(f"COUPLING STEP FAILED: {reason}")
+            logger.error(f"({jobtype}) -- refusing to advance the workflow.")
+            logger.error("=" * 78)
+            sys.exit(1)
     return config
 
 

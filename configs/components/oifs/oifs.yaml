@@ -345,6 +345,17 @@ oifs:
         destination: oifs-48r1
         with_xios: false
         major_version: 48r1
+      48r1v5:
+        # interim develop* stopgap: coupled-slab + land-ice + co2, until ec-earth merges to main
+        branch: 'movcav-landice+co2-concdriven'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository:  https://git.smhi.se/jan.streffing/oifs48r1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
       48r1v1:
         branch: '48r1v1'
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
@@ -374,16 +385,6 @@ oifs:
         clean_command: rm -rf build install
         git-repository: https://git.geomar.de/foci/src/oifs48r1.git
         executable: OpenIFS
-        install_bins: install/bin/OpenIFS
-        destination: oifs-48r1
-        with_xios: false
-        major_version: 48r1
-      48r1_lpjg_branch:
-        branch: '73997159375996b6f2ec9013ce1dbe8a67ba772e'
-        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
-        clean_command: rm -rf build install
-        executable: OpenIFS
-        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
         install_bins: install/bin/OpenIFS
         destination: oifs-48r1
         with_xios: false
@@ -455,9 +456,25 @@ oifs:
     perturb: 0
     ensemble_id: 1
 
+    # Global orbit default (historical): module OFF -> IFS-native present-day,
+    # date-driven orbit. Kept for reproducibility of awicm3 v3.0-v3.2.x + frontiers.
     orb_switch: False
     orb_mode: "variable_year"
     orb_iyear: ${start_date!syear}
+
+    # awicm3 v3.3.0/v3.3.1 (43r3): switch to a real, fixed 1850 orbit
+    # (piControl-correct, stationary). v3.4+/48r1 are handled in
+    # choose_major_version:48r1. Keyed on the setup version (general.version),
+    # not oifs.version (which is plain "43r3" for all these).
+    choose_general.version:
+            v3.3.0:
+                    orb_switch: True
+                    orb_mode: "fixed_year"
+                    orb_iyear: 1850
+            v3.3.1:
+                    orb_switch: True
+                    orb_mode: "fixed_year"
+                    orb_iyear: 1850
 
     restart: 1
 
@@ -1215,6 +1232,12 @@ oifs:
                             ICMCL_INIT: ICMCL_INIT
                     tl_o3_data_dir: "${pool_dir}/../climate.v020/"
                     wam_namelist_dir: "${prepifs_dir}/ecmwf"
+                    # v3.4+/48r1 orbit default: a real 1850 orbit held fixed
+                    # (piControl-correct, stationary; no leap/date-driven drift).
+                    # Transient/paleo runscripts override NAMORB (or these vars).
+                    orb_switch: True
+                    orb_mode: "fixed_year"
+                    orb_iyear: 1850
                     add_namelist_changes:
                             fort.4:
                                     NAMRES:
@@ -1231,6 +1254,10 @@ oifs:
                                             CNMEXP: "${oifs.input_expid}"
                                     NAMPPC:
                                             LRSACC: ".true." # reset accumulation of fluxes
+                                    NAMORB:
+                                            LCORBMD: "${orb_switch}"
+                                            ORBMODE: "${orb_mode}"
+                                            ORBIY: "${orb_iyear}"
                     further_reading:
                             - oifs/oifs48.tuning.yaml
                             - oifs/oifs48.env.yaml

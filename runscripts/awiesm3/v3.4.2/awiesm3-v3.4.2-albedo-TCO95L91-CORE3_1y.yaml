@@ -2,8 +2,8 @@ general:
     user: !ENV ${USER}
     setup_name: "awiesm3"
     version: "v3.4.2"
-    account: "bb1469"
-    compute_time: "08:00:00"
+    account: "clidyn.clidyn"
+    compute_time: "00:10:00"
     initial_date: "1850-01-01"
     final_date: "1853-01-01"
     base_dir: "/albedo/work/user/${user}/runtime/${general.setup_name}-${general.version}/" 

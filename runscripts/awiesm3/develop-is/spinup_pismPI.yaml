@@ -27,6 +27,9 @@ pism:
         domain: "antarct_cr"        # 8km pool files exist under antarct_cr (grid identical to antarctica-8km); domain added to pism.domains.yaml
         model_dir: "/work/ab0246/a270092/model_codes/awiesm3-develop-is/pism-github1.2.1/"
         lresume: 1
+        # concurrent coupling_mode only: chunk-1 forcing set; auto = newest
+        # matching harvest under <pism.pool_dir>/coupled_bootstrap
+        bootstrap_forcing_dir: "auto"
 
         nx: 761
         ny: 761

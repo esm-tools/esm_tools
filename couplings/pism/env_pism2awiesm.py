@@ -1,6 +1,10 @@
 def prepare_environment(config):
     default_input_grid = config["general"]["experiment_couple_dir"] +"/ice.griddes"
+    concurrent = config["general"].get("coupling_mode", "serial") == "concurrent"
     environment_dict = {
+            "COUPLING_MODE": config["general"].get("coupling_mode", "serial"),
+            "CHUNK_NUMBER": config["general"].get("chunk_number", 0),
+            "COUPLING_FAIL_SUFFIX": ".pism" if concurrent else "",
             "ATMOSPHERE_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "PISM_TO_ATMOSPHERE": int(config["general"]["last_run_in_chunk"]),
             "CHUNK_START_DATE_pism": config["general"]["chunk_start_date"],

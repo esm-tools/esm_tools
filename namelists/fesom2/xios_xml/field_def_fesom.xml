@@ -14,6 +14,10 @@
     <field id="a_ice"  long_name="sea-ice area fraction"              standard_name="sea_ice_area_fraction" unit="1" detect_missing_value="true"/>
     <field id="m_ice"  long_name="sea-ice mass per area"              standard_name="sea_ice_thickness"     unit="m" detect_missing_value="true"/>
     <field id="m_snow" long_name="snow on ice mass per area"          standard_name="surface_snow_thickness" unit="m" detect_missing_value="true"/>
+    <field id="alb"    long_name="sea-ice albedo"                     unit="1" detect_missing_value="true"/>
+    <field id="apnd"   long_name="melt pond area fraction"            unit="1" detect_missing_value="true"/>
+    <field id="hpnd"   long_name="melt pond depth"                    unit="m" detect_missing_value="true"/>
+    <field id="ipnd"   long_name="melt pond ice lid thickness"        unit="m" detect_missing_value="true"/>
     <field id="MLD1"   long_name="mixed layer depth (Large 1997)"     unit="m"/>
     <field id="MLD2"   long_name="mixed layer depth (Levitus)"        unit="m"/>
     <field id="MLD3"   long_name="mixed layer depth (Griffies)"       unit="m"/>

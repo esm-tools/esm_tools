@@ -172,7 +172,7 @@ def get_user_config_from_command_line(command_line_config):
     # the definition from the runscript prevails after the user_config.update
     # If it's not None (True or False) the definition of the command line wins
     # over the runscript as is the case for all the other variables
-    command_line_overwrite_vars = ["use_venv", "profile"]
+    command_line_overwrite_vars = ["use_venv", "profile", "coupling_chain"]
     for var in command_line_overwrite_vars:
         if command_line_config.get(var, "Var does not exist") is None:
             del command_line_config[var]

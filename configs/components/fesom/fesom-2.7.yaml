@@ -46,7 +46,12 @@ fesom:
         branch: "2.7.7"
         repo_options: "--recurse-submodules"
       "2.7-main":
-        branch: "main"
+        # INTERIM (until FESOM PR #957 merges to fesom2 main): the awiesm3 develop*
+        # variants build the coupled-slab ice-surftemp branch that provides the
+        # sit_feom send (so the namcouple's sit_feom is filled -- fixes the -cc
+        # "namcouple variable not used" abort). Only awiesm3 develop* use 2.7-main;
+        # revert branch to "main" once #957 is merged.
+        branch: "awiesm3-implicit-ice-surftemp"
         repo_options: "--recurse-submodules"
         #namelist_dir: "${model_dir}/config/"
 
@@ -201,6 +206,22 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 900          # constant that control numerical stability of mEVP.
                     beta_evp: 900           # constant that control numerical stability of mEVP.
+            jack:
+                    nx: 30041537
+                    whichEVP: 1
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
+            palk:
+                    nx: 1724005
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
+            next:
+                    nx: 12952215
+                    whichEVP: 1
+                    alpha_evp: 800          # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
+
             SO3:
                     nx: 11087062
                     whichEVP: 1
@@ -640,7 +661,7 @@ fesom:
             config:  config
             cvmix:   cvmix
             dyn:     dyn
-            nml_forcing: nml_forcing
+            forcing_nml: forcing_nml
             ice:     ice
             icepack: icepack
             io:      io
@@ -652,7 +673,7 @@ fesom:
             config:  "${namelist_dir}/namelist.config"
             cvmix:   "${namelist_dir}/namelist.cvmix"
             dyn:     "${namelist_dir}/namelist.dyn"
-            nml_forcing: "${namelist_dir}/namelist.forcing"
+            forcing_nml: "${namelist_dir}/namelist.forcing"
             ice:     "${namelist_dir}/namelist.ice"
             icepack: "${namelist_dir}/namelist.icepack"
             io:      "${namelist_dir}/namelist.io"
@@ -664,7 +685,7 @@ fesom:
             config:  "namelist.config"
             cvmix:   "namelist.cvmix"
             dyn:     "namelist.dyn"
-            nml_forcing: "namelist.forcing"
+            forcing_nml: "namelist.forcing"
             ice:     "namelist.ice"
             icepack: "namelist.icepack"
             io:      "namelist.io"

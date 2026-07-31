@@ -115,108 +115,20 @@ lpj_guess:
     # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
     ndep_input_dir: ${input_dir}/ndep/${resolution}/
 
-    # Output mode: 
-    # esm_tools_copy: slow but reliable, many files
+    # Output mode:
+    # esm_tools_copy: relatively fast (parallel but running as part of tidy), many files
     # collect_txt: combile into one run1 folder for ec2cmor2 few files, fast
     # convert_netcdf (future)
     output_mode: collect_txt
     choose_output_mode:
         esm_tools_copy:
-            # Define files to ignore
-            ignore_files:
-                outputs: outputs
-                log: log
-                monthly_catalog: monthly_catalog
-                landuse_dir: landuse_dir
-                landuse_contents: landuse_contents
-                landuse_ins: landuse_ins
-                run_dirs: run_dirs
-                guess_per_run_log: guess_per_run_log
-                timeline_lpjg_per_run: timeline_lpjg_per_run
-            # ignore_in_work and ignore_sources must use matching keys
-            # (framework looks up ignore_files values in ignore_sources).
-            # Patterns are globbed recursively relative to thisrun_work_dir
-            # by check_for_unknown_files (filelists.py); files matching these
-            # are not copied to the experiment unknown/ directory at tidy time.
-            # prog_lpj_guess.sh / script_lpj_guess.sh are covered by the
-            # framework-wide prog_*.sh / script_*.sh globs in filelists.py.
-            ignore_in_work:
-                outputs: "run*/output/*.out"
-                log: "*.log"
-                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
-                landuse_dir: "landuse"
-                landuse_contents: "landuse/**/*"
-                landuse_ins: "landuse.ins"
-                run_dirs: "run*"
-                guess_per_run_log: "run*/guess*.log"
-                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
-            ignore_sources:
-                outputs: "run*/output/*.out"
-                log: "*.log"
-                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
-                landuse_dir: "landuse"
-                landuse_contents: "landuse/**/*"
-                landuse_ins: "landuse.ins"
-                run_dirs: "run*"
-                guess_per_run_log: "run*/guess*.log"
-                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
-
-            # Output data - enumerate over all run directories to preserve structure
-            # Uses proc_list enumeration (defined above via nproc)
             outdata_files:
                 "lpjg_run_[[proc_list-->PROC_NUM]]": "lpjg_run_PROC_NUM"
-            outdata_in_work:
-                "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/output/*.out"
-            outdata_sources:
-                "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/*"
-
         collect_txt:
             # In collect_txt mode, esm_tools does NOT copy output files.
             # Instead, a separate slurm job combines runX/output/*.out into
             # single .out files per pattern (for ec2cmor2 preprocessing).
             combine_njobs: 8
-
-            ignore_files:
-                outputs: outputs
-                log: log
-                monthly_catalog: monthly_catalog
-                landuse_dir: landuse_dir
-                landuse_contents: landuse_contents
-                landuse_ins: landuse_ins
-                run_dirs: run_dirs
-                guess_per_run_log: guess_per_run_log
-                timeline_lpjg_per_run: timeline_lpjg_per_run
-            # ignore_in_work and ignore_sources must use matching keys
-            # (framework looks up ignore_files values in ignore_sources).
-            # Patterns are globbed recursively relative to thisrun_work_dir
-            # by check_for_unknown_files (filelists.py); files matching these
-            # are not copied to the experiment unknown/ directory at tidy time.
-            # prog_lpj_guess.sh / script_lpj_guess.sh are covered by the
-            # framework-wide prog_*.sh / script_*.sh globs in filelists.py.
-            ignore_in_work:
-                outputs: "run*/output/*.out"
-                log: "*.log"
-                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
-                landuse_dir: "landuse"
-                landuse_contents: "landuse/**/*"
-                landuse_ins: "landuse.ins"
-                run_dirs: "run*"
-                guess_per_run_log: "run*/guess*.log"
-                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
-            ignore_sources:
-                outputs: "run*/output/*.out"
-                log: "*.log"
-                monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
-                landuse_dir: "landuse"
-                landuse_contents: "landuse/**/*"
-                landuse_ins: "landuse.ins"
-                run_dirs: "run*"
-                guess_per_run_log: "run*/guess*.log"
-                timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
-
-            outdata_files: {}
-            outdata_in_work: {}
-            outdata_sources: {}
 
             scripts_files:
                 combine1: combine1
@@ -320,6 +232,55 @@ lpj_guess:
         "drynoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/drynoy2.nc
         "wetnhx_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnhx2.nc
         "wetnoy_[[proc_list-->PROC_NUM]]": runPROC_NUM/ndep/wetnoy2.nc
+
+
+    # Output data - enumerate over all run directories to preserve structure
+    # Uses proc_list enumeration (defined above via nproc)
+    outdata_in_work:
+        "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/output/*.out"
+    outdata_sources:
+        "lpjg_run_[[proc_list-->PROC_NUM]]": "runPROC_NUM/*"
+
+
+    # Define files to ignore
+    # ignore_in_work and ignore_sources must use matching keys
+    # (framework looks up ignore_files values in ignore_sources).
+    # Patterns are globbed recursively relative to thisrun_work_dir
+    # by check_for_unknown_files (filelists.py); files matching these
+    # are not copied to the experiment unknown/ directory at tidy time.
+    # prog_lpj_guess.sh / script_lpj_guess.sh are covered by the
+    # framework-wide prog_*.sh / script_*.sh globs in filelists.py.
+    ignore_files:
+        outputs: outputs
+        log: log
+        monthly_catalog: monthly_catalog
+        landuse_dir: landuse_dir
+        landuse_contents: landuse_contents
+        landuse_ins: landuse_ins
+        run_dirs: run_dirs
+        guess_per_run_log: guess_per_run_log
+        timeline_lpjg_per_run: timeline_lpjg_per_run
+    ignore_in_work:
+        outputs: "run*/output/*.out"
+        log: "*.log"
+        monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
+        landuse_dir: "landuse"
+        landuse_contents: "landuse/**/*"
+        landuse_ins: "landuse.ins"
+        run_dirs: "run*"
+        guess_per_run_log: "run*/guess*.log"
+        timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
+    ignore_sources:
+        outputs: "run*/output/*.out"
+        log: "*.log"
+        monthly_catalog: "LPJ-GUESS_monthlyoutput.txt"
+        landuse_dir: "landuse"
+        landuse_contents: "landuse/**/*"
+        landuse_ins: "landuse.ins"
+        run_dirs: "run*"
+        guess_per_run_log: "run*/guess*.log"
+        timeline_lpjg_per_run: "run*/timeline_lpjg.nc"
+
 
     choose_resolution:
         # Note:

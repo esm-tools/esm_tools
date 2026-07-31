@@ -635,7 +635,7 @@ fesom:
             config:         config
             cvmix:          cvmix
             dyn:            dyn
-            nml_forcing:    nml_forcing
+            forcing_nml:    forcing_nml
             ice:            ice
             icepack:        icepack
             io:             io
@@ -647,7 +647,7 @@ fesom:
             config:        "${namelist_dir}/namelist.config"
             cvmix:         "${namelist_dir}/namelist.cvmix"
             dyn:           "${namelist_dir}/namelist.dyn"
-            nml_forcing:   "${namelist_dir}/namelist.forcing"
+            forcing_nml:   "${namelist_dir}/namelist.forcing"
             ice:           "${namelist_dir}/namelist.ice"
             icepack:       "${namelist_dir}/namelist.icepack"
             io:            "${namelist_dir}/namelist.io"
@@ -659,7 +659,7 @@ fesom:
             config:        "namelist.config"
             cvmix:         "namelist.cvmix"
             dyn:           "namelist.dyn"
-            nml_forcing:   "namelist.forcing"
+            forcing_nml:   "namelist.forcing"
             ice:           "namelist.ice"
             icepack:       "namelist.icepack"
             io:            "namelist.io"

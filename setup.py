@@ -141,6 +141,7 @@ setup(
         "catalog-esgvoc": [
             "esgvoc>=6.0",
         ],
+        "test": test_requirements,
     },
     install_requires=requirements,
     license="GNU General Public License v2",

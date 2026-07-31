@@ -1,0 +1,31 @@
+# A real general.workflow: the default prepcompute -> compute -> tidy chain as
+# esm_runscripts assembles it, carried under the "general" config section. When
+# collect_all_workflow_information walks the sections it renames each sub_plan to
+# <name>_<section> -- prepcompute -> prepcompute_general, etc. (see
+# batch_system.get_run_filename(..., "prepcompute_general")) -- qualifying it by
+# the section that contributed it, and re-points preceded_by onto those names.
+# order_plans must then resolve a section-qualified predecessor back to the plan
+# that owns it (via parent_plan); before the fix it raised
+# "Unknown plan prepcompute_general".
+entry_point: prepcompute
+exit_point: tidy
+next_iteration_trigger: tidy
+plans: {}
+sub_plans:
+  prepcompute:
+    parent_plan: prepcompute
+    batch_or_shell: SimulationSetup
+    nproc: 1
+  compute:
+    parent_plan: compute
+    preceded_by: prepcompute
+    batch_or_shell: batch
+    submit_to_batch_system: true
+    run_on_queue: compute
+    nproc: 288
+  tidy:
+    parent_plan: tidy
+    preceded_by: compute
+    batch_or_shell: shell
+    run_on_queue: pp
+    nproc: 1

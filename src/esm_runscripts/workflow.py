@@ -261,7 +261,7 @@ def order_plans(config):
 
         predecessor = plan_conf["preceded_by"]
         if predecessor not in gw_config["plans"]:
-            # preceded_by may name a model-scoped sub_plan (e.g.
+            # preceded_by may name a section-qualified sub_plan (e.g.
             # ``prepcompute_general``); resolve it to the plan that owns it.
             sub_plan_conf = gw_config.get("sub_plans", {}).get(predecessor, {})
             if sub_plan_conf.get("parent_plan") in gw_config["plans"]:

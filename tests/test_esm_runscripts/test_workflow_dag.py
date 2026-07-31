@@ -146,3 +146,41 @@ def test_order_plans_raises_unknown_plan_error_on_dangling_predecessor():
     with pytest.raises(workflow.UnknownPlanError):
         workflow.order_plans(config)
 
+
+# --- model-scoping (the collect_all path build_dag skips) -------------------
+
+
+def test_model_scoped_preceded_by_resolves_to_a_plan():
+    """collect_all renames sub_plans to ``<name>_<model>`` and re-points
+    ``preceded_by`` onto those names; order_plans must still resolve them.
+
+    Regression: order_plans raised ``Unknown plan prepcompute_general`` because
+    preceded_by was re-pointed to a model-scoped sub_plan name while the plan is
+    keyed by the base name. Exercises collect_all -> complete_plans -> order_plans.
+    """
+    config = {
+        "general": {
+            "workflow": {
+                "plans": {},
+                "sub_plans": {
+                    "prepcompute": {"parent_plan": "prepcompute"},
+                    "compute": {"parent_plan": "compute", "preceded_by": "prepcompute"},
+                    "tidy": {"parent_plan": "tidy", "preceded_by": "compute"},
+                },
+                "entry_point": "prepcompute",
+                "exit_point": "tidy",
+            }
+        }
+    }
+    workflow.collect_all_workflow_information(config)
+    workflow.complete_plans(config)
+    # Before the fix this raised UnknownPlanError (Unknown plan prepcompute_general).
+    workflow.order_plans(config)
+
+    # order_plans consumes the (model-scoped) preceded_by to wire the chain;
+    # the DAG must resolve each predecessor back to its base plan name.
+    plans = config["general"]["workflow"]["plans"]
+    assert plans["compute"]["called_from"] == "prepcompute"
+    assert plans["tidy"]["called_from"] == "compute"
+    assert plans["prepcompute"]["next_submit"] == ["compute"]
+    assert plans["compute"]["next_submit"] == ["tidy"]

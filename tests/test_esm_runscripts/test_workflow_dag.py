@@ -21,6 +21,7 @@ import warnings
 import deprecation
 import pytest
 import yaml
+
 from esm_runscripts import workflow
 
 
@@ -68,6 +69,8 @@ default_chain_legacy = _workflow_fixture("workflow_default_legacy")
 default_chain_new = _workflow_fixture("workflow_default_new")
 coupled_legacy = _workflow_fixture("workflow_coupled_legacy")
 coupled_new = _workflow_fixture("workflow_coupled_new")
+dangling_predecessor_block = _workflow_fixture("workflow_dangling_predecessor")
+section_qualified_block = _workflow_fixture("workflow_section_qualified")
 
 
 # --- absolute-shape golden (pytest-regressions) ----------------------------
@@ -125,59 +128,39 @@ def test_canonical_keys_emit_no_deprecation_warning(default_chain_new):
 # --- unknown-plan error (order_plans failure contract) ---------------------
 
 
-def test_order_plans_raises_unknown_plan_error_on_dangling_predecessor():
+def test_order_plans_raises_unknown_plan_error_on_dangling_predecessor(
+    dangling_predecessor_block,
+):
     """A preceded_by that names neither a plan nor a sub_plan is a hard error.
 
     order_plans raises :class:`workflow.UnknownPlanError` (a catchable exception)
     rather than calling ``sys.exit`` and killing the interpreter.
     """
-    config = {
-        "general": {
-            "workflow": {
-                "plans": {
-                    "compute": {"preceded_by": "does_not_exist", "next_submit": []},
-                },
-                "sub_plans": {},
-                "entry_point": "compute",
-                "exit_point": "compute",
-            }
-        }
-    }
+    config = {"general": {"workflow": dangling_predecessor_block}}
     with pytest.raises(workflow.UnknownPlanError):
         workflow.order_plans(config)
 
 
-# --- model-scoping (the collect_all path build_dag skips) -------------------
+# --- section-qualified sub_plans (the collect_all path build_dag skips) -----
 
 
-def test_model_scoped_preceded_by_resolves_to_a_plan():
-    """collect_all renames sub_plans to ``<name>_<model>`` and re-points
-    ``preceded_by`` onto those names; order_plans must still resolve them.
+def test_section_qualified_preceded_by_resolves_to_a_plan(section_qualified_block):
+    """collect_all renames each sub_plan to ``<name>_<section>`` -- qualifying it
+    by the config section that contributed it -- and re-points ``preceded_by``
+    onto those names; order_plans must still resolve them.
 
     Regression: order_plans raised ``Unknown plan prepcompute_general`` because
-    preceded_by was re-pointed to a model-scoped sub_plan name while the plan is
-    keyed by the base name. Exercises collect_all -> complete_plans -> order_plans.
+    preceded_by was re-pointed to a section-qualified sub_plan name while the
+    plan is keyed by the base name. Exercises collect_all -> complete_plans ->
+    order_plans.
     """
-    config = {
-        "general": {
-            "workflow": {
-                "plans": {},
-                "sub_plans": {
-                    "prepcompute": {"parent_plan": "prepcompute"},
-                    "compute": {"parent_plan": "compute", "preceded_by": "prepcompute"},
-                    "tidy": {"parent_plan": "tidy", "preceded_by": "compute"},
-                },
-                "entry_point": "prepcompute",
-                "exit_point": "tidy",
-            }
-        }
-    }
+    config = {"general": {"workflow": section_qualified_block}}
     workflow.collect_all_workflow_information(config)
     workflow.complete_plans(config)
     # Before the fix this raised UnknownPlanError (Unknown plan prepcompute_general).
     workflow.order_plans(config)
 
-    # order_plans consumes the (model-scoped) preceded_by to wire the chain;
+    # order_plans consumes the (section-qualified) preceded_by to wire the chain;
     # the DAG must resolve each predecessor back to its base plan name.
     plans = config["general"]["workflow"]["plans"]
     assert plans["compute"]["called_from"] == "prepcompute"

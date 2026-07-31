@@ -120,3 +120,29 @@ def test_canonical_keys_emit_no_deprecation_warning(default_chain_new):
     with warnings.catch_warnings():
         warnings.simplefilter("error", deprecation.DeprecatedWarning)
         build_dag(default_chain_new)
+
+
+# --- unknown-plan error (order_plans failure contract) ---------------------
+
+
+def test_order_plans_raises_unknown_plan_error_on_dangling_predecessor():
+    """A preceded_by that names neither a plan nor a sub_plan is a hard error.
+
+    order_plans raises :class:`workflow.UnknownPlanError` (a catchable exception)
+    rather than calling ``sys.exit`` and killing the interpreter.
+    """
+    config = {
+        "general": {
+            "workflow": {
+                "plans": {
+                    "compute": {"preceded_by": "does_not_exist", "next_submit": []},
+                },
+                "sub_plans": {},
+                "entry_point": "compute",
+                "exit_point": "compute",
+            }
+        }
+    }
+    with pytest.raises(workflow.UnknownPlanError):
+        workflow.order_plans(config)
+

@@ -10,6 +10,14 @@ import esm_tools.esm_warnings  # noqa: F401  installs the deprecation visibility
 from loguru import logger
 
 
+class WorkflowError(Exception):
+    """Base class for errors raised while assembling the workflow graph."""
+
+
+class UnknownPlanError(WorkflowError):
+    """A plan orders itself after a predecessor that is not a known plan."""
+
+
 _LEGACY_KEYS_SPEC: dict = esm_parser.yaml_file_to_dict(
     f"{esm_tools.get_config_filepath()}"
     "/esm_software/esm_runscripts/workflow_legacy_keys.yaml"
@@ -253,8 +261,10 @@ def order_plans(config):
 
         predecessor = plan_conf["preceded_by"]
         if predecessor not in gw_config["plans"]:
-            logger.error(f"Unknown plan {predecessor}.")
-            sys.exit(-1)
+            raise UnknownPlanError(
+                f"Plan {plan!r} is preceded_by {predecessor!r}, "
+                "which is not a known plan."
+            )
 
         if plan not in gw_config["plans"][predecessor]["next_submit"]:
             gw_config["plans"][predecessor]["next_submit"].append(plan)

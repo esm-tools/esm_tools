@@ -97,6 +97,7 @@ setup(
             "shapely>=2.0",
             "universal-pathlib>=0.2",
         ],
+        "test": test_requirements,
     },
     install_requires=requirements,
     license="GNU General Public License v2",

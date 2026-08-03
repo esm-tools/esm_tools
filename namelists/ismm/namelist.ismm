@@ -1,0 +1,24 @@
+! -----------------------------------------------------------------------
+! ISM-mapper. Values here are placeholders; the per-leg ones (RunLengthSec,
+! TimeStepSec, StartDate) are set from namelist_changes in the setup.
+! -----------------------------------------------------------------------
+&NAMISMM
+  RunLengthSec        = 31536000
+  TimeStepSec         = 3600
+  StartDate           = 19000101
+  NumCoupledRegions   = 1
+  CISSEMBEL_av        = 21600
+  LDebug              = .false.
+  LInterpolate        = .true.
+  LRecvAtmRunoff      = .true.
+  LSendToRunoffMapper = .false.
+/
+!------------------------------------------------------------------------
+&NAMISMARR
+  FileListISM       = 'antar_pism2ece.nc'
+  PrefixListISM     = 'antar'
+  CISSEMBELBoolList = .false.
+  DomainIDList      = 1
+  GridListNX        = 761
+  GridListNY        = 761
+/

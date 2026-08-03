@@ -51,6 +51,50 @@ ismm:
     bin_in_work:
         bin: ${executable}
 
+    # <prefix>_smb_<year>.nc, the monthly accumulation the ice sheet is forced
+    # from. Written to work/; keep it, it is the whole point of the component.
+    outdata_files:
+        smb: smb
+    outdata_sources:
+        smb: ${ice_prefix}_smb_*.nc
+    outdata_in_work:
+        smb: ${ice_prefix}_smb_*.nc
+
+    # The mapper reads <prefix>_pism2ece.nc from cwd. oifs already stages that
+    # same file into work/ (add_input_in_work), and both run there, so there is
+    # nothing extra to stage.
+
+    namelist_dir: ${general.esm_namelist_dir}/ismm/
+    namelists:
+        - "namelist.ismm"
+    config_sources:
+        namelist.ismm: "${namelist_dir}/namelist.ismm"
+
+    # Leg length the mapper integrates over, and where it starts. The mapper
+    # divides its accumulator by the step count, so a wrong RunLengthSec or
+    # TimeStepSec silently rescales every field it hands the ice sheet.
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    coupling_time_step: ${oasis3mct.time_step}
+    start_date_yyyymmdd: "${start_date!syear}${start_date!smonth}${start_date!sday}"
+
+    namelist_changes:
+        namelist.ismm:
+            NAMISMM:
+                RunLengthSec: "${runtime_seconds}"
+                TimeStepSec: "${coupling_time_step}"
+                StartDate: "${start_date_yyyymmdd}"
+                NumCoupledRegions: 1
+                # We do not wire basal melt and discharge to the runoff-mapper
+                # yet, so do not declare them: unpartnered OASIS fields are at
+                # best noise and at worst the -huge accumulation trap.
+                LSendToRunoffMapper: ".false."
+            NAMISMARR:
+                FileListISM: "${ice_prefix}_pism2ece.nc"
+                PrefixListISM: "${ice_prefix}"
+                CISSEMBELBoolList: ".false."
+                GridListNX: "${nx}"
+                GridListNY: "${ny}"
+
     contact: "jan.streffing(at)awi.de"
 
     metadata:

@@ -1,0 +1,26 @@
+# 5-cycle final evaluation of the moving-cavity coupling, sequential (non-concurrent)
+# chain, with BOTH fixes in: FESOM Bug VIII (PR #960) and the FESOM->PISM melt
+# sign (esm_tools 33f71c607). Precedes the orography/SMB coupling work.
+general:
+        add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
+                - model1
+                - model2
+        iterative_coupling: True
+        honor_final_date: True   # actually stop at final_date (see resubmit._experiment_over_marker)
+        use_venv: False
+        user: !ENV ${USER}
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        account: ab0246
+        with_recom: False
+
+model1:
+        setup_name: awiesm3
+        runscript: eval5_ocean.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: eval5_pism.yaml
+        chunk_size: 10
+        chunk_unit: "years"

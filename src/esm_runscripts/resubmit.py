@@ -88,6 +88,29 @@ def end_of_experiment(config):
     return False
 
 
+def _experiment_over_marker(config):
+    """Marker that end_of_experiment_all_models() looks for in a sibling model's log.
+
+    Both writers of the marker (sim_objects.py and end_of_experiment() below) emit
+    it through logger.progress as a bare "Experiment over", but this check was
+    written against a "# Experiment over" form that nothing produces. The match
+    therefore never succeeds, end_of_experiment_all_models() always returns False,
+    and an iteratively-coupled chain resubmits past its final_date indefinitely.
+
+    Fixing that unconditionally would change the behaviour of the existing
+    awiesm2 / awicm-pism ice-sheet setups, which have always run this way and are
+    stopped by hand. So the working match is opt-in: set
+
+        general:
+            honor_final_date: True
+
+    in the coupling runscript to have the chain actually stop at final_date.
+    """
+    if config["general"].get("honor_final_date", False):
+        return "Experiment over"
+    return "# Experiment over"
+
+
 def end_of_experiment_all_models(config):
     index = 1
     expid = config["general"]["expid"]
@@ -107,11 +130,12 @@ def end_of_experiment_all_models(config):
                 + setup_name
                 + ".log"
             )
+            marker = _experiment_over_marker(config)
             if os.path.isfile(logfile):
                 with open(logfile, "r") as open_logfile:
                     logfile_array = open_logfile.readlines()
                     for line in logfile_array:
-                        if "# Experiment over" in line:
+                        if marker in line:
                             logger.info(f"    ...{setup_name} is done.")
                             experiment_done = True
                             break

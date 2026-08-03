@@ -38,6 +38,19 @@ ismm:
 
     install_bins: sources/ism-mapper/bin/ism-mapper.exe
 
+    # Runtime. It has to be a launched MPI rank whenever it runs, or OASIS
+    # enddef fails; general.smb_coupled puts it in include_models.
+    executable: ism-mapper.exe
+    setup_dir: ${general.model_dir}
+    bin_dir: ${setup_dir}/bin
+
+    bin_files:
+        bin: bin
+    bin_sources:
+        bin: ${bin_dir}/${executable}
+    bin_in_work:
+        bin: ${executable}
+
     contact: "jan.streffing(at)awi.de"
 
     metadata:

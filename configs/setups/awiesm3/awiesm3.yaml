@@ -19,6 +19,13 @@ general:
     # coupling config in the fesom/oifs sections (choose_general.interactive_mesh).
     interactive_mesh: false
 
+    # OIFS->PISM surface mass balance via the ISM-mapper, and the PISM->OIFS
+    # orography/plit return. ismm is always built (it is in the develop-is
+    # coupling); this gates its OASIS fields and directions.
+    # ECE_CPL_ISMM belongs in the runscript next to ECE_LANDICE/ISMRGNPFX:
+    # NAMECECFG is add_'d per chunk there and a second add_ here collides.
+    smb_coupled: false
+
     include_models:
         - fesom
         - oifs
@@ -108,16 +115,18 @@ general:
             # of the iterative coupling; dEBM is invoked from PISM's coupler.
             # (ismm DOES have to join the launch once it is switched on, but via
             # general.smb_coupled, not from here.)
+            # include_models is consumed before general-level choose_ blocks
+            # resolve, so ismm cannot be gated there. Keep it in step with
+            # smb_coupled: a launched ismm with no coupled fields deadlocks OASIS.
             add_include_models:
                 - xios
-            # esm-tools >=6.54 rejects any root section that is not a known
-            # component. Build-only components loaded through the coupling land in
-            # the config as root sections with nothing declaring them, so they have
-            # to be whitelisted here or esm_master aborts on "Missing section
-            # headers". This was already broken for debm before ismm was added.
+                - ismm
+            # Build-only components come in via the coupling and land here as root
+            # sections nothing declares; esm-tools >=6.54 rejects those.
             add_other_components:
                 - debm
-                - ismm
+            # OIFS->PISM SMB (gates the OASIS fields and directions).
+            smb_coupled: true
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
@@ -322,6 +331,21 @@ oifs:
     ICMGG_INIT_name: "_${fesom.resolution}"
 
     # CO2 tracer is turned on, if at least one of the couplings for co2 is active    
+
+    # OIFS side of the ISM coupling. The three _ISM fields are what ecearth.F90
+    # declares OASIS_OUT for the direct path; PLIT_<region> comes back in.
+    # Precip/Runoff are already declared for the ocean path and are reused.
+    choose_general.smb_coupled:
+        true:
+            add_coupling_fields:
+                A_Evap_ISM:
+                    grid: atma
+                A_SST_ISM:
+                    grid: atma
+                A_Soil4T_ISM:
+                    grid: atma
+                PLIT_${ismm.ice_prefix}:
+                    grid: atma
 
     choose_general.with_co2_oce_coupling:
         true:
@@ -949,6 +973,45 @@ rnfmap:
 
 #########################################################################################
 
+# ISM-mapper: accumulates the OIFS forcing PISM needs and returns the ice state.
+# Built always (it is in the develop-is coupling), run only when smb_coupled.
+ismm:
+    pool_dir: ${general.pool_dir}
+    nproc: 1
+    omp_num_threads: 1
+
+    # 4-char OASIS grid name; must match ocp-tool's ice.regions[].name and the
+    # ISMRGNPFX region prefix used for the field names below.
+    ice_grid: ismp
+    ice_prefix: antar
+    nx: 761        # antarct_cr 8 km
+    ny: 761
+
+    grids:
+        ${ice_grid}:
+            name: ${ice_grid}
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "LR"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+
+    # Names come from the ism-mapper itself (cplng_config_mod.F90): every field
+    # is <prefix>_<name>. The CISSEMBEL set is not here, we run the direct path.
+    ism_recv_fields: ["${ice_prefix}_Precip_liquid", "${ice_prefix}_Precip_solid",
+        "${ice_prefix}_Evaporation", "${ice_prefix}_Runoff", "${ice_prefix}_Soil4T",
+        "${ice_prefix}_SST"]
+    ism_send_fields: ["${ice_prefix}_plit"]
+
+    coupling_fields:
+        "[[ism_recv_fields-->FIELD]]":
+            grid: ${ice_grid}
+        "[[ism_send_fields-->FIELD]]":
+            grid: ${ice_grid}
+
+
+#########################################################################################
+
 # Settings for OASIS
 oasis3mct:
     model_dir: ${general.model_dir}/oasis
@@ -983,12 +1046,16 @@ oasis3mct:
     o2r_lag: 0
     r2a_lag: "${lag}"
     v2a_lag: "${lpj_guess.time_step}"
+    a2i_lag: "${lag}"        # atm -> ISM-mapper
+    i2a_lag: "${lag}"        # ISM-mapper -> atm (plit)
     a2o_seq: 2
     o2a_seq: 2
     o2r_seq: 1
     r2a_seq: 2
     a2v_seq: 2
     v2a_seq: 2
+    a2i_seq: 2
+    i2a_seq: 2
 
     coupling_time_step: "${oasis3mct.time_step}"
     choose_general.major_version:
@@ -1075,6 +1142,32 @@ oasis3mct:
             seq: ${a2v_seq}
             coupling_time_step: ${land_atmo_coupling_time_step}
             lag_overwrite: true
+
+    # OIFS <-> ISM-mapper. Weights are precomputed by ocp-tool's pyOASIS step
+    # (awiesm3_ismp_links); see couplings/fesom regenerate_oasis_weights.
+    choose_general.smb_coupled:
+        true:
+            add_coupling_directions:
+                'atma->${ismm.ice_grid}':
+                    lag: ${a2i_lag}
+                    seq: ${a2i_seq}
+                # Runoff lives on atmr, not atma, so it is its own direction.
+                'atmr->${ismm.ice_grid}':
+                    lag: ${a2i_lag}
+                    seq: ${a2i_seq}
+                '${ismm.ice_grid}->atma':
+                    lag: ${i2a_lag}
+                    seq: ${i2a_seq}
+            add_coupling_target_fields:
+                rstism.nc:
+                    - '${ismm.ice_prefix}_Precip_liquid:${ismm.ice_prefix}_Precip_solid
+                      <--gauswgt_c-- A_Precip_liquid:A_Precip_solid'
+                    - '${ismm.ice_prefix}_Evaporation:${ismm.ice_prefix}_Soil4T:${ismm.ice_prefix}_SST
+                      <--gauswgt_c-- A_Evap_ISM:A_Soil4T_ISM:A_SST_ISM'
+                    - '${ismm.ice_prefix}_Runoff <--gauswgt_c-- A_Runoff'
+                    - 'PLIT_${ismm.ice_prefix} <--gauswgt_i-- ${ismm.ice_prefix}_plit'
+            add_process_ordering:
+                - ismm
 
 
     coupling_methods:

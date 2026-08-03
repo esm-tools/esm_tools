@@ -91,6 +91,11 @@
               "$ref": "#/definitions/datetime"
             }
           ]
+        },
+        "paleo:label": {
+          "title": "Paleo label",
+          "description": "Free-text label for the interval this run represents, e.g. 'LGM', 'mid-Holocene'. User-chosen; no controlled vocabulary.",
+          "type": "string"
         }
       },
       "dependencies": {
@@ -125,17 +130,20 @@
       "type": "object",
       "properties": {
         "paleo:datetime": {
-          "$ref": "#/definitions/summary"
+          "$ref": "#/definitions/datetime_summary"
         },
         "paleo:start_datetime": {
-          "$ref": "#/definitions/summary"
+          "$ref": "#/definitions/datetime_summary"
         },
         "paleo:end_datetime": {
-          "$ref": "#/definitions/summary"
+          "$ref": "#/definitions/datetime_summary"
+        },
+        "paleo:label": {
+          "$ref": "#/definitions/label_summary"
         }
       }
     },
-    "summary": {
+    "datetime_summary": {
       "type": [
         "array",
         "object"
@@ -150,6 +158,12 @@
         "maximum": {
           "$ref": "#/definitions/datetime"
         }
+      }
+    },
+    "label_summary": {
+      "type": "array",
+      "items": {
+        "type": "string"
       }
     }
   }

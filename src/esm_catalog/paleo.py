@@ -8,17 +8,20 @@ mirroring STAC core's Date and Time fields::
     paleo:datetime        - nominal geological time
     paleo:start_datetime  - start of a transient run's geological span
     paleo:end_datetime    - end of a transient run's geological span
+    paleo:label           - free-text label for the interval (e.g. "LGM")
 
-Values are ISO-8601-like strings with an unbounded (optionally negative) year,
-e.g. ``"-21000-01-01T00:00:00"`` for the Last Glacial Maximum, parsed and
-formatted by the ``paleodatetime`` library on the consumer side.
+The datetimes are ISO-8601-like strings with an unbounded (optionally negative)
+year, e.g. ``"-21000-01-01T00:00:00"`` for the Last Glacial Maximum, parsed and
+formatted by the ``paleodatetime`` library on the consumer side. ``paleo:label``
+is a user-chosen name, not a controlled vocabulary.
 
-The time comes from the ``general.paleo`` config section (see
+The values come from the ``general.paleo`` config section (see
 ``CollectionContext.paleo_config``), whose keys mirror the output fields::
 
     general:
       paleo:
-        datetime: "-21000-01-01T00:00:00"          # a time-slice run (LGM)
+        datetime: "-21000-01-01T00:00:00"          # a time-slice run
+        label: "LGM"                               # optional free-text label
         # start_datetime / end_datetime instead     # a transient run
 """
 
@@ -36,7 +39,7 @@ from esm_catalog.registry import EXTENSION_URLS
 _PALEO_URL = EXTENSION_URLS["paleo"]
 
 # The config keys map 1:1 onto the paleo: fields.
-_KEYS = ("datetime", "start_datetime", "end_datetime")
+_KEYS = ("datetime", "start_datetime", "end_datetime", "label")
 
 
 @lru_cache(maxsize=None)

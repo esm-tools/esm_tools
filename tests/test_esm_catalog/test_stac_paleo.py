@@ -85,6 +85,20 @@ def test_malformed_datetime_raises(item):
         add_paleo_data(item, paleo_config={"datetime": "21 ka"})
 
 
+def test_label_alongside_datetime(item):
+    add_paleo_data(item, paleo_config={"datetime": LGM, "label": "LGM"})
+    assert item.properties["paleo:datetime"] == LGM
+    assert item.properties["paleo:label"] == "LGM"
+
+
+def test_label_only(item):
+    # label is independent of the datetimes; a label-only config is allowed.
+    add_paleo_data(item, paleo_config={"label": "mid-Holocene"})
+    assert item.properties["paleo:label"] == "mid-Holocene"
+    assert "paleo:datetime" not in item.properties
+    assert PALEO_URL in item.stac_extensions
+
+
 def test_url_appended_once(item):
     add_paleo_data(item, paleo_config={"datetime": LGM})
     add_paleo_data(item, paleo_config={"datetime": LGM})
@@ -163,9 +177,13 @@ def test_make_item_paleo_validates_against_schema(tmp_path, schema):
     [
         ({"paleo:datetime": LGM}, True),
         ({"paleo:start_datetime": LGM, "paleo:end_datetime": CE1850}, True),
+        ({"paleo:datetime": LGM, "paleo:label": "LGM"}, True),  # label + datetime
+        ({"paleo:label": "LGM"}, True),  # label alone
         ({"paleo:datetime": "21 ka"}, False),  # malformed
         ({"paleo:start_datetime": LGM}, False),  # half range
         ({"paleo:datetime": LGM, "paleo:start_datetime": LGM, "paleo:end_datetime": CE1850}, False),
+        ({"paleo:label": 123}, False),  # label must be a string
+        ({"paleo:bogus": "x"}, False),  # invented key rejected by the namespace lock
     ],
 )
 def test_schema_constraints(schema, props, valid):
@@ -189,6 +207,11 @@ def test_summary_single(collection):
     add_paleo_summary(collection, {"datetime": LGM})
     assert collection.summaries.get_list("paleo:datetime") == [LGM]
     assert PALEO_URL in collection.stac_extensions
+
+
+def test_summary_includes_label(collection):
+    add_paleo_summary(collection, {"datetime": LGM, "label": "LGM"})
+    assert collection.summaries.get_list("paleo:label") == ["LGM"]
 
 
 def test_summary_transient(collection):

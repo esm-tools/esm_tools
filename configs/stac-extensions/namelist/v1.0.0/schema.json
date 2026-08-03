@@ -5,7 +5,8 @@
   "description": "STAC Namelist Extension for STAC Items and Collections, exposing Fortran namelist parameters for search.",
   "type": "object",
   "required": [
-    "stac_extensions"
+    "stac_extensions",
+    "type"
   ],
   "properties": {
     "stac_extensions": {
@@ -15,58 +16,74 @@
       }
     },
     "type": {
+      "type": "string",
       "enum": [
-        "Feature",
-        "Collection"
+        "Collection",
+        "Feature"
       ]
     }
   },
-  "if": {
-    "properties": {
-      "type": {
-        "const": "Collection"
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "nml:files": {
-        "title": "Namelist files",
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "nml:groups": {
-        "title": "Namelist groups",
-        "type": "array",
-        "items": {
-          "type": "string"
-        }
-      },
-      "nml:parameters": {
-        "title": "Flattened namelist parameters",
-        "description": "Maps 'group:key' to the parameter's scalar value, for CQL2 filtering.",
-        "type": "object",
-        "additionalProperties": {
-          "$ref": "#/definitions/scalar_or_list"
-        }
-      }
-    }
-  },
-  "else": {
-    "properties": {
+  "oneOf": [
+    {
+      "$comment": "Item: nml:{component}:{group}:{key} live in properties.",
+      "type": "object",
+      "required": [
+        "type",
+        "properties"
+      ],
       "properties": {
-        "type": "object",
-        "patternProperties": {
-          "^nml:": {
+        "type": {
+          "const": "Feature"
+        },
+        "properties": {
+          "$ref": "#/definitions/item_fields"
+        }
+      }
+    },
+    {
+      "$comment": "Collection: nml:files/groups/parameters at top level.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "Collection"
+        },
+        "nml:files": {
+          "title": "Namelist files",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nml:groups": {
+          "title": "Namelist groups",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nml:parameters": {
+          "title": "Flattened namelist parameters",
+          "description": "Maps 'group:key' to the parameter's scalar value, for CQL2 filtering.",
+          "type": "object",
+          "additionalProperties": {
             "$ref": "#/definitions/scalar_or_list"
           }
         }
       }
     }
-  },
+  ],
   "definitions": {
+    "item_fields": {
+      "type": "object",
+      "patternProperties": {
+        "^nml:": {
+          "$ref": "#/definitions/scalar_or_list"
+        }
+      }
+    },
     "scalar_or_list": {
       "oneOf": [
         {

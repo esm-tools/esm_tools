@@ -731,7 +731,8 @@ function regenerate_oasis_weights {
 from pathlib import Path
 from ocp_tool.dynamic_regen import regenerate_for_submesh
 from ocp_tool.oasis_weights import (
-    generate_weights, _set_feom_mask_active, _strip_feom_corners)
+    generate_weights, awiesm3_feom_links, awiesm3_ismp_links,
+    _set_feom_mask_active, _strip_feom_corners)
 
 method = '${OASIS_REMAP_METHOD:-existing}'
 use_corners = (method == 'conserv')
@@ -761,7 +762,14 @@ if not use_corners:
     _strip_feom_corners(Path('${out_dir}') / 'grids.nc', prefix='feom')
 
 # 3. rmp weights using the model's own pyOASIS build + OpenMPI worker interpreter.
-generate_weights('${out_dir}', atm_grid='A096', method=method,
+#    With smb_coupled the OIFS<->ISM-mapper links join the same run: they remap
+#    from the A096 mask regenerated above, so they cannot be built separately.
+links = awiesm3_feom_links(atm_grid='A096', method=method)
+if ${SMB_COUPLED:-0}:
+    links += awiesm3_ismp_links(atm_grid='A096', ice_grid='${ISM_GRID:-ismp}',
+                                method='${ISM_REMAP_METHOD:-gauswgt}')
+print('weight links:', [(l.source, l.target, l.map_name) for l in links], flush=True)
+generate_weights('${out_dir}', links=links, atm_grid='A096', method=method,
                  threads=${OCP_WEIGHTGEN_THREADS:-8}, use_corners=use_corners,
                  worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
                  oasis_build_path='${OASIS_BUILD_PATH}')
@@ -774,7 +782,9 @@ subprocess.check_call(['${OCP_WEIGHTGEN_DRIVER_PY}',
                        '${out_dir}', '${submesh}', '${NPROC_fesom}'])
 PYEOF
 
-    local nlinks=${OCP_WEIGHTGEN_NLINKS:-4}
+    # One task per link so they run concurrently. awiesm3_feom_links returns 5,
+    # plus 3 for the ice sheet.
+    local nlinks=${OCP_WEIGHTGEN_NLINKS:-$([ "${SMB_COUPLED:-0}" = "1" ] && echo 8 || echo 5)}
     if [ -n "${SLURM_JOB_ID:-}" ]; then
         # Already inside an allocation (couple_in on a compute node): the per-link
         # srun steps run within it (concurrent if it has >= nlinks nodes/tasks).

@@ -112,6 +112,24 @@ def harvest_environment(config):
     }
 
 
+def _ismm_environment(config, environment_dict):
+    """Call couplings/pism/env_ismm.ismm_environment, loaded by path.
+
+    env_* files are executed standalone by esm_runscripts rather than imported
+    as a package, so there is no relative import to use.
+    """
+    path = os.path.normpath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "..", "pism", "env_ismm.py"))
+    try:
+        spec = importlib.util.spec_from_file_location("env_ismm", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module.ismm_environment(config, environment_dict)
+    except Exception as exc:
+        print(f"env_fesom: could not load {path}: {exc}")
+        return {"SMB_COUPLED": 0}
+
+
 def prepare_environment(config):
     # --- Auto-discover the ocp-tool OASIS-regen toolchain (ice2fesom) ---------
     # esm_tools installs ocp-tool (required_plugin) and the coupled model's OASIS
@@ -265,6 +283,9 @@ def prepare_environment(config):
 
             }
     environment_dict.update(harvest_environment(config))
+    # OIFS <-> ISM-mapper. Owned by couplings/pism, spliced in here only because
+    # the ice links are built from the same regenerated A096 mask.
+    environment_dict.update(_ismm_environment(config, environment_dict))
 
     #if environment_dict["ADD_UNCHANGED_ICE"] == False:
     #    environment_dict["ADD_UNCHANGED_ICE"] = 0

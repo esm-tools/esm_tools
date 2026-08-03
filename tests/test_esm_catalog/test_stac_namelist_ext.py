@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import esm_tools
 import pytest
 from pystac import Item
 
@@ -16,7 +17,7 @@ from esm_catalog.namelist import add_namelist_extension, add_namelist_item_exten
 from esm_catalog.registry import EXTENSION_URLS
 
 NAMELIST_URL = EXTENSION_URLS["namelist"]
-SCHEMA_PATH = Path(__file__).parent / "schemas" / "namelist-v1.0.0.json"
+SCHEMA_PATH = Path(esm_tools.get_config_filepath("stac-extensions/namelist/v1.0.0/schema.json"))
 
 
 def _ctx(**kwargs):
@@ -77,7 +78,7 @@ def test_collection_extension_drops_raw():
     assert "nml:raw" not in col.extra_fields
 
 
-def test_collection_extension_skips_nested_dicts_and_large_lists():
+def test_collection_extension_skips_nested_dicts_and_none():
     col = make_collection(_ctx())
     add_namelist_extension(
         col,
@@ -86,8 +87,7 @@ def test_collection_extension_skips_nested_dicts_and_large_lists():
                 "runctl": {
                     "delta_time": 450,
                     "nested": {"a": 1},
-                    "big_list": list(range(20)),
-                    "small_list": [1, 2, 3],
+                    "levels": list(range(20)),
                     "none_value": None,
                 }
             }
@@ -95,9 +95,8 @@ def test_collection_extension_skips_nested_dicts_and_large_lists():
     )
     params = col.extra_fields["nml:parameters"]
     assert params["runctl:delta_time"] == 450
-    assert params["runctl:small_list"] == [1, 2, 3]
+    assert params["runctl:levels"] == list(range(20))  # scalar lists kept, no length cap
     assert "runctl:nested" not in params
-    assert "runctl:big_list" not in params
     assert "runctl:none_value" not in params
 
 

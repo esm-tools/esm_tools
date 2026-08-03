@@ -74,7 +74,10 @@ ismm:
     # divides its accumulator by the step count, so a wrong RunLengthSec or
     # TimeStepSec silently rescales every field it hands the ice sheet.
     runtime_seconds: "$(( ${next_date} - ${start_date} ))"
-    coupling_time_step: ${oasis3mct.time_step}
+    coupling_time_step: ${oasis3mct.ism_atmo_coupling_time_step}
+    # PrepareCISSEMBELForcing is called unguarded and stops if CISSEMBEL_av is
+    # not a multiple of TimeStepSec, so keep them equal while CISSEMBEL is off.
+    cissembel_averaging_window: ${coupling_time_step}
     start_date_yyyymmdd: "${start_date!syear}${start_date!smonth}${start_date!sday}"
 
     namelist_changes:
@@ -82,6 +85,7 @@ ismm:
             NAMISMM:
                 RunLengthSec: "${runtime_seconds}"
                 TimeStepSec: "${coupling_time_step}"
+                CISSEMBEL_av: "${cissembel_averaging_window}"
                 StartDate: "${start_date_yyyymmdd}"
                 NumCoupledRegions: 1
                 # We do not wire basal melt and discharge to the runoff-mapper

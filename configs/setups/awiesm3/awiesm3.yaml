@@ -1046,8 +1046,8 @@ oasis3mct:
     o2r_lag: 0
     r2a_lag: "${lag}"
     v2a_lag: "${lpj_guess.time_step}"
-    a2i_lag: "${lag}"        # atm -> ISM-mapper
-    i2a_lag: "${lag}"        # ISM-mapper -> atm (plit)
+    a2i_lag: "${oifs.time_step}"
+    i2a_lag: "${ism_atmo_coupling_time_step}"
     a2o_seq: 2
     o2a_seq: 2
     o2r_seq: 1
@@ -1119,6 +1119,11 @@ oasis3mct:
             rst_co2_av_name: 'rst_co2_av'
 
     land_atmo_coupling_time_step: 86400
+    # Ice sheet consumers are monthly (dEBM reads 12 monthly means; the
+    # ISM-mapper only ever writes a monthly mean). Daily is the coarsest period
+    # that still divides a calendar month. Raise it if CISSEMBEL is ever run,
+    # which needs CISSEMBEL_av resolution.
+    ism_atmo_coupling_time_step: 86400
     coupling_directions:
         'atma->feom':
             lag: ${a2o_lag}
@@ -1151,20 +1156,26 @@ oasis3mct:
                 'atma->${ismm.ice_grid}':
                     lag: ${a2i_lag}
                     seq: ${a2i_seq}
+                    coupling_time_step: ${ism_atmo_coupling_time_step}
+                    lag_overwrite: true
                 # Runoff lives on atmr, not atma, so it is its own direction.
                 'atmr->${ismm.ice_grid}':
                     lag: ${a2i_lag}
                     seq: ${a2i_seq}
+                    coupling_time_step: ${ism_atmo_coupling_time_step}
+                    lag_overwrite: true
                 '${ismm.ice_grid}->atma':
                     lag: ${i2a_lag}
                     seq: ${i2a_seq}
+                    coupling_time_step: ${ism_atmo_coupling_time_step}
+                    lag_overwrite: true
             add_coupling_target_fields:
                 rstism.nc:
                     - '${ismm.ice_prefix}_Precip_liquid:${ismm.ice_prefix}_Precip_solid
-                      <--gauswgt_c-- A_Precip_liquid:A_Precip_solid'
+                      <--gauswgt_avg-- A_Precip_liquid:A_Precip_solid'
                     - '${ismm.ice_prefix}_Evaporation:${ismm.ice_prefix}_Soil4T:${ismm.ice_prefix}_SST
-                      <--gauswgt_c-- A_Evap_ISM:A_Soil4T_ISM:A_SST_ISM'
-                    - '${ismm.ice_prefix}_Runoff <--gauswgt_c-- A_Runoff'
+                      <--gauswgt_avg-- A_Evap_ISM:A_Soil4T_ISM:A_SST_ISM'
+                    - '${ismm.ice_prefix}_Runoff <--gauswgt_avg-- A_Runoff'
                     - 'PLIT_${ismm.ice_prefix} <--gauswgt_i-- ${ismm.ice_prefix}_plit'
             add_process_ordering:
                 - ismm
@@ -1245,6 +1256,18 @@ oasis3mct:
                     nb_of_search_bins: 1
                     nb_of_neighbours: 25
                     weight: "0.1"
+        gauswgt_avg:
+            time_transformation: average
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+            postprocessing:
+                conserv:
+                    method: glbpos
+                    algorithm: opt
         gauswgt_glo:
             time_transformation: conserv
             remapping:

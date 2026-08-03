@@ -147,6 +147,11 @@ oifs:
                         NISMRGNS: 1
                         "ISMRGNPFX(1)": "antar"
                         "ISMRGNCIS(1)": ".false."
+                        # SMB exchange with the ISM-mapper. Orography stays off:
+                        # ECE_ISM_OROG makes suorog read usurf_oifs, and the file
+                        # we stage has only plit_oifs.
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".false."
         "*":
             add_input_files:
                 pism2ece_antar: pism2ece_antar
@@ -179,6 +184,9 @@ oifs:
                         # bare string 'antar' -- f90nml adds the Fortran quotes itself
                         "ISMRGNPFX(1)": "antar"
                         "ISMRGNCIS(1)": ".false."
+                        # See the chunk-1 branch: SMB on, orography off.
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".false."
 
     # General (all-chunk) OIFS namelist defaults. Must be `namelist_changes`
     # (not add_): esm_tools forbids a general add_<var> alongside the same add_<var>

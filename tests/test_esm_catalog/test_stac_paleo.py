@@ -6,6 +6,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import esm_tools
 import jsonschema
 import pytest
 from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
@@ -17,9 +18,7 @@ from esm_catalog.paleo import add_paleo_data, add_paleo_summary
 from esm_catalog.registry import EXTENSION_URLS
 
 PALEO_URL = EXTENSION_URLS["paleo"]
-SCHEMA_PATH = (
-    Path(__file__).parents[2] / "configs" / "stac-extensions" / "paleo" / "v1.0.0" / "schema.json"
-)
+SCHEMA_PATH = Path(esm_tools.get_config_filepath("stac-extensions/paleo/v1.0.0/schema.json"))
 
 LGM = "-21000-01-01T00:00:00"
 CE1850 = "1850-01-01T00:00:00"

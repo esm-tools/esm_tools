@@ -1,0 +1,51 @@
+ismm:
+    model: ismm
+    type: ice sheet coupler
+
+    # The ISM-mapper is the EC-Earth4 in-line OASIS component that accumulates the
+    # atmosphere fields an ice sheet needs and writes them as {region}_smb_{year}.nc
+    # once a month, and pushes the previous ice state (plit, basal melt, discharge)
+    # back into the live model. It is not a standalone repository: it lives inside
+    # ecearth4 under sources/ism-mapper, so this component clones ecearth4 and builds
+    # that subtree. CISSEMBEL is built from the same clone rather than from its own
+    # upstream (gitlab.com/crodehacke/CISSEMBEL) so the two cannot drift apart.
+    #
+    # CISSEMBEL is a LINK-time dependency even for direct-path regions:
+    # ism-mapper_run_mod.F90 has an unguarded `use modEBMworld` and the link line
+    # ends in libebm_cpl.a. At runtime EBMworld is only called for regions with
+    # ISMRGNCIS(n)=.true., so on the PISM-direct path it is never executed.
+    #
+    # The branch is required, not just preferred: cissembel-levante-intel carries
+    # 5799a2a, which fixes an EBMfinalize use-after-free that crashes any run with
+    # a non-CISSEMBEL region. That is the path we use.
+
+    available_versions:
+    - "ece4"
+
+    version: "ece4"
+    git-repository: https://git.smhi.se/jan.streffing/ecearth4.git
+    branch: cissembel-levante-intel
+
+    # The committed Makefile carries ECMWF HPC2020 paths and mpifort. Every setting
+    # it needs is a plain make variable, and command-line macros override file
+    # assignments, so the machine configuration is passed here rather than by
+    # patching a tracked file. OASIS comes from the sibling component in the same
+    # setup dir; note the library name differs from EC-Earth's own build, ours is
+    # libpsmile.a where theirs is libpsmile.MPI1.a.
+    comp_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make coupling && cd ${model_dir}/sources/ism-mapper/src && make FC=mpif90 LD=mpif90 OASIS_BASE_DIR=${model_dir}/../oasis/arch_ecearth OASIS_LIBS="-lpsmile -lmct -lmpeu -lscrip" EBMWORLD_DIR=${model_dir}/sources/ism-mapper/src/CISSEMBEL/src NETCDF_INC_DIR="-I$NETCDFFROOT/include -I$NETCDFROOT/include" NETCDF_LIB_DIR="-L$NETCDFFROOT/lib -L$NETCDFROOT/lib"'
+
+    clean_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make clean; cd ${model_dir}/sources/ism-mapper/src && make clean'
+
+    install_bins: sources/ism-mapper/bin/ism-mapper.exe
+
+    contact: "jan.streffing(at)awi.de"
+
+    metadata:
+        Institute: DMI / AWI
+        Description:
+            ISM-mapper, the EC-Earth4 in-line OASIS component that accumulates
+            atmospheric forcing for an ice sheet model and returns the ice state.
+            Bundled with CISSEMBEL, an energy balance surface scheme used for
+            regions flagged ISMRGNCIS.
+        Publications:
+            "Rodehacke, C. B., CISSEMBEL <https://gitlab.com/crodehacke/CISSEMBEL>"

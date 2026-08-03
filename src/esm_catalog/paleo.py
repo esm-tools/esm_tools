@@ -51,11 +51,7 @@ def _schema() -> dict:
 
 
 def _paleo_props(paleo_config: dict | None) -> dict:
-    """Return the ``paleo:*`` fields set by *paleo_config*, or an empty dict.
-
-    ``datetime`` -> a time-slice run; ``start_datetime`` + ``end_datetime`` ->
-    a transient one. Empty means not a paleo run.
-    """
+    """Return the ``paleo:*`` fields set by *paleo_config* (empty = not paleo)."""
     cfg = paleo_config or {}
     return {f"paleo:{k}": cfg[k] for k in _KEYS if cfg.get(k) is not None}
 
@@ -67,46 +63,43 @@ def _register(obj) -> None:
 
 
 @lru_cache(maxsize=None)
-def _validate(kind: str, frozen: tuple) -> None:
-    """Validate a paleo probe against the schema, memoized by content.
+def _validate(instance_json: str) -> None:
+    """Validate a paleo probe (its JSON) against the schema, memoized by content.
 
-    A scan applies the same config to every item/collection, so memoizing
-    collapses validation to once per distinct config. *kind* is ``"Feature"``
-    (fields in ``properties``) or ``"Collection"`` (fields in ``summaries``).
+    A scan applies the same config to every item/collection, so memoizing on the
+    probe's JSON collapses validation to once per distinct config.
     """
-    fields = {k: list(v) if kind == "Collection" else v for k, v in frozen}
-    instance = {"type": kind, "stac_extensions": [_PALEO_URL]}
-    instance["summaries" if kind == "Collection" else "properties"] = fields
-    jsonschema.validate(instance=instance, schema=_schema())
+    jsonschema.validate(instance=json.loads(instance_json), schema=_schema())
 
 
 def add_paleo_data(item: pystac.Item, paleo_config: dict | None = None) -> None:
-    """Copy geological time from *paleo_config* onto *item*, or do nothing.
+    """Set the ``paleo:*`` geological time on *item* from *paleo_config*.
 
-    Config keys mirror STAC core's Date and Time and map 1:1 onto the
-    ``paleo:`` item properties: ``datetime`` for a time-slice run, or
-    ``start_datetime`` + ``end_datetime`` for a transient one. No-op when none
-    are set. Validated against the paleo extension schema.
+    No-op when *paleo_config* sets no paleo fields. Validated against the paleo
+    extension schema.
     """
     props = _paleo_props(paleo_config)
     if not props:
         return
-    _validate("Feature", tuple(sorted(props.items())))
+    probe = {"type": "Feature", "stac_extensions": [_PALEO_URL], "properties": props}
+    _validate(json.dumps(probe, sort_keys=True))
     item.properties.update(props)
     _register(item)
 
 
-def add_paleo_summary(collection, paleo_config: dict | None = None) -> None:
-    """Summarize geological time from *paleo_config* on *collection*, or nothing.
+def add_paleo_summary(
+    collection: pystac.Collection, paleo_config: dict | None = None
+) -> None:
+    """Summarize the ``paleo:*`` geological time on *collection* from *paleo_config*.
 
-    The collection-level view of the same ``paleo:*`` fields, in ``summaries``
-    (their STAC-idiomatic home). Config-driven, so each summary is the single
-    configured value. No-op when nothing is set.
+    The collection-level view of the same fields, in ``summaries`` (their
+    STAC-idiomatic home). No-op when *paleo_config* sets no paleo fields.
     """
     summaries = {k: [v] for k, v in _paleo_props(paleo_config).items()}
     if not summaries:
         return
-    _validate("Collection", tuple(sorted((k, tuple(v)) for k, v in summaries.items())))
+    probe = {"type": "Collection", "stac_extensions": [_PALEO_URL], "summaries": summaries}
+    _validate(json.dumps(probe, sort_keys=True))
     for key, values in summaries.items():
         collection.summaries.add(key, values)
     _register(collection)

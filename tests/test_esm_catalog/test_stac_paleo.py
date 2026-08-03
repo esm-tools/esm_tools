@@ -213,6 +213,11 @@ def test_summary_includes_label(collection):
     assert collection.summaries.get_list("paleo:label") == ["LGM"]
 
 
+def test_summary_malformed_raises(collection):
+    with pytest.raises(jsonschema.ValidationError):
+        add_paleo_summary(collection, {"datetime": "21 ka"})
+
+
 def test_summary_transient(collection):
     add_paleo_summary(collection, {"start_datetime": LGM, "end_datetime": CE1850})
     assert collection.summaries.get_list("paleo:start_datetime") == [LGM]

@@ -8,11 +8,12 @@ from pathlib import Path
 
 import jsonschema
 import pytest
-from pystac import Item
+from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
 
+from esm_catalog.collection import make_collection
 from esm_catalog.context import CollectionContext
 from esm_catalog.item import make_item
-from esm_catalog.paleo import add_paleo_data
+from esm_catalog.paleo import add_paleo_data, add_paleo_summary
 from esm_catalog.registry import EXTENSION_URLS
 
 PALEO_URL = EXTENSION_URLS["paleo"]
@@ -32,6 +33,15 @@ def item():
         bbox=None,
         datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
         properties={},
+    )
+
+
+@pytest.fixture
+def collection():
+    return Collection(
+        id="c",
+        description="d",
+        extent=Extent(SpatialExtent([[-180, -90, 180, 90]]), TemporalExtent([[None, None]])),
     )
 
 
@@ -164,3 +174,42 @@ def test_schema_constraints(schema, props, valid):
     else:
         with pytest.raises(jsonschema.ValidationError):
             jsonschema.validate(instance=_instance(props), schema=schema)
+
+
+# --- collection level (add_paleo_summary / make_collection) ---
+
+
+def test_summary_noop_without_config(collection):
+    add_paleo_summary(collection)
+    assert collection.summaries.is_empty()
+    assert collection.stac_extensions == []
+
+
+def test_summary_single(collection):
+    add_paleo_summary(collection, {"datetime": LGM})
+    assert collection.summaries.get_list("paleo:datetime") == [LGM]
+    assert PALEO_URL in collection.stac_extensions
+
+
+def test_summary_transient(collection):
+    add_paleo_summary(collection, {"start_datetime": LGM, "end_datetime": CE1850})
+    assert collection.summaries.get_list("paleo:start_datetime") == [LGM]
+    assert collection.summaries.get_list("paleo:end_datetime") == [CE1850]
+    assert collection.summaries.get_list("paleo:datetime") is None
+
+
+def test_collection_validates_against_schema(collection, schema):
+    add_paleo_summary(collection, {"datetime": LGM})
+    jsonschema.validate(instance=collection.to_dict(), schema=schema)
+
+
+def test_make_collection_with_paleo_config():
+    col = make_collection(_ctx(description="d", paleo_config={"datetime": LGM}))
+    assert col.summaries.get_list("paleo:datetime") == [LGM]
+    assert PALEO_URL in col.stac_extensions
+
+
+def test_make_collection_without_paleo_config():
+    col = make_collection(_ctx(description="d"))
+    assert col.summaries.is_empty()
+    assert PALEO_URL not in col.stac_extensions

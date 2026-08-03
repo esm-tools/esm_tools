@@ -2,10 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://esm-tools.github.io/stac-extensions/paleo/v1.0.0/schema.json",
   "title": "Paleo Extension",
-  "description": "STAC Paleo Extension for STAC Items: geological time for paleoclimate simulations, mirroring STAC core Date and Time with unbounded (deep-time) years. Values are ISO-8601-like strings parsed by the paleodatetime library.",
+  "description": "STAC Paleo Extension for STAC Collections and Items: geological time for paleoclimate simulations, mirroring STAC core Date and Time with unbounded (deep-time) years. Values are ISO-8601-like strings parsed by the paleodatetime library.",
   "type": "object",
   "required": [
-    "stac_extensions"
+    "stac_extensions",
+    "type"
   ],
   "properties": {
     "stac_extensions": {
@@ -15,31 +16,81 @@
       }
     },
     "type": {
-      "const": "Feature"
+      "type": "string",
+      "enum": [
+        "Collection",
+        "Feature"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$comment": "Item: paleo fields live in properties.",
+      "type": "object",
+      "required": [
+        "type",
+        "properties"
+      ],
+      "properties": {
+        "type": {
+          "const": "Feature"
+        },
+        "properties": {
+          "$ref": "#/definitions/fields"
+        }
+      }
     },
-    "properties": {
+    {
+      "$comment": "Collection: paleo fields live in summaries.",
+      "type": "object",
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "const": "Collection"
+        },
+        "summaries": {
+          "$ref": "#/definitions/summaries"
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "datetime": {
+      "type": "string",
+      "pattern": "^-?[0-9]+-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}$"
+    },
+    "fields": {
+      "$comment": "The paleo fields, defined once and referenced per STAC object type.",
       "type": "object",
       "properties": {
         "paleo:datetime": {
           "title": "Geological datetime",
-          "description": "Nominal geological time the run represents, as an ISO-8601-like string with an unbounded (optionally negative) year, e.g. '-21000-01-01T00:00:00' for the Last Glacial Maximum. Parse with the paleodatetime library. May be null when a range is given via paleo:start_datetime/paleo:end_datetime.",
-          "type": [
-            "string",
-            "null"
-          ],
-          "pattern": "^-?[0-9]+-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}$"
+          "description": "Nominal geological time the run represents, e.g. '-21000-01-01T00:00:00' for the Last Glacial Maximum. Parse with the paleodatetime library.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/datetime"
+            }
+          ]
         },
         "paleo:start_datetime": {
           "title": "Geological start datetime",
-          "description": "Start of a transient run's geological span (paired with paleo:end_datetime), same string form as paleo:datetime.",
-          "type": "string",
-          "pattern": "^-?[0-9]+-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}$"
+          "description": "Start of a transient run's geological span (paired with paleo:end_datetime).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/datetime"
+            }
+          ]
         },
         "paleo:end_datetime": {
           "title": "Geological end datetime",
-          "description": "End of a transient run's geological span (paired with paleo:start_datetime), same string form as paleo:datetime.",
-          "type": "string",
-          "pattern": "^-?[0-9]+-[0-9]{2}-[0-9]{2}[T ][0-9]{2}:[0-9]{2}:[0-9]{2}$"
+          "description": "End of a transient run's geological span (paired with paleo:start_datetime).",
+          "allOf": [
+            {
+              "$ref": "#/definitions/datetime"
+            }
+          ]
         }
       },
       "dependencies": {
@@ -62,6 +113,42 @@
               "paleo:datetime"
             ]
           }
+        }
+      },
+      "patternProperties": {
+        "^(?!paleo:)": {}
+      },
+      "additionalProperties": false
+    },
+    "summaries": {
+      "$comment": "Collection summaries carry the paleo values as a list or a range.",
+      "type": "object",
+      "properties": {
+        "paleo:datetime": {
+          "$ref": "#/definitions/summary"
+        },
+        "paleo:start_datetime": {
+          "$ref": "#/definitions/summary"
+        },
+        "paleo:end_datetime": {
+          "$ref": "#/definitions/summary"
+        }
+      }
+    },
+    "summary": {
+      "type": [
+        "array",
+        "object"
+      ],
+      "items": {
+        "$ref": "#/definitions/datetime"
+      },
+      "properties": {
+        "minimum": {
+          "$ref": "#/definitions/datetime"
+        },
+        "maximum": {
+          "$ref": "#/definitions/datetime"
         }
       }
     }

@@ -1,4 +1,7 @@
 general:
+        add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
+                - model1
+                - model2
         iterative_coupling: True
         use_venv: False
         user: !ENV ${USER}

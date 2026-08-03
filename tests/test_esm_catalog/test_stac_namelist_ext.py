@@ -126,6 +126,21 @@ def test_collection_extension_accepts_real_f90nml_namelist():
     assert col.extra_fields["nml:groups"] == ["runctl"]
 
 
+def test_collection_extension_with_shipped_namelist():
+    # Flatten a real namelist file shipped in the repo, read the way the scan
+    # layer would (esm_tools packaging accessor + f90nml).
+    f90nml = pytest.importorskip("f90nml")
+    nml = f90nml.read(esm_tools.get_namelist_filepath("amip/namelist.amip"))
+    col = make_collection(_ctx())
+    add_namelist_extension(col, {"namelist.amip": nml})
+    params = col.extra_fields["nml:parameters"]
+    assert params["namamip:runlengthsec"] == 86400
+    assert params["namamip:startyear"] == 1850
+    assert col.extra_fields["nml:files"] == ["namelist.amip"]
+    assert col.extra_fields["nml:groups"] == ["namamip"]
+    assert NAMELIST_URL in col.stac_extensions
+
+
 # --- add_namelist_item_extension (item-level, all components) ---
 
 

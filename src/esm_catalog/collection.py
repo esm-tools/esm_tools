@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from pystac import Collection, Extent, Item, Link, SpatialExtent, TemporalExtent
 
+from esm_catalog.paleo import add_paleo_summary
+
 
 def make_collection(ctx) -> Collection:
     """Construct a pystac Collection for an experiment component.
@@ -26,6 +28,7 @@ def make_collection(ctx) -> Collection:
         extra_fields={"experiment": ctx.experiment_id, "components": [ctx.component]},
     )
     col.add_link(Link("parent", f"#{ctx.experiment_id}", media_type="application/json"))
+    add_paleo_summary(col, ctx.paleo_config)
     return col
 
 

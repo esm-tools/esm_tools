@@ -6,7 +6,6 @@ general:
                 - model1
                 - model2
         iterative_coupling: True
-        honor_final_date: True   # actually stop at final_date (see resubmit._experiment_over_marker)
         use_venv: False
         user: !ENV ${USER}
         base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"

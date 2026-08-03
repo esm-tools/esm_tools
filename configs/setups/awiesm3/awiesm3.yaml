@@ -113,6 +113,12 @@ general:
             with_co2_tracer: false
             with_co2_oce_coupling: false
             with_co2_veg_coupling: false
+            # Iteratively-coupled setup: let final_date actually end the chain.
+            # end_of_experiment_all_models() otherwise tests each sibling model's
+            # log for a marker nothing writes, so the chain resubmits past
+            # final_date forever. Opt-in so the awiesm2 / awicm-pism ice-sheet
+            # setups keep their existing behaviour (see resubmit.py).
+            honor_final_date: true
 
     version: "v3.4"
     resolution: ${oifs.resolution}_${fesom.resolution}

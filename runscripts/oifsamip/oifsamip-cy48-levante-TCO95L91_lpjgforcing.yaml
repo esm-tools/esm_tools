@@ -33,6 +33,11 @@ oifsamip:
     model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
 
 oifs:
+    # NOTE: the old hand-written NAMECECMIP6 block was REMOVED 2026-07-30.
+    # 48r1 renamed that namelist to NAMECECMIP, so the block was never read:
+    # LCMIP6/CMIP6DATADIR/NCMIPFIXYR/SSPNAME set there had NO effect and the
+    # runs silently used NCMIPFIXYR=-1 (transient). Forcing is configured by
+    # configs/components/oifs/oifs48.cmip.yaml via oifs.mip + oifs.scenario.
     resolution: "TCO95"
     levels: "L91"
     prepifs_expid: ab45
@@ -49,11 +54,6 @@ oifs:
     # immaterial for driving the offline LPJG re-spin.
     add_namelist_changes:
         fort.4:
-            NAMECECMIP6:
-                LCMIP6: True
-                CMIP6DATADIR: '/work/ab0246/a270092/input/oifs-48r1/cmip6-data/'
-                NCMIPFIXYR: 1850
-                SSPNAME: 'historical'
             NAMECETUNING:
                 TMPRALBSEAD: 0.075
 

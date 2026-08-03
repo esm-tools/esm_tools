@@ -26,43 +26,47 @@ general:
    use_venv: false
    homedir: !ENV ${HOME}
    setup_name: icon-fesom
-   compute_time: "00:10:00"
-   account: bb0519
+   compute_time: "01:40:00"
+   account: bm1514
    # --- PLEASE READ CAREFULLY ------------------------------#
    # if the restart date does not match ini_parent_date you have to modify the ICON restart
    # as follows prior to starting the simulation
    # "ncatted -a tc_startdate,global,o,c,'1850-01-01T00:00:00Z' multifile_restart_atmo.mfr/attributes.nc" 
    # multifile_restart_atmo.mfr is a link to 
    # ${icon.parent_restart_dir}/${parent_expid}_restart_atm_${start_rsttime}.mfr 
+   # created by a pre_run_command (see general section)
    # --------------------------------------------------------#
    # daily restart
-   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   final_date: "1850-01-03T00:00:00"         # Final date of the experiment
-   nday: 1
+   #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   #final_date: "1850-01-03T00:00:00"         # Final date of the experiment
+   #nday: 1
    # monthly restart
    #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
    #final_date: "1850-04-01T00:00:00"         # Final date of the experiment
    #nmonth: 1
    # yearly restart
-   #initial_date: "1850-01-01T00:00:00"       # Initial exp. date
-   #final_date: "1852-01-01T00:00:00"         # Final date of the experiment
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "2025-01-01T00:00:00"         # Final date of the experiment
    # set length and unit, both are used to set ICON and FESOM time intervals correctly
-   #nmonth: 12
+   nmonth: 12
    
    lresume: True 
-   #ini_parent_exp_id: "IF-SW003"
-   #ini_parent_date: "18510101"
+   ini_parent_exp_id: "IF-SW003"
+   ini_parent_date: "19500101"
+   ini_parent_dir: "${computer.pool_directories.focipool}/ICON-FESOM/ICON_FESOM_RESTART/${ini_parent_exp_id}"
    #ini_parent_dir: "/work/bm1514/b350071/esm-experiments/${ini_parent_exp_id}/restart"
-   ini_parent_exp_id: "exp011"
-   ini_parent_date: "20700101"
-   ini_parent_dir: "/work/bb0519/foci_input2/ICON-FESOM/ICON_FESOM_RESTART/${ini_parent_exp_id}"
+   #ini_parent_exp_id: "exp011"
+   #ini_parent_date: "20700101"
+   #ini_parent_dir: "/work/bb0519/foci_input2/ICON-FESOM/ICON_FESOM_RESTART/${ini_parent_exp_id}"
    
-   base_dir: ${homedir}/esm/esm-experiments/ 
+   base_dir: ${homedir}/esm/bm1514-experiments/ 
    model_dir: ${homedir}/esm/models/icon-fesom-${general.version}
-   version: "v1.0"
+   version: "v2.0"
 
-yac:
+yac: 
    lresume: ${general.lresume}
+   input_sources:
+       coupling_yaml: ${computer.pool_directories.focipool}/ICON-FESOM/YAC/coupling_antarctic_smoother.yaml
 
 icon:
    lresume: ${general.lresume}
@@ -89,40 +93,35 @@ icon:
        - "ln -sf ${icon.parent_restart_dir}/${parent_expid}_restart_atm_${start_rsttime}.mfr multifile_restart_atmo.mfr"
          # overcome limitation of f90nml who cannot handle the duplicate namelists output_nml in NAMELIST_atm correctly
        - sed -i s/\'icon_/\'${general.expid}_/ NAMELIST_*
-   choose_general.version:
-      v1.0: # sveta's version, 
-         version: "2025.04-public-sl"
-      v2.0:
-         version: "2025.10-public"
-
+   version: "2025.10-public"
    resolution: "R02B05"
    grid_id: "0030"
-   nproc: 256
+   #nproc: 256
    #omp_num_threads: 8
-   #nproc: 2560
+   nproc: 2560
    #nproc: 1488
    #nproc: 2560
    omp_num_threads: 1
    
    dtime: 450 # 900 is the current default in icon.yaml
    # daily restart and output interval
-   checkpoint_interval: P01D
-   restart_interval: P01D
-   output_interval: P01D
+   #checkpoint_interval: P01D
+   #restart_interval: P01D
+   #output_interval: P01D
    # monthly restart and output interval
    #checkpoint_interval: P01M
    #restart_interval: P01M
    #output_interval: P01M
    # yearly restart and monthly output interval
-   #checkpoint_interval: P01Y
-   #restart_interval: P01Y
-   #output_interval: P01M
+   checkpoint_interval: P01Y
+   restart_interval: P01Y
+   output_interval: P01M
 
    # awi is the tuning from AWI (Svetlana Loza) based on slo1826 ICON-XPP experiment
    # https://gitlab.dkrz.de/icon/icon-nwp/-/wikis/ICON-Seamless/CMIP7-Experiments#tuning-experiments-with-icon-xpp-release-configuration-of-112024
    # geomar is Sebastian's tuning based on kcmPi019 (latest DWD as of 03/2026) ICON-XPP run
    # https://gitlab.dkrz.de/icon/icon-nwp/-/wikis/ICON-Seamless/CMIP7-Experiments#branch-iconbackports-release-202510-2
-   namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/${icon.resolution}/awi/"
+   namelist_dir: "${general.esm_namelist_dir}/icon/${icon.version}/${icon.resolution}/geomar/"
    # example, change a namelist parameter
    # be aware of typos, use the exact name as in the namelist 
    # otherwise a new namelist parameter will be created which will 
@@ -157,17 +156,28 @@ fesom:
    #mesh_dir: /work/ab0246/a270092/input/fesom2/core2/ # trailing slash is important
    #mesh_dir: /home/b/b350071/svetas_experiment/exp011/fesom/FESOM2_one_year_input/mesh/core2/ 
    mesh_dir: /work/bb0519/foci_input2/ICON-FESOM/FESOM2/MESHES_FESOM2.1/core2/ 
+      #choose_general.version:
+      #v1.0: # sveta's version, 
+      #   version: "2.6.2-yac-sl"
+      #v2.0:
+   namelist_changes:
+      namelist.ice:
+         ice_therm:
+            h0: 1.0
+
    version: "2.6.2-yac"
    resolution: "CORE2"
-   time_step: 1800
-   nproc: 72 # use for daily restarts 
-   #nproc: 512  # use for monthly or yearly restarts with CORE2
+   time_step: 900 
+   nproc: 864  # use for monthly or yearly restarts with CORE2
+      #time_step: 1800
+      #nproc: 512  # use for monthly or yearly restarts with CORE2
+   #nproc: 72 # use for daily restarts 
    #nproc: 4096
    #nproc: 1280
    #nproc: 1920
-   #restart_unit: "y" # yearly restarts
+   restart_unit: "y" # yearly restarts
    #restart_unit: "m" # monthly restarts 
-   restart_unit: "d" # daily restarts
+   #restart_unit: "d" # daily restarts
    restart_rate: "1"
    
    #add_input_files:

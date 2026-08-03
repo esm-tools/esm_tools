@@ -175,7 +175,7 @@ icon:
             # output_filename: ${expid}
             output_start: ${start_date}
             output_end: ${next_date}
-            output_interval: ${output_interval}
+            # output_interval: ${output_interval}
             file_interval: ${file_interval}
             # TODO: operation = 'mean' not working at least not with
             # my set of output variables

@@ -38,6 +38,28 @@ next_year=$(date -d "$next_date" +%Y)
 initial_year=$(date -d "$initial_date" +%Y)
 final_year=$(date -d "$final_date" +%Y)
 
+# dirty hack to not always plot the last year on longer runs but rather
+# the last 5, 10 or 20 years
+# set averaging interval depending on run length
+diff=$((next_year - initial_year))
+# to reduce the number of plots, don't run pyicon every
+# year for run longer than 5 years
+skip='no'
+if (( diff > 40 )); then
+    start_year=$((next_year - 20))
+    [[ $((diff % 10)) > 0 ]] && skip="yes"
+elif (( diff > 15 )); then
+    start_year=$((next_year - 10))
+    [[ $((diff % 5)) > 0 ]] && skip="yes"
+elif (( diff > 5 )); then
+    start_year=$((next_year - 5))
+    [[ $((diff % 3)) > 0 ]] && skip="yes"
+fi
+if [[ "$skip" == "yes" ]] ; then
+    echo "Skip tripyview for year $next_year (skip $skip)"
+    exit 0
+fi
+
 output_file="${expid}_tripyrun_${start_year}.yaml"
 target_dir="${base_dir}/${expid}/config/fesom"
 
@@ -56,7 +78,7 @@ export target_dir
 echo "$(date):: Configuration Values:"
 echo "$(date):: ---------------------"
 echo "$(date):: outdata_path=$outdata_path"
-echo "$(date):: start_date=$start_date"
+echo "$(date):: start_year=$start_year"
 echo "$(date):: next_date=$next_date"
 echo "$(date):: initial_date=$initial_date"
 echo "$(date):: final_date=$final_date"
@@ -103,12 +125,11 @@ function activate_or_install_tripyview_environment() {
     else
         echo "$(date):: esm-tools_auto_tripyview env DOES NOT exist. Installing..."
         source "$(conda info --base)/etc/profile.d/conda.sh"
-        conda create -y --name esm-tools_auto_tripyview python=3.9
+        conda create -y --name esm-tools_auto_tripyview python=3.12 'setuptools<81' libstdcxx-ng
         activate_env
         mkdir -p "${base_dir}/${expid}/src"
         cd "${base_dir}/${expid}/src" || exit 1
-        git clone https://github.com/fesom/tripyview
-        conda install -c conda-forge libstdcxx-ng
+        git clone -b workbench https://github.com/fesom/tripyview
         cd tripyview
         pip install -e .
     fi

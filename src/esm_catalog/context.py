@@ -61,6 +61,8 @@ class CollectionContext:
     description: str | None = None
     data_license: str | None = None
     experiment_path: Path | None = None
+    # [TODO] PG: population seam — a future scan layer fills this per experiment.
+    #            Until then it stays empty and the namelist extension no-ops.
     namelists_by_component: dict = field(default_factory=dict)
     paleo_config: dict | None = None
     contacts: list[Contact] = field(default_factory=list)

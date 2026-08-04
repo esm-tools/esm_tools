@@ -17,9 +17,6 @@ general:
     # Enable the PISM<->FESOM dynamic-mesh coupling (wiring lives behind this flag
     # in configs/setups/awiesm3/awiesm3.yaml).
     interactive_mesh: true
-    # PISM's own basal melt and discharge reach FESOM through the runoff
-    # mapper, and the mapper stops passing the atmosphere's Antarctic calving.
-    ism_freshwater_return: true
     nday: 0
     nmonth: 0
     nyear: 1

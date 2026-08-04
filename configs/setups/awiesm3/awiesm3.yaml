@@ -974,11 +974,6 @@ rnfmap:
                         IgnoreCalvingBasins: 66
                     NAMRNFMAPARRAYS:
                         PrefixListISM: "${ismm.ice_prefix}"
-            add_coupling_fields:
-                R_Bmelt_${ismm.ice_prefix}:
-                    grid: rnfa
-                R_Discharge_${ismm.ice_prefix}:
-                    grid: rnfa
 
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -1042,14 +1037,6 @@ ismm:
         "${ice_prefix}_Evaporation", "${ice_prefix}_Runoff", "${ice_prefix}_Soil4T",
         "${ice_prefix}_SST"]
     ism_send_fields: ["${ice_prefix}_plit"]
-
-    # bmelt and discharge go to the runoff mapper, not to OIFS. Names again from
-    # the ism-mapper itself.
-    choose_general.ism_freshwater_return:
-        true:
-            add_ism_send_fields:
-                - "${ice_prefix}_bmelt"
-                - "${ice_prefix}_discharge"
 
     coupling_fields:
         "[[ism_recv_fields-->FIELD]]":
@@ -1228,23 +1215,6 @@ oasis3mct:
                     - 'PLIT_${ismm.ice_prefix} <--gauswgt_i-- ${ismm.ice_prefix}_plit'
             add_process_ordering:
                 - ismm
-
-    # The ice sheet's own freshwater to the ocean, replacing the snow-cap
-    # calving the runoff mapper stops passing for basin 66. Basal melt joins
-    # runoff and discharge joins calving inside the mapper, so both leave
-    # through the R_*_oce link that already exists.
-    choose_general.ism_freshwater_return:
-        true:
-            add_coupling_directions:
-                '${ismm.ice_grid}->rnfa':
-                    lag: ${i2a_lag}
-                    seq: ${i2a_seq}
-                    coupling_time_step: ${ism_atmo_coupling_time_step}
-                    lag_overwrite: true
-            add_coupling_target_fields:
-                rstism.nc:
-                    - 'R_Bmelt_${ismm.ice_prefix}:R_Discharge_${ismm.ice_prefix}
-                      <--gauswgt_i-- ${ismm.ice_prefix}_bmelt:${ismm.ice_prefix}_discharge'
 
 
     coupling_methods:

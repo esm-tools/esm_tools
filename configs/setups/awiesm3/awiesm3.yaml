@@ -337,12 +337,16 @@ oifs:
     # Precip/Runoff are already declared for the ocean path and are reused.
     choose_general.smb_coupled:
         true:
+            # Land fields go on atmr (R096), the land-masked atmosphere grid.
+            # atma masks land out, so over Antarctica 95% of source cells south
+            # of 75S are excluded and the remap draws from the Southern Ocean.
+            # Only SST belongs on the ocean-masked grid.
             add_coupling_fields:
                 A_Evap_ISM:
-                    grid: atma
-                A_SST_ISM:
-                    grid: atma
+                    grid: atmr
                 A_Soil4T_ISM:
+                    grid: atmr
+                A_SST_ISM:
                     grid: atma
                 PLIT_${ismm.ice_prefix}:
                     grid: atma
@@ -1171,11 +1175,12 @@ oasis3mct:
                     lag_overwrite: true
             add_coupling_target_fields:
                 rstism.nc:
-                    - '${ismm.ice_prefix}_Precip_liquid:${ismm.ice_prefix}_Precip_solid
-                      <--gauswgt_avg-- A_Precip_liquid:A_Precip_solid'
-                    - '${ismm.ice_prefix}_Evaporation:${ismm.ice_prefix}_Soil4T:${ismm.ice_prefix}_SST
-                      <--gauswgt_avg-- A_Evap_ISM:A_Soil4T_ISM:A_SST_ISM'
-                    - '${ismm.ice_prefix}_Runoff <--gauswgt_avg-- A_Runoff'
+                    # A_Precip_* are shared with the ocean coupling, which needs
+                    # them on atma. @atmr sends the same fields on the
+                    # land-masked grid for this link only.
+                    - '${ismm.ice_prefix}_Precip_liquid:${ismm.ice_prefix}_Precip_solid:${ismm.ice_prefix}_Evaporation:${ismm.ice_prefix}_Soil4T:${ismm.ice_prefix}_Runoff
+                      <--gauswgt_avg-- A_Precip_liquid@atmr:A_Precip_solid@atmr:A_Evap_ISM:A_Soil4T_ISM:A_Runoff'
+                    - '${ismm.ice_prefix}_SST <--gauswgt_avg-- A_SST_ISM'
                     - 'PLIT_${ismm.ice_prefix} <--gauswgt_i-- ${ismm.ice_prefix}_plit'
             add_process_ordering:
                 - ismm

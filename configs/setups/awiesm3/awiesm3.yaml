@@ -1256,6 +1256,9 @@ oasis3mct:
                     nb_of_search_bins: 1
                     nb_of_neighbours: 25
                     weight: "0.1"
+        # No CONSERV postprocessing: GLBPOS rescales the target to the source's
+        # global integral, which inflates a target that covers only part of the
+        # globe, and is meaningless for a temperature.
         gauswgt_avg:
             time_transformation: average
             remapping:
@@ -1264,10 +1267,6 @@ oasis3mct:
                     nb_of_search_bins: 1
                     nb_of_neighbours: 25
                     weight: "0.1"
-            postprocessing:
-                conserv:
-                    method: glbpos
-                    algorithm: opt
         gauswgt_glo:
             time_transformation: conserv
             remapping:

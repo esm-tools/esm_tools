@@ -80,10 +80,28 @@ def add_namelist_item_extension(
 def _searchable(
     namelists: NamelistData,
 ) -> Iterator[tuple[NamelistFileName, GroupName, ParameterName, NamelistValue]]:
-    """Yield (file, group, key, value) for every searchable parameter."""
+    """Yield (file, group, key, value) for every searchable parameter.
+
+    A group repeated within a file (an f90nml Cogroup) is disambiguated with a
+    ``[(index)]`` suffix on the group name — matching the convention
+    esm_environment uses for repeated keys (e.g. ``PATH[(0)]``) — so the two
+    occurrences do not collapse onto the same flattened key.
+    """
     for file, groups in namelists.items():
-        for group, values in groups.items():
-            for key, value in values.items():
+        # .items() flattens a repeated group (Cogroup) into one entry per
+        # occurrence; count them first so only genuine repeats get an index.
+        items = list(groups.items())
+        counts: dict[GroupName, int] = {}
+        for name, _params in items:
+            counts[name] = counts.get(name, 0) + 1
+        seen: dict[GroupName, int] = {}
+        for name, params in items:
+            if counts[name] > 1:
+                group = f"{name}[({seen.get(name, 0)})]"
+                seen[name] = seen.get(name, 0) + 1
+            else:
+                group = name
+            for key, value in params.items():
                 if _is_searchable(value):
                     yield file, group, key, value
 

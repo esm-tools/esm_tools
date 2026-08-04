@@ -141,6 +141,20 @@ def test_collection_extension_with_shipped_namelist():
     assert NAMELIST_URL in col.stac_extensions
 
 
+def test_collection_repeated_group_is_indexed():
+    # A group repeated in a file (an f90nml Cogroup) must not collapse onto one
+    # key; each occurrence gets a [(index)] suffix (like esm_environment's
+    # PATH[(0)]), so both values survive.
+    f90nml = pytest.importorskip("f90nml")
+    nml = f90nml.reads("&rep\n x=1\n/\n&rep\n x=2\n/\n&solo\n y=9\n/")
+    col = make_collection(_ctx())
+    add_namelist_extension(col, {"namelist.bgc": nml})
+    params = col.extra_fields["nml:parameters"]
+    assert params["namelist.bgc:rep[(0)]:x"] == 1
+    assert params["namelist.bgc:rep[(1)]:x"] == 2
+    assert params["namelist.bgc:solo:y"] == 9
+
+
 # --- add_namelist_item_extension (item-level, all components) ---
 
 

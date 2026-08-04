@@ -298,8 +298,10 @@ oifs:
                         nproc: 1
                         run_after: tidy
                         script_dir: ${general.esm_couplings_dir}/oifs
-                        script: just_copy_stuff.functions
-                        call_function: just_copy
+                        # Hands the ISM-mapper SMB over when smb_coupled is on,
+                        # and falls back to the fixed paleo file when it is not.
+                        script: smb2ice.functions
+                        call_function: smb2ice
                         env_preparation: env_oifs2ice.py
 
     res_level: ${resolution}${levels}

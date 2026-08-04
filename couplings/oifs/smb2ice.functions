@@ -1,0 +1,92 @@
+#!/bin/ksh
+## @file
+## @brief Hand the ISM-mapper surface mass balance output to the ice sheet.
+##
+## The ISM-mapper writes {prefix}_smb_{year}.nc on the ice sheet's own grid,
+## twelve monthly means per year. This puts the chunk's years into COUPLE_DIR
+## as atmosphere_file_for_ice.nc, which is what the PISM side reads.
+##
+## With SMB_COUPLED unset this falls back to just_copy, the fixed paleo file.
+
+function smb2ice()
+{
+    if [ "${SMB_COUPLED:-0}" != "1" ]; then
+        . ${FUNCTION_PATH}/just_copy_stuff.functions
+        just_copy
+        return $?
+    fi
+
+    echo "        =================================================================="
+    echo "        *** S T A R T I N G    smb2ice ***"
+
+    _src_dir=${ISM_OUTDATA_DIR:-${COUPLE_DIR}/../outdata/ismm}
+    _prefix=${ISM_PREFIX:-antar}
+    _out=${COUPLE_DIR}/atmosphere_file_for_ice.nc
+
+    _files=$(ls -1 ${_src_dir}/${_prefix}_smb_*.nc 2>/dev/null)
+    _nfiles=$(echo "${_files}" | grep -c . )
+    if [ "${_nfiles}" -eq 0 ]; then
+        echo " *** no ${_prefix}_smb_*.nc in ${_src_dir} ***"
+        echo "no ISM-mapper output for chunk ${CHUNK_NUMBER}" \
+            > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        exit 1
+    fi
+    echo "         * ${_nfiles} year(s) from ${_src_dir}"
+
+    # The ice sheet is forced with a repeating annual cycle, so a multi-year
+    # chunk collapses to the chunk mean seasonal cycle.
+    rm -f ${_out}
+    if [ "${_nfiles}" -eq 1 ]; then
+        cp ${_files} ${_out}
+    else
+        cdo -s -O ymonmean -mergetime ${_files} ${_out}
+    fi
+
+    cat > ${COUPLE_DIR}/atmosphere_names_for_ice.dat <<EOF
+atmosphere_name_precipitation_liquid=${_prefix}_Precip_liquid
+atmosphere_units_precipitation_liquid=m/s
+atmosphere_name_precipitation_solid=${_prefix}_Precip_solid
+atmosphere_units_precipitation_solid=m/s
+atmosphere_name_evaporation=${_prefix}_Evaporation
+atmosphere_units_evaporation=kg/m2/s
+atmosphere_name_runoff=${_prefix}_Runoff
+atmosphere_units_runoff=m/s
+atmosphere_name_temperature_below_firn=${_prefix}_Soil4T
+atmosphere_units_temperature_below_firn=K
+atmosphere_name_sst=${_prefix}_SST
+atmosphere_units_sst=K
+EOF
+
+    cdo -s infon ${_out} 2>/dev/null | head -20
+
+    # concurrent coupling: publish the tagged files and the cycle marker
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        . ${FUNCTION_PATH}/../general/coupling_general.functions
+        for _f in atmosphere_file_for_ice.nc atmosphere_names_for_ice.dat ; do
+            cp "${COUPLE_DIR}/${_f}" "${COUPLE_DIR}/${_f}.chunk_${CHUNK_NUMBER}"
+        done
+        _ok=1
+        for _f in ocean_file_for_ice.nc ocean.griddes ocean_names_for_ice.dat \
+                  atmosphere_file_for_ice.nc atmosphere_names_for_ice.dat ; do
+            [ -e "${COUPLE_DIR}/${_f}.chunk_${CHUNK_NUMBER}" ] || \
+                { echo " *** missing ${_f}.chunk_${CHUNK_NUMBER} ***"; _ok=0; }
+        done
+        if [ ${_ok} -eq 1 ]; then
+            touch_coupling_marker "${COUPLE_DIR}/awiesm3_chunk_${CHUNK_NUMBER}.done"
+        else
+            echo "incomplete AWI->PISM handoff set for chunk ${CHUNK_NUMBER}" \
+                > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+            exit 1
+        fi
+        unset _f _ok
+    fi
+
+    if [ "${HARVEST_PARALLEL_INI:-0}" = "1" ]; then
+        . ${FUNCTION_PATH}/../general/harvest.functions
+        harvest_pism_bootstrap
+    fi
+
+    unset _src_dir _prefix _out _files _nfiles
+    echo "        *** F I N I S H E D    smb2ice ***"
+    echo "        =================================================================="
+}

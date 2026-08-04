@@ -9,7 +9,7 @@ general:
     # backfilled badly.
     compute_time: "00:45:00"
     initial_date: "1900-01-01"
-    final_date: "1901-01-01"   # single cycle: OASIS enddef + one leg
+    final_date: "1902-01-01"   # 2 cycles: exercises couple_in on chunk 2
     # Shared with pism for iterative coupling -- LITERAL awiesm3-develop-is (both
     # models must resolve to the SAME experiment_dir; ${setup_name}-${version}
     # would diverge since pism is a different setup). -> runtime/awiesm3-develop-is/<expid>

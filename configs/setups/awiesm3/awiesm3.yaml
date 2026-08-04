@@ -961,19 +961,16 @@ rnfmap:
 
     # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
     # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean
-    # and leaves the rest of the world alone. Only once the ice sheet is sending
-    # its own melt and discharge: the receive buffers are allocated and never
-    # initialised, so declaring a region nothing sends would sum uninitialised
-    # memory into the ocean's runoff.
+    # and leaves the rest of the world alone. What replaces it is PISM's own
+    # discharge, arriving as icebergs. NumCoupledRegions stays 0: the mapper can
+    # take the ice sheet's water directly, but that is the other way of doing
+    # this and it is not the one we use.
     choose_general.ism_freshwater_return:
         true:
             add_namelist_changes:
                 namelist.runoffmapper:
                     NAMRNFMAP:
-                        NumCoupledRegions: 1
                         IgnoreCalvingBasins: 66
-                    NAMRNFMAPARRAYS:
-                        PrefixListISM: "${ismm.ice_prefix}"
 
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}

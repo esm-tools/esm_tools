@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from typing import Iterator, Union
 
+import f90nml
 import pystac
 
 from esm_catalog.registry import EXTENSION_URLS
@@ -34,20 +35,14 @@ ParameterName = str
 FlatKey = str
 """A flattened 'file:group:key' identifier, e.g. 'namelist.echam:runctl:delta_time'."""
 
-NamelistScalar = Union[str, int, float, bool, None]
-"""A single namelist value: string, int, float, boolean, or None."""
+Namelist = f90nml.Namelist
+"""A parsed Fortran namelist (group -> parameters; nested groups are Namelists)."""
 
-NamelistValue = Union[NamelistScalar, list, dict]
-"""An f90nml value: a scalar, a list, or a nested group (dict)."""
-
-NamelistGroup = dict[ParameterName, NamelistValue]
-"""A namelist group's parameters: key -> value."""
-
-Namelist = dict[GroupName, NamelistGroup]
-"""One namelist file's contents: group -> parameters."""
+NamelistValue = Union[str, int, float, bool, None, list, Namelist]
+"""An f90nml value: a scalar, a list, or a nested group (Namelist)."""
 
 NamelistData = dict[NamelistFileName, Namelist]
-"""One component's namelists: file -> namelist."""
+"""One component's namelists: filename -> parsed namelist."""
 
 NamelistsByComponent = dict[ComponentName, NamelistData]
 """All components' namelists: component -> that component's namelists."""

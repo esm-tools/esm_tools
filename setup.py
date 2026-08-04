@@ -93,6 +93,7 @@ setup(
             "pystac>=1.8",
             "shapely>=2.0",
             "universal-pathlib>=0.2",
+            "f90nml>=1.4",
         ],
     },
     install_requires=requirements,

@@ -21,7 +21,7 @@ import pytest
 import esm_tools
 from esm_catalog.collection import make_collection
 from esm_catalog.item import make_item
-from esm_catalog.namelist import (Namelist, NamelistFileName, _is_queryable,
+from esm_catalog.namelist import (Namelist, NamelistFilename, _is_queryable,
                                   add_namelist_collection_extension,
                                   add_namelist_item_extension)
 from esm_catalog.registry import EXTENSION_URLS
@@ -202,7 +202,7 @@ def test_item_rejects_malformed_nml_key_but_keeps_foreign_props(bare_item, nml_s
 class ShippedNamelist(NamedTuple):
     """A Fortran namelist shipped in esm_tools, parsed for the extension tests."""
 
-    filename: NamelistFileName
+    filename: NamelistFilename
     """The namelist's filename, e.g. 'namelist.echam'."""
 
     namelist: Namelist

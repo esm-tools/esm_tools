@@ -13,7 +13,7 @@ from functools import lru_cache
 from typing import TYPE_CHECKING
 
 import esm_tools
-import jsonschema
+from jsonschema.validators import validator_for
 
 from esm_catalog.registry import EXTENSION_URLS
 
@@ -46,14 +46,18 @@ def load_schema(name: str) -> dict:
 
 
 def validate(instance: dict, name: str) -> None:
-    """Validate *instance* against extension *name*'s schema (memoized by content).
+    """Validate a STAC object's ``.to_dict()`` against extension *name*'s schema.
 
-    A scan applies the same config shape to every item/collection, so memoizing
-    on the instance's JSON collapses validation to once per distinct shape.
+    The compiled validator is cached per extension, so schema compilation
+    happens once — the per-object validation itself always runs.
     """
-    _validate_cached(name, json.dumps(instance, sort_keys=True))
+    _validator(name).validate(instance)
 
 
 @lru_cache(maxsize=None)
-def _validate_cached(name: str, instance_json: str) -> None:
-    jsonschema.validate(instance=json.loads(instance_json), schema=load_schema(name))
+def _validator(name: str):
+    """A jsonschema validator compiled once for extension *name*'s schema."""
+    schema = load_schema(name)
+    cls = validator_for(schema)
+    cls.check_schema(schema)
+    return cls(schema)

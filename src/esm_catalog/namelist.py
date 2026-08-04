@@ -24,7 +24,7 @@ _URL = EXTENSION_URLS["namelist"]
 ComponentName = str
 """A model component, e.g. 'echam', 'fesom'."""
 
-NamelistFileName = str
+NamelistFilename = str
 """A namelist filename, e.g. 'namelist.echam'."""
 
 GroupName = str
@@ -42,7 +42,7 @@ Namelist = f90nml.Namelist
 NamelistValue = Union[str, int, float, bool, None, list, Namelist]
 """An f90nml value: a scalar, a list, or a nested group (Namelist)."""
 
-ComponentNamelists = dict[NamelistFileName, Namelist]
+ComponentNamelists = dict[NamelistFilename, Namelist]
 """One component's namelists: filename -> parsed namelist."""
 
 NamelistsByComponent = dict[ComponentName, ComponentNamelists]
@@ -61,14 +61,11 @@ def add_namelist_collection_extension(
     parameters: dict[FlatKey, NamelistValue] = {}
     for filename, group, key, value in _iter_queryable_params(namelists):
         parameters[f"{filename}:{group}:{key}"] = value
-    fields = {
-        "nml:files": sorted(namelists),
-        "nml:groups": sorted(groups),
-        "nml:parameters": parameters,
-    }
-    validate({"type": "Collection", "stac_extensions": [_URL], **fields}, "namelist")
-    collection.extra_fields.update(fields)
+    collection.extra_fields["nml:files"] = sorted(namelists)
+    collection.extra_fields["nml:groups"] = sorted(groups)
+    collection.extra_fields["nml:parameters"] = parameters
     register_extension(collection, _URL)
+    validate(collection.to_dict(), "namelist")
 
 
 def add_namelist_item_extension(
@@ -81,14 +78,14 @@ def add_namelist_item_extension(
             props[f"nml:{component}:{filename}:{group}:{key}"] = value
     if not props:
         return
-    validate({"type": "Feature", "stac_extensions": [_URL], "properties": props}, "namelist")
     item.properties.update(props)
     register_extension(item, _URL)
+    validate(item.to_dict(), "namelist")
 
 
 def _iter_queryable_params(
     namelists: ComponentNamelists,
-) -> Iterator[tuple[NamelistFileName, GroupName, ParameterName, NamelistValue]]:
+) -> Iterator[tuple[NamelistFilename, GroupName, ParameterName, NamelistValue]]:
     """Yield (file, group, key, value) for every queryable parameter.
 
     A group repeated within a file (an f90nml Cogroup) is disambiguated with an

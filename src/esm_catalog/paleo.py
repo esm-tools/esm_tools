@@ -53,10 +53,9 @@ def add_paleo_data(item: pystac.Item, paleo_config: dict | None = None) -> None:
     props = _paleo_props(paleo_config)
     if not props:
         return
-    probe = {"type": "Feature", "stac_extensions": [_PALEO_URL], "properties": props}
-    validate(probe, "paleo")
     item.properties.update(props)
     register_extension(item, _PALEO_URL)
+    validate(item.to_dict(), "paleo")
 
 
 def add_paleo_summary(
@@ -70,12 +69,7 @@ def add_paleo_summary(
     summaries = {k: [v] for k, v in _paleo_props(paleo_config).items()}
     if not summaries:
         return
-    probe = {
-        "type": "Collection",
-        "stac_extensions": [_PALEO_URL],
-        "summaries": summaries,
-    }
-    validate(probe, "paleo")
     for key, values in summaries.items():
         collection.summaries.add(key, values)
     register_extension(collection, _PALEO_URL)
+    validate(collection.to_dict(), "paleo")

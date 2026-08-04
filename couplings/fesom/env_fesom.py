@@ -257,6 +257,11 @@ def prepare_environment(config):
                 or f"{ocp_tool_dir}/configs/{resolution}.yaml"),
             # Output tag for the regenerated grid (output subdir + ICMGG suffix).
             "OCP_REGEN_GRID_TAG": config["fesom"].get("ocp_regen_grid_tag", "feomdyn"),
+            # Write the ocean grid into the regenerated OASIS files. The weights
+            # for the new mesh are built against it, so leaving it out gives a
+            # leg that starts on the previous mesh's weights and dies in MCT.
+            "OCP_WRITE_OASIS_GRID": (
+                "True" if fesom.get("ocp_write_oasis_grid", True) else "False"),
 
             #"FESOM_GRID_input": config["fesom"]["grid_input"],
             #"solidearth_ice_thickness_file":(

@@ -58,6 +58,8 @@ fi
 function ice2fesom {
     echo " *** S T A R T I N G    ice2fesom ***"
 
+    rm -f "${COUPLE_DIR}/.oasis_weights_stale"
+
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
     . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
@@ -120,9 +122,33 @@ function ice2fesom {
             cat "${_rgw_log}" 2>/dev/null
             echo "----- end regenerate_oasis_weights output (rc=${_rgw_rc}) -----"
             if [ ${_rgw_rc} -ne 0 ] ; then
-                echo " *** ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc}) ***"; exit 1
+                echo " *** ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc}) ***"
+                touch "${COUPLE_DIR}/.oasis_weights_stale"
+                exit 1
             fi
-            unset _rgw_log _rgw_pid _rgw_rc
+
+            # The weights must match the mesh we just built them for. A silent
+            # mismatch is expensive: the leg starts, runs to the first exchange
+            # and dies in MCT with a column-count error on all ranks.
+            _rgw_nod=$(head -1 "${COUPLE_DIR}/latest_submesh/nod2d.out" 2>/dev/null | tr -d ' ')
+            if [ -n "${_rgw_nod}" ] ; then
+                for _rgw_f in "${COUPLE_DIR}/oasis_regen"/rmp_*feom*.nc ; do
+                    [ -e "${_rgw_f}" ] || continue
+                    case "$(basename ${_rgw_f})" in
+                        rmp_feom_to_*) _rgw_dim=src_grid_size ;;
+                        *)             _rgw_dim=dst_grid_size ;;
+                    esac
+                    _rgw_have=$(ncdump -h "${_rgw_f}" | awk -v d="${_rgw_dim}" '$1==d{print $3; exit}')
+                    if [ "${_rgw_have}" != "${_rgw_nod}" ] ; then
+                        echo " *** ice2fesom FAILED: $(basename ${_rgw_f}) has ${_rgw_dim}=${_rgw_have}," \
+                             "the new mesh has ${_rgw_nod} nodes ***"
+                        touch "${COUPLE_DIR}/.oasis_weights_stale"
+                        exit 1
+                    fi
+                done
+                echo " *   weights match the new mesh (${_rgw_nod} nodes)"
+            fi
+            unset _rgw_log _rgw_pid _rgw_rc _rgw_nod _rgw_f _rgw_dim _rgw_have
 
             # Carry the OASIS coupling state across the mesh change: remap the feom
             # fields in the coupling restarts (rstos/rstas) onto the new node set,
@@ -739,10 +765,14 @@ use_corners = (method == 'conserv')
 
 # 1. Consistent grids/masks/areas (updated A096 + feom) + modified ICMGG + runoff
 #    LSM + LPJ-GUESS slt for the new submesh. No weights yet (generate_rmp=False).
+#    write_oasis_grid is on because the weights below are built against the
+#    ocean grid in these files. The pool build leaves it off, since FESOM writes
+#    its own feom at runtime, but here there is nothing to build weights from.
 regenerate_for_submesh(
     mesh_dir='${submesh}', grid_name='${grid_tag}', out_dir='${out_dir}',
     template='${OCP_TEMPLATE_CONFIG}', ocp_tool_dir='${OCP_TOOL_DIR}',
-    python_exe='${OCP_WEIGHTGEN_DRIVER_PY}', generate_rmp=False)
+    python_exe='${OCP_WEIGHTGEN_DRIVER_PY}', generate_rmp=False,
+    write_oasis_grid=${OCP_WRITE_OASIS_GRID:-True})
 
 # 2a. Permute feom.* to FESOM's RUNTIME exchange ordering (my_list / Apple
 #     partition) BEFORE the weights are generated. Without this the weights are

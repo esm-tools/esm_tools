@@ -159,3 +159,4 @@ calnoro
 
 # Local test-data artifacts (large binary DBs, never committed)
 tests/data/
+.claude/

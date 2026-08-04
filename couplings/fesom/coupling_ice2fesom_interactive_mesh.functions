@@ -797,7 +797,8 @@ if not use_corners:
 links = awiesm3_feom_links(atm_grid='A096', method=method)
 if ${SMB_COUPLED:-0}:
     links += awiesm3_ismp_links(atm_grid='A096', ice_grid='${ISM_GRID:-ismp}',
-                                method='${ISM_REMAP_METHOD:-gauswgt}')
+                                method='${ISM_REMAP_METHOD:-gauswgt}',
+                                freshwater=bool(${ISM_FRESHWATER_RETURN:-0}))
 print('weight links:', [(l.source, l.target, l.map_name) for l in links], flush=True)
 generate_weights('${out_dir}', links=links, atm_grid='A096', method=method,
                  threads=${OCP_WEIGHTGEN_THREADS:-8}, use_corners=use_corners,

@@ -285,6 +285,10 @@ oasis3mct:
                 # runtime node order inherited from sie_feom).
                 rstos.nc: "/work/ab0246/a270092/pism_repro/prep/coupled_slab_rstos/rstos.nc"
                 vegin.nc: vegin.nc
+                # Seeds antar_plit for the first coupling interval. NNOREST
+                # zero-fills a missing restart, which is safe for a flux and not
+                # for a mask: an empty plit strips the glacier tiles.
+                rstism.nc: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/rstism.nc"
         "*":
             input_sources:
                 grids: "${general.experiment_couple_dir}/oasis_regen/grids.nc"
@@ -298,6 +302,7 @@ oasis3mct:
                 rstas.nc: "${general.experiment_couple_dir}/restart_remapped/rstas.nc"
                 rstos.nc: "${general.experiment_couple_dir}/restart_remapped/rstos.nc"
                 vegin.nc: vegin.nc
+                rstism.nc: "${general.experiment_couple_dir}/oasis_regen/rstism.nc"
 
 xios:
     with_model:

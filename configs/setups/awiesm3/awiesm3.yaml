@@ -26,6 +26,12 @@ general:
     # NAMECECFG is add_'d per chunk there and a second add_ here collides.
     smb_coupled: false
 
+    # The ice sheet's own basal melt and discharge reaching the ocean, which
+    # replaces the atmosphere's snow-cap calving over the ice sheet. Both halves
+    # have to move together: switching off the calving alone takes about
+    # 2000 Gt/yr out of the Southern Ocean with nothing put back.
+    ism_freshwater_return: false
+
     include_models:
         - fesom
         - oifs
@@ -946,13 +952,21 @@ rnfmap:
     runoff_maps_name: _${fesom.resolution}
     version: v1.1
 
-    # With an ice sheet model, the runoff mapper is where the two freshwater
-    # returns are reconciled. Basin 66 is everything south of 60S in
-    # runoff_maps.nc, so dropping its calving takes the atmosphere's snow-cap
-    # shedding out of the Southern Ocean and leaves the rest of the world alone.
+    # The runoff mapper is where the two freshwater returns are reconciled, so
+    # the ice-sheet-aware version comes in with smb_coupled. It behaves exactly
+    # as before while NumCoupledRegions is 0.
     choose_general.smb_coupled:
         true:
             version: v1.4-ismm
+
+    # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
+    # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean
+    # and leaves the rest of the world alone. Only once the ice sheet is sending
+    # its own melt and discharge: the receive buffers are allocated and never
+    # initialised, so declaring a region nothing sends would sum uninitialised
+    # memory into the ocean's runoff.
+    choose_general.ism_freshwater_return:
+        true:
             add_namelist_changes:
                 namelist.runoffmapper:
                     NAMRNFMAP:

@@ -94,6 +94,7 @@ setup(
             "shapely>=2.0",
             "universal-pathlib>=0.2",
             "f90nml>=1.4",
+            "jsonschema>=4.0",
         ],
     },
     install_requires=requirements,
@@ -127,6 +128,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.66.3",
+    version="6.66.4",
     zip_safe=False,
 )

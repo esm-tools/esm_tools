@@ -62,6 +62,7 @@ class CollectionContext:
     data_license: str | None = None
     experiment_path: Path | None = None
     namelists_by_component: dict = field(default_factory=dict)
+    paleo_config: dict | None = None
     contacts: list[Contact] = field(default_factory=list)
 
     def __post_init__(self):

@@ -8,6 +8,8 @@ from pystac import (Collection, Extent, Item, Link, SpatialExtent,
 from esm_catalog.context import CollectionContext
 from esm_catalog.namelist import add_namelist_extension
 
+from esm_catalog.paleo import add_paleo_summary
+
 
 def make_collection(ctx: CollectionContext) -> Collection:
     """Construct a pystac Collection for an experiment component.
@@ -31,6 +33,7 @@ def make_collection(ctx: CollectionContext) -> Collection:
     )
     col.add_link(Link("parent", f"#{ctx.experiment_id}", media_type="application/json"))
     add_namelist_extension(col, ctx.namelists_by_component.get(ctx.component, {}))
+    add_paleo_summary(col, ctx.paleo_config)
     return col
 
 

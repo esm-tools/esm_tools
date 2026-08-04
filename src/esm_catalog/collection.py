@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
-from pystac import Collection, Extent, Item, Link, SpatialExtent, TemporalExtent
+from pystac import (Collection, Extent, Item, Link, SpatialExtent,
+                    TemporalExtent)
 
+from esm_catalog.context import CollectionContext
 from esm_catalog.namelist import add_namelist_extension
 
 
-def make_collection(ctx) -> Collection:
+def make_collection(ctx: CollectionContext) -> Collection:
     """Construct a pystac Collection for an experiment component.
 
     Args:

@@ -10,6 +10,7 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.context import CollectionContext
 from esm_catalog.datacube import add_datacube_extension
 from esm_catalog.namelist import add_namelist_item_extension
 from esm_catalog.registry import EXTENSION_URLS
@@ -18,8 +19,8 @@ from esm_catalog.registry import EXTENSION_URLS
 def make_item(
     path: Union[Path, UPath, str],
     metadata: dict,
-    ctx,
-) -> dict:
+    ctx: CollectionContext,
+) -> Item:
     """Construct a STAC Item dict.
 
     Args:
@@ -63,7 +64,7 @@ def make_item(
 
     add_contacts(item, ctx)
     add_datacube_extension(item, metadata)
-    add_namelist_item_extension(item, ctx)
+    add_namelist_item_extension(item, ctx.namelists_by_component)
 
     return item
 

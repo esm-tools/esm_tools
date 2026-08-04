@@ -147,7 +147,7 @@ def test_collection_extension_with_shipped_namelist():
 def test_item_extension_noop_without_namelists():
     ctx = _ctx()
     item = _bare_item()
-    add_namelist_item_extension(item, ctx)
+    add_namelist_item_extension(item, ctx.namelists_by_component)
     assert item.properties == {}
     assert item.stac_extensions == []
 
@@ -159,7 +159,7 @@ def test_item_extension_uses_prescanned_context():
         }
     )
     item = _bare_item()
-    add_namelist_item_extension(item, ctx)
+    add_namelist_item_extension(item, ctx.namelists_by_component)
     assert item.properties["nml:echam:runctl:co2vmr"] == 0.000284
     assert NAMELIST_URL in item.stac_extensions
 
@@ -172,7 +172,7 @@ def test_item_extension_covers_all_components():
         }
     )
     item = _bare_item()
-    add_namelist_item_extension(item, ctx)
+    add_namelist_item_extension(item, ctx.namelists_by_component)
     assert item.properties["nml:echam:runctl:delta_time"] == 450
     assert item.properties["nml:jsbach:jsbach_ctl:use_dynveg"] is True
 

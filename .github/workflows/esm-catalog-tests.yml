@@ -38,7 +38,7 @@ jobs:
           pip install -e . --no-deps
           # setuptools<81 still bundles pkg_resources (removed in 81), which esm_tools imports.
           pip install -U "pytest>=7.4" click loguru pystac shapely universal-pathlib jsonschema \
-            "setuptools<81" pyyaml colorama \
+            "setuptools<81" pyyaml colorama f90nml \
             "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git"
       - name: Run esm_catalog tests
         run: pytest tests/test_esm_catalog -v

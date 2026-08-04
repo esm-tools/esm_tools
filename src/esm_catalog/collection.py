@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from pystac import Collection, Extent, Item, Link, SpatialExtent, TemporalExtent
+from pystac import (Collection, Extent, Item, Link, SpatialExtent,
+                    TemporalExtent)
+
+from esm_catalog.context import CollectionContext
+from esm_catalog.namelist import add_namelist_collection_extension
 
 from esm_catalog.paleo import add_paleo_summary
 
 
-def make_collection(ctx) -> Collection:
+def make_collection(ctx: CollectionContext) -> Collection:
     """Construct a pystac Collection for an experiment component.
 
     Args:
@@ -28,6 +32,10 @@ def make_collection(ctx) -> Collection:
         extra_fields={"experiment": ctx.experiment_id, "components": [ctx.component]},
     )
     col.add_link(Link("parent", f"#{ctx.experiment_id}", media_type="application/json"))
+    # [TODO] PG: Ugly call signature for this level and inward is acceptable for now
+    add_namelist_collection_extension(
+        col, ctx.namelists_by_component.get(ctx.component, {})
+    )
     add_paleo_summary(col, ctx.paleo_config)
     return col
 

@@ -10,16 +10,19 @@ from typing import Union
 from pystac import Asset, Item, Link
 from upath import UPath
 
+from esm_catalog.context import CollectionContext
 from esm_catalog.datacube import add_datacube_extension
+from esm_catalog.namelist import add_namelist_item_extension
 from esm_catalog.paleo import add_paleo_data
 from esm_catalog.registry import EXTENSION_URLS
+from esm_catalog.stac_ext import register_extension
 
 
 def make_item(
     path: Union[Path, UPath, str],
     metadata: dict,
-    ctx,
-) -> dict:
+    ctx: CollectionContext,
+) -> Item:
     """Construct a STAC Item dict.
 
     Args:
@@ -63,6 +66,7 @@ def make_item(
 
     add_contacts(item, ctx)
     add_datacube_extension(item, metadata)
+    add_namelist_item_extension(item, ctx.namelists_by_component)
     add_paleo_data(item, ctx.paleo_config)
 
     return item
@@ -118,9 +122,7 @@ def add_contacts(item, ctx) -> None:
         return
 
     item.properties["contacts"] = [_contact_to_stac(c) for c in ctx.contacts]
-    url = EXTENSION_URLS["contacts"]
-    if url not in item.stac_extensions:
-        item.stac_extensions.append(url)
+    register_extension(item, EXTENSION_URLS["contacts"])
 
 
 def _build_datetime(metadata: dict) -> tuple:

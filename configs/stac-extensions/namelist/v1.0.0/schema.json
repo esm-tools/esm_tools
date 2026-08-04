@@ -1,0 +1,126 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json",
+  "title": "Namelist Extension",
+  "description": "STAC Namelist Extension for STAC Items and Collections, exposing Fortran namelist parameters as CQL2 queryables.",
+  "type": "object",
+  "required": [
+    "stac_extensions",
+    "type"
+  ],
+  "properties": {
+    "stac_extensions": {
+      "type": "array",
+      "contains": {
+        "const": "https://esm-tools.github.io/stac-extensions/namelist/v1.0.0/schema.json"
+      }
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "Collection",
+        "Feature"
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "$comment": "Item: nml:{component}:{file}:{group}:{key} live in properties.",
+      "type": "object",
+      "required": [
+        "type",
+        "properties"
+      ],
+      "properties": {
+        "type": {
+          "const": "Feature"
+        },
+        "properties": {
+          "$ref": "#/definitions/item_fields"
+        }
+      }
+    },
+    {
+      "$comment": "Collection: nml:files/groups/parameters at top level.",
+      "type": "object",
+      "required": [
+        "type",
+        "nml:files",
+        "nml:groups",
+        "nml:parameters"
+      ],
+      "properties": {
+        "type": {
+          "const": "Collection"
+        },
+        "nml:files": {
+          "title": "Namelist files",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nml:groups": {
+          "title": "Namelist groups",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "nml:parameters": {
+          "title": "Flattened namelist parameters",
+          "description": "Maps 'file:group:key' to the parameter's value (a repeated group is indexed as 'group[N]'), for CQL2 filtering.",
+          "type": "object",
+          "propertyNames": {
+            "$comment": "Exactly three colon-separated, non-empty segments: file:group:key. Assumes colon-free filenames (basenames such as 'namelist.echam').",
+            "pattern": "^[^:]+:[^:]+:[^:]+$"
+          },
+          "additionalProperties": {
+            "$ref": "#/definitions/queryable_value"
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "scalar": {
+      "title": "Scalar",
+      "description": "A single namelist value: string, number, boolean, or null.",
+      "type": [
+        "string",
+        "number",
+        "boolean",
+        "null"
+      ]
+    },
+    "queryable_value": {
+      "title": "Queryable value",
+      "description": "A namelist parameter exposed for CQL2 filtering: a scalar, or a list of scalars (possibly empty, heterogeneous, or containing nulls). Nested groups are dropped before emission.",
+      "oneOf": [
+        {
+          "$ref": "#/definitions/scalar"
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/scalar"
+          }
+        }
+      ]
+    },
+    "item_fields": {
+      "title": "Namelist item fields",
+      "description": "STAC Item properties: every 'nml:{component}:{file}:{group}:{key}' key maps to a queryable value; foreign (non-nml:) core properties are unconstrained.",
+      "type": "object",
+      "propertyNames": {
+        "$comment": "Foreign props pass; nml: keys must have exactly four colon-separated tail segments (component:file:group:key).",
+        "pattern": "^(?!nml:)|^nml:[^:]+:[^:]+:[^:]+:[^:]+$"
+      },
+      "patternProperties": {
+        "^nml:[^:]+:[^:]+:[^:]+:[^:]+$": {
+          "$ref": "#/definitions/queryable_value"
+        }
+      }
+    }
+  }
+}

@@ -19,23 +19,48 @@ from esm_catalog.registry import EXTENSION_URLS
 
 _URL = EXTENSION_URLS["namelist"]
 
+ComponentName = str
+"""A model component, e.g. 'echam', 'fesom'."""
+
+NamelistFile = str
+"""A namelist filename, e.g. 'namelist.echam'."""
+
+GroupName = str
+"""A namelist group (chapter), e.g. 'runctl'."""
+
+ParameterName = str
+"""A namelist parameter key, e.g. 'delta_time'."""
+
+FlatKey = str
+"""A flattened 'group:key' parameter identifier, e.g. 'runctl:delta_time'."""
+
 NamelistScalar = Union[str, int, float, bool, None]
-# An f90nml value: a scalar, a list, or a nested group (dict).
+"""A single namelist value: string, int, float, boolean, or None."""
+
 NamelistValue = Union[NamelistScalar, list, dict]
-# filename -> group -> key -> value
-NamelistData = dict[str, dict[str, dict[str, NamelistValue]]]
-# component -> that component's namelist data
-NamelistsByComponent = dict[str, NamelistData]
+"""An f90nml value: a scalar, a list, or a nested group (dict)."""
+
+NamelistGroup = dict[ParameterName, NamelistValue]
+"""A namelist group's parameters: key -> value."""
+
+Namelist = dict[GroupName, NamelistGroup]
+"""One namelist file's contents: group -> parameters."""
+
+NamelistData = dict[NamelistFile, Namelist]
+"""One component's namelists: file -> namelist."""
+
+NamelistsByComponent = dict[ComponentName, NamelistData]
+"""All components' namelists: component -> that component's namelists."""
 
 
 def add_namelist_extension(collection: pystac.Collection, namelists: NamelistData) -> None:
     """Set collection-level nml:files/groups/parameters from *namelists*, or nothing."""
     if not namelists:
         return
-    groups: set[str] = set()
+    groups: set[GroupName] = set()
     for file_groups in namelists.values():
         groups.update(file_groups)
-    parameters: dict[str, NamelistValue] = {}
+    parameters: dict[FlatKey, NamelistValue] = {}
     for group, key, value in _searchable(namelists):
         parameters.setdefault(f"{group}:{key}", value)  # first file wins
     collection.extra_fields["nml:files"] = sorted(namelists)
@@ -57,7 +82,7 @@ def add_namelist_item_extension(
         _register(item)
 
 
-def _searchable(namelists: NamelistData) -> Iterator[tuple[str, str, NamelistValue]]:
+def _searchable(namelists: NamelistData) -> Iterator[tuple[GroupName, ParameterName, NamelistValue]]:
     """Yield (group, key, value) for every searchable parameter."""
     for groups in namelists.values():
         for group, values in groups.items():

@@ -51,8 +51,8 @@ def test_collection_extension_flattens_parameters():
     add_namelist_extension(
         col, {"namelist.echam": {"runctl": {"delta_time": 450, "lcouple": True}}}
     )
-    assert col.extra_fields["nml:parameters"]["runctl:delta_time"] == 450
-    assert col.extra_fields["nml:parameters"]["runctl:lcouple"] is True
+    assert col.extra_fields["nml:parameters"]["namelist.echam:runctl:delta_time"] == 450
+    assert col.extra_fields["nml:parameters"]["namelist.echam:runctl:lcouple"] is True
 
 
 def test_collection_extension_lists_files_and_groups():
@@ -94,10 +94,10 @@ def test_collection_extension_skips_nested_dicts_and_none():
         },
     )
     params = col.extra_fields["nml:parameters"]
-    assert params["runctl:delta_time"] == 450
-    assert params["runctl:levels"] == list(range(20))  # scalar lists kept, no length cap
-    assert "runctl:nested" not in params
-    assert "runctl:none_value" not in params
+    assert params["namelist.echam:runctl:delta_time"] == 450
+    assert params["namelist.echam:runctl:levels"] == list(range(20))  # scalar lists kept, no length cap
+    assert "namelist.echam:runctl:nested" not in params
+    assert "namelist.echam:runctl:none_value" not in params
 
 
 def test_collection_extension_url_appended_once():
@@ -121,8 +121,8 @@ def test_collection_extension_accepts_real_f90nml_namelist():
     )
     col = make_collection(_ctx())
     add_namelist_extension(col, {"namelist.echam": nml})
-    assert col.extra_fields["nml:parameters"]["runctl:delta_time"] == 450
-    assert col.extra_fields["nml:parameters"]["runctl:lcouple"] is True
+    assert col.extra_fields["nml:parameters"]["namelist.echam:runctl:delta_time"] == 450
+    assert col.extra_fields["nml:parameters"]["namelist.echam:runctl:lcouple"] is True
     assert col.extra_fields["nml:groups"] == ["runctl"]
 
 
@@ -134,8 +134,8 @@ def test_collection_extension_with_shipped_namelist():
     col = make_collection(_ctx())
     add_namelist_extension(col, {"namelist.amip": nml})
     params = col.extra_fields["nml:parameters"]
-    assert params["namamip:runlengthsec"] == 86400
-    assert params["namamip:startyear"] == 1850
+    assert params["namelist.amip:namamip:runlengthsec"] == 86400
+    assert params["namelist.amip:namamip:startyear"] == 1850
     assert col.extra_fields["nml:files"] == ["namelist.amip"]
     assert col.extra_fields["nml:groups"] == ["namamip"]
     assert NAMELIST_URL in col.stac_extensions
@@ -160,7 +160,7 @@ def test_item_extension_uses_prescanned_context():
     )
     item = _bare_item()
     add_namelist_item_extension(item, ctx.namelists_by_component)
-    assert item.properties["nml:echam:runctl:co2vmr"] == 0.000284
+    assert item.properties["nml:echam:namelist.echam:runctl:co2vmr"] == 0.000284
     assert NAMELIST_URL in item.stac_extensions
 
 
@@ -173,8 +173,8 @@ def test_item_extension_covers_all_components():
     )
     item = _bare_item()
     add_namelist_item_extension(item, ctx.namelists_by_component)
-    assert item.properties["nml:echam:runctl:delta_time"] == 450
-    assert item.properties["nml:jsbach:jsbach_ctl:use_dynveg"] is True
+    assert item.properties["nml:echam:namelist.echam:runctl:delta_time"] == 450
+    assert item.properties["nml:jsbach:namelist.jsbach:jsbach_ctl:use_dynveg"] is True
 
 
 # --- schema validation ---

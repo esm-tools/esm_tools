@@ -928,6 +928,27 @@ SBEOF
         else
             echo " *   WARNING: make_plit_oifs.py not found (${plit_py}); skipping plit generation"
         fi
+
+        # --- the ice sheet's own freshwater, for the runoff mapper ---
+        # Basal melt and discharge from the chunk PISM just ran, into the same
+        # feedback file. Without them the ISM-mapper has nothing to send and the
+        # ocean loses the calving the runoff mapper stopped supplying.
+        if [ "${ISM_FRESHWATER_RETURN:-0}" = "1" ]; then
+            local fwf_py fwf_ex
+            fwf_py=${FUNCTION_PATH}/../pism/make_pism2ece_fwf.py
+            fwf_ex=${PISM_OUTDATA_DIR:-${COUPLE_DIR}/../outdata/pism}/latest_ex_file_pism.nc
+            if [ ! -f "${fwf_py}" ]; then
+                echo " *** ice2fesom FAILED: make_pism2ece_fwf.py not found (${fwf_py}) ***"; exit 1
+            fi
+            if [ ! -f "${fwf_ex}" ]; then
+                echo " *** ice2fesom FAILED: no PISM extra file at ${fwf_ex}," \
+                     "the freshwater return has nothing to send ***"; exit 1
+            fi
+            if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${fwf_py}" "${fwf_ex}" "${plit_out}" ; then
+                echo " *** ice2fesom FAILED: make_pism2ece_fwf ***"; exit 1
+            fi
+            unset fwf_py fwf_ex
+        fi
     else
         echo " *   WARNING: no regenerated ICMGG*INIT_* found in ${out_dir} (OIFS LSM will be stale)"
     fi

@@ -88,9 +88,10 @@ ismm:
                 CISSEMBEL_av: "${cissembel_averaging_window}"
                 StartDate: "${start_date_yyyymmdd}"
                 NumCoupledRegions: 1
-                # We do not wire basal melt and discharge to the runoff-mapper
-                # yet, so do not declare them: unpartnered OASIS fields are at
-                # best noise and at worst the -huge accumulation trap.
+                # Declaring basal melt and discharge without a partner on the
+                # runoff-mapper side is at best noise and at worst the -huge
+                # accumulation trap, so they follow the switch that wires both
+                # ends at once.
                 LSendToRunoffMapper: ".false."
             NAMISMARR:
                 FileListISM: "${ice_prefix}_pism2ece.nc"
@@ -98,6 +99,13 @@ ismm:
                 CISSEMBELBoolList: ".false."
                 GridListNX: "${nx}"
                 GridListNY: "${ny}"
+
+    choose_general.ism_freshwater_return:
+        true:
+            add_namelist_changes:
+                namelist.ismm:
+                    NAMISMM:
+                        LSendToRunoffMapper: ".true."
 
     contact: "jan.streffing(at)awi.de"
 

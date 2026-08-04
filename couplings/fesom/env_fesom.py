@@ -262,6 +262,12 @@ def prepare_environment(config):
             # leg that starts on the previous mesh's weights and dies in MCT.
             "OCP_WRITE_OASIS_GRID": (
                 "True" if fesom.get("ocp_write_oasis_grid", True) else "False"),
+            # The ice sheet's basal melt and discharge go into the feedback file
+            # for the ISM-mapper to forward to the runoff mapper.
+            "ISM_FRESHWATER_RETURN": int(
+                bool(config["general"].get("ism_freshwater_return", False))),
+            "PISM_OUTDATA_DIR": os.path.join(
+                config["general"]["experiment_dir"], "outdata", "pism"),
 
             #"FESOM_GRID_input": config["fesom"]["grid_input"],
             #"solidearth_ice_thickness_file":(

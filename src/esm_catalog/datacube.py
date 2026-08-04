@@ -22,6 +22,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from esm_catalog.registry import EXTENSION_URLS
+from esm_catalog.stac_ext import register_extension
 
 if TYPE_CHECKING:
     import pystac
@@ -45,9 +46,7 @@ def add_datacube_extension(item: "pystac.Item", metadata: dict) -> None:
     if cube_vars:
         item.properties["cube:variables"] = cube_vars
 
-    url = EXTENSION_URLS["datacube"]
-    if url not in item.stac_extensions:
-        item.stac_extensions.append(url)
+    register_extension(item, EXTENSION_URLS["datacube"])
 
 
 def _to_cube_variables(variables: list) -> dict:

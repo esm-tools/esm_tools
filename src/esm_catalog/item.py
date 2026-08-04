@@ -15,6 +15,7 @@ from esm_catalog.datacube import add_datacube_extension
 from esm_catalog.namelist import add_namelist_item_extension
 from esm_catalog.paleo import add_paleo_data
 from esm_catalog.registry import EXTENSION_URLS
+from esm_catalog.stac_ext import register_extension
 
 
 def make_item(
@@ -121,9 +122,7 @@ def add_contacts(item, ctx) -> None:
         return
 
     item.properties["contacts"] = [_contact_to_stac(c) for c in ctx.contacts]
-    url = EXTENSION_URLS["contacts"]
-    if url not in item.stac_extensions:
-        item.stac_extensions.append(url)
+    register_extension(item, EXTENSION_URLS["contacts"])
 
 
 def _build_datetime(metadata: dict) -> tuple:

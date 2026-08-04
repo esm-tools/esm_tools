@@ -27,14 +27,10 @@ The values come from the ``general.paleo`` config section (see
 
 from __future__ import annotations
 
-import json
-from functools import lru_cache
-
-import esm_tools
-import jsonschema
 import pystac
 
 from esm_catalog.registry import EXTENSION_URLS
+from esm_catalog.stac_ext import register_extension, validate
 
 _PALEO_URL = EXTENSION_URLS["paleo"]
 
@@ -42,34 +38,10 @@ _PALEO_URL = EXTENSION_URLS["paleo"]
 _KEYS = ("datetime", "start_datetime", "end_datetime", "label")
 
 
-@lru_cache(maxsize=None)
-def _schema() -> dict:
-    """Load the paleo extension schema (once; resolved install-aware)."""
-    path = esm_tools.get_config_filepath("stac-extensions/paleo/v1.0.0/schema.json")
-    with open(path) as fh:
-        return json.load(fh)
-
-
 def _paleo_props(paleo_config: dict | None) -> dict:
     """Return the ``paleo:*`` fields set by *paleo_config* (empty = not paleo)."""
     cfg = paleo_config or {}
     return {f"paleo:{k}": cfg[k] for k in _KEYS if cfg.get(k) is not None}
-
-
-def _register(obj) -> None:
-    """Add the paleo extension URL to *obj*.stac_extensions, once."""
-    if _PALEO_URL not in obj.stac_extensions:
-        obj.stac_extensions.append(_PALEO_URL)
-
-
-@lru_cache(maxsize=None)
-def _validate(instance_json: str) -> None:
-    """Validate a paleo probe (its JSON) against the schema, memoized by content.
-
-    A scan applies the same config to every item/collection, so memoizing on the
-    probe's JSON collapses validation to once per distinct config.
-    """
-    jsonschema.validate(instance=json.loads(instance_json), schema=_schema())
 
 
 def add_paleo_data(item: pystac.Item, paleo_config: dict | None = None) -> None:
@@ -82,9 +54,9 @@ def add_paleo_data(item: pystac.Item, paleo_config: dict | None = None) -> None:
     if not props:
         return
     probe = {"type": "Feature", "stac_extensions": [_PALEO_URL], "properties": props}
-    _validate(json.dumps(probe, sort_keys=True))
+    validate(probe, "paleo")
     item.properties.update(props)
-    _register(item)
+    register_extension(item, _PALEO_URL)
 
 
 def add_paleo_summary(
@@ -98,8 +70,12 @@ def add_paleo_summary(
     summaries = {k: [v] for k, v in _paleo_props(paleo_config).items()}
     if not summaries:
         return
-    probe = {"type": "Collection", "stac_extensions": [_PALEO_URL], "summaries": summaries}
-    _validate(json.dumps(probe, sort_keys=True))
+    probe = {
+        "type": "Collection",
+        "stac_extensions": [_PALEO_URL],
+        "summaries": summaries,
+    }
+    validate(probe, "paleo")
     for key, values in summaries.items():
         collection.summaries.add(key, values)
-    _register(collection)
+    register_extension(collection, _PALEO_URL)

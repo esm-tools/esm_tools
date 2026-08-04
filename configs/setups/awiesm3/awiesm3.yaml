@@ -946,6 +946,21 @@ rnfmap:
     runoff_maps_name: _${fesom.resolution}
     version: v1.1
 
+    # With an ice sheet model, the runoff mapper is where the two freshwater
+    # returns are reconciled. Basin 66 is everything south of 60S in
+    # runoff_maps.nc, so dropping its calving takes the atmosphere's snow-cap
+    # shedding out of the Southern Ocean and leaves the rest of the world alone.
+    choose_general.smb_coupled:
+        true:
+            version: v1.4-ismm
+            add_namelist_changes:
+                namelist.runoffmapper:
+                    NAMRNFMAP:
+                        NumCoupledRegions: 1
+                        IgnoreCalvingBasins: 66
+                    NAMRNFMAPARRAYS:
+                        PrefixListISM: "${ismm.ice_prefix}"
+
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}
     time_step: ${oasis3mct.coupling_time_step}

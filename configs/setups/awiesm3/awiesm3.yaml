@@ -37,6 +37,34 @@ general:
     # so setting it from one here leaves the whole iceberg block off.
     with_icb: false
 
+    # Counting the generated bergs into icebergs%ib_num. It has to go in the
+    # general recipe: the prepcompute_recipe under fesom's choose_with_icb is
+    # never read, which is also why that block's two fesom_icb_pism steps have
+    # never run. After modify_namelists, because it edits the loaded namelist.
+    choose_general.with_icb:
+        true:
+            prepcompute_recipe:
+            - "compile_model"
+            - "_show_simulation_info"
+            - "create_new_files"
+            - "create_empty_folders"
+            - "prepare_coupler_files"
+            - "assemble"
+            - "log_used_files"
+            - "_write_finalized_config"
+            - "wait_for_iterative_coupling"
+            - "copy_files_to_thisrun"
+            - "write_env"
+            - "preprocess"
+            - "modify_namelists"
+            - "count_icebergs_into_namelist"
+            - "append_to_namelist"
+            - "modify_files"
+            - "copy_files_to_work"
+            - "report_missing_files"
+            - "compute_and_log_file_checksums"
+            - "database_entry"
+
     include_models:
         - fesom
         - oifs

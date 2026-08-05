@@ -69,8 +69,15 @@ pism:
         ini_parent_exp_id: "bla"
         ini_parent_date: "1-1-1"
         ini_restart_dir: "bla"
-        # Antarctic spinup restart (08km, from a270193 1percCO2_b_2640, PI-style state)
-        spinup_file: "/work/ab0246/a270193/esm-experiments/1percCO2_b_2640/restart/pism_sh/1percCO2_b_2640_pismr_restart_627500101-627501231.nc"
+        # End state of a270234's repro_movcav45, 570 yr of coupled PISM on this
+        # same 8 km antarct_cr grid. The old 1percCO2_b_2640 spinup was still
+        # deep in its own transient here: discharge -14253 Gt/yr at the start of
+        # movcav45 against -4141 at the end, and the ice sheet shedding
+        # ~9800 Gt/yr against ~1700. Starting relaxed keeps the iceberg forcing
+        # in a range the ocean can be judged on.
+        # Old spinup, for reference:
+        # /work/ab0246/a270193/esm-experiments/1percCO2_b_2640/restart/pism_sh/1percCO2_b_2640_pismr_restart_627500101-627501231.nc
+        spinup_file: "/work/ab0246/a270234/runtime/awiesm3-develop-is/repro_movcav45/restart/pism/repro_movcav45_pismr_restart_10005600101-10005691231.nc"
 
         pool_dir: "/work/ab0246/a270092/input/pism/"
         ts_interval: "1"

@@ -10,52 +10,83 @@ from __future__ import annotations
 
 import json
 from functools import lru_cache
-from typing import TYPE_CHECKING
 
-import esm_tools
+import pystac
 from jsonschema.validators import validator_for
 
-from esm_catalog.registry import EXTENSION_URLS
+import esm_tools
+from esm_catalog.registry import EXTENSION_URLS, Extension
+from esm_catalog.types import ExtensionUrl
 
-if TYPE_CHECKING:
-    import pystac
 
-
-def register_extension(obj: "pystac.STACObject", url: str) -> None:
+def register_extension(obj: pystac.STACObject, url: ExtensionUrl) -> None:
     """Append *url* to ``obj.stac_extensions`` once (idempotent)."""
     if url not in obj.stac_extensions:
         obj.stac_extensions.append(url)
 
 
+def apply_extension(
+    obj: pystac.STACObject, name: Extension, *, validate: bool = True
+) -> None:
+    """Register extension *name* on *obj*, then (by default) validate the result.
+
+    Register-before-validate is the required order — the schema's
+    ``stac_extensions`` ``contains`` check needs the URL present. Callers write
+    their fields onto *obj* first, then call this.
+
+    Parameters
+    ----------
+    obj : pystac.STACObject
+        The Item or Collection to register the extension on and validate.
+    name : Extension
+        The registry name of the extension to apply.
+    validate : bool, optional
+        Whether to validate *obj* against the extension schema. Pass False for
+        extensions whose schema is hosted remotely (no local copy to check
+        against). Defaults to True.
+    """
+    register_extension(obj, EXTENSION_URLS[name])
+    if validate:
+        _validator(name).validate(obj.to_dict())
+
+
 @lru_cache(maxsize=None)
-def load_schema(name: str) -> dict:
+def load_schema(name: Extension) -> dict:
     """Load an ESM-Tools extension's JSON schema by registry *name* (memoized).
 
     The local config path mirrors the hosted URL's ``/stac-extensions/...`` tail,
-    so it resolves install-aware via esm_tools. Raises for extensions whose
-    schema is hosted remotely (no local copy), e.g. the upstream stac-extensions.
+    so it resolves install-aware via esm_tools.
+
+    Parameters
+    ----------
+    name : Extension
+        The registry name of the extension whose schema to load.
+
+    Returns
+    -------
+    dict
+        The parsed JSON schema.
+
+    Raises
+    ------
+    ValueError
+        For extensions whose schema is hosted remotely (no local copy), e.g. the
+        upstream stac-extensions.
     """
     url = EXTENSION_URLS[name]
     marker = "/stac-extensions/"
-    idx = url.find(marker)
-    if idx == -1:
+    marker_index = url.find(marker)
+    if marker_index == -1:
         raise ValueError(f"No local schema for '{name}': {url!r} is hosted remotely.")
-    rel = url[idx + 1 :]  # 'stac-extensions/<name>/<version>/schema.json'
-    with open(esm_tools.get_config_filepath(rel)) as fh:
-        return json.load(fh)
-
-
-def validate(instance: dict, name: str) -> None:
-    """Validate a STAC object's ``.to_dict()`` against extension *name*'s schema.
-
-    The compiled validator is cached per extension, so schema compilation
-    happens once — the per-object validation itself always runs.
-    """
-    _validator(name).validate(instance)
+    relative_path = url[
+        marker_index + 1 :
+    ]  # 'stac-extensions/<name>/<version>/schema.json'
+    with open(esm_tools.get_config_filepath(relative_path)) as schema_file:
+        return json.load(schema_file)
 
 
 @lru_cache(maxsize=None)
-def _validator(name: str):
+def _validator(name: Extension):
     """A jsonschema validator compiled once for extension *name*'s schema."""
     schema = load_schema(name)
     cls = validator_for(schema)

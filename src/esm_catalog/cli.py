@@ -1,7 +1,6 @@
 """esm-catalog command-line interface.
 
-This is the scaffold entry point. Subcommands (scan, serve, ...) are added by
-subsequent feature PRs.
+Subcommands (scan, serve, ...) are registered on the top-level group.
 """
 
 from __future__ import annotations

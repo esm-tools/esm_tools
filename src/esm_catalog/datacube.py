@@ -25,10 +25,7 @@ import pystac
 
 from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
-from esm_catalog.types import FileMetadata
-
-VariableName = str
-"""A data variable name, e.g. 'tas'."""
+from esm_catalog.types import FileMetadata, ScannedVariable, VariableName
 
 
 class CubeVariable(TypedDict, total=False):
@@ -75,7 +72,7 @@ def add_datacube_item_extension(item: pystac.Item, file_metadata: FileMetadata) 
     apply_extension(item, Extension.datacube, validate=False)
 
 
-def _to_cube_variables(variables: list[dict]) -> CubeVariables:
+def _to_cube_variables(variables: list[ScannedVariable]) -> CubeVariables:
     """Map scanner variable entries to datacube Variable Objects.
 
     Entries without a name are skipped. The first present of ``description`` /
@@ -83,7 +80,7 @@ def _to_cube_variables(variables: list[dict]) -> CubeVariables:
 
     Parameters
     ----------
-    variables : list of dict
+    variables : list of ScannedVariable
         Scanner variable entries.
 
     Returns

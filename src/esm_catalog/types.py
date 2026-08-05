@@ -17,6 +17,9 @@ ExperimentId = str
 ComponentName = str
 """A model component, e.g. 'echam', 'fesom'."""
 
+VariableName = str
+"""A data variable name, e.g. 'tas'."""
+
 License = str
 """A license identifier, e.g. an SPDX id or 'proprietary'."""
 
@@ -31,6 +34,21 @@ BBox = list[float]
 """A bounding box, [west, south, east, north]."""
 
 
+class ScannedVariable(TypedDict, total=False):
+    """One entry in a scanner's ``variables`` list, before datacube mapping.
+
+    Every key is optional; ``name`` identifies the variable, the rest are the
+    CF-style attributes a scanner may extract.
+    """
+
+    name: VariableName
+    units: str
+    dimensions: list[str]
+    description: str
+    long_name: str
+    standard_name: str
+
+
 class FileMetadata(TypedDict, total=False):
     """The metadata a scanner (scan_netcdf/scan_grib) produces for one file.
 
@@ -39,7 +57,7 @@ class FileMetadata(TypedDict, total=False):
     """
 
     variable: str
-    variables: list[dict]
+    variables: list[ScannedVariable]
     component: ComponentName
     format: str
     dimensions: dict

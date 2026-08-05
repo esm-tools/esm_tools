@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from esm_catalog.datacube import add_datacube_item_extension
 from esm_catalog.item import make_item
 from esm_catalog.registry import EXTENSION_URLS
 
-from .helpers import assert_valid, bare_item, make_ctx, metadata
+from .helpers import assert_valid_remote, make_exp_metadata, make_file_metadata
+
+# item comes from tests/test_esm_catalog/conftest.py
 
 DATACUBE_URL = EXTENSION_URLS["datacube"]
-SCHEMA_PATH = Path(__file__).parent / "schemas" / "datacube-v2.2.0.json"
 
 
 def _dims():
@@ -26,33 +24,29 @@ def _dims():
     }
 
 
-def test_noop_without_dimensions_or_variables():
-    item = bare_item()
+def test_noop_without_dimensions_or_variables(item):
     add_datacube_item_extension(item, {})
     assert "cube:dimensions" not in item.properties
     assert "cube:variables" not in item.properties
     assert item.stac_extensions == []
 
 
-def test_noop_with_variables_but_no_dimensions():
+def test_noop_with_variables_but_no_dimensions(item):
     # v2.2.0 requires cube:dimensions whenever the extension is declared,
     # so variables alone must not trigger it.
-    item = bare_item()
     add_datacube_item_extension(item, {"variables": [{"name": "temp"}]})
     assert item.properties == {}
     assert item.stac_extensions == []
 
 
-def test_dimensions_only():
-    item = bare_item()
+def test_dimensions_only(item):
     add_datacube_item_extension(item, {"dimensions": _dims()})
     assert item.properties["cube:dimensions"] == _dims()
     assert "cube:variables" not in item.properties
     assert DATACUBE_URL in item.stac_extensions
 
 
-def test_variable_mapping():
-    item = bare_item()
+def test_variable_mapping(item):
     variables = [
         {
             "name": "temp",
@@ -76,15 +70,13 @@ def test_variable_mapping():
     assert cube_vars["u10"]["description"] == "eastward_wind"
 
 
-def test_variable_without_name_is_skipped():
-    item = bare_item()
+def test_variable_without_name_is_skipped(item):
     variables = [{"units": "K"}, {"name": "temp"}]
     add_datacube_item_extension(item, {"dimensions": _dims(), "variables": variables})
     assert list(item.properties["cube:variables"]) == ["temp"]
 
 
-def test_url_appended_once():
-    item = bare_item()
+def test_url_appended_once(item):
     add_datacube_item_extension(item, {"dimensions": _dims()})
     add_datacube_item_extension(item, {"dimensions": _dims()})
     assert item.stac_extensions.count(DATACUBE_URL) == 1
@@ -94,21 +86,23 @@ def test_url_appended_once():
 
 
 def test_make_item_without_dims_has_no_datacube(temp_nc):
-    item = make_item(temp_nc, metadata(), make_ctx())
+    item = make_item(temp_nc, make_file_metadata(), make_exp_metadata())
     assert "cube:dimensions" not in item.properties
     assert item.stac_extensions == []
 
 
 def test_make_item_with_dims_applies_datacube(temp_nc):
-    meta = metadata(dimensions=_dims(), variables=[{"name": "temp", "units": "K"}])
-    item = make_item(temp_nc, meta, make_ctx())
+    file_metadata = make_file_metadata(
+        dimensions=_dims(), variables=[{"name": "temp", "units": "K"}]
+    )
+    item = make_item(temp_nc, file_metadata, make_exp_metadata())
     assert item.properties["cube:dimensions"] == _dims()
     assert item.properties["cube:variables"]["temp"]["unit"] == "K"
     assert DATACUBE_URL in item.stac_extensions
 
 
 def test_item_validates_against_datacube_schema(temp_nc):
-    meta = metadata(
+    file_metadata = make_file_metadata(
         dimensions=_dims(),
         variables=[
             {
@@ -119,12 +113,12 @@ def test_item_validates_against_datacube_schema(temp_nc):
             }
         ],
     )
-    item = make_item(temp_nc, meta, make_ctx())
-    assert_valid(item, json.loads(SCHEMA_PATH.read_text()))
+    item = make_item(temp_nc, file_metadata, make_exp_metadata())
+    # datacube schema is hosted upstream (not vendored); validate against it live.
+    assert_valid_remote(item, DATACUBE_URL)
 
 
-def test_all_nameless_variables_omit_cube_variables():
-    item = bare_item()
+def test_all_nameless_variables_omit_cube_variables(item):
     add_datacube_item_extension(
         item, {"dimensions": _dims(), "variables": [{"units": "K"}]}
     )

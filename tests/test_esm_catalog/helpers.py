@@ -1,29 +1,36 @@
 """Shared, importable test helpers for the esm_catalog STAC tests.
 
-Plain functions (not fixtures) so they compose inline, e.g.
+Parameterized builders and an assertion helper — plain functions so they
+compose inline with per-call arguments, e.g.
 
-    make_item(temp_nc, metadata(), make_ctx())
+    make_item(temp_nc, make_file_metadata(), make_exp_metadata())
+    make_item(temp_nc, make_file_metadata(dimensions=dims), make_exp_metadata(paleo_config=cfg))
 
-conftest.py wraps the bare-object builders + make_ctx as fixtures for tests
-that prefer the injection style; both share this single implementation.
+Zero-arg object builders (item, collection) live as fixtures in conftest.py
+instead — they take no arguments, so injection fits them cleanly.
 """
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from urllib.error import URLError
+from urllib.request import urlopen
 
 import jsonschema
-from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
+import pytest
+from referencing import Registry, Resource
+from referencing.jsonschema import DRAFT7
 
 from esm_catalog.models import ExperimentMetadata
 
 
-def make_ctx(**kwargs) -> ExperimentMetadata:
+def make_exp_metadata(**kwargs) -> ExperimentMetadata:
     """An ExperimentMetadata with sensible defaults; override any field via kwargs."""
     return ExperimentMetadata(**{"experiment_id": "exp-alpha", **kwargs})
 
 
-def metadata(**kwargs) -> dict:
+def make_file_metadata(**kwargs) -> dict:
     """Default scan metadata for one file; override any key via kwargs."""
     return {
         "variable": "temp",
@@ -35,29 +42,27 @@ def metadata(**kwargs) -> dict:
     }
 
 
-def bare_collection() -> Collection:
-    """An empty pystac Collection, to exercise collection-level extensions directly."""
-    return Collection(
-        id="exp",
-        description="test collection",
-        extent=Extent(
-            spatial=SpatialExtent(bboxes=[[-180.0, -90.0, 180.0, 90.0]]),
-            temporal=TemporalExtent(intervals=[[None, None]]),
-        ),
-    )
-
-
-def bare_item() -> Item:
-    """A minimal pystac Item, to exercise item-level extensions directly."""
-    return Item(
-        id="i",
-        geometry=None,
-        bbox=None,
-        datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
-        properties={},
-    )
-
-
 def assert_valid(obj, schema) -> None:
     """Assert *obj*.to_dict() validates against *schema* (a loaded JSON Schema)."""
     jsonschema.validate(instance=obj.to_dict(), schema=schema)
+
+
+def _fetch_schema_resource(uri: str) -> Resource:
+    """Fetch a JSON Schema over HTTP as a referencing Resource (for $ref resolution)."""
+    with urlopen(uri, timeout=30) as response:
+        return Resource.from_contents(json.load(response), default_specification=DRAFT7)
+
+
+def assert_valid_remote(obj, schema_url: str) -> None:
+    """Validate *obj*.to_dict() against the schema fetched live from *schema_url*.
+
+    Used for extensions whose schema is hosted upstream (datacube, contacts) and
+    not vendored locally. External ``$ref``s are resolved over HTTP on demand.
+    Skips the test if the network is unreachable rather than failing.
+    """
+    try:
+        schema = _fetch_schema_resource(schema_url).contents
+    except URLError as exc:
+        pytest.skip(f"cannot reach remote schema {schema_url}: {exc}")
+    registry = Registry(retrieve=_fetch_schema_resource)
+    jsonschema.Draft7Validator(schema, registry=registry).validate(obj.to_dict())

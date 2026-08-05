@@ -11,22 +11,14 @@ from esm_catalog.paleo import add_paleo_collection_extension, add_paleo_item_ext
 from esm_catalog.registry import EXTENSION_URLS
 from esm_catalog.stac_ext import load_schema
 
-from .helpers import assert_valid, bare_collection, bare_item, make_ctx, metadata
+from .helpers import assert_valid, make_exp_metadata, make_file_metadata
 
 PALEO_URL = EXTENSION_URLS["paleo"]
 
 LGM = "-21000-01-01T00:00:00"
 CE1850 = "1850-01-01T00:00:00"
 
-
-@pytest.fixture
-def item():
-    return bare_item()
-
-
-@pytest.fixture
-def collection():
-    return bare_collection()
+# item, collection come from tests/test_esm_catalog/conftest.py
 
 
 @pytest.fixture
@@ -121,19 +113,23 @@ def test_stored_datetime_parses_in_paleodatetime(item, year):
 
 
 def test_make_item_without_paleo_config_sets_no_paleo_fields(temp_nc):
-    item = make_item(temp_nc, metadata(), make_ctx())
+    item = make_item(temp_nc, make_file_metadata(), make_exp_metadata())
     assert "paleo:datetime" not in item.properties
     assert PALEO_URL not in item.stac_extensions
 
 
 def test_make_item_with_paleo_config(temp_nc):
-    item = make_item(temp_nc, metadata(), make_ctx(paleo_config={"datetime": LGM}))
+    item = make_item(
+        temp_nc, make_file_metadata(), make_exp_metadata(paleo_config={"datetime": LGM})
+    )
     assert item.properties["paleo:datetime"] == LGM
     assert PALEO_URL in item.stac_extensions
 
 
 def test_make_item_paleo_validates_against_schema(temp_nc, schema):
-    item = make_item(temp_nc, metadata(), make_ctx(paleo_config={"datetime": LGM}))
+    item = make_item(
+        temp_nc, make_file_metadata(), make_exp_metadata(paleo_config={"datetime": LGM})
+    )
     assert_valid(item, schema)
 
 
@@ -206,12 +202,14 @@ def test_collection_validates_against_schema(collection, schema):
 
 
 def test_make_collection_with_paleo_config():
-    col = make_collection(make_ctx(description="d", paleo_config={"datetime": LGM}))
-    assert col.summaries.get_list("paleo:datetime") == [LGM]
-    assert PALEO_URL in col.stac_extensions
+    collection = make_collection(
+        make_exp_metadata(description="d", paleo_config={"datetime": LGM})
+    )
+    assert collection.summaries.get_list("paleo:datetime") == [LGM]
+    assert PALEO_URL in collection.stac_extensions
 
 
 def test_make_collection_without_paleo_config():
-    col = make_collection(make_ctx(description="d"))
-    assert col.summaries.is_empty()
-    assert PALEO_URL not in col.stac_extensions
+    collection = make_collection(make_exp_metadata(description="d"))
+    assert collection.summaries.is_empty()
+    assert PALEO_URL not in collection.stac_extensions

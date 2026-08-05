@@ -1,9 +1,11 @@
 """Namelist STAC extension: Fortran namelist parameters as CQL2 queryables.
 
 Collection level (collection.extra_fields):
-    nml:files       - namelist filenames
+    nml:files       - "component:file" namelist filenames
     nml:groups      - namelist groups across all files
-    nml:parameters  - flattened "file:group:key" -> value, for CQL2 filtering
+    nml:parameters  - flattened "component:file:group:key" -> value, for CQL2
+                      filtering (component-qualified so two components sharing a
+                      filename cannot collide)
 
 Item level (item.properties), one entry per parameter across all components:
     nml:{component}:{file}:{group}:{key} -> value
@@ -31,7 +33,8 @@ ParameterName = str
 """A namelist parameter key, e.g. 'delta_time'."""
 
 FlatKey = str
-"""A flattened 'file:group:key' identifier, e.g. 'namelist.echam:runctl:delta_time'."""
+"""A flattened 'component:file:group:key' identifier, e.g.
+'echam:namelist.echam:runctl:delta_time'."""
 
 Namelist = f90nml.Namelist
 """A parsed Fortran namelist (group -> parameters; nested groups are Namelists)."""
@@ -47,30 +50,39 @@ NamelistsByComponent = dict[ComponentName, ComponentNamelists]
 
 
 def add_namelist_collection_extension(
-    collection: pystac.Collection, namelists: ComponentNamelists
+    collection: pystac.Collection, namelists_by_component: NamelistsByComponent
 ) -> None:
-    """Set the collection-level nml:files/groups/parameters from *namelists*.
+    """Set collection-level nml:files/groups/parameters from every component.
 
-    No-op when *namelists* is empty.
+    A Collection is the whole experiment, so parameters are keyed
+    ``component:file:group:key`` — component-qualified, so two components that
+    ship a same-named namelist file cannot overwrite each other. No-op when
+    *namelists_by_component* is empty.
 
     Parameters
     ----------
     collection : pystac.Collection
         The collection to annotate in place.
-    namelists : ComponentNamelists
-        The namelists whose files, groups, and queryable parameters are
-        summarised at collection level.
+    namelists_by_component : NamelistsByComponent
+        Every component's namelists, whose files, groups, and queryable
+        parameters are summarised at collection level.
     """
-    if not namelists:
+    if not namelists_by_component:
         return
     groups: set[GroupName] = set()
-    for file_groups in namelists.values():
-        groups.update(file_groups)
+    for namelists in namelists_by_component.values():
+        for file_groups in namelists.values():
+            groups.update(file_groups)
     parameters: dict[FlatKey, NamelistValue] = {
-        f"{filename}:{group}:{key}": value
+        f"{component}:{filename}:{group}:{key}": value
+        for component, namelists in namelists_by_component.items()
         for filename, group, key, value in _iter_queryable_params(namelists)
     }
-    collection.extra_fields["nml:files"] = sorted(namelists)
+    collection.extra_fields["nml:files"] = sorted(
+        f"{component}:{filename}"
+        for component, namelists in namelists_by_component.items()
+        for filename in namelists
+    )
     collection.extra_fields["nml:groups"] = sorted(groups)
     collection.extra_fields["nml:parameters"] = parameters
     apply_extension(collection, Extension.namelist)

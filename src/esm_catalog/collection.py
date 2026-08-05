@@ -9,12 +9,15 @@ from esm_catalog.namelist import add_namelist_collection_extension
 from esm_catalog.paleo import add_paleo_collection_extension
 from esm_catalog.types import BBox
 
+# STAC-valid "coverage unknown" default; update_extent swaps it out on the first
+# real item bbox (tracked by a flag, since a global item equals this by value).
+DEFAULT_BBOX: BBox = [-180.0, -90.0, 180.0, 90.0]
+
 
 def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
-    """Construct a pystac Collection for an experiment.
+    """Build the STAC Collection for an experiment.
 
-    A Collection *is* the experiment — all of its components — so it carries
-    every component's namelists, not one.
+    The Collection is the experiment: it carries every component's namelists.
 
     Parameters
     ----------
@@ -25,26 +28,22 @@ def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
     Returns
     -------
     pystac.Collection
-        A Collection with default global extent. Its parent (the root catalog)
-        is set by the catalog-assembly layer via ``add_child``, not here.
+        A Collection with a default global extent and no parent — the
+        experiment is the catalog root.
     """
     collection = Collection(
         id=exp_metadata.experiment_id,
-        description=exp_metadata.description,
+        # STAC requires a string description; fall back to the id when None.
+        description=exp_metadata.description or exp_metadata.experiment_id,
         extent=Extent(
-            spatial=SpatialExtent(bboxes=[[-180.0, -90.0, 180.0, 90.0]]),
+            spatial=SpatialExtent(bboxes=[DEFAULT_BBOX]),
             temporal=TemporalExtent(intervals=[[None, None]]),
         ),
         title=exp_metadata.experiment_id,
         license=exp_metadata.data_license or "proprietary",
         extra_fields={"components": sorted(exp_metadata.namelists_by_component)},
     )
-    all_namelists = {
-        filename: namelist
-        for component_files in exp_metadata.namelists_by_component.values()
-        for filename, namelist in component_files.items()
-    }
-    add_namelist_collection_extension(collection, all_namelists)
+    add_namelist_collection_extension(collection, exp_metadata.namelists_by_component)
     add_paleo_collection_extension(collection, exp_metadata.paleo_config)
     # [NOTE] (LLM Claude-Opus 4.8): decode-companion assets shared by all items —
     # GRIB code/parameter tables, the FESOM/ICON mesh, remap weights — belong
@@ -64,10 +63,13 @@ def update_extent(collection: Collection, item: Item) -> None:
     """
     if item.bbox and len(item.bbox) == 4:
         current = collection.extent.spatial.bboxes
-        if current == [[-180.0, -90.0, 180.0, 90.0]]:
-            collection.extent.spatial.bboxes = [list(item.bbox)]
-        else:
+        if getattr(collection, "_bbox_from_items", False):
             collection.extent.spatial.bboxes = [_merge_bbox(current[0], item.bbox)]
+        else:
+            # First real bbox replaces the placeholder; flag it (runtime-only,
+            # unserialized) so a global item is not read as the unset default.
+            collection.extent.spatial.bboxes = [list(item.bbox)]
+            collection._bbox_from_items = True
 
     item_dt = item.datetime or item.common_metadata.start_datetime
     item_dt_end = item.common_metadata.end_datetime or item_dt

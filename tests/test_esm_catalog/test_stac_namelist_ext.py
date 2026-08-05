@@ -30,9 +30,9 @@ from esm_catalog.namelist import (
 from esm_catalog.registry import EXTENSION_URLS
 from esm_catalog.stac_ext import load_schema
 
-from .helpers import assert_valid, metadata
+from .helpers import assert_valid, make_exp_metadata, make_file_metadata
 
-# bare_collection, bare_item, make_ctx come from tests/test_esm_catalog/conftest.py
+# collection, item come from tests/test_esm_catalog/conftest.py
 
 NAMELIST_URL = EXTENSION_URLS["namelist"]
 
@@ -84,118 +84,133 @@ def test_is_queryable(value, queryable):
 # --- add_namelist_collection_extension (collection-level) ---
 
 
-def test_collection_noop_without_namelists(bare_collection):
-    add_namelist_collection_extension(bare_collection, {})
-    assert "nml:files" not in bare_collection.extra_fields
-    assert bare_collection.stac_extensions == []
+def test_collection_noop_without_namelists(collection):
+    add_namelist_collection_extension(collection, {})
+    assert "nml:files" not in collection.extra_fields
+    assert collection.stac_extensions == []
 
 
-def test_collection_flattens_parameters(bare_collection):
-    add_namelist_collection_extension(bare_collection, component_namelists("echam"))
-    params = bare_collection.extra_fields["nml:parameters"]
-    assert params["namelist.echam:runctl:delta_time"] == 450
-    assert params["namelist.echam:runctl:lcouple"] is True
+def test_collection_flattens_parameters(collection):
+    add_namelist_collection_extension(collection, by_component("echam"))
+    params = collection.extra_fields["nml:parameters"]
+    assert params["echam:namelist.echam:runctl:delta_time"] == 450
+    assert params["echam:namelist.echam:runctl:lcouple"] is True
 
 
-def test_collection_lists_files_and_groups(bare_collection):
-    add_namelist_collection_extension(
-        bare_collection, component_namelists("echam", "jsbach")
-    )
-    assert bare_collection.extra_fields["nml:files"] == [
-        "namelist.echam",
-        "namelist.jsbach",
+def test_collection_lists_files_and_groups(collection):
+    add_namelist_collection_extension(collection, by_component("echam", "jsbach"))
+    assert collection.extra_fields["nml:files"] == [
+        "echam:namelist.echam",
+        "jsbach:namelist.jsbach",
     ]
-    assert bare_collection.extra_fields["nml:groups"] == ["jsbach_ctl", "runctl"]
-    assert NAMELIST_URL in bare_collection.stac_extensions
+    assert collection.extra_fields["nml:groups"] == ["jsbach_ctl", "runctl"]
+    assert NAMELIST_URL in collection.stac_extensions
 
 
-def test_collection_url_appended_once(bare_collection):
-    add_namelist_collection_extension(bare_collection, component_namelists("echam"))
-    add_namelist_collection_extension(bare_collection, component_namelists("echam"))
-    assert bare_collection.stac_extensions.count(NAMELIST_URL) == 1
+def test_collection_url_appended_once(collection):
+    add_namelist_collection_extension(collection, by_component("echam"))
+    add_namelist_collection_extension(collection, by_component("echam"))
+    assert collection.stac_extensions.count(NAMELIST_URL) == 1
 
 
-def test_collection_indexes_repeated_group(bare_collection):
+def test_collection_component_qualified_keys_avoid_filename_collision(collection):
+    # Two components ship a same-named namelist file; the component-qualified
+    # keys must keep both values instead of one silently overwriting the other.
+    add_namelist_collection_extension(
+        collection,
+        {
+            "echam": {"namelist.io": read_nml("echam")},
+            "jsbach": {"namelist.io": read_nml("jsbach")},
+        },
+    )
+    params = collection.extra_fields["nml:parameters"]
+    assert params["echam:namelist.io:runctl:delta_time"] == 450
+    assert params["jsbach:namelist.io:jsbach_ctl:use_dynveg"] is True
+    assert collection.extra_fields["nml:files"] == [
+        "echam:namelist.io",
+        "jsbach:namelist.io",
+    ]
+
+
+def test_collection_indexes_repeated_group(collection):
     # A group repeated in a file (an f90nml Cogroup) must not collapse onto one
     # key; each occurrence gets an [index] array suffix, so both values survive.
     add_namelist_collection_extension(
-        bare_collection, {"namelist.bgc": read_nml("repeated_group")}
+        collection, {"bgc": {"namelist.bgc": read_nml("repeated_group")}}
     )
-    params = bare_collection.extra_fields["nml:parameters"]
-    assert params["namelist.bgc:rep[0]:x"] == 1
-    assert params["namelist.bgc:rep[1]:x"] == 2
-    assert params["namelist.bgc:solo:y"] == 9
+    params = collection.extra_fields["nml:parameters"]
+    assert params["bgc:namelist.bgc:rep[0]:x"] == 1
+    assert params["bgc:namelist.bgc:rep[1]:x"] == 2
+    assert params["bgc:namelist.bgc:solo:y"] == 9
 
 
-def test_collection_drops_non_json_scalar(bare_collection):
+def test_collection_drops_non_json_scalar(collection):
     # f90nml yields a Fortran complex; it is not JSON-serializable and must be
     # skipped, not emitted (which would crash to_dict/json.dumps later).
     add_namelist_collection_extension(
-        bare_collection, {"namelist.echam": read_nml("with_complex")}
+        collection, {"echam": {"namelist.echam": read_nml("with_complex")}}
     )
-    params = bare_collection.extra_fields["nml:parameters"]
-    assert params["namelist.echam:runctl:delta_time"] == 450
-    assert "namelist.echam:runctl:phase" not in params
+    params = collection.extra_fields["nml:parameters"]
+    assert params["echam:namelist.echam:runctl:delta_time"] == 450
+    assert "echam:namelist.echam:runctl:phase" not in params
 
 
-def test_collection_flattens_shipped_namelist(bare_collection):
+def test_collection_flattens_shipped_namelist(collection):
     # A real namelist shipped in esm_tools, read the way the scan layer would.
     amip = f90nml.read(esm_tools.get_namelist_filepath("amip/namelist.amip"))
-    add_namelist_collection_extension(bare_collection, {"namelist.amip": amip})
-    params = bare_collection.extra_fields["nml:parameters"]
-    assert params["namelist.amip:namamip:runlengthsec"] == 86400
-    assert params["namelist.amip:namamip:startyear"] == 1850
+    add_namelist_collection_extension(collection, {"amip": {"namelist.amip": amip}})
+    params = collection.extra_fields["nml:parameters"]
+    assert params["amip:namelist.amip:namamip:runlengthsec"] == 86400
+    assert params["amip:namelist.amip:namamip:startyear"] == 1850
 
 
 # --- add_namelist_item_extension (item-level, all components) ---
 
 
-def test_item_noop_without_namelists(bare_item):
-    add_namelist_item_extension(bare_item, {})
-    assert bare_item.properties == {}
-    assert bare_item.stac_extensions == []
+def test_item_noop_without_namelists(item):
+    add_namelist_item_extension(item, {})
+    assert item.properties == {}
+    assert item.stac_extensions == []
 
 
-def test_item_flattens_one_component(bare_item):
-    add_namelist_item_extension(bare_item, by_component("echam"))
-    assert bare_item.properties["nml:echam:namelist.echam:runctl:co2vmr"] == 0.000284
-    assert NAMELIST_URL in bare_item.stac_extensions
+def test_item_flattens_one_component(item):
+    add_namelist_item_extension(item, by_component("echam"))
+    assert item.properties["nml:echam:namelist.echam:runctl:co2vmr"] == 0.000284
+    assert NAMELIST_URL in item.stac_extensions
 
 
-def test_item_covers_all_components(bare_item):
-    add_namelist_item_extension(bare_item, by_component("echam", "jsbach"))
-    assert bare_item.properties["nml:echam:namelist.echam:runctl:delta_time"] == 450
-    assert (
-        bare_item.properties["nml:jsbach:namelist.jsbach:jsbach_ctl:use_dynveg"] is True
-    )
+def test_item_covers_all_components(item):
+    add_namelist_item_extension(item, by_component("echam", "jsbach"))
+    assert item.properties["nml:echam:namelist.echam:runctl:delta_time"] == 450
+    assert item.properties["nml:jsbach:namelist.jsbach:jsbach_ctl:use_dynveg"] is True
 
 
 # --- schema validation ---
 
 
-def test_collection_validates_against_namelist_schema(make_ctx, nml_schema):
-    ctx = make_ctx(namelists_by_component=by_component("echam"))
-    assert_valid(make_collection(ctx), nml_schema)
+def test_collection_validates_against_namelist_schema(nml_schema):
+    exp_metadata = make_exp_metadata(namelists_by_component=by_component("echam"))
+    assert_valid(make_collection(exp_metadata), nml_schema)
 
 
-def test_collection_rejects_malformed_parameter_key(make_ctx, nml_schema):
-    # nml:parameters keys must be exactly 'file:group:key' (three colon-separated
-    # segments); the schema's propertyNames rule must reject anything else.
-    ctx = make_ctx(namelists_by_component=by_component("echam"))
-    col_dict = make_collection(ctx).to_dict()
+def test_collection_rejects_malformed_parameter_key(nml_schema):
+    # nml:parameters keys must be exactly 'component:file:group:key' (four
+    # colon-separated segments); the propertyNames rule must reject anything else.
+    exp_metadata = make_exp_metadata(namelists_by_component=by_component("echam"))
+    col_dict = make_collection(exp_metadata).to_dict()
     col_dict["nml:parameters"]["missing_group_and_key"] = 1  # only one segment
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=col_dict, schema=nml_schema)
 
 
-def test_item_rejects_malformed_nml_key_but_keeps_foreign_props(bare_item, nml_schema):
+def test_item_rejects_malformed_nml_key_but_keeps_foreign_props(item, nml_schema):
     # nml: keys must be nml:component:file:group:key; a short nml: key is
     # rejected, while foreign core props (datetime, etc.) pass untouched.
-    add_namelist_item_extension(bare_item, by_component("echam"))
+    add_namelist_item_extension(item, by_component("echam"))
     # well-formed item (carrying a core datetime prop) validates
-    jsonschema.validate(instance=bare_item.to_dict(), schema=nml_schema)
+    jsonschema.validate(instance=item.to_dict(), schema=nml_schema)
     # a truncated nml: key must be rejected
-    bad = bare_item.to_dict()
+    bad = item.to_dict()
     bad["properties"]["nml:echam:runctl"] = 1  # missing file+key segments
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=nml_schema)
@@ -243,6 +258,13 @@ def _shipped_namelist_files() -> list[Path]:
     ]
 
 
+def test_shipped_namelist_corpus_is_present():
+    # Guards the parametrized corpus test below: if the shipped-namelist root is
+    # missing, that test parametrizes over zero cases and passes while asserting
+    # nothing. Fail loudly instead of vanishing silently.
+    assert len(_shipped_namelist_files()) > 20
+
+
 @pytest.fixture(
     params=_shipped_namelist_files(),
     ids=lambda p: str(p.relative_to(_NAMELIST_ROOT)),
@@ -262,16 +284,16 @@ def shipped_namelist(request) -> ShippedNamelist:
 
 
 def test_every_shipped_namelist_flattens_and_validates(
-    bare_collection, shipped_namelist, nml_schema
+    collection, shipped_namelist, nml_schema
 ):
     # Flatten every real namelist shipped in esm_tools and confirm the produced collection is
     # schema-valid — the extension must survive the full spread of shipped inputs.
     add_namelist_collection_extension(
-        bare_collection, {shipped_namelist.filename: shipped_namelist.namelist}
+        collection, {"comp": {shipped_namelist.filename: shipped_namelist.namelist}}
     )
-    assert_valid(bare_collection, nml_schema)
+    assert_valid(collection, nml_schema)
 
 
-def test_item_validates_against_namelist_schema(make_ctx, nml_schema, temp_nc):
-    ctx = make_ctx(namelists_by_component=by_component("echam"))
-    assert_valid(make_item(temp_nc, metadata(), ctx), nml_schema)
+def test_item_validates_against_namelist_schema(nml_schema, temp_nc):
+    exp_metadata = make_exp_metadata(namelists_by_component=by_component("echam"))
+    assert_valid(make_item(temp_nc, make_file_metadata(), exp_metadata), nml_schema)

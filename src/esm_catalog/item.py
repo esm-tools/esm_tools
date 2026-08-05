@@ -85,7 +85,7 @@ def make_item(
 def _build_id(
     variable: str, component: str, datetime_str: str, path: Path | UPath
 ) -> ItemId:
-    """Build a stable unique item id of the form {variable}.{component}.{datetime}.{hash}.
+    """Build a stable unique item id of the form {variable}.{component}.{datetime_str}.{hash}.
 
     Parameters
     ----------
@@ -242,4 +242,7 @@ def _to_href(path: Path | UPath) -> Href:
                 f"'{protocol}' path has no host in storage_options."
             )
         return uri
+    # Local path: as_uri() rejects relative paths, so resolve to absolute first.
+    if not path.is_absolute():
+        path = Path(path).resolve()
     return path.as_uri()

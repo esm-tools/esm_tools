@@ -1097,7 +1097,11 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # The generator reads lon_bnds/lat_bnds to place bergs inside a discharge
     # cell, and cdo cannot put them there: the PISM griddes carries centres only.
     local bounds_py=${FUNCTION_PATH}/../pism/add_cell_bounds.py
-    if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${bounds_py}" \
+    # PYTHONPATH: add_cell_bounds imports ocp_tool for the projection, and the
+    # ocp-tool python does not have the package on its path by itself. The
+    # weight regeneration gets away without this by running from the repo root.
+    if ! PYTHONPATH="${OCP_TOOL_DIR}:${PYTHONPATH}" \
+            ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${bounds_py}" \
             "${COUPLE_DIR}/latest_discharge.nc" "${ICB_BASIN_FILE}" ; then
         echo " *** ice2fesom FAILED: add_cell_bounds ***"; exit 1
     fi

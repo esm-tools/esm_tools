@@ -66,6 +66,17 @@ def main(argv=None):
 
     lon = os.path.join(args.icb_dir, "icb_longitude.dat")
     n = sum(1 for _ in open(lon)) if os.path.exists(lon) else 0
+
+    # icb_calving_day.dat, the day of year each berg leaves the front. FESOM
+    # opens it status='old' and reads ib_num values, so it has to exist and be
+    # as long as the rest, and the generator does not write it. Spread over the
+    # year rather than all on day 1: PISM gives an annual discharge, and calving
+    # the whole of it in one timestep is a freshwater pulse the ocean would feel.
+    day = os.path.join(args.icb_dir, "icb_calving_day.dat")
+    with open(day, "w") as fh:
+        for i in range(n):
+            fh.write(f"{1.0 + 364.0 * i / max(n - 1, 1):.4f}\n")
+
     print(f" *   generated {n} icebergs -> {args.icb_dir}")
 
 

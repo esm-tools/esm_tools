@@ -335,7 +335,9 @@ fesom:
                 use_icesheet_coupling: True        # initializes new icebergs every restart
                 update_icebergs: True
 
-                icb_inputs: [longitude,latitude,length,height,scaling,felem]
+                # calving_day: FESOM opens it status='old' and reads ib_num values
+                # from it, so it has to be here or the run dies in init_icebergs.
+                icb_inputs: [longitude,latitude,length,height,scaling,felem,calving_day]
 
                 add_restart_in_files:
                         icb_restart: icb_restart
@@ -393,6 +395,7 @@ fesom:
                         height: "icb_height.dat"
                         scaling: "icb_scaling.dat"
                         felem: "icb_felem.dat"
+                        calving_day: "icb_calving_day.dat"
                         num_non_melted_icb_file: "num_non_melted_icb_file"
 
                 add_input_files:
@@ -402,6 +405,7 @@ fesom:
                         height: "height"
                         scaling: "scaling"
                         felem: "felem"
+                        calving_day: "calving_day"
                         #num_non_melted_icb_file: "num_non_melted_icb_file"
 
     log_files:

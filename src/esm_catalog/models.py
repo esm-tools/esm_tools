@@ -1,16 +1,11 @@
+"""Pydantic models for experiment identity and PI/author contacts."""
+
 from __future__ import annotations
 
 from pathlib import Path
-from typing import ClassVar, TypedDict, cast
+from typing import TypedDict, cast
 
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    Field,
-    SkipValidation,
-    field_serializer,
-    model_validator,
-)
+from pydantic import BaseModel, ConfigDict, Field, SkipValidation, field_serializer
 
 from esm_catalog.namelist import NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
@@ -38,18 +33,16 @@ class Contact(BaseModel):
     Attributes
     ----------
     name : str or None
-        Full name (production-required).
+        Full name.
     orcid : Orcid or None
-        ORCID identifier, e.g. "0000-0001-2345-6789" (optional).
+        ORCID identifier, e.g. "0000-0001-2345-6789".
     institution : Institution or None
-        Affiliated institution (optional in dev, required in production).
+        Affiliated institution.
     roles : list of str
         STAC contact roles (defaults to ["principal_investigator"]).
     """
 
     model_config = ConfigDict(frozen=True)
-
-    PRODUCTION_REQUIRED: ClassVar[list[str]] = ["name", "institution"]
 
     name: str | None = None
     orcid: Orcid | None = Field(default=None, serialization_alias="identifier")
@@ -69,27 +62,6 @@ class Contact(BaseModel):
         """Serialize to the STAC contacts entry (aliased fields, empties dropped)."""
         return cast(StacContact, self.model_dump(by_alias=True, exclude_none=True))
 
-    @classmethod
-    def from_dict(cls, entry: dict) -> Contact:
-        """Build a Contact from a dict (keys: name, orcid, institution, roles)."""
-        return cls.model_validate(entry)
-
-    def validate_production_req(self) -> None:
-        """Check that the production-required fields are present.
-
-        Raises
-        ------
-        ValueError
-            If any production-required field (name, institution) is missing.
-        """
-        missing = [
-            field for field in self.PRODUCTION_REQUIRED if not getattr(self, field)
-        ]
-        if missing:
-            raise ValueError(
-                f"Contact '{self.name}' is missing required fields: {', '.join(missing)}"
-            )
-
 
 class ExperimentMetadata(BaseModel):
     """Experiment identity + pre-scanned config for building its Collection and Items.
@@ -100,10 +72,7 @@ class ExperimentMetadata(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    PRODUCTION_REQUIRED: ClassVar[list[str]] = ["description", "data_license"]
-
     experiment_id: ExperimentId
-    production: bool = False
     description: str | None = None
     data_license: License | None = None
     experiment_path: Path | None = None
@@ -113,35 +82,3 @@ class ExperimentMetadata(BaseModel):
     namelists_by_component: SkipValidation[NamelistsByComponent] = {}
     paleo_config: PaleoConfig | None = None
     contacts: list[Contact] = []
-
-    @model_validator(mode="after")
-    def _check_production(self) -> ExperimentMetadata:
-        """Require the metadata fields and at least one valid contact in production.
-
-        Returns
-        -------
-        ExperimentMetadata
-            The validated model (unchanged).
-
-        Raises
-        ------
-        ValueError
-            If, with ``production`` set, a required field is empty or no valid
-            contact is present.
-        """
-        if not self.production:
-            return self
-        missing = [
-            field
-            for field in self.PRODUCTION_REQUIRED
-            if getattr(self, field) in (None, "")
-        ]
-        if missing:
-            raise ValueError(
-                f"Production context requires non-empty fields: {', '.join(missing)}"
-            )
-        if not self.contacts:
-            raise ValueError("Production context requires at least one contact")
-        for contact in self.contacts:
-            contact.validate_production_req()
-        return self

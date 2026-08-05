@@ -1,7 +1,7 @@
 """Shared domain vocabulary for esm_catalog.
 
-Lightweight type aliases (not data models — those are the dataclasses in
-context.py) naming the shapes that recur across the catalog builders and
+Lightweight type aliases (not data models — those are the pydantic models in
+models.py) naming the shapes that recur across the catalog builders and
 extensions. Each alias carries an attribute docstring so its meaning surfaces
 on IDE hover wherever it is used.
 """

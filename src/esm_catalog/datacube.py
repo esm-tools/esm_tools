@@ -2,13 +2,13 @@
 
 Expected metadata shapes (the contract the file scanners must meet):
 
-    metadata["dimensions"]: dict mapping dimension name to a STAC datacube
+    file_metadata["dimensions"]: dict mapping dimension name to a STAC datacube
         Dimension Object, e.g.
         {"time": {"type": "temporal", "extent": ["2000-01-01T00:00:00Z",
                                                  "2000-12-31T00:00:00Z"]},
          "lon": {"type": "spatial", "axis": "x", "extent": [-180.0, 180.0]}}
 
-    metadata["variables"]: list of dicts with keys
+    file_metadata["variables"]: list of dicts with keys
         name (str, required — entries without it are skipped),
         dimensions (list[str]), units (str), and any of
         description / long_name / standard_name (str).

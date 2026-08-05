@@ -1,6 +1,7 @@
 """esm-catalog command-line interface.
 
-Subcommands (scan, serve, ...) are registered on the top-level group.
+A scaffold group carrying only ``--version`` for now; the scan/serve
+subcommands are not yet registered.
 """
 
 from __future__ import annotations

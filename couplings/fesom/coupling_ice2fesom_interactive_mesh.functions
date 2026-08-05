@@ -1094,6 +1094,14 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # needs pyfesom2, which does not import in the python esm_runscripts runs.
     # icb_felem indexes the mesh, so the set is only valid for the mesh it was
     # built on, which is why it is rebuilt here rather than staged from a pool.
+    # The generator reads lon_bnds/lat_bnds to place bergs inside a discharge
+    # cell, and cdo cannot put them there: the PISM griddes carries centres only.
+    local bounds_py=${FUNCTION_PATH}/../pism/add_cell_bounds.py
+    if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${bounds_py}" \
+            "${COUPLE_DIR}/latest_discharge.nc" "${ICB_BASIN_FILE}" ; then
+        echo " *** ice2fesom FAILED: add_cell_bounds ***"; exit 1
+    fi
+
     local icb_py=${FUNCTION_PATH}/make_icebergs.py
     if [ -z "${ICB_BASIN_FILE:-}" ]; then
         echo " *** ice2fesom FAILED: fesom.basin_file unset, the berg generator"

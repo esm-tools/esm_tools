@@ -172,15 +172,20 @@ def count_icebergs_into_namelist(config):
     if not config["fesom"].get("use_icebergs", False):
         return config
 
-    couple_dir = config["general"]["experiment_couple_dir"]
-    lon = os.path.join(couple_dir, "icb_longitude.dat")
+    # Where the berg files for THIS leg are. fesom.iceberg_dir already resolves
+    # to the run-1 seed directory or, from run 2, the couple dir the generator
+    # writes into, so follow it rather than assuming the couple dir.
+    berg_dir = config["fesom"].get(
+        "iceberg_dir", config["general"]["experiment_couple_dir"]
+    )
+    lon = os.path.join(berg_dir, "icb_longitude.dat")
     n_new = 0
     if os.path.isfile(lon):
         with open(lon) as fh:
             n_new = sum(1 for line in fh if line.strip())
 
     n_old = 0
-    old_file = os.path.join(couple_dir, "num_non_melted_icb_file")
+    old_file = os.path.join(berg_dir, "num_non_melted_icb_file")
     if os.path.isfile(old_file):
         try:
             with open(old_file) as fh:

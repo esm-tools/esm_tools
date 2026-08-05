@@ -32,9 +32,13 @@ awiesm3:
     model_dir: "/work/ab0246/a270092/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
-    # Run 1 has no PISM discharge yet, so it starts with no bergs. From run 2 the
-    # plugin builds them from latest_discharge.nc and the mesh of that leg.
-    ini_iceberg_dir: "/work/ab0246/a270092/input/fesom2/icebergs_coldstart"
+    # Chunk-1 bergs, generated offline from the discharge of the same movcav45
+    # state the PISM restart comes from. From chunk 2 they are rebuilt per leg
+    # in couple_in. Valid for the chunk1_mesh only: icb_felem indexes elements.
+    # An empty set is also legal now (FESOM/fesom2#962); icebergs_coldstart has
+    # one, and it leaves year 1 with no Antarctic freshwater at all, since the
+    # runoff mapper has stopped passing basin 66's calving.
+    ini_iceberg_dir: "/work/ab0246/a270092/input/fesom2/icebergs_ini_movcav45"
     ini_disch_file: "/work/ab0246/a270092/input/fesom2/icebergs_coldstart/zero_discharge.nc"
     # Drainage basins the iceberg generator assigns PISM's discharge to. Matches
     # the pism domain and resolution in ismtest1_pism.yaml.

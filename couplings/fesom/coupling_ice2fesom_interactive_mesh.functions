@@ -1089,6 +1089,27 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
 
+    # Turn that discharge into the berg set for THIS leg's mesh. A subprocess
+    # under the ocp-tool python, like the weight regeneration: the generator
+    # needs pyfesom2, which does not import in the python esm_runscripts runs.
+    # icb_felem indexes the mesh, so the set is only valid for the mesh it was
+    # built on, which is why it is rebuilt here rather than staged from a pool.
+    local icb_py=${FUNCTION_PATH}/make_icebergs.py
+    if [ -z "${ICB_BASIN_FILE:-}" ]; then
+        echo " *** ice2fesom FAILED: fesom.basin_file unset, the berg generator"
+        echo "     needs the ice sheet drainage basins ***"; exit 1
+    fi
+    if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${icb_py}" \
+            "${COUPLE_DIR}/latest_discharge.nc" \
+            "${MESH_DIR_fesom}" \
+            "${COUPLE_DIR}" \
+            "${ICB_BASIN_FILE}" \
+            --restart "${ICB_RESTART_ISM:-}" \
+            --seed "${CURRENT_YEAR_fesom:-0}" \
+            --cavities "${ICB_USE_CAVITIES:-1}" ; then
+        echo " *** ice2fesom FAILED: make_icebergs ***"; exit 1
+    fi
+
     use_icesheet_coupling=1
     echo "     ...done."
 }

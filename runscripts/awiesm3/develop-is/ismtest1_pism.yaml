@@ -54,7 +54,9 @@ pism:
         # PISM grid, so there is nothing to regrid and no melt model to run.
         ablation_method: "DIRECT"
         regrid_method: "NONE"
-        iceberg_coupling: 0
+        # PISM's discharge leaves as icebergs, so pism2ocean writes
+        # latest_discharge.nc for the berg generator on the atmosphere side.
+        iceberg_coupling: 1
         thk_threshold: 5.0
         select_min_glacial_depth: 1
         account_all_fw_input: 1

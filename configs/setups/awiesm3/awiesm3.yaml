@@ -26,11 +26,16 @@ general:
     # NAMECECFG is add_'d per chunk there and a second add_ here collides.
     smb_coupled: false
 
-    # The ice sheet's own basal melt and discharge reaching the ocean, which
-    # replaces the atmosphere's snow-cap calving over the ice sheet. Both halves
-    # have to move together: switching off the calving alone takes about
-    # 2000 Gt/yr out of the Southern Ocean with nothing put back.
+    # The ice sheet's discharge reaching the ocean as icebergs, replacing the
+    # atmosphere's snow-cap calving over the ice sheet. Both halves have to move
+    # together: switching off the calving alone takes about 2000 Gt/yr out of
+    # the Southern Ocean with nothing put back.
     ism_freshwater_return: false
+
+    # The iceberg module. Set it in the driver runscript next to with_recom:
+    # fesom's choose_with_icb resolves before a general-level choose_ block does,
+    # so setting it from one here leaves the whole iceberg block off.
+    with_icb: false
 
     include_models:
         - fesom
@@ -426,6 +431,21 @@ fesom:
     lresume: false
     nproc: 72
     omp_num_threads: 1
+
+    # Icebergs carry PISM's discharge into the ocean. The plugin builds them per
+    # leg from the discharge and the mesh that leg runs on, so nothing is seeded
+    # from a file: a fixed berg set would be wrong the first time the mesh moves.
+    with_icb: ${general.with_icb}
+    choose_general.ism_freshwater_return:
+        true:
+            # Cavities are open, so the berg generator has to know not to place
+            # bergs under the shelves.
+            use_cav: true
+
+            # basin_file says which PISM drainage basin each discharge cell
+            # belongs to. It has to come from the runscript: pism is a separate
+            # setup under iterative coupling, so its domain and resolution are
+            # not in this namespace.
     # ocp-tool (the moving-coastline OASIS/ICMGG regen toolchain) is conda-native
     # -- python-eccodes/python-cdo/basemap from conda-forge -- so it cannot run
     # from the pip venv; OCP_TOOL_DIR must be a real checkout that carries the code

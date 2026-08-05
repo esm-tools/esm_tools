@@ -155,6 +155,49 @@ def modify_files(config):
     return config
 
 
+def count_icebergs_into_namelist(config):
+    """Set icebergs%ib_num from the berg set the coupling just generated.
+
+    The berg files are written per leg by couplings/fesom/make_icebergs.py,
+    which runs in couple_in, before this. FESOM sizes its iceberg arrays from
+    ib_num, so the count has to reach the namelist before the run starts.
+
+    Deliberately not the upstream fesom_icb_pism plugin: that registers an
+    esm_tools.plugins entry point, and every registered plugin is imported at
+    startup, so installing it pulls pyfesom2 into every esm_runscripts call.
+    Counting lines needs none of that.
+    """
+    if "fesom" not in config["general"].get("valid_model_names", []):
+        return config
+    if not config["fesom"].get("use_icebergs", False):
+        return config
+
+    couple_dir = config["general"]["experiment_couple_dir"]
+    lon = os.path.join(couple_dir, "icb_longitude.dat")
+    n_new = 0
+    if os.path.isfile(lon):
+        with open(lon) as fh:
+            n_new = sum(1 for line in fh if line.strip())
+
+    n_old = 0
+    old_file = os.path.join(couple_dir, "num_non_melted_icb_file")
+    if os.path.isfile(old_file):
+        try:
+            with open(old_file) as fh:
+                n_old = int((fh.read().split() or ["0"])[0])
+        except ValueError:
+            n_old = 0
+
+    nmls = config["fesom"].setdefault("namelist_changes", {})
+    icebergs = nmls.setdefault("namelist.config", {}).setdefault("icebergs", {})
+    icebergs["ib_num"] = n_old + n_new
+    icebergs["use_icesheet_coupling"] = bool(
+        config["fesom"].get("use_icesheet_coupling", False)
+    )
+    logger.info(f"    icebergs: ib_num = {n_old} carried over + {n_new} new")
+    return config
+
+
 def modify_namelists(config):
     # Load and modify namelists:
 

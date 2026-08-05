@@ -158,6 +158,14 @@ def prepare_environment(config):
             "CHANGE_OCEAN": int(config["fesom"].get("change_ocean", False).__bool__()),
             "FESOM_TO_ICE": int(config["general"]["first_run_in_chunk"]),
             "MESH_DIR_fesom": config["fesom"]["mesh_dir"],
+            # Iceberg generation. The berg set is rebuilt per leg from the ice
+            # sheet's discharge and this leg's mesh, by a subprocess under the
+            # ocp-tool python (see couplings/fesom/make_icebergs.py).
+            "ICB_BASIN_FILE": fesom.get("basin_file", ""),
+            "ICB_USE_CAVITIES": int(bool(fesom.get("use_cav", False))),
+            "ICB_RESTART_ISM": (
+                config["fesom"].get("restart_in_sources", {}).get("icb_restart_ISM", "")),
+            "CURRENT_YEAR_fesom": general["current_date"].syear,
             # FESOM install bin/ -- holds the native mesh partitioner
             # (fesom_meshpart, built for the -is variant via
             # -DBUILD_MESHPARTITIONER=ON) that build_submesh uses instead of the

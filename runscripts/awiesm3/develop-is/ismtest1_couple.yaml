@@ -12,6 +12,8 @@ general:
         base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
         account: ab0246
         with_recom: False
+        # Icebergs carry PISM's discharge to the ocean.
+        with_icb: True
 
 model1:
         setup_name: awiesm3

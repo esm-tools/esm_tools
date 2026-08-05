@@ -16,7 +16,7 @@ formatted by the ``paleodatetime`` library on the consumer side. ``paleo:label``
 is a user-chosen name, not a controlled vocabulary.
 
 The values come from the ``general.paleo`` config section (see
-``CollectionContext.paleo_config``), whose keys mirror the output fields::
+``ExperimentMetadata.paleo_config``), whose keys mirror the output fields::
 
     general:
       paleo:
@@ -28,48 +28,94 @@ The values come from the ``general.paleo`` config section (see
 from __future__ import annotations
 
 import pystac
+from typing_extensions import TypedDict  # pydantic needs this flavor as a model field
 
-from esm_catalog.registry import EXTENSION_URLS
-from esm_catalog.stac_ext import register_extension, validate
+from esm_catalog.registry import Extension
+from esm_catalog.stac_ext import apply_extension
 
-_PALEO_URL = EXTENSION_URLS["paleo"]
+PaleoDatetime = str
+"""An ISO-8601-like geological datetime with an unbounded (optionally negative)
+year, e.g. '-21000-01-01T00:00:00' for the Last Glacial Maximum."""
 
-# The config keys map 1:1 onto the paleo: fields.
-_KEYS = ("datetime", "start_datetime", "end_datetime", "label")
+PaleoLabel = str
+"""A free-text label for a paleo interval, e.g. 'LGM' (not a controlled vocabulary)."""
 
 
-def _paleo_props(paleo_config: dict | None) -> dict:
-    """Return the ``paleo:*`` fields set by *paleo_config* (empty = not paleo)."""
+class PaleoConfig(TypedDict, total=False):
+    """The ``general.paleo`` config section — every key optional.
+
+    A time-slice run sets ``datetime``; a transient run sets ``start_datetime``
+    and ``end_datetime``; ``label`` is an optional free-text name.
+    """
+
+    datetime: PaleoDatetime
+    start_datetime: PaleoDatetime
+    end_datetime: PaleoDatetime
+    label: PaleoLabel
+
+
+# The config keys map 1:1 onto the paleo: fields — derived from PaleoConfig so
+# the two never drift.
+_KEYS = tuple(PaleoConfig.__annotations__)
+
+
+def _to_paleo_props(paleo_config: PaleoConfig | None) -> dict:
+    """Return the ``paleo:*`` fields set by *paleo_config*.
+
+    Parameters
+    ----------
+    paleo_config : PaleoConfig or None
+        The ``general.paleo`` config section, or None.
+
+    Returns
+    -------
+    dict
+        The ``paleo:*`` properties; empty when the config is None or sets no
+        paleo fields (i.e. not a paleo run).
+    """
     cfg = paleo_config or {}
-    return {f"paleo:{k}": cfg[k] for k in _KEYS if cfg.get(k) is not None}
+    return {f"paleo:{key}": cfg[key] for key in _KEYS if cfg.get(key) is not None}
 
 
-def add_paleo_data(item: pystac.Item, paleo_config: dict | None = None) -> None:
+def add_paleo_item_extension(
+    item: pystac.Item, paleo_config: PaleoConfig | None = None
+) -> None:
     """Set the ``paleo:*`` geological time on *item* from *paleo_config*.
 
-    No-op when *paleo_config* sets no paleo fields. Validated against the paleo
-    extension schema.
+    Validated against the paleo extension schema.
+
+    Parameters
+    ----------
+    item : pystac.Item
+        The item to annotate in place.
+    paleo_config : PaleoConfig or None, optional
+        The ``general.paleo`` config section. No-op when it sets no paleo fields.
     """
-    props = _paleo_props(paleo_config)
+    props = _to_paleo_props(paleo_config)
     if not props:
         return
     item.properties.update(props)
-    register_extension(item, _PALEO_URL)
-    validate(item.to_dict(), "paleo")
+    apply_extension(item, Extension.paleo)
 
 
-def add_paleo_summary(
-    collection: pystac.Collection, paleo_config: dict | None = None
+def add_paleo_collection_extension(
+    collection: pystac.Collection, paleo_config: PaleoConfig | None = None
 ) -> None:
     """Summarize the ``paleo:*`` geological time on *collection* from *paleo_config*.
 
-    The collection-level view of the same fields, in ``summaries`` (their
-    STAC-idiomatic home). No-op when *paleo_config* sets no paleo fields.
+    The collection-level view of the same fields lives in ``summaries`` (their
+    STAC-idiomatic home).
+
+    Parameters
+    ----------
+    collection : pystac.Collection
+        The collection to annotate in place.
+    paleo_config : PaleoConfig or None, optional
+        The ``general.paleo`` config section. No-op when it sets no paleo fields.
     """
-    summaries = {k: [v] for k, v in _paleo_props(paleo_config).items()}
-    if not summaries:
+    props = _to_paleo_props(paleo_config)
+    if not props:
         return
-    for key, values in summaries.items():
-        collection.summaries.add(key, values)
-    register_extension(collection, _PALEO_URL)
-    validate(collection.to_dict(), "paleo")
+    for key, value in props.items():
+        collection.summaries.add(key, [value])
+    apply_extension(collection, Extension.paleo)

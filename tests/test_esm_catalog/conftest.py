@@ -1,52 +1,37 @@
 """Shared fixtures for the esm_catalog STAC tests.
 
-Generic builders live here so sibling test modules can drop their private
-_ctx()/bare-object copies onto a single source of truth. Extension-specific
-fixtures (e.g. shipped_namelist) stay in their own test module.
+The builders themselves live in helpers.py (importable plain functions so they
+compose inline in make_item(...) calls); these fixtures are thin wrappers for
+tests that prefer fixture injection.
 """
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 import pytest
-from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
 
-from esm_catalog.context import CollectionContext
+from .helpers import bare_collection as _bare_collection
+from .helpers import bare_item as _bare_item
+from .helpers import make_ctx as _make_ctx
 
 
 @pytest.fixture
 def bare_collection():
-    """An empty pystac Collection, to exercise collection-level extensions directly."""
-    return Collection(
-        id="exp",
-        description="test collection",
-        extent=Extent(
-            spatial=SpatialExtent(bboxes=[[-180.0, -90.0, 180.0, 90.0]]),
-            temporal=TemporalExtent(intervals=[[None, None]]),
-        ),
-    )
+    return _bare_collection()
 
 
 @pytest.fixture
 def bare_item():
-    """A minimal pystac Item, to exercise item-level extensions directly."""
-    return Item(
-        id="i",
-        geometry=None,
-        bbox=None,
-        datetime=datetime(2000, 1, 1, tzinfo=timezone.utc),
-        properties={},
-    )
+    return _bare_item()
 
 
 @pytest.fixture
 def make_ctx():
-    """Factory for a CollectionContext — the end-to-end builder tests need one."""
+    return _make_ctx
 
-    def _make(**kwargs):
-        return CollectionContext(
-            experiment_id="exp", component="echam", collection_id="exp", **kwargs
-        )
 
-    return _make
+@pytest.fixture
+def temp_nc(tmp_path):
+    """A throwaway .nc file on disk; make_item only needs the path to exist."""
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    return f

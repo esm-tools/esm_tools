@@ -1,24 +1,23 @@
-"""Unit tests for CollectionContext and Contact."""
+"""Unit tests for the ExperimentMetadata and Contact models."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
-from esm_catalog.context import CollectionContext, Contact
+from esm_catalog.models import Contact, ExperimentMetadata
 
 
 @pytest.fixture
 def production_kwargs():
-    """Full set of valid kwargs for a production CollectionContext.
+    """Full set of valid kwargs for a production ExperimentMetadata.
 
     Tests pop or overwrite keys to exercise individual validation failures.
     """
     return {
         "experiment_id": "exp",
-        "component": "echam",
-        "collection_id": "exp",
         "production": True,
         "description": "desc",
         "data_license": "CC-BY-4.0",
@@ -27,10 +26,8 @@ def production_kwargs():
 
 
 def test_context_minimal():
-    ctx = CollectionContext(
+    ctx = ExperimentMetadata(
         experiment_id="exp-alpha",
-        component="echam",
-        collection_id="exp-alpha",
     )
     assert ctx.experiment_id == "exp-alpha"
     assert ctx.experiment_path is None
@@ -38,10 +35,8 @@ def test_context_minimal():
 
 
 def test_context_carries_prescanned_namelists():
-    ctx = CollectionContext(
+    ctx = ExperimentMetadata(
         experiment_id="exp-alpha",
-        component="echam",
-        collection_id="exp-alpha",
         experiment_path=Path("/exp/alpha"),
         namelists_by_component={"echam": {"namelist.echam": {"runctl": {"dt": 450}}}},
     )
@@ -50,21 +45,21 @@ def test_context_carries_prescanned_namelists():
 
 def test_production_context_requires_description(production_kwargs):
     production_kwargs.pop("description")
-    with pytest.raises(ValueError, match="description"):
-        CollectionContext(**production_kwargs)
+    with pytest.raises(ValidationError, match="description"):
+        ExperimentMetadata(**production_kwargs)
 
 
 def test_production_missing_both_fields_names_both(production_kwargs):
     production_kwargs.pop("description")
     production_kwargs.pop("data_license")
-    with pytest.raises(ValueError, match="description, data_license"):
-        CollectionContext(**production_kwargs)
+    with pytest.raises(ValidationError, match="description, data_license"):
+        ExperimentMetadata(**production_kwargs)
 
 
 def test_production_empty_string_counts_as_missing(production_kwargs):
     production_kwargs["description"] = ""
-    with pytest.raises(ValueError, match="description"):
-        CollectionContext(**production_kwargs)
+    with pytest.raises(ValidationError, match="description"):
+        ExperimentMetadata(**production_kwargs)
 
 
 # --- Contact ---
@@ -111,16 +106,16 @@ def test_contact_validate_fails_with_none_name():
 
 def test_production_context_requires_contact(production_kwargs):
     production_kwargs.pop("contacts")
-    with pytest.raises(ValueError, match="contact"):
-        CollectionContext(**production_kwargs)
+    with pytest.raises(ValidationError, match="contact"):
+        ExperimentMetadata(**production_kwargs)
 
 
 def test_production_context_requires_contact_with_institution(production_kwargs):
     production_kwargs["contacts"] = [Contact(name="Jane")]
-    with pytest.raises(ValueError, match="institution"):
-        CollectionContext(**production_kwargs)
+    with pytest.raises(ValidationError, match="institution"):
+        ExperimentMetadata(**production_kwargs)
 
 
 def test_production_context_passes_with_valid_contact(production_kwargs):
-    ctx = CollectionContext(**production_kwargs)
+    ctx = ExperimentMetadata(**production_kwargs)
     assert ctx.production is True

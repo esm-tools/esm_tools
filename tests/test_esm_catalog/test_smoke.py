@@ -6,11 +6,17 @@ from click.testing import CliRunner
 
 import esm_catalog
 from esm_catalog.cli import main
+from esm_catalog.registry import EXTENSION_URLS, Extension
 
 
 def test_package_has_version():
     assert isinstance(esm_catalog.__version__, str)
     assert esm_catalog.__version__
+
+
+def test_every_extension_has_a_url():
+    # Extension is the single source of truth; every member must map to a URL.
+    assert set(EXTENSION_URLS) == set(Extension)
 
 
 def test_cli_version_runs():

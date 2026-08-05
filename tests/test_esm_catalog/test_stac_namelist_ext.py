@@ -10,7 +10,6 @@ extension's shapes by two small builders:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import NamedTuple
 
@@ -21,11 +20,17 @@ import pytest
 import esm_tools
 from esm_catalog.collection import make_collection
 from esm_catalog.item import make_item
-from esm_catalog.namelist import (Namelist, NamelistFilename, _is_queryable,
-                                  add_namelist_collection_extension,
-                                  add_namelist_item_extension)
+from esm_catalog.namelist import (
+    Namelist,
+    NamelistFilename,
+    _is_queryable,
+    add_namelist_collection_extension,
+    add_namelist_item_extension,
+)
 from esm_catalog.registry import EXTENSION_URLS
 from esm_catalog.stac_ext import load_schema
+
+from .helpers import assert_valid, metadata
 
 # bare_collection, bare_item, make_ctx come from tests/test_esm_catalog/conftest.py
 
@@ -170,7 +175,7 @@ def test_item_covers_all_components(bare_item):
 
 def test_collection_validates_against_namelist_schema(make_ctx, nml_schema):
     ctx = make_ctx(namelists_by_component=by_component("echam"))
-    jsonschema.validate(instance=make_collection(ctx).to_dict(), schema=nml_schema)
+    assert_valid(make_collection(ctx), nml_schema)
 
 
 def test_collection_rejects_malformed_parameter_key(make_ctx, nml_schema):
@@ -259,24 +264,14 @@ def shipped_namelist(request) -> ShippedNamelist:
 def test_every_shipped_namelist_flattens_and_validates(
     bare_collection, shipped_namelist, nml_schema
 ):
-    # Flatten every real namelist we ship and confirm the produced collection is
+    # Flatten every real namelist shipped in esm_tools and confirm the produced collection is
     # schema-valid — the extension must survive the full spread of shipped inputs.
     add_namelist_collection_extension(
         bare_collection, {shipped_namelist.filename: shipped_namelist.namelist}
     )
-    jsonschema.validate(instance=bare_collection.to_dict(), schema=nml_schema)
+    assert_valid(bare_collection, nml_schema)
 
 
-def test_item_validates_against_namelist_schema(make_ctx, nml_schema, tmp_path):
-    f = tmp_path / "temp.nc"
-    f.write_bytes(b"x")
+def test_item_validates_against_namelist_schema(make_ctx, nml_schema, temp_nc):
     ctx = make_ctx(namelists_by_component=by_component("echam"))
-    metadata = {
-        "variable": "temp",
-        "format": "netcdf",
-        "datetime_start": datetime(2000, 1, 1, tzinfo=timezone.utc),
-        "datetime_end": datetime(2000, 1, 1, tzinfo=timezone.utc),
-    }
-    jsonschema.validate(
-        instance=make_item(f, metadata, ctx).to_dict(), schema=nml_schema
-    )
+    assert_valid(make_item(temp_nc, metadata(), ctx), nml_schema)

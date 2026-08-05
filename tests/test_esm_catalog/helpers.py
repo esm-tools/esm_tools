@@ -23,6 +23,7 @@ from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT7
 
 from esm_catalog.models import ExperimentMetadata
+from esm_catalog.types import FileMetadata
 
 
 def make_exp_metadata(**kwargs) -> ExperimentMetadata:
@@ -30,7 +31,7 @@ def make_exp_metadata(**kwargs) -> ExperimentMetadata:
     return ExperimentMetadata(**{"experiment_id": "exp-alpha", **kwargs})
 
 
-def make_file_metadata(**kwargs) -> dict:
+def make_file_metadata(**kwargs) -> FileMetadata:
     """Default scan metadata for one file; override any key via kwargs."""
     return {
         "variable": "temp",

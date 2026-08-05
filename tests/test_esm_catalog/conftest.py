@@ -8,6 +8,7 @@ functions in helpers.py, imported and called inline with per-test arguments.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
@@ -39,7 +40,7 @@ def item() -> Item:
 
 
 @pytest.fixture
-def temp_nc(tmp_path):
+def temp_nc(tmp_path) -> Path:
     """A throwaway .nc file on disk; make_item only needs the path to exist."""
     f = tmp_path / "temp.nc"
     f.write_bytes(b"x")

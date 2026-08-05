@@ -74,7 +74,7 @@ def make_item(
         )
     )
 
-    add_contacts_item_extension(item, exp_metadata)
+    add_contacts_item_extension(item, exp_metadata.contacts)
     add_datacube_item_extension(item, file_metadata)
     add_namelist_item_extension(item, exp_metadata.namelists_by_component)
     add_paleo_item_extension(item, exp_metadata.paleo_config)

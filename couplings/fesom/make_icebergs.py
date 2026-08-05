@@ -77,7 +77,18 @@ def main(argv=None):
         for i in range(n):
             fh.write(f"{1.0 + 364.0 * i / max(n - 1, 1):.4f}\n")
 
-    print(f" *   generated {n} icebergs -> {args.icb_dir}")
+    # num_non_melted_icb_file: how many of the bergs FESOM reads are carried over
+    # from the previous leg rather than newly calved. It is staged into work/ and
+    # opened there, so it has to exist alongside the .dat files. The generator
+    # does not write it either.
+    carried = 0
+    if args.restart and os.path.exists(args.restart):
+        with open(args.restart) as fh:
+            carried = sum(1 for line in fh if line.strip())
+    with open(os.path.join(args.icb_dir, "num_non_melted_icb_file"), "w") as fh:
+        fh.write(f"{carried}\n")
+
+    print(f" *   generated {n} icebergs ({carried} carried over) -> {args.icb_dir}")
 
 
 if __name__ == "__main__":

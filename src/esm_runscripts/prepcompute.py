@@ -188,18 +188,15 @@ def count_icebergs_into_namelist(config):
         except ValueError:
             n_old = 0
 
-    # The loaded namelist, not namelist_changes: this runs after
-    # modify_namelists, which has already consumed those.
-    nml = config["fesom"].get("namelists", {}).get("namelist.config")
-    if nml is None:
-        logger.warning("    icebergs: namelist.config not loaded, ib_num unset")
-        return config
-    icebergs = nml.get("icebergs", {})
+    # namelist_changes, and this has to run BEFORE modify_namelists: that step
+    # loads, modifies and writes the namelists in one go, so editing the loaded
+    # object afterwards changes nothing on disk.
+    nmls = config["fesom"].setdefault("namelist_changes", {})
+    icebergs = nmls.setdefault("namelist.config", {}).setdefault("icebergs", {})
     icebergs["ib_num"] = n_old + n_new
     icebergs["use_icesheet_coupling"] = bool(
         config["fesom"].get("use_icesheet_coupling", False)
     )
-    nml["icebergs"] = icebergs
     logger.info(f"    icebergs: ib_num = {n_old} carried over + {n_new} new")
     return config
 

@@ -40,7 +40,8 @@ general:
     # Counting the generated bergs into icebergs%ib_num. It has to go in the
     # general recipe: the prepcompute_recipe under fesom's choose_with_icb is
     # never read, which is also why that block's two fesom_icb_pism steps have
-    # never run. After modify_namelists, because it edits the loaded namelist.
+    # never run. Before modify_namelists, which loads, modifies and writes the
+    # namelists in one step: anything set after it never reaches disk.
     choose_general.with_icb:
         true:
             prepcompute_recipe:
@@ -56,8 +57,8 @@ general:
             - "copy_files_to_thisrun"
             - "write_env"
             - "preprocess"
-            - "modify_namelists"
             - "count_icebergs_into_namelist"
+            - "modify_namelists"
             - "append_to_namelist"
             - "modify_files"
             - "copy_files_to_work"

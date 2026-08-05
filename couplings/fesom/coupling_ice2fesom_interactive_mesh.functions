@@ -1106,7 +1106,8 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             "${ICB_BASIN_FILE}" \
             --restart "${ICB_RESTART_ISM:-}" \
             --seed "${CURRENT_YEAR_fesom:-0}" \
-            --cavities "${ICB_USE_CAVITIES:-1}" ; then
+            --cavities "${ICB_USE_CAVITIES:-1}" \
+            --scaling "${ICB_SCALING:-1,1,1,1,1,1}" ; then
         echo " *** ice2fesom FAILED: make_icebergs ***"; exit 1
     fi
 

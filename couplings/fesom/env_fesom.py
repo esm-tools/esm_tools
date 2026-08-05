@@ -163,6 +163,12 @@ def prepare_environment(config):
             # ocp-tool python (see couplings/fesom/make_icebergs.py).
             "ICB_BASIN_FILE": fesom.get("basin_file", ""),
             "ICB_USE_CAVITIES": int(bool(fesom.get("use_cav", False))),
+            # One entry per size bin ([0.1, 1, 10, 100, 1000] km2): how many real
+            # bergs of that class one model berg stands for. The small classes
+            # dominate the count and carry little mass, so compressing them cuts
+            # the advection cost without losing the bergs that matter.
+            "ICB_SCALING": ",".join(
+                str(x) for x in fesom.get("scaling_factor", [1, 1, 1, 1, 1, 1])),
             "ICB_RESTART_ISM": (
                 config["fesom"].get("restart_in_sources", {}).get("icb_restart_ISM", "")),
             "CURRENT_YEAR_fesom": general["current_date"].syear,

@@ -38,7 +38,7 @@ fesom:
     # An empty set is also legal now (FESOM/fesom2#962); icebergs_coldstart has
     # one, and it leaves year 1 with no Antarctic freshwater at all, since the
     # runoff mapper has stopped passing basin 66's calving.
-    ini_iceberg_dir: "/work/ab0246/a270092/input/fesom2/icebergs_ini_movcav45"
+    ini_iceberg_dir: "/work/ab0246/a270092/input/fesom2/icebergs_ini_movcav45.scaled"
     ini_disch_file: "/work/ab0246/a270092/input/fesom2/icebergs_coldstart/zero_discharge.nc"
     # Drainage basins the iceberg generator assigns PISM's discharge to. Matches
     # the pism domain and resolution in ismtest1_pism.yaml.

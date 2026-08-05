@@ -470,6 +470,22 @@ fesom:
             # Cavities are open, so the berg generator has to know not to place
             # bergs under the shelves.
             use_cav: true
+            # Per size bin ([0.1, 1, 10, 100, 1000] km2): how many real bergs one
+            # model berg stands for. The awiesm-2.1 values, which have been run.
+            # 63015 -> 1174 bergs here.
+            #
+            # Not a free cost knob. icb_thermo scales the fluxes to the ocean by
+            # scaling(ib) but deliberately not the melt: a model berg decays at
+            # the rate of a berg of its chunk's MEAN size. Melt is non-linear in
+            # size, so the factors change the answer, and these are the ones that
+            # come with a run behind them.
+            #
+            # For reference: the uncompressed set costs +26% runtime against
+            # ib_num=0 (0.0948 vs 0.0754 s/step measured), so sampling more is
+            # affordable here if it is ever worth testing against this baseline.
+            # The CAV-ICB reference goes further the other way, [250,100,30,2,1,1]
+            # for 485 bergs, on a finer mesh where advection bites harder.
+            scaling_factor: [100, 50, 10, 1, 1, 1]
 
             # basin_file says which PISM drainage basin each discharge cell
             # belongs to. It has to come from the runscript: pism is a separate

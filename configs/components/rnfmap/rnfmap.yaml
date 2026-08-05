@@ -94,8 +94,11 @@ rnfmap:
           - rnfmap/rnfmap.env.yaml
         destination: rnfmap
         runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+        # Versioned directory, not a suffixed filename: the staged name in work/
+        # comes from the source basename, so a namelist.runoffmapper.ismm lands
+        # under that name and the model dies looking for namelist.runoffmapper.
         config_sources:
-                namelist.runoffmapper: "${namelist_dir}/namelist.runoffmapper.ismm"
+                namelist.runoffmapper: "${namelist_dir}/1.4-ismm/namelist.runoffmapper"
         add_namelist_changes:
                 namelist.runoffmapper:
                         NAMRNFMAP:

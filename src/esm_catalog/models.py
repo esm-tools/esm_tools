@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TypedDict, cast
+from typing import Optional, TypedDict, cast
 
 from pydantic import BaseModel, ConfigDict, Field, SkipValidation, field_serializer
 
@@ -44,15 +44,15 @@ class Contact(BaseModel):
 
     model_config = ConfigDict(frozen=True)
 
-    name: str | None = None
-    orcid: Orcid | None = Field(default=None, serialization_alias="identifier")
-    institution: Institution | None = Field(
+    name: Optional[str] = None
+    orcid: Optional[Orcid] = Field(default=None, serialization_alias="identifier")
+    institution: Optional[Institution] = Field(
         default=None, serialization_alias="organization"
     )
     roles: list[str] = ["principal_investigator"]
 
     @field_serializer("orcid")
-    def _full_orcid_url(self, orcid: Orcid | None) -> Orcid | None:
+    def _full_orcid_url(self, orcid: Optional[Orcid]) -> Optional[Orcid]:
         """Serialize an ORCID as its full ``https://orcid.org/`` URL (stored raw)."""
         if orcid and not orcid.startswith("https://orcid.org/"):
             return f"https://orcid.org/{orcid}"
@@ -73,12 +73,12 @@ class ExperimentMetadata(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     experiment_id: ExperimentId
-    description: str | None = None
-    data_license: License | None = None
-    experiment_path: Path | None = None
+    description: Optional[str] = None
+    data_license: Optional[License] = None
+    experiment_path: Optional[Path] = None
     # Populated by the scan layer, keyed by component. Empty by default, in
     # which case the namelist extension is a no-op. Values are f90nml.Namelist
     # objects, so validation is skipped rather than coerced.
     namelists_by_component: SkipValidation[NamelistsByComponent] = {}
-    paleo_config: PaleoConfig | None = None
+    paleo_config: Optional[PaleoConfig] = None
     contacts: list[Contact] = []

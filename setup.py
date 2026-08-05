@@ -96,6 +96,7 @@ setup(
             "f90nml>=1.4",
             "jsonschema>=4.0",
             "pydantic>=2",
+            "rich-click>=1.7",
         ],
     },
     install_requires=requirements,

@@ -710,6 +710,63 @@ function fix_namcouple_feom_dim {
     echo " *   fix_namcouple_feom_dim: feom grid dim ${full} -> ${sub} in ${nc}"
 }
 
+function link_oifs_icm_into_ocp_tool {
+    # ocp-tool modifies OIFS's initial files, and it reads the unmodified ones
+    # from its own input/openifs_input_default/, named after the experiment id in
+    # its config. A fresh ocp-tool checkout ships only a small sample set, so a
+    # colleague's install has no ICMGG for our experiment and the regen fails on
+    # a missing file. Link them in from the same pool paths OIFS is started from.
+    #
+    # Everything here comes from env_fesom.py: OCP_OPENIFS_INPUT_DIR,
+    # OCP_TEMPLATE_CONFIG, OIFS_PREPIFS_EXPID and the four OIFS_ICM* sources.
+    local dir=${OCP_OPENIFS_INPUT_DIR:-${OCP_TOOL_DIR:+${OCP_TOOL_DIR}/input/openifs_input_default}}
+    [ -n "${dir}" ] || return 0
+    mkdir -p "${dir}" 2>/dev/null
+    if [ ! -w "${dir}" ]; then
+        echo " *   ocp-tool ICM links: ${dir} not writable, leaving it alone"
+        return 0
+    fi
+
+    # The link must carry the id ocp-tool looks for, which is experiment_name in
+    # its config. That is not always the id OIFS ran under: ICMCL in particular
+    # is linked under the prepifs id while the pool file carries the input id.
+    local expid
+    expid=$(sed -n 's/^[[:space:]]*experiment_name:[[:space:]]*"\{0,1\}\([A-Za-z0-9]\{1,\}\).*/\1/p' \
+                "${OCP_TEMPLATE_CONFIG}" 2>/dev/null | head -1)
+    [ -n "${expid}" ] || expid=${OIFS_PREPIFS_EXPID}
+    if [ -z "${expid}" ]; then
+        echo " *   ocp-tool ICM links: no experiment id found, skipping"
+        return 0
+    fi
+
+    local linked=0 missing=0 pair name src
+    for pair in "ICMGG${expid}INIT|${OIFS_ICMGG_INIT}" \
+                "ICMGG${expid}INIUA|${OIFS_ICMGG_INIUA}" \
+                "ICMSH${expid}INIT|${OIFS_ICMSH_INIT}" \
+                "ICMCL${expid}INIT|${OIFS_ICMCL_INIT}" ; do
+        name=${pair%%|*}
+        src=${pair#*|}
+        [ -n "${src}" ] || continue
+        # A real file already there is somebody's deliberate copy. Only ever
+        # replace a symlink, so an existing install is never damaged.
+        if [ -e "${dir}/${name}" ] && [ ! -L "${dir}/${name}" ]; then
+            continue
+        fi
+        if [ ! -e "${src}" ]; then
+            echo " *   ocp-tool ICM links: no source for ${name} at ${src}"
+            missing=$((missing+1))
+            continue
+        fi
+        if ln -sfn "${src}" "${dir}/${name}" 2>/dev/null; then
+            linked=$((linked+1))
+        else
+            echo " *   ocp-tool ICM links: could not link ${name}"
+            missing=$((missing+1))
+        fi
+    done
+    echo " *   ocp-tool ICM links for ${expid}: ${linked} linked, ${missing} unresolved -> ${dir}"
+}
+
 function regenerate_oasis_weights {
     # Regenerate the OASIS feom grid description and the feom remap weights for
     # the new submesh, using ocp-tool driving the coupled model's own pyOASIS.
@@ -733,6 +790,10 @@ function regenerate_oasis_weights {
     : "${OCP_WEIGHTGEN_DRIVER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_DRIVER_PY not set}"
     : "${OCP_WEIGHTGEN_WORKER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_WORKER_PY not set}"
     : "${OCP_TEMPLATE_CONFIG:?regenerate_oasis_weights: OCP_TEMPLATE_CONFIG not set}"
+
+    # Before anything reads ocp-tool's input/: make sure this experiment's OIFS
+    # initial files are actually in there.
+    link_oifs_icm_into_ocp_tool
 
     local out_dir=${COUPLE_DIR}/oasis_regen
     local submesh=${COUPLE_DIR}/latest_submesh

@@ -130,6 +130,38 @@ def _ismm_environment(config, environment_dict):
         return {"SMB_COUPLED": 0}
 
 
+def _oifs_source(config, key):
+    """Pool path of one of OIFS's unmodified initial files.
+
+    Built from ``prepifs_dir`` and ``prepifs_expid`` the same way oifs.yaml
+    builds its own ``input_sources``, rather than read from ``input_sources``
+    itself: ``reuse_sources`` rewrites that to the experiment's pooled copy from
+    run 2 on, and renames it to ``input_expid``, so it stops being a pool path.
+    ICMCL is the odd one out. The climate.v020 pool names it ICMCLawi3INIT at
+    every resolution, since a climatology belongs to no experiment, and
+    oifs.yaml hardcodes that literal for 48r1.
+    """
+    oifs = config.get("oifs", {})
+    prepifs_dir = str(oifs.get("prepifs_dir", "") or "").rstrip("/")
+    expid = str(oifs.get("prepifs_expid", "") or "")
+    if key == "ICMCL_INIT":
+        icmcl_dir = str(oifs.get("icmcl_dir", "") or "").rstrip("/")
+        icmcl_file = str(oifs.get("icmcl_file", "") or "")
+        return f"{icmcl_dir}/{icmcl_file}" if icmcl_dir and icmcl_file else ""
+    if not prepifs_dir or not expid:
+        return ""
+    suffix = {
+        "ICMGG_INIT": str(oifs.get("ICMGG_INIT_name", "") or ""),
+        "ICMSH_INIT": str(oifs.get("ICMSH_INIT_name", "") or ""),
+    }.get(key, "")
+    stem = {"ICMGG_INIT": "ICMGG", "ICMGG_INIUA": "ICMGG",
+            "ICMSH_INIT": "ICMSH"}.get(key)
+    if not stem:
+        return ""
+    tail = "INIUA" if key.endswith("INIUA") else "INIT"
+    return f"{prepifs_dir}/{stem}{expid}{tail}{suffix}"
+
+
 def prepare_environment(config):
     # --- Auto-discover the ocp-tool OASIS-regen toolchain (ice2fesom) ---------
     # esm_tools installs ocp-tool (required_plugin) and the coupled model's OASIS
@@ -276,6 +308,18 @@ def prepare_environment(config):
             # leg that starts on the previous mesh's weights and dies in MCT.
             "OCP_WRITE_OASIS_GRID": (
                 "True" if fesom.get("ocp_write_oasis_grid", True) else "False"),
+            # ocp-tool reads the unmodified OIFS initial files from its own
+            # input/openifs_input_default/, named after the experiment id in its
+            # config. A fresh checkout ships only a small sample set, so the
+            # files this experiment needs are linked in at runtime. Sources are
+            # the ones OIFS itself uses, so the two cannot drift apart.
+            "OCP_OPENIFS_INPUT_DIR": (
+                f"{ocp_tool_dir}/input/openifs_input_default" if ocp_tool_dir else ""),
+            "OIFS_PREPIFS_EXPID": config.get("oifs", {}).get("prepifs_expid", ""),
+            "OIFS_ICMGG_INIT": _oifs_source(config, "ICMGG_INIT"),
+            "OIFS_ICMGG_INIUA": _oifs_source(config, "ICMGG_INIUA"),
+            "OIFS_ICMSH_INIT": _oifs_source(config, "ICMSH_INIT"),
+            "OIFS_ICMCL_INIT": _oifs_source(config, "ICMCL_INIT"),
 
             #"FESOM_GRID_input": config["fesom"]["grid_input"],
             #"solidearth_ice_thickness_file":(

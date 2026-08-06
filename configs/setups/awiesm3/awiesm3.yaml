@@ -658,6 +658,14 @@ fesom:
                 subjobs:
                     couple_in:
                         nproc: 1
+                        # On the batch system, not the login node. This step runs
+                        # build_submesh, the OASIS weight generation, cdo remapping
+                        # and the restart remap, about twelve minutes of real work,
+                        # and its srun calls need an allocation to sit in. Driven by
+                        # the workflow it inherits PISM's allocation, but a hand
+                        # resume would otherwise run it on the login node.
+                        submit_to_batch_system: True
+                        run_on_queue: ${computer.partitions.compute.name}
                         run_before: prepcompute
                         script: coupling_ice2fesom_interactive_mesh.functions
                         script_dir: ${general.esm_couplings_dir}/fesom
@@ -665,8 +673,7 @@ fesom:
                         env_preparation: env_fesom.py
                         run_only: first_run_in_chunk
                         # chunk-1 artifacts derive from PISM's initial geometry and
-                        # are pre-staged from the pool; skipping chunk 1 keeps the
-                        # heavy regen off the launch path (login-node friendly).
+                        # are pre-staged from the pool, so chunk 1 has no regen to do.
                         skip_chunk_number: 1
                     couple_namcouple:
                         # MUST run every leg incl. chunk 1: prepcompute writes the

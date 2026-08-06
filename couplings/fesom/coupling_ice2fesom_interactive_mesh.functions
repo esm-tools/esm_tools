@@ -65,11 +65,8 @@ function ice2fesom {
     . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
 
     echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
-    if [[ "x${ICE_TO_FESOM:-0}" == "x0" ]]; then
-        echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
-    else
-        iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
-    fi
+    # Iceberg generation moved BELOW build_submesh: the bergs must be placed in
+    # the ocean this leg actually has, not the one the previous leg had.
 
     # Concurrent coupling: this leg consumes the sibling's chunk-(N-1) products.
     # Require the marker (belt-and-braces; the Python park/revive already
@@ -85,6 +82,12 @@ function ice2fesom {
         unset _i2f_tag
     fi
 
+    # With a static ocean there is no submesh to wait for, so the bergs are
+    # generated here against the mesh FESOM runs on unchanged.
+    if [[ "x${CHANGE_OCEAN:-0}" != "x1" ]] && [[ "x${ICE_TO_FESOM:-0}" != "x0" ]]; then
+        iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+    fi
+
     # Build the dynamic submesh from the max-mesh and the PISM ice geometry
     # (latest_ice_geometry.nc, produced by pism2esm), then remap the previous
     # chunk's FESOM restart from the old mesh onto the new submesh before the
@@ -92,6 +95,14 @@ function ice2fesom {
     if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
         couple_timer "ice2fesom: build_submesh"
         build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
+        # Bergs go in here, after the submesh exists and before anything reads
+        # the berg files.
+        if [[ "x${ICE_TO_FESOM:-0}" == "x0" ]]; then
+            echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
+        else
+            couple_timer "ice2fesom: prepare_iceberg_forcing"
+            iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+        fi
         # The FESOM node count changed, so the OASIS feom grid description and the
         # feom remap weights baked for the previous mesh are stale (MCT aborts on
         # the first exchange: length of x /= columns of sMat). Regenerate them for
@@ -1172,9 +1183,21 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         echo " *** ice2fesom FAILED: fesom.basin_file unset, the berg generator"
         echo "     needs the ice sheet drainage basins ***"; exit 1
     fi
+    # The submesh, not MESH_DIR_fesom. The mother mesh is the maximum extent and
+    # includes cells presently under grounded ice, so placing bergs in it puts
+    # them tens of km inland of this leg's coastline: on chunk 2, 89 bergs at a
+    # median 29 km and up to 89 km from the nearest ocean element, 285 Gt of
+    # discharge, concentrated in Wilkes/Adelie and the Peninsula where the
+    # coastline is finest.
+    local icb_mesh=${MESH_DIR_fesom}
+    if [ -d "${COUPLE_DIR}/latest_submesh" ]; then
+        icb_mesh=${COUPLE_DIR}/latest_submesh
+    else
+        echo " *   note: no latest_submesh, placing bergs on ${MESH_DIR_fesom}"
+    fi
     if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${icb_py}" \
             "${COUPLE_DIR}/latest_discharge.nc" \
-            "${MESH_DIR_fesom}" \
+            "${icb_mesh}" \
             "${COUPLE_DIR}" \
             "${ICB_BASIN_FILE}" \
             --restart "${ICB_RESTART_ISM:-}" \

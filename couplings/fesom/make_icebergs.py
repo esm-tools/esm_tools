@@ -72,10 +72,15 @@ def main(argv=None):
     # as long as the rest, and the generator does not write it. Spread over the
     # year rather than all on day 1: PISM gives an annual discharge, and calving
     # the whole of it in one timestep is a freshwater pulse the ocean would feel.
+    #
+    # The last day of the year is deliberately left free. FESOM calves on
+    # istep > step_per_day*calving_day, so day 365 needs a step the year does not
+    # have, and such a berg never calves. It still reaches the restart, carrying
+    # an iceberg_elem that was never assigned, which makes the record unreadable.
     day = os.path.join(args.icb_dir, "icb_calving_day.dat")
     with open(day, "w") as fh:
         for i in range(n):
-            fh.write(f"{1.0 + 364.0 * i / max(n - 1, 1):.4f}\n")
+            fh.write(f"{1.0 + 363.0 * i / max(n - 1, 1):.4f}\n")
 
     # num_non_melted_icb_file: how many of the bergs FESOM reads are carried over
     # from the previous leg rather than newly calved. It is staged into work/ and

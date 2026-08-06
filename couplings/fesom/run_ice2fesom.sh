@@ -15,7 +15,11 @@
 #
 # Everything ice2fesom reads comes from the environment esm_runscripts exports
 # ahead of the task list, and srun passes that through.
-set -eu
+# No `set -eu`. The functions file is written to be sourced by the shell path,
+# which sets neither, and it reads variables that are legitimately unset: with
+# nounset it dies on `PYTHONPATH: unbound variable` the moment it prepares the
+# iceberg forcing. ice2fesom does its own error handling and exits non-zero
+# itself, and that exit status is this script's.
 
 # Undo any thread cap inherited from the launcher. esm_runscripts is started on
 # a login node where numpy's OpenBLAS wants 128 threads at import and RLIMIT_NPROC

@@ -26,6 +26,11 @@ general:
     force_overwrite_in_file_movements: True
 computer:
     taskset: true
+    # TEMPORARY (2026-08-05). Jobs 26719693 and 26719897 both got the same
+    # allocation and both died at step 1 with "Transport retry count exceeded"
+    # on the InfiniBand link, on l10016 and l10020. Drop this line once those
+    # nodes are healthy again.
+    additional_flags: ["--exclude=l10016,l10020"]
 
 awiesm3:
     postprocessing: false

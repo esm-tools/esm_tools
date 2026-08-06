@@ -658,20 +658,22 @@ fesom:
                 subjobs:
                     couple_in:
                         nproc: 1
-                        # NOT submit_to_batch_system. This subjob is the
-                        # script + call_function pattern: a functions file that has
-                        # to be sourced and then have ice2fesom called in it. The
-                        # batch path execve's the script instead, and a functions
-                        # file has no shebang and no execute bit, so it dies with
-                        # "Permission denied" and exit 13 before doing anything.
-                        # A failed couple_in cannot stop the chain, so the leg then
-                        # runs on the previous chunk's artifacts and looks fine.
-                        # Driven by the workflow this inherits PISM's allocation;
-                        # only a hand resume puts it on the login node.
+                        # On compute, not the login node: build_submesh runs
+                        # fesom_mesh_to_cdo multithreaded and the login node
+                        # refuses the threads ("libgomp: Thread creation failed").
+                        #
+                        # It goes through run_ice2fesom.sh rather than the
+                        # functions file directly, and carries NO call_function.
+                        # The batch path in dataprocess.py runs `srun <script>`
+                        # and ignores call_function, so a sourced-functions
+                        # subjob dies there on execve; the wrapper sources the
+                        # functions and calls ice2fesom itself, which both the
+                        # batch and the shell path handle identically.
+                        submit_to_batch_system: True
+                        run_on_queue: ${computer.partitions.compute.name}
                         run_before: prepcompute
-                        script: coupling_ice2fesom_interactive_mesh.functions
+                        script: run_ice2fesom.sh
                         script_dir: ${general.esm_couplings_dir}/fesom
-                        call_function: ice2fesom
                         env_preparation: env_fesom.py
                         run_only: first_run_in_chunk
                         # chunk-1 artifacts derive from PISM's initial geometry and

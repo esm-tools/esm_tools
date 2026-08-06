@@ -1178,6 +1178,22 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
         echo " *** ice2fesom FAILED: add_cell_bounds ***"; exit 1
     fi
 
+    # Re-seat the carried bergs first. Their iceberg_elem is a global index on
+    # the mesh that wrote the restart, and a mesh-change leg renumbers the
+    # elements, so each one silently points at a different element and dumps its
+    # meltwater there, divided by that element's node area. Setting
+    # find_iceberg_elem back to true makes FESOM re-derive the element from the
+    # berg's own lon/lat, which is what it does for a newly calved berg anyway.
+    # Must run before make_icebergs, which counts the carried bergs.
+    local reseat_py=${FUNCTION_PATH}/reseat_iceberg_restart.py
+    if [ -f "${reseat_py}" ] && [ -n "${ICB_RESTART_ISM:-}" ] \
+            && [ -f "${ICB_RESTART_ISM}" ] && [ -d "${COUPLE_DIR}/latest_submesh" ]; then
+        if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${reseat_py}" \
+                "${COUPLE_DIR}/latest_submesh" "${ICB_RESTART_ISM}" ; then
+            echo " *** ice2fesom FAILED: reseat_iceberg_restart ***"; exit 1
+        fi
+    fi
+
     local icb_py=${FUNCTION_PATH}/make_icebergs.py
     if [ -z "${ICB_BASIN_FILE:-}" ]; then
         echo " *** ice2fesom FAILED: fesom.basin_file unset, the berg generator"

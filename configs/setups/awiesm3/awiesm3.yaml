@@ -658,14 +658,16 @@ fesom:
                 subjobs:
                     couple_in:
                         nproc: 1
-                        # On the batch system, not the login node. This step runs
-                        # build_submesh, the OASIS weight generation, cdo remapping
-                        # and the restart remap, about twelve minutes of real work,
-                        # and its srun calls need an allocation to sit in. Driven by
-                        # the workflow it inherits PISM's allocation, but a hand
-                        # resume would otherwise run it on the login node.
-                        submit_to_batch_system: True
-                        run_on_queue: ${computer.partitions.compute.name}
+                        # NOT submit_to_batch_system. This subjob is the
+                        # script + call_function pattern: a functions file that has
+                        # to be sourced and then have ice2fesom called in it. The
+                        # batch path execve's the script instead, and a functions
+                        # file has no shebang and no execute bit, so it dies with
+                        # "Permission denied" and exit 13 before doing anything.
+                        # A failed couple_in cannot stop the chain, so the leg then
+                        # runs on the previous chunk's artifacts and looks fine.
+                        # Driven by the workflow this inherits PISM's allocation;
+                        # only a hand resume puts it on the login node.
                         run_before: prepcompute
                         script: coupling_ice2fesom_interactive_mesh.functions
                         script_dir: ${general.esm_couplings_dir}/fesom

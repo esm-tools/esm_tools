@@ -17,6 +17,19 @@
 # ahead of the task list, and srun passes that through.
 set -eu
 
+# Undo any thread cap inherited from the launcher. esm_runscripts is started on
+# a login node where numpy's OpenBLAS wants 128 threads at import and RLIMIT_NPROC
+# will not give them, so the launcher is capped; SLURM then propagates that
+# environment into this job. build_submesh runs fesom_mesh_to_cdo multithreaded
+# and must not inherit the cap, so set the threading from what the allocation
+# actually gives us.
+_cpus=${SLURM_CPUS_PER_TASK:-${SLURM_CPUS_ON_NODE:-1}}
+export OMP_NUM_THREADS=${OMP_NUM_THREADS_ICE2FESOM:-${_cpus}}
+export OPENBLAS_NUM_THREADS=${OMP_NUM_THREADS}
+export MKL_NUM_THREADS=${OMP_NUM_THREADS}
+export NUMEXPR_NUM_THREADS=${OMP_NUM_THREADS}
+echo "run_ice2fesom: threads set to ${OMP_NUM_THREADS}"
+
 here=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 funcs=${here}/coupling_ice2fesom_interactive_mesh.functions
 

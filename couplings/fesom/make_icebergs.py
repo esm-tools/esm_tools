@@ -64,6 +64,24 @@ def main(argv=None):
     ib.create_dataframe()
     ib._icb_generator(fmode="w")
 
+    # FESOM re-derives each berg's element from its lon/lat and refuses elements
+    # whose nodes are all cavity or all boundary. The generator's own cavity
+    # exclusion is a different test on a different object, so it can pass a berg
+    # FESOM will reject, and a rejected berg hangs every rank rather than
+    # aborting. Apply FESOM's rule here so the two agree.
+    _filter = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                           "filter_icebergs_fesom_rule.py")
+    if os.path.isfile(_filter):
+        import runpy
+        _argv = sys.argv
+        sys.argv = [_filter, args.mesh_dir, args.icb_dir]
+        try:
+            runpy.run_path(_filter, run_name="__main__")
+        finally:
+            sys.argv = _argv
+    else:
+        print(f"make_icebergs: {_filter} missing, bergs not filtered")
+
     lon = os.path.join(args.icb_dir, "icb_longitude.dat")
     n = sum(1 for _ in open(lon)) if os.path.exists(lon) else 0
 

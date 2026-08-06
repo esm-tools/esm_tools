@@ -26,11 +26,6 @@ general:
     force_overwrite_in_file_movements: True
 computer:
     taskset: true
-    # TEMPORARY (2026-08-05). Jobs 26719693 and 26719897 both got the same
-    # allocation and both died at step 1 with "Transport retry count exceeded"
-    # on the InfiniBand link, on l10016 and l10020. Drop this line once those
-    # nodes are healthy again.
-    additional_flags: ["--exclude=l10016,l10020"]
 
 awiesm3:
     postprocessing: false
@@ -322,7 +317,13 @@ oasis3mct:
                 rstas.nc: "${general.experiment_couple_dir}/restart_remapped/rstas.nc"
                 rstos.nc: "${general.experiment_couple_dir}/restart_remapped/rstos.nc"
                 vegin.nc: vegin.nc
-                rstism.nc: "${general.experiment_couple_dir}/oasis_regen/rstism.nc"
+                # Carried forward from the previous leg, NOT from oasis_regen.
+                # Nothing regenerates an rstism there, so that path served a
+                # stale seed holding only antar_plit, and OASIS aborted with
+                # "Invalid dimension ID or name" on the first LAGged link whose
+                # source field was missing. None of the ismm links touch feom
+                # (A096/R096 40320, ismp 761x761), so no remapping is needed.
+                rstism.nc: "${experiment_restart_in_dir}/rstism.nc"
 
 xios:
     with_model:

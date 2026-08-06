@@ -374,6 +374,15 @@ fesom:
                                 add_input_files:
                                         num_non_melted_icb_file: "num_non_melted_icb_file"
 
+                                # The iceberg files are rebuilt every leg, so they
+                                # must not be reused. reuse_sources redirects every
+                                # reusable filetype to the experiment input pool from
+                                # run 2 on, which would serve run 1's icebergs against
+                                # this leg's ib_num and read past the end of the file.
+                                # Dropping input costs nothing here: the pool holds
+                                # the iceberg files and nothing else.
+                                reusable_filetypes: [bin, src]
+
                         "*":
                                 iceberg_dir: "${ini_iceberg_dir}"
 

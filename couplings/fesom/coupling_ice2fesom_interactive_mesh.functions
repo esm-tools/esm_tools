@@ -990,9 +990,30 @@ SBEOF
         # coastline (reusing another leg's file flips the wrong cells). The
         # updtim KSTEP=0 hook then flips the newly-grounded sea cells to land and
         # seeds a freezing skin/soil T, preventing the SURFPP divide-by-zero.
-        local plit_py plit_out
+        local plit_py plit_out p2e_py
         plit_py=${FUNCTION_PATH}/make_plit_oifs.py
         plit_out=${COUPLE_DIR}/antar_pism2ece.nc
+
+        # The ISM-mapper's half of this file first: it reads plit(time,y,x) on
+        # the PISM grid, and nothing in the pipeline wrote it. Chunk 1 only gets
+        # away with it because its pre-staged pool copy happens to carry both
+        # halves; from chunk 2 the file is created here and, with only the OIFS
+        # half in it, the mapper aborts at startup on nf90_inq_dimid:
+        #   *EE*OASISNetCDF: Invalid dimension ID or name
+        # Built from THIS leg's geometry, so the mask tracks the moving ice
+        # sheet instead of being frozen at the initial state.
+        p2e_py=${FUNCTION_PATH}/../pism/make_pism2ece_plit.py
+        if [ -f "${p2e_py}" ] && [ -f "${COUPLE_DIR}/latest_ice_geometry.nc" ]; then
+            [ -f "${plit_out}" ] || ${OCP_WEIGHTGEN_DRIVER_PY:-python} -c \
+                "import netCDF4 as nc; nc.Dataset('${plit_out}','w').close()"
+            if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${p2e_py}" \
+                    "${COUPLE_DIR}/latest_ice_geometry.nc" "${plit_out}" ; then
+                echo " *** ice2fesom FAILED: make_pism2ece_plit ***"; exit 1
+            fi
+        else
+            echo " *   WARNING: cannot build the PISM-grid plit (${p2e_py} or"
+            echo "     latest_ice_geometry.nc missing); the ISM-mapper will abort"
+        fi
         if [ -f "${plit_py}" ]; then
             ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${plit_py}" "${icmgg}" "${plit_out}" \
                 && echo "     ...generated per-leg OIFS plit mask -> $(basename "${plit_out}")" \

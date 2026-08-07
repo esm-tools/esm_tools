@@ -268,8 +268,41 @@
             <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
                 <field field_ref="skt" name="tslsi" long_name="Surface Temperature Where Land or Sea Ice"/>
             </field_group>
-            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+        </file>
+
+        <!-- mrsol: three DReq entries differ in depth and operation, so they
+             need separate streams (timeseries="only" splits on field name and
+             all three are name="mrsol"). -->
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="3h"
+            name="atmos_3h_land_mrsol100_avg"
+            description="AWI-ESM3-VEG-HR 3-hourly mean soil moisture, top 1m">
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
                 <field field_ref="moisture_content_of_soil_layer_100cm__mrsol"/>
+            </field_group>
+        </file>
+
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="3h"
+            name="atmos_3h_land_mrsol10_inst"
+            description="AWI-ESM3-VEG-HR 3-hourly instantaneous soil moisture, top 10cm">
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="instant">
+                <field field_ref="moisture_content_of_soil_layer__mrsol"/>
+            </field_group>
+        </file>
+
+        <file
+            enabled="true"
+            timeseries="only"
+            output_freq="1d"
+            name="atmos_day_land_mrsol10_avg"
+            description="AWI-ESM3-VEG-HR daily mean soil moisture, top 10cm">
+            <field_group grid_ref="reduced_sfc" freq_op="{{ oifs.output_step_freq }}ts" operation="average">
+                <field field_ref="moisture_content_of_soil_layer__mrsol"/>
             </field_group>
         </file>
 

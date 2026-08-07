@@ -39,12 +39,21 @@ pism2esm() {
     echo "modules loaded:"
     echo $(module list)
 
+    # Source general/ and this model's own files, never another model's coupling
+    # file. Reaching sideways used to happen here: the fesom interactive-mesh file
+    # was sourced last and redefines
+    # iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing, so the
+    # dispatch in coupling_pism2ocean.functions silently got the AWI berg pipeline
+    # instead of this chain's own two-line discharge step. That pipeline needs the
+    # fesom environment (ICB_BASIN_FILE, OCP_TOOL_DIR), which the pism chain does
+    # not have, so it died at add_cell_bounds before this function could write
+    # pism_chunk_N.done, and in concurrent mode the sibling parked forever.
+    # Nothing here calls anything that file defines.
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/general_helpers.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
     . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions
     . ${FUNCTION_PATH}/coupling_pism2ocean.functions
-    . ${FUNCTION_PATH}/../fesom/coupling_ice2fesom_interactive_mesh.functions
 
     # Extract the ice-geometry variables PISM hands to the rest of the system.
     # ice_subNN = (usurf - thk) on floating ice (mask==3) is the cavity-roof depth

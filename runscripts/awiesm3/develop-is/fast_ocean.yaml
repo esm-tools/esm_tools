@@ -29,7 +29,7 @@ computer:
 
 awiesm3:
     postprocessing: false
-    model_dir: "/work/ab0246/a270092/model_codes/${general.setup_name}-${general.version}//"
+    model_dir: "/work/ab0246/${general.user}/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
     # Chunk-1 bergs, generated offline from the discharge of the same movcav45
@@ -38,17 +38,17 @@ fesom:
     # An empty set is also legal now (FESOM/fesom2#962); icebergs_coldstart has
     # one, and it leaves year 1 with no Antarctic freshwater at all, since the
     # runoff mapper has stopped passing basin 66's calving.
-    ini_iceberg_dir: "/work/ab0246/a270092/input/fesom2/icebergs_ini_movcav45.scaled"
-    ini_disch_file: "/work/ab0246/a270092/input/fesom2/icebergs_coldstart/zero_discharge.nc"
+    ini_iceberg_dir: "${general.pool_dir}/fesom2/icebergs_ini_movcav45.scaled"
+    ini_disch_file: "${general.pool_dir}/fesom2/icebergs_coldstart/zero_discharge.nc"
     # Drainage basins the iceberg generator assigns PISM's discharge to. Matches
     # the pism domain and resolution in ismtest1_pism.yaml.
-    basin_file: "/work/ab0246/a270092/input/pism/basins/antarct_cr.08km.nc"
+    basin_file: "${general.pool_dir}/pism/basins/antarct_cr.08km.nc"
 
     # Mesh chunk 1 ran on. couple_in is skipped on chunk 1 (artifacts pooled), so no
     # previous_submesh is recorded; without this the first mesh-change leg would
     # assume the old mesh was the full mother mesh and refuse to remap the
     # (submesh-sized) OASIS restart.
-    chunk1_mesh: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/submesh"
+    chunk1_mesh: "${general.pool_dir}/fesom2/pism_cavity_ini/submesh"
     # ocean->PISM: hand PISM FESOM's own cavity melt (fw -> shelfbmassflux, -ocean
     # given) instead of a T/S column average (-ocean th) that PISM re-melts itself.
     # The th default averaged FESOM levels 1-20 = 0-410 m INCLUDING the summer
@@ -76,7 +76,7 @@ fesom:
     # (7 Ronne artifact nodes hybridized back to pool values; hsnow max 0.81 m).
     # Ocean restart unchanged (copy of the pool one). Revert to
     # "${general.pool_dir}/fesom2/pism_cavity_ini/restart/" for the old state.
-    ini_restart_dir: "/work/ab0246/a270092/pism_repro/prep/clean_ice_ini/"
+    ini_restart_dir: "${general.pool_dir}/fesom2/pism_cavity_ini/restart_clean_ice/"
     time_step: 1200            # zstar tolerates 1200s on the cavity mesh (linfs needs <=180s)
     nproc: 1792                # FESOM stable at 1792 (256 hits a decomposition-sensitive cavity blow); core3/dist_1792 + complete TCO95-CORE3/1792
     omp_num_threads: 2         # was 1 for the crash hunt (bit-reproducible reruns); 2 for turnaround now that the hunt is over
@@ -146,12 +146,12 @@ oifs:
             add_input_files:
                 pism2ece_antar: pism2ece_antar
             add_input_sources:
-                ICMGG_INIT: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/oasis/ICMGGab45INIT_feomdyn"
-                pism2ece_antar: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini/antar_pism2ece.nc"
-                wam_grid_tables: "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
-                wam_subgrid_0:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
-                wam_subgrid_1:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
-                wam_subgrid_2:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+                ICMGG_INIT: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/ICMGGab45INIT_feomdyn"
+                pism2ece_antar: "${general.pool_dir}/fesom2/pism_cavity_ini/antar_pism2ece.nc"
+                wam_grid_tables: "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
             add_input_in_work:
                 pism2ece_antar: antar_pism2ece.nc
             add_namelist_changes:
@@ -180,10 +180,10 @@ oifs:
                 # WAM option A maximal-ocean tables (see the oifs block). MUST be
                 # here, not a general oifs.input_sources -- the latter loses the
                 # merge to the component's ${prepifs_dir}/wam_grid_tables default.
-                wam_grid_tables: "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
-                wam_subgrid_0:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
-                wam_subgrid_1:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
-                wam_subgrid_2:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+                wam_grid_tables: "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
             add_input_in_work:
                 pism2ece_antar: antar_pism2ece.nc
             # Land-ice namelist gated to chunk>1: on a fresh chunk-1 (full mesh)
@@ -298,7 +298,7 @@ oasis3mct:
                 # rstos is the pool weighted rstos.nc plus the new sit_feom
                 # field (=1.5*sie_feom: per-ice 1.5 m for the first exchange,
                 # runtime node order inherited from sie_feom).
-                rstos.nc: "/work/ab0246/a270092/pism_repro/prep/coupled_slab_rstos/rstos.nc"
+                rstos.nc: "${general.pool_dir}/fesom2/pism_cavity_ini/rstos_coupled_slab.nc"
                 vegin.nc: vegin.nc
                 # Seeds antar_plit for the first coupling interval. NNOREST
                 # zero-fills a missing restart, which is safe for a flux and not

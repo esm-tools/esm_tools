@@ -13,7 +13,8 @@ general:
         # so BOTH models resolve to the SAME experiment_dir runtime/awiesm3-develop-is/<expid>
         # (pism's own setup_name-version would put it elsewhere and break the handoff).
         base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
-        script_dir: "/home/a/a270092/esm_tools/couplings/"
+        # The couplings tree of whichever esm_tools is running, not a fixed home.
+        script_dir: "${general.esm_configs_dir}/../couplings/"
         nyear: 10
         change_ocean: 1
         files_to_wait_for:
@@ -25,7 +26,7 @@ pism:
         version: "github1.2.1"
         resolution: "08km"          # 08km == 761x761; matches antarct_cr pool naming (basins/masks/initial are *_08km)
         domain: "antarct_cr"        # 8km pool files exist under antarct_cr (grid identical to antarctica-8km); domain added to pism.domains.yaml
-        model_dir: "/work/ab0246/a270092/model_codes/awiesm3-develop-is/pism-github1.2.1/"
+        model_dir: "/work/ab0246/${general.user}/model_codes/awiesm3-develop-is/pism-github1.2.1/"
         lresume: 1
         # concurrent coupling_mode only: chunk-1 forcing set; auto = newest
         # matching harvest under <pism.pool_dir>/coupled_bootstrap
@@ -47,7 +48,7 @@ pism:
         ###################
         # Settings for AWIES - PISM coupling
         # DEBM
-        debm_path: "/work/ab0246/a270092/model_codes/awiesm3-develop-is/bin/debm"
+        debm_path: "/work/ab0246/${general.user}/model_codes/awiesm3-develop-is/bin/debm"
         debm_beta: 10
         lapse_rate: -0.005
         # DIRECT consumes the ISM-mapper's P-E-R, which already arrives on the
@@ -77,8 +78,14 @@ pism:
         # in a range the ocean can be judged on.
         # Old spinup, for reference:
         # /work/ab0246/a270193/esm-experiments/1percCO2_b_2640/restart/pism_sh/1percCO2_b_2640_pismr_restart_627500101-627501231.nc
-        spinup_file: "/work/ab0246/a270234/runtime/awiesm3-develop-is/repro_movcav45/restart/pism/repro_movcav45_pismr_restart_10005600101-10005691231.nc"
+        # Copied into the pool. It used to be read straight out of a270234's live
+        # experiment tree, which nobody else should depend on staying there.
+        spinup_file: "${pool_dir}/spinup/repro_movcav45_pismr_restart_10005600101-10005691231.nc"
 
+        # Still a literal. The group pool lives in awiesm3.yaml as general.pool_dir,
+        # but this chain's setup_name is pism and there is no setups/pism, so it
+        # never loads awiesm3.yaml: both ${general.pool_dir} and ${model1.pool_dir}
+        # fail to resolve here. See the note in fast_ocean.yaml.
         pool_dir: "/work/ab0246/a270092/input/pism/"
         ts_interval: "1"
         ex_interval: "monthly"

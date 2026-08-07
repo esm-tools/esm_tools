@@ -27,6 +27,16 @@
     <file id="f_h_snow" name="h_snow.fesom"><field field_ref="h_snow"   freq_op="1d"/></file>
     <file id="f_unod_sfc" name="unod_sfc.fesom"><field field_ref="unod_sfc" freq_op="1d"/></file>
     <file id="f_vnod_sfc" name="vnod_sfc.fesom"><field field_ref="vnod_sfc" freq_op="1d"/></file>
+
+    <!-- Daily sea-ice mass per area, for CMIP sivol at day frequency
+         (seaIce.sivol.tavg-u-hm-u.day.{nh,sh}). m_ice is only monthly in the
+         fesom_1mo group below, which left the daily rules with 12 values to
+         spread over 365 timesteps. Without this the daily volume has to be
+         rebuilt as h_ice * a_ice, and since both are daily means that product
+         drops the sub-daily covariance between thickness and concentration.
+         Separate file id and name so the monthly m_ice stream, which several
+         monthly rules read, is untouched. -->
+    <file id="f_m_ice_day" name="m_ice_day.fesom"><field field_ref="m_ice" freq_op="1d"/></file>
   </file_group>
 
   <!-- ================= Monthly ================= -->
@@ -89,6 +99,21 @@
     <file id="f_sgm11"        name="sgm11.fesom"       ><field field_ref="sgm11"        freq_op="1mo"/></file>
     <file id="f_sgm12"        name="sgm12.fesom"       ><field field_ref="sgm12"        freq_op="1mo"/></file>
     <file id="f_sgm22"        name="sgm22.fesom"       ><field field_ref="sgm22"        freq_op="1mo"/></file>
+
+    <!-- Instantaneous stress tensor, for CMIP sistressave / sistressmax.
+         Both DReq entries are branded tpt-u-hxy-si and ask for an instantaneous
+         value at the centre of the month; the averaged streams above cannot
+         supply that. sistressmax is sqrt(((s11-s22)/2)^2 + s12^2), a nonlinear
+         function of the components, so deriving it from monthly means is not
+         even the monthly mean of the invariant. The two rules are deactivated
+         in the HR recipe for exactly this reason; these streams are what makes
+         them reactivatable. Separate files rather than operation flips on the
+         streams above, so nothing that wants the mean silently gets a snapshot.
+         Note the sample lands at the end of the output interval, not the 15th
+         as the DReq text prefers, but it is a genuine instantaneous value. -->
+    <file id="f_sgm11_inst"   name="sgm11_inst.fesom"  ><field field_ref="sgm11"        freq_op="1mo" operation="instant"/></file>
+    <file id="f_sgm12_inst"   name="sgm12_inst.fesom"  ><field field_ref="sgm12"        freq_op="1mo" operation="instant"/></file>
+    <file id="f_sgm22_inst"   name="sgm22_inst.fesom"  ><field field_ref="sgm22"        freq_op="1mo" operation="instant"/></file>
 
     <!-- 0D scalars routed through XIOS at file_def cadence -->
     <file id="f_volo"      name="volo.fesom"     ><field field_ref="volo"      freq_op="1mo"/></file>

@@ -20,6 +20,13 @@ general:
     # PISM's discharge reaches FESOM as icebergs, and the runoff mapper stops
     # passing the atmosphere's Antarctic snow-cap calving that it replaces.
     ism_freshwater_return: true
+    # Serial runs refresh the concurrent-mode chunk-1 bootstrap set in the pool
+    # (couplings/general/harvest.functions, once per coupling identity). Without
+    # these two keys the identity is empty and the harvest skips, which is how
+    # the pool kept a set from a pipeline where the atmosphere forcing was still
+    # on the Gaussian grid rather than PISM's.
+    harvest_parallel_ini: True
+    pism_grid_tag: "antarct_cr-08km"
     nday: 0
     nmonth: 0
     nyear: 1

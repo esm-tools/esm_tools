@@ -122,10 +122,9 @@ function ice2fesom {
             _rgw_pid=$!
 
             if ! remap_fesom_restart ; then
-                echo " *** ice2fesom FAILED: remap_fesom_restart ***"
                 kill ${_rgw_pid} 2>/dev/null ; wait ${_rgw_pid} 2>/dev/null
                 echo "----- backgrounded regenerate_oasis_weights output -----"; cat "${_rgw_log}" 2>/dev/null
-                exit 1
+                couple_fail "ice2fesom FAILED: remap_fesom_restart"
             fi
 
             wait ${_rgw_pid} ; _rgw_rc=$?
@@ -133,9 +132,8 @@ function ice2fesom {
             cat "${_rgw_log}" 2>/dev/null
             echo "----- end regenerate_oasis_weights output (rc=${_rgw_rc}) -----"
             if [ ${_rgw_rc} -ne 0 ] ; then
-                echo " *** ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc}) ***"
                 touch "${COUPLE_DIR}/.oasis_weights_stale"
-                exit 1
+                couple_fail "ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc})"
             fi
 
             # The weights must match the mesh we just built them for. A silent
@@ -151,10 +149,8 @@ function ice2fesom {
                     esac
                     _rgw_have=$(ncdump -h "${_rgw_f}" | awk -v d="${_rgw_dim}" '$1==d{print $3; exit}')
                     if [ "${_rgw_have}" != "${_rgw_nod}" ] ; then
-                        echo " *** ice2fesom FAILED: $(basename ${_rgw_f}) has ${_rgw_dim}=${_rgw_have}," \
-                             "the new mesh has ${_rgw_nod} nodes ***"
                         touch "${COUPLE_DIR}/.oasis_weights_stale"
-                        exit 1
+                        couple_fail "ice2fesom FAILED: $(basename ${_rgw_f}) has ${_rgw_dim}=${_rgw_have}, the new mesh has ${_rgw_nod} nodes"
                     fi
                 done
                 echo " *   weights match the new mesh (${_rgw_nod} nodes)"
@@ -512,26 +508,9 @@ NML
         return ${rc}
     fi
 
-    # --- Freezing-point cap on newly-under-ice columns ------------------------
-    # Where the moving geometry puts new ice over previously-open water
-    # (ulevels_new > ulevels_old) the remap carries the above-freezing
-    # open-ocean temperature straight under the new ice shelf; FESOM then melts
-    # against it in a runaway (large basal heat/freshwater flux into the thin
-    # ice-base layer) -> cfl_z blowup within a few days, ringing the whole
-    # margin. Cap T at the in-situ freezing point on those columns so there is
-    # no spurious thermal driving (salinity untouched).
-    local cap_py=${OCP_WEIGHTGEN_DRIVER_PY:-python}   # needs xarray + numpy
-    local cap_script=${FUNCTION_PATH}/../fesom/remap_restart/cap_new_cavity_temp.py
-    if [ -f "${cap_script}" ]; then
-        echo " *   capping new-cavity temperature to freezing (cap_new_cavity_temp.py)"
-        ${cap_py} "${cap_script}" \
-            "${COUPLE_DIR}/latest_submesh" \
-            "${MAXMESH_DIR_fesom}/cavity_nlvls.out" \
-            "${outdir}/temp.nc" "${outdir}/salt.nc" \
-            || { echo " *   cap_new_cavity_temp FAILED"; return 1; }
-    else
-        echo " *   WARNING: cap_new_cavity_temp.py not found (${cap_script}); skipping freezing cap"
-    fi
+    # Columns that the moving geometry puts under new ice are seeded by
+    # seed_newly_iced_from_cavity in remap_restart/mo_remap_fields.F90, from the
+    # nearest column that is cavity in both meshes. Nothing to do here.
 
     echo "     ...done. remapped restart -> ${outdir}"
 }
@@ -1008,7 +987,7 @@ SBEOF
                 "import netCDF4 as nc; nc.Dataset('${plit_out}','w').close()"
             if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${p2e_py}" \
                     "${COUPLE_DIR}/latest_ice_geometry.nc" "${plit_out}" ; then
-                echo " *** ice2fesom FAILED: make_pism2ece_plit ***"; exit 1
+                couple_fail "ice2fesom FAILED: make_pism2ece_plit"
             fi
         else
             echo " *   WARNING: cannot build the PISM-grid plit (${p2e_py} or"
@@ -1196,7 +1175,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     if ! PYTHONPATH="${OCP_TOOL_DIR}:${PYTHONPATH}" \
             ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${bounds_py}" \
             "${COUPLE_DIR}/latest_discharge.nc" "${ICB_BASIN_FILE}" ; then
-        echo " *** ice2fesom FAILED: add_cell_bounds ***"; exit 1
+        couple_fail "ice2fesom FAILED: add_cell_bounds"
     fi
 
     # Re-seat the carried bergs first. Their iceberg_elem is a global index on
@@ -1211,14 +1190,13 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             && [ -f "${ICB_RESTART_ISM}" ] && [ -d "${COUPLE_DIR}/latest_submesh" ]; then
         if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${reseat_py}" \
                 "${COUPLE_DIR}/latest_submesh" "${ICB_RESTART_ISM}" ; then
-            echo " *** ice2fesom FAILED: reseat_iceberg_restart ***"; exit 1
+            couple_fail "ice2fesom FAILED: reseat_iceberg_restart"
         fi
     fi
 
     local icb_py=${FUNCTION_PATH}/make_icebergs.py
     if [ -z "${ICB_BASIN_FILE:-}" ]; then
-        echo " *** ice2fesom FAILED: fesom.basin_file unset, the berg generator"
-        echo "     needs the ice sheet drainage basins ***"; exit 1
+        couple_fail "ice2fesom FAILED: fesom.basin_file unset, the berg generator needs the ice sheet drainage basins"
     fi
     # The submesh, not MESH_DIR_fesom. The mother mesh is the maximum extent and
     # includes cells presently under grounded ice, so placing bergs in it puts
@@ -1241,7 +1219,7 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             --seed "${CURRENT_YEAR_fesom:-0}" \
             --cavities "${ICB_USE_CAVITIES:-1}" \
             --scaling "${ICB_SCALING:-1,1,1,1,1,1}" ; then
-        echo " *** ice2fesom FAILED: make_icebergs ***"; exit 1
+        couple_fail "ice2fesom FAILED: make_icebergs"
     fi
 
     use_icesheet_coupling=1

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
 
@@ -28,7 +29,8 @@ from esm_catalog.types import FileMetadata
 
 def make_exp_metadata(**kwargs) -> ExperimentMetadata:
     """An ExperimentMetadata with sensible defaults; override any field via kwargs."""
-    return ExperimentMetadata(**{"experiment_id": "exp-alpha", **kwargs})
+    defaults = {"experiment_id": "exp-alpha", "experiment_path": Path("/exp/alpha")}
+    return ExperimentMetadata(**{**defaults, **kwargs})
 
 
 def make_file_metadata(**kwargs) -> FileMetadata:

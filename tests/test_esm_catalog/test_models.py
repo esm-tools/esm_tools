@@ -4,16 +4,39 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+from pydantic import ValidationError
+
 from esm_catalog.models import Contact, ExperimentMetadata
 
 
 def test_exp_metadata_minimal():
     exp_metadata = ExperimentMetadata(
         experiment_id="exp-alpha",
+        experiment_path=Path("/exp/alpha"),
     )
     assert exp_metadata.experiment_id == "exp-alpha"
-    assert exp_metadata.experiment_path is None
+    assert exp_metadata.experiment_path == Path("/exp/alpha")
     assert exp_metadata.namelists_by_component == {}
+    assert exp_metadata.components == []
+
+
+def test_exp_metadata_requires_a_path():
+    """An experiment always has a location; the path is required."""
+    with pytest.raises(ValidationError):
+        ExperimentMetadata(experiment_id="exp-alpha")
+
+
+def test_collection_id_is_name_plus_path_hash():
+    """The Collection id is the (reusable) name plus a path hash, so two
+    experiments sharing a name get distinct, stable ids."""
+    a = ExperimentMetadata(experiment_id="PI_ctrl", experiment_path=Path("/runs/a"))
+    b = ExperimentMetadata(experiment_id="PI_ctrl", experiment_path=Path("/runs/b"))
+    again = ExperimentMetadata(experiment_id="PI_ctrl", experiment_path=Path("/runs/a"))
+
+    assert a.collection_id.startswith("PI_ctrl-")
+    assert a.collection_id != b.collection_id  # same name, different path
+    assert a.collection_id == again.collection_id  # stable for the same path
 
 
 def test_exp_metadata_carries_prescanned_namelists():

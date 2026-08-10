@@ -36,19 +36,22 @@ def test_collection_is_pystac(collection):
 
 
 def test_collection_minimal_skeleton(collection):
-    assert collection.id == "exp-alpha"
-    # components are derived from the scanned namelists; none here → empty.
+    # id is unique (name + path hash); the human name is the title.
+    assert collection.id.startswith("exp-alpha-")
+    assert collection.title == "exp-alpha"
+    # components come from the experiment's `components` field; none set → empty.
     assert collection.extra_fields["components"] == []
 
 
 def test_collection_lists_all_experiment_components():
-    # A Collection is the whole experiment: it carries every component's
-    # namelists and lists every component, not one.
+    # A Collection is the whole experiment: it lists every component (from the
+    # components field, incl. baked-in submodels), independent of namelists.
     exp_metadata = make_exp_metadata(
+        components=["echam", "fesom"],
         namelists_by_component={
             "echam": {"namelist.echam": {"runctl": {"delta_time": 450}}},
             "fesom": {"namelist.fesom": {"clockinit": {"yearnew": 1850}}},
-        }
+        },
     )
     collection = make_collection(exp_metadata)
     assert collection.extra_fields["components"] == ["echam", "fesom"]

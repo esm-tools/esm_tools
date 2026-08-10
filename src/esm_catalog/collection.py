@@ -17,23 +17,25 @@ DEFAULT_BBOX: BBox = [-180.0, -90.0, 180.0, 90.0]
 def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
     """Build the STAC Collection for an experiment.
 
-    The Collection is the experiment: it carries every component's namelists.
+    A Collection is the whole experiment: all of its components.
 
     Parameters
     ----------
     exp_metadata : ExperimentMetadata
-        Experiment identity and pre-scanned config (experiment_id, namelists,
-        paleo config).
+        Experiment identity and pre-scanned config (experiment_id, components,
+        namelists, paleo config).
 
     Returns
     -------
     pystac.Collection
         A Collection with a default global extent and no parent — the
-        experiment is the catalog root.
+        experiment is the catalog root. Its ``id`` is unique (see
+        ``ExperimentMetadata.collection_id``); its ``title`` is the human
+        experiment name.
     """
     collection = Collection(
-        id=exp_metadata.experiment_id,
-        # STAC requires a string description; fall back to the id when None.
+        id=exp_metadata.collection_id,
+        # STAC requires a string description; fall back to the name when None.
         description=exp_metadata.description or exp_metadata.experiment_id,
         extent=Extent(
             spatial=SpatialExtent(bboxes=[DEFAULT_BBOX]),
@@ -41,13 +43,10 @@ def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
         ),
         title=exp_metadata.experiment_id,
         license=exp_metadata.data_license or "proprietary",
-        extra_fields={"components": sorted(exp_metadata.namelists_by_component)},
+        extra_fields={"components": sorted(exp_metadata.components)},
     )
     add_namelist_collection_extension(collection, exp_metadata.namelists_by_component)
     add_paleo_collection_extension(collection, exp_metadata.paleo_config)
-    # [NOTE] (LLM Claude-Opus 4.8): decode-companion assets shared by all items —
-    # GRIB code/parameter tables, the FESOM/ICON mesh, remap weights — belong
-    # here as Collection-level assets (one per experiment), not on each item.
     return collection
 
 

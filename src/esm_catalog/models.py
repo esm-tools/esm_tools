@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Optional, TypedDict, cast
 
@@ -9,7 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, SkipValidation, field_seriali
 
 from esm_catalog.namelist import NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
-from esm_catalog.types import ExperimentId, License
+from esm_catalog.types import ComponentName, ExperimentId, License
 
 Orcid = str
 """An ORCID identifier, e.g. '0000-0001-2345-6789' or its full URL."""
@@ -73,12 +74,22 @@ class ExperimentMetadata(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     experiment_id: ExperimentId
+    experiment_path: Path
     description: Optional[str] = None
     data_license: Optional[License] = None
-    experiment_path: Optional[Path] = None
+    # Model components, including baked-in submodels (e.g. jsbach inside echam).
+    components: list[ComponentName] = []
     # Populated by the scan layer, keyed by component. Empty by default, in
     # which case the namelist extension is a no-op. Values are f90nml.Namelist
     # objects, so validation is skipped rather than coerced.
     namelists_by_component: SkipValidation[NamelistsByComponent] = {}
     paleo_config: Optional[PaleoConfig] = None
     contacts: list[Contact] = []
+
+    @property
+    def collection_id(self) -> str:
+        """The STAC Collection id: the ``experiment_id`` plus a short hash of
+        the ``experiment_path``, so experiments that reuse a name still get
+        distinct ids."""
+        digest = hashlib.md5(str(self.experiment_path).encode()).hexdigest()[:8]
+        return f"{self.experiment_id}-{digest}"

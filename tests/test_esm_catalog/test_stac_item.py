@@ -39,10 +39,10 @@ def test_item_basic_fields(item):
     assert item.properties["format"] == "netcdf"
     assert item.properties["component"] == "echam"
     assert item.properties["experiment"] == "exp-alpha"
-    assert item.collection_id == "exp-alpha"
+    assert item.collection_id.startswith("exp-alpha-")  # name + path hash
     assert item.assets["data"].href.startswith("file://")
     assert item.links[0].rel == "collection"
-    assert item.links[0].target == "#exp-alpha"
+    assert item.links[0].target.startswith("#exp-alpha-")
 
 
 def test_item_bbox_and_geometry_passthrough(temp_nc):

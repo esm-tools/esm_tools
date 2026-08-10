@@ -63,13 +63,13 @@ def make_item(
         start_datetime=dt_start,
         end_datetime=dt_end,
         assets={"data": _build_data_asset(path, file_metadata)},
-        collection=exp_metadata.experiment_id,
+        collection=exp_metadata.collection_id,
     )
 
     item.add_link(
         Link(
             rel="collection",
-            target=f"#{exp_metadata.experiment_id}",
+            target=f"#{exp_metadata.collection_id}",
             media_type="application/json",
         )
     )
@@ -175,12 +175,6 @@ def _build_datetime(
     return dt_start, dt_end, (dt_start if single else None)
 
 
-# [NOTE] (LLM Claude-Opus 4.8): further per-file assets (thumbnail, metadata
-# sidecar, kerchunk/zarr index) join the item at the make_item assembly site as
-# extra keys alongside "data". Decode-companions shared across all items — GRIB
-# code/parameter tables, the unstructured mesh/grid, remap weights — are
-# one-per-experiment; put those on the Collection (see make_collection), not
-# here, so they are not duplicated across every item.
 def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
     """Build the single ``data`` asset for the source file.
 

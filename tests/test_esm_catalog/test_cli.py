@@ -11,15 +11,20 @@ from click.testing import CliRunner
 from esm_catalog.cli import main
 
 
-def test_help_lists_all_commands():
-    result = CliRunner().invoke(main, ["--help"])
+@pytest.fixture
+def runner():
+    return CliRunner()
+
+
+def test_help_lists_all_commands(runner):
+    result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
     for command in ("auth", "init", "scan", "push", "add", "rm", "edit"):
         assert command in result.output
 
 
-def test_auth_subcommands_registered():
-    result = CliRunner().invoke(main, ["auth", "--help"])
+def test_auth_subcommands_registered(runner):
+    result = runner.invoke(main, ["auth", "--help"])
     assert result.exit_code == 0
     assert "login" in result.output
     assert "logout" in result.output
@@ -38,7 +43,7 @@ def test_auth_subcommands_registered():
         ["edit", "collection"],
     ],
 )
-def test_stub_commands_report_not_implemented(argv):
-    result = CliRunner().invoke(main, argv)
+def test_stub_commands_report_not_implemented(runner, argv):
+    result = runner.invoke(main, argv)
     assert result.exit_code != 0
     assert "not implemented" in result.output

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
 
+from esm_catalog.contacts import add_contacts_collection_extension
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.namelist import add_namelist_collection_extension
 from esm_catalog.paleo import add_paleo_collection_extension
@@ -23,7 +24,7 @@ def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
     ----------
     exp_metadata : ExperimentMetadata
         Experiment identity and pre-scanned config (experiment_id, components,
-        namelists, paleo config).
+        contacts, namelists, paleo config).
 
     Returns
     -------
@@ -45,6 +46,7 @@ def make_collection(exp_metadata: ExperimentMetadata) -> Collection:
         license=exp_metadata.data_license or "proprietary",
         extra_fields={"components": sorted(exp_metadata.components)},
     )
+    add_contacts_collection_extension(collection, exp_metadata.contacts)
     add_namelist_collection_extension(collection, exp_metadata.namelists_by_component)
     add_paleo_collection_extension(collection, exp_metadata.paleo_config)
     return collection

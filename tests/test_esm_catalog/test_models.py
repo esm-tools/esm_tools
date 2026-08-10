@@ -72,3 +72,23 @@ def test_contact_to_stac_carries_custom_roles():
         name="Jane", institution="AWI", roles=["author", "processor"]
     ).to_stac()
     assert stac["roles"] == ["author", "processor"]
+
+
+def test_contact_to_stac_aliases_institution_to_organization():
+    stac = Contact(name="Jane", institution="AWI").to_stac()
+    assert stac["organization"] == "AWI"
+
+
+def test_contact_to_stac_expands_bare_orcid_to_url():
+    stac = Contact(name="Jane", orcid="0000-0001-2345-6789").to_stac()
+    assert stac["identifier"] == "https://orcid.org/0000-0001-2345-6789"
+
+
+def test_contact_to_stac_passes_through_full_orcid_url():
+    stac = Contact(name="Jane", orcid="https://orcid.org/0000-0001-2345-6789").to_stac()
+    assert stac["identifier"] == "https://orcid.org/0000-0001-2345-6789"
+
+
+def test_contact_to_stac_omits_absent_orcid():
+    stac = Contact(name="Jane", institution="AWI").to_stac()
+    assert "identifier" not in stac

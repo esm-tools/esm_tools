@@ -1,4 +1,7 @@
-"""Contacts STAC extension: PI/author contacts on a STAC Item.
+"""Contacts STAC extension: PI/author contacts on a STAC Collection.
+
+Contacts describe the experiment, so they attach to the Collection. An Item
+reaches them through its ``rel="collection"`` link.
 
 The contacts schema is hosted upstream (stac-extensions.github.io), so there is
 no local copy to validate against — this extension only registers its URL.
@@ -13,22 +16,24 @@ from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 
 
-def add_contacts_item_extension(item: pystac.Item, contacts: list[Contact]) -> None:
-    """Inject the contacts extension URL and properties into *item*.
+def add_contacts_collection_extension(
+    collection: pystac.Collection, contacts: list[Contact]
+) -> None:
+    """Inject the contacts extension URL and contacts into *collection*.
 
-    No-op when *contacts* is empty. Takes the contacts slice directly (like the
-    other item extensions) rather than the whole experiment, so it need not
-    depend on the ExperimentMetadata model.
+    PI/author contacts describe the experiment, so they attach to the Collection.
+    No-op when *contacts* is empty. A Collection has no ``properties``, so the
+    contacts live in ``extra_fields``.
 
     Parameters
     ----------
-    item : pystac.Item
-        The item to annotate in place.
+    collection : pystac.Collection
+        The collection to annotate in place.
     contacts : list of Contact
         The experiment's PI/author contacts.
     """
     if not contacts:
         return
-    item.properties["contacts"] = [contact.to_stac() for contact in contacts]
+    collection.extra_fields["contacts"] = [contact.to_stac() for contact in contacts]
     # remote schema (upstream stac-extensions) — nothing local to validate against
-    apply_extension(item, Extension.contacts, validate=False)
+    apply_extension(collection, Extension.contacts, validate=False)

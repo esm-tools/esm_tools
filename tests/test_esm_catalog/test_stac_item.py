@@ -11,8 +11,6 @@ from pystac import Item, STACError
 from upath import UPath
 
 from esm_catalog.item import _to_href, make_item
-from esm_catalog.models import Contact
-from esm_catalog.registry import EXTENSION_URLS
 
 from .helpers import make_exp_metadata, make_file_metadata
 
@@ -215,67 +213,3 @@ def test_item_id_defaults_to_unknown_variable(temp_nc):
 
 def test_netcdf_media_type_default(item):
     assert item.assets["data"].media_type == "application/x-netcdf"
-
-
-# --- contacts ---
-
-
-def test_item_no_contacts_no_extension(item):
-    assert "contacts" not in item.properties
-    assert item.stac_extensions == []
-
-
-def test_item_contacts_in_properties(temp_nc):
-    exp_metadata = make_exp_metadata(
-        contacts=[
-            Contact(name="Jane Doe", orcid="0000-0001-2345-6789", institution="AWI")
-        ]
-    )
-    item = make_item(temp_nc, make_file_metadata(), exp_metadata)
-    contacts = item.properties["contacts"]
-    assert len(contacts) == 1
-    assert contacts[0]["name"] == "Jane Doe"
-    assert contacts[0]["identifier"] == "https://orcid.org/0000-0001-2345-6789"
-    assert contacts[0]["organization"] == "AWI"
-
-
-def test_item_contacts_orcid_full_url_passthrough(temp_nc):
-    exp_metadata = make_exp_metadata(
-        contacts=[
-            Contact(
-                name="Jane Doe",
-                orcid="https://orcid.org/0000-0001-2345-6789",
-                institution="AWI",
-            )
-        ]
-    )
-    item = make_item(temp_nc, make_file_metadata(), exp_metadata)
-    assert (
-        item.properties["contacts"][0]["identifier"]
-        == "https://orcid.org/0000-0001-2345-6789"
-    )
-
-
-def test_item_contacts_registers_extension_url(temp_nc):
-    exp_metadata = make_exp_metadata(contacts=[Contact(name="Jane", institution="AWI")])
-    item = make_item(temp_nc, make_file_metadata(), exp_metadata)
-    assert EXTENSION_URLS["contacts"] in item.stac_extensions
-
-
-def test_item_contacts_orcid_optional(temp_nc):
-    exp_metadata = make_exp_metadata(
-        contacts=[Contact(name="Jane Doe", institution="AWI")]
-    )
-    item = make_item(temp_nc, make_file_metadata(), exp_metadata)
-    assert "identifier" not in item.properties["contacts"][0]
-
-
-def test_item_multiple_contacts(temp_nc):
-    exp_metadata = make_exp_metadata(
-        contacts=[
-            Contact(name="Jane Doe", institution="AWI"),
-            Contact(name="John Smith", institution="DKRZ"),
-        ]
-    )
-    item = make_item(temp_nc, make_file_metadata(), exp_metadata)
-    assert len(item.properties["contacts"]) == 2

@@ -8,6 +8,8 @@ import pytest
 from pystac import Collection, Item
 
 from esm_catalog.collection import make_collection, update_extent
+from esm_catalog.models import Contact
+from esm_catalog.registry import EXTENSION_URLS
 
 from .helpers import make_exp_metadata
 
@@ -155,3 +157,26 @@ def test_temporal_extent_not_shrunk_by_inner_item(collection):
     update_extent(collection, _item(dt_lo, bbox=[0, 0, 1, 1], dt_end=dt_hi))
     update_extent(collection, _item(dt_mid, bbox=[0, 0, 1, 1]))
     assert collection.extent.temporal.intervals[0] == [dt_lo, dt_hi]
+
+
+# --- contacts ---
+
+
+def test_collection_no_contacts_no_extension(collection):
+    # Default experiment has no contacts, so the collection carries none and does
+    # not register the extension.
+    assert "contacts" not in collection.extra_fields
+    assert EXTENSION_URLS["contacts"] not in collection.stac_extensions
+
+
+def test_collection_wires_contacts_and_registers_extension():
+    # make_collection places the serialized contacts on the collection and
+    # registers the extension. Contact.to_stac() serialization is tested in
+    # test_models.py; here we only check the wiring.
+    contacts = [
+        Contact(name="Jane Doe", institution="AWI"),
+        Contact(name="John Smith", institution="DKRZ"),
+    ]
+    collection = make_collection(make_exp_metadata(contacts=contacts))
+    assert collection.extra_fields["contacts"] == [c.to_stac() for c in contacts]
+    assert EXTENSION_URLS["contacts"] in collection.stac_extensions

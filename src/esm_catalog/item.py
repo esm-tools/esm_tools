@@ -9,7 +9,6 @@ from pathlib import Path, PurePosixPath
 from pystac import Asset, Item, Link
 from upath import UPath
 
-from esm_catalog.contacts import add_contacts_item_extension
 from esm_catalog.datacube import add_datacube_item_extension
 from esm_catalog.models import ExperimentMetadata
 from esm_catalog.namelist import add_namelist_item_extension
@@ -35,13 +34,13 @@ def make_item(
         The file's scanned metadata (scan_netcdf/scan_grib output).
     exp_metadata : ExperimentMetadata
         Experiment identity and pre-scanned config (experiment_id, namelists,
-        paleo config, contacts).
+        paleo config). Contacts are set on the Collection.
 
     Returns
     -------
     pystac.Item
-        A STAC Item for the file, with the datacube, contacts, namelist, and
-        paleo extensions applied where the metadata warrants them.
+        A STAC Item for the file, with the datacube, namelist, and paleo
+        extensions applied where the metadata warrants them.
     """
     if isinstance(path, str):
         path = UPath(path if "://" in path else Path(path).resolve())
@@ -74,7 +73,6 @@ def make_item(
         )
     )
 
-    add_contacts_item_extension(item, exp_metadata.contacts)
     add_datacube_item_extension(item, file_metadata)
     add_namelist_item_extension(item, exp_metadata.namelists_by_component)
     add_paleo_item_extension(item, exp_metadata.paleo_config)

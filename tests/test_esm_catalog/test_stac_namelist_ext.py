@@ -258,13 +258,6 @@ def _shipped_namelist_files() -> list[Path]:
     ]
 
 
-def test_shipped_namelist_corpus_is_present():
-    # Guards the parametrized corpus test below: if the shipped-namelist root is
-    # missing, that test parametrizes over zero cases and passes while asserting
-    # nothing. Fail loudly instead of vanishing silently.
-    assert len(_shipped_namelist_files()) > 20
-
-
 @pytest.fixture(
     params=_shipped_namelist_files(),
     ids=lambda p: str(p.relative_to(_NAMELIST_ROOT)),

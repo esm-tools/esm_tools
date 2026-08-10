@@ -1,22 +1,21 @@
 """Shared fixtures for the esm_catalog STAC tests.
 
-Generic builders live here so sibling test modules can drop their private
-_ctx()/bare-object copies onto a single source of truth. Extension-specific
-fixtures (e.g. shipped_namelist) stay in their own test module.
+Zero-arg object builders (item, collection) and temp_nc live here as fixtures.
+The parameterized builders (make_exp_metadata, make_file_metadata) and assert_valid are plain
+functions in helpers.py, imported and called inline with per-test arguments.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 import pytest
 from pystac import Collection, Extent, Item, SpatialExtent, TemporalExtent
 
-from esm_catalog.context import CollectionContext
-
 
 @pytest.fixture
-def bare_collection():
+def collection() -> Collection:
     """An empty pystac Collection, to exercise collection-level extensions directly."""
     return Collection(
         id="exp",
@@ -29,7 +28,7 @@ def bare_collection():
 
 
 @pytest.fixture
-def bare_item():
+def item() -> Item:
     """A minimal pystac Item, to exercise item-level extensions directly."""
     return Item(
         id="i",
@@ -41,12 +40,8 @@ def bare_item():
 
 
 @pytest.fixture
-def make_ctx():
-    """Factory for a CollectionContext — the end-to-end builder tests need one."""
-
-    def _make(**kwargs):
-        return CollectionContext(
-            experiment_id="exp", component="echam", collection_id="exp", **kwargs
-        )
-
-    return _make
+def temp_nc(tmp_path) -> Path:
+    """A throwaway .nc file on disk; make_item only needs the path to exist."""
+    f = tmp_path / "temp.nc"
+    f.write_bytes(b"x")
+    return f

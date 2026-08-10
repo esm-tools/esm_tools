@@ -1,173 +1,225 @@
-"""Build a STAC Item dict from scan metadata and collection context."""
+"""Build a STAC Item from file metadata and experiment metadata."""
 
 from __future__ import annotations
 
 import hashlib
-from datetime import timezone
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
-from typing import Union
 
 from pystac import Asset, Item, Link
 from upath import UPath
 
-from esm_catalog.context import CollectionContext
-from esm_catalog.datacube import add_datacube_extension
+from esm_catalog.datacube import add_datacube_item_extension
+from esm_catalog.models import ExperimentMetadata
 from esm_catalog.namelist import add_namelist_item_extension
-from esm_catalog.paleo import add_paleo_data
-from esm_catalog.registry import EXTENSION_URLS
-from esm_catalog.stac_ext import register_extension
+from esm_catalog.paleo import add_paleo_item_extension
+from esm_catalog.types import FileMetadata, Href
+
+ItemId = str
+"""A STAC Item id, e.g. 'tas.echam.20000101.a1b2c3'."""
 
 
 def make_item(
-    path: Union[Path, UPath, str],
-    metadata: dict,
-    ctx: CollectionContext,
+    path: Path | UPath | str,
+    file_metadata: FileMetadata,
+    exp_metadata: ExperimentMetadata,
 ) -> Item:
-    """Construct a STAC Item dict.
+    """Construct a STAC Item for a single output file.
 
-    Args:
-        path:     Path to the source file (local Path, UPath, or URI string).
-        metadata: Dict returned by scan_netcdf() or scan_grib().
-        ctx:      CollectionContext with experiment_id, component, collection_id.
+    Parameters
+    ----------
+    path : Path or UPath or str
+        Path to the source file (local Path, UPath, or URI string).
+    file_metadata : FileMetadata
+        The file's scanned metadata (scan_netcdf/scan_grib output).
+    exp_metadata : ExperimentMetadata
+        Experiment identity and pre-scanned config (experiment_id, namelists,
+        paleo config). Contacts are set on the Collection.
 
-    Returns:
-        pystac.item.Item object representing the STAC Item
+    Returns
+    -------
+    pystac.Item
+        A STAC Item for the file, with the datacube, namelist, and paleo
+        extensions applied where the metadata warrants them.
     """
     if isinstance(path, str):
         path = UPath(path if "://" in path else Path(path).resolve())
 
-    dt_start, dt_end, item_datetime, _, _ = _build_datetime(metadata)
-    id = _make_id(
-        metadata.get("variable", "unknown"),
-        ctx.component,
-        metadata.get("datetime_str", "000000"),
+    dt_start, dt_end, item_datetime = _build_datetime(file_metadata)
+    item_id = _build_id(
+        file_metadata.get("variable", "unknown"),
+        file_metadata.get("component", "unknown"),
+        file_metadata.get("datetime_str", "000000"),
         path,
     )
 
     item = Item(
-        id=id,
-        geometry=metadata.get("geometry"),
-        bbox=metadata.get("bbox"),
+        id=item_id,
+        geometry=file_metadata.get("geometry"),
+        bbox=file_metadata.get("bbox"),
         datetime=item_datetime,
-        properties=_build_properties(metadata, ctx),
+        properties=_build_properties(file_metadata, exp_metadata),
         start_datetime=dt_start,
         end_datetime=dt_end,
-        assets=_build_assets(path, metadata),
-        collection=ctx.collection_id,
+        assets={"data": _build_data_asset(path, file_metadata)},
+        collection=exp_metadata.collection_id,
     )
 
     item.add_link(
         Link(
             rel="collection",
-            target=f"#{ctx.collection_id}",
+            target=f"#{exp_metadata.collection_id}",
             media_type="application/json",
         )
     )
 
-    add_contacts(item, ctx)
-    add_datacube_extension(item, metadata)
-    add_namelist_item_extension(item, ctx.namelists_by_component)
-    add_paleo_data(item, ctx.paleo_config)
+    add_datacube_item_extension(item, file_metadata)
+    add_namelist_item_extension(item, exp_metadata.namelists_by_component)
+    add_paleo_item_extension(item, exp_metadata.paleo_config)
 
     return item
 
 
-def _make_id(
-    variable: str, component: str, dt_str: str, path: Union[Path, UPath]
-) -> str:
-    """Return a stable unique item ID: {variable}.{component}.{datetime}.{hash}."""
+def _build_id(
+    variable: str, component: str, datetime_str: str, path: Path | UPath
+) -> ItemId:
+    """Build a stable unique item id of the form {variable}.{component}.{datetime_str}.{hash}.
+
+    Parameters
+    ----------
+    variable : str
+        The primary data variable name.
+    component : str
+        The model component that produced the file.
+    datetime_str : str
+        The file's nominal timestamp, already formatted for the id.
+    path : Path or UPath
+        The source file path, hashed to disambiguate otherwise-identical ids.
+
+    Returns
+    -------
+    ItemId
+        The composed item id.
+    """
     path_hash = hashlib.md5(str(path).encode()).hexdigest()[:6]
-    return f"{variable}.{component}.{dt_str}.{path_hash}"
+    return f"{variable}.{component}.{datetime_str}.{path_hash}"
 
 
-def _build_properties(metadata: dict, ctx) -> dict:
-    """Assemble the STAC item properties dict from metadata and context."""
+def _build_properties(
+    file_metadata: FileMetadata, exp_metadata: ExperimentMetadata
+) -> dict:
+    """Assemble the STAC item properties from file metadata and experiment.
+
+    Parameters
+    ----------
+    file_metadata : FileMetadata
+        The file's scanned metadata.
+    exp_metadata : ExperimentMetadata
+        The owning experiment, source of the ``experiment`` property.
+
+    Returns
+    -------
+    dict
+        The STAC item properties. A ``variables`` list is added only when the
+        file holds more than one named data variable.
+    """
 
     properties: dict = {
-        "variable": metadata.get("variable", "unknown"),
-        "experiment": ctx.experiment_id,
-        "component": ctx.component,
-        "format": metadata.get("format", "unknown"),
+        "variable": file_metadata.get("variable", "unknown"),
+        "experiment": exp_metadata.experiment_id,
+        "component": file_metadata.get("component", "unknown"),
+        "format": file_metadata.get("format", "unknown"),
     }
-    if metadata.get("output_frequency"):
-        properties["output_frequency"] = metadata["output_frequency"]
+    if file_metadata.get("output_frequency"):
+        properties["output_frequency"] = file_metadata["output_frequency"]
 
-    all_var_names = [
-        v["name"]
-        for v in metadata.get("variables", [])
-        if v.get("name") and v["name"] != "unknown"
+    variable_names = [
+        variable["name"]
+        for variable in file_metadata.get("variables", [])
+        if variable.get("name") and variable["name"] != "unknown"
     ]
-    if len(all_var_names) > 1:
-        properties["variables"] = all_var_names
+    if len(variable_names) > 1:
+        properties["variables"] = variable_names
 
     return properties
 
 
-def _contact_to_stac(contact) -> dict:
-    """Convert a Contact dataclass to STAC contacts extension format."""
-    entry: dict = {"name": contact.name, "roles": list(contact.roles)}
-    if contact.orcid:
-        orcid = contact.orcid
-        if not orcid.startswith("https://orcid.org/"):
-            orcid = f"https://orcid.org/{orcid}"
-        entry["identifier"] = orcid
-    if contact.institution:
-        entry["organization"] = contact.institution
-    return entry
+def _build_datetime(
+    file_metadata: FileMetadata,
+) -> tuple[datetime | None, datetime | None, datetime | None]:
+    """Parse and normalise the datetime fields from file metadata.
 
+    Naive datetimes are assumed UTC and made timezone-aware.
 
-def add_contacts(item, ctx) -> None:
-    """Inject contacts extension URL and properties into *item*."""
-    if not ctx.contacts:
-        return
+    Parameters
+    ----------
+    file_metadata : FileMetadata
+        The file's scanned metadata.
 
-    item.properties["contacts"] = [_contact_to_stac(c) for c in ctx.contacts]
-    register_extension(item, EXTENSION_URLS["contacts"])
-
-
-def _build_datetime(metadata: dict) -> tuple:
-    """Parse and normalise datetime fields from metadata.
-
-    Returns:
-        (dt_start, dt_end, item_datetime, start_datetime, end_datetime)
-        where item_datetime is set for single-time files and
-        start_datetime/end_datetime for multi-time files.
+    Returns
+    -------
+    tuple of (datetime or None, datetime or None, datetime or None)
+        ``(dt_start, dt_end, item_datetime)``. ``item_datetime`` is set only for
+        a single-time file (start == end, or no end), otherwise None.
     """
-    dt_start = metadata.get("datetime_start")
-    dt_end = metadata.get("datetime_end")
-
+    dt_start = file_metadata.get("datetime_start")
+    dt_end = file_metadata.get("datetime_end")
     if dt_start and dt_start.tzinfo is None:
         dt_start = dt_start.replace(tzinfo=timezone.utc)
     if dt_end and dt_end.tzinfo is None:
         dt_end = dt_end.replace(tzinfo=timezone.utc)
 
-    if dt_start == dt_end or dt_end is None:
-        return dt_start, dt_end, dt_start if dt_start else None, None, None
-    return (
-        dt_start,
-        dt_end,
-        None,
-        dt_start.isoformat() if dt_start else None,
-        dt_end.isoformat() if dt_end else None,
+    single = dt_end is None or dt_start == dt_end
+    return dt_start, dt_end, (dt_start if single else None)
+
+
+def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
+    """Build the single ``data`` asset for the source file.
+
+    Parameters
+    ----------
+    path : Path or UPath
+        The source file path, used for the asset href and title.
+    file_metadata : FileMetadata
+        The file's scanned metadata; its ``format`` selects the media type.
+
+    Returns
+    -------
+    pystac.Asset
+        The file's data asset.
+    """
+    file_format = file_metadata.get("format", "")
+    media_type = (
+        "application/x-grib2" if file_format == "grib" else "application/x-netcdf"
+    )
+    return Asset(
+        href=_to_href(path),
+        media_type=media_type,
+        title=PurePosixPath(str(path)).name,
+        roles=["data"],
     )
 
 
-def _build_assets(path: Union[Path, UPath], metadata: dict) -> dict:
-    """Build the STAC assets dict with a single 'data' asset for the source file."""
-    fmt = metadata.get("format", "")
-    media_type = "application/x-grib2" if fmt == "grib" else "application/x-netcdf"
-    return {
-        "data": Asset(
-            href=_to_href(path),
-            media_type=media_type,
-            title=PurePosixPath(str(path)).name,
-            roles=["data"],
-        )
-    }
+def _to_href(path: Path | UPath) -> Href:
+    """Convert a path to a STAC-compatible href (file:// or protocol URI).
 
+    Parameters
+    ----------
+    path : Path or UPath
+        The source file path.
 
-def _to_href(path: Union[Path, UPath]) -> str:
-    """Convert path to a STAC-compatible href (file:// or protocol URI)."""
+    Returns
+    -------
+    Href
+        A ``file://`` URI for local paths, or a protocol URI (with host where
+        the storage options provide one) for remote paths.
+
+    Raises
+    ------
+    ValueError
+        If a host-based remote path carries no host in its storage options, so
+        no valid URI can be constructed.
+    """
     if hasattr(path, "protocol") and path.protocol and path.protocol != "file":
         protocol = path.protocol
         # UPath 0.3.x omits the host from str(path) for host-based protocols (ssh, sftp).
@@ -182,4 +234,7 @@ def _to_href(path: Union[Path, UPath]) -> str:
                 f"'{protocol}' path has no host in storage_options."
             )
         return uri
+    # Local path: as_uri() rejects relative paths, so resolve to absolute first.
+    if not path.is_absolute():
+        path = Path(path).resolve()
     return path.as_uri()

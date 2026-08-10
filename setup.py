@@ -37,7 +37,7 @@ requirements = [
     "tqdm==4.66.3",
     "typing_extensions>=4.1.1",  # Maximum number for Python 3.6 support
     "xdgenvpy==2.3.5",
-    "pydantic>=1.10.13",
+    "pydantic>=2",
     "h5netcdf>=0.8.1",
 ]
 
@@ -95,6 +95,7 @@ setup(
             "universal-pathlib>=0.2",
             "f90nml>=1.4",
             "jsonschema>=4.0",
+            "pydantic>=2",
         ],
     },
     install_requires=requirements,
@@ -128,6 +129,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.66.5",
+    version="6.66.6",
     zip_safe=False,
 )

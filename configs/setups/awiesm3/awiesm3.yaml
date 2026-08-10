@@ -21,7 +21,7 @@ general:
 
     # OIFS->PISM surface mass balance via the ISM-mapper, and the PISM->OIFS
     # orography/plit return. ismm is always built (it is in the develop-is
-    # coupling); this gates its OASIS fields and directions.
+    # coupling); this gates whether it is launched and its OASIS fields exist.
     # ECE_CPL_ISMM belongs in the runscript next to ECE_LANDICE/ISMRGNPFX:
     # NAMECECFG is add_'d per chunk there and a second add_ here collides.
     smb_coupled: false
@@ -42,6 +42,13 @@ general:
     # never read, which is also why that block's two fesom_icb_pism steps have
     # never run. Before modify_namelists, which loads, modifies and writes the
     # namelists in one step: anything set after it never reaches disk.
+    # ismm only joins the launch when the SMB fields exist. A launched ismm with
+    # no coupled fields deadlocks OASIS, so the two must move together.
+    choose_general.smb_coupled:
+        true:
+            add_include_models:
+                - ismm
+
     choose_general.with_icb:
         true:
             prepcompute_recipe:
@@ -155,18 +162,12 @@ general:
             # of the iterative coupling; dEBM is invoked from PISM's coupler.
             # (ismm DOES have to join the launch once it is switched on, but via
             # general.smb_coupled, not from here.)
-            # include_models is consumed before general-level choose_ blocks
-            # resolve, so ismm cannot be gated there. Keep it in step with
-            # smb_coupled: a launched ismm with no coupled fields deadlocks OASIS.
             add_include_models:
                 - xios
-                - ismm
             # Build-only components come in via the coupling and land here as root
             # sections nothing declares; esm-tools >=6.54 rejects those.
             add_other_components:
                 - debm
-            # OIFS->PISM SMB (gates the OASIS fields and directions).
-            smb_coupled: true
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false

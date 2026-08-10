@@ -20,6 +20,7 @@ general:
     # PISM's discharge reaches FESOM as icebergs, and the runoff mapper stops
     # passing the atmosphere's Antarctic snow-cap calving that it replaces.
     ism_freshwater_return: true
+    smb_coupled: true
     # Serial runs refresh the concurrent-mode chunk-1 bootstrap set in the pool
     # (couplings/general/harvest.functions, once per coupling identity). Without
     # these two keys the identity is empty and the harvest skips, which is how

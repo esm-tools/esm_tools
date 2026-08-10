@@ -20,6 +20,7 @@ general:
     # PISM's discharge reaches FESOM as icebergs, and the runoff mapper stops
     # passing the atmosphere's Antarctic snow-cap calving that it replaces.
     ism_freshwater_return: true
+    smb_coupled: true
     nday: 0
     nmonth: 0
     nyear: 1

@@ -1,6 +1,6 @@
 """Datacube STAC extension: cube:dimensions and cube:variables.
 
-Expected metadata shapes (the contract the file scanners must meet):
+The metadata a file scanner must provide::
 
     file_metadata["dimensions"]: dict mapping dimension name to a STAC datacube
         Dimension Object, e.g.
@@ -9,7 +9,7 @@ Expected metadata shapes (the contract the file scanners must meet):
          "lon": {"type": "spatial", "axis": "x", "extent": [-180.0, 180.0]}}
 
     file_metadata["variables"]: list of dicts with keys
-        name (str, required — entries without it are skipped),
+        name (str, required; entries without it are skipped),
         dimensions (list[str]), units (str), and any of
         description / long_name / standard_name (str).
 

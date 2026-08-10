@@ -1,13 +1,16 @@
 """Namelist STAC extension: Fortran namelist parameters as CQL2 queryables.
 
-Collection level (collection.extra_fields):
+Collection level (``collection.extra_fields``)::
+
     nml:files       - "component:file" namelist filenames
     nml:groups      - namelist groups across all files
     nml:parameters  - flattened "component:file:group:key" -> value, for CQL2
                       filtering (component-qualified so two components sharing a
                       filename cannot collide)
 
-Item level (item.properties), one entry per parameter across all components:
+Item level (``item.properties``), one entry per parameter across all
+components::
+
     nml:{component}:{file}:{group}:{key} -> value
 """
 

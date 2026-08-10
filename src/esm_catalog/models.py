@@ -29,28 +29,20 @@ class StacContact(TypedDict, total=False):
 
 
 class Contact(BaseModel):
-    """A single PI or author contact for an experiment.
-
-    Attributes
-    ----------
-    name : str or None
-        Full name.
-    orcid : Orcid or None
-        ORCID identifier, e.g. "0000-0001-2345-6789".
-    institution : Institution or None
-        Affiliated institution.
-    roles : list of str
-        STAC contact roles (defaults to ["principal_investigator"]).
-    """
+    """A single PI or author contact for an experiment."""
 
     model_config = ConfigDict(frozen=True)
 
     name: Optional[str] = None
+    """Full name."""
     orcid: Optional[Orcid] = Field(default=None, serialization_alias="identifier")
+    """ORCID identifier, e.g. "0000-0001-2345-6789"."""
     institution: Optional[Institution] = Field(
         default=None, serialization_alias="organization"
     )
+    """Affiliated institution."""
     roles: list[str] = ["principal_investigator"]
+    """STAC contact roles; defaults to ["principal_investigator"]."""
 
     @field_serializer("orcid")
     def _full_orcid_url(self, orcid: Optional[Orcid]) -> Optional[Orcid]:

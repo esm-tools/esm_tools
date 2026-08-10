@@ -194,6 +194,13 @@ ifsaturatewetlands 1		! Whether to take water from runoff in association with th
 !save_state 0			! Whether to save a state file ! ecev3 - outcommented
 !state_path ""			! Directory to put state files in
 
+! Take state from the nearest source gridcell when the gridlist does not match
+! the state file. With a moving coastline the L grid gains and loses cells every
+! mesh-change leg, and a gridcell with no entry in the state otherwise starts
+! bare: deserialize_gridcell throws, the framework catches it and leaves the
+! cell as landcover_init made it.
+state_remap 1
+
 
 !///////////////////////////////////////////////////////////////////////////////////////
 ! LANDCOVER PARAMETERS

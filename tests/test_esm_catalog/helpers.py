@@ -32,15 +32,15 @@ def make_exp_metadata(**kwargs) -> ExperimentMetadata:
 
 
 def make_file_metadata(**kwargs) -> FileMetadata:
-    """Default scan metadata for one file; override any key via kwargs."""
-    return {
+    """Default scan metadata for one file; override any field via kwargs."""
+    defaults = {
         "variable": "temp",
         "component": "echam",
         "format": "netcdf",
         "datetime_start": datetime(2000, 1, 1, tzinfo=timezone.utc),
         "datetime_end": datetime(2000, 1, 1, tzinfo=timezone.utc),
-        **kwargs,
     }
+    return FileMetadata(**{**defaults, **kwargs})
 
 
 def assert_valid(obj, schema) -> None:

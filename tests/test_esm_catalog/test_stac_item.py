@@ -207,8 +207,7 @@ def test_to_href_bucket_protocol_uri():
 
 
 def test_item_id_defaults_to_unknown_variable(temp_nc):
-    file_metadata = make_file_metadata()
-    del file_metadata["variable"]
+    file_metadata = make_file_metadata(variable=None)
     item = make_item(temp_nc, file_metadata, make_exp_metadata())
     assert re.fullmatch(r"unknown\.echam\.000000\.[0-9a-f]{6}", item.id)
 

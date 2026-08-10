@@ -48,16 +48,16 @@ def make_item(
 
     dt_start, dt_end, item_datetime = _build_datetime(file_metadata)
     item_id = _build_id(
-        file_metadata.get("variable", "unknown"),
-        file_metadata.get("component", "unknown"),
-        file_metadata.get("datetime_str", "000000"),
+        file_metadata.variable or "unknown",
+        file_metadata.component or "unknown",
+        file_metadata.datetime_str or "000000",
         path,
     )
 
     item = Item(
         id=item_id,
-        geometry=file_metadata.get("geometry"),
-        bbox=file_metadata.get("bbox"),
+        geometry=file_metadata.geometry,
+        bbox=file_metadata.bbox,
         datetime=item_datetime,
         properties=_build_properties(file_metadata, exp_metadata),
         start_datetime=dt_start,
@@ -127,18 +127,18 @@ def _build_properties(
     """
 
     properties: dict = {
-        "variable": file_metadata.get("variable", "unknown"),
+        "variable": file_metadata.variable or "unknown",
         "experiment": exp_metadata.experiment_id,
-        "component": file_metadata.get("component", "unknown"),
-        "format": file_metadata.get("format", "unknown"),
+        "component": file_metadata.component or "unknown",
+        "format": file_metadata.format or "unknown",
     }
-    if file_metadata.get("output_frequency"):
-        properties["output_frequency"] = file_metadata["output_frequency"]
+    if file_metadata.output_frequency:
+        properties["output_frequency"] = file_metadata.output_frequency
 
     variable_names = [
-        variable["name"]
-        for variable in file_metadata.get("variables", [])
-        if variable.get("name") and variable["name"] != "unknown"
+        variable.name
+        for variable in file_metadata.variables
+        if variable.name and variable.name != "unknown"
     ]
     if len(variable_names) > 1:
         properties["variables"] = variable_names
@@ -164,8 +164,8 @@ def _build_datetime(
         ``(dt_start, dt_end, item_datetime)``. ``item_datetime`` is set only for
         a single-time file (start == end, or no end), otherwise None.
     """
-    dt_start = file_metadata.get("datetime_start")
-    dt_end = file_metadata.get("datetime_end")
+    dt_start = file_metadata.datetime_start
+    dt_end = file_metadata.datetime_end
     if dt_start and dt_start.tzinfo is None:
         dt_start = dt_start.replace(tzinfo=timezone.utc)
     if dt_end and dt_end.tzinfo is None:
@@ -196,7 +196,7 @@ def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
     pystac.Asset
         The file's data asset.
     """
-    file_format = file_metadata.get("format", "")
+    file_format = file_metadata.format or ""
     media_type = (
         "application/x-grib2" if file_format == "grib" else "application/x-netcdf"
     )

@@ -100,8 +100,18 @@ fesom:
 lpj_guess:
     nproc: 64 # originally 16
     omp_num_threads: 4
-    lresume: false
     mip: "cmip7"
+    # Start from the spun-up vegetation rather than bare ground. The state was
+    # written on the old gridlist, so the cells the coastline adds have no entry
+    # in it and are filled by nearest neighbour (state_remap in ecearth.ins.j2).
+    lresume: true
+    ini_parent_exp_id: "lpjg_spinup"
+    ini_parent_date: "3849-12-31"
+    ini_restart_dir: "${general.pool_dir}/lpj-guess/restart/${oifs.resolution}-${fesom.resolution}/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: ${ini_restart_dir}/lpjg_state_3850/*
 
 oifs:
     resolution: TCO95

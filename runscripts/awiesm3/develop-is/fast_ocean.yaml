@@ -106,7 +106,11 @@ lpj_guess:
     # in it and are filled by nearest neighbour (state_remap in ecearth.ins.j2).
     lresume: true
     ini_parent_exp_id: "lpjg_spinup"
-    ini_parent_date: "3849-12-31"
+    # create_deserializer looks for <state_path>/lpjg_state_<calendar year>, so
+    # the directory in work has to carry the year the leg starts, whatever year
+    # the spinup that filled it was written at. This date sets that name via
+    # lpjg_parent_state; the source below is the spinup itself.
+    ini_parent_date: "1899-12-31"
     ini_restart_dir: "${general.pool_dir}/lpj-guess/restart/${oifs.resolution}-${fesom.resolution}/"
     choose_general.run_number:
         1:

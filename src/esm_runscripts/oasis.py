@@ -50,7 +50,10 @@ class oasis:
             else:
                 self.namcouple += [" $NLOGPRT", "           " + "1 -1", " $END"]
         else:
-            self.namcouple += [" $NLOGPRT", "           " + str(debug_level), " $END"]
+            if mct_version >= (5, 0):
+                self.namcouple += [" $NLOGPRT", "           " + str(debug_level) + " 0 0", " $END"]
+            else:
+                self.namcouple += [" $NLOGPRT", "           " + "1", " $END"]
         if mct_version >= (4, 0):
             # If true, OASIS can start without restart files
             self.namcouple += [" $NNOREST", "           " + str(nnorest), " $END "]
@@ -109,10 +112,10 @@ class oasis:
             else:
                 export_mode = "EXPORTED"
 
-        if bool(lresume) is False:
-            lag = str(0)
+        if not lresume and not direction.get('lag_overwrite'):
+            lag = 0
         else:
-            lag = direction.get("lag", "0")
+            lag = direction.get('lag')
 
         # if a transformation method for CONSERV (e.g. GLOBAL) is set below,
         # increase seq (=number of lines describing the transformation) by 1
@@ -121,6 +124,7 @@ class oasis:
         seq = int(direction.get("seq", "2"))
         # if transformation.get("postprocessing", {}).get("conserv", {}).get("method"):
         #    seq += 1
+        time_step = direction.get("coupling_time_step", time_step)
 
         p_rgrid = p_lgrid = "0"
         if "number_of_overlapping_points" in rgrid:
@@ -323,6 +327,10 @@ class oasis:
                             sys.exit(2)
                         detail_line += " " + normalization.upper() + " " + order.upper()
                     trafo_details += [detail_line.strip()]
+                elif trans.lower() in [
+                    "loctrans",
+                ]:
+                    continue
 
         allpost = transformation.get("postprocessing", "bla")
         if not isinstance(allpost, list):
@@ -489,7 +497,7 @@ class oasis:
 
         config = fconfig[self.name]
         gconfig = fconfig["general"]
-        is_runtime = gconfig["run_or_compile"] == "runtime"
+        is_runtime = gconfig["execution_mode"] == "run"
         enddate = "_" + gconfig["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )
@@ -545,6 +553,7 @@ class oasis:
             gconfig["run_number"] == 1
             and config["lresume"]
             and gconfig["jobtype"] == "prepcompute"
+            and config.get("norestart", "F") == "F"
         ):
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
@@ -561,12 +570,18 @@ class oasis:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
                 glob_search_file = (
-                    f"{restart_file_path}*"
+                    f"{config['ini_restart_dir']}{restart_file}*"
                     f"{config['ini_restart_date'].year}"
                     f"{config['ini_restart_date'].month:02}"
                     f"{config['ini_restart_date'].day:02}"
                 )
             else:
+                glob_search_file = restart_file_path
+
+            # add support for oasis_date_stamp (which for some reason does
+            # not work anymore after awi-geomar merge in 2025 without the two lines below)
+            # reason unknown, but the entire section here should be revised soon anyways 
+            if config.get('oasis_date_stamp'):
                 glob_search_file = restart_file_path
 
             glob_restart_file = glob.glob(glob_search_file)
@@ -577,7 +592,13 @@ class oasis:
                     restart_file = os.path.basename(glob_restart_file[0])
                 elif len(glob_restart_file) == 0:
                     restart_file = restart_file_path
-                    if not os.path.isfile(restart_file):
+                    # in case config["restart_in_sources"] are given explicitely 
+                    # AND are not absolute paths as e.g in FOCI
+                    # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+                    #    restart_in_sources: sstocean_${parent_expid}_...
+                    # we need to check for the full path as well 
+                    # btw it was a nightmare to track this down
+                    if not os.path.isfile(restart_file) and not os.path.isfile(f"{config['ini_restart_dir']}/{restart_file}"):
                         user_error(
                             "Restart file missing",
                             f"No OASIS restart file for ``{restart_file_label}`` found "
@@ -621,9 +642,9 @@ class oasis:
         filelist = ""
         # Loop through the fields and their corresponding models and exes
         for field, model, exe in zip(all_fields, models, exes):
-            logger.info(field + "-" + model)
+            logger.info(f"{field}-{model}")
             thesefiles = glob.glob(field + "_" + exe + "_*.nc")
-            logger.info(thesefiles)
+            logger.info(f"{thesefiles}")
             for thisfile in thesefiles:
 
                 logger.info(

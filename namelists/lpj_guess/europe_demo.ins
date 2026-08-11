@@ -1,0 +1,46 @@
+!
+! Instruction file with European species to be used with the
+! demonstration I/O module.
+!
+! See the file data/env/readme_env.txt for information about the
+! data files.
+!
+! Make sure to start LPJ-GUESS with -input demo when using this
+! instruction file.
+!
+
+import "europe.ins"
+
+! The number of years to run the model after spinup.
+! Since the demo I/O module simply repeats the same year's climate 
+! over and over we need to specify how many years we wish to run.
+nyear 100
+
+
+!///////////////////////////////////////////////////////////////////////
+! Forcing Data & gridlists
+!
+
+! Atmospheric CO2 content (ppmv)
+! (used only by guessio.cpp)
+param "co2" (num 340)
+
+! Nitrogen deposition (kg/ha/year)
+param "ndep" (num 2)
+
+param "file_gridlist" (str "gridlist.txt")
+
+! You may need to specify the full pathname (including directory) here
+param "file_temp" (str "tmp30_21.grd")  ! temperature
+param "file_prec" (str "prc30_21.grd")  ! precipitation
+param "file_sun"  (str "clo30_21.grd")  ! sunshine
+
+param "file_soil" (str "soils_lpj.dat") ! Path to LPJ soil code file
+
+
+!///////////////////////////////////////////////////////////////////////
+! Demo input currently only works with the INTERP weather generator and
+! the fire model GLOBFIRM (or no fire with NOFIRE).
+
+firemodel "GLOBFIRM"
+weathergenerator "INTERP"

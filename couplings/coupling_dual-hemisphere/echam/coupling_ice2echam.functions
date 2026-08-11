@@ -3,7 +3,7 @@
 ## @fn ice2echam_1st()
 ice2echam_1st() {
         echo "                =================================================================="
-        echo "                 *** S T A R T I N G    ice2echam *** "; echo
+        echo "                 *** S T A R T I N G    ice2echam_1st for ${PISM_HEMISPHERE} *** "; echo
 
         . ${FUNCTION_PATH}/../general/general_lists.functions
         . ${FUNCTION_PATH}/../general/coupling_general.functions
@@ -40,9 +40,15 @@ ice2echam_1st() {
         if [ "$ISM_TO_ECHAM_update_land_runoff" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_land_runoff_1st
         fi
+        
+        echo "                 *** F I N I S H E D    ice2echam_1st *** "
+        echo "                =================================================================="
 }
 ## @fn ice2echam_2nd()
 ice2echam_2nd() {
+        echo "                =================================================================="
+        echo "                 *** S T A R T I N G    ice2echam_2nd for ${PISM_HEMISPHERE} *** "; echo
+
         if [ "$ISM_TO_ECHAM_update_orography" -eq 1 ]; then
                 iterative_coupling_ice_echam6_update_orography_2nd
         fi
@@ -53,7 +59,7 @@ ice2echam_2nd() {
                 iterative_coupling_ice_echam6_update_land_runoff_2nd
         fi
 
-        echo "                 *** F I N I S H E D    ice2echam *** "
+        echo "                 *** F I N I S H E D    ice2echam_2nd *** "
         echo "                =================================================================="
 }
 
@@ -76,7 +82,7 @@ iterative_coupling_ice_echam6_update_orography_1st() {
             update_orography_apply_orography_anomaly_high_res
             update_orography_prepare_calnoro_high_res
         else 
-            regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil 
+            regrid_to_echam ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference.nc remapbil 
             update_orography_apply_orography_anomaly
             update_orography_prepare_calnoro
         fi
@@ -92,8 +98,8 @@ iterative_coupling_ice_echam6_update_orography_2nd() {
 
 update_orography_from_martins_script() {
 cdo -L -remapbil,${RES_echam}grid /
-            ${COUPLE_DIR}/ice_orog_difference_T511grid.nc / 
-            ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_T511grid.nc / 
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_${RES_echam}grid.nc
 #cdo -L -setmisstoc,0. -ifthen slf.nc ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc dummy.nc
 #mv dummy.nc ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc
 ECHAM_g=9.80665
@@ -103,8 +109,8 @@ else
         rfile=${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc
 fi
 cdo -L -sp2gp -gp2sp -add -selvar,GEOSP ${rfile} -mulc,${ECHAM_g} /
-        ${COUPLE_DIR}/ice_orog_difference_${RES_echam}grid.nc /
-        ${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
+        ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_${RES_echam}grid.nc /
+        ${COUPLE_DIR}/${PISM_HEMISPHERE}/echam6_new_orography_before_calnoro_low_res.nc
 mv geosp.nc ${output_dir}/input/echam6/GEOSP_${paleo_time}_${RES_echam}.nc
 }
 
@@ -112,7 +118,7 @@ update_oromea_from_martins_script() {
 ofile=${COUPLE_DIR}/target_orography_echam6_${CHUNK_START_DATE_echam}-${CHUNK_END_DATE_echam}.nc
 
 cdo -L -remapnn,r720x360 -setgrid,T511grid -selvar,OROMEA ${hi_res_init_oro} oromea_pi_r720x360.nc
-cdo -L -remapnn,r720x360 ${COUPLE_DIR}/ice_orog_difference_T511grid.nc anom_topo_r720x360.nc
+cdo -L -remapnn,r720x360 ${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_T511grid.nc anom_topo_r720x360.nc
 #cdo -L -setmisstoc,0. -ifthen -remapnn,r720x360grid slf.nc anom_topo_r720x360.nc dummy.nc
 #mv dummy.nc anom_topo_r720x360.nc
 cdo -L -add oromea_pi_r720x360.nc anom_topo_r720x360.nc oromea_r720x360.nc
@@ -133,8 +139,8 @@ rm oromea_pi_r720x360.nc anom_topo_r720x360.nc oromea_r720x360.nc topodata.nc ss
 ## @fn update_orography_apply_orography_anomaly_high_res() 
 update_orography_apply_orography_anomaly_high_res() {
         echo; echo "                *   applying surface height changes to high-resolution echam topography"
-        ifile=${COUPLE_DIR}/ice_orog_difference_T511grid.nc
-        ofile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_high_res.nc
+        ifile=${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_T511grid.nc
+        ofile=${COUPLE_DIR}/${PISM_HEMISPHERE}/echam6_new_orography_before_calnoro_high_res.nc
         ncrename -v ${ice_orography_difference_name},oromea $ifile
         cdo -s -setmisstoc,0 $ifile tmp; mv tmp $ifile
         if [[ -f ${ofile} ]]
@@ -212,7 +218,7 @@ update_orography_select_field() {
 update_orography_apply_orography_anomaly() {
         echo; echo "                *   applying surface height changes to echam topography"
         ifile=${COUPLE_DIR}/${PISM_HEMISPHERE}/ice_orog_difference_${RES_echam}grid.nc
-        ofile=${COUPLE_DIR}/${PISM_HEMISPHERE}/echam6_new_orography_before_calnoro.nc
+        ofile=${COUPLE_DIR}/${PISM_HEMISPHERE}/echam6_new_orography_before_calnoro_low_res.nc
         ncrename -v ${ice_orography_difference_name},oromea $ifile
         cdo -s -setmisstoc,0 $ifile tmp; mv tmp $ifile
         if [ -L ${RESTART_DIR_echam}/restart_${EXP_ID}_echam.nc ]; then
@@ -241,7 +247,7 @@ update_orography_prepare_calnoro_high_res() {
 ## @fn update_orography_prepare_calnoro()
 update_orography_prepare_calnoro() {
         echo; echo "                *   preparing for external program CALNORO"
-        ifile=${COUPLE_DIR}/${PISM_HEMISPHERE}/echam6_new_orography_before_calnoro.nc
+        ifile=${COUPLE_DIR}/echam6_new_orography_before_calnoro_low_res.nc
         ofile=topodata.nc
         cdo -s -P 28 \
                  -remapnn,r720x360 \
@@ -1480,7 +1486,7 @@ regrid_to_echam() {
 	echo "                -   regridding $FILENAME to echam ${RES} grid with $remapper"
         cdo -s -P 28 \
                 -$remapper,${RES}grid \
-                -setgrid,${COUPLE_DIR}/ice.griddes \
+                -setgrid,${COUPLE_DIR}/${PISM_HEMISPHERE}/ice.griddes \
                 $FILENAME ${FILENAME%.*}_${RES}grid.nc
 }
 

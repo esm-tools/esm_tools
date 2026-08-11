@@ -11,7 +11,7 @@ basedir="$HOME/esm/esm-experiments/"
 obsroot="$HOME/foci_input2/OBS_MONITORING/T63/"
 expid="test"
 iniyear=1850
-condapath="$HOME/miniconda3/"
+condapath="$HOME/miniforge3/"
 #
 #------- DO NOT EDIT BELOW THIS LINE UNLESS YOU KNOW WHAT YOU ARE DOING ------#
 #
@@ -26,7 +26,7 @@ while getopts "h?:r:i:p:c:o:" opt; do
         echo "                   -o path to obs data         (basedir,      default is $obsroot)"
         echo "                   -r experiment / run id      (run,          default is $expid)"
         echo "                   -i initial year             (initial year, default is $iniyear)"
-        echo "                   -c root path to conda env   (condapath,    default is \$HOME/miniconda3/)"
+        echo "                   -c root path to conda env   (condapath,    default is \$HOME/miniforge3/)"
         echo
         exit 0
         ;;
@@ -50,12 +50,12 @@ echo "Doing ECHAM6 monitoring in $basedir for $expid from year $iniyear onwards"
 echo "Using conda environment from $condapath"
 echo
 if ! source $condapath/bin/activate jupyter_mon ; then
-   echo
+  echo
 	echo "source $condapath/bin/activate jupyter_mon failed" 
 	echo "install with"
 	echo "   conda env create -n jupyter_mon --file $(dirname $0)/jupyter_mon.yaml"
 	echo "   source $condapath/bin/activate jupyter_mon" 
-   echo '   python -m ipykernel install --user --name jupyter_mon --display-name "jupyter_mon"'
+  echo '   python -m ipykernel install --user --name jupyter_mon --display-name "jupyter_mon"'
 	echo
 	exit 1
 else
@@ -63,9 +63,8 @@ else
 fi
 
 cd $(dirname $0)
-papermill echam_monitoring.ipynb echam_monitoring_${expid}.ipynb -p expid $expid -p iniyear $iniyear -p exproot $basedir -p obsroot $obsroot
-jupyter-nbconvert --no-input --to html echam_monitoring_${expid}.ipynb
-mv -v *.html $basedir/$expid/mon/echam/
+papermill echam_monitoring.ipynb $basedir/$expid/mon/echam/echam_monitoring_${expid}.ipynb -k jupyter_mon -p expid $expid -p iniyear $iniyear -p exproot $basedir -p obsroot $obsroot
+jupyter-nbconvert --no-input --to html $basedir/$expid/mon/echam/echam_monitoring_${expid}.ipynb
 
 echo "`date`: ECHAM6 monitoring finished"
 exit 0

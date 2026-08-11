@@ -1,10 +1,11 @@
-available_versions:
-- 40r1
-- 43r3
-choose_version:
-  40r1:
-    couplings:
-    - oifs-40r1+oasis
-  43r3:
-    couplings:
-    - oifs-43r3+oasis
+general:
+    available_versions:
+    - 40r1
+    - 43r3
+    choose_version:
+      40r1:
+        couplings:
+        - oifs-40r1+oasis
+      43r3:
+        couplings:
+        - oifs-43r3+oasis

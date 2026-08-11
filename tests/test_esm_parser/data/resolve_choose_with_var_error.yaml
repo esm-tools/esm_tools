@@ -1,0 +1,24 @@
+# TEST DATA
+# model: rnfmap
+# type: choose block
+# function: resol_choose_with_var
+# description: conflicting values of version in choose blocks. The function should
+#   raise an user_error
+
+general:
+    major_version: 3.3
+fesom:
+    version: 2.6.8
+rnfmap:
+    version: focioifs
+    choose_general.major_version:
+        3.3:
+            version: v1.1 # conflicting value
+        3.4:
+            version: v1.1
+    choose_fesom.version:
+        2.6.8:
+            version: awicm3-v1 # conflicting value
+        "*":
+            version: v1.1
+_blackdict: {}

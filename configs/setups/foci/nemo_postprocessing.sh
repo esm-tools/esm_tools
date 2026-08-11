@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Postprocessing for FOCI within ESM-Tools
-# based on the Postprocessing from the old mkexp based runtime environment
+# based on the Postprocessing from the old mkexp based run environment
 # Sebastian Wahl 06/2021
 #
 
@@ -16,12 +16,14 @@ envfile=""  # change via -x
 freq="m"
 run_monitoring="no"
 
-module load nco || module load NCO
-
 OCEAN_CHECK_NETCDF4=false
 # set to false to skip netcdf4 conversion, time consuming but reduces file size by at least 50%
 OCEAN_CONVERT_NETCDF4=true
-OCEAN_FILE_TAGS="grid_T grid_U grid_V icemod ptrc_T"
+# In NEMO 3.6 we had grid_T, grid_U etc
+# In NEMO 4 we also use diaptr2D, diaptr3D and grid_U_vsum 
+# It should be fine to add them here. The script will search for them
+# if they exist they will be used, if not they will be skipped
+OCEAN_FILE_TAGS="grid_T grid_U grid_V grid_W icemod ptrc_T diaptr2D diaptr3D grid_U_vsum"
 
 # Other settings
 max_jobs=20
@@ -95,6 +97,8 @@ else
   # module purge in envfile writes non-printable chars to log
    source $envfile > >(tee) 
 fi
+# load nco after env.sh has been sourced
+module load nco || module load NCO
 #
 # the ncks option -a is deprecated since version 4.7.1 and replaced by --no-alphabetize
 sortoption="--no-alphabetize"
@@ -180,7 +184,12 @@ endyear=$(date --date="$enddate" "+%Y")
 # simulation that ran in multiyear intervals.
 if [[ -z $increment ]] ; then
    if [[ $startyear == $endyear ]] ; then
-      increment=$((endmonth - startmonth + 1)) 
+	   # freq is 'y' for a full single year
+      if [[ "$startmonth" == "01" ]] && [[ "$endmonth" == "12" ]] ; then
+			increment=1
+		else
+      	increment=$((${endmonth#0} - ${startmonth#0} + 1)) 
+		fi
 	else
       increment=$((endyear - startyear + 1)) 
    fi
@@ -226,7 +235,7 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 		else
 			currdate1=$nextdate
 			currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
-			nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+			nextdate=$(date --date="$currdate1 + ${increment} year" "+%Y%m%d")	
 		fi
 
 		for filetag in $filetags
@@ -236,7 +245,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 				input=${s}_${currdate1}_${currdate2}_${filetag}.nc3
 		    	output=${s}_${currdate1}_${currdate2}_${filetag}.nc
 				# !!! output files will have the same name as the old input file !!! 
-      	  	if [[ -f $output ]] ; then
+            echo " Looking for $output " 
+            if [[ -f $output ]] && ! [[ $(ncdump -k $output) =~ "netCDF-4" ]]; then
 					mv $output $input
                
 					# If too many jobs run at the same time, wait
@@ -277,6 +287,8 @@ if ${OCEAN_CONVERT_NETCDF4} ; then
 							mv -v $input nc3/                    
 						fi
 					) &
+            else
+                echo "NOTE: $output already in netCDF-4 format, no ncks treatment done"
 				fi
 			done #steps
 		done #filetags
@@ -310,7 +322,7 @@ do
 	else
 		currdate1=$nextdate
 		currdate2=$(date --date="$currdate1 + ${increment} year - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate2 + ${increment} year" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + ${increment} year" "+%Y%m%d")	
 	fi
 
 	for filetag in $filetags
@@ -384,7 +396,7 @@ do
 	else
 		currdate1=$nextdate
 		currdate2=$(date --date="$currdate1 + 1 year - 1 day" "+%Y%m%d")	
-		nextdate=$(date --date="$currdate2 + 1 year" "+%Y%m%d")	
+		nextdate=$(date --date="$currdate1 + 1 year" "+%Y%m%d")	
 	fi
 
 	# output=${EXP_ID}_1y_${currdate1}_${currdate2}_${filetag}.nc
@@ -393,7 +405,7 @@ do
 		while (( $(jobs -p | wc -l) >=  max_jobs )); do sleep $sleep_time; done
 		(
 			trap 'echo $? > $post_dir/status' ERR
-			print "Processing year $year"
+			print "Processing restart date $currdate2"
 			tar czf ${EXP_ID}_restart_${currdate2}.tar.gz *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 			[[ $? -eq 0 ]] && rm *${EXP_ID}_*_restart*_${currdate2}_*.nc 
 		) &
@@ -446,7 +458,8 @@ rm -r $post_dir
 print 'removal of temporary and non-precious data files finished'
 
 print "post-processing finished for $startdate-$enddate"
-
+# required for interactive use
+cd $(dirname $0)
 if [[ "$endmonth" == "12" ]] && [[ "$run_monitoring" == "yes" ]] ; then
     print "will now run NEMO monitoring until $enddate"
    $(dirname $0)/nemo_monitoring.sh -r ${EXP_ID} 

@@ -63,6 +63,7 @@ class Slurm:
         return os.environ.get("SLURM_JOB_ID")
 
     def prepare_launcher(self, config, cluster):
+
         # MA: not sure how this will play with heterogeneous parallelization
         if "multi_srun" in config["general"]:
             for run_type in list(config["general"]["multi_srun"]):
@@ -90,28 +91,56 @@ class Slurm:
         Gathers previously prepared requirements
         (batch_system.calculate_requirements) and writes them to ``self.path``.
         """
+        launcher = config["computer"].get("launcher", None)
+        heterogeneous_parallelization = config["computer"].get(
+            "heterogeneous_parallelization", False
+        )
+        # make an empty string which we will append commands to
+        commands = ""
+
+        if launcher not in ["srun", "mpirun"]:
+            user_error(
+                "Launcher",
+                f"The launcher {launcher} is not compatible with ESM-Tools in SLURM."
+                "Supported launchers for SLURM are srun and mpirun"
+            )
+
+        for model in config["general"]["valid_model_names"]:
+            end_proc = config[model].get("end_proc", None)
+            start_proc = config[model].get("start_proc", None)
+
+            # a model component like oasis3mct does not need cores
+            # since its technically a library
+            # So start_proc and end_proc will be None. Skip it
+            if start_proc == None or end_proc == None:
+                continue
+
+            # number of cores needed
+            no_cpus = end_proc - start_proc + 1
+
+            if heterogeneous_parallelization:
+                command = f'./{config[model].get("execution_command_het_par", None)}'
+            elif "execution_command" in config[model]:
+                command = f'./{config[model]["execution_command"]}'
+            elif "executable" in config[model]:
+                command = f'./{config[model]["executable"]}'
+            else:
+                logger.debug(
+                    "warning: the executable or execution_command could not be "
+                    f"detemined for {model}"
+                )
+                continue
+
+            if launcher == "srun":
+                commands += f"{start_proc}-{end_proc}  {command}\n"
+            elif launcher == "mpirun":
+                # JK: Need to think about how to handle heterogeneous paralleisation here...
+                commands += f" -np {no_cpus} {command} :"
+
+        commands = commands[:-1]  # remove trailing separator
 
         with open(hostfile, "w") as hostfile:
-            for model in config["general"]["valid_model_names"]:
-                end_proc = config[model].get("end_proc", None)
-                start_proc = config[model].get("start_proc", None)
-
-                if start_proc == None or end_proc == None:
-                    continue
-
-                if config["computer"].get("heterogeneous_parallelization", False):
-                    command = "./" + config[model].get(
-                        "execution_command_het_par", None
-                    )
-                elif "execution_command" in config[model]:
-                    command = "./" + config[model]["execution_command"]
-                elif "executable" in config[model]:
-                    command = "./" + config[model]["executable"]
-                else:
-                    continue
-                hostfile.write(
-                    str(start_proc) + "-" + str(end_proc) + "  " + command + "\n"
-                )
+            hostfile.write(commands)
 
     @staticmethod
     def get_job_state(jobid):
@@ -254,6 +283,9 @@ class Slurm:
                     f.write("#!/bin/sh" + "\n")
                     f.write(
                         "export OMP_NUM_THREADS="
+                        + str(config[model].get("omp_num_threads", 1))
+                        + "\n"
+                        "export OASIS_OMP_NUM_THREADS="
                         + str(config[model].get("omp_num_threads", 1))
                         + "\n"
                     )

@@ -94,6 +94,7 @@ general:
         - '2.1-paleodyn-2.5'
         - '2.6'
         - '2.6.1'
+        - '2.6.2'
 
         choose_version:
           '2.6':
@@ -104,6 +105,11 @@ general:
           '2.6.1':
             couplings:
             - fesom-2.6.7+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../"
+            with_recom: false
+          '2.6.2':
+            couplings:
+            - fesom-2.6.11+echam-6.3.05p2-awiesm-2.1
             fesom_Dflags: "-DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../"
             with_recom: false
           '2.1-paleodyn-2.5':
@@ -150,7 +156,7 @@ general:
         choose_general.iterative_coupling:
             True:
                 required_plugins:
-                    - "https://github.com/esm-tools-plugins/esm_pism"
+                    - "git+https://github.com/esm-tools-plugins/esm_pism"
 
 #########################################################################################
 ########### necessary changes to submodels compared to standalone setups ################
@@ -215,6 +221,10 @@ echam:
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
+                "2.6.2":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
 
         # --- icebergs ---
         choose_general.with_icb:
@@ -254,14 +264,6 @@ echam:
                 configure_opts: "'--with-coupler=oasis3-mct --without-regard-for-quality'"
             "*":
                 configure_opts: '--with-coupler=oasis3-mct'
-        add_compiletime_environment_changes:
-            add_export_vars:
-                # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
-                OIFS_OASIS_BASE: '$(pwd)/oasis'
-                OIFS_OASIS_INCLUDE: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
-                OASIS3MCT_FC_LIB: "$(pwd)/lib/"
-                OASIS3MCTROOT: "$(pwd)/oasis/"
-                configure_opts: "${echam.configure_opts}"
 
         # Bootstrap switch
         # ----------------
@@ -352,6 +354,14 @@ fesom:
                                                 surf_relax_s: 0.0
                 "2.6.1":
                         version: "2.6.7"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: 0.0
+                "2.6.2":
+                        version: "2.6.11"
                         ALE_scheme: 'zstar'
                         namelist_dir: ${fesom.model_dir}/config/
                         add_namelist_changes:
@@ -507,10 +517,13 @@ recom:
 
 oasis3mct:
         model_dir: ${general.model_dir}/oasis
+        mct_version: 2.8
 
         process_ordering:
                 - fesom
                 - echam
+
+        include_env_from_component_files: False
 
         a2o_lag: "${echam.time_step}"
         o2a_lag: "${fesom.time_step}"
@@ -637,3 +650,26 @@ oasis3mct:
                 rmp_f2a_D: rmp_feom_to_atmo_DISTWGT.nc
 
 
+computer:
+    add_export_vars:
+        # NOTE(PG)/FIXME(KH): The mh-linux is wrong, and uses OpenIFS Flags...???
+        OIFS_OASIS_BASE:
+            _value: '$(pwd)/oasis'
+            _execution_mode: compile
+            _component: echam
+        OIFS_OASIS_INCLUDE:
+            _value: '"-I$OIFS_OASIS_BASE/build/lib/psmile -I$OIFS_OASIS_BASE/build/lib/psmile/scrip -I$OIFS_OASIS_BASE/build/lib/psmile/mct -I$OIFS_OASIS_BASE/build/lib/psmile/mct/mpeu"'
+            _execution_mode: compile
+            _component: echam
+        OASIS3MCT_FC_LIB:
+            _value: "$(pwd)/lib/"
+            _execution_mode: compile
+            _component: echam
+        OASIS3MCTROOT:
+            _value: "$(pwd)/oasis/"
+            _execution_mode: compile
+            _component: echam
+        configure_opts:
+            _value: "${echam.configure_opts}"
+            _execution_mode: compile
+            _component: echam

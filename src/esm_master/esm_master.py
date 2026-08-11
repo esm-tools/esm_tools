@@ -20,6 +20,7 @@ from .compile_info import setup_and_model_infos
 
 from .task import Task
 
+import esm_parser
 from esm_parser import yaml_dump
 
 def main_flow(parsed_args, target):
@@ -33,8 +34,16 @@ def main_flow(parsed_args, target):
     setups2models.config = setups2models.reduce(target)
 
     user_config = write_minimal_user_config(setups2models.config)
-    # Miguel: Move this somewhere else after talking to Paul and Dirk
-    user_config["general"]["run_or_compile"] = "compiletime"
+
+    user_config["computer"] = user_config.get("computer", {})
+    user_config["general"]["execution_mode"] = "compile"
+
+    # Apply Spack-style ``key=value`` CLI overrides (see ``cli.py``) before
+    # SimulationSetup resolves the ``choose_`` blocks, so that e.g.
+    # ``computer.mpi_implementation=openmpi_2026`` is visible to
+    # ``choose_mpi_implementation`` in the machine config.
+    if parsed_args.get("overrides"):
+        esm_parser.dict_merge(user_config, parsed_args["overrides"])
 
     # deniz: verbose is supposed to be a boolean right? It is initialized as
     # 0 in cli.py. Is it then a debug_level?
@@ -93,9 +102,13 @@ def main_flow(parsed_args, target):
     user_task.generate_task_script()
 
     # Print config
-    model_nested_dirs = complete_config["general"]["model_dir"].split("/")
-    model_name = model_nested_dirs.pop(-1)
-    finished_config_path = f'{"/".join(model_nested_dirs)}/{model_name}-finished_config.yaml'
+    current_path = os.getcwd()
+    
+    model_dir_rel_pwd = os.path.realpath(complete_config["general"]["model_dir"]).replace(
+        f"{current_path}/", ""
+    )
+    model_name = model_dir_rel_pwd.split("/")[0]
+    finished_config_path = f"{current_path}/{model_name}-finished_config.yaml"
     yaml_dump(complete_config, config_file_path=finished_config_path)
 
     if parsed_args.get("check", False):

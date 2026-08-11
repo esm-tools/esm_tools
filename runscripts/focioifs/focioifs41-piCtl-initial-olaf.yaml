@@ -1,0 +1,159 @@
+# Runscript to run FOCI-OpenIFS 4.1 on Olaf
+# OpenIFS 43r3 + NEMO 4.2.2
+# Tco95_L91 + eORCA05_L75
+
+general:
+   use_venv: False
+   verbose: False 
+   homedir: !ENV ${HOME}
+   
+   setup_name: "focioifs"      
+   resolution: "TCO95_eORCA05"
+   version: "4.0"
+   
+   compute_time: "01:00:00"
+   initial_date: "1850-01-01T00:00:00"       # Initial exp. date
+   final_date: "1850-02-01T00:00:00"         # Final date of the experiment
+   
+   nyear: 0
+   nmonth: 1
+   nday: 0
+   #restart_rate: 1
+   #restart_unit: days 
+   hours: 0
+   account: iccp 
+   base_dir: /proj/home/ibs/iccp/jkjellsson/esm-experiments/
+
+   # This activates post processing for OpenIFS and NEMO
+   postprocessing: 1
+   
+   lresume: False
+   # Name of the run you are starting from
+   ini_parent_exp_id: "foci3-test12"
+   # Where are you starting from in the above run
+   ini_parent_date: "18491231" 
+   ini_string_parent_date: "1850-01-01"
+   # Time step in NEMO from restarts in parent run
+   # NOTE: ESM-Tools looks for a global NEMO restart file 
+   # You must run nocs_combine on restarts first.
+   #ini_nemo_restart_steps: 262800
+   #ini_parent_dir: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/"
+   # Time stamp from OASIS for restarts in parent run
+   oasis_date_stamp: "_18400101-18491231"
+   # Previous run config file
+   # (should be general enough)
+   prev_run_config_file: "/scratch/usr/shkjocke/esm-nemo4/${ini_parent_exp_id}/config/${ini_parent_exp_id}_finished_config.yaml${oasis_date_stamp}"
+
+   #computer:
+   #partition_name: ""
+   #additional_flags: '--qos=preempt'
+
+focioifs:
+   model_dir: /proj/internal_group/iccp/jkjellsson/models/focioifs-4.1/
+   
+oifs:
+   
+   lresume: ${general.lresume}
+   # This would be for a traditional restart
+   # but not used here
+   prev_run_config_file: "${general.prev_run_config_file}"
+   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   #ini_parent_dir: "${general.ini_parent_dir}/restart/oifs/18591231/"
+   #ini_parent_date: "${prev_date}"
+   
+   version: "43r3"
+   time_step: 1800
+   with_xios: True
+   scenario: "piControl"
+   mip: "cmip6"
+   o3_scheme: cmip6
+   pool_dir: /proj/internal_group/iccp/jkjellsson/foci_input2/
+   input_dir: "${pool_dir}/openifs_cy43_tco95/"
+   rtables_dir: "${pool_dir}/openifs_cy43_general/rtables/"
+   vtables_dir: "${pool_dir}/openifs_cy43_general/vtables/"
+   clim_dir: "${pool_dir}/openifs_cy43_tco95/95_4/"
+   ifsdata_dir: "${pool_dir}/openifs_cy43_general/ifsdata/"
+   cmip5_data_dir: "${pool_dir}/openifs_cy43_general/cmip5_ghg/"
+   cmip6_data_dir: "${pool_dir}/openifs_cy43_general/cmip6-data/"
+   icmcl_dir: "${pool_dir}/openifs_cy43_tco95/2008010100/"
+   icmcl_file: "ICMCLhagwINIT"
+   # This would use initial conditions from ERA-Interim 2008-01-01
+   prepifs_expid: hagw
+   prepifs_startdate: 20080101
+   
+   resolution: TCO95
+   levels: L91
+   nproc: 288
+   omp_num_threads: 1
+   use_ocean_currents: 0
+   sclct_switch: 2
+   #initial_date_cold: "4000-01-01"
+   solarspectrum: True 
+   
+   ini_pseudo_initial_date: "1859-01-01"
+
+oasis3mct:
+   lresume: True
+   pool_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05/"
+   # This would be for a cold start (SST = 0C,etc)
+   ini_parent_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05/" 
+   
+   a2o_remap_method: "bilincub"
+   o2a_remap_method: "bilinear"
+   norestart: F
+   use_lucia: True
+   #export_mode: EXPOUT
+   debug_level: 1
+   mct_version: "5.0"
+   # in FOCIOIFS all oasis input files are treated as restarts.
+   # in FOCI all remapping files are handled as inputs. Both approaches work.
+   #ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+   #oasis_date_stamp: "${general.oasis_date_stamp}"
+   #oasis_date_stamp: "" 
+   
+nemo:
+   lresume: ${general.lresume}
+   #ini_parent_exp_id: "${general.ini_parent_exp_id}"
+   #ini_parent_dir: "${general.ini_parent_dir}/nemo/"
+   #ini_parent_date: "${prev_date}"
+   input_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/NEMO4_eORCA05/L75/"
+   
+   resolution: "eORCA05"
+   version: "eORCA05_Z75_SI3_COUPLED" 
+   # 64x51 = 3264 
+   # 48x48 = 2304
+   # 36x36 = 1296
+   # 36x24 = 864
+   # 24x24 = 576
+   _nx: 720
+   _ny: 603 
+   jpni: 24
+   jpnj: 18
+   #nproca: ${nemo.jpni}
+   #nprocb: ${nemo.jpnj}
+   nproc: 432 
+   add_namelist_changes:
+       namelist_cfg:
+          namctl:
+              ln_timing: ".false."
+          namrun:
+              nn_istate: 0
+          namdyn_ldf:
+              # Use time-varying viscosity set by deformation rate
+              # (Smagorinsky)
+              nn_ahm_ijk_t: 32
+          namtra_ldf:
+              # Diffusion set by local baroclinic growth rate 
+              nn_aht_ijk_t: 20
+              rn_aht_scale: 1.5 
+          namtra_eiv:
+              rn_aeiv_scale: 0.5 
+   
+rnfmap:
+   nproc: 1
+
+xios: 
+   with_model: focioifs 
+   xml_dir: "/proj/internal_group/iccp/jkjellsson/foci_input2/oasis3_openifs43r3-tco95_nemo4-eorca05/output_for_diag/"
+   nproc: 8
+   omp_num_threads: 1

@@ -10,6 +10,14 @@ general:
     lresume: false
     coupled_setup: true
 
+    # Suffix on the two pool files that ocp-tool derives from the fitted land-sea
+    # mask, the OIFS ICMGG_INIT and the LPJ-GUESS slt. ocp-tool before 863c94a gave
+    # every cell it flipped from ocean to land soil type 6 and left the rest of that
+    # cell's ocean column in place, so the unsuffixed files carry dry organic coastal
+    # points. New versions take _v2 without being listed anywhere: only the three
+    # released tags below opt back out, in choose_version.
+    icmgg_slt_suffix: "_v2"
+
     # Default off; set true in a runscript to enable the concentration-driven
     # CO2 spinup mode (see choose_general.with_co2_concdriven in the oifs section).
     with_co2_concdriven: false
@@ -37,6 +45,8 @@ general:
     choose_version:
         v3.4.0:
             major_version: v3.4
+            # Released with the pre-863c94a ICMGG and slt. Keep those names.
+            icmgg_slt_suffix: ""
             couplings:
                 - awiesm3_v3.4.0
             add_include_models:
@@ -48,6 +58,8 @@ general:
             with_co2_veg_coupling: false
         v3.4.1:
             major_version: v3.4
+            # Released with the pre-863c94a ICMGG and slt. Keep those names.
+            icmgg_slt_suffix: ""
             couplings:
                 - awiesm3_v3.4.1
             add_include_models:
@@ -59,6 +71,8 @@ general:
             with_co2_veg_coupling: false
         v3.4.2:
             major_version: v3.4
+            # Released with the pre-863c94a ICMGG and slt. Keep those names.
+            icmgg_slt_suffix: ""
             couplings:
                 - awiesm3_v3.4.2
             add_include_models:
@@ -309,7 +323,7 @@ oifs:
 
     prepifs_dir: ${input_dir}/${res_level}/
     tl_o3_data_dir: ${input_dir}/${version}/climate/
-    ICMGG_INIT_name: "_${fesom.resolution}"
+    ICMGG_INIT_name: "_${fesom.resolution}${general.icmgg_slt_suffix}"
 
     # CO2 tracer is turned on, if at least one of the couplings for co2 is active    
 
@@ -811,9 +825,9 @@ lpj_guess:
         CO2: CO2
 
     forcing_sources:
-        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}.nc
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}${general.icmgg_slt_suffix}.nc
         CO2: ${lpj_guess.co2_source_file}
-        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}${general.icmgg_slt_suffix}.nc
         "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
 
     forcing_in_work:

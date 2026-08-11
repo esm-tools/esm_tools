@@ -36,7 +36,6 @@ def test_auth_subcommands_registered(runner):
         ["auth", "login", "https://stac.awi.de"],
         ["auth", "logout"],
         ["init", "/tmp/exp"],
-        ["scan"],
         ["push"],
         ["add", "/tmp/f.nc"],
         ["rm", "/tmp/f.nc"],
@@ -47,3 +46,15 @@ def test_stub_commands_report_not_implemented(runner, argv):
     result = runner.invoke(main, argv)
     assert result.exit_code != 0
     assert "not implemented" in result.output
+
+
+def test_scan_missing_run_reports_clean_error(runner):
+    """A directory with no finished_config yields a one-line error, no traceback."""
+    result = runner.invoke(main, ["scan", "--exp-root", "/nonexistent/xyz"])
+    assert result.exit_code != 0
+    assert "scan requires a completed ESM-Tools run" in result.output
+    assert "Traceback" not in result.output
+    # The SourcingError was translated to a clean ClickException, not propagated.
+    assert not isinstance(result.exception, Exception) or isinstance(
+        result.exception, SystemExit
+    )

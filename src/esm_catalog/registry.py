@@ -1,25 +1,15 @@
 """Extension registry — the single source of truth for STAC extensions.
 
-`Extension` is a StrEnum of every extension esm_catalog can attach; EXTENSION_URLS
+``Extension`` is a StrEnum of every extension esm_catalog can attach; EXTENSION_URLS
 is keyed by it, so a schema URL can never reference a name the type system does
 not know, and every call site is checked against the enum rather than a bare str.
 """
 
 from __future__ import annotations
 
-import sys
-from enum import Enum, auto
+from enum import auto
 
-if sys.version_info >= (3, 11):
-    from enum import StrEnum
-else:  # pragma: no cover - py<3.11 fallback
-
-    class StrEnum(str, Enum):
-        __str__ = str.__str__
-
-        @staticmethod
-        def _generate_next_value_(name, start, count, last_values):
-            return name.lower()  # matches enum.StrEnum: auto() -> the member name
+from esm_catalog._compat import StrEnum
 
 
 class Extension(StrEnum):

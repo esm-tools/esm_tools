@@ -99,6 +99,8 @@ setup(
             "rich-click>=1.7",
             "xarray>=2023.1",
             "cf-xarray>=0.8",
+            "pyarrow>=14",
+            "stac-geoparquet>=0.6",
         ],
     },
     install_requires=requirements,

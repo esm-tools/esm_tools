@@ -101,21 +101,26 @@ lpj_guess:
     nproc: 64 # originally 16
     omp_num_threads: 4
     mip: "cmip7"
-    # Start from the spun-up vegetation rather than bare ground. The state was
-    # written on the old gridlist, so the cells the coastline adds have no entry
-    # in it and are filled by nearest neighbour (state_remap in ecearth.ins.j2).
-    lresume: true
-    ini_parent_exp_id: "lpjg_spinup"
-    # create_deserializer looks for <state_path>/lpjg_state_<calendar year>, so
-    # the directory in work has to carry the year the leg starts, whatever year
-    # the spinup that filled it was written at. This date sets that name via
-    # lpjg_parent_state; the source below is the spinup itself.
-    ini_parent_date: "1899-12-31"
-    ini_restart_dir: "${general.pool_dir}/lpj-guess/restart/${oifs.resolution}-${fesom.resolution}/"
-    choose_general.run_number:
-        1:
-            restart_in_sources:
-                state: ${ini_restart_dir}/lpjg_state_3850/*
+    # Cold start on chunk 1, deliberately. The pooled state lpjg_state_3850 does
+    # not load: it dies in Soil::update_ice_fraction with an invalid ice volume of
+    # -0.016162, the same value under a binary that predates all of the LPJ-GUESS
+    # land-fraction hardening and one that includes it, so the state is at fault
+    # rather than the code. Nothing had ever read it. Until 9df993774 the staged
+    # directory was named for the spinup year while create_deserializer looks for
+    # the leg year, so every earlier run silently cold-started with no state and no
+    # internal spinup either, `deserializer_ece.get() 0, islpjgspinup 0`. This is
+    # therefore what all the earlier -is runs actually did; it is only explicit now.
+    # Later legs still continue from the state the previous leg wrote.
+    # Restore the block below once a state exists that loads.
+    lresume: false
+    #   lresume: true
+    #   ini_parent_exp_id: "lpjg_spinup"
+    #   ini_parent_date: "1899-12-31"       # names the staged dir for the leg year
+    #   ini_restart_dir: "${general.pool_dir}/lpj-guess/restart/${oifs.resolution}-${fesom.resolution}/"
+    #   choose_general.run_number:
+    #       1:
+    #           restart_in_sources:
+    #               state: ${ini_restart_dir}/lpjg_state_3850/*
 
 oifs:
     resolution: TCO95

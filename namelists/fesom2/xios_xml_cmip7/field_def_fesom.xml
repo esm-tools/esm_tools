@@ -1,4 +1,4 @@
-<field_definition level="1" prec="4" enabled="true" operation="average" default_value="9.969209968386869e+36">
+<field_definition level="1" prec="4" enabled="true" operation="average" default_value="9.969209968386869e+36" detect_missing_value="true">
 
   <!-- 2D fields on NODES -->
   <field_group id="fesom_2d_nod" grid_ref="grid_2d_nod" prec="4">

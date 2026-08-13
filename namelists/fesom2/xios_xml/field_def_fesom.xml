@@ -1,4 +1,4 @@
-<field_definition level="1" prec="4" enabled="true" operation="average" default_value="9.969209968386869e+36">
+<field_definition level="1" prec="4" enabled="true" operation="average" default_value="9.969209968386869e+36" detect_missing_value="true">
 
   <!-- Minimal FESOM-2 field definition: mirrors the 28 variables requested by
        the upstream default config/namelist.io on FESOM/fesom2:main (otracers

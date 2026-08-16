@@ -10,13 +10,26 @@ general:
     lresume: false
     coupled_setup: true
 
-    # Suffix on the two pool files that ocp-tool derives from the fitted land-sea
-    # mask, the OIFS ICMGG_INIT and the LPJ-GUESS slt. ocp-tool before 863c94a gave
-    # every cell it flipped from ocean to land soil type 6 and left the rest of that
-    # cell's ocean column in place, so the unsuffixed files carry dry organic coastal
-    # points. New versions take _v2 without being listed anywhere: only the three
-    # released tags below opt back out, in choose_version.
-    icmgg_slt_suffix: "_v2"
+    # Suffix on the OIFS ICMGG_INIT that ocp-tool derives from the fitted land-sea
+    # mask. ocp-tool before 863c94a gave every cell it flipped from ocean to land
+    # soil type 6 and left the rest of that cell's ocean column in place, so the
+    # unsuffixed files carry dry organic coastal points. New versions take _v2
+    # without being listed anywhere: only the three released tags below opt back
+    # out, in choose_version.
+    icmgg_suffix: "_v2"
+
+    # The LPJ-GUESS soil type is a separate setting, and it stays on the old map.
+    # Soil::serialize (soil.cpp:4311) archives Frac_water, Frac_ice, Frac_air, whc,
+    # alwhc and aw_max, which are absolute volume fractions, but it does NOT archive
+    # soiltype: that is rebuilt from the slt file on every run. The repaired map
+    # moves 302 simulated cells on TCO95_CORE3 and 3371 on TCO319_CORE3 off soil
+    # code 6, all north of the alat > -60 cut in eceframework.cpp:2720, so
+    # LPJ-GUESS really runs them. A run resuming an old state then meets one
+    # porosity holding another one's fractions, which is the "Illegal Frac_air"
+    # family (soil.cpp:3156) and the invalid water content fails at
+    # soil.cpp:3430-3433. Regenerating the spinup state against _v2 is what would
+    # let this flip.
+    lpjg_slt_suffix: ""
 
     # Default off; set true in a runscript to enable the concentration-driven
     # CO2 spinup mode (see choose_general.with_co2_concdriven in the oifs section).
@@ -45,8 +58,8 @@ general:
     choose_version:
         v3.4.0:
             major_version: v3.4
-            # Released with the pre-863c94a ICMGG and slt. Keep those names.
-            icmgg_slt_suffix: ""
+            # Released with the pre-863c94a ICMGG. Keep that name.
+            icmgg_suffix: ""
             couplings:
                 - awiesm3_v3.4.0
             add_include_models:
@@ -58,8 +71,8 @@ general:
             with_co2_veg_coupling: false
         v3.4.1:
             major_version: v3.4
-            # Released with the pre-863c94a ICMGG and slt. Keep those names.
-            icmgg_slt_suffix: ""
+            # Released with the pre-863c94a ICMGG. Keep that name.
+            icmgg_suffix: ""
             couplings:
                 - awiesm3_v3.4.1
             add_include_models:
@@ -71,8 +84,8 @@ general:
             with_co2_veg_coupling: false
         v3.4.2:
             major_version: v3.4
-            # Released with the pre-863c94a ICMGG and slt. Keep those names.
-            icmgg_slt_suffix: ""
+            # Released with the pre-863c94a ICMGG. Keep that name.
+            icmgg_suffix: ""
             couplings:
                 - awiesm3_v3.4.2
             add_include_models:
@@ -323,7 +336,7 @@ oifs:
 
     prepifs_dir: ${input_dir}/${res_level}/
     tl_o3_data_dir: ${input_dir}/${version}/climate/
-    ICMGG_INIT_name: "_${fesom.resolution}${general.icmgg_slt_suffix}"
+    ICMGG_INIT_name: "_${fesom.resolution}${general.icmgg_suffix}"
 
     # CO2 tracer is turned on, if at least one of the couplings for co2 is active    
 
@@ -825,9 +838,9 @@ lpj_guess:
         CO2: CO2
 
     forcing_sources:
-        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}${general.icmgg_slt_suffix}.nc
+        soil_layer_type: ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}${general.lpjg_slt_suffix}.nc
         CO2: ${lpj_guess.co2_source_file}
-        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}${general.icmgg_slt_suffix}.nc
+        "soil_layer_type_[[proc_list-->PROC_NUM]]": ${lpj_guess.slt_dir}/slt_${lpj_guess.resolution}_${fesom.resolution}${general.lpjg_slt_suffix}.nc
         "CO2_[[proc_list-->PROC_NUM]]": ${lpj_guess.co2_source_file}
 
     forcing_in_work:

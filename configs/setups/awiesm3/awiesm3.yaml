@@ -17,22 +17,29 @@ general:
     # only the three released tags below opt back out, in choose_version.
     icmgg_suffix: "_v2"
 
-    # LPJ-GUESS stays on the old soil map, and this is not a "pending a test" hold
-    # any more. Soil::serialize (soil.cpp:4311) archives Frac_water, Frac_ice,
-    # Frac_air, whc, alwhc and aw_max, which are absolute volume fractions, but it
-    # does NOT archive soiltype: that is rebuilt from the slt file on every run.
-    # The repaired map moves 302 simulated cells on TCO95_CORE3 (3371 on TCO319)
-    # off soil code 6, all north of the alat > -60 cut in eceframework.cpp:2720, so
-    # LPJ-GUESS really runs them. Resuming an old state against the new soiltype
-    # therefore meets one porosity holding another one's fractions, which is the
-    # "Illegal Frac_air" family (soil.cpp:3156) and the invalid water content fails
-    # at soil.cpp:3430-3433. The guessserializer cold-start fix does not cover it,
-    # because those cells have state; it is the soil type under them that moved.
+    # The LPJ-GUESS soil map is a separate setting from the ICMGG, because whether
+    # the repaired map is safe depends on the spinup state a run resumes.
     #
-    # So "_v2" is safe only where no old state is read: lresume false, or a state
-    # that was itself built with _v2. Setting it globally breaks every run that
-    # resumes a spinup made with the old map. Regenerating the spinup state against
-    # _v2 is what would let this flip, and that is the same job as lpjg_state_3850.
+    # Soil::serialize (soil.cpp:4311) archives Frac_water, Frac_ice, Frac_air, whc,
+    # alwhc and aw_max, which are absolute volume fractions, and does NOT archive
+    # soiltype: that is rebuilt from the slt file every run. So a cell that has
+    # state AND changes soil code resumes with one porosity holding another one's
+    # fractions, which is the "Illegal Frac_air" family (soil.cpp:3156) and the
+    # invalid water content fails at soil.cpp:3430-3433. A cell that changes soil
+    # code but has NO state is fine: it cold-starts from landcover_init, which
+    # guessserializer 0218bbb made reachable and state_remap 0 keeps honest.
+    #
+    # Which cells those are, measured against the pooled states:
+    #   TCO95-CORE3  / lpjg_state_3850    314 cells change,     0 have state
+    #   TCO319-DARS2 / lpjg_state_3350   6184 cells change,  1328 have state
+    # The changed cells are the ocean-to-land flips, so on CORE3 they were ocean
+    # when the spinup ran and never had state. The DARS2 state does not line up
+    # that way, and 1328 cells there would break.
+    #
+    # So this stays "" until the DARS2 state has those 1328 cells dropped, at which
+    # point they cold-start too and "_v2" is safe everywhere. Dropping them is
+    # cheap: the state index is (lon, lat, position) triples with a trailing count,
+    # so removing a cell is an index edit, not a respin.
     lpjg_slt_suffix: ""
 
     # Default off; set true in a runscript to enable the concentration-driven

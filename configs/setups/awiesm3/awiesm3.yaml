@@ -17,14 +17,22 @@ general:
     # only the three released tags below opt back out, in choose_version.
     icmgg_suffix: "_v2"
 
-    # The LPJ-GUESS soil type is held on the old files pending a test, not because
-    # anything is known to be wrong with the repaired ones. The repaired map moves
-    # 302 simulated cells off soil code 6, and soil.cpp gives the two organic codes
-    # their own soil-property branch, so it does change soil hydraulics where it
-    # applies. ismtest34 is the run that got the -is setup working again and it used
-    # the old map, so that is what is validated. Set this to "_v2" once a run has
-    # been made with it; there is no reason to expect trouble, since LPJ-GUESS
-    # cold-starts here and so builds its own state against whichever map it reads.
+    # LPJ-GUESS stays on the old soil map, and this is not a "pending a test" hold
+    # any more. Soil::serialize (soil.cpp:4311) archives Frac_water, Frac_ice,
+    # Frac_air, whc, alwhc and aw_max, which are absolute volume fractions, but it
+    # does NOT archive soiltype: that is rebuilt from the slt file on every run.
+    # The repaired map moves 302 simulated cells on TCO95_CORE3 (3371 on TCO319)
+    # off soil code 6, all north of the alat > -60 cut in eceframework.cpp:2720, so
+    # LPJ-GUESS really runs them. Resuming an old state against the new soiltype
+    # therefore meets one porosity holding another one's fractions, which is the
+    # "Illegal Frac_air" family (soil.cpp:3156) and the invalid water content fails
+    # at soil.cpp:3430-3433. The guessserializer cold-start fix does not cover it,
+    # because those cells have state; it is the soil type under them that moved.
+    #
+    # So "_v2" is safe only where no old state is read: lresume false, or a state
+    # that was itself built with _v2. Setting it globally breaks every run that
+    # resumes a spinup made with the old map. Regenerating the spinup state against
+    # _v2 is what would let this flip, and that is the same job as lpjg_state_3850.
     lpjg_slt_suffix: ""
 
     # Default off; set true in a runscript to enable the concentration-driven

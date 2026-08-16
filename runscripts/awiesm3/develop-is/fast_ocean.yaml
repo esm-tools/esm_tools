@@ -163,10 +163,20 @@ oifs:
             # FESOM data -> 0 K skin temperature -> zero-T column in the first
             # radiation call. The atmosphere surface set (lsm+plit+masks+weights)
             # only exists in the native, mutually-consistent variant here.
+            #
+            # _lakes is that same file with the lake fields put back. The flip to
+            # land rebuilds a cell's whole surface column from its nearest dry
+            # neighbour, and lake cover is just another surface field to that
+            # fill, so the native file has cl >= 0.5 at zero cells: no Caspian,
+            # no Great Lakes, nothing for FLake to integrate. ocp-tool's
+            # tools/repair_lake_cover.py restores cl, dl and the FLake
+            # prognostics at the 370 flipped cells and nowhere else. This does
+            # not reopen the radaca crash above, which came from a different
+            # lsm; here lsm and slt are bit-identical to the native file.
             add_input_files:
                 pism2ece_antar: pism2ece_antar
             add_input_sources:
-                ICMGG_INIT: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/ICMGGab45INIT_feomdyn"
+                ICMGG_INIT: "${general.pool_dir}/fesom2/pism_cavity_ini/oasis/ICMGGab45INIT_feomdyn_lakes"
                 pism2ece_antar: "${general.pool_dir}/fesom2/pism_cavity_ini/antar_pism2ece.nc"
                 wam_grid_tables: "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
                 wam_subgrid_0:   "${general.pool_dir}/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"

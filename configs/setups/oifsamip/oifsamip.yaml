@@ -9,6 +9,16 @@ general:
 
         lresume: False
         coupled_setup: True
+        with_co2_oce_coupling: False
+        with_co2_veg_coupling: False
+
+        # Promote the OIFS prepcompute recipe to the setup level so the OIFS
+        # `preprocess` step actually runs (change_icm_date.sh re-dates ICMGG/ICMSH/
+        # wave init files to the run's initial_date). Without this, the coupled
+        # oifsamip setup fell back to the default framework recipe which has NO
+        # preprocess step -> init files kept their pool dates -> WAM aborted on the
+        # date mismatch at any start year != the wave-init date. (Matches awicm3.yaml:183.)
+        prepcompute_recipe: ${oifs.prepcompute_recipe}
 
         include_models:
                 - amip
@@ -33,12 +43,13 @@ general:
         postprocessing: false
         post_time: "00:05:00"
         compute_time: "00:30:00"
+        parallel_file_movements: 'threads'
 
         reusable_filetypes: [input, bin, src]
 
         choose_computer.name:
                 juwels:
-                        pool_dir: "/p/project/chhb19/jstreffi/input"
+                        pool_dir: "/p/project/chhb19/streffing1/input"
                 aleph:
                         pool_dir: "/proj/awi/input"
                 levante:
@@ -76,7 +87,17 @@ oifs:
         restart_firstlast: "last"
         restart_rate: 12
 
-        mip: "cmip6"
+        # Flux de-accumulation period (s) used by field_def_lpjg_safe.xml.j2 to
+        # convert OpenIFS accumulated fluxes (ssr/str/tp/tisr/...) into W/m2 and
+        # kg/m2/s. It MUST equal NFRHIS*TSTEP; with NFRHIS=1 (the default) that is
+        # time_step. The retired static field_def_lpjg_safe.xml hard-coded 21600
+        # (6h = the freq_op sampling cadence, NOT the accumulation reset), making
+        # every flux 6x too low -> the offline LPJG spin-up saw ~1/6 NPP (boreal
+        # ~0). Defaulted here so no oifsamip+LPJG runscript can reintroduce it;
+        # override only if NFRHIS!=1.
+        flux_accumulation_period: "${oifs.time_step}"
+
+        mip: "cmip7"
         scenario: "historical"
 
         prepifs_expid: h6mv
@@ -103,6 +124,12 @@ oifs:
                                 - ICMCL_INIT
                 "cy48":
                         version: "48r1"
+                        # Build OIFS WITH XIOS output + coupling (like awicm3/awiesm3).
+                        # Without these flags the binary has no XIOS (so no LPJG forcing
+                        # output) and no cplng2, despite LXIOS:TRUE in the namelist.
+                        with_xios: true
+                        build_type: 'release'
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
                         append_icmcl: ""
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         add_namelist_changes:
@@ -115,6 +142,7 @@ oifs:
                                                 ECE_CPL_AMIP: ".true."
                                         NAMMCC:
                                                 LNEMOLIMCUR: ".false."
+                                                LNEMOSICOUP: ".false."
                                         NAEPHY:
                                                 LECURR: ".false."
                                                 #NALBEDOSCHEME: 3
@@ -162,7 +190,10 @@ oifs:
 
         prepifs_dir: ${input_dir}/${res_level}/
         tl_o3_data_dir: ${input_dir}/${version}/climate/
-        ICMGG_INIT_name: ""
+        # AMIP uses the AMIP init (ICMGG${prepifs_expid}INIT_AMIP): the LPJG-capable
+        # OIFS build expects surface fields the base 81-field ICMGG...INIT lacks
+        # (ABOR1 GRID_IN MISSING FIELD 117-120). The _AMIP init (90 flds) supplies them.
+        ICMGG_INIT_name: "_AMIP"
 
 
 
@@ -195,6 +226,7 @@ xios:
         compression_level: 1
 
         add_config_sources:
+                context_ifs: ${xml_dir}/context_ifs.xml.j2
                 domain_def: ${xml_dir}/domain_def.xml.j2
                 file_def: ${xml_dir}/file_def.xml.j2
 

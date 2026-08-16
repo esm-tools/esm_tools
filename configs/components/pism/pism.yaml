@@ -53,16 +53,30 @@ pism:
         branch: stable1.0-awi-dev
         git-repository: swrepo1.awi.de/scmrepos/git/snowflake/snowflake.git
     clean_command: ${defaults.clean_command}
-    comp_command: "mkdir -p build; cd build; export PISM_INSTALL_PREFIX=$(readlink -f\
-      \ $(pwd)/..); cmake \\\n        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \\\n        -DCMAKE_BUILD_TYPE=RelWithDebInfo\
-      \ \\\n        -DPism_BUILD_TYPE=RelWithDebInfo \\\n        -DCMAKE_CXX_COMPILER=$CXX\
-      \ \\\n        -DCMAKE_CXX_FLAGS=\"-O3 -fp-model precise -no-fast-transcendentals -march=native\"\
-      \ \\\n        -DCMAKE_C_COMPILER=$CC  \\\n        -DCMAKE_C_FLAGS=\"-O3 -march=native -fp-model precise\
-      \ -no-fast-transcendentals\" \\\n        -DPETSC_EXECUTABLE_RUNS:BOOL=ON \\\n  \
-      \      -DMPI_C_DIR=\"$I_MPI_ROOT\" \\\n        -DPism_USE_JANSSON:BOOL=NO \\\n \
-      \       -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF \\\n        -DPism_USE_PARALLEL_HDF5:BOOL=ON\
-      \ \\\n        -DPism_USE_PROJ:BOOL=YES \\\n        -DPism_BUILD_EXTRA_EXECS:BOOL=ON\
-      \ \\\n        ..; make -j4; make install;\n"
+    # PETSc/udunits/fftw/proj deps are exported by the choose_computer.name block
+    # in pism.compiletime_env_changes.yaml. Coupled setups that keep pism out of
+    # add_include_models never read that file and must override comp_command
+    # themselves (see the pism section in awiesm3.yaml).
+    # NOTE: keep this a double-quoted scalar. A folded (>-) block yields a
+    # ruamel FoldedScalarString that esm_master cannot pickle.
+    comp_command: "mkdir -p build; cd build;
+        export PISM_INSTALL_PREFIX=$(readlink -f $(pwd)/..);
+        cmake
+        -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        -DPism_BUILD_TYPE=RelWithDebInfo
+        -DCMAKE_CXX_COMPILER=$CXX
+        -DCMAKE_CXX_FLAGS=\"-O3 -fp-model precise -no-fast-transcendentals -march=native\"
+        -DCMAKE_C_COMPILER=$CC
+        -DCMAKE_C_FLAGS=\"-O3 -march=native -fp-model precise -no-fast-transcendentals\"
+        -DPETSC_EXECUTABLE_RUNS:BOOL=ON
+        -DMPI_C_DIR=\"$I_MPI_ROOT\"
+        -DPism_USE_JANSSON:BOOL=NO
+        -DPism_USE_PARALLEL_NETCDF4:BOOL=OFF
+        -DPism_USE_PARALLEL_HDF5:BOOL=ON
+        -DPism_USE_PROJ:BOOL=YES
+        -DPism_BUILD_EXTRA_EXECS:BOOL=ON
+        ..; make -j4; make install;"
     contact: "paul.gierz(at)awi.de"
 
 
@@ -74,7 +88,11 @@ pism:
     lresume: false
 
 
-    model_dir: "${general.esm_master.dir}/pism-${version}"
+    # model_dir is set by esm_master (compile_info.py) for both standalone and
+    # coupled builds; an active line here referencing ${esm_master_dir} breaks the
+    # runscript finalize when pism is an included model (the var is unresolved in
+    # that context), so leave it commented like echam/fesom/oasis do.
+    # model_dir: "${esm_master_dir}/pism-${version}"
     setup_dir: "${model_dir}"
     bin_dir: "${setup_dir}/bin"
     pool_dir: "${computer.pool_directories.pool}/pool_pism"

@@ -3,7 +3,6 @@ import sys
 import time
 
 import psutil
-
 from loguru import logger
 
 from . import database_actions, helpers, logfiles
@@ -14,7 +13,7 @@ def run_job(config):
     return config
 
 
-def init_monitor_file(config):
+def init_observe_logs(config):
     # which job am I spying on?
     observe_job = config["general"]["jobtype"]
     actual_job = observe_job.replace("observe_", "")
@@ -51,26 +50,36 @@ def init_monitor_file(config):
     if os.path.isfile(exp_log_path):
         os.symlink(exp_log_path, log_in_run)
 
-    monitor_file = logfiles.logfile_handle
-
     logger.info(called_from)
     logger.info(exp_log_path)
 
-    monitor_file.write("observing job initialized \n")
-    monitor_file.write(
-        "attaching to process " + str(config["general"]["launcher_pid"]) + " \n"
-    )
-    monitor_file.write("Called from a " + called_from + "job \n")
+    logger.debug("observing job initialized")
+    logger.debug(f'attaching to process {str(config["general"]["launcher_pid"])}')
+    logger.debug(f"Called from a {called_from} job")
     return config
 
 
 def wait_and_observe(config):
-    if config["general"]["submitted"]:
-        monitor_file = logfiles.logfile_handle
+    # `submitted` is True for batch (compute) jobs launched into a SLURM
+    # allocation. Coupling subjobs (couple_in / couple_out) instead run their
+    # heavy work as a backgrounded process on the login node (`<function> &`),
+    # so `submitted` is False and this observe step would otherwise return
+    # immediately -- triggering the next job (prepcompute) while couple_in is
+    # still running. For a light coupling that finishes before the compute job
+    # clears the queue this is harmless, but a heavy couple_in (e.g. ice2fesom
+    # regenerating a submesh + OASIS weights, ~15 min) then has compute read
+    # half-written coupling files. So also block whenever the monitored PID is a
+    # live local process, regardless of `submitted`.
+    monitor_pid = config["general"].get("launcher_pid")
+    try:
+        have_live_local_job = psutil.pid_exists(int(monitor_pid))
+    except (TypeError, ValueError):
+        have_live_local_job = False
+    if config["general"]["submitted"] or have_live_local_job:
         thistime = 0
         error_check_list = assemble_error_list(config)
         while job_is_still_running(config):
-            monitor_file.write("still running \n")
+            logger.debug("still running")
             config["general"]["next_test_time"] = thistime
             config = check_for_errors(config)
             thistime = thistime + 10
@@ -78,12 +87,73 @@ def wait_and_observe(config):
         thistime = thistime + 100000000
         config["general"]["next_test_time"] = thistime
         config = check_for_errors(config)
+    config = check_coupling_failure(config)
+    return config
+
+
+def check_coupling_failure(config):
+    """Stop the workflow when a coupling subjob failed.
+
+    A coupling function (ice2fesom, fesom2ice, ...) is backgrounded by the generated
+    .run script, and this observe job is NOT its parent -- so it can never see the
+    exit code. ``assemble_error_list`` additionally returns an EMPTY error list for
+    every non-compute job, so the log is not even scanned for keywords. A failing
+    coupling step therefore used to advance the workflow silently, and the next leg
+    would run on stale or half-written coupling files (observed: remap_oasis_restart
+    correctly refused to write a mis-sized OASIS restart, yet the compute leg started
+    anyway on an un-remapped restart).
+
+    The coupling functions drop a ``.coupling_failed`` sentinel in COUPLE_DIR via
+    ``couple_fail``. Honour it here and abort.
+    """
+    jobtype = config["general"].get("jobtype", "")
+    if not jobtype.startswith("observe_couple"):
+        return config
+    couple_dir = config["general"].get("experiment_couple_dir")
+    if not couple_dir:
+        return config
+    # concurrent mode namespaces the sentinel per chain; the bare name still
+    # trips every chain (fail-stop)
+    sentinels = [os.path.join(couple_dir, ".coupling_failed")]
+    if config["general"].get("coupling_mode", "serial") == "concurrent":
+        sentinels.append(
+            os.path.join(
+                couple_dir, ".coupling_failed." + config["general"]["setup_name"]
+            )
+        )
+    for sentinel in sentinels:
+        if os.path.isfile(sentinel):
+            try:
+                with open(sentinel) as fid:
+                    reason = fid.read().strip()
+            except OSError:
+                reason = "(unreadable sentinel)"
+            os.remove(sentinel)
+            logger.error("=" * 78)
+            logger.error(f"COUPLING STEP FAILED: {reason}")
+            logger.error(f"({jobtype}) -- refusing to advance the workflow.")
+            logger.error("=" * 78)
+            sys.exit(1)
     return config
 
 
 def wake_up_call(config):
-    monitor_file = logfiles.logfile_handle
-    monitor_file.write("job ended, starting to tidy up now \n")
+    if hasattr(logger, "stdout_sink"):
+        # Flush the content of te stdout sink and set print_in_stdout to True
+        # so that the next messages will be printed in stdout, instead of buffered
+        logger.stdout_sink.flush_to_stdout()
+        logger.stdout_sink.print_in_stdout = True
+        if (
+            config["general"]["jobtype"] == "observe_compute"
+            and not config["general"]["task_log_files"]
+        ):
+            # Observe log is always created to be used as a buffer while the
+            # compute job is running in parallel to the observe job. If
+            # ``task_log_files`` is ``False`` we delete the observe log file
+            # once the log buffer is not needed anymore, after having flushed
+            # its content to stdout.
+            os.remove(logger.stdout_sink.path)
+    logger.debug("job ended, starting to tidy up now \n")
     return config
 
 
@@ -162,7 +232,6 @@ def check_for_errors(config):
 
     new_list = []
     error_check_list = config["general"]["error_list"]
-    monitor_file = logfiles.logfile_handle
     time = config["general"]["next_test_time"]
     for (
         trigger,
@@ -180,15 +249,13 @@ def check_for_errors(config):
                         if trigger.upper() in line.upper():
                             if method == "warn":
                                 warned = 1
-                                monitor_file.write("WARNING: " + message + "\n")
+                                logger.warning(f"WARNING: {message}")
                                 break
                             elif method == "kill":
                                 cancel_job = f"scancel {config['general']['jobid']}"
-                                monitor_file.write("ERROR: " + message + "\n")
-                                monitor_file.write("Will kill the run now..." + "\n")
-                                monitor_file.flush()
-                                logger.error("ERROR: " + message)
+                                logger.error(f"ERROR: {message}")
                                 logger.error("Will kill the run now...")
+                                logger.stdout_sink.flush_to_stdout()
                                 database_actions.database_entry_crashed(config)
                                 os.system(cancel_job)
                                 sys.exit(42)
@@ -202,6 +269,10 @@ def check_for_errors(config):
 
 
 def job_is_still_running(config):
-    if psutil.pid_exists(config["general"]["launcher_pid"]):
-        return True
-    return False
+    # launcher_pid arrives from the CLI as a string (argparse has no type=int)
+    # and defaults to -666 when absent; cast defensively so a missing/odd value
+    # reports "not running" instead of raising inside the observe loop.
+    try:
+        return psutil.pid_exists(int(config["general"]["launcher_pid"]))
+    except (TypeError, ValueError):
+        return False

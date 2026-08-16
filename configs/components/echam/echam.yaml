@@ -9,7 +9,10 @@ echam:
             available_versions:
             - 6.3.05p2
             - 6.3.05p2-foci
+            - 6.3.05p2-moz
+            - 6.3.05p2-moz_mct2
             - 6.3.05p2-foci_autotools
+            - 6.3.05p2-foci_lmu
             - 6.3.05p2-foci_oasismct4
             - 6.3.02p4
             - 6.3.04p1-esm_interface
@@ -73,6 +76,36 @@ echam:
               6.3.05p2-foci:
                 branch: esm-tools
                 git-repository: https://git.geomar.de/foci/src/echam.git
+              6.3.05p2-moz:
+                branch: oasis-mct5
+                git-repository: https://git.geomar.de/foci/src/echam_hammoz.git
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
+                comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
+                  ./config/createMakefiles.pl; autoreconf -i --force; unset FCFLAGS; unset FFLAGS; 
+                  ./configure --prefix=$(pwd)/../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../oasis/INSTALL_OASIS.ESMTOOLS/ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
+                  make -j `nproc --all`; make install -j `nproc --all`;
+                install_bins: ''
+              6.3.05p2-moz_mct2:
+                branch: master 
+                git-repository: https://git.geomar.de/foci/src/echam_hammoz.git
+                clean_command: rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
+                comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
+                  ./config/createMakefiles.pl; autoreconf -i --force; unset FCFLAGS; unset FFLAGS; 
+                  ./configure --prefix=$(pwd)/../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
+                  make -j `nproc --all`; make install -j `nproc --all`;
+                install_bins: ''
+              6.3.05p2-foci_lmu:
+                git-repository: https://gitlab.dkrz.de/lmu-lus/mpiesm/hbp_mpiesm-landveg.git 
+                branch: feature/couple_to_nemo3.6_mops
+                clean_command: cd src/echam; rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
+                comp_command: cd src/echam; 
+                  git submodule init; git submodule update cdi || echo "No update required"; 
+                  mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps; 
+                  ./config/createMakefiles.pl; autoreconf -i --force;
+                  unset FCFLAGS; unset FFLAGS; 
+                  ./configure --prefix=$(pwd)/../../../ --with-fortran=intel --with-coupler=oasis3-mct-nemo --enable-cdi-pio OASIS3MCTROOT=$(pwd)/../../../oasis/INSTALL_OASIS.ESMTOOLS/ SUPPORTROOT=$(pwd)/../ SUPPORT_LIB='-L$(SUPPORTROOT)/lib -lsupport' SRCDIRS="support cdi" ;
+                  make -j `nproc --all`; make install -j `nproc --all`;
+                install_bins: ''
               6.3.05p2-foci_autotools:
                 clean_command: rm -rf src/echam/bin; rm -rf bin; make clean; make distclean
                 comp_command: mkdir -p src/.deps yaxt/src/.deps yaxt/tests/.deps;
@@ -128,7 +161,7 @@ echam:
     ocean_resolution: 'GR15'
     disturbance: "1.000001"
     lresume: false
-
+    use_moz: false
 
     lgfw: False
     lupdate_orography: False
@@ -270,12 +303,33 @@ echam:
                     dataset: r0008
                     nprocrad: "remove_from_namelist"
                     lrad_async: "remove_from_namelist"
+            6.3.05p2-foci_autotools:
+                    repo_tag: not_set
+                    dataset: r0008
+                    nprocrad: "remove_from_namelist"
+                    lrad_async: "remove_from_namelist"
+            6.3.05p2-moz:
+                    repo_tag: not_set
+                    dataset: r0008
+                    nprocrad: "remove_from_namelist"
+                    lrad_async: "remove_from_namelist"
+                    use_moz: true
+            6.3.05p2-moz_mct2:
+                    repo_tag: not_set
+                    dataset: r0008
+                    nprocrad: "remove_from_namelist"
+                    lrad_async: "remove_from_namelist"
+                    use_moz: true
             6.3.05p2-foci_oasismct4:
                     repo_tag: not_set
                     dataset: r0008
                     nprocrad: "remove_from_namelist"
                     lrad_async: "remove_from_namelist"
-
+            6.3.05p2-foci_lmu:
+                    repo_tag: not_set
+                    dataset: r0008
+                    nprocrad: "remove_from_namelist"
+                    lrad_async: "remove_from_namelist"
             6.3.05p2-concurrent_radiation-paleodyn:
                     concurrent_radiation_code: true
                     repo_tag: not_applicable
@@ -332,6 +386,8 @@ echam:
                                     radctl:
                                             lrad_async: "${lrad_async}"
                     add_streams:
+                        - rad
+                    add_restartstreams:
                         - rad
             "*":
                     from_concurrent_radiation_code_choose: <NO_CONCURRENT_RADIATION_CODE>
@@ -497,7 +553,7 @@ echam:
     choose_lresume:
             False:
                     restart_in_modifications:
-                            "[[streams-->STREAM]]":
+                            "[[restartstreams-->STREAM]]":
                                     - "vdate <--set_global_attr-- ${start_date!syear!smonth!sday}"
                                       # - fdate "<--set_dim--" ${year_before_date}
                                       # - ndate "<--set_dim--" ${steps_in_year_before}
@@ -574,6 +630,9 @@ echam:
                         lco2_emis: true # read carbon emissions; need carbon_emissions.nc in work
                         lco2_2perc: true # limit maximum co2 growth rate to 2% wrt previous time step
             add_choose_scenario: # other loop order (1:add_forcing_files 2:add_choose_scenario) does not work
+                cmip6hist:
+                    add_forcing_files:
+                        carbon_emissions: carbon_emissions_hist
                 HIST:
                     add_forcing_files:
                         carbon_emissions: carbon_emissions_hist
@@ -626,6 +685,9 @@ echam:
                                     add_streams:
                                             - wiso
                                             - accw_wiso
+                                    add_restartstreams:
+                                            - wiso
+                                            - accw_wiso
 
                                     # The following lines take care of the renaming of the
                                     # ozon files, and their copying
@@ -641,6 +703,45 @@ echam:
                             False:
                                     nwiso: 0
                                     lwiso_rerun: False
+
+    choose_use_moz:
+        true:
+            add_input_files:
+                moz_effxs: moz_effxs 
+                moz_rsf: moz_rsf 
+                moz_temp: moz_temp
+                moz_xs: moz_xs 
+                moz_uvalbedo: moz_uvalbedo
+                moz_xtsoil: moz_xtsoil
+                moz_surface_properties: moz_surface_properties 
+
+            add_choose_scenario_type:
+                'PI-CTRL':
+                    add_forcing_files:
+                        moz_lbc: moz_lbc_pictl
+                        moz_sad_sulf: moz_sad_sulf_pictl
+                    add_forcing_in_work:
+                        moz_lbc: "moz_lbc.${echam.resolution}.nc"
+                        moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"
+                'cmip6':
+                    add_forcing_files:
+                        moz_lbc: moz_lbc
+                        moz_sad_sulf: moz_sad_sulf
+                        moz_epp: moz_epp
+                        moz_photolysis: moz_photolysis
+                        moz_ap_index: moz_ap_index
+                    add_forcing_in_work:
+                        moz_epp: "moz_epp.${echam.resolution}${echam.levels}.nc"
+                        moz_photolysis: etfphot_@YEAR@.nc
+                        moz_ap_index: apindex_@YEAR@.nc
+                        moz_lbc: "moz_lbc.${echam.resolution}.nc"
+                        moz_sad_sulf: "moz_sad_sulf.${echam.resolution}.nc"
+
+            add_input_in_work:
+                moz_temp: "moz_temp_prs_gt200nm.nc"
+                moz_uvalbedo: "moz_uvalbedo.${echam.resolution}.nc"
+                moz_xtsoil: "xtsoil.nc"
+                moz_surface_properties: "surface_properties.nc"
 
     bin_files:
             "echam_bin": "echam_bin"
@@ -751,6 +852,21 @@ echam:
             - spim
             - ism
 
+    restartstreams:
+            - echam
+            - accw
+            - co2
+            - g3bid
+            - g3bim
+            - g3bday
+            - g3b1hi
+            - glday
+            - aclcim
+            - sp6h
+            - glim
+            - spim
+            - ism
+
     streamsnc:
             - aclcim
             - g3b1hi
@@ -807,23 +923,23 @@ echam:
             #"[[streamsnc-->STREAM]]_nc": ${general.expid}_${start_date!syear!smonth}_STREAM.nc
 
     restart_in_files:
-            "[[streams-->STREAM]]": STREAM
+            "[[restartstreams-->STREAM]]": STREAM
 
     restart_in_sources:
-            "[[streams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
+            "[[restartstreams-->STREAM]]": restart_${parent_expid}_STREAM_${parent_date!syear!smonth!sday}.nc
 
     restart_in_in_work:
-            "[[streams-->STREAM]]": restart_${general.expid}_STREAM.nc
+            "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM.nc
 
 
     restart_out_files:
-            "[[streams-->STREAM]]": STREAM
+            "[[restartstreams-->STREAM]]": STREAM
 
     restart_out_sources:
-            "[[streams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
+            "[[restartstreams-->STREAM]]": restart_${general.expid}_STREAM_${other_date!syear!smonth!sday}.nc
 
     restart_out_in_work:
-            "[[streams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
+            "[[restartstreams-->STREAM]]": restart_${general.expid}_${other_date!syear!smonth!sday!shour!sminute!ssecond}_STREAM.nc
 
     log_files:
             atmout: atmout

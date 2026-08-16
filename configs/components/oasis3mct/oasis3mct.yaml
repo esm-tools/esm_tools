@@ -59,6 +59,8 @@ oasis3mct:
     - '4.0-awicm-3.2'
     - '5.0-smhi'
     - '5.0-geomar'
+    - '5.1'
+    - '5.2'
     - '6.0-YAC'
     choose_version:
       '2.8-paleodyn':
@@ -83,12 +85,17 @@ oasis3mct:
         branch: awicm-3.1
       4.0-awicm-3.2:
         branch: awicm-3.2
+        comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
       4.0-awicm-frontiers:
         branch: awicm-3-frontiers
       5.0-smhi:
-        branch: main_dkrz
-        git-repository: https://gitlab.dkrz.de/ec-earth/oasis3mct5-ece
-        comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
+        branch: local_combined_fixes
+        git-repository: https://git.smhi.se/jan.streffing/oasis3-mct-5
+        # The CMake build now also produces a shared liboasis.cbind.so and the
+        # pyOASIS python package is staged under oasis/python/pyoasis (used by
+        # ocp-tool to regenerate OASIS grids/weights offline, e.g. for a dynamic
+        # FESOM mesh). The coupled model still links the static libraries.
+        comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/; cp build/lib/cbindings/liboasis.cbind.so lib/ 2>/dev/null || true; mkdir -p python/pyoasis; cp pyoasis/src/*.py python/pyoasis/ 2>/dev/null || true'
       5.0-geomar:
         # this version is taken directly from the CERFACS gitlab
         # it compiles in the standard way, i.e. not with cmake
@@ -106,6 +113,14 @@ oasis3mct:
         clean_command: 'rm -rf INSTALL_OASIS.ESMTOOLS'
         # this is how we should do it but it does not work
         #clean_command: 'export ESM_OASIS_DIR=${model_dir} ; cd util/make_dir/ ; make -f TopMakefileOasis3 realclean ; cd ../../ ; rm -rf build lib/libpsmile.a lib/libscrip.a lib/libmct.a lib/libmpeu.a'
+      '5.1':
+        branch: '5.1'
+        git-repository: https://git.smhi.se/jan.streffing/oasis3-mct-5
+        comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
+      '5.2':
+        branch: '5.2'
+        git-repository: https://git.smhi.se/jan.streffing/oasis3-mct-5
+        comp_command: 'mkdir -p build; cd build; cmake ..;   make -j 1; mkdir -p ../include/; cp lib/psmile/libpsmile.a lib/psmile/mct/libmct.a lib/psmile/mct/mpeu/libmpeu.a lib/psmile/scrip/libscrip.a ../lib; cd ..; find . -type f \( -name "*.o" -o -name "*.mod" \) ! -path "./include/*" -exec cp -t include/ {} +; mkdir -p arch_ecearth; ln -fs ../lib ../include arch_ecearth/'
       ec-earth:
         branch: ec-earth-version
       foci:
@@ -257,23 +272,33 @@ oasis3mct:
             masks: masks.nc
             grids: grids.nc
 
+    # Patterns globbed recursively relative to thisrun_work_dir by
+    # check_for_unknown_files (filelists.py); files matching any of these
+    # are not copied to the experiment unknown/ directory at tidy time.
+    # ignore_in_work and ignore_sources must use the same keys.
     ignore_files:
             debug.root: debug.root
             debug.notroot: debug.notroot
             lucia: lucia
             nout: nout
+            timeline: timeline
+            load_balancing: load_balancing
 
     ignore_in_work:
             debug.root: debug.root*
             debug.notroot: debug.notroot*
             lucia: lucia.*
             nout: nout.000000
+            timeline: "timeline_*.nc"
+            load_balancing: "load_balancing_info.txt"
 
     ignore_sources:
             debug.root: debug.root*
             debug.notroot: debug.notroot*
             lucia: lucia.*
             nout: nout.000000
+            timeline: "timeline_*.nc"
+            load_balancing: "load_balancing_info.txt"
 
 
     # transformations:

@@ -1,0 +1,79 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "bb1469"
+    compute_time: "02:00:00"
+    initial_date: "1900-01-01"
+    final_date: "1910-01-01"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 0
+    nmonth: 0
+    nyear: 2
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE2"
+    restart_rate: 2
+    restart_unit: "y"
+    restart_first: 2
+    lresume: false
+    time_step: 1800
+    nproc: 768 #originally 512 but worked with 1152
+    omp_num_threads: 2 # originally 4 but worked with 1
+    tar_binary_restarts: true
+
+lpj_guess:
+    nproc: 8 # originally 16
+    omp_num_threads: 8
+    lresume: false    
+    mip: "cmip7"
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    mpi: cmip6 #for cmip6 simulations!
+    scenario: piControl #solar radiation is going to be taken always from 1850
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                LCMIP6: False
+                LCMIP7: True
+                CMIP7DATADIR: '/work/bb1469/a270089/input/oifs-48r1/cmip-data/'
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+
+oasis3mct:
+    use_lucia: true #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+    norestart: T #Do i restart from vegin or not?
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 32
+    omp_num_threads: 8

@@ -1,12 +1,95 @@
 #!/usr/bin/ksh
 
+# ---------------------------------------------------------------------------
+# couple_timer: lightweight per-step profiling timer for the coupling glue.
+#   Call `couple_timer "label"` at each block boundary. It prints the wall
+#   time elapsed since the PREVIOUS mark, tagged with the previous label, as
+#   an indented '[TIMER]' line.  After a run:
+#       grep '\[TIMER\]' <exp>/log/*couple*   ->  per-step cost breakdown
+#   Idempotent (defined once per shell) and side-effect free. Keep the copies
+#   in the other coupling_*2*.functions files in sync.
+# ---------------------------------------------------------------------------
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        _ct_stamp=$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="${_ct_stamp}" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+        else
+            # First mark: there is no previous section to time, but stamp it anyway.
+            # Without this, any time spent BEFORE instrumentation starts (esm_tools
+            # internals, file staging) is invisible -- the absolute stamps let you
+            # line the [TIMER] lines up against the job's own start/end.
+            awk -v t="${_ct_stamp}" -v l="$1" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9s\n", t, "(instrumentation starts: " l ")", "--" }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+    # couple_timer_end: stamp the LAST section, which otherwise never prints (its
+    # duration is only emitted by the *next* mark, and at the end of a function
+    # there isn't one). Call it right before a coupling function returns.
+    couple_timer_end() {
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+            unset COUPLE_TIMER_LAST COUPLE_TIMER_LABEL
+        fi
+    }
+fi
+
 function fesom2ice {
     FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing:-0}
     echo " *** S T A R T I N G    fesom2ice *** "
-    echo " LA DEBUG: MESH_PATH=${MESH_DIR_fesom}"
+
+    # Use the mesh FESOM ACTUALLY RAN ON, not the static full mesh. On a
+    # moving-cavity leg FESOM runs on the submesh (fewer nodes), so its output
+    # has n2d = submesh; loading the full mesh here made pyfesom build a
+    # (nt, full_n2d) array and the fill blew up with
+    #   ValueError: could not broadcast input array from shape (208810,) into shape (12,211567)
+    # The authoritative source is the MeshPath in the namelist.config the run used.
+    MESH_DIR_fesom_static=${MESH_DIR_fesom}
+    if [ -f "${WORK_DIR_fesom}/namelist.config" ]; then
+        _rm=$(grep -i "^\s*meshpath" "${WORK_DIR_fesom}/namelist.config" 2>/dev/null \
+              | head -1 | sed "s/.*=\s*'\?//; s/'\?\s*$//")
+        if [ -n "${_rm}" ] && [ -f "${_rm}/nod2d.out" ]; then
+            MESH_DIR_fesom=${_rm}
+        fi
+    fi
+    echo " *   fesom2ice mesh: ${MESH_DIR_fesom} ($(head -1 ${MESH_DIR_fesom}/nod2d.out 2>/dev/null | awk '{print $1}') nodes)"
+    if [ "${MESH_DIR_fesom}" != "${MESH_DIR_fesom_static}" ]; then
+        echo " *   (submesh leg: static mesh was ${MESH_DIR_fesom_static})"
+    fi
 
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
+
+    # --- make failures VISIBLE to the workflow (same rationale as ice2fesom's
+    # couple_fail): this subjob is backgrounded, observe never sees its exit
+    # code, and keyword error checking is off for non-compute jobs -- a bare
+    # exit here lets the workflow advance and the PISM leg then runs without
+    # ocean forcing and dies empty (movcav16 chunk-1->2 handover, 2026-07-14).
+    # Drop the sentinel observe.py checks, then exit. Overrides the shared
+    # test_file_or_exit ONLY inside this subjob's shell.
+    couple_fail() {
+        echo " *** $1 ***"
+        if [ -n "${COUPLE_DIR:-}" ] ; then
+            mkdir -p "${COUPLE_DIR}" 2>/dev/null
+            echo "$1" > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        fi
+        exit 1
+    }
+    function test_file_or_exit {
+        __file=$1
+        __error_code=$2
+        if [ ! -f ${__file:-/DiesenFileNamenSeheIchSehrSelten_Oder_Fragezeichen} ] ; then
+            couple_fail "fesom2ice FAILED: missing file >>${__file}<< in $(pwd) (code ${__error_code:-998})"
+        fi
+    }
 
     echo "     Starting coupling_fesom2ice.functions ...."
     echo "FESOM_TO_ISM_ocean_forcing=${FESOM_TO_ISM_ocean_forcing}"
@@ -15,11 +98,27 @@ function fesom2ice {
     iter_coup_interact_method_oce2ice=${iter_coup_interact_method_oce2ice:-}
 
     iterative_coupling_fesom1x_ice_make_forcing
+    couple_timer "fesom2ice: write_grid+names"
     iterative_coupling_fesom1x_ice_write_grid
     iterative_coupling_fesom1x_ice_write_names
 
+    # concurrent coupling: publish chunk-tagged copies only (the sibling chain
+    # restages fixed names from the tag it wants; no shared fixed-name writes)
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        for _f in ocean_file_for_ice.nc ocean.griddes ocean_names_for_ice.dat ; do
+            [ -e "${COUPLE_DIR}/${_f}" ] && \
+                mv "${COUPLE_DIR}/${_f}" "${COUPLE_DIR}/${_f}.chunk_${CHUNK_NUMBER}"
+        done
+        unset _f
+    fi
+    couple_timer "fesom2ice: DONE"
+
     for file in ${cleanup_list} ; do test -f $file && rm $file ; done
     unset cleanup_list file
+
+    # stamp the final section (its duration is otherwise never emitted:
+    # only the NEXT mark prints it, and there isn't one at the end)
+    couple_timer_end
 }
 
 function iterative_coupling_fesom1x_ice_make_forcing {
@@ -28,10 +127,13 @@ function iterative_coupling_fesom1x_ice_make_forcing {
     FESOM_TO_ISM_multiyear_mean=${FESOM_TO_ISM_multiyear_mean:-1}
     FESOM_TO_ISM_total_mean=${FESOM_TO_ISM_total_mean:-1}
 
+    couple_timer "fesom2ice: construct+select (pass1)"
     fesom_ice_construct_input_list
     fesom_ice_select_relevant_variables
     # Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+    couple_timer "fesom2ice: build_grid temp+salt (pass1)"
     fesom_ice_fesom_build_grid_with_lonlat_depth
+    couple_timer "fesom2ice: concat+means (pass1)"
     fesom_ice_concatenate_files
     if [ "x${FESOM_TO_ISM_multiyear_mean:-0}" == "x1" ] ; then
             fesom_ice_generate_multiyear_mean
@@ -61,10 +163,13 @@ function iterative_coupling_fesom1x_ice_make_forcing {
             FESOM_TO_ISM_total_mean=1
     fi
 
+    couple_timer "fesom2ice: construct+select (pass2)"
     fesom_ice_construct_input_list
     fesom_ice_select_relevant_variables
     # Come from special FESOM grid to i(lon,lat),j(lon,lat),depth grid
+    couple_timer "fesom2ice: build_grid temp+salt (pass2)"
     fesom_ice_fesom_build_grid_with_lonlat_depth
+    couple_timer "fesom2ice: concat+means (pass2)"
     fesom_ice_concatenate_files
     if [ "x${FESOM_TO_ISM_multiyear_mean}" == "x1" ] ; then
         fesom_ice_generate_multiyear_mean
@@ -84,6 +189,7 @@ function iterative_coupling_fesom1x_ice_make_forcing {
     #
     # Adding the depth works only for z-coordinates
     #
+    couple_timer "fesom2ice: finalize (rename depth + cp)"
     if [ -f ${FileName_depth4levels_FESOM} ] ; then
 	cp ocean_file_for_ice.nc ocean_file_for_ice.before_add_depth.nc
 	fesom_ice_rename_level2depth_add_depth ${FileName_depth4levels_FESOM} ocean_file_for_ice.nc
@@ -151,6 +257,32 @@ function iterative_coupling_fesom1x_ice_write_names {
         echo "     ...done."
 }
 
+function fesom_ice_resolve_output_file {
+        # Resolve a FESOM output file for a given variable+year, accepting either
+        # naming scheme:
+        #   legacy : <var>.fesom.<year>.nc
+        #   XIOS   : <var>.fesom_<year>-<yend>.nc
+        # The XIOS split-suffix form is what FESOM/XIOS writes when
+        # cmip7_cmor_output (with_xios) is on; the Rename_XIOS_FESOM subjob later
+        # renames it to the legacy form (ystart -> <year>). That rename runs
+        # concurrently with couple_out, so this step can race it; accepting both
+        # names makes the coupling robust regardless of which has happened yet.
+        # Echoes the first existing match (legacy preferred); returns 1 if none.
+        typeset _var=$1 _year=$2 _legacy _xios
+        _legacy=${DATA_DIR_fesom}/${_var}.fesom.${_year}.nc
+        if [ -f "${_legacy}" ] ; then
+            echo "${_legacy}"
+            return 0
+        fi
+        for _xios in ${DATA_DIR_fesom}/${_var}.fesom_${_year}-*.nc ; do
+            if [ -f "${_xios}" ] ; then
+                echo "${_xios}"
+                return 0
+            fi
+        done
+        return 1
+}
+
 function fesom_ice_construct_input_list {
         echo ""; echo " *   constructing input list"
 
@@ -175,20 +307,20 @@ function fesom_ice_construct_input_list {
 	    #for month in $(seq -f "%02g" 1 12); do
 		day=01
 		variable=temp
-		current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}.nc
-		if [ -f $current_file ] ; then
+		current_file=$(fesom_ice_resolve_output_file ${variable} ${year})
+		if [ -n "$current_file" ] ; then
 		    fesom1x_raw_file3D_T_list_for_ice="$fesom1x_raw_file3D_T_list_for_ice $current_file"
 		else
-		    echo "     - Missing 3D fesom file ${current_file}"
+		    echo "     - Missing 3D fesom file ${DATA_DIR_fesom}/${variable}.fesom.${year}.nc (and XIOS variant ${variable}.fesom_${year}-*.nc)"
 		    echo " S T O P  1  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 1
 		fi
 
 		variable=salt
-		current_file=${DATA_DIR_fesom}/${variable}.fesom.${year}.nc
-		if [ -f $current_file ] ; then
+		current_file=$(fesom_ice_resolve_output_file ${variable} ${year})
+		if [ -n "$current_file" ] ; then
 		    fesom1x_raw_file3D_S_list_for_ice="$fesom1x_raw_file3D_S_list_for_ice $current_file"
 		else
-		    echo "     - Missing 3D fesom file ${current_file}"
+		    echo "     - Missing 3D fesom file ${DATA_DIR_fesom}/${variable}.fesom.${year}.nc (and XIOS variant ${variable}.fesom_${year}-*.nc)"
 		    echo " S T O P  2  (coupling_fesom2ice.functions::fesom_ice_construct_input_list)" ; exit 2
 		fi
 	    #done
@@ -203,6 +335,54 @@ function fesom_ice_construct_input_list {
 	    month=01
 		day=01
 		current_file=${DATA_DIR_fesom}/${EXP_ID}.${year}.pism.nc
+		if [ ! -f $current_file ] ; then
+		    # FESOM2 does not write the FESOM1.x-era ${EXP_ID}.<year>.pism.nc bundle
+		    # this pipeline expects. Synthesize it from the standard monthly streams:
+		    # sst/sss (level-1 = the ICE-BASE T/S at cavity nodes, per FESOM's
+		    # virtual-column convention) -> Tsurf/Ssurf, plus fh and fw. fw is
+		    # converted m/s (freshwater) -> kg m-2 s-1. SIGN kept HERE, and
+		    # flipped later: FESOM melt => fw<0 (positive fw = freshwater
+		    # leaving the ocean), but PISM's shelfbmassflux is positive = MELT,
+		    # so the conventions are OPPOSITE. The flip is applied as
+		    # `factor = -1` on the fw entry of the cdo partable, in
+		    # coupling_ocean2pism.functions -- see the comment there for how
+		    # both conventions were established from the data. Do NOT also
+		    # negate fw here; that would double-flip it back.
+		    # (An earlier version of this comment claimed the signs already
+		    # agreed, citing ConstantPIK.cc. That comment in PISM contradicts
+		    # itself and ConstantPIK is not the active ocean model: -ocean given.)
+		    current_file=${COUPLE_DIR}/${EXP_ID}.${year}.pism.nc
+		    if [ ! -f $current_file ]; then
+		        echo "     - synthesizing 2D flux bundle ${current_file} (sst,sss,fh,fw)"
+		        _ok=1
+		        for _v in sst sss fh fw ; do
+		            _src=$(fesom_ice_resolve_output_file ${_v} ${year})
+		            if [ -z "${_src}" ]; then echo "     - cannot synthesize: missing ${_v}.fesom.${year}"; _ok=0; break; fi
+		            case ${_v} in
+		                sst) $cdo -O chname,sst,Tsurf ${_src} tmp_p2d_${_v}.nc ;;
+		                sss) $cdo -O chname,sss,Ssurf ${_src} tmp_p2d_${_v}.nc ;;
+		                fh)  $cdo -O selvar,fh ${_src} tmp_p2d_${_v}.nc ;;
+		                fw)  $cdo -O setattribute,fw@units="kg m-2 s-1" -expr,'fw=fw*1000.0' ${_src} tmp_p2d_${_v}.nc ;;
+		            esac
+		        done
+		        if [ ${_ok} -eq 1 ]; then
+		            $cdo -O merge tmp_p2d_sst.nc tmp_p2d_sss.nc tmp_p2d_fh.nc tmp_p2d_fw.nc ${current_file}
+		            # Per-variable copies for the 2D interpolation step:
+		            # fesom_scalar_array_to_LonLat.py ignores the bundle path and
+		            # opens ${FESOM_PATH}/<var>.fesom.<year>.nc itself. Stage ALL
+		            # FOUR from the synthesized tmp files (the 2D loop points
+		            # FESOM_PATH at COUPLE_DIR when these exist): Tsurf/Ssurf are
+		            # not FESOM outputs at all, and fw here carries the m/s ->
+		            # kg m-2 s-1 conversion -- reading the raw DATA_DIR fw would
+		            # silently hand PISM a flux 1000x too small.
+		            cp -f tmp_p2d_sst.nc ${COUPLE_DIR}/Tsurf.fesom.${year}.nc
+		            cp -f tmp_p2d_sss.nc ${COUPLE_DIR}/Ssurf.fesom.${year}.nc
+		            cp -f tmp_p2d_fh.nc  ${COUPLE_DIR}/fh.fesom.${year}.nc
+		            cp -f tmp_p2d_fw.nc  ${COUPLE_DIR}/fw.fesom.${year}.nc
+		        fi
+		        rm -f tmp_p2d_*.nc
+		    fi
+		fi
 		if [ -f $current_file ] ; then
 		    fesom1x_raw_file2D_list_for_ice="$fesom1x_raw_file2D_list_for_ice $current_file"
 		else
@@ -241,12 +421,21 @@ function fesom_ice_select_relevant_variables {
     fesom1x_file2D_list_for_ice=""
     fesom1x_file2Dstatic_list_for_ice=""
     
+    # NOTE: the 3-D temp/salt *_var4ice.nc file is VESTIGIAL. It used to feed the
+    # goodgrid builder, but fesom_scalar_array_to_LonLat.py now reads the raw
+    # FESOM file directly (--FESOM_PATH/--FESOM_VARIABLE/--FESOM_YEARS) and does
+    # its own time-mean; downstream concatenate/means consume the *goodgrid*
+    # files, never these. The var4ice file is used only to derive the goodgrid
+    # NAME and is then deleted. So the expensive `cdo monmean` (a full read+write
+    # of the ~260 MB yearly file, ~155 s/pass) is pure overhead -- replace it
+    # with an instant symlink that preserves the filename/-f invariants.
+    # (The 2-D paths below still use monmean; leave them unchanged.)
     variable=temp
     for file in ${fesom1x_raw_file3D_T_list_for_ice} ; do
 	echo -n "     - >${variable}< from ${file}"
         filename=$(basename $file)
 	output="${filename%.*}"_var4ice.nc
-        ${cdo} -s -f nc monmean $file $output
+        ln -sf "$file" "$output"        # was: ${cdo} -s -f nc monmean $file $output  (data unused)
         fesom1x_file3D_T_list_for_ice="$fesom1x_file3D_T_list_for_ice ${output}"
 	echo " : STILL alive"
     done
@@ -256,7 +445,7 @@ function fesom_ice_select_relevant_variables {
 	echo -n "     - >${variable}< from ${file}"
         filename=$(basename $file)
 	output="${filename%.*}"_var4ice.nc
-        ${cdo} -s -f nc monmean $file $output
+        ln -sf "$file" "$output"        # was: ${cdo} -s -f nc monmean $file $output  (data unused)
         fesom1x_file3D_S_list_for_ice="$fesom1x_file3D_S_list_for_ice ${output}"
 	echo " : STILL alive"
     done
@@ -415,14 +604,25 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		output="${filename%.*}"_goodgrid.nc
 
 		echo -n "     - >${variable}< from ${file}"
-                python $pyfesom_script ${FESOM_MESH_SWITCHES} \
-		    --FESOM_PATH $DATA_DIR_fesom \
-		    --FESOM_VARIABLE $variable \
-		    --FESOM_MESH ${MESH_DIR_fesom} \
-		    --FESOM_YEARS $start_year_couple $end_year_couple \
-                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
-                    --FESOM_OUTPUT $output > $logfile
-		echo " : STILL alive"
+		# Stage 1b: the goodgrid file is a pure function of the raw FESOM
+		# source. When make_forcing runs its second pass (multiyear- vs
+		# total-mean), the source is unchanged and the goodgrid already
+		# exists from the first pass, so skip the expensive rebuild.
+		_raw_src="${DATA_DIR_fesom}${variable}.fesom.${start_year_couple}.nc"
+		if [ "x${start_year_couple}" == "x${end_year_couple}" ] && \
+		   [ -f "${output}" ] && [ -f "${_raw_src}" ] && [ "${output}" -nt "${_raw_src}" ] ; then
+		    echo " : reusing existing goodgrid (skip rebuild)"
+		else
+                    python $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_VARIABLE $variable \
+		        --FESOM_MESH ${MESH_DIR_fesom} \
+		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
+                        --FESOM_OUTPUT $output > $logfile
+		    echo " : STILL alive"
+		fi
+		unset _raw_src
 
 		test_file_or_exit $output 6
                 processed_fesom1x_file3D_T_list_for_ice="$processed_fesom1x_file3D_T_list_for_ice ${output}"
@@ -434,14 +634,23 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 		output="${filename%.*}"_goodgrid.nc
 
 		echo -n "     - >${variable}< from ${file}"
-                python $pyfesom_script ${FESOM_MESH_SWITCHES} \
-		    --FESOM_PATH $DATA_DIR_fesom \
-		    --FESOM_VARIABLE $variable \
-		    --FESOM_MESH ${MESH_DIR_fesom} \
-		    --FESOM_YEARS $start_year_couple $end_year_couple \
-                    --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
-		    --FESOM_OUTPUT $output > $logfile
-		echo " : STILL alive"
+		# Stage 1b: skip rebuild if goodgrid already built this leg from
+		# the same (unchanged) raw source -- see temp loop above.
+		_raw_src="${DATA_DIR_fesom}${variable}.fesom.${start_year_couple}.nc"
+		if [ "x${start_year_couple}" == "x${end_year_couple}" ] && \
+		   [ -f "${output}" ] && [ -f "${_raw_src}" ] && [ "${output}" -nt "${_raw_src}" ] ; then
+		    echo " : reusing existing goodgrid (skip rebuild)"
+		else
+                    python $pyfesom_script ${FESOM_MESH_SWITCHES} \
+		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_VARIABLE $variable \
+		        --FESOM_MESH ${MESH_DIR_fesom} \
+		        --FESOM_YEARS $start_year_couple $end_year_couple \
+                        --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
+		        --FESOM_OUTPUT $output > $logfile
+		    echo " : STILL alive"
+		fi
+		unset _raw_src
 
 		test_file_or_exit $output 7
                 processed_fesom1x_file3D_S_list_for_ice="$processed_fesom1x_file3D_S_list_for_ice ${output}"
@@ -470,21 +679,35 @@ function fesom_ice_fesom_build_grid_with_lonlat_depth {
 
 		    echo -n "     - >${variable}< from ${file}"
 		    result_file=tmp_file_$(printf "%04i" $ic)__${variable}
+		    # fesom_scalar_array_to_LonLat.py opens
+		    # ${FESOM_PATH}/<var>.fesom.<year>.nc itself (it ignores the
+		    # bundle path). All four are staged per-variable in COUPLE_DIR
+		    # by the DIRECT-route synthesizer (fw with its x1000 unit
+		    # conversion); fall back to DATA_DIR for real outputs.
+		    var_path=${DATA_DIR_fesom}
+		    if [ -f "${COUPLE_DIR}/${variable}.fesom.${start_year_couple}.nc" ]; then
+		        var_path=${COUPLE_DIR}/
+		    fi
+		    # Write the per-variable tmp file the loop expects. The legacy
+		    # code wrote --FESOM_OUTPUT ${output} (the merged goodgrid) for
+		    # every variable and then tested/merged tmp_file_NNNN__VAR that
+		    # nothing had created -- this branch had never run (the FESOM1.x
+		    # bundle never existed, so the loop was always empty).
                     python $pyfesom_script ${FESOM_MESH_SWITCHES} \
-		        --FESOM_PATH $DATA_DIR_fesom \
+		        --FESOM_PATH $var_path \
 		        --FESOM_VARIABLE $variable \
 		        --FESOM_MESH ${MESH_DIR_fesom} \
 		        --FESOM_YEARS $start_year_couple $end_year_couple \
                         --FESOM_MESH_ROTATED ${MESH_ROTATED_fesom} \
-		        --FESOM_OUTPUT $output > $logfile
+		        --FESOM_OUTPUT ${result_file} > $logfile
 		    echo " : STILL alive"
 
 		    test_file_or_exit $result_file 9
 		done
-		$cdo -f nc cat tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]* ${output}
-
-		ncks -Av iter tmp_file_0001__[A-Z,a-z]* ${output} && \
-		    rm tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]*
+		# one variable per tmp file -> combine variables (merge, NOT time-cat)
+		$cdo -O -f nc merge tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]* ${output}
+		test_file_or_exit ${output} 9
+		rm -f tmp_file_[0-9][0-9][0-9][0-9]__[A-Z,a-z]*
 
                 processed_fesom1x_file2D_list_for_ice="$processed_fesom1x_file2D_list_for_ice ${output}"
         done
@@ -569,6 +792,17 @@ function fesom_ice_concatenate_files {
 	${cdo} -s ensmean ${processed_fesom1x_file3D_T_list_for_ice} temp.tmp.nc
 	${cdo} -s ensmean ${processed_fesom1x_file3D_S_list_for_ice} salt.tmp.nc
         ${cdo} -s merge temp.tmp.nc salt.tmp.nc ocean_file_for_ice.nc
+	# Merge the processed 2D surface fields (Tsurf/Ssurf/fh/fw goodgrid) in as
+	# well -- the DIRECT route reads Tsurf/fw from ocean_file_for_ice, and the
+	# historical merge only ever carried temp+salt (the 2D list was always
+	# empty before the FESOM2 bundle synthesizer existed). Different vertical
+	# axes (level=1 vs full) coexist fine in one file.
+	if [ -n "${processed_fesom1x_file2D_list_for_ice// /}" ] ; then
+	    mv ocean_file_for_ice.nc ocean3d.tmp.nc
+	    ${cdo} -s merge ocean3d.tmp.nc ${processed_fesom1x_file2D_list_for_ice} ocean_file_for_ice.nc \
+	        || { mv ocean3d.tmp.nc ocean_file_for_ice.nc ; couple_fail "fesom2ice FAILED: merging 2D surface fields into ocean_file_for_ice"; }
+	    rm -f ocean3d.tmp.nc
+	fi
         #${cdo} -s merge \
 	#    ${processed_fesom1x_file3D_T_list_for_ice} \
 	#    ${processed_fesom1x_file3D_S_list_for_ice} \

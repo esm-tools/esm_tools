@@ -82,20 +82,19 @@ def prepare_coupler_files(config):
             config, config["general"]["coupler_config_dir"]
         )
         coupler_name = config["general"]["coupler"].name
-        if coupler_name == "yac":
-            couplingfile = "coupling.xml"
-        else:
+
+        if coupler_name == "oasis3mct" and coupler_filename:
             couplingfile = "namcouple"
 
-        all_files_to_copy_append(
-            config,
-            coupler_name,
-            "config",
-            couplingfile,
-            config["general"]["coupler_config_dir"] + "/" + coupler_filename,
-            None,
-            None,
-        )
+            all_files_to_copy_append(
+                config,
+                coupler_name,
+                "config",
+                couplingfile,
+                config["general"]["coupler_config_dir"] + "/" + coupler_filename,
+                None,
+                None,
+            )
     return config
 
 
@@ -179,7 +178,8 @@ def modify_namelists(config):
 
 
 def wait_for_iterative_coupling(config):
-    count_max = 90
+    # configurable backstop: concurrent chains can skew by more than 90x10s
+    count_max = int(config["general"].get("files_to_wait_for_max_cycles", 90))
     if (
         config["general"].get("iterative_coupling", False)
         and config["general"]["chunk_number"] > 1

@@ -1,0 +1,78 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "v3.4.2"
+    account: "ba0989"
+    compute_time: "01:00:00"
+    initial_date: "1350-01-01"
+    final_date: "1350-01-03"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 1
+    nmonth: 0
+    nyear: 0
+    use_venv: False
+    install_esm_tools_branch: 'feat/awiesm3-v3.4-co2'
+
+computer:
+    taskset: true
+    mail_type: "ALL"
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "CORE3"
+    time_step: 1200
+    nproc: 1792
+    omp_num_threads: 2
+    lresume: true
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+    ini_parent_exp_id: "foo"
+    ini_parent_date: "${prev_date}"
+    ini_restart_dir: "/work/ab0246/a270092/input/fesom2/restart/CORE3"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.2000.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.2000.ice.restart/*.nc
+
+lpj_guess:
+    resolution: "TCO319"
+    mip: cmip7
+    scenario: piControl
+    nproc: 64
+    omp_num_threads: 4
+    lresume: false
+   
+
+oifs:
+    resolution: TCO319
+    levels: "L137"
+    prepifs_expid: abns
+    input_expid: awi3
+    wam: true
+    time_step: 1200
+    nproc: 640
+    omp_num_threads: 4
+    mip: cmip7
+    scenario: piControl
+    lresume: false
+    cmip7_cmor_output: "cmip7_spinup"
+    add_namelist_changes:
+        fort.4:
+            NAMMCC:
+                LRDALB: True
+
+oasis3mct:
+    use_lucia: false
+    lresume: false
+    time_step: 3600
+
+xios:
+    with_model:
+        - oifs
+    nproc: 8
+    omp_num_threads: 32

@@ -172,7 +172,7 @@ def get_user_config_from_command_line(command_line_config):
     # the definition from the runscript prevails after the user_config.update
     # If it's not None (True or False) the definition of the command line wins
     # over the runscript as is the case for all the other variables
-    command_line_overwrite_vars = ["use_venv", "profile"]
+    command_line_overwrite_vars = ["use_venv", "profile", "coupling_chain"]
     for var in command_line_overwrite_vars:
         if command_line_config.get(var, "Var does not exist") is None:
             del command_line_config[var]
@@ -321,14 +321,9 @@ def add_esm_runscripts_defaults_to_config(config):
         f"{esm_tools.get_config_filepath()}/esm_software/esm_runscripts/defaults.yaml"
     )
     default_config = esm_parser.yaml_file_to_dict(path_to_file)
-    config["general"]["defaults.yaml"] = default_config
-
-    if "general" in default_config:
-        config["general"] = esm_parser.new_deep_update(
-            config["general"], default_config["general"]
-        )
 
     if "per_model_defaults" in default_config:
+        config["general"]["per_model_defaults"] = default_config["per_model_defaults"]
         per_model_defaults = copy.deepcopy(default_config["per_model_defaults"])
         # Remove ``file_movements`` from per_model_defaults as this is resolved in
         # ``filelists.py`` and otherwise, it is not possible to understand there what
@@ -340,5 +335,8 @@ def add_esm_runscripts_defaults_to_config(config):
             config[model] = esm_parser.new_deep_update(
                 config[model], per_model_defaults
             )
+        del default_config["per_model_defaults"]
+
+    config = esm_parser.new_deep_update(config, default_config)
 
     return config

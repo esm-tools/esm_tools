@@ -94,6 +94,7 @@ general:
         - '2.1-paleodyn-2.5'
         - '2.6'
         - '2.6.1'
+        - '2.6.2'
 
         choose_version:
           '2.6':
@@ -104,6 +105,11 @@ general:
           '2.6.1':
             couplings:
             - fesom-2.6.7+echam-6.3.05p2-awiesm-2.1
+            fesom_Dflags: "-DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../"
+            with_recom: false
+          '2.6.2':
+            couplings:
+            - fesom-2.6.11+echam-6.3.05p2-awiesm-2.1
             fesom_Dflags: "-DFESOM_COUPLED=ON -DCMAKE_INSTALL_PREFIX=../"
             with_recom: false
           '2.1-paleodyn-2.5':
@@ -212,6 +218,10 @@ echam:
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
                 "2.6.1":
+                        version: "6.3.05p2-awiesm-2.1"
+                        namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
+                        model_dir: ${general.model_dir}/echam-6.3.05p2
+                "2.6.2":
                         version: "6.3.05p2-awiesm-2.1"
                         namelist_dir: "${general.esm_namelist_dir}/echam/${version}/${namelist_type}"
                         model_dir: ${general.model_dir}/echam-6.3.05p2
@@ -344,6 +354,14 @@ fesom:
                                                 surf_relax_s: 0.0
                 "2.6.1":
                         version: "2.6.7"
+                        ALE_scheme: 'zstar'
+                        namelist_dir: ${fesom.model_dir}/config/
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: 0.0
+                "2.6.2":
+                        version: "2.6.11"
                         ALE_scheme: 'zstar'
                         namelist_dir: ${fesom.model_dir}/config/
                         add_namelist_changes:

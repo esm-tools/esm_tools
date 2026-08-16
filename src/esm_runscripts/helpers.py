@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime
 
@@ -10,10 +11,6 @@ import esm_plugin_manager
 import esm_tools
 from esm_profile import print_profile_summary
 from esm_tools import user_error
-
-
-def vprint(message, config):
-    logger.debug(message)
 
 
 def print_datetime(config):
@@ -63,6 +60,13 @@ def evaluate(config, job_type, recipe_name):
     )
     if recipe_steps:
         framework_recipe["recipe"] = recipe_steps
+
+    pre_recipe = config.get("general", {}).get("pre_recipe", {})
+    excluded_jobs = pre_recipe.get("exclude_job_types", [])
+    pre_steps = pre_recipe.get("steps", [])
+    if job_type not in excluded_jobs and pre_steps:
+        framework_recipe["recipe"] = pre_steps + framework_recipe["recipe"]
+
     framework_plugins = esm_plugin_manager.read_plugin_information(
         plugins_bare, framework_recipe, need_to_parse_plugins
     )
@@ -112,6 +116,7 @@ def write_to_log(config, message, message_sep=None):
        programmer passes a ``message_sep`` argument; this one wins over
        the user choice.
     """
+    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED!")
     try:
         with open(config["general"]["experiment_log_file"], "a+") as logfile:
             line = assemble_log_message(config, message, message_sep)
@@ -129,6 +134,7 @@ def write_to_log(config, message, message_sep=None):
 def assemble_log_message(
     config, message, message_sep=None, timestampStr_from_Unix=False
 ):
+    raise NotImplementedError("THIS LINE SHOULD NOT BE REACHED!")
     """Assembles message for log file. See doc for write_to_log"""
     message = [str(i) for i in message]
     dateTimeObj = datetime.now()
@@ -236,77 +242,6 @@ def update_reusable_filetypes(config, reusable_filetypes=None):
     if return_config:
         return config
     return reusable_filetypes
-
-
-##############################
-# SINK CLASS FOR LOGURU.LOGGER
-##############################
-
-
-class SmartSink:
-    """
-    A class for smart sinks that allow for logging (using ``logger`` from loguru), even
-    if the file path of the log file is not yet defined. The actual sink is not the
-    instanced object itself, but the method ``sink`` of the instance. The log record is
-    saved in ``self.log_record`` and the log file is written using the path specified
-    in ``self.path``. If the path is not specified, the log is stored only in the
-    ``self.log_record``. When the path is finally specified, ``self.log_record`` is
-    dumped into the log file and from that moment, any time ``logger`` logs something it
-    will also be written into the file. To specify the path the method ``def_path``
-    needs to be used.
-    """
-
-    def __init__(self):
-        # Initialise instance variables
-        self.log_record = []
-        self.path = None
-
-    def sink(self, message):
-        """
-        The actual sink for loguru's ``logger``. Once you define a logger level a sink
-        needs to be provided. Standard sinks include file paths, methods, etc.
-        Providing this method as a sink (``logger.add(<name_of_the_instance>.sink,
-        level="<your_level>", ...)``) enables the functionality of the SmartSink object.
-
-        Parameters
-        ----------
-        message : str
-            String containing the logging message.
-        """
-        if self.path:
-            self.write_log(message, "a")
-        self.log_record.append(message)
-
-    def write_log(self, message, wmode):
-        """
-        Method to write the logs into the disk.
-
-        Parameters
-        ----------
-        message : str, list
-            String containing the logging message or list containing more than one
-            logging message, to be written in the file.
-        wmode : str
-            Writing mode to choose among ``"w"`` or ``"a"``.
-        """
-        if isinstance(message, str):
-            message = [message]
-        with open(self.path, wmode) as log:
-            for line in message:
-                log.write(line)
-
-    def def_path(self, path):
-        """
-        Method to define the path of the file. Once the path is defined, the log record
-        is written into the file.
-
-        Parameters
-        ----------
-        path : str
-            Path of the logging file.
-        """
-        self.path = path
-        self.write_log(self.log_record, "w")
 
 
 ################################################################################

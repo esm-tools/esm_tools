@@ -1,5 +1,4 @@
 import copy
-import logging
 import os
 import sys
 
@@ -48,7 +47,6 @@ def mini_resolve_variable_date_file(date_file, config):
 
 
 def _read_date_file(config):
-    import logging
     import os
 
     date_file = (
@@ -59,21 +57,19 @@ def _read_date_file(config):
     date_file = mini_resolve_variable_date_file(date_file, config)
 
     if os.path.isfile(date_file):
-        logging.info("Date file read from %s", date_file)
+        logger.debug(f"Date file read from {date_file}")
         with open(date_file) as date_file:
             date, run_number = date_file.readline().strip().split()
             run_number = int(run_number)
         write_file = False
     else:
-        logging.info("No date file found %s", date_file)
-        logging.info("Initializing run_number=1 and date=18500101")
+        logger.debug(f"No date file found {date_file}")
         date = config["general"].get("initial_date", "18500101")
         run_number = 1
         write_file = True
     config["general"]["run_number"] = run_number
     config["general"]["current_date"] = date
-    logging.info("current_date = %s", date)
-    logging.info("run_number = %s", run_number)
+    logger.info(f"Initializing run_number={run_number} and date={date}")
     return config
 
 
@@ -403,7 +399,7 @@ def _add_all_folders(config):
 
     config["general"]["all_model_filetypes"] = all_model_filetypes
 
-    for model in config["general"]["valid_model_names"]:
+    for model in esm_parser.get_components(config, include=["model"]):
         for filetype in all_model_filetypes:
             if "restart" in filetype:
                 filedir = "restart"
@@ -570,7 +566,7 @@ def add_vcs_info(config):
 
     # NOTE(PG): There is no good way to get the repo directory from the config,
     # this may at least be a good start:
-    esm_tools_repo = config.get("general", {}).get("esm_function_dir")
+    esm_tools_repo = config.get("general", {}).get("esm_configs_dir")
     if esm_tools_repo is not None:
         vcs_versions["esm_tools"] = helpers.get_all_git_info(f"{esm_tools_repo}/../")
     else:
@@ -688,7 +684,8 @@ def initialize_coupler(config):
                 )
                 config["general"]["coupler"] = coupler.coupler_class(config, model)
                 break
-        config["general"]["coupler"].add_files(config)
+        if config["general"]["coupler"].name == 'oasis3mct':
+            config["general"]["coupler"].add_files(config)
     return config
 
 

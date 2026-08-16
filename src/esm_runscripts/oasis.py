@@ -112,10 +112,10 @@ class oasis:
             else:
                 export_mode = "EXPORTED"
 
-        if bool(lresume) is False:
-            lag = str(0)
+        if not lresume and not direction.get('lag_overwrite'):
+            lag = 0
         else:
-            lag = direction.get("lag", "0")
+            lag = direction.get('lag')
 
         # if a transformation method for CONSERV (e.g. GLOBAL) is set below,
         # increase seq (=number of lines describing the transformation) by 1
@@ -124,6 +124,7 @@ class oasis:
         seq = int(direction.get("seq", "2"))
         # if transformation.get("postprocessing", {}).get("conserv", {}).get("method"):
         #    seq += 1
+        time_step = direction.get("coupling_time_step", time_step)
 
         p_rgrid = p_lgrid = "0"
         if "number_of_overlapping_points" in rgrid:
@@ -326,6 +327,10 @@ class oasis:
                             sys.exit(2)
                         detail_line += " " + normalization.upper() + " " + order.upper()
                     trafo_details += [detail_line.strip()]
+                elif trans.lower() in [
+                    "loctrans",
+                ]:
+                    continue
 
         allpost = transformation.get("postprocessing", "bla")
         if not isinstance(allpost, list):
@@ -548,6 +553,7 @@ class oasis:
             gconfig["run_number"] == 1
             and config["lresume"]
             and gconfig["jobtype"] == "prepcompute"
+            and config.get("norestart", "F") == "F"
         ):
             # If they do not exist, define ``ini_restart_date`` and ``ini_restart_dir``
             # based on ``ini_parent_date`` and ``ini_parent_dir``
@@ -564,12 +570,18 @@ class oasis:
                 # check if restart file with ini_restart_date in filename is in the restart
                 # folder of the parent experiment to be branched off from:
                 glob_search_file = (
-                    f"{restart_file_path}*"
+                    f"{config['ini_restart_dir']}{restart_file}*"
                     f"{config['ini_restart_date'].year}"
                     f"{config['ini_restart_date'].month:02}"
                     f"{config['ini_restart_date'].day:02}"
                 )
             else:
+                glob_search_file = restart_file_path
+
+            # add support for oasis_date_stamp (which for some reason does
+            # not work anymore after awi-geomar merge in 2025 without the two lines below)
+            # reason unknown, but the entire section here should be revised soon anyways 
+            if config.get('oasis_date_stamp'):
                 glob_search_file = restart_file_path
 
             glob_restart_file = glob.glob(glob_search_file)
@@ -580,7 +592,13 @@ class oasis:
                     restart_file = os.path.basename(glob_restart_file[0])
                 elif len(glob_restart_file) == 0:
                     restart_file = restart_file_path
-                    if not os.path.isfile(restart_file):
+                    # in case config["restart_in_sources"] are given explicitely 
+                    # AND are not absolute paths as e.g in FOCI
+                    # ini_parent_dir: "${general.ini_parent_dir}/oasis3mct/"
+                    #    restart_in_sources: sstocean_${parent_expid}_...
+                    # we need to check for the full path as well 
+                    # btw it was a nightmare to track this down
+                    if not os.path.isfile(restart_file) and not os.path.isfile(f"{config['ini_restart_dir']}/{restart_file}"):
                         user_error(
                             "Restart file missing",
                             f"No OASIS restart file for ``{restart_file_label}`` found "
@@ -610,6 +628,25 @@ class oasis:
             config["restart_in_sources"][restart_file_label] = restart_file
 
     def prepare_restarts(self, restart_file, all_fields, models, config):
+        """
+        Prepare OASIS restart files by merging EXPOUT files.
+        
+        Parameters
+        ----------
+        restart_file : str
+            Name of the restart file to create
+        all_fields : list
+            List of field names
+        models : list
+            List of model names
+        config : dict
+            Configuration dictionary
+        
+        Note
+        ----
+        For bidirectional couplings with LOCTRANS, use merge_restart_files()
+        after both prepare_restarts calls to merge _recv into main file.
+        """
         enddate = "_" + config["general"]["end_date"].format(
             form=9, givenph=False, givenpm=False, givenps=False
         )
@@ -622,12 +659,49 @@ class oasis:
         cwd = os.getcwd()
         os.chdir(config["general"]["thisrun_work_dir"])
         filelist = ""
-        # Loop through the fields and their corresponding models and exes
+        # Collect coupling numbers from the specified fields to find all related EXPOUT files
+        # This handles bidirectional LOCTRANS+EXPOUT where both directions write to same restart
+        processed_files = set()
+        coupling_numbers = set()
+        
+        # First pass: identify coupling numbers from specified fields
+        initial_couplings = set()
         for field, model, exe in zip(all_fields, models, exes):
-            logger.info(field + "-" + model)
-            thesefiles = glob.glob(field + "_" + exe + "_*.nc")
-            logger.info(thesefiles)
-            for thisfile in thesefiles:
+            field_files = glob.glob(field + "_" + exe + "_*.nc")
+            for f in field_files:
+                # Extract coupling number (e.g., "10" from "LAILVeg_OpenIFS_10.nc")
+                parts = f.rsplit('_', 1)
+                if len(parts) == 2 and parts[1].endswith('.nc'):
+                    coupling_num = parts[1][:-3]
+                    initial_couplings.add((exe, coupling_num))
+        
+        logger.info(f"Initial coupling numbers for {restart_file}: {initial_couplings}")
+        
+        # Second pass: find ALL executables writing to these coupling numbers
+        # (handles bidirectional EXPOUT where sending model isn't in all_fields)
+        for exe, coupling_num in initial_couplings:
+            # Find all files with this coupling number, regardless of exe
+            all_with_coupling = glob.glob("*_*_" + coupling_num + ".nc")
+            for f in all_with_coupling:
+                # Extract executable from filename (e.g., "lpjg" from "GUE_LLAI_lpjg_10.nc")
+                parts = f.rsplit('_', 2)
+                if len(parts) >= 3:
+                    file_exe = parts[-2]
+                    coupling_numbers.add((file_exe, coupling_num))
+        
+        logger.info(f"All coupling numbers for {restart_file}: {coupling_numbers}")
+        
+        # Third pass: process all files matching these (exe, coupling_number) pairs
+        for exe, coupling_num in coupling_numbers:
+            # Find ALL fields with this exe and coupling number (handles bidirectional EXPOUT)
+            matching_files = glob.glob("*_" + exe + "_" + coupling_num + ".nc")
+            logger.info(f"Including all files for {exe} coupling {coupling_num}: {matching_files}")
+            
+            for thisfile in matching_files:
+                # Skip if already processed
+                if thisfile in processed_files:
+                    continue
+                processed_files.add(thisfile)
 
                 logger.info(
                     "cdo showtime " + thisfile + " 2>/dev/null | head -n 1 | wc -w",
@@ -641,6 +715,9 @@ class oasis:
                     .decode("utf-8")
                     .rstrip()
                 )
+                # Extract field name from filename (e.g., "T2MVeg" from "T2MVeg_OpenIFS_11.nc")
+                field_from_file = thisfile.rsplit('_', 2)[0]
+                
                 logger.info(
                     "cdo -O seltimestep,"
                     + str(lasttimestep)
@@ -656,12 +733,12 @@ class oasis:
                     + " onlyonetimestep.nc"
                 )
                 logger.info(
-                    "ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc",
+                    "ncwa -O -a time onlyonetimestep.nc notimestep_" + field_from_file + ".nc",
                 )
                 os.system(
-                    "ncwa -O -a time onlyonetimestep.nc notimestep_" + field + ".nc"
+                    "ncwa -O -a time onlyonetimestep.nc notimestep_" + field_from_file + ".nc"
                 )
-                filelist += "notimestep_" + field + ".nc "
+                filelist += "notimestep_" + field_from_file + ".nc "
                 logger.info(filelist)
         # MA: -O flag added to overwrite oasis restart files in case oasis creats them
         # before (i.e. when using LOCTRANS)
@@ -676,11 +753,50 @@ class oasis:
             logger.warning("nc4c merge failed, trying without it...")
             logger.info(cdo_merge_command)
             os.system(cdo_merge_command)
+        
         rmlist = glob.glob("notimestep*")
         rmlist.append("onlyonetimestep.nc")
         for rmfile in rmlist:
             logger.info("rm " + rmfile)
             os.system("rm " + rmfile)
+        os.chdir(cwd)
+
+    def merge_restart_files(self, restart_file, config):
+        """
+        Merge _recv restart file into main restart file for bidirectional couplings.
+        This is called AFTER both restart files have been created.
+        
+        Parameters
+        ----------
+        restart_file : str
+            Name of the main restart file
+        config : dict
+            Configuration dictionary
+        """
+        cwd = os.getcwd()
+        os.chdir(config["general"]["thisrun_work_dir"])
+        
+        recv_file = restart_file + "_recv"
+        if os.path.isfile(recv_file) and os.path.isfile(restart_file):
+            logger.info(f"Merging {recv_file} into {restart_file} for bidirectional restart")
+            temp_file = restart_file + ".tmp"
+            merge_cmd = f"cdo -O -f nc4c merge {restart_file} {recv_file} {temp_file}"
+            logger.info(merge_cmd)
+            exit_code = os.system(merge_cmd)
+            if exit_code != 0:
+                merge_cmd = f"cdo -O merge {restart_file} {recv_file} {temp_file}"
+                logger.warning("nc4c merge failed, trying without it...")
+                logger.info(merge_cmd)
+                exit_code = os.system(merge_cmd)
+            if exit_code == 0:
+                # Replace original with merged file
+                os.system(f"mv {temp_file} {restart_file}")
+                logger.info(f"Successfully merged {recv_file} into {restart_file}")
+            else:
+                logger.error(f"Failed to merge {recv_file} into {restart_file}")
+        else:
+            logger.warning(f"Cannot merge: {restart_file}={os.path.isfile(restart_file)}, {recv_file}={os.path.isfile(recv_file)}")
+        
         os.chdir(cwd)
 
     def finalize(self, destination_dir):

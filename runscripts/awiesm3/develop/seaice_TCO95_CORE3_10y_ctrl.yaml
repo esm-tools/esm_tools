@@ -1,0 +1,82 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "ab0246"
+    compute_time: "08:00:00"
+    initial_date: "1900-01-01"
+    final_date: "1910-01-01"
+    base_dir: "/work/ab0246/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 0
+    nyear: 10
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    resolution: "CORE3"
+    restart_rate: 10
+    restart_unit: "y"
+    restart_first: 10
+    lresume: true
+    ini_parent_exp_id: "core3_spunup"
+    ini_parent_date: "2000-12-31"
+    ini_restart_dir: "/work/ab0246/a270092/input/fesom2/restart/CORE3/"
+    time_step: 1200
+    nproc: 1792
+    omp_num_threads: 2
+    tar_binary_restarts: true
+    add_namelist_changes:
+        namelist.config:
+            run_config:
+                use_cavity: true
+
+lpj_guess:
+    nproc: 64
+    omp_num_threads: 4
+    lresume: false
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    mpi: cmip6
+    scenario: piControl
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                NCMIPFIXYR: 1990
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+
+oasis3mct:
+    use_lucia: true
+    lresume: true
+    ini_parent_exp_id: "cmp_dev_1m"
+    ini_parent_date: "1900-01-31"
+    ini_restart_dir: "/work/ab0246/a270092/runtime/awiesm3-develop/cmp_dev_1m/restart/oasis3mct/"
+    time_step: 7200
+    norestart: T
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 32
+    omp_num_threads: 8

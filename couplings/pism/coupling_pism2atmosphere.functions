@@ -1,5 +1,39 @@
 #!/usr/bin/ksh
 
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        _ct_stamp=$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="${_ct_stamp}" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+        else
+            # First mark: there is no previous section to time, but stamp it anyway.
+            # Without this, any time spent BEFORE instrumentation starts (esm_tools
+            # internals, file staging) is invisible -- the absolute stamps let you
+            # line the [TIMER] lines up against the job's own start/end.
+            awk -v t="${_ct_stamp}" -v l="$1" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9s\n", t, "(instrumentation starts: " l ")", "--" }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+    # couple_timer_end: stamp the LAST section, which otherwise never prints (its
+    # duration is only emitted by the *next* mark, and at the end of a function
+    # there isn't one). Call it right before a coupling function returns.
+    couple_timer_end() {
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+            unset COUPLE_TIMER_LAST COUPLE_TIMER_LABEL
+        fi
+    }
+fi
+
 function pism2atmosphere {
         echo "                =================================================================="
         echo "                 *** S T A R T I N G    pism2atmosphere *** "; echo
@@ -27,12 +61,19 @@ function pism2atmosphere {
         echo "                =================================================================="
 }
 function iterative_coupling_pism_atmosphere_make_forcing {
+        couple_timer "pism2atm: get_newest_output (cat+timmean)"
         pism_atmosphere_get_newest_output
+        couple_timer "pism2atm: update_domain_mask"
         pism_atmosphere_update_domain_mask
+        couple_timer "pism2atm: generate_orography_anomaly"
         pism_atmosphere_generate_orography_anomaly
+        couple_timer "pism2atm: generate_ice_thickness_anomaly"
         pism_atmosphere_generate_ice_thickness_anomaly
+        couple_timer "pism2atm: generate_runoff"
         pism_atmosphere_generate_runoff
+        couple_timer "pism2atm: assemble_final_file"
         pism_atmosphere_assemble_final_file
+        couple_timer "pism2atm: make_forcing DONE"
 }
 
 function iterative_coupling_pism_atmosphere_write_names {
@@ -127,7 +168,7 @@ function pism_atmosphere_get_newest_output {
                     "nhem" | "laurentide" | "greenland") 
                             month_to_select=6
                             ;;
-                    "shem" | "antarctica" | "Antarctica")
+                    "shem" | "antarctica" | "Antarctica" | "antarct_cr")
                             month_to_select=12
                             ;;
                     *)
@@ -333,15 +374,34 @@ function convert_ice_thk_diff_to_flux_over_pism_run {
 function generate_orography_anomaly_over_pism_run { 
         echo ""; echo "                 *   calculating surface height change over the last pism chunk"
         ifile1=${last_year_in_chunk_restart}
-        ifile2=${first_year_in_chunk_input}
-        ofile=${COUPLE_DIR}/ice_orog_difference.nc
-        cdo -s -sub \
-                -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
-                -expr,"${OROG_VARNAME_pism}=thk+topg" \
-                $ifile1 \
-                -expr,"${OROG_VARNAME_pism}=thk+topg" \
-                $ifile2 \
-                $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+       
+        # LA: as before use difference between PISM input and PISM restart for orography change 
+        if [[ "x${orog_reference_pism}" == "x0" ]]; then 
+            ifile2=${first_year_in_chunk_input}
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        # LA: now new use difference between elev_lo (ECHAM orography) and PISM restart for orography change 
+        elif [[ "x${orog_reference_pism}" == "x1" ]]; then 
+            ifile2="${COUPLE_DIR}/elev_lo.nc"
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -selname,"orog" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        else
+           echo " * choose 0 or 1"
+           echo " * EXIT "
+           exit 42 
+        fi
 
         ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         mv tmp.nc $ofile

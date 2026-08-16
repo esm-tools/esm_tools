@@ -1,6 +1,41 @@
 #!/usr/bin/ksh
 
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        _ct_stamp=$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="${_ct_stamp}" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+        else
+            # First mark: there is no previous section to time, but stamp it anyway.
+            # Without this, any time spent BEFORE instrumentation starts (esm_tools
+            # internals, file staging) is invisible -- the absolute stamps let you
+            # line the [TIMER] lines up against the job's own start/end.
+            awk -v t="${_ct_stamp}" -v l="$1" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9s\n", t, "(instrumentation starts: " l ")", "--" }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+    # couple_timer_end: stamp the LAST section, which otherwise never prints (its
+    # duration is only emitted by the *next* mark, and at the end of a function
+    # there isn't one). Call it right before a coupling function returns.
+    couple_timer_end() {
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+            unset COUPLE_TIMER_LAST COUPLE_TIMER_LABEL
+        fi
+    }
+fi
+
 function ocean2pism {
+    couple_timer "ocean2pism: setup+names+prepare-forcing"
     echo " *** S T A R T I N G    ocean2pism *** (PISM version ${VERSION_pism})"
 
     echo $(module list)
@@ -179,9 +214,11 @@ function ocean2pism {
             exit 3
     esac
 
+    couple_timer "ocean2pism: compute-forcing+time-axis+xy"
     #iterative_coupling_ocean_pism_set_options
     iterative_coupling_ocean_pism_regrid_set_time_axis ${PISM_OCEAN_FORCING_FILE}
     iterative_coupling_pism_regrid_add_xy_array ${PISM_OCEAN_FORCING_FILE} "ocean"
+    couple_timer "ocean2pism: DONE (before sleep 10)"
 
     ln -sf "${COUPLE_DIR}/ocean_forcing4pism_ver${VERSION_pism}.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_pism}.nc" "${COUPLE_DIR}/latest_ocean_forcing_file.nc"
     
@@ -208,6 +245,10 @@ function ocean2pism {
         echo "Something wrong after waiting for 120 seconds!"
     fi
     echo "     ...done."
+
+    # stamp the final section (its duration is otherwise never emitted:
+    # only the NEXT mark prints it, and there isn't one at the end)
+    couple_timer_end
 }
 
 function save_griddes {
@@ -529,6 +570,28 @@ function iterative_coupling_ocean_pism_fesom2pism_names {
     _oce_heatflux_unit="W m-2 s-1"
 
     # Maximal salinity of 474 g/kg : "Don Juan Pond", Antarctica
+    #
+    # fw carries `factor = -1`: FESOM and PISM use OPPOSITE sign conventions
+    # for the sub-shelf mass flux and nothing else in this pipeline flips it
+    # (remap / fillmiss2 / selname / ncks are all sign-preserving).
+    #   FESOM  fw               : positive = freshwater LEAVING the ocean, so
+    #                             MELT is NEGATIVE. Verified from the global
+    #                             P/E pattern -- ITCZ -1273 mm/yr (precip),
+    #                             subtropics +700 mm/yr (evap).
+    #   PISM   shelfbmassflux   : positive = MELT. Verified by regressing
+    #                             basal_mass_flux_floating ("positive = ice
+    #                             gain") on the forcing: slope -0.877 x SPY,
+    #                             r = -0.95. Confirmed in the source at
+    #                             icemodel/energy.cc:121, where the shelf term
+    #                             is added to grounded_basal_melt_rate (bmelt,
+    #                             positive = loss) with the SAME sign.
+    # Without the factor every melting cell reached PISM as refreezing: the
+    # net cavity flux came out at -769 Gt/yr (accretion) instead of +769.
+    # NB the comment at coupling_fesom2ice.functions:343-345 argues the signs
+    # already agree, citing ConstantPIK.cc. That citation is to a
+    # self-contradictory comment (ConstantPIK.cc:129 says "positive if ice is
+    # freezing on"; line 130 and the code itself say the opposite), and
+    # ConstantPIK is not even the active ocean model here (-ocean given).
 cat > ${_file:-cdo_partable.txt} <<EOFcdo
 &parameter
 name = temp
@@ -577,6 +640,7 @@ out_name = ${_oce_massflux_varn}
 units = "${_oce_massflux_unit}"
 long_name = "shelf basal mass flux"
 standard_name = shelf_basal_mass_flux
+factor = -1
 /
 
 &parameter
@@ -607,6 +671,7 @@ EOFcdo
 # Regrid: Interpolation and extrapolation
 #
 function iterative_coupling_ocean_pism_regrid_interpolate {
+    couple_timer "ocean2pism: build_weights4remap"
     echo " *   Interpolate GCM forcing..."
 
     ierr=10
@@ -624,6 +689,7 @@ function iterative_coupling_ocean_pism_regrid_interpolate {
 	couple
     test_file_or_exit $WEIGHTS_OCE2ICE 6
 
+    couple_timer "ocean2pism: cdo remap (apply, per-level weights)"
     echo "     => remap,$GRIDDES_ICE,$WEIGHTS_OCE2ICE"
     $cdo remap,$GRIDDES_ICE,$WEIGHTS_OCE2ICE \
 	ocean_file_for_ice.pism_names.nc \
@@ -639,6 +705,7 @@ function iterative_coupling_ocean_pism_regrid_extrapolate {
     # FESOM ocean grid
     regrid_ocean_pism_extrapolate_misstoc=${regrid_ocean_pism_extrapolate_misstoc:-0}
     iterative_coupling_ocean_pism_regrid_extra_type=${iterative_coupling_ocean_pism_regrid_extra_type:-fillmiss2}
+    couple_timer "ocean2pism: extrapolate (${iterative_coupling_ocean_pism_regrid_extra_type})"
     echo " *   Extrapolate GCM forcing with method >>${iterative_coupling_ocean_pism_regrid_extra_type}<< ..."
 
     _cdo_flag=$( return_allowed_cdo_miss_replace_flags ${iterative_coupling_ocean_pism_regrid_extra_type} ${regrid_ocean_pism_extrapolate_misstoc} )
@@ -670,9 +737,15 @@ function iterative_coupling_ocean_pism_regrid_none {
 #
 function iterative_coupling_ocean_pism_compute_ocean_direct_forcing {
     _file=$1
-    _action_string=": rename file"
+    _action_string=": select given-route fields"
     echo " *   Building direct ocean forcing (${PISM_OCEAN_SWITCH:-Unknown}) $_action_string -> $_file ..."
-    mv -f ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc ${COUPLE_DIR}/$(basename ${_file})
+    # Keep only the fields PISM's '-ocean given' consumes. The 3D
+    # theta/salinity companions carry FESOM's decreasing depth axis, which
+    # PISM rejects if anything makes it parse them.
+    $cdo selname,shelfbtemp,shelfbmassflux \
+	ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc \
+	${COUPLE_DIR}/$(basename ${_file})
+    rm -f ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc
     echo "     ...done."
 }
 
@@ -702,7 +775,11 @@ function iterative_coupling_ocean_pism_compute_ocean_temp_forcing {
 
 function iterative_coupling_ocean_pism_compute_ocean_tempsalt_forcing {
     _file=$1
-    if [ 0 -eq 1 ] ; then
+    # 150-600 m band: excludes the summer surface layer. The old index-1/20
+    # selection averaged 0-410 m INCLUDING the surface and fed PISM's -ocean th
+    # ice-base water of up to +6.5 degC -> catastrophic melt. Kept as a safety
+    # for anyone still running the th route (the setup default is now DIRECT).
+    if [ 1 -eq 1 ] ; then
 	_action_string=": vertical mean (150-600m) of temperature and salinity" ;
 	cdovert_flag="-sellevel,150/600"
     else

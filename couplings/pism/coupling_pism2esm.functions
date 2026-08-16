@@ -1,59 +1,106 @@
 #!/usr/bin/ksh
+
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        _ct_stamp=$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="${_ct_stamp}" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+        else
+            # First mark: there is no previous section to time, but stamp it anyway.
+            # Without this, any time spent BEFORE instrumentation starts (esm_tools
+            # internals, file staging) is invisible -- the absolute stamps let you
+            # line the [TIMER] lines up against the job's own start/end.
+            awk -v t="${_ct_stamp}" -v l="$1" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9s\n", t, "(instrumentation starts: " l ")", "--" }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+    # couple_timer_end: stamp the LAST section, which otherwise never prints (its
+    # duration is only emitted by the *next* mark, and at the end of a function
+    # there isn't one). Call it right before a coupling function returns.
+    couple_timer_end() {
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+            unset COUPLE_TIMER_LAST COUPLE_TIMER_LABEL
+        fi
+    }
+fi
+
 pism2esm() {
-    echo "===================================================================="
-    echo "[PISM2ESM] Starting PISM to ESM coupling"
-    echo "===================================================================="
-    echo "[PISM2ESM] Loaded modules:"
+    echo " *** S T A R T I N G    pism2esm *** "
+    echo "modules loaded:"
     echo $(module list)
-    echo "[PISM2ESM] Loading coupling functions..."
+
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/general_helpers.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
-   # if [ -f ${COUPLE_DIR}/latest_gfw_atmo.nc ]; then
-   #     rm ${COUPLE_DIR}/latest_gfw_atmo.nc
-   # fi
-    
-    #if [ -f ${COUPLE_DIR}/latest_jsbach_init_file.nc ]; then
-    #    rm ${COUPLE_DIR}/latest_jsbach_init_file.nc
-    #fi
-    #
-    #if [ -f ${COUPLE_DIR}/latest_jsbach_restart_file.nc ]; then
-    #    rm ${COUPLE_DIR}/latest_jsbach_restart_file.nc
-    #fi
-    #
-    #if [ -f ${COUPLE_DIR}/latest_veg_restart_file.nc ]; then
-    #    rm ${COUPLE_DIR}/latest_veg_restart_file.nc
-    #fi
-    
-   # if [ -f ${COUPLE_DIR}/latest_target_orography.nc ]; then
-   #     rm ${COUPLE_DIR}/latest_target_orography.nc
-   # fi
-
-    #echo "LA DEBUG: MIN_MON_SELECT=${MIN_MON_SELECT}"
-    #if [ "x${MIN_MON_SELECT}" == "x1" ]; then
-    #    echo "LA DEBUG: Hier"
     . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions
-    #else
-    #    echo "LA DEBUG: Oder hier"
-    #    . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions.origin
     . ${FUNCTION_PATH}/coupling_pism2ocean.functions
+    . ${FUNCTION_PATH}/../fesom/coupling_ice2fesom_interactive_mesh.functions
 
-    echo "[PISM2ESM] Extracting ice geometry variables from PISM output..."
-    echo "[PISM2ESM]   Input file: ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
-    echo "[PISM2ESM]   Output file: ${COUPLE_DIR}/latest_ice_geometry.nc"
-    if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ]]; then
-	    echo "cdo seltimestep,1  -expr,ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=(mask==2); mask=mask; ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/latest_ice_geometry.nc"
-	    cdo seltimestep,1  -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
-              ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc ${COUPLE_DIR}/latest_ice_geometry.nc
-    else
-        echo "[PISM2ESM] WARNING: PISM output file not found!"
+    # Extract the ice-geometry variables PISM hands to the rest of the system.
+    # ice_subNN = (usurf - thk) on floating ice (mask==3) is the cavity-roof depth
+    # consumed by mesh_flags.py to flag max-mesh nodes.
+    # Concurrent coupling: write the chunk-tagged name directly (the AWI chain
+    # reads the tag it wants; no shared fixed-name writes).
+    _geom_out=${COUPLE_DIR}/latest_ice_geometry.nc
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        _geom_out=${COUPLE_DIR}/latest_ice_geometry.chunk_${CHUNK_NUMBER}.nc
     fi
+    echo " *   extracting ice geometry variables from PISM output"
+    echo " *     input:  ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc"
+    echo " *     output: ${_geom_out}"
 
-    #    env > env_pism2awiesm.txt
-    #pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
-    echo "[PISM2ESM] Calling pism2atmosphere coupling..."
- #   pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm 
-    #pism2ocean
-    echo "[PISM2ESM] PISM to ESM coupling completed"
-    echo "===================================================================="
+    couple_timer "pism2esm: pism2atmosphere"
+    echo " *   calling pism2atmosphere"
+    pism2atmosphere 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+    couple_timer "pism2esm: ice-geometry seltimestep/expr"
+    if [[ -f ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ]]; then
+        cdo seltimestep,-1 \
+            -expr,"ice_subNN=(usurf-thk)*(mask==3); shelf_msk=(mask==3); ocean_msk=(mask==4); land_msk=(mask<=3); grounded_ice_mask=((mask==2)); mask=mask;" \
+            ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
+            ${_geom_out}
+        echo "coming soon: change ocean= $CHANGE_OCEAN"
+    elif [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        # no PISM output = the leg did not integrate; halt this chain instead of
+        # exiting clean with no marker (the sibling would park forever)
+        echo "pism2esm: no PISM output (${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc) -- leg did not integrate" \
+            > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        echo " *** pism2esm FAILED: no PISM output; chunk ${CHUNK_NUMBER} produced nothing ***"
+        exit 1
+    else
+        echo " *   WARNING: PISM output file not found, skipping ice-geometry extraction"
+    fi
+    couple_timer "pism2esm: pism2ocean"
+    echo " *   calling pism2ocean"
+    pism2ocean 2>> ${COUPLE_DIR}/cdo_stderr_pism2ocean
+
+    # concurrent coupling: tagged ex-file for the AWI chain + the cycle marker
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        _ok=1
+        cp "${OUTPUT_DIR_pism}/latest_ex_file_pism.nc" \
+           "${OUTPUT_DIR_pism}/latest_ex_file_pism.chunk_${CHUNK_NUMBER}.nc" || _ok=0
+        [ -e "${_geom_out}" ] || { echo " *** missing ${_geom_out} ***"; _ok=0; }
+        if [ ${_ok} -eq 1 ]; then
+            touch_coupling_marker "${COUPLE_DIR}/pism_chunk_${CHUNK_NUMBER}.done"
+        else
+            echo "incomplete PISM->AWI handoff set for chunk ${CHUNK_NUMBER}" \
+                > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+            exit 1
+        fi
+        unset _ok
+    fi
+    unset _geom_out
+
+    couple_timer "pism2esm: DONE"
+
+    echo " *** pism2esm done *** "
 }

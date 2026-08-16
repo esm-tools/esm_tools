@@ -124,16 +124,9 @@ class SimulationSetup(object):
         # Run the preexp recipe
         self.config = prepexp.run_job(self.config)
 
-        # self.pseudocall(kill_after_submit)
-        # call to observe here..
         org_jobtype = str(self.config["general"]["jobtype"])
-        self.config = logfiles.initialize_logfiles(self.config, org_jobtype)
-
-        if self.config["general"]["submitted"]:
-            old_stdout = sys.stdout
-            old_stderr = sys.stderr
-            sys.stdout = logfiles.logfile_handle
-            sys.stderr = logfiles.logfile_handle
+        logfiles.set_logfile_name(self.config)
+        logger.stdout_sink.def_path(self.config["general"]["logfile_path"])
 
         if self.config["general"]["jobtype"] == "prepcompute":
             self.prepcompute()
@@ -159,15 +152,11 @@ class SimulationSetup(object):
 
         resubmit.maybe_resubmit(self.config)
 
-        self.config = logfiles.finalize_logfiles(self.config, org_jobtype)
-
-        if self.config["general"]["submitted"]:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+        logfiles.finalize_experiment_logfile(self.config, org_jobtype)
 
         if kill_after_submit:
             if self.config["general"].get("experiment_over", False):
-                helpers.write_to_log(self.config, ["# Experiment over"], message_sep="")
+                logger.progress("Experiment over")
             helpers.end_it_all(self.config)
 
         return self.config["general"].get("experiment_over", False)
@@ -254,3 +243,5 @@ class SimulationSetup(object):
         )
         if "prev_chunk_objs" in self.config["general"]:
             del self.config["general"]["prev_chunk_objs"]
+
+        self.config["general"]["system_components"].extend(self.config.prev_objects)

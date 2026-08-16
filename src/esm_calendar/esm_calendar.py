@@ -1,6 +1,7 @@
 """
 Module Docstring.,..?
 """
+
 import copy
 import logging
 import sys
@@ -54,8 +55,10 @@ class Dateformat(object):
 
     def __repr__(self):
         return (
-            "Dateformat(form=%s, printhours=%s, printminutes=%s, printseconds=%s)"
-            % (self.form, self.printhours, self.printminutes, self.printseconds)
+            f"Dateformat(form={self.form}, "
+            f"printhours={self.printhours}, "
+            f"printminutes={self.printminutes}, "
+            f"printseconds={self.printseconds})"
         )
 
 
@@ -210,7 +213,7 @@ class Calendar(object):
         return self.calendar_type
 
     def __repr__(self):
-        return "esm_calendar(calendar_type=%s)" % self.calendar_type
+        return f"esm_calendar(calendar_type={self.calendar_type})"
 
     def __str__(self):
         if self.calendar_type == 0:
@@ -218,8 +221,7 @@ class Calendar(object):
         if self.calendar_type == 1:
             return "esm_calendar object with allowed leap years"
         return (
-            "esm_calendar object with equal-length months of %s days"
-            % self.calendar_type
+            f"esm_calendar object with equal-length months of {self.calendar_type} days"
         )
 
 
@@ -349,7 +351,12 @@ class Date(object):
 
     def _init_from_date(self, indate, calendar=Calendar()):
         self.year, self.month, self.day, self.hour, self.minute, self.second = (
-            indate.year, indate.month, indate.day, indate.hour, indate.minute, indate.second
+            indate.year,
+            indate.month,
+            indate.day,
+            indate.hour,
+            indate.minute,
+            indate.second,
         )
 
     @property

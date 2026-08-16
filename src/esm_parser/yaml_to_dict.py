@@ -9,9 +9,9 @@ from loguru import logger
 from ruamel.yaml import RoundTripConstructor
 from ruamel.yaml.nodes import ScalarNode
 
+import esm_environment
 import esm_parser
 import esm_tools
-import esm_environment
 from esm_tools import user_error
 
 from .provenance import *
@@ -154,7 +154,7 @@ def create_env_loader(tag="!ENV", loader=yaml.SafeLoader):
     return loader
 
 
-def yaml_file_to_dict(filepath):
+def yaml_file_to_dict(filepath, register_sections=True):
     """
     Given a yaml file, returns a corresponding dictionary.
 
@@ -174,6 +174,12 @@ def yaml_file_to_dict(filepath):
     ----------
     filepath : str
         Where to get the YAML file from
+    register_sections : bool, optional
+        If True (default), records each root-level key and its source file in
+        ``general.sections`` so that ``validate_config_sections`` can later
+        identify which file introduced any unexpected top-level key. Set to
+        False in tests that compare the raw loaded dict and do not need
+        section tracking.
 
     Returns
     -------
@@ -217,6 +223,14 @@ def yaml_file_to_dict(filepath):
             # Turn list export_vars into dictionaries
             esm_environment.turn_export_vars_into_dict(yaml_load)
 
+            if register_sections:
+                # Register each root-level key and its source file in
+                # general.sections so that validate_config_sections can later
+                # identify which file introduced any unexpected top-level key.
+                loaded_filepath = f"{filepath}{extension}"
+                sections = yaml_load.setdefault("general", {}).setdefault("sections", {})
+                sections.update({k: loaded_filepath for k in yaml_load if k != "general"})
+
             return yaml_load
 
         except IOError as error:
@@ -234,7 +248,7 @@ def yaml_file_to_dict(filepath):
                 f"Syntax error in ``{filepath}``\n\n``Details:\n``{error}",
             )
     raise FileNotFoundError(
-        "All file extensions tried and none worked for %s" % filepath
+        f"All file extensions tried and none worked for {filepath}"
     )
 
 

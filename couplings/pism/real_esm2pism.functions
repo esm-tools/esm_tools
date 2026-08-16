@@ -1,0 +1,42 @@
+#!/bin/ksh
+# Real esm->pism couple_in: actually remaps the FESOM ocean + atmosphere onto the
+# configured PISM grid (ice.griddes = ${DOMAIN_pism}/${RES_pism}, e.g. antarct_cr 8km).
+# Replaces ccoupling_esm2pism.functions, whose fatmosphere2pism/focean2pism are
+# Greenland-Eemian (E130ka) test STUBS that hard-copy forcing from
+# /work/.../a270122/lars_and_paul/experiments/E130ka_coupled3 -> wrong (Greenland) grid.
+function esm2pism() {
+    . ${FUNCTION_PATH}/coupling_atmosphere2pism.functions
+    . ${FUNCTION_PATH}/coupling_ocean2pism.functions
+    . ${FUNCTION_PATH}/../general/pism_helpers.functions   # pism_helpers_create_xy_axis (used by add_xy_array)
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+
+    # Concurrent coupling: restage the AWI forcing set onto the fixed names this
+    # function consumes -- from the sibling's chunk-(N-1) tags (cp, not links:
+    # atmosphere2pism modifies its input in place), or from the pool bootstrap
+    # on chunk 1. In serial the AWI couple_out wrote the fixed names directly.
+    if [ "${COUPLING_MODE:-serial}" = "concurrent" ]; then
+        . ${FUNCTION_PATH}/../general/coupling_general.functions
+        _e2p_set="atmosphere_file_for_ice.nc atmosphere_names_for_ice.dat \
+                  ocean_file_for_ice.nc ocean.griddes ocean_names_for_ice.dat"
+        if [ "${CHUNK_NUMBER:-1}" -gt 1 ]; then
+            _e2p_tag=$(( CHUNK_NUMBER - 1 ))
+            require_coupling_marker "${COUPLE_DIR}/awiesm3_chunk_${_e2p_tag}.done"
+            for _f in ${_e2p_set} ; do
+                cp "${COUPLE_DIR}/${_f}.chunk_${_e2p_tag}" "${COUPLE_DIR}/${_f}" || \
+                    { echo "esm2pism: missing ${_f}.chunk_${_e2p_tag}" \
+                        > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"; exit 1; }
+            done
+        else
+            echo " *   esm2pism chunk 1: staging bootstrap forcing from ${PISM_BOOTSTRAP_DIR:?not set}"
+            for _f in ${_e2p_set} ; do
+                cp "${PISM_BOOTSTRAP_DIR}/${_f}" "${COUPLE_DIR}/${_f}" || \
+                    { echo "esm2pism: bootstrap ${_f} missing in ${PISM_BOOTSTRAP_DIR}" \
+                        > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"; exit 1; }
+            done
+        fi
+        unset _e2p_set _e2p_tag _f
+    fi
+
+    atmosphere2pism
+    ocean2pism
+}

@@ -138,13 +138,15 @@ def create(base_dir, start_date, end_date, force, interactive):
     templated = load_archive_specs(config)
     if templated:
         expid = os.path.basename(os.path.abspath(base_dir))
+        arch_dir = os.path.join(base_dir, "arch")
+        os.makedirs(arch_dir, exist_ok=True)
         for filetype in ["outdata", "restart"]:
             for model, specs in templated.items():
                 tarballs = collect_tarballs(
                     base_dir, filetype, model, specs, start_date, end_date, expid
                 )
                 for tar_name, flist in tarballs.items():
-                    archive_name = os.path.join(base_dir, tar_name + ".tgz")
+                    archive_name = os.path.join(arch_dir, tar_name + ".tgz")
                     click.secho(
                         f" Packing {tar_name} ({filetype}, {len(flist)} files)"
                     )

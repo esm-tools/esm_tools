@@ -267,6 +267,11 @@ def stamp_files(model_files):
                 stamped_filepattern = stamp_filepattern(filepattern)
                 logging.debug(f"Adding [{model}][{idx}] = {stamped_filepattern}")
                 model_files[model][idx] = stamped_filepattern
+            except DatestampLocationError:
+                # No determinable (varying) datestamp for this file; leave it
+                # out of date-based archiving rather than crashing.
+                logging.debug(f"No datestamp for {filepattern}; skipping")
+                continue
             except AssertionError:  # List was longer than 1
                 stamped_filepatterns = stamp_filepattern(filepattern, force_return=True)
                 logging.debug(stamped_filepatterns)
@@ -419,6 +424,8 @@ def determine_datestamp_location(files):
             valid_slices.append(slice_)
     if len(valid_slices) > 1:
         raise DatestampLocationError("Unable to determine a unique datestamp!")
+    if not valid_slices:
+        raise DatestampLocationError("Unable to find a varying datestamp!")
     return valid_slices[0]
 
 

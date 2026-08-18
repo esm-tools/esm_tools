@@ -129,7 +129,9 @@ def load_archive_specs(config) -> dict:
     """
     specs: dict[str, list[ArchiveSpec]] = {}
     for model, model_cfg in (config or {}).items():
-        archive = (model_cfg or {}).get("archive")
+        if not isinstance(model_cfg, dict):
+            continue  # top-level settings (archive_dir, hsm_target, ...), not a model
+        archive = model_cfg.get("archive")
         if isinstance(archive, list):
             specs[model] = [ArchiveSpec(**entry) for entry in archive]
     return specs

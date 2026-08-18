@@ -78,7 +78,6 @@ import pprint
 import click
 
 from .esm_archiving import (
-    archive_mistral,
     check_tar_lists,
     group_files,
     pack_tarfile,
@@ -138,7 +137,7 @@ def create(base_dir, start_date, end_date, force, interactive):
     templated = load_archive_specs(config)
     if templated:
         expid = os.path.basename(os.path.abspath(base_dir))
-        arch_dir = os.path.join(base_dir, "arch")
+        arch_dir = os.path.join(base_dir, config.get("archive_dir", "archive"))
         os.makedirs(arch_dir, exist_ok=True)
         for filetype in ["outdata", "restart"]:
             for model, specs in templated.items():
@@ -184,27 +183,93 @@ def create(base_dir, start_date, end_date, force, interactive):
 
 
 @main.command()
-@click.argument("base_dir")
-@click.argument("start_date")
-@click.argument("end_date")
-def upload(base_dir, start_date, end_date):
-    # NOTE: archive_mistral uploads to DKRZ HPSS (tape.dkrz.de) via pypftp; it is
-    # NOT the AWI ScoutFS HSM. For AWI, create locally then push the tarballs to
-    # scoutfs://hsm.dmawi.de (see fsspec-scoutfs). This command is kept working
-    # for DKRZ but the on-tape bookkeeping DB was removed, so it just uploads.
-    click.secho(" Uploading archives for:")
-    click.secho(base_dir)
+@click.argument("base_dir", default=".", required=False)
+@click.option(
+    "--to", "dest", default=None,
+    help="HSM target directory; overrides the hsm_target config key.",
+)
+def upload(base_dir, dest):
+    """Push the tarballs in <base_dir>/archive/ to the AWI HSM via ScoutFS.
 
-    for filetype in ["outdata", "restart"]:
-        files = group_files(base_dir, filetype)
-        files = stamp_files(files)
-        files = sort_files_to_tarlists(files, start_date, end_date, config)
+    Destination resolution: --to  >  config `hsm_target` (a jinja template, e.g.
+    "/hs/projects/paleodyn/from_experiments/{{ expid }}"). Files are NOT released
+    from the online cache here (they are not archdone until the HSM archiver has
+    run) — use hsm-release.sh for that.
+    """
+    import glob as _glob
 
-        for model in files:
-            archive_name = os.path.join(
-                base_dir, f"{model}_{filetype}_{start_date}_{end_date}.tgz"
+    expid = os.path.basename(os.path.abspath(base_dir))
+    arch_dir = os.path.join(base_dir, config.get("archive_dir", "archive"))
+    tarballs = sorted(_glob.glob(os.path.join(arch_dir, "*.tgz")))
+    if not tarballs:
+        click.secho(f"No tarballs in {arch_dir} - run `esm_archive create` first.")
+        return
+
+    if dest is None:
+        target = config.get("hsm_target")
+        if not target:
+            raise click.ClickException(
+                "No destination: pass --to, or set `hsm_target` in the config."
             )
-            archive_mistral(archive_name)
+        from jinja2 import Template
+
+        dest = Template(target).render(expid=expid)
+
+    protocol = config.get("hsm_protocol")
+    if not protocol:
+        raise click.ClickException("Set `hsm_protocol` in the config (e.g. scoutfs).")
+    host = config.get("hsm_host")
+    if not host:
+        raise click.ClickException("Set `hsm_host` in the config (e.g. hsm.dmawi.de).")
+    try:
+        import fsspec
+    except ImportError:
+        raise click.ClickException("fsspec is required to upload (pip install it).")
+    if protocol == "scoutfs":
+        try:
+            import fsspec_scoutfs  # noqa: F401  registers the scoutfs protocol
+        except ImportError:
+            raise click.ClickException(
+                "fsspec-scoutfs is required for the scoutfs protocol (pip install it)."
+            )
+
+    # For ssh-based protocols let SSH behave normally (agent + ~/.ssh keys); only
+    # pin a key if the user set one, since paramiko does not read ~/.ssh/config.
+    storage_options = dict(config.get("hsm_storage_options") or {})
+    storage_options.setdefault("host", host)
+    key = config.get("hsm_ssh_key")
+    if key:
+        storage_options["key_filename"] = os.path.expanduser(key)
+        storage_options["look_for_keys"] = False
+    fs = fsspec.filesystem(protocol, **storage_options)
+
+    from fsspec.callbacks import TqdmCallback
+
+    click.secho(f" Uploading {len(tarballs)} tarball(s) to {host}:{dest}", color="green")
+    fs.makedirs(dest, exist_ok=True)
+    for tarball in tarballs:
+        name = os.path.basename(tarball)
+        remote = dest.rstrip("/") + "/" + name
+        callback = TqdmCallback(
+            tqdm_kwargs={
+                "desc": name,
+                "unit": "B",
+                "unit_scale": True,
+                "unit_divisor": 1024,
+            }
+        )
+        fs.put(tarball, remote, callback=callback)
+        local_size = os.path.getsize(tarball)
+        remote_size = fs.info(remote).get("size")
+        if remote_size != local_size:
+            raise click.ClickException(
+                f"size mismatch for {name}: local {local_size} != remote {remote_size}"
+            )
+    click.secho(
+        " Upload complete. Files sit in the online cache until the HSM archiver "
+        "copies them to tape; release with hsm-release.sh.",
+        color="green",
+    )
 
 
 if __name__ == "__main__":

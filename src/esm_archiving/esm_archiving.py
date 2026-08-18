@@ -478,9 +478,15 @@ def get_files_for_date_range(
 
     # BUG: determine_datestamp_location takes a list, not a string!!!
     date_stamp = ">>>DATE<<<"
+    # Use pandas Periods rather than Timestamps: Timestamps are datetime64[ns]
+    # and overflow outside ~1677-2262, which breaks paleo experiments (e.g. year
+    # 0800). period_range is end-inclusive, so drop the stop period to keep the
+    # documented "end date is not included" behaviour.
+    end_period = pd.Period(stop_date, freq=frequency)
     dates = [
-        date.to_pydatetime().strftime(date_format)
-        for date in pd.date_range(start=start_date, end=stop_date, freq=frequency)
+        period.strftime(date_format)
+        for period in pd.period_range(start=start_date, end=stop_date, freq=frequency)
+        if period < end_period
     ]
     files = [filepattern.replace(date_stamp, str(date)) for date in dates]
     return files

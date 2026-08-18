@@ -476,6 +476,11 @@ def get_files_for_date_range(
     # that's a horrible idea. Or at least, a difficult one. If we know the date
     # format, we can just build a list of the desired dates.
 
+    # A model with no archive frequency/date_format in the config cannot be
+    # date-matched; return nothing rather than crashing on None.
+    if not frequency or not date_format:
+        return []
+
     # BUG: determine_datestamp_location takes a list, not a string!!!
     date_stamp = ">>>DATE<<<"
     # Use pandas Periods rather than Timestamps: Timestamps are datetime64[ns]
@@ -483,8 +488,18 @@ def get_files_for_date_range(
     # 0800). period_range is end-inclusive, so drop the stop period to keep the
     # documented "end date is not included" behaviour.
     end_period = pd.Period(stop_date, freq=frequency)
+
+    def _stamp(period):
+        # strftime("%Y") does not zero-pad years below 1000 (e.g. year 800 ->
+        # "800", not "0800"), but ESM output files use a 4-digit zero-padded
+        # year. Substitute the padded year explicitly so paleo stamps match.
+        fmt = date_format
+        if "%Y" in fmt and 0 <= period.year < 1000:
+            fmt = fmt.replace("%Y", f"{period.year:04d}")
+        return period.strftime(fmt)
+
     dates = [
-        period.strftime(date_format)
+        _stamp(period)
         for period in pd.period_range(start=start_date, end=stop_date, freq=frequency)
         if period < end_period
     ]

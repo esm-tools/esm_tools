@@ -86,6 +86,7 @@ from .esm_archiving import (
     stamp_files,
     sum_tar_lists_human_readable,
 )
+from .spec import collect_tarballs, load_archive_specs
 
 
 from .config import load_config, write_config_yaml
@@ -131,6 +132,26 @@ def create(base_dir, start_date, end_date, force, interactive):
     click.secho("From: %s" % start_date, color="green")
     click.secho("To: %s" % end_date, color="green")
 
+    # Template-driven path: if the config gives per-model lists of ArchiveSpec,
+    # find files by rendering their jinja `match` glob and pack them into
+    # tarballs named by the rendered `tar_template`.
+    templated = load_archive_specs(config)
+    if templated:
+        expid = os.path.basename(os.path.abspath(base_dir))
+        for filetype in ["outdata", "restart"]:
+            for model, specs in templated.items():
+                tarballs = collect_tarballs(
+                    base_dir, filetype, model, specs, start_date, end_date, expid
+                )
+                for tar_name, flist in tarballs.items():
+                    archive_name = os.path.join(base_dir, tar_name + ".tgz")
+                    click.secho(
+                        f" Packing {tar_name} ({filetype}, {len(flist)} files)"
+                    )
+                    pack_tarfile(flist, base_dir, archive_name)
+        return
+
+    # Legacy heuristic path (no templated specs configured):
     for filetype in ["outdata", "restart"]:
         files = group_files(base_dir, filetype)
         files = stamp_files(files)

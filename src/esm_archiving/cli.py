@@ -245,11 +245,21 @@ def upload(base_dir, dest):
 
     from fsspec.callbacks import TqdmCallback
 
+    # Quieten fsspec-scoutfs's per-path loguru debug lines (symlink resolution,
+    # parent-dir lookups) so the upload output stays clean.
+    try:
+        from loguru import logger as _logger
+
+        _logger.disable("fsspec_scoutfs")
+    except ImportError:
+        pass
+
     click.secho(f" Uploading {len(tarballs)} tarball(s) to {host}:{dest}", color="green")
     fs.makedirs(dest, exist_ok=True)
     for tarball in tarballs:
         name = os.path.basename(tarball)
         remote = dest.rstrip("/") + "/" + name
+        local_size = os.path.getsize(tarball)
         callback = TqdmCallback(
             tqdm_kwargs={
                 "desc": name,
@@ -258,8 +268,8 @@ def upload(base_dir, dest):
                 "unit_divisor": 1024,
             }
         )
+        callback.set_size(local_size)  # so the bar shows real bytes, not 0/1
         fs.put(tarball, remote, callback=callback)
-        local_size = os.path.getsize(tarball)
         remote_size = fs.info(remote).get("size")
         if remote_size != local_size:
             raise click.ClickException(

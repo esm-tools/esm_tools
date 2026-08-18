@@ -126,23 +126,10 @@ def main(ctx, write_local_config=False, write_config=False):
 @click.option("--force", is_flag=True)
 @click.option("--interactive", is_flag=True)
 def create(base_dir, start_date, end_date, force, interactive):
-    session = Session()
-    click.secho(
-        " Creating archives for:", color="green"
-    )
+    click.secho(" Creating archives for:", color="green")
     click.secho(base_dir, color="green")
     click.secho("From: %s" % start_date, color="green")
     click.secho("To: %s" % end_date, color="green")
-
-    exp_db = Experiments(expid=base_dir.split("/")[-1])
-    if not session.query(Experiments).filter_by(expid=exp_db.expid).all():
-        session.add(exp_db)
-    else:
-        exp_db = session.query(Experiments).filter_by(expid=exp_db.expid).all()[0]
-
-    archive_db = Archive(exp_ref=exp_db)
-    if not session.query(Archive).filter_by(exp_ref=exp_db):
-        session.add(archive_db)
 
     for filetype in ["outdata", "restart"]:
         files = group_files(base_dir, filetype)
@@ -159,20 +146,18 @@ def create(base_dir, start_date, end_date, force, interactive):
                 click.secho("The following files were requested but missing:")
                 pp.pprint(missing)
         for model in files:
-            click.secho(
-                f" Packing up files for {model} ({filetype})"
-            )
+            if not existing.get(model):
+                click.secho(
+                    f" Nothing to pack for {model} ({filetype}) in this date"
+                    " range, skipping"
+                )
+                continue
+            click.secho(f" Packing up files for {model} ({filetype})")
             archive_name = os.path.join(
                 base_dir, f"{model}_{filetype}_{start_date}_{end_date}.tgz"
             )
-            tarball_db = Tarball(fname=archive_name, archive=archive_db)
-            session.add(tarball_db)
             click.secho(archive_name)
             pack_tarfile(existing[model], base_dir, archive_name)
-            for file in existing[model]:
-                file_db = ArchivedFile(fname=file, tarball=tarball_db)
-                session.add(file_db)
-    session.commit()
 
 
 @main.command()
@@ -180,7 +165,10 @@ def create(base_dir, start_date, end_date, force, interactive):
 @click.argument("start_date")
 @click.argument("end_date")
 def upload(base_dir, start_date, end_date):
-    session = Session()
+    # NOTE: archive_mistral uploads to DKRZ HPSS (tape.dkrz.de) via pypftp; it is
+    # NOT the AWI ScoutFS HSM. For AWI, create locally then push the tarballs to
+    # scoutfs://hsm.dmawi.de (see fsspec-scoutfs). This command is kept working
+    # for DKRZ but the on-tape bookkeeping DB was removed, so it just uploads.
     click.secho(" Uploading archives for:")
     click.secho(base_dir)
 
@@ -193,13 +181,7 @@ def upload(base_dir, start_date, end_date):
             archive_name = os.path.join(
                 base_dir, f"{model}_{filetype}_{start_date}_{end_date}.tgz"
             )
-            # tarball_db = Tarball(fname=archive_name)
-
-            q = session.query(Tarball).filter_by(fname=archive_name)
             archive_mistral(archive_name)
-            for f in q.all().pop().files:
-                f.on_tape = True
-    session.commit()
 
 
 if __name__ == "__main__":

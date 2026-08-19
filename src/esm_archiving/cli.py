@@ -213,7 +213,7 @@ def upload(base_dir, dest):
             )
         from jinja2 import Template
 
-        dest = Template(target).render(expid=expid)
+        dest = Template(target).render(expid=expid, model=config.get("model"))
 
     protocol = config.get("hsm_protocol")
     if not protocol:
@@ -221,60 +221,63 @@ def upload(base_dir, dest):
     host = config.get("hsm_host")
     if not host:
         raise click.ClickException("Set `hsm_host` in the config (e.g. hsm.dmawi.de).")
-    try:
-        import fsspec
-    except ImportError:
-        raise click.ClickException("fsspec is required to upload (pip install it).")
-    if protocol == "scoutfs":
-        try:
-            import fsspec_scoutfs  # noqa: F401  registers the scoutfs protocol
-        except ImportError:
-            raise click.ClickException(
-                "fsspec-scoutfs is required for the scoutfs protocol (pip install it)."
-            )
-
-    # For ssh-based protocols let SSH behave normally (agent + ~/.ssh keys); only
-    # pin a key if the user set one, since paramiko does not read ~/.ssh/config.
-    storage_options = dict(config.get("hsm_storage_options") or {})
-    storage_options.setdefault("host", host)
-    key = config.get("hsm_ssh_key")
-    if key:
-        storage_options["key_filename"] = os.path.expanduser(key)
-        storage_options["look_for_keys"] = False
-    fs = fsspec.filesystem(protocol, **storage_options)
-
-    from fsspec.callbacks import TqdmCallback
-
-    # Quieten fsspec-scoutfs's per-path loguru debug lines (symlink resolution,
-    # parent-dir lookups) so the upload output stays clean.
-    try:
-        from loguru import logger as _logger
-
-        _logger.disable("fsspec_scoutfs")
-    except ImportError:
-        pass
-
     click.secho(f" Uploading {len(tarballs)} tarball(s) to {host}:{dest}", color="green")
-    fs.makedirs(dest, exist_ok=True)
-    for tarball in tarballs:
-        name = os.path.basename(tarball)
-        remote = dest.rstrip("/") + "/" + name
-        local_size = os.path.getsize(tarball)
-        callback = TqdmCallback(
-            tqdm_kwargs={
-                "desc": name,
-                "unit": "B",
-                "unit_scale": True,
-                "unit_divisor": 1024,
-            }
+
+    if protocol in ("scoutfs", "sftp", "ssh"):
+        # ssh-based: transfer with rsync (paramiko's SFTP tops out ~1-10 MB/s;
+        # rsync over ssh is ~100x that and resumes/verifies). Its --info=progress2
+        # bar renders straight to the terminal (stdout inherited).
+        import shlex
+        import subprocess
+
+        ssh_cmd = "ssh"
+        key = config.get("hsm_ssh_key")
+        if key:
+            ssh_cmd += " -i " + shlex.quote(os.path.expanduser(key))
+        subprocess.run([*shlex.split(ssh_cmd), host, "mkdir", "-p", dest], check=True)
+        result = subprocess.run(
+            [
+                "rsync", "-a", "--partial", "--append-verify", "-h",
+                "--info=progress2,name,stats2",
+                "-e", ssh_cmd, *tarballs, f"{host}:{dest.rstrip('/')}/",
+            ]
         )
-        callback.set_size(local_size)  # so the bar shows real bytes, not 0/1
-        fs.put(tarball, remote, callback=callback)
-        remote_size = fs.info(remote).get("size")
-        if remote_size != local_size:
-            raise click.ClickException(
-                f"size mismatch for {name}: local {local_size} != remote {remote_size}"
+        if result.returncode != 0:
+            raise click.ClickException(f"rsync failed (exit {result.returncode})")
+        total = sum(os.path.getsize(t) for t in tarballs)
+        click.secho(
+            f" {len(tarballs)} tarball(s), {total / 2 ** 30:.1f} GiB, now under {dest}",
+            color="green",
+        )
+    else:
+        # Non-ssh backend (s3, ...): stream via fsspec with a tqdm bar.
+        try:
+            import fsspec
+            from fsspec.callbacks import TqdmCallback
+        except ImportError:
+            raise click.ClickException("fsspec is required to upload (pip install it).")
+        storage_options = dict(config.get("hsm_storage_options") or {})
+        fs = fsspec.filesystem(protocol, **storage_options)
+        fs.makedirs(dest, exist_ok=True)
+        for tarball in tarballs:
+            name = os.path.basename(tarball)
+            remote = dest.rstrip("/") + "/" + name
+            local_size = os.path.getsize(tarball)
+            callback = TqdmCallback(
+                tqdm_kwargs={"desc": name, "unit": "B", "unit_scale": True,
+                             "unit_divisor": 1024}
             )
+            callback.set_size(local_size)
+            with open(tarball, "rb") as src, fs.open(remote, "wb") as dst:
+                while True:
+                    data = src.read(8 * 1024 * 1024)
+                    if not data:
+                        break
+                    dst.write(data)
+                    callback.relative_update(len(data))
+            callback.close()
+            if fs.info(remote).get("size") != local_size:
+                raise click.ClickException(f"size mismatch for {name}")
     click.secho(
         " Upload complete. Files sit in the online cache until the HSM archiver "
         "copies them to tape; release with hsm-release.sh.",

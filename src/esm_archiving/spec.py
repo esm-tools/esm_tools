@@ -59,6 +59,11 @@ class ArchiveSpec(BaseModel):
     )
     frequency: Frequency = "1M"
     date_format: StrftimeFormat = "%Y%m"
+    static: bool = Field(
+        default=False,
+        description="match once instead of stepping dates; for undated files "
+        "(coupling diagnostics, grids/weights). Use no {{ date }}/{{ decade }}.",
+    )
 
     @cached_property
     def _match_tmpl(self) -> Template:
@@ -106,6 +111,13 @@ def collect_tarballs(base_dir, filetype, model, specs, start_date, end_date, exp
     model_dir = os.path.join(base_dir, filetype, model)
     buckets: dict[str, list[str]] = {}
     for spec in specs:
+        if spec.static:
+            # Undated files: render/glob once, one tarball, no date loop.
+            ctx = {"expid": expid, "filetype": filetype, "model": model}
+            matched = glob.glob(os.path.join(model_dir, spec.render_match(**ctx)))
+            if matched:
+                buckets.setdefault(spec.render_tar_name(**ctx), []).extend(matched)
+            continue
         end_period = pd.Period(end_date, freq=spec.frequency)
         for period in pd.period_range(
             start=start_date, end=end_date, freq=spec.frequency
@@ -113,7 +125,7 @@ def collect_tarballs(base_dir, filetype, model, specs, start_date, end_date, exp
             if period >= end_period:
                 continue
             ctx = date_context(period, spec.date_format)
-            ctx.update(expid=expid, filetype=filetype)
+            ctx.update(expid=expid, filetype=filetype, model=model)
             matched = glob.glob(os.path.join(model_dir, spec.render_match(**ctx)))
             if not matched:
                 continue

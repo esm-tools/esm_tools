@@ -221,7 +221,7 @@ choose_with_icb:
             use_icesheet_coupling: True        # initializes new icebergs every restart
             update_icebergs: True
 
-            icb_inputs: [longitude,latitude,length,height,scaling,felem]
+            icb_inputs: [calving_day,longitude,latitude,length,height,scaling,felem]
 
             add_restart_in_files:
                     icb_restart: icb_restart
@@ -279,6 +279,7 @@ choose_with_icb:
                     height: "icb_height.dat"
                     scaling: "icb_scaling.dat"
                     felem: "icb_felem.dat"
+                    calving_day: "icb_calving_day.dat"
                     num_non_melted_icb_file: "num_non_melted_icb_file"
 
             add_input_files:
@@ -288,6 +289,7 @@ choose_with_icb:
                     height: "height"
                     scaling: "scaling"
                     felem: "felem"
+                    calving_day: "calving_day"
                     num_non_melted_icb_file: "num_non_melted_icb_file"
             
 

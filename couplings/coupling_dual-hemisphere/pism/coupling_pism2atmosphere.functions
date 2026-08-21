@@ -484,35 +484,57 @@ function generate_runoff_combine_fields {
                     # seeded by tendency_of_ice_amount_due_to_discharge and would
                     # otherwise double-count that freshwater mass.
                     #
-                    # For PISM 1.x with PISM_MASS_LOSS_VARS="discharge,runoff":
-                    #   total       = runoff + tendency_of_ice_amount_due_to_discharge
-                    #   gfw content = total - tendency_of_ice_amount_due_to_discharge
-                    #               = runoff
-                    # The arithmetic is written explicitly so additional balance
-                    # components can be added to the sum without re-deriving the formula.
+                    # 'runoff' here is NOT a surface-runoff component: it is
+                    # 910 * d(thk)/dt from convert_ice_thk_diff_to_flux_over_pism_run,
+                    # i.e. the TOTAL ice mass tendency, which already contains the
+                    # discharge.  The sum of mass balance components is therefore
+                    # 'runoff' alone, and
+                    #   gfw content = runoff - tendency_of_ice_amount_due_to_discharge
+                    # (sign convention: ice-sheet convention, mass gain positive;
+                    #  coupling_ice2echam.functions flips it with mulc,-1 for the ocean.)
                     #
-                    # The previous implementation used 'cdo sub discharge runoff' which
-                    # (a) produces discharge - runoff with the operands in the wrong
-                    # order vs the comment, and (b) inherits the discharge variable's
-                    # CF attributes (long_name='discharge flux ...'), which become
-                    # misleading once the content is no longer pure discharge.
-                    # Fix both issues here.
+                    # Two earlier implementations were wrong here:
+                    #   'cdo sub discharge runoff'          -> discharge - runoff, i.e. the
+                    #                                         negative of the correct field
+                    #   'cdo sub (runoff+discharge) discharge' -> cancels to 'runoff', so the
+                    #                                         discharge was never removed and
+                    #                                         all calving freshwater was
+                    #                                         delivered twice.
+                    #
+                    # MISSING VALUES: with account_all_fw_input != 1 the 'runoff' base file
+                    # is ice_runoff_from_thk_above_flotation_difference.nc, which is masked
+                    # by '-ifthen -gtc,0' on thk+topg and therefore has missing values over
+                    # ALL floating ice -- which is exactly where the discharge lives (~98% of
+                    # the domain-integrated discharge in a typical NH/SH run).  CDO propagates
+                    # missing through 'sub', so both operands must be set to 0 first or the
+                    # correction silently disappears.
                     echo " * computing gfw_atmo content = (all mass balance components) - iceberg discharge"
                     _disch_tmp="${ofile%.nc}_disch_tmp.nc"
                     _runoff_tmp="${ofile%.nc}_runoff_tmp.nc"
-                    _total_tmp="${ofile%.nc}_total_tmp.nc"
-                    # extract iceberg discharge component (renamed to runoff so cdo add
-                    # below operates on a single variable name)
+                    rm -f ${_disch_tmp} ${_runoff_tmp}
+                    # sum of all mass balance components (extend here if more are added).
+                    # setmisstoc,0: masked-out cells contribute nothing, but must not turn
+                    # the whole cell missing in the subtraction below.
+                    cdo -s -setmisstoc,0 -selname,runoff ${ifile} \
+                           ${_runoff_tmp} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
+                    # iceberg discharge component, renamed to 'runoff' so that cdo sub
+                    # operates on a single matching variable name
                     cdo -s -chname,tendency_of_ice_amount_due_to_discharge,runoff \
+                           -setmisstoc,0 \
                            -selname,tendency_of_ice_amount_due_to_discharge ${ifile} \
-                           ${_disch_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-                    # extract surface runoff
-                    cdo -s -selname,runoff ${ifile} ${_runoff_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-                    # sum all mass balance components (extend here if more are added)
-                    cdo -s add ${_runoff_tmp} ${_disch_tmp} ${_total_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-                    # subtract iceberg discharge component (handled by FESOM iceberg model)
-                    cdo -s sub ${_total_tmp} ${_disch_tmp} ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-                    rm -f ${_disch_tmp} ${_runoff_tmp} ${_total_tmp}
+                           ${_disch_tmp} 2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
+                    if [ -s "${_disch_tmp}" ]; then
+                        # subtract iceberg discharge (handled by the FESOM iceberg model)
+                        cdo -s sub ${_runoff_tmp} ${_disch_tmp} ${ofile} \
+                            2>> ${COUPLE_DIR}/${PISM_HEMISPHERE}/cdo_stderr_pism2atm
+                    else
+                        echo " * ERROR: tendency_of_ice_amount_due_to_discharge missing from ${ifile};"
+                        echo " *        cannot remove iceberg discharge from gfw_atmo -- calving"
+                        echo " *        freshwater would be delivered twice. Aborting."
+                        rm -f ${_disch_tmp} ${_runoff_tmp}
+                        exit 42
+                    fi
+                    rm -f ${_disch_tmp} ${_runoff_tmp}
                 #***************************************************************************
                 else
 		    # Only need tendency of ice amount, do not need to combine fields.

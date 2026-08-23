@@ -1,0 +1,142 @@
+# ---------------------------------------------------------------------------------
+# SB2 --- stable-boundary-layer mixing, RSBLB 2.0 (default 5.0), on the LX4 base.
+#
+# WHY THIS AND NOT ANOTHER SURFACE LEVER.  The DJF land cold bias was resolved by height
+# against ERA5 on 2026-08-21 (scripts/analysis/djf_bias_vertical_structure.py).  In the
+# best coupled run, 11P, over 60-90N land in DJF:
+#
+#     T2m -3.63   T1000 -2.10   T925 -0.88   T850 -0.42
+#     low-level inversion bias (T925-T2m)  +2.81 K
+#     surface  inversion bias (T2m-Tskt)   +0.11 K
+#
+# The bias decays to nothing by 850 hPa, so it is surface-confined and a redistribution
+# lever is the right class.  But the SKIN IS ALREADY RIGHT: the whole excess inversion
+# sits between the screen and 925 hPa.  That retires the surface-side candidates as a
+# class, and it explains the three nulls already on record --- ECE_LAMSK_SN (J1/J2, skin
+# conduction, 60-90N DJF +0.125 against a 0.41 threshold), Raupach z0 (11J-11I, DJF
+# land-ocean gap -0.017 and -0.003 in two windows) and F1 (RVZ0H on forest).  Each was
+# adjusting a part of the column that carries no error.
+#
+# THE LEVER.  The 2m-925 hPa layer is mixed by the stable branch of VDFEXCU, whose
+# constants were hardcoded literals until they were exposed as &NAMVDFS
+# (scripts/patches/expose_sbl_mixing.py).  RSBLB is coefficient b of the LTG stability
+# functions, F_H = 1/(1 + 2 b Ri sqrt(1 + d Ri)).  LOWERING it lengthens the stable tail:
+# at Ri = 0.5, F_H goes 0.140 (b=5) -> 0.214 (b=3) -> 0.290 (b=2), so roughly 1.5x and 2x
+# the heat exchange.  More heat mixed down = weaker inversion = warmer winter screen.
+# This is the direction Holtslag et al. (2013) and Sandu et al. (2013) discuss, and it is
+# the route Round 16's own pre-registered falsifier named when skin conductivity failed.
+#
+# ZCB, ZCD and ZLMIN are used ONLY inside the IF (ZRI > 0) branch of VDFEXCU, checked
+# before patching, so this cannot reach unstable or convective mixing.
+#
+# WHAT WOULD DISQUALIFY IT.  The known cost of a longer tail is a too-weak inversion and
+# degraded synoptic behaviour, so: 60-90N DJF overshooting warm; the low-level inversion
+# bias crossing zero; global net TOA beyond about +-0.3 at 44 years; Siberian JJA going
+# backwards.  Sea ice and the Southern Ocean must be checked too --- the stable regime is
+# not land-only, it is simply rare over open ocean, and it is NOT rare over ice.
+#
+# VERIFY BEFORE TRUSTING.  &NAMVDFS is new.  SUVDFS echoes the values it used to NULOUT,
+# so confirm "SUVDFS: stable-BL mixing" in NODE.001_01 shows RSBLB=2.0 before scoring
+# this arm.  A malformed group aborts by design; an ABSENT group silently keeps 5.0,
+# which would make this arm a copy of its control.
+# ---------------------------------------------------------------------------------
+
+general:
+    user: !ENV ${USER}
+    setup_name: "oifsamip"
+    version: "cy48"
+    compute_time: "08:00:00"
+    initial_date: "1870-01-01"
+    final_date: "1916-01-01"   # 46 yr; evaluate 1872-1915
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/"
+    account: "ab0246"
+    nday: 0
+    nmonth: 0
+    nyear: 8
+    use_venv: false
+
+computer:
+    taskset: true
+
+oifsamip:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+oifs:
+    icmcl_dir: "/work/ab0246/a270092/input/oifs-48r1/climate.v020/95_4_dms_rev3/"
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    add_namelist_changes:
+        fort.4:
+            NAMECECFG:
+                ECE_CLIMR_DMS: .true.
+                ECE_DMS_CCN_SENS: 0.0    # X4: DMS field READ but the CCN lever OFF
+            NAMCLDP:
+                RVICE: 0.16
+                RSNOWLIN2: 0.04              # match the coupled tuning runs explicitly
+                RCL_INPSEA: 0.2          # D2b: ocean INP -> 20% (marine biogenic floor)
+                RCL_INPPMIN: 50000.0     # D2b: only below ~700 hPa, sparing tropical anvils
+            # NAMSURFTUNE, not NAMECECFG: NAMECECFG is read twice from the same
+            # fort.4 -- by ECE_CONFIG in arpifs/ecearth.F90 and by SURFECE_CONFIG
+            # in surf/surfece.F90 -- and a Fortran namelist read dies with
+            # "invalid reference to variable" on any name the reading module does
+            # not declare.  Verified the hard way, 2026-08-02.
+            # SB2: stable-BL mixing.  New namelist group, see the header.
+            NAMVDFS:
+                RSBLB: 2.0
+            NAMSURFTUNE:
+                # --- G4 base ---
+                "ECE_TUNE_RVRSMIN(3)": 1000.0
+                "ECE_TUNE_RVRSMIN(4)": 1000.0
+                "ECE_TUNE_RVRSMIN(9)": 225.0
+                # --- K1: vegetation albedo, types 1 / 10 / 11 only ---
+                "ECE_TUNE_RVVEGALB(1,1)": 0.023500
+                "ECE_TUNE_RVVEGALB(1,2)": 0.030240
+                "ECE_TUNE_RVVEGALB(1,3)": 0.252561
+                "ECE_TUNE_RVVEGALB(1,4)": 0.284663
+                "ECE_TUNE_RVVEGALB(10,1)": 0.022748
+                "ECE_TUNE_RVVEGALB(10,2)": 0.026933
+                "ECE_TUNE_RVVEGALB(10,3)": 0.234026
+                "ECE_TUNE_RVVEGALB(10,4)": 0.253862
+                "ECE_TUNE_RVVEGALB(11,1)": 0.047943
+                "ECE_TUNE_RVVEGALB(11,2)": 0.078395
+                "ECE_TUNE_RVVEGALB(11,3)": 0.185338
+                "ECE_TUNE_RVVEGALB(11,4)": 0.262827
+                # --- K1: bare-soil background scale, all four components ---
+                "ECE_TUNE_SOILALB(1)": 0.95
+                "ECE_TUNE_SOILALB(2)": 0.95
+                "ECE_TUNE_SOILALB(3)": 0.95
+                "ECE_TUNE_SOILALB(4)": 0.95
+                # --- P3: the fitted depletion, taken literally at course scale ---
+                ECE_SNOW_SCF: 3
+                ECE_SNOW_SCF_RHOREF: 200.0
+                ECE_SNOW_SCF_DCL: 0.014     # field / low veg, d_c at rho=200
+                ECE_SNOW_SCF_DCH: 0.026     # forest / high veg
+                ECE_SNOW_SCF_MD: 4.70
+                ECE_SNOW_SCF_BL: 1.46
+                ECE_SNOW_SCF_BH: 0.40
+                ECE_SNOW_SCF_DCMAX: 0.30
+                ECE_SNOW_SCF_SCALE: 1.0
+                ECE_SNOW_SCF_SWEMIN: 15.0
+
+oasis3mct:
+    lresume: false   # generate the rst files for the first leg
+    time_step: 86400
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32
+    # Per-run override so the shared template is untouched: adds daily
+    # sd/rsn/tsn/asn/stl1/stl2.  Retained from N/O because f_full -- the fraction
+    # of the box at cover >= 0.999 -- is the diagnostic that exposed the defect and
+    # is the one that has to come back.
+    add_config_sources:
+        file_def: ${xml_dir}/file_def_snowdiag.xml.j2

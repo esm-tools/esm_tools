@@ -1664,6 +1664,15 @@ oifs:
                                             ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
                                               ${namelist_dir}/namcompo_emis_co2_terminator.nml
                                               ${thisrun_config_dir}/fort.4"
+            # Standalone component operations (esm_master comp-/recomp-oifs-*) have no
+            # setup to define general.with_co2_oce_coupling, and without a wildcard
+            # esm_parser raises "Key general.with_co2_oce_coupling was not defined" and
+            # the build never reaches the compiler.  The commented general: block at the
+            # top of this file records the same gap.  With "*" present, esm_parser drops
+            # the block when the key is undefined, leaving append_to_namelist_method at
+            # its default "".  Every setup defines the key, so this never fires for them.
+            "*":
+                    append_to_namelist_method: ""
 
     #======================================================================================
     # POSTPROCESS

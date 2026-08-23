@@ -199,9 +199,7 @@ ifsaturatewetlands 1		! Whether to take water from runoff in association with th
 ! mesh-change leg, and a gridcell with no entry in the state otherwise starts
 ! bare: deserialize_gridcell throws, the framework catches it and leaves the
 ! cell as landcover_init made it.
-state_remap 0   ! Cold-start cells absent from the state (guessserializer 0218bbb).
-! Remapping a neighbour transplants moisture/ice/temperature derived from a
-! porosity the target does not have; landcover_init defaults are self-consistent.
+state_remap 1
 
 
 !///////////////////////////////////////////////////////////////////////////////////////

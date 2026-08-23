@@ -149,27 +149,3 @@ ifmethane 1
 {% if lpj_guess.daily_alloc_output | default(0) == 1 %}
 file_daily_alloc "daily_alloc.out"
 {% endif %}
-
-! ---------------------------------------------------------------------------
-! PEAT-vs-LUH3 CONFLICT POLICY: the physical peat stand wins.
-!
-! Valid ONLY for fixed-forcing control runs.  Do not use for historical or
-! scenario runs, where the LUH3 land-use dataset is an applied common forcing
-! that must be reproduced exactly -- there the default (0) is required.
-!
-! Justification for a piControl: the two inputs are both prescribed and, under
-! fixed_LU, both static, pinned to different epochs.  LUH3 held at 1850 leaves
-! 0.0886 NATURAL at 67.7917N 19.2857E against a 0.1917 physical peat stand;
-! read at the run's own year (1350) it would have left 0.6176 and there would
-! be no conflict.  North of 60N, mean LUH3 rangeland at 1850 is 0.0040, while
-! northern peat holds order 500-1000 PgC and sets the soil thermal regime that
-! this campaign's boreal cold bias lives in.  Peat is the signal there; boreal
-! land use at 1850 is noise.
-! ---------------------------------------------------------------------------
-peat_lu_conflict_policy 1
-
-! Jinja strips the trailing newline when it renders this template, so the last
-! line must NOT be a parameter statement -- plib then hits EOF mid-token and
-! rejects the whole file with "Bad instruction file!", LPJ-GUESS exits 99 and the
-! run dies at startup with IFS still in CNT3.  That cost run 11U and R1_pi_ctl.
-! Keep a comment line last.

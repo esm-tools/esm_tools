@@ -199,6 +199,8 @@ oifs:
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
             config_sources:
                 "fort.4": "${namelist_dir}/fort.4.j2"
+            config_in_work:
+                "fort.4": "fort.4"
             wam: true
             add_add_namelist_changes:
                 fort.4:

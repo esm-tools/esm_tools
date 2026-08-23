@@ -565,10 +565,18 @@ fesom:
                 - namelist.recom
             add_config_files:
                 recom:     recom
+            # From the FESOM source tree, NOT ${namelist_dir}. The bin_<setting>
+            # sets are per-REcoM-configuration and ship with the model; esm_tools
+            # carries only the flat namelists/fesom2/2.7 set and has no bin_* at
+            # all. Sourcing them from ${namelist_dir} does not fail loudly: the
+            # base file is simply absent, f90nml writes out only the groups
+            # add_namelist_changes supplies, and FESOM dies on every rank with
+            # "end-of-file during read ... namelist.recom" at &parecomsetup.
+            # namelist.tra and namelist.io are gutted the same way.
             add_config_sources:
-                recom:     "${namelist_dir}/bin_${recom_setting}/namelist.recom"
-                tra:       "${namelist_dir}/bin_${recom_setting}/namelist.tra"
-                io:        "${namelist_dir}/bin_${recom_setting}/namelist.io"
+                recom:     "${model_dir}/config/bin_${recom_setting}/namelist.recom"
+                tra:       "${model_dir}/config/bin_${recom_setting}/namelist.tra"
+                io:        "${model_dir}/config/bin_${recom_setting}/namelist.io"
             add_config_in_work:
                 recom:     "namelist.recom"
             recom_input_path: '/work/ab0246/a270092/input/fesom2/recom/'

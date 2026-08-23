@@ -20,7 +20,6 @@ oifs:
     required_plugins:
             - "git+https://github.com/esm-tools-plugins/postprocess"
             - "git+https://github.com/esm-tools-plugins/preprocess"
-            - "git+https://github.com/JanStreffing/append_to_namelist"
 
     description: |
             The OpenIFS atmosphere model based on ECMWF IFS
@@ -1626,44 +1625,24 @@ oifs:
                     method: "${preprocess_method}"
                     type: shell
 
-    append_to_namelist:
-            append_to_namelist_shell:
-                    method: "${append_to_namelist_method}"
-                    type: shell
-
-    append_to_namelist_method: ""
+    # CO2 coupling: entries for the NAMCOMPO_EMIS namelist group. NAMCOMPO_EMIS
+    # is a repeated Fortran namelist group (OpenIFS reads it in a loop until an
+    # empty occurrence is found), so it can't be expressed via namelist_changes
+    # (a YAML dict can't hold the same group name twice). Instead, the v3.4
+    # fort.4.j2 template (namelists/oifs/48r1/awicm3/v3.4/fort.4.j2) renders
+    # this list with a Jinja2 for loop, appending the mandatory empty
+    # terminator group itself whenever the list is non-empty.
+    namcompo_emis_entries: []
     choose_general.with_co2_oce_coupling:
             true:
-                    choose_general.with_co2_veg_coupling:
-                            true:
-                                    append_to_namelist_method: "
-                                              ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                                ${namelist_dir}/namcompo_emis_co2_oce.nml
-                                                ${thisrun_config_dir}/fort.4;
-                                              ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                                ${namelist_dir}/namcompo_emis_co2_veg.nml
-                                                ${thisrun_config_dir}/fort.4;
-                                              ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                                ${namelist_dir}/namcompo_emis_co2_terminator.nml
-                                                ${thisrun_config_dir}/fort.4"
-                            false:
-                                    append_to_namelist_method: "
-                                            ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                              ${namelist_dir}/namcompo_emis_co2_oce.nml
-                                              ${thisrun_config_dir}/fort.4;
-                                            ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                              ${namelist_dir}/namcompo_emis_co2_terminator.nml
-                                              ${thisrun_config_dir}/fort.4"
-            false:
-                    choose_general.with_co2_veg_coupling:
-                            true:
-                                    append_to_namelist_method: "
-                                            ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                              ${namelist_dir}/namcompo_emis_co2_veg.nml
-                                              ${thisrun_config_dir}/fort.4;
-                                            ${general.esm_configs_dir}/components/oifs/append_to_namelist.sh
-                                              ${namelist_dir}/namcompo_emis_co2_terminator.nml
-                                              ${thisrun_config_dir}/fort.4"
+                    add_namcompo_emis_entries:
+                            - {species: "CO2_GHG", sector: "co2of", paramid: 210067, scaling: -1.0}
+    choose_general.with_co2_veg_coupling:
+            true:
+                    add_namcompo_emis_entries:
+                            - {species: "CO2_GHG", sector: "co2nbf", paramid: 210068, scaling: -1.0}
+                            - {species: "CO2_GHG", sector: "co2apf", paramid: 210069, scaling: -1.0}
+                            - {species: "CO2_GHG", sector: "co2fire", paramid: 210080, scaling: -1.0}
 
     #======================================================================================
     # POSTPROCESS
@@ -1710,7 +1689,6 @@ oifs:
        - "write_env"
        - "preprocess"
        - "modify_namelists"
-       - "append_to_namelist"
        - "modify_files"
        - "copy_files_to_work"
        - "report_missing_files"

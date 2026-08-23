@@ -1,3 +1,7 @@
+! This is a Jinja2 template (rendered by esm_runscripts before the namelist is
+! loaded and patched via namelist_changes) - a stray Jinja delimiter (curly
+! brace + percent sign) anywhere in this file will silently change or break
+! the rendered output.
 &NAMECECFG
 ECE_CPL_AMIP=.false.
 ECE_CPL_NEMO_LIM=.false.
@@ -518,3 +522,9 @@ CNMEXP="ab45",
 /
 &NAMVARBC_MODES
 /
+{% if oifs.namcompo_emis_entries %}
+{% for entry in oifs.namcompo_emis_entries %}
+&NAMCOMPO_EMIS THIS%SPECIES='{{ entry.species }}', THIS%SECTOR='{{ entry.sector }}', THIS%PARAMID={{ entry.paramid }}, THIS%SCALING={{ entry.scaling }} /
+{% endfor %}
+&NAMCOMPO_EMIS /
+{% endif %}

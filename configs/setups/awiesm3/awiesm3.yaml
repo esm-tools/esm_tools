@@ -197,6 +197,8 @@ oifs:
                 git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS;
                 nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
             namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
+            config_sources:
+                "fort.4": "${namelist_dir}/fort.4.j2"
             wam: true
             add_add_namelist_changes:
                 fort.4:

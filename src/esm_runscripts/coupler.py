@@ -89,6 +89,9 @@ class coupler_class:
                     else:
                         rights = [rightside]
 
+                    lefts, left_grid_override = self._split_grid_override(lefts)
+                    rights, right_grid_override = self._split_grid_override(rights)
+
                     if not len(lefts) == len(rights):
                         logger.error(
                             f"Left and right side of coupling don't match: {coupling}"
@@ -105,20 +108,19 @@ class coupler_class:
                                 if left in full_config[model]["coupling_fields"]:
                                     found_left = True
                                     leftmodel = full_config[model]["executable"]
+                                    this_left_grid = (
+                                        left_grid_override
+                                        or full_config[model]["coupling_fields"][left][
+                                            "grid"
+                                        ]
+                                    )
                                     if not left_grid:
-                                        left_grid = full_config[model][
-                                            "coupling_fields"
-                                        ][left]["grid"]
+                                        left_grid = this_left_grid
                                         lgrid_info = full_config[model]["grids"][
                                             left_grid
                                         ]
                                     else:
-                                        if (
-                                            not left_grid
-                                            == full_config[model]["coupling_fields"][
-                                                left
-                                            ]["grid"]
-                                        ):
+                                        if not left_grid == this_left_grid:
                                             logger.error(
                                                 "All fields coupled together need to exist on same grid"
                                             )
@@ -126,20 +128,19 @@ class coupler_class:
                                 if right in full_config[model]["coupling_fields"]:
                                     found_right = True
                                     rightmodel = full_config[model]["executable"]
+                                    this_right_grid = (
+                                        right_grid_override
+                                        or full_config[model]["coupling_fields"][right][
+                                            "grid"
+                                        ]
+                                    )
                                     if not right_grid:
-                                        right_grid = full_config[model][
-                                            "coupling_fields"
-                                        ][right]["grid"]
+                                        right_grid = this_right_grid
                                         rgrid_info = full_config[model]["grids"][
                                             right_grid
                                         ]
                                     else:
-                                        if (
-                                            not right_grid
-                                            == full_config[model]["coupling_fields"][
-                                                right
-                                            ]["grid"]
-                                        ):
+                                        if not right_grid == this_right_grid:
                                             logger.error(
                                                 "All fields coupled together need to exist on same grid"
                                             )
@@ -222,6 +223,9 @@ class coupler_class:
                     else:
                         rights = [rightside]
 
+                    lefts, _ = self._split_grid_override(lefts)
+                    rights, _ = self._split_grid_override(rights)
+
                     all_lefts += lefts
                     all_rights += rights
 
@@ -277,6 +281,35 @@ class coupler_class:
                 if restart_file in merge_recv_list:
                     self.coupler.merge_restart_files(restart_file, full_config)
 
+    @staticmethod
+    def _split_grid_override(fields):
+        """Split an optional ``FIELD@grid`` suffix off each field name.
+
+        OASIS names the grid per namcouple entry, so one field can be sent on
+        two grids of the same size but different masks. ``coupling_fields``
+        holds one grid per field and cannot express that, so ``@grid``
+        overrides it for a single coupling line.
+
+        Returns (clean_names, grid_or_None).
+        """
+        names = []
+        override = None
+        for field in fields:
+            if "@" in field:
+                name, grid = field.split("@", 1)
+                grid = grid.strip()
+                if override is not None and override != grid:
+                    logger.error(
+                        f"Conflicting grid overrides in one coupling line: "
+                        f"{override} and {grid}"
+                    )
+                    sys.exit(0)
+                override = grid
+                names.append(name.strip())
+            else:
+                names.append(field.strip())
+        return names, override
+
     def add_couplings(self, full_config):
         self.coupler.next_coupling = 1
         if self.coupler.name == "oasis3mct":
@@ -303,6 +336,9 @@ class coupler_class:
                         else:
                             rights = [rightside]
 
+                        lefts, left_grid_override = self._split_grid_override(lefts)
+                        rights, right_grid_override = self._split_grid_override(rights)
+
                         if not len(lefts) == len(rights):
                             logger.error(
                                 f"Left and right side of coupling don't match: {coupling}")
@@ -318,20 +354,19 @@ class coupler_class:
                                     if left in full_config[model]["coupling_fields"]:
                                         found_left = True
                                         leftmodel = model
+                                        this_left_grid = (
+                                            left_grid_override
+                                            or full_config[model]["coupling_fields"][
+                                                left
+                                            ]["grid"]
+                                        )
                                         if not left_grid:
-                                            left_grid = full_config[model][
-                                                "coupling_fields"
-                                            ][left]["grid"]
+                                            left_grid = this_left_grid
                                             lgrid_info = full_config[model]["grids"][
                                                 left_grid
                                             ]
                                         else:
-                                            if (
-                                                not left_grid
-                                                == full_config[model][
-                                                    "coupling_fields"
-                                                ][left]["grid"]
-                                            ):
+                                            if not left_grid == this_left_grid:
                                                 logger.error(
                                                     "All fields coupled together need to exist on same grid"
                                                 )
@@ -339,20 +374,19 @@ class coupler_class:
                                     if right in full_config[model]["coupling_fields"]:
                                         found_right = True
                                         rightmodel = model
+                                        this_right_grid = (
+                                            right_grid_override
+                                            or full_config[model]["coupling_fields"][
+                                                right
+                                            ]["grid"]
+                                        )
                                         if not right_grid:
-                                            right_grid = full_config[model][
-                                                "coupling_fields"
-                                            ][right]["grid"]
+                                            right_grid = this_right_grid
                                             rgrid_info = full_config[model]["grids"][
                                                 right_grid
                                             ]
                                         else:
-                                            if (
-                                                not right_grid
-                                                == full_config[model][
-                                                    "coupling_fields"
-                                                ][right]["grid"]
-                                            ):
+                                            if not right_grid == this_right_grid:
                                                 logger.error(
                                                     "All fields coupled together need to exist on same grid"
                                                 )

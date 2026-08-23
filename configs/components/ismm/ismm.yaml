@@ -1,0 +1,112 @@
+ismm:
+    model: ismm
+    type: ice sheet coupler
+
+    # The ISM-mapper is the EC-Earth4 in-line OASIS component that accumulates the
+    # atmosphere fields an ice sheet needs and writes them as {region}_smb_{year}.nc
+    # once a month, and pushes the previous ice state (plit, basal melt, discharge)
+    # back into the live model. It is not a standalone repository: it lives inside
+    # ecearth4 under sources/ism-mapper, so this component clones ecearth4 and builds
+    # that subtree. CISSEMBEL is built from the same clone rather than from its own
+    # upstream (gitlab.com/crodehacke/CISSEMBEL) so the two cannot drift apart.
+    #
+    # CISSEMBEL is a LINK-time dependency even for direct-path regions:
+    # ism-mapper_run_mod.F90 has an unguarded `use modEBMworld` and the link line
+    # ends in libebm_cpl.a. At runtime EBMworld is only called for regions with
+    # ISMRGNCIS(n)=.true., so on the PISM-direct path it is never executed.
+    #
+    # The branch is required, not just preferred: cissembel-levante-intel carries
+    # 5799a2a, which fixes an EBMfinalize use-after-free that crashes any run with
+    # a non-CISSEMBEL region. That is the path we use.
+
+    available_versions:
+    - "ece4"
+
+    version: "ece4"
+    git-repository: https://git.smhi.se/jan.streffing/ecearth4.git
+    branch: cissembel-levante-intel
+
+    # The committed Makefile carries ECMWF HPC2020 paths and mpifort. Every setting
+    # it needs is a plain make variable, and command-line macros override file
+    # assignments, so the machine configuration is passed here rather than by
+    # patching a tracked file. OASIS comes from the sibling component in the same
+    # setup dir; note the library name differs from EC-Earth's own build, ours is
+    # libpsmile.a where theirs is libpsmile.MPI1.a.
+    comp_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make coupling && cd ${model_dir}/sources/ism-mapper/src && make FC=mpif90 LD=mpif90 OASIS_BASE_DIR=${model_dir}/../oasis/arch_ecearth OASIS_LIBS="-lpsmile -lmct -lmpeu -lscrip" EBMWORLD_DIR=${model_dir}/sources/ism-mapper/src/CISSEMBEL/src NETCDF_INC_DIR="-I$NETCDFFROOT/include -I$NETCDFROOT/include" NETCDF_LIB_DIR="-L$NETCDFFROOT/lib -L$NETCDFROOT/lib"'
+
+    clean_command: 'cd sources/ism-mapper/src/CISSEMBEL/src && make clean; cd ${model_dir}/sources/ism-mapper/src && make clean'
+
+    install_bins: sources/ism-mapper/bin/ism-mapper.exe
+
+    # Runtime. It has to be a launched MPI rank whenever it runs, or OASIS
+    # enddef fails; general.smb_coupled puts it in include_models.
+    executable: ism-mapper.exe
+    setup_dir: ${general.model_dir}
+    bin_dir: ${setup_dir}/bin
+
+    bin_files:
+        bin: bin
+    bin_sources:
+        bin: ${bin_dir}/${executable}
+    bin_in_work:
+        bin: ${executable}
+
+    # <prefix>_smb_<year>.nc, the monthly accumulation the ice sheet is forced
+    # from. Written to work/; keep it, it is the whole point of the component.
+    outdata_files:
+        smb: smb
+    outdata_sources:
+        smb: ${ice_prefix}_smb_*.nc
+    outdata_in_work:
+        smb: ${ice_prefix}_smb_*.nc
+
+    # The mapper reads <prefix>_pism2ece.nc from cwd. oifs already stages that
+    # same file into work/ (add_input_in_work), and both run there, so there is
+    # nothing extra to stage.
+
+    namelist_dir: ${general.esm_namelist_dir}/ismm/
+    namelists:
+        - "namelist.ismm"
+    config_sources:
+        namelist.ismm: "${namelist_dir}/namelist.ismm"
+
+    # Leg length the mapper integrates over, and where it starts. The mapper
+    # divides its accumulator by the step count, so a wrong RunLengthSec or
+    # TimeStepSec silently rescales every field it hands the ice sheet.
+    runtime_seconds: "$(( ${next_date} - ${start_date} ))"
+    coupling_time_step: ${oasis3mct.ism_atmo_coupling_time_step}
+    # PrepareCISSEMBELForcing is called unguarded and stops if CISSEMBEL_av is
+    # not a multiple of TimeStepSec, so keep them equal while CISSEMBEL is off.
+    cissembel_averaging_window: ${coupling_time_step}
+    start_date_yyyymmdd: "${start_date!syear}${start_date!smonth}${start_date!sday}"
+
+    namelist_changes:
+        namelist.ismm:
+            NAMISMM:
+                RunLengthSec: "${runtime_seconds}"
+                TimeStepSec: "${coupling_time_step}"
+                CISSEMBEL_av: "${cissembel_averaging_window}"
+                StartDate: "${start_date_yyyymmdd}"
+                NumCoupledRegions: 1
+                # We do not wire basal melt and discharge to the runoff-mapper
+                # yet, so do not declare them: unpartnered OASIS fields are at
+                # best noise and at worst the -huge accumulation trap.
+                LSendToRunoffMapper: ".false."
+            NAMISMARR:
+                FileListISM: "${ice_prefix}_pism2ece.nc"
+                PrefixListISM: "${ice_prefix}"
+                CISSEMBELBoolList: ".false."
+                GridListNX: "${nx}"
+                GridListNY: "${ny}"
+
+    contact: "jan.streffing(at)awi.de"
+
+    metadata:
+        Institute: DMI / AWI
+        Description:
+            ISM-mapper, the EC-Earth4 in-line OASIS component that accumulates
+            atmospheric forcing for an ice sheet model and returns the ice state.
+            Bundled with CISSEMBEL, an energy balance surface scheme used for
+            regions flagged ISMRGNCIS.
+        Publications:
+            "Rodehacke, C. B., CISSEMBEL <https://gitlab.com/crodehacke/CISSEMBEL>"

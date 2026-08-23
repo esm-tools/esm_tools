@@ -1,0 +1,228 @@
+# AWI-ESM3 CMIP7 piControl - TCO95-CORE3 - 11T: 46e7a84 WITH REPAIR-FIRST CHECKS
+# =============================================================================
+# ONE DAY.  The question is only whether Laszlo's 46e7a84 becomes usable for us if
+# its assert-first checks are converted to the repair-first policy that BOTH CMIP6
+# predecessors of this configuration used.  If this clears, we stop maintaining a
+# fork at 168a98b and go back onto his line.
+#
+# Binary: bin/guess.46e_repairfirst, md5 de372ab0, branch run/46e7a84-repair-first
+# off dad5729 (= 46e7a84 + cold-start 0218bbb + LUH3 area renormalisation).
+#
+# THE PRECEDENT.  Neither predecessor aborts on drift it could repair:
+#   EC-Earth3 lpjg_v4p1  getlandcover() rescales land-cover fractions by their sum
+#                        with a warning and pushes the residual into NATURAL.  It
+#                        tests closure at 1e-14 -- tighter than 46e7a84 -- but the
+#                        response is to FIX.  8 fail() in landcover.cpp vs our 74.
+#   JSBACH3              scale_cover_fract (mo_land_surface.f90:1485) iterates
+#                        ntiles times rescaling toward sum=1, and calls finish()
+#                        only if a fraction is STILL out of range afterwards.
+#
+# WHAT CHANGED, against the 12 cells that killed 11I on 2026-08-14 (all 61-71N):
+#   9 cells  physical stand sum off by 3.3e-9..4.2e-7 against lc_bookkeeping_tol()
+#            = INPUT_RESOLUTION*1e-3 = 1e-9.  That tolerance is scaled off land-use
+#            INPUT precision but applied to a sum of restart-state floats, whose
+#            error floor is float eps; 4.2e-7 is ~3.5x float32 eps, so NO restart
+#            can pass it.  Now renormalised below 1e-5, fatal above.
+#   3 cells  stand metadata vs physical, 8.0e-4 / 6.1e-3 / 3.3e-2.  The function is
+#            named synchronize_carried_landcover_state and its very next line does
+#            gcst.frac = st_sum[s] -- it is a repair routine that refused to repair.
+#            Physical stands own the pools, so this direction changes no stock.
+#            Now repaired with a per-cell warning below 0.1, fatal above.
+#   1 cell   peatland 0.1917 > available NATURAL 0.0886 at 67.7917N 19.2857E.  The
+#            cause is LUH3 assigning range=0.9114 to Arctic Sweden, mapped wholesale
+#            to PASTURE.  Neither predecessor could hit this: EC-Earth3 reads
+#            PEATLAND from the land-use file itself so there is no second dataset to
+#            disagree with, and JSBACH3 has no peatland type.  Now capped to the
+#            available NATURAL with a warning, surplus left to the normal transfer.
+#
+# PASS = 24/24 steps, no fail(), outdata written, AND the repair messages appear for
+# roughly the expected cells.  Silence in the log would mean the checks were never
+# reached, which is not a pass.
+# =============================================================================
+general:
+    # THE ONE CHANGE vs 11G.  Selects slt_TCO95_CORE3_v2.nc for LPJ-GUESS.  The ICMGG
+    # already takes _v2 independently (general.icmgg_slt_suffix); this is the LPJ-GUESS
+    # soil map only, which c0ecdf5aa had pinned back to the old name.
+    lpjg_slt_suffix: "_v2"
+    user: !ENV ${USER}
+    install_esm_tools_branch: 'feat/awiesm3-v3.4-co2'
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "ab0246"
+    compute_time: "00:20:00"   # room to clear init and step a day
+    initial_date: "1350-01-01"
+    final_date: "1350-01-02"  # 11S: ONE DAY smoke test
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-v3.4/"
+    nday: 1
+    nmonth: 0
+    nyear: 0
+    use_venv: False
+    # Raise per-process FD limit before model launch to avoid LPJ restart
+    # failures when opening many state shards plus forcing NetCDF files.
+    pre_run_commands: "ulimit -n 262144 || ulimit -n 65535 || true"
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "CORE3"
+    time_step: 1200
+    nproc: 1792
+    omp_num_threads: 1
+    lresume: true
+    restart_rate: 1
+    restart_unit: 'd'
+    restart_first: 1
+    tar_binary_restarts: false
+    with_cavity: true
+    vis_sync: false
+    # 06T mixed-layer stack (identical to 09C/11A)
+    add_namelist_changes:
+        namelist.ice:
+            meltpond:
+                pndaspect: 1.3
+                rfracmax: 0.75
+                albpnd: 0.28
+        namelist.tra:
+            tracer_phys:
+                use_momix: true
+                momix_kv: 0.01
+        namelist.cvmix:
+            param_kpp:
+                kpp_av0: 0.003
+                kpp_kv0: 0.003
+                kpp_avbckg: 5.0e-05
+                kpp_kvbckg: 5.0e-06
+        namelist.oce:
+            oce_dyn:
+                spp: false
+    ini_parent_exp_id: "CORE3_restart"
+    ini_parent_date: "2000-01-01"
+    ini_restart_dir: "/work/ab0246/a270092/input/fesom2/restart/CORE3"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                par_oce_restart: /${ini_restart_dir}/fesom.2000.oce.restart/*.nc
+                par_ice_restart: /${ini_restart_dir}/fesom.2000.ice.restart/*.nc
+    further_reading:
+        - fesom.tripyview.yaml
+    cmip7_cmor_output: True
+
+lpj_guess:
+    # mask fix (168a98b) on the June base 2e9ce65, md5 8ce6a8a4. No Raupach, no
+    # 08-07 hardening. Pinned because esm_tools defaults to `executable: guess`,
+    # so every run would otherwise stage whatever bin/guess happens to be.
+    executable: guess.peatlu_policies
+    resolution: "TCO95"
+    mip: cmip7
+    scenario: piControl
+    daily_output: true
+    nproc: 64
+    omp_num_threads: 4
+    lresume: true
+    ini_parent_exp_id: "LPJG-SPINUP_2000Y_TCO95_CORE3_CRUNCEPandCERES_daily_variability"
+    ini_parent_date: "3900-12-31"
+    ini_restart_dir: "/work/bb1469/a270270/runtime/lpjg-spinup/LPJG-SPINUP_2000Y_TCO95_CORE3_CRUNCEPandCERES_daily_variability/run_19000101-38991231/work/"
+    choose_general.run_number:
+        1:
+            restart_in_sources:
+                state: /${ini_restart_dir}/lpjg_state_3901/*
+            restart_in_in_work:
+                state: lpjg_state_${initial_date!syear}/*
+    # Soil-temperature sensitivity: pin the modified template explicitly so
+    # every LPJ-GUESS rank uses useifssoiltemp=1, independent of which
+    # ESM-Tools checkout provides esm_runscripts on PATH.
+    add_config_sources:
+        "guess_ins_[[proc_list-->PROC_NUM]]": /home/a/a270092/esm_tools/namelists/lpj_guess/guess.ins.useifssoiltemp1.peatauth.j2
+    fixed_CO2: 1850
+    fixed_ndep: 1850
+    fixed_LU: 1850
+    file_luh3_states: /work/ab0246/a270092/input/lpj-guess/land_use/TCO95/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2024_TCO95.nc
+    file_luh3_management: /work/ab0246/a270092/input/lpj-guess/land_use/TCO95/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2024_TCO95.nc
+    file_luh3_transitions: /work/ab0246/a270092/input/lpj-guess/land_use/TCO95/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2023_TCO95.nc
+
+oifs:
+    resolution: "TCO95"
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 1
+    mip: cmip7
+    scenario: piControl
+    lresume: false
+    cmip7_cmor_output: True
+    add_namelist_changes:
+        fort.4:
+            NAMCLDP:
+                RVICE: 0.16
+                RCL_INPSEA: 0.2
+                RCL_INPPMIN: 50000.0   # 11G: S4 -- the ONLY change from 11E
+            NAMGWWMS:
+                GGAUSSB: -0.5
+            NAEPHY:
+                LRDALB: False        # Coupled albedo on (LPJG-driven)
+            NAMCUMF:
+                ENTSTPC3: 1          # retained from 09C
+            NAMSURFTUNE:
+                "ECE_TUNE_RVRSMIN(3)": 1000.0
+                "ECE_TUNE_RVRSMIN(4)": 1000.0
+                "ECE_TUNE_RVRSMIN(9)": 225.0
+                ECE_SNOW_SCF: 3
+                ECE_SNOW_SCF_RHOREF: 200.0
+                ECE_SNOW_SCF_DCL: 0.014
+                ECE_SNOW_SCF_DCH: 0.026
+                ECE_SNOW_SCF_MD: 4.70
+                ECE_SNOW_SCF_BL: 1.46
+                ECE_SNOW_SCF_BH: 0.40
+                ECE_SNOW_SCF_DCMAX: 0.30
+                ECE_SNOW_SCF_SCALE: 1.0
+                # 11E change 1: the autumn snow-mass floor, 30 -> 15.
+                ECE_SNOW_SCF_SWEMIN: 15.0
+                # --- K1: snow-free land albedo, vegetation types 1 / 10 / 11 only.
+                # Tundra is DELIBERATELY EXCLUDED so K1 stays orthogonal to the boreal
+                # levers and adds no absorbed shortwave to the Arctic: 60-90N net TOA
+                # stays at -97.463 against a control -97.737 and CERES -97.98.  Do not
+                # add tundra entries -- they compete for the same Arctic energy budget.
+                "ECE_TUNE_RVVEGALB(1,1)": 0.023500
+                "ECE_TUNE_RVVEGALB(1,2)": 0.030240
+                "ECE_TUNE_RVVEGALB(1,3)": 0.252561
+                "ECE_TUNE_RVVEGALB(1,4)": 0.284663
+                "ECE_TUNE_RVVEGALB(10,1)": 0.022748
+                "ECE_TUNE_RVVEGALB(10,2)": 0.026933
+                "ECE_TUNE_RVVEGALB(10,3)": 0.234026
+                "ECE_TUNE_RVVEGALB(10,4)": 0.253862
+                "ECE_TUNE_RVVEGALB(11,1)": 0.047943
+                "ECE_TUNE_RVVEGALB(11,2)": 0.078395
+                "ECE_TUNE_RVVEGALB(11,3)": 0.185338
+                "ECE_TUNE_RVVEGALB(11,4)": 0.262827
+                # --- K1: bare-soil background scale, all four components ---
+                "ECE_TUNE_SOILALB(1)": 0.95
+                "ECE_TUNE_SOILALB(2)": 0.95
+                "ECE_TUNE_SOILALB(3)": 0.95
+                "ECE_TUNE_SOILALB(4)": 0.95
+    add_input_files:
+        dust_clim: dust_clim
+    add_input_sources:
+        dust_clim: '/work/ab0246/a270092/input/oifs-48r1/cmip7-data/dust/onlinedust_v4_rmp.nc'
+    add_input_in_work:
+        dust_clim: 'composition/onlinedust_v4_rmp.nc'
+
+oasis3mct:
+    use_lucia: false
+    lresume: true
+    time_step: 3600       # 1 hour coupling (06T/06V stack)
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 16
+    omp_num_threads: 128
+    compression_level: 3

@@ -65,14 +65,33 @@ def main():
             "regenerated ICMGG lsm looks wrong; refusing to write an empty mask.")
 
     # netCDF4 via xarray-free write to match the (ny=1, nx) layout suorog reads.
+    #
+    # Append, never truncate. This file has two consumers: suorog reads
+    # plit_oifs(ny, nx) in OIFS grid-point order, and the ISM-mapper reads
+    # plit(time, y, x) on the PISM grid, written by the pism2esm side. Opening
+    # it "w" dropped the ISM-mapper's variable and its time/y/x dimensions, and
+    # the mapper then aborted at startup on nf90_inq_dimid with NC_EBADDIM.
+    import os
     import netCDF4 as nc
-    with nc.Dataset(out, "w", format="NETCDF4") as ds:
-        ds.createDimension("ny", 1)
-        ds.createDimension("nx", plit.size)
-        v = ds.createVariable("plit_oifs", "f8", ("ny", "nx"))
+    mode = "a" if os.path.exists(out) else "w"
+    with nc.Dataset(out, mode, format="NETCDF4") as ds:
+        if "ny" not in ds.dimensions:
+            ds.createDimension("ny", 1)
+        if "nx" not in ds.dimensions:
+            ds.createDimension("nx", plit.size)
+        elif ds.dimensions["nx"].size != plit.size:
+            raise SystemExit(
+                f"make_plit_oifs: {out} has nx={ds.dimensions['nx'].size}, "
+                f"this ICMGG gives {plit.size}")
+        if "plit_oifs" not in ds.variables:
+            v = ds.createVariable("plit_oifs", "f8", ("ny", "nx"))
+        else:
+            v = ds["plit_oifs"]
         v.units = "1"
         v.long_name = "Antarctic land-ice mask (1=ice), OIFS GP order"
         v[:] = plit.reshape(1, -1)
+        kept = [n for n in ds.variables if n != "plit_oifs"]
+        print(f"make_plit_oifs: mode={mode}, kept {kept}")
 
 
 if __name__ == "__main__":

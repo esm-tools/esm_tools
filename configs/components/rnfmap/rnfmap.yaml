@@ -31,6 +31,7 @@ rnfmap:
     - v1.1
     - v1.2
     - v1.3
+    - v1.4-ismm
 
     runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}.nc'
 
@@ -83,6 +84,25 @@ rnfmap:
           - rnfmap/rnfmap.env.yaml
         destination: rnfmap
         runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+      # EC-Earth4's runoff mapper: takes the ice sheet model's basal melt and
+      # discharge, and can drop the atmosphere's calving per drainage basin.
+      # Needs NumCoupledRegions and the NAMRNFMAPARRAYS group, so it comes with
+      # its own namelist.
+      v1.4-ismm:
+        branch: ismm-freshwater
+        further_reading:
+          - rnfmap/rnfmap.env.yaml
+        destination: rnfmap
+        runoff_file: '${input_dir}/runoff_maps${runoff_maps_name}_v1.1.nc'
+        # Versioned directory, not a suffixed filename: the staged name in work/
+        # comes from the source basename, so a namelist.runoffmapper.ismm lands
+        # under that name and the model dies looking for namelist.runoffmapper.
+        config_sources:
+                namelist.runoffmapper: "${namelist_dir}/1.4-ismm/namelist.runoffmapper"
+        add_namelist_changes:
+                namelist.runoffmapper:
+                        NAMRNFMAP:
+                                NumCoupledRegions: 0
       agrif:
         branch: agrif
         further_reading:

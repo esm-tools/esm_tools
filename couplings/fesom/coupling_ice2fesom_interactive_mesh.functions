@@ -58,16 +58,15 @@ fi
 function ice2fesom {
     echo " *** S T A R T I N G    ice2fesom ***"
 
+    rm -f "${COUPLE_DIR}/.oasis_weights_stale"
+
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
     . ${FUNCTION_PATH}/../pism/coupling_ocean2pism.functions
 
     echo "ICE_TO_FESOM=${ICE_TO_FESOM:-0}"
-    if [[ "x${ICE_TO_FESOM:-0}" == "x0" ]]; then
-        echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
-    else
-        iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
-    fi
+    # Iceberg generation moved BELOW build_submesh: the bergs must be placed in
+    # the ocean this leg actually has, not the one the previous leg had.
 
     # Concurrent coupling: this leg consumes the sibling's chunk-(N-1) products.
     # Require the marker (belt-and-braces; the Python park/revive already
@@ -83,6 +82,12 @@ function ice2fesom {
         unset _i2f_tag
     fi
 
+    # With a static ocean there is no submesh to wait for, so the bergs are
+    # generated here against the mesh FESOM runs on unchanged.
+    if [[ "x${CHANGE_OCEAN:-0}" != "x1" ]] && [[ "x${ICE_TO_FESOM:-0}" != "x0" ]]; then
+        iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+    fi
+
     # Build the dynamic submesh from the max-mesh and the PISM ice geometry
     # (latest_ice_geometry.nc, produced by pism2esm), then remap the previous
     # chunk's FESOM restart from the old mesh onto the new submesh before the
@@ -90,6 +95,14 @@ function ice2fesom {
     if [[ "x${CHANGE_OCEAN:-0}" == "x1" ]]; then
         couple_timer "ice2fesom: build_submesh"
         build_submesh           || couple_fail "ice2fesom FAILED: build_submesh"
+        # Bergs go in here, after the submesh exists and before anything reads
+        # the berg files.
+        if [[ "x${ICE_TO_FESOM:-0}" == "x0" ]]; then
+            echo " *   ICE_TO_FESOM=0 -> skipping iceberg-forcing prep"
+        else
+            couple_timer "ice2fesom: prepare_iceberg_forcing"
+            iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
+        fi
         # The FESOM node count changed, so the OASIS feom grid description and the
         # feom remap weights baked for the previous mesh are stale (MCT aborts on
         # the first exchange: length of x /= columns of sMat). Regenerate them for
@@ -109,10 +122,9 @@ function ice2fesom {
             _rgw_pid=$!
 
             if ! remap_fesom_restart ; then
-                echo " *** ice2fesom FAILED: remap_fesom_restart ***"
                 kill ${_rgw_pid} 2>/dev/null ; wait ${_rgw_pid} 2>/dev/null
                 echo "----- backgrounded regenerate_oasis_weights output -----"; cat "${_rgw_log}" 2>/dev/null
-                exit 1
+                couple_fail "ice2fesom FAILED: remap_fesom_restart"
             fi
 
             wait ${_rgw_pid} ; _rgw_rc=$?
@@ -120,9 +132,30 @@ function ice2fesom {
             cat "${_rgw_log}" 2>/dev/null
             echo "----- end regenerate_oasis_weights output (rc=${_rgw_rc}) -----"
             if [ ${_rgw_rc} -ne 0 ] ; then
-                echo " *** ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc}) ***"; exit 1
+                touch "${COUPLE_DIR}/.oasis_weights_stale"
+                couple_fail "ice2fesom FAILED: regenerate_oasis_weights (rc=${_rgw_rc})"
             fi
-            unset _rgw_log _rgw_pid _rgw_rc
+
+            # The weights must match the mesh we just built them for. A silent
+            # mismatch is expensive: the leg starts, runs to the first exchange
+            # and dies in MCT with a column-count error on all ranks.
+            _rgw_nod=$(head -1 "${COUPLE_DIR}/latest_submesh/nod2d.out" 2>/dev/null | tr -d ' ')
+            if [ -n "${_rgw_nod}" ] ; then
+                for _rgw_f in "${COUPLE_DIR}/oasis_regen"/rmp_*feom*.nc ; do
+                    [ -e "${_rgw_f}" ] || continue
+                    case "$(basename ${_rgw_f})" in
+                        rmp_feom_to_*) _rgw_dim=src_grid_size ;;
+                        *)             _rgw_dim=dst_grid_size ;;
+                    esac
+                    _rgw_have=$(ncdump -h "${_rgw_f}" | awk -v d="${_rgw_dim}" '$1==d{print $3; exit}')
+                    if [ "${_rgw_have}" != "${_rgw_nod}" ] ; then
+                        touch "${COUPLE_DIR}/.oasis_weights_stale"
+                        couple_fail "ice2fesom FAILED: $(basename ${_rgw_f}) has ${_rgw_dim}=${_rgw_have}, the new mesh has ${_rgw_nod} nodes"
+                    fi
+                done
+                echo " *   weights match the new mesh (${_rgw_nod} nodes)"
+            fi
+            unset _rgw_log _rgw_pid _rgw_rc _rgw_nod _rgw_f _rgw_dim _rgw_have
 
             # Carry the OASIS coupling state across the mesh change: remap the feom
             # fields in the coupling restarts (rstos/rstas) onto the new node set,
@@ -475,26 +508,9 @@ NML
         return ${rc}
     fi
 
-    # --- Freezing-point cap on newly-under-ice columns ------------------------
-    # Where the moving geometry puts new ice over previously-open water
-    # (ulevels_new > ulevels_old) the remap carries the above-freezing
-    # open-ocean temperature straight under the new ice shelf; FESOM then melts
-    # against it in a runaway (large basal heat/freshwater flux into the thin
-    # ice-base layer) -> cfl_z blowup within a few days, ringing the whole
-    # margin. Cap T at the in-situ freezing point on those columns so there is
-    # no spurious thermal driving (salinity untouched).
-    local cap_py=${OCP_WEIGHTGEN_DRIVER_PY:-python}   # needs xarray + numpy
-    local cap_script=${FUNCTION_PATH}/../fesom/remap_restart/cap_new_cavity_temp.py
-    if [ -f "${cap_script}" ]; then
-        echo " *   capping new-cavity temperature to freezing (cap_new_cavity_temp.py)"
-        ${cap_py} "${cap_script}" \
-            "${COUPLE_DIR}/latest_submesh" \
-            "${MAXMESH_DIR_fesom}/cavity_nlvls.out" \
-            "${outdir}/temp.nc" "${outdir}/salt.nc" \
-            || { echo " *   cap_new_cavity_temp FAILED"; return 1; }
-    else
-        echo " *   WARNING: cap_new_cavity_temp.py not found (${cap_script}); skipping freezing cap"
-    fi
+    # Columns that the moving geometry puts under new ice are seeded by
+    # seed_newly_iced_from_cavity in remap_restart/mo_remap_fields.F90, from the
+    # nearest column that is cavity in both meshes. Nothing to do here.
 
     echo "     ...done. remapped restart -> ${outdir}"
 }
@@ -684,6 +700,63 @@ function fix_namcouple_feom_dim {
     echo " *   fix_namcouple_feom_dim: feom grid dim ${full} -> ${sub} in ${nc}"
 }
 
+function link_oifs_icm_into_ocp_tool {
+    # ocp-tool modifies OIFS's initial files, and it reads the unmodified ones
+    # from its own input/openifs_input_default/, named after the experiment id in
+    # its config. A fresh ocp-tool checkout ships only a small sample set, so a
+    # colleague's install has no ICMGG for our experiment and the regen fails on
+    # a missing file. Link them in from the same pool paths OIFS is started from.
+    #
+    # Everything here comes from env_fesom.py: OCP_OPENIFS_INPUT_DIR,
+    # OCP_TEMPLATE_CONFIG, OIFS_PREPIFS_EXPID and the four OIFS_ICM* sources.
+    local dir=${OCP_OPENIFS_INPUT_DIR:-${OCP_TOOL_DIR:+${OCP_TOOL_DIR}/input/openifs_input_default}}
+    [ -n "${dir}" ] || return 0
+    mkdir -p "${dir}" 2>/dev/null
+    if [ ! -w "${dir}" ]; then
+        echo " *   ocp-tool ICM links: ${dir} not writable, leaving it alone"
+        return 0
+    fi
+
+    # The link must carry the id ocp-tool looks for, which is experiment_name in
+    # its config. That is not always the id OIFS ran under: ICMCL in particular
+    # is linked under the prepifs id while the pool file carries the input id.
+    local expid
+    expid=$(sed -n 's/^[[:space:]]*experiment_name:[[:space:]]*"\{0,1\}\([A-Za-z0-9]\{1,\}\).*/\1/p' \
+                "${OCP_TEMPLATE_CONFIG}" 2>/dev/null | head -1)
+    [ -n "${expid}" ] || expid=${OIFS_PREPIFS_EXPID}
+    if [ -z "${expid}" ]; then
+        echo " *   ocp-tool ICM links: no experiment id found, skipping"
+        return 0
+    fi
+
+    local linked=0 missing=0 pair name src
+    for pair in "ICMGG${expid}INIT|${OIFS_ICMGG_INIT}" \
+                "ICMGG${expid}INIUA|${OIFS_ICMGG_INIUA}" \
+                "ICMSH${expid}INIT|${OIFS_ICMSH_INIT}" \
+                "ICMCL${expid}INIT|${OIFS_ICMCL_INIT}" ; do
+        name=${pair%%|*}
+        src=${pair#*|}
+        [ -n "${src}" ] || continue
+        # A real file already there is somebody's deliberate copy. Only ever
+        # replace a symlink, so an existing install is never damaged.
+        if [ -e "${dir}/${name}" ] && [ ! -L "${dir}/${name}" ]; then
+            continue
+        fi
+        if [ ! -e "${src}" ]; then
+            echo " *   ocp-tool ICM links: no source for ${name} at ${src}"
+            missing=$((missing+1))
+            continue
+        fi
+        if ln -sfn "${src}" "${dir}/${name}" 2>/dev/null; then
+            linked=$((linked+1))
+        else
+            echo " *   ocp-tool ICM links: could not link ${name}"
+            missing=$((missing+1))
+        fi
+    done
+    echo " *   ocp-tool ICM links for ${expid}: ${linked} linked, ${missing} unresolved -> ${dir}"
+}
+
 function regenerate_oasis_weights {
     # Regenerate the OASIS feom grid description and the feom remap weights for
     # the new submesh, using ocp-tool driving the coupled model's own pyOASIS.
@@ -708,6 +781,10 @@ function regenerate_oasis_weights {
     : "${OCP_WEIGHTGEN_WORKER_PY:?regenerate_oasis_weights: OCP_WEIGHTGEN_WORKER_PY not set}"
     : "${OCP_TEMPLATE_CONFIG:?regenerate_oasis_weights: OCP_TEMPLATE_CONFIG not set}"
 
+    # Before anything reads ocp-tool's input/: make sure this experiment's OIFS
+    # initial files are actually in there.
+    link_oifs_icm_into_ocp_tool
+
     local out_dir=${COUPLE_DIR}/oasis_regen
     local submesh=${COUPLE_DIR}/latest_submesh
     rm -rf "${out_dir}"
@@ -731,17 +808,22 @@ function regenerate_oasis_weights {
 from pathlib import Path
 from ocp_tool.dynamic_regen import regenerate_for_submesh
 from ocp_tool.oasis_weights import (
-    generate_weights, _set_feom_mask_active, _strip_feom_corners)
+    generate_weights, awiesm3_feom_links, awiesm3_ismp_links,
+    _set_feom_mask_active, _strip_feom_corners)
 
 method = '${OASIS_REMAP_METHOD:-existing}'
 use_corners = (method == 'conserv')
 
 # 1. Consistent grids/masks/areas (updated A096 + feom) + modified ICMGG + runoff
 #    LSM + LPJ-GUESS slt for the new submesh. No weights yet (generate_rmp=False).
+#    write_oasis_grid is on because the weights below are built against the
+#    ocean grid in these files. The pool build leaves it off, since FESOM writes
+#    its own feom at runtime, but here there is nothing to build weights from.
 regenerate_for_submesh(
     mesh_dir='${submesh}', grid_name='${grid_tag}', out_dir='${out_dir}',
     template='${OCP_TEMPLATE_CONFIG}', ocp_tool_dir='${OCP_TOOL_DIR}',
-    python_exe='${OCP_WEIGHTGEN_DRIVER_PY}', generate_rmp=False)
+    python_exe='${OCP_WEIGHTGEN_DRIVER_PY}', generate_rmp=False,
+    write_oasis_grid=${OCP_WRITE_OASIS_GRID:-True})
 
 # 2a. Permute feom.* to FESOM's RUNTIME exchange ordering (my_list / Apple
 #     partition) BEFORE the weights are generated. Without this the weights are
@@ -761,7 +843,14 @@ if not use_corners:
     _strip_feom_corners(Path('${out_dir}') / 'grids.nc', prefix='feom')
 
 # 3. rmp weights using the model's own pyOASIS build + OpenMPI worker interpreter.
-generate_weights('${out_dir}', atm_grid='A096', method=method,
+#    With smb_coupled the OIFS<->ISM-mapper links join the same run: they remap
+#    from the A096 mask regenerated above, so they cannot be built separately.
+links = awiesm3_feom_links(atm_grid='A096', method=method)
+if ${SMB_COUPLED:-0}:
+    links += awiesm3_ismp_links(atm_grid='A096', ice_grid='${ISM_GRID:-ismp}',
+                                method='${ISM_REMAP_METHOD:-gauswgt}')
+print('weight links:', [(l.source, l.target, l.map_name) for l in links], flush=True)
+generate_weights('${out_dir}', links=links, atm_grid='A096', method=method,
                  threads=${OCP_WEIGHTGEN_THREADS:-8}, use_corners=use_corners,
                  worker_python='${OCP_WEIGHTGEN_WORKER_PY}',
                  oasis_build_path='${OASIS_BUILD_PATH}')
@@ -774,7 +863,9 @@ subprocess.check_call(['${OCP_WEIGHTGEN_DRIVER_PY}',
                        '${out_dir}', '${submesh}', '${NPROC_fesom}'])
 PYEOF
 
-    local nlinks=${OCP_WEIGHTGEN_NLINKS:-4}
+    # One task per link so they run concurrently. awiesm3_feom_links returns 5,
+    # plus 3 for the ice sheet.
+    local nlinks=${OCP_WEIGHTGEN_NLINKS:-$([ "${SMB_COUPLED:-0}" = "1" ] && echo 8 || echo 5)}
     if [ -n "${SLURM_JOB_ID:-}" ]; then
         # Already inside an allocation (couple_in on a compute node): the per-link
         # srun steps run within it (concurrent if it has >= nlinks nodes/tasks).
@@ -878,9 +969,30 @@ SBEOF
         # coastline (reusing another leg's file flips the wrong cells). The
         # updtim KSTEP=0 hook then flips the newly-grounded sea cells to land and
         # seeds a freezing skin/soil T, preventing the SURFPP divide-by-zero.
-        local plit_py plit_out
+        local plit_py plit_out p2e_py
         plit_py=${FUNCTION_PATH}/make_plit_oifs.py
         plit_out=${COUPLE_DIR}/antar_pism2ece.nc
+
+        # The ISM-mapper's half of this file first: it reads plit(time,y,x) on
+        # the PISM grid, and nothing in the pipeline wrote it. Chunk 1 only gets
+        # away with it because its pre-staged pool copy happens to carry both
+        # halves; from chunk 2 the file is created here and, with only the OIFS
+        # half in it, the mapper aborts at startup on nf90_inq_dimid:
+        #   *EE*OASISNetCDF: Invalid dimension ID or name
+        # Built from THIS leg's geometry, so the mask tracks the moving ice
+        # sheet instead of being frozen at the initial state.
+        p2e_py=${FUNCTION_PATH}/../pism/make_pism2ece_plit.py
+        if [ -f "${p2e_py}" ] && [ -f "${COUPLE_DIR}/latest_ice_geometry.nc" ]; then
+            [ -f "${plit_out}" ] || ${OCP_WEIGHTGEN_DRIVER_PY:-python} -c \
+                "import netCDF4 as nc; nc.Dataset('${plit_out}','w').close()"
+            if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${p2e_py}" \
+                    "${COUPLE_DIR}/latest_ice_geometry.nc" "${plit_out}" ; then
+                couple_fail "ice2fesom FAILED: make_pism2ece_plit"
+            fi
+        else
+            echo " *   WARNING: cannot build the PISM-grid plit (${p2e_py} or"
+            echo "     latest_ice_geometry.nc missing); the ISM-mapper will abort"
+        fi
         if [ -f "${plit_py}" ]; then
             ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${plit_py}" "${icmgg}" "${plit_out}" \
                 && echo "     ...generated per-leg OIFS plit mask -> $(basename "${plit_out}")" \
@@ -1048,6 +1160,67 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
 
     cdo -s -timmean -selname,tendency_of_ice_amount_due_to_discharge \
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+
+    # Turn that discharge into the berg set for THIS leg's mesh. A subprocess
+    # under the ocp-tool python, like the weight regeneration: the generator
+    # needs pyfesom2, which does not import in the python esm_runscripts runs.
+    # icb_felem indexes the mesh, so the set is only valid for the mesh it was
+    # built on, which is why it is rebuilt here rather than staged from a pool.
+    # The generator reads lon_bnds/lat_bnds to place bergs inside a discharge
+    # cell, and cdo cannot put them there: the PISM griddes carries centres only.
+    local bounds_py=${FUNCTION_PATH}/../pism/add_cell_bounds.py
+    # PYTHONPATH: add_cell_bounds imports ocp_tool for the projection, and the
+    # ocp-tool python does not have the package on its path by itself. The
+    # weight regeneration gets away without this by running from the repo root.
+    if ! PYTHONPATH="${OCP_TOOL_DIR}:${PYTHONPATH}" \
+            ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${bounds_py}" \
+            "${COUPLE_DIR}/latest_discharge.nc" "${ICB_BASIN_FILE}" ; then
+        couple_fail "ice2fesom FAILED: add_cell_bounds"
+    fi
+
+    # Re-seat the carried bergs first. Their iceberg_elem is a global index on
+    # the mesh that wrote the restart, and a mesh-change leg renumbers the
+    # elements, so each one silently points at a different element and dumps its
+    # meltwater there, divided by that element's node area. Setting
+    # find_iceberg_elem back to true makes FESOM re-derive the element from the
+    # berg's own lon/lat, which is what it does for a newly calved berg anyway.
+    # Must run before make_icebergs, which counts the carried bergs.
+    local reseat_py=${FUNCTION_PATH}/reseat_iceberg_restart.py
+    if [ -f "${reseat_py}" ] && [ -n "${ICB_RESTART_ISM:-}" ] \
+            && [ -f "${ICB_RESTART_ISM}" ] && [ -d "${COUPLE_DIR}/latest_submesh" ]; then
+        if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${reseat_py}" \
+                "${COUPLE_DIR}/latest_submesh" "${ICB_RESTART_ISM}" ; then
+            couple_fail "ice2fesom FAILED: reseat_iceberg_restart"
+        fi
+    fi
+
+    local icb_py=${FUNCTION_PATH}/make_icebergs.py
+    if [ -z "${ICB_BASIN_FILE:-}" ]; then
+        couple_fail "ice2fesom FAILED: fesom.basin_file unset, the berg generator needs the ice sheet drainage basins"
+    fi
+    # The submesh, not MESH_DIR_fesom. The mother mesh is the maximum extent and
+    # includes cells presently under grounded ice, so placing bergs in it puts
+    # them tens of km inland of this leg's coastline: on chunk 2, 89 bergs at a
+    # median 29 km and up to 89 km from the nearest ocean element, 285 Gt of
+    # discharge, concentrated in Wilkes/Adelie and the Peninsula where the
+    # coastline is finest.
+    local icb_mesh=${MESH_DIR_fesom}
+    if [ -d "${COUPLE_DIR}/latest_submesh" ]; then
+        icb_mesh=${COUPLE_DIR}/latest_submesh
+    else
+        echo " *   note: no latest_submesh, placing bergs on ${MESH_DIR_fesom}"
+    fi
+    if ! ${OCP_WEIGHTGEN_DRIVER_PY:-python} "${icb_py}" \
+            "${COUPLE_DIR}/latest_discharge.nc" \
+            "${icb_mesh}" \
+            "${COUPLE_DIR}" \
+            "${ICB_BASIN_FILE}" \
+            --restart "${ICB_RESTART_ISM:-}" \
+            --seed "${CURRENT_YEAR_fesom:-0}" \
+            --cavities "${ICB_USE_CAVITIES:-1}" \
+            --scaling "${ICB_SCALING:-1,1,1,1,1,1}" ; then
+        couple_fail "ice2fesom FAILED: make_icebergs"
+    fi
 
     use_icesheet_coupling=1
     echo "     ...done."

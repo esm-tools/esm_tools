@@ -1,0 +1,32 @@
+# Single-cycle smoke test for the OIFS<->ISM-mapper coupling: one awiesm3 year
+# then one PISM decade, then stop. The point is OASIS enddef with ism-mapper.exe
+# as a sixth component; everything after that is a bonus.
+# Disposable. eval5_* stays the 5-cycle evaluation.
+general:
+        # Concurrent chain: the AWI leg and the PISM decade run at the same time
+        # and hand over through <model>_chunk_<N>.done markers in couple/, instead
+        # of PISM's decade serialising behind the ocean year.
+        coupling_mode: concurrent
+        add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
+                - model1
+                - model2
+        iterative_coupling: True
+        use_venv: False
+        user: !ENV ${USER}
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        account: ab0246
+        with_recom: False
+        # Icebergs carry PISM's discharge to the ocean.
+        with_icb: True
+
+model1:
+        setup_name: awiesm3
+        runscript: fast_ocean.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: fast_pism.yaml
+        chunk_size: 10
+        chunk_unit: "years"

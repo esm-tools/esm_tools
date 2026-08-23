@@ -10,25 +10,36 @@ general:
     lresume: false
     coupled_setup: true
 
-    # Suffix on the OIFS ICMGG_INIT that ocp-tool derives from the fitted land-sea
-    # mask. ocp-tool before 863c94a gave every cell it flipped from ocean to land
-    # soil type 6 and left the rest of that cell's ocean column in place, so the
-    # unsuffixed files carry dry organic coastal points. New versions take _v2
-    # without being listed anywhere: only the three released tags below opt back
-    # out, in choose_version.
+    # ocp-tool before 863c94a gave every cell it flipped from ocean to land soil
+    # type 6 and left the rest of that cell's ocean column in place, so the
+    # unsuffixed files carry dry organic coastal points. The repaired files sit
+    # beside them under _v2. New versions take them without being listed anywhere:
+    # only the three released tags below opt back out, in choose_version.
     icmgg_suffix: "_v2"
 
-    # The LPJ-GUESS soil type is a separate setting, and it stays on the old map.
+    # The LPJ-GUESS soil map is a separate setting from the ICMGG, because whether
+    # the repaired map is safe depends on the spinup state a run resumes.
+    #
     # Soil::serialize (soil.cpp:4311) archives Frac_water, Frac_ice, Frac_air, whc,
-    # alwhc and aw_max, which are absolute volume fractions, but it does NOT archive
-    # soiltype: that is rebuilt from the slt file on every run. The repaired map
-    # moves 302 simulated cells on TCO95_CORE3 and 3371 on TCO319_CORE3 off soil
-    # code 6, all north of the alat > -60 cut in eceframework.cpp:2720, so
-    # LPJ-GUESS really runs them. A run resuming an old state then meets one
-    # porosity holding another one's fractions, which is the "Illegal Frac_air"
-    # family (soil.cpp:3156) and the invalid water content fails at
-    # soil.cpp:3430-3433. Regenerating the spinup state against _v2 is what would
-    # let this flip.
+    # alwhc and aw_max, which are absolute volume fractions, and does NOT archive
+    # soiltype: that is rebuilt from the slt file every run. So a cell that has
+    # state AND changes soil code resumes with one porosity holding another one's
+    # fractions, which is the "Illegal Frac_air" family (soil.cpp:3156) and the
+    # invalid water content fails at soil.cpp:3430-3433. A cell that changes soil
+    # code but has NO state is fine: it cold-starts from landcover_init, which
+    # guessserializer 0218bbb made reachable and state_remap 0 keeps honest.
+    #
+    # Which cells those are, measured against the pooled states:
+    #   TCO95-CORE3  / lpjg_state_3850    314 cells change,     0 have state
+    #   TCO319-DARS2 / lpjg_state_3350   6184 cells change,  1328 have state
+    # The changed cells are the ocean-to-land flips, so on CORE3 they were ocean
+    # when the spinup ran and never had state. The DARS2 state does not line up
+    # that way, and 1328 cells there would break.
+    #
+    # So this stays "" until the DARS2 state has those 1328 cells dropped, at which
+    # point they cold-start too and "_v2" is safe everywhere. Dropping them is
+    # cheap: the state index is (lon, lat, position) triples with a trailing count,
+    # so removing a cell is an index edit, not a respin.
     lpjg_slt_suffix: ""
 
     # Default off; set true in a runscript to enable the concentration-driven
@@ -39,6 +50,60 @@ general:
     # tied): any awiesm3 version enables it with interactive_mesh: true. Gates the
     # coupling config in the fesom/oifs sections (choose_general.interactive_mesh).
     interactive_mesh: false
+
+    # OIFS->PISM surface mass balance via the ISM-mapper, and the PISM->OIFS
+    # orography/plit return. ismm is always built (it is in the develop-is
+    # coupling); this gates whether it is launched and its OASIS fields exist.
+    # ECE_CPL_ISMM belongs in the runscript next to ECE_LANDICE/ISMRGNPFX:
+    # NAMECECFG is add_'d per chunk there and a second add_ here collides.
+    smb_coupled: false
+
+    # The ice sheet's discharge reaching the ocean as icebergs, replacing the
+    # atmosphere's snow-cap calving over the ice sheet. Both halves have to move
+    # together: switching off the calving alone takes about 2000 Gt/yr out of
+    # the Southern Ocean with nothing put back.
+    ism_freshwater_return: false
+
+    # The iceberg module. Set it in the driver runscript next to with_recom:
+    # fesom's choose_with_icb resolves before a general-level choose_ block does,
+    # so setting it from one here leaves the whole iceberg block off.
+    with_icb: false
+
+    # Counting the generated bergs into icebergs%ib_num. It has to go in the
+    # general recipe: the prepcompute_recipe under fesom's choose_with_icb is
+    # never read, which is also why that block's two fesom_icb_pism steps have
+    # never run. Before modify_namelists, which loads, modifies and writes the
+    # namelists in one step: anything set after it never reaches disk.
+    # ismm only joins the launch when the SMB fields exist. A launched ismm with
+    # no coupled fields deadlocks OASIS, so the two must move together.
+    choose_general.smb_coupled:
+        true:
+            add_include_models:
+                - ismm
+
+    choose_general.with_icb:
+        true:
+            prepcompute_recipe:
+            - "compile_model"
+            - "_show_simulation_info"
+            - "create_new_files"
+            - "create_empty_folders"
+            - "prepare_coupler_files"
+            - "assemble"
+            - "log_used_files"
+            - "_write_finalized_config"
+            - "wait_for_iterative_coupling"
+            - "copy_files_to_thisrun"
+            - "write_env"
+            - "preprocess"
+            - "count_icebergs_into_namelist"
+            - "modify_namelists"
+            - "append_to_namelist"
+            - "modify_files"
+            - "copy_files_to_work"
+            - "report_missing_files"
+            - "compute_and_log_file_checksums"
+            - "database_entry"
 
     include_models:
         - fesom
@@ -127,14 +192,20 @@ general:
             major_version: v3.4
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
-            # NB: pism + debm are built via the coupling above, but must NOT be
-            # added as awiesm3 runtime models. add_include_models launches them in
+            # NB: pism + debm + ismm are built via the coupling above, but must NOT
+            # be added as awiesm3 runtime models. add_include_models launches them in
             # the awiesm3 OASIS/MPMD job, where pismr would join MPI_COMM_WORLD
             # without being one of OASIS's components ($NBMODEL: fesom OpenIFS
             # guess rnfma xios.x) -> OASIS deadlocks at init. PISM runs as model2
             # of the iterative coupling; dEBM is invoked from PISM's coupler.
+            # (ismm DOES have to join the launch once it is switched on, but via
+            # general.smb_coupled, not from here.)
             add_include_models:
                 - xios
+            # Build-only components come in via the coupling and land here as root
+            # sections nothing declares; esm-tools >=6.54 rejects those.
+            add_other_components:
+                - debm
             oasis_with_yac: false
             xios_interp_order: 1
             with_co2_tracer: false
@@ -306,8 +377,10 @@ oifs:
                         nproc: 1
                         run_after: tidy
                         script_dir: ${general.esm_couplings_dir}/oifs
-                        script: just_copy_stuff.functions
-                        call_function: just_copy
+                        # Hands the ISM-mapper SMB over when smb_coupled is on,
+                        # and falls back to the fixed paleo file when it is not.
+                        script: smb2ice.functions
+                        call_function: smb2ice
                         env_preparation: env_oifs2ice.py
 
     res_level: ${resolution}${levels}
@@ -339,6 +412,25 @@ oifs:
     ICMGG_INIT_name: "_${fesom.resolution}${general.icmgg_suffix}"
 
     # CO2 tracer is turned on, if at least one of the couplings for co2 is active    
+
+    # OIFS side of the ISM coupling. The three _ISM fields are what ecearth.F90
+    # declares OASIS_OUT for the direct path; PLIT_<region> comes back in.
+    # Precip/Runoff are already declared for the ocean path and are reused.
+    choose_general.smb_coupled:
+        true:
+            # Land fields go on atmr (R096), the land-masked atmosphere grid.
+            # atma masks land out, so over Antarctica 95% of source cells south
+            # of 75S are excluded and the remap draws from the Southern Ocean.
+            # Only SST belongs on the ocean-masked grid.
+            add_coupling_fields:
+                A_Evap_ISM:
+                    grid: atmr
+                A_Soil4T_ISM:
+                    grid: atmr
+                A_SST_ISM:
+                    grid: atma
+                PLIT_${ismm.ice_prefix}:
+                    grid: atma
 
     choose_general.with_co2_oce_coupling:
         true:
@@ -407,6 +499,37 @@ fesom:
     lresume: false
     nproc: 72
     omp_num_threads: 1
+
+    # Icebergs carry PISM's discharge into the ocean. The plugin builds them per
+    # leg from the discharge and the mesh that leg runs on, so nothing is seeded
+    # from a file: a fixed berg set would be wrong the first time the mesh moves.
+    with_icb: ${general.with_icb}
+    choose_general.ism_freshwater_return:
+        true:
+            # Cavities are open, so the berg generator has to know not to place
+            # bergs under the shelves.
+            use_cav: true
+            # Per size bin ([0.1, 1, 10, 100, 1000] km2): how many real bergs one
+            # model berg stands for. The awiesm-2.1 values, which have been run.
+            # 63015 -> 1174 bergs here.
+            #
+            # Not a free cost knob. icb_thermo scales the fluxes to the ocean by
+            # scaling(ib) but deliberately not the melt: a model berg decays at
+            # the rate of a berg of its chunk's MEAN size. Melt is non-linear in
+            # size, so the factors change the answer, and these are the ones that
+            # come with a run behind them.
+            #
+            # For reference: the uncompressed set costs +26% runtime against
+            # ib_num=0 (0.0948 vs 0.0754 s/step measured), so sampling more is
+            # affordable here if it is ever worth testing against this baseline.
+            # The CAV-ICB reference goes further the other way, [250,100,30,2,1,1]
+            # for 485 bergs, on a finer mesh where advection bites harder.
+            scaling_factor: [100, 50, 10, 1, 1, 1]
+
+            # basin_file says which PISM drainage basin each discharge cell
+            # belongs to. It has to come from the runscript: pism is a separate
+            # setup under iterative coupling, so its domain and resolution are
+            # not in this namespace.
     # ocp-tool (the moving-coastline OASIS/ICMGG regen toolchain) is conda-native
     # -- python-eccodes/python-cdo/basemap from conda-forge -- so it cannot run
     # from the pip venv; OCP_TOOL_DIR must be a real checkout that carries the code
@@ -574,6 +697,14 @@ fesom:
                 subjobs:
                     couple_in:
                         nproc: 1
+                        # Deliberately NOT submit_to_batch_system. Driven by the
+                        # workflow this runs inside PISM's allocation, which is 4
+                        # nodes, and regenerate_oasis_weights calls
+                        # `srun -n 1 --cpus-per-task=64` inside it. Given its own
+                        # single-node job that inner srun can never get a step
+                        # ("step creation temporarily disabled, Requested nodes are
+                        # busy") because the parent already holds the node, and
+                        # couple_in spins until the walltime.
                         run_before: prepcompute
                         script: coupling_ice2fesom_interactive_mesh.functions
                         script_dir: ${general.esm_couplings_dir}/fesom
@@ -581,8 +712,7 @@ fesom:
                         env_preparation: env_fesom.py
                         run_only: first_run_in_chunk
                         # chunk-1 artifacts derive from PISM's initial geometry and
-                        # are pre-staged from the pool; skipping chunk 1 keeps the
-                        # heavy regen off the launch path (login-node friendly).
+                        # are pre-staged from the pool, so chunk 1 has no regen to do.
                         skip_chunk_number: 1
                     couple_namcouple:
                         # MUST run every leg incl. chunk 1: prepcompute writes the
@@ -855,6 +985,17 @@ lpj_guess:
         - ${work_dir}/landuse
         - ${work_dir}/fire
 
+    # The soil type is the slt field of the ICMGG, so in principle it should follow
+    # the mask each leg runs on: when the coastline moves, a cell that becomes land
+    # has no soil code in the old file and eceframework drops it as a lake point, 71
+    # of them on the first mesh-change leg of ismtest29. Reading ice2fesom's
+    # regenerated slt from chunk 2 was tried and reverted. It changes nothing here,
+    # because every one of those 71 cells is south of 60S and the latitude cut in
+    # eceframework already excludes them: both legs simulated 10610 cells either
+    # way. It is not free either, since swapping the soil map mid-run puts the same
+    # restart inconsistency in play as lpjg_slt_suffix above. Revisit together with
+    # the state respin, or when a coastline north of 60S starts moving.
+
     choose_general.run_number:
         1:
             input_sources:
@@ -933,6 +1074,26 @@ rnfmap:
     runoff_maps_name: _${fesom.resolution}
     version: v1.1
 
+    # The runoff mapper is where the two freshwater returns are reconciled, so
+    # the ice-sheet-aware version comes in with smb_coupled. It behaves exactly
+    # as before while NumCoupledRegions is 0.
+    choose_general.smb_coupled:
+        true:
+            version: v1.4-ismm
+
+    # Basin 66 is everything south of 60S in runoff_maps.nc, so dropping its
+    # calving takes the atmosphere's snow-cap shedding out of the Southern Ocean
+    # and leaves the rest of the world alone. What replaces it is PISM's own
+    # discharge, arriving as icebergs. NumCoupledRegions stays 0: the mapper can
+    # take the ice sheet's water directly, but that is the other way of doing
+    # this and it is not the one we use.
+    choose_general.ism_freshwater_return:
+        true:
+            add_namelist_changes:
+                namelist.runoffmapper:
+                    NAMRNFMAP:
+                        IgnoreCalvingBasins: 66
+
     nproc: 1
     omp_num_threads: ${computer.partitions.compute.cores_per_node}
     time_step: ${oasis3mct.coupling_time_step}
@@ -962,6 +1123,45 @@ rnfmap:
 
     input_files:
         runoff_maps: runoff_maps
+
+
+#########################################################################################
+
+# ISM-mapper: accumulates the OIFS forcing PISM needs and returns the ice state.
+# Built always (it is in the develop-is coupling), run only when smb_coupled.
+ismm:
+    pool_dir: ${general.pool_dir}
+    nproc: 1
+    omp_num_threads: 1
+
+    # 4-char OASIS grid name; must match ocp-tool's ice.regions[].name and the
+    # ISMRGNPFX region prefix used for the field names below.
+    ice_grid: ismp
+    ice_prefix: antar
+    nx: 761        # antarct_cr 8 km
+    ny: 761
+
+    grids:
+        ${ice_grid}:
+            name: ${ice_grid}
+            nx: "${nx}"
+            ny: "${ny}"
+            oasis_grid_type: "LR"
+            oyac_grid_type: "LL"
+            oyac_io_per_node: 4
+
+    # Names come from the ism-mapper itself (cplng_config_mod.F90): every field
+    # is <prefix>_<name>. The CISSEMBEL set is not here, we run the direct path.
+    ism_recv_fields: ["${ice_prefix}_Precip_liquid", "${ice_prefix}_Precip_solid",
+        "${ice_prefix}_Evaporation", "${ice_prefix}_Runoff", "${ice_prefix}_Soil4T",
+        "${ice_prefix}_SST"]
+    ism_send_fields: ["${ice_prefix}_plit"]
+
+    coupling_fields:
+        "[[ism_recv_fields-->FIELD]]":
+            grid: ${ice_grid}
+        "[[ism_send_fields-->FIELD]]":
+            grid: ${ice_grid}
 
 
 #########################################################################################
@@ -1000,12 +1200,16 @@ oasis3mct:
     o2r_lag: 0
     r2a_lag: "${lag}"
     v2a_lag: "${lpj_guess.time_step}"
+    a2i_lag: "${oifs.time_step}"
+    i2a_lag: "${ism_atmo_coupling_time_step}"
     a2o_seq: 2
     o2a_seq: 2
     o2r_seq: 1
     r2a_seq: 2
     a2v_seq: 2
     v2a_seq: 2
+    a2i_seq: 2
+    i2a_seq: 2
 
     coupling_time_step: "${oasis3mct.time_step}"
     choose_general.major_version:
@@ -1069,6 +1273,11 @@ oasis3mct:
             rst_co2_av_name: 'rst_co2_av'
 
     land_atmo_coupling_time_step: 86400
+    # Ice sheet consumers are monthly (dEBM reads 12 monthly means; the
+    # ISM-mapper only ever writes a monthly mean). Daily is the coarsest period
+    # that still divides a calendar month. Raise it if CISSEMBEL is ever run,
+    # which needs CISSEMBEL_av resolution.
+    ism_atmo_coupling_time_step: 86400
     coupling_directions:
         'atma->feom':
             lag: ${a2o_lag}
@@ -1092,6 +1301,39 @@ oasis3mct:
             seq: ${a2v_seq}
             coupling_time_step: ${land_atmo_coupling_time_step}
             lag_overwrite: true
+
+    # OIFS <-> ISM-mapper. Weights are precomputed by ocp-tool's pyOASIS step
+    # (awiesm3_ismp_links); see couplings/fesom regenerate_oasis_weights.
+    choose_general.smb_coupled:
+        true:
+            add_coupling_directions:
+                'atma->${ismm.ice_grid}':
+                    lag: ${a2i_lag}
+                    seq: ${a2i_seq}
+                    coupling_time_step: ${ism_atmo_coupling_time_step}
+                    lag_overwrite: true
+                # Runoff lives on atmr, not atma, so it is its own direction.
+                'atmr->${ismm.ice_grid}':
+                    lag: ${a2i_lag}
+                    seq: ${a2i_seq}
+                    coupling_time_step: ${ism_atmo_coupling_time_step}
+                    lag_overwrite: true
+                '${ismm.ice_grid}->atma':
+                    lag: ${i2a_lag}
+                    seq: ${i2a_seq}
+                    coupling_time_step: ${ism_atmo_coupling_time_step}
+                    lag_overwrite: true
+            add_coupling_target_fields:
+                rstism.nc:
+                    # A_Precip_* are shared with the ocean coupling, which needs
+                    # them on atma. @atmr sends the same fields on the
+                    # land-masked grid for this link only.
+                    - '${ismm.ice_prefix}_Precip_liquid:${ismm.ice_prefix}_Precip_solid:${ismm.ice_prefix}_Evaporation:${ismm.ice_prefix}_Soil4T:${ismm.ice_prefix}_Runoff
+                      <--gauswgt_avg-- A_Precip_liquid@atmr:A_Precip_solid@atmr:A_Evap_ISM:A_Soil4T_ISM:A_Runoff'
+                    - '${ismm.ice_prefix}_SST <--gauswgt_avg-- A_SST_ISM'
+                    - 'PLIT_${ismm.ice_prefix} <--gauswgt_i-- ${ismm.ice_prefix}_plit'
+            add_process_ordering:
+                - ismm
 
 
     coupling_methods:
@@ -1163,6 +1405,17 @@ oasis3mct:
                     algorithm: opt
         gauswgt_i:
             time_transformation: instant
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+        # No CONSERV postprocessing: GLBPOS rescales the target to the source's
+        # global integral, which inflates a target that covers only part of the
+        # globe, and is meaningless for a temperature.
+        gauswgt_avg:
+            time_transformation: average
             remapping:
                 gauswgt:
                     search_bin: latitude

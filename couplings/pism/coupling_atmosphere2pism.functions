@@ -138,9 +138,12 @@ atmosphere2pism() {
         "REMAP")
             ic_atm2pism_regrid_remap
             ;;
+        "NONE")
+            ic_atm2pism_regrid_none
+            ;;
         *)
             echo "Unknown regrid method selected!"
-            echo "Known options: DOWNSCALE, INTERPOLATE, REMAP"
+            echo "Known options: DOWNSCALE, INTERPOLATE, REMAP, NONE"
             exit 1
             ;;
     esac
@@ -156,12 +159,16 @@ atmosphere2pism() {
             ic_atm2pism_ablation_debm
             latest_atmo_file=${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
             ;;
+        "DIRECT")
+            ic_atm2pism_ablation_direct
+            latest_atmo_file=${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
+            ;;
         "EBM")
             ic_atm2pism_ablation_ebm
             ;;
         *)
             echo "Unknown mass balance selected!"
-            echo "Known options: PDD, DEBM, EBM"
+            echo "Known options: PDD, DEBM, DIRECT, EBM"
             exit 2
             ;;
     esac
@@ -314,8 +321,30 @@ ic_atm2pism_regrid_interpolate() {
 }
 
 
+## @fn ic_atm2pism_regrid_none()
+## @brief For forcing that already arrives on the ice sheet grid.
+ic_atm2pism_regrid_none() {
+    echo; echo -e "\t\tForcing is already on the ice sheet grid, nothing to regrid."
+    _rn_nx=$(cdo -s griddes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | awk '$1=="xsize"{print $3; exit}')
+    _rn_want=$(awk '$1=="xsize"{print $3; exit}' ${COUPLE_DIR}/ice.griddes)
+    if [ -n "${_rn_nx}" ] && [ -n "${_rn_want}" ] && [ "${_rn_nx}" != "${_rn_want}" ]; then
+        echo " Forcing has xsize ${_rn_nx} but the ice grid is ${_rn_want}"
+        # Leave the sentinel observe.py reads. A bare exit only ends couple_in,
+        # and the chain then starts PISM, which dies on the missing
+        # latest_atmo_forcing_file.nc symlink this function never got to make.
+        if [ -n "${COUPLE_DIR:-}" ]; then
+            echo "atmosphere2pism: forcing xsize ${_rn_nx}, ice grid ${_rn_want}" \
+                > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        fi
+        exit 1
+    fi
+    echo -e "\t\t...done."; echo
+    unset _rn_nx _rn_want
+}
+
+
 ## @fn ic_atm2pism_regrid_remap()
-## @brief Conservative remapping of atmospheric fields 
+## @brief Conservative remapping of atmospheric fields
 ##
 ## Uses `cdo remapcon` to conservatively remap to the `PISM` grid
 ic_atm2pism_regrid_remap() {
@@ -364,6 +393,89 @@ ic_atm2pism_ablation_debm() {
     ic_debm2pism_ablation_debm_make_surface_forcing
     ic_debm2pism_ablation_debm_set_options_surface_given
     echo; echo -e "\t\t...done."; echo
+}
+
+
+## @fn ic_atm2pism_ablation_direct()
+## @brief Uses the atmosphere's own surface mass balance, P - E - R.
+##
+## For an ice sheet that is cold enough that melt is negligible, the land
+## surface scheme's water budget already is the surface mass balance, so there
+## is nothing for a melt model to add. Requires the forcing to name
+## precipitation_liquid, precipitation_solid, evaporation, runoff and
+## temperature_below_firn.
+ic_atm2pism_ablation_direct() {
+    echo; echo -e "\t\tSetting up SMB scheme DIRECT..."
+    ic_atm2pism_ablation_direct_make_surface_forcing
+    ic_debm2pism_ablation_debm_make_surface_forcing_set_time_axis
+    ic_debm2pism_ablation_debm_set_options_surface_given
+    echo; echo -e "\t\t...done."; echo
+}
+
+
+ic_atm2pism_ablation_direct_make_surface_forcing() {
+    _dir_in=${COUPLE_DIR}/atmosphere_file_for_ice.nc
+    _dir_out=${COUPLE_DIR}/surface_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc
+
+    for _v in ${atmosphere_name_precipitation_liquid} ${atmosphere_name_precipitation_solid} \
+              ${atmosphere_name_evaporation} ${atmosphere_name_runoff} \
+              ${atmosphere_name_temperature_below_firn} ; do
+        if ! cdo -s showname ${_dir_in} 2>/dev/null | tr ' ' '\n' | grep -qx "${_v}"; then
+            echo " Missing >>${_v}<< in ${_dir_in}, DIRECT needs P, E, R and a firn temperature"
+            exit 9
+        fi
+    done
+
+    # Precipitation and runoff arrive as m/s of liquid water, evaporation as
+    # kg m-2 s-1 already. PISM wants kg m-2 s-1.
+    echo -e "\t\t- climatic_mass_balance = (P_liq + P_sol - R) * rho_w - E"
+    cdo -s -O -setattribute,climatic_mass_balance@units="kg m-2 s-1" \
+        -expr,"climatic_mass_balance=(${atmosphere_name_precipitation_liquid}+${atmosphere_name_precipitation_solid}-${atmosphere_name_runoff})*1000.0-${atmosphere_name_evaporation}" \
+        ${_dir_in} ${COUPLE_DIR}/smb_direct.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+    cdo -s -O -setattribute,ice_surface_temp@units="K" \
+        -chname,${atmosphere_name_temperature_below_firn},ice_surface_temp \
+        -selvar,${atmosphere_name_temperature_below_firn} \
+        ${_dir_in} ${COUPLE_DIR}/tsurf_direct.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+    ic_atm2pism_ablation_direct_apply_mask
+
+    cdo -s -O merge ${COUPLE_DIR}/smb_direct.nc ${COUPLE_DIR}/tsurf_direct.nc ${_dir_out} \
+        2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+    unset _dir_in _dir_out _v
+}
+
+
+## @fn ic_atm2pism_ablation_direct_apply_mask()
+## @brief Keeps the mass balance off the open ocean.
+##
+## The forcing covers the whole polar stereographic domain, and away from land
+## the remap has no source data, so those values are extrapolated. Left in
+## place a positive one would nucleate ice in the middle of the ocean.
+ic_atm2pism_ablation_direct_apply_mask() {
+    echo -e "\t\t- Masking the mass balance to the ice sheet domain"
+    # thk and topg rather than the pool mask file, which for some domains is an
+    # atmosphere grid of a different size.
+    if [ "x$RUN_NUMBER_pism" == "x1" ]; then
+        _dir_state=${INPUT_FILE_pism:-${SPINUP_FILE_pism}}
+    else
+        _dir_state=${OUTPUT_DIR_pism}/latest_ex_file_pism.nc
+    fi
+    echo -e "\t\t-   ice sheet state from ${_dir_state}"
+    test_file_or_exit ${_dir_state} 9
+
+    # Keep the mass balance where there is ice or where the bed is above sea
+    # level. Everything else is open ocean, where the remap has no land to draw
+    # from and a positive value would nucleate ice offshore.
+    cdo -s -O -expr,'icemask=((thk>0.0)||(topg>0.0))?1.0:0.0' \
+        -seltimestep,-1 -selvar,thk,topg ${_dir_state} ${COUPLE_DIR}/mask_direct.nc \
+        2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+
+    cdo -s -O -setmisstoc,0 -ifthen ${COUPLE_DIR}/mask_direct.nc ${COUPLE_DIR}/smb_direct.nc \
+        ${COUPLE_DIR}/smb_direct_masked.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+    mv ${COUPLE_DIR}/smb_direct_masked.nc ${COUPLE_DIR}/smb_direct.nc
+    unset _dir_state
 }
 
 

@@ -9,7 +9,7 @@ general:
     # backfilled badly.
     compute_time: "00:45:00"
     initial_date: "1900-01-01"
-    final_date: "1905-01-01"   # 5-cycle final evaluation
+    final_date: "1902-01-01"   # 2 cycles: exercises couple_in on chunk 2
     # Shared with pism for iterative coupling -- LITERAL awiesm3-develop-is (both
     # models must resolve to the SAME experiment_dir; ${setup_name}-${version}
     # would diverge since pism is a different setup). -> runtime/awiesm3-develop-is/<expid>
@@ -17,6 +17,17 @@ general:
     # Enable the PISM<->FESOM dynamic-mesh coupling (wiring lives behind this flag
     # in configs/setups/awiesm3/awiesm3.yaml).
     interactive_mesh: true
+    # PISM's discharge reaches FESOM as icebergs, and the runoff mapper stops
+    # passing the atmosphere's Antarctic snow-cap calving that it replaces.
+    ism_freshwater_return: true
+    smb_coupled: true
+    # Serial runs refresh the concurrent-mode chunk-1 bootstrap set in the pool
+    # (couplings/general/harvest.functions, once per coupling identity). Without
+    # these two keys the identity is empty and the harvest skips, which is how
+    # the pool kept a set from a pipeline where the atmosphere forcing was still
+    # on the Gaussian grid rather than PISM's.
+    harvest_parallel_ini: True
+    pism_grid_tag: "antarct_cr-08km"
     nday: 0
     nmonth: 0
     nyear: 1
@@ -29,6 +40,18 @@ awiesm3:
     model_dir: "/work/ab0246/a270092/model_codes/${general.setup_name}-${general.version}//"
 
 fesom:
+    # Chunk-1 bergs, generated offline from the discharge of the same movcav45
+    # state the PISM restart comes from. From chunk 2 they are rebuilt per leg
+    # in couple_in. Valid for the chunk1_mesh only: icb_felem indexes elements.
+    # An empty set is also legal now (FESOM/fesom2#962); icebergs_coldstart has
+    # one, and it leaves year 1 with no Antarctic freshwater at all, since the
+    # runoff mapper has stopped passing basin 66's calving.
+    ini_iceberg_dir: "/work/ab0246/a270092/input/fesom2/icebergs_ini_movcav45.scaled"
+    ini_disch_file: "/work/ab0246/a270092/input/fesom2/icebergs_coldstart/zero_discharge.nc"
+    # Drainage basins the iceberg generator assigns PISM's discharge to. Matches
+    # the pism domain and resolution in ismtest1_pism.yaml.
+    basin_file: "/work/ab0246/a270092/input/pism/basins/antarct_cr.08km.nc"
+
     # Mesh chunk 1 ran on. couple_in is skipped on chunk 1 (artifacts pooled), so no
     # previous_submesh is recorded; without this the first mesh-change leg would
     # assume the old mesh was the full mother mesh and refuse to remap the
@@ -302,7 +325,13 @@ oasis3mct:
                 rstas.nc: "${general.experiment_couple_dir}/restart_remapped/rstas.nc"
                 rstos.nc: "${general.experiment_couple_dir}/restart_remapped/rstos.nc"
                 vegin.nc: vegin.nc
-                rstism.nc: "${general.experiment_couple_dir}/oasis_regen/rstism.nc"
+                # Carried forward from the previous leg, NOT from oasis_regen.
+                # Nothing regenerates an rstism there, so that path served a
+                # stale seed holding only antar_plit, and OASIS aborted with
+                # "Invalid dimension ID or name" on the first LAGged link whose
+                # source field was missing. None of the ismm links touch feom
+                # (A096/R096 40320, ismp 761x761), so no remapping is needed.
+                rstism.nc: "${experiment_restart_in_dir}/rstism.nc"
 
 xios:
     with_model:

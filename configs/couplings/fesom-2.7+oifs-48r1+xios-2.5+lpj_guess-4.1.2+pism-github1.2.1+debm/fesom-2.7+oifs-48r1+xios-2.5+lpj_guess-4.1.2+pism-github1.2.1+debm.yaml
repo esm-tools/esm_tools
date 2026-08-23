@@ -1,8 +1,13 @@
 # awiesm3 + interactive ice sheet (PISM) coupling: same component set as
-# fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2, but additionally builds PISM and
-# dEBM so the awiesm3<->PISM dynamic-ocean coupling can be built and reproduced
-# from a single esm_master target (comp-awiesm3-develop-is). The runtime ice<->
-# ocean coupling itself is driven by the couplings/fesom ice2fesom workflow.
+# fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2, but additionally builds PISM,
+# dEBM and the ISM-mapper so the awiesm3<->PISM dynamic-ocean coupling and the
+# OIFS->PISM surface mass balance can be built and reproduced from a single
+# esm_master target (comp-awiesm3-develop-is). The runtime ice<->ocean coupling
+# itself is driven by the couplings/fesom ice2fesom workflow.
+#
+# ismm is always built but only joins the launch when general.smb_coupled is
+# true. It must be an MPI rank whenever it runs, because OASIS enddef needs
+# every declared component present.
 components:
 - xios-2.5-ece
 - rnfmap-v1.1
@@ -12,6 +17,7 @@ components:
 - lpj_guess-4.1.2
 - pism-github1.2.1
 - debm-esm_tools
+- ismm-ece4
 coupling_changes:
 - sed -i 's/xios-2.5+/xios/g' oifs-48r1/bundle.yml
 - sed -i 's/xios\/build_ecearth/xios/g' oifs-48r1/bundle.yml

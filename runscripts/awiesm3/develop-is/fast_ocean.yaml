@@ -7,9 +7,17 @@ general:
     # A 1-yr awiesm3 leg runs 26-33 min on 45 nodes (measured: 25:49 and 32:54;
     # model ~19-26 min + ~7 min post/tidy). 2:30:00 was a 6x over-request and
     # backfilled badly.
-    compute_time: "00:45:00"
+    # A leg is normally about 41 minutes and ismtest36 ran ten of them at 40:58
+    # against 45:00, so there was never much headroom. ismtest40 was then killed
+    # at the limit with FESOM already exited 0, stalled in the file bookkeeping
+    # while /work was unresponsive: that phase logs ~10000 entries a second when
+    # the filesystem is healthy, and it dropped to ten a second, burst, then went
+    # silent for twelve minutes. Ordinary shell commands on /work hung for minutes
+    # at the same time, so this is the filesystem rather than the job.
+    # The extra headroom is insurance against that, not a cost the leg really has.
+    compute_time: "01:15:00"
     initial_date: "1900-01-01"
-    final_date: "1910-01-01"   # 10 cycles: does the intermittent FESOM blowup recur
+    final_date: "1903-01-01"   # 3 cycles: lakes survive the chunk-2 regen, new guess binary runs
     # Shared with pism for iterative coupling -- LITERAL awiesm3-develop-is (both
     # models must resolve to the SAME experiment_dir; ${setup_name}-${version}
     # would diverge since pism is a different setup). -> runtime/awiesm3-develop-is/<expid>

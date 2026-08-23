@@ -7,7 +7,7 @@ general:
         # couple_in overran and was killed mid-regen (job 26077001, 2026-07-06).
         compute_time: "02:00:00"
         initial_date: "1000000-01-01"
-        final_date: "1000099-12-31"   # 10 decades = 10 coupling cycles, matches fast_ocean
+        final_date: "1000029-12-31"   # 3 decades = 3 coupling cycles, matches fast_ocean
         user: !ENV ${USER}
         # Shared with awiesm3 for iterative coupling -- LITERAL awiesm3-develop-is
         # so BOTH models resolve to the SAME experiment_dir runtime/awiesm3-develop-is/<expid>

@@ -13,7 +13,14 @@ general:
         iterative_coupling: True
         use_venv: False
         user: !ENV ${USER}
-        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        # On /scratch, not /work. /work drops small-file writes at 1-2.5 percent
+        # (measured 2/200 on /work/ab0246, 0/2000 on /scratch), which an
+        # esm_runscripts staging copy of ~5000 files essentially always trips.
+        # It corrupts guess.ins into "Bad instruction file!" with every LPJ-GUESS
+        # rank exiting 99, and it is the best explanation for the OASIS av gsize
+        # mismatch that killed ismtest41 and 42 on inputs byte-identical to a run
+        # that worked. Large-file I/O never notices, so this looks intermittent.
+        base_dir: "/scratch/a/${user}/runtime/awiesm3-develop-is/"
         account: ab0246
         with_recom: False
         # Icebergs carry PISM's discharge to the ocean.

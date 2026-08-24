@@ -150,6 +150,23 @@ def create(base_dir, start_date, end_date, force, interactive):
                         f" Packing {tar_name} ({filetype}, {len(flist)} files)"
                     )
                     pack_tarfile(flist, base_dir, archive_name)
+        # Whole-directory captures (scripts/config/log): flat dirs with no model
+        # or datestamp, tarred as-is for reproducibility. forcing/input/bin are
+        # excluded by default (shared pools / large boundary data).
+        for extra in config.get("archive_extra_dirs", ["scripts", "config", "log"]):
+            src = os.path.join(base_dir, extra)
+            if not os.path.isdir(src):
+                continue
+            flist = [
+                os.path.join(root, f)
+                for root, _, fnames in os.walk(src)
+                for f in fnames
+            ]
+            if not flist:
+                continue
+            archive_name = os.path.join(arch_dir, f"{expid}_{extra}.tgz")
+            click.secho(f" Packing {expid}_{extra} ({extra}, {len(flist)} files)")
+            pack_tarfile(flist, base_dir, archive_name)
         return
 
     # Legacy heuristic path (no templated specs configured):

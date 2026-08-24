@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Generator, Optional
 
 import rich_click as click
 
@@ -44,7 +44,7 @@ def _quiet_worker_logging(level: int) -> None:
 
 
 @contextmanager
-def _scan_progress(enabled: bool) -> Iterator[Optional[object]]:
+def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
     """A transient rich spinner+bar over a scan; yields an ``on_progress`` callback.
 
     Yields ``None`` (a no-op) when *enabled* is false — not a TTY, or the caller
@@ -62,6 +62,7 @@ def _scan_progress(enabled: bool) -> Iterator[Optional[object]]:
         MofNCompleteColumn,
         Progress,
         SpinnerColumn,
+        TaskID,
         TextColumn,
         TimeElapsedColumn,
     )
@@ -75,32 +76,38 @@ def _scan_progress(enabled: bool) -> Iterator[Optional[object]]:
         console=Console(stderr=True),
         transient=True,
     )
-    tasks: dict[str, int] = {}
+    tasks: dict[str, TaskID] = {}
+
+    def enter_phase(name: str, after: Optional[str], **task_fields) -> TaskID:
+        """Return phase *name*'s task, creating it once and hiding *after*'s first.
+
+        The phases run in sequence (sourcing → reading → writing); each hands off
+        by hiding the previous phase's bar as its own appears.
+        """
+        if name not in tasks:
+            if after and after in tasks:
+                progress.update(tasks[after], visible=False)
+            tasks[name] = progress.add_task(**task_fields)
+        return tasks[name]
 
     def on_progress(event) -> None:
         if event.phase == "sourcing":
-            if "sourcing" not in tasks:
-                tasks["sourcing"] = progress.add_task(
-                    "sourcing experiment…", total=None
-                )
+            task = enter_phase(
+                "sourcing", None, description="sourcing experiment…", total=None
+            )
             if event.detail:
-                progress.update(
-                    tasks["sourcing"], description=f"walking outdata — {event.detail}"
-                )
+                progress.update(task, description=f"walking outdata — {event.detail}")
         elif event.phase == "reading":
-            if "reading" not in tasks:
-                if "sourcing" in tasks:
-                    progress.update(tasks["sourcing"], visible=False)
-                tasks["reading"] = progress.add_task("reading", total=event.total)
+            task = enter_phase(
+                "reading", "sourcing", description="reading", total=event.total
+            )
             progress.update(
-                tasks["reading"],
+                task,
                 completed=event.current,
                 description=f"reading {event.detail}" if event.detail else "reading",
             )
         elif event.phase == "writing":
-            if "reading" in tasks:
-                progress.update(tasks["reading"], visible=False)
-            tasks["writing"] = progress.add_task("writing catalog…", total=None)
+            enter_phase("writing", "reading", description="writing catalog…", total=None)
 
     with progress:
         yield on_progress

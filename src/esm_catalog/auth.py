@@ -8,7 +8,7 @@ unlike a localhost-loopback flow, also works from a headless HPC login node
 where no browser is available on the machine running the CLI.
 
 The resulting token is cached at ``$XDG_STATE_HOME/esm-catalog/token.json``
-(mode ``0600``). ``bearer()`` returns a valid access token, silently refreshing
+(mode ``0600``). ``get_bearer_token()`` returns a valid access token, refreshing
 via the refresh token when the cached one has expired.
 """
 
@@ -19,38 +19,77 @@ import hashlib
 import os
 import secrets
 import time
-from typing import Optional
+from typing import NewType, Optional, TypedDict
 
 import httpx
 from loguru import logger
 from pydantic import BaseModel
 
-from esm_catalog.config import Settings
+from esm_catalog.config import Scope, Settings, TokenType, Url
 from esm_catalog.xdg import token_file
 
 # Refresh a little before real expiry so a long push does not die mid-flight.
 EXPIRY_SKEW_SECONDS = 30
 
+# Opaque OAuth credential strings. NewTypes (not the transparent aliases in
+# types.py) so the checker rejects passing one where another is meant: an access
+# token is not a refresh token is not an authorization code is not a PKCE
+# verifier/challenge, even though all are strings on the wire.
+AccessToken = NewType("AccessToken", str)
+RefreshToken = NewType("RefreshToken", str)
+AuthCode = NewType("AuthCode", str)
+CodeVerifier = NewType("CodeVerifier", str)
+CodeChallenge = NewType("CodeChallenge", str)
+
+
+class TokenResponse(TypedDict, total=False):
+    """The raw token-endpoint JSON — carries a *relative* ``expires_in``.
+
+    Distinct from :class:`TokenSet`, which stores an *absolute* ``expires_at``;
+    :meth:`TokenSet.from_response` performs that transform.
+    """
+
+    access_token: AccessToken
+    refresh_token: RefreshToken
+    token_type: TokenType
+    scope: Scope
+    expires_in: float
+
 
 class OIDCMetadata(BaseModel):
     """The subset of the OIDC discovery document the client uses."""
 
-    authorization_endpoint: str
-    token_endpoint: str
-    issuer: Optional[str] = None
+    authorization_endpoint: Url
+    token_endpoint: Url
+    issuer: Optional[Url] = None
 
 
 class TokenSet(BaseModel):
     """A cached OAuth token, plus the absolute time it expires."""
 
-    access_token: str
-    refresh_token: Optional[str] = None
-    token_type: str = "Bearer"
-    scope: Optional[str] = None
+    access_token: AccessToken
+    refresh_token: Optional[RefreshToken] = None
+    token_type: TokenType = "Bearer"
+    scope: Optional[Scope] = None
     #: Absolute epoch seconds at which ``access_token`` expires, if known.
     expires_at: Optional[float] = None
 
-    def is_expired(self, now: Optional[float] = None, skew: int = EXPIRY_SKEW_SECONDS) -> bool:
+    @classmethod
+    def from_response(cls, payload: TokenResponse) -> "TokenSet":
+        """Build from a token-endpoint payload, stamping absolute expiry.
+
+        ``payload`` is a plain ``dict`` (``resp.json()``), so ``"expires_in" in
+        payload`` is the correct membership test — the relative lifetime becomes
+        an absolute ``expires_at``.
+        """
+        token = cls.model_validate(payload)
+        if "expires_in" in payload:
+            token.expires_at = time.time() + float(payload["expires_in"])
+        return token
+
+    def is_expired(
+        self, now: Optional[float] = None, skew: int = EXPIRY_SKEW_SECONDS
+    ) -> bool:
         """True if the access token is (within *skew* of) expiry, or unknown."""
         if self.expires_at is None:
             return True
@@ -72,11 +111,11 @@ def _b64url(raw: bytes) -> str:
     return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
 
 
-def pkce_pair() -> tuple[str, str]:
+def generate_pkce_pair() -> tuple[CodeVerifier, CodeChallenge]:
     """Return ``(code_verifier, code_challenge)`` for PKCE S256."""
     verifier = _b64url(secrets.token_bytes(64))
     challenge = _b64url(hashlib.sha256(verifier.encode("ascii")).digest())
-    return verifier, challenge
+    return CodeVerifier(verifier), CodeChallenge(challenge)
 
 
 # --------------------------------------------------------------------------- #
@@ -100,6 +139,9 @@ def save_token(token: TokenSet) -> None:
     """Write *token* to the cache, creating it ``0600`` before any secret lands."""
     path = token_file()
     path.parent.mkdir(parents=True, exist_ok=True)
+    # O_CREAT's mode applies only when the file is created (and is umask-masked);
+    # on a re-login the existing file keeps its old perms. The explicit chmod
+    # pins 0600 regardless of umask or a pre-existing, possibly-widened file.
     fd = os.open(str(path), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
     with os.fdopen(fd, "w") as handle:
         handle.write(token.model_dump_json(indent=2))
@@ -120,30 +162,38 @@ def clear_token() -> bool:
 # --------------------------------------------------------------------------- #
 
 
-def discover(settings: Settings) -> OIDCMetadata:
+def fetch_oidc_metadata(settings: Settings) -> OIDCMetadata:
     """Fetch and parse the OIDC discovery document."""
-    resp = httpx.get(settings.oidc_discovery_url, timeout=15, verify=settings.verify_tls)
+    resp = httpx.get(
+        settings.oidc_discovery_url, timeout=15, verify=settings.verify_tls
+    )
     resp.raise_for_status()
     return OIDCMetadata.model_validate(resp.json())
 
 
 def build_login_url(
-    meta: OIDCMetadata, settings: Settings, challenge: str, state: str
-) -> str:
-    """Build the authorization-endpoint URL to open in a browser."""
+    meta: OIDCMetadata, settings: Settings, challenge: CodeChallenge
+) -> Url:
+    """Build the authorization-endpoint URL to open in a browser.
+
+    No ``state`` is sent: the out-of-band copy-paste flow has no automated
+    callback to verify the echo against, so a ``state`` nonce would be security
+    theatre. It returns (with verification) if a loopback-callback login is added.
+    """
     params = {
         "response_type": "code",
         "client_id": settings.client_id,
         "redirect_uri": settings.redirect_uri,
         "scope": settings.scopes,
-        "state": state,
         "code_challenge": challenge,
         "code_challenge_method": "S256",
     }
     return str(httpx.URL(meta.authorization_endpoint, params=params))
 
 
-def _token_request(meta: OIDCMetadata, settings: Settings, data: dict) -> TokenSet:
+def _request_token(
+    meta: OIDCMetadata, settings: Settings, data: dict[str, str]
+) -> TokenSet:
     """POST to the token endpoint with client-secret-basic auth; return a TokenSet."""
     resp = httpx.post(
         meta.token_endpoint,
@@ -154,18 +204,14 @@ def _token_request(meta: OIDCMetadata, settings: Settings, data: dict) -> TokenS
     )
     if resp.status_code != 200:
         raise AuthError(f"token endpoint returned HTTP {resp.status_code}: {resp.text}")
-    payload = resp.json()
-    token = TokenSet.model_validate(payload)
-    if "expires_in" in payload:
-        token.expires_at = time.time() + float(payload["expires_in"])
-    return token
+    return TokenSet.from_response(resp.json())
 
 
-def exchange_code(
-    meta: OIDCMetadata, settings: Settings, code: str, verifier: str
+def exchange_code_for_token(
+    meta: OIDCMetadata, settings: Settings, code: AuthCode, verifier: CodeVerifier
 ) -> TokenSet:
     """Exchange an authorization *code* (+ PKCE verifier) for a token."""
-    return _token_request(
+    return _request_token(
         meta,
         settings,
         {
@@ -177,11 +223,11 @@ def exchange_code(
     )
 
 
-def refresh(meta: OIDCMetadata, settings: Settings, token: TokenSet) -> TokenSet:
+def refresh_access_token(meta: OIDCMetadata, settings: Settings, token: TokenSet) -> TokenSet:
     """Mint a fresh access token from *token*'s refresh token."""
     if not token.refresh_token:
         raise AuthError("no refresh token cached; run 'esm-catalog auth login'")
-    new = _token_request(
+    new = _request_token(
         meta,
         settings,
         {"grant_type": "refresh_token", "refresh_token": token.refresh_token},
@@ -192,17 +238,19 @@ def refresh(meta: OIDCMetadata, settings: Settings, token: TokenSet) -> TokenSet
     return new
 
 
-def bearer(settings: Settings) -> str:
+def get_bearer_token(settings: Settings) -> AccessToken:
     """Return a valid access token, refreshing (and re-caching) if expired.
 
-    Raises :class:`AuthError` with an actionable message if there is no session
-    or the refresh fails — the caller should surface it as a CLI error.
+    The ``get_`` verb is deliberate: this does real work — reads the token
+    cache, may refresh over the network, re-caches, and can raise
+    :class:`AuthError` (no session, or refresh failed), which the caller should
+    surface as a CLI error.
     """
     token = load_token()
     if token is None:
         raise AuthError("not logged in; run 'esm-catalog auth login <server>'")
     if token.is_expired():
         logger.debug("Access token expired; refreshing.")
-        token = refresh(discover(settings), settings, token)
+        token = refresh_access_token(fetch_oidc_metadata(settings), settings, token)
         save_token(token)
     return token.access_token

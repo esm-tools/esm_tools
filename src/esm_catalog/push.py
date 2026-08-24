@@ -17,14 +17,14 @@ semantics, so re-pushing the same object is harmless. Nothing is ever deleted.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Iterable, Literal, Optional
+from typing import Iterable, Literal, Optional, Protocol
 
+from pydantic import BaseModel, Field
 from stac_geoparquet.arrow import stac_table_to_items
 from upath import UPath
 
-from esm_catalog.client import StacClient, StacObject
+from esm_catalog.client import CollectionId, StacClient, StacObject
 from esm_catalog.storage.geoparquet import read_shard
 
 #: Items per bulk_items request. pgstac loads each batch server-side.
@@ -36,18 +36,19 @@ PathKind = Literal["collection", "item", "shard", "unknown"]
 _SHARD_SUFFIXES = {".parquet", ".geoparquet"}
 
 
-@dataclass
-class PushSummary:
+class PushSummary(BaseModel):
     """Counts of what a push shipped."""
 
     collections: int = 0
     items: int = 0
     shards: int = 0
-    errors: list[str] = field(default_factory=list)
+    errors: list[str] = Field(default_factory=list)
 
 
-#: Called as ``on_progress(advance, detail)`` to drive a progress display.
-ProgressHook = Callable[[int, str], None]
+class ProgressHook(Protocol):
+    """Called as ``hook(advance, detail)`` to drive a progress display."""
+
+    def __call__(self, advance: int, detail: str) -> None: ...
 
 
 def classify_file(path: Path) -> PathKind:
@@ -103,10 +104,10 @@ def count_items(path: Path) -> int:
     return 0
 
 
-def shard_items_by_collection(path: Path) -> dict[str, list[StacObject]]:
+def shard_items_by_collection(path: Path) -> dict[CollectionId, list[StacObject]]:
     """Read a shard and group its Items by collection id."""
     table = read_shard(UPath(path))
-    grouped: dict[str, list[StacObject]] = {}
+    grouped: dict[CollectionId, list[StacObject]] = {}
     for item in stac_table_to_items(table):
         grouped.setdefault(item["collection"], []).append(item)
     return grouped
@@ -133,8 +134,7 @@ def push_paths(
                 summary.items += 1
                 progress(1, f"item {path.name}")
             elif kind == "shard":
-                n = _push_shard(path, client, progress)
-                summary.items += n
+                summary.items += _push_shard(path, client, progress)
                 summary.shards += 1
             else:
                 summary.errors.append(f"skipped {path.name}: not a STAC file")

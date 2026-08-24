@@ -18,7 +18,7 @@ Only ``server`` and OIDC client credentials are needed to push. A minimal
 
 from __future__ import annotations
 
-from typing import Optional, Type
+from typing import Optional
 
 from pydantic import SecretStr
 from pydantic_settings import (
@@ -30,7 +30,31 @@ from pydantic_settings import (
 
 from esm_catalog.xdg import config_file
 
-DEFAULT_SCOPES = "openid eduperson_entitlement offline_access"
+# Domain string vocabulary for the client layer — transparent aliases with
+# docstrings (mirroring esm_catalog.types), so no signature carries a bare,
+# meaningless ``str``. Credentials that must not be confused live as NewTypes in
+# auth.py; these are plain names for values that are freely used as strings.
+Url = str
+"""An http(s) URL, kept as a plain string for httpx and rstrip."""
+
+ClientId = str
+"""An OAuth client identifier registered with the identity provider."""
+
+Scope = str
+"""Space-delimited OAuth scopes, e.g. 'openid eduperson_entitlement offline_access'."""
+
+TokenType = str
+"""An OAuth token type; practically always 'Bearer' (case-insensitive, RFC 6749)."""
+
+# Dev defaults, named at module level so they are greppable and overridable.
+DEFAULT_DISCOVERY_URL = (
+    "https://login-dev.helmholtz.de/oauth2/.well-known/openid-configuration"
+)
+DEFAULT_CLIENT_ID = "esm-catalog-dev"
+DEFAULT_REDIRECT_URI = "https://stac-dev.dmawi.de"
+# OAuth sends scopes as one space-delimited string; the list form is just for
+# legibility (no accidental missing spaces).
+DEFAULT_SCOPES = " ".join(["openid", "eduperson_entitlement", "offline_access"])
 
 
 class Settings(BaseSettings):
@@ -44,30 +68,28 @@ class Settings(BaseSettings):
 
     #: STAC API root, e.g. ``https://stac-dev.dmawi.de``. The API lives under
     #: ``<server_url>/api`` (see :attr:`api_url`).
-    server_url: Optional[str] = None
+    server_url: Optional[Url] = None
 
     #: OIDC discovery document URL (the identity provider, e.g. Helmholtz AAI).
-    oidc_discovery_url: str = (
-        "https://login-dev.helmholtz.de/oauth2/.well-known/openid-configuration"
-    )
+    oidc_discovery_url: Url = DEFAULT_DISCOVERY_URL
 
     #: OAuth client id registered with the IdP for this catalog.
-    client_id: str = "esm-catalog-dev"
+    client_id: ClientId = DEFAULT_CLIENT_ID
 
     #: OAuth client secret. Prefer ``ESM_CATALOG_CLIENT_SECRET`` over the file.
     client_secret: SecretStr = SecretStr("")
 
     #: Redirect URI registered with the IdP; the login code lands here.
-    redirect_uri: str = "https://stac-dev.dmawi.de"
+    redirect_uri: Url = DEFAULT_REDIRECT_URI
 
     #: Space-separated OAuth scopes; ``offline_access`` yields a refresh token.
-    scopes: str = DEFAULT_SCOPES
+    scopes: Scope = DEFAULT_SCOPES
 
     #: Verify the server's TLS certificate. Disable only for dev self-signed.
     verify_tls: bool = True
 
     @property
-    def api_url(self) -> str:
+    def api_url(self) -> Url:
         """The STAC API base (``<server_url>/api``), without a trailing slash."""
         if not self.server_url:
             raise ValueError(
@@ -79,13 +101,20 @@ class Settings(BaseSettings):
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Type[BaseSettings],
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> tuple[PydanticBaseSettingsSource, ...]:
-        """init > env > YAML file (drops the unused dotenv/secret-file sources)."""
+        """Sources in precedence order: init > env > YAML file.
+
+        pydantic-settings calls this by keyword, so the parameter names are
+        fixed. We drop ``dotenv_settings`` (a ``.env`` file) and
+        ``file_secret_settings`` (Docker-style ``/run/secrets``) — config comes
+        only from kwargs, env, and the YAML file. ``del`` marks them consumed.
+        """
+        del dotenv_settings, file_secret_settings
         return (
             init_settings,
             env_settings,

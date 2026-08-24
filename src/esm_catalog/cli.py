@@ -126,25 +126,28 @@ def auth() -> None:
 
 @auth.command("login")
 @click.argument("server_url")
-@click.option("--open", "open_browser", is_flag=True, help="Open the login URL in a browser.")
-@click.option("-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed).")
+@click.option(
+    "--open", "open_browser", is_flag=True, help="Open the login URL in a browser."
+)
+@click.option(
+    "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
+)
 def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
     """Log in to SERVER_URL and cache a token for later push."""
-    import secrets as _secrets
-
     from esm_catalog import auth as _auth
     from esm_catalog.config import Settings
     from esm_catalog.xdg import token_file
 
     settings = Settings(server_url=server_url, verify_tls=not insecure)
     try:
-        meta = _auth.discover(settings)
+        meta = _auth.fetch_oidc_metadata(settings)
     except Exception as exc:  # noqa: BLE001 — surface any discovery failure cleanly
-        raise click.ClickException(f"Could not reach the identity provider: {exc}") from exc
+        raise click.ClickException(
+            f"Could not reach the identity provider: {exc}"
+        ) from exc
 
-    verifier, challenge = _auth.pkce_pair()
-    state = _secrets.token_urlsafe(8)
-    login_url = _auth.build_login_url(meta, settings, challenge, state)
+    verifier, challenge = _auth.generate_pkce_pair()
+    login_url = _auth.build_login_url(meta, settings, challenge)
 
     click.secho("\nOpen this URL in a browser and log in:\n", fg="cyan")
     click.echo(login_url + "\n")
@@ -153,16 +156,18 @@ def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
 
         webbrowser.open(login_url)
 
-    code = click.prompt("Paste the code from the landing page").strip()
+    code = _auth.AuthCode(click.prompt("Paste the code from the landing page").strip())
     try:
-        token = _auth.exchange_code(meta, settings, code, verifier)
+        token = _auth.exchange_code_for_token(meta, settings, code, verifier)
     except _auth.AuthError as exc:
         raise click.ClickException(str(exc)) from exc
     _auth.save_token(token)
 
     click.secho(f"Logged in — token cached at {token_file()}", fg="green")
     if token.refresh_token:
-        click.secho("Refresh token stored; future pushes will not need a login.", fg="green")
+        click.secho(
+            "Refresh token stored; future pushes will not need a login.", fg="green"
+        )
     else:
         click.secho(
             "Note: no refresh token returned — you will re-login when it expires.",
@@ -273,7 +278,9 @@ def scan(
     type=click.Path(exists=True, path_type=Path),
 )
 @click.option("--server", default=None, help="Target STAC server (overrides config).")
-@click.option("-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed).")
+@click.option(
+    "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
+)
 def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None:
     """Push STAC objects to the catalog.
 
@@ -283,24 +290,30 @@ def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None
     """
     import sys
 
-    from esm_catalog import auth, push as pushmod
+    from esm_catalog import auth
+    from esm_catalog import push as pushmod
     from esm_catalog.client import StacClient
     from esm_catalog.config import Settings
 
-    overrides = {"verify_tls": not insecure}
+    # Only override server_url when --server is given, so config/env can supply
+    # it otherwise (passing None would clobber those, as init has top precedence).
+    settings = Settings(verify_tls=not insecure)
     if server:
-        overrides["server_url"] = server
-    settings = Settings(**overrides)
+        settings.server_url = server
 
     try:
         api_url = settings.api_url
-        token = auth.bearer(settings)
+        token = auth.get_bearer_token(settings)
     except (ValueError, auth.AuthError) as exc:
         raise click.ClickException(str(exc)) from exc
 
     files = pushmod.expand_paths(list(paths))
     total = sum(
-        1 if pushmod.classify_file(f) in ("collection", "item") else pushmod.count_items(f)
+        (
+            1
+            if pushmod.classify_file(f) in ("collection", "item")
+            else pushmod.count_items(f)
+        )
         for f in files
     )
 
@@ -320,21 +333,15 @@ def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None
 
 
 @contextmanager
-def _push_progress(enabled: bool, total: int) -> Iterator[object]:
+def _push_progress(enabled: bool, total: int) -> Generator[object, None, None]:
     """A transient rich bar over a push; yields an ``advance(n, detail)`` callback."""
     if not enabled:
         yield lambda advance, detail: None
         return
 
     from rich.console import Console
-    from rich.progress import (
-        BarColumn,
-        MofNCompleteColumn,
-        Progress,
-        SpinnerColumn,
-        TextColumn,
-        TimeElapsedColumn,
-    )
+    from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
+                               SpinnerColumn, TextColumn, TimeElapsedColumn)
 
     progress = Progress(
         SpinnerColumn(),

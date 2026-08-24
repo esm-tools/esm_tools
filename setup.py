@@ -103,6 +103,7 @@ setup(
             "stac-geoparquet>=0.6",
             "httpx>=0.27",
             "pydantic-settings>=2.2",
+            "platformdirs>=4.0",
             "pyyaml>=6.0",
         ],
     },

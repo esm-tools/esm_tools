@@ -126,15 +126,59 @@ def auth() -> None:
 
 @auth.command("login")
 @click.argument("server_url")
-def auth_login(server_url: str) -> None:
+@click.option("--open", "open_browser", is_flag=True, help="Open the login URL in a browser.")
+@click.option("-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed).")
+def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
     """Log in to SERVER_URL and cache a token for later push."""
-    _not_implemented("auth login")
+    import secrets as _secrets
+
+    from esm_catalog import auth as _auth
+    from esm_catalog.config import Settings
+    from esm_catalog.xdg import token_file
+
+    settings = Settings(server_url=server_url, verify_tls=not insecure)
+    try:
+        meta = _auth.discover(settings)
+    except Exception as exc:  # noqa: BLE001 — surface any discovery failure cleanly
+        raise click.ClickException(f"Could not reach the identity provider: {exc}") from exc
+
+    verifier, challenge = _auth.pkce_pair()
+    state = _secrets.token_urlsafe(8)
+    login_url = _auth.build_login_url(meta, settings, challenge, state)
+
+    click.secho("\nOpen this URL in a browser and log in:\n", fg="cyan")
+    click.echo(login_url + "\n")
+    if open_browser:
+        import webbrowser
+
+        webbrowser.open(login_url)
+
+    code = click.prompt("Paste the code from the landing page").strip()
+    try:
+        token = _auth.exchange_code(meta, settings, code, verifier)
+    except _auth.AuthError as exc:
+        raise click.ClickException(str(exc)) from exc
+    _auth.save_token(token)
+
+    click.secho(f"Logged in — token cached at {token_file()}", fg="green")
+    if token.refresh_token:
+        click.secho("Refresh token stored; future pushes will not need a login.", fg="green")
+    else:
+        click.secho(
+            "Note: no refresh token returned — you will re-login when it expires.",
+            fg="yellow",
+        )
 
 
 @auth.command("logout")
 def auth_logout() -> None:
     """Discard the cached token."""
-    _not_implemented("auth logout")
+    from esm_catalog.auth import clear_token
+
+    if clear_token():
+        click.secho("Token cache removed.", fg="green")
+    else:
+        click.secho("Nothing to remove.", fg="yellow")
 
 
 @main.command()

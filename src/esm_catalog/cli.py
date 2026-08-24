@@ -266,9 +266,92 @@ def scan(
 
 
 @main.command()
-def push() -> None:
-    """Ship not-yet-pushed shards to the server's pgstac."""
-    _not_implemented("push")
+@click.argument(
+    "paths",
+    nargs=-1,
+    required=True,
+    type=click.Path(exists=True, path_type=Path),
+)
+@click.option("--server", default=None, help="Target STAC server (overrides config).")
+@click.option("-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed).")
+def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None:
+    """Push STAC objects to the catalog.
+
+    Each PATH is a Collection/Item JSON, a stac-geoparquet shard, or a directory
+    of them. Writes are authenticated (run 'auth login' first) and idempotent
+    (upsert) — re-pushing is safe, nothing is deleted.
+    """
+    import sys
+
+    from esm_catalog import auth, push as pushmod
+    from esm_catalog.client import StacClient
+    from esm_catalog.config import Settings
+
+    overrides = {"verify_tls": not insecure}
+    if server:
+        overrides["server_url"] = server
+    settings = Settings(**overrides)
+
+    try:
+        api_url = settings.api_url
+        token = auth.bearer(settings)
+    except (ValueError, auth.AuthError) as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    files = pushmod.expand_paths(list(paths))
+    total = sum(
+        1 if pushmod.classify_file(f) in ("collection", "item") else pushmod.count_items(f)
+        for f in files
+    )
+
+    show_progress = sys.stderr.isatty()
+    with StacClient(api_url, token, verify_tls=settings.verify_tls) as client:
+        with _push_progress(show_progress, total) as advance:
+            summary = pushmod.push_paths(paths, client, on_progress=advance)
+
+    click.echo(
+        f"pushed {summary.collections} collection(s), {summary.items} item(s) "
+        f"from {summary.shards} shard(s)"
+    )
+    if summary.errors:
+        for err in summary.errors:
+            click.secho(f"  ! {err}", fg="red", err=True)
+        raise click.ClickException(f"{len(summary.errors)} path(s) failed.")
+
+
+@contextmanager
+def _push_progress(enabled: bool, total: int) -> Iterator[object]:
+    """A transient rich bar over a push; yields an ``advance(n, detail)`` callback."""
+    if not enabled:
+        yield lambda advance, detail: None
+        return
+
+    from rich.console import Console
+    from rich.progress import (
+        BarColumn,
+        MofNCompleteColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
+
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+        console=Console(stderr=True),
+        transient=True,
+    )
+    with progress:
+        task = progress.add_task("pushing", total=total or None)
+
+        def advance(n: int, detail: str) -> None:
+            progress.update(task, advance=n, description=f"pushing — {detail}")
+
+        yield advance
 
 
 @main.command()

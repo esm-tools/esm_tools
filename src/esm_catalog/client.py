@@ -13,12 +13,19 @@ authenticated and role-gated. Two granularities:
 from __future__ import annotations
 
 from types import TracebackType
-from typing import Any, Literal, Optional, Type
+from typing import Any, Literal, Optional
 
 import httpx
 
+from esm_catalog.auth import AccessToken
+from esm_catalog.config import Url
+
 #: A STAC object (Collection or Item) as a plain JSON dict.
 StacObject = dict[str, Any]
+
+#: A STAC Collection id. A documented alias (not a NewType): ids surface out of
+#: ``StacObject`` dict reads, where a NewType would only add cast() noise.
+CollectionId = str
 
 #: How ``bulk_items`` treats existing ids: fail on conflict, or overwrite.
 BulkMethod = Literal["insert", "upsert"]
@@ -47,8 +54,8 @@ class StacClient:
 
     def __init__(
         self,
-        api_url: str,
-        token: str,
+        api_url: Url,
+        token: AccessToken,
         verify_tls: bool = True,
         transport: Optional[httpx.BaseTransport] = None,
     ) -> None:
@@ -68,7 +75,7 @@ class StacClient:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc: Optional[BaseException],
         tb: Optional[TracebackType],
     ) -> None:
@@ -103,12 +110,16 @@ class StacClient:
             f"/collections/{cid}/items/{iid}",
         )
 
+    def _check(self, resp: httpx.Response, action: str) -> None:
+        """Raise :class:`StacClientError` unless *resp* is a 200/201 success."""
+        if resp.status_code not in (200, 201):
+            raise StacClientError(action, resp.status_code, resp.text)
+
     def _upsert(self, kind: str, body: StacObject, post_path: str, put_path: str) -> None:
         resp = self._client.post(self._base + post_path, json=body)
         if resp.status_code == 409:
             resp = self._client.put(self._base + put_path, json=body)
-        if resp.status_code not in (200, 201):
-            raise StacClientError(f"upsert {kind} {body.get('id')!r}", resp.status_code, resp.text)
+        self._check(resp, f"upsert {kind} {body.get('id')!r}")
 
     # ----------------------------------------------------------------- #
     # Bulk items (Bulk Transactions extension).
@@ -116,7 +127,7 @@ class StacClient:
 
     def bulk_items(
         self,
-        collection_id: str,
+        collection_id: CollectionId,
         items: list[StacObject],
         method: BulkMethod = "upsert",
     ) -> None:
@@ -131,9 +142,4 @@ class StacClient:
         resp = self._client.post(
             f"{self._base}/collections/{collection_id}/bulk_items", json=payload
         )
-        if resp.status_code not in (200, 201):
-            raise StacClientError(
-                f"bulk_items into {collection_id!r} ({len(items)} items)",
-                resp.status_code,
-                resp.text,
-            )
+        self._check(resp, f"bulk_items into {collection_id!r} ({len(items)} items)")

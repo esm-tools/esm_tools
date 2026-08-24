@@ -1,45 +1,27 @@
-"""XDG base-directory resolution for esm-catalog.
+"""Base directories for esm-catalog, via platformdirs.
 
-Faithful to the `XDG Base Directory spec
-<https://specifications.freedesktop.org/basedir-spec/latest/>`_: honour the
-``XDG_*_HOME`` environment variables when set, else fall back to the spec's
-defaults under ``$HOME``. Used for the config file and the token cache.
+platformdirs honours ``XDG_CONFIG_HOME``/``XDG_STATE_HOME`` when they are set
+(and the OS-native location otherwise), so the config file and token cache land
+where the platform expects without us hand-rolling the spec.
 """
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
+
+from platformdirs import user_config_path, user_state_path
 
 APP_NAME = "esm-catalog"
 
 
-def _xdg_home(var: str, default: Path) -> Path:
-    """Return ``$var`` as a path if set and absolute, else *default*."""
-    value = os.environ.get(var)
-    if value and os.path.isabs(value):
-        return Path(value)
-    return default
-
-
-def config_home() -> Path:
-    """``$XDG_CONFIG_HOME`` or ``~/.config``."""
-    return _xdg_home("XDG_CONFIG_HOME", Path.home() / ".config")
-
-
-def state_home() -> Path:
-    """``$XDG_STATE_HOME`` or ``~/.local/state``."""
-    return _xdg_home("XDG_STATE_HOME", Path.home() / ".local" / "state")
-
-
 def config_dir() -> Path:
-    """The app's config directory, ``<config-home>/esm-catalog``."""
-    return config_home() / APP_NAME
+    """The app's config directory (``$XDG_CONFIG_HOME/esm-catalog`` on Linux)."""
+    return user_config_path(APP_NAME)
 
 
 def state_dir() -> Path:
-    """The app's state directory, ``<state-home>/esm-catalog``."""
-    return state_home() / APP_NAME
+    """The app's state directory (``$XDG_STATE_HOME/esm-catalog`` on Linux)."""
+    return user_state_path(APP_NAME)
 
 
 def config_file() -> Path:

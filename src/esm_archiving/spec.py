@@ -92,11 +92,16 @@ def _paleo_safe_stamp(period: pd.Period, date_format: str) -> str:
 def date_context(period: pd.Period, date_format: str) -> dict:
     """Readable date variables handed to the jinja templates for one step."""
     decade_start = period.year - period.year % 10
+    century_start = period.year - period.year % 100
     return {
         "date": _paleo_safe_stamp(period, date_format),
         "year": f"{period.year:04d}",
         "month": f"{period.month:02d}",
         "decade": f"{decade_start:04d}-{decade_start + 9:04d}",
+        "century": f"{century_start:04d}-{century_start + 99:04d}",
+        # two-digit leading century (e.g. 4900 -> "49") for glob prefixes that
+        # bucket a whole century in one step (see the COSMOS profile).
+        "century_prefix": f"{century_start // 100:02d}",
     }
 
 

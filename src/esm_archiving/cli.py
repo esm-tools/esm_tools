@@ -125,7 +125,15 @@ def main(ctx, write_local_config=False, write_config=False):
 @click.argument("end_date")
 @click.option("--force", is_flag=True)
 @click.option("--interactive", is_flag=True)
-def create(base_dir, start_date, end_date, force, interactive):
+@click.option(
+    "-c", "--config", "config_path", default=None,
+    help="Path to an esm_archiving config file, overriding the search path "
+    "(e.g. a COSMOS profile).",
+)
+def create(base_dir, start_date, end_date, force, interactive, config_path):
+    # local config: an explicit --config selects an alternate profile, otherwise
+    # fall back to the normal search-path config. No module-global mutation.
+    config = load_config(config_path) if config_path else load_config()
     click.secho(" Creating archives for:", color="green")
     click.secho(base_dir, color="green")
     click.secho("From: %s" % start_date, color="green")
@@ -205,7 +213,12 @@ def create(base_dir, start_date, end_date, force, interactive):
     "--to", "dest", default=None,
     help="HSM target directory; overrides the hsm_target config key.",
 )
-def upload(base_dir, dest):
+@click.option(
+    "-c", "--config", "config_path", default=None,
+    help="Path to an esm_archiving config file, overriding the search path "
+    "(e.g. a COSMOS profile).",
+)
+def upload(base_dir, dest, config_path):
     """Push the tarballs in <base_dir>/archive/ to the AWI HSM via ScoutFS.
 
     Destination resolution: --to  >  config `hsm_target` (a jinja template, e.g.
@@ -213,6 +226,9 @@ def upload(base_dir, dest):
     from the online cache here (they are not archdone until the HSM archiver has
     run) — use hsm-release.sh for that.
     """
+    # local config: an explicit --config selects an alternate profile, otherwise
+    # fall back to the normal search-path config. No module-global mutation.
+    config = load_config(config_path) if config_path else load_config()
     import glob as _glob
 
     expid = os.path.basename(os.path.abspath(base_dir))

@@ -662,12 +662,25 @@ def pack_tarfile(flist, wdir, outname):
     if not wdir.endswith("/"):
         wdir += "/"
     flist = [item.replace(wdir, "") for item in flist]
-    tar_part = (
-        f"tar --use-compress-program=pigz -cvf {outname} -C {wdir} {' '.join(flist)}"
-    )
-    tqdm_part = f"tqdm --total {len(flist)} --unit files"
-    output_part = f"{outname}.log"
-    run_command(tar_part + "|" + tqdm_part + ">>" + output_part)
+    # Pass the member list to tar via a temp file (``-T``) rather than on the
+    # command line: a single COSMOS century tarball can hold tens of thousands
+    # of files, which overruns ARG_MAX ("Argument list too long") if inlined.
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".filelist", dir=os.path.dirname(outname) or None, delete=False
+    ) as _fh:
+        _fh.write("\n".join(flist) + "\n")
+        listfile = _fh.name
+    try:
+        tar_part = (
+            f"tar --use-compress-program=pigz -cvf {outname} -C {wdir} -T {listfile}"
+        )
+        tqdm_part = f"tqdm --total {len(flist)} --unit files"
+        output_part = f"{outname}.log"
+        run_command(tar_part + "|" + tqdm_part + ">>" + output_part)
+    finally:
+        os.remove(listfile)
     # with tarfile.open(outname, "w:gz") as tar:
     #    for f in tqdm.tqdm(flist):
     #        tar.add(f, arcname=os.path.basename(f))

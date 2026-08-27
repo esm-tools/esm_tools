@@ -269,7 +269,14 @@ def create(base_dir, start_date, end_date, force, interactive, config_path, jobs
     help="Path to an esm_archiving config file, overriding the search path "
     "(e.g. a COSMOS profile).",
 )
-def upload(base_dir, dest, config_path):
+@click.option(
+    "-j", "--jobs", "jobs", type=int, default=None,
+    help="Upload this many tarballs concurrently (default: 1, or the config "
+    "`upload_jobs`). Keep it small — parallel uploads fill the HSM online cache "
+    "faster than the releaser drains it. A single ssh-rsync stream is often "
+    "CPU-bound on the cipher, so 2-4 streams help without over-filling.",
+)
+def upload(base_dir, dest, config_path, jobs):
     """Push the tarballs in <base_dir>/archive/ to the AWI HSM via ScoutFS.
 
     Destination resolution: --to  >  config `hsm_target` (a jinja template, e.g.
@@ -309,8 +316,7 @@ def upload(base_dir, dest, config_path):
 
     if protocol in ("scoutfs", "sftp", "ssh"):
         # ssh-based: transfer with rsync (paramiko's SFTP tops out ~1-10 MB/s;
-        # rsync over ssh is ~100x that and resumes/verifies). Its --info=progress2
-        # bar renders straight to the terminal (stdout inherited).
+        # rsync over ssh is ~100x that and resumes/verifies).
         import shlex
         import subprocess
 
@@ -318,16 +324,45 @@ def upload(base_dir, dest, config_path):
         key = config.get("hsm_ssh_key")
         if key:
             ssh_cmd += " -i " + shlex.quote(os.path.expanduser(key))
+        remote = f"{host}:{dest.rstrip('/')}/"
         subprocess.run([*shlex.split(ssh_cmd), host, "mkdir", "-p", dest], check=True)
-        result = subprocess.run(
-            [
+
+        n_jobs = jobs if jobs is not None else config.get("upload_jobs", 1)
+        n_jobs = max(1, int(n_jobs or 1))
+        if n_jobs == 1:
+            # one stream, all tarballs — with the live progress bar
+            result = subprocess.run([
                 "rsync", "-a", "--partial", "--append-verify", "-h",
-                "--info=progress2,name,stats2",
-                "-e", ssh_cmd, *tarballs, f"{host}:{dest.rstrip('/')}/",
-            ]
-        )
-        if result.returncode != 0:
-            raise click.ClickException(f"rsync failed (exit {result.returncode})")
+                "--info=progress2,name,stats2", "-e", ssh_cmd, *tarballs, remote,
+            ])
+            if result.returncode != 0:
+                raise click.ClickException(f"rsync failed (exit {result.returncode})")
+        else:
+            # concurrent streams, one rsync per tarball (a thread pool balances
+            # the big and small tarballs across streams). Quiet, so the streams
+            # don't interleave; report each as it lands.
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            def _rsync_one(tarball):
+                r = subprocess.run([
+                    "rsync", "-a", "--partial", "--append-verify",
+                    "-e", ssh_cmd, tarball, remote,
+                ])
+                return tarball, r.returncode
+
+            click.secho(f" {n_jobs} concurrent streams", color="green")
+            failed = []
+            with ThreadPoolExecutor(max_workers=n_jobs) as pool:
+                futs = [pool.submit(_rsync_one, t) for t in tarballs]
+                for fut in as_completed(futs):
+                    tarball, rc = fut.result()
+                    if rc != 0:
+                        failed.append((os.path.basename(tarball), rc))
+                    else:
+                        click.secho(f"   uploaded {os.path.basename(tarball)}")
+            if failed:
+                detail = ", ".join(f"{n} (exit {c})" for n, c in failed)
+                raise click.ClickException(f"rsync failed for: {detail}")
         total = sum(os.path.getsize(t) for t in tarballs)
         click.secho(
             f" {len(tarballs)} tarball(s), {total / 2 ** 30:.1f} GiB, now under {dest}",

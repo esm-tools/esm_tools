@@ -637,7 +637,7 @@ def run_command(command):
 
 
 # Pack the files into tarball(s), depending on the size of the list
-def pack_tarfile(flist, wdir, outname):
+def pack_tarfile(flist, wdir, outname, pigz_threads=None, progress=True):
     """
     Creates a compressed tarball (``outname``) with all files found in ``flist``.
 
@@ -652,6 +652,13 @@ def pack_tarfile(flist, wdir, outname):
         off the beginning of the flist
     outname : str
         The output file name
+    pigz_threads : int, optional
+        Threads for ``pigz``. ``None`` (default) lets pigz use all cores — right
+        when packing one tarball at a time. When packing tarballs concurrently,
+        pass a per-tarball budget so the pigz instances don't oversubscribe.
+    progress : bool, optional
+        Show the per-file ``tqdm`` progress bar (default). Turn off when packing
+        in parallel, so several bars don't clash on one terminal.
 
     Returns
     -------
@@ -673,12 +680,16 @@ def pack_tarfile(flist, wdir, outname):
         _fh.write("\n".join(flist) + "\n")
         listfile = _fh.name
     try:
-        tar_part = (
-            f"tar --use-compress-program=pigz -cvf {outname} -C {wdir} -T {listfile}"
-        )
-        tqdm_part = f"tqdm --total {len(flist)} --unit files"
-        output_part = f"{outname}.log"
-        run_command(tar_part + "|" + tqdm_part + ">>" + output_part)
+        pigz = "pigz" if pigz_threads is None else f"pigz -p {pigz_threads}"
+        prog = f'--use-compress-program="{pigz}"'
+        if progress:
+            tar_part = f"tar {prog} -cvf {outname} -C {wdir} -T {listfile}"
+            tqdm_part = f"tqdm --total {len(flist)} --unit files"
+            output_part = f"{outname}.log"
+            run_command(tar_part + "|" + tqdm_part + ">>" + output_part)
+        else:
+            # quiet (no -v / no tqdm) so concurrent packs don't interleave bars
+            run_command(f"tar {prog} -cf {outname} -C {wdir} -T {listfile}")
     finally:
         os.remove(listfile)
     # with tarfile.open(outname, "w:gz") as tar:

@@ -45,6 +45,14 @@ top of the experiment folder. Note that the final date (1851-01-1 in this
 example) is **not included**. During packing, you get a progress bar indicating
 when the tarball is finished.
 
+Independent tarballs can be packed concurrently with ``-j/--jobs`` (or the
+``pack_jobs`` config key)::
+
+    esm_archive create /path/to/experiment 1850-01-01 1851-01-01 -j 4
+
+Each concurrent ``pigz`` gets a share of the cores (so they don't
+oversubscribe); the per-file progress bar is shown only for serial packing.
+
 Please be aware that are size limits in place on DKRZ's tape server. Any tar
 files **larger than 500 Gb will be trucated**. For more information, see:
 https://www.dkrz.de/up/systems/hpss/hpss
@@ -94,6 +102,39 @@ pp = pprint.PrettyPrinter(width=41, compact=True)
 config = load_config()
 
 
+def _pack_all(tasks, base_dir, jobs):
+    """Pack the gathered tarballs. ``jobs<=1`` packs serially with a per-file
+    progress bar (pigz uses all cores). ``jobs>1`` packs that many at a time,
+    quietly, each pigz limited to a share of the cores so they don't
+    oversubscribe. Tarballs are independent, so this is a straight fan-out.
+    """
+    jobs = max(1, int(jobs or 1))
+    if jobs == 1:
+        for archive_name, flist, label in tasks:
+            click.secho(f" Packing {label}")
+            pack_tarfile(flist, base_dir, archive_name)
+        return
+    cores = (
+        len(os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else (os.cpu_count() or 1)
+    )
+    per = max(1, cores // jobs)
+    click.secho(f" Packing {len(tasks)} tarballs, {jobs} at a time (pigz -p{per} each)")
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    with ThreadPoolExecutor(max_workers=jobs) as pool:
+        futs = {
+            pool.submit(
+                pack_tarfile, flist, base_dir, name, pigz_threads=per, progress=False
+            ): label
+            for name, flist, label in tasks
+        }
+        for fut in as_completed(futs):
+            fut.result()  # surface any packing error
+            click.secho(f" packed {futs[fut]}")
+
+
 @click.group(invoke_without_command=True)
 @click.version_option()
 @click.pass_context
@@ -130,7 +171,12 @@ def main(ctx, write_local_config=False, write_config=False):
     help="Path to an esm_archiving config file, overriding the search path "
     "(e.g. a COSMOS profile).",
 )
-def create(base_dir, start_date, end_date, force, interactive, config_path):
+@click.option(
+    "-j", "--jobs", "jobs", type=int, default=None,
+    help="Pack this many tarballs concurrently (default: 1, or the config "
+    "`pack_jobs`). pigz threads per tarball are budgeted from the core count.",
+)
+def create(base_dir, start_date, end_date, force, interactive, config_path, jobs):
     # local config: an explicit --config selects an alternate profile, otherwise
     # fall back to the normal search-path config. No module-global mutation.
     config = load_config(config_path) if config_path else load_config()
@@ -147,17 +193,19 @@ def create(base_dir, start_date, end_date, force, interactive, config_path):
         expid = os.path.basename(os.path.abspath(base_dir))
         arch_dir = os.path.join(base_dir, config.get("archive_dir", "archive"))
         os.makedirs(arch_dir, exist_ok=True)
+        # Gather every tarball to pack as (archive_name, flist, label), then pack
+        # them serially or `jobs`-at-a-time — they are independent tarballs.
+        tasks = []
         for filetype in ["outdata", "restart"]:
             for model, specs in templated.items():
                 tarballs = collect_tarballs(
                     base_dir, filetype, model, specs, start_date, end_date, expid
                 )
                 for tar_name, flist in tarballs.items():
-                    archive_name = os.path.join(arch_dir, tar_name + ".tgz")
-                    click.secho(
-                        f" Packing {tar_name} ({filetype}, {len(flist)} files)"
-                    )
-                    pack_tarfile(flist, base_dir, archive_name)
+                    tasks.append((
+                        os.path.join(arch_dir, tar_name + ".tgz"), flist,
+                        f"{tar_name} ({filetype}, {len(flist)} files)",
+                    ))
         # Whole-directory captures (scripts/config/log): flat dirs with no model
         # or datestamp, tarred as-is for reproducibility. forcing/input/bin are
         # excluded by default (shared pools / large boundary data).
@@ -172,9 +220,12 @@ def create(base_dir, start_date, end_date, force, interactive, config_path):
             ]
             if not flist:
                 continue
-            archive_name = os.path.join(arch_dir, f"{expid}_{extra}.tgz")
-            click.secho(f" Packing {expid}_{extra} ({extra}, {len(flist)} files)")
-            pack_tarfile(flist, base_dir, archive_name)
+            tasks.append((
+                os.path.join(arch_dir, f"{expid}_{extra}.tgz"), flist,
+                f"{expid}_{extra} ({extra}, {len(flist)} files)",
+            ))
+        n_jobs = jobs if jobs is not None else config.get("pack_jobs", 1)
+        _pack_all(tasks, base_dir, n_jobs)
         return
 
     # Legacy heuristic path (no templated specs configured):

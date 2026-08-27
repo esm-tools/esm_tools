@@ -24,7 +24,12 @@ from pydantic import AfterValidator, BaseModel, Field
 
 
 def _valid_pandas_freq(value: str) -> str:
-    pd.tseries.frequencies.to_offset(value)  # raises on an unknown offset alias
+    # Validate as the *period* frequency it is actually used as (collect_tarballs
+    # steps pd.period_range / pd.Period). to_offset accepts the same aliases but
+    # emits a FutureWarning for 'M'/'Y' in pandas >= 2.2 ("use 'ME'/'YE'"); period
+    # frequencies are not deprecated, so this both silences the warning and
+    # matches how the value is consumed.
+    pd.period_range("2000-01-01", periods=1, freq=value)  # raises on a bad alias
     return value
 
 

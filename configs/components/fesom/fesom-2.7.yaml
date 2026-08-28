@@ -6,7 +6,7 @@ fesom:
     version: "2.7"
     type: ocean
 
-    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DUSE_SINGLE_PRECISION=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
     clean_command: ${defaults.clean_command}
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
@@ -562,6 +562,7 @@ fesom:
 
                             nm_runoff_file: "${forcing_data_dir}/${forcing_folder}/${runoff_file}"
                             nm_sss_data_file: "${forcing_data_dir}/${forcing_folder}/${sss_data_file}"
+                            nm_chl_data_file: "${forcing_data_dir}/Sweeney/Sweeney_2005.nc"
 
                             runoff_data_source: ${runoff_data_source}
                             sss_data_source: ${sss_data_source}

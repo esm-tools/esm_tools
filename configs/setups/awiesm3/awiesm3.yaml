@@ -295,7 +295,7 @@ oifs:
         "v3.4":
             with_xios: true
             build_type: 'release'
-            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32
+            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16
                 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios
                 --build-type=${build_type} --install;
                 git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS;
@@ -597,12 +597,12 @@ fesom:
     with_xios: true
     choose_with_xios:
         true:
-            comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+            comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
                          -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
                         ${yac_flag} ${meshpart_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
         false:
-            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON
+            comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
                          -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
                         ${yac_flag} ${meshpart_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
@@ -627,6 +627,11 @@ fesom:
     # variant overrides this in choose_general.version below so build_submesh
     # can partition submeshes natively (no Singularity/user-namespaces needed).
     meshpart_flag: ""
+    # Single-precision FESOM (-DUSE_SINGLE_PRECISION=ON) is opt-in per version.
+    # Default off (double precision). Only the develop* variants enable it, via
+    # choose_general.version below. Released tags v3.4.2 and below stay double;
+    # v3.5+ can opt in later once validated.
+    fesom_sp_flag: ""
     model_dir: ${general.model_dir}/${fesom.destination}
     setup_dir: ${general.model_dir}
 
@@ -682,9 +687,11 @@ fesom:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         develop:
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         develop-cc:
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         # -is (ice-sheet coupled) variant additionally builds the native FESOM
@@ -693,6 +700,7 @@ fesom:
         # meshtools Singularity container (user namespaces are disabled
         # cluster-wide on levante, which breaks the container).
         develop-is:
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 
     # PISM<->FESOM dynamic-mesh coupling (general.interactive_mesh). couple_in

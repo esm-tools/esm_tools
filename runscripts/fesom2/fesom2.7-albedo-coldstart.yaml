@@ -1,0 +1,26 @@
+general:
+        user: !ENV ${USER}
+        account: "paleodyn.paleodyn"
+        setup_name: fesom
+        compute_time: "00:30:00"
+        initial_date: '1959-01-01'
+        final_date: '1959-02-01'
+        base_dir: "/albedo/work/user/jstreffi/runtime/${general.setup_name}-${general.version}/"
+        nyear: 0
+        nmonth: 1
+        use_venv: False
+
+fesom:
+        version: 2.7
+        model_dir: "/albedo/work/user/jstreffi/model_codes/fesom-2.7/"
+        pool_dir: "/albedo/work/projects/p_pool_fesom2"
+        mesh_dir: "/albedo/work/projects/p_pool_fesom2/core2/"
+        climate_data_dir: "/albedo/work/projects/p_pool_fesom2/hydrography/"
+        forcing_data_dir: "/albedo/work/projects/p_pool_fesom2/forcing/"
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'm'
+        resolution: "CORE2"
+        lresume: false
+        time_step: 1800
+        nproc: 288

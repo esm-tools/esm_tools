@@ -280,7 +280,7 @@ oifs:
                         version: "48r1"
                         with_xios: True
                         build_type: 'release'
-                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
                         mip: "cmip6"
                         wam: true

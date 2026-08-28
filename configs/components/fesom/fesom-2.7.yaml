@@ -28,6 +28,15 @@ fesom:
         branch: "2.7.0"
         namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
 
+      "2.7.0":
+        branch: "2.7.0"
+        namelist_dir: "${esm_namelist_dir}/fesom2/2.7.0/"
+
+      "2.7.3":
+        branch: "2.7.3"
+        destination: "fesom-2.7.3"
+        namelist_dir: "${model_dir}/config/"
+
       "2.7-paleodyn":
         branch: "2.7.0"
         wiso_code: true

@@ -14,6 +14,7 @@ from esm_catalog.scan.sourcing import (
     _namelists_by_component,
     _parse_datestamp,
     _tidy_log_outdata,
+    _walk_outdata,
     output_files,
     source_experiment,
 )
@@ -307,3 +308,34 @@ def test_namelists_by_component(tmp_path):
     assert set(result["echam"]) == {"namelist.echam"}  # stamped copy skipped
     assert result["echam"]["namelist.echam"]["radctl"]["co2vmr"] == 284.3e-6
     assert result["fesom"]["namelist.oce"]["oce_dyn"]["c_d"] == 0.0025
+
+
+def test_walk_outdata_component_from_boundary(tmp_path):
+    outdata = UPath(tmp_path) / "outdata"
+    (outdata / "fesom").mkdir(parents=True)
+    (outdata / "echam").mkdir(parents=True)
+    (outdata / "fesom" / "MLD1.fesom.1850.nc").write_text("x")
+    (outdata / "echam" / "tas.nc").write_text("x")
+
+    def components(root: UPath) -> dict[str, str]:
+        return {cp.path.name: cp.component for cp in _walk_outdata(root, None)}
+
+    # Absolute exp_root: component is the outdata subdir.
+    assert components(UPath(tmp_path)) == {
+        "MLD1.fesom.1850.nc": "fesom",
+        "tas.nc": "echam",
+    }
+    # Relative exp_root must give the same result. Regression: a len(base) slice
+    # stripped an absolute walk-root prefix and mislabelled the component (a
+    # '/albedo/...' root under 'outdata' produced 'work').
+    import os
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(tmp_path)
+        assert components(UPath(".")) == {
+            "MLD1.fesom.1850.nc": "fesom",
+            "tas.nc": "echam",
+        }
+    finally:
+        os.chdir(cwd)

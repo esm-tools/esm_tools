@@ -138,7 +138,10 @@ def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
     from esm_catalog.config import Settings
     from esm_catalog.xdg import token_file
 
-    settings = Settings(server_url=server_url, verify_tls=not insecure)
+    # -k only overrides; without it, ESM_CATALOG_VERIFY_TLS from env/config wins.
+    settings = Settings(server_url=server_url)
+    if insecure:
+        settings.verify_tls = False
     try:
         meta = _auth.fetch_oidc_metadata(settings)
     except Exception as exc:  # noqa: BLE001 — surface any discovery failure cleanly
@@ -295,11 +298,13 @@ def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None
     from esm_catalog.client import StacClient
     from esm_catalog.config import Settings
 
-    # Only override server_url when --server is given, so config/env can supply
-    # it otherwise (passing None would clobber those, as init has top precedence).
-    settings = Settings(verify_tls=not insecure)
+    # Override only what the flags give, so config/env supplies the rest (init
+    # kwargs have top precedence — passing them unconditionally clobbers env).
+    settings = Settings()
     if server:
         settings.server_url = server
+    if insecure:
+        settings.verify_tls = False
 
     try:
         api_url = settings.api_url

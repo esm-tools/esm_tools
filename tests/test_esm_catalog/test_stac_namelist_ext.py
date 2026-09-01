@@ -23,6 +23,7 @@ from esm_catalog.item import make_item
 from esm_catalog.namelist import (
     Namelist,
     NamelistFilename,
+    _arrow_safe,
     _is_queryable,
     add_namelist_collection_extension,
     add_namelist_item_extension,
@@ -290,3 +291,17 @@ def test_every_shipped_namelist_flattens_and_validates(
 def test_item_validates_against_namelist_schema(nml_schema, temp_nc):
     exp_metadata = make_exp_metadata(namelists_by_component=by_component("echam"))
     assert_valid(make_item(temp_nc, make_file_metadata(), exp_metadata), nml_schema)
+
+
+def test_arrow_safe_stringifies_only_mixed_kind_lists():
+    # A mixed text+number list (f90nml's putrerun = 1,'months','first',0) cannot
+    # be a single-typed geoparquet column, so every element is stringified.
+    assert _arrow_safe([1, "months", "first", 0]) == ["1", "months", "first", "0"]
+    # Homogeneous lists (all numeric / all text) and scalars pass through.
+    assert _arrow_safe([1, 2, 3]) == [1, 2, 3]
+    assert _arrow_safe([1.0, 2.5]) == [1.0, 2.5]
+    assert _arrow_safe(["a", "b"]) == ["a", "b"]
+    assert _arrow_safe(0.000284) == 0.000284
+    assert _arrow_safe("scalar") == "scalar"
+    # None is preserved (a nullable column), not stringified to "None".
+    assert _arrow_safe([1, "x", None]) == ["1", "x", None]

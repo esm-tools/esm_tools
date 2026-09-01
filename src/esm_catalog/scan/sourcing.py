@@ -249,12 +249,18 @@ def _walk_outdata(
         return
     fs = outdata.fs
     base = outdata.path.rstrip("/")
+    # The component is the first path segment below outdata/. Split on the
+    # outdata boundary rather than slicing by len(base): fs.walk may return
+    # absolute roots even when base is relative (e.g. exp_root='.'), and a bare
+    # root[len(base):] would then strip the wrong prefix -- a '/albedo/...' root
+    # under a 7-char base 'outdata' famously yields the component 'work'.
+    marker = "/" + _OUTDATA_SUBDIR + "/"
     count = 0
     for root, _dirs, files in fs.walk(base):
-        rel = root[len(base) :].lstrip("/")
-        if not rel:
+        after = root.rsplit(marker, 1)
+        if len(after) < 2 or not after[1]:
             continue  # files sitting directly in outdata/ have no component
-        component = rel.split("/", 1)[0]
+        component = after[1].split("/", 1)[0]
         for name in sorted(files):
             count += 1
             if on_file is not None:

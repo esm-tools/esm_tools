@@ -11,6 +11,7 @@ from upath import UPath
 from esm_catalog.scan.sourcing import (
     SourcingError,
     TidyOutdataEntry,
+    _namelists_by_component,
     _parse_datestamp,
     _tidy_log_outdata,
     output_files,
@@ -283,3 +284,26 @@ def test_tidy_log_outdata_yields_component_dest_md5_and_skips_malformed():
         TidyOutdataEntry("echam", "/d/no_checksum", None),
         TidyOutdataEntry("echam", "/d/good", "abc123"),
     ]
+
+
+def test_namelists_by_component(tmp_path):
+    config = UPath(tmp_path) / "config"
+    (config / "echam").mkdir(parents=True)
+    (config / "fesom").mkdir(parents=True)
+    (config / "oasis3mct").mkdir(parents=True)  # no namelist.* -> excluded
+
+    (config / "echam" / "namelist.echam").write_text(
+        "&radctl\n  co2vmr = 284.3e-6\n/\n"
+    )
+    # a per-segment copy must be skipped (the base file is canonical)
+    (config / "echam" / "namelist.echam_18500101-18500131").write_text(
+        "&radctl\n  co2vmr = 999.0\n/\n"
+    )
+    (config / "fesom" / "namelist.oce").write_text("&oce_dyn\n  c_d = 0.0025\n/\n")
+
+    result = _namelists_by_component(UPath(tmp_path))
+
+    assert set(result) == {"echam", "fesom"}  # oasis3mct dropped (no namelists)
+    assert set(result["echam"]) == {"namelist.echam"}  # stamped copy skipped
+    assert result["echam"]["namelist.echam"]["radctl"]["co2vmr"] == 284.3e-6
+    assert result["fesom"]["namelist.oce"]["oce_dyn"]["c_d"] == 0.0025

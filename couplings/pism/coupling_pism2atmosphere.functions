@@ -137,7 +137,11 @@ function pism_atmosphere_get_newest_output {
             echo "                 -   selecting summer values only! Month=$month_to_select "
             echo "                 -   ifile = ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc; ofile = ${COUPLE_DIR}/${EXP_ID}_pism_extra_summer_${YR0_pism}-${END_YEAR_pism}.nc "
             
-        
+       
+            if [[ "x${SEA_LEVEL_FORCING}" != "x0" ]]; then
+                cdo -s -chname,sea_level_rise_potential,delta_SL -mulc,-1 -subc,${SEA_LEVEL_FORCING} -timmean -selname,sea_level_rise_potential ${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_ts_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc ${COUPLE_DIR}/latest_global_mean_sea_level_forcing.nc
+            fi
+
             # Select mask either by minimum ice thickness over year (MIN_MON_SELECT==1) or by summer value (Jun for NH, Dec for SH)
             if [[ "x${MIN_MON_SELECT}" == "x1" ]]; then
                 cdo -s \
@@ -182,14 +186,16 @@ function pism_atmosphere_update_domain_mask {
 function pism_atmosphere_generate_orography_anomaly {
         echo; echo "                 Generating orography anomaly..."
         generate_orography_anomaly_over_pism_run
-        correct_lonlat_order ${COUPLE_DIR}/ice_orog_difference.nc
+        if [ "x${orog_reference_pism}" != "x1" ]
+        then
+            correct_lonlat_order ${COUPLE_DIR}/ice_orog_difference.nc
+        fi
         echo; echo "                  ...done."
 }
 
 function pism_atmosphere_generate_ice_thickness_anomaly {
         echo; echo "                 Generating ice_thickness anomaly..."
         generate_ice_thickness_anomaly_over_pism_run
-        correct_lonlat_order ${COUPLE_DIR}/ice_thk_above_flotation_difference.nc
         correct_lonlat_order ${COUPLE_DIR}/ice_thk_difference.nc
         convert_ice_thk_diff_to_flux_over_pism_run
         echo; echo "                  ...done."
@@ -205,7 +211,12 @@ function pism_atmosphere_generate_runoff {
 
 function pism_atmosphere_assemble_final_file {
         echo; echo "                  Assembling final ice_file_for_atmosphere.nc and cleaning up..."
-        files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_orog_difference.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
+        if [ "x${orog_reference_pism}" == "x1" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ] 
+        then
+            files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
+        else
+            files_needed="${COUPLE_DIR}/ice_mask_current.nc ${COUPLE_DIR}/ice_orog_difference.nc ${COUPLE_DIR}/ice_runoff_flux_total.nc ${COUPLE_DIR}/ice_runoff_kg_m-2_s-1.nc"
+        fi
         cdo -s -O merge $files_needed ${COUPLE_DIR}/ice_file_for_atmosphere.nc
 	    ncwa -a time ${COUPLE_DIR}/ice_file_for_atmosphere.nc tmp; mv tmp ${COUPLE_DIR}/ice_file_for_atmosphere.nc
         #rm $files_needed $rmlist
@@ -278,8 +289,7 @@ function generate_ice_thickness_anomaly_over_pism_run {
         echo ""; echo "                 *   calculating ice thickness change over the last pism chunk"
         ifile1=${last_year_in_chunk_restart}
         ifile2=${first_year_in_chunk_input}
-        ofile1=${COUPLE_DIR}/ice_thk_above_flotation_difference.nc
-        ofile2=${COUPLE_DIR}/ice_thk_difference.nc
+        ofile=${COUPLE_DIR}/ice_thk_difference.nc
         cdo -s -expr,"thk_topg=thk+topg" \
                 $ifile1 \
                 tmp1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
@@ -288,73 +298,84 @@ function generate_ice_thickness_anomaly_over_pism_run {
                 $ifile2 \
                 tmp2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         
-        cdo -s -chname,"thk_topg","thk_diff" \
-                -sub \
-                -ifthen -gtc,0 tmp1 tmp1 \
-                -ifthen -gtc,0 tmp2 tmp2 \
-                $ofile1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-        
-        rm tmp1 tmp2
-
         cdo -s -chname,"thk","thk_diff" \
                 -sub \
                 -selvar,"thk" \
                 $ifile1 \
                 -selvar,"thk" \
                 $ifile2 \
-                $ofile2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         
+        rm tmp1 tmp2
+
         #ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         #mv tmp.nc $ofile
 }
 
 function convert_ice_thk_diff_to_flux_over_pism_run {
         echo ""; echo "                 *   converting thickness difference to freshwater flux over the last pism chunk"
-        ifile1=${COUPLE_DIR}/ice_thk_above_flotation_difference.nc
-        ifile2=${COUPLE_DIR}/ice_thk_difference.nc
-        ofile1=${COUPLE_DIR}/ice_runoff_from_thk_above_flotation_difference.nc
-        ofile2=${COUPLE_DIR}/ice_runoff_from_thk_difference.nc
+        ifile=${COUPLE_DIR}/ice_thk_difference.nc
+        ofile=${COUPLE_DIR}/ice_runoff_from_thk_difference.nc
 
         cdo -s -divc,${CHUNK_SIZE_pism_standalone} \
                 -chname,"thk_diff","runoff" \
                 -mulc,910 \
-                $ifile1 \
-                $ofile1 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-        
-        cdo -s -divc,${CHUNK_SIZE_pism_standalone} \
-                -chname,"thk_diff","runoff" \
-                -mulc,910 \
-                $ifile2 \
-                $ofile2 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
-                #-mulc,${RES_pism//km} \
-                #-mulc,${RES_pism//km} \
+                $ifile \
+                $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
 }
 
 function generate_orography_anomaly_over_pism_run { 
         echo ""; echo "                 *   calculating surface height change over the last pism chunk"
         ifile1=${last_year_in_chunk_restart}
-        ifile2=${first_year_in_chunk_input}
-        ofile=${COUPLE_DIR}/ice_orog_difference.nc
-        cdo -s -sub \
-                -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
-                -expr,"${OROG_VARNAME_pism}=thk+topg" \
-                $ifile1 \
-                -expr,"${OROG_VARNAME_pism}=thk+topg" \
-                $ifile2 \
-                $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+       
+        # LA: as before use difference between PISM input and PISM restart for orography change 
+        if [[ "x${orog_reference_pism}" == "x0" ]]; then 
+            ifile2=${first_year_in_chunk_input}
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        elif [ "x${orog_reference_pism}" == "x1" ] && [ "x${CHUNK_NUMBER_pism}" == "x2" ]; then 
+            #ifile2="${COUPLE_DIR}/elev_lo.nc"
+            ofile=${COUPLE_DIR}/ice_orog.nc
+            cdo -s  \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+            ncwa -a time $ofile tmp
+            mv tmp $ofile
+        else
+            if [ -f ${COUPLE_DIR}/ice_orog.nc ]
+            then
+                mv ${COUPLE_DIR}/ice_orog.nc ${COUPLE_DIR}/ice_orog.nc_BAK
+            fi
+            
+            ifile2=${first_year_in_chunk_input}
+            ofile=${COUPLE_DIR}/ice_orog_difference.nc
+            cdo -s -sub \
+                    -chname,${OROG_VARNAME_pism},${OROG_ANOM_VARNAME_pism} \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile1 \
+                    -expr,"${OROG_VARNAME_pism}=thk+topg" \
+                    $ifile2 \
+                    $ofile 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+           echo " * continue with only ice thk diff approach"
+           #echo " * EXIT "
+           #exit 42 
+        fi
 
-        ncks -O -x -v time,GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+        ncks -O -x -v GEOSP $ofile tmp.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
         mv tmp.nc $ofile
 }
 
 function generate_runoff_select_variables {
         echo ""; echo "                 *   selecting vars"
         # LA account_all_fw_input needs to be defined
-        if [[ "x${account_all_fw_input}" == "x1" ]]; then
-            ifile=${COUPLE_DIR}/ice_runoff_from_thk_difference.nc
-        else
-            ifile=${COUPLE_DIR}/ice_runoff_from_thk_above_flotation_difference.nc
-        fi
+        ifile=${COUPLE_DIR}/ice_runoff_from_thk_difference.nc
         ofile=${COUPLE_DIR}/ice_runoff.nc
 
 	case ${VERSION_pism:--0.1} in
@@ -473,8 +494,58 @@ function generate_runoff_combine_fields {
                 #***************************************************************************
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
-                    echo " * substratiing discharge from runoff ${ifile}"
-                    cdo -s -chname,tendency_of_ice_amount_due_to_discharge,runoff -sub -selname,tendency_of_ice_amount_due_to_discharge ${ifile} -selname,runoff ${ifile} ${ofile} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm 
+                    # gfw_atmo content must equal "all PISM mass balance components
+                    # minus the iceberg discharge", because the FESOM iceberg model is
+                    # seeded by tendency_of_ice_amount_due_to_discharge and would
+                    # otherwise double-count that freshwater mass.
+                    #
+                    # 'runoff' here is NOT a surface-runoff component: it is
+                    # 910 * d(thk)/dt from convert_ice_thk_diff_to_flux_over_pism_run,
+                    # i.e. the TOTAL ice mass tendency, which already contains the
+                    # discharge.  The sum of mass balance components is therefore
+                    # 'runoff' alone, and
+                    #   gfw content = runoff - tendency_of_ice_amount_due_to_discharge
+                    # (sign convention: ice-sheet convention, mass gain positive;
+                    #  coupling_ice2echam.functions flips it with mulc,-1 for the ocean.)
+                    #
+                    # The previous implementation was 'cdo sub discharge runoff', which
+                    # produces discharge - runoff: the operands are reversed relative to
+                    # the intent, so the field had the correct magnitude but the wrong sign.
+                    #
+                    # MISSING VALUES: with account_all_fw_input != 1 the 'runoff' base file
+                    # is ice_runoff_from_thk_above_flotation_difference.nc, which is masked
+                    # by '-ifthen -gtc,0' on thk+topg and therefore has missing values over
+                    # ALL floating ice -- which is exactly where the discharge lives (~98% of
+                    # the domain-integrated discharge in a typical NH/SH run).  CDO propagates
+                    # missing through 'sub', so both operands must be set to 0 first or the
+                    # correction silently disappears.
+                    echo " * subtracting iceberg discharge from the mass balance sum: ${ifile}"
+                    _disch_tmp="${ofile%.nc}_disch_tmp.nc"
+                    _runoff_tmp="${ofile%.nc}_runoff_tmp.nc"
+                    rm -f ${_disch_tmp} ${_runoff_tmp}
+                    # sum of all mass balance components (extend here if more are added).
+                    # setmisstoc,0: masked-out cells contribute nothing, but must not turn
+                    # the whole cell missing in the subtraction below.
+                    cdo -s -setmisstoc,0 -selname,runoff ${ifile} \
+                           ${_runoff_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                    # iceberg discharge component, renamed to 'runoff' so that cdo sub
+                    # operates on a single matching variable name
+                    cdo -s -chname,tendency_of_ice_amount_due_to_discharge,runoff \
+                           -setmisstoc,0 \
+                           -selname,tendency_of_ice_amount_due_to_discharge ${ifile} \
+                           ${_disch_tmp} 2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                    if [ -s "${_disch_tmp}" ]; then
+                        # subtract iceberg discharge (handled by the FESOM iceberg model)
+                        cdo -s sub ${_runoff_tmp} ${_disch_tmp} ${ofile} \
+                            2>> ${COUPLE_DIR}/cdo_stderr_pism2atm
+                    else
+                        echo " * ERROR: tendency_of_ice_amount_due_to_discharge missing from ${ifile};"
+                        echo " *        cannot remove iceberg discharge from gfw_atmo -- calving"
+                        echo " *        freshwater would be delivered twice. Aborting."
+                        rm -f ${_disch_tmp} ${_runoff_tmp}
+                        exit 42
+                    fi
+                    rm -f ${_disch_tmp} ${_runoff_tmp}
                 #***************************************************************************
                 else
 		    # Only need tendency of ice amount, do not need to combine fields.
@@ -497,6 +568,12 @@ function generate_runoff_combine_fields {
                 #LA include iceberg model
                 if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
                     ncrename -v runoff,total_ice_mass_loss_flux $ofile
+                    # Describe the actual content: the iceberg discharge has been removed.
+                    ncatted -O -h \
+                        -a long_name,total_ice_mass_loss_flux,o,c,"mass loss flux to hydrology (all PISM mass balance components except iceberg discharge)" \
+                        -a standard_name,total_ice_mass_loss_flux,o,c,"land_ice_specific_mass_flux_excluding_calving_and_ice_front_melting" \
+                        -a comment,total_ice_mass_loss_flux,o,c,"iceberg discharge is delivered to the ocean separately via the FESOM iceberg model and is subtracted here to avoid double-counting" \
+                        $ofile
                 else
                     ncrename -v runoff,total_ice_mass_loss_flux $ofile
 		fi

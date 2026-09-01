@@ -10,7 +10,6 @@
 ## @var ECHAM_TO_ISM_multiyear_mean
 ## Controls whether or not a multi-year mean is made from `atmosphere_file_for_ice.nc`
 ## Originally defined in ::echam_after_last_run_in_chunk
-export ECHAM_TO_ISM_multiyear_mean
 
 ##@var ECHAM_TO_ISM_atmosphere_forcing
 ## Controls whether `ECHAM6` output is used to prepare a forcing file for a generic ice sheet model.
@@ -60,7 +59,7 @@ echam2ice() {
             fi
         done
 
-        echo "                 *** F I N I S E D      echam2ice *** "
+        echo "                 *** F I N I S H E D    echam2ice *** "
         echo "                =================================================================="
 }
 
@@ -72,19 +71,14 @@ echam2ice() {
 ## 1. Constructs an input list of files from which the `ECHAM6` output will be extracted
 ## 2. Selects relevant variables from these files
 ## 3. Concatenates files to single file for further manipulation
-## 4. Generates a multiyear mean, if `ECHAM_TO_ISM_multiyear_mean` is `1`
+## 4. Generates a multiyear mean, if `ECHAM_TO_ISM_multiyear_mean` is `1` - LA: option removed
 ## 5. Adds `atmosphere_file_for_ice.nc` to the couple directory via `add_to`.
 iterative_coupling_echam6_ice_make_forcing() {
         echo "                Preparing echam6 file for processing in an ice sheet model..."
 
-        ECHAM_TO_ISM_multiyear_mean=${ECHAM_TO_ISM_multiyear_mean:-1}
-
         echam_ice_construct_input_list
         echam_ice_select_relevant_variables
         echam_ice_concatenate_files
-        if [ "x${ECHAM_TO_ISM_multiyear_mean}" == "x1" ]; then
-                echam_ice_generate_multiyear_mean
-        fi
         #add_to $(pwd)/atmosphere_file_for_ice.nc atmosphere_file_for_ice.nc couple
         cp $(pwd)/atmosphere_file_for_ice.nc ${COUPLE_DIR}/atmosphere_file_for_ice.nc
 
@@ -175,8 +169,7 @@ echam_ice_construct_input_list() {
         CHUNK_END_DAY_echam=$(date -d "${CHUNK_END_DATE_echam:?Missing_var}" +%d)
 
         test_if_set CHUNK_END_YEAR_echam
-        number_of_years_for_forcing=${number_of_years_for_forcing:-1}
-        start_year_couple=$(( CHUNK_END_YEAR_echam - number_of_years_for_forcing + 1 ))
+        start_year_couple=$(( CHUNK_END_YEAR_echam - CHUNK_SIZE + 1 ))
         end_year_couple=${CHUNK_END_YEAR_echam}
         echam6_file_list_for_ice=""
         for year in $(seq $start_year_couple $end_year_couple ); do
@@ -207,10 +200,11 @@ echam_ice_construct_input_list() {
 ## mass balance schemes, e.g. an EBM.
 echam_ice_select_relevant_variables() {
         echo ""; echo "                *   selecting relevant variables"
+        echo ""; echo "                *   echam6_file_list_for_ice=${echam6_file_list_for_ice}"
 
         processed_echam6_file_list_for_ice=""
         
-        if [[ "x${oro_update_var}" == "xgeosp" ]]; then
+        if [[ "x${oro_update_var}" == "xGEOSP" ]]; then
             for file in ${echam6_file_list_for_ice}; do
                     filename=$(basename $file)
                     ${cdo} -s -f nc \
@@ -220,15 +214,12 @@ echam_ice_select_relevant_variables() {
                                    uv=(u10^2+v10^2)^(1/2)" \
                             -setcodetab,${file}.codes \
                             -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
+                            -monmean \
                             $file \
                             "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
-                            #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \
-                            #-setcodetab,echam \
-                            #-selcode,169,143,142,129,176,204,177,205,164 \
-
                     processed_echam6_file_list_for_ice="$processed_echam6_file_list_for_ice ${filename%.*}_for_ice.nc"
             done
-       else 
+       elif [[ "x${oro_update_var}" == "xOROMEA" ]]; then
             for file in ${echam6_file_list_for_ice}; do
                     filename=$(basename $file)
                     ${cdo} -s -f nc \
@@ -238,13 +229,14 @@ echam_ice_select_relevant_variables() {
                                    uv=(u10^2+v10^2)^(1/2)" \
                             -setcodetab,${file}.codes \
                             -selcode,169,167,143,142,144,129,176,204,177,205,164,184,54,165,166 \
+                            -monmean \
                             $file \
                             "${filename%.*}"_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
-                            #-expr,"temp2=temp2; orog=geosp/9.81; aprt=aprl+aprc; swd=srads-sradsu; lwd=trads-tradsu; cc=aclcov" \
-                            #-setcodetab,echam \
-                            #-selcode,169,143,142,129,176,204,177,205,164 \
                     processed_echam6_file_list_for_ice="$processed_echam6_file_list_for_ice ${filename%.*}_for_ice.nc"
             done
+        else
+            echo ""; echo " You have to choose either GEOSP or OROMEA. Exit with error! "
+            return 42
         fi
         unset echam6_file_list_for_ice 
 }
@@ -271,47 +263,6 @@ echam_ice_concatenate_files() {
         
         #rm ${processed_echam6_file_list_for_ice}
         unset processed_echam6_file_list_for_ice
-}
-
-## @fn echam_ice_generate_multiyear_mean() 
-## @brief Makes a multiyear mean of `atmosphere_file_for_ice.nc`
-##
-## If the switch #ECHAM_TO_ISM_multiyear_mean is set to `1`, a multi-year monthly mean of `atmosphere_file_for_ice.nc` is made.
-echam_ice_generate_multiyear_mean() {
-        echo ""; echo "                *   making multi-year monthly mean"
-        
-        ##################################
-        CHUNK_END_YEAR_echam=$(date -d "${CHUNK_END_DATE_echam:?Missing_var}" +%Y)
-        CHUNK_START_YEAR_echam=$(date -d "${CHUNK_START_DATE_echam:?Missing_var}" +%Y)
-
-        start_year_couple=$(( CHUNK_START_YEAR_echam + 1 ))
-        echo "* select years from ${start_year_couple} to ${CHUNK_END_YEAR_echam} "
-        ##################################
-
-        ###################################
-        ## LA: choose minimum temperature
-        #echo ""; echo "                 *   selcting year with minimum summer temp2 over NA"
-        #${cdo} -s -yearmean -selmon,4,5,6 -selname,temp2 atmosphere_file_for_ice.nc tmp
-        #${cdo} -s -sellonlatbox,-100,-55,40,60 tmp tmp2
-        #${cdo} -s -fldmean tmp2 tmp3
-        #${cdo} -s -eq -timmin tmp3 tmp3 tmp4 
-        #${cdo} -s -remapnn,${COUPLE_DIR}/atmosphere.griddes tmp4 tmp5
-        #${cdo} -s -splityear tmp5 year
-        #${cdo} -s -splityear atmosphere_file_for_ice.nc atm.year
-
-        ##for YEAR in $(CHUNK_START_YEAR_echam..CHUNK_END_YEAR_echam)
-        #for YEAR in $(seq ${CHUNK_START_YEAR_echam} 1 ${CHUNK_END_YEAR_echam})
-        #do
-        #    echo ""; echo "             * processing year ${YEAR}"
-        #    ${cdo} -s -ifthen year${YEAR}.nc atm.year${YEAR}.nc tmp.year${YEAR}.nc
-        #done
-        #${cdo} -s -ymonsum -cat "tmp.year*.nc" tmp.final
-        #mv tmp.final atmosphere_file_for_ice.nc
-        ##rm tmp tmp2 tmp3 tmp4 tmp5 atm.year* year* tmp.year*
-        ###################################
-
-        ${cdo} -s -ymonmean -selyear,${start_year_couple}/${CHUNK_END_YEAR_echam} atmosphere_file_for_ice.nc tmp 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
-        mv -f tmp atmosphere_file_for_ice.nc
 }
 
 # emacs: -*- mode: shell;

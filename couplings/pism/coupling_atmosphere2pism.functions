@@ -110,6 +110,37 @@ atmosphere2pism() {
             ;;
     esac
 
+    #
+    # Here ANOMALY in air-temperature and precipitation
+    #
+    if [[ "x${ANOMALY_AIR_TEMPERATURE:-0}" == "x1" || \
+         "x${ANOMALY_PRECIPITATION:-0}" == "x1" ]] ; then
+        # Initialize require variables and file names
+        ic_atm2pism_anoforce_initialize
+
+        if [ "x${ANOMALY_AIR_TEMPERATURE:-0}" == "x1" ] ; then
+            ic_atm2pism_anoforce_offset_temp_air_regridded
+            ic_atm2pism_anoforce_offset_temp_firn_regridded
+            # To ensure that we do not have any double accounting
+            TEMP_ANOM=0
+            REDUCE_TEMP=0
+        fi
+
+        if [ "x${ANOMALY_PRECIPITATION:-0}" == "x1" ] ; then
+            if [ 1 -eq 1 ] ; then
+                # Precipitation is scaled by anomaly (Multiplication of
+                # actual precipitation by base state)
+                ic_atm2pism_anoforce_scale_precipitation_regridded
+            else
+                # Precipition as an offset (Addition)
+                ic_atm2pism_anoforce_offset_precipitation_regridded
+            fi
+            # To ensure that we do not have any double accounting
+            PREC_ANOM=0
+        fi
+    fi
+    
+    
     iterative_coupling_atmosphere_pism_ablation_method=${iterative_coupling_atmosphere_pism_ablation_method:-PDD}
     echo -e "\t\t--> Ablation method >>> ${GREEN}${iterative_coupling_atmosphere_pism_ablation_method}${NOCOLOR} <<<"
     case $iterative_coupling_atmosphere_pism_ablation_method in
@@ -370,7 +401,12 @@ ic_atm2pism_prepare_define_constants() {
     echo; echo -e "\t\t* Defining constants"
     INTERPOL_TYPE_ATM="bil"  #"bil" "con" "dis" "nn"
     WEIGHTS_ATM2ICE=weights_atm2ice.${INTERPOL_TYPE_ATM}.nc
-    GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+    if [[ -f ${COUPLE_DIR}/ice.griddes ]]
+    then
+        GRIDDES_ICE=${COUPLE_DIR}/ice.griddes
+    else
+        GRIDDES_ICE=${POOL_DIR_pism}/grids/${DOMAIN_pism}/${EXE_pism}_${DOMAIN_pism}_${RES_pism}.griddes
+    fi
     GRIDDES_ATM=atmosphere.griddes
 
     NOCOLOR='\033[0m'
@@ -676,7 +712,7 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         else
                 #elev_hi_file="${INPUT_FILE_NAME_BASE_pism%.*}"_thk_plus_topg.nc
                 elev_hi_file=elev_hi.nc
-		echo "UKK2: elev_hi=" ${elev_hi_file}
+		        echo "UKK2: elev_hi=" ${elev_hi_file}
                 echo " * LA DEBUG: INPUT_FILE_pism = ${INPUT_FILE_pism}"
                 echo " * LA DEBUG: INPUT_FILE_NAME_BASE_pism = ${INPUT_FILE_NAME_BASE_pism%.*}"
                 ${cdo} -s \
@@ -688,6 +724,8 @@ ic_atm2pism_regrid_downscale_generate_elevation_difference() {
         fi
         cp ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_elevation}.nc ${COUPLE_DIR}/elev_lo.nc
         ${cdo} -s sub ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
+        cp ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_lo.nc_${CHUNK_START_YEAR_pism}
+        cp ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_hi.nc_${CHUNK_START_YEAR_pism}
 	#UKK generate elevation differences for desertification scheme 
 	#the idea is to prevent that the ice sheet grows unlimited, if the HR (high res
 	#resolution) ice sheet exceeds the height of the LR ice sheet and gets too
@@ -807,57 +845,10 @@ ic_atm2pism_regrid_downscale_temperature_below_firn() {
 ## elevations >2000m mostly following Ziemen et al, 2014. 
 ## only difference: we only aply it if elev_hi > elev_lo... 
 ic_atm2pism_regrid_downscale_precipitation() {
-        DOWNSCALE_PRECIP=${DOWNSCALE_PRECIP:-1}
-        if [ "x${DOWNSCALE_PRECIP}" == "x1" ]; then
-                echo ""; echo -e "\t\t*  downscaling precipitation"
-                # Now we do precipitation
-                gamma="-0.07"
-                echo -e "\t\t-  factor γ=${gamma}"
-                echo -e "\t\t-  P_downscaled = P * e ** (gamma * (T_downscaled - T_original))"
-                ${cdo} -s \
-                        -mul \
-                        ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc \
-                        -exp \
-                        -mulc,$gamma \
-                        -sub \
-                        ${COUPLE_DIR}/temperature.nc \
-                        ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc \
-                        ${COUPLE_DIR}/precip_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                echo -e "\t\t-  corrections applied (time mean of difference Hi-Res - Lo-Res) "
-                echo "                       fldmin: $(cdo -s -output -fldmin -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
-                echo "                      fldmean: $(cdo -s -output -fldmean -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
-                echo "                       fldmax: $(cdo -s -output -fldmax -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
-                mv ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/precipitation.nc
-                if [ "x$backup_temperature" == "x1" ]; then
-                        echo -e "\t\t  Restoring interpolated temperature for use in atmo_given_file.nc"
-                        mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_temperature}.nc ${COUPLE_DIR}/temperature.nc
-			DOWNSCALE_TEMP=0
-                fi
-        elif [ "x${DOWNSCALE_PRECIP}" == "desertification" ]; then
-        echo ""; echo -e "\t\t*  downscaling precipitation following desertification scheme -> Ziemen et al, 2014 "
-                # Now we do precipitation
-                gamma=${gamma:-"-0.00069315"}
-                echo -e "\t\t-  factor γ=${gamma}"
-                echo -e "\t\t-  P_downscaled = P * e ** (-gamma * max(0,(max(2000,Z_hi) - max(2000,Z_lo))))"
-               
-                ${cdo} -s \
-                        -mul \
-                        ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc \
-                        -exp \
-                        -mulc,$gamma \
-                        ${COUPLE_DIR}/elev_hi_minus_lo_2000.nc \
-                        ${COUPLE_DIR}/precip_hi.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                echo -e "\t\t-  corrections applied (time mean of difference Hi-Res - Lo-Res) "
-                echo "                       fldmin: $(cdo -s -output -fldmin -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
-                echo "                      fldmean: $(cdo -s -output -fldmean -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
-                echo "                       fldmax: $(cdo -s -output -fldmax -timmean -sub ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc)"
-                mv ${COUPLE_DIR}/precip_hi.nc ${COUPLE_DIR}/precipitation.nc   
-        else
-                echo ""; echo -e "\t\t*   NOT downscaling precipitation"
-                echo -e "\t\t-   falling back to bilinear interpolation for precipitation!"
-                # Take the already bilinearly interpolated file
-                mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc ${COUPLE_DIR}/precipitation.nc
-        fi
+         echo ""; echo -e "\t\t*   NOT downscaling precipitation"
+         echo -e "\t\t-   falling back to bilinear interpolation for precipitation!"
+         # Take the already bilinearly interpolated file
+         mv ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${atmosphere_name_precipitation}.nc ${COUPLE_DIR}/precipitation.nc
 }
 
 ic_atm2pism_regrid_downscale_shortwave_downward_radiation() {
@@ -1323,25 +1314,6 @@ ic_atm2pism_ablation_pdd_set_options_atmo_given() {
         echo "pism_set_config_value_FORCE___atmosphere_given_period=${number_of_timesteps_in_atmo_given_file}" \
         >> ${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
 		
-        #        ${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
-        #    echo "pism_set_forcing_file___atmosphere_lapse_rate=${COUPLE_DIR}/surface_altitude_coarse_resolution.nc" >> \
-	#	${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
-	#else
-        #    echo "pism_set_coupler___atmosphere=given" >> \
-	#	${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
-        #fi
-        #
-        #echo "pism_set_coupler___surface=pdd" \
-        #>> ${COUPLE_DIR}/pism_coupler_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
-
-        #echo "pism_set_forcing_file___atmosphere_given=${COUPLE_DIR}/atmo_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc" \
-        #>> ${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
-
-        #number_of_timesteps_in_atmo_given_file=$(cdo -s \
-        #    nyear \
-        #    ${COUPLE_DIR}/atmo_given_file_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.nc)
-        #echo "pism_set_config_value_FORCE___atmosphere_given_period=${number_of_timesteps_in_atmo_given_file}" \
-        #>> ${COUPLE_DIR}/pism_forcing_${CHUNK_START_DATE_pism}-${CHUNK_END_DATE_pism}.dat
 }
 
 
@@ -1409,23 +1381,6 @@ ic_debm2pism_ablation_debm_make_surface_forcing() {
 ic_atm2debm_ablation_debm_make_forcing_set_temperature_units() {
         echo -e "\t\t-   setting temperature units and variable names"
         ncrename -v ${atmosphere_name_temperature},air_temp ${COUPLE_DIR}/temperature.nc
-        echo -e "\t\t- LA DEBUG: REDUCE_TEMP = ${REDUCE_TEMP}"
-        if [[ "x${REDUCE_TEMP}" == "x1" ]]; then
-            if [[ "x${REDUCE_TEMP_BY}" == "xanom" ]]; then
-                echo -e "\t\t-  use bias correction from this file ${TEMP2_BIAS_FILE}"
-
-                ${cdo} -s -f nc -P 8 \
-                        -remapbil,${COUPLE_DIR}/ice.griddes   \
-                        ${TEMP2_BIAS_FILE} \
-                        ${COUPLE_DIR}/remapped.temp2bias_file.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-                cdo -s -sub ${COUPLE_DIR}/temperature.nc ${COUPLE_DIR}/remapped.temp2bias_file.nc ${COUPLE_DIR}/temperature.tmp.nc
-                mv ${COUPLE_DIR}/temperature.tmp.nc ${COUPLE_DIR}/temperature.nc
-            else
-                echo -e "\t\t-  reduce temperature of dEBM input artificially by ${REDUCE_TEMP_BY} K"
-                cdo -subc,${REDUCE_TEMP_BY} ${COUPLE_DIR}/temperature.nc ${COUPLE_DIR}/temperature.tmp.nc
-                mv ${COUPLE_DIR}/temperature.tmp.nc ${COUPLE_DIR}/temperature.nc
-            fi
-        fi
         # Units skipped, although we need a way to ensure they are in Kelvin
 }
 
@@ -1442,24 +1397,6 @@ ic_atm2debm_ablation_debm_make_forcing_set_precipitation_units() {
         echo -e "\t\t-   setting precipitation units and variable names"
         ncrename -v ${atmosphere_name_precipitation},precipitation ${COUPLE_DIR}/precipitation.nc
         ncatted -a units,precipitation,o,c,"kg m-2 second-1" ${COUPLE_DIR}/precipitation.nc
-        echo -e "\t\t- LA DEBUG: Use anomaly coupling = ${PREC_ANOM}"
-        if [[ "x${PREC_ANOM}" == "x1" ]]; then
-             echo -e "\t\t-  use bias correction from this file ${PREC_BIAS_FILE}"
-
-             ${cdo} -s -f nc -P 8 \
-                     -remapbil,${COUPLE_DIR}/ice.griddes   \
-                     ${PREC_BIAS_FILE} \
-                     ${COUPLE_DIR}/remapped.precbias_file.nc
-             ${cdo} -s -P 8 \
-                    -setmisstoc,0 
-                    -ifthen -gtc,0 ${COUPLE_DIR}/remapped.precbias_file.nc
-                    ${COUPLE_DIR}/remapped.precbias_file.nc tmp.nc
-             mv tmp.nc ${COUPLE_DIR}/remapped.precbias_file.nc
-
-             ${COUPLE_DIR}/temperature.nc 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
-             cdo -s -sub ${COUPLE_DIR}/precipitation.nc ${COUPLE_DIR}/remapped.precbias_file.nc ${COUPLE_DIR}/precipitation.tmp.nc
-             mv ${COUPLE_DIR}/precipitation.tmp.nc ${COUPLE_DIR}/precipitation.nc
-        fi
 }
 
 
@@ -1949,13 +1886,13 @@ ic_debm2pism_ablation_debm_make_surface_forcing_apply_mask() {
         #        rm smb.nc
         #else
                 # apply mask
-                for var in SNH ME SMB RZ A tsurf; do
+                for var in SNH ME SMB RZ A tsurf SF; do
                         cdo -s -f nc -selvar,${var} smb.nc ${var} 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
                 done
-                cdo -s -O merge SNH ME SMB RZ A tsurf surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
+                cdo -s -O merge SNH ME SMB RZ A tsurf SF surface_mass_balance_masked.nc 1>> ${COUPLE_DIR}/cdo_stderr_atm2pism 2>&1
 
                 cp ${COUPLE_DIR}/uta_smb.nc ${COUPLE_DIR}/uta_surface_mass_balance_masked3.nc
-                cdo -selvar,SNH,ME,SMB,RZ,A,tsurf ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/surface_mass_balance_masked.nc
+                cdo -selvar,SNH,ME,SMB,RZ,A,tsurf,SF ${COUPLE_DIR}/smb.nc ${COUPLE_DIR}/surface_mass_balance_masked.nc
           
                 rm SNH ME SMB RZ A tsurf
                 rm smb.nc
@@ -2095,4 +2032,263 @@ cdo_verbosity() {
         else
                 cdo=cdo
         fi
+}
+
+
+
+################################################################################
+################################################################################
+# D E T A I L S   :: Atmospheric anomaly forcing
+################################################################################
+################################################################################
+## @fn ic_atm2pism_anoforce_initialize()
+## @brief
+## Initilize anomaly forcing
+##
+## To use anomaly forcing, we have to initilize some additional
+## variables, which occurs here.
+ic_atm2pism_anoforce_initialize(){
+    echo""; echo -e "\t\t*   initilize anomaly forcing (variables and file names)"
+    #
+    # Atmospheric REFERENCE data and its variables. These could be the
+    # "truth".
+    #
+    REFERENCE_ATMOS_FNAME=${REFERENCE_ATMOS_FNAME:-"/work/ab0246/a270096/share/pism/ANT.16km/ATMForcing.piControl.16km.nc"}
+    REFERENCE_ATMOS_VNAME_ELEVATION="surface_altitude"
+    REFERENCE_ATMOS_VNAME_TEMP_AIR="air_temp"
+    REFERENCE_ATMOS_VNAME_TEMP_FIRN="ice_surface_temp"
+    REFERENCE_ATMOS_VNAME_PRECIP="precipitation"
+    REFERENCE_ATMOS_VNAME_SMB="climatic_mass_balance"
+
+    #
+    # Forcing data from driving atmospheric climate/earth system model
+    #
+    FORCING_ATMOS_VNAME_TEMP_AIR="temp2"
+    FORCING_ATMOS_VNAME_TEMP_FIRN="tsurf"
+    FORCING_ATMOS_VNAME_PRECIP="aprt"
+
+    #
+    # Atmospheric BASE STATE and it variables. For a climate warming
+    # simulations, this BASE STATE could prepresent the control
+    # climate piControl, for instance.
+    #
+    BASE_STATE_ATMOS_FNAME=${BASE_STATE_ATMOS_FNAME:-"/work/ab0246/a270096/share/pism/ANT.16km/atmo_given_file_base_state.pism_sh.nc"}
+    BASE_STATE_ATMOS_VNAME_TEMP_AIR="air_temp"
+    BASE_STATE_ATMOS_VNAME_TEMP_FIRN="ice_surface_temp"
+    BASE_STATE_ATMOS_VNAME_PRECIP="precipitation"
+    #??? BASE_STATE_ATMOS_VNAME_SMB=""
+
+    #
+    # Report
+    #
+    echo  -e "\t\t*   - Reference  ${REFERENCE_ATMOS_FNAME:?Missing variable}"
+    echo  -e "\t\t*   - Base state ${BASE_STATE_ATMOS_FNAME:?Missing variable}"
+
+    for _file in $REFERENCE_ATMOS_FNAME $BASE_STATE_ATMOS_FNAME ; do
+        if [ ! -f $_file ] ; then
+            echo "ERROR: Atmosphere anomaly coupling; MISSING file $_file"
+            echo " S T O P"
+            exit 2
+        else
+            echo  -e "\t\t*     + $(basename $_file): $($cdo -s showvar $_file)"
+        fi
+    done
+}
+
+## @fn ic_atm2pism_anoforce_offset_temp_air_regridded()
+## @brief
+## Air temperature as an anomaly on top of a reference
+##
+## Air temperature from the anomaly of the forcing on the
+## reference. All the calculations are performed on the regridded ice
+## sheet model domain.
+ic_atm2pism_anoforce_offset_temp_air_regridded() {
+        echo""; echo -e "\t\t*   anomaly air temperature evolution (offset)"
+        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc \
+           ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.NoAnomaly.nc
+
+        _ic_atm2pism_anoforce_addition_regridded \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.NoAnomaly.nc \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc \
+            ${FORCING_ATMOS_VNAME_TEMP_AIR:?Miss var 1} \
+            ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
+            ${BASE_STATE_ATMOS_VNAME_TEMP_AIR:?Miss var 3} \
+            ${REFERENCE_ATMOS_FNAME:?Miss var 4} \
+            ${REFERENCE_ATMOS_VNAME_TEMP_AIR:?Miss var 5}
+
+        if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc ] ; then
+            echo "ERROR: Missing output file ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc"
+        fi
+}
+
+## @fn ic_atm2pism_anoforce_offset_temp_firn_regridded()
+## @brief
+## Firn temperature as an anomaly on top of a reference
+##
+## Firn temperature from the anomaly of the forcing on the
+## reference. All the calculations are performed on the regridded ice
+## sheet model domain. Here, the firn temperature does not exceeds the
+## melting temperature.
+ic_atm2pism_anoforce_offset_temp_firn_regridded() {
+        echo""; echo -e "\t\t*   anomaly firn temperature evolution (offset)"
+        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
+           ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.NoAnomaly.nc
+
+        _ic_atm2pism_anoforce_addition_regridded \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.NoAnomaly.nc \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
+            ${FORCING_ATMOS_VNAME_TEMP_FIRN:?Miss var 1} \
+            ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
+            ${BASE_STATE_ATMOS_VNAME_TEMP_FIRN:?Miss var 3} \
+            ${REFERENCE_ATMOS_FNAME:?Miss var 4} \
+            ${REFERENCE_ATMOS_VNAME_TEMP_FIRN:?Miss var 5}
+
+        #
+        # Firn temperature has be at or below the freezing temperature
+        #
+        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
+           ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.tmp.nc
+
+        $cdo -minc,273.15 \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.tmp.nc \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
+            && rm -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.tmp.nc
+
+        if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc ] ; then
+            echo "ERROR: Missing output file ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc"
+        fi
+}
+
+## @fn ic_atm2pism_anoforce_offset_precipitation_regridded()
+## @brief
+## Precipitation as a OFFSET anomaly on top of a reference
+##
+## Precipitation from the anomaly of the forcing on top of the
+## reference, which adds an offset on the reference value. All the
+## calculations are performed on the regridded ice sheet model domain.
+ic_atm2pism_anoforce_offset_precipitation_regridded() {
+        echo""; echo -e "\t\t*   anomaly precipitation evolution (offset)"
+        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
+           ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc
+
+        _ic_atm2pism_anoforce_addition_regridded \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
+            ${FORCING_ATMOS_VNAME_PRECIP:?Miss var 1} \
+            ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
+            ${BASE_STATE_ATMOS_VNAME_PRECIP:?Miss var 3} \
+            ${REFERENCE_ATMOS_VNAME_PRECIP:?Miss var 4} \
+            ${REFERENCE_ATMOS_FNAME:?Miss var 5} \
+            ${REFERENCE_ATMOS_VNAME_PRECIP:?Miss var 6}
+
+        if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc ] ; then
+            echo "ERROR: Missing output file ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc"
+        fi
+}
+
+## @fn ic_atm2pism_anoforce_scale_precipitation_regridded()
+## @brief
+## Precipitation as a scaled anomaly on top of a reference
+##
+## Precipitation from the anomaly of the forcing on the reference,
+## which scales the reference value. All the calculations are
+## performed on the regridded ice sheet model domain.
+ic_atm2pism_anoforce_scale_precipitation_regridded() {
+        echo""; echo -e "\t\t*   anomaly precipitation evolution (scale)"
+        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
+           ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc
+
+        _ic_atm2pism_anoforce_multiplication_regridded \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc \
+            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
+            ${FORCING_ATMOS_VNAME_PRECIP:?Miss var 1} \
+            ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
+            ${BASE_STATE_ATMOS_VNAME_PRECIP:?Miss var 3} \
+            ${REFERENCE_ATMOS_FNAME:?Miss var 4} \
+            ${REFERENCE_ATMOS_VNAME_PRECIP:?Miss var 5}
+}
+
+## @fn _ic_atm2pism_anoforce_addition_regridded()
+## @brief
+## Computes the forcing as and additive anomaly on top of a reference
+##
+## This internal function computes the forcing based on an additive
+## anomaly of a forcing field on top of a reference reference field.
+_ic_atm2pism_anoforce_addition_regridded() {
+    _input_force_file=${1:?Missing first input}
+    _output_force_file=${2:?Missing second input}
+    _force_var=${3:?Missing third input}
+    _base_state_force_file=${4:?Missing forth input}
+    _base_state_force_var=${5:?Missing fifth input}
+    _reference_file=${6:?Missing sixth input}
+    _reference_var=${7:?Missing seventh input}
+
+    #
+    # Check existences of input files
+    #
+    for _file in $_input_force_file $_base_state_force_file  $_reference_file ; do
+        if [ ! -f $_file ] ; then
+	    echo "_ic_atm2pism_anoforce_addition_regridded, INPUT: $*"
+            echo "ERROR: Missing input file $_file"
+        fi
+    done
+    # In case $_input and $_output are identical
+    if [ "x${_input_force_file}" == "x${_output_force_file}" ] ; then
+        mv $_input_force_file ${_input_force_file}.NoAnomaly.tmp.nc
+        _input_force_file=${_input_force_file}.NoAnomaly.tmp.nc
+    fi
+
+    #
+    # Do the math: Var = Var_ref + (Var_forcing-Var_forcing_base)
+    #
+    $cdo -O -setvar,$_force_var \
+        -add -selvar,$_reference_var $_reference_file \
+        -sub -selvar,$_force_var $_input_force_file \
+             -selvar,$_base_state_force_var $_base_state_force_file \
+        $_output_force_file
+}
+
+## @fn _ic_atm2pism_anoforce_multiplication_regridded()
+## @brief
+## Computes the forcing as an multiplication anomaly on top of a reference
+##
+## This internal function computes the forcing based on a
+## multiplicative anomaly of a forcing field on top of a reference
+## reference field.
+_ic_atm2pism_anoforce_multiplication_regridded() {
+    _input_force_file=${1:?Missing first input}
+    _output_force_file=${2:?Missing second input}
+    _force_var=${3:?Missing third input}
+    _base_state_force_file=${4:?Missing forth input}
+    _base_state_force_var=${5:?Missing fifth input}
+    _reference_file=${6:?Missing sixth input}
+    _reference_var=${7:?Missing seventh input}
+    _multi_value_max=${8:-10}
+    #??_multi_value_min=${9:-0}
+
+    #
+    # Check existences of input files
+    #
+
+    for _file in $_input_force_file $_base_state_force_file  $_reference_file ; do
+        if [ ! -f $_file ] ; then
+	    echo "_ic_atm2pism_anoforce_multiplication_regridded, INPUT: $*"
+            echo "ERROR: Missing input file $_file"
+        fi
+    done
+    # In case $_input and $_output are identical
+    if [ "x${_input_force_file}" == "x${_output_force_file}" ] ; then
+        mv $_input_force_file ${_input_force_file}.NoAnomaly.tmp.nc
+        _input_force_file=${_input_force_file}.NoAnomaly.tmp.nc
+    fi
+
+    #
+    # Do the math: Var = Var_ref * min(multi_value_max, (Var_forcing/Var_forcing_base))
+    #
+    $cdo -O -setvar,$_force_var \
+        -mul -selvar,$_reference_var $_reference_file \
+        -fillmiss2 -minc,$_multi_value_max \
+        -div -selvar,$_force_var $_input_force_file \
+             -selvar,$_base_state_force_var $_base_state_force_file \
+        $_output_force_file
 }

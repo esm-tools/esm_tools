@@ -10,8 +10,8 @@ function pism2ocean {
     echo "PISM_TO_OCEAN=${PISM_TO_OCEAN:-0}"
     if [[ $PISM_TO_OCEAN -le 0 ]]; then
         echo " NOT generating ice forcing for ocean model"
-	echo "   since PISM_TO_OCEAN=${PISM_TO_OCEAN}"
-	return
+	    echo " since PISM_TO_OCEAN=${PISM_TO_OCEAN}"
+	    return
     fi
 
     #
@@ -226,9 +226,12 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     echo " * generating latest_discharge.nc"
     echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
 
-    cdo mulc,${CHUNK_SIZE_pism_standalone} \
-            -timmean -selname,tendency_of_ice_amount_due_to_discharge \
-            -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+    cdo -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+        -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
+
+    #cdo mulc,${CHUNK_SIZE_pism_standalone} \
+    #        -timmean -selname,tendency_of_ice_amount_due_to_discharge \
+    #        -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
 
 #    wc -l ../icb/iceberg.restart.ISM | awk '{ print $1 }' > ../icb/num_non_melted_icb_file
 #    use_icesheet_coupling=1

@@ -13,17 +13,82 @@ function ice2fesom {
 	    echo " since ICE_TO_FESOM=${ICE_TO_FESOM}"
 	    return
     else
-        echo " Only generating iceberg forcing so far ..."
+        echo " * generate landice freshwater flux for global salinity adjustment"
+        distribute_total_discharge_over_ocean
+    fi
+
+    cd "${COUPLE_DIR}" || {
+        echo "ERROR: ice2fesom cannot cd to COUPLE_DIR=${COUPLE_DIR}"
+        return 1
+    }
+
+    # Freeze restart-remap source mesh for this call.
+    # Priority: explicit WETDRY_LAST_MESH_DIR -> state file -> MESH_DIR_fesom.
+    typeset _wd_state_file="${WETDRY_LAST_MESH_STATE_FILE:-${COUPLE_DIR}/wetdry_last_mesh_dir.txt}"
+    typeset _wd_nx_state_file="${WETDRY_LAST_MESH_NX_STATE_FILE:-${COUPLE_DIR}/wetdry_last_mesh_nx.txt}"
+    typeset _wd_last_src=""
+    if [[ -n "${WETDRY_LAST_MESH_DIR:-}" ]] && [[ -d "${WETDRY_LAST_MESH_DIR}" ]] && [[ -f "${WETDRY_LAST_MESH_DIR}/nod2d.out" ]]; then
+        _wd_last_src="$(cd "${WETDRY_LAST_MESH_DIR}" 2>/dev/null && pwd -P)"
+    fi
+    if [[ -z "${_wd_last_src}" ]] && [[ -f "${_wd_state_file}" ]]; then
+        typeset _wd_state_mesh
+        IFS= read -r _wd_state_mesh < "${_wd_state_file}"
+        if [[ -n "${_wd_state_mesh}" ]] && [[ -d "${_wd_state_mesh}" ]] && [[ -f "${_wd_state_mesh}/nod2d.out" ]]; then
+            _wd_last_src="$(cd "${_wd_state_mesh}" 2>/dev/null && pwd -P)"
+        fi
+        unset _wd_state_mesh
+    fi
+    if [[ -z "${_wd_last_src}" ]] && [[ -n "${MESH_DIR_fesom:-}" ]] && [[ -d "${MESH_DIR_fesom}" ]] && [[ -f "${MESH_DIR_fesom}/nod2d.out" ]]; then
+        _wd_last_src="$(cd "${MESH_DIR_fesom}" 2>/dev/null && pwd -P)"
+    fi
+    if [[ -n "${_wd_last_src}" ]]; then
+        export WETDRY_LAST_MESH_DIR="${_wd_last_src}"
+        echo " *   WETDRY_LAST_MESH_DIR frozen to ${WETDRY_LAST_MESH_DIR}"
+    fi
+    unset _wd_last_src
+
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    typeset _wd_next_mesh="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+
+    # (1) submesh_cutting → submesh_mapping → submesh_partition (wet-dry mesh under COUPLE_DIR)
+    iterative_coupling_ice_fesom_generate_submesh
+    # (2) Remap FESOM restart onto wet-dry submesh (last_mesh → submesh_dir)
+    iterative_coupling_ice_fesom_modify_fesom_restart
+    # (3) Publish active wetdry mesh only after restart remap has used last_mesh.
+    if [[ -n "${WETDRY_SUBMESH_ACTIVE_DIR:-}" ]] && [[ -d "${_wd_next_mesh}" ]] && [[ -f "${_wd_next_mesh}/nod2d.out" ]]; then
+        rm -rf "${WETDRY_SUBMESH_ACTIVE_DIR}" || return 1
+        ln -s "${_wd_next_mesh}" "${WETDRY_SUBMESH_ACTIVE_DIR}" || return 1
+        echo " *   active wetdry submesh -> ${WETDRY_SUBMESH_ACTIVE_DIR} -> ${_wd_next_mesh}"
+    fi
+    if [[ -d "${_wd_next_mesh}" ]] && [[ -f "${_wd_next_mesh}/nod2d.out" ]]; then
+        typeset _wd_next_real
+        _wd_next_real="$(cd "${_wd_next_mesh}" 2>/dev/null && pwd -P)"
+        if [[ -n "${_wd_next_real}" ]]; then
+            printf "%s\n" "${_wd_next_real}" > "${_wd_state_file}"
+            echo " *   updated wetdry last-mesh state: ${_wd_state_file} -> ${_wd_next_real}"
+        fi
+        typeset _wd_next_nx
+        _wd_next_nx="$(awk 'NR==1{print int($1)}' "${_wd_next_mesh}/nod2d.out" 2>/dev/null)"
+        if [[ -n "${_wd_next_nx}" ]] && [[ "${_wd_next_nx}" == +([0-9]) ]] && [[ "${_wd_next_nx}" -gt 0 ]]; then
+            printf "%s\n" "${_wd_next_nx}" > "${_wd_nx_state_file}"
+            echo " *   updated wetdry nx state: ${_wd_nx_state_file} -> ${_wd_next_nx}"
+        else
+            echo "WARNING: could not determine node count from ${_wd_next_mesh}/nod2d.out; wetdry nx state not updated."
+        fi
+        unset _wd_next_nx
+        unset _wd_next_real
+    fi
+    unset _wdsuf _wd_next_mesh
+    unset _wd_state_file
+    unset _wd_nx_state_file
+
+    if [[ "x${FESOM_PREP_ICEBERG_DISCHARGE:-0}" == "x1" ]]; then
+        echo " *   Iceberg discharge file preparation (use_icebergs)"
         iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing
-        return
     fi
 
     #
-    # ==> if [[ $ICE_TO_FESOM -ge 1 ]]; then
-    #
-    # ice2fesom
-    #             4) Remap/Regrid to FESOM grid
-    #             5) FESOM Names
+    # ice2fesom: remap combined PISM ocean file to FESOM grid (requires pism2ocean; PISM_TO_OCEAN=1 in env_pism)
     #
     CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_awicm}-${CHUNK_END_DATE_awicm}"
 
@@ -32,10 +97,15 @@ function ice2fesom {
     WEIGHTS_ICE2OCE=${WEIGHTS_ICE2OCE:-weights_ice2oce.${INTERPOL_TYPE_OCE}.nc}
     GRIDDES_OCE=${GRIDDES_OCE:-ocean.griddes}
     OCEAN_PISM_FORCING_FILE="pism_forcing4ocean_verXXXX.${INTERPOL_TYPE_OCE}.${CHUNK_DATE_TAG_awicm}.nc"
-    COMBINED_OUTPUT=ice_file_at_ocean.combined.nc
+    COMBINED_OUTPUT=${COUPLE_DIR}/ice_file_at_ocean.combined.nc
 
+    if [[ ! -f "${COMBINED_OUTPUT}" ]]; then
+        echo " *   No ${COMBINED_OUTPUT} — skip PISM→FESOM regrid (pism couple_out / pism2ocean must produce this file)."
+        echo "     ...ice2fesom finished (submesh/restart placeholders only)."
+        return 0
+    fi
 
-    iterative_coupling_ice_fesom1x_write_names
+    iterative_coupling_ice_fesom_ocean_names
 
     read_names ice fesom
     save_griddes ocean
@@ -73,9 +143,543 @@ function ice2fesom {
 }
 
 
+## Wet/dry mesh — Python/R utils and templates under coupling_CIS_wetdry/utils/wetdry/ (from gen_wetdry_v2).
+##   Cutting/partition steps are implemented in this file; utils/ holds submesh_mapping.py, modify_nodhn.py, templates.
+##   WETDRY_UTILS             default ${FUNCTION_PATH}/../utils/wetdry
+##   WETDRY_QGLB_DIR          mother QGLB mesh (global/nod2d.out …)
+##   WETDRY_CHUNK_TAG         YYYYMMDD-YYYYMMDD (set by env_fesom.py; used in default dir names)
+##   WETDRY_MAXMESH_DIR       default ${COUPLE_DIR}/fesom_wetdry_maxmesh_${WETDRY_CHUNK_TAG}
+##   WETDRY_SUBMESH_DIR       default ${COUPLE_DIR}/fesom_wetdry_submesh_${WETDRY_CHUNK_TAG}
+##   WETDRY_SUBMESH_PARTITION_WORK_DIR  fesom_ini work dir; default …/fesom_wetdry_partition_work_${WETDRY_CHUNK_TAG}
+##   WETDRY_STEP4_WORK_DIR    legacy alias (optional); if set, used when WETDRY_SUBMESH_PARTITION_WORK_DIR is unset
+##   WETDRY_RESTART_REMAP_WORK_DIR  scratch dir for restart remap (per chunk, from env_fesom.py)
+##   WETDRY_MESHTOOLS_BIN     optional: prepended to PATH (relax150614.x, rg.x)
+##   Wetdry mesh stages: cutting → mapping → depth_from_map (if shelf file) → cavity_min_layers → partition.
+##   WETDRY_FESOM_INI / FESOM_INI  path to fesom_ini.x (default: fesom_ini.x on PATH)
+##   RSCRIPT                  default Rscript (for gen_mesh_cst.R)
+##   WETDRY_LAST_MESH_DIR     mesh restart was built on (default MESH_DIR_fesom)
+##   WETDRY_FESOM_RESTART_YEAR   default chunk start year (env_fesom.py); override if restart filenames differ
+##   PISM shelf nodhn / post-map depth (cut-fields mode):
+##   WETDRY_USE_PISM_SHELF_NODHN   default 1; set 0 to keep legacy interpolate_topography + modify_nodhn + aux3d in cutting
+##   WETDRY_PISM_CUT_NC           optional override for cut-fields source (default ${COUPLE_DIR}/ice_file_at_ocean.combined.nc)
+##   WETDRY_PISM_MAX_SEARCH_KM     passed to wetdry_maxmesh_nodhn.py
+##   WETDRY_GROUNDED_NODHN_VALUE  nodhn over grounded ice (default -9999); passed to wetdry_maxmesh_nodhn.py
+##   WETDRY_BEDROCK_FILE           basename under QGLB global (default bedrock_topography.out)
+##   WETDRY_NOD2D_FOR_SHELF        nod2d basename for shelf/nodhn on parent mesh (default nod2d.out; must match maxmesh)
+##   WETDRY_SKIP_DEPTH_FROM_MAP    set 1 to skip wetdry_submesh_depth_outputs.py after mapping
+##   WETDRY_MIN_DEPTH              optional --min_depth for wetdry_submesh_depth_outputs.py (default -20)
+##   WETDRY_SKIP_CAVITY_MIN_LAYERS set 1 to skip wetdry_submesh_cavity_min_layers.py after depth_from_map
+##   WETDRY_CAVITY_MIN_LAYER_SPAN  min bed_level-base_level (default 3); passed to cavity_min_layers.py
+##   WETDRY_CAVITY_BED_INDEX_OFFSET  default 2 (new bed idx = base_level + offset when span too small)
+##   WETDRY_CAVITY_DEPTH_ADJUST_EPS  optional m subtract from zmid when setting new bed (default 0.1 in Python)
+##   WETDRY_CAVITY_MIN_LAYERS_THIN_ONLY  set 1 for --thin_cavity_only (nbase < zmid[0] only)
+##   WETDRY_CAVITY_DEPTH_POSITIVE_DOWN  set 1 if depth@node is positive-down (legacy); default matches modify_nodhn (negative ocean)
+##   WETDRY_CAVITY_ZMID_CONVENTION  optional: negative_z | positive_down (default auto from depth_zlev zmid)
+##   WETDRY_DEPTH_ZLEV            optional explicit path to depth_zlev.out (else global/ then submesh root)
+##   WETDRY_PRIORITY_NODES         optional: path to priority_nodes file copied to submesh/priority_nodes.txt before relax
+##                                   (relax150614.x requires this file; default copy from submesh_cutting_settings if present)
 
-function iterative_coupling_ice_fesom1x_write_names {
-    echo "Writing fesom1x input names and units for use with generic ocean_file_for_ice.nc"
+## submesh_cutting: cut submesh from QGLB global (populate maxmesh from QGLB/MESH_DIR_fesom; relax150614 + rg.x).
+function iterative_coupling_ice_fesom_wetdry_submesh_cutting {
+    typeset wutils="${WETDRY_WUTILS:-${WETDRY_UTILS:-${FUNCTION_PATH}/../utils/wetdry}}"
+    typeset qglb="${WETDRY_QGLB_DIR:-/albedo/home/psong/LGM_cavity/gen_CORE3_paleo/CORE3_QGLB}"
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    typeset maxd="${WETDRY_MAXMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_maxmesh${_wdsuf}}"
+    typeset subd="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+    typeset mtbin="${WETDRY_MESHTOOLS_BIN:-/albedo/home/psong/LGM_cavity/meshtools_triangle_PSong/bin}"
+
+    echo " --- wetdry submesh_cutting: QGLB global → relax + rg (cut submesh) ---"
+    mkdir -p "$maxd" || return 1
+
+    if [[ ! -f "$maxd/nod2d.out" ]] && [[ -f "$qglb/global/nod2d.out" ]]; then
+        echo " *   Maxmesh from QGLB: $qglb/global -> $maxd"
+        cp -f "$qglb/global/nod2d.out" "$maxd/" || return 1
+        cp -f "$qglb/global/elem2d.out" "$maxd/" 2>/dev/null || true
+        cp -f "$qglb/global/aux3d.out" "$maxd/" 2>/dev/null || true
+    fi
+    if [[ ! -f "$maxd/nod2d.out" ]] && [[ -n "${MESH_DIR_fesom:-}" ]] && [[ -f "${MESH_DIR_fesom}/nod2d.out" ]]; then
+        echo " *   Maxmesh from MESH_DIR_fesom=${MESH_DIR_fesom}"
+        cp -f "${MESH_DIR_fesom}"/*.out "$maxd/" 2>/dev/null || true
+    fi
+    if [[ ! -f "$maxd/nod2d.out" ]]; then
+        echo "WARNING: No maxmesh nod2d.out — skip entire wetdry mesh pipeline (submesh_cutting → submesh_mapping → submesh_partition)."
+        return 2
+    fi
+
+    if [[ ! -f "$qglb/global/nod2d.out" ]]; then
+        echo "ERROR: submesh_cutting requires WETDRY_QGLB_DIR/global/ (nod2d.out)."
+        return 1
+    fi
+    [[ -n "$mtbin" ]] && export PATH="${mtbin}:${PATH}"
+    if ! command -v relax150614.x >/dev/null 2>&1; then
+        echo "ERROR: relax150614.x not in PATH (set WETDRY_MESHTOOLS_BIN if needed)."
+        return 1
+    fi
+    if ! command -v rg.x >/dev/null 2>&1; then
+        echo "ERROR: rg.x not in PATH (set WETDRY_MESHTOOLS_BIN if needed)."
+        return 1
+    fi
+
+    export submesh_dir="$subd"
+    if [[ ! -f "${wutils}/submesh_cutting_settings/namelist.relax.submesh" ]]; then
+        echo "ERROR: missing ${wutils}/submesh_cutting_settings/namelist.relax.submesh"
+        return 1
+    fi
+    rm -rf "$subd"
+    mkdir -p "$subd" || return 1
+    cp -r "$qglb/global" "$subd/" || return 1
+
+    typeset _use_pism_nodhn=0
+    typeset _cut_nc="${WETDRY_PISM_CUT_NC:-${COUPLE_DIR}/ice_file_at_ocean.combined.nc}"
+    if [[ "${WETDRY_USE_PISM_SHELF_NODHN:-1}" != "0" ]]; then
+        if [[ -f "$_cut_nc" ]]; then
+            _use_pism_nodhn=1
+        else
+            echo "ERROR: cut-fields mode requires ${_cut_nc} for wetdry_maxmesh_nodhn.py."
+            echo "       Ensure cut-fields variables shelf_base_ut and grounded_ice_mask are present."
+            return 1
+        fi
+    fi
+    rm -f "$subd/.wetdry_pism_nodhn"
+    if [[ ${_use_pism_nodhn} -eq 1 ]]; then
+        : >"$subd/.wetdry_pism_nodhn"
+        if [[ ! -f "${wutils}/wetdry_maxmesh_nodhn.py" ]]; then
+            echo "ERROR: ${wutils}/wetdry_maxmesh_nodhn.py missing (PISM shelf nodhn path)."
+            return 1
+        fi
+        echo " *   wetdry_maxmesh_nodhn.py: shelf − bedrock → submesh/nodhn.out; maxmesh shelf for mapping..."
+        typeset _pyexe=python
+        if command -v python3 >/dev/null 2>&1; then
+            _pyexe=python3
+        fi
+        echo " *   using wetdry cut fields: ${_cut_nc} (shelf_base_ut + grounded_ice_mask)"
+        "${_pyexe}" "${wutils}/wetdry_maxmesh_nodhn.py" \
+            --qglb_global "$qglb/global" \
+            --pism_cut_nc "$_cut_nc" \
+            --out_nodhn "$subd/nodhn.out" \
+            --out_shelf_max "$maxd/wetdry_shelf_on_maxmesh.out" \
+            ${WETDRY_BEDROCK_FILE:+--bedrock_file} ${WETDRY_BEDROCK_FILE:+$WETDRY_BEDROCK_FILE} \
+            ${WETDRY_NOD2D_FOR_SHELF:+--nod2d} ${WETDRY_NOD2D_FOR_SHELF:+$WETDRY_NOD2D_FOR_SHELF} \
+            ${WETDRY_PISM_MAX_SEARCH_KM:+--max_search_km} ${WETDRY_PISM_MAX_SEARCH_KM:+$WETDRY_PISM_MAX_SEARCH_KM} \
+            ${WETDRY_GROUNDED_NODHN_VALUE:+--grounded_nodhn_value} ${WETDRY_GROUNDED_NODHN_VALUE:+$WETDRY_GROUNDED_NODHN_VALUE} \
+            || return 1
+    fi
+
+    ( cd "$subd" || exit 1
+      cp global/nod2d.out.uv ./nod2d.out || exit 1
+      cp global/elem2d.out ./elem2d.out || exit 1
+      cp "${wutils}/submesh_cutting_settings/namelist.relax.submesh" ./namelist.relax || exit 1
+      cp "${wutils}/submesh_cutting_settings/mesh_parameters.txt" ./mesh_parameters.txt || exit 1
+      if [[ -n "${WETDRY_PRIORITY_NODES:-}" ]] && [[ -f "${WETDRY_PRIORITY_NODES}" ]]; then
+          cp "${WETDRY_PRIORITY_NODES}" ./priority_nodes.txt || exit 1
+          echo " *   priority_nodes.txt from WETDRY_PRIORITY_NODES=${WETDRY_PRIORITY_NODES}"
+      elif [[ -f "${wutils}/submesh_cutting_settings/priority_nodes.txt" ]]; then
+          cp "${wutils}/submesh_cutting_settings/priority_nodes.txt" ./priority_nodes.txt || exit 1
+      else
+          echo "ERROR: relax150614.x needs priority_nodes.txt in submesh cwd — set WETDRY_PRIORITY_NODES to your file"
+          echo "       (e.g. export WETDRY_PRIORITY_NODES=/path/to/priority_nodes.PISM.txt) or add"
+          echo "       ${wutils}/submesh_cutting_settings/priority_nodes.txt to the repo."
+          exit 1
+      fi
+      if [[ -f ./nodhn.out ]]; then
+          cp -f ./nodhn.out ./nodhn_old.out || exit 1
+          echo " *   backup pre-relax nodhn.out -> nodhn_old.out"
+      fi
+      echo " *   relax150614.x (cut_off triangles)..."
+      relax150614.x || exit 1
+      echo " *   rg.x (SFC reorder)..."
+      rg.x ./ '_relax.out' || exit 1
+      mv nod2d_sfc_relax.out nod2d.out || exit 1
+      mv nodhn_sfc_relax.out nodhn.out || exit 1
+      mv elem2d_sfc_relax.out elem2d.out || exit 1
+      cp nodhn.out depth.out || exit 1
+      if [[ -f .wetdry_pism_nodhn ]]; then
+          echo " *   skip modify_nodhn/aux3d here (wetdry_submesh_depth_outputs.py after submesh_mapping)"
+          rm -f .wetdry_pism_nodhn
+      else
+          echo " *   modify_nodhn.py (minimum depth)..."
+          if command -v python3 >/dev/null 2>&1; then
+              python3 "${wutils}/modify_nodhn.py" "$subd" || exit 1
+          else
+              python "${wutils}/modify_nodhn.py" "$subd" || exit 1
+          fi
+          cp "${subd}/global/depth_zlev.out" depth_zlev.out || exit 1
+          cat depth_zlev.out depth@node.out > aux3d.out || exit 1
+      fi
+    ) || return 1
+
+    if [[ ! -f "$subd/nod2d.out" ]]; then
+        echo "ERROR: submesh nod2d.out missing after submesh_cutting."
+        return 1
+    fi
+    return 0
+}
+
+## submesh_mapping: mapping from submesh to maxmesh (map_nod.out / map_elem.out).
+function iterative_coupling_ice_fesom_wetdry_submesh_mapping {
+    typeset wutils="${WETDRY_WUTILS:-${WETDRY_UTILS:-${FUNCTION_PATH}/../utils/wetdry}}"
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    typeset maxd="${WETDRY_MAXMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_maxmesh${_wdsuf}}"
+    typeset subd="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+
+    echo " --- wetdry submesh_mapping: submesh → maxmesh (map_nod.out / map_elem.out) ---"
+    if [[ ! -f "${wutils}/submesh_mapping.py" ]]; then
+        echo "ERROR: missing ${wutils}/submesh_mapping.py"
+        return 1
+    fi
+    if [[ ! -f "$maxd/nod2d.out" ]] || [[ ! -f "$subd/nod2d.out" ]]; then
+        echo "ERROR: maxmesh or submesh nod2d.out missing."
+        return 1
+    fi
+    if command -v python3 >/dev/null 2>&1; then
+        python3 "${wutils}/submesh_mapping.py" --maxmesh_dir "$maxd" --submesh_dir "$subd" || return 1
+    else
+        python "${wutils}/submesh_mapping.py" --maxmesh_dir "$maxd" --submesh_dir "$subd" || return 1
+    fi
+    return 0
+}
+
+## After submesh_mapping: map maxmesh bedrock + PISM shelf to submesh → depth@node.out, cavity_depth@node.out, aux3d.out.
+## Runs when ${WETDRY_MAXMESH_DIR}/wetdry_shelf_on_maxmesh.out exists (written by wetdry_maxmesh_nodhn.py in cutting).
+function iterative_coupling_ice_fesom_wetdry_submesh_depth_from_map {
+    typeset wutils="${WETDRY_WUTILS:-${WETDRY_UTILS:-${FUNCTION_PATH}/../utils/wetdry}}"
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    typeset maxd="${WETDRY_MAXMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_maxmesh${_wdsuf}}"
+    typeset subd="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+    typeset qglb="${WETDRY_QGLB_DIR:-/albedo/home/psong/LGM_cavity/gen_CORE3_paleo/CORE3_QGLB}"
+    typeset shelf="${maxd}/wetdry_shelf_on_maxmesh.out"
+    typeset _pyexe=python
+    command -v python3 >/dev/null 2>&1 && _pyexe=python3
+
+    if [[ "${WETDRY_SKIP_DEPTH_FROM_MAP:-0}" == "1" ]]; then
+        echo " --- wetdry submesh_depth_from_map: skipped (WETDRY_SKIP_DEPTH_FROM_MAP=1) ---"
+        return 0
+    fi
+    if [[ ! -f "$shelf" ]]; then
+        echo " --- wetdry submesh_depth_from_map: no $shelf — keep depth/aux3d from cutting (legacy) ---"
+        return 0
+    fi
+    if [[ ! -f "${wutils}/wetdry_submesh_depth_outputs.py" ]]; then
+        echo "ERROR: ${wutils}/wetdry_submesh_depth_outputs.py missing (required for PISM shelf depth path)."
+        return 1
+    fi
+    if [[ ! -f "$subd/map_nod.out" ]]; then
+        echo "ERROR: submesh_depth_from_map: $subd/map_nod.out missing — run submesh_mapping first."
+        return 1
+    fi
+
+    echo " --- wetdry submesh_depth_from_map: depth@node, cavity_depth@node, aux3d from map_nod + maxmesh fields ---"
+    "${_pyexe}" "${wutils}/wetdry_submesh_depth_outputs.py" \
+        --submesh_dir "$subd" \
+        --qglb_global "$qglb/global" \
+        --maxmesh_shelf_file "$shelf" \
+        ${WETDRY_BEDROCK_FILE:+--bedrock_file} ${WETDRY_BEDROCK_FILE:+$WETDRY_BEDROCK_FILE} \
+        ${WETDRY_MIN_DEPTH:+--min_depth} ${WETDRY_MIN_DEPTH:+$WETDRY_MIN_DEPTH} \
+        || return 1
+    return 0
+}
+
+## After depth_from_map: deepen bed where cavity has fewer than min_layer_span layers between shelf base and bed.
+function iterative_coupling_ice_fesom_wetdry_submesh_cavity_min_layers {
+    typeset wutils="${WETDRY_WUTILS:-${WETDRY_UTILS:-${FUNCTION_PATH}/../utils/wetdry}}"
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    typeset subd="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+    typeset _pyexe=python
+    command -v python3 >/dev/null 2>&1 && _pyexe=python3
+
+    if [[ "${WETDRY_SKIP_CAVITY_MIN_LAYERS:-0}" == "1" ]]; then
+        echo " --- wetdry submesh_cavity_min_layers: skipped (WETDRY_SKIP_CAVITY_MIN_LAYERS=1) ---"
+        return 0
+    fi
+    if [[ ! -f "${wutils}/wetdry_submesh_cavity_min_layers.py" ]]; then
+        echo "WARNING: ${wutils}/wetdry_submesh_cavity_min_layers.py missing — skip cavity min layers."
+        return 0
+    fi
+    if [[ ! -f "$subd/cavity_depth@node.out" ]] || [[ ! -f "$subd/depth@node.out" ]]; then
+        echo " --- wetdry submesh_cavity_min_layers: no cavity_depth or depth@node — skip ---"
+        return 0
+    fi
+    if [[ ! -f "$subd/global/depth_zlev.out" ]] && [[ ! -f "$subd/depth_zlev.out" ]]; then
+        echo " --- wetdry submesh_cavity_min_layers: no depth_zlev.out in global/ or submesh root — skip ---"
+        return 0
+    fi
+
+    echo " --- wetdry submesh_cavity_min_layers: ensure >= ${WETDRY_CAVITY_MIN_LAYER_SPAN:-3} layer mids shelf–bed ---"
+    typeset _cav_thin=""
+    [[ "${WETDRY_CAVITY_MIN_LAYERS_THIN_ONLY:-0}" == "1" ]] && _cav_thin="--thin_cavity_only"
+    typeset _cav_pd=""
+    [[ "${WETDRY_CAVITY_DEPTH_POSITIVE_DOWN:-0}" == "1" ]] && _cav_pd="--depth_at_node_positive_down"
+    typeset _cav_zmid=""
+    [[ -n "${WETDRY_CAVITY_ZMID_CONVENTION:-}" ]] && _cav_zmid="--zmid_convention ${WETDRY_CAVITY_ZMID_CONVENTION}"
+    "${_pyexe}" "${wutils}/wetdry_submesh_cavity_min_layers.py" \
+        --submesh_dir "$subd" \
+        ${WETDRY_DEPTH_ZLEV:+--depth_zlev} ${WETDRY_DEPTH_ZLEV:+$WETDRY_DEPTH_ZLEV} \
+        ${WETDRY_CAVITY_MIN_LAYER_SPAN:+--min_layer_span} ${WETDRY_CAVITY_MIN_LAYER_SPAN:+$WETDRY_CAVITY_MIN_LAYER_SPAN} \
+        ${WETDRY_CAVITY_BED_INDEX_OFFSET:+--bed_index_offset} ${WETDRY_CAVITY_BED_INDEX_OFFSET:+$WETDRY_CAVITY_BED_INDEX_OFFSET} \
+        ${WETDRY_CAVITY_DEPTH_ADJUST_EPS:+--depth_adjust_eps} ${WETDRY_CAVITY_DEPTH_ADJUST_EPS:+$WETDRY_CAVITY_DEPTH_ADJUST_EPS} \
+        ${_cav_thin} \
+        ${_cav_pd} \
+        ${_cav_zmid} \
+        || return 1
+    return 0
+}
+
+## submesh_partition: mesh ini and partitioning (fesom_ini.x, gen_mesh_cst.R, CDO OCE_flag/GLAC_flag on mesh_cst.nc).
+function iterative_coupling_ice_fesom_wetdry_submesh_partition {
+    typeset wutils="${WETDRY_WUTILS:-${WETDRY_UTILS:-${FUNCTION_PATH}/../utils/wetdry}}"
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    typeset subd="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+    typeset fini="${FESOM_INI:-${WETDRY_FESOM_INI:-fesom_ini.x}}"
+    typeset part_res="${wutils}/submesh_partition"
+    typeset work rscript mesh_dir
+
+    echo " --- wetdry submesh_partition: mesh ini + partitioning (fesom_ini, mesh_cst.nc, CDO flags) ---"
+    if [[ ! -f "${part_res}/namelist.config" ]] || [[ ! -f "${part_res}/gen_mesh_cst.R" ]]; then
+        echo "ERROR: missing ${part_res}/namelist.config or gen_mesh_cst.R"
+        return 1
+    fi
+    if [[ ! -f "$subd/nod2d.out" ]]; then
+        echo "ERROR: submesh not ready for submesh_partition."
+        return 1
+    fi
+    if [[ ! -f "$fini" ]] && ! command -v "$fini" >/dev/null 2>&1; then
+        echo "ERROR: fesom_ini not found ($fini) — set FESOM_INI or WETDRY_FESOM_INI or PATH."
+        return 1
+    fi
+
+    if [[ -n "${WETDRY_SUBMESH_PARTITION_WORK_DIR:-}" ]]; then
+        work="${WETDRY_SUBMESH_PARTITION_WORK_DIR}"
+    elif [[ -n "${WETDRY_STEP4_WORK_DIR:-}" ]]; then
+        work="${WETDRY_STEP4_WORK_DIR}"
+    else
+        work="${COUPLE_DIR}/fesom_wetdry_partition_work${_wdsuf}"
+    fi
+    rscript="${RSCRIPT:-Rscript}"
+    mesh_dir="$subd"
+
+    export submesh_dir="$subd"
+    mkdir -p "$work" || return 1
+    sed "s|^MeshPath=.*|MeshPath='${subd}/'|" "${part_res}/namelist.config" > "${work}/namelist.config" || return 1
+
+    echo " *   fesom_ini ($fini) in $work"
+    ( cd "$work" || exit 1
+      "${fini}" > fesom_ini.out || exit 1
+    ) || return 1
+
+    echo " *   gen_mesh_cst.R -> ${subd}/mesh_cst.nc"
+    "${rscript}" "${part_res}/gen_mesh_cst.R" "$subd" || return 1
+
+    ( cd "$work" || exit 1
+      if [[ -f "${mesh_dir}/cavity_nlvls.out" ]]; then
+          echo " *   OCE_flag / GLAC_flag from cavity_nlvls.out"
+          cdo -L -f nc -b F64 input,"${mesh_dir}/mesh_cst.nc" cavity_nlvls_tmp.nc < "${mesh_dir}/cavity_nlvls.out" || exit 1
+          cdo -L -f nc -b F64 -setname,OCE_flag -setvrange,0.99,1.01 cavity_nlvls_tmp.nc OCE_flag_tmp.nc || exit 1
+          cdo -L -f nc -b F64 -setname,GLAC_flag -setrtoc,1.01,100,1 -setrtomiss,0.99,1.01 cavity_nlvls_tmp.nc GLAC_flag_tmp.nc || exit 1
+          cdo -L -f nc -b F64 -merge "${mesh_dir}/mesh_cst.nc" OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc || exit 1
+      else
+          echo " *   no cavity_nlvls.out — constant OCE_flag / GLAC_flag"
+          cdo -L -f nc -b F64 -setname,OCE_flag -const,1,"${mesh_dir}/mesh_cst.nc" OCE_flag_tmp.nc || exit 1
+          cdo -L -f nc -b F64 -setname,GLAC_flag -setctomiss,1 -const,1,"${mesh_dir}/mesh_cst.nc" GLAC_flag_tmp.nc || exit 1
+          cdo -L -f nc -b F64 -merge "${mesh_dir}/mesh_cst.nc" OCE_flag_tmp.nc GLAC_flag_tmp.nc mesh_cst_tmp.nc || exit 1
+      fi
+      cp mesh_cst_tmp.nc "${mesh_dir}/mesh_cst.nc" || exit 1
+      rm -f *.out *_tmp.nc 2>/dev/null || true
+    ) || return 1
+
+    echo " *   submesh_partition done (mesh_cst.nc under $subd)"
+    return 0
+}
+
+## Orchestrator: submesh_cutting → submesh_mapping → submesh_depth_from_map → submesh_cavity_min_layers → submesh_partition.
+function iterative_coupling_ice_fesom_generate_submesh {
+    typeset wutils="${WETDRY_UTILS:-${FUNCTION_PATH}/../utils/wetdry}"
+
+    echo " ========== FESOM wetdry: cutting → mapping → depth_from_map → cavity_min_layers → partition =========="
+    echo " PISM wetdry fields: ${COUPLE_DIR}/ice_ocean_wet_mask.nc ${COUPLE_DIR}/ice_shelf_base_geometry.nc ${COUPLE_DIR}/ice_shelf_base_level.nc"
+    echo " WETDRY_UTILS=$wutils  WETDRY_CHUNK_TAG=${WETDRY_CHUNK_TAG:-?}"
+
+    if [[ ! -f "${wutils}/submesh_mapping.py" ]] || [[ ! -f "${wutils}/submesh_partition/namelist.config" ]] || [[ ! -f "${wutils}/submesh_partition/gen_mesh_cst.R" ]]; then
+        echo "WARNING: utils/wetdry incomplete — skip wetdry mesh pipeline."
+        return 0
+    fi
+
+    export WETDRY_WUTILS="$wutils"
+    export WETDRY_QGLB_DIR="${WETDRY_QGLB_DIR:-/albedo/home/psong/LGM_cavity/gen_CORE3_paleo/CORE3_QGLB}"
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    export WETDRY_MAXMESH_DIR="${WETDRY_MAXMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_maxmesh${_wdsuf}}"
+    export WETDRY_SUBMESH_DIR="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+    export WETDRY_FESOM_INI=/albedo/home/psong/codes/fesom2/bin/fesom_ini.x
+    export WETDRY_PRIORITY_NODES=/albedo/home/psong/LGM_cavity/my_input/priority_nodes.PISM.txt
+    export RSCRIPT=/albedo/soft/sw/R/4.2.2/bin/Rscript
+
+    iterative_coupling_ice_fesom_wetdry_submesh_cutting
+    typeset _wd_rc=$?
+    if [[ ${_wd_rc} -eq 2 ]]; then
+        unset WETDRY_WUTILS
+        return 0
+    fi
+    if [[ ${_wd_rc} -ne 0 ]]; then
+        unset WETDRY_WUTILS
+        return 1
+    fi
+    iterative_coupling_ice_fesom_wetdry_submesh_mapping || {
+        unset WETDRY_WUTILS
+        return 1
+    }
+    iterative_coupling_ice_fesom_wetdry_submesh_depth_from_map || {
+        unset WETDRY_WUTILS
+        return 1
+    }
+    iterative_coupling_ice_fesom_wetdry_submesh_cavity_min_layers || {
+        unset WETDRY_WUTILS
+        return 1
+    }
+    iterative_coupling_ice_fesom_wetdry_submesh_partition || {
+        unset WETDRY_WUTILS
+        return 1
+    }
+    unset WETDRY_WUTILS
+
+    echo "     ...iterative_coupling_ice_fesom_generate_submesh done."
+    return 0
+}
+
+
+function iterative_coupling_ice_fesom_modify_fesom_restart {
+    typeset wutils="${WETDRY_UTILS:-${FUNCTION_PATH}/../utils/wetdry}"
+    typeset last_mesh="${WETDRY_LAST_MESH_DIR:-${MESH_DIR_fesom:-}}"
+    typeset _wdsuf="${WETDRY_CHUNK_TAG:+_${WETDRY_CHUNK_TAG}}"
+    typeset next_mesh="${WETDRY_SUBMESH_DIR:-${COUPLE_DIR}/fesom_wetdry_submesh${_wdsuf}}"
+    typeset rst_base="${RESTART_DIR_fesom:-}"
+    typeset yr="${WETDRY_FESOM_RESTART_YEAR:-}"
+
+    echo " ========== FESOM wetdry: remap restart onto submesh =========="
+
+    if [[ -z "$rst_base" ]]; then
+        echo " *   RESTART_DIR_fesom unset — skip restart remapping."
+        return 0
+    fi
+    if [[ -z "$last_mesh" ]] || [[ ! -d "$last_mesh" ]] || [[ ! -f "$last_mesh/nod2d.out" ]]; then
+        echo " *   last mesh invalid (WETDRY_LAST_MESH_DIR / MESH_DIR_fesom) — skip."
+        return 0
+    fi
+    if [[ ! -d "$next_mesh" ]] || [[ ! -f "$next_mesh/nod2d.out" ]]; then
+        echo " *   Submesh $next_mesh not ready — run submesh_cutting / submesh_mapping / submesh_partition first — skip."
+        return 0
+    fi
+    # Always dereference to physical paths for coupling internals.
+    last_mesh="$(cd "$last_mesh" 2>/dev/null && pwd -P)"
+    next_mesh="$(cd "$next_mesh" 2>/dev/null && pwd -P)"
+    if [[ -z "$last_mesh" ]] || [[ -z "$next_mesh" ]]; then
+        echo " *   Could not resolve physical last/next mesh paths — skip."
+        return 0
+    fi
+    if [[ -z "$yr" ]]; then
+        echo " *   Set WETDRY_FESOM_RESTART_YEAR to match fesom.<year>.oce.restart — skip."
+        return 0
+    fi
+
+    typeset oce_nc="${rst_base}/fesom.${yr}.oce.restart.nc"
+    typeset ice_nc="${rst_base}/fesom.${yr}.ice.restart.nc"
+    typeset oce_dir="${rst_base}/fesom.${yr}.oce.restart"
+    typeset ice_dir="${rst_base}/fesom.${yr}.ice.restart"
+    typeset py="${PYTHON:-python3}"
+    command -v python3 >/dev/null 2>&1 && py=python3
+    typeset work="${WETDRY_RESTART_REMAP_WORK_DIR:-${COUPLE_DIR}/fesom_wetdry_restart_remap${_wdsuf}}"
+    typeset stamp
+    stamp=$(date +%Y%m%d%H%M%S 2>/dev/null || print 0)
+
+    if [[ ! -f "$oce_nc" ]] && [[ ! -d "$oce_dir" ]]; then
+        echo " *   No $oce_nc nor $oce_dir — skip (cold start or different restart layout)."
+        return 0
+    fi
+
+    export PYTHONPATH="${wutils}${PYTHONPATH:+:${PYTHONPATH}}"
+    export last_mesh_dir="$last_mesh"
+    export next_mesh_dir="$next_mesh"
+
+    # Split monolithic .nc into per-variable dirs (utils/wetdry/split_FESOM2_restart.py)
+    if [[ -f "$oce_nc" ]] && [[ ! -d "$oce_dir" ]]; then
+        export last_exp_dir="$rst_base"
+        export last_restart_year="$yr"
+        if [[ -f "$ice_nc" ]]; then
+            echo " *   Splitting oce+ice restart NC files via split_FESOM2_restart.py"
+            "$py" "${wutils}/split_FESOM2_restart.py" || return 1
+        else
+            echo " *   Splitting ocean restart NC only"
+            "$py" -c "
+import os, sys
+sys.path.insert(0, r'${wutils}')
+from split_FESOM2_restart import split_FESOM2_restart, copy_variable
+r = r'${rst_base}'
+y = r'${yr}'
+shared = ['time', 'iter']
+split_FESOM2_restart(
+    os.path.join(r, f'fesom.{y}.oce.restart.nc'),
+    os.path.join(r, f'fesom.{y}.oce.restart'),
+    shared)
+oce_folder = os.path.join(r, f'fesom.{y}.oce.restart')
+copy_variable('salt', 'salt_M1', oce_folder)
+copy_variable('temp', 'temp_M1', oce_folder)
+" || return 1
+        fi
+    fi
+
+    if [[ ! -d "$oce_dir" ]]; then
+        echo "ERROR: Ocean restart directory missing after split: $oce_dir"
+        return 1
+    fi
+
+    rm -rf "$work"
+    mkdir -p "$work/oce_new" "$work/ice_new" || return 1
+
+    # Backup canonical restart trees (compare: jsbach uses readlink + pack/unpack; here we preserve full dirs)
+    if [[ -d "$oce_dir" ]]; then
+        echo " *   Backup: cp -a $oce_dir -> ${oce_dir}.before_wetdry_${stamp}"
+        cp -a "$oce_dir" "${oce_dir}.before_wetdry_${stamp}" || true
+    fi
+
+    export last_restart_dir="${oce_dir}/"
+    export next_restart_dir="${work}/oce_new/"
+    mkdir -p "$next_restart_dir"
+    echo " *   fesom2_wetdry_restart (ocean): last_mesh=$last_mesh -> next_mesh=$next_mesh"
+    "$py" -c "from fesom2_restart import fesom2_wetdry_restart; fesom2_wetdry_restart()" || return 1
+    cp -a "${work}/oce_new/." "$oce_dir/" || return 1
+
+    # Ice restart (optional): split .nc if needed, then remap like ocean
+    if [[ -f "$ice_nc" ]] && [[ ! -d "$ice_dir" ]]; then
+        echo " *   Splitting ice restart NC only"
+        "$py" -c "
+import os, sys
+sys.path.insert(0, r'${wutils}')
+from split_FESOM2_restart import split_FESOM2_restart
+r = r'${rst_base}'
+y = r'${yr}'
+split_FESOM2_restart(
+    os.path.join(r, f'fesom.{y}.ice.restart.nc'),
+    os.path.join(r, f'fesom.{y}.ice.restart'),
+    ['time', 'iter'])
+" || true
+    fi
+    if [[ -d "$ice_dir" ]]; then
+        echo " *   Backup ice restart: ${ice_dir}.before_wetdry_${stamp}"
+        cp -a "$ice_dir" "${ice_dir}.before_wetdry_${stamp}" || true
+        export last_restart_dir="${ice_dir}/"
+        export next_restart_dir="${work}/ice_new/"
+        mkdir -p "$next_restart_dir"
+        echo " *   fesom2_wetdry_restart (ice)"
+        "$py" -c "from fesom2_restart import fesom2_wetdry_restart; fesom2_wetdry_restart()" || return 1
+        cp -a "${work}/ice_new/." "$ice_dir/" || return 1
+    fi
+
+    echo "     ...iterative_coupling_ice_fesom_modify_fesom_restart done (in-place under $rst_base)."
+    return 0
+}
+
+
+
+function iterative_coupling_ice_fesom_ocean_names {
+    echo "Writing FESOM ocean input name metadata (ice → ocean regrid)"
     :> ice_names_for_fesom.dat
 
     #
@@ -105,6 +709,18 @@ function iterative_coupling_ice_fesom1x_write_names {
     echo ""; echo " *   iceshelfmask"
     echo "fesom_name_iceshelfmask=mask" >> ice_names_for_fesom.dat
     echo "fesom_units_iceshelfmask=1" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   combined ocean+wet mask (from PISM pism2ocean)"
+    echo "fesom_name_ocean_wet_mask=ocean_wet_mask" >> ice_names_for_fesom.dat
+    echo "fesom_units_ocean_wet_mask=1" >> ice_names_for_fesom.dat
+
+    echo "";     echo " *   ice shelf base geometry (from PISM pism2ocean)"
+    echo "fesom_name_shelf_base_geometry=shelf_base" >> ice_names_for_fesom.dat
+    echo "fesom_units_shelf_base_geometry=m" >> ice_names_for_fesom.dat
+
+    echo ""; echo " *   ice shelf base level (from PISM pism2ocean; mask rules)"
+    echo "fesom_name_shelf_base_level=shelf_base_level" >> ice_names_for_fesom.dat
+    echo "fesom_units_shelf_base_level=m" >> ice_names_for_fesom.dat
 
     add_to $(pwd)/ice_names_for_fesom.dat ice_names_for_fesom.dat couple
     echo "     ...done."
@@ -218,12 +834,10 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     latest_pism_output=${COUPLE_DIR}/../outdata/pism//latest_ex_file_pism.nc
     if [[ -f ${latest_pism_output} ]]; then
         pism_discharge_file=${COUPLE_DIR}/../outdata/pism/latest_ex_file_pism.nc
-        #pism_discharge_file=${latest_pism_output}
     elif [[ -f ${SPINUP_FILE_pism} ]]; then
         pism_discharge_file=${SPINUP_FILE_pism}
     fi
 
-    echo "CHUNK_SIZE_pism_standalone: ${CHUNK_SIZE_pism_standalone}"
     echo "COUPLE_DIR: ${COUPLE_DIR}"
     echo "PISM_DISCHARGE_FILE: ${pism_discharge_file}"
 
@@ -231,6 +845,30 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
             -setgrid,${COUPLE_DIR}/ice.griddes ${pism_discharge_file} ${COUPLE_DIR}/latest_discharge.nc
     
     use_icesheet_coupling=1
+}
+
+###########################################################################
+# LA: moved here from coupling_ice2echam.functions
+###########################################################################
+function distribute_total_discharge_over_ocean() {
+        echo; echo "                *   integrate discharge over echam grid"
+        ifile1=${COUPLE_DIR}/ice_discharge.nc
+        ifile2=${COUPLE_DIR}/ice_discharge.gridarea.nc
+        cdo -s gridarea ${ifile1} ${ifile2}
+        CELL_AREA_FESOM_FILE=${CELL_AREA_FESOM_FILE:-"fesom.mesh.diag.nc"}
+        echo; echo "            * Start apply_hosing_correction.py with: $ifile1 $ifile2 ${MESH_DIR_fesom}/${CELL_AREA_FESOM_FILE} ${COUPLE_DIR} "
+        module load python3
+        if [ -f "${COUPLE_DIR}/landice_yearly_mass_loss.out" ]; then
+            rm ${COUPLE_DIR}/landice_yearly_mass_loss.out
+        fi
+
+        python ${FUNCTION_PATH}/../utils/apply_hosing_correction.py "$ifile1" "$ifile2" "${MESH_DIR_fesom}/${CELL_AREA_FESOM_FILE}" "${COUPLE_DIR}"
+        module unload python3
+        if [ -f "${COUPLE_DIR}/landice_nodes_in_region_2.out" ]; then
+            echo >> ${COUPLE_DIR}/landice_yearly_mass_loss.out 
+            cat ${CONSTANT_LANDICE_HOSING_FILE} >> ${COUPLE_DIR}/landice_yearly_mass_loss.out
+        fi
+        echo; echo "            * Finished apply_hosing_correction.py "
 }
 
 ############################################################################

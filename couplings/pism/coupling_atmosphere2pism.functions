@@ -2104,20 +2104,20 @@ ic_atm2pism_anoforce_initialize(){
 ## sheet model domain.
 ic_atm2pism_anoforce_offset_temp_air_regridded() {
         echo""; echo -e "\t\t*   anomaly air temperature evolution (offset)"
-        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc \
-           ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.NoAnomaly.nc
+        mv ${COUPLE_DIR}/temperature.nc \
+           ${COUPLE_DIR}/temperature.NoAnomaly.nc
 
         _ic_atm2pism_anoforce_addition_regridded \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.NoAnomaly.nc \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc \
+            ${COUPLE_DIR}/temperature.NoAnomaly.nc \
+            ${COUPLE_DIR}/temperature.nc \
             ${FORCING_ATMOS_VNAME_TEMP_AIR:?Miss var 1} \
             ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
             ${BASE_STATE_ATMOS_VNAME_TEMP_AIR:?Miss var 3} \
             ${REFERENCE_ATMOS_FNAME:?Miss var 4} \
             ${REFERENCE_ATMOS_VNAME_TEMP_AIR:?Miss var 5}
 
-        if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc ] ; then
-            echo "ERROR: Missing output file ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature.nc"
+        if [ ! -f ${COUPLE_DIR}/temperature.nc ] ; then
+            echo "ERROR: Missing output file ${COUPLE_DIR}/temperature.nc"
         fi
 }
 
@@ -2131,12 +2131,12 @@ ic_atm2pism_anoforce_offset_temp_air_regridded() {
 ## melting temperature.
 ic_atm2pism_anoforce_offset_temp_firn_regridded() {
         echo""; echo -e "\t\t*   anomaly firn temperature evolution (offset)"
-        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
-           ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.NoAnomaly.nc
+        mv ${COUPLE_DIR}/temperature_below_firn.nc \
+           ${COUPLE_DIR}/temperature_below_firn.NoAnomaly.nc
 
         _ic_atm2pism_anoforce_addition_regridded \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.NoAnomaly.nc \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
+            ${COUPLE_DIR}/temperature_below_firn.NoAnomaly.nc \
+            ${COUPLE_DIR}/temperature_below_firn.nc \
             ${FORCING_ATMOS_VNAME_TEMP_FIRN:?Miss var 1} \
             ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
             ${BASE_STATE_ATMOS_VNAME_TEMP_FIRN:?Miss var 3} \
@@ -2146,16 +2146,16 @@ ic_atm2pism_anoforce_offset_temp_firn_regridded() {
         #
         # Firn temperature has be at or below the freezing temperature
         #
-        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
-           ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.tmp.nc
+        mv ${COUPLE_DIR}/temperature_below_firn.nc \
+           ${COUPLE_DIR}/temperature_below_firn.tmp.nc
 
         $cdo -minc,273.15 \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.tmp.nc \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc \
-            && rm -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.tmp.nc
+            ${COUPLE_DIR}/temperature_below_firn.tmp.nc \
+            ${COUPLE_DIR}/temperature_below_firn.nc \
+            && rm -f ${COUPLE_DIR}/temperature_below_firn.tmp.nc
 
-        if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc ] ; then
-            echo "ERROR: Missing output file ${COUPLE_DIR}/${PISM_HEMISPHERE}/temperature_below_firn.nc"
+        if [ ! -f ${COUPLE_DIR}/temperature_below_firn.nc ] ; then
+            echo "ERROR: Missing output file ${COUPLE_DIR}/temperature_below_firn.nc"
         fi
 }
 
@@ -2168,21 +2168,20 @@ ic_atm2pism_anoforce_offset_temp_firn_regridded() {
 ## calculations are performed on the regridded ice sheet model domain.
 ic_atm2pism_anoforce_offset_precipitation_regridded() {
         echo""; echo -e "\t\t*   anomaly precipitation evolution (offset)"
-        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
-           ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc
+        mv ${COUPLE_DIR}/precipitation.nc \
+           ${COUPLE_DIR}/precipitation.NoAnomaly.nc
 
         _ic_atm2pism_anoforce_addition_regridded \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
+            ${COUPLE_DIR}/precipitation.NoAnomaly.nc \
+            ${COUPLE_DIR}/precipitation.nc \
             ${FORCING_ATMOS_VNAME_PRECIP:?Miss var 1} \
             ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
             ${BASE_STATE_ATMOS_VNAME_PRECIP:?Miss var 3} \
-            ${REFERENCE_ATMOS_VNAME_PRECIP:?Miss var 4} \
-            ${REFERENCE_ATMOS_FNAME:?Miss var 5} \
-            ${REFERENCE_ATMOS_VNAME_PRECIP:?Miss var 6}
+            ${REFERENCE_ATMOS_FNAME:?Miss var 4} \
+            ${REFERENCE_ATMOS_VNAME_PRECIP:?Miss var 5}
 
-        if [ ! -f ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc ] ; then
-            echo "ERROR: Missing output file ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc"
+        if [ ! -f ${COUPLE_DIR}/precipitation.nc ] ; then
+            echo "ERROR: Missing output file ${COUPLE_DIR}/precipitation.nc"
         fi
 }
 
@@ -2195,12 +2194,12 @@ ic_atm2pism_anoforce_offset_precipitation_regridded() {
 ## performed on the regridded ice sheet model domain.
 ic_atm2pism_anoforce_scale_precipitation_regridded() {
         echo""; echo -e "\t\t*   anomaly precipitation evolution (scale)"
-        mv ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
-           ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc
+        mv ${COUPLE_DIR}/precipitation.nc \
+           ${COUPLE_DIR}/precipitation.NoAnomaly.nc
 
         _ic_atm2pism_anoforce_multiplication_regridded \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.NoAnomaly.nc \
-            ${COUPLE_DIR}/${PISM_HEMISPHERE}/precipitation.nc \
+            ${COUPLE_DIR}/precipitation.NoAnomaly.nc \
+            ${COUPLE_DIR}/precipitation.nc \
             ${FORCING_ATMOS_VNAME_PRECIP:?Miss var 1} \
             ${BASE_STATE_ATMOS_FNAME:?Miss var 2} \
             ${BASE_STATE_ATMOS_VNAME_PRECIP:?Miss var 3} \

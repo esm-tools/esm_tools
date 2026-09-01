@@ -7,14 +7,12 @@ def prepare_environment(config):
             "WORK_DIR": config["general"]["thisrun_work_dir"],
             "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "MACHINE": config["computer"]["name"],
-            "CHUNK_SIZE": config[config["general"]["setup_name"]]["chunk_size"],  #!!!
             
             # PISM
             "ATMOSPHERE_TO_PISM": int(config["general"]["first_run_in_chunk"]),
             "PISM_TO_ATMOSPHERE": int(config["general"]["last_run_in_chunk"]),
             "PISM_TO_OCEAN": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False).__bool__()),
             "OCEAN_TO_PISM": int(config["general"]["first_run_in_chunk"]),
-            "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "VERSION_pism": config[config["general"]["setup_name"]]["version"].replace("github", "").replace("index", "").replace("snowflake", "")[:3],
             "POOL_DIR_pism": config[config["general"]["setup_name"]]["pool_dir"],
             "YR0_pism": config["general"]["start_date"].syear,
@@ -30,18 +28,15 @@ def prepare_environment(config):
             "CHUNK_END_DATE_pism": config["general"]["chunk_end_date"],
             "CHUNK_START_YEAR_pism": config["general"]["chunk_start_date"].syear,
             "CHUNK_END_YEAR_pism": config["general"]["chunk_end_date"].syear,
-            "EXP_ID": config["general"]["command_line_config"]["expid"],
             "OUTPUT_DIR_pism": config[config["general"]["setup_name"]]["experiment_outdata_dir"],
             "SPINUP_FILE_pism": config[config["general"]["setup_name"]]["spinup_file"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
-            "MACHINE": config["computer"]["name"],
             "DOMAIN_pism": config[config["general"]["setup_name"]]["domain"],
             "RES_pism": config[config["general"]["setup_name"]]["resolution"],
             "EXE_pism": config[config["general"]["setup_name"]]["executable"],
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             
             # user defined input
-            "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             
             "iter_coup_interact_method_oce2ice": config[config["general"]["setup_name"]].get("iter_coup_interact_method_oce2ice", "OCEANTEMPSALT"),
             "iterative_coupling_atmosphere_pism_regrid_method": config[config["general"]["setup_name"]].get("regrid_method", "DOWNSCALE"), 

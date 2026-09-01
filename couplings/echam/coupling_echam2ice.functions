@@ -251,7 +251,7 @@ echam_ice_concatenate_files() {
 
         test -f atmosphere_file_for_ice.nc && rm atmosphere_file_for_ice.nc
         ${cdo} -s cat ${processed_echam6_file_list_for_ice} atmosphere_file_for_ice.nc 2>> ${COUPLE_DIR}/cdo_stderr_echam2ice
-        if [[ ! "x${oro_update_var}" == "xgeosp" ]]; then
+        if [[ ! "x${oro_update_var}" == "xGEOSP" ]]; then
 
             latest_restart_file="${RESTART_DIR_echam}/restart_${EXP_ID}_echam_${END_YEAR_echam}${END_MONTH_echam}${END_DAY_echam}.nc"
             echo " * latest_restart_file=${latest_restart_file}"

@@ -4,9 +4,13 @@ def prepare_environment(config):
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "WORK_DIR": config["general"]["thisrun_work_dir"],
-            "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
+            # NOTE: AWIESM is a *coupled* setup, so esm_parser folds the runscript's
+            # "awiesm:" section into "general" and deletes it (esm_parser.py, "if coupled_setup").
+            # config["awiesm"] therefore does not exist here -- read the component instead.
+            # All consumers use ${FUNCTION_PATH}/../<dir>/..., so echam vs fesom is equivalent.
+            "FUNCTION_PATH": config["echam"]["workflow"]["subjobs"]["couple_in"]["script_dir"],
             "MACHINE": config["computer"]["name"],
-            "CHUNK_SIZE": config[config["general"]["setup_name"]]["chunk_size"],  #!!!
+            "CHUNK_SIZE": config["general"]["this_chunk_size"],  #!!!
             
             # ECHAM
             "ICE_TO_ECHAM": int(config["general"]["first_run_in_chunk"]),

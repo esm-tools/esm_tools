@@ -91,7 +91,7 @@ iterative_coupling_ice_echam6_update_orography() {
             update_orography_apply_orography_anomaly_high_res
             update_orography_prepare_calnoro_high_res
         #fi
-        elif [ -f ${hi_res_init_oro} ] 
+        elif [ -f "${hi_res_init_oro}" ] 
         then
             regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil T511
             regrid_to_echam ${COUPLE_DIR}/ice_orog_difference.nc remapbil 
@@ -298,14 +298,6 @@ update_orography_generate_target_orography_file() {
 
 
         ############################################################
-        # Define the method for orography update (oro_update_mod):
-        #   1: use low-resolution reference; take all sub-grid scale parameters from CALNORO; take GEOSP from low-res input
-        #   2: use low-resolution reference; take all sub-grid scale parameters from CALNORO; take OROMEA and GEOSP from low-res input
-        #                                                                                     (like it has been done before)
-        #   3: use high-resolution reference; take all sub-grid scale parameterds from CALNORO; take OROMEA and GEOSP from high-res input
-        #   4: update orography but keep sub-grid scale parameters from unit.24
-        #   5: update orography but change sub-grid scale parameters only in ice domain where ice mask or change of ice mask (ice loss/ice gain) 
-
         if [ "x${oro_update_mod}" == "x0" ]; then # old coupling scheme: OROMEA and GEOSP from low-res input
                 cdo -s -replace \
                         ${ifile} \

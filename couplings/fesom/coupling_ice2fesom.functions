@@ -90,7 +90,7 @@ function ice2fesom {
     #
     # ice2fesom: remap combined PISM ocean file to FESOM grid (requires pism2ocean; PISM_TO_OCEAN=1 in env_pism)
     #
-    CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_awicm}-${CHUNK_END_DATE_awicm}"
+    CHUNK_DATE_TAG_awicm="${CHUNK_START_DATE_fesom}-${CHUNK_END_DATE_fesom}"
 
     INTERPOL_TYPE_OCE=${INTERPOL_TYPE_OCE:-"dis"} #Standard=dis : "bil" "con" "dis" "nn"
 
@@ -866,7 +866,7 @@ function distribute_total_discharge_over_ocean() {
         module unload python3
         if [ -f "${COUPLE_DIR}/landice_nodes_in_region_2.out" ]; then
             echo >> ${COUPLE_DIR}/landice_yearly_mass_loss.out 
-            cat ${CONSTANT_LANDICE_HOSING_FILE} >> ${COUPLE_DIR}/landice_yearly_mass_loss.out
+            cat ${CONSTANT_FRESHWATER_HOSING_FILE} >> ${COUPLE_DIR}/landice_yearly_mass_loss.out
         fi
         echo; echo "            * Finished apply_hosing_correction.py "
 }

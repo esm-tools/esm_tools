@@ -25,6 +25,7 @@ from stac_geoparquet.arrow import stac_table_to_items
 from upath import UPath
 
 from esm_catalog.client import CollectionId, StacClient, StacObject
+from esm_catalog.scan.workspace import STATE_FILENAME
 from esm_catalog.storage.geoparquet import read_shard
 
 #: Items per bulk_items request. pgstac loads each batch server-side.
@@ -78,15 +79,20 @@ def expand_paths(paths: Iterable[Path]) -> list[Path]:
     """Flatten directories to files, collections-first, then items, then shards.
 
     Ordering matters: a collection must exist before its items (single or bulk)
-    can be written. Within a directory we therefore emit ``*.json`` Collections
-    first, then ``*.json`` Items, then shards.
+    can be written, so the returned list is Collections, then Items, then shards.
+
+    Directories are searched **recursively** — the scanner writes shards under
+    ``items/`` while ``collection.json`` sits at the catalog root — and the
+    ``esm-catalog.json`` workspace-state file is skipped (it is bookkeeping, not
+    a STAC object, so it must not count as a failed push).
     """
     files: list[Path] = []
     for path in paths:
         if path.is_dir():
-            files.extend(sorted(path.glob("*.json")))
+            candidates = sorted(path.rglob("*.json"))
             for suffix in _SHARD_SUFFIXES:
-                files.extend(sorted(path.glob(f"*{suffix}")))
+                candidates += sorted(path.rglob(f"*{suffix}"))
+            files.extend(f for f in candidates if f.name != STATE_FILENAME)
         else:
             files.append(path)
     # Stable-sort files so collections precede items precede shards.

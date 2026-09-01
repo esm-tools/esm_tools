@@ -151,3 +151,67 @@ def test_expand_paths_orders_collections_first(tmp_path):
 
     kinds = [pushmod.classify_file(p) for p in pushmod.expand_paths([tmp_path])]
     assert kinds == ["collection", "item", "shard"]
+
+
+def test_expand_paths_recurses_and_skips_workspace_state(tmp_path):
+    # The scanner's on-disk layout: collection.json at the catalog root, shards
+    # under items/, and the esm-catalog.json workspace-state file alongside.
+    catalog = tmp_path / "catalog"
+    (catalog / "items").mkdir(parents=True)
+    (catalog / "collection.json").write_text(
+        json.dumps({"type": "Collection", "id": "c"})
+    )
+    (catalog / "esm-catalog.json").write_text(
+        json.dumps({"experiment_id": "c", "scanned": {}})
+    )
+    (catalog / "items" / "s.parquet").write_bytes(b"")
+
+    names = [p.name for p in pushmod.expand_paths([catalog])]
+    assert "collection.json" in names          # top-level collection
+    assert "s.parquet" in names                # shard found in items/ subdir
+    assert "esm-catalog.json" not in names     # workspace state skipped, not an error
+
+
+def test_push_paths_over_catalog_layout(tmp_path):
+    # End-to-end over the scanner's real layout: collection.json at the root,
+    # shard under items/, esm-catalog.json state file alongside. Drives the whole
+    # push and observes the HTTP calls (this is the scenario that failed on Albedo).
+    catalog = tmp_path / "catalog"
+    (catalog / "items").mkdir(parents=True)
+    (catalog / "collection.json").write_text(
+        json.dumps({"id": "c", "type": "Collection"})
+    )
+    (catalog / "esm-catalog.json").write_text(
+        json.dumps({"experiment_id": "c", "scanned": {}})
+    )
+    write_shard([_item("a", "c"), _item("b", "c")], UPath(catalog / "items" / "s.parquet"))
+
+    calls: list[tuple[str, str]] = []
+
+    def responder(request: httpx.Request) -> httpx.Response:
+        calls.append((request.method, request.url.path))
+        return httpx.Response(201, json={})
+
+    client = StacClient("https://host/api", "tok", transport=httpx.MockTransport(responder))
+    summary = pushmod.push_paths([catalog], client)
+
+    assert summary.errors == []
+    assert (summary.collections, summary.shards, summary.items) == (1, 1, 2)
+    paths = [p for _, p in calls]
+    assert "/api/collections" in paths                    # collection upserted
+    assert "/api/collections/c/bulk_items" in paths       # shard items bulk-pushed
+    assert not any("esm-catalog" in p for p in paths)     # state file never sent
+
+
+def test_upsert_reports_redirect_actionably():
+    # A bare "HTTP 308" is unhelpful; a redirect must hint at the http/https or
+    # trailing-slash cause (the real-world failure from an http:// server_url).
+    def responder(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(308, headers={"location": "https://host/api/collections"})
+
+    client, _ = _recording_client(responder)
+    with pytest.raises(StacClientError) as exc:
+        client.upsert_collection({"id": "c", "type": "Collection"})
+    assert exc.value.status == 308
+    msg = str(exc.value).lower()
+    assert "redirect" in msg and "https" in msg

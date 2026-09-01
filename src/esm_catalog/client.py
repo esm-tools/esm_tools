@@ -111,9 +111,24 @@ class StacClient:
         )
 
     def _check(self, resp: httpx.Response, action: str) -> None:
-        """Raise :class:`StacClientError` unless *resp* is a 200/201 success."""
-        if resp.status_code not in (200, 201):
-            raise StacClientError(action, resp.status_code, resp.text)
+        """Raise :class:`StacClientError` unless *resp* is a 200/201 success.
+
+        A redirect (e.g. Caddy's http→https 308) is reported with the target and
+        the likely cause, rather than a bare status — the client does not follow
+        it, because the slash redirect on these endpoints drops the ``/api``
+        prefix and would send the request somewhere wrong.
+        """
+        if resp.status_code in (200, 201):
+            return
+        if resp.is_redirect:
+            location = resp.headers.get("location", "<none>")
+            raise StacClientError(
+                f"{action} — server sent a redirect to {location}; check that "
+                "server_url uses https (not http) and has no trailing slash",
+                resp.status_code,
+                resp.text,
+            )
+        raise StacClientError(action, resp.status_code, resp.text)
 
     def _upsert(self, kind: str, body: StacObject, post_path: str, put_path: str) -> None:
         resp = self._client.post(self._base + post_path, json=body)

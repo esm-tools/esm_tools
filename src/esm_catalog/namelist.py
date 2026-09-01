@@ -152,7 +152,37 @@ def _iter_queryable_params(
                 group = group_name
             for key, value in params.items():
                 if _is_queryable(value):
-                    yield filename, group, key, value
+                    yield filename, group, key, _arrow_safe(value)
+
+
+def _arrow_safe(value: NamelistValue) -> NamelistValue:
+    """Make a namelist value storable in a single-typed column (geoparquet).
+
+    A scalar passes through. A list is stored as a shard column, which arrow
+    requires to be one type; f90nml, however, produces mixed-kind lists such as
+    ``putrerun = 1, 'months', 'first', 0`` -> ``[1, 'months', 'first', 0]`` (a
+    Fortran output-interval triplet). A list mixing text with numbers (or bools)
+    cannot be a typed column, so every element is stringified to a uniform
+    ``list[str]``; homogeneous numeric or text lists are left as-is. ``None`` is
+    preserved so the column can null it.
+    """
+    if not isinstance(value, list):
+        return value
+    kinds = set()
+    for element in value:
+        if element is None:
+            continue
+        if isinstance(element, bool):
+            kinds.add("bool")
+        elif isinstance(element, (int, float)):
+            kinds.add("number")
+        elif isinstance(element, str):
+            kinds.add("text")
+        else:
+            kinds.add("other")
+    if len(kinds) <= 1:
+        return value
+    return [None if element is None else str(element) for element in value]
 
 
 def _is_queryable(value: NamelistValue) -> bool:

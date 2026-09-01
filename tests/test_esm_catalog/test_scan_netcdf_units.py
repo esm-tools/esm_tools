@@ -321,3 +321,20 @@ def test_to_python_unwraps_numpy_scalar():
     assert result == 3.5
     assert isinstance(result, float)
     assert _to_python("plain") == "plain"
+
+
+def test_unidentified_dimension_has_no_type():
+    # A dimension with no CF axis (e.g. FESOM's unstructured 'elem') is a bare
+    # index: it keeps its extent but must NOT be labelled 'spatial'/'temporal'.
+    dataset = xr.Dataset(
+        coords={
+            "time": ("time", pd.date_range("1850-03-31", periods=1)),
+            "elem": ("elem", np.arange(0, 100)),
+        }
+    )
+    dataset["time"].attrs["standard_name"] = "time"
+
+    dims = _extract_dimensions(dataset)
+    assert dims["time"]["type"] == "temporal"
+    assert dims["elem"]["extent"] == [0, 99]
+    assert "type" not in dims["elem"]

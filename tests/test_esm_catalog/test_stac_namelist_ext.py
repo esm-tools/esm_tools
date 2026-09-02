@@ -94,15 +94,15 @@ def test_collection_noop_without_namelists(collection):
 def test_collection_flattens_parameters(collection):
     add_namelist_collection_extension(collection, by_component("echam"))
     params = collection.extra_fields["nml:parameters"]
-    assert params["echam:namelist.echam:runctl:delta_time"] == 450
-    assert params["echam:namelist.echam:runctl:lcouple"] is True
+    assert params["echam__namelist_echam__runctl__delta_time"] == 450
+    assert params["echam__namelist_echam__runctl__lcouple"] is True
 
 
 def test_collection_lists_files_and_groups(collection):
     add_namelist_collection_extension(collection, by_component("echam", "jsbach"))
     assert collection.extra_fields["nml:files"] == [
-        "echam:namelist.echam",
-        "jsbach:namelist.jsbach",
+        "echam__namelist_echam",
+        "jsbach__namelist_jsbach",
     ]
     assert collection.extra_fields["nml:groups"] == ["jsbach_ctl", "runctl"]
     assert NAMELIST_URL in collection.stac_extensions
@@ -125,24 +125,24 @@ def test_collection_component_qualified_keys_avoid_filename_collision(collection
         },
     )
     params = collection.extra_fields["nml:parameters"]
-    assert params["echam:namelist.io:runctl:delta_time"] == 450
-    assert params["jsbach:namelist.io:jsbach_ctl:use_dynveg"] is True
+    assert params["echam__namelist_io__runctl__delta_time"] == 450
+    assert params["jsbach__namelist_io__jsbach_ctl__use_dynveg"] is True
     assert collection.extra_fields["nml:files"] == [
-        "echam:namelist.io",
-        "jsbach:namelist.io",
+        "echam__namelist_io",
+        "jsbach__namelist_io",
     ]
 
 
 def test_collection_indexes_repeated_group(collection):
     # A group repeated in a file (an f90nml Cogroup) must not collapse onto one
-    # key; each occurrence gets an [index] array suffix, so both values survive.
+    # key; each occurrence gets a '_index' suffix, so both values survive.
     add_namelist_collection_extension(
         collection, {"bgc": {"namelist.bgc": read_nml("repeated_group")}}
     )
     params = collection.extra_fields["nml:parameters"]
-    assert params["bgc:namelist.bgc:rep[0]:x"] == 1
-    assert params["bgc:namelist.bgc:rep[1]:x"] == 2
-    assert params["bgc:namelist.bgc:solo:y"] == 9
+    assert params["bgc__namelist_bgc__rep_0__x"] == 1
+    assert params["bgc__namelist_bgc__rep_1__x"] == 2
+    assert params["bgc__namelist_bgc__solo__y"] == 9
 
 
 def test_collection_drops_non_json_scalar(collection):
@@ -152,8 +152,8 @@ def test_collection_drops_non_json_scalar(collection):
         collection, {"echam": {"namelist.echam": read_nml("with_complex")}}
     )
     params = collection.extra_fields["nml:parameters"]
-    assert params["echam:namelist.echam:runctl:delta_time"] == 450
-    assert "echam:namelist.echam:runctl:phase" not in params
+    assert params["echam__namelist_echam__runctl__delta_time"] == 450
+    assert "echam__namelist_echam__runctl__phase" not in params
 
 
 def test_collection_flattens_shipped_namelist(collection):
@@ -161,8 +161,8 @@ def test_collection_flattens_shipped_namelist(collection):
     amip = f90nml.read(esm_tools.get_namelist_filepath("amip/namelist.amip"))
     add_namelist_collection_extension(collection, {"amip": {"namelist.amip": amip}})
     params = collection.extra_fields["nml:parameters"]
-    assert params["amip:namelist.amip:namamip:runlengthsec"] == 86400
-    assert params["amip:namelist.amip:namamip:startyear"] == 1850
+    assert params["amip__namelist_amip__namamip__runlengthsec"] == 86400
+    assert params["amip__namelist_amip__namamip__startyear"] == 1850
 
 
 # --- add_namelist_item_extension (item-level, all components) ---
@@ -176,14 +176,16 @@ def test_item_noop_without_namelists(item):
 
 def test_item_flattens_one_component(item):
     add_namelist_item_extension(item, by_component("echam"))
-    assert item.properties["nml:echam:namelist.echam:runctl:co2vmr"] == 0.000284
+    assert item.properties["nml__echam__namelist_echam__runctl__co2vmr"] == 0.000284
     assert NAMELIST_URL in item.stac_extensions
 
 
 def test_item_covers_all_components(item):
     add_namelist_item_extension(item, by_component("echam", "jsbach"))
-    assert item.properties["nml:echam:namelist.echam:runctl:delta_time"] == 450
-    assert item.properties["nml:jsbach:namelist.jsbach:jsbach_ctl:use_dynveg"] is True
+    assert item.properties["nml__echam__namelist_echam__runctl__delta_time"] == 450
+    assert (
+        item.properties["nml__jsbach__namelist_jsbach__jsbach_ctl__use_dynveg"] is True
+    )
 
 
 # --- schema validation ---
@@ -195,24 +197,26 @@ def test_collection_validates_against_namelist_schema(nml_schema):
 
 
 def test_collection_rejects_malformed_parameter_key(nml_schema):
-    # nml:parameters keys must be exactly 'component:file:group:key' (four
-    # colon-separated segments); the propertyNames rule must reject anything else.
+    # Flattened keys are JSON-path-safe: only [A-Za-z0-9_]. A key carrying a
+    # forbidden character (here a ':') must be rejected by propertyNames. (The
+    # '__' format cannot regex-enforce a segment count, since segments contain
+    # underscores; the guarantee it does enforce is character-safety.)
     exp_metadata = make_exp_metadata(namelists_by_component=by_component("echam"))
     col_dict = make_collection(exp_metadata).to_dict()
-    col_dict["nml:parameters"]["missing_group_and_key"] = 1  # only one segment
+    col_dict["nml:parameters"]["has:a:colon"] = 1  # forbidden character
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=col_dict, schema=nml_schema)
 
 
 def test_item_rejects_malformed_nml_key_but_keeps_foreign_props(item, nml_schema):
-    # nml: keys must be nml:component:file:group:key; a short nml: key is
-    # rejected, while foreign core props (datetime, etc.) pass untouched.
+    # nml__ keys must be JSON-path-safe; one carrying a ':' is rejected, while
+    # foreign core props (datetime, etc.) pass untouched.
     add_namelist_item_extension(item, by_component("echam"))
     # well-formed item (carrying a core datetime prop) validates
     jsonschema.validate(instance=item.to_dict(), schema=nml_schema)
-    # a truncated nml: key must be rejected
+    # an nml__ key with a forbidden character must be rejected
     bad = item.to_dict()
-    bad["properties"]["nml:echam:runctl"] = 1  # missing file+key segments
+    bad["properties"]["nml__echam__bad:key"] = 1  # colon not allowed
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(instance=bad, schema=nml_schema)
 

@@ -12,8 +12,8 @@ function pism2atmosphere {
 
         echo "PISM_TO_ATMOSPHERE=${PISM_TO_ATMOSPHERE}"
 
-        echo "LA DEBUG: first_year_in_chunk_input = ${first_year_in_chunk_input}"
-        echo "LA DEBUG: last_year_in_chunk_restart = ${last_year_in_chunk_restart}"
+        echo " * first_year_in_chunk_input = ${first_year_in_chunk_input}"
+        echo " * last_year_in_chunk_restart = ${last_year_in_chunk_restart}"
 
         if [[ $PISM_TO_ATMOSPHERE -eq 1 ]]; then
                 iterative_coupling_pism_atmosphere_write_grid
@@ -26,6 +26,19 @@ function pism2atmosphere {
         echo "                 *** F I N I S H E D    pism2atmosphere *** "
         echo "                =================================================================="
 }
+function Iterative_coupling_check_icebergs_included {
+        TMP=$( grep cobld $( ls -t ${COUPLE_DIR}/../run_*/work/namelist.config | head -1 ) | sed 's/^[ \t]*//' )
+        prefix="use_icebergs = "
+        FESOM_USE_ICEBERGS=${TMP#"$prefix"}
+        if [ ${FESOM_USE_ICEBERGS} == ".true." || ${FESOM_USE_ICEBERGS} == ".TRUE." ]
+        then
+            FESOM_USE_ICEBERGS=1
+        else
+            FESOM_USE_ICEBERGS=0
+        fi
+        echo "LA DEBUG: FESOM_USE_ICEBERGS = ${FESOM_USE_ICEBERGS}"
+}
+
 function iterative_coupling_pism_atmosphere_make_forcing {
         pism_atmosphere_get_newest_output
         pism_atmosphere_update_domain_mask
@@ -63,13 +76,7 @@ function pism_atmosphere_get_newest_output {
         # LA: Summer value for mask only. Now: Summer value for mask, yearmean for runoff
 
         # Define list of variables selected from PISM output depending on whether icebergs are used or not
-        if [ "x${fesom_use_iceberg}" == "x1" ]; then
-            echo " * use iceberg coupling and exclude iceberg discharge from mass balance"
-            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_discharge"
-        else 
-            echo " * no iceberg coupling"
-            CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount"
-        fi 
+        CDO_SELECT_VAR_LIST="thk,climatic_mass_balance,topg,${OROG_VARNAME_pism},${GLACIAL_MASK_VARNAME_pism},tendency_of_ice_amount,tendency_of_ice_amount_due_to_discharge"
         
         LATEST_PISM_FILE_SINGLE=${OUTPUT_DIR_pism}/${EXP_ID}_${EXE_pism}_extra_${YR0_pism}${M0_pism}${D0_pism}-${END_YEAR_pism}${END_MONTH_pism}${END_DAY_pism}.nc
         echo; echo "                 *   OUTPUT_DIR_pism = ${OUTPUT_DIR_pism} "
@@ -392,7 +399,7 @@ function generate_runoff_select_variables {
         	
             #***************************************************************************
             #LA include iceberg model
-            if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+            if [[ "x${FESOM_USE_ICEBERGS}" == "x1" ]]; then
                 PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_discharge,runoff"} #,tendency_of_ice_amount_due_to_calving"}
                 #PISM_MASS_LOSS_VARS=${PISM_MASS_LOSS_VARS:-"tendency_of_ice_amount_due_to_discharge,tendency_of_ice_amount"} #,tendency_of_ice_amount_due_to_calving"}
                 PISM_MASS_LOSS_ARRAY=("tendency_of_ice_amount_due_to_discharge" "runoff") # "tendency_of_ice_amount_due_to_calving")
@@ -449,7 +456,7 @@ function generate_runoff_transform_units {
 		cdo -s  -divc,${years_to_seconds_divc_factor}  $ifile    $ofile
         #***************************************************************************
         #LA include iceberg model
-        if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+        if [[ "x${FESOM_USE_ICEBERGS}" == "x1" ]]; then
 		    cdo -s  -divc,${years_to_seconds_divc_factor}  -selname,tendency_of_ice_amount_due_to_discharge ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc tmp
 		    ncatted -a units,tendency_of_ice_amount_due_to_discharge,o,c,"kg second-1 m-2"  tmp tmp2; rm tmp # ; mv tmp $ofile 
             ncatted -a units,runoff,o,c,"kg second-1 m-2" $ofile tmp; mv tmp $ofile 
@@ -493,7 +500,7 @@ function generate_runoff_combine_fields {
 	"1.0"|"1.1"|"1.2")
                 #***************************************************************************
                 #LA include iceberg model
-                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+                if [[ "x${FESOM_USE_ICEBERGS}" == "x1" ]]; then
                     # gfw_atmo content must equal "all PISM mass balance components
                     # minus the iceberg discharge", because the FESOM iceberg model is
                     # seeded by tendency_of_ice_amount_due_to_discharge and would
@@ -566,7 +573,7 @@ function generate_runoff_combine_fields {
 	"1.0"|"1.1"|"1.2")
                 #***************************************************************************
                 #LA include iceberg model
-                if [[ "x${fesom_use_iceberg}" == "x1" ]]; then
+                if [[ "x${FESOM_USE_ICEBERGS}" == "x1" ]]; then
                     ncrename -v runoff,total_ice_mass_loss_flux $ofile
                     # Describe the actual content: the iceberg discharge has been removed.
                     ncatted -O -h \

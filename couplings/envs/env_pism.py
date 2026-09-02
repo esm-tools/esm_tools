@@ -37,7 +37,6 @@ def prepare_environment(config):
             "INPUT_FILE_pism": config[config["general"]["setup_name"]].get("cli_input_file_pism"),
             
             # user defined input
-            
             "iter_coup_interact_method_oce2ice": config[config["general"]["setup_name"]].get("iter_coup_interact_method_oce2ice", "OCEANTEMPSALT"),
             "iterative_coupling_atmosphere_pism_regrid_method": config[config["general"]["setup_name"]].get("regrid_method", "DOWNSCALE"), 
             "iterative_coupling_atmosphere_pism_ablation_method": config[config["general"]["setup_name"]].get("ablation_method", "PDD"),
@@ -56,7 +55,6 @@ def prepare_environment(config):
             "orog_reference_pism": config[config["general"]["setup_name"]].get("orog_reference_pism", 1),
             "first_year_in_chunk_input": config[config["general"]["setup_name"]]["experiment_input_dir"] + "/" + config["general"]["expid"] + "_pismr_input_"  + config["general"]["chunk_start_date"].syear + "0101-" + str(int( config["general"]["chunk_start_date"].syear ) + int( config["general"]["nyear"] - 1 )) + "1231.nc", 
             "last_year_in_chunk_restart": config[config["general"]["setup_name"]]["restart_out_targets"]["restart"],
-            "fesom_use_iceberg": int(config[config["general"]["setup_name"]].get("iceberg_coupling", False).__bool__()),
             "USE_YMONMEAN": config[config["general"]["setup_name"]].get("use_ymonmean", 0),
             "CRITICAL_THK_FOR_MASK_pism": config["pism"].get("thk_threshold", 5.0), 
             "MIN_MON_SELECT": int(config["pism"].get("select_min_glacial_depth", 1)),

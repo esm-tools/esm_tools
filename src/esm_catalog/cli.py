@@ -331,10 +331,38 @@ def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None
         f"pushed {summary.collections} collection(s), {summary.items} item(s) "
         f"from {summary.shards} shard(s)"
     )
+
+    # If a pushed catalog carries queryables the server has not registered, tell
+    # the operator how to register them (filtering already works; this only
+    # surfaces the fields in the STAC Browser filter UI).
+    for directory in (p for p in paths if p.is_dir()):
+        delta = pushmod.queryable_delta(directory, api_url, settings.verify_tls)
+        if delta is not None:
+            _report_new_queryables(delta, settings.server_url)
+
     if summary.errors:
         for err in summary.errors:
             click.secho(f"  ! {err}", fg="red", err=True)
         raise click.ClickException(f"{len(summary.errors)} path(s) failed.")
+
+
+def _report_new_queryables(delta_path: Path, server_url: Optional[str]) -> None:
+    """Print the operator recipe for registering new queryables."""
+    import json as _json
+
+    count = len(_json.loads(delta_path.read_text()).get("properties", {}))
+    host = (server_url or "<pgstac-host>").split("://", 1)[-1].rstrip("/")
+    click.secho(
+        f"\n{count} new queryable field(s) are not yet registered.", fg="yellow"
+    )
+    click.echo(
+        "Filtering already works without this — registration only makes these\n"
+        "fields appear in the STAC Browser filter UI. A privileged operator runs:\n"
+    )
+    click.secho(
+        f"  ssh {host} sudo -u stac esm-catalog-load-queryables - < {delta_path}\n",
+        fg="cyan",
+    )
 
 
 @contextmanager

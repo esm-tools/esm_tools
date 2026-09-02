@@ -120,7 +120,7 @@ def add_namelist_collection_extension(
 def add_namelist_item_extension(
     item: pystac.Item, namelists_by_component: NamelistsByComponent
 ) -> None:
-    """Set item-level nml:{component}:{file}:{group}:{key} from the given namelists.
+    """Set item-level nml__{component}__{file}__{group}__{key} from the namelists.
 
     No-op when no queryable parameters are found.
 
@@ -141,6 +141,43 @@ def add_namelist_item_extension(
         return
     item.properties.update(props)
     apply_extension(item, Extension.namelist)
+
+
+def _json_type(value: NamelistValue) -> str:
+    """The JSON-Schema ``type`` for a queryable definition of *value*.
+
+    ``bool`` is checked before ``int`` (it subclasses it). Mixed lists have
+    already been stringified by :func:`_arrow_safe`, so a list is always
+    ``array``. The types drive pgstac's CQL2 casting (``integer``/``number`` ->
+    numeric comparison; ``array`` -> text array; everything else -> text).
+    """
+    if isinstance(value, bool):
+        return "boolean"
+    if isinstance(value, int):
+        return "integer"
+    if isinstance(value, float):
+        return "number"
+    if isinstance(value, list):
+        return "array"
+    return "string"
+
+
+def namelist_queryables(
+    namelists_by_component: NamelistsByComponent,
+) -> dict[str, dict[str, str]]:
+    """Map each item-level ``nml__`` key to a JSON-Schema queryable definition.
+
+    The result is the ``properties`` body of a ``pypgstac load-queryables`` file:
+    ``{name: {"type": <json-type>}}``, one entry per item-level namelist property.
+    Empty when there are no namelists.
+    """
+    return {
+        _flatten(_ITEM_PREFIX, component, filename, group, key): {
+            "type": _json_type(value)
+        }
+        for component, namelists in namelists_by_component.items()
+        for filename, group, key, value in _iter_queryable_params(namelists)
+    }
 
 
 def _iter_queryable_params(

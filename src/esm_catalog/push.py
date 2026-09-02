@@ -25,7 +25,7 @@ from stac_geoparquet.arrow import stac_table_to_items
 from upath import UPath
 
 from esm_catalog.client import CollectionId, StacClient, StacObject
-from esm_catalog.scan.workspace import STATE_FILENAME
+from esm_catalog.scan.workspace import QUERYABLES_FILENAME, STATE_FILENAME
 from esm_catalog.storage.geoparquet import read_shard
 
 #: Items per bulk_items request. pgstac loads each batch server-side.
@@ -35,6 +35,9 @@ CHUNK_SIZE = 500
 PathKind = Literal["collection", "item", "shard", "unknown"]
 
 _SHARD_SUFFIXES = {".parquet", ".geoparquet"}
+
+#: Catalog sidecars that are not STAC objects and must never be pushed.
+_SKIP_FILES = {STATE_FILENAME, QUERYABLES_FILENAME}
 
 
 class PushSummary(BaseModel):
@@ -83,8 +86,9 @@ def expand_paths(paths: Iterable[Path]) -> list[Path]:
 
     Directories are searched **recursively** — the scanner writes shards under
     ``items/`` while ``collection.json`` sits at the catalog root — and the
-    ``esm-catalog.json`` workspace-state file is skipped (it is bookkeeping, not
-    a STAC object, so it must not count as a failed push).
+    catalog sidecars (the ``esm-catalog.json`` workspace state and the
+    ``queryables.json`` file) are skipped: they are bookkeeping, not STAC
+    objects, so they must not count as failed pushes.
     """
     files: list[Path] = []
     for path in paths:
@@ -92,7 +96,7 @@ def expand_paths(paths: Iterable[Path]) -> list[Path]:
             candidates = sorted(path.rglob("*.json"))
             for suffix in _SHARD_SUFFIXES:
                 candidates += sorted(path.rglob(f"*{suffix}"))
-            files.extend(f for f in candidates if f.name != STATE_FILENAME)
+            files.extend(f for f in candidates if f.name not in _SKIP_FILES)
         else:
             files.append(path)
     # Stable-sort files so collections precede items precede shards.
@@ -160,3 +164,46 @@ def _push_shard(path: Path, client: StacClient, progress: ProgressHook) -> int:
             pushed += len(batch)
             progress(len(batch), f"{path.name} -> {collection_id} ({pushed})")
     return pushed
+
+
+#: The delta sidecar naming queryables present in the catalog but not yet
+#: registered on the server (a ``pypgstac load-queryables`` file).
+QUERYABLES_DELTA_FILENAME = "queryables-delta.json"
+
+
+def registered_queryables(api_url: str, verify_tls: bool) -> set[str]:
+    """The property names the server currently advertises as queryables."""
+    import httpx
+
+    resp = httpx.get(f"{api_url}/queryables", verify=verify_tls, timeout=30)
+    resp.raise_for_status()
+    return set(resp.json().get("properties", {}))
+
+
+def queryable_delta(
+    catalog_dir: Path, api_url: str, verify_tls: bool
+) -> Optional[Path]:
+    """Diff the catalog's ``queryables.json`` against the server; write the delta.
+
+    Returns the path to a written ``queryables-delta.json`` (its ``properties``
+    are the queryables present in the catalog but not yet registered on the
+    server), or ``None`` when there is nothing to register. If the server cannot
+    be reached for the diff, the *full* set is emitted so registration is never
+    silently skipped.
+    """
+    source = catalog_dir / QUERYABLES_FILENAME
+    if not source.exists():
+        return None
+    properties = json.loads(source.read_text()).get("properties", {})
+    if not properties:
+        return None
+    try:
+        already = registered_queryables(api_url, verify_tls)
+    except Exception:  # noqa: BLE001 — unreachable server -> emit the full set
+        already = set()
+    new = {name: definition for name, definition in properties.items() if name not in already}
+    if not new:
+        return None
+    delta_path = catalog_dir / QUERYABLES_DELTA_FILENAME
+    delta_path.write_text(json.dumps({"properties": new}, indent=2))
+    return delta_path

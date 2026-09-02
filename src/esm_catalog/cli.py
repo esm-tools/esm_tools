@@ -357,7 +357,8 @@ def _report_new_queryables(delta_path: Path, server_url: Optional[str]) -> None:
     )
     click.echo(
         "Filtering already works without this — registration only makes these\n"
-        "fields appear in the STAC Browser filter UI. A privileged operator runs:\n"
+        "fields appear in the STAC Browser filter UI. A privileged operator runs\n"
+        "on the pgstac host (adjust the ssh name if it differs from the API host):\n"
     )
     click.secho(
         f"  ssh {host} sudo -u stac esm-catalog-load-queryables - < {delta_path}\n",

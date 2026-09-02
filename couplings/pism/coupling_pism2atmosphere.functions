@@ -27,16 +27,24 @@ function pism2atmosphere {
         echo "                =================================================================="
 }
 function Iterative_coupling_check_icebergs_included {
-        TMP=$( grep cobld $( ls -t ${COUPLE_DIR}/../run_*/work/namelist.config | head -1 ) | sed 's/^[ \t]*//' )
-        prefix="use_icebergs = "
-        FESOM_USE_ICEBERGS=${TMP#"$prefix"}
-        if [ ${FESOM_USE_ICEBERGS} == ".true." || ${FESOM_USE_ICEBERGS} == ".TRUE." ]
-        then
-            FESOM_USE_ICEBERGS=1
-        else
+        _nml=$( ls -t ${COUPLE_DIR}/../run_*/work/namelist.config 2>/dev/null | head -1 )
+        if [ -z "${_nml}" ] || [ ! -f "${_nml}" ]; then
+            echo "WARNING: no namelist.config under ${COUPLE_DIR}/../run_*/work/ - assuming icebergs off"
             FESOM_USE_ICEBERGS=0
+            _raw=""
+        else
+            # "    use_icebergs = .true."  ->  ".true."
+            # [^[:space:]!,] excludes TAB too (plain "[^ !,]" does not)
+            _raw=$( sed -n 's/^[[:space:]]*use_icebergs[[:space:]]*=[[:space:]]*\([^[:space:]!,]*\).*/\1/p' \
+                        "${_nml}" | head -1 | tr -d '\r' )
+            case "$( printf '%s' "${_raw}" | tr '[:upper:]' '[:lower:]' )" in
+                .true.|.t.|true|t|1) FESOM_USE_ICEBERGS=1 ;;
+                *)                   FESOM_USE_ICEBERGS=0 ;;
+            esac
         fi
-        echo "LA DEBUG: FESOM_USE_ICEBERGS = ${FESOM_USE_ICEBERGS}"
+        echo " * namelist=${_nml}"
+        echo " * raw='${_raw}' -> FESOM_USE_ICEBERGS=${FESOM_USE_ICEBERGS}"
+        unset _nml _raw
 }
 
 function iterative_coupling_pism_atmosphere_make_forcing {

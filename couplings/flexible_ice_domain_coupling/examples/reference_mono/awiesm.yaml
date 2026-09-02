@@ -1,0 +1,185 @@
+# Adapted from /work/ba0989/a270124/PalModII/experiments/pi_ctl_1x1_icb/scripts/
+# for couplings/flexible_ice_domain_coupling. Only the marked lines differ from
+# the original; see MIGRATION.md for the full list.
+#
+# One ice sheet, so no "ice_domain: True" marker: the experiment keeps the flat
+# couple-directory layout (${couple_dir}/latest_*.nc) that configs/components/
+# pism expects, and every domain loop runs exactly once.
+# NOTE: script_dir must point at this coupling tree. ${general.esm_couplings_dir}
+#       resolves to the *installed* esm_tools (/home/a/a270124/esm_tools/couplings),
+#       so the absolute path to the _develop checkout is used here. Alternatively
+#       symlink it once and go back to ${general.esm_couplings_dir}/...:
+#         ln -s /home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling \
+#               /home/a/a270124/esm_tools/couplings/flexible_ice_domain_coupling
+general:
+    setup_name: "awiesm"
+    compute_time: "01:00:00"
+    initial_date: "2121-01-01T00:00:00"       # Initial exp. date
+    final_date: "2220-12-31T00:00:00"         # Final date of the experiment
+    base_dir: "/work/ba0989/a270124/PalModII/experiments"
+    restart_dir: "/work/ba0989/a270124/PalModII/experiments/pi_spinup_3rd_cont_mid/restart"
+    script_dir: "/home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling"                     # CHANGED
+    nmonth: 0
+    nyear: 1
+    with_wiso: False
+    with_icb: True
+    use_venv: False
+#    clean_old_rundirs_except: 2
+#    clean_old_rundirs_keep_every: 25
+    account: "ba0989"
+    version: "2.1-paleodyn-2.5"
+    files_to_wait_for:
+        - "latest_jsbach_init_file.nc"
+        - "latest_gfw_atmo.nc"
+        - "latest_jsbach_restart_file.nc"
+        - "latest_veg_restart_file.nc"
+        - "latest_target_orography.nc"
+        - "landice_yearly_mass_loss.out"
+
+awiesm:
+    postprocessing: false
+    model_dir: "/home/a/a270124/model_codes/FIX.la/fix_icb/awiesm-2.1-paleodyn-2.5/"
+
+echam:
+    nproca: 24
+    nprocb: 24
+    nprocar: 0 
+    nprocbr: 0 
+    restart_rate: 1
+    restart_unit: "years"
+    lresume: False #True
+    ini_parent_dir: "${restart_dir}/echam/"
+    ini_parent_date: "21201231"
+    ini_parent_exp_id: "pi_spinup_3rd_cont_mid"
+    ##################################
+    # LA: setups for coupling
+    multi_year_mean: 0
+    oro_update_mod: 1                             # CHANGED (was 6; same code, renumbered)
+    oro_update_var: "oromea"
+    albedo_on_glaciers: 0.7 
+    glacial_threshold: 0.5
+    use_transient_forcing: False
+    #transient_forcing_table: "/work/ba0989/a270124/PalModII/datasets/ghg_from_matteo/orb_forcing_dinsol/full_forcing_1850-3000_ssp585.txt"
+    ##################################
+    add_namelist_changes:
+        namelist.echam:
+            submodelctl:
+                lmethox: true
+                lco2: false
+            radctl:
+                iaero: 3 
+                io3: 4 
+                isolrad: 6 
+                ich4: 3 
+                in2o: 3 
+                #co2vmr: 0.0011372679
+                #ch4vmr: 8.082490234375e-07
+                #n2ovmr: 2.730210571289e-07
+                yr_perp: remove_from_namelist
+            co2ctl:
+                lco2_scenario: false
+            runctl:
+                l_orbvsop87: false
+                default_output: false
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                script: coupling_ice2echam.functions
+                script_dir: ${general.script_dir}/echam
+                call_function: ice2echam
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_echam2ice.functions
+                script_dir: ${general.script_dir}/echam
+                call_function: echam2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: last_run_in_chunk
+
+
+jsbach:
+    dynamic_vegetations: True
+    input_sources:
+        jsbach_1850: "/work/ba0989/a270124/PalModII/experiments/pi_spinup_3rd_cont_mid/couple//jsbach_init_file_2120-01-01T00:00:00-2120-12-31T00:00:00.nc"
+    namelist_dir: "/work/ba0989/a270124/PalModII/namelists_jsbach/"
+    
+oasis3mct:
+    lresume: False #1
+    ini_parent_dir: "${restart_dir}/oasis3mct/"
+    ini_parent_date: "21201231"
+    ini_parent_exp_id: "pi_spinup_3rd_cont_mid"
+
+fesom:
+    nproc: 384
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: 1
+    ini_parent_dir: "${restart_dir}/fesom/"
+    ini_parent_date: "21201231"
+    ini_parent_exp_id: "pi_spinup_3rd_cont_mid"
+    mesh_dir: "/work/ba0989/a270124/PalModII/experiments/ICEBERGS/mesh_core2/" #"/home/a/a270064/bb1029/inputs/mesh_core2/"
+    ############################
+    # icebergs
+    fesom_use_iceberg: 1
+    ini_iceberg_dir: "/home/a/a270124/icebergs/dummy/"
+    ini_disch_file: "/home/a/a270124/icebergs/greenland_future/latest_discharge.nc"
+    disch_file: "${general.experiment_couple_dir}/latest_discharge.nc"
+    basin_file: "/home/a/a270124/icebergs/greenland_future/basins.nc"
+    domain: "greenland"
+    rotate: False
+    scaling_factor:
+        - 100
+        - 50
+        - 10
+        - 1
+        - 1
+    ############################
+    add_config_sources:
+        io: "/work/ba0989/a270124/PalModII/configs/namelists_fesom2.5/namelist.io.paleo_no_dmoc"
+    add_namelist_changes:
+        namelist.tra:
+            tracer_phys: 
+                use_momix: false
+        namelist.oce:
+            oce_dyn: 
+                spp: true
+        namelist.config:
+            icebergs:
+                turn_off_hf: False
+                turn_off_fw: False
+                #cell_saturation: 2
+                lbalance_fw: False #True
+                #grounded_melt_factor: 3
+                l_cap_ibhf_n: True
+                steps_per_ib_step: 8
+    
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                script: coupling_ice2fesom.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: ice2fesom
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_fesom2ice.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: fesom2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: last_run_in_chunk
+    

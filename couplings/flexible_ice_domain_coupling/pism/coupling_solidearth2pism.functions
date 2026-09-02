@@ -1,0 +1,72 @@
+#!/usr/bin/ksh
+
+function solidearth2pism {
+        echo "                =================================================================="
+        echo "                 *** S T A R T I N G    solidearth2pism *** "; echo
+
+        . ${FUNCTION_PATH}/../general/ice_domains.functions
+        ice_domain_select "${ICE_DOMAIN:-.}"
+
+        echo "                SOLID_EARTH_TO_PISM=${SOLID_EARTH_TO_PISM}"
+
+        if [[ "x${SOLID_EARTH_TO_PISM}" == "x1" ]]; then
+                read_names solidearth ice
+                iterative_coupling_solid_earth_pism_regrid_rename
+                iterative_coupling_solid_earth_pism_update_restart_file
+        else
+                echo " NOT generating solid earth forcing for ice"
+        fi
+        echo
+        echo "                 *** F I N I S H E D    solidearth2pism *** "
+        echo "                =================================================================="
+}
+
+function iterative_coupling_solid_earth_pism_regrid_rename {
+
+# The bedrock change is a *global* VILMA product, shared by all ice domains.
+        ice_bedrock_change_file=${ice_bedrock_change_file:-${COUPLE_DIR}/bedrock_change.nc}
+
+# Regrid: use remapbic because is gives smoother results and conservatism is not essential in this case
+        cdo -s \
+                remapbic,${ICE_COUPLE_DIR}/ice.griddes \
+                -setgrid,${SOLIDEARTH_grid} \
+                ${ice_bedrock_change_file} \
+                ${ICE_COUPLE_DIR}/bedrock_change_regrid.nc
+
+# Rename
+        cdo -s \
+                chname,${bedrock_change_name},topg \
+                ${ICE_COUPLE_DIR}/bedrock_change_regrid.nc ${ICE_COUPLE_DIR}/add_topg_${RUN_NUMBER_solidearth}.nc
+}
+
+function iterative_coupling_solid_earth_pism_update_restart_file {
+
+# Import the restart file to be changed
+        cp $(readlink ${RESTART_DIR_pism}/latest_restart_file_pism.nc) ${ICE_COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc
+
+# Select topg (bedrock height), add the change, and replace this variable in the restart file
+        cdo -s \
+                selvar,topg \
+                ${ICE_COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc \
+                ${ICE_COUPLE_DIR}/tmp.nc
+
+        cdo -s \
+                add ${ICE_COUPLE_DIR}/tmp.nc \
+                ${ICE_COUPLE_DIR}/add_topg_${RUN_NUMBER_solidearth}.nc \
+                ${ICE_COUPLE_DIR}/added_topg_${RUN_NUMBER_solidearth}.nc
+
+        cdo -s \
+                replace ${ICE_COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc \
+                ${ICE_COUPLE_DIR}/added_topg_${RUN_NUMBER_solidearth}.nc \
+                ${ICE_COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc
+
+# Export the changed restart file
+        cp ${ICE_COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc $(readlink ${RESTART_DIR_pism}/latest_restart_file_pism.nc)
+
+# Clean up
+        rm ${ICE_COUPLE_DIR}/tmp.nc 
+        rm ${ICE_COUPLE_DIR}/add_topg_${RUN_NUMBER_solidearth}.nc ${ICE_COUPLE_DIR}/added_topg_${RUN_NUMBER_solidearth}.nc
+# You may not want to (but nevertheless you can) delete these files:
+        rm ${ICE_COUPLE_DIR}/restart_pre_${RUN_NUMBER_solidearth}.nc ${ICE_COUPLE_DIR}/restart_post_${RUN_NUMBER_solidearth}.nc
+
+}

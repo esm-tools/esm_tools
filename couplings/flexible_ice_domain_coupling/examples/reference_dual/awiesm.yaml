@@ -1,0 +1,221 @@
+# Adapted from
+# /work/ab0246/a270124/esm-experiments/awiesm-2.6/spinup_20260818/scripts/
+# for couplings/flexible_ice_domain_coupling. Only the marked lines differ from
+# the original; see MIGRATION.md for the full list.
+# NOTE: script_dir must point at this coupling tree. ${general.esm_couplings_dir}
+#       resolves to the *installed* esm_tools (/home/a/a270124/esm_tools/couplings),
+#       so the absolute path to the _develop checkout is used here. Alternatively
+#       symlink it once and go back to ${general.esm_couplings_dir}/...:
+#         ln -s /home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling \
+#               /home/a/a270124/esm_tools/couplings/flexible_ice_domain_coupling
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm"
+    version: "2.6.1"
+    account: "ba0989"
+    with_icb: True
+    with_wiso: False #True
+    compute_time: "03:00:00"
+    initial_date: "3140-01-01"
+    final_date: "3500-12-31"
+    restart_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6/AWIESM26_spinup/restart" #"/work/ab0246/a270146/AWIESM26_spinup/restart/"
+    base_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6"
+    script_dir: "/home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling"    # CHANGED
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    use_venv: False
+#    clean_old_rundirs_except: 2
+#    clean_old_rundirs_keep_every: 25
+#    install_esm_tools_branch: "feat/awicm3_v3.3_and_v3.4"
+    files_to_wait_for:
+        - "latest_jsbach_init_file.nc"
+        - "latest_gfw_atmo.nc"
+        - "latest_jsbach_restart_file.nc"
+        - "latest_veg_restart_file.nc"
+        - "latest_target_orography.nc"
+        - "landice_yearly_mass_loss.out"
+
+computer:
+    taskset: true
+
+awiesm:
+    postprocessing: false
+    model_dir: "/work/ab0246/a270124/model_codes/testing_and_debugging/awiesm-2.6.1/"
+
+fesom:
+    #resolution: "CORE2"
+    nx: 132273
+    #time_step: 900 #1800
+    #lasttime: 85500 
+    #lasttime: 84600 
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    lresume: 1 #0
+    ini_parent_dir: "${restart_dir}/fesom/"
+    ini_parent_date: "31391231"
+    ini_parent_exp_id: "AWIESM26_spinup"
+    #nproc: 384
+    tar_binary_restarts: true
+    #namelist_dir: "/work/ab0246/a270092/model_codes/awicm3-v3.3/fesom-2.6/config/"
+    mesh_dir: "/home/a/a270146/meshes/AWIESM-2.1-wiso/PI_ICEv2/"
+    #namelist_dir: "/home/a/a270124/model_codes/awiesm-2.1-paleodyn-2.5/fesom-2.5/config"
+    add_config_sources:
+        io: "/work/ba0989/a270124/PalModII/configs/namelists_fesom2.5/namelist.io.paleo_no_dmoc"
+#    add_config_sources:
+#        io: "/work/ba0989/a270124/PalModII/configs/namelists_fesom2.5/namelist.io.paleo"
+    fesom_use_iceberg: 1
+    ini_iceberg_dir: "/home/a/a270124/icebergs/dummy/"
+    ini_disch_file: 
+        - "/home/a/a270124/icebergs/sh_scaled/latest_discharge.nc"
+        - "/home/a/a270124/icebergs/greenland_future/latest_discharge.nc"
+    disch_file:
+        - "${general.experiment_couple_dir}/pism_sh/latest_discharge.nc"
+        - "${general.experiment_couple_dir}/pism_nh/latest_discharge.nc"
+    basin_file: 
+        - "/work/ba1066/a270124/pool_pism/basins/antarctica.16km.nc"
+        - "/home/a/a270124/icebergs/greenland_future/basins.nc"
+    domain: 
+        - "sh"
+        - "greenland"
+    scaling_factor:
+        - 250
+        - 100
+        - 50
+        - 1
+        - 1
+    rotate: False
+    use_cav: True
+    climate_data_dir: "/work/ab0246/a270124/awiesm_pool/"
+    add_namelist_changes:
+        namelist.config:
+           # geomerty:
+           #     use_cavityonelem: True
+            icebergs:
+                turn_off_hf: False
+                turn_off_fw: False
+                cell_saturation: 2
+                lbalance_fw: False #True
+                l_cap_ibhf_n: True
+                l_allowgrounding: 1
+#                grounded_melt_factor: 3
+                steps_per_ib_step: 8
+            run_config:
+                use_cavity: True
+                use_cavity_partial_cell: True
+           #     use_transit: False #true
+            paths:
+                ClimateDataPath: "${climate_data_dir}"
+#        namelist.tra:
+#            tracer_phys: 
+#                use_momix: false
+#        namelist.oce:
+#            oce_dyn: 
+#                spp: true
+      #  namelist.tra:
+      #      tracer_init3d:
+      #          n_ic3d: 3
+      #          idlist: [2,1,14]
+      #          filelist: ["phc3.0_winter.nc","phc3.0_winter.nc","rC14t_abio_OMIPinit.nc"]
+      #          varlist: ["salt","temp","rC14t"]
+      #  namelist.transit:
+      #      transit_param:
+      #          l_r14c: true
+      #          l_r39ar: false
+      #          l_f11: true
+      #          l_f12: true
+      #          l_sf6: true
+      #          anthro_transit: true
+      #          length_transit: 166
+      #          ti_start_transit: 101
+      #          ifile_transit: "${climate_data_dir}/Table_CO2_isoC_CFCs1112_SF6.txt"
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                script: coupling_ice2fesom.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: ice2fesom
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_fesom2ice.functions
+                script_dir: ${general.script_dir}/fesom
+                call_function: fesom2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: last_run_in_chunk
+
+oasis3mct:
+    lresume: 0 #1
+    ini_parent_dir: "${restart_dir}/oasis3mct/"
+    ini_parent_date: "31391231"
+    ini_parent_exp_id: "AWIESM26_spinup"
+
+echam:
+    lresume: 0 #1
+    ini_parent_dir: "${restart_dir}/echam/"
+    ini_parent_date: "31391231"
+    ini_parent_exp_id: "AWIESM26_spinup"
+    restart_rate: 1
+    restart_unit: "years"
+    namelist_dir: "/home/a/a270124/namelists/production/echam"
+    #scenario: 1990
+    scenario_type: PI-CTRL
+    ##################################
+    # LA: setups for coupling
+    multi_year_mean: 0
+    oro_update_mod: 1                             # CHANGED (was 6; same code, renumbered)
+    oro_update_var: "ormoea"
+    albedo_on_glaciers: 0.7 
+    glacial_threshold: 0.5
+    ##################################
+    add_namelist_changes:
+        namelist.echam:
+#            submodelctl:
+#                lupdate_orog: False
+            radctl:
+                #CO2VMR: 353.86e-6
+                #CH4VMR: 1.6936e-6
+                #N2OVMR: 0.309e-6
+                lrad_async: False
+                yr_perp: remove_from_namelist
+            runctl:
+                l_orbvsop87: false
+                default_output: false
+            wisoctl:
+                lwiso_rerun: false
+    workflow:
+        next_run_triggered_by: couple_out
+        subjobs:
+            couple_in:
+                nproc: 1
+                run_before: prepcompute
+                script: coupling_ice2echam.functions          # CHANGED (no separate dual driver)
+                script_dir: ${general.script_dir}/echam
+                call_function: ice2echam
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: first_run_in_chunk
+                skip_chunk_number: 1
+
+            couple_out:
+                nproc: 1
+                run_after: tidy
+                script: coupling_echam2ice.functions
+                script_dir: ${general.script_dir}/echam
+                call_function: echam2ice
+                env_preparation: ${general.script_dir}/envs/env_awiesm.py   # CHANGED
+                run_only: last_run_in_chunk
+
+
+jsbach:
+    dynamic_vegetations: True
+    input_sources:
+        jsbach_1850: "${fesom.mesh_dir}/tarfiles${echam.resolution}/input/jsbach/jsbach_T63CORE2_11tiles_5layers_1850_ICEv2.nc"
+    namelist_dir: "/work/ba0989/a270124/PalModII/configs/namelists_jsbach/"

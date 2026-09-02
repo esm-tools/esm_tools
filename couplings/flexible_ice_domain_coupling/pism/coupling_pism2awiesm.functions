@@ -1,0 +1,51 @@
+#!/usr/bin/ksh
+
+# The ice domain registry has to be available to every function in this file,
+# not only to the entry point, so it is sourced here rather than inside a
+# function body.
+. ${FUNCTION_PATH}/../general/ice_domains.functions
+#
+# pism2awiesm -- couple_out of one ice sheet domain.
+#
+# Runs for exactly one ice domain and leaves all of its products in
+# ${ICE_COUPLE_DIR}. Merging the contributions of all domains into the single
+# global fields that ECHAM/JSBACH and FESOM expect happens on the receiving
+# side (ice2echam, ice2fesom), not here.
+#
+pism2awiesm() {
+    echo $(module list)
+    . ${FUNCTION_PATH}/../general/ice_domains.functions
+    . ${FUNCTION_PATH}/../general/general_lists.functions
+    . ${FUNCTION_PATH}/../general/general_helpers.functions
+    . ${FUNCTION_PATH}/../general/coupling_general.functions
+
+    ice_domain_select "${ICE_DOMAIN:-.}"
+    echo " *** couple_out for ice domain '${ICE_DOMAIN}' -> ${ICE_COUPLE_DIR}"
+
+    # These five are *global* products of ice2echam and are what the atmosphere
+    # blocks on via "files_to_wait_for". They are invalidated here, at the
+    # start of the ice sheet couple_out, so that ECHAM cannot pick up the
+    # previous chunk's forcing. They stay in ${COUPLE_DIR} -- with several ice
+    # domains each domain simply invalidates them again, which is harmless
+    # because ice2echam recreates them once, after all domains are done.
+    for _p2a_stale in latest_gfw_atmo.nc \
+                      latest_jsbach_init_file.nc \
+                      latest_jsbach_restart_file.nc \
+                      latest_veg_restart_file.nc \
+                      latest_target_orography.nc ; do
+        if [ -f ${COUPLE_DIR}/${_p2a_stale} ]; then
+            rm ${COUPLE_DIR}/${_p2a_stale}
+        fi
+    done
+    unset _p2a_stale
+
+    . ${FUNCTION_PATH}/coupling_pism2atmosphere.functions
+    . ${FUNCTION_PATH}/coupling_pism2ocean.functions
+
+    echo "*** Starting pism2atmosphere ***"
+    pism2atmosphere 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2awiesm
+
+    echo "*** Starting pism2ocean ***"
+    pism2ocean 2>> ${ICE_COUPLE_DIR}/cdo_stderr_pism2awiesm
+
+}

@@ -1,0 +1,78 @@
+# NOTE: replace /path/to/esm_tools with the location of your ESM-Tools
+#       checkout before using this runscript.
+# One ice sheet domain. The only coupling-specific things are the workflow
+# subjobs at the bottom: they point at the flexible coupling scripts and at
+# env_ice.py / env_ice2awiesm.py, which export ICE_DOMAIN and ICE_DOMAINS.
+#
+# ${COUPLE_DIR}/pism_gris/ is this domain's private exchange directory; the
+# "files_to_wait_for" paths are relative to ${COUPLE_DIR} and therefore carry
+# the domain name.
+general:
+        setup_name: pism_gris
+        compute_time: "00:40:00"
+        initial_date: "8100-01-01"
+        final_date: "8200-12-31"
+        base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+        nyear: 10
+        files_to_wait_for:
+            - "pism_gris/latest_atmo_forcing_file.nc"
+            - "pism_gris/latest_ocean_forcing_file.nc"
+        use_venv: False
+
+pism_gris:
+        version: "github1.2.1"
+        resolution: "20km"
+        model_dir: "/pf/a/a270124/pism_v1.2.1/"
+        lresume: 1
+
+        ###################
+        # Settings for AWIESM - ice sheet coupling
+        ablation_method: "DEBM"
+        debm_path: "/pf/a/a270129/dEBM_esm_tools/dEBMmain"
+        debm_obl: "22.944859"
+        lapse_rate: -0.005
+        iceberg_coupling: False
+        ###################
+
+        ini_parent_exp_id: "bla"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "bla"
+        spinup_file: "/work/ba0989/a270124/PalModII/experiments/PI_spinup_q01/restart/pism/PI_spinup_q01_pismr_restart_80900101-80991231.nc"
+        pool_dir: "/work/ba1066/a270124/pool_pism/"
+        ts_interval: "1"
+        ex_interval: "monthly"
+        domain: "greenland"
+        force_bootstrap_first_run: False
+
+        couplers:
+                surface:
+                    given:
+                        files:
+                            surface_given_file: "pism_gris/latest_atmo_forcing_file.nc"
+                        kv_pairs:
+                            surface_given_period: 1
+                ocean:
+                    th:
+                        files:
+                            ocean_th_file: "pism_gris/latest_ocean_forcing_file.nc"
+
+        workflow:
+                next_run_triggered_by: couple_out
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                script: coupling_awiesm2pism.functions
+                                script_dir: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/pism/
+                                call_function: awiesm2pism
+                                env_preparation: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/envs/env_ice.py
+                                run_only: first_run_in_chunk
+
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                script: coupling_pism2awiesm.functions
+                                script_dir: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/pism/
+                                call_function: pism2awiesm
+                                env_preparation: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/envs/env_ice2awiesm.py
+                                run_only: last_run_in_chunk

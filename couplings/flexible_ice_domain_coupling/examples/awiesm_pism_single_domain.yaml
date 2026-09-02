@@ -1,0 +1,28 @@
+# ---------------------------------------------------------------------------
+# The same scheme with one ice sheet. A single domain is not a special case:
+# the loops run once and every reduction is the identity, so this behaves like
+# the original single-hemisphere setup -- with the difference that the ice
+# sheet's files live in ${COUPLE_DIR}/pism/ instead of directly in
+# ${COUPLE_DIR}.
+#
+# Omit the "ice_domain: True" marker entirely to get the old flat layout
+# (ICE_DOMAINS = "."), e.g. when restarting an existing experiment.
+# ---------------------------------------------------------------------------
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+        account: ba0989
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm.yaml
+        chunk_size: 2
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: pism.yaml
+        chunk_size: 20
+        chunk_unit: "years"
+        ice_domain: True

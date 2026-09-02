@@ -1,0 +1,50 @@
+# ---------------------------------------------------------------------------
+# Iterative coupling of AWI-ESM with an arbitrary number of ice sheet domains.
+#
+# model1 is the ESM. Every further modelN is one ice sheet domain and is marked
+# with "ice_domain: True" -- that marker is what the coupling scripts read to
+# build the domain list (ICE_DOMAINS). Add or remove a modelN block to add or
+# remove an ice sheet; nothing else has to change.
+#
+# The optional "ice_domain_box" clips a domain's contribution to a lon/lat box
+# before the domains are combined onto the global grids. It is only needed when
+# the remapping halos of two domains would otherwise overlap; leave it out if
+# the domains are clearly separated.
+# ---------------------------------------------------------------------------
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+        account: ba0989
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm.yaml
+        chunk_size: 2
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism_nh
+        runscript: pism_nh.yaml
+        chunk_size: 20
+        chunk_unit: "years"
+        ice_domain: True
+        ice_domain_box: "0,360,0,90"
+
+model3:
+        setup_name: pism_sh
+        runscript: pism_sh.yaml
+        chunk_size: 20
+        chunk_unit: "years"
+        ice_domain: True
+        ice_domain_box: "0,360,-90,0"
+
+# A third ice sheet: nothing here is special, it is just one more entry.
+# Greenland overlaps the northern hemisphere domain in latitude, which is
+# exactly the case the old sellonlatbox/ncrcat merge could not represent.
+model4:
+        setup_name: pism_gris
+        runscript: pism_gris.yaml
+        chunk_size: 20
+        chunk_unit: "years"
+        ice_domain: True

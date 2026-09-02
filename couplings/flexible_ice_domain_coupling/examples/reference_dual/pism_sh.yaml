@@ -1,0 +1,211 @@
+# Adapted from
+# /work/ab0246/a270124/esm-experiments/awiesm-2.6/spinup_20260818/scripts/
+# for couplings/flexible_ice_domain_coupling. Only the marked lines differ from
+# the original; see MIGRATION.md for the full list.
+# NOTE: script_dir must point at this coupling tree. ${general.esm_couplings_dir}
+#       resolves to the *installed* esm_tools (/home/a/a270124/esm_tools/couplings),
+#       so the absolute path to the _develop checkout is used here. Alternatively
+#       symlink it once and go back to ${general.esm_couplings_dir}/...:
+#         ln -s /home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling \
+#               /home/a/a270124/esm_tools/couplings/flexible_ice_domain_coupling
+general:
+        setup_name: "pism_sh"
+        compute_time: "00:59:59"
+        initial_date: "61850-01-01"
+        final_date: "62775-12-31"
+        base_dir: "/work/ab0246/a270096/esm-experiments/" #TODO:
+        script_dir: "/home/a/a270124/_develop/esm_tools/couplings/flexible_ice_domain_coupling"    # ADDED
+        nyear: 10
+        #clean_old_rundirs_keep_every: 5
+        #clean_old_rundirs_except: 2
+        files_to_wait_for:
+            - "pism_sh/latest_atmo_forcing_file.nc"
+            - "pism_sh/latest_ocean_forcing_file.nc"
+        use_venv: False
+        lresume: 1
+        #ini_parent_exp_id: "/home/a/a270096/LINKS/esm-experiments/test014"
+        #ini_restart_dir: "/home/a/a270096/LINKS/esm-experiments/test014/restart/"
+        first_initial_year: 61850 #TODO:1850?
+
+
+pism_sh:
+        version: "github1.2.1"
+        resolution: "08km"
+        #todo:org:model_dir: "/home/a/a270124/pism_dependencies/pism-1.1.4-qoohpi/"
+        model_dir: "/home/a/a270096/usr/share/pism.intel"
+        lresume: 1
+
+        ###################
+        # Settings for AWIES - PISM coupling
+        # Ocean ablation methode
+        #ocean_ablation_method: "OCEANTEMPSALT"
+        iter_coup_interact_method_ice2oce: "BASALSHELF_WATER_ICEBERG_MODEL"
+        ocean_ablation_method: "PICO_OCEAN"
+        # PDD for southern hemisphere
+        ablation_method: "PDD"
+        debm_path: "/pf/a/a270129/dEBM_esm_tools/dEBMmain"
+        debm_obl: "22.944859"
+        # lapse rate
+        lapse_rate: -0.005
+        iceberg_coupling: 1
+        USE_CAV_fesom: 1
+        # Anomaly coupling
+        ANOMALY_AIR_TEMPERATURE: 1 #True
+        ANOMALY_PRECIPITATION: 1 #True
+        ANOMALY_OCEAN_TEMPERATURE: 1 #True
+        ANOMALY_OCEAN_SALINITY: 1 #True
+        ###################
+        REFERENCE_ATMOS_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/ATMForcing.piControl.08km.nc"
+        BASE_STATE_ATMOS_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/atmo_given_file_base_state.pictrl-withoutism.pism_sh.nc"
+        REFERENCE_OCEAN_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/OCEForcing.piControl.08km.nc"
+        BASE_STATE_OCEAN_FNAME: "/work/ab0246/a270096/share/pism/ANT.08km/production/ocean_forcing4pism_base_state.pictrl-withoutism.pism_sh.nc"
+        ini_parent_exp_id: "spinup16"
+        ini_parent_date: "1-1-1"
+        ini_restart_dir: "/work/ab0246/a270096/esm-experiments/spinup16"
+        spinup_file: "/work/ab0246/a270096/share/pism/ANT.08km/production/PISM_ANT08km_1850_spinup16.nc" #TODO
+
+        pool_dir: "/work/ba1347/PISM/pool_pism_cr/"
+        ts_interval: "monthly"
+        ex_interval: "monthly"
+        #:org: domain: "antarctica"
+        domain: "antarct_cr"
+        #CAUTION!!: force_bootstrap_first_run: True
+        force_bootstrap_first_run: False
+
+        ###### CR: Begin ########################### PISM Flags/switches
+        PICO_basins_only_file: "/work/ab0246/a270096/share/pism/ANT.08km/production/OCEForcing.piControl.08km.nc"
+
+        kv_pairs:
+                title: AntarcticaPISM_sc2
+                max_dt: 0.83333334
+                stress_balance.model: "ssa+sia"
+                #stress_balance.sia.max_diffusivity: 512000
+                stress_balance.sia.max_diffusivity: 64000
+                sia_e: "2.5"
+                ssa_e: "0.512"
+                sia_n: "3.0"
+                ssa_n: "3.0"
+                #TODO#basal_resistance.pseudo_plastic.q: 0.5
+                #TODO#basal_resistance.pseudo_plastic.u_threshold: 100
+                #TODO#basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden: 0.01
+                #TODO#basal_yield_stress.mohr_coulomb.till_phi_default: 30
+                #TODO#basal_yield_stress.mohr_coulomb.till_cohesion: 0
+                #TODO#basal_yield_stress.mohr_coulomb.till_compressibility_coefficient: 0.12
+                #TODO#hydrology.tillwat_max: 1
+                hydrology: "null"
+                -bed_def: "lc"
+                #TODO:Update=1 if yearly coupling:
+                bed_deformation.lc.update_interval: 1
+                calving: "eigen_calving,thickness_calving"
+                thickness_calving_threshold: 75
+                eigen_calving_K: "5.0e17"
+                front_retreat_file: "/work/ab0246/a270096/share/pism/ANT.08km/production/retreat_coupled.nc"
+                #TODO#ocean.pik_melt_factor: "1e-2"
+                #TODO:2long?#precip_lapse_rate: "0.0"
+                #TODO:2long?#lapse_rate: "-0.0"
+                #TODO:2long?#moist_adiabatic_lapse_rate: "-0.0"
+                #TODO:2long?#smb_lapse_rate: "-0.0"
+                temp_lapse_rate: "-0.005"
+
+                # PICO switches CCR ## Note: File name below in couplers-ocean-pico
+                number_of_boxes: 5
+                continental_shelf_depth: -800
+                exclude_icerises: yes
+                ocean.pico.maximum_ice_rise_area: "1.0e5"
+                overturning_coeff: "3.0e6"
+                gamma_T: "4.0e-6"
+                # We have to set for the PDD model: -surface pdd
+                #                for neglecting melting: -surface simple
+                # DO NOT FORGET to asjust below the COUPLER section
+                atmosphere: "given"
+                surface: "pdd"
+                pdd_std_dev: 3.5 # Needed by -surface pdd if we do not provide a std-file
+                surface.ppd.balance_year_start_day: 91
+                #surface: "simple"
+
+                #TODO:2long?## PETSC settings
+                #TODO:2long?#ssa_method: fd
+                #TODO:2long?#ssafd_ksp_type: gmres
+                #TODO:2long?#ssafd_ksp_norm_type: unpreconditioned
+                #TODO:2long?#ssafd_ksp_pc_side: right
+                #TODO:2long?#ssafd_pc_type: asm
+                #TODO:2long?#ssafd_sub_pc_type: lu
+                #TODO:2long?##For_high_resolution: ssafd_ksp_rtol: 1e-10
+
+                #ts_vars: dt,ice_mass,ice_mass_glacierized,ice_area_glacierized,ice_area_glacierized_grounded,ice_area_glacierized_floating,ice_area_glacierized_temperate_base,ice_area_glacierized_cold_base,ice_volume_glacierized,ice_volume_glacierized_grounded,ice_volume_glacierized_floating,limnsw,max_hor_vel,sea_level_rise_potential,tendency_of_ice_mass,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux
+                #ts_vars: ice_mass,ice_mass_glacierized,ice_area_glacierized,ice_area_glacierized_grounded,ice_area_glacierized_floating,ice_volume_glacierized,ice_volume_glacierized_grounded,ice_volume_glacierized_floating,limnsw,max_hor_vel,tendency_of_ice_mass,tendency_of_ice_mass_due_to_basal_mass_flux,tendency_of_ice_mass_due_to_discharge,tendency_of_ice_mass_due_to_surface_mass_flux
+                #tendency_of_ice_mass_due_to_calving,
+
+        flags:
+                - front_retreat_cfl
+                - options_left
+                - pik # = -cfbc -kill_icebergs -part_grid -subgl
+                - no_subgl_basal_melt
+                - tauc_slippery_grounding_lines #- "basal_yield_stress.slippery_grounding_lines"
+                - pseudo_plastic # = - "basal_resistance.pseudo_plastic.enabled"
+                - label_floating_holes
+
+                #- "bootstrap"
+                #- "allow_extrapolation"
+                #- "basal_resistance.pseudo_plastic.enabled"
+                #- "basal_yield_stress.slippery_grounding_lines"
+        ###### CR: End #############################
+
+        couplers:
+                surface:
+                    #given:
+                    ## Given surface forcing
+                    #    files:
+                    #        surface_given_file: "latest_atmo_forcing_file.nc"
+                    #    kv_pairs:
+                    #        surface_given_period: 1
+                    pdd:
+                    # PDD forcing (TODO??)
+                        files:
+                            surface_pdd_file: "latest_atmo_forcing_file.nc"
+                        kv_pairs:
+                            surface_pdd_period: 1
+                # simple forcing
+                atmosphere:
+                    given:
+                        files:
+                            atmosphere_given_file: "latest_atmo_forcing_file.nc"
+                        kv_pairs:
+                            atmosphere_given_period: 1
+                ocean:
+                    #th:
+                    ## Three-equation forcing (NOT PICO)
+                    #    files:
+                    #        ocean_th_file: "latest_ocean_forcing_file.nc"
+                    #    kv_pairs:
+                    #        ocean_given_period: 1
+                    pico:
+                    # PICO  model forcing
+                        files:
+                            ocean_pico_file: "latest_ocean_forcing_file.nc"
+                        kv_pairs:
+                            ocean_pico_period: 1
+
+        workflow:
+                next_run_triggered_by: couple_out
+                subjobs:
+                        couple_in:
+                                nproc: 1
+                                run_before: prepcompute
+                                #script: pseudo_couple_in_pism.sh
+                                script: coupling_awiesm2pism.functions
+                                script_dir: ${general.script_dir}/pism    # CHANGED
+                                #call_function: call_this
+                                call_function: awiesm2pism
+                                env_preparation: ${general.script_dir}/envs/env_ice.py         # CHANGED
+                                run_only: first_run_in_chunk
+                                #skip_chunk_number: 1
+                        couple_out:
+                                nproc: 1
+                                run_after: tidy
+                                #script: pseudo_couple_out_pism.sh
+                                script: coupling_pism2awiesm.functions
+                                script_dir: ${general.script_dir}/pism    # CHANGED
+                                call_function: pism2awiesm
+                                env_preparation: ${general.script_dir}/envs/env_ice2awiesm.py  # CHANGED
+                                run_only: last_run_in_chunk

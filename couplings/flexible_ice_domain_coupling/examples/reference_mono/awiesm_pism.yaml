@@ -1,0 +1,24 @@
+# Adapted from /work/ba0989/a270124/PalModII/experiments/pi_ctl_1x1_icb/scripts/
+# for couplings/flexible_ice_domain_coupling. Only the marked lines differ from
+# the original; see MIGRATION.md for the full list.
+#
+# One ice sheet, so no "ice_domain: True" marker: the experiment keeps the flat
+# couple-directory layout (${couple_dir}/latest_*.nc) that configs/components/
+# pism expects, and every domain loop runs exactly once.
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ba0989/a270124/PalModII/experiments"
+        account: ba0989
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: pism.yaml
+        chunk_size: 1
+        chunk_unit: "years"

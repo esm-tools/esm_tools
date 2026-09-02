@@ -1,0 +1,36 @@
+# Adapted from
+# /work/ab0246/a270124/esm-experiments/awiesm-2.6/spinup_20260818/scripts/
+# for couplings/flexible_ice_domain_coupling. Only the marked lines differ from
+# the original; see MIGRATION.md for the full list.
+general:
+        iterative_coupling: True
+        use_venv: False
+        base_dir: "/work/ab0246/a270124/esm-experiments/awiesm-2.6/"
+        account: ba1587
+        profile: True
+
+model1:
+        setup_name: awiesm
+        runscript: awiesm.yaml     # PI-CTRL
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism_nh
+        runscript: pism_nh.yaml    # Feedback from GrIS
+        chunk_size: 10
+        chunk_unit: "years"
+        ice_domain: True                          # ADDED
+        ice_domain_box: "0,360,0,90"              # ADDED
+
+model3:
+        # Antarctica
+        setup_name: pism_sh
+        runscript: pism_sh.yaml # Feedback from AIS
+        chunk_size: 10
+        chunk_unit: "years"
+        ice_domain: True                          # ADDED
+        ice_domain_box: "0,360,-90,0"             # ADDED
+
+# Adding a third ice sheet is one more block like the two above plus its
+# runscript -- no change to any coupling script.

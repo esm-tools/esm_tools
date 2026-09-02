@@ -1,0 +1,447 @@
+#!/bin/ksh
+#
+# ice_domains.functions -- registry and helpers for an arbitrary number of
+#                          ice sheet domains ("hemispheres") in one experiment.
+#
+# ---------------------------------------------------------------------------
+# Concept
+# ---------------------------------------------------------------------------
+# The old scheme knew exactly one ice sheet, so every ice sheet product was
+# written flat into ${COUPLE_DIR}. The dual-hemisphere scheme hard-coded two of
+# them ("pism_nh", "pism_sh") and prefixed every path with ${PISM_HEMISPHERE}.
+#
+# Here that prefix becomes a first class concept:
+#
+#   ICE_DOMAINS      list of ice domain instance names, e.g.
+#                    "pism_nh,pism_sh,pism_gris". One entry per ice sheet
+#                    model instance taking part in the coupling. Comma, colon
+#                    and semicolon all work as separators -- the value must not
+#                    contain spaces, because ESM-Tools exports the coupling
+#                    environment as unquoted "export KEY=VALUE" lines.
+#   ICE_DOMAIN       the domain currently being worked on.
+#   ICE_COUPLE_DIR   ${COUPLE_DIR}/${ICE_DOMAIN} -- everything that belongs to
+#                    exactly one ice sheet lives here.
+#   COUPLE_DIR       stays reserved for the *global* exchange files, i.e. the
+#                    products of the atmosphere and the ocean
+#                    (atmosphere_file_for_ice.nc, ocean_file_for_ice.nc,
+#                    ocean.griddes, gfw_atmo*.nc, target_orography*.nc, ...).
+#
+# The ice sheet side (pism/*) always works inside ${ICE_COUPLE_DIR}. The global
+# side (echam/*, fesom/*) loops over ${ICE_DOMAINS}, does the per-domain work,
+# reduces the per-domain fields into one global field, and then does the
+# remaining global work exactly once.
+#
+# A single domain setup is not a special case: it is a list of length one.
+#
+# ---------------------------------------------------------------------------
+# Per domain attributes
+# ---------------------------------------------------------------------------
+# Optional attributes are passed as environment variables of the form
+#
+#   ICE_DOMAIN_<SANITIZED NAME>_<KEY>
+#
+# where <SANITIZED NAME> is the domain name upper-cased with every character
+# that is not [A-Z0-9] replaced by '_'. Known keys:
+#
+#   BOX      "lon1,lon2,lat1,lat2" -- clip the domain contribution to this
+#            lon/lat box before reducing it onto the global grid. Optional;
+#            only needed if remapping halos of two domains would overlap.
+#   WEIGHT   multiply the domain contribution by this factor before reducing
+#            (default 1). Mainly useful for sensitivity experiments.
+#
+# ---------------------------------------------------------------------------
+
+ice_domains_cdo=${ice_domains_cdo:-cdo}
+
+# Anchor for paths that are relative to the *experiment* directory rather than
+# to the couple directory. The old code spelled these "${COUPLE_DIR}/../...",
+# which silently breaks as soon as the ice sheet works in a couple
+# sub directory. Use ${ICE_EXP_DIR} instead.
+ICE_EXP_DIR=${ICE_EXP_DIR:-${COUPLE_DIR}/..}
+export ICE_EXP_DIR
+
+## @fn ice_domain_list()
+## Echo the configured ice domains as one space separated line, so that
+## `for d in $(ice_domain_list)` works.
+ice_domain_list() {
+        # ESM-Tools writes the coupling environment as unquoted
+        # "export KEY=VALUE" lines, so ICE_DOMAINS must not contain spaces.
+        # Commas, colons and semicolons are accepted as separators and
+        # normalised here.
+        if [ "x${ICE_DOMAINS}" != "x" ]; then
+                echo "${ICE_DOMAINS}" | tr ',:;' '   '
+        elif [ "x${ICE_DOMAIN}" != "x" ]; then
+                echo ${ICE_DOMAIN}
+        else
+                # Legacy single domain runs that never set anything: the ice
+                # sheet products sit directly in ${COUPLE_DIR}.
+                echo "."
+        fi
+}
+
+## @fn ice_domain_count()
+ice_domain_count() {
+        set -- $(ice_domain_list)
+        echo $#
+}
+
+## @fn ice_domain_sanitize()
+## Turn a domain name into a token usable inside a shell variable name.
+ice_domain_sanitize() {
+        echo "$1" | tr '[:lower:]' '[:upper:]' | sed 's/[^A-Z0-9]/_/g'
+}
+
+## @fn ice_domain_couple_dir()
+## Call: ice_domain_couple_dir DOMAIN
+## The couple sub directory holding everything that belongs to DOMAIN.
+## The pseudo domain "." maps back onto ${COUPLE_DIR} itself, which keeps
+## single domain experiments that predate this scheme working unchanged.
+ice_domain_couple_dir() {
+        _icd_name=${1:-${ICE_DOMAIN}}
+        if [ "x${_icd_name}" = "x" ] || [ "x${_icd_name}" = "x." ]; then
+                echo "${COUPLE_DIR}"
+        else
+                echo "${COUPLE_DIR}/${_icd_name}"
+        fi
+        unset _icd_name
+}
+
+## @fn ice_domain_select()
+## Call: ice_domain_select DOMAIN
+## Make DOMAIN the current one and make sure its couple directory exists.
+ice_domain_select() {
+        ICE_DOMAIN="$1"
+        ICE_COUPLE_DIR="$(ice_domain_couple_dir "${ICE_DOMAIN}")"
+        export ICE_DOMAIN ICE_COUPLE_DIR
+        mkdir -p "${ICE_COUPLE_DIR}"
+}
+
+## @fn ice_domain_foreach()
+## Call: ice_domain_foreach FUNCTION [ARGS...]
+## Run FUNCTION once per configured domain with that domain selected. The
+## previously selected domain is restored afterwards, so the helper nests.
+ice_domain_foreach() {
+        _icf_func=$1; shift
+        _icf_save_domain=${ICE_DOMAIN}
+        _icf_save_dir=${ICE_COUPLE_DIR}
+        _icf_rc=0
+        for _icf_domain in $(ice_domain_list); do
+                ice_domain_select "${_icf_domain}"
+                echo
+                echo "                ---- ice domain: ${ICE_DOMAIN} (${ICE_COUPLE_DIR}) ----"
+                ${_icf_func} "$@" || _icf_rc=$?
+        done
+        # Leave a deterministic selection behind: whatever was selected before,
+        # or -- if nothing was -- the first domain. Global stages that run after
+        # a loop still need a domain to read the ice variable names from, and
+        # "whichever domain happened to be last" is a bad thing to depend on.
+        if [ "x${_icf_save_domain}" != "x" ]; then
+                ICE_DOMAIN=${_icf_save_domain}
+                ICE_COUPLE_DIR=${_icf_save_dir}
+                export ICE_DOMAIN ICE_COUPLE_DIR
+        else
+                set -- $(ice_domain_list)
+                ice_domain_select "$1"
+        fi
+        unset _icf_func _icf_domain _icf_save_domain _icf_save_dir
+        return ${_icf_rc}
+}
+
+## @fn ice_domain_attr()
+## Call: ice_domain_attr DOMAIN KEY [DEFAULT]
+ice_domain_attr() {
+        _ica_var="ICE_DOMAIN_$(ice_domain_sanitize "$1")_$(echo "$2" | tr '[:lower:]' '[:upper:]')"
+        eval _ica_val=\"\${${_ica_var}}\"
+        if [ "x${_ica_val}" = "x" ]; then
+                _ica_val="$3"
+        fi
+        echo "${_ica_val}"
+        unset _ica_var _ica_val
+}
+
+## @fn ice_domain_require_selected()
+## Guard for functions that must not run outside a selected domain.
+ice_domain_require_selected() {
+        if [ "x${ICE_COUPLE_DIR}" = "x" ]; then
+                echo " !!! ${1:-this function} was called without a selected ice domain."
+                echo " !!! Use ice_domain_select / ice_domain_foreach, or set ICE_DOMAIN."
+                echo " S T O P  70"
+                exit 70
+        fi
+}
+
+## @fn ice_domain_stage_in()
+## Call: ice_domain_stage_in SHARED_FILE [LOCAL_NAME]
+## Copy a global exchange file into the current domain directory so that the
+## per-domain processing can modify it without disturbing the other domains.
+## Returns non-zero (without aborting) if the shared file is not there.
+ice_domain_stage_in() {
+        ice_domain_require_selected ice_domain_stage_in
+        _ics_src=$1
+        _ics_dst=${ICE_COUPLE_DIR}/${2:-$(basename "$1")}
+        if [ ! -f "${_ics_src}" ]; then
+                echo "                -   shared file ${_ics_src} not present, nothing staged in"
+                unset _ics_src _ics_dst
+                return 1
+        fi
+        if [ "${_ics_src}" -ef "${_ics_dst}" ] 2>/dev/null; then
+                unset _ics_src _ics_dst
+                return 0
+        fi
+        cp -f "${_ics_src}" "${_ics_dst}"
+        echo "                -   staged ${_ics_src} -> ${_ics_dst}"
+        unset _ics_src _ics_dst
+        return 0
+}
+
+## @fn ice_domain_apply_box()
+## Call: ice_domain_apply_box DOMAIN FILE
+## Zero out everything outside the domain's BOX attribute. No-op when the
+## domain does not declare a box.
+ice_domain_apply_box() {
+        _icb_box=$(ice_domain_attr "$1" BOX)
+        _icb_file=$2
+        if [ "x${_icb_box}" = "x" ]; then
+                unset _icb_box _icb_file
+                return 0
+        fi
+        echo "                -   clipping $(basename ${_icb_file}) of domain $1 to box ${_icb_box}"
+        ${ice_domains_cdo} -s -setclonlatbox,1,${_icb_box} -mulc,0 "${_icb_file}" "${_icb_file}.box_mask" \
+                && ${ice_domains_cdo} -s -mul "${_icb_file}" "${_icb_file}.box_mask" "${_icb_file}.boxed" \
+                && mv -f "${_icb_file}.boxed" "${_icb_file}"
+        rm -f "${_icb_file}.box_mask"
+        unset _icb_box _icb_file
+}
+
+## @fn ice_domain_reduce()
+## Call: ice_domain_reduce BASENAME OUTFILE [OP] [TARGET_GRID] [REMAP] [SELVAR]
+##
+##   BASENAME     file name looked up as ${COUPLE_DIR}/<domain>/BASENAME
+##   OUTFILE      the merged result
+##   OP           add (default) | max | min
+##                  add  -- anomalies, fluxes, mass losses
+##                  max  -- binary masks, domain masks
+##                  min  -- rarely needed, provided for symmetry
+##   TARGET_GRID  optional cdo grid description. When given, every domain
+##                contribution is remapped onto it before the reduction. Needed
+##                when the domains do not already share a grid.
+##   REMAP        cdo remap operator used with TARGET_GRID, default remapcon2.
+##   SELVAR       optional single variable to reduce instead of the whole file.
+##
+## Missing values are turned into zeros before reducing, so a domain simply
+## contributes nothing outside its own footprint. Domains missing the file
+## are skipped with a warning; if no domain has it the function returns 1 and
+## does not create OUTFILE.
+##
+## Exactly one contributing domain and no remapping/box/weight/selection is the
+## identity: the file is copied through untouched, missing values included.
+## That keeps single ice sheet experiments behaving exactly as before.
+ice_domain_reduce() {
+        _icr_base=$1
+        _icr_out=$2
+        _icr_op=${3:-add}
+        _icr_grid=$4
+        _icr_remap=${5:-remapcon2}
+        _icr_selvar=$6
+
+        case ${_icr_op} in
+                add|max|min) ;;
+                *)
+                        echo " !!! ice_domain_reduce: unknown operator >>${_icr_op}<<"
+                        echo "     Known: add, max, min"
+                        echo " S T O P  71"
+                        exit 71
+                        ;;
+        esac
+
+        # Which domains actually delivered something? Note that in the flat
+        # single domain layout the input and the output are the very same file,
+        # so nothing may be removed before this point -- and the result is
+        # assembled in a temporary file and only moved into place at the end.
+        _icr_have=""
+        for _icr_domain in $(ice_domain_list); do
+                _icr_in=$(ice_domain_couple_dir "${_icr_domain}")/${_icr_base}
+                if [ -f "${_icr_in}" ]; then
+                        _icr_have="${_icr_have} ${_icr_domain}"
+                else
+                        echo "                -   ${_icr_base}: nothing from domain ${_icr_domain}, skipped"
+                fi
+        done
+
+        # Identity shortcut: one contributor, nothing to transform.
+        set -- ${_icr_have}
+        if [ $# -eq 1 ] \
+           && [ "x${_icr_grid}" = "x" ] \
+           && [ "x${_icr_selvar}" = "x" ] \
+           && [ "x$(ice_domain_attr "$1" BOX)" = "x" ] \
+           && [ "x$(ice_domain_attr "$1" WEIGHT 1)" = "x1" ]; then
+                _icr_in=$(ice_domain_couple_dir "$1")/${_icr_base}
+                if [ "${_icr_in}" -ef "${_icr_out}" ] 2>/dev/null; then
+                        echo "                *   single domain '$1': ${_icr_base} is already the reduced file"
+                else
+                        cp -f "${_icr_in}" "${_icr_out}"
+                        echo "                *   single domain '$1' contributed ${_icr_base}, passed through unchanged"
+                fi
+                unset _icr_base _icr_out _icr_op _icr_grid _icr_remap _icr_selvar
+                unset _icr_have _icr_n _icr_domain _icr_dir _icr_in _icr_piece _icr_weight _icr_tmp
+                return 0
+        fi
+
+        if [ "x${_icr_have}" = "x" ]; then
+                # A stale result from an earlier chunk must not survive a
+                # reduction in which no domain contributed.
+                echo "                -   ${_icr_base}: no domain contributed, ${_icr_out} not written"
+                rm -f "${_icr_out}"
+                unset _icr_base _icr_out _icr_op _icr_grid _icr_remap _icr_selvar
+                unset _icr_have _icr_n _icr_domain _icr_dir _icr_in _icr_piece _icr_weight _icr_tmp
+                return 1
+        fi
+
+        _icr_tmp=${_icr_out}.reducing
+        _icr_n=0
+        for _icr_domain in ${_icr_have}; do
+                _icr_dir=$(ice_domain_couple_dir "${_icr_domain}")
+                _icr_in=${_icr_dir}/${_icr_base}
+
+                _icr_piece=${_icr_out}.part_$(ice_domain_sanitize "${_icr_domain}")
+                ${ice_domains_cdo} -s -setmisstoc,0 \
+                        ${_icr_grid:+-${_icr_remap},${_icr_grid}} \
+                        ${_icr_selvar:+-selvar,${_icr_selvar}} \
+                        "${_icr_in}" "${_icr_piece}" || return 1
+
+                ice_domain_apply_box "${_icr_domain}" "${_icr_piece}"
+
+                _icr_weight=$(ice_domain_attr "${_icr_domain}" WEIGHT 1)
+                if [ "x${_icr_weight}" != "x1" ]; then
+                        ${ice_domains_cdo} -s -mulc,${_icr_weight} "${_icr_piece}" "${_icr_piece}.w" \
+                                && mv -f "${_icr_piece}.w" "${_icr_piece}"
+                fi
+
+                if [ ${_icr_n} -eq 0 ]; then
+                        mv -f "${_icr_piece}" "${_icr_tmp}"
+                else
+                        ${ice_domains_cdo} -s ${_icr_op} "${_icr_tmp}" "${_icr_piece}" "${_icr_tmp}.acc" \
+                                && mv -f "${_icr_tmp}.acc" "${_icr_tmp}"
+                        rm -f "${_icr_piece}"
+                fi
+                _icr_n=$((_icr_n+1))
+        done
+
+        mv -f "${_icr_tmp}" "${_icr_out}"
+        echo "                *   reduced ${_icr_n} domain contribution(s) of ${_icr_base} with '${_icr_op}' into $(basename ${_icr_out})"
+        unset _icr_base _icr_out _icr_op _icr_grid _icr_remap _icr_selvar
+        unset _icr_have _icr_n _icr_domain _icr_dir _icr_in _icr_piece _icr_weight _icr_tmp
+        return 0
+}
+
+## @fn ice_domain_reduce_by_varclass()
+## Call: ice_domain_reduce_by_varclass BASENAME OUTFILE MASK_PATTERN [GRID] [REMAP]
+##
+## Like ice_domain_reduce, but reduces each variable of the file with the
+## operator that fits it: variables whose name matches the extended regular
+## expression MASK_PATTERN are reduced with 'max' (they are masks and have to
+## stay binary), everything else with 'add'. The per-variable results are
+## merged back into one file.
+##
+## Needed for the combined ice->ocean forcing file, which carries fluxes and
+## masks side by side.
+ice_domain_reduce_by_varclass() {
+        _icv_base=$1
+        _icv_out=$2
+        _icv_maskpat=$3
+        _icv_grid=$4
+        _icv_remap=$5
+
+        # Take the variable list from the first domain that has the file.
+        _icv_src=""
+        for _icv_domain in $(ice_domain_list); do
+                if [ -f "$(ice_domain_couple_dir "${_icv_domain}")/${_icv_base}" ]; then
+                        _icv_src=$(ice_domain_couple_dir "${_icv_domain}")/${_icv_base}
+                        break
+                fi
+        done
+        if [ "x${_icv_src}" = "x" ]; then
+                echo "                -   ${_icv_base}: no domain contributed, ${_icv_out} not written"
+                rm -f "${_icv_out}"
+                unset _icv_base _icv_out _icv_maskpat _icv_grid _icv_remap _icv_src _icv_domain
+                return 1
+        fi
+
+        # One domain: nothing to combine, keep the file exactly as it is.
+        if [ "$(ice_domain_count)" -eq 1 ] && [ "x${_icv_grid}" = "x" ]; then
+                ice_domain_reduce "${_icv_base}" "${_icv_out}" add "${_icv_grid}" "${_icv_remap}"
+                return $?
+        fi
+
+        _icv_parts=""
+        for _icv_var in $(${ice_domains_cdo} -s showname "${_icv_src}" | tr -s ' ' '\n' | grep -v '^$'); do
+                if echo "${_icv_var}" | grep -Eq "${_icv_maskpat}"; then
+                        _icv_op=max
+                else
+                        _icv_op=add
+                fi
+                _icv_part=${_icv_out}.var_${_icv_var}
+                if ice_domain_reduce "${_icv_base}" "${_icv_part}" "${_icv_op}" \
+                        "${_icv_grid}" "${_icv_remap}" "${_icv_var}"; then
+                        _icv_parts="${_icv_parts} ${_icv_part}"
+                fi
+        done
+
+        rm -f "${_icv_out}"
+        ${ice_domains_cdo} -s -O merge ${_icv_parts} "${_icv_out}" || return 1
+        rm -f ${_icv_parts}
+        echo "                *   reduced ${_icv_base} variable by variable into $(basename ${_icv_out})"
+        unset _icv_base _icv_out _icv_maskpat _icv_grid _icv_remap _icv_src _icv_domain
+        unset _icv_parts _icv_var _icv_op _icv_part
+        return 0
+}
+
+## @fn ice_domain_reduce_into_couple_dir()
+## Convenience wrapper: reduce ${COUPLE_DIR}/<domain>/BASENAME into
+## ${COUPLE_DIR}/BASENAME.
+ice_domain_reduce_into_couple_dir() {
+        ice_domain_reduce "$1" "${COUPLE_DIR}/$1" "$2" "$3" "$4"
+}
+
+## @fn ice_domain_wait_for()
+## Call: ice_domain_wait_for RELATIVE_FILE [MAX_TRIES] [SLEEP_SECONDS]
+## Wait until every configured domain has produced RELATIVE_FILE in its own
+## couple directory. Returns 1 when the timeout is hit, naming what is missing.
+ice_domain_wait_for() {
+        _icw_file=$1
+        _icw_max=${2:-60}
+        _icw_sleep=${3:-10}
+        _icw_try=0
+        while [ ${_icw_try} -lt ${_icw_max} ]; do
+                _icw_missing=""
+                for _icw_domain in $(ice_domain_list); do
+                        _icw_path=$(ice_domain_couple_dir "${_icw_domain}")/${_icw_file}
+                        [ -f "${_icw_path}" ] || _icw_missing="${_icw_missing} ${_icw_path}"
+                done
+                if [ "x${_icw_missing}" = "x" ]; then
+                        unset _icw_file _icw_max _icw_sleep _icw_try _icw_missing _icw_domain _icw_path
+                        return 0
+                fi
+                echo "        * still waiting for:${_icw_missing}"
+                sleep ${_icw_sleep}
+                _icw_try=$((_icw_try+1))
+        done
+        echo " !!! timed out waiting for:${_icw_missing}"
+        unset _icw_file _icw_max _icw_sleep _icw_try _icw_missing _icw_domain _icw_path
+        return 1
+}
+
+## @fn ice_domain_report()
+ice_domain_report() {
+        echo "                =================================================================="
+        echo "                 ice domains: $(ice_domain_list)  (n=$(ice_domain_count))"
+        for _icp_domain in $(ice_domain_list); do
+                echo "                   - ${_icp_domain}: $(ice_domain_couple_dir ${_icp_domain})"
+                _icp_box=$(ice_domain_attr "${_icp_domain}" BOX)
+                [ "x${_icp_box}" != "x" ] && echo "                       box:    ${_icp_box}"
+                _icp_weight=$(ice_domain_attr "${_icp_domain}" WEIGHT)
+                [ "x${_icp_weight}" != "x" ] && echo "                       weight: ${_icp_weight}"
+        done
+        echo "                =================================================================="
+        unset _icp_domain _icp_box _icp_weight
+}

@@ -1,0 +1,100 @@
+# NOTE: replace /path/to/esm_tools with the location of your ESM-Tools
+#       checkout before using this runscript.
+# The ESM side. Nothing here knows how many ice sheets there are: env_awiesm.py
+# derives ICE_DOMAINS from the modelN sections of awiesm_pism_multi_domain.yaml,
+# and ice2echam / ice2fesom loop over that list and reduce the result.
+general:
+    setup_name: "awiesm"
+    account: ba0989
+    compute_time: "00:55:00"
+    initial_date: "1938-01-01"
+    final_date: "2037-12-31"
+    base_dir: "/work/ba0989/a270124/PalModII/experiments/"
+    nmonth: 0
+    nyear: 1
+    # These are the *global* products of ice2echam, written once after all ice
+    # domains have been reduced -- they are not per domain and therefore carry
+    # no domain prefix.
+    files_to_wait_for:
+        - "latest_jsbach_init_file.nc"
+        - "latest_gfw_atmo.nc"
+        - "latest_jsbach_restart_file.nc"
+        - "latest_veg_restart_file.nc"
+        - "latest_target_orography.nc"
+        - "landice_yearly_mass_loss.out"
+
+awiesm:
+    version: "2.1"
+    postprocessing: true
+    scenario: "PALEO"
+    model_dir: "/home/a/a270124/awiesm-2.1"
+
+echam:
+    version: "6.3.05p2-concurrent_radiation-paleodyn"
+    restart_unit: "years"
+    lresume: 1
+    hosing_correction: true
+    update_ice_orography: true
+    update_glacial_mask: true
+    update_land_runoff: true
+    oro_update_mod: 1
+    oro_update_var: "OROMEA"
+    albedo_on_glaciers: 0.7
+    glacial_threshold: 0.5
+
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2echam.functions
+                    script_dir: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/echam/
+                    call_function: ice2echam
+                    env_preparation: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/envs/env_awiesm.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_echam2ice.functions
+                    script_dir: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/echam/
+                    call_function: echam2ice
+                    env_preparation: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/envs/env_awiesm.py
+                    run_only: last_run_in_chunk
+
+fesom:
+    version: "2.0"
+    res: "CORE2"
+    pool_dir: "/pool/data/AWICM/FESOM2"
+    mesh_dir: "/pf/a/a270064/bb1029/AWIESM2.1-EXP/mesh_core2/"
+    restart_rate: 1
+    restart_unit: "y"
+    lresume: 1
+    use_icebergs: False
+    # Several ice domains deliver an iceberg discharge on their own grids;
+    # this is the common grid they are summed on before FESOM reads them.
+    ice_discharge_target_grid: "T63grid"
+
+    workflow:
+            next_run_triggered_by: couple_out
+            subjobs:
+                couple_in:
+                    nproc: 1
+                    run_before: prepcompute
+                    script: coupling_ice2fesom.functions
+                    script_dir: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/fesom/
+                    call_function: ice2fesom
+                    env_preparation: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/envs/env_awiesm.py
+                    run_only: first_run_in_chunk
+                    skip_chunk_number: 1
+
+                couple_out:
+                    nproc: 1
+                    run_after: tidy
+                    script: coupling_fesom2ice.functions
+                    script_dir: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/fesom/
+                    call_function: fesom2ice
+                    env_preparation: /path/to/esm_tools/couplings/flexible_ice_domain_coupling/envs/env_awiesm.py
+                    run_only: last_run_in_chunk

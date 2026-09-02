@@ -360,8 +360,10 @@ def _report_new_queryables(delta_path: Path, server_url: Optional[str]) -> None:
         "fields appear in the STAC Browser filter UI. A privileged operator runs\n"
         "on the pgstac host (adjust the ssh name if it differs from the API host):\n"
     )
+    # Absolute path: sudo's secure_path need not include /usr/local/bin.
     click.secho(
-        f"  ssh {host} sudo -u stac esm-catalog-load-queryables - < {delta_path}\n",
+        f"  ssh {host} sudo -u stac /usr/local/bin/esm-catalog-load-queryables "
+        f"- < {delta_path}\n",
         fg="cyan",
     )
 

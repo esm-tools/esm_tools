@@ -26,6 +26,10 @@ CATALOG_DIRNAME = "catalog"
 STATE_FILENAME = "esm-catalog.json"
 """The workspace-state file inside the catalog directory."""
 
+QUERYABLES_FILENAME = "queryables.json"
+"""The catalog's namelist queryables (a ``pypgstac load-queryables`` file), so
+an operator can register them for the STAC Browser filter UI."""
+
 ScannedPath = str
 """A scanned output file's path (as text) — the key its catalogued md5 is stored under."""
 

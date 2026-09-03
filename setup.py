@@ -106,6 +106,13 @@ setup(
             "platformdirs>=4.0",
             "pyyaml>=6.0",
         ],
+        # GRIB support is opt-in: cfgrib/eccodes pull the ecCodes C library, which
+        # is heavy and awkward in CI, so the scanner treats GRIB as unsupported
+        # (a clean skip) unless this extra is installed.
+        "catalog-grib": [
+            "cfgrib>=0.9",
+            "eccodes>=1.5",
+        ],
     },
     install_requires=requirements,
     license="GNU General Public License v2",

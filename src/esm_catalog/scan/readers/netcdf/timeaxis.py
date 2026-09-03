@@ -34,7 +34,13 @@ def _time_coord(dataset: xr.Dataset) -> Optional[xr.DataArray]:
     try:
         return dataset.cf["time"]
     except (KeyError, AttributeError):
-        return None
+        pass
+    # GRIB (cfgrib) carries the timestamp as ``valid_time`` (and a reference
+    # ``time``) that cf_xarray may not pick as *the* axis; fall back by name.
+    for name in ("valid_time", "time"):
+        if name in dataset.coords:
+            return dataset[name]
+    return None
 
 
 def _extract_time_range(dataset: xr.Dataset) -> DateTimeRange:
@@ -61,8 +67,10 @@ def _time_bounds(coord: xr.DataArray) -> DateTimeRange:
     Returns ``(None, None)`` for an empty axis, or integer time with no units to
     anchor it. Shared by :func:`_extract_time_range` and :func:`_time_extent_iso`.
     """
-    values = coord.values
-    if len(values) == 0:
+    # atleast_1d: a single-timestep file (common in GRIB) has a 0-d/scalar time
+    # coordinate, which has no len(); treat it as a one-element axis.
+    values = np.atleast_1d(coord.values)
+    if values.size == 0:
         return None, None
     first, last = values[0], values[-1]
     if np.issubdtype(values.dtype, np.integer):

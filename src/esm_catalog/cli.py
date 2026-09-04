@@ -9,13 +9,20 @@ Workflow for one experiment::
 
 On disk, ``<exp_root>/catalog/`` holds the catalog PFS-friendly: one
 ``collection.json`` plus sharded stac-geoparquet (a handful of files, never one
-JSON per item), and an ``esm-catalog.json`` workspace-state file (experiment id,
-server, and which files have been scanned). ``push`` bulk-loads new shards into
-the server's pgstac, which stac-fastapi-pgstac then serves to the web viewer.
+JSON per item), and an ``esm-catalog.json`` workspace-state file (experiment id
+and which files have been scanned, for incremental re-scans). ``push`` bulk-loads
+new shards into the server's pgstac, which stac-fastapi-pgstac then serves to the
+web viewer.
+
+Configuration (identity-provider settings, ``client_secret``, a default
+``server_url``) comes from environment variables prefixed ``ESM_CATALOG_`` or
+from a config file — run ``esm-catalog status`` to see what is currently
+resolved and where the config file would live.
 """
 
 from __future__ import annotations
 
+import sys
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Generator, Optional
@@ -23,6 +30,34 @@ from typing import Generator, Optional
 import rich_click as click
 
 from esm_catalog import __version__
+
+_CONFIG_EPILOG = (
+    "Configuration (identity-provider settings, client_secret, a default "
+    "server_url) comes from environment variables prefixed 'ESM_CATALOG_' "
+    "(e.g. ESM_CATALOG_SERVER_URL) or a config file — run 'esm-catalog status' "
+    "to see what is currently resolved and where the config file would live."
+)
+
+
+def _configure_logging(verbose: bool) -> int:
+    """Set up logging for a CLI command; return the stdlib level used.
+
+    Quiets noisy third-party stdlib loggers (paramiko, stac_geoparquet) and caps
+    esm_catalog's own loguru sink at the same level, so a command's progress
+    display is the only thing shown by default — internal detail (e.g. a token
+    refresh) only prints with --verbose. Without this, loguru's default sink
+    prints every DEBUG+ message unconditionally.
+    """
+    import logging
+
+    from loguru import logger
+
+    level = logging.DEBUG if verbose else logging.WARNING
+    logger.remove()
+    logger.add(sys.stderr, level=logging.getLevelName(level))
+    for noisy in ("paramiko", "stac_geoparquet"):
+        logging.getLogger(noisy).setLevel(level)
+    return level
 
 
 def _quiet_worker_logging(level: int) -> None:
@@ -105,7 +140,7 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
         yield on_progress
 
 
-@click.group()
+@click.group(epilog=_CONFIG_EPILOG)
 @click.version_option(version=__version__, prog_name="esm-catalog")
 def main() -> None:
     """ESM-Tools simulation catalog."""
@@ -123,10 +158,22 @@ def auth() -> None:
     "--open", "open_browser", is_flag=True, help="Open the login URL in a browser."
 )
 @click.option(
-    "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
+    "-k",
+    "--insecure",
+    is_flag=True,
+    help="Skip TLS verification (dev self-signed). Not persisted — pass it again "
+    "on every 'push' against this server.",
 )
 def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
-    """Log in to SERVER_URL and cache a token for later push."""
+    """Log in and cache a token scoped to SERVER_URL.
+
+    The token is cached per server (logging into a second server does not
+    overwrite the first's token). SERVER_URL only labels which server this
+    token is for — it is not itself contacted for login. The identity provider
+    (who actually issues the token) is a separate system, configured via
+    oidc_discovery_url/client_id/client_secret (env or config file); see
+    'esm-catalog status' or the config file for what is currently resolved.
+    """
     from esm_catalog import auth as _auth
     from esm_catalog.config import Settings
     from esm_catalog.xdg import token_file
@@ -152,14 +199,24 @@ def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
 
         webbrowser.open(login_url)
 
-    code = _auth.AuthCode(click.prompt("Paste the code from the landing page").strip())
+    try:
+        raw_code = click.prompt("Paste the code from the landing page").strip()
+    except click.Abort as exc:
+        raise click.ClickException(
+            "Login cancelled — no code was entered. The URL and PKCE challenge "
+            "above are now stale; run this command again to restart."
+        ) from exc
+    code = _auth.AuthCode(raw_code)
     try:
         token = _auth.exchange_code_for_token(meta, settings, code, verifier)
     except _auth.AuthError as exc:
         raise click.ClickException(str(exc)) from exc
-    _auth.save_token(token)
+    _auth.save_token(token, server_url)
 
-    click.secho(f"Logged in — token cached at {token_file()}", fg="green")
+    click.secho(
+        f"Logged in to {server_url} — token cached at {token_file(server_url)}",
+        fg="green",
+    )
     if token.refresh_token:
         click.secho(
             "Refresh token stored; future pushes will not need a login.", fg="green"
@@ -172,15 +229,24 @@ def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
 
 
 @auth.command("logout")
-def auth_logout() -> None:
-    """Discard the cached token."""
+@click.argument("server_url", required=False)
+def auth_logout(server_url: Optional[str]) -> None:
+    """Discard the cached token for SERVER_URL (default: the configured server)."""
     from esm_catalog.auth import clear_token
+    from esm_catalog.config import Settings
 
-    if clear_token():
-        # These should be proper loguru logs not just echos
-        click.secho("Token cache removed.", fg="green")
+    if server_url is None:
+        server_url = Settings().server_url
+    if not server_url:
+        raise click.ClickException(
+            "no server given and none configured; pass SERVER_URL, set "
+            "ESM_CATALOG_SERVER_URL, or add server_url to the config file"
+        )
+
+    if clear_token(server_url):
+        click.secho(f"Token cache for {server_url} removed.", fg="green")
     else:
-        click.secho("Nothing to remove.", fg="yellow")
+        click.secho(f"Nothing to remove for {server_url}.", fg="yellow")
 
 
 @main.command()
@@ -202,7 +268,11 @@ def auth_logout() -> None:
 )
 @click.option("--scheduler", default=None, help="Attach to a Dask scheduler (tcp://…).")
 @click.option(
-    "-j", "--jobs", type=int, default=None, help="Number of parallel workers."
+    "-j",
+    "--jobs",
+    type=click.IntRange(min=1),
+    default=None,
+    help="Number of parallel workers.",
 )
 @click.option("--strict", is_flag=True, help="Exit non-zero if any file fails to scan.")
 @click.option(
@@ -221,20 +291,12 @@ def scan(
     verbose: bool,
 ) -> None:
     """Scan the experiment's output into the catalog (stac-geoparquet shards)."""
-    import logging
-    import sys
-
     from upath import UPath
 
     from esm_catalog.scan.ingest import ScanError, scan_experiment
     from esm_catalog.scan.sourcing import SourcingError
 
-    # Quiet noisy third-party INFO/CPU/RSS chatter (paramiko connection banners,
-    # stac_geoparquet telemetry) unless --verbose. CLI-only: library importers
-    # keep their own logging config.
-    level = logging.INFO if verbose else logging.WARNING
-    for noisy in ("paramiko", "stac_geoparquet"):
-        logging.getLogger(noisy).setLevel(level)
+    level = _configure_logging(verbose)
 
     show_progress = sys.stderr.isatty() and not verbose
     try:
@@ -252,6 +314,12 @@ def scan(
             )
     except (SourcingError, ScanError) as exc:
         raise click.ClickException(str(exc)) from exc
+    if report.scanned + report.skipped == 0:
+        click.secho(
+            f"0 output files found under {exp_root} — check --exp-root points "
+            "at a completed ESM-Tools run.",
+            fg="yellow",
+        )
     click.echo(
         f"scanned {report.scanned}, catalogued {report.items}, "
         f"skipped {report.skipped}, unsupported {report.unsupported}, "
@@ -268,21 +336,33 @@ def scan(
 )
 @click.option("--server", default=None, help="Target STAC server (overrides config).")
 @click.option(
-    "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
+    "-k",
+    "--insecure",
+    is_flag=True,
+    help="Skip TLS verification (dev self-signed). Not persisted — pass it again "
+    "on 'auth login' and on every 'push' against this server.",
 )
-def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None:
+@click.option(
+    "-v",
+    "--verbose",
+    is_flag=True,
+    help="Show connection and library logs instead of the progress display.",
+)
+def push(
+    paths: tuple[Path, ...], server: Optional[str], insecure: bool, verbose: bool
+) -> None:
     """Push STAC objects to the catalog.
 
     Each PATH is a Collection/Item JSON, a stac-geoparquet shard, or a directory
     of them. Writes are authenticated (run 'auth login' first) and idempotent
     (upsert) — re-pushing is safe, nothing is deleted.
     """
-    import sys
-
     from esm_catalog import auth
     from esm_catalog import push as pushmod
     from esm_catalog.client import StacClient
     from esm_catalog.config import Settings
+
+    _configure_logging(verbose)
 
     # Override only what the flags give, so config/env supplies the rest (init
     # kwargs have top precedence — passing them unconditionally clobbers env).
@@ -443,6 +523,12 @@ def status(exp_root: str) -> None:
         server_url = None
     if server_url:
         click.echo(f"push target: {server_url}")
+        from esm_catalog.auth import load_token
+
+        click.echo(
+            "logged in: "
+            + ("yes" if load_token(server_url) is not None else "no")
+        )
     else:
         click.secho(
             "push target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",

@@ -27,7 +27,19 @@ def test_xdg_honours_env(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
     assert xdg.config_file() == tmp_path / "cfg" / "esm-catalog" / "config.yaml"
-    assert xdg.token_file() == tmp_path / "state" / "esm-catalog" / "token.json"
+    assert (
+        xdg.token_file("https://stac.example.org")
+        == tmp_path / "state" / "esm-catalog" / "tokens" / "stac.example.org.json"
+    )
+
+
+def test_token_file_sanitises_unparsable_server_url(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    # No scheme -> urlsplit finds no netloc; falls back to the raw string, still
+    # sanitised to a safe filename rather than raising.
+    path = xdg.token_file("not a url at all")
+    assert path.parent == tmp_path / "esm-catalog" / "tokens"
+    assert path.name == "not_a_url_at_all.json"
 
 
 # --------------------------------------------------------------------------- #
@@ -68,33 +80,66 @@ def test_token_expiry():
 # --------------------------------------------------------------------------- #
 
 
+_SERVER = "https://stac.example.org"
+
+
 def test_token_cache_roundtrip_and_perms(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
-    assert auth.load_token() is None  # absent
+    assert auth.load_token(_SERVER) is None  # absent
 
-    auth.save_token(TokenSet(access_token="abc", refresh_token="r", expires_at=42))
-    loaded = auth.load_token()
+    auth.save_token(
+        TokenSet(access_token="abc", refresh_token="r", expires_at=42), _SERVER
+    )
+    loaded = auth.load_token(_SERVER)
     assert loaded is not None
     assert loaded.access_token == "abc" and loaded.refresh_token == "r"
 
-    mode = stat.S_IMODE(xdg.token_file().stat().st_mode)
+    mode = stat.S_IMODE(xdg.token_file(_SERVER).stat().st_mode)
     assert mode == 0o600  # secret material not world-readable
+
+
+def test_token_cache_is_scoped_per_server(monkeypatch, tmp_path):
+    # The bug this closes: logging into a second server must not clobber the
+    # first's cached token, and each server's token must resolve independently.
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    server_a, server_b = "https://stac-a.example.org", "https://stac-b.example.org"
+
+    auth.save_token(TokenSet(access_token="token-a"), server_a)
+    auth.save_token(TokenSet(access_token="token-b"), server_b)
+
+    assert auth.load_token(server_a).access_token == "token-a"
+    assert auth.load_token(server_b).access_token == "token-b"
+    assert auth.clear_token(server_a) is True
+    assert auth.load_token(server_a) is None
+    assert auth.load_token(server_b).access_token == "token-b"  # untouched
 
 
 def test_load_token_tolerates_garbage(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
-    path = xdg.token_file()
+    path = xdg.token_file(_SERVER)
     path.parent.mkdir(parents=True)
     path.write_text("{ not json")
-    assert auth.load_token() is None
+    assert auth.load_token(_SERVER) is None
+
+
+def test_get_bearer_token_requires_a_configured_server(monkeypatch):
+    monkeypatch.delenv("ESM_CATALOG_SERVER_URL", raising=False)
+    with pytest.raises(auth.AuthError, match="no server configured"):
+        auth.get_bearer_token(Settings(server_url=None))
+
+
+def test_get_bearer_token_names_the_server_when_not_logged_in(monkeypatch, tmp_path):
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
+    with pytest.raises(auth.AuthError, match=_SERVER):
+        auth.get_bearer_token(Settings(server_url=_SERVER))
 
 
 def test_clear_token(monkeypatch, tmp_path):
     monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path))
-    assert auth.clear_token() is False  # nothing yet
-    auth.save_token(TokenSet(access_token="x"))
-    assert auth.clear_token() is True
-    assert auth.load_token() is None
+    assert auth.clear_token(_SERVER) is False  # nothing yet
+    auth.save_token(TokenSet(access_token="x"), _SERVER)
+    assert auth.clear_token(_SERVER) is True
+    assert auth.load_token(_SERVER) is None
 
 
 # --------------------------------------------------------------------------- #

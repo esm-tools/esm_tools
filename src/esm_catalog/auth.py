@@ -7,9 +7,14 @@ authorization-code + PKCE with an out-of-band (copy-paste) redirect — which,
 unlike a localhost-loopback flow, also works from a headless HPC login node
 where no browser is available on the machine running the CLI.
 
-The resulting token is cached at ``$XDG_STATE_HOME/esm-catalog/token.json``
-(mode ``0600``). ``get_bearer_token()`` returns a valid access token, refreshing
-via the refresh token when the cached one has expired.
+The resulting token is cached per server at
+``$XDG_STATE_HOME/esm-catalog/tokens/<host>.json`` (mode ``0600``) — a STAC
+server and its identity provider are separate systems (``oidc_discovery_url``/
+``client_id`` are configured independently, not derived from the server URL),
+so the server URL only *labels* which server a token belongs to; it never
+selects the identity provider. ``get_bearer_token()`` returns a valid access
+token for ``settings.server_url``, refreshing via the refresh token when the
+cached one has expired.
 """
 
 from __future__ import annotations
@@ -123,9 +128,9 @@ def generate_pkce_pair() -> tuple[CodeVerifier, CodeChallenge]:
 # --------------------------------------------------------------------------- #
 
 
-def load_token() -> Optional[TokenSet]:
-    """Load the cached token, or ``None`` if absent or unreadable."""
-    path = token_file()
+def load_token(server_url: str) -> Optional[TokenSet]:
+    """Load the token cached for *server_url*, or ``None`` if absent or unreadable."""
+    path = token_file(server_url)
     if not path.exists():
         return None
     try:
@@ -135,9 +140,9 @@ def load_token() -> Optional[TokenSet]:
         return None
 
 
-def save_token(token: TokenSet) -> None:
-    """Write *token* to the cache, creating it ``0600`` before any secret lands."""
-    path = token_file()
+def save_token(token: TokenSet, server_url: str) -> None:
+    """Cache *token* for *server_url*, creating it ``0600`` before any secret lands."""
+    path = token_file(server_url)
     path.parent.mkdir(parents=True, exist_ok=True)
     # O_CREAT's mode applies only when the file is created (and is umask-masked);
     # on a re-login the existing file keeps its old perms. The explicit chmod
@@ -148,9 +153,9 @@ def save_token(token: TokenSet) -> None:
     os.chmod(path, 0o600)
 
 
-def clear_token() -> bool:
-    """Delete the cached token; return whether a file was removed."""
-    path = token_file()
+def clear_token(server_url: str) -> bool:
+    """Delete the token cached for *server_url*; return whether a file was removed."""
+    path = token_file(server_url)
     if path.exists():
         path.unlink()
         return True
@@ -246,11 +251,19 @@ def get_bearer_token(settings: Settings) -> AccessToken:
     :class:`AuthError` (no session, or refresh failed), which the caller should
     surface as a CLI error.
     """
-    token = load_token()
+    if not settings.server_url:
+        raise AuthError(
+            "no server configured; pass --server, set ESM_CATALOG_SERVER_URL, "
+            "or add server_url to the config file"
+        )
+    token = load_token(settings.server_url)
     if token is None:
-        raise AuthError("not logged in; run 'esm-catalog auth login <server>'")
+        raise AuthError(
+            f"not logged in to {settings.server_url}; "
+            f"run 'esm-catalog auth login {settings.server_url}'"
+        )
     if token.is_expired():
         logger.debug("Access token expired; refreshing.")
         token = refresh_access_token(fetch_oidc_metadata(settings), settings, token)
-        save_token(token)
+        save_token(token, settings.server_url)
     return token.access_token

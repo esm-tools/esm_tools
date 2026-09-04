@@ -361,7 +361,9 @@ def _find_segments(exp_root: UPath) -> list[_Segment]:
     if not paths:
         raise SourcingError(
             "scan requires a completed ESM-Tools run; "
-            f"no finished_config under {config_dir}"
+            f"no file matching '{_FINISHED_CONFIG_GLOB}' under {config_dir} "
+            "(e.g. '<expid>_finished_config.yaml', written by ESM-Tools at the "
+            "end of a run — a plain file named 'finished_config' will not match)"
         )
     return [_Segment(path=path, doc=_load_yaml(path)) for path in paths]
 

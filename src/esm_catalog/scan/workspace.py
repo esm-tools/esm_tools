@@ -35,10 +35,9 @@ ScannedPath = str
 
 
 class WorkspaceState(BaseModel):
-    """The persisted ``esm-catalog.json`` — init config plus scan bookkeeping."""
+    """The persisted ``esm-catalog.json`` — scan bookkeeping for incremental re-scans."""
 
     experiment_id: ExperimentId
-    server_url: Optional[str] = None
     scanned: dict[ScannedPath, Md5] = {}
 
 

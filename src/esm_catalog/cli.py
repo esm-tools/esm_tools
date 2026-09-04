@@ -3,9 +3,9 @@
 Workflow for one experiment::
 
     esm-catalog auth login https://stac.awi.de   # once; token cached locally
-    esm-catalog init  <exp_root>                 # set up <exp_root>/catalog/
     esm-catalog scan                             # write stac-geoparquet shards
     esm-catalog push                             # ship new shards -> pgstac
+    esm-catalog status                           # what's local, what's configured
 
 On disk, ``<exp_root>/catalog/`` holds the catalog PFS-friendly: one
 ``collection.json`` plus sharded stac-geoparquet (a handful of files, never one
@@ -25,11 +25,6 @@ import rich_click as click
 from esm_catalog import __version__
 
 
-def _not_implemented(command: str) -> None:
-    """Fail cleanly: *command* is scaffolded but its logic is not written yet."""
-    raise click.ClickException(f"'{command}' is not implemented yet.")
-
-
 def _quiet_worker_logging(level: int) -> None:
     """Set noisy third-party loggers to *level* in a worker process.
 
@@ -43,6 +38,7 @@ def _quiet_worker_logging(level: int) -> None:
         logging.getLogger(noisy).setLevel(level)
 
 
+# [FIXME] PG: This belongs somewhere else, it should not be directly in cli.py
 @contextmanager
 def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
     """A transient rich spinner+bar over a scan; yields an ``on_progress`` callback.
@@ -57,15 +53,9 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
         return
 
     from rich.console import Console
-    from rich.progress import (
-        BarColumn,
-        MofNCompleteColumn,
-        Progress,
-        SpinnerColumn,
-        TaskID,
-        TextColumn,
-        TimeElapsedColumn,
-    )
+    from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
+                               SpinnerColumn, TaskID, TextColumn,
+                               TimeElapsedColumn)
 
     progress = Progress(
         SpinnerColumn(),
@@ -107,7 +97,9 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
                 description=f"reading {event.detail}" if event.detail else "reading",
             )
         elif event.phase == "writing":
-            enter_phase("writing", "reading", description="writing catalog…", total=None)
+            enter_phase(
+                "writing", "reading", description="writing catalog…", total=None
+            )
 
     with progress:
         yield on_progress
@@ -119,6 +111,7 @@ def main() -> None:
     """ESM-Tools simulation catalog."""
 
 
+# [NOTE] PG: Consider factoring these into separate files for "reusability" (we will never do that, but builder-pattern cli is good here for separateion)
 @main.group()
 def auth() -> None:
     """Authenticate against a STAC server (token cached locally)."""
@@ -184,17 +177,10 @@ def auth_logout() -> None:
     from esm_catalog.auth import clear_token
 
     if clear_token():
+        # These should be proper loguru logs not just echos
         click.secho("Token cache removed.", fg="green")
     else:
         click.secho("Nothing to remove.", fg="yellow")
-
-
-@main.command()
-@click.argument("exp_root", type=click.Path(file_okay=False, path_type=Path))
-@click.option("--server", help="Target STAC server, recorded for later push.")
-def init(exp_root: Path, server: Optional[str]) -> None:
-    """Set up <EXP_ROOT>/catalog/ (collection.json + workspace state)."""
-    _not_implemented("init")
 
 
 @main.command()
@@ -398,24 +384,70 @@ def _push_progress(enabled: bool, total: int) -> Generator[object, None, None]:
 
 
 @main.command()
-@click.argument("file", type=click.Path(path_type=Path))
-def add(file: Path) -> None:
-    """Add one file's Item to the current shard."""
-    _not_implemented("add")
+@click.option(
+    "--exp-root",
+    default=".",
+    help="Experiment root; may be remote (e.g. sftp://host/path). Defaults to '.'.",
+)
+def status(exp_root: str) -> None:
+    """Show the local catalog's state and the configured push target.
 
+    Reports what a scan has produced on disk (shards, item counts, incremental
+    bookkeeping) and where 'push' would send it. Does not contact the server —
+    'push' itself is the only thing that knows what has actually been shipped,
+    since nothing local tracks push history.
+    """
+    from upath import UPath
 
-@main.command()
-@click.argument("file", type=click.Path(path_type=Path))
-def rm(file: Path) -> None:
-    """Remove one file's Item from the catalog."""
-    _not_implemented("rm")
+    from esm_catalog.config import Settings
+    from esm_catalog.scan.workspace import (
+        QUERYABLES_FILENAME,
+        catalog_dir,
+        load_state,
+    )
+    from esm_catalog.storage.geoparquet import read_shard
 
+    import json
 
-@main.command()
-@click.argument("target")
-def edit(target: str) -> None:
-    """Edit a Collection's or Item's metadata (TARGET)."""
-    _not_implemented("edit")
+    catalog = catalog_dir(UPath(exp_root))
+    click.echo(f"exp-root:  {exp_root}")
+    click.echo(f"catalog:   {catalog}")
+
+    state = load_state(catalog)
+    if state is None:
+        click.secho("Not yet scanned — run 'esm-catalog scan' first.", fg="yellow")
+    else:
+        click.echo(f"experiment: {state.experiment_id}")
+        click.echo(f"tracked (incremental) files: {len(state.scanned)}")
+
+        collection_path = catalog / "collection.json"
+        if collection_path.exists():
+            collection_id = json.loads(collection_path.read_text()).get("id", "?")
+            click.echo(f"collection: {collection_id}")
+
+        items_dir = catalog / "items"
+        shard_paths = sorted(items_dir.glob("*.parquet")) if items_dir.exists() else []
+        total_items = sum(read_shard(p).num_rows for p in shard_paths)
+        click.echo(f"shards: {len(shard_paths)} ({total_items} item(s) total)")
+
+        queryables_path = catalog / QUERYABLES_FILENAME
+        if queryables_path.exists():
+            count = len(
+                json.loads(queryables_path.read_text()).get("properties", {})
+            )
+            click.echo(f"queryables: {count}")
+
+    try:
+        server_url = Settings().server_url
+    except Exception:  # noqa: BLE001 — a broken config must not crash status
+        server_url = None
+    if server_url:
+        click.echo(f"push target: {server_url}")
+    else:
+        click.secho(
+            "push target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",
+            fg="yellow",
+        )
 
 
 if __name__ == "__main__":

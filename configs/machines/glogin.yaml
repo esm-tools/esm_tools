@@ -9,6 +9,9 @@
 
 computer:
     name: glogin
+    # Computing center hosting this machine, emitted as the STAC "host"
+    # provider. ROR identifier (center not registered in the WCRP-universe CV).
+    hosted_by: "https://ror.org/00cd95c65"  # GWDG (NHR@Göttingen)
     account: None
 
     # set default for hyperthreading_flag

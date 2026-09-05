@@ -6,6 +6,11 @@
 ################################################################################
 computer:
     name: albedo
+    # Computing center hosting this machine, emitted as the STAC "host"
+    # provider. Canonical WCRP-universe organisation record (dereferences to
+    # ROR, name variants, geolocation); a ror.org URL is used where the
+    # center is not registered in that CV.
+    hosted_by: "https://esgvoc.ipsl.fr/resource/universe/organisation/awi"  # AWI
     # Could be useful if this is extraced from /etc/os-distro:
     operating_system: "linux-rocky"
     sh_interpreter: "/usr/bin/bash"

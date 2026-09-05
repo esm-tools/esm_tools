@@ -123,16 +123,101 @@ computer:
             hostfile: hostfile_srun
 
     check_error:
+            # `srun: error:` fires for two distinct situations:
+            #   1. Real launch failures (execve, bad host, lost node).
+            #   2. The benign pmix_v3 finalize-race cascade where one rank
+            #      exits MPI_Finalize a few ms before its peer, the
+            #      errhandler fires, slurmstepd cancels the step, and srun
+            #      reports `task X: Killed` for every still-living rank.
+            # Case 2 happens AFTER all compute is done — we don't want to
+            # scancel the job (that would skip tidy and lose all output
+            # recovery). Demote to `warn` here; the specific real-failure
+            # triggers below still kill the job.
             "srun: error:" :
                     frequency: 30
-                    method: "kill"
-                    message: "SLURM ERROR: slurm ended with an error, exiting."
+                    method: "warn"
+                    message: "SLURM ERROR (benign finalize cascade or real launch failure — specific triggers below decide whether to abort)."
                     file: "stdout"
 
             "slurmstepd: error: execve():" :
                     frequency: 600
                     method: "kill"
                     message: "SLURM ERROR: slurm probably didn't find executable"
+                    file: "stdout"
+
+            # Real failure signatures — these still kill the job so that
+            # tidy does NOT advance the date file on a silent crash.
+            "oom_kill event" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: OOM kill event detected — a rank exceeded its cgroup memory limit."
+                    file: "stdout"
+
+            "Out Of Memory" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: srun reported Out Of Memory on a task."
+                    file: "stdout"
+
+            # NOTE: `Segmentation fault` is NOT in the kill list. At HR scale
+            # (Final_CMIP7_IO_Test_14, Test_17 with ~3281 ranks) FESOM rank
+            # 1394 hits a UCX `ucs_mpool_cleanup` NULL-deref SIGSEGV during
+            # MPI_Finalize *after* compute has reached the final step. The
+            # bash exit message is indistinguishable from a real compute
+            # segfault via substring match (esm_tools' check_error is
+            # substring-only, no regex). Killing on it would lose tidy
+            # for a benign teardown bug. The narrower triggers below catch
+            # real Fortran / MPI / heap crashes; raw C-level segfaults
+            # during compute will produce incomplete output detectable on
+            # inspection (output volume / final timestep mismatch).
+            "forrtl: severe" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: Intel Fortran runtime error (forrtl: severe ...)."
+                    file: "stdout"
+
+            # `forrtl: error (NN)` is the Intel Fortran runtime error handler
+            # for non-"severe" faults — floating divide-by-zero / FPE (73),
+            # array-bounds, etc. These are genuine compute crashes (e.g. the
+            # OIFS climaer/radaca FPE on the moving-cavity coastline emits
+            # `forrtl: error (73): floating divide by zero`). Without this the
+            # only Fortran trigger was `forrtl: severe`, so an FPE crash slipped
+            # through as method-less, tidy advanced the date file, and the run
+            # cascaded onto the next chunk on garbage output.
+            "forrtl: error" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: Intel Fortran runtime error (forrtl: error (NN) ... — FPE / bounds / I/O)."
+                    file: "stdout"
+
+            "MPI_ABORT was invoked" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: explicit MPI_ABORT from a rank."
+                    file: "stdout"
+
+            "BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: OpenMPI BAD TERMINATION (process exited abnormally during compute)."
+                    file: "stdout"
+
+            "Bus error" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: bus error."
+                    file: "stdout"
+
+            "DUE TO TIME LIMIT" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: job hit SLURM walltime limit."
+                    file: "stdout"
+
+            "Aborted (signal" :
+                    frequency: 30
+                    method: "kill"
+                    message: "MODEL ERROR: process aborted with a signal."
                     file: "stdout"
 
     # possibility to use less cores than processes. Useful for test runs / debugging

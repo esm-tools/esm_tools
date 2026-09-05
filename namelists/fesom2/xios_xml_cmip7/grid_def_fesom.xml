@@ -1,0 +1,81 @@
+<grid_definition>
+
+  <grid id="grid_scalar" description="0D scalar (global)">
+    <scalar scalar_ref="scalar_global"/>
+  </grid>
+
+  <!-- 2D grids -->
+  <grid id="grid_2d_nod"  description="2D grid on FESOM nodes">
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_2d_elem" description="2D grid on FESOM elements">
+    <domain domain_ref="elements"/>
+  </grid>
+
+  <!-- 2D regridded surface grids (regular lat/lon via XIOS interpolation) -->
+  <grid id="grid_2d_nod_reg"  description="2D regridded surface grid from FESOM nodes">
+    <domain domain_ref="nodes_reg"/>
+  </grid>
+  <grid id="grid_2d_elem_reg" description="2D regridded surface grid from FESOM elements">
+    <domain domain_ref="elements_reg"/>
+  </grid>
+
+  <!-- 3D grids (cell-centred vertical axis).
+       Axis-first composition to match Fortran send buffer shape (nz, nn). -->
+  <grid id="grid_3d_nod"  description="3D grid on FESOM nodes">
+    <axis   axis_ref="nz"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_3d_elem" description="3D grid on FESOM elements">
+    <axis   axis_ref="nz"/>
+    <domain domain_ref="elements"/>
+  </grid>
+
+  <!-- 3D grids (interface / w-grid vertical axis, nl levels) -->
+  <grid id="grid_3d_nod_nz1"  description="3D grid on FESOM nodes, w/interface levels">
+    <axis   axis_ref="nz1"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_3d_elem_nz1" description="3D grid on FESOM elements, w/interface levels">
+    <axis   axis_ref="nz1"/>
+    <domain domain_ref="elements"/>
+  </grid>
+
+  <!-- dMOC density-coordinate grids (std_dens_N density classes) -->
+  <grid id="grid_rho_nod"  description="density-class grid on FESOM nodes">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="nodes"/>
+  </grid>
+  <grid id="grid_rho_elem" description="density-class grid on FESOM elements">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="elements"/>
+  </grid>
+
+  <!-- 3D regridded grids (regular lat/lon × native vertical).
+       Used by fesom_1mo_reg_3d in file_def, gated by fesom.regrid_3d_output. -->
+  <grid id="grid_3d_nod_reg"      description="3D regridded grid on FESOM nodes (cell-center vertical)">
+    <axis   axis_ref="nz"/>
+    <domain domain_ref="nodes_reg"/>
+  </grid>
+  <grid id="grid_3d_elem_reg"     description="3D regridded grid on FESOM elements (cell-center vertical)">
+    <axis   axis_ref="nz"/>
+    <domain domain_ref="elements_reg"/>
+  </grid>
+  <grid id="grid_3d_nod_reg_nz1"  description="3D regridded grid on FESOM nodes (interface vertical)">
+    <axis   axis_ref="nz1"/>
+    <domain domain_ref="nodes_reg"/>
+  </grid>
+  <grid id="grid_3d_elem_reg_nz1" description="3D regridded grid on FESOM elements (interface vertical)">
+    <axis   axis_ref="nz1"/>
+    <domain domain_ref="elements_reg"/>
+  </grid>
+  <grid id="grid_rho_nod_reg"     description="density-class regridded grid on FESOM nodes">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="nodes_reg"/>
+  </grid>
+  <grid id="grid_rho_elem_reg"    description="density-class regridded grid on FESOM elements">
+    <axis   axis_ref="std_dens"/>
+    <domain domain_ref="elements_reg"/>
+  </grid>
+
+</grid_definition>

@@ -1,0 +1,59 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "v3.4.0"
+    account: "bb1469"
+    compute_time: "00:20:00"
+    initial_date: "1850-01-01"
+    final_date: "1850-01-04"
+    base_dir: "/work/bb1469/${user}/runtime/${general.setup_name}-${general.version}/" 
+    nday: 1
+    nmonth: 0
+    nyear: 0
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${user}/model_codes/${general.setup_name}-${general.version}/"
+
+fesom:
+    resolution: "CORE2"
+    time_step: 1800
+    nproc: 1152
+    omp_num_threads: 1
+    lresume: false
+    restart_rate: 1
+    restart_unit: "d"
+    restart_first: 1
+
+lpj_guess:
+    mip: cmip7
+    scenario: piControl
+    nproc: 64
+    omp_num_threads: 4
+    lresume: false
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 1
+    mip: cmip7
+    scenario: piControl
+    lresume: false
+
+oasis3mct:
+    use_lucia: false
+    lresume: false
+    time_step: 3600
+
+xios:
+    with_model: oifs
+    nproc: 8
+    omp_num_threads: 32

@@ -177,7 +177,151 @@ def parse_shargs():
         action="store_true",
     )
 
+    parser.add_argument(
+        "--coupling-chain",
+        help="concurrent iterative coupling: setup_name of the model chain this "
+        "invocation drives (one esm_runscripts chain per model)",
+        default=None,
+        dest="coupling_chain",
+    )
+
     return parser.parse_args()
+
+
+def _fan_out_coupling_chains(parsed_args):
+    """--coupling-chain all: chain doctor. Launch every model chain of the
+    concurrent-coupling driver that is not already in the batch queue. Cold
+    start, crash recovery and post-outage restart are all this one command."""
+    import subprocess
+
+    import yaml
+
+    # runscripts carry esm-tools tags (!ENV ...) that SafeLoader rejects; we only
+    # need the modelN setup_names, so resolve unknown tags to their raw value
+    class _TolerantLoader(yaml.SafeLoader):
+        pass
+
+    def _keep_raw(loader, tag_suffix, node):
+        if isinstance(node, yaml.ScalarNode):
+            return loader.construct_scalar(node)
+        if isinstance(node, yaml.SequenceNode):
+            return loader.construct_sequence(node)
+        return loader.construct_mapping(node)
+
+    _TolerantLoader.add_multi_constructor("", _keep_raw)
+
+    with open(os.path.realpath(parsed_args["runscript"])) as fid:
+        driver = yaml.load(fid, Loader=_TolerantLoader)
+    chains, index = [], 1
+    while f"model{index}" in driver:
+        chains.append(driver[f"model{index}"]["setup_name"])
+        index += 1
+    if not chains:
+        user_error(
+            "Concurrent iterative coupling",
+            f"--coupling-chain all needs an iterative-coupling driver runscript "
+            f"with model1/model2 blocks; ``{parsed_args['runscript']}`` has none.",
+        )
+
+    expid = parsed_args["expid"]
+    try:
+        # active states only: a COMPLETING/CANCELLED job still shows in squeue and
+        # would make the guard skip a chain that is actually gone
+        queued = subprocess.check_output(
+            ["squeue", "-h", "-u", os.environ.get("USER", ""),
+             "-t", "PENDING,RUNNING,CONFIGURING,SUSPENDED", "-o", "%j"],
+            stderr=subprocess.DEVNULL,
+        ).decode()
+        queued_names = set(queued.split())
+    except (OSError, subprocess.CalledProcessError):
+        queued_names = set()
+        logger.warning("chain doctor: squeue not available -- launching without guard")
+
+    base_command, skip_next = [], False
+    for arg in sys.argv:
+        if skip_next:
+            skip_next = False
+            continue
+        if arg == "--coupling-chain":
+            skip_next = True
+            continue
+        if arg.startswith("--coupling-chain="):
+            continue
+        base_command.append(arg)
+
+    for chain in chains:
+        if f"{expid}_{chain}" in queued_names or f"{expid}_{chain}_launch" in queued_names:
+            logger.info(f"chain doctor: {chain} already in the queue -- skipping")
+            continue
+        logger.info(f"chain doctor: launching chain {chain}")
+        _launch_coupling_chain(base_command, chain, expid, driver)
+    sys.exit(0)
+
+
+def _launch_coupling_chain(base_command, chain, expid, driver):
+    """Start one chain's esm_runscripts.
+
+    A chain launch runs newrun/couple_in/prepcompute IN-PROCESS, and those
+    coupling steps execute real binaries (dEBM, fesom_meshpart, OASIS weight
+    regen). On a login node the site watchdog kills them, so unless we are
+    already inside an allocation the launch goes through a small batch job.
+    """
+    import shlex
+    import subprocess
+    import tempfile
+
+    # Run from the driver runscript's OWN directory and pass it by basename, so the
+    # per-model `runscript:` basenames (awiesm3_dyn_ocean_core3.yaml, spinup_pismPI.yaml)
+    # resolve the same way a serial run launched from that directory does. Otherwise the
+    # launch job's CWD (wherever the doctor was invoked) is used and they are not found.
+    cmd = list(base_command); rs_dir = os.getcwd()
+    for i, a in enumerate(cmd):
+        if a.endswith((".yaml", ".yml")) and os.path.exists(a):
+            full = os.path.realpath(a); rs_dir = os.path.dirname(full); cmd[i] = os.path.basename(full); break
+    cmd += ["--coupling-chain", chain]
+    command = " ".join(shlex.quote(a) for a in cmd)
+
+    if os.environ.get("SLURM_JOB_ID"):
+        logger.info("  (inside an allocation -- running inline)")
+        subprocess.call(cmd, cwd=rs_dir)
+        return
+
+    general = driver.get("general", {})
+    account = general.get("account", "")
+    # exclusive node: couple_in runs dEBM + heavy cdo, which OOM on a shared core
+    partition = general.get("coupling_launcher_partition", "compute")
+    walltime = general.get("coupling_launcher_time", "00:30:00")
+    logfile = os.path.join(rs_dir, f"{expid}_{chain}_launch_%j.log")
+
+    script = (
+        "#!/bin/bash -l\n"
+        f"#SBATCH --job-name={expid}_{chain}_launch\n"
+        + (f"#SBATCH --account={account}\n" if account else "")
+        + f"#SBATCH --partition={partition}\n"
+        "#SBATCH --nodes=1\n"
+        "#SBATCH --exclusive\n"
+        f"#SBATCH --time={walltime}\n"
+        f"#SBATCH --output={logfile}\n"
+        f"cd {shlex.quote(rs_dir)}\n"
+        f"{command}\n"
+    )
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=f"_{expid}_{chain}.sbatch", delete=False
+    ) as fid:
+        fid.write(script)
+        sbatch_file = fid.name
+
+    try:
+        out = subprocess.check_output(
+            ["sbatch", "--export=ALL", sbatch_file], stderr=subprocess.STDOUT
+        ).decode().strip()
+        logger.info(f"  {out} (launcher job; chain log -> {logfile})")
+    except (OSError, subprocess.CalledProcessError) as error:
+        logger.warning(
+            f"  sbatch unavailable/failed ({error}); running inline -- note that "
+            f"coupling binaries may be killed on a login node"
+        )
+        subprocess.call(cmd, cwd=rs_dir)
 
 
 def main():
@@ -221,6 +365,9 @@ def main():
             f"The runscript ``{ARGS.runscript}`` does not exists in folder ``{runscript_dir}``. ",
             dsymbols=["``", "'"],
         )
+
+    if parsed_args.get("coupling_chain") == "all":
+        _fan_out_coupling_chains(parsed_args)
 
     # this might contain the relative path but it will be taken care of later
     command_line_config["original_command"] = original_command.strip()

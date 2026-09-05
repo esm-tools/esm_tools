@@ -1,0 +1,452 @@
+HYDRA_LAUNCHER_EXTRA_ARGS=--external-launcher
+SPACK_USER_CONFIG_PATH=/home/a/a270122/.config/spack
+LC_ALL=en_US.UTF-8
+SLURM_MEM_PER_CPU=940
+LS_COLORS=rs=0:di=38;5;33:ln=38;5;51:mh=00:pi=40;38;5;11:so=38;5;13:do=38;5;5:bd=48;5;232;38;5;11:cd=48;5;232;38;5;3:or=48;5;232;38;5;9:mi=01;05;37;41:su=48;5;196;38;5;15:sg=48;5;11;38;5;16:ca=48;5;196;38;5;226:tw=48;5;10;38;5;16:ow=48;5;10;38;5;21:st=48;5;21;38;5;15:ex=38;5;40:*.tar=38;5;9:*.tgz=38;5;9:*.arc=38;5;9:*.arj=38;5;9:*.taz=38;5;9:*.lha=38;5;9:*.lz4=38;5;9:*.lzh=38;5;9:*.lzma=38;5;9:*.tlz=38;5;9:*.txz=38;5;9:*.tzo=38;5;9:*.t7z=38;5;9:*.zip=38;5;9:*.z=38;5;9:*.dz=38;5;9:*.gz=38;5;9:*.lrz=38;5;9:*.lz=38;5;9:*.lzo=38;5;9:*.xz=38;5;9:*.zst=38;5;9:*.tzst=38;5;9:*.bz2=38;5;9:*.bz=38;5;9:*.tbz=38;5;9:*.tbz2=38;5;9:*.tz=38;5;9:*.deb=38;5;9:*.rpm=38;5;9:*.jar=38;5;9:*.war=38;5;9:*.ear=38;5;9:*.sar=38;5;9:*.rar=38;5;9:*.alz=38;5;9:*.ace=38;5;9:*.zoo=38;5;9:*.cpio=38;5;9:*.7z=38;5;9:*.rz=38;5;9:*.cab=38;5;9:*.wim=38;5;9:*.swm=38;5;9:*.dwm=38;5;9:*.esd=38;5;9:*.jpg=38;5;13:*.jpeg=38;5;13:*.mjpg=38;5;13:*.mjpeg=38;5;13:*.gif=38;5;13:*.bmp=38;5;13:*.pbm=38;5;13:*.pgm=38;5;13:*.ppm=38;5;13:*.tga=38;5;13:*.xbm=38;5;13:*.xpm=38;5;13:*.tif=38;5;13:*.tiff=38;5;13:*.png=38;5;13:*.svg=38;5;13:*.svgz=38;5;13:*.mng=38;5;13:*.pcx=38;5;13:*.mov=38;5;13:*.mpg=38;5;13:*.mpeg=38;5;13:*.m2v=38;5;13:*.mkv=38;5;13:*.webm=38;5;13:*.ogm=38;5;13:*.mp4=38;5;13:*.m4v=38;5;13:*.mp4v=38;5;13:*.vob=38;5;13:*.qt=38;5;13:*.nuv=38;5;13:*.wmv=38;5;13:*.asf=38;5;13:*.rm=38;5;13:*.rmvb=38;5;13:*.flc=38;5;13:*.avi=38;5;13:*.fli=38;5;13:*.flv=38;5;13:*.gl=38;5;13:*.dl=38;5;13:*.xcf=38;5;13:*.xwd=38;5;13:*.yuv=38;5;13:*.cgm=38;5;13:*.emf=38;5;13:*.ogv=38;5;13:*.ogx=38;5;13:*.aac=38;5;45:*.au=38;5;45:*.flac=38;5;45:*.m4a=38;5;45:*.mid=38;5;45:*.midi=38;5;45:*.mka=38;5;45:*.mp3=38;5;45:*.mpc=38;5;45:*.ogg=38;5;45:*.ra=38;5;45:*.wav=38;5;45:*.oga=38;5;45:*.opus=38;5;45:*.spx=38;5;45:*.xspf=38;5;45:
+LD_LIBRARY_PATH=/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/gsl-2.7-5ou4yk/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib:/sw/spack-levante/intel-oneapi-mpi-2021.5.0-mrcss7/mpi/2021.5.0/libfabric/lib:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib::/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50020101-50021231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50030101-50031231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50030101-50031231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50030101-50031231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50040101-50041231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50040101-50041231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50040101-50041231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50050101-50051231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50050101-50051231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50050101-50051231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50060101-50061231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50060101-50061231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50060101-50061231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50070101-50071231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50070101-50071231/work//lib/fesom/:/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50070101-50071231/work//lib/fesom/
+SLURM_SPANK_DISABLE_MONITORING=0
+UCX_TLS=mm,knem,cma,dc_mlx5,dc_x,self
+DEBM_BETA=10
+END_DAY_echam=31
+TCLLIBPATH=/sw/spack-levante/tk-8.6.11-baa4wx/lib
+UDUNITS2_ROOT=/sw/spack-levante/udunits-2.2.28-da6pla/
+SLURM_NODEID=0
+SLURM_TASK_PID=276504
+PISM_TO_ATMOSPHERE=1
+FPGA_VARS_ARGS=
+MESH_DIR_fesom=/work/ba0989/a270124/PalModII/experiments/ICEBERGS/mesh_core2/
+SSH_CONNECTION=134.1.1.80 4142 136.172.124.3 22
+SPACK_PYTHON=/usr/bin/python3
+INCLUDE=/sw/spack-levante/hdf5-1.12.1-tvymb5/include:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/include:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include:/sw/spack-levante/openmpi-4.1.2-yfwe6t/include
+OASIS_NETCDF=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu
+SLURM_PRIO_PROCESS=0
+ICE_TO_ECHAM=0
+I_MPI_PMI_LIBRARY=/usr/lib64/libpmi2.so
+OCL_ICD_FILENAMES=libintelocl_emu.so:libalteracl.so:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/lib/x64/libintelocl.so
+COUPLE_DIR=/work/ab0246/a270122/lars_and_paul/experiments/test_env/couple/
+MODULES_RUN_QUARANTINE=LD_LIBRARY_PATH LD_PRELOAD
+ZLIBROOT=/usr
+I_MPI_HYDRA_BOOTSTRAP_EXEC_EXTRA_ARGS=--external-launcher
+LANG=en_US.UTF-8
+IPFS_GATEWAY=http://136.172.60.151:8080
+SLURM_SUBMIT_DIR=/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_pism_10000500101-10000591231/scripts
+HISTCONTROL=ignoredups
+HOSING_FILE_LANDICE_LOSS=/work/ab0246/a270122/lars_and_paul/experiments/test_env/couple/
+OMPI_MCA_plm_slurm_args=--external-launcher
+I_MPI_PMI=pmi2
+OMPI_MCA_io=romio321
+DISPLAY=localhost:32.0
+ICE_TO_FESOM=0
+HOSTNAME=l20195
+OASIS_NETCDFF=/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
+DATA_DIR_echam=/work/ab0246/a270122/lars_and_paul/experiments/test_env/outdata/echam/
+CURRENT_YEAR_pism=1000050
+OLDPWD=/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_pism_10000500101-10000591231/scripts
+POOL_DIR_jsbach=/pool/data
+CELL_AREA_FESOM_FILE=fesom.mesh.diag.nc
+C_INCLUDE_PATH=/sw/spack-levante/hdf5-1.12.1-tvymb5/include:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/include:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include:/sw/spack-levante/openmpi-4.1.2-yfwe6t/include
+HDF5_ROOT=/sw/spack-levante/hdf5-1.12.1-tvymb5
+EDITOR=vim
+MACHINE=levante
+ENVIRONMENT=BATCH
+GPG_TTY=/dev/pts/268
+PATH_modshare=/sw/spack-workplace/spack/bin:1:/usr/bin:1:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/bin:1:/usr/local/bin:1:/usr/share/Modules/bin:1:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/bin/intel64:1:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/bin:1:/sw/spack-levante/nco-5.0.6-3xkdth/bin:1:/home/a/a270122/.local/scripts:1:/sw/bin:1:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/bin/intel64:1:/sw/spack-levante/git-2.31.1-25ve7r/bin:1:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/bin:1:/sw/spack-levante/cdo-2.0.5-5fascj/bin:1:/usr/sbin:1:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/lib/oclfpga/bin:1:/sw/spack-levante/hdf5-1.12.1-tvymb5/bin:1:/sw/spack-levante/git-lfs-2.11.0-oihcwo/bin:1:/home/a/a270122/.local/bin:1:/usr/local/sbin:1:/sw/spack-levante/openmpi-4.1.2-yfwe6t/bin:1
+ACL_BOARD_VENDOR_PATH=/opt/Intel/OpenCLFPGA/oneAPI/Boards
+LOADEDMODULES_modshare=hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0:1:git/2.31.1-gcc-11.2.0:1:nco/5.0.6-gcc-11.2.0:1:intel-oneapi-compilers/2022.0.1-gcc-11.2.0:1:netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0:1:netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0:1:openmpi/4.1.2-intel-2021.5.0:1:cdo/2.0.5-gcc-11.2.0:1:intel-oneapi-mkl/2022.0.1-gcc-11.2.0:1
+FORCING_DIR_jsbach=/work/ab0246/a270122/lars_and_paul/experiments/test_env/input/jsbach/
+OMPI_MCA_osc=pt2pt
+D0_pism=01
+SLURM_PROCID=0
+SLURM_JOB_GID=1153
+NETCDF_Fortran_INCLUDE_DIRECTORIES=/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/include
+I_MPI_HYDRA_BOOTSTRAP=slurm
+ENVIRONMENT_SET_BY_ESMTOOLS=TRUE
+MY_OBLIQUITY=23.441
+LAPACK_LIB=-mkl=sequential
+PKG_CONFIG_PATH_modshare=/sw/spack-levante/openmpi-4.1.2-yfwe6t/lib/pkgconfig:1:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib/pkgconfig:1:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/lib/pkgconfig:1:/sw/spack-levante/hdf5-1.12.1-tvymb5/lib/pkgconfig:1:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib/pkgconfig:1:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/pkgconfig:1
+CHUNK_END_YEAR_pism=1000059
+SLURMD_NODENAME=l20195
+C_INCLUDE_PATH_modshare=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include:1:/sw/spack-levante/hdf5-1.12.1-tvymb5/include:1:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/include:1:/sw/spack-levante/openmpi-4.1.2-yfwe6t/include:1
+NETCDF_C_INCLUDE_DIRECTORIES=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include
+iterative_coupling_atmosphere_pism_ablation_method=DEBM
+SLURM_JOB_END_TIME=1768253279
+MULTI_YEAR_MEAN_SMB=1
+SLURM_TASKS_PER_NODE=128
+CPLUS_INCLUDE_PATH_modshare=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include:1:/sw/spack-levante/hdf5-1.12.1-tvymb5/include:1:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/include:1:/sw/spack-levante/openmpi-4.1.2-yfwe6t/include:1
+S_COLORS=auto
+PRTE_MCA_plm_slurm_args=--external-launcher
+which_declare=declare -f
+DOWNSCALE_TEMP=1
+REDUCE_TEMP=0
+ECHAM_TO_ICE=1
+CC=mpicc
+KMP_LIBRARY=turnaround
+MPIF90=/sw/spack-levante/openmpi-4.1.2-yfwe6t/bin/mpif90
+last_year_in_chunk_restart=/work/ab0246/a270122/lars_and_paul/experiments/test_env/restart/pism/test_env_pismr_restart_10000500101-10000591231.nc
+PROJ_LIB=/sw/spack-levante/proj-8.1.0-i6a6ah/share/proj
+FUNCTION_PATH=/work/ab0246/a270122/lars_and_paul/esm_tools/couplings//pism
+XDG_SESSION_ID=119567
+CHUNK_START_YEAR_pism=1000040
+MODULES_CMD=/usr/share/Modules/libexec/modulecmd.tcl
+ISM_TO_ECHAM_update_land_runoff=1
+USER=a270122
+SLURM_NNODES=1
+INCLUDE_modshare=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include:1:/sw/spack-levante/hdf5-1.12.1-tvymb5/include:1:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/include:1:/sw/spack-levante/openmpi-4.1.2-yfwe6t/include:1
+FPGA_VARS_DIR=/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/lib/oclfpga
+ICEBERG_DIR=
+CMPLR_ROOT=/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1
+UCX_IB_ADDR_TYPE=ib_global
+POOL_DIR_echam=/pool/data
+ISM_TO_ECHAM_update_orography=1
+fesom_use_iceberg=0
+SLURM_SPANK_DKRZ_EPILOG=1
+SLURM_NTASKS_PER_CORE=1
+NLSPATH_modshare=/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/compiler/lib/intel64_lin/locale/%l_%t/%N:1:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64/locale/%l_%t/%N:1
+OCL_ICD_FILENAMES_modshare=libintelocl_emu.so:1:libalteracl.so:1:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/lib/x64/libintelocl.so:1
+MPICXX=/sw/spack-levante/openmpi-4.1.2-yfwe6t/bin/mpic++
+SLURM_JOB_START_TIME=1768250879
+PYFESOM_PATH=/pf/a/a270124/pyfesom2/
+MKL_THREADING_LAYER=INTEL
+ECHAM_GLACIAL_THRESHOLD=0.5
+INPUT_FILE_pism=/work/ab0246/a270122/lars_and_paul/experiments/test_env/restart/pism/test_env_pismr_restart_10000400101-10000491231.nc
+NETCDFFROOT=/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g
+PSMPIFLAGS=-lrt -lm -ldl
+OUTPUT_DIR_pism=/work/ab0246/a270122/lars_and_paul/experiments/test_env/outdata/pism/
+oro_update_var=oromea
+RESTART_DIR_jsbach=/work/ab0246/a270122/lars_and_paul/experiments/test_env/restart/jsbach/
+PWD=/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_pism_10000500101-10000591231/work
+CHUNK_START_DATE_pism=1000040-01-01T00:00:00
+SPACK_USER_CACHE_PATH=/home/a/a270122/.spack
+SLURM_JOB_NODELIST=l20195
+MODULES_LMCONFLICT_modshare=openmpi/4.1.2-intel-2021.5.0&openmpi:1:netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0&netcdf-fortran:1:hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0&hdf5:1:git/2.31.1-gcc-11.2.0&git:1:cdo/2.0.5-gcc-11.2.0&cdo:1:nco/5.0.6-gcc-11.2.0&nco:1:intel-oneapi-compilers/2022.0.1-gcc-11.2.0&intel-oneapi-compilers:1:intel-oneapi-mkl/2022.0.1-gcc-11.2.0&intel-oneapi-mkl:1:netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0&netcdf-c:1
+HOME=/home/a/a270122
+SLURM_CLUSTER_NAME=levante
+LC_CTYPE=en_US.UTF-8
+NETCDFROOT=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu
+SLURM_NODELIST=l20195
+SSH_CLIENT=134.1.1.80 4142 22
+INTELFPGAOCLSDKROOT=/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/lib/oclfpga
+SLURM_NTASKS=128
+YR0_pism=1000050
+WORK=/work/ab0246/a270122
+RUN_NUMBER_pism=6
+F77=mpif90
+END_MONTH_pism=12
+oro_update_mod=5
+PISM_TO_OCEAN=0
+SLURM_JOB_CPUS_PER_NODE=256
+MESH_ROTATED_fesom=False
+SPINUP_FILE_pism=/work/ab0246/a270122/lars_and_paul/experiments/HDL2/restart/pism/HDL2_pismr_restart_1000101-1001231.nc
+TEMP2_BIAS_FILE=None
+SLURM_TOPOLOGY_ADDR=isw10008.isw20105.isw20101.l20195
+_LMFILES__modshare=/sw/spack-levante/spack/modules/openmpi/4.1.2-intel-2021.5.0:1:/sw/spack-levante/spack/modules/cdo/2.0.5-gcc-11.2.0:1:/sw/spack-levante/spack/modules/intel-oneapi-mkl/2022.0.1-gcc-11.2.0:1:/sw/spack-levante/spack/modules/hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0:1:/sw/spack-levante/spack/modules/git/2.31.1-gcc-11.2.0:1:/sw/spack-levante/spack/modules/nco/5.0.6-gcc-11.2.0:1:/sw/spack-levante/spack/modules/intel-oneapi-compilers/2022.0.1-gcc-11.2.0:1:/sw/spack-levante/spack/modules/netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0:1:/sw/spack-levante/spack/modules/netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0:1
+DEBM_EXE=/home/a/a270124/model_codes/dEBM/Fortran/dEBMmain
+OASIS3MCT_FC_LIB=-L/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib -lnetcdff
+MODULES_LMALTNAME=intel-oneapi-compilers/2022.0.1-gcc-11.2.0&intel-oneapi-compilers/default&intel-oneapi-compilers
+NLSPATH=/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/intel64/locale/%l_%t/%N:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/compiler/lib/intel64_lin/locale/%l_%t/%N
+account_all_fw_input=1
+FESOM_PLATFORM_STRATEGY=levante.dkrz.de
+IO_LIB_ROOT=/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0
+SLURM_JOB_NAME=test_env
+TMPDIR=/tmp
+iter_coup_regrid_method_ice2oce=INTERPOLATE
+USE_YMONMEAN=0
+ECHAM_ALBEDO_ON_GLACIERS=0.7
+INIT_DIR_echam=/work/ab0246/a270122/lars_and_paul/experiments/test_env/input/echam/
+SLURM_JOBID=21962374
+SLURM_CONF=/var/spool/slurmd/conf-cache/slurm.conf
+EX_INT=monthly
+LOADEDMODULES=git/2.31.1-gcc-11.2.0:cdo/2.0.5-gcc-11.2.0:nco/5.0.6-gcc-11.2.0:intel-oneapi-compilers/2022.0.1-gcc-11.2.0:intel-oneapi-mkl/2022.0.1-gcc-11.2.0:openmpi/4.1.2-intel-2021.5.0:netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0:netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0:hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0
+CHUNK_END_DATE_fesom=5007-12-31T00:00:00
+FI_PROVIDER=mlx
+DOWNSCALING_LAPSE_RATE=-0.005
+FC=mpif90
+NETCDF_CXX_INCLUDE_DIRECTORIES=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include
+EXP_ID=test_env
+SLURM_SPANK_LUSTRE_REDUCE_READAHEAD=0
+END_DAY_pism=31
+MPICC=mpicc
+SLURM_JOB_QOS=normal
+I_MPI_FABRICS=shm:ofi
+SLURM_TOPOLOGY_ADDR_PATTERN=switch.switch.switch.node
+ATMOSPHERE_TO_PISM=0
+SSH_TTY=/dev/pts/268
+OMPI_MCA_pml=ucx
+MODULES_LMCONFLICT=git/2.31.1-gcc-11.2.0&git:cdo/2.0.5-gcc-11.2.0&cdo:nco/5.0.6-gcc-11.2.0&nco:intel-oneapi-compilers/2022.0.1-gcc-11.2.0&intel-oneapi-compilers:intel-oneapi-mkl/2022.0.1-gcc-11.2.0&intel-oneapi-mkl:openmpi/4.1.2-intel-2021.5.0&openmpi:netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0&netcdf-c:netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0&netcdf-fortran:hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0&hdf5
+MAIL=/var/spool/mail/a270122
+TCLLIBPATH_modshare=/sw/spack-levante/tk-8.6.11-baa4wx/lib:1
+DATA_DIR_fesom=/work/ab0246/a270122/lars_and_paul/experiments/test_env/outdata/fesom/
+DOWNSCALE_PRECIP=0
+MPIFC=mpif90
+SLURM_CPUS_ON_NODE=256
+CXX=mpicxx
+I_MPI_OFI_PROVIDER=mlx
+SLURM_JOB_NUM_NODES=1
+ACL_BOARD_VENDOR_PATH_modshare=/opt/Intel/OpenCLFPGA/oneAPI/Boards:1
+OMPI_MCA_coll=^ml
+END_MONTH_echam=12
+HDF5ROOT=/sw/spack-levante/hdf5-1.12.1-tvymb5
+SPACK_ROOT=/sw/spack-workplace/spack
+TERM=xterm-256color
+SHELL=/bin/bash
+CHUNK_START_DATE_fesom=5006-01-01T00:00:00
+CHUNK_END_DATE_echam=5007-12-31T00:00:00
+UCX_UNIFIED_MODE=y
+SLURM_JOB_UID=24979
+LM_LICENSE_FILE=28518@crest-int.dkrz.de:28518@crest-ml.dkrz.de:1700@crest-idl.dkrz.de:27000@crest-pgi.dkrz.de
+MANPATH_modshare=/sw/spack-levante/openmpi-4.1.2-yfwe6t/share/man:1::3:/sw/spack-levante/nco-5.0.6-3xkdth/share/man:1:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/share/man:1:/sw/spack-levante/git-2.31.1-25ve7r/share/man:1:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/share/man:1:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/documentation/en/man/common:1
+SLURM_JOB_PARTITION=compute
+MODULES_LMALTNAME_modshare=intel-oneapi-compilers/2022.0.1-gcc-11.2.0&intel-oneapi-compilers/default&intel-oneapi-compilers:1
+HCOLL_MAIN_IB=mlx5_0:1
+RES_echam=T63
+M0_pism=01
+CHUNK_END_DATE_pism=1000059-12-31T00:00:00
+FFTW_ROOT=/sw/spack-levante/fftw-3.3.10-lnogal/
+PERL5LIB=/usr/lib64/perl5
+DOMAIN_pism=greenland
+VERSION_pism=1.2
+CHUNK_SIZE_pism_standalone=20
+POOL_DIR_pism=/work/ba1066/a270124/pool_pism/
+HCOLL_ENABLE_MCAST_ALL=1
+UCX_NET_DEVICES=mlx5_0:1
+MPIROOT=/sw/spack-levante/openmpi-4.1.2-yfwe6t
+SLURM_JOB_USER=a270122
+SLURM_NPROCS=128
+SHLVL=47
+KMP_AFFINITY=granularity=fine,scatter
+SLURM_SUBMIT_HOST=l10739.lvt.dkrz.de
+MPIF77=/sw/spack-levante/openmpi-4.1.2-yfwe6t/bin/mpif77
+OCEAN_TO_PISM=0
+SLURM_JOB_ACCOUNT=ab0246
+EXE_pism=pismr
+ECCODESROOT=/work/ab0246/HPC_libraries/intel-oneapi-compilers/2022.0.1-gcc-11.2.0/openmpi/4.1.2-intel-2021.5.0
+orog_reference_pism=1
+HOSING_CORRECTION=1
+MANPATH=/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/share/man:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/share/man:/sw/spack-levante/openmpi-4.1.2-yfwe6t/share/man:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/documentation/en/man/common:/sw/spack-levante/nco-5.0.6-3xkdth/share/man:/sw/spack-levante/git-2.31.1-25ve7r/share/man:
+END_YEAR_pism=1000059
+OMPI_MCA_coll_hcoll_enable=1
+first_year_in_chunk_input=/work/ab0246/a270122/lars_and_paul/experiments/test_env/input/pism//test_env_pismr_input_10000400101-10000491231.nc
+HYDRA_BOOTSTRAP=slurm
+NETCDF_CXX_LIBRARIES=/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib
+MODULEPATH=/sw/spack-levante/spack/modules:/sw/spack-levante/spack/modules-experimental
+GDK_BACKEND=x11
+RESTART_DIR_echam=/work/ab0246/a270122/lars_and_paul/experiments/test_env/restart/echam/
+SLURM_GTIDS=0
+CHUNK_START_DATE_echam=5006-01-01T00:00:00
+LOGNAME=a270122
+DBUS_SESSION_BUS_ADDRESS=unix:abstract=/tmp/dbus-PoB9ADoMK4,guid=eebe19323b9c26a0e6218d426964ed13
+XDG_RUNTIME_DIR=/run/user/24979
+CPLUS_INCLUDE_PATH=/sw/spack-levante/hdf5-1.12.1-tvymb5/include:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/include:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/include:/sw/spack-levante/openmpi-4.1.2-yfwe6t/include
+MKLROOT=/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1
+MODULEPATH_modshare=/sw/spack-levante/spack/modules-experimental:1:/sw/spack-levante/spack/modules:1
+NYEAR=10
+FESOM_TO_ICE=0
+END_YEAR_echam=5007
+PATH=/sw/spack-levante/hdf5-1.12.1-tvymb5/bin:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/bin:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/bin:/sw/spack-levante/openmpi-4.1.2-yfwe6t/bin:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/bin/intel64:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/lib/oclfpga/bin:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/bin/intel64:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/bin:/sw/spack-levante/nco-5.0.6-3xkdth/bin:/sw/spack-levante/cdo-2.0.5-5fascj/bin:/sw/spack-levante/git-lfs-2.11.0-oihcwo/bin:/sw/spack-levante/git-2.31.1-25ve7r/bin:/home/a/a270122/.local/scripts:/home/a/a270122/.local/bin:/sw/bin:/sw/spack-workplace/spack/bin:/usr/share/Modules/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
+SLURM_JOB_ID=21962374
+_LMFILES_=/sw/spack-levante/spack/modules/git/2.31.1-gcc-11.2.0:/sw/spack-levante/spack/modules/cdo/2.0.5-gcc-11.2.0:/sw/spack-levante/spack/modules/nco/5.0.6-gcc-11.2.0:/sw/spack-levante/spack/modules/intel-oneapi-compilers/2022.0.1-gcc-11.2.0:/sw/spack-levante/spack/modules/intel-oneapi-mkl/2022.0.1-gcc-11.2.0:/sw/spack-levante/spack/modules/openmpi/4.1.2-intel-2021.5.0:/sw/spack-levante/spack/modules/netcdf-c/4.8.1-openmpi-4.1.2-intel-2021.5.0:/sw/spack-levante/spack/modules/netcdf-fortran/4.5.3-openmpi-4.1.2-intel-2021.5.0:/sw/spack-levante/spack/modules/hdf5/1.12.1-openmpi-4.1.2-intel-2021.5.0
+HDF5_C_INCLUDE_DIRECTORIES=/sw/spack-levante/hdf5-1.12.1-tvymb5/include
+REDUCE_TEMP_BY=1
+CPU_MODEL=AMD_EPYC_ZEN3
+MODULESHOME=/usr/share/Modules
+PKG_CONFIG_PATH=/sw/spack-levante/hdf5-1.12.1-tvymb5/lib/pkgconfig:/sw/spack-levante/netcdf-fortran-4.5.3-k6xq5g/lib/pkgconfig:/sw/spack-levante/netcdf-c-4.8.1-2k3cmu/lib/pkgconfig:/sw/spack-levante/openmpi-4.1.2-yfwe6t/lib/pkgconfig:/sw/spack-levante/intel-oneapi-mkl-2022.0.1-ttdktf/mkl/2022.0.1/lib/pkgconfig:/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/lib/pkgconfig
+PETSC_DIR=/sw/spack-levante/petsc-3.16.2-oorrxp/
+RES_pism=5km
+HISTSIZE=1000
+ECHAM_TO_ISM_multiyear_mean=0
+iterative_coupling_atmosphere_pism_regrid_method=DOWNSCALE
+number_of_years_for_forcing=2
+MPI_LIB=   -L/sw/spack-levante/openmpi-4.1.2-yfwe6t/lib -L/sw/spack-levante/ucx-1.12.0-nlas56/lib -L/sw/spack-levante/libevent-2.1.8-mjzu6s/lib -L/sw/spack-levante/pmix-3.2.1-xut2g3/lib -L/usr/lib64 -Wl,-rpath,/sw/spack-levante/intel-oneapi-compilers-2022.0.1-an2cbq/compiler/2022.0.1/linux/compiler/lib/intel64_lin -Wl,-rpath -Wl,/sw/spack-levante/openmpi-4.1.2-yfwe6t/lib -Wl,-rpath -Wl,/sw/spack-levante/ucx-1.12.0-nlas56/lib -Wl,-rpath -Wl,/sw/spack-levante/libevent-2.1.8-mjzu6s/lib -Wl,-rpath -Wl,/sw/spack-levante/pmix-3.2.1-xut2g3/lib -Wl,-rpath -Wl,/usr/lib64 -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi
+PROJ_ROOT=/sw/spack-levante/proj-5.2.0-w7auht/
+WORK_DIR=/work/ab0246/a270122/lars_and_paul/experiments/test_env/run_awiesm_50070101-50071231/work/
+SLURM_OOM_KILL_STEP=0
+iter_coup_interact_method_ice2oce=BASALSHELF_WATER_ICEBERG_MODEL
+SLURM_LOCALID=0
+MIN_MON_SELECT=1
+MESH_PATH_FESOM=/work/ba0989/a270124/PalModII/experiments/ICEBERGS/mesh_core2/
+CRITICAL_THK_FOR_MASK_pism=5
+LESSOPEN=||/usr/bin/lesspipe.sh %s
+ISM_TO_ECHAM_update_glacial_mask=1
+OMPI_MCA_btl=self
+BASH_FUNC_which%%=() {  ( alias;
+ eval ${which_declare} ) | /usr/bin/which --tty-only --read-alias --read-functions --show-tilde --show-dot $@
+}
+BASH_FUNC_module%%=() {  _module_raw "$@" 2>&1
+}
+BASH_FUNC_spack%%=() {  : this is a shell function from: /sw/spack-workplace/spack/share/spack/setup-env.sh;
+ : the real spack script is here: /sw/spack-workplace/spack/bin/spack;
+ _spack_shell_wrapper "$@";
+ return $?
+}
+BASH_FUNC__module_raw%%=() {  unset _mlshdbg;
+ if [ "${MODULES_SILENT_SHELL_DEBUG:-0}" = '1' ]; then
+ case "$-" in 
+ *v*x*)
+ set +vx;
+ _mlshdbg='vx'
+ ;;
+ *v*)
+ set +v;
+ _mlshdbg='v'
+ ;;
+ *x*)
+ set +x;
+ _mlshdbg='x'
+ ;;
+ *)
+ _mlshdbg=''
+ ;;
+ esac;
+ fi;
+ unset _mlre _mlIFS;
+ if [ -n "${IFS+x}" ]; then
+ _mlIFS=$IFS;
+ fi;
+ IFS=' ';
+ for _mlv in ${MODULES_RUN_QUARANTINE:-};
+ do
+ if [ "${_mlv}" = "${_mlv##*[!A-Za-z0-9_]}" -a "${_mlv}" = "${_mlv#[0-9]}" ]; then
+ if [ -n "`eval 'echo ${'$_mlv'+x}'`" ]; then
+ _mlre="${_mlre:-}${_mlv}_modquar='`eval 'echo ${'$_mlv'}'`' ";
+ fi;
+ _mlrv="MODULES_RUNENV_${_mlv}";
+ _mlre="${_mlre:-}${_mlv}='`eval 'echo ${'$_mlrv':-}'`' ";
+ fi;
+ done;
+ if [ -n "${_mlre:-}" ]; then
+ eval `eval ${_mlre} /usr/bin/tclsh /usr/share/Modules/libexec/modulecmd.tcl bash '"$@"'`;
+ else
+ eval `/usr/bin/tclsh /usr/share/Modules/libexec/modulecmd.tcl bash "$@"`;
+ fi;
+ _mlstatus=$?;
+ if [ -n "${_mlIFS+x}" ]; then
+ IFS=$_mlIFS;
+ else
+ unset IFS;
+ fi;
+ unset _mlre _mlv _mlrv _mlIFS;
+ if [ -n "${_mlshdbg:-}" ]; then
+ set -$_mlshdbg;
+ fi;
+ unset _mlshdbg;
+ return $_mlstatus
+}
+BASH_FUNC__spack_shell_wrapper%%=() {  for var in LD_LIBRARY_PATH DYLD_LIBRARY_PATH DYLD_FALLBACK_LIBRARY_PATH;
+ do
+ eval "if [ -n \"\${${var}-}\" ]; then export SPACK_$var=\${${var}}; fi";
+ done;
+ if [ -n "${ZSH_VERSION:-}" ]; then
+ emulate -L sh;
+ fi;
+ _sp_flags="";
+ while [ ! -z ${1+x} ] && [ "${1#-}" != "${1}" ]; do
+ _sp_flags="$_sp_flags $1";
+ shift;
+ done;
+ if [ -n "$_sp_flags" ] && [ "${_sp_flags#*h}" != "${_sp_flags}" ] || [ "${_sp_flags#*V}" != "${_sp_flags}" ]; then
+ command spack $_sp_flags "$@";
+ return;
+ fi;
+ _sp_subcommand="";
+ if [ ! -z ${1+x} ]; then
+ _sp_subcommand="$1";
+ shift;
+ fi;
+ case $_sp_subcommand in 
+ "cd")
+ _sp_arg="";
+ if [ -n "$1" ]; then
+ _sp_arg="$1";
+ shift;
+ fi;
+ if [ "$_sp_arg" = "-h" ] || [ "$_sp_arg" = "--help" ]; then
+ command spack cd -h;
+ else
+ LOC="$(spack location $_sp_arg "$@")";
+ if [ -d "$LOC" ]; then
+ cd "$LOC";
+ else
+ return 1;
+ fi;
+ fi;
+ return
+ ;;
+ "env")
+ _sp_arg="";
+ if [ -n "$1" ]; then
+ _sp_arg="$1";
+ shift;
+ fi;
+ if [ "$_sp_arg" = "-h" ] || [ "$_sp_arg" = "--help" ]; then
+ command spack env -h;
+ else
+ case $_sp_arg in 
+ activate)
+ _a=" $@";
+ if [ -z ${1+x} ] || [ "${_a#* --sh}" != "$_a" ] || [ "${_a#* --csh}" != "$_a" ] || [ "${_a#* -h}" != "$_a" ] || [ "${_a#* --help}" != "$_a" ]; then
+ command spack env activate "$@";
+ else
+ stdout="$(command spack $_sp_flags env activate --sh "$@")" || return;
+ eval "$stdout";
+ fi
+ ;;
+ deactivate)
+ _a=" $@";
+ if [ "${_a#* --sh}" != "$_a" ] || [ "${_a#* --csh}" != "$_a" ]; then
+ command spack env deactivate "$@";
+ else
+ if [ -n "$*" ]; then
+ command spack env deactivate -h;
+ else
+ stdout="$(command spack $_sp_flags env deactivate --sh)" || return;
+ eval "$stdout";
+ fi;
+ fi
+ ;;
+ *)
+ command spack env $_sp_arg "$@"
+ ;;
+ esac;
+ fi;
+ return
+ ;;
+ "load" | "unload")
+ _a=" $@";
+ if [ "${_a#* --sh}" != "$_a" ] || [ "${_a#* --csh}" != "$_a" ] || [ "${_a#* -h}" != "$_a" ] || [ "${_a#* --list}" != "$_a" ] || [ "${_a#* --help}" != "$_a" ]; then
+ command spack $_sp_flags $_sp_subcommand "$@";
+ else
+ stdout="$(command spack $_sp_flags $_sp_subcommand --sh "$@")" || return;
+ eval "$stdout";
+ fi
+ ;;
+ *)
+ command spack $_sp_flags $_sp_subcommand "$@"
+ ;;
+ esac
+}
+BASH_FUNC_switchml%%=() {  typeset swfound=1;
+ if [ "${MODULES_USE_COMPAT_VERSION:-0}" = '1' ]; then
+ typeset swname='main';
+ if [ -e /usr/share/Modules/libexec/modulecmd.tcl ]; then
+ typeset swfound=0;
+ unset MODULES_USE_COMPAT_VERSION;
+ fi;
+ else
+ typeset swname='compatibility';
+ if [ -e /usr/share/Modules/libexec/modulecmd-compat ]; then
+ typeset swfound=0;
+ MODULES_USE_COMPAT_VERSION=1;
+ export MODULES_USE_COMPAT_VERSION;
+ fi;
+ fi;
+ if [ $swfound -eq 0 ]; then
+ echo "Switching to Modules $swname version";
+ source /usr/share/Modules/init/bash;
+ else
+ echo "Cannot switch to Modules $swname version, command not found";
+ return 1;
+ fi
+}
+BASH_FUNC_ml%%=() {  module ml "$@"
+}
+_=/usr/bin/env

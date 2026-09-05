@@ -431,6 +431,12 @@ function iterative_coupling_pism_regrid_add_xy_array {
     else
         # This is the standard case: generate both float and double files, just in case something strange happens
 	INITIAL_FILE_pism=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    if [[ -f ${COUPLE_DIR}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc ]]
+    then
+	    INITIAL_FILE_pism=${COUPLE_DIR}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    else
+	    INITIAL_FILE_pism=${POOL_DIR_pism}/grids/${DOMAIN_pism}/pismr_${DOMAIN_pism}_${RES_pism}_xy.nc
+    fi
 	PISM_GRID_xy_file_double=${PISM_GRID_xy_file_double:-xy_file_double.$(basename ${INITIAL_FILE_pism})}
 	PISM_GRID_xy_file_float=${PISM_GRID_xy_file_float:-xy_file_float.$(basename ${INITIAL_FILE_pism})}
 	pism_helpers_create_xy_axis ${INITIAL_FILE_pism} ${PISM_GRID_xy_file_double} ${PISM_GRID_xy_file_float}
@@ -444,4 +450,40 @@ function iterative_coupling_pism_regrid_add_xy_array {
 	ncks -A -v x,y $PISM_GRID_XY_FILE $_file_name_add_xy
 
     unset _file_name_add_xy _model
+}
+
+
+# --- concurrent-coupling markers (coupling_mode: concurrent) -----------------
+# Producer chains publish "<model>_chunk_<N>.done" in COUPLE_DIR after all
+# cross-chain products of cycle N are staged; consumer chains require the
+# sibling's N-1 marker. The long wait is event-driven (Python park/revive);
+# require_coupling_marker is only a short belt-and-braces guard.
+
+function touch_coupling_marker {
+    # usage: touch_coupling_marker <marker-path>
+    _tcm_tmp="$1.tmp.$$"
+    { date -u +%Y-%m-%dT%H:%M:%SZ; hostname; echo "job ${SLURM_JOB_ID:-none}"; \
+      echo "${EXP_ID:-}"; } > "${_tcm_tmp}"
+    mv "${_tcm_tmp}" "$1"
+    echo " *   coupling marker: $(basename $1)"
+    unset _tcm_tmp
+}
+
+function require_coupling_marker {
+    # usage: require_coupling_marker <marker-path> [timeout_s=300] [poll_s=10]
+    _rcm_left=${2:-300}
+    while [ ! -f "$1" ]; do
+        if [ ${_rcm_left} -le 0 ]; then
+            echo " *** missing coupling marker $1 ***"
+            if [ -n "${COUPLE_DIR:-}" ]; then
+                echo "missing coupling marker $1" \
+                    > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+            fi
+            exit 1
+        fi
+        echo " *   waiting for coupling marker $(basename $1) (${_rcm_left}s left)"
+        sleep ${3:-10}
+        _rcm_left=$(( _rcm_left - ${3:-10} ))
+    done
+    unset _rcm_left
 }

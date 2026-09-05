@@ -156,6 +156,13 @@ fesom:
                     whichEVP: 0
                     alpha_evp: 250          # constant that control numerical stability of mEVP.
                     beta_evp: 250           # constant that control numerical stability of mEVP.
+            CORE3:
+                    nx: 211567
+                    mesh_dir: "${fesom.mesh_base_dir}/core3/"
+                    nproc: 128
+                    whichEVP: 1
+                    alpha_evp: 300          # constant that control numerical stability of mEVP.
+                    beta_evp: 300           # constant that control numerical stability of mEVP.
             pi:
                     nx: 3140
                     mesh_dir: "${fesom.mesh_base_dir}/pi/"
@@ -207,6 +214,11 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 500          # constant that control numerical stability of mEVP.
                     beta_evp: 500           # constant that control numerical stability of mEVP.
+            DARS2:
+                    nx: 3146761
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
             ROS2:
                     nx: 26306560
                     whichEVP: 1
@@ -222,6 +234,22 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 900          # constant that control numerical stability of mEVP.
                     beta_evp: 900           # constant that control numerical stability of mEVP.
+            jack:
+                    nx: 30041537
+                    whichEVP: 1
+                    alpha_evp: 900          # constant that control numerical stability of mEVP.
+                    beta_evp: 900           # constant that control numerical stability of mEVP.
+            palk:
+                    nx: 1724005
+                    whichEVP: 1
+                    alpha_evp: 500          # constant that control numerical stability of mEVP.
+                    beta_evp: 500           # constant that control numerical stability of mEVP.
+            next:
+                    nx: 12952215
+                    whichEVP: 1
+                    alpha_evp: 800          # constant that control numerical stability of mEVP.
+                    beta_evp: 800           # constant that control numerical stability of mEVP.
+
             SO3:
                     nx: 11087062
                     whichEVP: 1
@@ -607,7 +635,7 @@ fesom:
             config:         config
             cvmix:          cvmix
             dyn:            dyn
-            nml_forcing:    nml_forcing
+            forcing_nml:    forcing_nml
             ice:            ice
             icepack:        icepack
             io:             io
@@ -619,7 +647,7 @@ fesom:
             config:        "${namelist_dir}/namelist.config"
             cvmix:         "${namelist_dir}/namelist.cvmix"
             dyn:           "${namelist_dir}/namelist.dyn"
-            nml_forcing:   "${namelist_dir}/namelist.forcing"
+            forcing_nml:   "${namelist_dir}/namelist.forcing"
             ice:           "${namelist_dir}/namelist.ice"
             icepack:       "${namelist_dir}/namelist.icepack"
             io:            "${namelist_dir}/namelist.io"
@@ -631,7 +659,7 @@ fesom:
             config:        "namelist.config"
             cvmix:         "namelist.cvmix"
             dyn:           "namelist.dyn"
-            nml_forcing:   "namelist.forcing"
+            forcing_nml:   "namelist.forcing"
             ice:           "namelist.ice"
             icepack:       "namelist.icepack"
             io:            "namelist.io"
@@ -651,6 +679,8 @@ fesom:
             u_feom:
                     grid: feom
             v_feom:
+                    grid: feom
+            FCO2_feom:
                     grid: feom
             taux_oce:
                     grid: feom
@@ -683,6 +713,8 @@ fesom:
             u10w_oce:
                     grid: feom
             v10w_oce:
+                    grid: feom
+            XCO2_oce:
                     grid: feom
 
 

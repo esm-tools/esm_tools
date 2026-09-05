@@ -142,13 +142,39 @@ def maybe_resubmit(config):
         config = _increment_date_and_run_number(config)
         config = _write_date_file(config)
 
+        concurrent = (
+            config["general"].get("coupling_mode", "serial") == "concurrent"
+        )
+        if concurrent:
+            # NOTE(PG-style non-top-level import: avoid circular dependency)
+            from . import concurrent_coupling
+
+            # our couple_out just wrote this leg's marker: revive a parked
+            # sibling before anything else (even if we are done ourselves)
+            concurrent_coupling.revive_parked_sibling(config)
+
         if end_of_experiment(config):
+            if concurrent:
+                # each chain ends independently; falling through would restart
+                # this chain past its final_date
+                logger.info(
+                    "Concurrent coupling: this chain reached final_date; the "
+                    "sibling chain finishes independently."
+                )
+                return config
             if config["general"].get("iterative_coupling", False):
                 if end_of_experiment_all_models(config):
                     return config
             else:
                 # config = chunky_parts._update_chunk_date_file(config)
                 return config
+
+        if concurrent and concurrent_coupling.park_if_needed(
+            config, config["general"]["next_chunk_number"]
+        ):
+            # sibling marker for our next chunk is missing: chain parked (pure
+            # disk state); the sibling's leg end revives us
+            return config
 
         cluster = config["general"]["workflow"]["first_task_in_queue"]
         nextrun = resubmit_recursively(

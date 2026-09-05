@@ -74,10 +74,45 @@
 ##      1. PDD: Prepares files/flags for the positive degree day scheme
 ##      2. DEBM: Prepares files/flags for the diurnal energy balance model (see here: REF to Uta)
 ##      3. EBM: Prepares files/flags for the SEMIC energy balance model (see here: REF Mario)
+# --- couple_timer: per-step profiling timer (see coupling_fesom2ice.functions) ---
+if ! command -v couple_timer >/dev/null 2>&1 ; then
+    couple_timer() {
+        _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+        _ct_stamp=$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="${_ct_stamp}" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+        else
+            # First mark: there is no previous section to time, but stamp it anyway.
+            # Without this, any time spent BEFORE instrumentation starts (esm_tools
+            # internals, file staging) is invisible -- the absolute stamps let you
+            # line the [TIMER] lines up against the job's own start/end.
+            awk -v t="${_ct_stamp}" -v l="$1" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9s\n", t, "(instrumentation starts: " l ")", "--" }'
+        fi
+        COUPLE_TIMER_LAST="${_ct_now}"
+        COUPLE_TIMER_LABEL="$1"
+    }
+    # couple_timer_end: stamp the LAST section, which otherwise never prints (its
+    # duration is only emitted by the *next* mark, and at the end of a function
+    # there isn't one). Call it right before a coupling function returns.
+    couple_timer_end() {
+        if [ -n "${COUPLE_TIMER_LAST:-}" ] ; then
+            _ct_now=$(date +%s.%N 2>/dev/null) || _ct_now=$(date +%s)
+            awk -v a="${COUPLE_TIMER_LAST}" -v b="${_ct_now}" -v l="${COUPLE_TIMER_LABEL:-start}" \
+                -v t="$(date +'%Y-%m-%dT%H:%M:%S' 2>/dev/null)" \
+                'BEGIN{ printf "     [TIMER] %s %-50s %9.2f s\n", t, l, (b-a) }'
+            unset COUPLE_TIMER_LAST COUPLE_TIMER_LABEL
+        fi
+    }
+fi
+
 atmosphere2pism() {
+    couple_timer "atmosphere2pism: setup+receive"
     echo -e "\t\t=================================================================="
     echo -e "\t\t*** S T A R T I N G    atmosphere2pism *** "; echo
-    
+
     . ${FUNCTION_PATH}/../general/general_lists.functions
     . ${FUNCTION_PATH}/../general/general_helpers.functions
     . ${FUNCTION_PATH}/../general/coupling_general.functions
@@ -604,6 +639,7 @@ ic_atm2pism_regrid_dyn_downscale_transmissivity() {
 ##
 ## After regridding, all files matching variable names in `cdo vardes atmosphere_file_for_ice` are added to the `cleanup_list`
 ic_atm2pism_regrid_downscale_split_names() {
+        couple_timer "atmosphere2pism: regrid+downscale (split_names)"
         echo; echo "                *   spliting names and regridding via ${INTERPOL_TYPE_ATM}"
 
         # Umbau wegen dieser Fehlermeldungen
@@ -1354,6 +1390,7 @@ ic_atm2pism_ablation_pdd_set_options_atmo_given() {
 ## @brief
 ## Prepares a forcing file for the Fortran implementation of the dEBM mass balance model
 ic_atm2debm_ablation_debm_make_forcing() {
+        couple_timer "atmosphere2pism: dEBM prepare forcing file"
         echo; echo -e "\t\t* Preparing forcing file from atmosphere_file_for_ice.nc for the dEBM Mass Balance Model"
         ic_atm2debm_ablation_debm_make_forcing_set_temperature_units
         ic_atm2debm_ablation_debm_make_forcing_set_temperature_below_firn_units
@@ -1378,6 +1415,7 @@ ic_atm2debm_ablation_debm_make_forcing() {
 ## 2) Downloads dEBM code and create dEBM execute binary file; this only do for the first time step
 ## 3) Run the Fortran version of the dEBM
 ic_atm2debm_ablation_debm_run() {
+        couple_timer "atmosphere2pism: dEBM run (compile+execute)"
         echo; echo -e "\t\t* Running dEBM Model"
         ic_atm2debm_ablation_debm_run_modify_nml
         ic_atm2debm_ablation_debm_run_compile_binary
@@ -1691,18 +1729,13 @@ mapping_varname='thk'
 longitude_varname='lon'
 latitude_varname='lat'
 time_varname='time'
-hydmth_str = 10      ! the beginning of the hydrological year, also start month for snow height integration
-                  ! October for Northern Hemisphere
-                  ! April Southern Hemisphere
 stddev=3.5        ! constant standard deviation
 obliquity=${obliquity_value}
-beta_nml=${DEBM_BETA}
-cloud_bias=0.155  ! cloud bias
-Ans    = .845     ! Albedo for new snow
-Ads    = .73      ! Albedo for dry snow
-Aws    = .55      ! Albedo for wet snow
-tau_cs = .75      ! expected clear sky transmissivity
-residual    = 0        ! residual heat flux (e.g. due to flux into the ice sheet
+! NOTE: hydmth_str/beta_nml/cloud_bias/Ans/Ads/Aws/tau_cs/residual removed -
+! the dEBM Fortran-v1.0 binary does not define these in its &debm namelist and
+! aborts with forrtl severe(19) on the first one (hydmth_str). Restore them when
+! a newer dEBM (supporting these params) is built. v1.0 uses its internal
+! defaults for albedo / clear-sky transmissivity / hydrological-year start.
 /
 EOF
 fi

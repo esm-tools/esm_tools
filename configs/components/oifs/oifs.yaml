@@ -1,10 +1,14 @@
 #
 #OIFS standalone YAML FILE
 #
+#general:     # missing when doing esm_master get-oifs-48r1
+#  with_co2_oce_coupling: false
+#  with_co2_veg_coupling: false
+#
 oifs:
     model: oifs
     executable: oifs
-    execution_command: ${executable} -e ${oifs.input_expid}
+    execution_command: ${executable} -v ecmwf -e ${oifs.input_expid}
     version: 43r3
     major_version: 43r3
     source_code_permissions: 700
@@ -52,10 +56,8 @@ oifs:
     namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/
     cmip5_data_dir: ${input_dir}/../cmip5_data
     cmip6_data_dir: ${input_dir}/../cmip6_data
-    cmip7_data_dir: ${input_dir}/../cmip7_data
     cmip5_data_dir_nml: ${cmip5_data_dir}
     cmip6_data_dir_nml: ${cmip6_data_dir}
-    cmip7_data_dir_nml: ${cmip7_data_dir}
     restart_dir: ""
     in_date_folder: "${parent_date!syear!smonth!sday}"
     out_date_folder: "${end_date!syear!smonth!sday}"
@@ -114,6 +116,9 @@ oifs:
     - 43r3-v1
     - 43r3-v2
     - 48r1
+    - 48r1v1
+    - 48r1v2
+    - 48r1v4
     - 48r1-foci5
 
     choose_version:
@@ -122,13 +127,13 @@ oifs:
         major_version: 40r1
       "40r1-agcm":
         compile_command: export OIFS_COMP=agcm; cd make; ../fcm/bin/fcm make -v -j8 -f
-          oifs-agcm.cfg;  chmod -R ${source_code_permissions} .; git config core.fileMode false
+          oifs-agcm.cfg;  nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false
         requires:
         - oasis3mct-4.0
         major_version: 40r1
       40r1-foci:
         branch: foci_conserv
-        comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg ; chmod -R ${source_code_permissions} .; git config core.fileMode false
+        comp_command: cd make; ../fcm/bin/fcm make -v -j24 -f oifs.cfg ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false
         destination: 40r1
         contact: "swahl(at)geomar.de"
         requires:
@@ -139,7 +144,7 @@ oifs:
         - oasis3mct-5.0-smhi
         branch: main_dkrz
         executable: OpenIFS
-        comp_command: "export OIFS_CPLNG_LIB=$OIFS_OASIS_LIB; export OIFS_CPLNG_INCLUDE=$OIFS_OASIS_INCLUDE ;export OIFS_COMP=esm; export OIFS_BUILD=opt; export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable; export OIFS_CPLNG=enable; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j10 -f oifs_esm.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/OpenIFS"
+        comp_command: "export OIFS_CPLNG_LIB=$OIFS_OASIS_LIB; export OIFS_CPLNG_INCLUDE=$OIFS_OASIS_INCLUDE ;export OIFS_COMP=esm; export OIFS_BUILD=opt; export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable; export OIFS_CPLNG=enable; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j10 -f oifs_esm.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/OpenIFS"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3-ece
         install_bins: make/esm/oifs/bin/OpenIFS
         destination: oifs-43r3
@@ -150,7 +155,7 @@ oifs:
         - oasis3mct-4.0-awicm-3.0
         branch: awicm3-frontiers-freeze-candidate-1
         comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-          -v -j8 -f oifs.cfg ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+          -v -j8 -f oifs.cfg ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -160,7 +165,7 @@ oifs:
         requires:
         - oasis3mct-4.0-awicm-3.1
         branch: awicm-3.1
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -170,7 +175,7 @@ oifs:
         requires:
         - oasis3mct-4.0-awicm-3.1
         branch: awicm-3.1.1
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -180,7 +185,7 @@ oifs:
         requires:
         - oasis3mct-4.0-awicm-3.1
         branch: awicm-3.1.2
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -190,7 +195,7 @@ oifs:
         requires:
         - oasis3mct-4.0-awicm-3.1
         branch: awicm-3.1.3
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -200,7 +205,7 @@ oifs:
         requires:
         - oasis3mct-4.0-awicm-3.2
         branch: awicm-3.2
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -212,7 +217,7 @@ oifs:
         add_include_models:
         - oasis3mct
         branch: awicm-3.2
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -222,7 +227,7 @@ oifs:
         requires:
         - oasis3mct-4.0-awicm-3.2
         branch: awicm-3.2.4
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -232,7 +237,7 @@ oifs:
         requires:
         - oasis3mct-4.0-awicm-frontiers
         branch: awicm-3-frontiers-xios
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         destination: oifs-43r3
@@ -241,7 +246,7 @@ oifs:
       43r3:
         branch: oifs-deck
         comp_command: export OIFS_TOPLEVEL_DIR=${model_dir}; cd make; ../fcm/bin/fcm make
-          -v -j8 -f oifs.cfg ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
+          -v -j8 -f oifs.cfg ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
         install_bins: make/esm/oifs/bin/oifs
         with_xios: false
@@ -249,7 +254,7 @@ oifs:
       43r3-foci:
         branch: 43r3v1-foci
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         install_bins: make/esm/oifs/bin/oifs
         requires:
         - oasis3mct-4.0
@@ -259,7 +264,7 @@ oifs:
       43r3-foci21:
         branch: master
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         install_bins: make/esm/oifs/bin/oifs
         requires:
         - oasis3mct-EM21
@@ -269,7 +274,7 @@ oifs:
       43r3-foci211:
         branch: foci211
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         install_bins: make/esm/oifs/bin/oifs
         requires:
         - oasis3mct-EM21
@@ -279,7 +284,7 @@ oifs:
       43r3-foci22:
         branch: foci22
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} . ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         install_bins: make/esm/oifs/bin/oifs
         requires:
         - oasis3mct-EM21
@@ -289,7 +294,7 @@ oifs:
       43r3-foci30:
         branch: foci22
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} . ; git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false ; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         install_bins: make/esm/oifs/bin/oifs
         requires:
         - oasis3mct-5.0-geomar
@@ -310,7 +315,7 @@ oifs:
       43r3-v1:
         branch: 43r3v1-foci
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         install_bins: make/esm/oifs/bin/oifs
         add_include_models:
         - oasis3mct
@@ -321,7 +326,7 @@ oifs:
       43r3-v2:
         branch: master
         git-repository: https://gitlab.dkrz.de/ec-earth/oifs-43r3.git
-        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
+        comp_command: "export OIFS_TOPLEVEL_DIR=${model_dir}; export OIFS_XIOS=enable ; export OIFS_XIOS_DIR=${model_dir}/../xios ; export OIFS_XIOS_INCLUDE=-I/${model_dir}/../xios/inc/ ; cd make; ../fcm/bin/fcm make -v -j8 -f oifs.fcm ; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv esm/oifs/bin/master.exe esm/oifs/bin/oifs"
         install_bins: make/esm/oifs/bin/oifs
         add_include_models:
         - oasis3mct
@@ -331,10 +336,41 @@ oifs:
         major_version: 43r3
       48r1:
         branch: 'main'
-        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS
-        git-repository: https://git.smhi.se/ec-earth/vendor/openifs/oifs48r1
+        git-repository:  https://git.smhi.se/jan.streffing/oifs48r1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+      48r1v5:
+        # interim develop* stopgap: coupled-slab + land-ice + co2, until ec-earth merges to main
+        branch: 'movcav-landice+co2-concdriven'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository:  https://git.smhi.se/jan.streffing/oifs48r1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+      48r1v1:
+        branch: '48r1v1'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
+        install_bins: install/bin/OpenIFS
+        destination: oifs-48r1
+        with_xios: false
+        major_version: 48r1
+      48r1v2:
+        branch: '48r1v3' # Hotfix while we wait on the real fix, which will then before version 48r1v3
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+        clean_command: rm -rf build install
+        executable: OpenIFS
+        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
         install_bins: install/bin/OpenIFS
         destination: oifs-48r1
         with_xios: false
@@ -343,7 +379,7 @@ oifs:
         requires:
         - oasis3mct-5.0-geomar
         - xios-2.5_r2777
-        branch: dev/agrif-coupling 
+        branch: dev/agrif-coupling
         comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --with-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.DP install/bin/OpenIFS"
         clean_command: rm -rf build install
         git-repository: https://git.geomar.de/foci/src/oifs48r1.git
@@ -352,12 +388,12 @@ oifs:
         destination: oifs-48r1
         with_xios: false
         major_version: 48r1
-      48r1_lpjg_branch:
-        branch: '73997159375996b6f2ec9013ce1dbe8a67ba772e'
-        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; chmod -R ${source_code_permissions} .; git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+      48r1v4:
+        branch: '48r1v4'
+        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --openifs-only --without-double-precision --install; nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
         clean_command: rm -rf build install
         executable: OpenIFS
-        git-repository: https://git.smhi.se/sager/oifs48r1
+        git-repository: https://git.smhi.se/jan.streffing/oifs48r1.git
         install_bins: install/bin/OpenIFS
         destination: oifs-48r1
         with_xios: false
@@ -374,7 +410,11 @@ oifs:
     nlev: ${levels_number}
     prepifs_expid: gu5a
     prepifs_startdate: 19820101
-    mip: "cmip5"
+    mip: "cmip7"
+    # Opt-in switch: when true, route OIFS XIOS file_def/field_def to the
+    # CMIP7 CMOR-style j2 templates. Independent of `mip:` (which drives
+    # CMIP7 *forcings*). Default off: cmip7 forcings but default OIFS output.
+    cmip7_cmor_output: false
     o3_scheme: "default"
     scenario: "amip-prepifs"
     output: "default"
@@ -415,9 +455,25 @@ oifs:
     perturb: 0
     ensemble_id: 1
 
+    # Global orbit default (historical): module OFF -> IFS-native present-day,
+    # date-driven orbit. Kept for reproducibility of awicm3 v3.0-v3.2.x + frontiers.
     orb_switch: False
     orb_mode: "variable_year"
     orb_iyear: ${start_date!syear}
+
+    # awicm3 v3.3.0/v3.3.1 (43r3): switch to a real, fixed 1850 orbit
+    # (piControl-correct, stationary). v3.4+/48r1 are handled in
+    # choose_major_version:48r1. Keyed on the setup version (general.version),
+    # not oifs.version (which is plain "43r3" for all these).
+    choose_general.version:
+            v3.3.0:
+                    orb_switch: True
+                    orb_mode: "fixed_year"
+                    orb_iyear: 1850
+            v3.3.1:
+                    orb_switch: True
+                    orb_mode: "fixed_year"
+                    orb_iyear: 1850
 
     restart: 1
 
@@ -848,6 +904,7 @@ oifs:
             # XIOS output
             oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
             atm: atm_*
+            atmos: atmos_*
 
     outdata_sources:
             # old grib based output
@@ -858,6 +915,7 @@ oifs:
             # XIOS output
             oifsnc: ${input_expid}_*_${start_date!syear!smonth!sday}_*.nc
             atm: atm_*
+            atmos: atmos_*
 
 
     #======================================================================================
@@ -882,6 +940,7 @@ oifs:
                     outdata_files:
                             oifsnc: oifsnc
                             atm: atm
+                            atmos: atmos
             0:
                     outdata_files:
                             ICMGG: ICMGG
@@ -1006,7 +1065,7 @@ oifs:
                                             YI_NL%LMASSFIX: ".true."
                                             YL_NL%LMASSFIX: ".true."
                                             YQ_NL%LMASSFIX: ".true."
-            3: #DestinE 48r1 settings
+            3: 
                     add_namelist_changes:
                             fort.4:
                                     NAMDYN:
@@ -1030,8 +1089,19 @@ oifs:
                                             YR_NL%LINTLIN: ".true."
                                             YS_NL%BETAMFBC: -1
                                             YS_NL%LINTLIN: ".true."
+                                            YS_NL%LMASSFIX: ".true."
+                                            YR_NL%LMASSFIX: ".true."
+                                            YI_NL%LMASSFIX: ".true."
+                                            YL_NL%LMASSFIX: ".true."
+                                            YQ_NL%LMASSFIX: ".true."
+                                            # Humidity (q) mass fixer must use the proportional
+                                            # scheme like YI/YL/YR/YS above. The default additive
+                                            # fixer (BETAMFBC=2) overflows and segfaults in cnt4.
+                                            # Affects all OIFS-48r1 setups (massfixer: 3).
+                                            YQ_NL%BETAMFBC: -1
+
             4: #foci5-48r1 settings to avoid duplicate namelist settings
-                # TODO: YR_NL%BETAMFBC = -1 is duplicated if it exists in template namelist fort.4 
+                # TODO: YR_NL%BETAMFBC = -1 is duplicated if it exists in template namelist fort.4
                     add_namelist_changes:
                             fort.4:
                                     NAMDYN:
@@ -1136,12 +1206,24 @@ oifs:
                     o3_scheme: none
                     cloudfixer: none
                     massfixer: 3
+                    # prog_oifs.sh / script_oifs.sh are covered by the
+                    # framework-wide prog_*.sh / script_*.sh globs in
+                    # filelists.py:check_for_unknown_files.
                     ignore_files:
                             drhook: drhook
+                            meminfo: meminfo
+                            ece_gridlist: ece_gridlist
+                            gstats: gstats
                     ignore_in_work:
                             drhook: drhook*
+                            meminfo: "meminfo.txt"
+                            ece_gridlist: "ece_gridlist_*.txt"
+                            gstats: "gstats.xml"
                     ignore_sources:
                             drhook: drhook*
+                            meminfo: "meminfo.txt"
+                            ece_gridlist: "ece_gridlist_*.txt"
+                            gstats: "gstats.xml"
                     icmcl_dir: ${input_dir}/climate.v020/${res_number_tl}/
                     icmcl_file: ICMCLawi3INIT
                     append_icmcl: ""
@@ -1149,6 +1231,12 @@ oifs:
                             ICMCL_INIT: ICMCL_INIT
                     tl_o3_data_dir: "${pool_dir}/../climate.v020/"
                     wam_namelist_dir: "${prepifs_dir}/ecmwf"
+                    # v3.4+/48r1 orbit default: a real 1850 orbit held fixed
+                    # (piControl-correct, stationary; no leap/date-driven drift).
+                    # Transient/paleo runscripts override NAMORB (or these vars).
+                    orb_switch: True
+                    orb_mode: "fixed_year"
+                    orb_iyear: 1850
                     add_namelist_changes:
                             fort.4:
                                     NAMRES:
@@ -1165,7 +1253,12 @@ oifs:
                                             CNMEXP: "${oifs.input_expid}"
                                     NAMPPC:
                                             LRSACC: ".true." # reset accumulation of fluxes
+                                    NAMORB:
+                                            LCORBMD: "${orb_switch}"
+                                            ORBMODE: "${orb_mode}"
+                                            ORBIY: "${orb_iyear}"
                     further_reading:
+                            - oifs/oifs48.tuning.yaml
                             - oifs/oifs48.env.yaml
                             - oifs/oifs48.cmip.yaml
 
@@ -1378,7 +1471,13 @@ oifs:
     # OUTPUT CONFIG
     #======================================================================================
 
-    output_step_freq: $(( 3600 / ${time_step} * 6 ))
+    output_step_freq: $(( 3600 / ${time_step} * 6 ))   # default; overridden by choose_mip/choose_output below (restored for older awicm3 runscripts)
+
+    choose_mip:
+            "cmip7":
+                    output_step_freq: $(( 3600 / ${time_step} * 1 ))
+            "*":
+                    output_step_freq: $(( 3600 / ${time_step} * 6 ))
     choose_output:
             "1hr":
                      output_step_freq: $(( 3600 / ${time_step} * 1 ))
@@ -1526,6 +1625,24 @@ oifs:
                     method: "${preprocess_method}"
                     type: shell
 
+    # CO2 coupling: entries for the NAMCOMPO_EMIS namelist group. NAMCOMPO_EMIS
+    # is a repeated Fortran namelist group (OpenIFS reads it in a loop until an
+    # empty occurrence is found), so it can't be expressed via namelist_changes
+    # (a YAML dict can't hold the same group name twice). Instead, the v3.4
+    # fort.4.j2 template (namelists/oifs/48r1/awicm3/v3.4/fort.4.j2) renders
+    # this list with a Jinja2 for loop, appending the mandatory empty
+    # terminator group itself whenever the list is non-empty.
+    namcompo_emis_entries: []
+    choose_general.with_co2_oce_coupling:
+            true:
+                    add_namcompo_emis_entries:
+                            - {species: "CO2_GHG", sector: "co2of", paramid: 210067, scaling: -1.0}
+    choose_general.with_co2_veg_coupling:
+            true:
+                    add_namcompo_emis_entries:
+                            - {species: "CO2_GHG", sector: "co2nbf", paramid: 210068, scaling: -1.0}
+                            - {species: "CO2_GHG", sector: "co2apf", paramid: 210069, scaling: -1.0}
+                            - {species: "CO2_GHG", sector: "co2fire", paramid: 210080, scaling: -1.0}
 
     #======================================================================================
     # POSTPROCESS

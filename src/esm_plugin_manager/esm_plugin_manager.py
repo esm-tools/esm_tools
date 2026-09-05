@@ -206,7 +206,28 @@ def install(package: str) -> None:
     -------
     None
     """
-    package_name = package.split("/")[-1].replace(".git", "")
+    # Derive the bare package name from a plain name or a pip/VCS URL, tolerating
+    # a trailing slash, a ".git" suffix and an "@<ref>" branch/tag specifier.
+    package_name = package.rstrip("/").split("/")[-1]
+    package_name = package_name.replace(".git", "").split("@")[0]
+
+    # If the package is already importable it is installed; don't re-run pip.
+    # Re-running pip on a git/VCS URL re-clones the repo (and its VCS deps, e.g.
+    # ocp-tool -> pyfesom2) on every call, which is slow. Plugins that register
+    # an "esm_tools.plugins" entry point are caught below; this also covers
+    # packages (like ocp-tool) that do not.
+    import importlib.util
+
+    module_name = package_name.replace("-", "_")
+    try:
+        already_importable = bool(module_name) and (
+            importlib.util.find_spec(module_name) is not None
+        )
+    except (ImportError, ValueError):
+        already_importable = False
+    if already_importable:
+        return
+
     installed_entry_points = find_installed_plugins()
     installed_plugins = []
     for entry_point in installed_entry_points:

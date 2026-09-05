@@ -27,6 +27,8 @@ The values come from the ``general.paleo`` config section (see
 
 from __future__ import annotations
 
+from typing import Optional
+
 import pystac
 from typing_extensions import TypedDict  # pydantic needs this flavor as a model field
 
@@ -59,7 +61,7 @@ class PaleoConfig(TypedDict, total=False):
 _KEYS = tuple(PaleoConfig.__annotations__)
 
 
-def _to_paleo_props(paleo_config: PaleoConfig | None) -> dict:
+def _to_paleo_props(paleo_config: Optional[PaleoConfig]) -> dict:
     """Return the ``paleo:*`` fields set by *paleo_config*.
 
     Parameters
@@ -78,7 +80,7 @@ def _to_paleo_props(paleo_config: PaleoConfig | None) -> dict:
 
 
 def add_paleo_item_extension(
-    item: pystac.Item, paleo_config: PaleoConfig | None = None
+    item: pystac.Item, paleo_config: Optional[PaleoConfig] = None
 ) -> None:
     """Set the ``paleo:*`` geological time on *item* from *paleo_config*.
 
@@ -99,7 +101,7 @@ def add_paleo_item_extension(
 
 
 def add_paleo_collection_extension(
-    collection: pystac.Collection, paleo_config: PaleoConfig | None = None
+    collection: pystac.Collection, paleo_config: Optional[PaleoConfig] = None
 ) -> None:
     """Summarize the ``paleo:*`` geological time on *collection* from *paleo_config*.
 

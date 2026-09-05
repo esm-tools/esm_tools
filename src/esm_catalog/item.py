@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
+from typing import Optional
 
 from pystac import Asset, Item, Link
 from upath import UPath
@@ -17,6 +18,10 @@ from esm_catalog.types import FileMetadata, Href
 
 ItemId = str
 """A STAC Item id, e.g. 'tas.echam.20000101.a1b2c3'."""
+
+FX_FREQUENCY = "fx"
+"""The ``properties.frequency`` value marking a time-invariant item (CMIP 'fx');
+the scan layer routes these to the mutable fx shard."""
 
 
 def make_item(
@@ -31,7 +36,7 @@ def make_item(
     path : Path or UPath or str
         Path to the source file (local Path, UPath, or URI string).
     file_metadata : FileMetadata
-        The file's scanned metadata (scan_netcdf/scan_grib output).
+        The file's scanned metadata (a Reader's output, e.g. NetCdfReader).
     exp_metadata : ExperimentMetadata
         Experiment identity and pre-scanned config (experiment_id, namelists,
         paleo config). Contacts are set on the Collection.
@@ -40,25 +45,44 @@ def make_item(
     -------
     pystac.Item
         A STAC Item for the file, with the datacube, namelist, and paleo
-        extensions applied where the metadata warrants them.
+        extensions applied where the metadata warrants them. A time-invariant
+        (fx) file, one with no per-file datetime, is placed across the
+        experiment's run span and marked ``frequency == "fx"``.
+
+    Raises
+    ------
+    ValueError
+        If the file has no per-file datetime and the experiment has no run span
+        (``run_start``/``run_end``) to place it across.
     """
     if isinstance(path, str):
         path = UPath(path if "://" in path else Path(path).resolve())
 
-    dt_start, dt_end, item_datetime = _build_datetime(file_metadata)
+    dt_start, dt_end, item_datetime, is_fx = _build_datetime(
+        file_metadata, exp_metadata
+    )
+    # A time-varying file stamps its id from its own datetime; a time-invariant
+    # (fx) file has none, so it borrows the experiment run span's start
+    # (dt_start, set to run_start by _build_datetime) -- the stamp is never
+    # guessed from the filename.
+    id_stamp = file_metadata.get("datetime_str") or dt_start.strftime("%Y%m")
     item_id = _build_id(
         file_metadata.get("variable", "unknown"),
         file_metadata.get("component", "unknown"),
-        file_metadata.get("datetime_str", "000000"),
+        id_stamp,
         path,
     )
+
+    properties = _build_properties(file_metadata, exp_metadata)
+    if is_fx:
+        properties["frequency"] = FX_FREQUENCY
 
     item = Item(
         id=item_id,
         geometry=file_metadata.get("geometry"),
         bbox=file_metadata.get("bbox"),
         datetime=item_datetime,
-        properties=_build_properties(file_metadata, exp_metadata),
+        properties=properties,
         start_datetime=dt_start,
         end_datetime=dt_end,
         assets={"data": _build_data_asset(path, file_metadata)},
@@ -130,8 +154,8 @@ def _build_properties(
         "component": file_metadata.get("component", "unknown"),
         "format": file_metadata.get("format", "unknown"),
     }
-    if file_metadata.get("output_frequency"):
-        properties["output_frequency"] = file_metadata["output_frequency"]
+    if file_metadata.get("frequency"):
+        properties["frequency"] = file_metadata["frequency"]
 
     variable_names = [
         variable["name"]
@@ -146,31 +170,61 @@ def _build_properties(
 
 def _build_datetime(
     file_metadata: FileMetadata,
-) -> tuple[datetime | None, datetime | None, datetime | None]:
-    """Parse and normalise the datetime fields from file metadata.
+    exp_metadata: ExperimentMetadata,
+) -> tuple[Optional[datetime], Optional[datetime], Optional[datetime], bool]:
+    """Parse and normalise the datetime fields for the item.
 
     Naive datetimes are assumed UTC and made timezone-aware.
+
+    A time-varying file carries a per-file ``datetime_start``; it keeps that
+    time (single instant, or an interval when ``datetime_end`` differs). A
+    time-invariant (fx) file has no ``datetime_start``: STAC forbids a truly
+    timeless Item, so it is placed across the experiment's run span
+    (``run_start``/``run_end``) with a null instant, and flagged as fx.
 
     Parameters
     ----------
     file_metadata : FileMetadata
         The file's scanned metadata.
+    exp_metadata : ExperimentMetadata
+        The owning experiment; its ``run_start``/``run_end`` provide the span
+        for a time-invariant file.
 
     Returns
     -------
-    tuple of (datetime or None, datetime or None, datetime or None)
-        ``(dt_start, dt_end, item_datetime)``. ``item_datetime`` is set only for
-        a single-time file (start == end, or no end), otherwise None.
+    tuple of (datetime or None, datetime or None, datetime or None, bool)
+        ``(dt_start, dt_end, item_datetime, is_fx)``. For a time-varying file,
+        ``item_datetime`` is set only for a single instant (start == end, or no
+        end) and ``is_fx`` is False. For an fx file, ``dt_start``/``dt_end`` are
+        the run span, ``item_datetime`` is None, and ``is_fx`` is True.
+
+    Raises
+    ------
+    ValueError
+        If the file has no per-file datetime and the experiment has no run span.
     """
-    dt_start = file_metadata.get("datetime_start")
-    dt_end = file_metadata.get("datetime_end")
-    if dt_start and dt_start.tzinfo is None:
-        dt_start = dt_start.replace(tzinfo=timezone.utc)
-    if dt_end and dt_end.tzinfo is None:
-        dt_end = dt_end.replace(tzinfo=timezone.utc)
+    dt_start = _as_utc(file_metadata.get("datetime_start"))
+    dt_end = _as_utc(file_metadata.get("datetime_end"))
+
+    if dt_start is None:
+        run_start = _as_utc(exp_metadata.run_start)
+        run_end = _as_utc(exp_metadata.run_end)
+        if run_start is None or run_end is None:
+            raise ValueError(
+                "cannot place a time-invariant item: experiment has no "
+                "run_start/run_end"
+            )
+        return run_start, run_end, None, True
 
     single = dt_end is None or dt_start == dt_end
-    return dt_start, dt_end, (dt_start if single else None)
+    return dt_start, dt_end, (dt_start if single else None), False
+
+
+def _as_utc(value: Optional[datetime]) -> Optional[datetime]:
+    """Return *value* as a UTC-aware datetime, assuming UTC when it is naive."""
+    if value is not None and value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value
 
 
 def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:

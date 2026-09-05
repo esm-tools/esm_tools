@@ -9,7 +9,9 @@ on IDE hover wherever it is used.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TypedDict
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict
 
 ExperimentId = str
 """An experiment identifier, e.g. 'PI-CTRL'."""
@@ -34,36 +36,43 @@ BBox = list[float]
 """A bounding box, [west, south, east, north]."""
 
 
-class ScannedVariable(TypedDict, total=False):
+class ScannedVariable(BaseModel):
     """One entry in a scanner's ``variables`` list, before datacube mapping.
 
-    Every key is optional; ``name`` identifies the variable, the rest are the
-    CF-style attributes a scanner may extract.
+    Every field is optional; ``name`` identifies the variable, the rest are the
+    CF-style attributes a scanner may extract. ``extra="allow"`` lets a scanner
+    attach attributes not enumerated here.
     """
 
-    name: VariableName
-    units: str
-    dimensions: list[str]
-    description: str
-    long_name: str
-    standard_name: str
+    model_config = ConfigDict(extra="allow")
+
+    name: Optional[VariableName] = None
+    units: Optional[str] = None
+    dimensions: list[str] = []
+    description: Optional[str] = None
+    long_name: Optional[str] = None
+    standard_name: Optional[str] = None
 
 
-class FileMetadata(TypedDict, total=False):
+class FileMetadata(BaseModel):
     """The metadata a scanner (scan_netcdf/scan_grib) produces for one file.
 
-    Every key is optional — a scanner fills what it can extract. ``dimensions``
-    is a STAC datacube Dimensions object, forwarded verbatim (opaque here).
+    A scanner fills what it can extract; every field is optional and
+    ``extra="allow"`` permits keys not enumerated here. Validated at the scan
+    boundary, so a malformed reader output is caught where it is produced.
+    ``dimensions`` is a STAC datacube Dimensions object, forwarded verbatim.
     """
 
-    variable: str
-    variables: list[ScannedVariable]
-    component: ComponentName
-    format: str
-    dimensions: dict
-    datetime_start: datetime
-    datetime_end: datetime
-    datetime_str: str
-    output_frequency: str
-    geometry: dict
-    bbox: BBox
+    model_config = ConfigDict(extra="allow")
+
+    variable: Optional[str] = None
+    variables: list[ScannedVariable] = []
+    component: Optional[ComponentName] = None
+    format: Optional[str] = None
+    dimensions: dict = {}
+    datetime_start: Optional[datetime] = None
+    datetime_end: Optional[datetime] = None
+    datetime_str: Optional[str] = None
+    output_frequency: Optional[str] = None
+    geometry: Optional[dict] = None
+    bbox: Optional[BBox] = None

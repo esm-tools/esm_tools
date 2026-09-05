@@ -58,13 +58,14 @@ def add_datacube_item_extension(item: pystac.Item, file_metadata: FileMetadata) 
     file_metadata : FileMetadata
         The file's scanned metadata. No-op when it carries no dimensions.
     """
-    dimensions = file_metadata.get("dimensions", {})
+    file_metadata = FileMetadata.model_validate(file_metadata)
+    dimensions = file_metadata.dimensions
     if not dimensions:
         return
 
     item.properties["cube:dimensions"] = dimensions
 
-    cube_variables = _to_cube_variables(file_metadata.get("variables", []))
+    cube_variables = _to_cube_variables(file_metadata.variables)
     if cube_variables:
         item.properties["cube:variables"] = cube_variables
 
@@ -90,15 +91,16 @@ def _to_cube_variables(variables: list[ScannedVariable]) -> CubeVariables:
     """
     cube_variables: CubeVariables = {}
     for variable in variables:
-        name = variable.get("name")
+        name = variable.name
         if not name:
             continue
-        entry: CubeVariable = {"dimensions": variable.get("dimensions", [])}
-        if "units" in variable:
-            entry["unit"] = variable["units"]
+        entry: CubeVariable = {"dimensions": variable.dimensions}
+        if variable.units:
+            entry["unit"] = variable.units
         for description_key in ("description", "long_name", "standard_name"):
-            if description_key in variable:
-                entry["description"] = variable[description_key]
+            value = getattr(variable, description_key)
+            if value:
+                entry["description"] = value
                 break
         cube_variables[name] = entry
     return cube_variables

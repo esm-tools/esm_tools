@@ -1,0 +1,19 @@
+called_from:
+  compute: prepcompute
+  couple_in: couple_out
+  couple_out: tidy
+  prepcompute: couple_in
+  tidy: compute
+first: couple_in
+last: couple_out
+next_submit:
+  compute:
+  - tidy
+  couple_in:
+  - prepcompute
+  couple_out:
+  - couple_in
+  prepcompute:
+  - compute
+  tidy:
+  - couple_out

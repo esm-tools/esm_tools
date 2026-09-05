@@ -62,7 +62,7 @@ class Slurm:
         """
         return os.environ.get("SLURM_JOB_ID")
 
-    def prepare_launcher(self, config, cluster):
+    def prepare_launcher(self, config, plan):
 
         # MA: not sure how this will play with heterogeneous parallelization
         if "multi_srun" in config["general"]:
@@ -74,7 +74,7 @@ class Slurm:
             "heterogeneous_parallelization", False
         ) and not config["computer"].get("taskset", False):
             # Prepare heterogeneous parallelization call
-            config["general"]["batch"].het_par_launcher_lines(config, cluster)
+            config["general"]["batch"].het_par_launcher_lines(config, plan)
         else:
             # Standard/old way of running jobs with slurm
             self.write_one_hostfile(self.path, config)
@@ -172,7 +172,7 @@ class Slurm:
 
     ############# HETEROGENOUS PARALLELIZATION STUFF (MPI + OMP) #################
 
-    def add_pre_launcher_lines(self, config, cluster, runfile):
+    def add_pre_launcher_lines(self, config, plan, runfile):
         """
         Adds pre-launcher lines to the ``runfile``.
 
@@ -192,7 +192,7 @@ class Slurm:
                 self.add_hostlist_file_gen_lines(config, runfile)
 
     @staticmethod
-    def het_par_headers(config, cluster, headers):
+    def het_par_headers(config, plan, headers):
         """
         Modifies the list of ``headers`` to include the ``packjob``/``hetjob`` logic
         for heterogeneous parallelization in SLURM.
@@ -202,8 +202,8 @@ class Slurm:
         config : dict
             Configuration dictionary containing information about the experiment and
             experiment directory.
-        cluster : str
-            Type of job cluster.
+        plan : str
+            Type of job plan.
         headers : list
             List of headers for the ``.run`` file.
 

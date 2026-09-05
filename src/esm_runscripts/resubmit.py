@@ -17,61 +17,61 @@ def submit(config):
     return config
 
 
-def resubmit_batch_or_shell(config, batch_or_shell, cluster=None):
+def resubmit_batch_or_shell(config, batch_or_shell, plan=None):
     config = config["general"]["batch"].write_simple_runscript(
-        config, cluster, batch_or_shell
+        config, plan, batch_or_shell
     )
     if not check_if_check(config):
         config = submit(config)
     return config
 
 
-def resubmit_SimulationSetup(config, cluster=None):
+def resubmit_SimulationSetup(config, plan=None):
     # Jobs that should be started directly from the compute job:
 
     jobtype = config["general"]["jobtype"]
 
     command_line_config = config["general"]["command_line_config"]
-    command_line_config["jobtype"] = cluster
+    command_line_config["jobtype"] = plan
 
     logfiles.initialize_logging(command_line_config)
 
-    logger.debug(f"{cluster} for this run:")
-    logger.debug(f"Initializing {cluster} object with:")
+    logger.debug(f"{plan} for this run:")
+    logger.debug(f"Initializing {plan} object with:")
     logger.debug(str(command_line_config))
     # NOTE(PG) Non top level import to avoid circular dependency:
 
     os.chdir(config["general"]["started_from"])
     from .sim_objects import SimulationSetup
 
-    cluster_obj = SimulationSetup(command_line_config)
+    setup_obj = SimulationSetup(command_line_config)
 
-    logger.debug(f"{cluster} object built....")
+    logger.debug(f"{plan} object built....")
 
-    if f"{cluster}_update_{jobtype}_config_before_resubmit" in cluster_obj.config:
-        logger.debug(f"{cluster} object needs to update the calling job config:")
+    if f"{plan}_update_{jobtype}_config_before_resubmit" in setup_obj.config:
+        logger.debug(f"{plan} object needs to update the calling job config:")
         # FIXME(PG): This might need to be a deep update...?
         config.update(
-            cluster_obj.config[f"{cluster}_update_{jobtype}_config_before_resubmit"]
+            setup_obj.config[f"{plan}_update_{jobtype}_config_before_resubmit"]
         )
 
     if not check_if_check(config):
-        logger.debug(f"Calling {cluster} job:")
-        config["general"]["experiment_over"] = cluster_obj(kill_after_submit=False)
+        logger.debug(f"Calling {plan} job:")
+        config["general"]["experiment_over"] = setup_obj(kill_after_submit=False)
 
     return config
 
 
-def get_submission_type(cluster, config):
+def get_submission_type(plan, config):
     # Figure out if next job is resubmitted to batch system,
     # just executed in shell or invoked as new SimulationSetup
     # object
 
-    clusterconf = config["general"]["workflow"]["subjob_clusters"][cluster]
+    plan_conf = config["general"]["workflow"]["plans"][plan]
 
-    if clusterconf.get("submit_to_batch_system", False):
+    if plan_conf.get("submit_to_batch_system", False):
         submission_type = "batch"
-    elif cluster in ["newrun", "prepcompute", "tidy", "inspect", "viz"]:
+    elif plan in ["newrun", "prepcompute", "tidy", "inspect", "viz"]:
         submission_type = "SimulationSetup"
     else:
         submission_type = "shell"
@@ -150,39 +150,43 @@ def maybe_resubmit(config):
                 # config = chunky_parts._update_chunk_date_file(config)
                 return config
 
-        cluster = config["general"]["workflow"]["first_task_in_queue"]
+        plan = config["general"]["workflow"]["entry_point"]
         nextrun = resubmit_recursively(
-            config, list_of_clusters=[cluster], nextrun_in=True
+            config, list_of_plans=[plan], nextrun_in=True
         )
 
     return config
 
 
-def resubmit_recursively(config, jobtype=None, list_of_clusters=None, nextrun_in=False):
+def resubmit_recursively(
+    config, jobtype=None, list_of_plans=None, nextrun_in=False
+):
     nextrun = False
 
-    if not list_of_clusters:
-        list_of_clusters = config["general"]["workflow"]["subjob_clusters"][
+    if not list_of_plans:
+        list_of_plans = config["general"]["workflow"]["plans"][
             jobtype
         ].get("next_submit", [])
 
-    for cluster in list_of_clusters:
+    for plan in list_of_plans:
         if (
-            cluster == config["general"]["workflow"]["first_task_in_queue"]
+            plan == config["general"]["workflow"]["entry_point"]
             and not nextrun_in
         ):
             nextrun = True
         else:
-            if not workflow.skip_cluster(cluster, config):
-                submission_type = get_submission_type(cluster, config)
+            if not workflow.skip_plan(plan, config):
+                submission_type = get_submission_type(plan, config)
                 if submission_type == "SimulationSetup":
-                    resubmit_SimulationSetup(config, cluster)
+                    resubmit_SimulationSetup(config, plan)
                 elif submission_type in ["batch", "shell"]:
-                    resubmit_batch_or_shell(config, submission_type, cluster)
+                    resubmit_batch_or_shell(config, submission_type, plan)
             else:
-                logger.info(f"Skipping {cluster}")
+                logger.info(f"Skipping {plan}")
                 nextrun = (
-                    resubmit_recursively(config, jobtype=cluster, nextrun_in=nextrun_in)
+                    resubmit_recursively(
+                        config, jobtype=plan, nextrun_in=nextrun_in
+                    )
                     or nextrun
                 )
     return nextrun

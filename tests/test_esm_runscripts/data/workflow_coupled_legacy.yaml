@@ -1,0 +1,20 @@
+# Coupled chain: couple_in runs before prepcompute (bumps the entry), couple_out
+# runs after tidy (bumps the exit). Legacy ordering keys.
+first_task_in_queue: prepcompute
+last_task_in_queue: tidy
+sub_plans:
+  couple_in:
+    parent_plan: couple_in
+    run_before: prepcompute
+  prepcompute:
+    parent_plan: prepcompute
+    run_before: compute
+  compute:
+    parent_plan: compute
+    run_before: tidy
+  tidy:
+    parent_plan: tidy
+    run_after: compute
+  couple_out:
+    parent_plan: couple_out
+    run_after: tidy

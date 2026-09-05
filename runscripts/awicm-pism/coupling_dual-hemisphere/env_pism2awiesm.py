@@ -47,7 +47,7 @@ def prepare_environment(config):
             "OUTPUT_DIR_pism": config[config["general"]["setup_name"]]["experiment_outdata_dir"],
             "SPINUP_FILE_pism": config[config["general"]["setup_name"]]["spinup_file"],
             #"MESH_DIR_fesom": config["general"]["mesh_dir"],
-            "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["subjobs"]["couple_in"]["script_dir"],
+            "FUNCTION_PATH": config[config["general"]["setup_name"]]["workflow"]["sub_plans"]["couple_in"]["script_dir"],
             "CHUNK_SIZE_pism_standalone": config["model2"]["chunk_size"],
             #"iter_coup_interact_method_ice2oce": "BASALSHELF_WATER_ICEBERG_MODEL",
             "MACHINE": config["computer"]["name"],

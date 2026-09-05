@@ -36,7 +36,12 @@ def _extract_bbox(dataset: xr.Dataset) -> SpatialExtent:
 
     try:
         lat_min, lat_max = float(np.nanmin(latitude)), float(np.nanmax(latitude))
-        lon_min, lon_max = float(np.nanmin(longitude)), float(np.nanmax(longitude))
+        # GRIB (and some NetCDF) grids use a 0..360 longitude convention; fold it
+        # to -180..180 so the range check accepts it and the extent is real
+        # rather than the whole-Earth fallback.
+        lon = np.asarray(longitude, dtype=float)
+        lon = np.where(lon > 180.0, lon - 360.0, lon)
+        lon_min, lon_max = float(np.nanmin(lon)), float(np.nanmax(lon))
     except (ValueError, TypeError):
         return _global_extent()
 

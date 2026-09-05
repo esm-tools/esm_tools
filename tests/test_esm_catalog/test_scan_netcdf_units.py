@@ -250,11 +250,15 @@ def test_extract_dimensions_spatial_extent_unit_and_axes():
     assert dims["lon"]["unit"] == "degrees_east"
 
 
-def test_extract_dimensions_unclassified_dim_is_spatial_without_axis():
-    """A dimension cf cannot classify stays plain ``spatial``."""
+def test_extract_dimensions_unclassified_dim_has_no_type_or_axis():
+    """A dimension cf cannot classify gets an extent but no (misleading) type.
+
+    (Since #1564: an unidentified index dimension -- e.g. FESOM's ``elem`` -- must
+    not be labelled ``spatial``.)
+    """
     dataset = xr.Dataset({"v": (("bnds",), np.zeros(2, "float32"))})
     dims = _extract_dimensions(dataset)
-    assert dims["bnds"]["type"] == "spatial"
+    assert "type" not in dims["bnds"]
     assert "axis" not in dims["bnds"]
 
 
@@ -321,3 +325,20 @@ def test_to_python_unwraps_numpy_scalar():
     assert result == 3.5
     assert isinstance(result, float)
     assert _to_python("plain") == "plain"
+
+
+def test_unidentified_dimension_has_no_type():
+    # A dimension with no CF axis (e.g. FESOM's unstructured 'elem') is a bare
+    # index: it keeps its extent but must NOT be labelled 'spatial'/'temporal'.
+    dataset = xr.Dataset(
+        coords={
+            "time": ("time", pd.date_range("1850-03-31", periods=1)),
+            "elem": ("elem", np.arange(0, 100)),
+        }
+    )
+    dataset["time"].attrs["standard_name"] = "time"
+
+    dims = _extract_dimensions(dataset)
+    assert dims["time"]["type"] == "temporal"
+    assert dims["elem"]["extent"] == [0, 99]
+    assert "type" not in dims["elem"]

@@ -43,6 +43,7 @@ from esm_catalog.scan.types import (
     ScanReport,
 )
 from esm_catalog.scan.workspace import (
+    QUERYABLES_FILENAME,
     WorkspaceState,
     catalog_dir,
     load_state,
@@ -208,6 +209,7 @@ def scan_experiment(
         exp_metadata.experiment_id,
     )
     _write_failures(catalog, failures)
+    _write_queryables(catalog, exp_metadata)
     save_state(catalog, state)
 
     if strict and failures:
@@ -235,6 +237,25 @@ def _write_catalog(
     write_shard(fx_items, items_dir / fx_shard_name(experiment_id))
     collection_path = catalog / "collection.json"
     collection_path.write_text(json.dumps(collection.to_dict(), indent=2))
+
+
+def _write_queryables(catalog, exp_metadata: ExperimentMetadata) -> None:
+    """Write (or clear) the queryables sidecar for this experiment's namelists.
+
+    Its ``properties`` are the item-level ``nml__`` keys and their JSON types --
+    the exact file ``pypgstac load-queryables`` consumes. ``push`` diffs it
+    against the server's registered queryables to tell an operator which (if
+    any) are new.
+    """
+    from esm_catalog.namelist import namelist_queryables
+
+    path = catalog / QUERYABLES_FILENAME
+    properties = namelist_queryables(exp_metadata.namelists_by_component)
+    if not properties:
+        if path.exists():
+            path.unlink()
+        return
+    path.write_text(json.dumps({"properties": properties}, indent=2))
 
 
 def _write_failures(catalog, failures) -> None:

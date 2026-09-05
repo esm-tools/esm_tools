@@ -25,23 +25,27 @@ tolerantly with ``.get`` and defaults:
   component's ``outdata_targets`` mapping holds glob *patterns*, used only as a
   fallback when tidy logs are absent.
 
-``namelists_by_component`` is left empty here; populating it is out of scope for
-this module.
+``namelists_by_component`` is populated from ``config/<component>/namelist.*``,
+parsed with f90nml.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from datetime import date, datetime
 from itertools import chain
 from pathlib import Path
 from typing import Any, Callable, Iterable, Optional
 
+import f90nml
+from loguru import logger
 from pydantic import BaseModel, ConfigDict
 from ruamel.yaml import YAML
 from upath import UPath
 
 from esm_catalog.models import Contact, ExperimentMetadata
+from esm_catalog.namelist import ComponentNamelists, NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
 from esm_catalog.scan.types import Md5, OutputFile, RunStamp
 from esm_catalog.types import ComponentName, ExperimentId
@@ -146,9 +150,8 @@ def source_experiment(exp_root: UPath) -> ExperimentMetadata:
     Returns
     -------
     ExperimentMetadata
-        Identity, description, license, contacts, paleo config, and the run span
-        (min start / max end across segments). ``namelists_by_component`` is left
-        empty (out of scope here).
+        Identity, description, license, contacts, paleo config, the run span
+        (min start / max end across segments), and each component's namelists.
 
     Raises
     ------
@@ -170,7 +173,42 @@ def source_experiment(exp_root: UPath) -> ExperimentMetadata:
         paleo_config=_paleo_config(docs),
         run_start=run_start,
         run_end=run_end,
+        namelists_by_component=_namelists_by_component(exp_root),
     )
+
+
+_NAMELIST_GLOB = "namelist.*"
+"""Namelist files live at ``config/<component>/namelist.<name>``."""
+
+_RUN_STAMP_RE = re.compile(r"_\d{8}-\d{8}$")
+"""A per-segment run stamp suffix, e.g. ``_18500101-18500131``."""
+
+
+def _namelists_by_component(exp_root: UPath) -> NamelistsByComponent:
+    """Parse each ``config/<component>/namelist.*`` into an f90nml Namelist.
+
+    The per-segment copies (``namelist.echam_18500101-18500131``) are skipped;
+    the base file (no run-stamp suffix) is the canonical one. A namelist that
+    fails to parse is logged and skipped -- a bad file never aborts the scan.
+    """
+    result: NamelistsByComponent = {}
+    config_dir = exp_root / _CONFIG_SUBDIR
+    if not config_dir.exists():
+        return result
+    for component_dir in sorted(config_dir.iterdir()):
+        if not component_dir.is_dir():
+            continue
+        namelists: ComponentNamelists = {}
+        for path in sorted(component_dir.glob(_NAMELIST_GLOB)):
+            if _RUN_STAMP_RE.search(path.name):
+                continue
+            try:
+                namelists[path.name] = f90nml.reads(path.read_text())
+            except Exception as exc:  # noqa: BLE001 -- a bad namelist is not fatal
+                logger.warning("Skipping unparseable namelist {}: {}", path, exc)
+        if namelists:
+            result[component_dir.name] = namelists
+    return result
 
 
 def _on_exp_fs(exp_root: UPath, destination: str) -> UPath:
@@ -211,12 +249,18 @@ def _walk_outdata(
         return
     fs = outdata.fs
     base = outdata.path.rstrip("/")
+    # The component is the first path segment below outdata/. Split on the
+    # outdata boundary rather than slicing by len(base): fs.walk may return
+    # absolute roots even when base is relative (e.g. exp_root='.'), and a bare
+    # root[len(base):] would then strip the wrong prefix -- a '/albedo/...' root
+    # under a 7-char base 'outdata' famously yields the component 'work'.
+    marker = "/" + _OUTDATA_SUBDIR + "/"
     count = 0
     for root, _dirs, files in fs.walk(base):
-        rel = root[len(base) :].lstrip("/")
-        if not rel:
+        after = root.rsplit(marker, 1)
+        if len(after) < 2 or not after[1]:
             continue  # files sitting directly in outdata/ have no component
-        component = rel.split("/", 1)[0]
+        component = after[1].split("/", 1)[0]
         for name in sorted(files):
             count += 1
             if on_file is not None:
@@ -317,7 +361,9 @@ def _find_segments(exp_root: UPath) -> list[_Segment]:
     if not paths:
         raise SourcingError(
             "scan requires a completed ESM-Tools run; "
-            f"no finished_config under {config_dir}"
+            f"no file matching '{_FINISHED_CONFIG_GLOB}' under {config_dir} "
+            "(e.g. '<expid>_finished_config.yaml', written by ESM-Tools at the "
+            "end of a run — a plain file named 'finished_config' will not match)"
         )
     return [_Segment(path=path, doc=_load_yaml(path)) for path in paths]
 

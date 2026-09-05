@@ -26,15 +26,18 @@ CATALOG_DIRNAME = "catalog"
 STATE_FILENAME = "esm-catalog.json"
 """The workspace-state file inside the catalog directory."""
 
+QUERYABLES_FILENAME = "queryables.json"
+"""The catalog's namelist queryables (a ``pypgstac load-queryables`` file), so
+an operator can register them for the STAC Browser filter UI."""
+
 ScannedPath = str
 """A scanned output file's path (as text) — the key its catalogued md5 is stored under."""
 
 
 class WorkspaceState(BaseModel):
-    """The persisted ``esm-catalog.json`` — init config plus scan bookkeeping."""
+    """The persisted ``esm-catalog.json`` — scan bookkeeping for incremental re-scans."""
 
     experiment_id: ExperimentId
-    server_url: Optional[str] = None
     scanned: dict[ScannedPath, Md5] = {}
 
 

@@ -11,8 +11,10 @@ from upath import UPath
 from esm_catalog.scan.sourcing import (
     SourcingError,
     TidyOutdataEntry,
+    _namelists_by_component,
     _parse_datestamp,
     _tidy_log_outdata,
+    _walk_outdata,
     output_files,
     source_experiment,
 )
@@ -242,7 +244,7 @@ def test_missing_config_raises_sourcing_error(tmp_path):
     exp_root = UPath(tmp_path)
     (exp_root / "config").mkdir(parents=True, exist_ok=True)
 
-    with pytest.raises(SourcingError, match="no finished_config"):
+    with pytest.raises(SourcingError, match="no file matching"):
         source_experiment(exp_root)
 
 
@@ -283,3 +285,57 @@ def test_tidy_log_outdata_yields_component_dest_md5_and_skips_malformed():
         TidyOutdataEntry("echam", "/d/no_checksum", None),
         TidyOutdataEntry("echam", "/d/good", "abc123"),
     ]
+
+
+def test_namelists_by_component(tmp_path):
+    config = UPath(tmp_path) / "config"
+    (config / "echam").mkdir(parents=True)
+    (config / "fesom").mkdir(parents=True)
+    (config / "oasis3mct").mkdir(parents=True)  # no namelist.* -> excluded
+
+    (config / "echam" / "namelist.echam").write_text(
+        "&radctl\n  co2vmr = 284.3e-6\n/\n"
+    )
+    # a per-segment copy must be skipped (the base file is canonical)
+    (config / "echam" / "namelist.echam_18500101-18500131").write_text(
+        "&radctl\n  co2vmr = 999.0\n/\n"
+    )
+    (config / "fesom" / "namelist.oce").write_text("&oce_dyn\n  c_d = 0.0025\n/\n")
+
+    result = _namelists_by_component(UPath(tmp_path))
+
+    assert set(result) == {"echam", "fesom"}  # oasis3mct dropped (no namelists)
+    assert set(result["echam"]) == {"namelist.echam"}  # stamped copy skipped
+    assert result["echam"]["namelist.echam"]["radctl"]["co2vmr"] == 284.3e-6
+    assert result["fesom"]["namelist.oce"]["oce_dyn"]["c_d"] == 0.0025
+
+
+def test_walk_outdata_component_from_boundary(tmp_path):
+    outdata = UPath(tmp_path) / "outdata"
+    (outdata / "fesom").mkdir(parents=True)
+    (outdata / "echam").mkdir(parents=True)
+    (outdata / "fesom" / "MLD1.fesom.1850.nc").write_text("x")
+    (outdata / "echam" / "tas.nc").write_text("x")
+
+    def components(root: UPath) -> dict[str, str]:
+        return {cp.path.name: cp.component for cp in _walk_outdata(root, None)}
+
+    # Absolute exp_root: component is the outdata subdir.
+    assert components(UPath(tmp_path)) == {
+        "MLD1.fesom.1850.nc": "fesom",
+        "tas.nc": "echam",
+    }
+    # Relative exp_root must give the same result. Regression: a len(base) slice
+    # stripped an absolute walk-root prefix and mislabelled the component (a
+    # '/albedo/...' root under 'outdata' produced 'work').
+    import os
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(tmp_path)
+        assert components(UPath(".")) == {
+            "MLD1.fesom.1850.nc": "fesom",
+            "tas.nc": "echam",
+        }
+    finally:
+        os.chdir(cwd)

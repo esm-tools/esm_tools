@@ -24,7 +24,10 @@ def _extract_dimensions(dataset: xr.Dataset) -> CubeDimensions:
     dimensions: CubeDimensions = {}
     for name in dataset.sizes:
         coord = dataset.coords.get(name)
-        entry: CubeDimension = {"type": "spatial", "extent": [None, None]}
+        # No default type: a dimension is only 'spatial'/'temporal' if CF axis
+        # detection says so. An unidentified dimension (e.g. FESOM's unstructured
+        # 'elem') is a bare index — it carries an extent but no misleading type.
+        entry: CubeDimension = {"extent": [None, None]}
         if coord is not None:
             values = coord.values
             entry["extent"] = [_to_python(values.min()), _to_python(values.max())]

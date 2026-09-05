@@ -101,6 +101,17 @@ setup(
             "cf-xarray>=0.8",
             "pyarrow>=14",
             "stac-geoparquet>=0.6",
+            "httpx>=0.27",
+            "pydantic-settings>=2.2",
+            "platformdirs>=4.0",
+            "pyyaml>=6.0",
+        ],
+        # GRIB support is opt-in: cfgrib/eccodes pull the ecCodes C library, which
+        # is heavy and awkward in CI, so the scanner treats GRIB as unsupported
+        # (a clean skip) unless this extra is installed.
+        "catalog-grib": [
+            "cfgrib>=0.9",
+            "eccodes>=1.5",
         ],
     },
     install_requires=requirements,

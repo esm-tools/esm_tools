@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
-from pystac import Item, STACError
+from pystac import Item
 from upath import UPath
 
 from esm_catalog.item import _to_href, make_item
@@ -140,18 +140,21 @@ def test_open_ended_range_keeps_datetime(temp_nc):
 
 
 def test_missing_datetimes_raise(temp_nc):
+    # A time-invariant file with no run span to place it across cannot become a
+    # STAC-valid item; make_item must refuse with a clear error rather than emit
+    # a timeless item.
     file_metadata = make_file_metadata(datetime_start=None, datetime_end=None)
-    with pytest.raises(STACError):
+    with pytest.raises(ValueError, match="run_start/run_end"):
         make_item(temp_nc, file_metadata, make_exp_metadata())
 
 
-def test_output_frequency_property(temp_nc):
+def test_frequency_property(temp_nc):
     with_freq = make_item(
-        temp_nc, make_file_metadata(output_frequency="mon"), make_exp_metadata()
+        temp_nc, make_file_metadata(frequency="mon"), make_exp_metadata()
     )
     without = make_item(temp_nc, make_file_metadata(), make_exp_metadata())
-    assert with_freq.properties["output_frequency"] == "mon"
-    assert "output_frequency" not in without.properties
+    assert with_freq.properties["frequency"] == "mon"
+    assert "frequency" not in without.properties
 
 
 def test_multiple_variables_listed(temp_nc):
@@ -170,7 +173,8 @@ def test_single_variable_no_variables_key(temp_nc):
 
 
 def test_item_id_format(item):
-    assert re.fullmatch(r"temp\.echam\.000000\.[0-9a-f]{6}", item.id)
+    # No explicit datetime_str, so the stamp is derived from the file's start.
+    assert re.fullmatch(r"temp\.echam\.200001\.[0-9a-f]{6}", item.id)
 
 
 def test_item_id_uses_datetime_str(temp_nc):
@@ -208,7 +212,7 @@ def test_item_id_defaults_to_unknown_variable(temp_nc):
     file_metadata = make_file_metadata()
     del file_metadata["variable"]
     item = make_item(temp_nc, file_metadata, make_exp_metadata())
-    assert re.fullmatch(r"unknown\.echam\.000000\.[0-9a-f]{6}", item.id)
+    assert re.fullmatch(r"unknown\.echam\.200001\.[0-9a-f]{6}", item.id)
 
 
 def test_netcdf_media_type_default(item):

@@ -51,21 +51,30 @@ computer:
     output_flags: "--output=${thisrun_logfile} --error=${thisrun_logfile}"
     name_flag: "--job-name=${expid}"
 
-    taskset: false
+    hetjob_strategy: hetjob
     mt_launcher_flag: ""
 
     add_choose_heterogeneous_parallelization:
         true:
             cpu_bind: "none"
-            choose_taskset:
+            choose_hetjob_strategy:
                 # Support for old taskset heterogeneous parallelization approach
-                true:
+                taskset:
                     srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
-                # Support for new packjob heterogeneous parallelization approach
-                    post_run_commands: "unset SLURM_HOSTFILE"
-                false:
-
-     # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
+                # Support for hetjob parallelization approach (heterogeneity handled with heterogeneous slurm job + srun steps, allows for heterogeneous resources)
+                hetjob:
+                    launcher_flags_per_component: "
+                        ${mt_launcher_flag}
+                        --nodes=@nnodes@
+                        --ntasks=@nproc@
+                        --ntasks-per-node=@nproc_per_node@
+                        --cpus-per-task=@cpus_per_proc@
+                        --export=ALL,OMP_NUM_THREADS=@omp_num_threads@"
+                    srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} \\\n@components@"
+                    launcher_comp_sep: " \\\n:"
+                # Support for srun steps approach (heterogeneity handled in the srun command)
+                srunsteps:
+                    # kh 24.06.22 --hint=nomultithread is needed (in many cases) on levante to avoid hyperthreading
                     launcher_flags_per_component: "
                         ${mt_launcher_flag}
                         --nodes=@nnodes@
@@ -78,6 +87,8 @@ computer:
         false:
             cpu_bind: "cores"
             srun_execution_command: "${debugger_flags_prelauncher} ${launcher} ${launcher_flags} ${mt_launcher_flag}--multi-prog ${config_files.hostfile}"
+
+    #add_post_run_commands: "unset SLURM_HOSTFILE"
 
     choose_launcher:
             srun:

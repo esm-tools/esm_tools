@@ -39,6 +39,7 @@ requirements = [
     "xdgenvpy==2.3.5",
     "pydantic>=2",
     "h5netcdf>=0.8.1",
+    "universal-pathlib>=0.2",
 ]
 
 setup_requirements = []

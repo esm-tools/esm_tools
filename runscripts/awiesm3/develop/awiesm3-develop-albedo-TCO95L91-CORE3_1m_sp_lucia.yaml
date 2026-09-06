@@ -1,0 +1,130 @@
+general:
+    user: !ENV ${USER}
+    setup_name: "awiesm3"
+    version: "develop"
+    account: "clidyn.clidyn"
+    # 1-month SP load-balancing test: branch off the end of the spinup phase 2
+    # (1901-01-01 restart), 1800 s, linfs, with OASIS3 LUCIA load-balancing ON.
+    # Twin of the DP test (..._1m_dp_lucia.yaml); the ONLY intended difference
+    # is FESOM precision (SP model build here) so LUCIA timings are comparable.
+    compute_time: "01:30:00"
+    initial_date: "1901-01-01"
+    final_date: "1901-02-01"
+    base_dir: "/albedo/work/user/${user}/runtime/${general.setup_name}-${general.version}/"
+    nday: 0
+    nmonth: 1
+    nyear: 0
+    use_venv: False
+
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/albedo/work/user/${user}/model_codes/${general.setup_name}-${general.version}//"
+    # Branch from the spinup phase-2 restart (all components: fesom/oifs/oasis3mct/lpj_guess).
+    # esm_tools appends "/<model>" to ini_parent_dir for each component.
+    ini_parent_exp_id: awiesm3sp_spin
+    ini_parent_date: 19010101
+    ini_parent_dir: "/albedo/work/user/${user}/runtime/${general.setup_name}-${general.version}/awiesm3sp_spin/restart"
+
+fesom:
+    resolution: "CORE3"
+    # Cross-experiment branch: fesom's parent_restart_dir must be model-specific and
+    # END WITH A SLASH. esm_tools concatenates parent_restart_dir + "fesom.YYYY.*"
+    # without inserting a separator; the setup-level ini_parent_dir yields
+    # ".../restart/fesom" (no trailing slash) so the glob misses and no restart is
+    # staged. Setting it at the fesom level makes it used verbatim (with the slash).
+    ini_parent_exp_id: awiesm3sp_spin
+    ini_parent_date: "19010101"
+    ini_parent_dir: "/albedo/work/user/${user}/runtime/${general.setup_name}-${general.version}/awiesm3sp_spin/restart/fesom/"
+    restart_rate: 1
+    restart_unit: "m"
+    restart_first: 1
+    lresume: true           # branch from spinup phase-2 restart
+    time_step: 1800
+    # 256 cores (dist_256) -> ~861 nodes/core, compute-bound regime, so FESOM is on
+    # the critical path and the SP-vs-DP compute difference shows in wall-clock
+    # (at 1792 cores / 123 nodes/core FESOM was comm-bound and 64% idle).
+    nproc: 256
+    omp_num_threads: 1
+    tar_binary_restarts: true
+    add_namelist_changes:
+        namelist.config:
+            ale_def:
+                which_ale: 'linfs'
+            run_config:
+                use_cavity: true
+            restart_log:
+                raw_restart_length_unit: "off"
+                bin_restart_length_unit: "off"
+
+rnfmap:
+    config_sources:
+        namelist.runoffmapper: "${namelist_dir}/1.4-ismm/namelist.runoffmapper"
+
+lpj_guess:
+    nproc: 64
+    omp_num_threads: 4
+    lresume: true
+    mip: "cmip7"
+    fixed_landuse_year: 1850
+    firemodel: NOFIRE
+    output_mode: collect_txt
+    # New-mesh land inputs not regenerated yet -> natural vegetation only.
+    run_peatland: 0
+    run_landcover: 0
+    use_luh3_input: 0
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    # COLD-START OpenIFS (no branchoff). The OIFS branchoff needs its own block
+    # (ini_restart_date at HH=23:00 + ini_pseudo_initial_date, per the awi-esm3 docs);
+    # doing it via the generic ini_parent_date misaligns OIFS's coupling step counter
+    # by one step, so OIFS issues an extra A_SST get at msec==$RUNTIME and OASIS aborts
+    # (mod_oasis_advance.F90:669). For a load-balancing test only the ocean state matters,
+    # so OIFS cold-starts and only FESOM branches from the spinup restart.
+    lresume: false
+    time_step: 3600
+    nproc: 256
+    omp_num_threads: 1
+    mpi: cmip7 #for cmip6 simulations!
+    scenario: piControl #solar radiation is going to be taken always from 1850
+    add_namelist_changes:
+        fort.4:
+            NAMECECMIP:
+                LCMIP6: False
+                LCMIP7: True
+                CMIP7DATADIR: '${input_dir}/cmip7-data/'
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+                NO3CMIP: 7
+                CO3DATADIR: '${input_dir}/cmip7-data/'
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+
+oasis3mct:
+    use_lucia: true # LOAD-BALANCING TEST: measure per-component coupling times
+    # LUCIA requires OASIS_debug=0 (the model warns "With load balance analysis
+    # OASIS_debug should be 0"); with the default debug_level=1 no timeline_*/
+    # load_balancing output is written. debug_level=0 -> $NLOGPRT "0 0 1".
+    debug_level: 0
+    lresume: true
+    time_step: 3600
+    norestart: T
+
+xios:
+    with_model: oifs
+    nproc: 4
+    omp_num_threads: 32

@@ -3,13 +3,24 @@ general:
     setup_name: "awiesm3"
     version: "develop"
     account: "clidyn.clidyn"
-    compute_time: "02:00:00"
+    # Spinup, chained (esm_tools re-reads this file each leg):
+    #   phase 1: 1900-01 at 300 s (coldstart, run 1, 1-month leg -- already launched)
+    #   phase 2: 1900-02 .. 1901-01 at 1200 s, 3-month legs  <-- ACTIVE
+    #   phase 3: 1901-01 .. 1902-01 at 1800 s (bump time_step 1800 + final_date 1902-01-01)
+    # Spinup, one phase at a time (edit + resubmit this experiment between phases).
+    # oasis lresume=false is very slow (re-does the coupling restart/weights every leg),
+    # so do it once for a SHORT bootstrap, then oasis lresume=true for the rest:
+    #   phase 0: 1900-01-01..02   @ 300 s,  oasis lresume=false (coldstart)   DONE (job 47087657)
+    #   phase 1: ..1900-02-01      @ 300 s,  oasis lresume=true  (1 month)    DONE (job 47087708)
+    #   phase 2: ..1901-01-01      @ 1200 s, oasis lresume=true  (11 months)  DONE (job 47088745)
+    #   phase 3: ..1902-01-01      @ 1800 s, oasis lresume=true  (1 year)     <-- ACTIVE
+    compute_time: "08:00:00"
     initial_date: "1900-01-01"
-    final_date: "1900-02-01"
+    final_date: "1902-01-01"
     base_dir: "/albedo/work/user/${user}/runtime/${general.setup_name}-${general.version}/"
     nday: 0
-    nmonth: 1
-    nyear: 0
+    nmonth: 0
+    nyear: 1
     use_venv: False
 
 computer:
@@ -22,19 +33,21 @@ awiesm3:
 fesom:
     resolution: "CORE3"
     restart_rate: 1
-    restart_unit: "m"
+    restart_unit: "y"
     restart_first: 1
     # Cold start: the pooled CORE3 restart (fesom.2000.*) is for the old 211567-node
     # mesh and is dimension-incompatible with the new 220509-node mesh, so start from
     # hydrography instead of a restart. Cold start needs a short step (300 s) for
     # stability; run a month on the 1792 partition so it doesn't take forever.
-    lresume: false
-    time_step: 300
+    lresume: false          # coldstart (only applies to run 1; continuations force true)
+    time_step: 1800
     nproc: 1792
     omp_num_threads: 1 # originally 4 but worked with 1
     tar_binary_restarts: true
     add_namelist_changes:
         namelist.config:
+            ale_def:
+                which_ale: 'linfs'
             run_config:
                 use_cavity: true
             restart_log:
@@ -58,6 +71,14 @@ lpj_guess:
     fixed_landuse_year: 1850
     firemodel: NOFIRE
     output_mode: collect_txt
+    # Temporary (new-mesh land inputs not regenerated yet): every mesh-specific land
+    # input (peat map, LUH3 states, text land-use lu_luh2.txt) is keyed to the old
+    # CORE3 LSM and fails on the new-mesh land cells. For the smoke test, run natural
+    # vegetation only: run_landcover=0 needs no land-use data at all (and moots LUH3).
+    # run_peatland=0 skips the peat lookup.
+    run_peatland: 0
+    run_landcover: 0
+    use_luh3_input: 0
 
 oifs:
     resolution: TCO95
@@ -92,8 +113,8 @@ oifs:
                 GGAUSSB: -0.8
 
 oasis3mct:
-    use_lucia: true #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster
-    lresume: false # first leg on the new CORE3 mesh: generate the OASIS rst files
+    use_lucia: false # ~5-10% faster
+    lresume: true # phases 1-3: read the OASIS rst/weights laid down by the bootstrap (phase 0)
     time_step: 3600
     norestart: T #Do i restart from vegin or not?
 

@@ -116,6 +116,9 @@ general:
         - 'v3.4.0'
         - 'v3.4.1'
         - 'v3.4.2'
+        - 'v3.5'
+        - 'v3.5-cc'
+        - 'v3.5-is'
         - 'develop'
         - 'develop-cc'
         - 'develop-is'
@@ -218,6 +221,58 @@ general:
             # setups keep their existing behaviour (see resubmit.py).
             honor_final_date: true
 
+        # ------------------------------------------------------------------
+        # v3.5: the first AWIESM3 major version on FESOM 2.8. Otherwise a copy
+        # of v3.4 (develop*); the two are expected to diverge, which is what
+        # makes it a new major version.
+        # ------------------------------------------------------------------
+        v3.5:
+            major_version: v3.5
+            couplings:
+                - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+
+        # Carbon-cycle variant. FESOM still has to be built from the REcoM CO2
+        # coupling branch (FESOM PR #806,
+        # https://github.com/FESOM/fesom2/pull/806), which is not in main yet.
+        # The branch override lives in the fesom section under
+        # choose_general.with_co2_oce_coupling; delete it once #806 is merged
+        # and 2.8.0 carries the coupling.
+        v3.5-cc:
+            major_version: v3.5
+            couplings:
+                - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2
+            add_include_models:
+                - xios
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: true
+            with_co2_oce_coupling: true
+            with_co2_veg_coupling: true
+
+        # Ice-sheet coupled variant of v3.5: see develop-is above for why PISM,
+        # dEBM and ismm are built by the coupling but not added as runtime models.
+        v3.5-is:
+            major_version: v3.5
+            couplings:
+                - fesom-2.8+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
+            add_include_models:
+                - xios
+            add_other_components:
+                - debm
+            oasis_with_yac: false
+            xios_interp_order: 1
+            with_co2_tracer: false
+            with_co2_oce_coupling: false
+            with_co2_veg_coupling: false
+            honor_final_date: true
+
     version: "v3.4"
     resolution: ${oifs.resolution}_${fesom.resolution}
     postprocessing: false
@@ -311,6 +366,25 @@ oifs:
                         LRDALB: false
                     NAMCLDP:
                         RVICE: 0.16
+        "v3.5":
+            with_xios: true
+            build_type: 'release'
+            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16
+                --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios
+                --build-type=${build_type} --install;
+                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS;
+                nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
+            namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.5
+            wam: true
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCT0:
+                        LXIOS: true
+                    NAEPHY:
+                        LECURR: true
+                        LRDALB: false
+                    NAMCLDP:
+                        RVICE: 0.16
 
     choose_general.version:
         # NAMMCC: coupled-slab mode, pairs with the develop* FESOM build.
@@ -329,6 +403,27 @@ oifs:
                         LNEMOLIMTHK: ".true."
                         LNEMOSICOUP: ".false."
         develop-is:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5-cc:
+            add_add_namelist_changes:
+                fort.4:
+                    NAMMCC:
+                        LNEMOLIMTEMP: ".false."
+                        LNEMOLIMTHK: ".true."
+                        LNEMOSICOUP: ".false."
+        v3.5-is:
             add_add_namelist_changes:
                 fort.4:
                     NAMMCC:
@@ -677,11 +772,28 @@ fesom:
                 namelist.ice:
                     ice_therm:
                         use_meltponds: true
+        "v3.5":
+            version: "2.8"
+            with_xios: true
+            add_namelist_changes:
+                namelist.config:
+                    geometry:
+                        metric_factor_zero: True
+                    # which_ale is set in the base namelist_changes above (see there).
+                    restart_log:
+                        raw_restart_length_unit: "off"
+                        bin_restart_length_unit: "off"
+                namelist.tra:
+                    tracer_phys:
+                        surf_relax_s: "0.0"
+                namelist.ice:
+                    ice_therm:
+                        use_meltponds: true
 
-    # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop
+    # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop/v3.5
     # branches — reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is
     # unstable on coarse meshes (e.g. CORE2), so other resolutions keep
-    # their per-mesh whichEVP default from fesom-2.7.yaml.
+    # their per-mesh whichEVP default from fesom-2.7.yaml / fesom-2.8.yaml.
     choose_general.version:
         v3.4.2:
             choose_resolution:
@@ -700,6 +812,21 @@ fesom:
         # meshtools Singularity container (user namespaces are disabled
         # cluster-wide on levante, which breaks the container).
         develop-is:
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
+        # v3.5 mirrors the develop* trio. FESOM main's CMake permits single
+        # precision for OIFS_COUPLED builds (src/CMakeLists.txt), which is what
+        # awiesm3 is; it refuses SP only for OASIS/ECHAM, YAC and the IFS
+        # interface.
+        v3.5:
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5-cc:
+            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            choose_resolution:
+                DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
+        v3.5-is:
             fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
             meshpart_flag: "-DBUILD_MESHPARTITIONER=ON"
 
@@ -1288,6 +1415,65 @@ oasis3mct:
             rst_co2_ao_name: 'rst_co2_ao'
             rst_co2_av_name: 'rst_co2_av'
 
+        'v3.5':
+            add_process_ordering:
+                - xios
+            coupling_target_fields:
+                rstas.nc:
+                    - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                    - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                    - 'heat_ico <--gauswgt_gsmart-- A_Q_ice'
+                      #                    - 'heat_ico <--bicubic-- A_Q_ice'
+                    - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                    - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
+                    - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                    - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                rstos.nc:
+                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo:A_Ice_thickness <--gauswgt_i--
+                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom:sit_feom'
+                    - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                vegin.nc:
+                    # BUG FIX (2025-03-16): GUE_TYPH and GUE_FRAL were swapped, causing IFS to receive? Investigate further and check if this has any impact on the results. The old (wrong) configuration is included here for reference.
+                    # TypeHigh (int, e.g. 6) as FracLow (CVL), clamped to 1.0 → wrong albedo over deserts? 
+                    # Old: GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL
+                    - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
+                      GUE_LLAI:GUE_HLAI:GUE_FRAL:GUE_FRAH:GUE_TYPL:GUE_TYPH'
+                    - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
+                    - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
+                    - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
+                    - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg--
+                      SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
+                    - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
+                    - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
+            choose_general.with_co2_veg_coupling:
+                true:
+                    add_coupling_target_fields:
+                        rst_co2_av.nc:
+                            - 'CO2_LPJG <--loctrans_avg-- XCO2Veg'
+                            - 'FCO2NAT:FCO2ANT:FCO2NPP <--loctrans_avg-- GUE_CNAT:GUE_CANT:GUE_CNPP'
+                    add_merge_recv_restarts:
+                        - rst_co2_av.nc    # CO2 vegetation coupling (bidirectional LOCTRANS)
+            choose_general.with_co2_oce_coupling:
+                true:
+                    add_coupling_target_fields:
+                        rst_co2_ao.nc:
+                            - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
+                            - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
+
+            # Specify which restart files need bidirectional merging
+            # Use this for restart files with LOCTRANS+EXPOUT in both directions
+            # where both send and receive use the same restart file name in namcouple
+            merge_recv_restarts:
+                - vegin.nc         # OpenIFS <-> lpjg bidirectional LOCTRANS
+
+            mct_version: "5.0"
+            input_dir: ${oasis3mct.pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+            rstos_file_name: 'rstos'
+            rstas_file_name: 'rstas'
+            vegin_file_name: 'vegin'
+            rst_co2_ao_name: 'rst_co2_ao'
+            rst_co2_av_name: 'rst_co2_av'
+
     land_atmo_coupling_time_step: 86400
     # Ice sheet consumers are monthly (dEBM reads 12 monthly means; the
     # ISM-mapper only ever writes a monthly mean). Daily is the coarsest period
@@ -1639,6 +1825,17 @@ computer:
 
     choose_general.major_version:
         v3.4:
+            choose_name:
+                juwels:
+                    iolibraries: system_libs
+                    compiler_mpi: gnu2023_ompi2023
+                levante:
+                    iolibraries: system_intel_libs
+                    compiler_mpi: intel2022_openmpi
+                albedo:
+                    mpi_implementation: openmpi_2026
+                    load_python: true
+        v3.5:
             choose_name:
                 juwels:
                     iolibraries: system_libs

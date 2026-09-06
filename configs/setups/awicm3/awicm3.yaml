@@ -32,6 +32,7 @@ general:
         - 'v3.4.0'
         - 'v3.4.1'
         - 'v3.4.2'
+        - 'v3.5'
         - 'develop'
         - 'frontiers-xios'
 
@@ -134,6 +135,16 @@ general:
             major_version: v3.4
             couplings:
             - awicm3_v3.4.2
+            add_include_models:
+            - xios
+            oasis_with_yac: False
+            xios_interp_order: 1
+          # First version on FESOM 2.8. Otherwise a copy of v3.4; the two are
+          # expected to diverge, which is what makes it a new major version.
+          v3.5:
+            major_version: v3.5
+            couplings:
+            - fesom-2.8+oifs-48r1+xios-2.5
             add_include_models:
             - xios
             oasis_with_yac: False
@@ -293,6 +304,23 @@ oifs:
                                                 LECURR: true
                                                 NALBEDOSCHEME: 3
 
+                "v3.5":
+                        version: "48r1"
+                        with_xios: True
+                        build_type: 'release'
+                        comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16 --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios --build-type=${build_type} --install; mv install/bin/ifsMASTER.SP install/bin/OpenIFS"
+                        namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.5
+                        mip: "cmip6"
+                        wam: true
+                        restart_type: "ifs_default"
+                        add_namelist_changes:
+                                fort.4:
+                                        NAMCT0:
+                                                LXIOS: TRUE
+                                        NAEPHY:
+                                                LECURR: true
+                                                NALBEDOSCHEME: 3
+
                 "frontiers-xios":
                         with_xios: True
                         namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/frontiers
@@ -396,7 +424,14 @@ fesom:
                 TL159_CORE2:
                         nproc: 72
         build_type: "Release"    # Available options: Release, Debug, Bit
-        comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${yac_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
+        # Single-precision FESOM (-DUSE_SINGLE_PRECISION=ON) is opt-in per major
+        # version. Default off (double precision) so every released version up to
+        # v3.4.2 keeps the build it was validated with; v3.5 opts in below, in
+        # choose_general.major_version. FESOM main's CMake permits SP for
+        # OIFS_COUPLED builds, which is what awicm3 is; it refuses SP only for
+        # OASIS/ECHAM, YAC and the IFS interface (src/CMakeLists.txt).
+        fesom_sp_flag: ""
+        comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag} -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${yac_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=../  ..;   make install -j `nproc --all`
         choose_general.oasis_with_yac:
             True:
                 yac_flag: "-DOASIS_WITH_YAC=ON"
@@ -506,6 +541,26 @@ fesom:
                                                 albim: 0.43
                 "v3.4":
                         version: "2.7"
+                        append_icmcl: ""
+                        add_namelist_changes:
+                                namelist.tra:
+                                        tracer_phys:
+                                                surf_relax_s: "${surf_relax_s}"
+                                namelist.config:
+                                        geometry:
+                                                metric_factor_zero: True
+                                        ale_def:
+                                                which_ale: 'linfs'
+                                        restart_log:
+                                                raw_restart_length_unit: "off"
+                                                bin_restart_length_unit: "off"
+                                namelist.ice:
+                                        ice_therm:
+                                                use_meltponds: true
+
+                "v3.5":
+                        version: "2.8"
+                        fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
                         append_icmcl: ""
                         add_namelist_changes:
                                 namelist.tra:
@@ -653,6 +708,8 @@ rnfmap:
                                         version: v1.1
                 "v3.4":
                         version: v1.1
+                "v3.5":
+                        version: v1.1
 
         nproc: 1
         omp_num_threads: ${computer.partitions.compute.cores_per_node}
@@ -793,6 +850,25 @@ oasis3mct:
                                         - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
                                         - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
                 'v3.4':
+                        mct_version: "5.0"
+                        input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+                        rstos_file_name: 'rstos'
+                        rstas_file_name: 'rstas'
+                        add_process_ordering:
+                                - xios
+                        coupling_target_fields:
+                                rstas.nc:
+                                        - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                                        - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                                        - 'heat_ico <--bicubic-- A_Q_ice'
+                                        - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                                        - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
+                                        - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                                        - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                                rstos.nc:
+                                        - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo <--gauswgt_i-- sst_feom:sie_feom:snt_feom:ist_feom:sia_feom'
+                                        - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                'v3.5':
                         mct_version: "5.0"
                         input_dir: ${pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
                         rstos_file_name: 'rstos'
@@ -1063,6 +1139,17 @@ computer:
 
         choose_general.major_version:
             v3.4:
+                choose_name:
+                    juwels:
+                        taskset: false
+                        iolibraries: system_libs
+                        compiler_mpi: gnu2024_ompi2024
+                    levante:
+                        iolibraries: system_intel_libs
+                        compiler_mpi: intel2022_openmpi
+                    albedo:
+                        mpi_implementation: openmpi_2026
+            v3.5:
                 choose_name:
                     juwels:
                         taskset: false

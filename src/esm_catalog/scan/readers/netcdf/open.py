@@ -8,6 +8,8 @@ decoding is reopened with ``decode_times=False`` for hand-decoding downstream.
 
 from __future__ import annotations
 
+import warnings
+
 import xarray as xr
 from loguru import logger
 from upath import UPath
@@ -27,6 +29,13 @@ def _open_dataset(path: UPath) -> xr.Dataset:
     reopen with ``decode_times=False`` and decode the time coordinate by hand
     downstream. Each attempt opens a fresh handle, since a consumed remote stream
     cannot be re-read.
+
+    Dates outside ``datetime64[ns]`` range (routine for paleoclimate runs) do not
+    raise -- xarray decodes them to ``cftime`` objects instead and emits
+    ``SerializationWarning``. Expected and already handled downstream
+    (:mod:`esm_catalog.scan.readers.netcdf.timeaxis` accepts cftime objects same
+    as datetime64), so it is suppressed here rather than left to print on every
+    such file.
     """
     is_remote = bool(path.protocol) and path.protocol != "file"
     logger.debug("Opening NetCDF {} (remote={})", path, is_remote)
@@ -46,7 +55,9 @@ def _open_dataset(path: UPath) -> xr.Dataset:
             raise
 
     try:
-        return _open(decode_times=True)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+            return _open(decode_times=True)
     except (ValueError, OSError) as error:
         if _is_time_decode_error(error):
             logger.debug("Time decode failed for {}; retrying undecoded", path)

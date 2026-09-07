@@ -21,6 +21,7 @@ Welcome to ESM Tools's documentation!
    workflow
    esm_environment
    esm_tests
+   esm_catalog_index
    motd
    cookbook
    glossary

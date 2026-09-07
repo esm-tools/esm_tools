@@ -199,11 +199,16 @@ def build_login_url(
 def _request_token(
     meta: OIDCMetadata, settings: Settings, data: dict[str, str]
 ) -> TokenSet:
-    """POST to the token endpoint with client-secret-basic auth; return a TokenSet."""
+    """POST to the token endpoint as a public client; return a TokenSet.
+
+    ``esm-catalog-dev`` is registered with Helmholtz AAI as a public client
+    (confirmed with HIFIS support, 2026-09-07): PKCE alone authenticates the
+    authorization-code exchange (RFC 7636), no client secret involved, so
+    ``client_id`` goes in the body rather than an HTTP Basic auth header.
+    """
     resp = httpx.post(
         meta.token_endpoint,
-        data=data,
-        auth=(settings.client_id, settings.client_secret.get_secret_value()),
+        data={"client_id": settings.client_id, **data},
         timeout=15,
         verify=settings.verify_tls,
     )

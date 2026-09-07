@@ -8,7 +8,11 @@ fesom:
     version: "2.8"
     type: ocean
 
-    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DUSE_SINGLE_PRECISION=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
+    # ASYNCHRONOUS_IO_THREADS defaults to OFF, which compiles out the async
+    # output/forcing threads entirely: every write is gathered onto one rank and
+    # blocks every other rank. The coupled setups get it on by accident, via the
+    # legacy -DDISABLE_MULTITHREADING=OFF the backward-compat block converts.
+    comp_command: mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DASYNCHRONOUS_IO_THREADS=ON -DUSE_SINGLE_PRECISION=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
     clean_command: ${defaults.clean_command}
 
     # MA This variable needs to be set true in every version of fesom-2.1 (choose_ block
@@ -217,23 +221,23 @@ fesom:
             par_ice_restart: par_ice_restart
 
     restart_in_in_work:
-            par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
-            par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+            par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
+            par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
             fesom_raw_restart_info: fesom_raw_restart/*.info
             fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
             fesom_bin_restart_info: fesom_bin_restart/*.info
             fesom_bin_restart: fesom_bin_restart/np${nproc}/*
-            wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+            wiso_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear!month}
             icb_restart_ISM: iceberg.restart.ISM
     restart_in_sources:
-            par_oce_restart: fesom.${parent_date!syear}.oce.restart/*.nc
-            par_ice_restart: fesom.${parent_date!syear}.ice.restart/*.nc
+            par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
+            par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
             fesom_raw_restart_info: fesom_raw_restart/*.info
             fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
             fesom_bin_restart_info: fesom_bin_restart/*.info
             fesom_bin_restart: fesom_bin_restart/np${nproc}/*
-            wiso_restart: fesom.${parent_date!syear}.wiso.restart.nc
+            wiso_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear!month}
             icb_restart_ISM: iceberg.restart.ISM
 
@@ -246,27 +250,27 @@ fesom:
             fesom_bin_restart: fesom_bin_restart
 
     restart_out_in_work:
-            par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
-            par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+            par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+            par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
             fesom_raw_restart_info: fesom_raw_restart/*.info
             fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
             fesom_raw_restart_tar: fesom_raw_restart.tar.*
             fesom_bin_restart_info: fesom_bin_restart/*.info
             fesom_bin_restart: fesom_bin_restart/np${nproc}/*
             fesom_bin_restart_tar: fesom_bin_restart.tar.*
-            wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+            wiso_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear}
             icb_restart_ISM: iceberg.restart.ISM
     restart_out_sources:
-            par_oce_restart: fesom.${end_date!syear}.oce.restart/*.nc
-            par_ice_restart: fesom.${end_date!syear}.ice.restart/*.nc
+            par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+            par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
             fesom_raw_restart_info: fesom_raw_restart/*.info
             fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
             fesom_raw_restart_tar: fesom_raw_restart.tar.*
             fesom_bin_restart_info: fesom_bin_restart/*.info
             fesom_bin_restart: fesom_bin_restart/np${nproc}/*
             fesom_bin_restart_tar: fesom_bin_restart.tar.*
-            wiso_restart: fesom.${end_date!syear}.wiso.restart.nc
+            wiso_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.wiso.restart.nc
             icb_restart: iceberg.restart #.${parent_date!syear}
             icb_restart_ISM: iceberg.restart.ISM
 
@@ -831,3 +835,17 @@ fesom:
     - "copy_all_results_to_exp"
     - "clean_run_dir"
 
+
+# ------------------------------------------------------------------------------
+# MACHINE ENVIRONMENT
+# ------------------------------------------------------------------------------
+computer:
+    choose_computer.name:
+        # albedo's default is openmpi_2022 (OpenMPI 4.1.3 + hdf5 1.12.2 +
+        # netcdf-fortran 4.5.4). AWICM3/AWIESM3 have always pinned openmpi_2026
+        # (4.1.6 + hdf5 1.14.3 + netcdf-c 4.8.1 + netcdf-fortran 4.6.1) in their
+        # own computer: block, so coupled FESOM ran on a different MPI/IO stack
+        # than standalone FESOM ever did. Pin the same stack here so a standalone
+        # run is built and launched the way the coupled ones are.
+        albedo:
+            mpi_implementation: openmpi_2026

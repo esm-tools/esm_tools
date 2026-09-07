@@ -23,6 +23,20 @@
     <field id="MLD3"   long_name="mixed layer depth (Griffies)"       unit="m"/>
     <field id="fw"     long_name="freshwater flux"                    unit="m s-1"/>
     <field id="fh"     long_name="surface heat flux"                  unit="W m-2"/>
+    <!-- Iceberg fluxes on nod2D, registered by CASE ('icb') in io_meandata.F90:1677
+         when use_icebergs=.true. Note there is no stream called "icb": that case
+         label expands to these four plus ibhf below, so requesting 'icb' in
+         namelist.io never produced an icb file (and under XIOS namelist.io is not
+         read at all, see io_meandata.F90:344). Declared unconditionally, since a
+         field nothing references costs nothing; the <file> entries in
+         file_def_fesom.xml.j2 are gated on fesom.use_icebergs so no fill-only
+         file appears in a run without icebergs.
+         Long names are the model's own. ibfwb and ibfwbv carry an identical
+         string upstream; "(bv)" is added here only to tell them apart. -->
+    <field id="ibfwb"  long_name="basal iceberg melting"              unit="m s-1" detect_missing_value="true"/>
+    <field id="ibfwbv" long_name="basal iceberg melting (bv)"         unit="m s-1" detect_missing_value="true"/>
+    <field id="ibfwl"  long_name="lateral iceberg melting"            unit="m s-1" detect_missing_value="true"/>
+    <field id="ibfwe"  long_name="iceberg erosion"                    unit="m s-1" detect_missing_value="true"/>
   </field_group>
 
   <!-- 2D fields on ELEMENTS -->
@@ -45,6 +59,9 @@
     <field id="bolus_w" long_name="GM bolus vertical velocity"      unit="m s-1"/>
     <field id="N2"      long_name="Brunt-Vaisala frequency squared" unit="s-2"/>
     <field id="Kv"      long_name="vertical tracer diffusivity"     unit="m2 s-1"/>
+    <!-- ibhf is def_stream'd as (/nl,nod2D/), the same shape as w/N2/Kv above,
+         so it belongs in this nl group and NOT in fesom_3d_nod (nl-1). -->
+    <field id="ibhf"    long_name="heat flux from iceberg melting"   unit="W m-2" detect_missing_value="true"/>
   </field_group>
 
   <!-- 3D fields on ELEMENTS, cell-center -->

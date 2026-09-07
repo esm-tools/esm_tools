@@ -9,7 +9,11 @@ on IDE hover wherever it is used.
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TypedDict
+from typing import Optional
+
+from typing_extensions import TypedDict
+
+from pydantic import BaseModel, ConfigDict
 
 ExperimentId = str
 """An experiment identifier, e.g. 'PI-CTRL'."""
@@ -55,36 +59,43 @@ CubeDimensions = dict[str, CubeDimension]
 """A STAC datacube Dimensions object, keyed by dimension name."""
 
 
-class ScannedVariable(TypedDict, total=False):
+class ScannedVariable(BaseModel):
     """One entry in a scanner's ``variables`` list, before datacube mapping.
 
-    Every key is optional; ``name`` identifies the variable, the rest are the
-    CF-style attributes a scanner may extract.
+    Every field is optional; ``name`` identifies the variable, the rest are the
+    CF-style attributes a scanner may extract. ``extra="allow"`` lets a scanner
+    attach attributes not enumerated here.
     """
 
-    name: VariableName
-    units: str
-    dimensions: list[str]
-    description: str
-    long_name: str
-    standard_name: str
+    model_config = ConfigDict(extra="allow")
+
+    name: Optional[VariableName] = None
+    units: Optional[str] = None
+    dimensions: list[str] = []
+    description: Optional[str] = None
+    long_name: Optional[str] = None
+    standard_name: Optional[str] = None
 
 
-class FileMetadata(TypedDict, total=False):
+class FileMetadata(BaseModel):
     """The metadata a Reader (e.g. NetCDFReader) produces for one file.
 
-    Every key is optional — a reader fills what it can extract. ``dimensions``
-    is a STAC datacube Dimensions object, forwarded verbatim (opaque here).
+    A scanner fills what it can extract; every field is optional and
+    ``extra="allow"`` permits keys not enumerated here. Validated at the scan
+    boundary, so a malformed reader output is caught where it is produced.
+    ``dimensions`` is a STAC datacube Dimensions object, forwarded verbatim.
     """
 
-    variable: str
-    variables: list[ScannedVariable]
-    component: ComponentName
-    format: str
-    dimensions: CubeDimensions
-    datetime_start: datetime
-    datetime_end: datetime
-    datetime_str: str
-    frequency: str
-    geometry: Geometry
-    bbox: BBox
+    model_config = ConfigDict(extra="allow")
+
+    variable: Optional[str] = None
+    variables: list[ScannedVariable] = []
+    component: Optional[ComponentName] = None
+    format: Optional[str] = None
+    dimensions: CubeDimensions = {}
+    datetime_start: Optional[datetime] = None
+    datetime_end: Optional[datetime] = None
+    datetime_str: Optional[str] = None
+    frequency: Optional[str] = None
+    geometry: Optional[Geometry] = None
+    bbox: Optional[BBox] = None

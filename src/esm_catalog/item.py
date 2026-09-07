@@ -65,10 +65,10 @@ def make_item(
     # (fx) file has none, so it borrows the experiment run span's start
     # (dt_start, set to run_start by _build_datetime) -- the stamp is never
     # guessed from the filename.
-    id_stamp = file_metadata.get("datetime_str") or dt_start.strftime("%Y%m")
+    id_stamp = file_metadata.datetime_str or dt_start.strftime("%Y%m")
     item_id = _build_id(
-        file_metadata.get("variable", "unknown"),
-        file_metadata.get("component", "unknown"),
+        file_metadata.variable or "unknown",
+        file_metadata.component or "unknown",
         id_stamp,
         path,
     )
@@ -79,8 +79,8 @@ def make_item(
 
     item = Item(
         id=item_id,
-        geometry=file_metadata.get("geometry"),
-        bbox=file_metadata.get("bbox"),
+        geometry=file_metadata.geometry,
+        bbox=file_metadata.bbox,
         datetime=item_datetime,
         properties=properties,
         start_datetime=dt_start,
@@ -149,18 +149,18 @@ def _build_properties(
     """
 
     properties: dict = {
-        "variable": file_metadata.get("variable", "unknown"),
+        "variable": file_metadata.variable or "unknown",
         "experiment": exp_metadata.experiment_id,
-        "component": file_metadata.get("component", "unknown"),
-        "format": file_metadata.get("format", "unknown"),
+        "component": file_metadata.component or "unknown",
+        "format": file_metadata.format or "unknown",
     }
-    if file_metadata.get("frequency"):
-        properties["frequency"] = file_metadata["frequency"]
+    if file_metadata.frequency:
+        properties["frequency"] = file_metadata.frequency
 
     variable_names = [
-        variable["name"]
-        for variable in file_metadata.get("variables", [])
-        if variable.get("name") and variable["name"] != "unknown"
+        variable.name
+        for variable in file_metadata.variables
+        if variable.name and variable.name != "unknown"
     ]
     if len(variable_names) > 1:
         properties["variables"] = variable_names
@@ -203,8 +203,8 @@ def _build_datetime(
     ValueError
         If the file has no per-file datetime and the experiment has no run span.
     """
-    dt_start = _as_utc(file_metadata.get("datetime_start"))
-    dt_end = _as_utc(file_metadata.get("datetime_end"))
+    dt_start = _as_utc(file_metadata.datetime_start)
+    dt_end = _as_utc(file_metadata.datetime_end)
 
     if dt_start is None:
         run_start = _as_utc(exp_metadata.run_start)
@@ -242,7 +242,7 @@ def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
     pystac.Asset
         The file's data asset.
     """
-    file_format = file_metadata.get("format", "")
+    file_format = file_metadata.format or ""
     media_type = (
         "application/x-grib2" if file_format == "grib" else "application/x-netcdf"
     )

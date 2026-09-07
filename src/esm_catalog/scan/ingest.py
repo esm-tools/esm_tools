@@ -89,8 +89,8 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
     except (UnknownFormatError, LookupError):
         return _ReadResult(output_file, None, None, unsupported=True)
     try:
-        file_metadata = dict(reader.read(output_file.path))
-        file_metadata["component"] = output_file.component
+        file_metadata = FileMetadata.model_validate(reader.read(output_file.path))
+        file_metadata.component = output_file.component
         return _ReadResult(output_file, file_metadata, None)
     except UnsupportedContentError:
         return _ReadResult(output_file, None, None, unsupported=True)

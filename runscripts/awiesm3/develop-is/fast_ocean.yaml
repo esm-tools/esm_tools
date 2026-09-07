@@ -61,6 +61,19 @@ fesom:
     resolution: "CORE3"        # cavity-enabled 211567-node mesh (was CORE2 126858)
     with_cavity: true          # enable ice-shelf cavities (use_cavity=.true.)
     griddes_nodes: "core3_griddes_nodes.nc"   # ice2fesom max-mesh node griddes (CORE3, not the core2 default); generated w/ pyfesom2 in the core3 mesh dir
+    # Max mesh. awiesm3.yaml:617 otherwise derives this as ${pool_dir}/fesom2/core3/,
+    # which was swapped on 2026-08-24 23:47 from the 211567-node mesh to a
+    # 220509-node one (old content kept alongside as core3_beta). That broke
+    # fix_namcouple_feom_dim silently: it seds the MAX_MESH nod2d count -> the
+    # submesh count in the namcouple, 220509 matched nothing, and the namcouple
+    # kept fesom.nx=211567 while FESOM ran the 208810-node submesh. The echo after
+    # the sed prints unconditionally, so the log claimed a fix that never happened.
+    # Sets both MESH_DIR_fesom and MAX_MESH (env_fesom.py:192,215). MeshPath is
+    # separately forced to the submesh by the chunk block in awiesm3.yaml.
+    # NOTE: a270234-owned path (the June cavity-hole rework; dist_1792 regenerated
+    # there with fesom_meshpart). Anyone else needs their own copy, or
+    # "${general.pool_dir}/fesom2/core3_beta/" for the pre-rework mesh.
+    mesh_dir: "/work/ab0246/a270234/mesh/a270092/core3/"
     restart_rate: 1
     restart_unit: "y"
     restart_first: 1
@@ -88,6 +101,22 @@ fesom:
     # The ocp-tool OASIS-regen toolchain (ocp_tool_dir, driver/worker conda envs,
     # template/build/rmp dirs) is auto-discovered in couplings/fesom/env_fesom.py;
     # set it in this fesom block only to override a discovered default.
+    # env_fesom.py:181 discovers these by shelling out to `conda env list`, and
+    # _conda_env_python returns "" when conda is not on PATH. That is exactly the
+    # case for a .run script generated from inside a batch job (the chunk-2
+    # couple_in script is written by the PISM job, whose module env has no conda),
+    # so the export comes out empty. It then fails silently, because
+    # ${OCP_WEIGHTGEN_DRIVER_PY:-python} in make_icebergs falls back to a python
+    # with no fesom_icb_pism -> "ice2fesom FAILED: make_icebergs" and
+    # observe_couple_in refuses to advance. Setting them explicitly is the
+    # fallback _conda_env_python's own docstring intends.
+    # ocp-worker: mpi4py 4.1.2 -> Open MPI v4.1.2, matching the model build.
+    # NOTE: a270234-owned conda envs; other users need their own paths here.
+    ocp_weightgen_driver_py: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+    ocp_weightgen_worker_py: "/work/ab0246/a270234/conda/envs/ocp-worker/bin/python"
+    # env_fesom.py:290 otherwise derives this as <pool>/oasis/cy48r1/TCO95-CORE3/1792,
+    # the directory that vanished in the 2026-08-25 00:04 pool reorg; follow input_dir.
+    oasis_rmp_template_dir: "${general.pool_dir}/oasis/cy48r1/TCO95-core3_beta/1792"
 
     # Per-leg mesh + restart-source wiring (chunk_number 1/"*") lives in awiesm3.yaml
     # behind general.interactive_mesh. Only the restart parent stays here (the
@@ -98,6 +127,17 @@ fesom:
     # with the oifs NAMMCC LNEMOLIMTEMP/LNEMOLIMTHK settings below.
 
 lpj_guess:
+    # Same 00:04 reorg: slt_TCO95_CORE3.nc -- the path this builds as ${slt_dir}/
+    # slt_${resolution}_${fesom.resolution}${general.lpjg_slt_suffix}.nc -- is gone,
+    # only slt_TCO95_core3_beta.nc survived. Without it every one of the 11764 land
+    # cells falls through as a lake point ("Problem with EC-Earth Soil info",
+    # ecemain(): error in read_input_data) and LPJ-GUESS SIGSEGVs, taking the MPMD
+    # step down: the second ism38 failure, 2026-08-25 11:00. Overriding slt_dir
+    # rather than forcing_sources fixes all 65 references at once (base + one per
+    # rank via [[proc_list-->PROC_NUM]]).
+    # NOTE: a270234-owned path, holding a byte-identical copy of the surviving
+    # *_core3_beta map under the name the config expects. See its README.txt.
+    slt_dir: "/work/ab0246/a270234/input/lpj-guess/slt/"
     nproc: 64 # originally 16
     omp_num_threads: 4
     mip: "cmip7"
@@ -293,12 +333,31 @@ oifs:
                 LHDHKS: ".false."
 
     # oifs just_copy subjob now lives in awiesm3.yaml behind general.interactive_mesh.
+rnfmap:
+    # Same 00:04 reorg: runoff-mapper/runoff_maps_CORE3_v1.1.nc is gone (the path
+    # rnfmap.yaml:74 builds from runoff_maps_name = _${fesom.resolution}), leaving
+    # runoff_maps_core3_beta_v1.1.nc.
+    runoff_file: "${general.pool_dir}/runoff-mapper/runoff_maps_core3_beta_v1.1.nc"
+
 oasis3mct:
     use_lucia: false #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster
     lresume: true # Set to false to generate the rst files for first leg
     time_step: 3600
     norestart: T #Do i restart from vegin or not?
     debug_level: 1
+
+    # The pool dir this used to resolve to, cy48r1/TCO95-CORE3 (= pool_dir/oasis/
+    # cy${oifs.version}/${oifs.resolution}-${fesom.resolution}, awiesm3.yaml:1253),
+    # was removed on 2026-08-25 00:04; TCO95-core3_beta holds the same set.
+    # masks.nc/grids.nc/areas.nc/vegin.nc are staged from here via the restart_in
+    # path. When the directory is missing they are silently not staged and
+    # LPJ-GUESS exits 2 s into the leg with "get_nx_atmo_from_mask: Could not open
+    # masks.nc" -- it nc_opens the file at the top of ecemain() with no retry --
+    # taking the whole MPMD step down with it. That is what killed ism38.
+    # ini_restart_dir defaults to "${input_dir}"; set explicitly so a later change
+    # to one cannot silently leave the other pointing at the dead path.
+    input_dir: "${general.pool_dir}/oasis/cy48r1/TCO95-core3_beta/"
+    ini_restart_dir: "${general.pool_dir}/oasis/cy48r1/TCO95-core3_beta/"
 
     # Per-leg OASIS files. Kept in the runscript (the shared oasis3mct
     # load_restart_from_pool machinery also sets rmp/rstas/rstos, so a setup-level

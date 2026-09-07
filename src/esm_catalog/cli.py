@@ -14,10 +14,10 @@ and which files have been scanned, for incremental re-scans). ``push`` bulk-load
 new shards into the server's pgstac, which stac-fastapi-pgstac then serves to the
 web viewer.
 
-Configuration (identity-provider settings, ``client_secret``, a default
-``server_url``) comes from environment variables prefixed ``ESM_CATALOG_`` or
-from a config file — run ``esm-catalog status`` to see what is currently
-resolved and where the config file would live.
+Configuration (identity-provider settings, a default ``server_url``) comes
+from environment variables prefixed ``ESM_CATALOG_`` or from a config file —
+run ``esm-catalog status`` to see what is currently resolved and where the
+config file would live.
 """
 
 from __future__ import annotations
@@ -32,10 +32,10 @@ import rich_click as click
 from esm_catalog import __version__
 
 _CONFIG_EPILOG = (
-    "Configuration (identity-provider settings, client_secret, a default "
-    "server_url) comes from environment variables prefixed 'ESM_CATALOG_' "
-    "(e.g. ESM_CATALOG_SERVER_URL) or a config file — run 'esm-catalog status' "
-    "to see what is currently resolved and where the config file would live."
+    "Configuration (identity-provider settings, a default server_url) comes "
+    "from environment variables prefixed 'ESM_CATALOG_' (e.g. "
+    "ESM_CATALOG_SERVER_URL) or a config file — run 'esm-catalog status' to "
+    "see what is currently resolved and where the config file would live."
 )
 
 
@@ -171,8 +171,8 @@ def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
     overwrite the first's token). SERVER_URL only labels which server this
     token is for — it is not itself contacted for login. The identity provider
     (who actually issues the token) is a separate system, configured via
-    oidc_discovery_url/client_id/client_secret (env or config file); see
-    'esm-catalog status' or the config file for what is currently resolved.
+    oidc_discovery_url/client_id (env or config file); see 'esm-catalog
+    status' or the config file for what is currently resolved.
     """
     from esm_catalog import auth as _auth
     from esm_catalog.config import Settings

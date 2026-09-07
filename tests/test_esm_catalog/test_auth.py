@@ -186,10 +186,3 @@ def test_verify_tls_from_env(monkeypatch):
     assert Settings().verify_tls is False
     monkeypatch.setenv("ESM_CATALOG_VERIFY_TLS", "true")
     assert Settings().verify_tls is True
-
-
-def test_secret_not_leaked_in_repr(monkeypatch):
-    monkeypatch.setenv("ESM_CATALOG_CLIENT_SECRET", "supersecret")
-    s = Settings()
-    assert "supersecret" not in repr(s)
-    assert s.client_secret.get_secret_value() == "supersecret"

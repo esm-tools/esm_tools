@@ -13,7 +13,9 @@ From: {{ BASE_IMAGE_TAG }}
     export LC_ALL=en_US.UTF-8
 
 %runscript
-    exec /opt/conda/envs/esm_tools/bin/python "$@"
+    # Passthrough, not a fixed command -- esm_master, esm-catalog, python,
+    # whatever entry point PATH (set in %environment) resolves.
+    exec "$@"
 
 %labels
     Name esm_tools
@@ -22,8 +24,9 @@ From: {{ BASE_IMAGE_TAG }}
 %help
     esm-tools, built from ghcr.io/esm-tools/esm_tools.
 
-    Run a command inside the esm_tools conda env:
-        apptainer exec esm_tools.sif esm_master --help
+    Run any installed entry point:
+        apptainer run esm_tools.sif esm_master --help
+        apptainer run esm_tools.sif esm-catalog auth login <server>
 
     Drop into a shell with the env active:
         apptainer shell esm_tools.sif

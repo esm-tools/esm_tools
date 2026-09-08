@@ -40,9 +40,16 @@ pism:
       github1.2:
         branch: v1.2
         git-repository: https://github.com/pism/pism.git
+      # Not upstream v1.2.1, despite the name. The name is kept because it fixes
+      # the build directory, pism-github1.2.1, that the coupled setup and the
+      # runscripts already point at. The tree is crodehacke/detect_holes --
+      # Rodehacke's enclosed-ocean and hole-detection work, which the ice-sheet
+      # coupling needs -- plus the two fixes on top of it. The old entry named
+      # v1.2.1, which has none of that; it builds cleanly and is silently wrong,
+      # so anyone doing a fresh get- got a PISM that could not detect holes.
       github1.2.1:
-        branch: v1.2.1
-        git-repository: https://github.com/pism/pism.git
+        branch: crodehacke/detect_holes-awiesm3-is
+        git-repository: https://github.com/xihao001/pism.git
       index1.1:
         branch: Index_dev
         git-repository: https://github.com/sebhinck/pism-pub

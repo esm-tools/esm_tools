@@ -47,6 +47,14 @@ ENV LC_ALL=en_US.UTF-8
 # Set working directory inside the container
 WORKDIR /esm
 
+# catalog-grib needs the ecCodes C library at runtime; cfgrib/eccodes (the pip
+# packages) only bind to it. conda-forge bundles the compiled library, which
+# is far more reliable here than pip alone -- see setup.py's own comment on
+# the extra. Everything else (catalog + esm_tools itself) is plain pip.
+COPY . .
+RUN mamba install -n esm_tools -y -c conda-forge eccodes && \
+    mamba run -n esm_tools pip install --no-cache-dir -e ".[catalog,catalog-grib]"
+
 # Use the Conda environment by default (uncomment if using an environment)
 RUN echo "conda activate esm_tools" >> ~/.bashrc
 

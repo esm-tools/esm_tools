@@ -59,10 +59,14 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
 
+      # context is the repo root, not the Dockerfile's own directory: the
+      # Dockerfile COPYs the source tree in to pip-install esm_tools itself
+      # (catalog + catalog-grib extras), not just the container scaffolding.
       - id: push
         uses: docker/build-push-action@v6
         with:
-          context: .github/containers/ubuntu-miniforge-esm_tests
+          context: .
+          file: .github/containers/ubuntu-miniforge-esm_tests/Dockerfile
           push: true
           tags: ${{ steps.tags.outputs.list }}
 

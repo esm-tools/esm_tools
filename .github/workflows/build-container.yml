@@ -1,0 +1,118 @@
+name: build container
+
+on:
+  # No `paths:` filter here deliberately: GitHub applies it to the whole
+  # trigger, tags included, so a version-tag push landing on a commit that
+  # didn't textually touch these files would get silently skipped -- and a
+  # tag build must always run, unconditionally.
+  push:
+    branches: [release]
+    tags: ["v[0-9]*.[0-9]*.[0-9]*"]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "branch, tag, or commit SHA to build (blank = the branch/tag you picked above)"
+        required: false
+        type: string
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+      build_ref: ${{ steps.resolve_ref.outputs.build_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - id: resolve_ref
+        run: echo "build_ref=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      # :latest only moves on an actual release-branch push -- a manual build
+      # of an old commit/tag, or a versioned-tag push, must never move it.
+      - id: tags
+        run: |
+          {
+            echo "list<<EOF"
+            echo "${IMAGE}:${{ steps.resolve_ref.outputs.build_ref }}"
+            if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" == "true" ]]; then
+              echo "${IMAGE}:${{ github.ref_name }}"
+            fi
+            if [[ "${{ github.event_name == 'push' && github.ref == 'refs/heads/release' }}" == "true" ]]; then
+              echo "${IMAGE}:latest"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      - id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .github/containers/ubuntu-miniforge-esm_tests
+          push: true
+          tags: ${{ steps.tags.outputs.list }}
+
+  # Bootstraps from the image build-and-push-image just pushed (Bootstrap:
+  # docker in esm_tools.def) -- not a parallel reimplementation of the
+  # Dockerfile. Apptainer comes from alpine's apk, same as firn's build-sif
+  # job (codebase.helmholtz.cloud/paul.gierz/firn), so no HPC runner/module
+  # needed here either.
+  build-and-push-sif:
+    needs: build-and-push-image
+    runs-on: ubuntu-latest
+    container:
+      image: alpine:latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      APPTAINER_DOCKER_USERNAME: ${{ github.actor }}
+      APPTAINER_DOCKER_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+      BUILD_REF: ${{ needs.build-and-push-image.outputs.build_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - run: apk add --no-cache apptainer
+
+      - run: |
+          apptainer build --build-arg "BASE_IMAGE_TAG=${IMAGE}:${BUILD_REF}" \
+            esm_tools.sif \
+            .github/containers/ubuntu-miniforge-esm_tests/esm_tools.def
+          apptainer inspect esm_tools.sif
+
+      # Same tag policy as the docker image: sif-<build_ref> always; sif-<tag>
+      # on a versioned-tag push; sif-latest only on an actual release push.
+      - name: publish .sif to ghcr (ORAS)
+        run: |
+          echo "$APPTAINER_DOCKER_PASSWORD" | apptainer registry login \
+            --username "$APPTAINER_DOCKER_USERNAME" --password-stdin \
+            "oras://ghcr.io"
+          apptainer push esm_tools.sif "oras://${IMAGE}:sif-${BUILD_REF}"
+          if [ "${{ startsWith(github.ref, 'refs/tags/') }}" = "true" ]; then
+            apptainer push esm_tools.sif "oras://${IMAGE}:sif-${{ github.ref_name }}"
+          fi
+          if [ "${{ github.event_name == 'push' && github.ref == 'refs/heads/release' }}" = "true" ]; then
+            apptainer push esm_tools.sif "oras://${IMAGE}:sif-latest"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: esm_tools.sif
+          path: esm_tools.sif
+          retention-days: 7

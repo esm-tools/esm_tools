@@ -1,0 +1,30 @@
+# Built from the image this repo already publishes to ghcr.io — not a parallel
+# Dockerfile reimplementation. BASE_IMAGE_TAG is passed at build time (see
+# .github/workflows/build-container.yml) so the .sif always bootstraps from
+# the exact image tag just pushed, not a mutable :latest that may not exist
+# yet on this trigger (e.g. a versioned-tag push never moves :latest).
+# Manual build: apptainer build --build-arg BASE_IMAGE_TAG=ghcr.io/esm-tools/esm_tools:latest esm_tools.sif esm_tools.def
+Bootstrap: docker
+From: {{ BASE_IMAGE_TAG }}
+
+%environment
+    export PATH=/opt/conda/envs/esm_tools/bin:/opt/conda/bin:$PATH
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+
+%runscript
+    exec /opt/conda/envs/esm_tools/bin/python "$@"
+
+%labels
+    Name esm_tools
+    Maintainer paul.gierz@awi.de
+
+%help
+    esm-tools, built from ghcr.io/esm-tools/esm_tools.
+
+    Run a command inside the esm_tools conda env:
+        apptainer exec esm_tools.sif esm_master --help
+
+    Drop into a shell with the env active:
+        apptainer shell esm_tools.sif
+        # then: conda activate esm_tools

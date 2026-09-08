@@ -1,4 +1,5 @@
-# TODO (PG): Change to ghcr hosting at some point in the future.
+# Built and pushed to ghcr.io/esm-tools/esm_tools by
+# .github/workflows/build-container.yml.
 
 # Use Ubuntu 25 as the base image
 FROM ubuntu:25.04

@@ -135,6 +135,16 @@ fesom:
                     whichEVP: 1
                     alpha_evp: 300          # constant that control numerical stability of mEVP.
                     beta_evp: 300           # constant that control numerical stability of mEVP.
+            CORE3_nocav:
+                    # CORE3 with use_cavity=.false.: same nodes and elements, the
+                    # ice-shelf cavities are open ocean. Partitions under
+                    # core3_nocav/dist_*; ocp-tool products in the pool as CORE3_nocav.
+                    nx: 220509
+                    mesh_dir: "${fesom.mesh_base_dir}/core3_nocav/"
+                    nproc: 128
+                    whichEVP: 1
+                    alpha_evp: 300          # constant that control numerical stability of mEVP.
+                    beta_evp: 300           # constant that control numerical stability of mEVP.
             pi:
                     nx: 3140
                     mesh_dir: "${fesom.mesh_base_dir}/pi/"
@@ -780,6 +790,8 @@ fesom:
             heat_oce:
                     grid: feom
             heat_ico:
+                    grid: feom
+            tsk_ico:
                     grid: feom
             heat_swo:
                     grid: feom

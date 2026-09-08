@@ -51,9 +51,16 @@ WORKDIR /esm
 # packages) only bind to it. conda-forge bundles the compiled library, which
 # is far more reliable here than pip alone -- see setup.py's own comment on
 # the extra. Everything else (catalog + esm_tools itself) is plain pip.
+#
+# tzdata: pyarrow (stac-geoparquet's dependency) needs a real zoneinfo
+# database and does not reliably fall back to the base image's system one
+# from inside a conda env -- "Cannot locate timezone 'UTC'" otherwise, seen
+# live pushing a geoparquet shard. TZDIR pins it explicitly rather than
+# relying on pyarrow's own search order.
 COPY . .
-RUN mamba install -n esm_tools -y -c conda-forge eccodes && \
+RUN mamba install -n esm_tools -y -c conda-forge eccodes tzdata && \
     mamba run -n esm_tools pip install --no-cache-dir -e ".[catalog,catalog-grib]"
+ENV TZDIR=/opt/conda/envs/esm_tools/share/zoneinfo
 
 # Use the Conda environment by default (uncomment if using an environment)
 RUN echo "conda activate esm_tools" >> ~/.bashrc

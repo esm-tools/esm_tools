@@ -19,8 +19,10 @@ post-process the metadata. An enricher registers itself with
 
 from __future__ import annotations
 
+import warnings
 from typing import Callable
 
+import xarray as xr
 from upath import UPath
 
 from esm_catalog.scan.format import FileFormat
@@ -91,9 +93,18 @@ def _open_hypercubes(path: UPath) -> list:
     # this reader is local-only); ``.path`` is the UPath's filesystem path.
     # indexpath="" keeps cfgrib from writing a .idx sidecar next to the data;
     # errors="ignore" drops messages cfgrib cannot decode rather than aborting.
-    return cfgrib.open_datasets(
-        path.path, backend_kwargs={"indexpath": "", "errors": "ignore"}
-    )
+    #
+    # Dates outside datetime64[ns] range (routine for paleoclimate calendars)
+    # do not raise -- cfgrib's own xarray_plugin falls back to cftime objects
+    # and warns instead, same as the NetCDF reader's open path (see
+    # netcdf/open.py). Already handled downstream (timeaxis.py accepts cftime
+    # objects same as datetime64), so suppressed here too rather than left to
+    # print on every such file.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+        return cfgrib.open_datasets(
+            path.path, backend_kwargs={"indexpath": "", "errors": "ignore"}
+        )
 
 
 def _basic_metadata(datasets: list) -> FileMetadata:

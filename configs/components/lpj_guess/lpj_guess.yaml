@@ -55,8 +55,11 @@ lpj_guess:
             branch: main
         4.1.2:
             runscript_name: run_coupled_4_1_2.ins
-            git-repository: https://git.smhi.se/e8891/lpjg-4.1.git
-            branch: lpj_guess_awiesm3
+            # 2026-09-08: awiesm3 develop* build the land-grid branch (LPJ-GUESS land
+            # mask derived from the coastline), which is what the current develop
+            # bin/guess was built from.
+            git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
+            branch: feat/lpjg-land-grid-from-coastline-4.1.11
             install_bins: build/guess
             executable: guess
         4.1.3:

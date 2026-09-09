@@ -116,6 +116,13 @@ fesom:
     cmip7_cmor_output: True
 
 lpj_guess:
+    # PINNED 2026-08-24.  bin/guess is whatever was built last, and a rebuild on
+    # 08-23 21:48 replaced it with a tree whose hardened land-cover checks reject
+    # the shared 1350 state (1e-9 tolerance against floating-point stand sums).
+    # 11V crashlooped all three legs on it.  This arm STAGED md5 f687355919dc0b18b511e10560899bae,
+    # verified against the guess in its own run directory, so it is pinned to the
+    # binary it actually ran.  An unpinned default is a dependency nothing enforces.
+    executable: guess.raupach_junebase_gated
     resolution: "TCO95"
     mip: cmip7
     scenario: piControl

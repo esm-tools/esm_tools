@@ -161,7 +161,7 @@ general:
             with_co2_oce_coupling: false
             with_co2_veg_coupling: false
         develop:
-            major_version: v3.4
+            major_version: v3.5
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
@@ -173,7 +173,7 @@ general:
             with_co2_veg_coupling: false
             
         develop-cc:
-            major_version: v3.4
+            major_version: v3.5
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2
             add_include_models:
@@ -189,7 +189,7 @@ general:
         # (and reproduced by any user) from a single esm_master target:
         #   esm_master comp-awiesm3-develop-is
         develop-is:
-            major_version: v3.4
+            major_version: v3.5
             couplings:
                 - fesom-2.7+oifs-48r1+xios-2.5+lpj_guess-4.1.2+pism-github1.2.1+debm
             # NB: pism + debm + ismm are built via the coupling above, but must NOT
@@ -312,6 +312,28 @@ oifs:
                     NAMCLDP:
                         RVICE: 0.16
 
+        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
+        # differences live in the oasis3mct block. v3.4.x is untouched.
+        "v3.5":
+            with_xios: true
+            build_type: 'release'
+            comp_command: "./openifs-bundle create; ./openifs-bundle build --threads=32 --cmake=FCM_PARALLEL=16
+                --openifs-only --without-double-precision --with-cplng2 --with-oifs-xios
+                --build-type=${build_type} --install;
+                git config core.fileMode false; mv install/bin/ifsMASTER.SP install/bin/OpenIFS;
+                nohup chmod -R ${source_code_permissions} . >/dev/null 2>&1 & disown"
+            namelist_dir: ${general.esm_namelist_dir}/oifs/${version}/awicm3/v3.4
+            wam: true
+            add_add_namelist_changes:
+                fort.4:
+                    NAMCT0:
+                        LXIOS: true
+                    NAEPHY:
+                        LECURR: true
+                        LRDALB: false
+                    NAMCLDP:
+                        RVICE: 0.16
+
     choose_general.version:
         # NAMMCC: coupled-slab mode, pairs with the develop* FESOM build.
         develop:
@@ -386,7 +408,7 @@ oifs:
     res_level: ${resolution}${levels}
     atm_oce_fields: [A_Qns_oce, A_Qs_all, A_Precip_liquid, A_Precip_solid, A_Evap,
         A_Subl, A_Q_ice, A_TauX_oce, A_TauY_oce, A_TauX_ice, A_TauY_ice, A_SST, A_Ice_frac,
-        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_CurX, A_CurY, A_WindX, A_WindY,
+        A_Snow_thickness, A_Ice_temp, A_Ice_albedo, A_Ice_thickness, A_Ice_tskin, A_CurX, A_CurY, A_WindX, A_WindY,
         A_FCO2_oce, A_XCO2_oce]
     atm_veg_fields: [LAILVeg, LAIHVeg, FracLVeg, FracHVeg, TypeHVeg, TypeLVeg, T2MVeg,
         TPVeg, SDVeg, SDensVeg, SoilTVeg.L001, SoilTVeg.L002, SoilTVeg.L003, SoilTVeg.L004,
@@ -599,12 +621,12 @@ fesom:
         true:
             comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
                          -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DFESOM_WITH_XIOS=ON -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                        ${yac_flag} ${meshpart_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        ${yac_flag} ${meshpart_flag} ${sp_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
         false:
             comp_command: mkdir -p build; cd build; cmake -DOIFS_COUPLED=ON -DFESOM_COUPLED=ON ${fesom_sp_flag}
                          -DENABLE_OPENMP=ON -DOPENMP_REPRODUCIBLE=OFF -DDISABLE_MULTITHREADING=OFF -DDISABLE_PARALLEL_RESTART_READ=ON ${recom_comp_flag} -DCMAKE_BUILD_TYPE=${build_type} -DDISABLE_MULTITHREADING=OFF
-                        ${yac_flag} ${meshpart_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
+                        ${yac_flag} ${meshpart_flag} ${sp_flag} -DCMAKE_INSTALL_PREFIX=../  ..;   make install
                         -j `nproc --all`
     choose_general.oasis_with_yac:
         true:
@@ -632,6 +654,20 @@ fesom:
     # choose_general.version below. Released tags v3.4.2 and below stay double;
     # v3.5+ can opt in later once validated.
     fesom_sp_flag: ""
+    # Working precision. FESOM main gained -DUSE_SINGLE_PRECISION (WP=real32);
+    # default off, so nothing changes unless a runscript asks for it. The
+    # OIFS-via-OASIS path is the one coupled mode the FESOM guard allows
+    # (src/CMakeLists.txt:100-155): exfld is typed WP_full so the OASIS transient
+    # stays real64, and the coupling MPI calls use MPI_WP rather than a hardcoded
+    # MPI_DOUBLE_PRECISION. FESOM_COUPLED without OIFS, USE_YAC and
+    # ENABLE_IFS_INTERFACE are still refused by that guard, correctly.
+    single_precision: false
+    sp_flag: ""
+    choose_single_precision:
+        true:
+            sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+        false:
+            sp_flag: ""
     model_dir: ${general.model_dir}/${fesom.destination}
     setup_dir: ${general.model_dir}
 
@@ -678,6 +714,24 @@ fesom:
                     ice_therm:
                         use_meltponds: true
 
+        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
+        # differences live in the oasis3mct block. v3.4.x is untouched.
+        "v3.5":
+            with_xios: true
+            add_namelist_changes:
+                namelist.config:
+                    geometry:
+                        metric_factor_zero: True
+                    # which_ale is set in the base namelist_changes above (see there).
+                    restart_log:
+                        raw_restart_length_unit: "off"
+                        bin_restart_length_unit: "off"
+                namelist.tra:
+                    tracer_phys:
+                        surf_relax_s: "0.0"
+                namelist.ice:
+                    ice_therm:
+                        use_meltponds: true
     # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop
     # branches — reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is
     # unstable on coarse meshes (e.g. CORE2), so other resolutions keep
@@ -1288,6 +1342,75 @@ oasis3mct:
             rst_co2_ao_name: 'rst_co2_ao'
             rst_co2_av_name: 'rst_co2_av'
 
+        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
+        # differences live in the oasis3mct block. v3.4.x is untouched.
+        "v3.5":
+            add_process_ordering:
+                - xios
+            coupling_target_fields:
+                rstas.nc:
+                    - 'heat_oce:heat_swo <--gauswgt_c-- A_Qns_oce:A_Qs_all'
+                    - 'prec_oce:snow_oce:evap_oce:subl_oce <--gauswgt_c-- A_Precip_liquid:A_Precip_solid:A_Evap:A_Subl'
+                    # GSSMAR, not GSMART: A_Q_ice changes sign between the hemispheres, so the
+                    # multiplicative correction's denominator passes through zero and the factor
+                    # blows up near it. Measured over a coupled year, GSMART delivered 9105
+                    # excursions above 1 kW/m2 onto ice (max 22550); GSSMAR delivered none.
+                    - 'heat_ico <--gauswgt_gssmar-- A_Q_ice'
+                    # Ice-tile skin temperature: the anchor FESOM's implicit skin solve is
+                    # expanded about. No CONSERV - a global conservation correction on a
+                    # temperature is meaningless.
+                    - 'tsk_ico <--gauswgt_i-- A_Ice_tskin'
+                      #                    - 'heat_ico <--bicubic-- A_Q_ice'
+                    - 'taux_oce:tauy_oce:taux_ico:tauy_ico <--bicubic-- A_TauX_oce:A_TauY_oce:A_TauX_ice:A_TauY_ice'
+                    - 'u10w_oce:v10w_oce <--bicubic-- A_WindX:A_WindY'
+                    - 'R_Runoff_atm:R_Calving_atm <--gauswgt_c-- A_Runoff:A_Calving'
+                    - 'hydr_oce:calv_oce <--gauswgt_c-- R_Runoff_oce:R_Calving_oce'
+                rstos.nc:
+                    - 'A_SST:A_Ice_frac:A_Snow_thickness:A_Ice_temp:A_Ice_albedo:A_Ice_thickness <--gauswgt_i--
+                      sst_feom:sie_feom:snt_feom:ist_feom:sia_feom:sit_feom'
+                    - 'A_CurX:A_CurY <--gauswgt_i-- u_feom:v_feom'
+                vegin.nc:
+                    # BUG FIX (2025-03-16): GUE_TYPH and GUE_FRAL were swapped, causing IFS to receive? Investigate further and check if this has any impact on the results. The old (wrong) configuration is included here for reference.
+                    # TypeHigh (int, e.g. 6) as FracLow (CVL), clamped to 1.0 → wrong albedo over deserts? 
+                    # Old: GUE_LLAI:GUE_HLAI:GUE_TYPH:GUE_FRAH:GUE_TYPL:GUE_FRAL
+                    - 'LAILVeg:LAIHVeg:FracLVeg:FracHVeg:TypeLVeg:TypeHVeg <--loctrans_avg--
+                      GUE_LLAI:GUE_HLAI:GUE_FRAL:GUE_FRAH:GUE_TYPL:GUE_TYPH'
+                    - 'T2M_LPJG:TPRE_LPJ:SNOC_LPJ:SNOD_LPJ <--loctrans_avg-- T2MVeg:TPVeg:SDVeg:SDensVeg'
+                    - 'ST1L_LPJ:ST2L_LPJ:ST3L_LPJ:ST4L_LPJ <--loctrans_avg-- SoilTVeg.L001:SoilTVeg.L002:SoilTVeg.L003:SoilTVeg.L004'
+                    - 'SM1L_LPJ:SM2L_LPJ:SM3L_LPJ:SM4L_LPJ <--loctrans_avg-- SoilMVeg.L001:SoilMVeg.L002:SoilMVeg.L003:SoilMVeg.L004'
+                    - 'SWNR_LPJ:LWNR_LPJ:SHUM_LPJ:SPRE_LPJ:WSPD_LPJ <--loctrans_avg--
+                      SSRVeg:SLRVeg:SHUMVeg:PRESVeg:WSPDVeg'
+                    - 'TMIN_LPJ <--loctrans_min-- TMINVeg'
+                    - 'TMAX_LPJ <--loctrans_max-- TMAXVeg'
+            choose_general.with_co2_veg_coupling:
+                true:
+                    add_coupling_target_fields:
+                        rst_co2_av.nc:
+                            - 'CO2_LPJG <--loctrans_avg-- XCO2Veg'
+                            - 'FCO2NAT:FCO2ANT:FCO2NPP <--loctrans_avg-- GUE_CNAT:GUE_CANT:GUE_CNPP'
+                    add_merge_recv_restarts:
+                        - rst_co2_av.nc    # CO2 vegetation coupling (bidirectional LOCTRANS)
+            choose_general.with_co2_oce_coupling:
+                true:
+                    add_coupling_target_fields:
+                        rst_co2_ao.nc:
+                            - 'XCO2_oce <--gauswgt_i-- A_XCO2_oce'
+                            - 'A_FCO2_oce <--gauswgt_gss-- FCO2_feom'
+
+            # Specify which restart files need bidirectional merging
+            # Use this for restart files with LOCTRANS+EXPOUT in both directions
+            # where both send and receive use the same restart file name in namcouple
+            merge_recv_restarts:
+                - vegin.nc         # OpenIFS <-> lpjg bidirectional LOCTRANS
+
+            mct_version: "5.0"
+            input_dir: ${oasis3mct.pool_dir}/cy${oifs.version}/${oifs.resolution}-${fesom.resolution}/
+            rstos_file_name: 'rstos'
+            rstas_file_name: 'rstas'
+            vegin_file_name: 'vegin'
+            rst_co2_ao_name: 'rst_co2_ao'
+            rst_co2_av_name: 'rst_co2_av'
+
     land_atmo_coupling_time_step: 86400
     # Ice sheet consumers are monthly (dEBM reads 12 monthly means; the
     # ISM-mapper only ever writes a monthly mean). Daily is the coarsest period
@@ -1407,6 +1530,22 @@ oasis3mct:
         # GSSPOS blows up when the summed target residual is ~0 while the source
         # residual is small but non-zero (OASIS aborts: "gsspos sumdst is zero but
         # sumsrc is not"). GSMART is robust to that degenerate sum.
+        # Picks whichever conservation correction distorts the field least at each
+        # coupling step - per-sign multiplicative (GSSPOS), whole-field multiplicative
+        # (GLBPOS), or additive (GLOBAL) - instead of GSMART's single fallback for the
+        # exactly-zero denominator. Needs OASIS with CONSERV method GSSMAR.
+        gauswgt_gssmar:
+            time_transformation: conserv
+            remapping:
+                gauswgt:
+                    search_bin: latitude
+                    nb_of_search_bins: 1
+                    nb_of_neighbours: 25
+                    weight: "0.1"
+            postprocessing:
+                conserv:
+                    method: gssmar
+                    algorithm: opt
         gauswgt_gsmart:
             time_transformation: conserv
             remapping:
@@ -1639,6 +1778,19 @@ computer:
 
     choose_general.major_version:
         v3.4:
+            choose_name:
+                juwels:
+                    iolibraries: system_libs
+                    compiler_mpi: gnu2023_ompi2023
+                levante:
+                    iolibraries: system_intel_libs
+                    compiler_mpi: intel2022_openmpi
+                albedo:
+                    mpi_implementation: openmpi_2026
+                    load_python: true
+        # v3.5: the develop* variants. Identical to v3.4 here; the coupling
+        # differences live in the oasis3mct block. v3.4.x is untouched.
+        "v3.5":
             choose_name:
                 juwels:
                     iolibraries: system_libs

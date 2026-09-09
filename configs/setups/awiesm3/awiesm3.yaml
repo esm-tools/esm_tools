@@ -732,6 +732,77 @@ fesom:
                 namelist.ice:
                     ice_therm:
                         use_meltponds: true
+            # FESOM 2.8 renamed the NetCDF restarts, and v3.5 is the first
+            # awiesm3 to build a FESOM that carries the rename. Pre-2.8 wrote one
+            # directory per year, named by that year and holding every restart
+            # record written during it (fesom.1359.oce.restart). From 2.8 there
+            # is one directory per restart *instant*, stamped with the date of
+            # that instant (fesom.1360-01-01.oce.restart) -- see nc_restart_path()
+            # in fesom-2.7/src/io_restart.F90 and calendar_stamp() in
+            # fortran_utils.F90.
+            #
+            # The reader still falls back to the old name, so a leg branched off a
+            # pre-2.8 restart keeps working; but the writer only ever emits the new
+            # name. With the unmodified 2.7 patterns esm_tools therefore collected
+            # nothing at the end of a leg: restart/fesom stayed empty and the next
+            # leg died reading a file that had never been staged -- while the date
+            # file advanced, so the wreckage looked like progress. That is what
+            # killed 11Y legs 2 and 3 (2026-09-09) after leg 1 had run its ten
+            # years cleanly.
+            #
+            # The stamp on the restart a leg *writes* is the start of the next leg
+            # (next_date); the stamp on the one it *reads* is its own start_date.
+            # The legacy pair is kept alongside so that branching off a pre-2.8
+            # experiment still finds its parent; whichever of the two is absent is
+            # a permitted absence, not an error.
+            #
+            # This lives here rather than under fesom-2.7.yaml's "2.7-main"
+            # choose_version arm because that key is only reached by esm_master
+            # when building; at runtime the setup pins fesom version "2.7" (which
+            # also picks the namelist directory), so a choose_version arm would
+            # never fire for a run.
+            restart_in_in_work:
+                par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
+                par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
+                par_oce_restart_legacy: fesom.${parent_date!syear}.oce.restart/*.nc
+                par_ice_restart_legacy: fesom.${parent_date!syear}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+            restart_in_sources:
+                par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
+                par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
+                par_oce_restart_legacy: fesom.${parent_date!syear}.oce.restart/*.nc
+                par_ice_restart_legacy: fesom.${parent_date!syear}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+            add_restart_in_files:
+                par_oce_restart_legacy: par_oce_restart_legacy
+                par_ice_restart_legacy: par_ice_restart_legacy
+            allowed_missing_files:
+                - "fesom\\..*\\.(oce|ice)\\.restart.*"
+            restart_out_in_work:
+                par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+                par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_raw_restart_tar: fesom_raw_restart.tar.*
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+                fesom_bin_restart_tar: fesom_bin_restart.tar.*
+            restart_out_sources:
+                par_oce_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.oce.restart/*.nc
+                par_ice_restart: fesom.${next_date!syear}-${next_date!smonth}-${next_date!sday}.ice.restart/*.nc
+                fesom_raw_restart_info: fesom_raw_restart/*.info
+                fesom_raw_restart: fesom_raw_restart/np${nproc}/*.dump
+                fesom_raw_restart_tar: fesom_raw_restart.tar.*
+                fesom_bin_restart_info: fesom_bin_restart/*.info
+                fesom_bin_restart: fesom_bin_restart/np${nproc}/*
+                fesom_bin_restart_tar: fesom_bin_restart.tar.*
+
     # aEVP only on the high-resolution DARS2 mesh on v3.4.2 + develop
     # branches — reverses HR sithick drift (Koldunov 2019 JAMES). aEVP is
     # unstable on coarse meshes (e.g. CORE2), so other resolutions keep

@@ -68,7 +68,7 @@ fesom:
     ini_restart_dir: "/work/ab0246/a270092/pism_repro/prep/clean_ice_ini/"
     time_step: 1200            # zstar tolerates 1200s on the cavity mesh (linfs needs <=180s)
     nproc: 1792                # FESOM stable at 1792 (256 hits a decomposition-sensitive cavity blow); core3/dist_1792 + complete TCO95-CORE3/1792
-    omp_num_threads: 2
+    omp_num_threads: 1
     tar_binary_restarts: true  # use_cavity is set via with_cavity:true; restart_log off folded into the chunk choose-block below
     cmip7_cmor_output: false   # CMIP7 output off for now (needs plev39 axis); validate coupling first
     change_ocean: 1
@@ -100,7 +100,7 @@ oifs:
     lresume: false
     time_step: 3600
     nproc: 384
-    omp_num_threads: 4
+    omp_num_threads: 2
     mpi: cmip7
     scenario: piControl #solar radiation is going to be taken always from 1850
     cmip7_cmor_output: false   # CMIP7 output off for now (plev39 axis missing); validate coupling first

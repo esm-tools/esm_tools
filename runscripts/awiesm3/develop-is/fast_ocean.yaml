@@ -66,7 +66,7 @@ fesom:
     oce2ice_method: "DIRECT"
     # Debug tool (found the ist runaway 2026-07-14): oasis_expout_o2a: 1 dumps
     # every ocean->atm exchange to netcdf. ~20x slowdown -- crash hunts only.
-    resolution: "CORE3"        # cavity-enabled 211567-node mesh (was CORE2 126858)
+    resolution: "CORE3"        # cavity-enabled 220509-node mesh (was CORE2 126858)
     with_cavity: true          # enable ice-shelf cavities (use_cavity=.true.)
     griddes_nodes: "core3_griddes_nodes.nc"   # ice2fesom max-mesh node griddes (CORE3, not the core2 default); generated w/ pyfesom2 in the core3 mesh dir
     restart_rate: 1

@@ -43,6 +43,18 @@ lpj_guess:
     resolution: TL255 #if it's not set i dosen't work!
     TM5: 0
 
+    # Select the grid product explicitly, independently of resolution.
+    # "legacy" uses L<nnn> with land=1/ocean=0; "coupled_land" uses
+    # <resolution>-land with land=0/ocean=1 and the atmosphere/FESOM-adapted
+    # coastline. Existing continuations on an L-grid must override this to
+    # legacy in their runscript.
+    grid_product: coupled_land
+    choose_grid_product:
+        legacy:
+            selected_grid_name: "L${oasis_grid_name}"
+        coupled_land:
+            selected_grid_name: "${resolution}-land"
+
     # Enumeration for parallel run directories (run1, run2, ..., runN)
     nproc: 8
     proc_list_entry: '[str(x) for x in range(1,${nproc}+1)]'

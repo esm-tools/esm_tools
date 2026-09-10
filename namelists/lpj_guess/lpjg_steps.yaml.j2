@@ -12,6 +12,8 @@ initial_year: {{lpj_guess.initial_year | default(lpj_guess.run_year)}}
 
 # Grid configuration
 mygrid: "{{lpj_guess.resolution}}"
+grid_product: "{{lpj_guess.grid_product}}"
+grid_name: "{{lpj_guess.selected_grid_name}}"
 
 # Coupling and experiment configuration
 TM5: {{lpj_guess.co2_coupling | default(0) | lower}}

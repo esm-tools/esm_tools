@@ -51,6 +51,35 @@ Mvert_lev = Mbed_info0[1:Mvert_num + 1]
 Mbed_info = Mbed_info0[Mvert_num + 1:]
 Mbed_info = -np.abs(Mbed_info)
 
+# --- model bottom for nodes whose true bathymetry reaches sea level ----------
+# fesom_submesh.F90:296 (mesh_reduce_byflag) drops any element whose shallowest
+# node is at or above the deepest ice draft of that element:
+#
+#     if (maxval(topo_raw(elem)) >= minval(cavity_raw(elem))) elflag(el) = 0
+#
+# In the open ocean cavity_raw is 0, so a node with bathymetry >= 0 removes
+# every element touching it. The old 211567 CORE3 mesh clamped bathymetry to a
+# 20 m floor, so this branch never fired. The 220509 mesh stores TRUE
+# bathymetry, which reaches -0.00 at 15036 shallow coastal nodes: 43893
+# elements (10.3%) were discarded and the cascade orphaned 18076 nodes, leaving
+# a 197862-node submesh instead of ~216000.
+#
+# Those nodes are wet as far as FESOM is concerned -- nlvls.out gives them 5..35
+# levels -- so for the submesh carve, which is a model-mesh operation, use the
+# model's own bottom depth there. aux3d.out/nodhn.out stay the real depth;
+# nlvls.out is what the model runs on.
+#
+# Guarded to nodes at/above sea level, so any mesh carrying a depth floor (the
+# old CORE3 among them) is unaffected and bit-identical to before.
+_shallow = Mbed_info >= 0.0
+if _shallow.any():
+    _nlvls = np.loadtxt(os.path.join(Mmesh_folder, "nlvls.out"), dtype=int)
+    _model_bottom = Mvert_lev[np.clip(_nlvls - 1, 0, Mvert_num - 1)]
+    Mbed_info[_shallow] = _model_bottom[_shallow]
+    print(f"  Bathymetry at/above sea level at {int(_shallow.sum())} nodes "
+          f"-> using model bottom from nlvls.out "
+          f"(median {np.median(_model_bottom[_shallow]):.1f} m)")
+
 # Exclude grounded ice shelves even when PISM reports them as floating.
 condition = (Mbed_info - cavity_depth) > sea_level
 

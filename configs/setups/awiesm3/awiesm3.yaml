@@ -651,8 +651,8 @@ fesom:
     # can partition submeshes natively (no Singularity/user-namespaces needed).
     meshpart_flag: ""
     # Single-precision FESOM (-DUSE_SINGLE_PRECISION=ON) is opt-in per version.
-    # Default off (double precision). Only the develop* variants enable it, via
-    # choose_general.version below. Released tags v3.4.2 and below stay double;
+    # Default off (double precision). Only develop and develop-is enable it, via
+    # choose_general.version below; develop-cc stays double because of REcoM. Released tags v3.4.2 and below stay double;
     # v3.5+ can opt in later once validated.
     fesom_sp_flag: ""
     # Working precision. FESOM main gained -DUSE_SINGLE_PRECISION (WP=real32);
@@ -817,7 +817,11 @@ fesom:
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         develop-cc:
-            fesom_sp_flag: "-DUSE_SINGLE_PRECISION=ON"
+            # Double precision: REcoM hardcodes its own WP = 8
+            # (src/recom/recom_modules.F90), so with FESOM's WP = real32 every
+            # REcoM array handed to a FESOM reader is a type mismatch and
+            # gen_surface_forcing.F90 does not compile.
+            fesom_sp_flag: ""
             choose_resolution:
                 DARS2: {add_namelist_changes: {namelist.ice: {ice_dyn: {whichevp: 2}}}}
         # -is (ice-sheet coupled) variant additionally builds the native FESOM

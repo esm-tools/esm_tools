@@ -564,7 +564,8 @@ fesom:
             ocp_tool_dir: ""
     choose_general.with_co2_oce_coupling:
         true:
-            branch: fesom2.6_recom_awiesm3_co2_coupling
+            # The REcoM CO2 coupling (fesom2.6_recom_awiesm3_co2_coupling) is in
+            # fesom2 main since #806, so the branch comes from the version ("2.7-main").
             recom_setting: 2p3z2d
             recom_comp_flag: -DRECOM_COUPLED=ON
             # Derive the REcoM &parecomsetup gates from recom_setting so the BGC

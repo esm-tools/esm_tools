@@ -348,8 +348,22 @@ def scan(
     is_flag=True,
     help="Show connection and library logs instead of the progress display.",
 )
+@click.option(
+    "--resolve",
+    "resolve_specs",
+    multiple=True,
+    metavar="HOST:PORT:IP",
+    help="Pre-seed a DNS lookup with an IP, skipping the query (curl's own "
+    "--resolve syntax). SNI and the Host header still use HOST, so "
+    "certificate validation is unaffected — only useful when DNS itself is "
+    "broken but the server is reachable by IP. Repeatable.",
+)
 def push(
-    paths: tuple[Path, ...], server: Optional[str], insecure: bool, verbose: bool
+    paths: tuple[Path, ...],
+    server: Optional[str],
+    insecure: bool,
+    verbose: bool,
+    resolve_specs: tuple[str, ...],
 ) -> None:
     """Push STAC objects to the catalog.
 
@@ -361,6 +375,7 @@ def push(
     from esm_catalog import push as pushmod
     from esm_catalog.client import StacClient
     from esm_catalog.config import Settings
+    from esm_catalog.resolve import parse_resolve, ResolvingTransport
 
     _configure_logging(verbose)
 
@@ -378,6 +393,19 @@ def push(
     except (ValueError, auth.AuthError) as exc:
         raise click.ClickException(str(exc)) from exc
 
+    try:
+        resolve_map = {
+            (host, port): ip
+            for host, port, ip in (parse_resolve(spec) for spec in resolve_specs)
+        }
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+    transport = (
+        ResolvingTransport(resolve_map, verify_tls=settings.verify_tls)
+        if resolve_map
+        else None
+    )
+
     files = pushmod.expand_paths(list(paths))
     total = sum(
         (
@@ -389,7 +417,9 @@ def push(
     )
 
     show_progress = sys.stderr.isatty()
-    with StacClient(api_url, token, verify_tls=settings.verify_tls) as client:
+    with StacClient(
+        api_url, token, verify_tls=settings.verify_tls, transport=transport
+    ) as client:
         with _push_progress(show_progress, total) as advance:
             summary = pushmod.push_paths(paths, client, on_progress=advance)
 

@@ -41,7 +41,7 @@ ldiag_cmor        = .true.  ! enables CMOR diagnostics for CMIP6/CMIP7 ('tos', '
 ! GENERAL OUTPUT SETTINGS
 ! ============================================================================
 &nml_general
-io_listsize       = 150      ! total number of streams to allocate. Shall be larger or equal to the number of streams in &nml_list (max. 150)
+io_listsize       = 200      ! 150      ! total number of streams to allocate. Shall be larger or equal to the number of streams in &nml_list (max. 150)
 vec_autorotate    = .true.   ! unrotate vector fields (velocities, winds) before writing to output files
 compression_level = 1        ! compression level for netCDF output (1=fastest, 9=smallest)
 /
@@ -127,6 +127,7 @@ io_list =  'sst       ',1, 'd', 4,
            'rsdoabsorb',1, 'm', 4,
            'utemp     ',1, 'd', 4,
            'vtemp     ',1, 'd', 4,
+           'icb       ',1, 'm', 4,
 /
 
 ! ============================================================================

@@ -1182,8 +1182,14 @@ function iterative_coupling_pism_ocean_prepare_ocean_icebergmodel_forcing {
     # the mesh that wrote the restart, and a mesh-change leg renumbers the
     # elements, so each one silently points at a different element and dumps its
     # meltwater there, divided by that element's node area. Setting
-    # find_iceberg_elem back to true makes FESOM re-derive the element from the
-    # berg's own lon/lat, which is what it does for a newly calved berg anyway.
+    # find_iceberg_elem back to true would make FESOM re-derive the element the
+    # way it does for a newly calved berg, but that flag also declares the frame
+    # -- true means "geographic", and a carried berg's coordinates are rotated --
+    # so it made FESOM rotate the position a second time and stop on the first
+    # berg it could not place, hanging the whole coupled job until the
+    # wall-clock limit. It also discards the berg's velocity. The script instead
+    # writes the element the berg is in on the new mesh and leaves the record
+    # otherwise untouched.
     # Must run before make_icebergs, which counts the carried bergs.
     local reseat_py=${FUNCTION_PATH}/reseat_iceberg_restart.py
     if [ -f "${reseat_py}" ] && [ -n "${ICB_RESTART_ISM:-}" ] \

@@ -32,6 +32,21 @@
     <file id="f_fw"     name="fw.fesom"    ><field field_ref="fw"      freq_op="1mo"/></file>
     <file id="f_fh"     name="fh.fesom"    ><field field_ref="fh"      freq_op="1mo"/></file>
 
+    {% if fesom.use_icebergs %}
+    <!-- Iceberg fluxes. Gated on the same switch the model gates on: only
+         CASE ('icb') in io_meandata.F90:1677 registers these, and only when
+         use_icebergs=.true., so without the gate a non-iceberg run would carry
+         <file> entries referencing fields XIOS is never sent. fesom.use_icebergs
+         defaults to false in fesom-2.7.yaml:15, so jinja's StrictUndefined cannot
+         trip on it. ibhf is 3D (nl) and lives with the interface-level files below,
+         but is kept here so the whole iceberg set sits under one gate. -->
+    <file id="f_ibfwb"  name="ibfwb.fesom" ><field field_ref="ibfwb"   freq_op="1mo"/></file>
+    <file id="f_ibfwbv" name="ibfwbv.fesom"><field field_ref="ibfwbv"  freq_op="1mo"/></file>
+    <file id="f_ibfwl"  name="ibfwl.fesom" ><field field_ref="ibfwl"   freq_op="1mo"/></file>
+    <file id="f_ibfwe"  name="ibfwe.fesom" ><field field_ref="ibfwe"   freq_op="1mo"/></file>
+    <file id="f_ibhf"   name="ibhf.fesom"  ><field field_ref="ibhf"    freq_op="1mo"/></file>
+    {% endif %}
+
     <!-- 2D elements -->
     <file id="f_tx_sur" name="tx_sur.fesom"><field field_ref="tx_sur"  freq_op="1mo"/></file>
     <file id="f_ty_sur" name="ty_sur.fesom"><field field_ref="ty_sur"  freq_op="1mo"/></file>

@@ -30,8 +30,16 @@ import numpy as np
 
 RHO_ICE = 850.0  # kg m-3, the generator's value
 
-FIELDS = ["longitude", "latitude", "length", "height", "scaling", "felem",
-          "calving_day"]
+# The per-berg files this filter trims when bergs are dropped.
+#
+# calving_day is deliberately NOT here. make_icebergs.py calls this filter and
+# only afterwards writes icb_calving_day.dat, sizing it from the already-filtered
+# icb_longitude.dat -- so its length is right by construction and it needs no
+# trimming. Listing it made the loop below compare THIS cycle's berg count against
+# the PREVIOUS cycle's leftover file and abort. That stayed hidden for 19 coupling
+# cycles because the early return above fires whenever nothing is dropped; the
+# first cycle to drop a berg (repro_ism37 cycle 20, 1094 fresh vs 1013 stale) hit it.
+FIELDS = ["longitude", "latitude", "length", "height", "scaling", "felem"]
 
 
 def _unit_vectors(lon_deg, lat_deg):

@@ -23,15 +23,52 @@ function smb2ice()
     _prefix=${ISM_PREFIX:-antar}
     _out=${COUPLE_DIR}/atmosphere_file_for_ice.nc
 
-    _files=$(ls -1 ${_src_dir}/${_prefix}_smb_*.nc 2>/dev/null)
-    _nfiles=$(echo "${_files}" | grep -c . )
-    if [ "${_nfiles}" -eq 0 ]; then
-        echo " *** no ${_prefix}_smb_*.nc in ${_src_dir} ***"
-        echo "no ISM-mapper output for chunk ${CHUNK_NUMBER}" \
+    # Select THIS chunk's years only. outdata/ismm keeps every year the
+    # experiment has ever written and is never pruned, so the plain
+    # ${_prefix}_smb_*.nc glob that used to be here grew by one file per chunk
+    # and made each handoff a cumulative running mean over all years to date:
+    # chunk 1 got 1900, chunk 28 got the mean of 1900-1927. That silently
+    # smoothed away the interannual SMB signal (sd 153 Gt/yr in repro_ism37)
+    # and lagged PISM behind the atmosphere's warming by a growing margin.
+    # echam2ice makes the same selection with `cdo -selyear`; here the years
+    # are separate files, so filter the file list instead.
+    # The chunk dates are what makes the selection possible; without them the
+    # only thing this could do is average across chunks again, so fail instead
+    # of silently reintroducing the bug.
+    _y0=${CHUNK_START_DATE_fesom%%-*}
+    _y1=${CHUNK_END_DATE_fesom%%-*}
+    if [ -z "${_y0}" ] || [ -z "${_y1}" ]; then
+        echo " *** CHUNK_START_DATE_fesom / CHUNK_END_DATE_fesom not set ***"
+        echo " *** (env_oifs2ice.py must export both) ***"
+        echo "chunk dates unset for chunk ${CHUNK_NUMBER}: cannot select" \
+             "this chunk's ${_prefix}_smb years" \
             > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
         exit 1
     fi
-    echo "         * ${_nfiles} year(s) from ${_src_dir}"
+
+    _files=""
+    for _f in ${_src_dir}/${_prefix}_smb_*.nc ; do
+        [ -e "${_f}" ] || continue
+        _fy=${_f##*_smb_}
+        _fy=${_fy%.nc}
+        # 10# so a zero-padded paleo year is not read as octal
+        case ${_fy} in *[!0-9]*) continue ;; esac
+        if [ $((10#${_fy})) -ge $((10#${_y0})) ] && \
+           [ $((10#${_fy})) -le $((10#${_y1})) ]; then
+            _files="${_files} ${_f}"
+        fi
+    done
+    _nfiles=$(echo ${_files} | wc -w)
+    _want=$(( 10#${_y1} - 10#${_y0} + 1 ))
+    if [ "${_nfiles}" -ne "${_want}" ]; then
+        echo " *** chunk ${CHUNK_NUMBER} wants years ${_y0}-${_y1}"
+        echo " *** (${_want} file(s)) but found ${_nfiles} in ${_src_dir} ***"
+        echo "incomplete ISM-mapper output for chunk ${CHUNK_NUMBER}:" \
+             "years ${_y0}-${_y1}, found ${_nfiles} of ${_want}" \
+            > "${COUPLE_DIR}/.coupling_failed${COUPLING_FAIL_SUFFIX:-}"
+        exit 1
+    fi
+    echo "         * ${_nfiles} year(s) ${_y0}-${_y1} from ${_src_dir}"
 
     # The ice sheet is forced with a repeating annual cycle, so a multi-year
     # chunk collapses to the chunk mean seasonal cycle.
@@ -86,7 +123,7 @@ EOF
         harvest_pism_bootstrap
     fi
 
-    unset _src_dir _prefix _out _files _nfiles
+    unset _src_dir _prefix _out _files _nfiles _y0 _y1 _y _f _fy _want
     echo "        *** F I N I S H E D    smb2ice ***"
     echo "        =================================================================="
 }

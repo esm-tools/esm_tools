@@ -38,6 +38,18 @@ lpj_guess:
             file_luh3_transitions: "${lpj_guess.input_dir}/land_use/regridded/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2023_${lpj_guess.resolution}.nc"
             file_luh3_states: "${lpj_guess.input_dir}/land_use/regridded/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.resolution}.nc"
             file_luh3_management: "${lpj_guess.input_dir}/land_use/regridded/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-1_gn_0850-2024_${lpj_guess.resolution}.nc"
+            # LUH3 v3.1.2 where it has been regridded for the resolution.
+            choose_lpj_guess.resolution:
+                TCO95:
+                    luh3_input_dir: ${lpj_guess.input_dir}/land_use/TCO95/
+                    file_luh3_transitions: "${lpj_guess.input_dir}/land_use/TCO95/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2023_TCO95.nc"
+                    file_luh3_states: "${lpj_guess.input_dir}/land_use/TCO95/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2024_TCO95.nc"
+                    file_luh3_management: "${lpj_guess.input_dir}/land_use/TCO95/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2024_TCO95.nc"
+                TCO319:
+                    luh3_input_dir: ${lpj_guess.input_dir}/land_use/TCO319/
+                    file_luh3_transitions: "${lpj_guess.input_dir}/land_use/TCO319/multiple-transitions_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2023_TCO319.nc"
+                    file_luh3_states: "${lpj_guess.input_dir}/land_use/TCO319/multiple-states_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2024_TCO319.nc"
+                    file_luh3_management: "${lpj_guess.input_dir}/land_use/TCO319/multiple-management_input4MIPs_landState_CMIP_UofMD-landState-3-1-2_gn_0850-2024_TCO319.nc"
             run_landcover: 1
             run_natural: 1
             run_crop: 1

@@ -1,5 +1,12 @@
 # ESM-Tests in check mode for all computers
 # =========================================
+#
+# Discovers every (computer, model, runscript) combination supported by the
+# model control files under src/esm_tests/resources/runscripts/*/config.yaml,
+# then fans them out as independent matrix jobs. Previously each computer ran
+# every one of its runscripts sequentially inside a single job; now each
+# runscript gets its own job, so wall-clock no longer scales with the total
+# number of runscripts.
 
 name: esm_tests
 
@@ -7,27 +14,79 @@ name: esm_tests
 on: [pull_request]
 
 jobs:
-  ollie:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - id: discover
+        shell: python3 {0}
+        run: |
+          import glob
+          import json
+          import os
+
+          import yaml
+
+          # Maps the "computers:" keys used in each model's config.yaml to the
+          # runner name esm_tests expects via choose_computer.name. Only
+          # computers wired up here get scheduled; anything else (e.g.
+          # blogin, which has no CI runner yet) is skipped.
+          COMPUTER_RUNNERS = {
+              "ollie": "ollie1",
+              "levante": "levante1",
+              "juwels": "jwlogin01.juwels",
+              "aleph": "elogin1",
+              "albedo": "albedo1",
+          }
+
+          base = "src/esm_tests/resources/runscripts"
+          entries = []
+          for model in sorted(os.listdir(base)):
+              config_path = os.path.join(base, model, "config.yaml")
+              if not os.path.isfile(config_path):
+                  continue
+              with open(config_path) as f:
+                  config = yaml.safe_load(f) or {}
+              runscripts = sorted(
+                  os.path.basename(p)
+                  for p in glob.glob(os.path.join(base, model, "*.yaml"))
+                  if os.path.basename(p) != "config.yaml"
+              )
+              for computer_key in config.get("computers", []):
+                  runner = COMPUTER_RUNNERS.get(computer_key)
+                  if runner is None:
+                      continue
+                  for runscript in runscripts:
+                      entries.append(
+                          {
+                              "computer_key": computer_key,
+                              "computer": runner,
+                              "model": model,
+                              "runscript": runscript,
+                          }
+                      )
+
+          matrix = {"include": entries}
+          with open(os.environ["GITHUB_OUTPUT"], "a") as gh_out:
+              gh_out.write(f"matrix={json.dumps(matrix)}\n")
+
+          print(f"Discovered {len(entries)} (computer, model, runscript) jobs")
+
+  test:
+    needs: discover
+    if: ${{ needs.discover.outputs.matrix != '{"include":[]}' }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    name: ${{ matrix.computer_key }} / ${{ matrix.model }} / ${{ matrix.runscript }}
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
-        computer: ollie1
-  levante:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: levante1
-  juwels:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: jwlogin01.juwels
-  aleph:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: elogin1
-  # blogin:
-  #   uses: ./.github/workflows/esm_tests_computer_workflow.yml
-  #   with:
-  #       computer: blogin1
-  albedo:
-    uses: ./.github/workflows/esm_tests_computer_workflow.yml
-    with:
-        computer: albedo1
+        computer: ${{ matrix.computer }}
+        model: ${{ matrix.model }}
+        runscript: ${{ matrix.runscript }}

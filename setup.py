@@ -18,6 +18,7 @@ requirements = [
     "colorama==0.4.5",
     "f90nml==1.4.4",
     "dask[distributed]>=2023.5.0,<=2024.8.0",
+    "bokeh!=3.0.*,>=2.4.2",  # distributed's own dashboard dependency pin
     "gfw-creator==0.2.2",
     "gitpython==3.1.54",  # Maximum version for Python 3.6 support
     "jinja2==3.1.6",

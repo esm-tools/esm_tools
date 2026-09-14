@@ -131,41 +131,48 @@ class SourcingError(Exception):
 
 
 @dataclass(frozen=True)
-class _Segment:
-    """One run segment: its finished_config path and parsed document."""
+class _RunConfig:
+    """One run's finished_config: its path and parsed document."""
 
     path: UPath
     doc: FinishedConfigDoc
 
 
-def source_experiment(exp_root: UPath) -> ExperimentMetadata:
+def source_experiment(
+    exp_root: UPath, *, run_cfgs: Optional[list[_RunConfig]] = None
+) -> ExperimentMetadata:
     """Build :class:`ExperimentMetadata` from an experiment's finished_config(s).
 
     Parameters
     ----------
     exp_root : UPath
         The experiment root directory, containing a ``config/`` subdirectory with
-        one ``*_finished_config.yaml`` per run segment.
+        one ``*_finished_config.yaml`` per run.
+    run_cfgs : list of _RunConfig, optional
+        Pre-parsed run configs, when the caller already has them (e.g.
+        :func:`~esm_catalog.scan.ingest.scan_experiment` shares one parse with
+        :func:`output_files`). Parsed from *exp_root* when omitted.
 
     Returns
     -------
     ExperimentMetadata
         Identity, description, license, contacts, paleo config, the run span
-        (min start / max end across segments), and each component's namelists.
+        (min start / max end across all runs), and each component's namelists.
 
     Raises
     ------
     SourcingError
         If no finished_config is found under ``<exp_root>/config``.
     """
-    segments = _find_segments(exp_root)
-    docs = [segment.doc for segment in segments]
+    if run_cfgs is None:
+        run_cfgs = _load_run_cfgs(exp_root)
+    docs = [run_cfg.doc for run_cfg in run_cfgs]
 
     general_metadata = list(_general_metadata_blocks(docs))
-    run_start, run_end = _run_span(segments)
+    run_start, run_end = _run_span(run_cfgs)
 
     return ExperimentMetadata(
-        experiment_id=_experiment_id(segments),
+        experiment_id=_experiment_id(run_cfgs),
         experiment_path=Path(str(exp_root)),
         description=_first_value(general_metadata, "Description"),
         data_license=_first_value(general_metadata, "License"),
@@ -271,7 +278,10 @@ def _walk_outdata(
 
 
 def output_files(
-    exp_root: UPath, on_file: Optional[Callable[[int], None]] = None
+    exp_root: UPath,
+    on_file: Optional[Callable[[int], None]] = None,
+    *,
+    run_cfgs: Optional[list[_RunConfig]] = None,
 ) -> list[OutputFile]:
     """Return the experiment's concrete output files, one per produced file.
 
@@ -291,6 +301,9 @@ def output_files(
     on_file : Callable or None, optional
         Called with the running file count while walking ``outdata/`` -- a
         progress hook for the slow remote-listing case.
+    run_cfgs : list of _RunConfig, optional
+        Pre-parsed run configs, when the caller already has them (see
+        :func:`source_experiment`). Parsed from *exp_root* when omitted.
 
     Returns
     -------
@@ -302,7 +315,8 @@ def output_files(
     SourcingError
         If no finished_config is found under ``<exp_root>/config``.
     """
-    segments = _find_segments(exp_root)  # validates the run completed; may raise
+    if run_cfgs is None:
+        run_cfgs = _load_run_cfgs(exp_root)  # validates the run completed; may raise
 
     tidy_entries = list(_tidy_outdata(exp_root))
     if tidy_entries:
@@ -319,8 +333,8 @@ def output_files(
         # files, then walk outdata/ for whatever the config missed.
         configured = (
             ComponentPath(target.component, _on_exp_fs(exp_root, str(target.path)))
-            for segment in segments
-            for target in _outdata_targets(segment.doc)
+            for run_cfg in run_cfgs
+            for target in _outdata_targets(run_cfg.doc)
         )
         candidates = (
             OutputFile(path=cp.path, component=cp.component, md5=None)
@@ -341,7 +355,7 @@ def output_files(
     return files
 
 
-def _find_segments(exp_root: UPath) -> list[_Segment]:
+def _load_run_cfgs(exp_root: UPath) -> list[_RunConfig]:
     """Load every finished_config under ``<exp_root>/config``, sorted chronologically.
 
     The finished_config filenames sort chronologically because their
@@ -365,16 +379,16 @@ def _find_segments(exp_root: UPath) -> list[_Segment]:
             "(e.g. '<expid>_finished_config.yaml', written by ESM-Tools at the "
             "end of a run — a plain file named 'finished_config' will not match)"
         )
-    return [_Segment(path=path, doc=_load_yaml(path)) for path in paths]
+    return [_RunConfig(path=path, doc=_load_yaml(path)) for path in paths]
 
 
-def _experiment_id(segments: list[_Segment]) -> ExperimentId:
+def _experiment_id(run_cfgs: list[_RunConfig]) -> ExperimentId:
     """The experiment id, from ``general.expid`` or the filename prefix fallback."""
-    for segment in segments:
-        expid = _general(segment.doc).expid
+    for run_cfg in run_cfgs:
+        expid = _general(run_cfg.doc).expid
         if expid:
             return str(expid)
-    name = segments[0].path.name
+    name = run_cfgs[0].path.name
     return name.split(_FINISHED_CONFIG_MARKER, 1)[0].rstrip("_")
 
 
@@ -456,18 +470,18 @@ def _paleo_config(docs: Iterable[FinishedConfigDoc]) -> Optional[PaleoConfig]:
 
 
 def _run_span(
-    segments: list[_Segment],
+    run_cfgs: list[_RunConfig],
 ) -> tuple[Optional[datetime], Optional[datetime]]:
-    """The union (min start, max end) of every segment's run window."""
-    windows = [w for w in map(_segment_window, segments) if w is not None]
+    """The union (min start, max end) of every run's window."""
+    windows = [w for w in map(_run_cfg_window, run_cfgs) if w is not None]
     if not windows:
         return None, None
     return min(start for start, _ in windows), max(end for _, end in windows)
 
 
-def _segment_window(segment: _Segment) -> Optional[RunWindow]:
-    """One segment's (start, end), from its config run dates or filename suffix."""
-    general = _general(segment.doc)
+def _run_cfg_window(run_cfg: _RunConfig) -> Optional[RunWindow]:
+    """One run's (start, end), from its config run dates or filename suffix."""
+    general = _general(run_cfg.doc)
 
     start = _first_date(general, _START_DATE_KEYS)
     end = _first_date(general, _END_DATE_KEYS)
@@ -479,7 +493,7 @@ def _segment_window(segment: _Segment) -> Optional[RunWindow]:
     if from_stamp:
         return from_stamp
 
-    return _suffix_window(segment.path.name)
+    return _suffix_window(run_cfg.path.name)
 
 
 def _first_date(general: GeneralBlock, keys: Iterable[str]) -> Optional[datetime]:

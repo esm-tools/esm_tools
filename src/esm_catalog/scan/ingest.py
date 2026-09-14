@@ -33,7 +33,7 @@ from esm_catalog.scan.reader import UnsupportedContentError, reader_for
 from esm_catalog.scan.readers import (
     netcdf as _netcdf,
 )  # noqa: F401  (registers readers)
-from esm_catalog.scan.sourcing import output_files, source_experiment
+from esm_catalog.scan.sourcing import _load_run_cfgs, output_files, source_experiment
 from esm_catalog.scan.types import (
     OutputFile,
     ProgressEvent,
@@ -148,9 +148,12 @@ def scan_experiment(
     if catalog is None:
         catalog = catalog_dir(exp_root)
     _emit("sourcing")
-    exp_metadata = source_experiment(exp_root)
+    run_cfgs = _load_run_cfgs(exp_root)
+    exp_metadata = source_experiment(exp_root, run_cfgs=run_cfgs)
     files = output_files(
-        exp_root, on_file=lambda n: _emit("sourcing", detail=f"{n} files found")
+        exp_root,
+        on_file=lambda n: _emit("sourcing", detail=f"{n} files found"),
+        run_cfgs=run_cfgs,
     )
     state = load_state(catalog) or WorkspaceState(
         experiment_id=exp_metadata.experiment_id

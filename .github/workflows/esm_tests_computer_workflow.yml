@@ -28,7 +28,7 @@ on:
 
 jobs:
   computer:
-    name: ${{ inputs.computer }}
+    name: ${{ inputs.computer }} / ${{ inputs.model }} / ${{ inputs.runscript }}
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in

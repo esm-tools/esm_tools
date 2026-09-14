@@ -84,7 +84,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
-    name: ${{ matrix.computer_key }} / ${{ matrix.model }} / ${{ matrix.runscript }}
     uses: ./.github/workflows/esm_tests_computer_workflow.yml
     with:
         computer: ${{ matrix.computer }}

@@ -11,11 +11,11 @@ on:
         required: true
         type: string
       model:
-        required: true
         type: string
+        default: ""
       runscript:
-        required: true
         type: string
+        default: ""
       update_esm_tests_info:
         type: boolean
         default: false
@@ -28,7 +28,7 @@ on:
 
 jobs:
   computer:
-    name: ${{ inputs.computer }} / ${{ inputs.model }} / ${{ inputs.runscript }}
+    name: ${{ inputs.model != '' && format('{0} / {1} / {2}', inputs.computer, inputs.model, inputs.runscript) || inputs.computer }}
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
     # Docker Hub image that `container-job` executes in
@@ -57,6 +57,7 @@ jobs:
       shell: bash
 
     - name: scope test_config.yaml to this runscript
+      if: ${{ inputs.model != '' && inputs.runscript != '' }}
       run: |
         cat > src/esm_tests/test_config.yaml <<EOF
         ${{ inputs.model }}:

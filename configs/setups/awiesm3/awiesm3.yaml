@@ -344,10 +344,12 @@ oifs:
                             NAMVDFS:
                                 RSBLB: 2.0
                             NAMCLDP:
-                                RCL_INPSEA: 0.2
-                                # 50000 (S4): reduced ice nuclei over the ocean up to 500 hPa
-                                # instead of 700 hPa, to cool the Southern Ocean.
-                                RCL_INPPMIN: 50000.0
+                                # Reduced ice nuclei over the ocean (factor RCL_INPSEA) below the
+                                # pressure RCL_INPPMIN: brighter supercooled cloud, strongest over
+                                # the Southern Ocean. Kept at or below 400 hPa so tropical
+                                # mid-level mixed-phase cloud is not reached.
+                                RCL_INPSEA: 0.1
+                                RCL_INPPMIN: 40000.0
                                 RSNOWLIN2: 0.04
                             NAMGWWMS:
                                 GGAUSSB: -0.5

@@ -345,7 +345,9 @@ oifs:
                                 RSBLB: 2.0
                             NAMCLDP:
                                 RCL_INPSEA: 0.2
-                                RCL_INPPMIN: 70000.0
+                                # 50000 (S4): reduced ice nuclei over the ocean up to 500 hPa
+                                # instead of 700 hPa, to cool the Southern Ocean.
+                                RCL_INPPMIN: 50000.0
                                 RSNOWLIN2: 0.04
                             NAMGWWMS:
                                 GGAUSSB: -0.5

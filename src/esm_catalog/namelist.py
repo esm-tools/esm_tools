@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from typing import Iterator, Union
+from typing import Iterator, Optional, Union
 
 import f90nml
 import pystac
@@ -117,8 +117,27 @@ def add_namelist_collection_extension(
     apply_extension(collection, Extension.namelist)
 
 
+def namelist_item_props(
+    namelists_by_component: NamelistsByComponent,
+) -> dict[str, NamelistValue]:
+    """Flatten every component's namelists into item-level nml__ properties.
+
+    The same for every item in an experiment -- the caller should compute this
+    once per scan and reuse it, rather than call it per item (namelist trees
+    can be large; walking one per file, 30k+ times over, is real wasted work).
+    """
+    return {
+        _flatten(_ITEM_PREFIX, component, filename, group, key): value
+        for component, namelists in namelists_by_component.items()
+        for filename, group, key, value in _iter_queryable_params(namelists)
+    }
+
+
 def add_namelist_item_extension(
-    item: pystac.Item, namelists_by_component: NamelistsByComponent
+    item: pystac.Item,
+    namelists_by_component: NamelistsByComponent,
+    *,
+    props: Optional[dict[str, NamelistValue]] = None,
 ) -> None:
     """Set item-level nml__{component}__{file}__{group}__{key} from the namelists.
 
@@ -131,12 +150,13 @@ def add_namelist_item_extension(
     namelists_by_component : NamelistsByComponent
         Every component's namelists, flattened into one queryable property per
         parameter.
+    props : dict, optional
+        The already-flattened properties (see :func:`namelist_item_props`), when
+        the caller is applying this to many items and has computed it once.
+        Recomputed from *namelists_by_component* when omitted.
     """
-    props: dict[str, NamelistValue] = {
-        _flatten(_ITEM_PREFIX, component, filename, group, key): value
-        for component, namelists in namelists_by_component.items()
-        for filename, group, key, value in _iter_queryable_params(namelists)
-    }
+    if props is None:
+        props = namelist_item_props(namelists_by_component)
     if not props:
         return
     item.properties.update(props)

@@ -28,6 +28,9 @@ def make_item(
     path: Path | UPath | str,
     file_metadata: FileMetadata,
     exp_metadata: ExperimentMetadata,
+    *,
+    namelist_props: Optional[dict] = None,
+    paleo_props: Optional[dict] = None,
 ) -> Item:
     """Construct a STAC Item for a single output file.
 
@@ -40,6 +43,13 @@ def make_item(
     exp_metadata : ExperimentMetadata
         Experiment identity and pre-scanned config (experiment_id, namelists,
         paleo config). Contacts are set on the Collection.
+    namelist_props, paleo_props : dict, optional
+        Pre-flattened item properties (see :func:`esm_catalog.namelist.namelist_item_props`
+        and :func:`esm_catalog.paleo.paleo_item_props`) -- every item in an
+        experiment gets the same values, so a caller building many items should
+        compute these once and pass them in rather than let each call redo the
+        same namelist walk / pydantic validation. Recomputed per call when
+        omitted.
 
     Returns
     -------
@@ -98,8 +108,10 @@ def make_item(
     )
 
     add_datacube_item_extension(item, file_metadata)
-    add_namelist_item_extension(item, exp_metadata.namelists_by_component)
-    add_paleo_item_extension(item, exp_metadata.paleo_config)
+    add_namelist_item_extension(
+        item, exp_metadata.namelists_by_component, props=namelist_props
+    )
+    add_paleo_item_extension(item, exp_metadata.paleo_config, props=paleo_props)
 
     return item
 

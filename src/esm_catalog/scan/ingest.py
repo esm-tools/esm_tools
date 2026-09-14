@@ -194,6 +194,12 @@ def scan_experiment(
     fx_items = []
     failures = []
     unsupported = 0
+    # namelist_props/paleo_props are identical for every item, so validating
+    # each item's namelist/paleo extension is redundant past the first --
+    # measured as the dominant per-item cost (patternProperties matching with
+    # recursive oneOf/$ref resolution) on a 32k-item scan. Validate once, on
+    # whichever item is first through the loop, then trust the rest.
+    validated_once = False
     for result in results:
         if result.unsupported:
             unsupported += 1
@@ -207,7 +213,9 @@ def scan_experiment(
             exp_metadata,
             namelist_props=namelist_props,
             paleo_props=paleo_props,
+            validate=not validated_once,
         )
+        validated_once = True
         update_extent(collection, item)
         if item.properties.get("frequency") == FX_FREQUENCY:
             fx_items.append(item)

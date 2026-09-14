@@ -31,6 +31,7 @@ def make_item(
     *,
     namelist_props: Optional[dict] = None,
     paleo_props: Optional[dict] = None,
+    validate: bool = True,
 ) -> Item:
     """Construct a STAC Item for a single output file.
 
@@ -50,6 +51,12 @@ def make_item(
         compute these once and pass them in rather than let each call redo the
         same namelist walk / pydantic validation. Recomputed per call when
         omitted.
+    validate : bool, optional
+        Whether to jsonschema-validate the namelist/paleo extensions. Measured
+        dominant cost of building many items (patternProperties matching with
+        recursive oneOf/$ref resolution) -- since namelist_props/paleo_props
+        are identical for every item in an experiment, a bulk caller only needs
+        to validate once (e.g. the first item) and pass False for the rest.
 
     Returns
     -------
@@ -109,9 +116,14 @@ def make_item(
 
     add_datacube_item_extension(item, file_metadata)
     add_namelist_item_extension(
-        item, exp_metadata.namelists_by_component, props=namelist_props
+        item,
+        exp_metadata.namelists_by_component,
+        props=namelist_props,
+        validate=validate,
     )
-    add_paleo_item_extension(item, exp_metadata.paleo_config, props=paleo_props)
+    add_paleo_item_extension(
+        item, exp_metadata.paleo_config, props=paleo_props, validate=validate
+    )
 
     return item
 

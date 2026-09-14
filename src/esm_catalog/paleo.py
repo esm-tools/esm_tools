@@ -90,6 +90,7 @@ def add_paleo_item_extension(
     paleo_config: Optional[PaleoConfig] = None,
     *,
     props: Optional[dict] = None,
+    validate: bool = True,
 ) -> None:
     """Set the ``paleo:*`` geological time on *item* from *paleo_config*.
 
@@ -107,13 +108,17 @@ def add_paleo_item_extension(
         -- every item in an experiment gets the same paleo config, so validating
         and dumping it per item is wasted work. Recomputed from *paleo_config*
         when omitted.
+    validate : bool, optional
+        Whether to jsonschema-validate the item after applying the extension. A
+        bulk caller that already trusts these code paths (e.g. covered by the
+        test suite's schema-conformance tests) should pass False.
     """
     if props is None:
         props = paleo_item_props(paleo_config)
     if not props:
         return
     item.properties.update(props)
-    apply_extension(item, Extension.paleo)
+    apply_extension(item, Extension.paleo, validate=validate)
 
 
 def add_paleo_collection_extension(

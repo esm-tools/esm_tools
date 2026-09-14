@@ -138,6 +138,7 @@ def add_namelist_item_extension(
     namelists_by_component: NamelistsByComponent,
     *,
     props: Optional[dict[str, NamelistValue]] = None,
+    validate: bool = True,
 ) -> None:
     """Set item-level nml__{component}__{file}__{group}__{key} from the namelists.
 
@@ -154,13 +155,19 @@ def add_namelist_item_extension(
         The already-flattened properties (see :func:`namelist_item_props`), when
         the caller is applying this to many items and has computed it once.
         Recomputed from *namelists_by_component* when omitted.
+    validate : bool, optional
+        Whether to jsonschema-validate the item after applying the extension.
+        Measured dominant cost of a bulk scan's per-item work (patternProperties
+        matching against every nml__ property, with recursive oneOf/$ref
+        resolution) -- a bulk caller that already trusts these code paths (e.g.
+        covered by the test suite's schema-conformance tests) should pass False.
     """
     if props is None:
         props = namelist_item_props(namelists_by_component)
     if not props:
         return
     item.properties.update(props)
-    apply_extension(item, Extension.namelist)
+    apply_extension(item, Extension.namelist, validate=validate)
 
 
 def _json_type(value: NamelistValue) -> str:

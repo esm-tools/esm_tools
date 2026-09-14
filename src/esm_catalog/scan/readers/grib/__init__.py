@@ -72,9 +72,15 @@ class GRIBReader:
         if not datasets:
             raise UnsupportedContentError(f"{path}: no readable GRIB hypercube")
         try:
-            metadata = _basic_metadata(datasets)
-            for enricher in _ENRICHERS:
-                metadata = enricher(path, metadata, datasets)
+            # Suppression has to span metadata extraction too, not just the open
+            # in _open_hypercubes -- SerializationWarning fires again whenever a
+            # lazily-decoded time coordinate is materialized (see netcdf/__init__
+            # for the same reasoning; this reuses its extractors).
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+                metadata = _basic_metadata(datasets)
+                for enricher in _ENRICHERS:
+                    metadata = enricher(path, metadata, datasets)
             return metadata
         finally:
             for dataset in datasets:

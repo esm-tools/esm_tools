@@ -21,7 +21,10 @@ module is the public face: the :class:`NetCDFReader` and its registration.
 
 from __future__ import annotations
 
+import warnings
+
 import cf_xarray  # noqa: F401 - registers the .cf accessor on Dataset/DataArray
+import xarray as xr
 from upath import UPath
 
 from esm_catalog.scan.format import FileFormat
@@ -65,18 +68,25 @@ class NetCDFReader:
             ``frequency`` and ``datetime_str`` are omitted for a time-invariant
             file -- their absence marks it as ``fx``.
         """
-        with _open_dataset(path) as opened:
-            # Stamp CF axis/coordinate attributes onto coordinates the model left
-            # bare (regex over common names) so the extractors below find lat, lon,
-            # level and time whether or not the file carried CF attributes -- no
-            # fixed name list, which never stays complete.
-            dataset = opened.cf.guess_coord_axis()
-            variables = _extract_variables(dataset)
-            dimensions = _extract_dimensions(dataset)
-            bbox, geometry = _extract_bbox(dataset)
-            start, end = _extract_time_range(dataset)
-            frequency = _infer_frequency(dataset)
-            primary = next(iter(dataset.data_vars), "unknown")
+        # Dates outside datetime64[ns] range (routine for paleoclimate runs) decode
+        # to cftime objects and emit SerializationWarning -- not just on open, but
+        # again whenever a lazily-decoded time coordinate is later materialized
+        # (e.g. _extract_time_range's .values access), so the suppression has to
+        # span the whole read, not just _open_dataset's own call.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+            with _open_dataset(path) as opened:
+                # Stamp CF axis/coordinate attributes onto coordinates the model left
+                # bare (regex over common names) so the extractors below find lat, lon,
+                # level and time whether or not the file carried CF attributes -- no
+                # fixed name list, which never stays complete.
+                dataset = opened.cf.guess_coord_axis()
+                variables = _extract_variables(dataset)
+                dimensions = _extract_dimensions(dataset)
+                bbox, geometry = _extract_bbox(dataset)
+                start, end = _extract_time_range(dataset)
+                frequency = _infer_frequency(dataset)
+                primary = next(iter(dataset.data_vars), "unknown")
 
         metadata: FileMetadata = {
             "variable": primary,

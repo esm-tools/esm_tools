@@ -345,11 +345,12 @@ oifs:
                                 RSBLB: 2.0
                             NAMCLDP:
                                 # Reduced ice nuclei over the ocean (factor RCL_INPSEA) below the
-                                # pressure RCL_INPPMIN: brighter supercooled cloud, strongest over
-                                # the Southern Ocean. Kept at or below 400 hPa so tropical
-                                # mid-level mixed-phase cloud is not reached.
+                                # pressure RCL_INPPMIN: brighter supercooled cloud. The mixed-phase
+                                # window sits at 900-550 hPa over the Southern Ocean and 600-300 hPa
+                                # in the tropics (sucldp.F90), so RCL_INPPMIN should stay near or
+                                # above 50000; lower values add tropical, not Southern Ocean, cloud.
                                 RCL_INPSEA: 0.1
-                                RCL_INPPMIN: 40000.0
+                                RCL_INPPMIN: 50000.0
                                 RSNOWLIN2: 0.04
                             NAMGWWMS:
                                 GGAUSSB: -0.5

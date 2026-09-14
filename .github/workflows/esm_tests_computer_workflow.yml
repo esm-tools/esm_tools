@@ -10,6 +10,12 @@ on:
       computer:
         required: true
         type: string
+      model:
+        required: true
+        type: string
+      runscript:
+        required: true
+        type: string
       update_esm_tests_info:
         type: boolean
         default: false
@@ -49,6 +55,14 @@ jobs:
         conda activate esm_tools;
         ./install.sh;
         echo "/opt/conda/envs/esm_tools/bin" >> $GITHUB_PATH;
+      shell: bash
+
+    - name: scope test_config.yaml to this runscript
+      run: |
+        cat > src/esm_tests/test_config.yaml <<EOF
+        ${{ inputs.model }}:
+          - ${{ inputs.runscript }}
+        EOF
       shell: bash
 
     - name: run esm_tests

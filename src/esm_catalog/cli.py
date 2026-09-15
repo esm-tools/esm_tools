@@ -22,10 +22,11 @@ config file would live.
 
 from __future__ import annotations
 
+import json
 import sys
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Generator, NoReturn, Optional
 
 import rich_click as click
 
@@ -142,8 +143,19 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
 
 @click.group(epilog=_CONFIG_EPILOG)
 @click.version_option(version=__version__, prog_name="esm-catalog")
-def main() -> None:
+@click.option(
+    "--json",
+    "json_output",
+    is_flag=True,
+    is_eager=True,
+    help="Emit machine-readable JSON instead of formatted text, where the "
+    "command supports it (currently: push, auth login). Unsupported commands "
+    "ignore this flag.",
+)
+@click.pass_context
+def main(ctx: click.Context, json_output: bool) -> None:
     """ESM-Tools simulation catalog."""
+    ctx.obj = {"json": json_output}
 
 
 # [NOTE] PG: Consider factoring these into separate files for "reusability" (we will never do that, but builder-pattern cli is good here for separateion)
@@ -164,7 +176,10 @@ def auth() -> None:
     help="Skip TLS verification (dev self-signed). Not persisted — pass it again "
     "on every 'push' against this server.",
 )
-def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
+@click.pass_context
+def auth_login(
+    ctx: click.Context, server_url: str, open_browser: bool, insecure: bool
+) -> None:
     """Log in and cache a token scoped to SERVER_URL.
 
     The token is cached per server (logging into a second server does not
@@ -173,10 +188,25 @@ def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
     (who actually issues the token) is a separate system, configured via
     oidc_discovery_url/client_id (env or config file); see 'esm-catalog
     status' or the config file for what is currently resolved.
+
+    Under --json: prints {"login_url": ..., "server_url": ...} as one line,
+    then reads the code as a plain line from stdin instead of an interactive
+    prompt — a script can drive a headless browser through login_url and
+    write the code back on the same process's stdin. Prints
+    {"server_url": ..., "token_cache_path": ..., "has_refresh_token": ...}
+    on success, or {"error": ...} on failure (exit 1 either way on error).
     """
+    json_output: bool = (ctx.obj or {}).get("json", False)
+
     from esm_catalog import auth as _auth
     from esm_catalog.config import Settings
     from esm_catalog.xdg import token_file
+
+    def _die(message: str) -> NoReturn:
+        if json_output:
+            click.echo(json.dumps({"error": message}))
+            sys.exit(1)
+        raise click.ClickException(message)
 
     # -k only overrides; without it, ESM_CATALOG_VERIFY_TLS from env/config wins.
     settings = Settings(server_url=server_url)
@@ -185,33 +215,54 @@ def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
     try:
         meta = _auth.fetch_oidc_metadata(settings)
     except Exception as exc:  # noqa: BLE001 — surface any discovery failure cleanly
-        raise click.ClickException(
-            f"Could not reach the identity provider: {exc}"
-        ) from exc
+        _die(f"Could not reach the identity provider: {exc}")
 
     verifier, challenge = _auth.generate_pkce_pair()
     login_url = _auth.build_login_url(meta, settings, challenge)
 
-    click.secho("\nOpen this URL in a browser and log in:\n", fg="cyan")
-    click.echo(login_url + "\n")
+    if json_output:
+        click.echo(json.dumps({"login_url": login_url, "server_url": server_url}))
+    else:
+        click.secho("\nOpen this URL in a browser and log in:\n", fg="cyan")
+        click.echo(login_url + "\n")
     if open_browser:
         import webbrowser
 
         webbrowser.open(login_url)
 
-    try:
-        raw_code = click.prompt("Paste the code from the landing page").strip()
-    except click.Abort as exc:
-        raise click.ClickException(
-            "Login cancelled — no code was entered. The URL and PKCE challenge "
-            "above are now stale; run this command again to restart."
-        ) from exc
+    if json_output:
+        raw_code = sys.stdin.readline().strip()
+        if not raw_code:
+            _die(
+                "No code read from stdin. The URL and PKCE challenge above are "
+                "now stale; run this command again to restart."
+            )
+    else:
+        try:
+            raw_code = click.prompt("Paste the code from the landing page").strip()
+        except click.Abort as exc:
+            raise click.ClickException(
+                "Login cancelled — no code was entered. The URL and PKCE challenge "
+                "above are now stale; run this command again to restart."
+            ) from exc
     code = _auth.AuthCode(raw_code)
     try:
         token = _auth.exchange_code_for_token(meta, settings, code, verifier)
     except _auth.AuthError as exc:
-        raise click.ClickException(str(exc)) from exc
+        _die(str(exc))
     _auth.save_token(token, server_url)
+
+    if json_output:
+        click.echo(
+            json.dumps(
+                {
+                    "server_url": server_url,
+                    "token_cache_path": str(token_file(server_url)),
+                    "has_refresh_token": bool(token.refresh_token),
+                }
+            )
+        )
+        return
 
     click.secho(
         f"Logged in to {server_url} — token cached at {token_file(server_url)}",
@@ -358,7 +409,9 @@ def scan(
     "certificate validation is unaffected — only useful when DNS itself is "
     "broken but the server is reachable by IP. Repeatable.",
 )
+@click.pass_context
 def push(
+    ctx: click.Context,
     paths: tuple[Path, ...],
     server: Optional[str],
     insecure: bool,
@@ -371,6 +424,8 @@ def push(
     of them. Writes are authenticated (run 'auth login' first) and idempotent
     (upsert) — re-pushing is safe, nothing is deleted.
     """
+    json_output: bool = (ctx.obj or {}).get("json", False)
+
     from esm_catalog import auth
     from esm_catalog import push as pushmod
     from esm_catalog.client import StacClient
@@ -387,11 +442,18 @@ def push(
     if insecure:
         settings.verify_tls = False
 
+    def _die(message: str) -> NoReturn:
+        """Report a fatal error and exit, in whichever format was requested."""
+        if json_output:
+            click.echo(json.dumps({"error": message}))
+            sys.exit(1)
+        raise click.ClickException(message)
+
     try:
         api_url = settings.api_url
         token = auth.get_bearer_token(settings)
     except (ValueError, auth.AuthError) as exc:
-        raise click.ClickException(str(exc)) from exc
+        _die(str(exc))
 
     try:
         resolve_map = {
@@ -399,7 +461,7 @@ def push(
             for host, port, ip in (parse_resolve(spec) for spec in resolve_specs)
         }
     except ValueError as exc:
-        raise click.ClickException(str(exc)) from exc
+        _die(str(exc))
     transport = (
         ResolvingTransport(resolve_map, verify_tls=settings.verify_tls)
         if resolve_map
@@ -416,26 +478,41 @@ def push(
         for f in files
     )
 
-    show_progress = sys.stderr.isatty()
+    show_progress = sys.stderr.isatty() and not json_output
     with StacClient(
         api_url, token, verify_tls=settings.verify_tls, transport=transport
     ) as client:
         with _push_progress(show_progress, total) as advance:
             summary = pushmod.push_paths(paths, client, on_progress=advance)
 
+    # If a pushed catalog carries queryables the server has not registered, tell
+    # the operator how to register them (filtering already works; this only
+    # surfaces the fields in the STAC Browser filter UI).
+    unregistered_queryables = []
+    for directory in (p for p in paths if p.is_dir()):
+        delta = pushmod.queryable_delta(directory, api_url, settings.verify_tls)
+        if delta is None:
+            continue
+        if json_output:
+            count = len(json.loads(delta.read_text()).get("properties", {}))
+            unregistered_queryables.append(
+                {"directory": str(directory), "count": count, "delta_path": str(delta)}
+            )
+        else:
+            _report_new_queryables(delta, settings.server_url)
+
+    if json_output:
+        result = summary.model_dump()
+        result["unregistered_queryables"] = unregistered_queryables
+        click.echo(json.dumps(result))
+        if summary.errors:
+            sys.exit(1)
+        return
+
     click.echo(
         f"pushed {summary.collections} collection(s), {summary.items} item(s) "
         f"from {summary.shards} shard(s)"
     )
-
-    # If a pushed catalog carries queryables the server has not registered, tell
-    # the operator how to register them (filtering already works; this only
-    # surfaces the fields in the STAC Browser filter UI).
-    for directory in (p for p in paths if p.is_dir()):
-        delta = pushmod.queryable_delta(directory, api_url, settings.verify_tls)
-        if delta is not None:
-            _report_new_queryables(delta, settings.server_url)
-
     if summary.errors:
         for err in summary.errors:
             click.secho(f"  ! {err}", fg="red", err=True)
@@ -444,9 +521,7 @@ def push(
 
 def _report_new_queryables(delta_path: Path, server_url: Optional[str]) -> None:
     """Print the operator recipe for registering new queryables."""
-    import json as _json
-
-    count = len(_json.loads(delta_path.read_text()).get("properties", {}))
+    count = len(json.loads(delta_path.read_text()).get("properties", {}))
     host = (server_url or "<pgstac-host>").split("://", 1)[-1].rstrip("/")
     click.secho(
         f"\n{count} new queryable field(s) are not yet registered.", fg="yellow"

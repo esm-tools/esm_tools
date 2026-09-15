@@ -31,6 +31,8 @@ import pystac
 from stac_geoparquet.arrow import parse_stac_items_to_arrow, to_parquet
 from upath import UPath
 
+from esm_catalog.storage import _stac_geoparquet_patch  # noqa: F401 (import applies the patch)
+
 from esm_catalog.scan.types import RunStamp
 from esm_catalog.types import ExperimentId
 

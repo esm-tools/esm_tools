@@ -181,7 +181,28 @@ def source_experiment(
         run_start=run_start,
         run_end=run_end,
         namelists_by_component=_namelists_by_component(exp_root),
+        components=_components(docs),
     )
+
+
+def _components(docs: Iterable[FinishedConfigDoc]) -> list[ComponentName]:
+    """The experiment's components: the union of every segment's ``general.models``.
+
+    Not every non-``general`` top-level block -- a finished_config's top level
+    also carries non-component sections (``computer``, ``defaults``, ...) and
+    baked-in submodels that ``general.models`` deliberately excludes (e.g.
+    ``jsbach``, folded into ``echam``). ``general.models`` is ESM-Tools' own
+    record of which top-level models are actually in the run.
+    """
+    names: set[ComponentName] = set()
+    for doc in docs:
+        general = doc.get("general")
+        if not isinstance(general, dict):
+            continue
+        models = general.get("models")
+        if isinstance(models, list):
+            names.update(str(m) for m in models)
+    return sorted(names)
 
 
 _NAMELIST_GLOB = "namelist.*"

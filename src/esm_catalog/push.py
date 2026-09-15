@@ -17,6 +17,7 @@ semantics, so re-pushing the same object is harmless. Nothing is ever deleted.
 from __future__ import annotations
 
 import json
+import traceback as _traceback
 from pathlib import Path
 from typing import Iterable, Literal, Optional, Protocol
 
@@ -24,7 +25,7 @@ from pydantic import BaseModel, Field
 from stac_geoparquet.arrow import stac_table_to_items
 from upath import UPath
 
-from esm_catalog.client import CollectionId, StacClient, StacObject
+from esm_catalog.client import CollectionId, StacClient, StacClientError, StacObject
 from esm_catalog.scan.workspace import QUERYABLES_FILENAME, STATE_FILENAME
 from esm_catalog.storage.geoparquet import read_shard
 
@@ -40,13 +41,42 @@ _SHARD_SUFFIXES = {".parquet", ".geoparquet"}
 _SKIP_FILES = {STATE_FILENAME, QUERYABLES_FILENAME}
 
 
+class PushError(BaseModel):
+    """One path's failure, structured for --json instead of a flattened string.
+
+    ``exception_type`` is None for a skip (not a STAC file) -- there was no
+    exception, just a path push_paths declined to touch. ``status`` is the
+    HTTP status code, only ever set for our own StacClientError (a network
+    library's ConnectError/TimeoutException etc. has no status to report).
+    ``traceback`` is only populated when push_paths is asked for it
+    (--verbose --json together) -- always available, but verbose enough
+    that it shouldn't be in every error by default.
+    """
+
+    path: str
+    exception_type: Optional[str] = None
+    message: str
+    status: Optional[int] = None
+    traceback: Optional[list[str]] = None
+
+    def __str__(self) -> str:
+        """Render the same text shape the old plain-string errors had.
+
+        A skip (exception_type is None) rendered as "skipped {path}: {message}";
+        a real failure rendered as "{path}: {message}" with no such prefix.
+        """
+        if self.exception_type is None:
+            return f"skipped {self.path}: {self.message}"
+        return f"{self.path}: {self.message}"
+
+
 class PushSummary(BaseModel):
     """Counts of what a push shipped."""
 
     collections: int = 0
     items: int = 0
     shards: int = 0
-    errors: list[str] = Field(default_factory=list)
+    errors: list[PushError] = Field(default_factory=list)
 
 
 class ProgressHook(Protocol):
@@ -127,8 +157,13 @@ def push_paths(
     paths: Iterable[Path],
     client: StacClient,
     on_progress: Optional[ProgressHook] = None,
+    include_traceback: bool = False,
 ) -> PushSummary:
-    """Push everything under *paths* through *client*; return a summary."""
+    """Push everything under *paths* through *client*; return a summary.
+
+    *include_traceback* attaches the full formatted traceback to each
+    PushError -- off by default (it's verbose), meant for --verbose --json.
+    """
     summary = PushSummary()
     progress = on_progress or (lambda advance, detail: None)
 
@@ -147,9 +182,23 @@ def push_paths(
                 summary.items += _push_shard(path, client, progress)
                 summary.shards += 1
             else:
-                summary.errors.append(f"skipped {path.name}: not a STAC file")
+                summary.errors.append(
+                    PushError(path=path.name, message="not a STAC file")
+                )
         except Exception as exc:  # noqa: BLE001 — collect, keep pushing the rest
-            summary.errors.append(f"{path.name}: {exc}")
+            summary.errors.append(
+                PushError(
+                    path=path.name,
+                    exception_type=f"{type(exc).__module__}.{type(exc).__name__}",
+                    message=str(exc),
+                    status=exc.status if isinstance(exc, StacClientError) else None,
+                    traceback=(
+                        _traceback.format_exception(type(exc), exc, exc.__traceback__)
+                        if include_traceback
+                        else None
+                    ),
+                )
+            )
 
     return summary
 

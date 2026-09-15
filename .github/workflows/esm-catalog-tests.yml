@@ -37,7 +37,7 @@ jobs:
           # pytest; the base pins pytest==7.1.2, which predates 3.12 support).
           pip install -e . --no-deps
           # setuptools<81 still bundles pkg_resources (removed in 81), which esm_tools imports.
-          pip install -U "pytest>=7.4" click loguru pystac shapely universal-pathlib jsonschema \
+          pip install -U "pytest>=7.4" "rich-click>=1.7" loguru pystac shapely universal-pathlib jsonschema \
             "setuptools<81" pyyaml colorama f90nml "pydantic>=2" typing_extensions \
             "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git"
       - name: Run esm_catalog tests

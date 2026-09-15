@@ -37,8 +37,12 @@ PathKind = Literal["collection", "item", "shard", "unknown"]
 
 _SHARD_SUFFIXES = {".parquet", ".geoparquet"}
 
+#: The delta sidecar naming queryables present in the catalog but not yet
+#: registered on the server (a ``pypgstac load-queryables`` file).
+QUERYABLES_DELTA_FILENAME = "queryables-delta.json"
+
 #: Catalog sidecars that are not STAC objects and must never be pushed.
-_SKIP_FILES = {STATE_FILENAME, QUERYABLES_FILENAME}
+_SKIP_FILES = {STATE_FILENAME, QUERYABLES_FILENAME, QUERYABLES_DELTA_FILENAME}
 
 
 class PushError(BaseModel):
@@ -116,9 +120,10 @@ def expand_paths(paths: Iterable[Path]) -> list[Path]:
 
     Directories are searched **recursively** — the scanner writes shards under
     ``items/`` while ``collection.json`` sits at the catalog root — and the
-    catalog sidecars (the ``esm-catalog.json`` workspace state and the
-    ``queryables.json`` file) are skipped: they are bookkeeping, not STAC
-    objects, so they must not count as failed pushes.
+    catalog sidecars (the ``esm-catalog.json`` workspace state, the
+    ``queryables.json`` file, and ``queryables-delta.json``, itself written by
+    a previous push) are skipped: they are bookkeeping, not STAC objects, so
+    they must not count as failed pushes.
     """
     files: list[Path] = []
     for path in paths:
@@ -213,11 +218,6 @@ def _push_shard(path: Path, client: StacClient, progress: ProgressHook) -> int:
             pushed += len(batch)
             progress(len(batch), f"{path.name} -> {collection_id} ({pushed})")
     return pushed
-
-
-#: The delta sidecar naming queryables present in the catalog but not yet
-#: registered on the server (a ``pypgstac load-queryables`` file).
-QUERYABLES_DELTA_FILENAME = "queryables-delta.json"
 
 
 def registered_queryables(api_url: str, verify_tls: bool) -> set[str]:

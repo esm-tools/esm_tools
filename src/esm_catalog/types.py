@@ -33,6 +33,27 @@ Href = str
 BBox = list[float]
 """A bounding box, [west, south, east, north]."""
 
+Geometry = dict
+"""A GeoJSON geometry object (forwarded verbatim onto the STAC Item)."""
+
+
+class CubeDimension(TypedDict, total=False):
+    """One entry in a STAC datacube ``cube:dimensions`` mapping.
+
+    ``type`` is ``"temporal"``/``"spatial"``, ``axis`` names the spatial axis
+    (``x``/``y``/``z``), ``extent`` is the ``[min, max]`` span, ``unit`` the
+    coordinate's units. Any reader produces this shape, not just NetCDF.
+    """
+
+    type: str
+    axis: str
+    extent: list
+    unit: str
+
+
+CubeDimensions = dict[str, CubeDimension]
+"""A STAC datacube Dimensions object, keyed by dimension name."""
+
 
 class ScannedVariable(TypedDict, total=False):
     """One entry in a scanner's ``variables`` list, before datacube mapping.
@@ -50,9 +71,9 @@ class ScannedVariable(TypedDict, total=False):
 
 
 class FileMetadata(TypedDict, total=False):
-    """The metadata a scanner (scan_netcdf/scan_grib) produces for one file.
+    """The metadata a Reader (e.g. NetCdfReader) produces for one file.
 
-    Every key is optional — a scanner fills what it can extract. ``dimensions``
+    Every key is optional — a reader fills what it can extract. ``dimensions``
     is a STAC datacube Dimensions object, forwarded verbatim (opaque here).
     """
 
@@ -60,10 +81,10 @@ class FileMetadata(TypedDict, total=False):
     variables: list[ScannedVariable]
     component: ComponentName
     format: str
-    dimensions: dict
+    dimensions: CubeDimensions
     datetime_start: datetime
     datetime_end: datetime
     datetime_str: str
-    output_frequency: str
-    geometry: dict
+    frequency: str
+    geometry: Geometry
     bbox: BBox

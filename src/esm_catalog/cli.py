@@ -445,6 +445,8 @@ def push(
     """
     json_output: bool = (ctx.obj or {}).get("json", False)
 
+    import os
+
     from esm_catalog import auth
     from esm_catalog import push as pushmod
     from esm_catalog.client import StacClient
@@ -497,17 +499,33 @@ def push(
         for f in files
     )
 
-    show_progress = sys.stderr.isatty() and not json_output
-    with StacClient(
-        api_url, token, verify_tls=settings.verify_tls, transport=transport
-    ) as client:
-        with _push_progress(show_progress, total) as advance:
-            summary = pushmod.push_paths(
-                paths,
-                client,
-                on_progress=advance,
-                include_traceback=verbose and json_output,
-            )
+    # ESM_CATALOG_PROFILE=/path/to/out.prof: cProfile the push (shard read-back
+    # into Items + upload), dumped for `python -m pstats`/snakeviz. Off (zero
+    # overhead) unless set -- same one-off "what's actually slow" hook as scan.
+    profile_path = os.environ.get("ESM_CATALOG_PROFILE")
+
+    def _run_push():
+        show_progress = sys.stderr.isatty() and not json_output
+        with StacClient(
+            api_url, token, verify_tls=settings.verify_tls, transport=transport
+        ) as client:
+            with _push_progress(show_progress, total) as advance:
+                return pushmod.push_paths(
+                    paths,
+                    client,
+                    on_progress=advance,
+                    include_traceback=verbose and json_output,
+                )
+
+    if profile_path:
+        import cProfile
+
+        profiler = cProfile.Profile()
+        summary = profiler.runcall(_run_push)
+        profiler.dump_stats(profile_path)
+        click.echo(f"profile written to {profile_path}", err=True)
+    else:
+        summary = _run_push()
 
     # If a pushed catalog carries queryables the server has not registered, tell
     # the operator how to register them (filtering already works; this only

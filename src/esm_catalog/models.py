@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import datetime
 from pathlib import Path
 from typing import Optional, TypedDict, cast
 
@@ -71,6 +72,11 @@ class ExperimentMetadata(BaseModel):
     data_license: Optional[License] = None
     # Model components, including baked-in submodels (e.g. jsbach inside echam).
     components: list[ComponentName] = []
+    # The experiment's nominal run span, from config (union over run segments).
+    # Time-invariant (fx) items pin their datetime to this span; sourced from
+    # the config, never derived from scanned items (which would be circular).
+    run_start: Optional[datetime] = None
+    run_end: Optional[datetime] = None
     # Populated by the scan layer, keyed by component. Empty by default, in
     # which case the namelist extension is a no-op. Values are f90nml.Namelist
     # objects, so validation is skipped rather than coerced.

@@ -71,7 +71,7 @@ class ScannedVariable(TypedDict, total=False):
 
 
 class FileMetadata(TypedDict, total=False):
-    """The metadata a Reader (e.g. NetCdfReader) produces for one file.
+    """The metadata a Reader (e.g. NetCDFReader) produces for one file.
 
     Every key is optional — a reader fills what it can extract. ``dimensions``
     is a STAC datacube Dimensions object, forwarded verbatim (opaque here).

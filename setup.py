@@ -97,6 +97,8 @@ setup(
             "jsonschema>=4.0",
             "pydantic>=2",
             "rich-click>=1.7",
+            "xarray>=2023.1",
+            "cf-xarray>=0.8",
         ],
     },
     install_requires=requirements,

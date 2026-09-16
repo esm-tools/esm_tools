@@ -15,8 +15,10 @@ Overview
 
 Four STAC extensions write fields onto an Item, a Collection, or both, and
 register the extension's URL: ``datacube``, ``contacts``, ``paleo``,
-``namelist``. They share one registry (``registry.py``) and one pair of helpers
-(``stac_ext.py``). :ref:`Adding a New Extension` covers writing another.
+``namelist``. They share one registry (``registry.py``), one pair of helpers
+(``stac_ext.py``), and one pluggable contract (``plugins.py``) that
+``item.py``/``collection.py`` dispatch through rather than calling each
+extension by name. :ref:`Adding a New Extension` covers writing another.
 
 Two files hold the typed vocabulary:
 
@@ -125,10 +127,10 @@ Data flow: building a catalog
        COLL [label="pystac.Collection\n(id=collection_id, default extent, components)"];
        MI -> ITEM; MC -> COLL;
 
-       ITEM -> "item extensions\ncontacts, datacube, namelist, paleo";
+       ITEM -> "item extensions\ndatacube, namelist, paleo";
        COLL -> "collection extensions\ncontacts, namelist, paleo";
 
-       "item extensions\ncontacts, datacube, namelist, paleo" -> CAT;
+       "item extensions\ndatacube, namelist, paleo" -> CAT;
        "collection extensions\ncontacts, namelist, paleo" -> CAT [label="update_extent, per item"];
        CAT [label="Experiment catalog\n(Collection + N Items)"];
    }
@@ -173,8 +175,21 @@ Recipe for a new ``lineage`` extension:
    - call ``apply_extension(obj, Extension.lineage)`` last, with
      ``validate=False`` only if step 2 was skipped.
 
-#. **Wire it in.** Call the new ``add_lineage_*_extension`` from
-   ``item.py::make_item`` and/or ``collection.py::make_collection``.
+#. **Register it.** In ``lineage.py``, add ``@hookimpl`` wrapper(s) calling
+   the new ``add_lineage_*_extension``:
+
+   .. code-block:: python
+
+      from esm_catalog.plugins import hookimpl
+
+      @hookimpl
+      def apply_to_item(item, file_metadata, exp_metadata, hints):
+          add_lineage_item_extension(item, ...)
+
+   Then register the module in ``plugins.py::_build_plugin_manager``
+   (``pm.register(lineage)``). ``item.py``/``collection.py`` need no change —
+   they dispatch ``pm.hook.apply_to_item``/``apply_to_collection`` without
+   knowing which extensions are registered.
 
 ``stac_ext.py`` needs no change; it works from the registry, not from any
 specific extension.

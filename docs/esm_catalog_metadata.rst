@@ -236,8 +236,6 @@ Send the operator ``catalog/queryables-delta.json``, or the command.
 Not recorded yet
 ----------------
 
-- The model components list on the Collection (``components``) is present
-  but currently comes out empty.
 - Which experiment a run was branched from, and when.
 - The machine that hosted the run (``hosted_by`` in the machine YAML) is not
   yet copied onto the Collection.

@@ -32,6 +32,7 @@ from typing import Iterator, Optional, Union
 import f90nml
 import pystac
 
+from esm_catalog.plugins import hookimpl
 from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 from esm_catalog.types import ComponentName
@@ -168,6 +169,21 @@ def add_namelist_item_extension(
         return
     item.properties.update(props)
     apply_extension(item, Extension.namelist, validate=validate)
+
+
+@hookimpl
+def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
+    add_namelist_item_extension(
+        item,
+        exp_metadata.namelists_by_component,
+        props=hints.get("namelist_props"),
+        validate=hints.get("validate", True),
+    )
+
+
+@hookimpl
+def apply_to_collection(collection, exp_metadata, hints) -> None:
+    add_namelist_collection_extension(collection, exp_metadata.namelists_by_component)
 
 
 def _json_type(value: NamelistValue) -> str:

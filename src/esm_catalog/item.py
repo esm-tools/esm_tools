@@ -10,10 +10,8 @@ from typing import Optional
 from pystac import Asset, Item, Link
 from upath import UPath
 
-from esm_catalog.datacube import add_datacube_item_extension
 from esm_catalog.models import ExperimentMetadata
-from esm_catalog.namelist import add_namelist_item_extension
-from esm_catalog.paleo import add_paleo_item_extension
+from esm_catalog.plugins import get_plugin_manager
 from esm_catalog.types import FileMetadata, Href
 
 ItemId = str
@@ -61,10 +59,11 @@ def make_item(
     Returns
     -------
     pystac.Item
-        A STAC Item for the file, with the datacube, namelist, and paleo
-        extensions applied where the metadata warrants them. A time-invariant
-        (fx) file, one with no per-file datetime, is placed across the
-        experiment's run span and marked ``frequency == "fx"``.
+        A STAC Item for the file, with every registered item-contract
+        extension (see :mod:`esm_catalog.plugins`) applied where its metadata
+        warrants it. A time-invariant (fx) file, one with no per-file
+        datetime, is placed across the experiment's run span and marked
+        ``frequency == "fx"``.
 
     Raises
     ------
@@ -114,15 +113,13 @@ def make_item(
         )
     )
 
-    add_datacube_item_extension(item, file_metadata)
-    add_namelist_item_extension(
-        item,
-        exp_metadata.namelists_by_component,
-        props=namelist_props,
-        validate=validate,
-    )
-    add_paleo_item_extension(
-        item, exp_metadata.paleo_config, props=paleo_props, validate=validate
+    hints = {
+        "namelist_props": namelist_props,
+        "paleo_props": paleo_props,
+        "validate": validate,
+    }
+    get_plugin_manager().hook.apply_to_item(
+        item=item, file_metadata=file_metadata, exp_metadata=exp_metadata, hints=hints
     )
 
     return item

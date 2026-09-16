@@ -107,6 +107,7 @@ setup(
             "pydantic-settings>=2.2",
             "platformdirs>=4.0",
             "pyyaml>=6.0",
+            "pluggy>=1.0",
         ],
         # GRIB support is opt-in: cfgrib/eccodes pull the ecCodes C library, which
         # is heavy and awkward in CI, so the scanner treats GRIB as unsupported

@@ -65,8 +65,10 @@ The pieces
      - Where
    * - ``esm-catalog`` CLI
      - Turns an experiment directory into STAC records and sends them to the
-       server. Four commands: ``auth login``/``logout``, ``scan``, ``push``,
-       ``status``.
+       server. Daily-workflow commands: ``auth login``/``logout``, ``scan``,
+       ``push``, ``status``. ``list-plugins`` is a contributor/debugging
+       command that lists registered extension plugins (see
+       :doc:`esm_catalog_architecture`).
      - Any node that can see the experiment; ``pip install
        esm-tools[catalog]``
    * - Local catalogue

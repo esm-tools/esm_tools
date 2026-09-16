@@ -683,5 +683,49 @@ def status(exp_root: str) -> None:
         )
 
 
+@main.command("list-plugins")
+@click.pass_context
+def list_plugins(ctx: click.Context) -> None:
+    """List registered Item/Collection extension plugins.
+
+    Each extension (datacube, namelist, paleo, contacts, ...) registers
+    itself against the item and/or collection contract (see
+    esm_catalog.plugins) rather than being hardcoded into item/collection
+    building — this shows what is currently registered.
+    """
+    from esm_catalog.plugins import get_plugin_manager
+
+    pm = get_plugin_manager()
+    item_impls = {hi.plugin_name for hi in pm.hook.apply_to_item.get_hookimpls()}
+    collection_impls = {
+        hi.plugin_name for hi in pm.hook.apply_to_collection.get_hookimpls()
+    }
+
+    rows = []
+    for name, plugin in pm.list_name_plugin():
+        hooks = []
+        if name in item_impls:
+            hooks.append("item")
+        if name in collection_impls:
+            hooks.append("collection")
+        doc = (plugin.__doc__ or "").strip().splitlines()
+        rows.append(
+            {"plugin": name, "hooks": hooks, "description": doc[0] if doc else ""}
+        )
+
+    if ctx.obj.get("json"):
+        click.echo(json.dumps(rows, indent=2))
+        return
+
+    plugin_width = max(len(row["plugin"]) for row in rows)
+    hooks_width = max(len(", ".join(row["hooks"])) for row in rows)
+    for row in rows:
+        click.echo(
+            f"{row['plugin']:<{plugin_width}}  "
+            f"{', '.join(row['hooks']):<{hooks_width}}  "
+            f"{row['description']}"
+        )
+
+
 if __name__ == "__main__":
     main()

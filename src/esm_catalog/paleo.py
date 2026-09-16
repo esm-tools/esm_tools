@@ -32,6 +32,7 @@ from typing import Optional
 import pystac
 from pydantic import BaseModel, ConfigDict
 
+from esm_catalog.plugins import hookimpl
 from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 
@@ -142,3 +143,18 @@ def add_paleo_collection_extension(
     for key, value in props.items():
         collection.summaries.add(key, [value])
     apply_extension(collection, Extension.paleo)
+
+
+@hookimpl
+def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
+    add_paleo_item_extension(
+        item,
+        exp_metadata.paleo_config,
+        props=hints.get("paleo_props"),
+        validate=hints.get("validate", True),
+    )
+
+
+@hookimpl
+def apply_to_collection(collection, exp_metadata, hints) -> None:
+    add_paleo_collection_extension(collection, exp_metadata.paleo_config)

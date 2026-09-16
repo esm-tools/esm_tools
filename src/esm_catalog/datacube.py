@@ -23,6 +23,7 @@ from typing import TypedDict
 
 import pystac
 
+from esm_catalog.plugins import hookimpl
 from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 from esm_catalog.types import FileMetadata, ScannedVariable, VariableName
@@ -104,3 +105,9 @@ def _to_cube_variables(variables: list[ScannedVariable]) -> CubeVariables:
                 break
         cube_variables[name] = entry
     return cube_variables
+
+
+@hookimpl
+def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
+    """Register this extension for the item contract (no collection-level counterpart)."""
+    add_datacube_item_extension(item, file_metadata)

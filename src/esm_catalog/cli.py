@@ -717,14 +717,16 @@ def list_plugins(ctx: click.Context) -> None:
         click.echo(json.dumps(rows, indent=2))
         return
 
-    plugin_width = max(len(row["plugin"]) for row in rows)
-    hooks_width = max(len(", ".join(row["hooks"])) for row in rows)
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table()
+    table.add_column("Plugin")
+    table.add_column("Contract")
+    table.add_column("Description")
     for row in rows:
-        click.echo(
-            f"{row['plugin']:<{plugin_width}}  "
-            f"{', '.join(row['hooks']):<{hooks_width}}  "
-            f"{row['description']}"
-        )
+        table.add_row(row["plugin"], ", ".join(row["hooks"]), row["description"])
+    Console().print(table)
 
 
 if __name__ == "__main__":

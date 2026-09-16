@@ -9,12 +9,17 @@ time range, frequency, per-variable metadata) are reused verbatim -- and because
 a GRIB grid carries real latitude/longitude, the spatial extent is genuine, not
 the whole-Earth fallback.
 
-This module is the *basic*, model-agnostic reader. Model-specific quirks that
-cfgrib alone cannot resolve -- most importantly ECHAM's GRIB1 encoding, where
-every field is stored under ``paramId=0`` and collapses to a single ``unknown``
-variable -- are handled by pluggable *enrichers* (see :mod:`.echam`), which
-post-process the metadata. An enricher registers itself with
-:func:`register_enricher`; the reader applies each in turn.
+This module is the *basic*, model-agnostic reader -- always correct, but pays
+cfgrib's per-open reindexing cost. A model module can register two different
+kinds of model-specific help, via :mod:`.plugins`:
+
+- ``try_model_specific_read`` (see :mod:`.echam`) -- an alternative, faster
+  read for files it recognises (e.g. straight from eccodes headers), tried
+  before cfgrib; returning ``None`` falls through to the generic path.
+- an *enricher* (:func:`register_enricher`) -- post-processes the metadata
+  cfgrib/the fast path already produced (e.g. ECHAM's GRIB1 encoding, where
+  every field is stored under ``paramId=0`` and collapses to a single
+  ``unknown`` variable, which no fast path claims).
 """
 
 from __future__ import annotations
@@ -27,6 +32,7 @@ from upath import UPath
 
 from esm_catalog.scan.format import FileFormat
 from esm_catalog.scan.reader import UnsupportedContentError, register
+from esm_catalog.scan.readers.grib.plugins import get_grib_plugin_manager
 from esm_catalog.scan.readers.netcdf.coords import _extract_bbox
 from esm_catalog.scan.readers.netcdf.dimensions import _extract_dimensions
 from esm_catalog.scan.readers.netcdf.frequency import _infer_frequency
@@ -61,13 +67,23 @@ class GRIBReader:
     supports_remote = False
 
     def read(self, path: UPath) -> FileMetadata:
-        """Open *path* with cfgrib and extract its scan metadata.
+        """Read *path*'s scan metadata: a model-specific fast path if one
+        claims the file, else cfgrib.
 
         Raises
         ------
         UnsupportedContentError
             If cfgrib is unavailable, or the file yields no readable hypercube.
         """
+        fast = get_grib_plugin_manager().hook.try_model_specific_read(
+            path=path, file_format=FileFormat.grib
+        )
+        if fast is not None:
+            return fast
+        return self._read_generic(path)
+
+    def _read_generic(self, path: UPath) -> FileMetadata:
+        """Open *path* with cfgrib and extract its scan metadata."""
         datasets = _open_hypercubes(path)
         if not datasets:
             raise UnsupportedContentError(f"{path}: no readable GRIB hypercube")

@@ -35,6 +35,29 @@ fesom:
         branch: "main"
         repo_options: "--recurse-submodules"
         namelist_dir: "${model_dir}/config/"
+      # Same source as 2.8.0, built against XIOS. FESOM then routes its output
+      # through XIOS instead of its own writer. Install XIOS first, from the
+      # same directory, so that it lands in the sibling ``xios`` that the
+      # comp_command below reads:
+      #
+      #     esm_master install-xios-2.5_r1910_ogcm
+      #     esm_master install-fesom-2.8.0-xios
+      #
+      # It has to be an XIOS built WITHOUT OASIS: the _ogcm and _oifs variants
+      # and trunk, which set use_oasis: ''. An OASIS-enabled libxios.a carries
+      # unresolved mod_oasis_* references; libfesom.so still links and then
+      # bin/fesom.x fails, because a standalone FESOM links no OASIS.
+      #
+      # This deliberately does not use ``requires: [xios-...]``. That is the
+      # mechanism nemo uses, and it is currently broken for every xios
+      # consumer: requiring a pinned xios version collides with the default
+      # ``version`` in configs/components/xios/xios.yaml. install-nemo-
+      # GYRE_XIOS and install-nemo-GYRE_PISCES both fail the same way.
+      "2.8.0-xios":
+        branch: "2.8.0"
+        repo_options: "--recurse-submodules"
+        with_xios: true
+        comp_command: export XIOS_ROOT=${model_dir}/../xios; mkdir -p build; cd build; cmake -DENABLE_OPENMP=ON -DFESOM_WITH_XIOS=ON -DCMAKE_INSTALL_PREFIX=../ ..;   make install -j `nproc --all`
 
     destination: "fesom-2.8"
     install_bins: bin/fesom.x
@@ -570,6 +593,47 @@ fesom:
                             namelist.config:
                                     run_config:
                                             use_cavity: true
+
+    # Route FESOM output through XIOS instead of its own writer. Needs a
+    # binary built with -DFESOM_WITH_XIOS=ON, ie fesom version 2.8.0-xios.
+    # Four of the six XMLs are taken from the model's own docs/xios_xml/, so
+    # they always match the source that is built. Two are replaced: the
+    # bundled iodef.xml is the AWI-ESM3 coupled variant, and the bundled
+    # file_def_fesom.xml requests six fields on grid_2d_elem that abort the
+    # run (see the comment in the replacement).
+    with_xios: false
+    choose_with_xios:
+            true:
+                    add_config_files:
+                            xios_iodef:      xios_iodef
+                            xios_context:    xios_context
+                            xios_field_def:  xios_field_def
+                            xios_file_def:   xios_file_def
+                            xios_axis_def:   xios_axis_def
+                            xios_domain_def: xios_domain_def
+                            xios_grid_def:   xios_grid_def
+                    add_config_sources:
+                            xios_iodef:      "${namelist_dir}/xios/iodef.xml"
+                            xios_context:    "${model_dir}/docs/xios_xml/context_fesom.xml"
+                            xios_field_def:  "${model_dir}/docs/xios_xml/field_def_fesom.xml"
+                            xios_file_def:   "${namelist_dir}/xios/file_def_fesom.xml"
+                            xios_axis_def:   "${model_dir}/docs/xios_xml/axis_def_fesom.xml"
+                            xios_domain_def: "${model_dir}/docs/xios_xml/domain_def_fesom.xml"
+                            xios_grid_def:   "${model_dir}/docs/xios_xml/grid_def_fesom.xml"
+                    add_config_in_work:
+                            xios_iodef:      "iodef.xml"
+                            xios_context:    "context_fesom.xml"
+                            xios_field_def:  "field_def_fesom.xml"
+                            xios_file_def:   "file_def_fesom.xml"
+                            xios_axis_def:   "axis_def_fesom.xml"
+                            xios_domain_def: "domain_def_fesom.xml"
+                            xios_grid_def:   "grid_def_fesom.xml"
+                    # In attached mode every rank writes its own file, named
+                    # <var>.fesom_<start>-<end>_<rank>.nc.
+                    add_outdata_sources:
+                            fesom_xios: "*.fesom_*.nc"
+                    add_outdata_targets:
+                            fesom_xios: "*.fesom_*.nc"
 
     use_landice_water: False
     choose_general.iterative_coupling:

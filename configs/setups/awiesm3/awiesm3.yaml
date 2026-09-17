@@ -799,6 +799,14 @@ fesom:
             choose_resolution:
                 CORE3:
                     add_namelist_changes:
+                        namelist.config:
+                            run_config:
+                                # Ice-shelf basal melt calibrated to the observed Antarctic total
+                                # (1100-1325 Gt/yr): factor on the three-equation transfer
+                                # velocities, FESOM PR #1064. Needs a FESOM that carries the
+                                # parameter (branch feat/cavity-gamma-scale or main after the
+                                # merge); older code dies at the namelist read.
+                                cavity_gamma_scale: 0.6
                         namelist.oce:
                             oce_dyn:
                                 spp: false

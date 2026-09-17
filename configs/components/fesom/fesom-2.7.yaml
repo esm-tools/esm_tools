@@ -47,9 +47,10 @@ fesom:
         repo_options: "--recurse-submodules"
       "2.7-main":
         # Used by the awiesm3 develop* variants. INTERIM: the branch of FESOM
-        # PR #1060 (tsk_ico receive, use_atm_ice_tskin); back to "main" once
-        # #1060 is merged.
-        branch: "feat/oifs-ice-skin-from-atmosphere"
+        # PR #1060 (tsk_ico receive, use_atm_ice_tskin) plus PR #1064
+        # (cavity_gamma_scale, which the v3.5 CORE3 defaults set); back to
+        # "main" once both are merged.
+        branch: "feat/cavity-gamma-scale"
         repo_options: "--recurse-submodules"
         #namelist_dir: "${model_dir}/config/"
 

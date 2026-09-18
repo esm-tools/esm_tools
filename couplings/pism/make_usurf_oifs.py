@@ -42,8 +42,15 @@ import netCDF4 as nc
 # every floating-point path suorog takes.
 EPS = 0.01
 
-# PISM's polar stereographic, with the y axis as PISM writes it.
-PISM_CRS = "EPSG:3031"
+# PISM's polar stereographic, with the y axis as PISM writes it. Spelled out
+# rather than given as EPSG:3031, because PROJ resolves an EPSG code only against
+# its database and the conda environment this runs in has none:
+#   CRSError: Invalid projection: EPSG:3031: (Internal Proj Error:
+#   proj_create: no database context specified)
+# The two are identical to better than 1e-9 degrees over the PISM domain.
+PISM_CRS = ("+proj=stere +lat_0=-90 +lat_ts=-71 +lon_0=0 +x_0=0 +y_0=0 "
+            "+ellps=WGS84 +units=m +no_defs")
+LONLAT_CRS = "+proj=longlat +ellps=WGS84 +no_defs"
 
 # PISM defaults, for deriving usurf on a restart that does not carry it.
 RHO_ICE = 910.0
@@ -123,7 +130,7 @@ def main():
     # 285 m. Nothing else in the coupling does this flip, so it has to be here.
     X, Y = np.meshgrid(x, -y)
     lon_p, lat_p = Transformer.from_crs(
-        PISM_CRS, "EPSG:4326", always_xy=True).transform(X, Y)
+        PISM_CRS, LONLAT_CRS, always_xy=True).transform(X, Y)
 
     pl, row_lat, row_start, n_oifs = oifs_grid(icmgg_path)
 

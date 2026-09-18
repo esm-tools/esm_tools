@@ -1,0 +1,571 @@
+general:
+    user: !ENV ${USER}
+    use_venv: False    # answer the venv bootstrap question non-interactively (nohup launches have no tty)
+    setup_name: "awiesm3"
+    version: "develop-is"
+    account: "ab0246"
+    # A 1-yr awiesm3 leg runs 26-33 min on 45 nodes (measured: 25:49 and 32:54;
+    # model ~19-26 min + ~7 min post/tidy). 2:30:00 was a 6x over-request and
+    # backfilled badly.
+    compute_time: "01:00:00"
+    initial_date: "1900-01-01"
+    # 30 cycles. 1900-1909 completed 2026-08-14; 1910-1918 completed 2026-08-15;
+    # extended to 1930 on 2026-08-17 to carry on from cycle 20. The intermittent
+    # FESOM blowup hit 1905 twice and then never recurred in 1905-1918, so it is
+    # state-dependent rather than tied to a particular year. fast_pism final_date
+    # must track this: 30 cycles = PISM 62370-62669.
+    # 2026-09-09: the 2-cycle ism40 cap is LIFTED -- back to the full 50 cycles.
+    # The test passed: cycles 1 and 2 both COMPLETED on the 220509 mesh with the
+    # rebuilt chunk-1 bundle and a cold start, and cycle 2's couple_in carved
+    # 213742 nodes with 618 solitary (the merged mesh_flags.py fix firing in the
+    # production path on all 15036 zero-bathymetry nodes).
+    # NOTE cycle 1 first died at the END of the year on an OASIS
+    # "av gsize nx ny mismatch" -- see the fesom.nx note below.
+    final_date: "1902-01-01"   # 2 cycles, 1900 and 1901. Was 1950-01-01 (50 cycles) in ism40.
+    # (ism40 note, kept for context) Extended 2026-08-26 from
+    # 1928-01-01 (28 cycles), which had halted the chain after 1927. The run had
+    # already died at 1923 on the FESOM blowup; this extension does not by itself
+    # get past that. fast_pism final_date tracks it: 50 cycles = PISM 62370-62869.
+    # Shared with pism for iterative coupling -- LITERAL awiesm3-develop-is (both
+    # models must resolve to the SAME experiment_dir; ${setup_name}-${version}
+    # would diverge since pism is a different setup). -> runtime/awiesm3-develop-is/<expid>
+    base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+    # Enable the PISM<->FESOM dynamic-mesh coupling (wiring lives behind this flag
+    # in configs/setups/awiesm3/awiesm3.yaml).
+    interactive_mesh: true
+    # PISM's discharge reaches FESOM as icebergs, and the runoff mapper stops
+    # passing the atmosphere's Antarctic snow-cap calving that it replaces.
+    ism_freshwater_return: true
+    smb_coupled: true
+    # Chunk-1 bundle for the 220509-node CORE3 mother mesh, rebuilt 2026-09-09
+    # (awiesm3.yaml:232 otherwise resolves this to ${pool_dir}/fesom2/pism_cavity_ini,
+    # which is the 211567-mesh bundle). Setting it here also redirects the chunk-1
+    # MeshPath at awiesm3.yaml:740. See the bundle's README.md for provenance:
+    # its submesh is carved from ism39's OWN initial ice state (spinup16 at t=0),
+    # not the movcav8 year-1000010 geometry the old bundle used -- the two differ
+    # by 13077 cells in floating status.
+    pism_cavity_ini_dir: "/work/ab0246/a270092/input/fesom2/pism_cavity_ini_220509_orog"
+    # ^ a270234's bundle with every entry symlinked, except antar_pism2ece.nc,
+    #   which is a real copy carrying usurf_oifs seeded from the chunk-1 PISM
+    #   state. Without that variable suorog ABOR1s on the first leg.
+    nday: 0
+    nmonth: 0
+    nyear: 1
+    force_overwrite_in_file_movements: True
+computer:
+    taskset: true
+
+awiesm3:
+    postprocessing: false
+    model_dir: "/work/ab0246/${general.user}/model_codes/${general.setup_name}-${general.version}//"
+
+fesom:
+    # Chunk-1 bergs, generated offline from the discharge of the same movcav45
+    # state the PISM restart comes from. From chunk 2 they are rebuilt per leg
+    # in couple_in. Valid for the chunk1_mesh only: icb_felem indexes elements.
+    # An empty set is also legal now (FESOM/fesom2#962); icebergs_coldstart has
+    # one, and it leaves year 1 with no Antarctic freshwater at all, since the
+    # runoff mapper has stopped passing basin 66's calving.
+    # new_ism39 chunk-1 icebergs: REGENERATED (2026-08-26), not a corrected copy of
+    # the 2026-08-05 pool set. Built by analysis/pism/make_chunk1_bergs.py from
+    # new_ism38's own first PISM decade (62370-62379) via fesom_icb_pism, so the
+    # seeds come from this configuration's real discharge instead of movcav45's.
+    #
+    # Why this matters for ism39 specifically: ism38 ran cycle 1900 with the
+    # MIRRORED pool set (lon -> 180-lon) and that is baked into its ocean state --
+    # the .lonfix directory only repaired chunk 1 going forward, it could not undo
+    # 1900. A fresh experiment is the only way to clear it.
+    #
+    # Verified before use (PROVENANCE.md in the directory):
+    #   3887 bergs, 13745.4 Gt/yr vs 13771.0 Gt/yr discharge
+    #   per-basin mass error 4.2 %   (mirrored sets score ~75 %)
+    #   distance to calving front  median 5.7 km, p90 27.0 km
+    #   longitudes out of range    0
+    #
+    # NOT mesh-locked despite icb_felem.dat indexing the chunk-1 submesh: FESOM
+    # never reads that file (every `felem` in the source is in the buoys_track
+    # output path) and find_iceberg_elem defaults to .true., so each element is
+    # re-derived from lon/lat. esm-tools copies it only because it is in icb_inputs.
+    #
+    # icb_calving_day.dat and num_non_melted_icb_file were added 2026-08-27: the
+    # generator writes only the six physical fields, but esm-tools pulls seven
+    # icb_inputs and init_icebergs_with_icesheet reads calving_day unconditionally
+    # (icb_step.F90:1518 is a hard `stop`). Values follow couple_in's own convention
+    # for later legs, linspace(1,364,n), so chunk 1 is consistent with chunk 2+.
+    # 2026-09-09: moved into the 220509 bundle. Regenerated on the new 213655-node
+    # submesh from ism39's OWN first PISM decade: 2060 bergs, 7041.4 Gt kept of
+    # 7049 Gt calved (0.1% dropped, 0 bergs outside the mesh). Regenerated for
+    # PLACEMENT, not indices -- the "NOT mesh-locked" note above is confirmed in
+    # the FESOM source (icb_allocate.F90:102, icb_step.F90:401).
+    ini_iceberg_dir: "${general.pism_cavity_ini_dir}/icebergs" #was ".../icebergs_ini_new_ism38_chunk1" (211567 mesh)
+    # Regenerated 2026-08-26 from new_ism38's OWN PISM decade 62370-62379 with the
+    # same cdo recipe recorded in the pool file's history attribute. The pool file
+    # carried the FIXES.md item-1 mirror in lon_bnds (corners bracket their own cell
+    # centre for 0.26 % of cells, median offset 90 deg; lat_bnds brackets 100 % at
+    # 0.036 deg). This file has NO lon_bnds at all -- the PISM extra file and the
+    # griddes both lack corner arrays -- so there is nothing to mirror. 7478 discharge
+    # cells, 13771 Gt/yr. See README.md beside it.
+    # CAVEAT: `disch_file` is assigned in configs/components/fesom/fesom-2.7.yaml:360
+    # but consumed nowhere -- re-checked 2026-08-27 across the whole config tree, it
+    # appears on that line and its chunk-2+ counterpart and nowhere else: no
+    # add_input_sources, no namelist entry, and namelist.forcing has
+    # use_landice_water = .false. INERT at runtime; set so the declared input is the
+    # discharge these bergs were actually generated from.
+    # 2026-09-09: ism39's own decade-1 discharge, 7060 Gt/yr. NOTE this is half the
+    # 13771 Gt/yr of the ism38 set above, despite both being years 62370-62379 from
+    # spinup16 -- worth understanding before relying on the berg forcing.
+    ini_disch_file: "${general.pism_cavity_ini_dir}/icebergs/ini_discharge.nc" #was ".../icebergs_ini_new_ism38_chunk1/ini_discharge.nc"
+    # Drainage basins the iceberg generator assigns PISM's discharge to. Matches
+    # the pism domain and resolution in ismtest1_pism.yaml.
+    basin_file: "/work/ab0246/a270092/input/pism/basins/antarct_cr.08km.nc" #"${general.pool_dir}/pism/basins/antarct_cr.08km.nc"
+
+    # Mesh chunk 1 ran on. couple_in is skipped on chunk 1 (artifacts pooled), so no
+    # previous_submesh is recorded; without this the first mesh-change leg would
+    # assume the old mesh was the full mother mesh and refuse to remap the
+    # (submesh-sized) OASIS restart.
+    chunk1_mesh: "${general.pism_cavity_ini_dir}/submesh" # 213655 nodes (was 208810 on the 211567 mesh)
+    # ocean->PISM: hand PISM FESOM's own cavity melt (fw -> shelfbmassflux, -ocean
+    # given) instead of a T/S column average (-ocean th) that PISM re-melts itself.
+    # The th default averaged FESOM levels 1-20 = 0-410 m INCLUDING the summer
+    # surface (theta up to +6.5 degC at the ice base even from a healthy ocean) and
+    # collapsed PISM (-24% floating area per decade). FESOM's own melt: 2.2 m/yr.
+    oce2ice_method: "DIRECT"
+    # Debug tool (found the ist runaway 2026-07-14): oasis_expout_o2a: 1 dumps
+    # every ocean->atm exchange to netcdf. ~20x slowdown -- crash hunts only.
+    resolution: "CORE3"        # cavity-enabled 220509-node mesh (was 211567; CORE2 was 126858)
+    with_cavity: true          # enable ice-shelf cavities (use_cavity=.true.)
+    griddes_nodes: "core3_griddes_nodes.nc"   # ice2fesom max-mesh node griddes (CORE3, not the core2 default); generated w/ pyfesom2 in the core3 mesh dir
+    # Max mesh under our own ownership. awiesm3.yaml:617 otherwise derives this as
+    # ${pool_dir}/fesom2/core3/, which a270092 swapped on 2026-08-24 23:47 from the
+    # 211567-node mesh to a 220509-node one (old content kept at core3_beta). That
+    # broke fix_namcouple_feom_dim silently: it seds ${MAX_MESH nod2d count} ->
+    # ${submesh count} in the namcouple, 220509 matched nothing, and the namcouple
+    # kept fesom.nx=211567 while FESOM runs the 208810-node submesh. The log line
+    # after the sed prints unconditionally, so it claimed a fix that never happened.
+    # This dir is the June cavity-hole rework: nod2d/elem2d/edges/mesh.nc are
+    # byte-identical to core3_beta, aux3d.out and cavity_depth@node.out are not
+    # (200736/211616 and 5092/211567 values differ), so dist_1792 was regenerated
+    # here with fesom_meshpart (see ../core3_partit_1792/) rather than copied, and
+    # core3_griddes_nodes.nc was copied from core3_beta -- it is a pure function of
+    # nod2d.out + elem2d.out, both byte-identical.
+    # Sets both MESH_DIR_fesom and MAX_MESH (env_fesom.py:192,215). MeshPath is
+    # separately forced to the submesh by the chunk choose-block in awiesm3.yaml.
+    #
+    # 2026-09-09: moved to the 220509-node mesh. Own byte-identical copy of
+    # a270092's core3 (7445/7445 files md5-verified, manifest in CHECKSUMS.md5)
+    # plus core3_griddes_nodes.nc generated for 220509 -- no such griddes existed
+    # anywhere before; every other copy is 211567. The griddes MUST live inside
+    # this dir: build_submesh:294 resolves it as ${MAX_MESH}/${MESH_GRIDDES_fesom}.
+    # See PROVENANCE.md there.
+    #
+    # REQUIRES the mesh_flags.py fix merged 2026-09-09 (couplings/pism/mesh_flags.py,
+    # backup .bak_pre_shallow_fix_20260909). This mesh stores TRUE bathymetry, which
+    # reaches -0.00 at 15036 shallow coastal nodes; the old mesh clamped to a 20 m
+    # floor. Without the fix, fesom_submesh.F90:296 discards every element touching
+    # such a node -- 43893 elements, cascading to 18076 orphaned nodes and a
+    # 197862-node submesh instead of 213655. The fix classifies those nodes from
+    # nlvls.out and is bit-identical on any mesh with a depth floor (verified).
+    mesh_dir: "/work/ab0246/a270234/mesh/core3_220509/"
+    restart_rate: 1
+    restart_unit: "y"
+    restart_first: 1
+    # chunk-1 COLD START (2026-09-09, with the move to the 220509 mesh).
+    #
+    # The old warm start read pism_cavity_ini/restart_clean_ice/ (208810 nodes),
+    # which came from "core3_spunup_on_pism_cavity" -- a spin-up performed ON the
+    # PISM cavity. No equivalent exists for the 213655-node submesh, and the
+    # available full-mesh restarts are not a substitute:
+    #   * input/fesom2/restart/core3_{linfs,zstar} are ~2.9 yr of model time
+    #     (iter 50496 at 1800 s; the 1958->1959 gap is exactly 17520 iter = 1 yr),
+    #     traced by model time to the core3y1 run -- short cold-start CORE3 tests,
+    #     not a spun-up ocean.
+    #   * they carry CORE3's OBSERVED cavity, not PISM's: mother 10039 cavity nodes
+    #     vs submesh 5680; at nodes in both, 1432 are cavity in the submesh but not
+    #     the mother, and the draft differs by >1 m at 5824 nodes (max 657 m).
+    #     Remapping across that is the one-off observed->PISM cavity swap the old
+    #     pism_cavity_ini README records as "always crashes FESOM around day 4".
+    # That README also states a cold start on this kind of submesh is stable at the
+    # full 1200 s timestep.
+    #
+    # To warm-start later: spin up FROM this cold start on this submesh and point
+    # ini_restart_dir at the result. Nothing is wasted by starting cold.
+    #
+    # awiesm3.yaml:727-728 sets lresume: true inside choose_general.chunk_number: 1.
+    # VERIFIED 2026-09-09 that this plain assignment overrides it: resolving the
+    # full config through esm_runscripts.sim_objects.SimulationSetup gives
+    # fesom.lresume = False here, against True for the pre-change runscript
+    # (.bak_pre_core3_220509_20260909) under the identical code path. So no
+    # matching chunk-1 block is needed. Note `esm_runscripts -c` cannot show this:
+    # check mode only creates the directory skeleton, with no namelists, no .run
+    # scripts and no restart staging either way.
+    lresume: false          # see the choose_general.chunk_number block below
+    # ini_parent_exp_id / ini_parent_date / ini_restart_dir intentionally unset.
+    # With lresume False on chunk 1 they are never read; previous values are in
+    # fast_ocean.yaml.bak_pre_core3_220509_20260909.
+    time_step: 1200            # zstar tolerates 1200s on the cavity mesh (linfs needs <=180s)
+    nproc: 1792                # FESOM stable at 1792 (256 hits a decomposition-sensitive cavity blow); core3/dist_1792 + complete TCO95-CORE3/1792
+    omp_num_threads: 2         # was 1 for the crash hunt (bit-reproducible reruns); 2 for turnaround now that the hunt is over
+    tar_binary_restarts: true  # use_cavity is set via with_cavity:true; restart_log off folded into the chunk choose-block below
+    cmip7_cmor_output: false   # CMIP7 output off for now (needs plev39 axis); validate coupling first
+    change_ocean: 1
+
+    # The ocp-tool OASIS-regen toolchain (ocp_tool_dir, driver/worker conda envs,
+    # template/build/rmp dirs) is auto-discovered in couplings/fesom/env_fesom.py;
+    # set it in this fesom block only to override a discovered default.
+    # ocp-tool writes its products to <ocp_tool_dir>/output, hardcoded in
+    # dynamic_regen.py. ism40 pointed this at a270234's checkout because
+    # a270092's is not writable by her; run as a270092 the inverse holds, and
+    # the chunk-2 weight regen died with
+    #   PermissionError: .../a270234/ocp-tool/output/TCO95_feomdyn/...
+    # after 77 seconds. This checkout contains her reference commit 0017f69 and
+    # its configs/TCO95_CORE3_ICE.yaml is byte-identical.
+    ocp_tool_dir: "/work/ab0246/a270092/software/ocp-tool"
+    # env_fesom.py:181 discovers these by shelling out to `conda env list`, and
+    # _conda_env_python returns "" when conda is not on PATH. That is exactly the
+    # case for a .run script generated from inside a batch job: the chunk-2
+    # couple_in script is written by the PISM job, whose module env has no conda,
+    # so the export came out empty. It fails silently, because
+    # ${OCP_WEIGHTGEN_DRIVER_PY:-python} then falls back to the mambaforge python,
+    # which has no fesom_icb_pism -> ModuleNotFoundError -> "ice2fesom FAILED:
+    # make_icebergs" and observe_couple_in refuses to advance (ism38 chunk 2,
+    # 2026-08-25 11:54). Setting them explicitly is the fallback _conda_env_python's
+    # own docstring intends. The worker uses the purpose-named ocp-worker env (mpi4py 4.1.2 ->
+    # Open MPI v4.1.2, matching the model build, same as ece4 but not
+    # EC-Earth-named). Set for the same reason, though the
+    # OASIS regen path only needs it when oasis_remap_method != "existing".
+    ocp_weightgen_driver_py: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+    ocp_weightgen_worker_py: "/work/ab0246/a270234/conda/envs/ocp-worker/bin/python"
+    # env_fesom.py otherwise derives this as <pool>/oasis/cy48r1/TCO95-CORE3/1792,
+    # the directory that vanished from the pool on 2026-08-25; follow input_dir.
+    # 2026-09-09: TCO95-CORE3/1792 is back (rebuilt for the 220509 mesh -- its rmp
+    # dst_grid_size is 220509, regenerated 2026-09-08). Only the mesh-independent
+    # rmp_R096_to_RnfA_GAUSWGT_25.nc is taken from here, but there is no reason to
+    # source it from the old mesh's directory.
+    oasis_rmp_template_dir: "/work/ab0246/a270092/input/oasis/cy48r1/TCO95-CORE3/1792"
+
+    # Per-leg mesh + restart-source wiring (chunk_number 1/"*") lives in awiesm3.yaml
+    # behind general.interactive_mesh. Only the restart parent stays here (the
+    # ini_parent_*/ini_restart_dir above).
+
+    # Coupled-slab mode is hardwired in the FESOM build (ice_thermo_cpl.F90:
+    # Qatmice=-a2ihf, the atmosphere owns the ice surface temperature); it pairs
+    # with the oifs NAMMCC LNEMOLIMTEMP/LNEMOLIMTHK settings below.
+
+    # COLD START, chunk 1 only.
+    #
+    # awiesm3.yaml:726-728 hardcodes `lresume: true` for chunk 1 (and for "*"),
+    # and the surrounding comment says the restart PARENT is the runscript's job.
+    # A plain `lresume: false` in this file does NOT beat that choose-block under
+    # the iterative-coupling driver -- it fails in prepare.py:520 with
+    # KeyError: 'ini_parent_exp_id'. (It DOES appear to win when fast_ocean.yaml
+    # is resolved standalone; that is a different assembly path and misleading.)
+    #
+    # Verified 2026-09-09 that a runscript choose-block MERGES with the setup's
+    # rather than replacing it: with this block in place the resolved config has
+    # fesom.lresume=False while MeshPath, which_ale=linfs and use_wsplit=.true.
+    # all still come through from awiesm3.yaml's chunk-1 block.
+    #
+    # Only chunk 1 is overridden. chunk >=2 keeps lresume: true and resumes from
+    # this experiment's own restart (prepare.py takes the run_number!=1 branch,
+    # so no ini_parent_* is read).
+    choose_general.chunk_number:
+        1:
+            lresume: false
+
+lpj_guess:
+    # slt_TCO95_CORE3.nc -- the path this builds as ${slt_dir}/slt_${resolution}_
+    # ${fesom.resolution}${general.lpjg_slt_suffix}.nc -- was removed from the pool
+    # slt dir in the 2026-08-25 00:04 reorg; only slt_TCO95_core3_beta.nc survived.
+    # Without it every one of the 11764 land cells falls through as a lake point
+    # ("Problem with EC-Earth Soil info", ecemain(): error in read_input_data) and
+    # LPJ-GUESS SIGSEGVs, taking the MPMD step down -- the second ism38 failure,
+    # 2026-08-25 11:00. Overriding slt_dir rather than forcing_sources fixes all 65
+    # references at once (base + one per rank via [[proc_list-->PROC_NUM]]).
+    # The file there is a byte-identical copy of the surviving *_core3_beta map,
+    # which is what repro_ism37 staged as work/slt_TCO95.nc. See its README.txt.
+    slt_dir: "/work/ab0246/a270234/input/lpj-guess/slt/"
+    nproc: 64 # originally 16
+    omp_num_threads: 4
+    mip: "cmip7"
+    # Cold start on chunk 1, deliberately. The pooled state lpjg_state_3850 does
+    # not load: it dies in Soil::update_ice_fraction with an invalid ice volume of
+    # -0.016162, the same value under a binary that predates all of the LPJ-GUESS
+    # land-fraction hardening and one that includes it, so the state is at fault
+    # rather than the code. Nothing had ever read it. Until 9df993774 the staged
+    # directory was named for the spinup year while create_deserializer looks for
+    # the leg year, so every earlier run silently cold-started with no state and no
+    # internal spinup either, `deserializer_ece.get() 0, islpjgspinup 0`. This is
+    # therefore what all the earlier -is runs actually did; it is only explicit now.
+    # Later legs still continue from the state the previous leg wrote.
+    # Restore the block below once a state exists that loads.
+    lresume: false
+    #   lresume: true
+    #   ini_parent_exp_id: "lpjg_spinup"
+    #   ini_parent_date: "1899-12-31"       # names the staged dir for the leg year
+    #   ini_restart_dir: "${general.pool_dir}/lpj-guess/restart/${oifs.resolution}-${fesom.resolution}/"
+    #   choose_general.run_number:
+    #       1:
+    #           restart_in_sources:
+    #               state: ${ini_restart_dir}/lpjg_state_3850/*
+
+oifs:
+    resolution: TCO95
+    levels: "L91"
+    prepifs_expid: ab45
+    input_expid: awi3
+    wam: true
+    lresume: false
+    time_step: 3600
+    nproc: 384
+    omp_num_threads: 4
+    mpi: cmip7
+    scenario: piControl #solar radiation is going to be taken always from 1850
+    cmip7_cmor_output: false   # CMIP7 output off for now (plev39 axis missing); validate coupling first
+
+    # WAM option A: maximal-ocean wave tables (built 2026-07-15 from ETOPO1 via
+    # create_wam_bathymetry_ETOPO1 + preproc, extended to -85S, max-ocean edited
+    # from the FESOM CORE3 max-mesh). NIBLO 29530 -> 30832: every cell a moving
+    # coastline can open -- open ocean or sub-shelf cavity -- is a WAM sea point,
+    # so its Stokes/Charnock storage is always DEFINED (0 when ice-masked via
+    # LMASKICE, real when open) and the voskin step-0 crash is impossible.
+    # Spectral grid (24x36) is bit-identical to the pool tables, so the running
+    # WAM binary is unchanged. Experiment-specific override (NOT the shared pool);
+    # the WAM binary restarts (BLS/LAW) from the old 29530-pt tables are invalid
+    # under this indexing -> WAM cold-starts on the first leg that uses them.
+    # The override lives in the choose_general.chunk_number add_input_sources
+    # blocks below (alongside ICMGG_INIT): a general oifs.input_sources loses
+    # the merge to the component's ${prepifs_dir}/wam_grid_tables default.
+
+    # On a mesh-change leg the OIFS land-sea mask must follow the moving ocean
+    # coastline. ice2fesom regenerates a consistent ICMGG (lsm/slt) for the new
+    # submesh into ${couple_dir}/oasis_regen via ocp-tool. Override the ICMGG_INIT
+    # source from chunk 2 on; chunk 1 keeps the static ICMGGab45INIT_CORE3.
+    choose_general.chunk_number:
+        1:              # chunk-1: ICMGG + plit pre-staged from the pool (fixed PISM-initial geometry).
+            # NOTE (attempts 5/6, 2026-07-14): this native pair is REQUIRED on the
+            # pool submesh. Swapping in the clean CORE3 ICMGG (with or without the
+            # plit/landice flip) dies deterministically at step 0 in radaca.F90:810:
+            # 62 difference-zone cells are ocean per the clean lsm but receive no
+            # FESOM data -> 0 K skin temperature -> zero-T column in the first
+            # radiation call. The atmosphere surface set (lsm+plit+masks+weights)
+            # only exists in the native, mutually-consistent variant here.
+            add_input_files:
+                pism2ece_antar: pism2ece_antar
+            add_input_sources:
+                ICMGG_INIT: "${general.pism_cavity_ini_dir}/oasis/ICMGGab45INIT_feomdyn"
+                pism2ece_antar: "${general.pism_cavity_ini_dir}/antar_pism2ece.nc"
+                wam_grid_tables: "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+            add_input_in_work:
+                pism2ece_antar: antar_pism2ece.nc
+            add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_LANDICE: ".true."
+                        ECE_LANDICE_THRESH: 0.5
+                        NISMRGNS: 1
+                        "ISMRGNPFX(1)": "antar"
+                        "ISMRGNCIS(1)": ".false."
+                        # SMB exchange with the ISM-mapper. Orography stays off:
+                        # ECE_ISM_OROG makes suorog read usurf_oifs, and the file
+                        # we stage has only plit_oifs.
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".true."
+        "*":
+            add_input_files:
+                pism2ece_antar: pism2ece_antar
+            add_input_sources:
+                ICMGG_INIT: "${general.experiment_couple_dir}/oasis_regen/ICMGGab45INIT_feomdyn"
+                # OIFS land-ice plit mask for the moving PISM coastline. suorog
+                # reads {ISMRGNPFX}_pism2ece.nc = antar_pism2ece.nc from cwd at
+                # leg init; prepcompute stages it into work/ via input_in_work
+                # (so it no longer depends on a file surviving in work/ by luck).
+                pism2ece_antar: "${general.experiment_couple_dir}/antar_pism2ece.nc"
+                # WAM option A maximal-ocean tables (see the oifs block). MUST be
+                # here, not a general oifs.input_sources -- the latter loses the
+                # merge to the component's ${prepifs_dir}/wam_grid_tables default.
+                wam_grid_tables: "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_grid_tables"
+                wam_subgrid_0:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_0"
+                wam_subgrid_1:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_1"
+                wam_subgrid_2:   "/work/ab0246/a270092/input/oifs-48r1/TCO95L91/wam_tables_maxocean_s85/wam_subgrid_2"
+            add_input_in_work:
+                pism2ece_antar: antar_pism2ece.nc
+            # Land-ice namelist gated to chunk>1: on a fresh chunk-1 (full mesh)
+            # there is no plit file yet and suorog ABORTS if ECE_LANDICE/ISMRGNPFX
+            # ask it to read antar_pism2ece.nc. Enable the ISM land-ice path only
+            # from the first mesh-change leg on, when the plit file is staged above.
+            add_namelist_changes:
+                fort.4:
+                    NAMECECFG:
+                        ECE_LANDICE: ".true."
+                        ECE_LANDICE_THRESH: 0.5
+                        NISMRGNS: 1
+                        # bare string 'antar' -- f90nml adds the Fortran quotes itself
+                        "ISMRGNPFX(1)": "antar"
+                        "ISMRGNCIS(1)": ".false."
+                        # See the chunk-1 branch: SMB on, orography off.
+                        ECE_CPL_ISMM: ".true."
+                        ECE_ISM_OROG: ".true."
+
+    # General (all-chunk) OIFS namelist defaults. Must be `namelist_changes`
+    # (not add_): esm_tools forbids a general add_<var> alongside the same add_<var>
+    # inside a choose_ block, and NAMECECFG is add_'d per-chunk in the "*" branch.
+    namelist_changes:
+        fort.4:
+            # NAMECECFG land-ice settings (ECE_LANDICE / ISMRGNPFX / NISMRGNS) are
+            # gated to chunk>1 in the choose_general.chunk_number "*" branch above:
+            # a fresh chunk-1 (full mesh) has no plit file and suorog would abort
+            # trying to open antar_pism2ece.nc. The CMIP/physics/DDH namelists
+            # below apply to all chunks.
+            #
+            # WEIGHTED_ICE REINSTATED (2026-07-16 evening, on top of the implicit
+            # FESIM solve): OIFS send-side diagnostics showed the prescribed
+            # ice-tile skin arriving unrepresentatively cold at marginal-ice
+            # cells (raw o2a blend mixes cold pack nodes into low-ci cells),
+            # whose sliver ice tiles then emit multi-kW/m2 sensible/latent
+            # fluxes -- the crash-family driver. Concentration weighting makes
+            # the prescribed tile skin representative of the ice actually
+            # present. PAIRING RULE: the FESOM send and this flag move together.
+            #   ist*a_ice send<-> ECE_CPL_NEMO_WEIGHTED_ICE = .true.   (current)
+            #   raw ist send  <-> ECE_CPL_NEMO_WEIGHTED_ICE = .false.
+            # Never mix (a*ist read as a temperature is catastrophically cold;
+            # raw ist divided by ci is also wrong). rstos.nc convention follows.
+            NAMECECFG:
+                ECE_CPL_NEMO_WEIGHTED_ICE: ".true."
+            # COUPLED-SLAB MODE (movcav32+): OIFS owns the ice-tile
+            # temperature. LNEMOLIMTEMP=.false. disables the hourly YTL
+            # overwrite from the FESOM ist ingest (ece_updclie_cpl); the ice
+            # temperature evolves in OIFS's own implicit surface solve.
+            # LNEMOLIMTHK=.true. feeds that solve's slab conduction with the
+            # COUPLED FESOM ice thickness (new o2a field sit_feom ->
+            # A_Ice_thickness, weighted convention; ECE_FESIM_GET_ICE_STATE
+            # divides by A_Ice_frac) and the coupled snow thickness
+            # (snt_feom, already exchanged). FESIM's ist becomes internal-only
+            # (albedo/pond state); its growth budget takes the atmosphere flux
+            # directly (hardwired in the FESOM build, ice_thermo_cpl.F90).
+            NAMMCC:
+                LNEMOLIMTEMP: ".false."
+                LNEMOLIMTHK: ".true."
+                # .false. = the surface scheme solves the ice-tile skin itself
+                # (with the coupled-thickness conduction) instead of treating
+                # it as strongly-coupled/prescribed from the ocean-ice model.
+                # Also required by the SUMCC guard when LNEMOLIMTEMP=.false.
+                LNEMOSICOUP: ".false."
+            NAMECECMIP:
+                LCMIP6: False
+                LCMIP7: True
+                CMIP7DATADIR: '/work/bb1469/a270089/input/oifs-48r1/cmip-data/'
+                NCMIPFIXYR: 1850
+                SCENARIONAME: 'SSP2-4.5'
+                LMACV2SP: True
+                LMACV2SP_CCNF: True
+            NAERAD:
+                NRADFR: -3
+                NDECOLAT: 0
+            NAMCLDP:
+                RVICE: 0.19
+            NAMGWWMS:
+                GGAUSSB: -0.8
+            # Disable DDH horizontal-domain budget diagnostics. On a mesh-change
+            # leg the DDH accumulation NaNs at step 0 (uninitialised passive
+            # precip-cover slot on the flipped coastline cells) and traps under
+            # -fpe0. DDH is a passive diagnostic; turning it off lets OIFS run.
+            # (was a work-dir fort.4 hack in movcav4; folded into config here.)
+            NAMDDH:
+                LHDGLB: ".false."
+                LHDPRG: ".false."
+                LHDHKS: ".false."
+
+    # oifs just_copy subjob now lives in awiesm3.yaml behind general.interactive_mesh.
+rnfmap:
+    # Same 00:04 reorg: runoff-mapper/runoff_maps_CORE3_v1.1.nc is gone (the path
+    # rnfmap.yaml:74 builds from runoff_maps_name = _${fesom.resolution}), leaving
+    # runoff_maps_core3_beta_v1.1.nc. Byte-identical to what repro_ism37 staged as
+    # work/runoff_maps.nc (1599104 B, 2025-12-20 10:49).
+    runoff_file: "${general.pool_dir}/runoff-mapper/runoff_maps_core3_beta_v1.1.nc"
+
+oasis3mct:
+    use_lucia: false #Set to TRUE if you want more diagnostics, if set to FALSE is ~5-10% faster
+    lresume: true # Set to false to generate the rst files for first leg
+    time_step: 3600
+    norestart: T #Do i restart from vegin or not?
+    # Do NOT raise this to 20 to capture OASIS's CONSERV rescale factor (zlagr):
+    # tried 2026-08-14 and it does not work. The run died at 1m33s with
+    # "forrtl: error (65): floating invalid" inside oasis_get during an ISM field
+    # receive (OIFS ranks, ece_updclie_cpl.F90:205) instead of reaching the usual
+    # FESOM blowup at 9m33s, and wrote no zlagr at all (1 OASIS log file instead
+    # of the usual 6). To measure zlagr, add a targeted print in the GLBPOS/GSMART
+    # branch of mod_oasis_advance.F90 (~line 2007) instead.
+    debug_level: 1
+
+    # The pool dir this used to resolve to, cy48r1/TCO95-CORE3 (= pool_dir/oasis/
+    # cy${oifs.version}/${oifs.resolution}-${fesom.resolution} in awiesm3.yaml:1253),
+    # was removed on 2026-08-25 00:04. TCO95-core3_beta holds the same set.
+    # masks.nc/grids.nc/areas.nc/vegin.nc are staged from here via the restart_in
+    # path; when the directory is missing they are silently not staged and
+    # LPJ-GUESS exits 2 s into the leg with "get_nx_atmo_from_mask: Could not open
+    # masks.nc" (it nc_opens the file at the top of ecemain() with no retry), which
+    # takes the whole MPMD step down. That is what killed ism38.
+    # ini_restart_dir defaults to "${input_dir}"; set explicitly so a future change
+    # to one cannot silently leave the other pointing at the dead path.
+    # 2026-09-09: TCO95-CORE3 is back and rebuilt for the 220509 mesh
+    # (grids/masks/areas/vegin from 2026-08-25 00:09). Follow the mesh.
+    input_dir: "/work/ab0246/a270092/input/oasis/cy48r1/TCO95-CORE3/"
+    ini_restart_dir: "/work/ab0246/a270092/input/oasis/cy48r1/TCO95-CORE3/"
+
+    # Per-leg OASIS files. Kept in the runscript (the shared oasis3mct
+    # load_restart_from_pool machinery also sets rmp/rstas/rstos, so a setup-level
+    # chunk override collides). chunk 1 = pool-staged; chunk >=2 = oasis_regen/ +
+    # restart_remapped/.
+    choose_general.chunk_number:
+        1:              # chunk-1: OASIS grids/weights + coupling restarts pre-staged from the pool
+            input_sources:
+                grids: "${general.pism_cavity_ini_dir}/oasis/grids.nc"
+                masks: "${general.pism_cavity_ini_dir}/oasis/masks.nc"
+                areas: "${general.pism_cavity_ini_dir}/oasis/areas.nc"
+                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
+            restart_in_sources:
+                rmp: "${general.pism_cavity_ini_dir}/oasis/rmp_*.nc"
+                rstas.nc: "${general.pism_cavity_ini_dir}/rstas.nc"
+                # Weighted-ist convention + coupled-slab sit_feom: the prep
+                # rstos is the pool weighted rstos.nc plus the new sit_feom
+                # field (=1.5*sie_feom: per-ice 1.5 m for the first exchange,
+                # runtime node order inherited from sie_feom).
+                # Our remapped rstos already carries sit_feom (the mother-mesh rstos
+                # from TCO95-CORE3/1792 has all five feom fields), so no
+                # separate _coupled_slab patch is needed as on the old bundle.
+                rstos.nc: "${general.pism_cavity_ini_dir}/rstos.nc"
+                vegin.nc: vegin.nc
+                # Seeds antar_plit for the first coupling interval. NNOREST
+                # zero-fills a missing restart, which is safe for a flux and not
+                # for a mask: an empty plit strips the glacier tiles.
+                rstism.nc: "${general.pism_cavity_ini_dir}/oasis/rstism.nc"
+        "*":
+            input_sources:
+                grids: "${general.experiment_couple_dir}/oasis_regen/grids.nc"
+                masks: "${general.experiment_couple_dir}/oasis_regen/masks.nc"
+                areas: "${general.experiment_couple_dir}/oasis_regen/areas.nc"
+                rmp: "${general.experiment_couple_dir}/oasis_regen/rmp_*.nc"
+            restart_in_sources:
+                rmp: "${general.experiment_couple_dir}/oasis_regen/rmp_*.nc"
+                # ice2fesom (remap_oasis_restart) remapped the coupling restarts'
+                # feom fields onto the new submesh node count.
+                rstas.nc: "${general.experiment_couple_dir}/restart_remapped/rstas.nc"
+                rstos.nc: "${general.experiment_couple_dir}/restart_remapped/rstos.nc"
+                vegin.nc: vegin.nc
+                # Carried forward from the previous leg, NOT from oasis_regen.
+                # Nothing regenerates an rstism there, so that path served a
+                # stale seed holding only antar_plit, and OASIS aborted with
+                # "Invalid dimension ID or name" on the first LAGged link whose
+                # source field was missing. None of the ismm links touch feom
+                # (A096/R096 40320, ismp 761x761), so no remapping is needed.
+                rstism.nc: "${experiment_restart_in_dir}/rstism.nc"
+
+xios:
+    with_model:
+        - oifs
+        - fesom
+    nproc: 32
+    omp_num_threads: 8

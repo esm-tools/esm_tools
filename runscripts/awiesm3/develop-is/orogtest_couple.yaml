@@ -1,0 +1,41 @@
+# First test of the PISM -> OIFS orography feedback. Two cycles, serial:
+# one awiesm3 year, then one PISM decade, then again.
+#
+# Serial and not concurrent on purpose. The point of this run is whether the
+# orography suorog reads at leg N+1 is the one PISM produced at leg N, and
+# serial makes that ordering trivially inspectable. Concurrent is faster and is
+# what production uses, but it overlaps the legs, so a handover bug and a
+# timing bug look the same.
+general:
+        coupling_mode: serial
+        add_other_components:            # esm-tools >=6.54: whitelist model1/model2 root sections
+                - model1
+                - model2
+        iterative_coupling: True
+        use_venv: False
+        user: !ENV ${USER}
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        account: ab0246
+        with_recom: False
+        # Icebergs carry PISM's discharge to the ocean.
+        with_icb: True
+        # Turns on the usurf_oifs writer in pism2esm. The matching half is
+        # ECE_ISM_OROG in orogtest_ocean.yaml, and a chunk-1 pism2ece file that
+        # already carries usurf_oifs: suorog ABOR1s on a missing varid.
+        ism_orog_coupled: True
+        # The PISM couple_out environment has no bare python. This one carries
+        # numpy, netCDF4, pyproj and eccodes, and is the same interpreter the
+        # fesom side uses for the weight generation.
+        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+
+model1:
+        setup_name: awiesm3
+        runscript: orogtest_ocean.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: orogtest_pism.yaml
+        chunk_size: 10
+        chunk_unit: "years"

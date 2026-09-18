@@ -45,7 +45,7 @@ class StacClient:
     Parameters
     ----------
     api_url:
-        STAC API base, e.g. ``https://stac-dev.dmawi.de/api`` (no trailing slash).
+        STAC API base, e.g. ``https://stac-dev.awi.de/api`` (no trailing slash).
     token:
         OAuth access token; sent as ``Authorization: Bearer``.
     verify_tls:

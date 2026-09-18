@@ -31,7 +31,7 @@ def parse_resolve(spec: str) -> tuple[str, int, str]:
     Parameters
     ----------
     spec : str
-        E.g. ``"stac-dev.dmawi.de:443:134.1.7.56"``.
+        E.g. ``"stac-dev.awi.de:443:134.1.7.56"``.
 
     Returns
     -------

@@ -575,6 +575,17 @@ oifs:
 
 fesom:
     version: "2.7"
+    # Where the parallel FESOM restart is read from. Deliberately a variable and
+    # not written straight into restart_in_sources: the v3.5 arm of
+    # choose_general.major_version wants the date-stamped name, and the ">1" arm
+    # of choose_general.chunk_number wants the submesh-remapped copy, and two
+    # choose_ blocks at the same hierarchy level may not define the same key.
+    # esm_tools rejects that with "Choose conflict", which from 2026-09-09
+    # (8ca594cda) made every iteratively coupled run die at chunk 2, in the
+    # resubmission inside the job, so the chain stopped with nothing queued and
+    # no error anywhere a user would look.
+    par_oce_restart_source: "fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc"
+    par_ice_restart_source: "fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc"
     time_step: 1800
     resolution: CORE2
     lresume: false
@@ -873,8 +884,8 @@ fesom:
                 fesom_bin_restart_info: fesom_bin_restart/*.info
                 fesom_bin_restart: fesom_bin_restart/np${nproc}/*
             restart_in_sources:
-                par_oce_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.oce.restart/*.nc
-                par_ice_restart: fesom.${start_date!syear}-${start_date!smonth}-${start_date!sday}.ice.restart/*.nc
+                par_oce_restart: ${fesom.par_oce_restart_source}
+                par_ice_restart: ${fesom.par_ice_restart_source}
                 par_oce_restart_legacy: fesom.${parent_date!syear}.oce.restart/*.nc
                 par_ice_restart_legacy: fesom.${parent_date!syear}.ice.restart/*.nc
                 fesom_raw_restart_info: fesom_raw_restart/*.info
@@ -1020,9 +1031,12 @@ fesom:
                         namelist.dyn:
                             dynamics_general:   # vertical-velocity splitting: prevents cfl_z blowup at cavity columns
                                 use_wsplit: ".true."
-                    restart_in_sources:      # ice2fesom remapped ocean+ice onto the submesh
-                        par_oce_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
-                        par_ice_restart: "${general.experiment_couple_dir}/restart_remapped/*.nc"
+                    # ice2fesom remapped ocean+ice onto the submesh. Sets the source
+                    # variable rather than restart_in_sources directly, so this stays
+                    # the only choose_ block defining that key (see the variable's
+                    # definition at the top of the fesom section).
+                    par_oce_restart_source: "${general.experiment_couple_dir}/restart_remapped/*.nc"
+                    par_ice_restart_source: "${general.experiment_couple_dir}/restart_remapped/*.nc"
 
         # Remove ICMCL_INIT forcing, which is only required for standalone simulations (form v3.2 onwards contains seasonal leaf area index, veg albedo etc.)
     remove_forcing_files:

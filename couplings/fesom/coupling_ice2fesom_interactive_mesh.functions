@@ -481,8 +481,33 @@ function remap_fesom_restart {
 
     local restart_year=${CHUNK_START_DATE_fesom%%-*}
     # FESOM resumes year <restart_year> from the restart written at the end of
-    # the previous year, stored in fesom.<restart_year-1>.oce.restart/.
+    # the previous year. Two namings exist for it:
+    #
+    #   v3.5 and later  fesom.<this leg's start date>.oce.restart/   (8ca594cda)
+    #   legacy          fesom.<restart_year - 1>.oce.restart/
+    #
+    # The stamp on the restart a leg WRITES is the start of the NEXT leg, so the
+    # date-stamped name carries this leg's own start date, not the previous
+    # year's. Only the legacy form was built here, so from 2026-09-09 every
+    # mesh-change leg pointed the remapper at a directory that no longer exists.
+    # remap_restart prints "NetCDF error: open .../temp.nc" and then exits 0, so
+    # nothing stopped: restart_remapped/ ended up holding only the OASIS
+    # restarts, and FESOM died at ocean startup on a missing ssh.nc
+    # (orog1 leg 2, 2026-09-18).
+    local restart_stamp=${CHUNK_START_DATE_fesom%%T*}
     local restart_year_old=$(( restart_year - 1 ))
+    local path_restart_old=${RESTART_DIR_fesom}/fesom.${restart_stamp}.oce.restart/
+    if [ ! -d "${path_restart_old}" ]; then
+        path_restart_old=${RESTART_DIR_fesom}/fesom.${restart_year_old}.oce.restart/
+        echo " *   date-stamped restart absent, falling back to the legacy name"
+    fi
+    if [ ! -d "${path_restart_old}" ]; then
+        echo " *   remap_fesom_restart: no source restart. Tried"
+        echo "       ${RESTART_DIR_fesom}/fesom.${restart_stamp}.oce.restart/"
+        echo "       ${RESTART_DIR_fesom}/fesom.${restart_year_old}.oce.restart/"
+        return 1
+    fi
+    echo " *   remapping from ${path_restart_old}"
     local outdir=${COUPLE_DIR}/restart_remapped
     mkdir -p ${outdir}
 
@@ -491,7 +516,7 @@ function remap_fesom_restart {
     path_base        = '${MAXMESH_DIR_fesom}/'
     path_old         = '${path_old}'
     path_new         = '${COUPLE_DIR}/latest_submesh/'
-    path_restart_old = '${RESTART_DIR_fesom}/fesom.${restart_year_old}.oce.restart/'
+    path_restart_old = '${path_restart_old}'
     path_restart_new = '${outdir}/'
     restart_year     = ${restart_year}
     nod2D_base       = ${nod2d_base}
@@ -511,6 +536,16 @@ NML
     # Columns that the moving geometry puts under new ice are seeded by
     # seed_newly_iced_from_cavity in remap_restart/mo_remap_fields.F90, from the
     # nearest column that is cavity in both meshes. Nothing to do here.
+
+    # remap_restart returns 0 even when it could not open its input, so rc is
+    # not evidence. Check that the ocean restart it was asked for actually
+    # landed: without this the leg proceeds to stage an empty restart and the
+    # failure only shows up as a FESOM netCDF error 20 minutes later.
+    if [ ! -s "${outdir}/temp.nc" ] || [ ! -s "${outdir}/ssh.nc" ]; then
+        echo " *   remap_fesom_restart: remap_restart exited 0 but wrote no ocean"
+        echo "     restart. ${outdir} holds: $(ls ${outdir} 2>/dev/null | tr '\n' ' ')"
+        return 1
+    fi
 
     echo "     ...done. remapped restart -> ${outdir}"
 }

@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<!-- Standalone FESOM iodef.
+
+     The iodef that ships in the model tree (docs/xios_xml/iodef.xml) is the
+     AWI-ESM3 coupled one: it pulls in the OpenIFS context and sets
+     using_server and using_oasis true. A standalone run has neither, so it
+     uses this file instead and the fesom context only.
+
+     using_server=false is XIOS attached mode: the server runs inside the
+     FESOM ranks, so the job stays a single executable and no xios_server.exe
+     ranks have to be reserved. Each rank then writes its own file, named
+     <var>.fesom_<start>-<end>_<rank>.nc. -->
+<simulation>
+
+  <context id="fesom" src="./context_fesom.xml" />
+
+  <context id="xios">
+    <variable_definition>
+      <variable_group id="buffer">
+        <variable id="optimal_buffer_size" type="string">performance</variable>
+        <variable id="buffer_size_factor"  type="double">2.0        </variable>
+      </variable_group>
+
+      <variable_group id="parameters">
+        <variable id="using_server" type="bool">false</variable>
+        <variable id="using_oasis"  type="bool">false</variable>
+        <variable id="info_level"   type="int" >0    </variable>
+        <variable id="print_file"   type="bool">true </variable>
+      </variable_group>
+    </variable_definition>
+  </context>
+
+</simulation>

@@ -21,7 +21,7 @@ general:
     # production path on all 15036 zero-bathymetry nodes).
     # NOTE cycle 1 first died at the END of the year on an OASIS
     # "av gsize nx ny mismatch" -- see the fesom.nx note below.
-    final_date: "1902-01-01"   # 2 cycles, 1900 and 1901. Was 1950-01-01 (50 cycles) in ism40.
+    final_date: "1920-01-01"   # 20 cycles, 1900-1919; extend by editing this and orogrun_pism final_date together
     # (ism40 note, kept for context) Extended 2026-08-26 from
     # 1928-01-01 (28 cycles), which had halted the chain after 1927. The run had
     # already died at 1923 on the FESOM blowup; this extension does not by itself

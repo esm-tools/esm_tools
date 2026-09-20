@@ -1,0 +1,37 @@
+# Long run of the PISM -> OIFS orography feedback. Concurrent, 50-year PISM
+# legs, as ism40 ran. Everything else as validated by orogtest/orog6 on
+# 2026-09-20, which was the first coupled cycle to survive a mesh-change leg
+# with a physically correct cavity.
+#
+# Concurrent is safe for the orography handover: pism2esm writes usurf_oifs
+# before it touches pism_chunk_N.done, and the awiesm3 chain's ice2fesom waits
+# on that marker before staging anything. Same lag as serial, overlapped.
+# Launch one chain per model:
+#   esm_runscripts orogrun_couple.yaml -e <expid> --coupling-chain awiesm3
+#   esm_runscripts orogrun_couple.yaml -e <expid> --coupling-chain pism
+general:
+        coupling_mode: concurrent
+        add_other_components:
+                - model1
+                - model2
+        iterative_coupling: True
+        use_venv: False
+        user: !ENV ${USER}
+        base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
+        account: ab0246
+        with_recom: False
+        with_icb: True
+        ism_orog_coupled: True
+        ism_orog_python: "/work/ab0246/a270234/conda/envs/ocp-tool2/bin/python"
+
+model1:
+        setup_name: awiesm3
+        runscript: orogrun_ocean.yaml
+        chunk_size: 1
+        chunk_unit: "years"
+
+model2:
+        setup_name: pism
+        runscript: orogrun_pism.yaml
+        chunk_size: 50
+        chunk_unit: "years"

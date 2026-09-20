@@ -23,7 +23,7 @@ general:
         # the same 50 cycles span 2500 PISM years rather than 500.
         # 2026-09-09: the 2-cycle ism40 cap is LIFTED, tracking fast_ocean's
         # restored 50 cycles. Both test legs (62370-62419, 62420-62469) COMPLETED.
-        final_date: "62389-12-31"   # 2 legs of 10 yr, matching orogtest_ocean. Was 64869 (50x50yr) in ism40.
+        final_date: "63369-12-31"   # 20 legs of 50 yr: 62370 + 20*50 - 1. Must end on the same cycle as orogrun_ocean.
         # cycles (1900-1949). Leg N is 62370+50*(N-1) .. +49, so leg 50 is
         # 64820-64869, hence this end date; stops without an orphan leg 51.
         # Was 62869-12-31 when legs were decades.
@@ -34,7 +34,7 @@ general:
         base_dir: "/work/ab0246/${user}/runtime/awiesm3-develop-is/"
         # The couplings tree of whichever esm_tools is running, not a fixed home.
         script_dir: "${general.esm_configs_dir}/../couplings/"
-        nyear: 10
+        nyear: 50
         change_ocean: 1
         files_to_wait_for:
             - "latest_atmo_forcing_file.nc"

@@ -951,7 +951,10 @@ contains
         ! adding a new prognostic field needs no change here.
         call list_restart_fields(path_old, flds, nflds)
         do ifld = 1, nflds
+            ! Both thickness fields are special-cased below. hnode_new used to
+            ! fall through to remap_field_auto and be filled like a tracer.
             if (trim(flds(ifld)) == 'hnode') cycle      ! special-cased below
+            if (trim(flds(ifld)) == 'hnode_new') cycle  ! same, see remap_hnode
             write(*,*) ' --> '//trim(flds(ifld))//'.nc'
             call system_clock(c0)
             call remap_field_auto(path_old, path_new, trim(flds(ifld)), &
@@ -970,7 +973,19 @@ contains
         ! new nodes get nominal layer thickness from zbar
         write(*,*) ' --> hnode.nc'
         call remap_hnode(mesh_old, mesh_new, node_flag, &
-                          path_old, path_new, time_val, iter_val)
+                          path_old, path_new, time_val, iter_val, 'hnode')
+
+        ! hnode_new: the ALE thickness FESOM actually divides by on the next step.
+        ! Test the file, not flds -- that array is deallocated a few lines above.
+        block
+          logical :: has_hn
+          inquire(file=trim(path_old)//'hnode_new.nc', exist=has_hn)
+          if (has_hn) then
+              write(*,*) ' --> hnode_new.nc'
+              call remap_hnode(mesh_old, mesh_new, node_flag, &
+                                path_old, path_new, time_val, iter_val, 'hnode_new')
+          end if
+        end block
 
         !_______________________________________________________________________
         ! Seed newly-iced columns from nearby EXISTING cavity water. Where the
@@ -1752,12 +1767,24 @@ contains
     !===========================================================================
     ! hnode needs special treatment: new levels get nominal thickness
     subroutine remap_hnode(mesh_old, mesh_new, node_flag, &
-                            path_old, path_new, time_val, iter_val)
+                            path_old, path_new, time_val, iter_val, varname)
         type(t_mesh_remap), intent(in) :: mesh_old, mesh_new
         integer,            intent(in) :: node_flag(:)
         character(len=*),   intent(in) :: path_old, path_new
         real(WP),           intent(in) :: time_val
         integer,            intent(in) :: iter_val
+        ! Which thickness field to remap: 'hnode' or 'hnode_new'. Both are layer
+        ! thicknesses and both need the geometry treatment below; only 'hnode'
+        ! used to come here. 'hnode_new' went through remap_field_auto, whose
+        ! donor fallback HOLDS THE DONOR'S DEEPEST VALUE below the donor column's
+        ! own bottom. That is right for a tracer and wrong for a thickness: on an
+        ! emerged column it wrote a constant 15 m where the true thicknesses are
+        ! 20, 25, 30, 40, 50 m. FESOM's ALE divides tracer tendencies by the
+        ! layer thickness, so the understatement amplified them by up to 3.3x
+        ! and the column reached -5.3 C in a single step (orog3/4/5, Amery,
+        ! 2026-09-18/19).
+        character(len=*),   intent(in), optional :: varname
+        character(len=32) :: vname
 
         real(WP), allocatable :: hnode_old(:,:), hnode_new(:,:)
         real(WP), allocatable :: eta_new(:)
@@ -1800,14 +1827,17 @@ contains
               call nc_check(nf90_close(ncid_g), 'close guard')
           end if
         end block
-        call read_restart_var_3d(trim(path_old), 'hnode', hnode_old)
+        vname = 'hnode'
+        if (present(varname)) vname = varname
+        call read_restart_var_3d(trim(path_old), trim(vname), hnode_old)
         ! staged (already remapped) ssh on the NEW mesh, for ALE consistency:
         ! changed columns must satisfy sum(hnode) = D + eta (zstar), else the
         ! mismatch is a standing dh/dt / deta/dt source at t=0.
         call read_restart_var_2d(trim(path_new), 'ssh', eta_new)
         ! preserve hnode's vertical-dimension name from the source file
-        call nc_check(nf90_open(trim(path_old)//'hnode.nc', nf90_nowrite, ncid_h), 'open hnode')
-        call nc_check(nf90_inq_varid(ncid_h, 'hnode', varid_h), 'inq hnode var')
+        call nc_check(nf90_open(trim(path_old)//trim(vname)//'.nc', nf90_nowrite, ncid_h), &
+                      'open '//trim(vname))
+        call nc_check(nf90_inq_varid(ncid_h, trim(vname), varid_h), 'inq '//trim(vname)//' var')
         call nc_check(nf90_inquire_variable(ncid_h, varid_h, dimids=ddids), 'inq hnode dims')
         call nc_check(nf90_inquire_dimension(ncid_h, ddids(2), name=lev_dim), 'inq hnode lev dim')
         call nc_check(nf90_close(ncid_h), 'close hnode')
@@ -1900,7 +1930,7 @@ contains
             end if
         end do
 
-        call write_nc_3d(trim(path_new)//'hnode.nc', 'hnode', &
+        call write_nc_3d(trim(path_new)//trim(vname)//'.nc', trim(vname), &
                           'layer thickness at node', 'm', &
                           hnode_new, nl1, nod_new, 'node', time_val, iter_val, lev_dim)
         deallocate(hnode_old, hnode_new, eta_new)

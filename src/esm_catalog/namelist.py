@@ -85,9 +85,9 @@ def add_namelist_collection_extension(
     """Set collection-level nml:files/groups/parameters from every component.
 
     A Collection is the whole experiment, so parameters are keyed
-    ``component:file:group:key`` — component-qualified, so two components that
-    ship a same-named namelist file cannot overwrite each other. No-op when
-    *namelists_by_component* is empty.
+    ``component__file__group__key`` — component-qualified, so two components
+    that ship a same-named namelist file cannot overwrite each other. No-op
+    when *namelists_by_component* is empty.
 
     Parameters
     ----------

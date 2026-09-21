@@ -3,13 +3,13 @@ esm_catalog: Browsing the Catalogue
 
 The web view of the catalogue is `STAC-browser
 <https://github.com/radiantearth/stac-browser>`_ at
-``https://stac-dev.dmawi.de``. It shows exactly what the API serves; there is
+``https://stac-dev.awi.de``. It shows exactly what the API serves; there is
 nothing in it that a script could not also get.
 
 .. TODO screencast: open the browser, find an experiment, filter Items, copy an href
 
-What you see
-------------
+Landing Page, Items, and the Filter Panel
+-------------------------------------------
 
 - The landing page lists experiments (STAC Collections): title, description,
   authors, time covered, and the namelist inventory.
@@ -37,8 +37,8 @@ A filter you build by clicking can be reproduced in code:
        filter_lang="cql2-text",
    )
 
-More of the same, each as the browser's filter panel would build it and as
-``pystac-client`` would send it:
+More filter examples, each shown as the browser's filter panel would build
+it and as ``pystac-client`` would send it:
 
 .. code-block:: python
 

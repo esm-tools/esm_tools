@@ -9,11 +9,11 @@ Logging in
 
 .. code-block:: bash
 
-   esm-catalog auth login https://stac-dev.dmawi.de
+   esm-catalog auth login https://stac-dev.awi.de
 
    # on a login node with no browser: copy the printed URL to your laptop
    # on a workstation: let it open the browser for you
-   esm-catalog auth login --open https://stac-dev.dmawi.de
+   esm-catalog auth login --open https://stac-dev.awi.de
 
 You are sent to the Helmholtz AAI, log in with your institute account, and the
 CLI receives a token. The token is cached at
@@ -28,7 +28,7 @@ To see whether you are logged in and for how long, look at the cache:
    $ python -c "import platformdirs; print(platformdirs.user_state_path('esm-catalog'))"
    /home/pgierz/.local/state/esm-catalog
    $ jq '{expires_at: (.expires_at | todate), scope}' \
-       ~/.local/state/esm-catalog/tokens/stac-dev.dmawi.de.json
+       ~/.local/state/esm-catalog/tokens/stac-dev.awi.de.json
    {
      "expires_at": "2026-09-14T13:02:11Z",
      "scope": "openid eduperson_entitlement offline_access"
@@ -43,34 +43,28 @@ The dev server now carries a real certificate (AWI's own, via HARICA/GEANT) —
 
 .. TODO screencast: auth login on a login node, copying the URL to a browser
 
-How it works
-------------
+The login flow
+--------------
 
-.. graphviz::
+.. mermaid::
    :align: center
 
-   digraph login {
-       rankdir=LR;
-       node [shape=box, style="rounded,filled", fillcolor="#f7f7f7",
-             fontname="Helvetica", fontsize=10];
-       edge [fontname="Helvetica", fontsize=9];
+   sequenceDiagram
+       actor You
+       participant CLI as esm-catalog auth login
+       participant IDP as Helmholtz AAI
+       participant TK as Token cache
+       participant PX as Auth proxy
+       participant API as STAC API
 
-       U   [label="You"];
-       CLI [label="esm-catalog auth login", fillcolor="#e3eefc"];
-       IDP [label="Helmholtz AAI"];
-       TK  [label="Token cache", shape=note];
-       PX  [label="Auth proxy", fillcolor="#fde9d9"];
-       API [label="STAC API"];
-
-       U   -> CLI [label="1"];
-       CLI -> IDP [label="2  login request"];
-       IDP -> U   [label="3  browser login", style=dashed];
-       IDP -> CLI [label="4  token"];
-       CLI -> TK  [label="5  cache"];
-       CLI -> PX  [label="6  push with token"];
-       PX  -> IDP [label="7  check groups", style=dashed];
-       PX  -> API [label="8  forward if your group\nowns the experiment"];
-   }
+       You->>CLI: 1  run auth login
+       CLI->>IDP: 2  login request
+       IDP-->>You: 3  browser login
+       IDP-->>CLI: 4  token
+       CLI->>TK: 5  cache
+       CLI->>PX: 6  push with token
+       PX-->>IDP: 7  check groups
+       PX->>API: 8  forward if your group owns the experiment
 
 The CLI is a *public* OIDC client (``esm-catalog-dev``): there is no secret
 in it, and login uses the authorization-code flow with PKCE, asking for the
@@ -80,8 +74,8 @@ address only labels which cache a token goes into; the identity provider is
 configured separately (``oidc_discovery_url`` in the client config) and
 defaults to the Helmholtz AAI development instance (``login-dev.helmholtz.de``).
 
-Who can do what
----------------
+Permissions by Action
+----------------------
 
 .. note::
 
@@ -103,9 +97,10 @@ Who can do what
    * - Push a new experiment
      - any logged-in user; the experiment is stamped with your VO group
    * - Update an experiment (re-push, add run segments)
-     - members of the owning group
+     - members of the owning group -- **not enforced yet, see the note above**
    * - Delete an experiment
-     - members of the owning group, or the catalogue operator
+     - members of the owning group, or the catalogue operator -- **not
+       enforced yet, see the note above**
    * - Register new searchable fields (queryables)
      - the catalogue operator
 
@@ -118,6 +113,6 @@ login`` again.
 .. code-block:: text
 
    $ esm-catalog push catalog/
-   pushing pi-ctrl-001-5058f1af → https://stac-dev.dmawi.de
+   pushing pi-ctrl-001-5058f1af → https://stac-dev.awi.de
    403 Forbidden: collection 'pi-ctrl-001-5058f1af' is owned by group
    'urn:geant:helmholtz.de:group:awi-paleo' and you are not a member.

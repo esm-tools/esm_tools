@@ -28,7 +28,7 @@ import xarray as xr
 from upath import UPath
 
 from esm_catalog.scan.format import FileFormat
-from esm_catalog.scan.reader import register
+from esm_catalog.scan.readers.plugins import hookimpl
 from esm_catalog.types import FileMetadata
 
 from .coords import _extract_bbox
@@ -106,4 +106,9 @@ class NetCDFReader:
         return _drop_surrogates(metadata)
 
 
-register(FileFormat.netcdf, NetCDFReader())
+_READER = NetCDFReader()
+
+
+@hookimpl
+def get_reader(file_format: FileFormat):
+    return _READER if file_format == FileFormat.netcdf else None

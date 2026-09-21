@@ -1,16 +1,16 @@
-"""The pluggable reader registry: :class:`FileFormat` -> :class:`Reader`.
+"""The pluggable reader contract: :class:`FileFormat` -> :class:`Reader`.
 
 A ``Reader`` extracts :class:`~esm_catalog.types.FileMetadata` from one file of a
-given format. Readers register themselves for a format, so the scan core
-dispatches by format without importing any concrete reader — adding a format is
-adding a reader plus a ``register`` call, never an edit to the core.
+given format. Readers register themselves for a format (see
+:mod:`esm_catalog.scan.readers.plugins`), so the scan core dispatches by format
+without importing any concrete reader — adding a format is adding a reader
+plus a ``get_reader`` hookimpl, never an edit to the core.
 """
 
 from __future__ import annotations
 
 from typing import Protocol, runtime_checkable
 
-from loguru import logger
 from upath import UPath
 
 from esm_catalog.scan.format import FileFormat
@@ -46,26 +46,6 @@ class Reader(Protocol):
         ...
 
 
-READERS: dict[FileFormat, Reader] = {}
-"""The format -> reader registry; populated by :func:`register` at import time."""
-
-
-def register(file_format: FileFormat, reader: Reader) -> None:
-    """Register *reader* as the handler for *file_format*.
-
-    Warns if a reader was already registered for *file_format*: a silent override
-    almost always means two modules claiming the same format by accident.
-    """
-    if file_format in READERS:
-        logger.warning(
-            "reader for {} overridden: {} replaces {}",
-            file_format,
-            type(reader).__name__,
-            type(READERS[file_format]).__name__,
-        )
-    READERS[file_format] = reader
-
-
 def reader_for(file_format: FileFormat) -> Reader:
     """Return the registered :class:`Reader` for *file_format*.
 
@@ -75,7 +55,9 @@ def reader_for(file_format: FileFormat) -> Reader:
         If no reader is registered — the format is detectable but unhandled
         (e.g. GRIB before its reader ships).
     """
-    try:
-        return READERS[file_format]
-    except KeyError:
-        raise LookupError(f"no reader registered for format '{file_format}'") from None
+    from esm_catalog.scan.readers.plugins import get_reader_plugin_manager
+
+    reader = get_reader_plugin_manager().hook.get_reader(file_format=file_format)
+    if reader is None:
+        raise LookupError(f"no reader registered for format '{file_format}'")
+    return reader

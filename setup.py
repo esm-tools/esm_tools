@@ -132,6 +132,17 @@ setup(
             "cfgrib>=0.9",
             "eccodes>=1.5",
         ],
+        # Only needed to run tests/test_esm_catalog.
+        # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py
+        # writes NetCDF fixtures via xarray's to_netcdf() (scipy: NETCDF3, no HDF5
+        # needed) and the memory:// (fsspec) scan path reopens them through the
+        # h5netcdf engine, which needs h5py.
+        "catalog-test": [
+            "pytest>=7.4",
+            "scipy>=1.10",
+            "h5py>=3.8",
+            "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
+        ],
     },
     install_requires=requirements,
     license="GNU General Public License v2",
@@ -164,6 +175,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/esm-tools/esm_tools",
-    version="6.66.7",
+    version="6.67.0",
     zip_safe=False,
 )

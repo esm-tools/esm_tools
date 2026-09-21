@@ -9,8 +9,8 @@
 #SBATCH -o {{ log_dir }}/worker.%A_%a.log
 set -euo pipefail
 source /etc/profile.d/modules.sh
-module load {{ apptainer_module | default('apptainer') }}
-export APPTAINER_CACHEDIR={{ scratch_dir }}/apptainer-cache
+module load {{ container_module }}
+export {{ cache_env_var }}={{ scratch_dir }}/container-cache
 IMG=oras://ghcr.io/esm-tools/esm_tools:sif-{{ image_tag }}
 COORD_DIR={{ scratch_dir }}/coord
 ADDR_FILE="$COORD_DIR/scheduler_address.txt"
@@ -23,4 +23,4 @@ for i in $(seq 1 60); do
 done
 SCHED_ADDR=$(cat "$ADDR_FILE")
 
-apptainer exec --cleanenv --env PYTHONNOUSERSITE=1 -B {{ bind_path | default('/albedo') }} "$IMG" dask worker "$SCHED_ADDR" --nworkers 1 --nthreads 1 --memory-limit 2GiB
+{{ container_bin }} exec --cleanenv --env PYTHONNOUSERSITE=1 {{ bind_flags }} "$IMG" dask worker "$SCHED_ADDR" --nworkers 1 --nthreads 1 --memory-limit 2GiB

@@ -1,4 +1,4 @@
-"""Render the SLURM + Dask + Apptainer job-array pipeline for a large scan.
+"""Render the SLURM + Dask + Singularity job-array pipeline for a large scan.
 
 ``esm-catalog scan --distributed --scheduler tcp://...`` attaches to an
 *already-running* Dask scheduler; it says nothing about how that scheduler
@@ -14,8 +14,11 @@ of how the driver ended, rather than leaving the array to idle out its own
 time limit.
 
 Validated live at 3000 workers / 32,200 files on Albedo (AWI); the template
-values (``smp`` partition, ``/albedo`` bind path, ``module load apptainer``)
-default to that environment but are all overridable.
+values (``smp`` partition, ``/albedo`` bind path) default to that environment
+but are all overridable. Container runtime defaults to ``singularity`` --
+Apptainer is a drop-in-compatible fork (identical CLI), so ``container_bin``/
+``container_module`` can be set to ``apptainer`` on a site that uses that
+name instead.
 """
 
 from __future__ import annotations
@@ -36,6 +39,62 @@ REQUIRED_VARS = (
     "n_workers",
 )
 
+DEFAULT_BIND_PATHS = ("/albedo",)
+
+DEFAULT_VARS_TEMPLATE = """\
+# Variables for 'esm-catalog distributed render-scripts'. Fill in the
+# CHANGE_ME values, then:
+#   esm-catalog distributed render-scripts my-vars.yaml --out-dir ./rendered
+#
+# Any of these can also be passed as a --flag instead (overrides the file);
+# see 'esm-catalog distributed render-scripts --help'.
+
+job_prefix: catalog          # SLURM job names become <job_prefix>-sched / -worker / -driver / -cleanup
+scratch_dir: /albedo/scratch/user/CHANGE_ME/tmp/esm-cat-scan   # coord/, container-cache/ live here
+image_tag: CHANGE_ME         # e.g. v6.68.0-rc.1-test-0.1.11
+exp_root: /albedo/work/projects/CHANGE_ME/esm_experiments/CHANGE_ME
+catalog_dir: /albedo/scratch/user/CHANGE_ME/tmp/esm-cat-scan/catalog
+n_workers: 3000
+
+# Optional, shown with their defaults:
+# partition: smp
+# qos: 12h
+# walltime: "04:00:00"
+# bind_paths: [/albedo]        # repeat for multiple mounts
+# container_bin: singularity   # or apptainer -- identical CLI, different binary name
+# container_module: singularity  # defaults to whatever container_bin is
+# push_after_scan: false
+# server_url: https://stac-dev.awi.de
+# log_dir: /custom/path/if/you/dont/want/$XDG_STATE_HOME/esm-catalog/logs
+"""
+
+
+def _normalize(context: dict[str, Any]) -> dict[str, Any]:
+    """Return *context* with the computed template fields filled in.
+
+    ``bind_paths`` (a list, possibly a single string) becomes ``bind_flags``
+    (one ``-B <path>`` per entry, pre-joined -- the templates just drop it in
+    rather than looping over a list in Jinja). ``container_bin``/
+    ``container_module`` default to ``singularity``; ``cache_env_var``
+    follows whichever binary is in play (``SINGULARITY_CACHEDIR`` or
+    ``APPTAINER_CACHEDIR``) since the two forks use different variable names
+    for the same thing.
+    """
+    context = dict(context)
+
+    bind_paths = context.get("bind_paths") or DEFAULT_BIND_PATHS
+    if isinstance(bind_paths, str):
+        bind_paths = (bind_paths,)
+    context["bind_flags"] = " ".join(f"-B {path}" for path in bind_paths)
+
+    container_bin = context.setdefault("container_bin", "singularity")
+    context.setdefault("container_module", container_bin)
+    context.setdefault(
+        "cache_env_var",
+        "SINGULARITY_CACHEDIR" if container_bin == "singularity" else "APPTAINER_CACHEDIR",
+    )
+    return context
+
 
 def render_scripts(context: dict[str, Any], out_dir: Path) -> list[Path]:
     """Render the four sbatch scripts into *out_dir*; return the written paths.
@@ -44,10 +103,11 @@ def render_scripts(context: dict[str, Any], out_dir: Path) -> list[Path]:
     ----------
     context : dict
         Template variables. Must contain every name in :data:`REQUIRED_VARS`;
-        everything else has a default baked into the templates themselves
-        (partition, qos, walltime, bind_path, apptainer_module,
-        push_after_scan, server_url) or is filled in by the caller
-        (``log_dir``, conventionally ``esm_catalog.xdg.state_dir() / "logs"``).
+        everything else has a default (partition, qos, walltime,
+        ``bind_paths`` -> :data:`DEFAULT_BIND_PATHS`, ``container_bin``/
+        ``container_module`` -> ``singularity``, push_after_scan,
+        server_url) or is filled in by the caller (``log_dir``,
+        conventionally ``esm_catalog.xdg.state_dir() / "logs"``).
     out_dir : Path
         Directory the four ``.sbatch`` files are written into (created if
         missing).
@@ -66,6 +126,8 @@ def render_scripts(context: dict[str, Any], out_dir: Path) -> list[Path]:
     missing = [key for key in REQUIRED_VARS if key not in context]
     if missing:
         raise ValueError(f"missing required variable(s): {', '.join(missing)}")
+
+    context = _normalize(context)
 
     out_dir.mkdir(parents=True, exist_ok=True)
     env = Environment(

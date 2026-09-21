@@ -217,3 +217,72 @@ def test_render_scripts_log_dir_defaults_from_state_dir(runner, tmp_path, monkey
     assert result.exit_code == 0, result.output
     sched = (out_dir / "sched.sbatch").read_text()
     assert f"{tmp_path}/state/esm-catalog/logs" in sched
+
+
+def test_render_scripts_defaults_to_singularity(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "module load singularity" in sched
+    assert "singularity exec" in sched
+    assert "SINGULARITY_CACHEDIR" in sched
+    assert "apptainer" not in sched
+
+
+def test_render_scripts_container_bin_override_switches_cache_env_var(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(out_dir),
+            "--container-bin", "apptainer", *_REQUIRED_FLAGS,
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "module load apptainer" in sched
+    assert "apptainer exec" in sched
+    assert "APPTAINER_CACHEDIR" in sched
+
+
+def test_render_scripts_repeated_bind_path_flags(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(out_dir),
+            "--bind-path", "/work", "--bind-path", "/scratch", *_REQUIRED_FLAGS,
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "-B /work -B /scratch" in sched
+    assert "/albedo" not in sched  # explicit flags replace the default, don't add to it
+
+
+def test_render_scripts_bind_path_defaults_to_albedo(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "-B /albedo" in sched
+
+
+def test_dump_vars_template_prints_yaml_and_skips_rendering(runner):
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--dump-vars-template"],
+    )
+    # No required flags were passed -- exit_code == 0 here (rather than the
+    # "missing required variable(s)" ClickException) proves --dump-vars-template
+    # short-circuited before validation/rendering ran at all.
+    assert result.exit_code == 0, result.output
+    assert "job_prefix: catalog" in result.output
+    assert "CHANGE_ME" in result.output

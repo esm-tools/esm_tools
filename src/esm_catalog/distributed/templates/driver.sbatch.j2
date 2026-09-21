@@ -8,8 +8,8 @@
 #SBATCH -o {{ log_dir }}/driver.%j.log
 set -euo pipefail
 source /etc/profile.d/modules.sh
-module load {{ apptainer_module | default('apptainer') }}
-export APPTAINER_CACHEDIR={{ scratch_dir }}/apptainer-cache
+module load {{ container_module }}
+export {{ cache_env_var }}={{ scratch_dir }}/container-cache
 IMG=oras://ghcr.io/esm-tools/esm_tools:sif-{{ image_tag }}
 EXP_ROOT={{ exp_root }}
 CATALOG_DIR={{ catalog_dir }}
@@ -28,7 +28,7 @@ SCHED_ADDR=$(cat "$ADDR_FILE")
 # empty cluster while the worker array is still trickling in
 sleep 30
 
-apptainer exec --cleanenv --env PYTHONNOUSERSITE=1 -B {{ bind_path | default('/albedo') }} "$IMG" esm-catalog scan \
+{{ container_bin }} exec --cleanenv --env PYTHONNOUSERSITE=1 {{ bind_flags }} "$IMG" esm-catalog scan \
   --exp-root "$EXP_ROOT" \
   --catalog-dir "$CATALOG_DIR" \
   --distributed --scheduler "$SCHED_ADDR" --verbose
@@ -36,5 +36,5 @@ apptainer exec --cleanenv --env PYTHONNOUSERSITE=1 -B {{ bind_path | default('/a
 # Scan succeeded (set -e would already have aborted otherwise) -- push the
 # freshly-scanned catalog straight to the server as the last step of this
 # job, same container, same bind mount.
-apptainer exec --cleanenv --env PYTHONNOUSERSITE=1 -B {{ bind_path | default('/albedo') }} "$IMG" esm-catalog push "$CATALOG_DIR" --server {{ server_url | default('https://stac-dev.awi.de') }} -v
+{{ container_bin }} exec --cleanenv --env PYTHONNOUSERSITE=1 {{ bind_flags }} "$IMG" esm-catalog push "$CATALOG_DIR" --server {{ server_url | default('https://stac-dev.awi.de') }} -v
 {% endif %}

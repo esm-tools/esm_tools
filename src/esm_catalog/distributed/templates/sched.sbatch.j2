@@ -8,8 +8,8 @@
 #SBATCH -o {{ log_dir }}/sched.%j.log
 set -euo pipefail
 source /etc/profile.d/modules.sh
-module load {{ apptainer_module | default('apptainer') }}
-export APPTAINER_CACHEDIR={{ scratch_dir }}/apptainer-cache
+module load {{ container_module }}
+export {{ cache_env_var }}={{ scratch_dir }}/container-cache
 IMG=oras://ghcr.io/esm-tools/esm_tools:sif-{{ image_tag }}
 COORD_DIR={{ scratch_dir }}/coord
 LOG={{ log_dir }}/sched.${SLURM_JOB_ID}.log
@@ -22,7 +22,7 @@ HOST=$(hostname)
 # address as soon as the job starts lets workers try to connect before dask
 # scheduler has bound its port, relying on dask's own retry logic to paper
 # over the race rather than guaranteeing readiness.
-apptainer exec --cleanenv --env PYTHONNOUSERSITE=1 -B {{ bind_path | default('/albedo') }} "$IMG" dask scheduler --host "$HOST" &
+{{ container_bin }} exec --cleanenv --env PYTHONNOUSERSITE=1 {{ bind_flags }} "$IMG" dask scheduler --host "$HOST" &
 SCHED_PID=$!
 
 for i in $(seq 1 60); do

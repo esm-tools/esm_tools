@@ -736,7 +736,7 @@ def list_plugins(ctx: click.Context) -> None:
 
 @main.group()
 def distributed() -> None:
-    """Render the SLURM + Dask + Apptainer pipeline for a large scan.
+    """Render the SLURM + Dask + Singularity pipeline for a large scan.
 
     'esm-catalog scan --distributed --scheduler tcp://...' attaches to an
     already-running Dask scheduler; it does not create one. This group
@@ -751,7 +751,7 @@ def distributed() -> None:
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
 @click.option("--job-prefix", help="SLURM job name prefix (<prefix>-sched, -worker, ...).")
-@click.option("--scratch-dir", help="Coordination + apptainer-cache directory.")
+@click.option("--scratch-dir", help="Coordination + container-cache directory.")
 @click.option("--image-tag", help="Container tag, e.g. v6.68.0-rc.1-test-0.1.11.")
 @click.option("--exp-root", help="Experiment directory the driver will scan.")
 @click.option("--catalog-dir", help="Where the driver writes the catalog.")
@@ -759,8 +759,14 @@ def distributed() -> None:
 @click.option("--partition", help="SLURM partition (default: smp).")
 @click.option("--qos", help="SLURM QOS (default: 12h).")
 @click.option("--walltime", help="SLURM time limit (default: 04:00:00).")
-@click.option("--bind-path", help="Apptainer -B mount (default: /albedo).")
-@click.option("--apptainer-module", help="Module to load for apptainer (default: apptainer).")
+@click.option(
+    "--bind-path",
+    "bind_paths",
+    multiple=True,
+    help="A -B mount; repeat for multiple (default: /albedo).",
+)
+@click.option("--container-bin", help="Container binary, e.g. singularity or apptainer (default: singularity).")
+@click.option("--container-module", help="Module to load (default: same as --container-bin).")
 @click.option(
     "--push-after-scan/--no-push-after-scan",
     default=None,
@@ -777,6 +783,12 @@ def distributed() -> None:
     type=click.Path(file_okay=False, path_type=Path),
     help="Where to write the four .sbatch files.",
 )
+@click.option(
+    "--dump-vars-template",
+    is_flag=True,
+    help="Print a ready-to-edit vars.yaml skeleton to stdout and exit -- "
+    "ignores every other option.",
+)
 def distributed_render_scripts(
     vars_file: Optional[Path],
     job_prefix: Optional[str],
@@ -788,12 +800,14 @@ def distributed_render_scripts(
     partition: Optional[str],
     qos: Optional[str],
     walltime: Optional[str],
-    bind_path: Optional[str],
-    apptainer_module: Optional[str],
+    bind_paths: tuple[str, ...],
+    container_bin: Optional[str],
+    container_module: Optional[str],
     push_after_scan: Optional[bool],
     server_url: Optional[str],
     log_dir: Optional[str],
     out_dir: Path,
+    dump_vars_template: bool,
 ) -> None:
     """Render sched/worker/driver/cleanup .sbatch scripts for a distributed scan.
 
@@ -803,6 +817,12 @@ def distributed_render_scripts(
     the rest of the CLI. Required values missing from both the file and the
     flags are reported together, not one at a time.
     """
+    from esm_catalog.distributed import DEFAULT_VARS_TEMPLATE
+
+    if dump_vars_template:
+        click.echo(DEFAULT_VARS_TEMPLATE, nl=False)
+        return
+
     import yaml
 
     from esm_catalog.distributed import render_scripts
@@ -822,8 +842,9 @@ def distributed_render_scripts(
         "partition": partition,
         "qos": qos,
         "walltime": walltime,
-        "bind_path": bind_path,
-        "apptainer_module": apptainer_module,
+        "bind_paths": list(bind_paths) or None,
+        "container_bin": container_bin,
+        "container_module": container_module,
         "push_after_scan": push_after_scan,
         "server_url": server_url,
         "log_dir": log_dir,

@@ -1,4 +1,4 @@
-esm_catalog: How the Pieces Fit
+esm_catalog: Scan, Push, Browse
 ===============================
 
 The simulation catalogue is a STAC API with a small client around it. You
@@ -6,62 +6,220 @@ scan an experiment on the HPC side, push the result to the server, and from
 then on anything that speaks STAC — the web browser, ``pystac-client``,
 ``xarray`` — can find your runs.
 
-.. graphviz::
+Quick start
+-----------
+
+Install ``esm_tools`` with the ``catalog`` extra, which adds ``pystac``, the
+STAC extension schemas, and the ``esm-catalog`` CLI:
+
+.. code-block:: bash
+
+   pip install "esm-tools[catalog]"
+
+``cd`` into a finished experiment and scan it. ``scan`` reads the experiment
+directory (``finished_config.yaml``, namelists, ``outdata/`` -- the tree is
+below) and writes a local catalog at ``<exp>/catalog/``. Nothing leaves this
+machine yet -- no network access, no login required:
+
+.. code-block:: bash
+
+   cd /albedo/work/user/$USER/runs/pi-ctrl-001
+   esm-catalog scan
+
+Log in, once per server. The one positional argument is the server URL;
+``auth login`` sends you to the Helmholtz AAI login page (opens a browser,
+or prints a URL to copy on a headless login node) and caches the token it
+gets back. One login lasts weeks -- see :doc:`esm_catalog_access_control`:
+
+.. code-block:: bash
+
+   esm-catalog auth login https://stac-dev.awi.de
+
+Push. The one positional argument is the local catalog directory ``scan``
+just wrote. ``push`` is idempotent -- rerunning it updates existing records,
+never deletes -- so it's safe to run again after every ``scan``:
+
+.. code-block:: bash
+
+   esm-catalog push catalog/
+
+Check what you have. ``status`` makes no server contact -- it reports the
+local ``catalog/``'s contents and where ``push`` would send them, which is
+worth checking before an actual push:
+
+.. code-block:: bash
+
+   esm-catalog status
+
+Set the server once in ``$XDG_CONFIG_HOME/esm-catalog/config.yaml`` and drop
+``--server`` afterwards:
+
+.. code-block:: yaml
+
+   server_url: https://stac-dev.awi.de
+
+The commands above cover two of three structural concerns: the CLI running
+locally (``scan``, ``status``), and writing to the server (``push``). The
+third -- reading from the server -- needs no CLI at all: the browser,
+``pystac-client``, ``xarray`` query the API directly.
+
+Your side — turning an experiment into a local catalogue:
+
+.. mermaid::
    :align: center
 
-   digraph services {
-       rankdir=LR;
-       compound=true;
-       fontname="Helvetica"; fontsize=10;
-       node [shape=box, style="rounded,filled", fillcolor="#f7f7f7",
-             fontname="Helvetica", fontsize=10];
-       edge [fontname="Helvetica", fontsize=9];
+   flowchart TB
+       EXP["Experiment directory<br/>(finished_config, namelists, outdata)"]
+       CLI["esm-catalog CLI<br/>scan · push · status"]
+       LOCAL["Local catalogue<br/>&lt;exp&gt;/catalog/items/*.parquet"]
 
-       subgraph cluster_hpc {
-           label="HPC / workstation (your side)";
-           style="rounded"; color="#999999";
-           EXP   [label="Experiment directory\n(finished_config, namelists, outdata)"];
-           CLI   [label="esm-catalog CLI\nscan · push · status · auth", fillcolor="#e3eefc"];
-           LOCAL [label="Local catalogue\n<exp>/catalog/items/*.parquet"];
-           TOKEN [label="Token cache\n$XDG_STATE_HOME/esm-catalog/tokens", shape=note];
-       }
+       CLI -->|scan reads| EXP
+       CLI -->|scan writes| LOCAL
+       CLI -->|push reads| LOCAL
 
-       subgraph cluster_srv {
-           label="Catalogue server (stac-dev.dmawi.de)";
-           style="rounded"; color="#999999";
-           PROXY [label="Auth proxy\n(who may write what)", fillcolor="#fde9d9"];
-           API   [label="STAC API\n(stac-fastapi-pgstac)", fillcolor="#e3eefc"];
-           PG    [label="PostgreSQL + pgSTAC", shape=cylinder, fillcolor="#eeeeee"];
-           WEB   [label="STAC-browser\n(web viewer)", fillcolor="#e3eefc"];
-       }
+       classDef highlight fill:#e3eefc,stroke:#999
+       class CLI highlight
 
-       IDP   [label="Helmholtz AAI\n(login)", style="rounded,dashed"];
-       READ  [label="Your scripts\npystac-client · xarray · intake", style="rounded,dashed"];
+Writing to the server — ``push`` needs a login (see
+:doc:`esm_catalog_access_control`):
 
-       EXP   -> CLI   [label="scan"];
-       CLI   -> LOCAL [label="writes shards"];
-       LOCAL -> CLI   [label="push reads"];
-       CLI   -> IDP   [label="auth login", style=dashed];
-       IDP   -> TOKEN [style=dashed];
-       TOKEN -> CLI   [style=dashed];
-       CLI   -> PROXY [label="push"];
-       PROXY -> API   [label="authorised\nwrites"];
-       API   -> PG;
-       WEB   -> API   [label="browse"];
-       READ  -> API   [label="search\n(CQL2 filter)"];
-   }
+.. mermaid::
+   :align: center
+
+   flowchart TB
+       CLI["esm-catalog CLI"]
+       PROXY["Auth proxy<br/>(who may write what)"]
+       API["STAC API<br/>(stac-fastapi-pgstac)"]
+       PG[("PostgreSQL + pgSTAC")]
+
+       CLI -->|push, logged in| PROXY
+       PROXY -->|authorised writes| API
+       API --> PG
+
+       classDef highlight fill:#e3eefc,stroke:#999
+       classDef proxy fill:#fde9d9,stroke:#999
+       classDef muted fill:#eeeeee,stroke:#999
+       class CLI,API highlight
+       class PROXY proxy
+       class PG muted
+
+Reading from the server — no login needed:
+
+.. mermaid::
+   :align: center
+
+   flowchart TB
+       API["STAC API<br/>(stac-fastapi-pgstac)"]
+       WEB["STAC-browser<br/>(web viewer)"]
+       READ["Your scripts<br/>pystac-client · xarray · intake"]
+
+       WEB -->|browse| API
+       READ -->|search, CQL2 filter| API
+
+       classDef highlight fill:#e3eefc,stroke:#999
+       class API,WEB highlight
+       style READ stroke-dasharray: 5 5
+
+The diagram above is structural (what talks to what); it doesn't show
+*order*. This is the same workflow as a timeline — scan, then push, then
+(any time later, by anyone) browse:
+
+.. mermaid::
+   :align: center
+
+   sequenceDiagram
+       actor You
+       participant CLI as esm-catalog CLI
+       participant EXP as Experiment directory
+       participant LOCAL as Local catalogue
+       participant API as STAC API
+       participant Reader as Browser / scripts
+
+       You->>CLI: scan
+       CLI->>EXP: read finished_config, namelists, outdata
+       CLI->>LOCAL: write shards
+
+       You->>CLI: push
+       CLI->>LOCAL: read shards
+       CLI->>API: push (authenticated)
+       API-->>CLI: ok
+
+       Note over Reader,API: any time later, by anyone
+       Reader->>API: search / browse
+       API-->>Reader: results
+
+"Experiment directory" above is a real ESM-Tools experiment tree (see
+:ref:`esm_runscripts:Experiment Directory Structure` for the full structure —
+every subfolder, not just the two ``scan`` reads):
+
+.. mermaid::
+   :align: center
+
+   flowchart TB
+       EXPID["&lt;expid&gt;/"]
+       CONFIG["config/"]
+       OUTDATA["outdata/"]
+       CONFIG_ECHAM["echam/"]
+       CONFIG_FESOM["fesom/"]
+       OUTDATA_ECHAM["echam/"]
+       OUTDATA_FESOM["fesom/"]
+       RUN["run_YYYYMMDD-YYYYMMDD/"]
+       TOP[".top_of_exp_tree"]
+
+       FC["`**&lt;expid&gt;_finished_config.yaml**
+       general.expid
+       general.metadata
+       general.paleo`"]
+       NML_ECHAM["`**namelist.echam**
+       runctl
+       radctl`"]
+       NML_FESOM["`**namelist.fesom**
+       paths
+       timestep`"]
+       FILE["`**PI_185001.01_echam, ...**
+       variable: t, q, vo, ...
+       cube:dimensions, cube:variables`"]
+
+       EXPID -.- TOP
+       EXPID --- CONFIG
+       EXPID --- OUTDATA
+       EXPID -.- RUN
+       CONFIG --- FC
+       CONFIG --- CONFIG_ECHAM
+       CONFIG --- CONFIG_FESOM
+       CONFIG_ECHAM --- NML_ECHAM
+       CONFIG_FESOM --- NML_FESOM
+       OUTDATA --- OUTDATA_ECHAM
+       OUTDATA --- OUTDATA_FESOM
+       OUTDATA_ECHAM --- FILE
+
+       classDef read fill:#e3eefc,stroke:#999
+       classDef context fill:#eeeeee,stroke:#999
+       class CONFIG,OUTDATA,CONFIG_ECHAM,CONFIG_FESOM,OUTDATA_ECHAM,OUTDATA_FESOM read
+       class RUN,TOP context
+
+Blue folders are what ``scan`` actually walks; grey (dashed edge) is shown
+only for context. ``scan`` reads ``config/<expid>_finished_config.yaml`` for experiment
+metadata, ``config/<component>/namelist.*`` for namelists, and walks
+``outdata/<component>/`` for output files (see :doc:`esm_catalog_metadata`
+for exactly what comes from where). ``.top_of_exp_tree`` marks the root
+(``esm_runscripts`` writes it once at setup) but ``scan`` does not read it —
+``--exp-root`` is given explicitly, or defaults to the current directory.
+``run_YYYYMMDD-YYYYMMDD/`` (one per run, dashed above) is per-run staging;
+the tidy phase moves its files into the folders above before ``scan`` ever
+sees them, so ``scan`` never reads inside a run folder directly.
 
 .. TODO screencast: scan → push → open in browser, end to end (~2 min)
 
-The pieces
+Components
 ----------
 
 .. list-table::
    :header-rows: 1
    :widths: 22 46 32
 
-   * - Piece
-     - What it does for you
+   * - Component
+     - Role
      - Where
    * - ``esm-catalog`` CLI
      - Turns an experiment directory into STAC records and sends them to the
@@ -78,46 +236,19 @@ The pieces
      - ``<experiment>/catalog/`` (change with ``--catalog-dir``)
    * - STAC API
      - Serves Collections (experiments) and Items (files) and answers
-       searches. Everything downstream talks to this.
-     - ``https://stac-dev.dmawi.de``
+       searches. The browser, ``pystac-client``, and ``xarray`` all query
+       this directly.
+     - ``https://stac-dev.awi.de``
    * - Auth proxy
      - Checks your login token on ``push`` and lets you write to the
        experiments your group owns. Reading needs no login.
      - in front of the API
    * - STAC-browser
      - Point-and-click view of the same API.
-     - ``https://stac-dev.dmawi.de`` (see :doc:`esm_catalog_viewer`)
+     - ``https://stac-dev.awi.de`` (see :doc:`esm_catalog_viewer`)
    * - Helmholtz AAI
      - Where ``auth login`` sends you. Your institute account works.
      - external
-
-Quick start
------------
-
-.. code-block:: bash
-
-   # 1. Install the client (once)
-   pip install "esm-tools[catalog]"
-
-   # 2. Scan a finished experiment. Writes <exp>/catalog/.
-   cd /albedo/work/user/$USER/runs/pi-ctrl-001
-   esm-catalog scan
-
-   # 3. Log in (once per server; the token is cached and refreshed)
-   esm-catalog auth login https://stac-dev.dmawi.de
-
-   # 4. Push. Idempotent: re-running updates, never deletes.
-   esm-catalog push catalog/
-
-   # 5. See what you have locally and where push would send it
-   esm-catalog status
-
-Set the server once in ``$XDG_CONFIG_HOME/esm-catalog/config.yaml`` and drop
-``--server`` afterwards:
-
-.. code-block:: yaml
-
-   server_url: https://stac-dev.dmawi.de
 
 Scanning a large experiment
 ---------------------------
@@ -138,7 +269,7 @@ also means a change to the experiment's metadata or namelists is not
 re-stamped onto files already catalogued; delete ``catalog/esm-catalog.json``
 to force a full rescan. ``--strict`` makes a scan fail if any file could not
 be read; otherwise failures are listed in ``catalog/failures.json`` and the
-rest goes through.
+rest of the scan completes normally.
 
 A remote experiment works too — ``scan`` and ``status`` accept an
 ``sftp://`` root:
@@ -158,7 +289,7 @@ Filters use CQL2; namelist parameters are available as ``nml__`` fields (see
 
    from pystac_client import Client
 
-   cat = Client.open("https://stac-dev.dmawi.de")
+   cat = Client.open("https://stac-dev.awi.de")
 
    # All experiments
    for coll in cat.get_collections():
@@ -234,8 +365,8 @@ files), so read the directory with ``union_by_name``:
    │ oasis3mct │    32 │
    └───────────┴───────┘
 
-The experiment record
----------------------
+The experiment record (``collection.json``)
+---------------------------------------------
 
 ``collection.json`` is the experiment as the server will see it — plain STAC,
 so ``json`` or ``pystac`` read it:
@@ -259,8 +390,8 @@ so ``json`` or ``pystac`` read it:
 The trailing eight characters of the id are the hash of the experiment path;
 they stay stable as long as the experiment does not move.
 
-What each component covers
---------------------------
+Date range and file count per component
+----------------------------------------
 
 .. testcode:: catalog
 

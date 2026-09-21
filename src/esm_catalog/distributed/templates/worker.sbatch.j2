@@ -1,0 +1,26 @@
+#!/bin/bash
+#SBATCH --job-name={{ job_prefix }}-worker
+#SBATCH --array=1-{{ n_workers }}%{{ n_workers }}
+#SBATCH -N1 -n1 -c1
+#SBATCH --mem-per-cpu=2G
+#SBATCH --qos={{ qos | default('12h') }}
+#SBATCH --time={{ walltime | default('04:00:00') }}
+#SBATCH --partition={{ partition | default('smp') }}
+#SBATCH -o {{ log_dir }}/worker.%A_%a.log
+set -euo pipefail
+source /etc/profile.d/modules.sh
+module load {{ container_module }}
+export {{ cache_env_var }}={{ scratch_dir }}/container-cache
+IMG=oras://ghcr.io/esm-tools/esm_tools:sif-{{ image_tag }}
+COORD_DIR={{ scratch_dir }}/coord
+ADDR_FILE="$COORD_DIR/scheduler_address.txt"
+
+# scheduler job may not have started (or published its address) yet --
+# poll rather than assume ordering between independently-scheduled jobs
+for i in $(seq 1 60); do
+  [ -s "$ADDR_FILE" ] && break
+  sleep 5
+done
+SCHED_ADDR=$(cat "$ADDR_FILE")
+
+{{ container_bin }} exec --cleanenv --env PYTHONNOUSERSITE=1 {{ bind_flags }} "$IMG" dask worker "$SCHED_ADDR" --nworkers 1 --nthreads 1 --memory-limit 2GiB

@@ -170,6 +170,7 @@ setup(
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
         "esm_tools.couplings": ["../couplings/*"],
+        "esm_catalog": ["distributed/templates/*.j2"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",

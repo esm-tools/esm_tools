@@ -68,7 +68,10 @@ The pieces
        server. Daily-workflow commands: ``auth login``/``logout``, ``scan``,
        ``push``, ``status``. ``list-plugins`` is a contributor/debugging
        command that lists registered extension plugins (see
-       :doc:`esm_catalog_architecture`).
+       :doc:`esm_catalog_architecture`). ``distributed render-scripts``
+       renders the SLURM + Dask + Apptainer job-array scripts a large scan
+       needs -- ``scan --distributed`` then attaches to the scheduler they
+       start.
      - Any node that can see the experiment; ``pip install
        esm-tools[catalog]``
    * - Local catalogue

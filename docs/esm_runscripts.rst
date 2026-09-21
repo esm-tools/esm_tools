@@ -416,9 +416,9 @@ When ``parallel_file_movements`` is set to ``"dask"``, the following happens
 automatically:
 
 1. **Cluster startup** -- Before the main recipe begins, a Dask scheduler and
-   workers are launched via ``srun`` (SLURM) on the allocated nodes. The
-   scheduler writes a ``dask_scheduler.json`` file into the run's ``work``
-   directory.
+   workers are launched via the batch system's launcher (e.g. ``srun`` for
+   SLURM, ``aprun`` for PBS) on the allocated nodes. The scheduler writes a
+   ``dask_scheduler.json`` file into the run's ``work`` directory.
 
 2. **Parallel I/O** -- During each file-movement phase, ``esm_runscripts``
    connects to the Dask cluster and submits copy/link/move operations as

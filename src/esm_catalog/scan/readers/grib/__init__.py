@@ -31,8 +31,9 @@ import xarray as xr
 from upath import UPath
 
 from esm_catalog.scan.format import FileFormat
-from esm_catalog.scan.reader import UnsupportedContentError, register
+from esm_catalog.scan.reader import UnsupportedContentError
 from esm_catalog.scan.readers.grib.plugins import get_grib_plugin_manager
+from esm_catalog.scan.readers.plugins import hookimpl
 from esm_catalog.scan.readers.netcdf.coords import _extract_bbox
 from esm_catalog.scan.readers.netcdf.dimensions import _extract_dimensions
 from esm_catalog.scan.readers.netcdf.frequency import _infer_frequency
@@ -164,7 +165,13 @@ def _basic_metadata(datasets: list) -> FileMetadata:
     return metadata
 
 
-register(FileFormat.grib, GRIBReader())
+_READER = GRIBReader()
+
+
+@hookimpl
+def get_reader(file_format: FileFormat):
+    return _READER if file_format == FileFormat.grib else None
+
 
 # Import model enrichers for their registration side effect. Kept last so
 # register_enricher and the reader are defined first.

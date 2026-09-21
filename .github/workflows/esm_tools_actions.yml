@@ -30,7 +30,7 @@ jobs:
 
     - name: Run Pytest
       run: |
-        pip install pytest
+        pip install -e ".[test]"
         pytest -v .
         pytest -v --doctest-modules src --ignore src/esm_runscripts/coupling --ignore-glob "*backup*"
 

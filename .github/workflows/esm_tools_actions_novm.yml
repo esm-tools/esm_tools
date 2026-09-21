@@ -46,7 +46,7 @@ jobs:
 
       - name: Run Pytest
         run: |
-          pip install pytest
+          pip install -e ".[test]"
           pytest -v .
 
       - name: run esm_master first time

@@ -52,11 +52,11 @@ class Pbs:
         """
         return os.environ.get("PBS_JOBID")
 
-    def prepare_launcher(self, config, cluster):
-        config["general"]["batch"].het_par_launcher_lines(config, cluster)
+    def prepare_launcher(self, config, plan):
+        config["general"]["batch"].het_par_launcher_lines(config, plan)
 
     @staticmethod
-    def add_pre_launcher_lines(config, cluster, runfile):
+    def add_pre_launcher_lines(config, plan, runfile):
         """
         Adds pre-launcher lines to the ``runfile``.
 
@@ -73,7 +73,7 @@ class Pbs:
         # cannot be done in the header because PBS does not support its own variables
         # to be used there (at least in the ALEPH's version).
         thisrun_logfile = config["computer"]["thisrun_logfile"].replace(
-            "@jobtype@", cluster
+            "@jobtype@", plan
         )
         runfile.write(f"qalter $PBS_JOBID -o {thisrun_logfile}\n")
 
@@ -87,7 +87,7 @@ class Pbs:
         return config
 
     @staticmethod
-    def het_par_headers(config, cluster, all_values):
+    def het_par_headers(config, plan, all_values):
         """
         Heterogeneous parallelization headings are not needed for PBS.
         """

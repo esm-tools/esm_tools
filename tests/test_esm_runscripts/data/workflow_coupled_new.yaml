@@ -1,0 +1,19 @@
+# Coupled chain: couple_in runs before prepcompute (bumps the entry), couple_out
+# runs after tidy (bumps the exit). Canonical preceded_by.
+entry_point: couple_in
+exit_point: couple_out
+sub_plans:
+  couple_in:
+    parent_plan: couple_in
+  prepcompute:
+    parent_plan: prepcompute
+    preceded_by: couple_in
+  compute:
+    parent_plan: compute
+    preceded_by: prepcompute
+  tidy:
+    parent_plan: tidy
+    preceded_by: compute
+  couple_out:
+    parent_plan: couple_out
+    preceded_by: tidy

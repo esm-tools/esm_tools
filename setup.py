@@ -16,6 +16,7 @@ requirements = [
     "Click>=8.0.4",  # Maximum version for Python 3.6 support
     "PyGithub==1.55",
     "colorama==0.4.5",
+    "deprecation>=2.1.0",
     "f90nml==1.4.4",
     "dask[distributed]>=2023.5.0,<=2024.8.0",
     "gfw-creator==0.2.2",
@@ -51,6 +52,8 @@ setup_requirements = []
 
 test_requirements = [
     "pyfakefs==4.6.0",
+    "pytest-datadir>=1.4.0",
+    "pytest-regressions>=2.5.0",
 ]
 
 setup(
@@ -114,6 +117,7 @@ setup(
             "h5py>=3.8",
             "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
         ],
+        "test": test_requirements,
     },
     install_requires=requirements,
     license="GNU General Public License v2",

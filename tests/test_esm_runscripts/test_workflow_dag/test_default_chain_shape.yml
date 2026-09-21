@@ -1,0 +1,13 @@
+called_from:
+  compute: prepcompute
+  prepcompute: tidy
+  tidy: compute
+first: prepcompute
+last: tidy
+next_submit:
+  compute:
+  - tidy
+  prepcompute:
+  - compute
+  tidy:
+  - prepcompute

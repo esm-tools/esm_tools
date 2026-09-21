@@ -1,0 +1,18 @@
+# Deprecation + rename table for legacy ``general.workflow`` keys.
+#
+# Legacy spellings are translated to the current P-Plan nouns at ingest and emit
+# a versioned deprecation warning. See
+# ``esm_runscripts.workflow.translate_legacy_workflow_keys``.
+#
+# ``run_before`` is intentionally absent: it is the inverse of ``preceded_by``
+# and is flipped onto the target sub-plan in code, not a plain key rename.
+deprecated_since: "6.67.0"
+removed_in: "7.0.0"
+renames:
+  subjob_clusters: plans
+  subjobs: sub_plans
+  subjob_cluster: parent_plan
+  run_after: preceded_by
+  first_task_in_queue: entry_point
+  last_task_in_queue: exit_point
+  next_run_triggered_by: next_iteration_trigger

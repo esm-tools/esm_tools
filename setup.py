@@ -30,7 +30,14 @@ requirements = [
     "pyyaml==6.0.1",
     "questionary==1.10.0",
     "ruamel.yaml==0.17.32",
-    "ruamel.yaml.clib>=0.2.7",
+    # 0.2.15 renamed its dist-info dir from the dotted "ruamel.yaml.clib-*" to
+    # underscored "ruamel_yaml_clib-*" (PEP 503 normalization). Legacy pkg_resources
+    # (still in play here via `setup.py develop`'s old-style console scripts) can't
+    # resolve a multi-dot project name against an underscored dist-info dir, so a
+    # console script's pkg_resources.require() dies with DistributionNotFound even
+    # though the package is installed and importable. Cap below it until the whole
+    # install path is off legacy pkg_resources.
+    "ruamel.yaml.clib>=0.2.7,<0.2.15",
     "semver==2.13.0",
     "sqlalchemy>=1.4.39",
     "tabulate==0.8.10",

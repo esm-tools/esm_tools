@@ -97,8 +97,14 @@ setup(
             "pydantic>=2",
         ],
         # Only needed to run tests/test_esm_catalog.
+        # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py
+        # writes NetCDF fixtures via xarray's to_netcdf() (scipy: NETCDF3, no HDF5
+        # needed) and the memory:// (fsspec) scan path reopens them through the
+        # h5netcdf engine, which needs h5py.
         "catalog-test": [
             "pytest>=7.4",
+            "scipy>=1.10",
+            "h5py>=3.8",
             "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
         ],
     },

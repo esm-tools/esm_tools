@@ -1,17 +1,17 @@
-esm_catalog: What Gets Recorded
-===============================
+esm_catalog: What Scan Records
+==============================
 
 This page tells you what ``esm-catalog scan`` reads from an experiment, what
-it writes, and — the part you need when searching — what the fields are
-called on the server.
+it writes, and — the part you need when searching — what the server names
+each field.
 
 Where the scan reads from
 -------------------------
 
 ``scan`` reads the run-segment ``<expid>_finished_config.yaml`` files
-ESM-Tools writes at the end of each run. Only the ``general`` block is used
-for experiment metadata; a component's own ``metadata`` block describes the
-model, not your run, and is ignored. Namelists come from
+ESM-Tools writes at the end of each run. ``scan`` uses only the ``general``
+block for experiment metadata; it ignores a component's own ``metadata``
+block, which describes the model, not your run. Namelists come from
 ``config/<component>/namelist.*``. The list of output files comes from the
 tidy-phase file-operations logs (with each component's ``outdata_targets``
 as the fallback when no tidy log exists), so a file is catalogued because
@@ -204,7 +204,7 @@ On the server the same field answers "every run with CO₂ above 400 ppm":
 
    from pystac_client import Client
 
-   cat = Client.open("https://stac-dev.dmawi.de")
+   cat = Client.open("https://stac-dev.awi.de")
    hits = cat.search(filter={
        "op": ">", "args": [
            {"property": "nml__echam__namelist_echam__radctl__co2vmr"}, 400e-6
@@ -214,9 +214,9 @@ On the server the same field answers "every run with CO₂ above 400 ppm":
        print(item.collection_id, item.id)
 
 Filtering on a field works as soon as the Items are pushed. Registering the
-field on the server does one extra thing: it makes it appear in the web
-browser's filter panel. ``push`` prints which fields are new to the server
-and how the operator registers them:
+field on the server additionally makes it appear in the web browser's filter
+panel. ``push`` prints which fields are new to the server and how the
+operator registers them:
 
 .. code-block:: text
 
@@ -227,7 +227,7 @@ and how the operator registers them:
    fields appear in the STAC Browser filter UI. A privileged operator runs
    on the pgstac host (adjust the ssh name if it differs from the API host):
 
-     ssh stac-dev.dmawi.de sudo -u stac /usr/local/bin/esm-catalog-load-queryables - < catalog/queryables-delta.json
+     ssh stac-dev.awi.de sudo -u stac /usr/local/bin/esm-catalog-load-queryables - < catalog/queryables-delta.json
 
 Send the operator ``catalog/queryables-delta.json``, or the command.
 

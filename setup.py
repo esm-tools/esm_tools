@@ -27,7 +27,6 @@ requirements = [
     "packaging>=24.0",
     "pandas>=1.1.5",  # Correct compatiability with xarray for Python 3.6
     "psutil==5.9.1",
-    "pytest==7.1.2",
     "pyyaml==6.0.1",
     "questionary==1.10.0",
     "ruamel.yaml==0.17.32",
@@ -108,6 +107,16 @@ setup(
             "platformdirs>=4.0",
             "pyyaml>=6.0",
             "pluggy>=1.0",
+        ],
+        # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py
+        # writes NetCDF fixtures via xarray's to_netcdf() (scipy: NETCDF3, no HDF5
+        # needed) and the memory:// (fsspec) scan path reopens them through the
+        # h5netcdf engine, which needs h5py.
+        "catalog-test": [
+            "pytest>=7.4",
+            "scipy>=1.10",
+            "h5py>=3.8",
+            "paleodatetime @ git+https://github.com/pgierz/paleodatetime.git",
         ],
         # GRIB support is opt-in: cfgrib/eccodes pull the ecCodes C library, which
         # is heavy and awkward in CI, so the scanner treats GRIB as unsupported

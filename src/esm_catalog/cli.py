@@ -755,7 +755,20 @@ def distributed() -> None:
 @click.option("--image-tag", help="Container tag, e.g. v6.68.0-rc.1-test-0.1.11.")
 @click.option("--exp-root", help="Experiment directory the driver will scan.")
 @click.option("--catalog-dir", help="Where the driver writes the catalog.")
-@click.option("--n-workers", type=int, help="Size of the worker job array.")
+@click.option(
+    "--worker-mode",
+    type=click.Choice(["array", "multinode"]),
+    help="'array': one SLURM job per worker (default; Albedo-style, no tight "
+    "running-job cap). 'multinode': one job, srun fans workers out inside "
+    "it (for a site with a tight per-user running-job cap, e.g. Levante).",
+)
+@click.option("--n-workers", type=int, help="Size of the worker job array (worker_mode=array).")
+@click.option("--n-nodes", type=int, help="Node count for the one worker job (worker_mode=multinode).")
+@click.option(
+    "--cores-per-node",
+    type=int,
+    help="Workers per node in multinode mode (default: 128, Levante's compute node).",
+)
 @click.option("--partition", help="SLURM partition (default: smp).")
 @click.option("--qos", help="SLURM QOS (default: 12h).")
 @click.option("--walltime", help="SLURM time limit (default: 04:00:00).")
@@ -796,7 +809,10 @@ def distributed_render_scripts(
     image_tag: Optional[str],
     exp_root: Optional[str],
     catalog_dir: Optional[str],
+    worker_mode: Optional[str],
     n_workers: Optional[int],
+    n_nodes: Optional[int],
+    cores_per_node: Optional[int],
     partition: Optional[str],
     qos: Optional[str],
     walltime: Optional[str],
@@ -812,10 +828,11 @@ def distributed_render_scripts(
     """Render sched/worker/driver/cleanup .sbatch scripts for a distributed scan.
 
     VARS_FILE is an optional YAML file of defaults (job_prefix, scratch_dir,
-    image_tag, exp_root, catalog_dir, n_workers are required, the rest
-    optional); any --flag overrides what it sets, same resolution order as
-    the rest of the CLI. Required values missing from both the file and the
-    flags are reported together, not one at a time.
+    image_tag, exp_root, catalog_dir are always required; n_workers is
+    required for worker_mode=array, n_nodes for worker_mode=multinode; the
+    rest optional); any --flag overrides what it sets, same resolution order
+    as the rest of the CLI. Required values missing from both the file and
+    the flags are reported together, not one at a time.
     """
     from esm_catalog.distributed import DEFAULT_VARS_TEMPLATE
 
@@ -838,7 +855,10 @@ def distributed_render_scripts(
         "image_tag": image_tag,
         "exp_root": exp_root,
         "catalog_dir": catalog_dir,
+        "worker_mode": worker_mode,
         "n_workers": n_workers,
+        "n_nodes": n_nodes,
+        "cores_per_node": cores_per_node,
         "partition": partition,
         "qos": qos,
         "walltime": walltime,

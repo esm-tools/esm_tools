@@ -1,20 +1,35 @@
-"""Render the SLURM + Dask + Singularity job-array pipeline for a large scan.
+"""Render the SLURM + Dask + Singularity job pipeline for a large scan.
 
 ``esm-catalog scan --distributed --scheduler tcp://...`` attaches to an
 *already-running* Dask scheduler; it says nothing about how that scheduler
 and its workers got there. This module renders the four SLURM scripts that
 bootstrap one: ``sched.sbatch`` starts the scheduler (readiness-gated -- it
 waits for the scheduler to announce itself before publishing its address, so
-workers never race the port binding), ``worker.sbatch`` is a job array that
-joins it, ``driver.sbatch`` waits for the scheduler's address then runs the
-actual ``scan`` (optionally ``push`` too), and ``cleanup.sbatch`` tears the
-scheduler and workers down once the driver finishes (success or failure) --
-submitted with ``--dependency=afterany:$DRIVER_JOBID`` so it fires regardless
-of how the driver ended, rather than leaving the array to idle out its own
-time limit.
+workers never race the port binding), ``worker.sbatch`` gets the workers
+running (two modes, see below), ``driver.sbatch`` waits for the scheduler's
+address then runs the actual ``scan`` (optionally ``push`` too), and
+``cleanup.sbatch`` tears the scheduler and workers down once the driver
+finishes (success or failure) -- submitted with
+``--dependency=afterany:$DRIVER_JOBID`` so it fires regardless of how the
+driver ended, rather than leaving the workers to idle out their own time
+limit.
 
-Validated live at 3000 workers / 32,200 files on Albedo (AWI); the template
-values (``smp`` partition, ``/albedo`` bind path) default to that environment
+Two worker modes (``worker_mode``), because sites differ in how many
+concurrently *running* jobs a user is allowed:
+
+- ``"array"`` (default) -- a SLURM job array, one job per worker. Validated
+  live at 3000 workers / 32,200 files on Albedo (AWI), which has no tight
+  per-user running-job cap. Requires ``n_workers``.
+- ``"multinode"`` -- one job, ``-N n_nodes``, ``srun`` fans
+  ``n_nodes * cores_per_node`` worker tasks out across that single job's own
+  allocation. For a site with a tight running-job cap (e.g. DKRZ Levante: 20
+  concurrently running jobs in compute+shared combined -- a 3000-element
+  array there would queue almost entirely, not run), this counts as exactly
+  one running job no matter how many worker tasks start inside it. Requires
+  ``n_nodes``; ``cores_per_node`` defaults to 128 (Levante's standard
+  ``compute`` node).
+
+Template values (``smp`` partition, ``/albedo`` bind path) default to Albedo
 but are all overridable. Container runtime defaults to ``singularity`` --
 Apptainer is a drop-in-compatible fork (identical CLI), so ``container_bin``/
 ``container_module`` can be set to ``apptainer`` on a site that uses that
@@ -28,18 +43,30 @@ from typing import Any
 
 from jinja2 import Environment, PackageLoader
 
-TEMPLATES = ("sched.sbatch.j2", "worker.sbatch.j2", "driver.sbatch.j2", "cleanup.sbatch.j2")
+SCHED_TEMPLATE = "sched.sbatch.j2"
+DRIVER_TEMPLATE = "driver.sbatch.j2"
+CLEANUP_TEMPLATE = "cleanup.sbatch.j2"
 
-REQUIRED_VARS = (
+WORKER_TEMPLATE_BY_MODE = {
+    "array": "worker.sbatch.j2",
+    "multinode": "worker-multinode.sbatch.j2",
+}
+
+BASE_REQUIRED_VARS = (
     "job_prefix",
     "scratch_dir",
     "image_tag",
     "exp_root",
     "catalog_dir",
-    "n_workers",
 )
 
+WORKER_MODE_REQUIRED_VARS = {
+    "array": ("n_workers",),
+    "multinode": ("n_nodes",),
+}
+
 DEFAULT_BIND_PATHS = ("/albedo",)
+DEFAULT_CORES_PER_NODE = 128
 
 DEFAULT_VARS_TEMPLATE = """\
 # Variables for 'esm-catalog distributed render-scripts'. Fill in the
@@ -54,7 +81,13 @@ scratch_dir: /albedo/scratch/user/CHANGE_ME/tmp/esm-cat-scan   # coord/, contain
 image_tag: CHANGE_ME         # e.g. v6.68.0-rc.1-test-0.1.11
 exp_root: /albedo/work/projects/CHANGE_ME/esm_experiments/CHANGE_ME
 catalog_dir: /albedo/scratch/user/CHANGE_ME/tmp/esm-cat-scan/catalog
+
+# Pick a worker mode:
+worker_mode: array           # one SLURM job per worker -- Albedo, no tight running-job cap
 n_workers: 3000
+# worker_mode: multinode      # one job, srun fans workers out inside it -- sites with a
+# n_nodes: 4                 # tight per-user running-job cap (e.g. DKRZ Levante: 20 running)
+# cores_per_node: 128         # workers per node in multinode mode (default: 128, Levante's compute node)
 
 # Optional, shown with their defaults:
 # partition: smp
@@ -78,7 +111,8 @@ def _normalize(context: dict[str, Any]) -> dict[str, Any]:
     ``container_module`` default to ``singularity``; ``cache_env_var``
     follows whichever binary is in play (``SINGULARITY_CACHEDIR`` or
     ``APPTAINER_CACHEDIR``) since the two forks use different variable names
-    for the same thing.
+    for the same thing. ``cores_per_node`` (multinode mode only) defaults to
+    :data:`DEFAULT_CORES_PER_NODE`.
     """
     context = dict(context)
 
@@ -93,6 +127,7 @@ def _normalize(context: dict[str, Any]) -> dict[str, Any]:
         "cache_env_var",
         "SINGULARITY_CACHEDIR" if container_bin == "singularity" else "APPTAINER_CACHEDIR",
     )
+    context.setdefault("cores_per_node", DEFAULT_CORES_PER_NODE)
     return context
 
 
@@ -102,12 +137,15 @@ def render_scripts(context: dict[str, Any], out_dir: Path) -> list[Path]:
     Parameters
     ----------
     context : dict
-        Template variables. Must contain every name in :data:`REQUIRED_VARS`;
-        everything else has a default (partition, qos, walltime,
-        ``bind_paths`` -> :data:`DEFAULT_BIND_PATHS`, ``container_bin``/
-        ``container_module`` -> ``singularity``, push_after_scan,
-        server_url) or is filled in by the caller (``log_dir``,
-        conventionally ``esm_catalog.xdg.state_dir() / "logs"``).
+        Template variables. Must contain every name in :data:`BASE_REQUIRED_VARS`
+        plus whichever :data:`WORKER_MODE_REQUIRED_VARS` entry matches
+        ``context.get("worker_mode", "array")``. Everything else has a
+        default (partition, qos, walltime, ``bind_paths`` ->
+        :data:`DEFAULT_BIND_PATHS`, ``container_bin``/``container_module`` ->
+        ``singularity``, ``cores_per_node`` -> :data:`DEFAULT_CORES_PER_NODE`,
+        push_after_scan, server_url) or is filled in by the caller
+        (``log_dir``, conventionally
+        ``esm_catalog.xdg.state_dir() / "logs"``).
     out_dir : Path
         Directory the four ``.sbatch`` files are written into (created if
         missing).
@@ -121,9 +159,18 @@ def render_scripts(context: dict[str, Any], out_dir: Path) -> list[Path]:
     Raises
     ------
     ValueError
-        If *context* is missing any of :data:`REQUIRED_VARS`.
+        If *context* is missing any required variable, or names an unknown
+        ``worker_mode``.
     """
-    missing = [key for key in REQUIRED_VARS if key not in context]
+    worker_mode = context.get("worker_mode", "array")
+    if worker_mode not in WORKER_TEMPLATE_BY_MODE:
+        raise ValueError(
+            f"unknown worker_mode {worker_mode!r}; expected one of "
+            f"{sorted(WORKER_TEMPLATE_BY_MODE)}"
+        )
+
+    required = (*BASE_REQUIRED_VARS, *WORKER_MODE_REQUIRED_VARS[worker_mode])
+    missing = [key for key in required if key not in context]
     if missing:
         raise ValueError(f"missing required variable(s): {', '.join(missing)}")
 
@@ -134,10 +181,17 @@ def render_scripts(context: dict[str, Any], out_dir: Path) -> list[Path]:
         loader=PackageLoader("esm_catalog", "distributed/templates"),
         keep_trailing_newline=True,
     )
+    templates = (
+        SCHED_TEMPLATE,
+        WORKER_TEMPLATE_BY_MODE[worker_mode],
+        DRIVER_TEMPLATE,
+        CLEANUP_TEMPLATE,
+    )
     written = []
-    for name in TEMPLATES:
+    for name in templates:
         rendered = env.get_template(name).render(**context)
-        path = out_dir / name.removesuffix(".j2")
+        out_name = "worker.sbatch" if name.startswith("worker") else name.removesuffix(".j2")
+        path = out_dir / out_name
         path.write_text(rendered)
         path.chmod(0o755)
         written.append(path)

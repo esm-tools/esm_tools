@@ -326,6 +326,11 @@ lpj_guess:
     nproc: 64 # originally 16
     omp_num_threads: 4
     mip: "cmip7"
+    # Peat capped at the smallest natural fraction LUH3 ever has in the cell.
+    # With the uncapped map peat takes nearly all of natural in some cells,
+    # and orogrun1 stopped in 1905 on the stand transfer capacity check.
+    forcing_sources:
+        peat: "/work/ab0246/a270092/input/lpj-guess/peat/TCO95_peat_frac_Lund_corrected_0850-2024.txt"
     # Cold start on chunk 1, deliberately. The pooled state lpjg_state_3850 does
     # not load: it dies in Soil::update_ice_fraction with an invalid ice volume of
     # -0.016162, the same value under a binary that predates all of the LPJ-GUESS

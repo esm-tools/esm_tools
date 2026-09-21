@@ -1137,6 +1137,11 @@ lpj_guess:
     # never covers on the CORE3 coastline are authorised as natural.
     choose_general.major_version:
         "v3.5":
+            # Peat capped at the smallest natural fraction LUH3 has in the cell
+            # over 0850-2024, so the peat area always fits inside natural land.
+            # A state built with the uncapped map does not load with this one;
+            # such an experiment sets lpj_guess.peat_map back in its runscript.
+            peat_map: ${input_dir}/peat/${resolution}_peat_frac_Lund_corrected_0850-2024.txt
             choose_resolution:
                 TCO95:
                     add_config_sources:

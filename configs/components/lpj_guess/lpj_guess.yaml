@@ -127,6 +127,11 @@ lpj_guess:
     input_dir: ${pool_dir}/lpj-guess/
     out_date_folder: "${end_date!syear!smonth!sday}"
 
+    # Prescribed peat fraction. LPJ-GUESS checks this map against the peat stands
+    # in the restart and stops on any difference, so an experiment has to keep
+    # the map its state was built with. Set peat_map in the runscript to pin one.
+    peat_map: ${input_dir}/peat/${resolution}_peat_frac.txt
+
     # CMIP N deposition directory (empty string to disable, otherwise full path with trailing /)
     ndep_input_dir: ${input_dir}/ndep/${resolution}/
 
@@ -313,7 +318,7 @@ lpj_guess:
         drynoy: ${ndep_input_dir}/drynoy_${resolution}_hist_d1.nc
         wetnhx: ${ndep_input_dir}/wetnhx_${resolution}_hist_d1.nc
         wetnoy: ${ndep_input_dir}/wetnoy_${resolution}_hist_d1.nc
-        peat: ${input_dir}/peat/${resolution}_peat_frac.txt
+        peat: ${peat_map}
         simfire_ba: ${fire_input_dir}/simfire_monthly_ba.nc
         simfire_popdens: ${fire_input_dir}/annual_population_density.nc
         "soil_layer_type_[[proc_list-->PROC_NUM]]": ${slt_dir}/slt_${resolution}.nc

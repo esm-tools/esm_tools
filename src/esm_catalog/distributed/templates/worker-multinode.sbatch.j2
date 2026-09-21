@@ -1,0 +1,33 @@
+#!/bin/bash
+#SBATCH --job-name={{ job_prefix }}-worker
+#SBATCH -N{{ n_nodes }}
+#SBATCH --qos={{ qos | default('12h') }}
+#SBATCH --time={{ walltime | default('04:00:00') }}
+#SBATCH --partition={{ partition | default('smp') }}
+#SBATCH -o {{ log_dir }}/worker.%j.log
+set -euo pipefail
+source /etc/profile.d/modules.sh
+module load {{ container_module }}
+export {{ cache_env_var }}={{ scratch_dir }}/container-cache
+IMG=oras://ghcr.io/esm-tools/esm_tools:sif-{{ image_tag }}
+COORD_DIR={{ scratch_dir }}/coord
+ADDR_FILE="$COORD_DIR/scheduler_address.txt"
+
+# scheduler job may not have started (or published its address) yet --
+# poll rather than assume ordering between independently-scheduled jobs
+for i in $(seq 1 60); do
+  [ -s "$ADDR_FILE" ] && break
+  sleep 5
+done
+SCHED_ADDR=$(cat "$ADDR_FILE")
+
+# One job, many workers: srun fans {{ n_nodes }} * {{ cores_per_node }} worker
+# tasks out across this job's own allocation instead of one SLURM job per
+# worker. For sites with a tight per-user running-job cap (e.g. DKRZ
+# Levante: 20 concurrently running jobs in compute+shared combined) a large
+# worker job array (worker.sbatch.j2's --array) can't sustain more than a
+# couple dozen workers regardless of array size -- this counts as exactly
+# one running job no matter how many worker tasks srun starts inside it.
+srun --ntasks={{ n_nodes * cores_per_node }} --ntasks-per-node={{ cores_per_node }} --cpus-per-task=1 \
+  {{ container_bin }} exec --cleanenv --env PYTHONNOUSERSITE=1 {{ bind_flags }} "$IMG" \
+  dask worker "$SCHED_ADDR" --nworkers 1 --nthreads 1 --memory-limit 2GiB

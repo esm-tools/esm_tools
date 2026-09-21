@@ -275,6 +275,66 @@ def test_render_scripts_bind_path_defaults_to_albedo(runner, tmp_path):
     assert "-B /albedo" in sched
 
 
+def test_render_scripts_multinode_mode_renders_srun_worker(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    flags = [
+        "--job-prefix", "catalog",
+        "--scratch-dir", "/scratch/catalog",
+        "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+        "--exp-root", "/exp/pi-ctrl-001",
+        "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+        "--worker-mode", "multinode",
+        "--n-nodes", "4",
+    ]  # fmt: skip
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *flags],
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "#SBATCH -N4" in worker
+    assert "srun --ntasks=512 --ntasks-per-node=128" in worker
+    assert "singularity exec" in worker
+
+
+def test_render_scripts_multinode_missing_n_nodes_errors(runner, tmp_path):
+    flags = [
+        "--job-prefix", "catalog",
+        "--scratch-dir", "/scratch/catalog",
+        "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+        "--exp-root", "/exp/pi-ctrl-001",
+        "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+        "--worker-mode", "multinode",
+    ]  # fmt: skip
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *flags],
+    )
+    assert result.exit_code != 0
+    assert "n_nodes" in result.output
+
+
+def test_render_scripts_multinode_cores_per_node_override(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    flags = [
+        "--job-prefix", "catalog",
+        "--scratch-dir", "/scratch/catalog",
+        "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+        "--exp-root", "/exp/pi-ctrl-001",
+        "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+        "--worker-mode", "multinode",
+        "--n-nodes", "2",
+        "--cores-per-node", "64",
+    ]  # fmt: skip
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *flags],
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "srun --ntasks=128 --ntasks-per-node=64" in worker
+
+
 def test_dump_vars_template_prints_yaml_and_skips_rendering(runner):
     result = runner.invoke(
         main,

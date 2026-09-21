@@ -350,8 +350,25 @@ oifs:
                                 # in the tropics (sucldp.F90), so RCL_INPPMIN should stay near or
                                 # above 50000; lower values add tropical, not Southern Ocean, cloud.
                                 RCL_INPSEA: 0.1
-                                RCL_INPPMIN: 50000.0
-                                RSNOWLIN2: 0.04
+                                # 70000 Pa follows sucldp.F90's own recommendation.
+                                RCL_INPPMIN: 70000.0
+                                # RSNOWLIN2 is deliberately unset, leaving the code default
+                                # 0.030. Raising it to 0.04 warms the Southern Ocean by
+                                # +0.61 W/m2 net at a cost of +0.42 W/m2 globally.
+                            NAERAD:
+                                # Background marine CCN over sea ice [cm-3]. Switches on the
+                                # open-water weighting of the Genthon (1992) whitecap sea-salt
+                                # source, which OpenIFS otherwise evaluates over sea ice too,
+                                # where there is no open water to raise spray from. That gives
+                                # Nd ~49 cm-3 over the summer Arctic pack against 10-30
+                                # observed, and 50-57 W/m2 too much shortwave removed at the
+                                # observed cloud cover. At 15.0 the melt-season effect is
+                                # SWdn +15.3 W/m2 and cloud attenuation -16.0, with clear-sky
+                                # flux and cloud amount unchanged.
+                                # Negative disables it. Requires an OpenIFS carrying
+                                # pr10/seaice-marine-ccn; an older binary aborts on the
+                                # unknown namelist name.
+                                RCCNSEAICE: 15.0
                             NAMGWWMS:
                                 GGAUSSB: -0.5
                             NAMCUMF:
@@ -825,7 +842,20 @@ fesom:
                                 Redi_Kmax: 1000.0
                         namelist.tra:
                             tracer_phys:
-                                use_momix: true
+                                # momix is Timmermann & Beckmann (2004),
+                                # src/oce_mo_conv.F90: south of momix_lat = -50, at open-ocean
+                                # nodes only, it adds momix_kv to Kv inside the Monin-Obukhov
+                                # length. At 0.01 m2/s that is 2000x the background 5e-6,
+                                # under the winter pack.
+                                #
+                                # Off by measurement: a paired 10-year experiment gives JJA
+                                # 55-80S ocean T2m bias +1.49 -> +0.98 K, 60-78S winter mixed
+                                # layer 312 -> 524 m, JJA SH ice extent 17.58 -> 19.81
+                                # (HadISST 21.71).
+                                #
+                                # momix_kv is left set so the dose is on record; it is inert
+                                # while use_momix is false.
+                                use_momix: false
                                 momix_kv: 0.01
                         namelist.cvmix:
                             param_kpp:
@@ -837,14 +867,29 @@ fesom:
                             meltpond:
                                 pndaspect: 1.6
                                 rfracmax: 0.6
-                                albpnd: 0.35
+                                # The four ice_therm albedos below are POND-FREE:
+                                # ice_thermo_cpl.F90 builds alb_noponds from them and only
+                                # then calls meltpond_albedo, which applies albpnd flat over
+                                # the pond fraction. Darkening them to stand in for ponds
+                                # double-counts the ponds. albpnd, albi and albim are FESOM's
+                                # own values (MOD_ICE.F90:85-88, ice_meltponds.F90:32);
+                                # albsn and albsnm are held below FESOM's, see there.
+                                albpnd: 0.20
                             ice_therm:
                                 snowmelt_tgate: false
                                 alb_tramp: 1.0
+                                # albsn/albsnm are held BELOW FESOM's own 0.81/0.77 on
+                                # purpose. At the FESOM values the Arctic ice volume runs
+                                # away and does not equilibrate: NH annual 24.0 -> 47.9
+                                # x10^3 km3 over 150 years, against PIOMAS 28.7 Apr /
+                                # 13.0 Sep, still climbing at +1.63/decade. Brighter melting
+                                # snow stops the summer pack clearing its snow, which locks
+                                # in the bright albedo: the melt-season snow-free fraction
+                                # falls from 24.4% to 0.2%. albi/albim are FESOM's own.
                                 albsn: 0.75
                                 albsnm: 0.65
-                                albi: 0.66
-                                albim: 0.64
+                                albi: 0.70
+                                albim: 0.68
             # FESOM 2.8 renamed the NetCDF restarts, and v3.5 is the first
             # awiesm3 to build a FESOM that carries the rename. Pre-2.8 wrote one
             # directory per year, named by that year and holding every restart

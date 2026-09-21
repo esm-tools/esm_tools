@@ -108,9 +108,34 @@ function pism_atmosphere_get_newest_output {
                 fi
             done
 
-            echo; echo "                *   Concatenating these files: ${PISM_OFILE_LIST} "
+            #echo; echo "                *   Concatenating these files: ${PISM_OFILE_LIST} "
+            #cdo cat ${PISM_OFILE_LIST} ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            #cdo timmean ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            echo; echo "             * Concatenating these 100 files: ${PISM_OFILE_LIST} "
             cdo cat ${PISM_OFILE_LIST} ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
-            cdo timmean ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+
+            # --- 修改开始 ---
+            # 计算最后100年的起始年份 (例如: 结束年=2000, 2000-100+1 = 1901. 即 1901-2000)
+            AVG_START_YEAR_CALC=$((CHUNK_END_YEAR_pism - 100 + 1))
+
+            # 检查计算出的起始年是否早于该 chunk 的实际起始年
+            # (防止 chunk 不足100年)
+            if [ ${AVG_START_YEAR_CALC} -lt ${CHUNK_START_YEAR_pism} ]; then
+                AVG_START_YEAR=${CHUNK_START_YEAR_pism}
+                echo "             * Note: Chunk is shorter than 100 years. Averaging over available years."
+            else
+                AVG_START_YEAR=${AVG_START_YEAR_CALC}
+            fi
+
+            echo "             * Calculating time mean over the last 100 years (range: ${AVG_START_YEAR} to ${CHUNK_END_YEAR_pism})"
+            
+            # 在 timmean 之前使用 selyear 选择年份范围
+            cdo timmean \
+                -selyear,${AVG_START_YEAR}/${CHUNK_END_YEAR_pism} \
+                ${OUTPUT_DIR_pism}/latest_ex_file_pism.CHUNK.nc \
+                ${OUTPUT_DIR_pism}/latest_ex_file_pism.nc 2>> ${COUPLE_DIR}/cdo_stderr_pism2awiesm
+            # --- 修改结束 ---
+
 
             #rm ${PISM_OFILE_LIST} ${PISM_cleanup_list}
         else

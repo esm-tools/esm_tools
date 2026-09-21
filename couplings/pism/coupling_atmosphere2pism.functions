@@ -85,7 +85,7 @@ atmosphere2pism() {
     which cdo
     echo -e "\t\t---> Preparing to couple generic atmosphere to specific ice sheet model PISM"
     ic_atm2pism_prepare
-
+    #iterative_coupling_atmosphere_pism_regrid_method="INTERPOLATE"
     iterative_coupling_atmosphere_pism_regrid_method=${iterative_coupling_atmosphere_pism_regrid_method:-DOWNSCALE}
     bool_atm2pism_regrid_dyn_downscaling=${bool_atm2pism_regrid_dyn_downscaling:-0}
     echo -e "\t\t--> Regrid method >>> ${GREEN}${iterative_coupling_atmosphere_pism_regrid_method}${NOCOLOR} <<<"
@@ -520,7 +520,7 @@ ic_atm2pism_regrid_dyn_downscale_generate_elevation_difference() {
 	ncrename -v $atmosphere_name_elevation,usurf ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/tmp.nc
 	cdo settbounds,1mon -setreftime,1850-01-01,00:00:00 -setunit,m tmp.nc surface_altitude_coarse_resolution.nc
 
-	cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc"
+	#cleanup_list="$cleanup_list ${COUPLE_DIR}/elev_hi.nc ${COUPLE_DIR}/elev_lo.nc ${COUPLE_DIR}/elev_hi_minus_lo.nc"
 }
 
 ic_atm2pism_regrid_dyn_downscale_temperature_below_firn() {
@@ -646,9 +646,9 @@ ic_atm2pism_regrid_downscale_split_names() {
                 ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_ 2>> ${COUPLE_DIR}/cdo_stderr_atm2pism
         ##atmosphere_file_at_ice.${INTERPOL_TYPE_ATM}.nc # && rm atmosphere_file_for_ice.nc
 
-        for varname in $(cdo -s vardes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ' | awk -F ' ' '{print $2}'); do
-                cleanup_list="$cleanup_list ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${varname}.nc"
-        done
+        #for varname in $(cdo -s vardes ${COUPLE_DIR}/atmosphere_file_for_ice.nc | tr -s ' ' | awk -F ' ' '{print $2}'); do
+                #cleanup_list="$cleanup_list ${COUPLE_DIR}/atmosphere_file_for_ice_for_downscaling_${varname}.nc"
+        #done
 }
 
 ## @fn ic_atm2pism_regrid_downscale_generate_elevation_difference()
@@ -732,7 +732,9 @@ ic_atm2pism_regrid_downscale_temperature() {
         if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
                 echo ""; echo "                *  downscaling temperature"
                 DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.005"}
-                if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
+                #if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
+	        #if (( ${DOWNSCALING_LAPSE_RATE} > 0 )); then
+		if [ $(echo "${DOWNSCALING_LAPSE_RATE} > 0" | bc) -eq 1 ]; then
                         echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
                         echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
                         exit 6
@@ -763,7 +765,9 @@ ic_atm2pism_regrid_downscale_temperature_below_firn() {
         if [ "x${DOWNSCALE_TEMP}" == "x1" ]; then
                 echo ""; echo "                *  downscaling temperature_below_firn"
                 DOWNSCALING_LAPSE_RATE=${DOWNSCALING_LAPSE_RATE:-"-0.005"} #old value = -0.007
-                if [ ${DOWNSCALING_LAPSE_RATE} -gt 0 ]; then
+                #if (( ${DOWNSCALING_LAPSE_RATE} > 0 )); then
+                if [ $(echo "${DOWNSCALING_LAPSE_RATE} > 0" | bc) -eq 1 ]; then
+		#if [ ${DOWNSCALING_LAPSE_RATE} > 0 ]; then
                         echo "YOUR DOWNSCALING LAPSE RATE IS POSITIVE!"
                         echo "IT WAS: $DOWNSCALING_LAPSE_RATE"
                         exit 6

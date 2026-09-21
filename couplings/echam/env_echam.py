@@ -1,4 +1,30 @@
 def prepare_environment(config):
+    # Get PISM domain from configuration
+    # Try multiple paths to find the domain:
+    # 1. From model2 config (iterative coupling)
+    # 2. From pism config directly
+    # 3. From echam config (user-specified override)
+    # 4. Default to "greenland"
+    pism_domain = None
+    
+    # Try model2 (iterative coupling configuration)
+    if "model2" in config:
+        model2_setup = config["model2"].get("setup_name", "pism")
+        if model2_setup in config:
+            pism_domain = config[model2_setup].get("domain")
+    
+    # Try pism directly
+    if not pism_domain and "pism" in config:
+        pism_domain = config["pism"].get("domain")
+    
+    # Try echam config (user override)
+    if not pism_domain:
+        pism_domain = config["echam"].get("pism_domain")
+    
+    # Default to greenland
+    if not pism_domain:
+        pism_domain = "greenland"
+    
     environment_dict = {
             "ICE_TO_ECHAM": int(config["general"]["first_run_in_chunk"]),
             "ECHAM_TO_ICE": int(config["general"]["last_run_in_chunk"]),
@@ -7,7 +33,9 @@ def prepare_environment(config):
             "ISM_TO_ECHAM_update_glacial_mask": int(config["echam"].get("update_glacial_mask", True).__bool__()), 
             "ISM_TO_ECHAM_update_land_runoff": 1,
             "COUPLE_DIR": config["general"]["experiment_couple_dir"],
-            "RES_echam": config["echam"]["resolution"], 
+            "RES_echam": config["echam"]["resolution"],
+            # === FIX: Add DOMAIN_pism for Greenland GLAC update ===
+            "DOMAIN_pism": pism_domain, 
             "EXP_ID": config["general"]["command_line_config"]["expid"],
             "RESTART_DIR_echam": config["echam"]["experiment_restart_out_dir"],
             "DATA_DIR_echam": config["echam"]["experiment_outdata_dir"],

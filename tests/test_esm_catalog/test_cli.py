@@ -25,7 +25,7 @@ def runner():
 def test_help_lists_all_commands(runner):
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
-    for command in ("auth", "scan", "push", "status"):
+    for command in ("auth", "scan", "push", "status", "distributed"):
         assert command in result.output
 
 
@@ -96,3 +96,124 @@ def test_status_after_scan_reports_catalog_contents(runner, tmp_path, monkeypatc
     assert "tracked (incremental) files: 1" in result.output
     assert "queryables: 1" in result.output
     assert "https://stac.example.org" in result.output
+
+
+# --------------------------------------------------------------------------- #
+# distributed render-scripts
+# --------------------------------------------------------------------------- #
+
+_REQUIRED_FLAGS = [
+    "--job-prefix", "catalog",
+    "--scratch-dir", "/scratch/catalog",
+    "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+    "--exp-root", "/exp/pi-ctrl-001",
+    "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+    "--n-workers", "500",
+]  # fmt: skip
+
+
+def test_distributed_subcommand_registered(runner):
+    result = runner.invoke(main, ["distributed", "--help"])
+    assert result.exit_code == 0
+    assert "render-scripts" in result.output
+
+
+def test_render_scripts_missing_required_vars_reports_all_at_once(runner, tmp_path):
+    result = runner.invoke(
+        main, ["distributed", "render-scripts", "--out-dir", str(tmp_path)]
+    )
+    assert result.exit_code != 0
+    for name in ("scratch_dir", "image_tag", "exp_root", "catalog_dir", "n_workers"):
+        assert name in result.output
+
+
+def test_render_scripts_writes_four_scripts_and_prints_submit_order(runner, tmp_path):
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    for name in ("sched.sbatch", "worker.sbatch", "driver.sbatch", "cleanup.sbatch"):
+        assert (tmp_path / name).exists()
+    assert "SCHED_JOBID=$(sbatch --parsable" in result.output
+    assert "--dependency=after:$SCHED_JOBID" in result.output
+    assert "--dependency=afterany:$DRIVER_JOBID" in result.output
+
+
+def test_render_scripts_worker_array_matches_n_workers(runner, tmp_path):
+    runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *_REQUIRED_FLAGS],
+    )
+    worker = (tmp_path / "worker.sbatch").read_text()
+    assert "#SBATCH --array=1-500%500" in worker
+
+
+def test_render_scripts_no_push_block_by_default(runner, tmp_path):
+    runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *_REQUIRED_FLAGS],
+    )
+    driver = (tmp_path / "driver.sbatch").read_text()
+    assert "esm-catalog push" not in driver
+
+
+def test_render_scripts_push_after_scan_flag_adds_push_block(runner, tmp_path):
+    runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(tmp_path),
+            *_REQUIRED_FLAGS,
+            "--push-after-scan", "--server-url", "https://stac-dev.awi.de",
+        ],  # fmt: skip
+    )
+    driver = (tmp_path / "driver.sbatch").read_text()
+    assert "esm-catalog push" in driver
+    assert "https://stac-dev.awi.de" in driver
+
+
+def test_render_scripts_cli_flag_overrides_vars_file(runner, tmp_path):
+    vars_file = tmp_path / "vars.yaml"
+    vars_file.write_text(
+        "\n".join(
+            [
+                "job_prefix: fromfile",
+                "scratch_dir: /scratch/fromfile",
+                "image_tag: v6.68.0-rc.1-test-0.1.11",
+                "exp_root: /exp/fromfile",
+                "catalog_dir: /exp/fromfile/catalog",
+                "n_workers: 100",
+            ]
+        )
+    )
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", str(vars_file),
+            "--out-dir", str(out_dir), "--n-workers", "999",
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "#SBATCH --array=1-999%999" in worker
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "fromfile-sched" in sched
+    assert "/scratch/fromfile" in sched
+
+
+def test_render_scripts_log_dir_defaults_from_state_dir(runner, tmp_path, monkeypatch):
+    # state_dir() wraps platformdirs, whose XDG_STATE_HOME honouring is a Unix-only
+    # convention (macOS ignores it by design) -- monkeypatch the function itself
+    # rather than the env var, so this test is portable across dev machines.
+    monkeypatch.setattr(
+        "esm_catalog.xdg.state_dir", lambda: tmp_path / "state" / "esm-catalog"
+    )
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert f"{tmp_path}/state/esm-catalog/logs" in sched

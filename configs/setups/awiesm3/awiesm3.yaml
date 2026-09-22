@@ -878,15 +878,35 @@ fesom:
                             ice_therm:
                                 snowmelt_tgate: false
                                 alb_tramp: 1.0
-                                # albsn/albsnm are held BELOW FESOM's own 0.81/0.77 on
-                                # purpose. At the FESOM values the Arctic ice volume runs
-                                # away and does not equilibrate: NH annual 24.0 -> 47.9
-                                # x10^3 km3 over 150 years, against PIOMAS 28.7 Apr /
-                                # 13.0 Sep, still climbing at +1.63/decade. Brighter melting
-                                # snow stops the summer pack clearing its snow, which locks
-                                # in the bright albedo: the melt-season snow-free fraction
-                                # falls from 24.4% to 0.2%. albi/albim are FESOM's own.
-                                albsn: 0.75
+                                # The two snow albedos do different jobs, measured on the
+                                # model's own melt seasons (ice_albedo_requirement.py):
+                                #                d(alb)/d(albsn)   d(alb)/d(albsnm)
+                                #     NH JJA          0.149             0.504
+                                #     SH DJF          0.908             0.051
+                                # The Antarctic pack surface rarely reaches the melting
+                                # point, so fmelt ~ 0 there and albsn carries the southern
+                                # response; albsnm is the Arctic knob. Both stay global -
+                                # the split is measured surface state, not hemispheric
+                                # tuning.
+                                #
+                                # albsnm is held BELOW FESOM's own 0.77 on purpose. At 0.77
+                                # the Arctic ice volume runs away and does not equilibrate:
+                                # NH annual 24.0 -> 47.9 x10^3 km3 over 150 years, still
+                                # climbing at +1.63/decade, because brighter melting snow
+                                # stops the summer pack clearing its snow and locks in the
+                                # bright albedo. The margin is the NH melt-season snow-free
+                                # fraction: 6.3 % healthy, 1.2 % in the runaway.
+                                #
+                                # albsn 0.80 is set for the Antarctic, where the pack
+                                # carries roughly the right September extent with about
+                                # half the observed volume. It delivers SH +10.0 W/m2,
+                                # essentially the +10.4 the Antarctic has been measured to
+                                # absorb and settle at, and NH +4.6. Bracketed: at 0.83 the
+                                # fmelt feedback grew the northern forcing to 7.3 W/m2,
+                                # past the 5.5 at which the Arctic goes unstable; at 0.78
+                                # the Arctic sat below a pre-2000 observational reference
+                                # it should exceed. albi/albim are FESOM's own values.
+                                albsn: 0.80
                                 albsnm: 0.65
                                 albi: 0.70
                                 albim: 0.68

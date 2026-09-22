@@ -248,6 +248,26 @@ def prepare_environment(config):
             # Debug: flip the o2a (rstos-backed) namcouple fields to EXPOUT so
             # OASIS dumps every exchange to netcdf (see fix_namcouple_feom_dim).
             "OASIS_EXPOUT_O2A": int(config["fesom"].get("oasis_expout_o2a", False).__bool__()),
+
+            # --- how build_submesh carves the cavity (all default to the old way) ---
+            # masked: one hop onto the max-mesh nodes with the ice draft averaged over
+            # floating cells only, so ice-front drafts are not blended with the open
+            # ocean's zeros. twohop (default) is the original T512 route.
+            "ICE2FESOM_REMAP": fesom.get("ice2fesom_remap", "twohop"),
+            # element_majority: an element straddling PISM's grounding line stays in the
+            # cavity when most of its area floats, instead of being dropped because one
+            # node is grounded (couplings/pism/gl_majority.py). Needs aux3d_undug.out in
+            # the max mesh: the bed before its minimum-water-column dig.
+            "GL_RULE": fesom.get("gl_rule", "none"),
+            # fvom_init switches of a patched fesom_meshpart (see meshpart_bin): deepen
+            # the bottom instead of lifting the ice base, and take an element's ice base
+            # as the mean over its ice-covered nodes.
+            "CAVITY_DIG": int(bool(fesom.get("cavity_dig", False))),
+            "CAVITY_ICEMEAN": int(bool(fesom.get("cavity_icemean", False))),
+            # Partitioner to use instead of ${model_dir}/bin/fesom_meshpart.
+            "FESOM_MESHPART_BIN": fesom.get("meshpart_bin", ""),
+            # Python for gl_majority.py (numpy, netCDF4, matplotlib); default python3.
+            "GL_MAJORITY_PY": fesom.get("gl_majority_py", ""),
             #"BASIN_FILE": config["fesom"].get("basin_file"),
             "MACHINE": config["computer"]["name"],
             "ICEBERG_DIR": config["fesom"].get("iceberg_dir", ""),

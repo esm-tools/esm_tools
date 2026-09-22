@@ -374,13 +374,12 @@ contains
                         if (set_new_to_zero) then
                             field_new(k, i_new) = 0.0_WP
                         else
-                            call find_nearest_old_node_at_level( &
-                                i_new, k, mesh_old, mesh_new, i_ref)
-                            if (i_ref > 0) then
-                                field_new(k, i_new) = field_old(k, i_ref)
-                            else
-                                field_new(k, i_new) = field_old(nl_old-1, i_old)
-                            end if
+                            ! Below the old seabed: the bed was deepened (static dig or
+                            ! fvom_init's dig mode). Continue the column's OWN bottom
+                            ! water downward. The nearest node with water at this depth
+                            ! is often outside the cavity, and copying it planted warm
+                            ! open-ocean water on the sub-shelf seabed.
+                            field_new(k, i_new) = field_old(nl_old-1, i_old)
                         end if
                     end if
                 end do

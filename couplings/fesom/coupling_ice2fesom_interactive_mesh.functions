@@ -285,6 +285,24 @@ function build_submesh {
     # outside-domain marker the reduction tool relies on -- rebuild it from a
     # bilinear domain indicator (valid inside, missing outside).
     couple_timer "ice2fesom: regrid ice geometry"
+    local _griddes=${MAXMESH_DIR_fesom}/${MESH_GRIDDES_fesom}
+    local _geom=${COUPLE_DIR}/latest_ice_geometry.nc
+    if [ "${ICE2FESOM_REMAP:-twohop}" = "masked" ]; then
+        # One hop straight onto the max-mesh nodes, and the ice draft averaged over
+        # FLOATING cells only: ice_subNN is 0 over open ocean, and a plain bilinear
+        # remap blended ice-front drafts with those zeros (-186 m in PISM arrived as
+        # -79 m). Mask and domain indicator as before.
+        echo " *   regridding ice geometry to max-mesh nodes (masked draft, one hop)"
+        cdo -setmisstoc,5 -remapbil,${_griddes} -delname,mask,ice_subNN ${_geom} tmp1_cont.nc
+        cdo -remapbil,${_griddes} -expr,"fl=(mask==3)?1:0;dfl=(mask==3)?ice_subNN:0" ${_geom} tmp1_fl.nc
+        cdo -setmisstoc,0 -expr,"ice_subNN=(fl>0.001)?dfl/fl:0" tmp1_fl.nc tmp1_draft.nc
+        cdo -remapbil,${_griddes} -expr,"ind=mask*0+1" ${_geom} tmp1_ind.nc
+        cdo -remapnn,${_griddes} -selname,mask ${_geom} tmp1_nn.nc
+        cdo -setmisstoc,5 -mul tmp1_nn.nc tmp1_ind.nc tmp1_mask.nc
+        cdo merge tmp1_cont.nc tmp1_draft.nc tmp1_mask.nc tmp2.nc
+        ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
+        rm -f tmp1_cont.nc tmp1_fl.nc tmp1_draft.nc tmp1_ind.nc tmp1_nn.nc tmp1_mask.nc tmp2.nc
+    else
     echo " *   regridding ice geometry to max-mesh nodes (mask: remapnn + domain indicator)"
     cdo -setmisstoc,5 -remapbil,T512grid -delname,mask ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_cont.nc
     cdo -remapbil,T512grid -expr,"ind=mask*0+1" ${COUPLE_DIR}/latest_ice_geometry.nc tmp1_ind.nc
@@ -294,6 +312,19 @@ function build_submesh {
     cdo -remapnn,${MAXMESH_DIR_fesom}/${MESH_GRIDDES_fesom} tmp1.nc tmp2.nc
     ncks -O -d time,0 tmp2.nc ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc
     rm tmp1_cont.nc tmp1_ind.nc tmp1_nn.nc tmp1_mask.nc tmp1.nc tmp2.nc
+    fi
+
+    # 1a. Grounding line by element majority: an element straddling PISM's grounding
+    #     line stays in the cavity when most of its area floats. Its grounded nodes turn
+    #     floating with the ice base on the undug bed (aux3d_undug.out in the max mesh).
+    if [ "${GL_RULE:-none}" = "element_majority" ]; then
+        couple_timer "ice2fesom: gl_majority.py (element majority)"
+        echo " *   grounding line by element majority (gl_majority.py)"
+        GL_MAJORITY_MODE=element ${GL_MAJORITY_PY:-python3} ${FUNCTION_PATH}/../pism/gl_majority.py \
+            ${COUPLE_DIR}/latest_ice_geometry_for_fesom.nc ${MAXMESH_DIR_fesom}/ \
+            ${MAXMESH_DIR_fesom}/aux3d_undug.out ${_geom} \
+            || { echo " *   build_submesh ERROR: gl_majority.py failed"; return 1; }
+    fi
 
     # 2. Derive node flags (topo_raw, cavity_raw, mask) from the regridded geometry
     couple_timer "ice2fesom: mesh_flags.py"
@@ -352,7 +383,11 @@ print(int((np.loadtxt('${COUPLE_DIR}/${SUBMESH_DIR}/cavity_depth.out')<-1e-3).su
     [ -f ${mesh_dir}/cavity_depth.out ] \
         && mv ${mesh_dir}/cavity_depth.out ${mesh_dir}/cavity_depth@node.out
 
-    local meshpart_bin=${FESOM_BIN_DIR}/fesom_meshpart
+    local meshpart_bin=${FESOM_MESHPART_BIN:-${FESOM_BIN_DIR}/fesom_meshpart}
+    # fvom_init switches (patched fesom_meshpart): deepen the bottom instead of lifting
+    # the ice base, and average an element's ice base over its ice-covered nodes only
+    if [ "${CAVITY_DIG:-0}" = "1" ]; then export FESOM_CAVITY_DIG=1; else unset FESOM_CAVITY_DIG; fi
+    if [ "${CAVITY_ICEMEAN:-0}" = "1" ]; then export FESOM_CAVITY_ICEMEAN=1; else unset FESOM_CAVITY_ICEMEAN; fi
     if [ ! -x "${meshpart_bin}" ]; then
         echo " *   build_submesh ERROR: fesom_meshpart not found (${meshpart_bin})"
         echo " *   rebuild the -is fesom: esm_master recomp-awiesm3-${version:-develop-is}/fesom"

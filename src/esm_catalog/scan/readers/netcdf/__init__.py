@@ -28,6 +28,7 @@ import xarray as xr
 from upath import UPath
 
 from esm_catalog.scan.format import FileFormat
+from esm_catalog.scan.readers.format_plugins import hookimpl as format_hookimpl
 from esm_catalog.scan.readers.plugins import hookimpl
 from esm_catalog.types import FileMetadata
 
@@ -112,3 +113,25 @@ _READER = NetCDFReader()
 @hookimpl
 def get_reader(file_format: FileFormat):
     return _READER if file_format == FileFormat.netcdf else None
+
+
+_SUFFIXES = frozenset({".nc", ".nc4", ".cdf", ".netcdf"})
+"""Filename suffixes that unambiguously mean NetCDF."""
+
+_HDF5_MAGIC = b"\x89HDF"
+"""NetCDF-4 / HDF5 signature at offset 0."""
+
+_CDF_MAGIC = b"CDF"
+"""Classic NetCDF signature (CDF\\x01 / \\x02 / \\x05) at offset 0."""
+
+
+@format_hookimpl
+def claim_by_suffix(suffix: str):
+    return FileFormat.netcdf if suffix in _SUFFIXES else None
+
+
+@format_hookimpl
+def claim_by_magic(head: bytes):
+    if head.startswith(_HDF5_MAGIC) or head.startswith(_CDF_MAGIC):
+        return FileFormat.netcdf
+    return None

@@ -101,6 +101,95 @@ n_workers: 3000
 # log_dir: /custom/path/if/you/dont/want/$XDG_STATE_HOME/esm-catalog/logs
 """
 
+_OPTIONAL_FIELD_COMMENTS = {
+    "partition": "smp",
+    "qos": "12h",
+    "walltime": '"04:00:00"',
+    "bind_paths": "[/albedo]        # repeat for multiple mounts",
+    "container_bin": "singularity   # or apptainer -- identical CLI, different binary name",
+    "container_module": "singularity  # defaults to whatever container_bin is",
+    "push_after_scan": "false",
+    "server_url": "https://stac-dev.awi.de",
+    "log_dir": "/custom/path/if/you/dont/want/$XDG_STATE_HOME/esm-catalog/logs",
+}
+
+
+def render_vars_template(overrides: dict[str, Any] | None = None) -> str:
+    """Render the ``--dump-vars-template`` skeleton, honoring any ``--flag`` overrides.
+
+    Without *overrides* this is byte-identical to :data:`DEFAULT_VARS_TEMPLATE`.
+    With overrides (the same dict the CLI builds from its ``--flag`` options),
+    base identity fields substitute in, ``worker_mode`` selects which of the
+    array/multinode blocks is active (uncommented) vs shown for reference
+    (commented), and any overridden optional field is uncommented and filled
+    in rather than left as a commented example -- so a dump that was told
+    ``--worker-mode multinode --n-nodes 4`` actually produces a multinode
+    vars file instead of silently discarding those flags.
+    """
+    overrides = overrides or {}
+
+    job_prefix = overrides.get("job_prefix", "catalog")
+    scratch_dir = overrides.get(
+        "scratch_dir", "/albedo/scratch/user/CHANGE_ME/tmp/esm-cat-scan"
+    )
+    image_tag = overrides.get("image_tag", "CHANGE_ME")
+    exp_root = overrides.get(
+        "exp_root", "/albedo/work/projects/CHANGE_ME/esm_experiments/CHANGE_ME"
+    )
+    catalog_dir = overrides.get(
+        "catalog_dir", "/albedo/scratch/user/CHANGE_ME/tmp/esm-cat-scan/catalog"
+    )
+
+    worker_mode = overrides.get("worker_mode", "array")
+    n_workers = overrides.get("n_workers", 3000)
+    n_nodes = overrides.get("n_nodes", 4)
+    cores_per_node = overrides.get("cores_per_node", DEFAULT_CORES_PER_NODE)
+
+    array_active = worker_mode != "multinode"
+    array_prefix = "" if array_active else "# "
+    multinode_prefix = "# " if array_active else ""
+    worker_block = (
+        f"{array_prefix}worker_mode: array           # one SLURM job per worker -- Albedo, no tight running-job cap\n"
+        f"{array_prefix}n_workers: {n_workers}\n"
+        f"{multinode_prefix}worker_mode: multinode      # one job, srun fans workers out inside it -- sites with a\n"
+        f"{multinode_prefix}n_nodes: {n_nodes}                 # tight per-user running-job cap (e.g. DKRZ Levante: 20 running)\n"
+        f"{multinode_prefix}cores_per_node: {cores_per_node}         # workers per node in multinode mode (default: 128, Levante's compute node)"
+    )
+
+    optional_lines = []
+    for name, example in _OPTIONAL_FIELD_COMMENTS.items():
+        if name in overrides:
+            value = overrides[name]
+            if name == "bind_paths":
+                value = "[" + ", ".join(value) + "]"
+            elif isinstance(value, bool):
+                value = str(value).lower()
+            optional_lines.append(f"{name}: {value}")
+        else:
+            optional_lines.append(f"# {name}: {example}")
+
+    return (
+        "# Variables for 'esm-catalog distributed render-scripts'. Fill in the\n"
+        "# CHANGE_ME values, then:\n"
+        "#   esm-catalog distributed render-scripts my-vars.yaml --out-dir ./rendered\n"
+        "#\n"
+        "# Any of these can also be passed as a --flag instead (overrides the file);\n"
+        "# see 'esm-catalog distributed render-scripts --help'.\n"
+        "\n"
+        f"job_prefix: {job_prefix}          # SLURM job names become <job_prefix>-sched / -worker / -driver / -cleanup\n"
+        f"scratch_dir: {scratch_dir}   # coord/, container-cache/ live here\n"
+        f"image_tag: {image_tag}         # e.g. v6.68.0-rc.1-test-0.1.11\n"
+        f"exp_root: {exp_root}\n"
+        f"catalog_dir: {catalog_dir}\n"
+        "\n"
+        "# Pick a worker mode:\n"
+        f"{worker_block}\n"
+        "\n"
+        "# Optional, shown with their defaults:\n"
+        + "\n".join(optional_lines)
+        + "\n"
+    )
+
 
 def _normalize(context: dict[str, Any]) -> dict[str, Any]:
     """Return *context* with the computed template fields filled in.

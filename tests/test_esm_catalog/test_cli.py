@@ -346,3 +346,19 @@ def test_dump_vars_template_prints_yaml_and_skips_rendering(runner):
     assert result.exit_code == 0, result.output
     assert "job_prefix: catalog" in result.output
     assert "CHANGE_ME" in result.output
+
+
+def test_dump_vars_template_honours_worker_mode_flags(runner):
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--dump-vars-template",
+            "--worker-mode", "multinode", "--n-nodes", "4", "--partition", "compute",
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    assert "worker_mode: multinode" in result.output
+    assert "n_nodes: 4" in result.output
+    assert "partition: compute" in result.output
+    assert "# worker_mode: array" in result.output
+    assert "# n_workers: 3000" in result.output

@@ -9,6 +9,11 @@ extensions. An extension opts in by implementing the hook(s) that match which
 own ``apply_to_item``/``apply_to_collection``, e.g. ``esm_catalog.contacts``
 implements only ``apply_to_collection``, ``esm_catalog.datacube`` only
 ``apply_to_item``).
+
+datacube/namelist/paleo/contacts are esm_catalog's own, always registered
+directly. A separately-installed package contributes a STAC extension the
+same way, via the ``esm_catalog`` entry-point group -- see
+:mod:`esm_catalog.scan.readers.plugins` for the ``pyproject.toml`` shape.
 """
 
 from __future__ import annotations
@@ -67,6 +72,7 @@ def _build_plugin_manager() -> pluggy.PluginManager:
     pm.register(namelist)
     pm.register(paleo)
     pm.register(contacts)
+    pm.load_setuptools_entrypoints("esm_catalog")
     return pm
 
 

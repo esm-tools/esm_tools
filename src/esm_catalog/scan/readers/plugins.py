@@ -6,6 +6,17 @@ fast-path contract) -- the same pluggy mechanism, a third, independent hook,
 so the scan core dispatches through it instead of a hand-rolled
 ``dict[FileFormat, Reader]`` registry. A reader module opts in by
 implementing ``get_reader``; the core never imports a concrete reader.
+
+netcdf and grib are esm_catalog's own, always registered directly. A
+separately-installed package (e.g. a community Zarr reader) contributes one
+by shipping a module that implements ``get_reader`` and declaring it under
+the ``esm_catalog.readers`` entry-point group in its own package metadata,
+e.g. in ``pyproject.toml``::
+
+    [project.entry-points."esm_catalog.readers"]
+    zarr = "esm_catalog_zarr:reader_module"
+
+See :func:`get_reader_plugin_manager`.
 """
 
 from __future__ import annotations
@@ -41,6 +52,7 @@ def _build_plugin_manager() -> pluggy.PluginManager:
 
     pm.register(netcdf)
     pm.register(grib)
+    pm.load_setuptools_entrypoints("esm_catalog.readers")
     return pm
 
 

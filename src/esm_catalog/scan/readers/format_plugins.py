@@ -7,6 +7,11 @@ independent hook, so :func:`esm_catalog.scan.format.detect` never hard-codes a
 format's suffixes or magic bytes. A reader module opts in by implementing
 ``claim_by_suffix`` and/or ``claim_by_magic``; ``format.py`` never imports a
 concrete reader.
+
+netcdf and grib are esm_catalog's own, always registered directly. A
+separately-installed package contributes a format the same way a reader
+does, via the ``esm_catalog.formats`` entry-point group -- see
+:mod:`esm_catalog.scan.readers.plugins` for the ``pyproject.toml`` shape.
 """
 
 from __future__ import annotations
@@ -51,6 +56,7 @@ def _build_plugin_manager() -> pluggy.PluginManager:
 
     pm.register(netcdf)
     pm.register(grib)
+    pm.load_setuptools_entrypoints("esm_catalog.formats")
     return pm
 
 

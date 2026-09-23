@@ -11,15 +11,22 @@ the whole-Earth fallback.
 
 This module is the *basic*, model-agnostic reader -- always correct, but pays
 cfgrib's per-open reindexing cost. A model module can register two different
-kinds of model-specific help, via :mod:`.plugins`:
+kinds of model-specific help:
 
-- ``try_model_specific_read`` (see :mod:`.echam`) -- an alternative, faster
-  read for files it recognises (e.g. straight from eccodes headers), tried
-  before cfgrib; returning ``None`` falls through to the generic path.
-- an *enricher* (:func:`register_enricher`) -- post-processes the metadata
-  cfgrib/the fast path already produced (e.g. ECHAM's GRIB1 encoding, where
-  every field is stored under ``paramId=0`` and collapses to a single
-  ``unknown`` variable, which no fast path claims).
+- ``try_model_specific_read`` (see :mod:`.plugins`, implemented by
+  :mod:`.echam`) -- an alternative, faster read for files it recognises (e.g.
+  straight from eccodes headers), tried before cfgrib. Pluggy-based: this is
+  first-match dispatch, and a third-party package can contribute one via the
+  ``esm_catalog.grib`` entry-point group (see :mod:`.plugins`).
+- an *enricher* (:func:`register_enricher`, see :mod:`.echam`) --
+  post-processes the metadata cfgrib/the fast path already produced (e.g.
+  ECHAM's GRIB1 encoding, where every field is stored under ``paramId=0`` and
+  collapses to a single ``unknown`` variable, which no fast path claims).
+  Plain list, not pluggy: enrichers form a pipeline where each one must see
+  the previous one's output, which is not what a pluggy hook call does (it
+  hands every implementation the same original arguments and collects
+  independent results) -- a plain ordered list is the right data structure
+  for "apply these transforms in sequence."
 """
 
 from __future__ import annotations

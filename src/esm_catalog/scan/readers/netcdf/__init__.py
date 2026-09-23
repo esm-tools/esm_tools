@@ -27,6 +27,7 @@ import cf_xarray  # noqa: F401 - registers the .cf accessor on Dataset/DataArray
 import xarray as xr
 from upath import UPath
 
+from esm_catalog.scan.enrichers import run_enrichers
 from esm_catalog.scan.format import FileFormat
 from esm_catalog.scan.readers.format_plugins import hookimpl as format_hookimpl
 from esm_catalog.scan.readers.plugins import hookimpl
@@ -89,21 +90,26 @@ class NetCDFReader:
                 frequency = _infer_frequency(dataset)
                 primary = next(iter(dataset.data_vars), "unknown")
 
-        metadata: FileMetadata = {
-            "variable": primary,
-            "variables": variables,
-            "dimensions": dimensions,
-            "bbox": bbox,
-            "geometry": geometry,
-            "format": "netcdf",
-        }
-        if start is not None:
-            metadata["datetime_start"] = start
-            metadata["datetime_str"] = start.strftime("%Y%m")
-        if end is not None:
-            metadata["datetime_end"] = end
-        if frequency is not None:
-            metadata["frequency"] = frequency
+                metadata: FileMetadata = {
+                    "variable": primary,
+                    "variables": variables,
+                    "dimensions": dimensions,
+                    "bbox": bbox,
+                    "geometry": geometry,
+                    "format": "netcdf",
+                }
+                if start is not None:
+                    metadata["datetime_start"] = start
+                    metadata["datetime_str"] = start.strftime("%Y%m")
+                if end is not None:
+                    metadata["datetime_end"] = end
+                if frequency is not None:
+                    metadata["frequency"] = frequency
+                # Enrichment runs while the dataset is still open, same as the
+                # GRIB reader -- a model-specific enricher (e.g. a hypothetical
+                # FESOM quirk) may need it, not just the already-extracted metadata.
+                run_enrichers(path, FileFormat.netcdf, metadata, [dataset])
+
         return _drop_surrogates(metadata)
 
 

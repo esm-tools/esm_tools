@@ -15,28 +15,25 @@ kinds of model-specific help:
 
 - ``try_model_specific_read`` (see :mod:`.plugins`, implemented by
   :mod:`.echam`) -- an alternative, faster read for files it recognises (e.g.
-  straight from eccodes headers), tried before cfgrib. Pluggy-based: this is
-  first-match dispatch, and a third-party package can contribute one via the
+  straight from eccodes headers), tried before cfgrib. First-match dispatch,
+  and GRIB-specific: a third-party package contributes one via the
   ``esm_catalog.grib`` entry-point group (see :mod:`.plugins`).
-- an *enricher* (:func:`register_enricher`, see :mod:`.echam`) --
-  post-processes the metadata cfgrib/the fast path already produced (e.g.
-  ECHAM's GRIB1 encoding, where every field is stored under ``paramId=0`` and
-  collapses to a single ``unknown`` variable, which no fast path claims).
-  Plain list, not pluggy: enrichers form a pipeline where each one must see
-  the previous one's output, which is not what a pluggy hook call does (it
-  hands every implementation the same original arguments and collects
-  independent results) -- a plain ordered list is the right data structure
-  for "apply these transforms in sequence."
+- an *enricher* (see :mod:`esm_catalog.scan.enrichers`, implemented here by
+  :mod:`.echam`) -- post-processes the metadata cfgrib/the fast path already
+  produced (e.g. ECHAM's GRIB1 encoding, where every field is stored under
+  ``paramId=0`` and collapses to a single ``unknown`` variable). Not
+  GRIB-specific -- the same mechanism works for any reader's model-specific
+  quirks, so it's a shared module, not owned by this package.
 """
 
 from __future__ import annotations
 
 import warnings
-from typing import Callable
 
 import xarray as xr
 from upath import UPath
 
+from esm_catalog.scan.enrichers import run_enrichers
 from esm_catalog.scan.format import FileFormat
 from esm_catalog.scan.reader import UnsupportedContentError
 from esm_catalog.scan.readers.grib.plugins import get_grib_plugin_manager
@@ -49,18 +46,7 @@ from esm_catalog.scan.readers.netcdf.timeaxis import _extract_time_range
 from esm_catalog.scan.readers.netcdf.variables import _extract_variables
 from esm_catalog.types import FileMetadata
 
-__all__ = ["GRIBReader", "register_enricher"]
-
-#: An enricher post-processes a GRIB file's metadata in place, given the opened
-#: hypercube datasets. It returns the (possibly replaced) metadata.
-GribEnricher = Callable[[UPath, FileMetadata, list], FileMetadata]
-
-_ENRICHERS: list[GribEnricher] = []
-
-
-def register_enricher(enricher: GribEnricher) -> None:
-    """Register a model-specific *enricher* to run after the basic extraction."""
-    _ENRICHERS.append(enricher)
+__all__ = ["GRIBReader"]
 
 
 class GRIBReader:
@@ -104,8 +90,7 @@ class GRIBReader:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=xr.SerializationWarning)
                 metadata = _basic_metadata(datasets)
-                for enricher in _ENRICHERS:
-                    metadata = enricher(path, metadata, datasets)
+                metadata = run_enrichers(path, FileFormat.grib, metadata, datasets)
             return metadata
         finally:
             for dataset in datasets:
@@ -196,8 +181,3 @@ def claim_by_suffix(suffix: str):
 @format_hookimpl
 def claim_by_magic(head: bytes):
     return FileFormat.grib if head.startswith(_GRIB_MAGIC) else None
-
-
-# Import model enrichers for their registration side effect. Kept last so
-# register_enricher and the reader are defined first.
-from esm_catalog.scan.readers.grib import echam as _echam  # noqa: E402,F401

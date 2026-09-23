@@ -9,9 +9,15 @@ format's suffixes or magic bytes. A reader module opts in by implementing
 concrete reader.
 
 netcdf and grib are esm_catalog's own, always registered directly. A
-separately-installed package contributes a format the same way a reader
-does, via the ``esm_catalog.formats`` entry-point group -- see
-:mod:`esm_catalog.scan.readers.plugins` for the ``pyproject.toml`` shape.
+separately-installed package contributes a format by shipping a module that
+implements ``claim_by_suffix``/``claim_by_magic`` and declaring it under the
+``esm_catalog.formats`` entry-point group in its own package metadata, e.g.
+in ``pyproject.toml``::
+
+    [project.entry-points."esm_catalog.formats"]
+    zarr = "esm_catalog_zarr:format_module"
+
+See :func:`get_format_plugin_manager`.
 """
 
 from __future__ import annotations

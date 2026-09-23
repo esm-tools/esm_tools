@@ -834,21 +834,6 @@ def distributed_render_scripts(
     as the rest of the CLI. Required values missing from both the file and
     the flags are reported together, not one at a time.
     """
-    from esm_catalog.distributed import DEFAULT_VARS_TEMPLATE
-
-    if dump_vars_template:
-        click.echo(DEFAULT_VARS_TEMPLATE, nl=False)
-        return
-
-    import yaml
-
-    from esm_catalog.distributed import render_scripts
-    from esm_catalog.xdg import state_dir
-
-    context: dict = {}
-    if vars_file is not None:
-        context = yaml.safe_load(vars_file.read_text()) or {}
-
     overrides = {
         "job_prefix": job_prefix,
         "scratch_dir": scratch_dir,
@@ -869,7 +854,24 @@ def distributed_render_scripts(
         "server_url": server_url,
         "log_dir": log_dir,
     }
-    context.update({key: value for key, value in overrides.items() if value is not None})
+    overrides = {key: value for key, value in overrides.items() if value is not None}
+
+    if dump_vars_template:
+        from esm_catalog.distributed import render_vars_template
+
+        click.echo(render_vars_template(overrides), nl=False)
+        return
+
+    import yaml
+
+    from esm_catalog.distributed import render_scripts
+    from esm_catalog.xdg import state_dir
+
+    context: dict = {}
+    if vars_file is not None:
+        context = yaml.safe_load(vars_file.read_text()) or {}
+
+    context.update(overrides)
     context.setdefault("log_dir", str(state_dir() / "logs"))
 
     try:

@@ -89,11 +89,37 @@ computer:
        LC_ALL: en_US.UTF-8
 
     additional_flags:
-          - "--constraint=sapphire"
+          - --constraint=sapphire
 
     # Now choose the compiler_mpi
     # Note: We must set the environment first, oneapi or gcc
     choose_compiler_mpi:
+       intel2023_ompi416_spack:
+
+          add_module_actions:
+             # Load Intel compilers, MKL and openMPI
+             - "load oneapi2023-env/2023.2.0"
+             - "load oneapi/2023.2.0"
+             - "load git"
+             - "load git-lfs"
+             - "load cmake"
+             - "source ~smomw235/spack_c/share/spack/setup-env.sh"
+
+          add_spack_actions:
+             - "env activate -d ~smomw235/nesh-spack-setup"
+
+          add_export_vars:
+             FC: mpif90
+             F77: mpif90
+             MPIFC: mpif90
+             CC: mpicc
+             CXX: mpic++
+             MPIROOT: "\"$(mpif90 -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpif90 -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+
+             FCFLAGS: -free
+
+       # currently unused, but modules are up to date (last update 04/2026)
        intel2023_ompi415:
 
           add_module_actions:
@@ -131,27 +157,29 @@ computer:
              - "load git-lfs/3.4.0"
 
           add_export_vars:
-             #FC: mpiifort
-             #F77: mpiifort
-             #MPIFC: mpiifort
-             #CC: mpiicc
-             #CXX: mpiicpc
-             #MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-             #MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+             FC: mpiifort
+             F77: mpiifort
+             MPIFC: mpiifort
+             CC: mpiicc
+             CXX: mpiicpc
+             MPIROOT: "\"$(mpiifort -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             MPI_LIB: "\"$(mpiifort -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
-             FC: mpiifx
-             F77: mpiifx
-             MPIFC: mpiifx
-             CC: mpiicx
-             CXX: mpiicx
-             MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
-             MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
+             #FC: mpiifx
+             #F77: mpiifx
+             #MPIFC: mpiifx
+             #CC: mpiicx
+             #CXX: mpiicx
+             #MPIROOT: "\"$(mpiifx -show | perl -lne 'm{ -I(.*?)/include } and print $1')\""
+             #MPI_LIB: "\"$(mpiifx -show |sed -e 's/^[^ ]*//' -e 's/-[I][^ ]*//g')\""
 
              FCFLAGS: -free
+             #I_MPI_PMI: pmi2
+             #I_MPI_PMI_LIBRARY: /usr/lib64/libpmi2.so
              I_MPI_PMI_LIBRARY: libpmi.so
-             I_MPI_FABRICS: shm:ofi
-             I_MPI_LARGE_SCALE_THRESHOLD: 8192
-             I_MPI_DYNAMIC_CONNECTION: 1
+             #I_MPI_FABRICS: shm:ofi
+             #I_MPI_LARGE_SCALE_THRESHOLD: 8192
+             #I_MPI_DYNAMIC_CONNECTION: 1
 
     # Now we choose whether to use the modules available on the system (system_libs)
     # or modules compiled by ourselves (geomar_libs etc)
@@ -159,6 +187,40 @@ computer:
 
        system_libs:
           choose_compiler_mpi:
+             intel2023_ompi416_spack:
+
+                add_module_actions:
+                     - "load netlib-lapack/3.11.0"
+                     # CDO and NCO required for some pre and post processing
+                     - "load cdo/1.9.9"
+                     - "load nco/5.1.5"
+
+                add_export_vars:
+                     OMPI_ROOT: "\"$(spack location -i openmpi)\""
+                     HDF5_ROOT: "\"$(spack location -i hdf5)\""
+                     HDF5ROOT: $HDF5_ROOT
+                     NETCDF_DIR: "\"$(spack location -i netcdf-c)\"" 
+                     NETCDFROOT: $NETCDF_DIR
+                     NETCDFFROOT: "\"$(spack location -i netcdf-fortran)\"" 
+                     ECCODESROOT: "\"$(spack location -i eccodes)\"" 
+                     XML2ROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/libxml2-2.10.3-jo44xw2wd6qade42357gg67zcyo6rb2n/"
+
+                     LD_LIBRARY_PATH: $ECCODESROOT/lib64:$LD_LIBRARY_PATH
+
+                     # For OASIS
+                     HDF5_C_INCLUDE_DIRECTORIES: $HDF5_ROOT/include
+                     NETCDF_Fortran_INCLUDE_DIRECTORIES: $NETCDFFROOT/include
+                     NETCDF_C_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                     NETCDF_CXX_INCLUDE_DIRECTORIES: $NETCDFROOT/include
+                     OASIS3MCT_FC_LIB: '"-L$NETCDFFROOT/lib -lnetcdff"'
+
+                     # For OASIS3-MCT5 from CERFACS
+                     OASIS_NETCDF: $NETCDF_DIR
+                     OASIS_NETCDFF: $NETCDF_DIR
+
+                     # bug in PMix 5.0.x
+                     PMIX_MCA_gdsr: ^shmem
+
              intel2023_ompi415:
 
                 add_module_actions:
@@ -177,11 +239,11 @@ computer:
                      - "load nco/5.1.5"
 
                 add_export_vars:
-                     HDF5_ROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/hdf5-1.14.3-73mngmtw2omzhb2j5oecftt6t6el4onf/"
+                     HDF5_ROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/hdf5-1.14.3-kzdygehueajyek7oi6raggxomytq3rcs/" 
                      HDF5ROOT: $HDF5_ROOT
-                     NETCDF_DIR: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-c-4.9.2-svxsecq3zyzo3wbfa26hl6nkundr7ph7/"
+                     NETCDF_DIR: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-c-4.9.2-eui5qkur5g2wm4e5cvw4yz37rdxnanrk/"
                      NETCDFROOT: $NETCDF_DIR
-                     NETCDFFROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-fortran-4.6.0-ghfiiqei4cz5mdsnzqwazj5gmepmgxut/" 
+                     NETCDFFROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-fortran-4.6.0-x7kw2kpfwvmannhow6oqmqgaeq5wxdke/lib/" 
                      ECCODESROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/eccodes-2.34.1-yk4grts4gppymo2cg5jrqydkrkb3we43/"
                      #NETLIBLAPACKROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netlib-lapack-3.11.0-krwsdhfz7f26fod7vtcjmzmqpscstyks/"
                      XML2ROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/libxml2-2.10.3-jo44xw2wd6qade42357gg67zcyo6rb2n/"
@@ -206,9 +268,10 @@ computer:
                      # CMake required to build some models
                      - "load cmake/3.27.4"
                      # HDF5 and netCDF required by most models
-                     - "load hdf5/1.14.1-2-with-with-oneapi-mpi-2021.10.0"
-                     - "load netcdf-c/4.9.2-with-oneapi-mpi-2021.10.0"
-                     - "load netcdf-fortran/4.6.0-with-oneapi-mpi-2021.10.0"
+                     - "load hdf5/1.14.3-with-with-oneapi-mpi-2021.10.0"
+                     - "load netcdf-c/4.9.2-with-oneapi-mpi-2021.10.0-hdf5-1.14.3"
+                     - "load netcdf-fortran/4.6.0-with-oneapi-mpi-2021.10.0-hdf5-1.14.3"
+                     - "load netlib-lapack/3.11.0"
                      # ecCodes required by OpenIFS
                      #- "load eccodes/2.25.0"
                      - "load eccodes/2.34.1"
@@ -226,8 +289,9 @@ computer:
                      ECCODESROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/eccodes-2.34.1-yk4grts4gppymo2cg5jrqydkrkb3we43/"
                      NETCDF_CXX_LIBRARIES: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netcdf-cxx4-4.3.1-n6bh6c2tp5yrnd5xotosfnk5vu3yxoga/lib"
                      XML2ROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/libxml2-2.10.3-jo44xw2wd6qade42357gg67zcyo6rb2n/"
+                     BZIP2ROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/bzip2-1.0.8-kedl63scrxp4oa3lmbedqanjoc33luxu/"
                      # Loading modules adds them to LD_LIBRARY_PATH
-                     #LD_LIBRARY_PATH: $NETCDF_DIR/lib/:$LD_LIBRARY_PATH
+                     LD_LIBRARY_PATH: $BZIP2ROOT/lib/:$LD_LIBRARY_PATH
 
                      # for ICON and FESOM
                      #NETLIBLAPACKROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netlib-lapack-3.11.0-krwsdhfz7f26fod7vtcjmzmqpscstyks/"

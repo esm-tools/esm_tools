@@ -55,6 +55,7 @@ aleph:
 nesh:
         login_nodes: 'nesh-login*'
         compute_nodes:
+               - 'nesh-srp*'
                - 'nesh-slk*'
                - 'nesh-clk*'
                - 'nesh-web*'

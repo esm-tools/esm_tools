@@ -56,61 +56,47 @@
  hdiff_tv_ratio          = 1.0
 /
 &nwp_phy_nml
- itype_satpres_coeffs = 2
- scale_cdnc_mode        = 2             ! for modis cdnc, scaling factor for simple plumes, =1 historical scaling factor to 2005, =2 picontrol scaling factor to 1850
- inwp_gscp               = 1	! 3
- !icalc_reff              = 100 
- !icpl_rad_reff           = 1
+ inwp_gscp               = 1
  inwp_convection         = 1
  inwp_radiation          = 4
  inwp_cldcover           = 1
  inwp_satad              = 1
  inwp_sso                = 1
  inwp_gwd                = 1
- latm_above_top          = .FALSE.
+ latm_above_top          = .false.
  efdt_min_raylfric       = 7200.
  itype_z0                = 2
  icapdcycl               = 3
- icpl_aero_conv          = 1	! 0: off
-				! 1: requires climatology cloud_num which Kinne does not have. Must use with icpl_aero_gscp=3 (external cdnc)
- icpl_aero_gscp          = 3	!=0 off without modis cdnc and irad_aero=12, default; =1 if irad_aero=6 or 9 is used; =3 for external modis cd
+ icpl_aero_conv          = 0           ! 1 if irad_aero=6 or 9 is used - 0 for irad_aero=12
+ icpl_aero_gscp          = 0           ! 1 if irad_aero=6 or 9 is used - 0 for irad_aero=12
  icpl_o3_tp              = 1
- icpl_aero_ice		 = 0	! 2
+ !lshallow_liquid_only   = .true.
  dt_rad                  = 3600.
- dt_conv                 = 900.       ! time step for convection in s (domain specific)
- dt_sso                  = 900.       ! time step for SSO parameterization
- dt_gwd                  = 900.       ! time step for gravity wave drag parameterization
+ dt_conv                 = 1800.       ! time step for convection in s (domain specific)
+ dt_sso                  = 1800.       ! time step for SSO parameterization
+ dt_gwd                  = 1800.       ! time step for gravity wave drag parameterization
  !                                     ! parameters for jsbach/vdiff land model:
  inwp_surface            = 2           ! 1 = terra; 2 = JSBACH
  inwp_turb               = 6           ! 1 = terra; 6 = VDIFF
- lconv_cdnc_interp      = .true.  	!activates deep convection, requires modis/cdnc (icpl_aero_conv=1)
- itype_parcel_ascent    = 2       	! =1 for icon-nwp quadratic profile, =2 for ifs type parcel ascent with cubic profile (Bechtold et al. 20
 /
 &nwp_tuning_nml
- tune_gcstar = 2	! 1
- tune_rprcon             =  0.0012
  itune_albedo            = 0                         ! somewhat reduced albedo (w.r.t. MODIS data) over Sahara 
- tune_zceff_min          = 0.025	!1.0e-4	!0.025 
- tune_gkdrag             = 0.065
- tune_gkwake             = 0.5		!1.4
- tune_gfrcrit            = 0.38		!0.45
- tune_grcrit		 = 0.5		!NA
- tune_gkdrag_enh 	 = 0.09		!NA
- tune_grcrit_enh 	 = 0.55		!NA
+ tune_zceff_min          = 0.025                     ! ** default value to be used for R3B7; use 0.025 for R2B6
+ tune_gkdrag             = 0.075                     ! R2B6: 0.075  
+ tune_gkwake             = 1.5                       ! R2B6: 1.5
+ tune_gfrcrit            = 0.425                     ! R2B6: 0.425
  tune_dust_abs           = 0.
- tune_box_liq_asy        = 3.0
+ tune_box_liq_asy        = 3.35  !sl 3.5             ! oper global: 3.0 , oper D2: 3.25, default: 2.5
  tune_box_liq            = 0.05
  tune_rcucov             = 0.075
  tune_rhebc_land         = 0.825
  tune_gust_factor        = 7.0
  icpl_turb_clc           = 1
- lcalib_clcov            = .FALSE.     ! turn off TCC, HCC, MCC, LCC tuning
- tune_eiscrit            = 7.0         ! switch off conv. param. in stratocumulus regions
- tune_zvz0i              = 0.85         ! Terminal fall velocity of ice
- tune_entrorg            = 1.95e-3     ! Entrainment parameter
- tune_sc_eis             = 7.          
- tune_rmfdeps_land       = 0.30        ! fractional mass flux for downdrafts over land (default, 0.25)
- tune_rmfdeps_ocean      = 0.25        ! fractional mass flux for downdrafts over ocean (default, 0.15)
+ lcalib_clcov            = .false.                   ! turn off TCC, HCC, MCC, LCC tuning
+ tune_eiscrit            = 7.0                       ! to switch off conv param in stratocumulus regions
+ tune_zvz0i              = 0.85    ! 1.2 !  0.6      ! default: 0.85   ; Terminal fall velocity of ice
+ tune_entrorg            = 2.1e-3  !sl 3.0e-3 ! 2.2e-3 ! default: 1.95e-3; Entrainment parameter valid for dx=20 km
+ tune_sc_eis             = 7.            !  7.       ! default: 1000. - exec newer 633d375ad0
 /
 &turbdiff_nml
  tkhmin                  = 0.6
@@ -147,11 +133,10 @@ rbf_scale_mode_ll        = 2
 ! support_baryctr_intp XS  =.true.,
 /
 &nonhydrostatic_nml
- ndyn_substeps	= 8
  iadv_rhotheta           = 2
  ivctype                 = 2
  itime_scheme            = 4
- exner_expol             = 0.5	!0.333
+ exner_expol             = 0.333
  vwind_offctr            = 0.2                       ! 0.2 for R2B6 and higher resolution, 0.3 for lower resolution
  damp_height             = 44000.                    
  rayleigh_coeff          = 0.5001                       ! default: 0.05
@@ -232,9 +217,6 @@ rbf_scale_mode_ll        = 2
  filename_format         = "<output_filename>_<datetime2>"
  ml_varlist              = 'tas_gmean','rsdt_gmean','rsut_gmean','rlut_gmean','radtop_gmean','prec_gmean','evap_gmean','pme_gmean'
 /
-!
-! 2d output
-!
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
  output_end              = "2094-01-01T00:00:00Z"
@@ -249,16 +231,13 @@ rbf_scale_mode_ll        = 2
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid
  operation               = "mean"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'pres_msl', 'pres_sfc', 't_s', 'clct', 'tot_prec_rate',
+ ml_varlist              = 'pres_msl', 'pres_sfc', 'sod_t', 'sou_t', 'thb_t', 't_s', 'clct', 'tot_prec_rate',
                            'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m',
-                           'sob_t', 'sod_t', 'sou_t', 'thb_t', 'sob_s', 'sou_s', 'thb_s', 'shfl_s', 'lhfl_s',
-                           'rain_con_rate', 'rain_gsp_rate', 'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate',          
-                           'rain_con', 'rain_gsp', 'prec_con','prec_gsp_rate',                                          
-                           'qifl_s', 'qhfl_s',
-                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 'meltpot_ice', 't_ice', 'h_ice',
+                           'sob_t', 'thb_t', 'sob_s', 'thb_s', 'shfl_s', 'lhfl_s', 'qhfl_s', 
+                           'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate', 'qifl_s',
+                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 't_ice', 'h_ice',
                            'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
 /
-! daily 2d output
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
  output_end              = "2094-01-01T00:00:00Z"
@@ -273,51 +252,14 @@ rbf_scale_mode_ll        = 2
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid
  operation               = "mean"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'pres_msl', 'pres_sfc', 't_s', 'clct', 'tot_prec_rate',
-                           'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m', rh_2m,
-                           'sob_t', 'sod_t', 'sou_t', 'thb_t', 'sob_s', 'sou_s', 'thb_s', 'shfl_s', 'lhfl_s',
-                           'rain_con_rate', 'rain_gsp_rate', 'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate',          
-                           'rain_con', 'rain_gsp', 'prec_con','prec_gsp_rate',                                          
-                           'qifl_s', 'qhfl_s',
-                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 'meltpot_ice', 't_ice', 'h_ice',
+ ml_varlist              = 'pres_msl', 'pres_sfc', 'sod_t', 'sou_t', 'thb_t', 't_s', 'clct', 'tot_prec_rate',
+                           'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m',
+                           'sob_t', 'thb_t', 'sob_s', 'thb_s', 'shfl_s', 'lhfl_s', 'qhfl_s', 
+                           'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate', 'qifl_s',
+                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 't_ice', 'h_ice',
                            'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
 /
-! daily 2d min/max 
-&output_nml
- output_start            = "1958-01-01T00:00:00Z"
- output_end              = "2094-01-01T00:00:00Z"
- output_interval         = "P1D"  ! the output interval and
- file_interval           = "P50Y"    ! the file interval
- filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
- dom                     = -1		             
- mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
- include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_atm_2d_min"    ! file name base
- filename_format         = "<output_filename>_<datetime2>"
- output_grid             = .TRUE.                    ! flag whether grid information is added to output.
- remap                   = 0                         ! 1: latlon,  0: native grid
- operation               = "min"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'sp_10m', 't_2m', 'rh_2m'
-/
-&output_nml
- output_start            = "1958-01-01T00:00:00Z"
- output_end              = "2094-01-01T00:00:00Z"
- output_interval         = "P1D"  ! the output interval and
- file_interval           = "P50Y"    ! the file interval
- filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
- dom                     = -1		             
- mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
- include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_atm_2d_max"    ! file name base
- filename_format         = "<output_filename>_<datetime2>"
- output_grid             = .TRUE.                    ! flag whether grid information is added to output.
- remap                   = 0                         ! 1: latlon,  0: native grid
- operation               = "max"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'sp_10m', 't_2m', 'rh_2m'
-/
-!
-! 3d output
-!
+! 3d output 
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
  output_end              = "2094-01-01T00:00:00Z"
@@ -334,81 +276,25 @@ rbf_scale_mode_ll        = 2
  operation               = "mean"                    ! works on icon grid only (remap=0)
  ml_varlist              = 'pres', 'geopot', 'temp', 'u', 'v', 'qv', 'rh', 'clc', 'tot_qc_dia', 'tot_qi_dia'
 /
-! daily 3d
+! selected levels for 3d as daily output
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
  output_end              = "2094-01-01T00:00:00Z"
- output_interval         = "P1D"  ! the output interval and
+ output_interval         = "PT3H"  ! the output interval and
  file_interval           = "P50Y"    ! the file interval
  filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
  dom                     = -1		             
  mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
  include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_atm_3d_ml_daily"    ! file name base
+ output_filename         = "icon_atm_3d_pl_daily"    ! file name base
  filename_format         = "<output_filename>_<datetime2>"
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid
- operation               = "mean"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'pres', 'geopot', 'temp', 'u', 'v', 'qv', 'clc', 'tot_qc_dia', 'tot_qi_dia' 
-/
-! selected levels for 3d as daily output
-! not used as we use ml output and then interpolate afterwards
-!&output_nml
-! output_start            = "1958-01-01T00:00:00Z"
-! output_end              = "2094-01-01T00:00:00Z"
-! output_interval         = "PT3H"  ! the output interval and
-! file_interval           = "P50Y"    ! the file interval
-! filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
-! dom                     = -1		             
-! mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
-! include_last            = .FALSE.                   ! flag whether to include the last time step
-! output_filename         = "icon_atm_3d_pl_daily"    ! file name base
-! filename_format         = "<output_filename>_<datetime2>"
-! output_grid             = .TRUE.                    ! flag whether grid information is added to output.
-! remap                   = 0                         ! 1: latlon,  0: native grid
-! !operation               = "mean"                    ! works on icon grid only (remap=0)
-! ! 'clc', 'tot_qc_dia', 'tot_qi_dia' do not work, see Sebastian's (swahl@geomar.de) bug report
-! !pl_varlist              = 'geopot', 'temp', 'u', 'v', 'qv', 'clc', 'tot_qc_dia', 'tot_qi_dia'
-! pl_varlist              = 'geopot', 'temp', 'u', 'v', 'qv'
-! p_levels                = 100000, 92500, 85000, 77500, 70000, 60000, 50000, 40000, 30000, 25000, 20000, 15000, 10000, 7000, 5000, 3000, 2000, 1000, 700, 500, 300, 200, 100, 50, 20, 10
-!/
-!
-! land output
-!
-&output_nml
- output_start            = "2595-01-01T00:00:00Z"
- output_end              = "5000-01-01T00:00:00Z"
- output_interval         = "P1M"  ! the output interval and
- file_interval           = "P50Y"    ! the file interval
- filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
- dom                     = -1                        
- mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
- include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_jsb_2d"       ! file name base
- filename_format         = "<output_filename>_<datetime2>"
- output_grid             = .TRUE.                    ! flag whether grid information is added to output.
- remap                   = 0                         ! 1: latlon,  0: native grid
- operation               = "mean"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'group:jsb_seb_basic','group:jsb_hydro_basic',
-			   'group:jsb_sse_basic', 'group:jsb_pheno_basic',
-			   'group:jsb_rad_basic','group:jsb_alcc_basic',
-			   'group:jsb_all_basic','hydro_weq_snow_box'
-/
-&output_nml ! 'lnd_mon'
- output_start            = "2595-01-01T00:00:00Z"
- output_end              = "5000-01-01T00:00:00Z"
- output_interval         = "P1M"  ! the output interval and
- file_interval           = "P50Y"    ! the file interval
- filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
- dom                     = -1                        
- mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
- include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_lnd_mon"      ! file name base
- filename_format         = "<output_filename>_<datetime2>"
- output_grid             = .TRUE.                    ! flag whether grid information is added to output.
- remap                   = 0                         ! 1: latlon,  0: native grid
- operation               = "mean"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'group:jsb_mon'
+ !operation               = "mean"                    ! works on icon grid only (remap=0)
+ ! 'clc', 'tot_qc_dia', 'tot_qi_dia' do not work, see Sebastian's (swahl@geomar.de) bug report
+ !pl_varlist              = 'geopot', 'temp', 'u', 'v', 'qv', 'clc', 'tot_qc_dia', 'tot_qi_dia'
+ pl_varlist              = 'geopot', 'temp', 'u', 'v', 'qv'
+ p_levels                = 100000, 92500, 85000, 77500, 70000, 60000, 50000, 40000, 30000, 25000, 20000, 15000, 10000, 7000, 5000, 3000, 2000, 1000, 700, 500, 300, 200, 100, 50, 20, 10
 /
 &dbg_index_nml
   idbg_mxmn              = 1                          ! initialize MIN/MAX  debug output

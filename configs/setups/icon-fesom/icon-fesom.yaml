@@ -12,13 +12,16 @@ computer:
                LIBFYAMLROOT: "/sw/spack-levante/libfyaml-0.7.12-fvbhgo/" 
                ICON_CONFIGURE_COMMAND: "config/dkrz/levante.intel"
         nesh:
-            compiler_mpi: intel2023_ompi415
+            compiler_mpi: intel2023_ompi416_spack
+            #compiler_mpi: intel2023_ompi415
+            #compiler_mpi: intel2023_impi2021
             iolibraries: system_libs
             add_export_vars:
                NETLIBLAPACKROOT: "/gxfs_home/sw/spack/spack0.20.1/usr/opt/spack/linux-rocky8-x86_64/oneapi-2023.2.0/netlib-lapack-3.11.0-krwsdhfz7f26fod7vtcjmzmqpscstyks/"
                LIBFYAMLROOT: "/gxfs_home/geomar/smomw235/sw/libfyaml-0.9.6/" 
-               #ICON_CONFIGURE_COMMAND: "config/nesh/nesh.intel"
-               ICON_CONFIGURE_COMMAND: "${general.esm_function_dir}/components/icon/nesh.intel"
+               ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intelspack"
+               #ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intel"
+               #ICON_CONFIGURE_COMMAND: "${general.esm_configs_dir}/components/icon/nesh.intelmpi"
                 
 general:
     model: icon-fesom 

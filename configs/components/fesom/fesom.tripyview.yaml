@@ -86,7 +86,7 @@ fesom:
         next_run_triggered_by: tidy
         subjobs:
             Tripy_Fesom:
-                batch_or_shell: batch
+                batch_or_shell: shell # does not work with mpirun, but srun, hence 'shell'
                 order_in_cluster: concurrent
                 run_on_queue: ${computer.partitions.pp.name}
                 run_after: tidy

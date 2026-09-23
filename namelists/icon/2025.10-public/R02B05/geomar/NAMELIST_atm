@@ -79,6 +79,7 @@
  dt_conv                 = 450     ! time step for convection in s (domain specific)
  dt_sso                  = 450     ! time step for SSO parameterization
  dt_gwd                  = 450    	! time step for gravity wave drag parameterization
+ !                                     ! parameters for jsbach/vdiff land model:
  inwp_surface            = 2           ! 1 = terra; 2 = JSBACH
  inwp_turb               = 6           ! 1 = terra; 6 = VDIFF
  lconv_cdnc_interp      = .true.  	!activates deep convection, requires modis/cdnc (icpl_aero_conv=1)
@@ -199,30 +200,9 @@
  filename_format         = "<output_filename>_<datetime2>"
  ml_varlist              = 'tas_gmean','rsdt_gmean','rsut_gmean','rlut_gmean','radtop_gmean','prec_gmean','evap_gmean','pme_gmean'
 /
-! 2D output additionally as daily
-&output_nml
- output_start            = "1958-01-01T00:00:00Z"
- output_end              = "2094-01-01T00:00:00Z"
- output_interval         = "P1D"  ! the output interval and
- file_interval           = "P50Y"    ! the file interval
- filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
- dom                     = -1		             
- mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
- include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_atm_2d_ml_daily"    ! file name base
- filename_format         = "<output_filename>_<datetime2>"
- output_grid             = .TRUE.                    ! flag whether grid information is added to output.
- remap                   = 0                         ! 1: latlon,  0: native grid
- operation               = "mean"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'pres_msl', 'pres_sfc', 't_s', 'clct', 'tot_prec_rate',
-                           'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m',
-                           'sob_t', 'sod_t', 'sou_t', 'thb_t', 'sob_s', 'sou_s', 'thb_s', 'shfl_s', 'lhfl_s',
-                           'rain_con_rate', 'rain_gsp_rate', 'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate',          
-                           'rain_con', 'rain_gsp', 'prec_con','prec_gsp_rate',                                          
-                           'qifl_s', 'qhfl_s',
-                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 'meltpot_ice', 't_ice', 'h_ice',
-                           'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
-/
+!
+! 2d output
+!
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
  output_end              = "2094-01-01T00:00:00Z"
@@ -246,7 +226,7 @@
                            't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 'meltpot_ice', 't_ice', 'h_ice',
                            'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
 /
-! save a subset as daily
+! daily 2d output
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
  output_end              = "2094-01-01T00:00:00Z"
@@ -256,13 +236,56 @@
  dom                     = -1		             
  mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
  include_last            = .FALSE.                   ! flag whether to include the last time step
- output_filename         = "icon_atm_3d_ml_daily"    ! file name base
+ output_filename         = "icon_atm_2d_ml_daily"    ! file name base
  filename_format         = "<output_filename>_<datetime2>"
  output_grid             = .TRUE.                    ! flag whether grid information is added to output.
  remap                   = 0                         ! 1: latlon,  0: native grid
  operation               = "mean"                    ! works on icon grid only (remap=0)
- ml_varlist              = 'pres', 'geopot', 'temp', 'u', 'v', 'qv' 
+ ml_varlist              = 'pres_msl', 'pres_sfc', 't_s', 'clct', 'tot_prec_rate',
+                           'tqv', 'tqv_dia', 'tqc_dia', 'tqi_dia', 'umfl_s', 'vmfl_s', 'sp_10m', 't_2m', rh_2m,
+                           'sob_t', 'sod_t', 'sou_t', 'thb_t', 'sob_s', 'sou_s', 'thb_s', 'shfl_s', 'lhfl_s',
+                           'rain_con_rate', 'rain_gsp_rate', 'snow_con_rate', 'snow_gsp_rate', 'ice_gsp_rate',          
+                           'rain_con', 'rain_gsp', 'prec_con','prec_gsp_rate',                                          
+                           'qifl_s', 'qhfl_s',
+                           't_seasfc', 'fr_land', 'fr_seaice', 'condhf_ice', 'meltpot_ice', 't_ice', 'h_ice',
+                           'albvisdif', 'albvisdir', 'albnirdif', 'albnirdir'
 /
+! daily 2d min/max 
+&output_nml
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1D"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1		             
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "icon_atm_2d_min"    ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "min"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'sp_10m', 't_2m', 'rh_2m'
+/
+&output_nml
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1D"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1		             
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "icon_atm_2d_max"    ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "max"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'sp_10m', 't_2m', 'rh_2m'
+/
+!
+! 3d output
+!
 &output_nml
  output_start            = "1958-01-01T00:00:00Z"
  output_end              = "2094-01-01T00:00:00Z"
@@ -279,6 +302,47 @@
  operation               = "mean"                    ! works on icon grid only (remap=0)
  ml_varlist              = 'pres', 'geopot', 'temp', 'u', 'v', 'qv', 'rh', 'clc', 'tot_qc_dia', 'tot_qi_dia'
 /
+! daily 3d
+&output_nml
+ output_start            = "1958-01-01T00:00:00Z"
+ output_end              = "2094-01-01T00:00:00Z"
+ output_interval         = "P1D"  ! the output interval and
+ file_interval           = "P50Y"    ! the file interval
+ filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+ dom                     = -1		             
+ mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+ include_last            = .FALSE.                   ! flag whether to include the last time step
+ output_filename         = "icon_atm_3d_ml_daily"    ! file name base
+ filename_format         = "<output_filename>_<datetime2>"
+ output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+ remap                   = 0                         ! 1: latlon,  0: native grid
+ operation               = "mean"                    ! works on icon grid only (remap=0)
+ ml_varlist              = 'pres', 'geopot', 'temp', 'u', 'v', 'qv', 'clc', 'tot_qc_dia', 'tot_qi_dia' 
+/
+! selected levels for 3d as daily output
+! not used as we use ml output and then interpolate afterwards
+!&output_nml
+! output_start            = "1958-01-01T00:00:00Z"
+! output_end              = "2094-01-01T00:00:00Z"
+! output_interval         = "PT3H"  ! the output interval and
+! file_interval           = "P50Y"    ! the file interval
+! filetype                = 4                         ! output format: 2=GRIB2, 4=NETCDFv2
+! dom                     = -1		             
+! mode                    =  1                        ! 1: forecast mode (relative t-axis); 2: climate mode
+! include_last            = .FALSE.                   ! flag whether to include the last time step
+! output_filename         = "icon_atm_3d_pl_daily"    ! file name base
+! filename_format         = "<output_filename>_<datetime2>"
+! output_grid             = .TRUE.                    ! flag whether grid information is added to output.
+! remap                   = 0                         ! 1: latlon,  0: native grid
+! !operation               = "mean"                    ! works on icon grid only (remap=0)
+! ! 'clc', 'tot_qc_dia', 'tot_qi_dia' do not work, see Sebastian's (swahl@geomar.de) bug report
+! !pl_varlist              = 'geopot', 'temp', 'u', 'v', 'qv', 'clc', 'tot_qc_dia', 'tot_qi_dia'
+! pl_varlist              = 'geopot', 'temp', 'u', 'v', 'qv'
+! p_levels                = 100000, 92500, 85000, 77500, 70000, 60000, 50000, 40000, 30000, 25000, 20000, 15000, 10000, 7000, 5000, 3000, 2000, 1000, 700, 500, 300, 200, 100, 50, 20, 10
+!/
+!
+! land output
+!
 &output_nml
  output_start            = "2595-01-01T00:00:00Z"
  output_end              = "5000-01-01T00:00:00Z"

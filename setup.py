@@ -114,6 +114,13 @@ setup(
             "platformdirs>=4.0",
             "pyyaml>=6.0",
         ],
+        # GRIB support is opt-in: cfgrib/eccodes pull the ecCodes C library, which
+        # is heavy and awkward in CI, so the scanner treats GRIB as unsupported
+        # (a clean skip) unless this extra is installed.
+        "catalog-grib": [
+            "cfgrib>=0.9",
+            "eccodes>=1.5",
+        ],
         # Only needed to run tests/test_esm_catalog.
         # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py
         # writes NetCDF fixtures via xarray's to_netcdf() (scipy: NETCDF3, no HDF5

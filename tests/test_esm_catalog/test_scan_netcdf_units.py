@@ -250,11 +250,15 @@ def test_extract_dimensions_spatial_extent_unit_and_axes():
     assert dims["lon"]["unit"] == "degrees_east"
 
 
-def test_extract_dimensions_unclassified_dim_is_spatial_without_axis():
-    """A dimension cf cannot classify stays plain ``spatial``."""
+def test_extract_dimensions_unclassified_dim_has_no_type_or_axis():
+    """A dimension cf cannot classify gets an extent but no (misleading) type.
+
+    (Since #1564: an unidentified index dimension -- e.g. FESOM's ``elem`` -- must
+    not be labelled ``spatial``.)
+    """
     dataset = xr.Dataset({"v": (("bnds",), np.zeros(2, "float32"))})
     dims = _extract_dimensions(dataset)
-    assert dims["bnds"]["type"] == "spatial"
+    assert "type" not in dims["bnds"]
     assert "axis" not in dims["bnds"]
 
 

@@ -7,6 +7,11 @@ Workflow for one experiment::
     esm-catalog push                             # ship new shards -> pgstac
     esm-catalog status                           # what's local, what's configured
 
+A large scan is distributed across SLURM instead::
+
+    esm-catalog distributed render-scripts VARS_FILE   # sched/worker/driver/cleanup .sbatch
+    esm-catalog scan --distributed --scheduler tcp://...  # what the driver script runs
+
 On disk, ``<exp_root>/catalog/`` holds the catalog PFS-friendly: one
 ``collection.json`` plus sharded stac-geoparquet (a handful of files, never one
 JSON per item), and an ``esm-catalog.json`` workspace-state file (experiment id
@@ -681,6 +686,218 @@ def status(exp_root: str) -> None:
             "push target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",
             fg="yellow",
         )
+
+
+@main.command("list-plugins")
+@click.pass_context
+def list_plugins(ctx: click.Context) -> None:
+    """List registered Item/Collection extension plugins.
+
+    Each extension (datacube, namelist, paleo, contacts, ...) registers
+    itself against the item and/or collection contract (see
+    esm_catalog.plugins) rather than being hardcoded into item/collection
+    building — this shows what is currently registered.
+    """
+    from esm_catalog.plugins import get_plugin_manager
+
+    pm = get_plugin_manager()
+    item_impls = {hi.plugin_name for hi in pm.hook.apply_to_item.get_hookimpls()}
+    collection_impls = {
+        hi.plugin_name for hi in pm.hook.apply_to_collection.get_hookimpls()
+    }
+
+    rows = []
+    for name, plugin in pm.list_name_plugin():
+        hooks = []
+        if name in item_impls:
+            hooks.append("item")
+        if name in collection_impls:
+            hooks.append("collection")
+        doc = (plugin.__doc__ or "").strip().splitlines()
+        rows.append(
+            {"plugin": name, "hooks": hooks, "description": doc[0] if doc else ""}
+        )
+
+    if ctx.obj.get("json"):
+        click.echo(json.dumps(rows, indent=2))
+        return
+
+    from rich.console import Console
+    from rich.table import Table
+
+    table = Table()
+    table.add_column("Plugin")
+    table.add_column("Contract")
+    table.add_column("Description")
+    for row in rows:
+        table.add_row(row["plugin"], ", ".join(row["hooks"]), row["description"])
+    Console().print(table)
+
+
+@main.group()
+def distributed() -> None:
+    """Render the SLURM + Dask + Singularity pipeline for a large scan.
+
+    'esm-catalog scan --distributed --scheduler tcp://...' attaches to an
+    already-running Dask scheduler; it does not create one. This group
+    renders the SLURM scripts that do -- see 'render-scripts --help'.
+    """
+
+
+@distributed.command("render-scripts")
+@click.argument(
+    "vars_file",
+    required=False,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+)
+@click.option("--job-prefix", help="SLURM job name prefix (<prefix>-sched, -worker, ...).")
+@click.option("--scratch-dir", help="Coordination + container-cache directory.")
+@click.option("--image-tag", help="Container tag, e.g. v6.68.0-rc.1-test-0.1.11.")
+@click.option("--exp-root", help="Experiment directory the driver will scan.")
+@click.option("--catalog-dir", help="Where the driver writes the catalog.")
+@click.option(
+    "--worker-mode",
+    type=click.Choice(["array", "multinode"]),
+    help="'array': one SLURM job per worker (default; Albedo-style, no tight "
+    "running-job cap). 'multinode': one job, srun fans workers out inside "
+    "it (for a site with a tight per-user running-job cap, e.g. Levante).",
+)
+@click.option("--n-workers", type=int, help="Size of the worker job array (worker_mode=array).")
+@click.option("--n-nodes", type=int, help="Node count for the one worker job (worker_mode=multinode).")
+@click.option(
+    "--cores-per-node",
+    type=int,
+    help="Workers per node in multinode mode (default: 128, Levante's compute node).",
+)
+@click.option("--partition", help="SLURM partition (default: smp).")
+@click.option("--qos", help="SLURM QOS (default: 12h).")
+@click.option("--walltime", help="SLURM time limit (default: 04:00:00).")
+@click.option(
+    "--bind-path",
+    "bind_paths",
+    multiple=True,
+    help="A -B mount; repeat for multiple (default: /albedo).",
+)
+@click.option("--container-bin", help="Container binary, e.g. singularity or apptainer (default: singularity).")
+@click.option("--container-module", help="Module to load (default: same as --container-bin).")
+@click.option(
+    "--push-after-scan/--no-push-after-scan",
+    default=None,
+    help="Have the driver run 'push' after 'scan' (default: off).",
+)
+@click.option("--server-url", help="Push target when --push-after-scan is set.")
+@click.option(
+    "--log-dir",
+    help="SBATCH -o directory (default: $XDG_STATE_HOME/esm-catalog/logs).",
+)
+@click.option(
+    "--out-dir",
+    default=".",
+    type=click.Path(file_okay=False, path_type=Path),
+    help="Where to write the four .sbatch files.",
+)
+@click.option(
+    "--dump-vars-template",
+    is_flag=True,
+    help="Print a ready-to-edit vars.yaml skeleton to stdout and exit -- "
+    "ignores every other option.",
+)
+def distributed_render_scripts(
+    vars_file: Optional[Path],
+    job_prefix: Optional[str],
+    scratch_dir: Optional[str],
+    image_tag: Optional[str],
+    exp_root: Optional[str],
+    catalog_dir: Optional[str],
+    worker_mode: Optional[str],
+    n_workers: Optional[int],
+    n_nodes: Optional[int],
+    cores_per_node: Optional[int],
+    partition: Optional[str],
+    qos: Optional[str],
+    walltime: Optional[str],
+    bind_paths: tuple[str, ...],
+    container_bin: Optional[str],
+    container_module: Optional[str],
+    push_after_scan: Optional[bool],
+    server_url: Optional[str],
+    log_dir: Optional[str],
+    out_dir: Path,
+    dump_vars_template: bool,
+) -> None:
+    """Render sched/worker/driver/cleanup .sbatch scripts for a distributed scan.
+
+    VARS_FILE is an optional YAML file of defaults (job_prefix, scratch_dir,
+    image_tag, exp_root, catalog_dir are always required; n_workers is
+    required for worker_mode=array, n_nodes for worker_mode=multinode; the
+    rest optional); any --flag overrides what it sets, same resolution order
+    as the rest of the CLI. Required values missing from both the file and
+    the flags are reported together, not one at a time.
+    """
+    overrides = {
+        "job_prefix": job_prefix,
+        "scratch_dir": scratch_dir,
+        "image_tag": image_tag,
+        "exp_root": exp_root,
+        "catalog_dir": catalog_dir,
+        "worker_mode": worker_mode,
+        "n_workers": n_workers,
+        "n_nodes": n_nodes,
+        "cores_per_node": cores_per_node,
+        "partition": partition,
+        "qos": qos,
+        "walltime": walltime,
+        "bind_paths": list(bind_paths) or None,
+        "container_bin": container_bin,
+        "container_module": container_module,
+        "push_after_scan": push_after_scan,
+        "server_url": server_url,
+        "log_dir": log_dir,
+    }
+    overrides = {key: value for key, value in overrides.items() if value is not None}
+
+    if dump_vars_template:
+        from esm_catalog.distributed import render_vars_template
+
+        click.echo(render_vars_template(overrides), nl=False)
+        return
+
+    import yaml
+
+    from esm_catalog.distributed import render_scripts
+    from esm_catalog.xdg import state_dir
+
+    context: dict = {}
+    if vars_file is not None:
+        context = yaml.safe_load(vars_file.read_text()) or {}
+
+    context.update(overrides)
+    context.setdefault("log_dir", str(state_dir() / "logs"))
+
+    try:
+        written = render_scripts(context, out_dir)
+    except ValueError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    for path in written:
+        click.echo(f"wrote {path}")
+
+    sched_path, worker_path, driver_path, cleanup_path = written
+    click.echo()
+    click.echo("Submit in this order (scheduler, then driver and workers "
+                "together, then cleanup dependent on the driver):")
+    click.echo(f"  SCHED_JOBID=$(sbatch --parsable {sched_path})")
+    click.echo(
+        f"  DRIVER_JOBID=$(sbatch --parsable --dependency=after:$SCHED_JOBID {driver_path})"
+    )
+    click.echo(
+        f"  WORKER_JOBID=$(sbatch --parsable --dependency=after:$SCHED_JOBID {worker_path})"
+    )
+    click.echo(
+        "  sbatch --dependency=afterany:$DRIVER_JOBID "
+        "--export=ALL,SCHED_JOBID=$SCHED_JOBID,WORKER_JOBID=$WORKER_JOBID "
+        f"{cleanup_path}"
+    )
 
 
 if __name__ == "__main__":

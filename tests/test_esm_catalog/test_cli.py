@@ -25,7 +25,7 @@ def runner():
 def test_help_lists_all_commands(runner):
     result = runner.invoke(main, ["--help"])
     assert result.exit_code == 0
-    for command in ("auth", "scan", "push", "status"):
+    for command in ("auth", "scan", "push", "status", "distributed"):
         assert command in result.output
 
 
@@ -96,3 +96,269 @@ def test_status_after_scan_reports_catalog_contents(runner, tmp_path, monkeypatc
     assert "tracked (incremental) files: 1" in result.output
     assert "queryables: 1" in result.output
     assert "https://stac.example.org" in result.output
+
+
+# --------------------------------------------------------------------------- #
+# distributed render-scripts
+# --------------------------------------------------------------------------- #
+
+_REQUIRED_FLAGS = [
+    "--job-prefix", "catalog",
+    "--scratch-dir", "/scratch/catalog",
+    "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+    "--exp-root", "/exp/pi-ctrl-001",
+    "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+    "--n-workers", "500",
+]  # fmt: skip
+
+
+def test_distributed_subcommand_registered(runner):
+    result = runner.invoke(main, ["distributed", "--help"])
+    assert result.exit_code == 0
+    assert "render-scripts" in result.output
+
+
+def test_render_scripts_missing_required_vars_reports_all_at_once(runner, tmp_path):
+    result = runner.invoke(
+        main, ["distributed", "render-scripts", "--out-dir", str(tmp_path)]
+    )
+    assert result.exit_code != 0
+    for name in ("scratch_dir", "image_tag", "exp_root", "catalog_dir", "n_workers"):
+        assert name in result.output
+
+
+def test_render_scripts_writes_four_scripts_and_prints_submit_order(runner, tmp_path):
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    for name in ("sched.sbatch", "worker.sbatch", "driver.sbatch", "cleanup.sbatch"):
+        assert (tmp_path / name).exists()
+    assert "SCHED_JOBID=$(sbatch --parsable" in result.output
+    assert "--dependency=after:$SCHED_JOBID" in result.output
+    assert "--dependency=afterany:$DRIVER_JOBID" in result.output
+
+
+def test_render_scripts_worker_array_matches_n_workers(runner, tmp_path):
+    runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *_REQUIRED_FLAGS],
+    )
+    worker = (tmp_path / "worker.sbatch").read_text()
+    assert "#SBATCH --array=1-500%500" in worker
+
+
+def test_render_scripts_no_push_block_by_default(runner, tmp_path):
+    runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *_REQUIRED_FLAGS],
+    )
+    driver = (tmp_path / "driver.sbatch").read_text()
+    assert "esm-catalog push" not in driver
+
+
+def test_render_scripts_push_after_scan_flag_adds_push_block(runner, tmp_path):
+    runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(tmp_path),
+            *_REQUIRED_FLAGS,
+            "--push-after-scan", "--server-url", "https://stac-dev.awi.de",
+        ],  # fmt: skip
+    )
+    driver = (tmp_path / "driver.sbatch").read_text()
+    assert "esm-catalog push" in driver
+    assert "https://stac-dev.awi.de" in driver
+
+
+def test_render_scripts_cli_flag_overrides_vars_file(runner, tmp_path):
+    vars_file = tmp_path / "vars.yaml"
+    vars_file.write_text(
+        "\n".join(
+            [
+                "job_prefix: fromfile",
+                "scratch_dir: /scratch/fromfile",
+                "image_tag: v6.68.0-rc.1-test-0.1.11",
+                "exp_root: /exp/fromfile",
+                "catalog_dir: /exp/fromfile/catalog",
+                "n_workers: 100",
+            ]
+        )
+    )
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", str(vars_file),
+            "--out-dir", str(out_dir), "--n-workers", "999",
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "#SBATCH --array=1-999%999" in worker
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "fromfile-sched" in sched
+    assert "/scratch/fromfile" in sched
+
+
+def test_render_scripts_log_dir_defaults_from_state_dir(runner, tmp_path, monkeypatch):
+    # state_dir() wraps platformdirs, whose XDG_STATE_HOME honouring is a Unix-only
+    # convention (macOS ignores it by design) -- monkeypatch the function itself
+    # rather than the env var, so this test is portable across dev machines.
+    monkeypatch.setattr(
+        "esm_catalog.xdg.state_dir", lambda: tmp_path / "state" / "esm-catalog"
+    )
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert f"{tmp_path}/state/esm-catalog/logs" in sched
+
+
+def test_render_scripts_defaults_to_singularity(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "module load singularity" in sched
+    assert "singularity exec" in sched
+    assert "SINGULARITY_CACHEDIR" in sched
+    assert "apptainer" not in sched
+
+
+def test_render_scripts_container_bin_override_switches_cache_env_var(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(out_dir),
+            "--container-bin", "apptainer", *_REQUIRED_FLAGS,
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "module load apptainer" in sched
+    assert "apptainer exec" in sched
+    assert "APPTAINER_CACHEDIR" in sched
+
+
+def test_render_scripts_repeated_bind_path_flags(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(out_dir),
+            "--bind-path", "/work", "--bind-path", "/scratch", *_REQUIRED_FLAGS,
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "-B /work -B /scratch" in sched
+    assert "/albedo" not in sched  # explicit flags replace the default, don't add to it
+
+
+def test_render_scripts_bind_path_defaults_to_albedo(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "-B /albedo" in sched
+
+
+def test_render_scripts_multinode_mode_renders_srun_worker(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    flags = [
+        "--job-prefix", "catalog",
+        "--scratch-dir", "/scratch/catalog",
+        "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+        "--exp-root", "/exp/pi-ctrl-001",
+        "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+        "--worker-mode", "multinode",
+        "--n-nodes", "4",
+    ]  # fmt: skip
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *flags],
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "#SBATCH -N4" in worker
+    assert "srun --ntasks=512 --ntasks-per-node=128" in worker
+    assert "singularity exec" in worker
+
+
+def test_render_scripts_multinode_missing_n_nodes_errors(runner, tmp_path):
+    flags = [
+        "--job-prefix", "catalog",
+        "--scratch-dir", "/scratch/catalog",
+        "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+        "--exp-root", "/exp/pi-ctrl-001",
+        "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+        "--worker-mode", "multinode",
+    ]  # fmt: skip
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(tmp_path), *flags],
+    )
+    assert result.exit_code != 0
+    assert "n_nodes" in result.output
+
+
+def test_render_scripts_multinode_cores_per_node_override(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    flags = [
+        "--job-prefix", "catalog",
+        "--scratch-dir", "/scratch/catalog",
+        "--image-tag", "v6.68.0-rc.1-test-0.1.11",
+        "--exp-root", "/exp/pi-ctrl-001",
+        "--catalog-dir", "/exp/pi-ctrl-001/catalog",
+        "--worker-mode", "multinode",
+        "--n-nodes", "2",
+        "--cores-per-node", "64",
+    ]  # fmt: skip
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *flags],
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "srun --ntasks=128 --ntasks-per-node=64" in worker
+
+
+def test_dump_vars_template_prints_yaml_and_skips_rendering(runner):
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--dump-vars-template"],
+    )
+    # No required flags were passed -- exit_code == 0 here (rather than the
+    # "missing required variable(s)" ClickException) proves --dump-vars-template
+    # short-circuited before validation/rendering ran at all.
+    assert result.exit_code == 0, result.output
+    assert "job_prefix: catalog" in result.output
+    assert "CHANGE_ME" in result.output
+
+
+def test_dump_vars_template_honours_worker_mode_flags(runner):
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--dump-vars-template",
+            "--worker-mode", "multinode", "--n-nodes", "4", "--partition", "compute",
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    assert "worker_mode: multinode" in result.output
+    assert "n_nodes: 4" in result.output
+    assert "partition: compute" in result.output
+    assert "# worker_mode: array" in result.output
+    assert "# n_workers: 3000" in result.output

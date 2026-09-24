@@ -103,6 +103,12 @@ setup(
             "f90nml>=1.4",
             "jsonschema>=4.0",
             "pydantic>=2",
+            "rich-click>=1.7",
+            "xarray>=2023.1",
+            "cf-xarray>=0.8",
+            "pyarrow>=14",
+            "stac-geoparquet>=0.6",
+            "pluggy>=1.0",
         ],
         # Only needed to run tests/test_esm_catalog.
         # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py

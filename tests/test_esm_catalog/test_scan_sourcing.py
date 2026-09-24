@@ -31,7 +31,7 @@ def _write_finished_config(
     start_date: str = "2000-01-01",
     end_date: str = "2000-12-31",
     outdata_targets: dict | None = None,
-    restart_out_sources: dict | None = None,
+    restart_out_targets: dict | None = None,
 ) -> UPath:
     """Write a minimal synthetic finished_config under ``<exp_root>/config``."""
     config_dir = exp_root / "config"
@@ -62,12 +62,12 @@ def _write_finished_config(
             "outdata_targets": targets,
         },
     }
-    if restart_out_sources is not None:
-        for source in restart_out_sources.values():
+    if restart_out_targets is not None:
+        for source in restart_out_targets.values():
             spath = UPath(source)
             spath.parent.mkdir(parents=True, exist_ok=True)
             spath.write_bytes(b"")
-        doc["fesom"] = {"restart_out_sources": restart_out_sources}
+        doc["fesom"] = {"restart_out_targets": restart_out_targets}
 
     name = f"{_EXPID}_finished_config.yaml{suffix}"
     path = config_dir / name
@@ -123,12 +123,12 @@ def test_output_files_excludes_restart(tmp_path):
     assert [f.path.name for f in files] == [f"{_EXPID}_echam.nc"]
 
 
-def test_restart_files_reads_restart_out_sources(tmp_path):
+def test_restart_files_reads_restart_out_targets(tmp_path):
     exp_root = UPath(tmp_path)
     restart_dir = exp_root / "restart" / "fesom"
     _write_finished_config(
         exp_root,
-        restart_out_sources={
+        restart_out_targets={
             "oce_restart": str(restart_dir / "fesom.2000.oce.nc"),
             "ice_restart": str(restart_dir / "fesom.2000.ice.nc"),
         },
@@ -146,9 +146,28 @@ def test_restart_files_reads_restart_out_sources(tmp_path):
 
 def test_restart_files_skips_undeclared_or_missing(tmp_path):
     exp_root = UPath(tmp_path)
-    # No restart_out_sources declared at all -- no finished_config.fesom block.
+    # No restart_out_targets declared at all -- no finished_config.fesom block.
     _write_finished_config(exp_root)
     assert restart_files(exp_root) == []
+
+
+def test_restart_files_walks_when_component_declares_no_targets(tmp_path):
+    # Confirmed against a real production experiment: fesom manages restarts
+    # via wildcard matching and declares no restart_out_targets at all, so
+    # its tidied files are only findable by walking restart/<component>/.
+    exp_root = UPath(tmp_path)
+    _write_finished_config(exp_root)  # no fesom block at all
+    restart_dir = exp_root / "restart" / "fesom"
+    (restart_dir).mkdir(parents=True)
+    (restart_dir / "fesom.2000.oce.restart").write_bytes(b"")
+    (restart_dir / "fesom.2000.ice.restart").write_bytes(b"")
+
+    files = restart_files(exp_root)
+
+    assert len(files) == 2
+    assert {f.component for f in files} == {"fesom"}
+    assert {f.stream for f in files} == {"restart"}
+    assert {f.category for f in files} == {"fesom.oce", "fesom.ice"}
 
 
 def test_source_files_combines_outdata_and_restart(tmp_path):
@@ -156,7 +175,7 @@ def test_source_files_combines_outdata_and_restart(tmp_path):
     restart_dir = exp_root / "restart" / "fesom"
     _write_finished_config(
         exp_root,
-        restart_out_sources={"oce_restart": str(restart_dir / "fesom.2000.oce.nc")},
+        restart_out_targets={"oce_restart": str(restart_dir / "fesom.2000.oce.nc")},
     )
 
     files = source_files(exp_root)

@@ -315,6 +315,57 @@ def _walk_outdata(
             )
 
 
+def _walk_restart(
+    exp_root: UPath, on_file: Optional[Callable[[int], None]] = None
+) -> Iterable[ComponentPath]:
+    """Yield a :class:`ComponentPath` for every real file under ``<exp_root>/restart``.
+
+    Fallback for a component that declares no ``restart_out_targets`` at all
+    -- confirmed against a real production experiment: fesom manages restart
+    files via wildcard matching (``restart_out_sources_wild_card``), so its
+    tidied destination is never explicitly declared, only walkable. Same
+    reasoning and structure as :func:`_walk_outdata`. Yielded paths carry no
+    declared ``stream`` -- the category is derived from the filename by the
+    caller (see :func:`restart_files`).
+    """
+    restart = exp_root / "restart"
+    if not restart.exists():
+        return
+    fs = restart.fs
+    base = restart.path.rstrip("/")
+    marker = "/restart/"
+    count = 0
+    for root, _dirs, files in fs.walk(base):
+        after = root.rsplit(marker, 1)
+        if len(after) < 2 or not after[1]:
+            continue
+        component = after[1].split("/", 1)[0]
+        for name in sorted(files):
+            count += 1
+            if on_file is not None:
+                on_file(count)
+            yield ComponentPath(
+                component=component, path=_on_exp_fs(exp_root, f"{root}/{name}")
+            )
+
+
+_DIGIT_RUN_RE = re.compile(r"\d{4,}")
+"""A run of 4+ digits -- a date stamp, stripped when deriving a restart
+category from a walked filename with no declared category."""
+
+
+def _category_from_filename(name: str) -> str:
+    """Best-effort restart category from a filename with no declared category.
+
+    ``fesom.2000.oce.restart`` -> ``fesom.oce`` -- strips the date-like digit
+    run and the final extension, keeping whatever distinguishes this file
+    from its siblings (e.g. 'oce' vs 'ice').
+    """
+    stem = Path(name).stem
+    stripped = _DIGIT_RUN_RE.sub("", stem).strip(".")
+    return re.sub(r"\.{2,}", ".", stripped) or stem
+
+
 def output_files(
     exp_root: UPath,
     on_file: Optional[Callable[[int], None]] = None,
@@ -400,21 +451,31 @@ def output_files(
 
 
 def restart_files(
-    exp_root: UPath, *, run_cfgs: Optional[list[_RunConfig]] = None
+    exp_root: UPath,
+    on_file: Optional[Callable[[int], None]] = None,
+    *,
+    run_cfgs: Optional[list[_RunConfig]] = None,
 ) -> list[OutputFile]:
-    """Return the experiment's restart files, one per declared restart target.
+    """Return the experiment's restart files.
 
-    Parallel to :func:`output_files`: reads ``restart_out_sources`` (the
-    resolved path, not the template) from each segment's finished_config --
-    the same trust model as outdata's config-target fallback (the declared
-    target is trusted once its file is verified to exist; contents are not
-    checked). No tidy-log equivalent exists for restarts, so this is the
-    primary source, not a fallback.
+    Parallel to :func:`output_files`: trusts declared ``restart_out_targets``
+    (the tidied, resolved destination -- see :func:`_restart_targets`) that
+    resolve to real files, same trust model as outdata's config-target
+    fallback (existence checked, contents are not). No tidy-log equivalent
+    exists for restarts, so this is the primary source, not a fallback --
+    except for a component that declares no restart_out_targets at all (e.g.
+    fesom, which manages restarts via wildcard matching): confirmed against a
+    real production experiment, so :func:`_walk_restart` covers it exactly
+    like :func:`_walk_outdata` covers outdata's undeclared case.
 
     Parameters
     ----------
     exp_root : UPath
         The experiment root directory.
+    on_file : Callable or None, optional
+        Called with the running file count while walking ``restart/`` for
+        undeclared components -- a progress hook for the slow remote-listing
+        case.
     run_cfgs : list of _RunConfig, optional
         Pre-parsed run configs, when the caller already has them. Parsed from
         *exp_root* when omitted.
@@ -447,6 +508,17 @@ def restart_files(
                     role="restart", category=target.stream,
                 )
             )
+    for cp in _walk_restart(exp_root, on_file):
+        key = str(cp.path)
+        if key in seen:
+            continue
+        seen.add(key)
+        files.append(
+            OutputFile(
+                path=cp.path, component=cp.component, stream="restart",
+                role="restart", category=_category_from_filename(cp.path.name),
+            )
+        )
     return files
 
 
@@ -461,7 +533,7 @@ def source_files(
     :func:`restart_files` respectively.
     """
     return output_files(exp_root, on_file, run_cfgs=run_cfgs) + restart_files(
-        exp_root, run_cfgs=run_cfgs
+        exp_root, on_file, run_cfgs=run_cfgs
     )
 
 
@@ -719,22 +791,27 @@ def _outdata_targets(doc: FinishedConfigDoc) -> Iterable[ComponentPath]:
 
 
 def _restart_targets(doc: FinishedConfigDoc) -> Iterable[ComponentPath]:
-    """Yield a :class:`ComponentPath` for every ``restart_out_sources`` entry in *doc*.
+    """Yield a :class:`ComponentPath` for every ``restart_out_targets`` entry in *doc*.
 
-    Parallel to :func:`_outdata_targets` -- reads the resolved path (its
-    ``${end_date!syear}``-style template already substituted by the time
-    ``finished_config.yaml`` is written), not the template itself.
+    Parallel to :func:`_outdata_targets`. ``restart_out_targets`` is the
+    tidied, persistent destination (``exp/restart/<component>/...``) --
+    ``restart_out_sources`` is the ephemeral ``run_DATE/work/`` path the file
+    lived at *before* tidy moved it, gone once that run directory is cleaned
+    up. Confirmed against a real production finished_config: echam declares
+    ``restart_out_targets``; components using wildcard-based restart handling
+    (e.g. fesom, via ``restart_out_sources_wild_card``) declare neither, so
+    they fall through to :func:`_walk_restart`.
     """
     for name, block in doc.items():
         if not isinstance(block, dict):
             continue
-        sources = block.get("restart_out_sources")
-        if not isinstance(sources, dict):
+        targets = block.get("restart_out_targets")
+        if not isinstance(targets, dict):
             continue
-        for stream, source in sources.items():
-            if source:
+        for stream, target in targets.items():
+            if target:
                 yield ComponentPath(
-                    component=str(name), path=UPath(str(source)), stream=str(stream)
+                    component=str(name), path=UPath(str(target)), stream=str(stream)
                 )
 
 

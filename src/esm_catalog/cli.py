@@ -44,6 +44,36 @@ _CONFIG_EPILOG = (
     "see what is currently resolved and where the config file would live."
 )
 
+click.rich_click.OPTION_GROUPS["esm-catalog distributed render-scripts"] = [
+    {
+        "name": "Experiment identity",
+        "options": [
+            "--job-prefix", "--scratch-dir", "--image-tag", "--exp-root", "--catalog-dir",
+        ],
+    },
+    {
+        "name": "Worker mode",
+        "options": [
+            "--worker-mode", "--n-workers", "--throttle", "--n-nodes", "--cores-per-node",
+        ],
+    },
+    {
+        "name": "SLURM",
+        "options": ["--partition", "--qos", "--account", "--walltime"],
+    },
+    {
+        "name": "Container",
+        "options": ["--bind-path", "--container-bin", "--container-module"],
+    },
+    {
+        "name": "Output",
+        "options": [
+            "--push-after-scan", "--server-url", "--log-dir", "--out-dir",
+            "--dump-vars-template",
+        ],
+    },
+]  # fmt: skip
+
 
 def _configure_logging(verbose: bool) -> int:
     """Set up logging for a CLI command; return the stdlib level used.
@@ -763,6 +793,11 @@ def distributed() -> None:
     "it (for a site with a tight per-user running-job cap, e.g. Levante).",
 )
 @click.option("--n-workers", type=int, help="Size of the worker job array (worker_mode=array).")
+@click.option(
+    "--throttle",
+    type=int,
+    help="Cap concurrent array elements (worker_mode=array; default: n_workers, i.e. no throttle).",
+)
 @click.option("--n-nodes", type=int, help="Node count for the one worker job (worker_mode=multinode).")
 @click.option(
     "--cores-per-node",
@@ -771,6 +806,10 @@ def distributed() -> None:
 )
 @click.option("--partition", help="SLURM partition (default: smp).")
 @click.option("--qos", help="SLURM QOS (default: 12h).")
+@click.option(
+    "--account",
+    help="SBATCH --account (no default; omitted from scripts unless set).",
+)
 @click.option("--walltime", help="SLURM time limit (default: 04:00:00).")
 @click.option(
     "--bind-path",
@@ -811,10 +850,12 @@ def distributed_render_scripts(
     catalog_dir: Optional[str],
     worker_mode: Optional[str],
     n_workers: Optional[int],
+    throttle: Optional[int],
     n_nodes: Optional[int],
     cores_per_node: Optional[int],
     partition: Optional[str],
     qos: Optional[str],
+    account: Optional[str],
     walltime: Optional[str],
     bind_paths: tuple[str, ...],
     container_bin: Optional[str],
@@ -842,10 +883,12 @@ def distributed_render_scripts(
         "catalog_dir": catalog_dir,
         "worker_mode": worker_mode,
         "n_workers": n_workers,
+        "throttle": throttle,
         "n_nodes": n_nodes,
         "cores_per_node": cores_per_node,
         "partition": partition,
         "qos": qos,
+        "account": account,
         "walltime": walltime,
         "bind_paths": list(bind_paths) or None,
         "container_bin": container_bin,
@@ -881,6 +924,22 @@ def distributed_render_scripts(
 
     for path in written:
         click.echo(f"wrote {path}")
+
+    defaulted = [
+        f"{name}={default}"
+        for name, default in (("qos", "12h"), ("partition", "smp"))
+        if name not in context
+    ]
+    if defaulted:
+        click.echo(
+            f"note: using Albedo defaults not overridden: {', '.join(defaulted)} "
+            "-- pass --qos/--partition if your site uses different names"
+        )
+    if "account" not in context:
+        click.echo(
+            "note: no --account set -- omitted from every script; pass "
+            "--account if your site requires one for sbatch to accept the job"
+        )
 
     sched_path, worker_path, driver_path, cleanup_path = written
     click.echo()

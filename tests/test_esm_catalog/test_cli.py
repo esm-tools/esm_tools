@@ -275,6 +275,95 @@ def test_render_scripts_bind_path_defaults_to_albedo(runner, tmp_path):
     assert "-B /albedo" in sched
 
 
+def test_render_scripts_account_flag_adds_sbatch_account(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(out_dir),
+            "--account", "ab1234", *_REQUIRED_FLAGS,
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    for name in ("sched.sbatch", "worker.sbatch", "driver.sbatch", "cleanup.sbatch"):
+        assert "#SBATCH --account=ab1234" in (out_dir / name).read_text()
+
+
+def test_render_scripts_no_account_by_default(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    sched = (out_dir / "sched.sbatch").read_text()
+    assert "--account" not in sched
+    assert "note: no --account set" in result.output
+
+
+def test_render_scripts_throttle_overrides_array_percent(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(out_dir),
+            "--throttle", "20", *_REQUIRED_FLAGS,
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "#SBATCH --array=1-500%20" in worker
+
+
+def test_render_scripts_throttle_defaults_to_n_workers(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    worker = (out_dir / "worker.sbatch").read_text()
+    assert "#SBATCH --array=1-500%500" in worker
+
+
+def test_render_scripts_notes_defaulted_qos_and_partition(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        ["distributed", "render-scripts", "--out-dir", str(out_dir), *_REQUIRED_FLAGS],
+    )
+    assert result.exit_code == 0, result.output
+    assert "note: using Albedo defaults not overridden: qos=12h, partition=smp" in result.output
+
+
+def test_render_scripts_no_defaults_note_when_all_overridden(runner, tmp_path):
+    out_dir = tmp_path / "rendered"
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--out-dir", str(out_dir),
+            "--qos", "normal", "--partition", "compute", "--account", "ab1234",
+            *_REQUIRED_FLAGS,
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    assert "note:" not in result.output
+
+
+def test_dump_vars_template_honours_account_and_throttle_flags(runner):
+    result = runner.invoke(
+        main,
+        [
+            "distributed", "render-scripts", "--dump-vars-template",
+            "--account", "ab1234", "--throttle", "20",
+        ],  # fmt: skip
+    )
+    assert result.exit_code == 0, result.output
+    assert "account: ab1234" in result.output
+    assert "throttle: 20" in result.output
+    assert "# throttle: 20" not in result.output
+
+
 def test_render_scripts_multinode_mode_renders_srun_worker(runner, tmp_path):
     out_dir = tmp_path / "rendered"
     flags = [

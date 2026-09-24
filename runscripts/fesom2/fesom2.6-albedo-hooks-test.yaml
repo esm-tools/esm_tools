@@ -1,0 +1,38 @@
+# FESOM2 Mini Test Configuration for Hook Event Testing on Albedo
+# Purpose: Short 3-day run with 2 restarts to test event-driven hooks
+# Usage: esm_runscripts fesom2.6-albedo-hooks-test.yaml -e hooks_test_001
+
+general:
+        setup_name: fesom
+        compute_time: "00:30:00"
+        initial_date: '2020-01-01'
+        final_date: '2020-01-03'
+        nyear: 0
+        nmonth: 0
+        nday: 1  # 1-day runs to generate restarts
+        use_venv: False
+
+fesom:
+        version: 2.6
+        mesh_dir: "/albedo/pool/FESOM2/core2"
+        restart_rate: 1
+        restart_first: 1
+        restart_unit: 'd'
+        resolution: "CORE2"
+        lresume: false
+        time_step: 1800
+        nproc: 96
+
+# Expected behavior:
+# - Day 1: Initial run (lresume=false)
+# - Day 2: Restart run 1 (lresume=true)
+# - Day 3: Restart run 2 (lresume=true)
+#
+# Hook events to watch for each run:
+# - esm_master:get-fesom-2.6:start/complete (if model needs fetching)
+# - esm_master:comp-fesom-2.6:start/complete (if compilation needed)
+# - esm_runscripts:recipe:prepexp:start/complete (experiment preparation)
+# - esm_runscripts:recipe:prepexp:<step>:start/complete (individual prep steps)
+# - esm_runscripts:recipe:compute:start/complete (model execution)
+# - esm_runscripts:recipe:compute:<step>:start/complete (e.g., namelist_changes, copy_files_to_work)
+# - esm_runscripts:recipe:tidy_and_resubmit:start/complete (cleanup and resubmission)

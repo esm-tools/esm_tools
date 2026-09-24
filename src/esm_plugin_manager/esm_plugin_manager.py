@@ -10,6 +10,14 @@ import esm_parser
 import esm_profile
 from esm_parser import yaml_file_to_dict
 
+# Non-invasive hook system integration
+try:
+    from esm_tools.hooks import trigger_hook
+except ImportError:
+    # Fallback if hooks not available
+    def trigger_hook(*args, **kwargs):
+        pass
+
 
 def read_recipe(recipe, additional_dict, needs_parse=True):
     if needs_parse:
@@ -133,6 +141,10 @@ def work_through_recipe(recipe, plugins, config):
         pdb.set_trace()
     recipes = recipe["recipe"]
     recipe_name = recipe["job_type"]
+
+    # Trigger hook at start of recipe execution
+    trigger_hook(f"esm_runscripts:recipe:{recipe_name}:start", config=config, recipe=recipes)
+
     for index, workitem in enumerate(recipes, start=1):
         if config["general"].get("verbose", False):
             # diagnostic message of which recipe step is being executed
@@ -146,47 +158,67 @@ def work_through_recipe(recipe, plugins, config):
             logger.info("=" * len(message))
             logger.info(message)
             logger.info("=" * len(message))
-        if plugins[workitem]["type"] == "core":
-            thismodule = __import__(plugins[workitem]["module"])
-            submodule = getattr(thismodule, plugins[workitem]["submodule"])
-            if config["general"].get("profile", False):
-                workitem_callable = getattr(submodule, workitem)
-                timed_workitem_callable = esm_profile.timing(
-                    workitem_callable, recipe_name
-                )
-                config = timed_workitem_callable(config)
-            else:
-                config = getattr(submodule, workitem)(config)
-        elif plugins[workitem]["type"] == "installed":
-            if config["general"].get("profile", False):
-                workitem_callable = plugins[workitem]["callable"]
-                timed_workitem_callable = esm_profile.timing(
-                    workitem_callable, recipe_name
-                )
-                config = timed_workitem_callable(config)
-            else:
-                config = plugins[workitem]["callable"](config)
-        else:
-            if sys.version_info >= (3, 5):
-                import importlib.util
 
-                spec = importlib.util.spec_from_file_location(
-                    plugins[workitem]["module"],
-                    plugins[workitem]["location"]
-                    + "/"
-                    + plugins[workitem]["module"]
-                    + ".py",
-                )
-                thismodule = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(thismodule)
+        # Trigger hook before each recipe step
+        trigger_hook(f"esm_runscripts:recipe:{recipe_name}:{workitem}:start",
+                    config=config, workitem=workitem, step=index, total=len(recipes))
+
+        try:
+            if plugins[workitem]["type"] == "core":
+                thismodule = __import__(plugins[workitem]["module"])
+                submodule = getattr(thismodule, plugins[workitem]["submodule"])
                 if config["general"].get("profile", False):
-                    workitem_callable = getattr(thismodule, workitem)
+                    workitem_callable = getattr(submodule, workitem)
                     timed_workitem_callable = esm_profile.timing(
                         workitem_callable, recipe_name
                     )
                     config = timed_workitem_callable(config)
                 else:
-                    config = getattr(thismodule, workitem)(config)
+                    config = getattr(submodule, workitem)(config)
+            elif plugins[workitem]["type"] == "installed":
+                if config["general"].get("profile", False):
+                    workitem_callable = plugins[workitem]["callable"]
+                    timed_workitem_callable = esm_profile.timing(
+                        workitem_callable, recipe_name
+                    )
+                    config = timed_workitem_callable(config)
+                else:
+                    config = plugins[workitem]["callable"](config)
+            else:
+                if sys.version_info >= (3, 5):
+                    import importlib.util
+
+                    spec = importlib.util.spec_from_file_location(
+                        plugins[workitem]["module"],
+                        plugins[workitem]["location"]
+                        + "/"
+                        + plugins[workitem]["module"]
+                        + ".py",
+                    )
+                    thismodule = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(thismodule)
+                    if config["general"].get("profile", False):
+                        workitem_callable = getattr(thismodule, workitem)
+                        timed_workitem_callable = esm_profile.timing(
+                            workitem_callable, recipe_name
+                        )
+                        config = timed_workitem_callable(config)
+                    else:
+                        config = getattr(thismodule, workitem)(config)
+
+            # Trigger hook after successful step completion
+            trigger_hook(f"esm_runscripts:recipe:{recipe_name}:{workitem}:complete",
+                        config=config, workitem=workitem, step=index, total=len(recipes))
+
+        except Exception as e:
+            # Trigger hook on step error
+            trigger_hook(f"esm_runscripts:recipe:{recipe_name}:{workitem}:error",
+                        config=config, workitem=workitem, step=index, total=len(recipes), error=str(e))
+            raise  # Re-raise to maintain existing error handling
+
+    # Trigger hook at end of recipe execution
+    trigger_hook(f"esm_runscripts:recipe:{recipe_name}:complete", config=config, recipe=recipes)
+
     return config
 
 

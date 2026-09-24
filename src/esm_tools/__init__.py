@@ -40,6 +40,16 @@ from loguru import logger
 
 from .error_handling import *
 
+# Event-driven architecture support
+try:
+    from .hooks import add_hook, trigger_hook
+except ImportError:
+    # Hooks module not available, define no-op functions
+    def add_hook(*args, **kwargs):
+        pass
+    def trigger_hook(*args, **kwargs):
+        pass
+
 # Setup Loguru for the following cases:
 # A) If user sets
 if os.environ.get("DEBUG_ESM_TOOLS"):

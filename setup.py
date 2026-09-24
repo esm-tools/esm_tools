@@ -109,6 +109,10 @@ setup(
             "pyarrow>=14",
             "stac-geoparquet>=0.6",
             "pluggy>=1.0",
+            "httpx>=0.27",
+            "pydantic-settings>=2.2",
+            "platformdirs>=4.0",
+            "pyyaml>=6.0",
         ],
         # Only needed to run tests/test_esm_catalog.
         # Only needed to run tests/test_esm_catalog: fake_experiment/config_builder.py

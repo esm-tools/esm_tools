@@ -126,15 +126,67 @@ def auth() -> None:
 
 @auth.command("login")
 @click.argument("server_url")
-def auth_login(server_url: str) -> None:
+@click.option(
+    "--open", "open_browser", is_flag=True, help="Open the login URL in a browser."
+)
+@click.option(
+    "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
+)
+def auth_login(server_url: str, open_browser: bool, insecure: bool) -> None:
     """Log in to SERVER_URL and cache a token for later push."""
-    _not_implemented("auth login")
+    from esm_catalog import auth as _auth
+    from esm_catalog.config import Settings
+    from esm_catalog.xdg import token_file
+
+    # -k only overrides; without it, ESM_CATALOG_VERIFY_TLS from env/config wins.
+    settings = Settings(server_url=server_url)
+    if insecure:
+        settings.verify_tls = False
+    try:
+        meta = _auth.fetch_oidc_metadata(settings)
+    except Exception as exc:  # noqa: BLE001 — surface any discovery failure cleanly
+        raise click.ClickException(
+            f"Could not reach the identity provider: {exc}"
+        ) from exc
+
+    verifier, challenge = _auth.generate_pkce_pair()
+    login_url = _auth.build_login_url(meta, settings, challenge)
+
+    click.secho("\nOpen this URL in a browser and log in:\n", fg="cyan")
+    click.echo(login_url + "\n")
+    if open_browser:
+        import webbrowser
+
+        webbrowser.open(login_url)
+
+    code = _auth.AuthCode(click.prompt("Paste the code from the landing page").strip())
+    try:
+        token = _auth.exchange_code_for_token(meta, settings, code, verifier)
+    except _auth.AuthError as exc:
+        raise click.ClickException(str(exc)) from exc
+    _auth.save_token(token)
+
+    click.secho(f"Logged in — token cached at {token_file()}", fg="green")
+    if token.refresh_token:
+        click.secho(
+            "Refresh token stored; future pushes will not need a login.", fg="green"
+        )
+    else:
+        click.secho(
+            "Note: no refresh token returned — you will re-login when it expires.",
+            fg="yellow",
+        )
 
 
 @auth.command("logout")
 def auth_logout() -> None:
     """Discard the cached token."""
-    _not_implemented("auth logout")
+    from esm_catalog.auth import clear_token
+
+    if clear_token():
+        click.secho("Token cache removed.", fg="green")
+    else:
+        click.secho("Nothing to remove.", fg="yellow")
 
 
 @main.command()
@@ -222,9 +274,96 @@ def scan(
 
 
 @main.command()
-def push() -> None:
-    """Ship not-yet-pushed shards to the server's pgstac."""
-    _not_implemented("push")
+@click.argument(
+    "paths",
+    nargs=-1,
+    required=True,
+    type=click.Path(exists=True, path_type=Path),
+)
+@click.option("--server", default=None, help="Target STAC server (overrides config).")
+@click.option(
+    "-k", "--insecure", is_flag=True, help="Skip TLS verification (dev self-signed)."
+)
+def push(paths: tuple[Path, ...], server: Optional[str], insecure: bool) -> None:
+    """Push STAC objects to the catalog.
+
+    Each PATH is a Collection/Item JSON, a stac-geoparquet shard, or a directory
+    of them. Writes are authenticated (run 'auth login' first) and idempotent
+    (upsert) — re-pushing is safe, nothing is deleted.
+    """
+    import sys
+
+    from esm_catalog import auth
+    from esm_catalog import push as pushmod
+    from esm_catalog.client import StacClient
+    from esm_catalog.config import Settings
+
+    # Override only what the flags give, so config/env supplies the rest (init
+    # kwargs have top precedence — passing them unconditionally clobbers env).
+    settings = Settings()
+    if server:
+        settings.server_url = server
+    if insecure:
+        settings.verify_tls = False
+
+    try:
+        api_url = settings.api_url
+        token = auth.get_bearer_token(settings)
+    except (ValueError, auth.AuthError) as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    files = pushmod.expand_paths(list(paths))
+    total = sum(
+        (
+            1
+            if pushmod.classify_file(f) in ("collection", "item")
+            else pushmod.count_items(f)
+        )
+        for f in files
+    )
+
+    show_progress = sys.stderr.isatty()
+    with StacClient(api_url, token, verify_tls=settings.verify_tls) as client:
+        with _push_progress(show_progress, total) as advance:
+            summary = pushmod.push_paths(paths, client, on_progress=advance)
+
+    click.echo(
+        f"pushed {summary.collections} collection(s), {summary.items} item(s) "
+        f"from {summary.shards} shard(s)"
+    )
+    if summary.errors:
+        for err in summary.errors:
+            click.secho(f"  ! {err}", fg="red", err=True)
+        raise click.ClickException(f"{len(summary.errors)} path(s) failed.")
+
+
+@contextmanager
+def _push_progress(enabled: bool, total: int) -> Generator[object, None, None]:
+    """A transient rich bar over a push; yields an ``advance(n, detail)`` callback."""
+    if not enabled:
+        yield lambda advance, detail: None
+        return
+
+    from rich.console import Console
+    from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
+                               SpinnerColumn, TextColumn, TimeElapsedColumn)
+
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+        console=Console(stderr=True),
+        transient=True,
+    )
+    with progress:
+        task = progress.add_task("pushing", total=total or None)
+
+        def advance(n: int, detail: str) -> None:
+            progress.update(task, advance=n, description=f"pushing — {detail}")
+
+        yield advance
 
 
 @main.command()

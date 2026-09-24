@@ -15,14 +15,19 @@ Overview
 
 Four STAC extensions write fields onto an Item, a Collection, or both, and
 register the extension's URL: ``datacube``, ``contacts``, ``paleo``,
-``namelist``. They share one registry (``registry.py``) and one pair of helpers
-(``stac_ext.py``). :ref:`Adding a New Extension` covers writing another.
+``namelist``. They share one registry (``registry.py``), one pair of helpers
+(``stac_ext.py``), and one pluggable contract (``plugins.py``) that
+``item.py``/``collection.py`` dispatch through rather than calling each
+extension by name. :ref:`Adding a New Extension` covers writing another.
 
 Two files hold the typed vocabulary:
 
-- ``types.py`` — type aliases and ``TypedDict``\ s that name recurring data
-  without methods (``ExperimentId``, ``FileMetadata``, ``BBox``, ...).
-- ``models.py`` — pydantic models with methods and validation
+- ``types.py`` — type aliases, ``TypedDict``\ s, and lightly-validated pydantic
+  models that name recurring data shapes (``ExperimentId``, ``BBox``,
+  ``FileMetadata``, ``ScannedVariable``); ``FileMetadata`` and
+  ``ScannedVariable`` validate at the scan boundary but carry no behaviour of
+  their own.
+- ``models.py`` — pydantic models with methods and cross-field validation
   (``ExperimentMetadata``, ``Contact.to_stac()``).
 
 How the pieces map
@@ -48,7 +53,6 @@ How the pieces map
        NM [label="namelist"]; PA [label="paleo"];
 
        DC -> ITEM [label="from the file", style=dashed];
-       CO -> ITEM [style=dashed];
        NM -> ITEM [style=dashed];
        PA -> ITEM [style=dashed];
        CO -> COLL [style=dashed];
@@ -125,10 +129,10 @@ Data flow: building a catalog
        COLL [label="pystac.Collection\n(id=collection_id, default extent, components)"];
        MI -> ITEM; MC -> COLL;
 
-       ITEM -> "item extensions\ncontacts, datacube, namelist, paleo";
+       ITEM -> "item extensions\ndatacube, namelist, paleo";
        COLL -> "collection extensions\ncontacts, namelist, paleo";
 
-       "item extensions\ncontacts, datacube, namelist, paleo" -> CAT;
+       "item extensions\ndatacube, namelist, paleo" -> CAT;
        "collection extensions\ncontacts, namelist, paleo" -> CAT [label="update_extent, per item"];
        CAT [label="Experiment catalog\n(Collection + N Items)"];
    }
@@ -136,7 +140,9 @@ Data flow: building a catalog
 .. note::
 
    - ``datacube`` is applied to Items only; there is no
-     ``add_datacube_collection_extension``.
+     ``add_datacube_collection_extension``. ``contacts`` is applied to
+     Collections only; there is no ``add_contacts_item_extension`` (an Item
+     reaches its experiment's contacts through its ``rel="collection"`` link).
    - Every ``add_*_extension`` function is a no-op on empty input (no contacts,
      no dimensions, no paleo config, no namelist parameters): it adds the
      extension's URL and fields only when there is data.
@@ -173,8 +179,23 @@ Recipe for a new ``lineage`` extension:
    - call ``apply_extension(obj, Extension.lineage)`` last, with
      ``validate=False`` only if step 2 was skipped.
 
-#. **Wire it in.** Call the new ``add_lineage_*_extension`` from
-   ``item.py::make_item`` and/or ``collection.py::make_collection``.
+#. **Register it.** In ``lineage.py``, add ``@hookimpl`` wrapper(s) calling
+   the new ``add_lineage_*_extension``:
+
+   .. code-block:: python
+
+      from esm_catalog.plugins import hookimpl
+
+      @hookimpl
+      def apply_to_item(item, file_metadata, exp_metadata, hints):
+          add_lineage_item_extension(item, ...)
+
+   Then register the module in ``plugins.py::_build_plugin_manager``
+   (``pm.register(lineage)``). ``item.py``/``collection.py`` need no change —
+   they dispatch ``pm.hook.apply_to_item``/``apply_to_collection`` without
+   knowing which extensions are registered. ``esm-catalog list-plugins``
+   shows what is actually registered and which hook(s) each plugin
+   implements — use it to check the new extension picked up the right one(s).
 
 ``stac_ext.py`` needs no change; it works from the registry, not from any
 specific extension.
@@ -192,9 +213,10 @@ Key design decisions
   and their schema URLs; ``apply_extension`` is the only place that registers and
   validates. No extension module imports another.
 - **Pydantic for validated records, aliases for the rest.** ``models.py`` holds
-  the pydantic models that validate and carry methods (``ExperimentMetadata``,
-  ``Contact``); ``types.py`` holds aliases and ``TypedDict``\ s that only name
-  data (``FileMetadata``, ``ScannedVariable``).
+  the pydantic models with behaviour and cross-field validation
+  (``ExperimentMetadata``, ``Contact``); ``types.py`` holds aliases,
+  ``TypedDict``\ s, and the lightly-validated shapes that only name data
+  (``FileMetadata``, ``ScannedVariable``).
 - **Validate only against a local schema.** ``paleo`` and ``namelist`` are
   ESM-Tools-owned and validated on every apply. ``contacts`` and ``datacube`` are
   upstream and remote-hosted, so they pass ``validate=False``: there is no local

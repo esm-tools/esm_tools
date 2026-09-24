@@ -44,6 +44,7 @@ from pydantic import BaseModel, ConfigDict
 from ruamel.yaml import YAML
 from upath import UPath
 
+from esm_catalog.cmip6 import Cmip6Config
 from esm_catalog.models import Contact, ExperimentMetadata
 from esm_catalog.namelist import ComponentNamelists, NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
@@ -179,6 +180,7 @@ def source_experiment(
         data_license=_first_value(general_metadata, "License"),
         contacts=_contacts(general_metadata),
         paleo_config=_paleo_config(docs),
+        cmip6_config=_cmip6_config(general_metadata),
         run_start=run_start,
         run_end=run_end,
         components=_components(docs),
@@ -510,6 +512,21 @@ def _to_contact(author: object, institution: Optional[str]) -> Optional[Contact]
             or author.get("affiliation")
             or institution,
         )
+    return None
+
+
+def _cmip6_config(blocks: Iterable[MetadataBlock]) -> Optional[Cmip6Config]:
+    """The ``general.metadata.cmip6`` block, from the first segment that declares one.
+
+    Lives in ``general.metadata`` (an ``extra`` key, alongside the existing
+    Description/Authors/License/Institute fields) rather than its own
+    top-level ``general.cmip6`` section -- it is experiment *metadata*, the
+    same category as those fields, not a distinct config concept.
+    """
+    for block in blocks:
+        cmip6 = getattr(block, "cmip6", None)
+        if isinstance(cmip6, dict) and cmip6:
+            return Cmip6Config.model_validate(cmip6)
     return None
 
 

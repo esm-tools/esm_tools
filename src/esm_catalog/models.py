@@ -9,6 +9,7 @@ from typing import Optional, TypedDict, cast
 
 from pydantic import BaseModel, ConfigDict, Field, SkipValidation, field_serializer
 
+from esm_catalog.cmip6 import Cmip6Config
 from esm_catalog.namelist import NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
 from esm_catalog.types import ComponentName, ExperimentId, License
@@ -82,6 +83,7 @@ class ExperimentMetadata(BaseModel):
     # objects, so validation is skipped rather than coerced.
     namelists_by_component: SkipValidation[NamelistsByComponent] = {}
     paleo_config: Optional[PaleoConfig] = None
+    cmip6_config: Optional[Cmip6Config] = None
     contacts: list[Contact] = []
 
     @property

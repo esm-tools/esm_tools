@@ -121,7 +121,7 @@ with open("API.rst", "w") as rst:
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz',
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz', 'sphinx.ext.doctest',
     'sphinx.ext.autosectionlabel', 'sphinx.ext.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs',
     'sphinx_toolbox.collapse']
 
@@ -273,6 +273,21 @@ texinfo_documents = [
 # :ref:`rst_file_name:title of the section` avoiding problems with
 # duplicated sections across different rst files.
 autosectionlabel_prefix_document = True
+
+
+# -- Executable handbook snippets (esm_catalog) ------------------------------
+# ``make doctest`` runs every ``.. testcode::`` block against a freshly built
+# demo experiment (see _demo/demo_experiment.py). The setup below runs once per
+# document that declares the ``catalog`` group.
+# Only explicit ``.. testcode::`` / ``.. doctest::`` directives run; bare ``>>>``
+# examples in docstrings are left alone (several predate this and don't set up
+# their own names).
+doctest_test_doctest_blocks = ""
+doctest_global_setup = f"""
+import warnings, sys
+warnings.filterwarnings("ignore")
+sys.path.insert(0, {os.path.abspath("_demo")!r})
+"""
 
 
 

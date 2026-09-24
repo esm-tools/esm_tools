@@ -132,6 +132,12 @@ setup(
             "cfgrib>=0.9",
             "eccodes>=1.5",
         ],
+        # CV validation for cmip6.py's declared DRS facets (esm_catalog.esgvoc_validate)
+        # is opt-in: it needs a locally-installed CV database (`esgvoc use <project>@latest`)
+        # and is a publish-time check, not something scanning depends on.
+        "catalog-esgvoc": [
+            "esgvoc>=6.0",
+        ],
     },
     install_requires=requirements,
     license="GNU General Public License v2",

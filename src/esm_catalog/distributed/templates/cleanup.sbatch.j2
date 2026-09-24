@@ -3,7 +3,8 @@
 #SBATCH -N1 -n1 -c1
 #SBATCH --time=00:05:00
 #SBATCH --partition={{ partition | default('smp') }}
-#SBATCH -o {{ log_dir }}/cleanup.%j.log
+{% if account %}#SBATCH --account={{ account }}
+{% endif %}#SBATCH -o {{ log_dir }}/cleanup.%j.log
 # Submitted with --dependency=afterany:$DRIVER_JOBID so it fires once the
 # driver finishes (success or failure) -- scancels the scheduler and worker
 # array jobs, which otherwise have no way to know the driver is done and

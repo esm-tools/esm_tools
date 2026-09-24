@@ -5,7 +5,8 @@
 #SBATCH --qos={{ qos | default('12h') }}
 #SBATCH --time={{ walltime | default('04:00:00') }}
 #SBATCH --partition={{ partition | default('smp') }}
-#SBATCH -o {{ log_dir }}/sched.%j.log
+{% if account %}#SBATCH --account={{ account }}
+{% endif %}#SBATCH -o {{ log_dir }}/sched.%j.log
 set -euo pipefail
 source /etc/profile.d/modules.sh
 module load {{ container_module }}

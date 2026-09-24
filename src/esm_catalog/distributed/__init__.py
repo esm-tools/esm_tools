@@ -33,7 +33,11 @@ Template values (``smp`` partition, ``/albedo`` bind path) default to Albedo
 but are all overridable. Container runtime defaults to ``singularity`` --
 Apptainer is a drop-in-compatible fork (identical CLI), so ``container_bin``/
 ``container_module`` can be set to ``apptainer`` on a site that uses that
-name instead.
+name instead. ``account`` (``#SBATCH --account``) is omitted from every
+script unless set -- some sites require it, others reject it, so there is
+no default. ``throttle`` (array mode only) caps how many array elements run
+concurrently, independent of ``n_workers`` -- a site can queue a large array
+while only running a handful at once; defaults to ``n_workers`` (no throttle).
 """
 
 from __future__ import annotations
@@ -85,6 +89,7 @@ catalog_dir: /albedo/scratch/user/CHANGE_ME/tmp/esm-cat-scan/catalog
 # Pick a worker mode:
 worker_mode: array           # one SLURM job per worker -- Albedo, no tight running-job cap
 n_workers: 3000
+# throttle: 3000             # cap concurrent array elements (default: n_workers, i.e. no throttle) -- array mode only
 # worker_mode: multinode      # one job, srun fans workers out inside it -- sites with a
 # n_nodes: 4                 # tight per-user running-job cap (e.g. DKRZ Levante: 20 running)
 # cores_per_node: 128         # workers per node in multinode mode (default: 128, Levante's compute node)
@@ -92,6 +97,7 @@ n_workers: 3000
 # Optional, shown with their defaults:
 # partition: smp
 # qos: 12h
+# account: CHANGE_ME          # SBATCH --account; omit on sites that don't require one
 # walltime: "04:00:00"
 # bind_paths: [/albedo]        # repeat for multiple mounts
 # container_bin: singularity   # or apptainer -- identical CLI, different binary name
@@ -104,6 +110,7 @@ n_workers: 3000
 _OPTIONAL_FIELD_COMMENTS = {
     "partition": "smp",
     "qos": "12h",
+    "account": "CHANGE_ME          # SBATCH --account; omit on sites that don't require one",
     "walltime": '"04:00:00"',
     "bind_paths": "[/albedo]        # repeat for multiple mounts",
     "container_bin": "singularity   # or apptainer -- identical CLI, different binary name",
@@ -148,9 +155,16 @@ def render_vars_template(overrides: dict[str, Any] | None = None) -> str:
     array_active = worker_mode != "multinode"
     array_prefix = "" if array_active else "# "
     multinode_prefix = "# " if array_active else ""
+
+    if array_active and "throttle" in overrides:
+        throttle_line = f"throttle: {overrides['throttle']}              # cap concurrent array elements -- array mode only"
+    else:
+        throttle_value = overrides.get("throttle", n_workers)
+        throttle_line = f"# throttle: {throttle_value}             # cap concurrent array elements (default: n_workers, i.e. no throttle) -- array mode only"
     worker_block = (
         f"{array_prefix}worker_mode: array           # one SLURM job per worker -- Albedo, no tight running-job cap\n"
         f"{array_prefix}n_workers: {n_workers}\n"
+        f"{throttle_line}\n"
         f"{multinode_prefix}worker_mode: multinode      # one job, srun fans workers out inside it -- sites with a\n"
         f"{multinode_prefix}n_nodes: {n_nodes}                 # tight per-user running-job cap (e.g. DKRZ Levante: 20 running)\n"
         f"{multinode_prefix}cores_per_node: {cores_per_node}         # workers per node in multinode mode (default: 128, Levante's compute node)"

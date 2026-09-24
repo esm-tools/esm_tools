@@ -27,6 +27,7 @@ from upath import UPath
 from esm_catalog.collection import make_collection, update_extent
 from esm_catalog.item import FX_FREQUENCY, make_item
 from esm_catalog.models import ExperimentMetadata
+from esm_catalog.namelist import namelist_item_props
 from esm_catalog.scan.format import UnknownFormatError, detect
 from esm_catalog.scan.parallel import parallel_map
 from esm_catalog.scan.reader import UnsupportedContentError, reader_for
@@ -181,10 +182,20 @@ def scan_experiment(
     _emit("writing")
 
     collection = make_collection(exp_metadata)
+    # Every item in the experiment gets the same namelist properties -- compute
+    # them once rather than re-walk the namelist tree per item (measured:
+    # dominates the writing phase on a 32k-item scan).
+    namelist_props = namelist_item_props(exp_metadata.namelists_by_component)
     ts_items = []
     fx_items = []
     failures = []
     unsupported = 0
+    # namelist_props is identical for every item, so validating each item's
+    # namelist extension is redundant past the first -- measured as the
+    # dominant per-item cost (patternProperties matching with recursive
+    # oneOf/$ref resolution) on a 32k-item scan. Validate once, on whichever
+    # item is first through the loop, then trust the rest.
+    validated_once = False
     for result in results:
         if result.unsupported:
             unsupported += 1
@@ -192,7 +203,13 @@ def scan_experiment(
         if result.failure is not None:
             failures.append(result.failure)
             continue
-        item = make_item(result.output_file.path, result.file_metadata, exp_metadata)
+        item = make_item(
+            result.output_file.path,
+            result.file_metadata,
+            exp_metadata,
+            hints={"namelist_props": namelist_props, "validate": not validated_once},
+        )
+        validated_once = True
         update_extent(collection, item)
         if item.properties.get("frequency") == FX_FREQUENCY:
             fx_items.append(item)

@@ -11,6 +11,7 @@ from upath import UPath
 from esm_catalog.scan.sourcing import (
     SourcingError,
     TidyOutdataEntry,
+    _namelists_by_component,
     _parse_datestamp,
     _tidy_log_outdata,
     _walk_outdata,

@@ -2,22 +2,32 @@
 
 Collection level (``collection.extra_fields``)::
 
-    nml:files       - "component:file" namelist filenames
+    nml:files       - "component__file" namelist filenames
     nml:groups      - namelist groups across all files
-    nml:parameters  - flattened "component:file:group:key" -> value, for CQL2
+    nml:parameters  - flattened "component__file__group__key" -> value, for CQL2
                       filtering (component-qualified so two components sharing a
                       filename cannot collide)
 
 Item level (``item.properties``), one entry per parameter across all
 components::
 
-    nml:{component}:{file}:{group}:{key} -> value
+    nml__{component}__{file}__{group}__{key} -> value
+
+The flattened keys use ``__`` as the separator and sanitise every other
+character to ``_``. This is deliberate: pgstac builds an (unquoted) JSON-path
+from an unregistered property name, so a name containing ``:`` (the STAC
+namespace idiom), ``.`` (from a filename like ``namelist.echam``) or ``[]``
+(a repeated-group index) yields a broken path and the CQL2 filter silently
+matches nothing. A ``[A-Za-z0-9_]``-only key resolves like any plain property
+(``component``, ``variable``), so namelist params are filterable with no
+queryables registration at all.
 """
 
 from __future__ import annotations
 
+import re
 from collections import Counter
-from typing import Iterator, Union
+from typing import Iterator, Optional, Union
 
 import f90nml
 import pystac
@@ -26,6 +36,22 @@ from esm_catalog.plugins import hookimpl
 from esm_catalog.registry import Extension
 from esm_catalog.stac_ext import apply_extension
 from esm_catalog.types import ComponentName
+
+#: Separator between the segments of a flattened namelist key.
+_KEY_SEP = "__"
+
+#: The item-property prefix marking a flattened namelist parameter.
+_ITEM_PREFIX = "nml"
+
+
+def _flatten(*parts: str) -> str:
+    """Join *parts* into a JSON-path-safe flat key.
+
+    Every character outside ``[A-Za-z0-9_]`` is replaced with ``_`` (so a
+    filename's ``.`` or a repeated-group ``[N]`` can never reach the key), and
+    the sanitised parts are joined with :data:`_KEY_SEP`.
+    """
+    return _KEY_SEP.join(re.sub(r"[^0-9A-Za-z_]", "_", part) for part in parts)
 
 NamelistFilename = str
 """A namelist filename, e.g. 'namelist.echam'."""
@@ -37,8 +63,8 @@ ParameterName = str
 """A namelist parameter key, e.g. 'delta_time'."""
 
 FlatKey = str
-"""A flattened 'component:file:group:key' identifier, e.g.
-'echam:namelist.echam:runctl:delta_time'."""
+"""A flattened 'component__file__group__key' identifier, e.g.
+'echam__namelist_echam__runctl__delta_time'."""
 
 Namelist = f90nml.Namelist
 """A parsed Fortran namelist (group -> parameters; nested groups are Namelists)."""
@@ -59,9 +85,9 @@ def add_namelist_collection_extension(
     """Set collection-level nml:files/groups/parameters from every component.
 
     A Collection is the whole experiment, so parameters are keyed
-    ``component:file:group:key`` — component-qualified, so two components that
-    ship a same-named namelist file cannot overwrite each other. No-op when
-    *namelists_by_component* is empty.
+    ``component__file__group__key`` — component-qualified, so two components
+    that ship a same-named namelist file cannot overwrite each other. No-op
+    when *namelists_by_component* is empty.
 
     Parameters
     ----------
@@ -78,12 +104,12 @@ def add_namelist_collection_extension(
         for file_groups in namelists.values():
             groups.update(file_groups)
     parameters: dict[FlatKey, NamelistValue] = {
-        f"{component}:{filename}:{group}:{key}": value
+        _flatten(component, filename, group, key): value
         for component, namelists in namelists_by_component.items()
         for filename, group, key, value in _iter_queryable_params(namelists)
     }
     collection.extra_fields["nml:files"] = sorted(
-        f"{component}:{filename}"
+        _flatten(component, filename)
         for component, namelists in namelists_by_component.items()
         for filename in namelists
     )
@@ -92,8 +118,29 @@ def add_namelist_collection_extension(
     apply_extension(collection, Extension.namelist)
 
 
+def namelist_item_props(
+    namelists_by_component: NamelistsByComponent,
+) -> dict[str, NamelistValue]:
+    """Flatten every component's namelists into item-level nml__ properties.
+
+    The same for every item in an experiment -- a bulk caller should compute
+    this once per scan and reuse it, rather than call it per item (namelist
+    trees can be large; walking one per file, 30k+ times over, is real
+    wasted work).
+    """
+    return {
+        _flatten(_ITEM_PREFIX, component, filename, group, key): value
+        for component, namelists in namelists_by_component.items()
+        for filename, group, key, value in _iter_queryable_params(namelists)
+    }
+
+
 def add_namelist_item_extension(
-    item: pystac.Item, namelists_by_component: NamelistsByComponent
+    item: pystac.Item,
+    namelists_by_component: NamelistsByComponent,
+    *,
+    props: Optional[dict[str, NamelistValue]] = None,
+    validate: bool = True,
 ) -> None:
     """Set item-level nml:{component}:{file}:{group}:{key} from the given namelists.
 
@@ -106,16 +153,23 @@ def add_namelist_item_extension(
     namelists_by_component : NamelistsByComponent
         Every component's namelists, flattened into one queryable property per
         parameter.
+    props : dict, optional
+        The already-flattened properties (see :func:`namelist_item_props`),
+        when the caller is applying this to many items and has computed it
+        once. Recomputed from *namelists_by_component* when omitted.
+    validate : bool, optional
+        Whether to jsonschema-validate the item after applying the extension.
+        Measured dominant cost of a bulk scan's per-item work (patternProperties
+        matching against every nml__ property, with recursive oneOf/$ref
+        resolution) -- a bulk caller that already trusts these code paths
+        should pass False after the first item.
     """
-    props: dict[str, NamelistValue] = {
-        f"nml:{component}:{filename}:{group}:{key}": value
-        for component, namelists in namelists_by_component.items()
-        for filename, group, key, value in _iter_queryable_params(namelists)
-    }
+    if props is None:
+        props = namelist_item_props(namelists_by_component)
     if not props:
         return
     item.properties.update(props)
-    apply_extension(item, Extension.namelist)
+    apply_extension(item, Extension.namelist, validate=validate)
 
 
 def _iter_queryable_params(
@@ -147,13 +201,45 @@ def _iter_queryable_params(
         for group_name, params in group_entries:
             if counts[group_name] > 1:
                 index = next_index.get(group_name, 0)
-                group = f"{group_name}[{index}]"
+                # '_N', not '[N]': brackets are JSON-path array syntax and would
+                # break the flattened key's resolution (see module docstring).
+                group = f"{group_name}_{index}"
                 next_index[group_name] = index + 1
             else:
                 group = group_name
             for key, value in params.items():
                 if _is_queryable(value):
-                    yield filename, group, key, value
+                    yield filename, group, key, _arrow_safe(value)
+
+
+def _arrow_safe(value: NamelistValue) -> NamelistValue:
+    """Make a namelist value storable in a single-typed column (geoparquet).
+
+    A scalar passes through. A list is stored as a shard column, which arrow
+    requires to be one type; f90nml, however, produces mixed-kind lists such as
+    ``putrerun = 1, 'months', 'first', 0`` -> ``[1, 'months', 'first', 0]`` (a
+    Fortran output-interval triplet). A list mixing text with numbers (or bools)
+    cannot be a typed column, so every element is stringified to a uniform
+    ``list[str]``; homogeneous numeric or text lists are left as-is. ``None`` is
+    preserved so the column can null it.
+    """
+    if not isinstance(value, list):
+        return value
+    kinds = set()
+    for element in value:
+        if element is None:
+            continue
+        if isinstance(element, bool):
+            kinds.add("bool")
+        elif isinstance(element, (int, float)):
+            kinds.add("number")
+        elif isinstance(element, str):
+            kinds.add("text")
+        else:
+            kinds.add("other")
+    if len(kinds) <= 1:
+        return value
+    return [None if element is None else str(element) for element in value]
 
 
 def _is_queryable(value: NamelistValue) -> bool:
@@ -184,7 +270,12 @@ def _is_queryable(value: NamelistValue) -> bool:
 
 @hookimpl
 def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
-    add_namelist_item_extension(item, exp_metadata.namelists_by_component)
+    add_namelist_item_extension(
+        item,
+        exp_metadata.namelists_by_component,
+        props=hints.get("namelist_props"),
+        validate=hints.get("validate", True),
+    )
 
 
 @hookimpl

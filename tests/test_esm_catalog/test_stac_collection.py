@@ -58,8 +58,8 @@ def test_collection_lists_all_experiment_components():
     collection = make_collection(exp_metadata)
     assert collection.extra_fields["components"] == ["echam", "fesom"]
     params = collection.extra_fields["nml:parameters"]
-    assert params["echam:namelist.echam:runctl:delta_time"] == 450
-    assert params["fesom:namelist.fesom:clockinit:yearnew"] == 1850
+    assert params["echam__namelist_echam__runctl__delta_time"] == 450
+    assert params["fesom__namelist_fesom__clockinit__yearnew"] == 1850
 
 
 def test_update_extent_expands_temporal(collection):

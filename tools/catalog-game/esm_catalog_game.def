@@ -1,0 +1,61 @@
+# Built from the same published esm_tools image the repo's own
+# esm_tools.def uses (see .github/containers/ubuntu-miniforge-esm_tests/) --
+# not a parallel reimplementation. That image already has esm_tools
+# installed with the `catalog` extra in a conda env named `esm_tools`
+# (esm_catalog.scan.sourcing importable out of the box); this layer only
+# adds the game itself (textual + this package) on top.
+#
+# BASE_IMAGE_TAG is passed at build time so the .sif always bootstraps from
+# the exact image tag just pushed, not a mutable :latest that may not exist
+# yet on this trigger.
+#
+# Manual build (run from the repo root, so the %files source path resolves):
+#   apptainer build \
+#     --build-arg BASE_IMAGE_TAG=ghcr.io/esm-tools/esm_tools:latest \
+#     esm_catalog_game.sif tools/catalog-game/esm_catalog_game.def
+#
+# Run against a real experiment directory (bind-mounted read-only -- the
+# game never writes into it, only into esm_catalog's sourcing layer's
+# in-memory read of config/ and log/):
+#   apptainer run \
+#     --bind /albedo/scratch/user/<user>/<expid>:/experiment:ro \
+#     esm_catalog_game.sif --exp-root /experiment
+Bootstrap: docker
+From: {{ BASE_IMAGE_TAG }}
+
+%files
+    tools/catalog-game /opt/esm_catalog_game
+
+%post
+    export PATH=/opt/conda/envs/esm_tools/bin:/opt/conda/bin:$PATH
+    pip install --no-cache-dir -e /opt/esm_catalog_game
+
+%environment
+    export PATH=/opt/conda/envs/esm_tools/bin:/opt/conda/bin:$PATH
+    export LANG=en_US.UTF-8
+    export LC_ALL=en_US.UTF-8
+
+%runscript
+    exec esm-catalog-game "$@"
+
+%labels
+    Name esm_catalog_game
+    Maintainer paul.gierz@awi.de
+
+%help
+    esm-catalog-game -- ranger-style terminal game for cataloging an
+    ESM-Tools experiment, built on esm_catalog's real scan-sourcing layer
+    (esm_catalog.scan.sourcing.source_experiment / source_files). Navigate
+    the real experiment tree with h/j/k/l, press 'c' on a file to capture
+    it, then pick its real (component / stream) from the choices shown.
+
+    Run against a real (or synthetic) experiment directory:
+        apptainer run --bind /path/to/experiment:/experiment:ro \
+            esm_catalog_game.sif --exp-root /experiment
+
+        apptainer run --bind /path/to/experiment:/experiment:ro \
+            esm_catalog_game.sif --exp-root /experiment --time 120
+
+    Drop into a shell with the env active:
+        apptainer shell esm_catalog_game.sif
+        # then: conda activate esm_tools && esm-catalog-game --help

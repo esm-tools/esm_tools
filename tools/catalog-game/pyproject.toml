@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "esm-catalog-game"
+version = "0.1.0"
+description = "Ranger-style terminal game for cataloging an ESM-Tools experiment with esm_catalog"
+requires-python = ">=3.9"
+dependencies = [
+    "textual>=0.60",
+    "click>=8.0",
+    # esm_catalog itself is not declared here on purpose: this tool is meant
+    # to run inside an esm-tools install (e.g. `pip install -e .[catalog]`
+    # from the repo root, or the esm_tools container image) where
+    # esm_catalog.scan.sourcing is already importable. Declaring it as a
+    # dependency here would pull in unrelated esm-tools packaging.
+]
+
+[project.scripts]
+esm-catalog-game = "esm_catalog_game.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -483,7 +483,12 @@ def push(
         api_url, token, verify_tls=settings.verify_tls, transport=transport
     ) as client:
         with _push_progress(show_progress, total) as advance:
-            summary = pushmod.push_paths(paths, client, on_progress=advance)
+            summary = pushmod.push_paths(
+                paths,
+                client,
+                on_progress=advance,
+                include_traceback=verbose and json_output,
+            )
 
     # If a pushed catalog carries queryables the server has not registered, tell
     # the operator how to register them (filtering already works; this only

@@ -244,7 +244,7 @@ def test_missing_config_raises_sourcing_error(tmp_path):
     exp_root = UPath(tmp_path)
     (exp_root / "config").mkdir(parents=True, exist_ok=True)
 
-    with pytest.raises(SourcingError, match="no finished_config"):
+    with pytest.raises(SourcingError, match="no file matching"):
         source_experiment(exp_root)
 
 

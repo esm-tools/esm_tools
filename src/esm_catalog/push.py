@@ -246,6 +246,22 @@ def _item_span(item: StacObject) -> tuple:
     return start, end
 
 
+def _real_assets(item: StacObject) -> dict:
+    """This item's assets, dropping null-valued entries.
+
+    A shard row read back via stac_table_to_items is not a standalone JSON
+    Item -- it came out of one shared Arrow table whose "assets" struct
+    column is the UNION of every asset key seen anywhere in the shard
+    (columnar storage: one schema shared by every row). A row that only
+    ever had its own single asset key gets every *other* row's key back as
+    a null placeholder. Confirmed live: pushing these straight through fails
+    pgstac's schema validation ("assets.<key> ... Input should be a valid
+    dictionary"). None of these null entries are real data, so they are
+    dropped before merging, never treated as "this row's assets".
+    """
+    return {k: v for k, v in item.get("assets", {}).items() if v is not None}
+
+
 def merge_item(existing: Optional[StacObject], incoming: list[StacObject]) -> StacObject:
     """Merge *incoming* single-asset shard rows (all sharing one Item id) into
     *existing* (the server's current state for that id, or None if this is
@@ -261,7 +277,7 @@ def merge_item(existing: Optional[StacObject], incoming: list[StacObject]) -> St
     # a freshly-built Item guaranteed to carry id/collection/type. Only its
     # assets and temporal span get widened with whatever existing adds.
     base = dict(incoming[0])
-    assets = dict(existing.get("assets", {})) if existing is not None else {}
+    assets = _real_assets(existing) if existing is not None else {}
     starts, ends = [], []
     if existing is not None:
         s, e = _item_span(existing)
@@ -270,7 +286,7 @@ def merge_item(existing: Optional[StacObject], incoming: list[StacObject]) -> St
         if e:
             ends.append(e)
     for item in incoming:
-        assets.update(item.get("assets", {}))
+        assets.update(_real_assets(item))
         s, e = _item_span(item)
         if s:
             starts.append(s)

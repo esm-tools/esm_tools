@@ -362,3 +362,27 @@ def test_merge_item_repush_same_asset_key_is_idempotent():
     merged = pushmod.merge_item(existing, incoming)
 
     assert set(merged["assets"]) == {"oce_restart_2000"}  # not duplicated
+
+
+def test_merge_item_drops_null_assets_from_columnar_round_trip():
+    # Confirmed live against a real DKRZ push: stac_table_to_items reads a
+    # shard back from ONE shared Arrow table, whose "assets" struct column is
+    # the union of every asset key seen anywhere in the shard -- a row that
+    # only ever had its own single key comes back with every *other* row's
+    # key as a null placeholder. Pushing those straight through fails
+    # pgstac's schema validation. merge_item must drop them, not merge them
+    # in as if they were real data.
+    row_a = _asset_item("echam-runoff", "c", "200001")
+    row_a["assets"]["200002"] = None  # another row's key, seen only as null here
+    row_a["assets"]["200003"] = None
+    row_b = _asset_item("echam-runoff", "c", "200002")
+    row_b["assets"]["200001"] = None
+    row_b["assets"]["200003"] = None
+
+    merged = pushmod.merge_item(None, [row_a, row_b])
+
+    assert merged["assets"] == {
+        "200001": row_a["assets"]["200001"],
+        "200002": row_b["assets"]["200002"],
+    }
+    assert None not in merged["assets"].values()

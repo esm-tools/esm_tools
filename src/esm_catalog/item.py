@@ -26,7 +26,6 @@ def make_item(
     path: Path | UPath | str,
     file_metadata: FileMetadata,
     exp_metadata: ExperimentMetadata,
-    hints: Optional[dict] = None,
 ) -> Item:
     """Construct a STAC Item for a single output file.
 
@@ -39,11 +38,6 @@ def make_item(
     exp_metadata : ExperimentMetadata
         Experiment identity and pre-scanned config (experiment_id, namelists,
         paleo config). Contacts are set on the Collection.
-    hints : dict, optional
-        Extension-specific precomputed values (e.g. namelist properties
-        flattened once per scan rather than per item) passed through to each
-        registered extension's ``apply_to_item`` hookimpl. See
-        :mod:`esm_catalog.namelist` for the keys a bulk caller can set.
 
     Returns
     -------
@@ -102,11 +96,12 @@ def make_item(
         )
     )
 
+    # hints: a free-form payload an extension can use to share values across
+    # its own calls (see esm_catalog.namelist/paleo, which memoize their own
+    # per-experiment properties internally rather than through this dict) --
+    # nothing populates it centrally, so it's empty by default.
     get_plugin_manager().hook.apply_to_item(
-        item=item,
-        file_metadata=file_metadata,
-        exp_metadata=exp_metadata,
-        hints=hints or {},
+        item=item, file_metadata=file_metadata, exp_metadata=exp_metadata, hints={}
     )
 
     return item

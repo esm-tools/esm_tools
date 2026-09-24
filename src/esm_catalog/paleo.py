@@ -149,13 +149,42 @@ def add_paleo_collection_extension(
     apply_extension(collection, Extension.paleo)
 
 
+#: collection_id -> already-computed paleo:* item props, computed and
+#: validated once per experiment (see :func:`_paleo_props_once`).
+_PROPS_CACHE: dict[str, dict] = {}
+
+
+def _paleo_props_once(exp_metadata) -> tuple[dict, bool]:
+    """The paleo:* item props for *exp_metadata*, computed once per experiment.
+
+    Same reasoning as :func:`esm_catalog.namelist._namelist_props_once`:
+    identical for every item in an experiment, so recompute-and-validate once,
+    cached by ``collection_id`` (``ExperimentMetadata`` itself isn't hashable,
+    and ``experiment_id`` alone is documented as reusable across distinct
+    experiments -- ``collection_id`` is what disambiguates them).
+
+    Returns
+    -------
+    tuple of (dict, bool)
+        The props, and whether this call computed them fresh (the caller
+        should validate only when it did).
+    """
+    collection_id = exp_metadata.collection_id
+    if collection_id in _PROPS_CACHE:
+        return _PROPS_CACHE[collection_id], False
+    props = paleo_item_props(exp_metadata.paleo_config)
+    _PROPS_CACHE[collection_id] = props
+    return props, True
+
+
 @hookimpl
 def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
+    props, validate = _paleo_props_once(exp_metadata)
     add_paleo_item_extension(
         item,
         exp_metadata.paleo_config,
-        props=hints.get("paleo_props"),
-        validate=hints.get("validate", True),
+        props=props,
+        validate=validate,
     )
 
 

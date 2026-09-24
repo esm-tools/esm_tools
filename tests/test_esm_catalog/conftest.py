@@ -129,3 +129,23 @@ def serial_scan(monkeypatch):
         return [worker(item) for item in inputs]
 
     monkeypatch.setattr(ingest, "parallel_map", _serial)
+
+
+@pytest.fixture(autouse=True)
+def _reset_extension_props_cache():
+    """Clear namelist.py/paleo.py's per-experiment props cache before each test.
+
+    The cache is keyed by ``collection_id`` (experiment_id + a hash of
+    experiment_path), which is genuinely unique for real scans -- but many
+    tests reuse ``make_exp_metadata()``'s default id/path with different
+    namelist/paleo content, so without a reset they'd collide on a stale
+    cached value left by an earlier test in the same pytest process.
+    """
+    import esm_catalog.namelist as namelist
+    import esm_catalog.paleo as paleo
+
+    namelist._PROPS_CACHE.clear()
+    paleo._PROPS_CACHE.clear()
+    yield
+    namelist._PROPS_CACHE.clear()
+    paleo._PROPS_CACHE.clear()

@@ -123,10 +123,9 @@ def namelist_item_props(
 ) -> dict[str, NamelistValue]:
     """Flatten every component's namelists into item-level nml__ properties.
 
-    The same for every item in an experiment -- a bulk caller should compute
-    this once per scan and reuse it, rather than call it per item (namelist
-    trees can be large; walking one per file, 30k+ times over, is real
-    wasted work).
+    The same for every item in an experiment -- the caller should compute this
+    once per scan and reuse it, rather than call it per item (namelist trees
+    can be large; walking one per file, 30k+ times over, is real wasted work).
     """
     return {
         _flatten(_ITEM_PREFIX, component, filename, group, key): value
@@ -154,15 +153,15 @@ def add_namelist_item_extension(
         Every component's namelists, flattened into one queryable property per
         parameter.
     props : dict, optional
-        The already-flattened properties (see :func:`namelist_item_props`),
-        when the caller is applying this to many items and has computed it
-        once. Recomputed from *namelists_by_component* when omitted.
+        The already-flattened properties (see :func:`namelist_item_props`), when
+        the caller is applying this to many items and has computed it once.
+        Recomputed from *namelists_by_component* when omitted.
     validate : bool, optional
         Whether to jsonschema-validate the item after applying the extension.
         Measured dominant cost of a bulk scan's per-item work (patternProperties
         matching against every nml__ property, with recursive oneOf/$ref
-        resolution) -- a bulk caller that already trusts these code paths
-        should pass False after the first item.
+        resolution) -- a bulk caller that already trusts these code paths (e.g.
+        covered by the test suite's schema-conformance tests) should pass False.
     """
     if props is None:
         props = namelist_item_props(namelists_by_component)
@@ -170,6 +169,53 @@ def add_namelist_item_extension(
         return
     item.properties.update(props)
     apply_extension(item, Extension.namelist, validate=validate)
+
+
+#: collection_id -> already-flattened namelist item props, computed and
+#: validated once per experiment (see :func:`_namelist_props_once`).
+_PROPS_CACHE: dict[str, dict] = {}
+
+
+def _namelist_props_once(exp_metadata) -> tuple[dict, bool]:
+    """The namelist item props for *exp_metadata*, computed once per experiment.
+
+    Every item in an experiment gets the same properties -- recomputing (a
+    namelist-tree walk) and re-validating (jsonschema patternProperties
+    matching, the measured dominant per-item cost on a bulk scan) for each one
+    is redundant. Cached by ``collection_id`` rather than *exp_metadata*
+    itself, since ``ExperimentMetadata`` isn't hashable (its
+    ``namelists_by_component`` holds ``f90nml.Namelist`` objects) -- and rather
+    than ``experiment_id`` alone, which is documented as reusable across
+    distinct experiments (``collection_id`` is what disambiguates them).
+
+    Returns
+    -------
+    tuple of (dict, bool)
+        The props, and whether this call computed them fresh (the caller
+        should validate only when it did).
+    """
+    collection_id = exp_metadata.collection_id
+    if collection_id in _PROPS_CACHE:
+        return _PROPS_CACHE[collection_id], False
+    props = namelist_item_props(exp_metadata.namelists_by_component)
+    _PROPS_CACHE[collection_id] = props
+    return props, True
+
+
+@hookimpl
+def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
+    props, validate = _namelist_props_once(exp_metadata)
+    add_namelist_item_extension(
+        item,
+        exp_metadata.namelists_by_component,
+        props=props,
+        validate=validate,
+    )
+
+
+@hookimpl
+def apply_to_collection(collection, exp_metadata, hints) -> None:
+    add_namelist_collection_extension(collection, exp_metadata.namelists_by_component)
 
 
 def _json_type(value: NamelistValue) -> str:
@@ -303,18 +349,3 @@ def _is_queryable(value: NamelistValue) -> bool:
             for element in value
         )
     return isinstance(value, (int, float, str, bool))
-
-
-@hookimpl
-def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
-    add_namelist_item_extension(
-        item,
-        exp_metadata.namelists_by_component,
-        props=hints.get("namelist_props"),
-        validate=hints.get("validate", True),
-    )
-
-
-@hookimpl
-def apply_to_collection(collection, exp_metadata, hints) -> None:
-    add_namelist_collection_extension(collection, exp_metadata.namelists_by_component)

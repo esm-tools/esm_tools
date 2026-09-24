@@ -26,7 +26,11 @@ from esm_catalog.scan.readers.netcdf.coords import (
 )
 from esm_catalog.scan.readers.netcdf.dimensions import _extract_dimensions, _to_python
 from esm_catalog.scan.readers.netcdf.frequency import _cf_frequency, _infer_frequency
-from esm_catalog.scan.readers.netcdf.timeaxis import _time_coord, _to_utc_datetime
+from esm_catalog.scan.readers.netcdf.timeaxis import (
+    _time_bounds,
+    _time_coord,
+    _to_utc_datetime,
+)
 from esm_catalog.scan.readers.netcdf.variables import _extract_variables
 
 
@@ -146,6 +150,46 @@ def test_to_utc_datetime_from_cftime():
     assert (result.year, result.month, result.day) == (1500, 6, 7)
     assert (result.hour, result.minute, result.second) == (8, 9, 10)
     assert result.tzinfo == timezone.utc
+
+
+# --------------------------------------------------------------------------- #
+# _time_bounds — undecoded numeric (int or float) CF time                      #
+# --------------------------------------------------------------------------- #
+
+
+def test_time_bounds_decodes_integer_seconds_since_epoch():
+    coord = xr.DataArray(
+        np.array([0, 86400], dtype="int64"),
+        dims="time",
+        attrs={"units": "seconds since 1970-01-01", "standard_name": "time"},
+    )
+    start, end = _time_bounds(coord)
+    assert start == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert end == datetime(1970, 1, 2, tzinfo=timezone.utc)
+
+
+def test_time_bounds_decodes_float_seconds_since_epoch():
+    # Confirmed live against a real FESOM output file (raw node-based data,
+    # time left as float64 seconds-since-epoch, not xarray-decoded): the
+    # dtype check used to only accept integer time, so this raised
+    # "ufunc 'subtract' cannot use operands with types dtype('float64') and
+    # dtype('<M8[s]')" instead of decoding -- cftime.num2date always handled
+    # float fine, only the guard was wrong.
+    coord = xr.DataArray(
+        np.array([0.0, 86400.0], dtype="float64"),
+        dims="time",
+        attrs={"units": "seconds since 1970-01-01", "standard_name": "time"},
+    )
+    start, end = _time_bounds(coord)
+    assert start == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert end == datetime(1970, 1, 2, tzinfo=timezone.utc)
+
+
+def test_time_bounds_numeric_without_units_returns_none():
+    coord = xr.DataArray(
+        np.array([0.0, 1.0], dtype="float64"), dims="time", attrs={}
+    )
+    assert _time_bounds(coord) == (None, None)
 
 
 # --------------------------------------------------------------------------- #

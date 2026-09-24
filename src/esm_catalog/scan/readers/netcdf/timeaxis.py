@@ -2,7 +2,7 @@
 
 The axis is located with :mod:`cf_xarray` (``standard_name``/``axis``/``units``),
 not by the name ``time`` -- models are not tidy (old FESOM called it ``T``).
-Handles decoded ``datetime64`` values, ``cftime`` objects, and integer-encoded
+Handles decoded ``datetime64`` values, ``cftime`` objects, and numeric-encoded
 time xarray could not decode (via the coordinate's CF units and calendar). A
 missing or unanchored time axis yields ``(None, None)`` -- the time-invariant case.
 """
@@ -46,7 +46,7 @@ def _time_coord(dataset: xr.Dataset) -> Optional[xr.DataArray]:
 def _extract_time_range(dataset: xr.Dataset) -> DateTimeRange:
     """Return the ``(start, end)`` datetimes of the CF time coordinate.
 
-    Handles decoded ``datetime64`` values, ``cftime`` objects, and integer-encoded
+    Handles decoded ``datetime64`` values, ``cftime`` objects, and numeric-encoded
     time that xarray could not decode (via the coordinate's CF units and calendar).
     Returns ``(None, None)`` when there is no time coordinate -- the time-invariant
     case.
@@ -62,9 +62,9 @@ def _extract_time_range(dataset: xr.Dataset) -> DateTimeRange:
 
 
 def _time_bounds(coord: xr.DataArray) -> DateTimeRange:
-    """The ``(start, end)`` datetimes of a time *coord*, decoding integer time.
+    """The ``(start, end)`` datetimes of a time *coord*, decoding numeric time.
 
-    Returns ``(None, None)`` for an empty axis, or integer time with no units to
+    Returns ``(None, None)`` for an empty axis, or numeric time with no units to
     anchor it. Shared by :func:`_extract_time_range` and :func:`_time_extent_iso`.
     """
     # atleast_1d: a single-timestep file (common in GRIB) has a 0-d/scalar time
@@ -73,15 +73,21 @@ def _time_bounds(coord: xr.DataArray) -> DateTimeRange:
     if values.size == 0:
         return None, None
     first, last = values[0], values[-1]
-    if np.issubdtype(values.dtype, np.integer):
-        first, last = _decode_integer_times(coord, [first, last])
+    # CF-encoded time xarray left undecoded is numeric, not just integer -- a
+    # float64 "seconds since ..." coordinate (confirmed live: raw FESOM
+    # output) is just as common as an integer one. cftime.num2date handles
+    # both; the dtype check only needs to rule out already-decoded
+    # datetime64/cftime values, which np.number does correctly (they aren't
+    # numeric dtypes).
+    if np.issubdtype(values.dtype, np.number):
+        first, last = _decode_numeric_times(coord, [first, last])
         if first is None:
             return None, None
     return _to_utc_datetime(first), _to_utc_datetime(last)
 
 
-def _decode_integer_times(coord: xr.DataArray, values: list) -> list:
-    """Decode integer *values* to cftime objects using the coord's units/calendar.
+def _decode_numeric_times(coord: xr.DataArray, values: list) -> list:
+    """Decode numeric *values* to cftime objects using the coord's units/calendar.
 
     Returns ``[None, None]`` when the coordinate carries no ``units`` attribute, so
     there is nothing to anchor the encoding to.

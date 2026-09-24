@@ -64,8 +64,12 @@ class PaleoConfig(BaseModel):
 _KEYS = tuple(PaleoConfig.model_fields)
 
 
-def _to_paleo_props(paleo_config: Optional[PaleoConfig]) -> dict:
+def paleo_item_props(paleo_config: Optional[PaleoConfig]) -> dict:
     """Return the ``paleo:*`` fields set by *paleo_config*.
+
+    The same for every item in an experiment -- a bulk caller should compute
+    this once per scan and reuse it, rather than re-validate/re-dump the
+    config per item.
 
     Parameters
     ----------
@@ -87,7 +91,11 @@ def _to_paleo_props(paleo_config: Optional[PaleoConfig]) -> dict:
 
 
 def add_paleo_item_extension(
-    item: pystac.Item, paleo_config: Optional[PaleoConfig] = None
+    item: pystac.Item,
+    paleo_config: Optional[PaleoConfig] = None,
+    *,
+    props: Optional[dict] = None,
+    validate: bool = True,
 ) -> None:
     """Set the ``paleo:*`` geological time on *item* from *paleo_config*.
 
@@ -99,12 +107,23 @@ def add_paleo_item_extension(
         The item to annotate in place.
     paleo_config : PaleoConfig or None, optional
         The ``general.paleo`` config section. No-op when it sets no paleo fields.
+    props : dict, optional
+        The already-computed ``paleo:*`` properties (see :func:`paleo_item_props`),
+        when the caller is applying this to many items and has computed it
+        once -- every item in an experiment gets the same paleo config, so
+        validating and dumping it per item is wasted work. Recomputed from
+        *paleo_config* when omitted.
+    validate : bool, optional
+        Whether to jsonschema-validate the item after applying the extension.
+        A bulk caller that already trusts these code paths should pass False
+        after the first item.
     """
-    props = _to_paleo_props(paleo_config)
+    if props is None:
+        props = paleo_item_props(paleo_config)
     if not props:
         return
     item.properties.update(props)
-    apply_extension(item, Extension.paleo)
+    apply_extension(item, Extension.paleo, validate=validate)
 
 
 def add_paleo_collection_extension(
@@ -122,7 +141,7 @@ def add_paleo_collection_extension(
     paleo_config : PaleoConfig or None, optional
         The ``general.paleo`` config section. No-op when it sets no paleo fields.
     """
-    props = _to_paleo_props(paleo_config)
+    props = paleo_item_props(paleo_config)
     if not props:
         return
     for key, value in props.items():
@@ -132,7 +151,12 @@ def add_paleo_collection_extension(
 
 @hookimpl
 def apply_to_item(item, file_metadata, exp_metadata, hints) -> None:
-    add_paleo_item_extension(item, exp_metadata.paleo_config)
+    add_paleo_item_extension(
+        item,
+        exp_metadata.paleo_config,
+        props=hints.get("paleo_props"),
+        validate=hints.get("validate", True),
+    )
 
 
 @hookimpl

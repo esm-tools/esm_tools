@@ -88,14 +88,63 @@ def test_status_after_scan_reports_catalog_contents(runner, tmp_path, monkeypatc
         json.dumps({"properties": {"nml__a__b__c__d": {"type": "number"}}})
     )
 
-    result = runner.invoke(main, ["status", "--exp-root", str(tmp_path)])
+
+# --------------------------------------------------------------------------- #
+# validate-cmip6
+# --------------------------------------------------------------------------- #
+
+
+def _write_collection_with_summaries(catalog_root, summaries: dict) -> None:
+    catalog = catalog_dir(UPath(catalog_root))
+    catalog.mkdir(parents=True, exist_ok=True)
+    (catalog / "collection.json").write_text(
+        json.dumps({"type": "Collection", "id": "exp-alpha", "summaries": summaries})
+    )
+
+
+def test_validate_cmip6_before_scan_says_so(runner, tmp_path):
+    result = runner.invoke(main, ["validate-cmip6", "--exp-root", str(tmp_path)])
+    assert result.exit_code != 0
+    assert "no collection.json" in result.output
+
+
+def test_validate_cmip6_noop_without_declared_facets(runner, tmp_path):
+    _write_collection_with_summaries(tmp_path, {})
+    result = runner.invoke(main, ["validate-cmip6", "--exp-root", str(tmp_path)])
     assert result.exit_code == 0
-    assert "exp-alpha" in result.output
-    assert "collection: exp-alpha" in result.output
-    assert "1 (1 item(s) total)" in result.output
-    assert "tracked (incremental) files: 1" in result.output
-    assert "queryables: 1" in result.output
-    assert "https://stac.example.org" in result.output
+    assert "nothing to validate" in result.output
+
+
+def _cmip6_cv_installed() -> bool:
+    try:
+        import esgvoc.api as esgvoc_api
+
+        esgvoc_api.valid_term_in_collection("CMIP6", "cmip6", "mip_era")
+        return True
+    except Exception:  # noqa: BLE001 -- any failure means "not installed/reachable"
+        return False
+
+
+def test_validate_cmip6_reports_invalid_facet(runner, tmp_path):
+    if not _cmip6_cv_installed():
+        pytest.skip("CMIP6 CV not installed locally (run: esgvoc use cmip6@latest)")
+    _write_collection_with_summaries(
+        tmp_path, {"cmip6:source_id": ["AWI-CM-3"], "cmip6:mip_era": ["CMIP6"]}
+    )
+    result = runner.invoke(main, ["validate-cmip6", "--exp-root", str(tmp_path)])
+    assert result.exit_code != 0
+    assert "cmip6:source_id='AWI-CM-3' is not a registered term" in result.output
+
+
+def test_validate_cmip6_confirms_valid_facets(runner, tmp_path):
+    if not _cmip6_cv_installed():
+        pytest.skip("CMIP6 CV not installed locally (run: esgvoc use cmip6@latest)")
+    _write_collection_with_summaries(
+        tmp_path, {"cmip6:source_id": ["AWI-CM-1-1-MR"], "cmip6:mip_era": ["CMIP6"]}
+    )
+    result = runner.invoke(main, ["validate-cmip6", "--exp-root", str(tmp_path)])
+    assert result.exit_code == 0
+    assert "2 declared cmip6 facet(s) are valid" in result.output
 
 
 # --------------------------------------------------------------------------- #

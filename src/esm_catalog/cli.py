@@ -4,6 +4,7 @@ Workflow for one experiment::
 
     esm-catalog auth login https://stac.awi.de   # once; token cached locally
     esm-catalog scan                             # write stac-geoparquet shards
+    esm-catalog validate-cmip6                   # check any declared cmip6:* facets, if present
     esm-catalog push                             # ship new shards -> pgstac
     esm-catalog status                           # what's local, what's configured
 
@@ -686,6 +687,70 @@ def status(exp_root: str) -> None:
             "push target: not configured (set server_url or ESM_CATALOG_SERVER_URL)",
             fg="yellow",
         )
+
+
+@main.command("validate-cmip6")
+@click.option(
+    "--exp-root",
+    default=".",
+    help="Experiment root; may be remote (e.g. sftp://host/path). Defaults to '.'.",
+)
+def validate_cmip6(exp_root: str) -> None:
+    """Check the scanned catalog's cmip6:* facets against the live esgvoc CV.
+
+    Reads ``collection.json`` (written by 'scan') rather than re-parsing the
+    experiment config, and reports whether each declared facet is a real,
+    registered term — catching a wrong case or an unregistered model name
+    before publication, not after. A no-op if the experiment declares no
+    cmip6 facets. Requires the optional 'catalog-esgvoc' extra and a locally
+    installed CV (``esgvoc use <project>@latest``).
+    """
+    from upath import UPath
+
+    from esm_catalog.cmip6 import Cmip6Config
+    from esm_catalog.esgvoc_validate import validate_cmip6_config
+    from esm_catalog.scan.workspace import catalog_dir
+
+    catalog = catalog_dir(UPath(exp_root))
+    collection_path = catalog / "collection.json"
+    if not collection_path.exists():
+        raise click.ClickException(
+            f"no collection.json under {catalog} — run 'esm-catalog scan' first."
+        )
+
+    summaries = json.loads(collection_path.read_text()).get("summaries", {})
+    prefix = "cmip6:"
+    facets = {
+        key[len(prefix) :]: values[0]
+        for key, values in summaries.items()
+        if key.startswith(prefix) and values
+    }
+    if not facets:
+        click.echo("No cmip6:* facets declared — nothing to validate.")
+        return
+
+    try:
+        issues = validate_cmip6_config(Cmip6Config(**facets))
+    except ImportError as exc:
+        raise click.ClickException(str(exc)) from exc
+    except Exception as exc:  # noqa: BLE001 — e.g. esgvoc's EsgvocNotFoundError
+        # when the package is installed but the CV database ("esgvoc use
+        # <project>@latest") isn't -- report cleanly, not a raw traceback.
+        raise click.ClickException(f"esgvoc CV lookup failed: {exc}") from exc
+
+    if not issues:
+        click.secho(
+            f"All {len(facets)} declared cmip6 facet(s) are valid.", fg="green"
+        )
+        return
+
+    for issue in issues:
+        click.secho(
+            f"  cmip6:{issue.field}={issue.value!r} is not a registered term "
+            f"in '{issue.collection}'",
+            fg="red",
+        )
+    raise click.ClickException(f"{len(issues)} invalid cmip6 facet(s).")
 
 
 @main.command("list-plugins")

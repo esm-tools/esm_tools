@@ -123,9 +123,19 @@ with open("API.rst", "w") as rst:
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc', 'sphinx.ext.viewcode', 'sphinx.ext.graphviz', 'sphinx.ext.doctest',
     'sphinx.ext.autosectionlabel', 'sphinx.ext.napoleon', 'sphinx_copybutton', 'sphinx_tabs.tabs',
-    'sphinx_toolbox.collapse']
+    'sphinx_toolbox.collapse', 'sphinxcontrib.mermaid', 'sphinx.ext.intersphinx']
 
 napoleon_custom_sections = ["User Information", "Programmer Information"]
+
+# Cross-links to pystac's own docs (e.g. :class:`pystac.Item`) instead of
+# just naming the class in backticks with nowhere to click through to.
+intersphinx_mapping = {
+    "pystac": ("https://pystac.readthedocs.io/en/stable/", None),
+}
+
+# SVG instead of the default PNG: crisp on high-DPI displays, embeds text as
+# real text (not rasterized), and diagrams stay small on disk.
+graphviz_output_format = "svg"
 
 # Strip the input promps for code cells when copying
 copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "

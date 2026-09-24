@@ -840,6 +840,31 @@ fesom:
                                 spp: false
                                 K_GM_max: 2500.0
                                 Redi_Kmax: 1000.0
+                                # Vertical mixing (oce_setup_step.F90 code 56). Four schemes
+                                # were run 20 years, 2020-2039, from one restart, differing
+                                # only in this line: both KPP variants lose Antarctic summer
+                                # ice, both TKE variants grow it, and cvmix_KPP reproduces
+                                # the KPP control closely enough to serve as the null.
+                                # TKE+IDEMIX against TKE alone on the same years:
+                                #     SH Feb volume  1.62 (+0.83/dec)  vs 1.31 (+0.42)  obs ~2.07
+                                #     SH Feb extent  2.26              vs 1.95          obs ~3.0
+                                #     T2m 60-90S    +0.569             vs +0.664
+                                # the closest this campaign has come to the observed
+                                # Antarctic summer pack. Cavity basal melt 2030-2039 falls
+                                # 1256 -> 1062 Gt/yr (cvmix_KPP 1284, cvmix_TKE 1174),
+                                # towards Adusumilli 2020 (~1100) from Rignot 2013 (~1500).
+                                #
+                                # The cost is northern and it is not small: NH April volume
+                                # 38.04 rising at +2.46/decade against 31.19 observed, where
+                                # TKE alone sits at 35.17 and is flat. Watch NH April volume.
+                                #
+                                # TKE carries prognostic state that KPP does not. Older
+                                # restarts have no tke.nc; io_restart.F90 registers it with
+                                # def_node_var_optional, so the missing file is skipped
+                                # rather than fatal and TKE spins up from tke_min = 1e-06.
+                                # That takes hours to days, so the first year after a switch
+                                # is not meaningful.
+                                mix_scheme: 'cvmix_TKE+cvmix_IDEMIX'
                         namelist.tra:
                             tracer_phys:
                                 # momix is Timmermann & Beckmann (2004),
@@ -863,6 +888,18 @@ fesom:
                                 kpp_kv0: 0.003
                                 kpp_avbckg: 5.0e-05
                                 kpp_kvbckg: 5.0e-06
+                            param_idemix:
+                                # Same tidal bottom forcing the shipped namelist names, but
+                                # the /albedo/ path in it is not visible from levante, so it
+                                # is taken from the machine pool instead.
+                                idemix_botforc_file: ${fesom.pool_dir}/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc
+                                # Normalisation target = this file's own area integral,
+                                # 0.918 TW, matching its Etot_in_TW_bin attribute. REQUIRES a
+                                # FESOM carrying the MPI_WP fix (FESOM PR #1087): without it
+                                # glb_Etot is memory-dependent garbage and this rescale
+                                # amplifies it. Verified in PICAL_cvTKEIDEMIX, where
+                                # Etot_bot goes 0.9135067 -> 0.9179869 TW.
+                                idemix_botforc_Etot: 9.17987e11
                         namelist.ice:
                             meltpond:
                                 pndaspect: 1.6

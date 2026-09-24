@@ -3,6 +3,10 @@
 computer:
     # basic setup
     name: juwels
+    # Computing center hosting this machine, emitted as the STAC "host"
+    # provider (canonical WCRP-universe organisation record; the CV
+    # registers the parent FZJ rather than JSC).
+    hosted_by: "https://esgvoc.ipsl.fr/resource/universe/organisation/fzj"  # FZJ (JSC)
     account: esmtst
     jobtype: compute
     accounting: true

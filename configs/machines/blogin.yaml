@@ -2,6 +2,9 @@
 
 computer:
     name: blogin
+    # Computing center hosting this machine, emitted as the STAC "host"
+    # provider. ROR identifier (center not registered in the WCRP-universe CV).
+    hosted_by: "https://ror.org/02eva5865"  # ZIB (HLRN)
     account: None
 
     # set default for hyperthreading_flag

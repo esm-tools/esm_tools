@@ -6,6 +6,7 @@ reader roundtrips through the scanner's own writer.
 
 import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 import httpx
 import pystac
@@ -215,3 +216,99 @@ def test_upsert_reports_redirect_actionably():
     assert exc.value.status == 308
     msg = str(exc.value).lower()
     assert "redirect" in msg and "https" in msg
+
+
+# --------------------------------------------------------------------------- #
+# Queryables delta (conditional registration).
+# --------------------------------------------------------------------------- #
+
+
+def _write_queryables(catalog: Path, properties: dict) -> None:
+    (catalog).mkdir(parents=True, exist_ok=True)
+    (catalog / "queryables.json").write_text(json.dumps({"properties": properties}))
+
+
+def test_queryable_delta_only_new_keys(tmp_path, monkeypatch):
+    catalog = tmp_path / "catalog"
+    _write_queryables(
+        catalog,
+        {
+            "nml__echam__namelist_echam__radctl__co2vmr": {"type": "number"},
+            "nml__echam__namelist_echam__radctl__yr_perp": {"type": "integer"},
+        },
+    )
+    # server already has co2vmr registered -> only yr_perp is new
+    import esm_catalog.push as p
+
+    monkeypatch.setattr(
+        p, "registered_queryables", lambda url, verify: {"nml__echam__namelist_echam__radctl__co2vmr", "datetime"}
+    )
+    delta = p.queryable_delta(catalog, "https://host/api", True)
+    assert delta is not None and delta.name == "queryables-delta.json"
+    written = json.loads(delta.read_text())["properties"]
+    assert set(written) == {"nml__echam__namelist_echam__radctl__yr_perp"}
+
+
+def test_queryable_delta_none_when_all_registered(tmp_path, monkeypatch):
+    catalog = tmp_path / "catalog"
+    _write_queryables(catalog, {"nml__a__b__c__d": {"type": "number"}})
+    import esm_catalog.push as p
+
+    monkeypatch.setattr(p, "registered_queryables", lambda url, verify: {"nml__a__b__c__d"})
+    assert p.queryable_delta(catalog, "https://host/api", True) is None
+    assert not (catalog / "queryables-delta.json").exists()
+
+
+def test_queryable_delta_full_set_when_server_unreachable(tmp_path, monkeypatch):
+    catalog = tmp_path / "catalog"
+    _write_queryables(catalog, {"nml__a__b__c__d": {"type": "number"}})
+    import esm_catalog.push as p
+
+    def _boom(url, verify):
+        raise RuntimeError("unreachable")
+
+    monkeypatch.setattr(p, "registered_queryables", _boom)
+    delta = p.queryable_delta(catalog, "https://host/api", True)
+    assert delta is not None  # emits the full set rather than skipping silently
+    assert set(json.loads(delta.read_text())["properties"]) == {"nml__a__b__c__d"}
+
+
+def test_queryable_delta_absent_when_no_sidecar(tmp_path, monkeypatch):
+    import esm_catalog.push as p
+
+    monkeypatch.setattr(p, "registered_queryables", lambda url, verify: set())
+    assert p.queryable_delta(tmp_path, "https://host/api", True) is None
+
+
+def test_registered_queryables_parses_properties():
+    def handler(request):
+        return httpx.Response(200, json={"properties": {"a": {}, "b": {}, "datetime": {}}})
+
+    import esm_catalog.push as p
+
+    # patch httpx.get used inside registered_queryables via a MockTransport client
+    import httpx as _httpx
+
+    real_get = _httpx.get
+
+    def fake_get(url, **kw):
+        return httpx.Response(200, json={"properties": {"a": {}, "b": {}}}, request=httpx.Request("GET", url))
+
+    _httpx.get = fake_get
+    try:
+        assert p.registered_queryables("https://host/api", True) == {"a", "b"}
+    finally:
+        _httpx.get = real_get
+
+
+def test_expand_paths_skips_queryables_sidecar(tmp_path):
+    catalog = tmp_path / "catalog"
+    catalog.mkdir()
+    (catalog / "collection.json").write_text(json.dumps({"type": "Collection", "id": "c"}))
+    (catalog / "queryables.json").write_text(json.dumps({"properties": {}}))
+    (catalog / "esm-catalog.json").write_text(json.dumps({"scanned": {}}))
+
+    names = [p.name for p in pushmod.expand_paths([catalog])]
+    assert "collection.json" in names
+    assert "queryables.json" not in names
+    assert "esm-catalog.json" not in names

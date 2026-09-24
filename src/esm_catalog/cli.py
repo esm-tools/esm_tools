@@ -342,6 +342,8 @@ def scan(
     verbose: bool,
 ) -> None:
     """Scan the experiment's output into the catalog (stac-geoparquet shards)."""
+    import os
+
     from upath import UPath
 
     from esm_catalog.scan.ingest import ScanError, scan_experiment
@@ -349,10 +351,15 @@ def scan(
 
     level = _configure_logging(verbose)
 
-    show_progress = sys.stderr.isatty() and not verbose
-    try:
+    # ESM_CATALOG_PROFILE=/path/to/out.prof: cProfile the whole scan (dask
+    # dispatch + the single-threaded item-building/writing phase), dumped for
+    # `python -m pstats`/snakeviz. Off (zero overhead) unless set -- meant for
+    # a one-off "what's actually slow" run, not routine use.
+    profile_path = os.environ.get("ESM_CATALOG_PROFILE")
+
+    def _run_scan():
         with _scan_progress(show_progress) as on_progress:
-            report = scan_experiment(
+            return scan_experiment(
                 UPath(exp_root),
                 catalog=UPath(catalog_dir) if catalog_dir else None,
                 distributed=distributed,
@@ -363,6 +370,18 @@ def scan(
                 worker_initializer=_quiet_worker_logging,
                 worker_initargs=(level,),
             )
+
+    show_progress = sys.stderr.isatty() and not verbose
+    try:
+        if profile_path:
+            import cProfile
+
+            profiler = cProfile.Profile()
+            report = profiler.runcall(_run_scan)
+            profiler.dump_stats(profile_path)
+            click.echo(f"profile written to {profile_path}", err=True)
+        else:
+            report = _run_scan()
     except (SourcingError, ScanError) as exc:
         raise click.ClickException(str(exc)) from exc
     if report.scanned + report.skipped == 0:
@@ -426,6 +445,8 @@ def push(
     """
     json_output: bool = (ctx.obj or {}).get("json", False)
 
+    import os
+
     from esm_catalog import auth
     from esm_catalog import push as pushmod
     from esm_catalog.client import StacClient
@@ -478,17 +499,33 @@ def push(
         for f in files
     )
 
-    show_progress = sys.stderr.isatty() and not json_output
-    with StacClient(
-        api_url, token, verify_tls=settings.verify_tls, transport=transport
-    ) as client:
-        with _push_progress(show_progress, total) as advance:
-            summary = pushmod.push_paths(
-                paths,
-                client,
-                on_progress=advance,
-                include_traceback=verbose and json_output,
-            )
+    # ESM_CATALOG_PROFILE=/path/to/out.prof: cProfile the push (shard read-back
+    # into Items + upload), dumped for `python -m pstats`/snakeviz. Off (zero
+    # overhead) unless set -- same one-off "what's actually slow" hook as scan.
+    profile_path = os.environ.get("ESM_CATALOG_PROFILE")
+
+    def _run_push():
+        show_progress = sys.stderr.isatty() and not json_output
+        with StacClient(
+            api_url, token, verify_tls=settings.verify_tls, transport=transport
+        ) as client:
+            with _push_progress(show_progress, total) as advance:
+                return pushmod.push_paths(
+                    paths,
+                    client,
+                    on_progress=advance,
+                    include_traceback=verbose and json_output,
+                )
+
+    if profile_path:
+        import cProfile
+
+        profiler = cProfile.Profile()
+        summary = profiler.runcall(_run_push)
+        profiler.dump_stats(profile_path)
+        click.echo(f"profile written to {profile_path}", err=True)
+    else:
+        summary = _run_push()
 
     # If a pushed catalog carries queryables the server has not registered, tell
     # the operator how to register them (filtering already works; this only

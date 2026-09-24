@@ -32,9 +32,6 @@ from esm_catalog.paleo import paleo_item_props
 from esm_catalog.scan.format import UnknownFormatError, detect
 from esm_catalog.scan.parallel import parallel_map
 from esm_catalog.scan.reader import UnsupportedContentError, reader_for
-from esm_catalog.scan.readers import (
-    netcdf as _netcdf,
-)  # noqa: F401  (registers readers)
 from esm_catalog.scan.sourcing import _load_run_cfgs, output_files, source_experiment
 from esm_catalog.scan.types import (
     OutputFile,

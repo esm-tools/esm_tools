@@ -22,8 +22,8 @@ from typing import Optional
 from loguru import logger
 from upath import UPath
 
+from esm_catalog.scan.enrichers import hookimpl as enricher_hookimpl
 from esm_catalog.scan.format import FileFormat
-from esm_catalog.scan.readers.grib import register_enricher
 from esm_catalog.scan.readers.grib.plugins import hookimpl
 from esm_catalog.scan.readers.netcdf.coords import _bbox_to_polygon
 from esm_catalog.types import FileMetadata, ScannedVariable
@@ -146,7 +146,13 @@ def enrich(path: UPath, metadata: FileMetadata, datasets: list) -> FileMetadata:
     return metadata
 
 
-register_enricher(enrich)
+@enricher_hookimpl
+def enrich_metadata(
+    path: UPath, file_format: FileFormat, metadata: FileMetadata, datasets: list
+) -> None:
+    if file_format != FileFormat.grib:
+        return
+    enrich(path, metadata, datasets)
 
 
 @hookimpl

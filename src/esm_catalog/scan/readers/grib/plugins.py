@@ -4,17 +4,28 @@
 ``cfgrib.open_datasets`` rebuilds its index on every open. A model module
 (e.g. :mod:`.echam`) can register a faster, model-specific read for the files
 it recognises; ``GRIBReader`` doesn't know which models have one.
+
+A third-party package contributes one by shipping a module that implements
+``try_model_specific_read`` and declaring it under the ``esm_catalog.grib``
+entry-point group in its own package metadata, e.g. in ``pyproject.toml``::
+
+    [project.entry-points."esm_catalog.grib"]
+    my_model = "my_package.grib_fastpath"
+
+See :func:`get_grib_plugin_manager`.
 """
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 import pluggy
-from upath import UPath
 
-from esm_catalog.scan.format import FileFormat
-from esm_catalog.types import FileMetadata
+if TYPE_CHECKING:
+    from upath import UPath
+
+    from esm_catalog.scan.format import FileFormat
+    from esm_catalog.types import FileMetadata
 
 hookspec = pluggy.HookspecMarker("esm_catalog.grib")
 hookimpl = pluggy.HookimplMarker("esm_catalog.grib")
@@ -25,8 +36,8 @@ class GribFastPathSpec:
 
     @hookspec(firstresult=True)
     def try_model_specific_read(
-        path: UPath, file_format: FileFormat
-    ) -> Optional[FileMetadata]:
+        path: "UPath", file_format: "FileFormat"
+    ) -> "Optional[FileMetadata]":
         """Return metadata read via a model-specific path, or None.
 
         Returning ``None`` means "not my file" (or "my fast path failed") —
@@ -42,6 +53,10 @@ def _build_plugin_manager() -> pluggy.PluginManager:
     from esm_catalog.scan.readers.grib import echam
 
     pm.register(echam)
+    # Built-ins are registered directly above (guaranteed, no install-metadata
+    # round-trip needed); this discovers anything a separately-installed
+    # package declared under the group in its own entry_points.
+    pm.load_setuptools_entrypoints("esm_catalog.grib")
     return pm
 
 

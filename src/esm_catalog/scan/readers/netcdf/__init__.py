@@ -27,8 +27,10 @@ import cf_xarray  # noqa: F401 - registers the .cf accessor on Dataset/DataArray
 import xarray as xr
 from upath import UPath
 
+from esm_catalog.scan.enrichers import run_enrichers
 from esm_catalog.scan.format import FileFormat
-from esm_catalog.scan.reader import register
+from esm_catalog.scan.readers.format_plugins import hookimpl as format_hookimpl
+from esm_catalog.scan.readers.plugins import hookimpl
 from esm_catalog.types import FileMetadata
 
 from .coords import _extract_bbox
@@ -88,22 +90,54 @@ class NetCDFReader:
                 frequency = _infer_frequency(dataset)
                 primary = next(iter(dataset.data_vars), "unknown")
 
-        metadata: FileMetadata = {
-            "variable": primary,
-            "variables": variables,
-            "dimensions": dimensions,
-            "bbox": bbox,
-            "geometry": geometry,
-            "format": "netcdf",
-        }
-        if start is not None:
-            metadata["datetime_start"] = start
-            metadata["datetime_str"] = start.strftime("%Y%m")
-        if end is not None:
-            metadata["datetime_end"] = end
-        if frequency is not None:
-            metadata["frequency"] = frequency
+                metadata: FileMetadata = {
+                    "variable": primary,
+                    "variables": variables,
+                    "dimensions": dimensions,
+                    "bbox": bbox,
+                    "geometry": geometry,
+                    "format": "netcdf",
+                }
+                if start is not None:
+                    metadata["datetime_start"] = start
+                    metadata["datetime_str"] = start.strftime("%Y%m")
+                if end is not None:
+                    metadata["datetime_end"] = end
+                if frequency is not None:
+                    metadata["frequency"] = frequency
+                # Enrichment runs while the dataset is still open, same as the
+                # GRIB reader -- a model-specific enricher (e.g. a hypothetical
+                # FESOM quirk) may need it, not just the already-extracted metadata.
+                run_enrichers(path, FileFormat.netcdf, metadata, [dataset])
+
         return _drop_surrogates(metadata)
 
 
-register(FileFormat.netcdf, NetCDFReader())
+_READER = NetCDFReader()
+
+
+@hookimpl
+def get_reader(file_format: FileFormat):
+    return _READER if file_format == FileFormat.netcdf else None
+
+
+_SUFFIXES = frozenset({".nc", ".nc4", ".cdf", ".netcdf"})
+"""Filename suffixes that unambiguously mean NetCDF."""
+
+_HDF5_MAGIC = b"\x89HDF"
+"""NetCDF-4 / HDF5 signature at offset 0."""
+
+_CDF_MAGIC = b"CDF"
+"""Classic NetCDF signature (CDF\\x01 / \\x02 / \\x05) at offset 0."""
+
+
+@format_hookimpl
+def claim_by_suffix(suffix: str):
+    return FileFormat.netcdf if suffix in _SUFFIXES else None
+
+
+@format_hookimpl
+def claim_by_magic(head: bytes):
+    if head.startswith(_HDF5_MAGIC) or head.startswith(_CDF_MAGIC):
+        return FileFormat.netcdf
+    return None

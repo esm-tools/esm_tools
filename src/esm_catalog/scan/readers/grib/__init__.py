@@ -11,28 +11,34 @@ the whole-Earth fallback.
 
 This module is the *basic*, model-agnostic reader -- always correct, but pays
 cfgrib's per-open reindexing cost. A model module can register two different
-kinds of model-specific help, via :mod:`.plugins`:
+kinds of model-specific help:
 
-- ``try_model_specific_read`` (see :mod:`.echam`) -- an alternative, faster
-  read for files it recognises (e.g. straight from eccodes headers), tried
-  before cfgrib; returning ``None`` falls through to the generic path.
-- an *enricher* (:func:`register_enricher`) -- post-processes the metadata
-  cfgrib/the fast path already produced (e.g. ECHAM's GRIB1 encoding, where
-  every field is stored under ``paramId=0`` and collapses to a single
-  ``unknown`` variable, which no fast path claims).
+- ``try_model_specific_read`` (see :mod:`.plugins`, implemented by
+  :mod:`.echam`) -- an alternative, faster read for files it recognises (e.g.
+  straight from eccodes headers), tried before cfgrib. First-match dispatch,
+  and GRIB-specific: a third-party package contributes one via the
+  ``esm_catalog.grib`` entry-point group (see :mod:`.plugins`).
+- an *enricher* (see :mod:`esm_catalog.scan.enrichers`, implemented here by
+  :mod:`.echam`) -- post-processes the metadata cfgrib/the fast path already
+  produced (e.g. ECHAM's GRIB1 encoding, where every field is stored under
+  ``paramId=0`` and collapses to a single ``unknown`` variable). Not
+  GRIB-specific -- the same mechanism works for any reader's model-specific
+  quirks, so it's a shared module, not owned by this package.
 """
 
 from __future__ import annotations
 
 import warnings
-from typing import Callable
 
 import xarray as xr
 from upath import UPath
 
+from esm_catalog.scan.enrichers import run_enrichers
 from esm_catalog.scan.format import FileFormat
-from esm_catalog.scan.reader import UnsupportedContentError, register
+from esm_catalog.scan.reader import UnsupportedContentError
 from esm_catalog.scan.readers.grib.plugins import get_grib_plugin_manager
+from esm_catalog.scan.readers.format_plugins import hookimpl as format_hookimpl
+from esm_catalog.scan.readers.plugins import hookimpl
 from esm_catalog.scan.readers.netcdf.coords import _extract_bbox
 from esm_catalog.scan.readers.netcdf.dimensions import _extract_dimensions
 from esm_catalog.scan.readers.netcdf.frequency import _infer_frequency
@@ -40,18 +46,7 @@ from esm_catalog.scan.readers.netcdf.timeaxis import _extract_time_range
 from esm_catalog.scan.readers.netcdf.variables import _extract_variables
 from esm_catalog.types import FileMetadata
 
-__all__ = ["GRIBReader", "register_enricher"]
-
-#: An enricher post-processes a GRIB file's metadata in place, given the opened
-#: hypercube datasets. It returns the (possibly replaced) metadata.
-GribEnricher = Callable[[UPath, FileMetadata, list], FileMetadata]
-
-_ENRICHERS: list[GribEnricher] = []
-
-
-def register_enricher(enricher: GribEnricher) -> None:
-    """Register a model-specific *enricher* to run after the basic extraction."""
-    _ENRICHERS.append(enricher)
+__all__ = ["GRIBReader"]
 
 
 class GRIBReader:
@@ -95,8 +90,7 @@ class GRIBReader:
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=xr.SerializationWarning)
                 metadata = _basic_metadata(datasets)
-                for enricher in _ENRICHERS:
-                    metadata = enricher(path, metadata, datasets)
+                metadata = run_enrichers(path, FileFormat.grib, metadata, datasets)
             return metadata
         finally:
             for dataset in datasets:
@@ -164,8 +158,26 @@ def _basic_metadata(datasets: list) -> FileMetadata:
     return metadata
 
 
-register(FileFormat.grib, GRIBReader())
+_READER = GRIBReader()
 
-# Import model enrichers for their registration side effect. Kept last so
-# register_enricher and the reader are defined first.
-from esm_catalog.scan.readers.grib import echam as _echam  # noqa: E402,F401
+
+@hookimpl
+def get_reader(file_format: FileFormat):
+    return _READER if file_format == FileFormat.grib else None
+
+
+_SUFFIXES = frozenset({".grb", ".grb2", ".grib", ".grib2"})
+"""Filename suffixes that unambiguously mean GRIB."""
+
+_GRIB_MAGIC = b"GRIB"
+"""GRIB1/GRIB2 signature at offset 0."""
+
+
+@format_hookimpl
+def claim_by_suffix(suffix: str):
+    return FileFormat.grib if suffix in _SUFFIXES else None
+
+
+@format_hookimpl
+def claim_by_magic(head: bytes):
+    return FileFormat.grib if head.startswith(_GRIB_MAGIC) else None

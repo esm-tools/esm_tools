@@ -9,7 +9,7 @@ Resolution order (highest precedence first):
 Only ``server`` is needed to push — the OIDC client id already defaults to the
 registered public client. A minimal ``config.yaml`` looks like::
 
-    server_url: https://stac-dev.dmawi.de
+    server_url: https://stac-dev.awi.de
 """
 
 from __future__ import annotations
@@ -46,7 +46,7 @@ DEFAULT_DISCOVERY_URL = (
     "https://login-dev.helmholtz.de/oauth2/.well-known/openid-configuration"
 )
 DEFAULT_CLIENT_ID = "esm-catalog-dev"
-DEFAULT_REDIRECT_URI = "https://stac-dev.dmawi.de"
+DEFAULT_REDIRECT_URI = "https://stac-dev.awi.de"
 # OAuth sends scopes as one space-delimited string; the list form is just for
 # legibility (no accidental missing spaces).
 DEFAULT_SCOPES = " ".join(["openid", "eduperson_entitlement", "offline_access"])
@@ -61,7 +61,7 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    #: STAC API root, e.g. ``https://stac-dev.dmawi.de``. The API lives under
+    #: STAC API root, e.g. ``https://stac-dev.awi.de``. The API lives under
     #: ``<server_url>/api`` (see :attr:`api_url`).
     server_url: Optional[Url] = None
 

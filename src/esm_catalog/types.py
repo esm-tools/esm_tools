@@ -1,9 +1,12 @@
 """Shared domain vocabulary for esm_catalog.
 
-Lightweight type aliases (not data models — those are the pydantic models in
-models.py) naming the shapes that recur across the catalog builders and
-extensions. Each alias carries an attribute docstring so its meaning surfaces
-on IDE hover wherever it is used.
+Type aliases, ``TypedDict``\\ s, and lightly-validated pydantic models naming
+the shapes that recur across the catalog builders and extensions — data that
+only needs a shape and, for ``FileMetadata``/``ScannedVariable``, boundary
+validation, not behaviour. Models with methods and cross-field validation
+(``ExperimentMetadata``, ``Contact``) live in models.py instead. Each alias
+carries an attribute docstring so its meaning surfaces on IDE hover wherever
+it is used.
 """
 
 from __future__ import annotations

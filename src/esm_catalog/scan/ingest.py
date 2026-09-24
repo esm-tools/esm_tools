@@ -147,7 +147,9 @@ def scan_experiment(
     if catalog is None:
         catalog = catalog_dir(exp_root)
     _emit("sourcing")
-    run_cfgs = _load_run_cfgs(exp_root)
+    run_cfgs = _load_run_cfgs(
+        exp_root, distributed=distributed, scheduler=scheduler, jobs=jobs
+    )
     exp_metadata = source_experiment(exp_root, run_cfgs=run_cfgs)
     files = output_files(
         exp_root,

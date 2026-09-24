@@ -47,6 +47,7 @@ from upath import UPath
 from esm_catalog.models import Contact, ExperimentMetadata
 from esm_catalog.namelist import ComponentNamelists, NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
+from esm_catalog.scan.parallel import parallel_map
 from esm_catalog.scan.types import Md5, OutputFile, RunStamp
 from esm_catalog.types import ComponentName, ExperimentId
 
@@ -376,11 +377,31 @@ def output_files(
     return files
 
 
-def _load_run_cfgs(exp_root: UPath) -> list[_RunConfig]:
+def _load_run_cfgs(
+    exp_root: UPath,
+    *,
+    distributed: bool = False,
+    scheduler: Optional[str] = None,
+    jobs: Optional[int] = None,
+) -> list[_RunConfig]:
     """Load every finished_config under ``<exp_root>/config``, sorted chronologically.
 
     The finished_config filenames sort chronologically because their
     ``YYYYMMDD-YYYYMMDD`` suffixes are zero-padded.
+
+    Parameters
+    ----------
+    exp_root : UPath
+        The experiment root directory.
+    distributed, scheduler, jobs : optional
+        Same meaning as :func:`~esm_catalog.scan.parallel.parallel_map`'s --
+        parse the finished_configs there too when a scan is already running
+        distributed, instead of serially in this (the driver) process. A run
+        with hundreds of segments can spend real wall-clock time here
+        (measured: 60-300s serially, depending on filesystem load), and the
+        cluster used for the read phase is sitting right there. Falls back
+        to a plain sequential loop -- the only path before this parameter
+        existed -- when *distributed* is false (the default).
 
     Raises
     ------
@@ -400,7 +421,18 @@ def _load_run_cfgs(exp_root: UPath) -> list[_RunConfig]:
             "(e.g. '<expid>_finished_config.yaml', written by ESM-Tools at the "
             "end of a run — a plain file named 'finished_config' will not match)"
         )
-    return [_RunConfig(path=path, doc=_load_yaml(path)) for path in paths]
+    if distributed:
+        docs = parallel_map(
+            paths,
+            _load_yaml,
+            distributed=True,
+            scheduler=scheduler,
+            jobs=jobs,
+            label="sourcing",
+        )
+    else:
+        docs = [_load_yaml(path) for path in paths]
+    return [_RunConfig(path=path, doc=doc) for path, doc in zip(paths, docs)]
 
 
 def _experiment_id(run_cfgs: list[_RunConfig]) -> ExperimentId:

@@ -94,6 +94,9 @@ class FileMetadata(BaseModel):
     variable: Optional[str] = None
     variables: list[ScannedVariable] = []
     component: Optional[ComponentName] = None
+    stream: Optional[str] = None
+    role: str = "data"
+    category: Optional[str] = None
     format: Optional[str] = None
     dimensions: CubeDimensions = {}
     datetime_start: Optional[datetime] = None

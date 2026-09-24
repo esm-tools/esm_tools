@@ -4,14 +4,19 @@
 
 - a ``*.json`` **Collection** — upserted (create-or-update),
 - a ``*.json`` **Item** — upserted into its collection,
-- a ``*.parquet`` / ``*.geoparquet`` **stac-geoparquet shard** — its Items are
+- a ``*.parquet`` / ``*.geoparquet`` **stac-geoparquet shard** — its rows are
   read (via the scanner's own :func:`~esm_catalog.storage.geoparquet.read_shard`),
-  grouped by collection, and bulk-upserted in chunks,
+  grouped by Item id (many rows can share an id -- each is a single-asset view
+  of a growing stream, see :mod:`esm_catalog.item`), and merged into whatever
+  the server already holds for that id before being upserted,
 - a **directory** — expanded to the files above, collections first so item
   targets exist before the items land.
 
 All writes go through the STAC API (authenticated, role-gated) and use *upsert*
 semantics, so re-pushing the same object is harmless. Nothing is ever deleted.
+Re-pushing the same shard is also idempotent for a growing Item specifically:
+asset keys are deterministic (see :mod:`esm_catalog.item`), so merging the
+same asset in twice overwrites the same key with the same value.
 """
 
 from __future__ import annotations
@@ -28,9 +33,6 @@ from upath import UPath
 from esm_catalog.client import CollectionId, StacClient, StacClientError, StacObject
 from esm_catalog.scan.workspace import QUERYABLES_FILENAME, STATE_FILENAME
 from esm_catalog.storage.geoparquet import read_shard
-
-#: Items per bulk_items request. pgstac loads each batch server-side.
-CHUNK_SIZE = 500
 
 #: What a single path resolves to.
 PathKind = Literal["collection", "item", "shard", "unknown"]
@@ -158,6 +160,138 @@ def shard_items_by_collection(path: Path) -> dict[CollectionId, list[StacObject]
     return grouped
 
 
+def _merge_collection_extent(
+    existing: Optional[StacObject], incoming: StacObject
+) -> StacObject:
+    """Widen *incoming*'s extent to also cover *existing*'s, if any.
+
+    *incoming*'s own extent only reflects what the pushing scan run saw
+    locally (see :mod:`esm_catalog.collection`); without this, repeatedly
+    pushing new runs of a long experiment would keep narrowing the server's
+    stored extent to just the latest run instead of accumulating it.
+    """
+    if existing is None or "extent" not in existing or "extent" not in incoming:
+        return incoming
+    merged = dict(incoming)
+    merged["extent"] = {
+        "spatial": {
+            "bbox": [
+                _merge_bbox(
+                    existing["extent"]["spatial"]["bbox"][0],
+                    incoming["extent"]["spatial"]["bbox"][0],
+                )
+            ]
+        },
+        "temporal": {
+            "interval": [
+                _merge_interval(
+                    existing["extent"]["temporal"]["interval"][0],
+                    incoming["extent"]["temporal"]["interval"][0],
+                )
+            ]
+        },
+    }
+    return merged
+
+
+def _merge_bbox(first: list, second: list) -> list:
+    """The smallest bbox containing both inputs."""
+    return [
+        min(first[0], second[0]),
+        min(first[1], second[1]),
+        max(first[2], second[2]),
+        max(first[3], second[3]),
+    ]
+
+
+def _merge_interval(first: list, second: list) -> list:
+    """The widest [start, end] interval covering both inputs (None = open)."""
+    starts = [_parse_datetime(v) for v in (first[0], second[0])]
+    ends = [_parse_datetime(v) for v in (first[1], second[1])]
+    starts = [s for s in starts if s is not None]
+    ends = [e for e in ends if e is not None]
+    start = min(starts).isoformat() if starts else None
+    end = max(ends).isoformat() if ends else None
+    return [start, end]
+
+
+def _group_by_item_id(items: list[StacObject]) -> dict[str, list[StacObject]]:
+    """Group a collection's shard rows by Item id.
+
+    A shard row is a single-asset *view* of a growing Item (see
+    :mod:`esm_catalog.item`) -- many rows across many scans can share one id.
+    Grouping here means every row for the same id merges in one push, not
+    once per row.
+    """
+    grouped: dict[str, list[StacObject]] = {}
+    for item in items:
+        grouped.setdefault(item["id"], []).append(item)
+    return grouped
+
+
+def _parse_datetime(value: Optional[str]):
+    from datetime import datetime
+
+    if value is None:
+        return None
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _item_span(item: StacObject) -> tuple:
+    """This item's (start, end) datetime, from start_datetime/end_datetime or
+    the single instant datetime -- whichever the shard row set."""
+    props = item.get("properties", {})
+    start = _parse_datetime(props.get("start_datetime") or props.get("datetime"))
+    end = _parse_datetime(props.get("end_datetime") or props.get("datetime"))
+    return start, end
+
+
+def merge_item(existing: Optional[StacObject], incoming: list[StacObject]) -> StacObject:
+    """Merge *incoming* single-asset shard rows (all sharing one Item id) into
+    *existing* (the server's current state for that id, or None if this is
+    the first time this stream has ever been pushed).
+
+    Assets merge by key (append-only in practice -- see item.py's asset-key
+    scheme, which makes re-pushing the same file idempotent rather than
+    duplicating it). start_datetime/end_datetime widen to cover every asset
+    now on the item, existing and incoming alike.
+    """
+    # Base on an incoming row, never on existing -- existing is a server
+    # response of unknown/possibly-partial shape, while every incoming row is
+    # a freshly-built Item guaranteed to carry id/collection/type. Only its
+    # assets and temporal span get widened with whatever existing adds.
+    base = dict(incoming[0])
+    assets = dict(existing.get("assets", {})) if existing is not None else {}
+    starts, ends = [], []
+    if existing is not None:
+        s, e = _item_span(existing)
+        if s:
+            starts.append(s)
+        if e:
+            ends.append(e)
+    for item in incoming:
+        assets.update(item.get("assets", {}))
+        s, e = _item_span(item)
+        if s:
+            starts.append(s)
+        if e:
+            ends.append(e)
+
+    base["assets"] = assets
+    if starts and ends:
+        start, end = min(starts), max(ends)
+        base.setdefault("properties", {})
+        base["properties"]["start_datetime"] = start.isoformat()
+        base["properties"]["end_datetime"] = end.isoformat()
+        if start == end:
+            base["datetime"] = start.isoformat()
+            base["properties"]["datetime"] = start.isoformat()
+        else:
+            base["datetime"] = None
+            base["properties"]["datetime"] = None
+    return base
+
+
 def push_paths(
     paths: Iterable[Path],
     client: StacClient,
@@ -176,7 +310,9 @@ def push_paths(
         kind = classify_file(path)
         try:
             if kind == "collection":
-                client.upsert_collection(json.loads(path.read_text()))
+                collection = json.loads(path.read_text())
+                existing = client.get_collection(collection["id"])
+                client.upsert_collection(_merge_collection_extent(existing, collection))
                 summary.collections += 1
                 progress(1, f"collection {path.name}")
             elif kind == "item":
@@ -209,14 +345,24 @@ def push_paths(
 
 
 def _push_shard(path: Path, client: StacClient, progress: ProgressHook) -> int:
-    """Bulk-upsert one shard's Items, chunked per collection; return item count."""
+    """Merge-and-push one shard's Items; return the number of asset rows pushed.
+
+    Each shard row is a single-asset view of a growing (Item = stream) id
+    (see :mod:`esm_catalog.item`). For every distinct id in this shard: fetch
+    whatever the server already has for it (None the first time this stream
+    is ever pushed), merge in every row from this shard sharing that id
+    (:func:`merge_item`), then upsert the merged result as one Item. Not a
+    bulk_items batch -- the Bulk Transactions extension replaces an Item
+    wholesale on conflict, which would silently drop assets accumulated by
+    earlier pushes; a real per-id merge needs the single-item upsert path.
+    """
     pushed = 0
     for collection_id, items in shard_items_by_collection(path).items():
-        for start in range(0, len(items), CHUNK_SIZE):
-            batch = items[start : start + CHUNK_SIZE]
-            client.bulk_items(collection_id, batch, method="upsert")
-            pushed += len(batch)
-            progress(len(batch), f"{path.name} -> {collection_id} ({pushed})")
+        for item_id, rows in _group_by_item_id(items).items():
+            existing = client.get_item(collection_id, item_id)
+            client.upsert_item(merge_item(existing, rows))
+            pushed += len(rows)
+            progress(len(rows), f"{path.name} -> {collection_id}/{item_id} ({pushed})")
     return pushed
 
 

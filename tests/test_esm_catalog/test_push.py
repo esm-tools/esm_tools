@@ -199,9 +199,11 @@ def test_push_paths_over_catalog_layout(tmp_path):
     assert summary.errors == []
     assert (summary.collections, summary.shards, summary.items) == (1, 1, 2)
     paths = [p for _, p in calls]
-    assert "/api/collections" in paths                    # collection upserted
-    assert "/api/collections/c/bulk_items" in paths       # shard items bulk-pushed
-    assert not any("esm-catalog" in p for p in paths)     # state file never sent
+    assert "/api/collections" in paths                     # collection upserted
+    assert "/api/collections/c" in paths                   # collection extent fetched
+    assert "/api/collections/c/items/a" in paths            # merge-fetch + upsert, per item id
+    assert "/api/collections/c/items/b" in paths
+    assert not any("esm-catalog" in p for p in paths)      # state file never sent
 
 
 def test_upsert_reports_redirect_actionably():
@@ -312,3 +314,51 @@ def test_expand_paths_skips_queryables_sidecar(tmp_path):
     assert "collection.json" in names
     assert "queryables.json" not in names
     assert "esm-catalog.json" not in names
+
+
+def _asset_item(item_id, collection, asset_key, dt="2020-01-01T00:00:00Z"):
+    """A single-asset shard-row shape, as pushed for a growing (Item=stream) id."""
+    return {
+        "type": "Feature",
+        "id": item_id,
+        "collection": collection,
+        "properties": {"start_datetime": dt, "end_datetime": dt, "datetime": dt},
+        "assets": {asset_key: {"href": f"file:///{asset_key}.nc"}},
+    }
+
+
+def test_merge_item_accumulates_assets_from_existing_and_incoming():
+    existing = _asset_item("fesom-restart", "c", "oce_restart_2000", dt="2000-01-01T00:00:00Z")
+    incoming = [_asset_item("fesom-restart", "c", "ice_restart_2000", dt="2000-01-01T00:00:00Z")]
+
+    merged = pushmod.merge_item(existing, incoming)
+
+    assert set(merged["assets"]) == {"oce_restart_2000", "ice_restart_2000"}
+    assert merged["id"] == "fesom-restart"
+
+
+def test_merge_item_widens_start_end_across_checkpoints():
+    existing = _asset_item("fesom-restart", "c", "oce_restart_2000", dt="2000-01-01T00:00:00Z")
+    incoming = [_asset_item("fesom-restart", "c", "oce_restart_2001", dt="2001-01-01T00:00:00Z")]
+
+    merged = pushmod.merge_item(existing, incoming)
+
+    assert merged["properties"]["start_datetime"] == "2000-01-01T00:00:00+00:00"
+    assert merged["properties"]["end_datetime"] == "2001-01-01T00:00:00+00:00"
+
+
+def test_merge_item_first_push_has_no_existing():
+    incoming = [_asset_item("fesom-restart", "c", "oce_restart_2000")]
+
+    merged = pushmod.merge_item(None, incoming)
+
+    assert merged["assets"] == incoming[0]["assets"]
+
+
+def test_merge_item_repush_same_asset_key_is_idempotent():
+    existing = _asset_item("fesom-restart", "c", "oce_restart_2000")
+    incoming = [_asset_item("fesom-restart", "c", "oce_restart_2000")]  # same key, re-pushed
+
+    merged = pushmod.merge_item(existing, incoming)
+
+    assert set(merged["assets"]) == {"oce_restart_2000"}  # not duplicated

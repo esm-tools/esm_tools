@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -38,7 +37,7 @@ def test_item_basic_fields(item):
     assert item.properties["component"] == "echam"
     assert item.properties["experiment"] == "exp-alpha"
     assert item.collection_id.startswith("exp-alpha-")  # name + path hash
-    assert item.assets["data"].href.startswith("file://")
+    assert item.assets["200001"].href.startswith("file://")
     assert item.links[0].rel == "collection"
     assert item.links[0].target.startswith("#exp-alpha-")
 
@@ -102,7 +101,7 @@ def test_item_time_range_sets_interval(temp_nc):
 
 def test_make_item_accepts_local_string_path(temp_nc):
     item = make_item(str(temp_nc), make_file_metadata(), make_exp_metadata())
-    href = item.assets["data"].href
+    href = item.assets["200001"].href
     assert href.startswith("file://")
     assert href.endswith("/temp.nc")
 
@@ -110,14 +109,14 @@ def test_make_item_accepts_local_string_path(temp_nc):
 def test_make_item_accepts_uri_string():
     uri = "ssh://hpc.example.org/data/temp.nc"
     item = make_item(uri, make_file_metadata(), make_exp_metadata())
-    assert item.assets["data"].href == uri
+    assert item.assets["200001"].href == uri
 
 
 def test_make_item_resolves_relative_path():
     # A relative Path must still yield an absolute file:// href, not raise; no
     # file/chdir needed since make_item does no I/O.
     item = make_item(Path("sub/temp.nc"), make_file_metadata(), make_exp_metadata())
-    href = item.assets["data"].href
+    href = item.assets["200001"].href
     assert href.startswith("file://")
     assert href.endswith("/sub/temp.nc")
 
@@ -173,19 +172,24 @@ def test_single_variable_no_variables_key(temp_nc):
 
 
 def test_item_id_format(item):
-    # No explicit datetime_str, so the stamp is derived from the file's start.
-    assert re.fullmatch(r"temp\.echam\.200001\.[0-9a-f]{6}", item.id)
+    # Item id is (component, stream) -- no path hash, no datetime segment.
+    # No declared stream, so it falls back to the file's own variable name.
+    assert item.id == "echam-temp"
 
 
 def test_item_id_uses_datetime_str(temp_nc):
-    # A scanner-supplied nominal timestamp lands in the id's datetime segment.
+    # The id does not vary with datetime_str -- it only affects the asset key.
     item = make_item(
         temp_nc, make_file_metadata(datetime_str="20000101"), make_exp_metadata()
     )
-    assert re.fullmatch(r"temp\.echam\.20000101\.[0-9a-f]{6}", item.id)
+    assert item.id == "echam-temp"
+    assert "20000101" in item.assets
 
 
-def test_item_id_distinct_for_different_paths(tmp_path):
+def test_item_id_same_for_different_paths(tmp_path):
+    # By design: the id is (component, stream), not derived from the file's own
+    # path -- two files of the same stream (different runs, different dirs)
+    # must share an id so their assets accumulate onto one growing Item.
     f1 = tmp_path / "a" / "temp.nc"
     f2 = tmp_path / "b" / "temp.nc"
     for f in (f1, f2):
@@ -193,14 +197,14 @@ def test_item_id_distinct_for_different_paths(tmp_path):
         f.write_bytes(b"x")
     id1 = make_item(f1, make_file_metadata(), make_exp_metadata()).id
     id2 = make_item(f2, make_file_metadata(), make_exp_metadata()).id
-    assert id1 != id2
+    assert id1 == id2 == "echam-temp"
 
 
 def test_grib_media_type(tmp_path):
     f = tmp_path / "temp.grb"
     f.write_bytes(b"x")
     item = make_item(f, make_file_metadata(format="grib"), make_exp_metadata())
-    assert item.assets["data"].media_type == "application/x-grib2"
+    assert item.assets["200001"].media_type == "application/x-grib2"
 
 
 def test_to_href_bucket_protocol_uri():
@@ -208,11 +212,33 @@ def test_to_href_bucket_protocol_uri():
     assert _to_href(p) == "memory://experiments/data/temp.nc"
 
 
-def test_item_id_defaults_to_unknown_variable(temp_nc):
+def test_item_id_defaults_to_unknown_stream(temp_nc):
     file_metadata = make_file_metadata(variable=None)
     item = make_item(temp_nc, file_metadata, make_exp_metadata())
-    assert re.fullmatch(r"unknown\.echam\.200001\.[0-9a-f]{6}", item.id)
+    assert item.id == "echam-unknown"
 
 
 def test_netcdf_media_type_default(item):
-    assert item.assets["data"].media_type == "application/x-netcdf"
+    assert item.assets["200001"].media_type == "application/x-netcdf"
+
+
+def test_restart_role_shares_one_item_id_across_categories(tmp_path):
+    # Both restart categories of one component share one Item (stream='restart'
+    # is fixed, not per-category) -- distinguished only by the asset key.
+    oce = tmp_path / "fesom.2000.oce.nc"
+    ice = tmp_path / "fesom.2000.ice.nc"
+    for f in (oce, ice):
+        f.write_bytes(b"x")
+    exp = make_exp_metadata()
+    fm_oce = make_file_metadata(stream="restart", role="restart", category="oce_restart")
+    fm_ice = make_file_metadata(stream="restart", role="restart", category="ice_restart")
+
+    item_oce = make_item(oce, fm_oce, exp)
+    item_ice = make_item(ice, fm_ice, exp)
+
+    assert item_oce.id == item_ice.id == "echam-restart"
+    (oce_key,) = item_oce.assets
+    (ice_key,) = item_ice.assets
+    assert oce_key.startswith("oce_restart_")
+    assert ice_key.startswith("ice_restart_")
+    assert item_oce.assets[oce_key].roles == ["restart"]

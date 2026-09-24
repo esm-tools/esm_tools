@@ -1,8 +1,15 @@
-"""Build a STAC Item from file metadata and experiment metadata."""
+"""Build a STAC Item (one asset) for a single output file.
+
+An Item is identified by ``(component, stream)`` -- a growing dataset, not a
+file. Many files of the same stream, scanned across many runs, all produce
+Items sharing the same id, each carrying exactly one asset for its own file.
+Reconciling them into one logical Item with every accumulated asset happens
+at push time (see :mod:`esm_catalog.push`), not here -- this module only ever
+builds the single-asset view for one file.
+"""
 
 from __future__ import annotations
 
-import hashlib
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Optional
@@ -15,7 +22,13 @@ from esm_catalog.plugins import get_plugin_manager
 from esm_catalog.types import FileMetadata, Href
 
 ItemId = str
-"""A STAC Item id, e.g. 'tas.echam.20000101.a1b2c3'."""
+"""A STAC Item id: ``{component}-{stream}``, e.g. 'fesom-restart', 'echam-echam_nc'."""
+
+AssetKey = str
+"""A single asset's key within its Item: ``{semantic_name}_{timestamp}`` for a
+restart asset (several restart categories share one Item), or just
+``{timestamp}`` for a data asset (the stream name already carries the
+semantic identity, so only the timestamp disambiguates)."""
 
 FX_FREQUENCY = "fx"
 """The ``properties.frequency`` value marking a time-invariant item (CMIP 'fx');
@@ -60,17 +73,13 @@ def make_item(
     dt_start, dt_end, item_datetime, is_fx = _build_datetime(
         file_metadata, exp_metadata
     )
-    # A time-varying file stamps its id from its own datetime; a time-invariant
-    # (fx) file has none, so it borrows the experiment run span's start
-    # (dt_start, set to run_start by _build_datetime) -- the stamp is never
-    # guessed from the filename.
+    # A time-varying file stamps its asset key from its own datetime; a
+    # time-invariant (fx) file has none, so it borrows the experiment run
+    # span's start (dt_start, set to run_start by _build_datetime).
     id_stamp = file_metadata.datetime_str or dt_start.strftime("%Y%m")
-    item_id = _build_id(
-        file_metadata.variable or "unknown",
-        file_metadata.component or "unknown",
-        id_stamp,
-        path,
-    )
+    stream = file_metadata.stream or file_metadata.variable or "unknown"
+    item_id = _build_id(file_metadata.component or "unknown", stream)
+    asset_key = _build_asset_key(id_stamp, file_metadata.category)
 
     properties = _build_properties(file_metadata, exp_metadata)
     if is_fx:
@@ -84,7 +93,7 @@ def make_item(
         properties=properties,
         start_datetime=dt_start,
         end_datetime=dt_end,
-        assets={"data": _build_data_asset(path, file_metadata)},
+        assets={asset_key: _build_asset(path, file_metadata)},
         collection=exp_metadata.collection_id,
     )
 
@@ -107,29 +116,24 @@ def make_item(
     return item
 
 
-def _build_id(
-    variable: str, component: str, datetime_str: str, path: Path | UPath
-) -> ItemId:
-    """Build a stable unique item id of the form {variable}.{component}.{datetime_str}.{hash}.
-
-    Parameters
-    ----------
-    variable : str
-        The primary data variable name.
-    component : str
-        The model component that produced the file.
-    datetime_str : str
-        The file's nominal timestamp, already formatted for the id.
-    path : Path or UPath
-        The source file path, hashed to disambiguate otherwise-identical ids.
-
-    Returns
-    -------
-    ItemId
-        The composed item id.
+def _build_id(component: str, stream: str) -> ItemId:
+    """Build the Item id for a ``(component, stream)`` -- a growing dataset,
+    not a file. Every file of this stream, from every scan of this
+    experiment, produces an Item sharing this same id (see the module
+    docstring for how those get reconciled at push time).
     """
-    path_hash = hashlib.md5(str(path).encode()).hexdigest()[:6]
-    return f"{variable}.{component}.{datetime_str}.{path_hash}"
+    return f"{component}-{stream}"
+
+
+def _build_asset_key(timestamp: str, category: Optional[str]) -> str:
+    """Build this file's asset key within its Item.
+
+    A restart file's stream ('restart') covers several categories
+    (oce_restart, ice_restart, ...) in one Item, so the category prefixes the
+    key to keep them distinct; a data file's stream already carries the
+    semantic identity, so the timestamp alone is enough.
+    """
+    return f"{category}_{timestamp}" if category else timestamp
 
 
 def _build_properties(
@@ -155,6 +159,7 @@ def _build_properties(
         "variable": file_metadata.variable or "unknown",
         "experiment": exp_metadata.experiment_id,
         "component": file_metadata.component or "unknown",
+        "stream": file_metadata.stream or "unknown",
         "format": file_metadata.format or "unknown",
     }
     if file_metadata.frequency:
@@ -230,20 +235,21 @@ def _as_utc(value: Optional[datetime]) -> Optional[datetime]:
     return value
 
 
-def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
-    """Build the single ``data`` asset for the source file.
+def _build_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
+    """Build this file's asset.
 
     Parameters
     ----------
     path : Path or UPath
         The source file path, used for the asset href and title.
     file_metadata : FileMetadata
-        The file's scanned metadata; its ``format`` selects the media type.
+        The file's scanned metadata; its ``format`` selects the media type,
+        its ``role`` ('data' or 'restart') becomes the asset's STAC role.
 
     Returns
     -------
     pystac.Asset
-        The file's data asset.
+        The file's asset.
     """
     file_format = file_metadata.format or ""
     media_type = (
@@ -253,7 +259,7 @@ def _build_data_asset(path: Path | UPath, file_metadata: FileMetadata) -> Asset:
         href=_to_href(path),
         media_type=media_type,
         title=PurePosixPath(str(path)).name,
-        roles=["data"],
+        roles=[file_metadata.role],
     )
 
 

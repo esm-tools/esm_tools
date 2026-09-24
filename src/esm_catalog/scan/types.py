@@ -22,17 +22,37 @@ RunStamp = str
 Md5 = str
 """A lowercase hex MD5 checksum."""
 
+Role = Literal["data", "restart"]
+"""What an output file represents -- the STAC asset ``roles`` value it carries."""
+
+Stream = str
+"""The config-declared file-producing category a file belongs to (an
+``outdata_targets``/``restart_out_files`` key, e.g. ``'echam_nc'``,
+``'oce_restart'``) -- one Item per ``(component, stream)``, growing across
+scans as more files of that stream are found. Not a CMIP ``variable_id``: a
+single native output file can carry several variables."""
+
 
 @dataclass(frozen=True)
 class OutputFile:
-    """One output file to scan, with its component and (if known) checksum.
+    """One output file to scan: its component, stream, role, and (if known) checksum.
 
     Produced by the sourcing layer from the experiment config, so the walk does
-    not have to infer the component from the path.
+    not have to infer the component from the path. ``stream`` identifies which
+    growing Item this file's asset belongs to (see :data:`Stream`) -- fixed as
+    ``'restart'`` for every restart file of a component (one Item covers every
+    restart category together), or the ``outdata_targets`` key for data.
+    ``category`` is the finer-grained semantic name within that Item (the raw
+    ``restart_out_sources`` key, e.g. ``'oce_restart'``) -- used to build the
+    asset key for a restart file; unused (``None``) for data, where the
+    stream name already carries the semantic identity.
     """
 
     path: UPath
     component: ComponentName
+    stream: Optional[Stream]
+    role: Role = "data"
+    category: Optional[str] = None
     md5: Optional[Md5] = None
 
 

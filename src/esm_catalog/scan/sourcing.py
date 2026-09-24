@@ -49,7 +49,7 @@ from esm_catalog.models import Contact, ExperimentMetadata
 from esm_catalog.namelist import ComponentNamelists, NamelistsByComponent
 from esm_catalog.paleo import PaleoConfig
 from esm_catalog.scan.parallel import parallel_map
-from esm_catalog.scan.types import Md5, OutputFile, RunStamp
+from esm_catalog.scan.types import Md5, OutputFile, RunStamp, Stream
 from esm_catalog.types import ComponentName, ExperimentId
 
 FinishedConfigDoc = dict[str, Any]
@@ -101,19 +101,33 @@ class MetadataBlock(BaseModel):
 
 @dataclass(frozen=True)
 class TidyOutdataEntry:
-    """One ``outdata`` entry from a tidy log: a produced file and its checksum."""
+    """One ``outdata`` entry from a tidy log: a produced file and its checksum.
+
+    ``stream`` is the tidy log's own entry key (e.g. ``'echam_nc'``) -- the
+    same config-declared category :func:`_outdata_targets` reads from
+    ``outdata_targets``, just observed via the tidy log instead.
+    """
 
     component: ComponentName
+    stream: Stream
     destination: str
     md5: Optional[Md5]
 
 
 @dataclass(frozen=True)
 class ComponentPath:
-    """A component paired with one of its output paths (config target or walked)."""
+    """A component paired with one of its output paths (config target or walked).
+
+    ``stream`` is the declared category this path came from (an
+    ``outdata_targets``/``restart_out_sources`` key) -- ``None`` for a path
+    found by walking the filesystem, which carries no declared category; the
+    caller resolves an effective stream from the file's own content instead
+    (see :func:`~esm_catalog.scan.ingest.resolve_stream`).
+    """
 
     component: ComponentName
     path: UPath
+    stream: Optional[Stream] = None
 
 _CONFIG_SUBDIR = "config"
 _LOG_SUBDIR = "log"
@@ -348,20 +362,26 @@ def output_files(
             OutputFile(
                 path=_on_exp_fs(exp_root, entry.destination),
                 component=entry.component,
+                stream=entry.stream,
+                role="data",
                 md5=entry.md5,
             )
             for entry in tidy_entries
         )
     else:
         # No tidy manifest: trust config outdata_targets that resolve to real
-        # files, then walk outdata/ for whatever the config missed.
+        # files, then walk outdata/ for whatever the config missed. A walked
+        # path carries no declared stream -- the caller resolves one from the
+        # file's own content (see scan.ingest.resolve_stream).
         configured = (
-            ComponentPath(target.component, _on_exp_fs(exp_root, str(target.path)))
+            ComponentPath(
+                target.component, _on_exp_fs(exp_root, str(target.path)), target.stream
+            )
             for run_cfg in run_cfgs
             for target in _outdata_targets(run_cfg.doc)
         )
         candidates = (
-            OutputFile(path=cp.path, component=cp.component, md5=None)
+            OutputFile(path=cp.path, component=cp.component, stream=cp.stream, role="data")
             for cp in chain(
                 (cp for cp in configured if cp.path.exists()),
                 _walk_outdata(exp_root, on_file),
@@ -377,6 +397,72 @@ def output_files(
         seen.add(key)
         files.append(candidate)
     return files
+
+
+def restart_files(
+    exp_root: UPath, *, run_cfgs: Optional[list[_RunConfig]] = None
+) -> list[OutputFile]:
+    """Return the experiment's restart files, one per declared restart target.
+
+    Parallel to :func:`output_files`: reads ``restart_out_sources`` (the
+    resolved path, not the template) from each segment's finished_config --
+    the same trust model as outdata's config-target fallback (the declared
+    target is trusted once its file is verified to exist; contents are not
+    checked). No tidy-log equivalent exists for restarts, so this is the
+    primary source, not a fallback.
+
+    Parameters
+    ----------
+    exp_root : UPath
+        The experiment root directory.
+    run_cfgs : list of _RunConfig, optional
+        Pre-parsed run configs, when the caller already has them. Parsed from
+        *exp_root* when omitted.
+
+    Returns
+    -------
+    list of OutputFile
+        Deduplicated by path, in first-seen order, each with ``role='restart'``.
+
+    Raises
+    ------
+    SourcingError
+        If no finished_config is found under ``<exp_root>/config``.
+    """
+    if run_cfgs is None:
+        run_cfgs = _load_run_cfgs(exp_root)
+
+    files: list[OutputFile] = []
+    seen: set[str] = set()
+    for run_cfg in run_cfgs:
+        for target in _restart_targets(run_cfg.doc):
+            path = _on_exp_fs(exp_root, str(target.path))
+            key = str(path)
+            if key in seen or not path.exists():
+                continue
+            seen.add(key)
+            files.append(
+                OutputFile(
+                    path=path, component=target.component, stream="restart",
+                    role="restart", category=target.stream,
+                )
+            )
+    return files
+
+
+def source_files(
+    exp_root: UPath,
+    on_file: Optional[Callable[[int], None]] = None,
+    *,
+    run_cfgs: Optional[list[_RunConfig]] = None,
+) -> list[OutputFile]:
+    """Every file the scan should catalogue: outdata (role='data') plus restart
+    (role='restart') files, discovered via :func:`output_files` and
+    :func:`restart_files` respectively.
+    """
+    return output_files(exp_root, on_file, run_cfgs=run_cfgs) + restart_files(
+        exp_root, run_cfgs=run_cfgs
+    )
 
 
 def _load_run_cfgs(
@@ -625,9 +711,31 @@ def _outdata_targets(doc: FinishedConfigDoc) -> Iterable[ComponentPath]:
         targets = block.get("outdata_targets")
         if not isinstance(targets, dict):
             continue
-        for target in targets.values():
+        for stream, target in targets.items():
             if target:
-                yield ComponentPath(component=str(name), path=UPath(str(target)))
+                yield ComponentPath(
+                    component=str(name), path=UPath(str(target)), stream=str(stream)
+                )
+
+
+def _restart_targets(doc: FinishedConfigDoc) -> Iterable[ComponentPath]:
+    """Yield a :class:`ComponentPath` for every ``restart_out_sources`` entry in *doc*.
+
+    Parallel to :func:`_outdata_targets` -- reads the resolved path (its
+    ``${end_date!syear}``-style template already substituted by the time
+    ``finished_config.yaml`` is written), not the template itself.
+    """
+    for name, block in doc.items():
+        if not isinstance(block, dict):
+            continue
+        sources = block.get("restart_out_sources")
+        if not isinstance(sources, dict):
+            continue
+        for stream, source in sources.items():
+            if source:
+                yield ComponentPath(
+                    component=str(name), path=UPath(str(source)), stream=str(stream)
+                )
 
 
 def _tidy_outdata(exp_root: UPath) -> Iterable[TidyOutdataEntry]:
@@ -670,7 +778,7 @@ def _tidy_log_outdata(doc: FinishedConfigDoc) -> Iterable[TidyOutdataEntry]:
         outdata = (block.get("files") or {}).get("outdata")
         if not isinstance(outdata, dict):
             continue
-        for entry in outdata.values():
+        for stream, entry in outdata.items():
             if not isinstance(entry, dict):
                 continue
             destination = entry.get("destination")
@@ -680,6 +788,7 @@ def _tidy_log_outdata(doc: FinishedConfigDoc) -> Iterable[TidyOutdataEntry]:
             md5 = str(checksum).strip() if checksum else None
             yield TidyOutdataEntry(
                 component=str(component),
+                stream=str(stream),
                 destination=str(destination).strip(),
                 md5=md5,
             )

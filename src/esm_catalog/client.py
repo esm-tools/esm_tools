@@ -88,10 +88,35 @@ class StacClient:
     # Single-object upserts (POST, then PUT on 409).
     # ----------------------------------------------------------------- #
 
+    def get_collection(self, collection_id: CollectionId) -> Optional[StacObject]:
+        """Fetch one Collection, or None if it does not exist yet.
+
+        Used by :mod:`esm_catalog.push` to widen the server's stored extent
+        rather than overwrite it with only the pushing run's local view.
+        """
+        resp = self._client.get(f"{self._base}/collections/{collection_id}")
+        if resp.status_code == 404:
+            return None
+        self._check(resp, f"get collection {collection_id!r}")
+        return resp.json()
+
     def upsert_collection(self, collection: StacObject) -> None:
         """Create *collection*, or update it if it already exists."""
         cid = collection["id"]
         self._upsert("collection", collection, "/collections", f"/collections/{cid}")
+
+    def get_item(self, collection_id: CollectionId, item_id: str) -> Optional[StacObject]:
+        """Fetch one Item, or None if it does not exist yet.
+
+        Used by :mod:`esm_catalog.push` to merge a newly-scanned asset into
+        whatever's already on the server for a growing (Item = stream) id,
+        rather than overwriting it.
+        """
+        resp = self._client.get(f"{self._base}/collections/{collection_id}/items/{item_id}")
+        if resp.status_code == 404:
+            return None
+        self._check(resp, f"get item {item_id!r}")
+        return resp.json()
 
     def upsert_item(self, item: StacObject) -> None:
         """Create *item*, or update it if it already exists.

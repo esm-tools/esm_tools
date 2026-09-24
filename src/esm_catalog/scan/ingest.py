@@ -3,7 +3,7 @@
 ``scan_experiment`` ties the scan layers together::
 
     source_experiment   -> ExperimentMetadata (+ run span, for fx items)
-    output_files        -> the run's OutputFiles (path, component, md5)
+    source_files         -> the run's OutputFiles (path, component, stream, role, md5)
     parallel_map(read)  -> FileMetadata per file (in worker processes)
     make_item           -> a STAC Item per file (in this process)
     write_shard         -> <expid>_stac_<runstamp>.parquet (new) + <expid>_stac_fx.parquet (rewritten)
@@ -30,7 +30,7 @@ from esm_catalog.models import ExperimentMetadata
 from esm_catalog.scan.format import UnknownFormatError, detect
 from esm_catalog.scan.parallel import parallel_map
 from esm_catalog.scan.reader import UnsupportedContentError, reader_for
-from esm_catalog.scan.sourcing import _load_run_cfgs, output_files, source_experiment
+from esm_catalog.scan.sourcing import _load_run_cfgs, source_experiment, source_files
 from esm_catalog.scan.types import (
     OutputFile,
     ProgressEvent,
@@ -88,6 +88,12 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
     try:
         file_metadata = FileMetadata.model_validate(reader.read(output_file.path))
         file_metadata.component = output_file.component
+        file_metadata.role = output_file.role
+        file_metadata.category = output_file.category
+        # A walked outdata file (no outdata_targets entry) carries no declared
+        # stream -- fall back to its own primary variable, the closest thing
+        # to a stream identity a raw filesystem walk can offer.
+        file_metadata.stream = output_file.stream or file_metadata.variable
         return _ReadResult(output_file, file_metadata, None)
     except UnsupportedContentError:
         return _ReadResult(output_file, None, None, unsupported=True)
@@ -149,7 +155,7 @@ def scan_experiment(
         exp_root, distributed=distributed, scheduler=scheduler, jobs=jobs
     )
     exp_metadata = source_experiment(exp_root, run_cfgs=run_cfgs)
-    files = output_files(
+    files = source_files(
         exp_root,
         on_file=lambda n: _emit("sourcing", detail=f"{n} files found"),
         run_cfgs=run_cfgs,

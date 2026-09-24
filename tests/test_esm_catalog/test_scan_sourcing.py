@@ -16,7 +16,9 @@ from esm_catalog.scan.sourcing import (
     _tidy_log_outdata,
     _walk_outdata,
     output_files,
+    restart_files,
     source_experiment,
+    source_files,
 )
 
 _EXPID = "exp-alpha"
@@ -29,6 +31,7 @@ def _write_finished_config(
     start_date: str = "2000-01-01",
     end_date: str = "2000-12-31",
     outdata_targets: dict | None = None,
+    restart_out_sources: dict | None = None,
 ) -> UPath:
     """Write a minimal synthetic finished_config under ``<exp_root>/config``."""
     config_dir = exp_root / "config"
@@ -59,6 +62,12 @@ def _write_finished_config(
             "outdata_targets": targets,
         },
     }
+    if restart_out_sources is not None:
+        for source in restart_out_sources.values():
+            spath = UPath(source)
+            spath.parent.mkdir(parents=True, exist_ok=True)
+            spath.write_bytes(b"")
+        doc["fesom"] = {"restart_out_sources": restart_out_sources}
 
     name = f"{_EXPID}_finished_config.yaml{suffix}"
     path = config_dir / name
@@ -112,6 +121,48 @@ def test_output_files_excludes_restart(tmp_path):
     files = output_files(exp_root)
 
     assert [f.path.name for f in files] == [f"{_EXPID}_echam.nc"]
+
+
+def test_restart_files_reads_restart_out_sources(tmp_path):
+    exp_root = UPath(tmp_path)
+    restart_dir = exp_root / "restart" / "fesom"
+    _write_finished_config(
+        exp_root,
+        restart_out_sources={
+            "oce_restart": str(restart_dir / "fesom.2000.oce.nc"),
+            "ice_restart": str(restart_dir / "fesom.2000.ice.nc"),
+        },
+    )
+
+    files = restart_files(exp_root)
+
+    assert len(files) == 2
+    assert {f.category for f in files} == {"oce_restart", "ice_restart"}
+    # One Item per component, not per restart category -- both share a stream.
+    assert {f.stream for f in files} == {"restart"}
+    assert {f.role for f in files} == {"restart"}
+    assert {f.component for f in files} == {"fesom"}
+
+
+def test_restart_files_skips_undeclared_or_missing(tmp_path):
+    exp_root = UPath(tmp_path)
+    # No restart_out_sources declared at all -- no finished_config.fesom block.
+    _write_finished_config(exp_root)
+    assert restart_files(exp_root) == []
+
+
+def test_source_files_combines_outdata_and_restart(tmp_path):
+    exp_root = UPath(tmp_path)
+    restart_dir = exp_root / "restart" / "fesom"
+    _write_finished_config(
+        exp_root,
+        restart_out_sources={"oce_restart": str(restart_dir / "fesom.2000.oce.nc")},
+    )
+
+    files = source_files(exp_root)
+
+    assert len(files) == 2  # the default echam outdata target + one restart file
+    assert {f.role for f in files} == {"data", "restart"}
 
 
 def test_output_files_pulls_md5_from_tidy_log(tmp_path):
@@ -282,8 +333,8 @@ def test_tidy_log_outdata_yields_component_dest_md5_and_skips_malformed():
         },
     }
     assert list(_tidy_log_outdata(doc)) == [
-        TidyOutdataEntry("echam", "/d/no_checksum", None),
-        TidyOutdataEntry("echam", "/d/good", "abc123"),
+        TidyOutdataEntry("echam", "no_checksum", "/d/no_checksum", None),
+        TidyOutdataEntry("echam", "good", "/d/good", "abc123"),
     ]
 def test_namelists_by_component(tmp_path):
     config = UPath(tmp_path) / "config"

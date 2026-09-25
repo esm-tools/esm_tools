@@ -234,26 +234,14 @@ general:
     choose_computer.name:
         levante:
             pool_dir: "/work/ab0246/a270092/input/"
-            idemix_botforc_file: "/work/ab0246/a270092/input/fesom2/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
         juwels:
             pool_dir: "/p/project/chhb19/jstreffi/input"
-            idemix_botforc_file: ${albedo_idemix_botforc_file}
         aleph:
             pool_dir: "/proj/awi/input"
-            idemix_botforc_file: ${albedo_idemix_botforc_file}
         albedo:
             pool_dir: "/albedo/pool/"
-            idemix_botforc_file: ${albedo_idemix_botforc_file}
         "*":
             pool_dir: "TO-BE-DEFINED-BY-THE-USER"
-            idemix_botforc_file: ${albedo_idemix_botforc_file}
-
-    # The IDEMIX tidal bottom forcing does NOT sit at a fixed offset under pool_dir: on
-    # albedo it is in Patrick Scholz's curated FESOM tree, on levante it was copied to this
-    # project's own input dir.  So it is named per machine above rather than derived, and
-    # machines where it has not been located fall back to the value the FESOM 2.7 namelist
-    # ships, which is the albedo path and is unverified anywhere else.
-    albedo_idemix_botforc_file: "/albedo/pool/FESOM/fesom2.0/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc"
 
     # Chunk-1 bootstrap set for the dynamic-mesh coupling; override per runscript.
     pism_cavity_ini_dir: "${general.pool_dir}/fesom2/pism_cavity_ini"
@@ -901,10 +889,16 @@ fesom:
                                 kpp_avbckg: 5.0e-05
                                 kpp_kvbckg: 5.0e-06
                             param_idemix:
-                                # Same tidal bottom forcing the shipped namelist names. Its
-                                # location is machine-specific and is NOT a fixed offset under
-                                # pool_dir, so it is set per computer in general above.
-                                idemix_botforc_file: ${general.idemix_botforc_file}
+                                # BOTH IDEMIX forcing files come from the fesom pool, at the
+                                # same relative layout on every machine, so neither is a
+                                # machine path. The shipped namelist mixes machines - its
+                                # surforc is a DKRZ /pool/data path and its botforc an
+                                # /albedo/pool one - and only one of the two ever resolves.
+                                #
+                                # A new machine therefore needs both files placed under
+                                # <fesom pool>/forcing/idemix/ in this layout.
+                                idemix_surforc_file: ${fesom.pool_dir}/forcing/idemix/fourier_smooth_2005_cfsr_inert_rgrid.nc
+                                idemix_botforc_file: ${fesom.pool_dir}/forcing/idemix/forcing_idemix_final_bin/FIN_STORMTIDE2_M2_plus_NYCANDER_CnoM2_bin_0.40deg.nc
                                 # Normalisation target = this file's own area integral,
                                 # 0.918 TW, matching its Etot_in_TW_bin attribute. REQUIRES a
                                 # FESOM carrying the MPI_WP fix (FESOM PR #1087): without it

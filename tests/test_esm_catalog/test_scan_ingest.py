@@ -13,6 +13,7 @@ from ruamel.yaml import YAML
 from upath import UPath
 
 from esm_catalog.scan.ingest import scan_experiment
+from esm_catalog.scan.sourcing import source_files
 from esm_catalog.scan.workspace import catalog_dir
 from esm_catalog.storage.geoparquet import fx_shard_name, read_shard
 
@@ -103,6 +104,21 @@ def test_scan_emits_progress_events(tmp_path):
     # one tick per file, reaching the total, and the last tick names its file
     assert reading[-1].current == reading[-1].total == report.scanned
     assert reading[-1].detail
+
+
+def test_reading_progress_names_the_in_flight_file_not_the_completed_one(tmp_path):
+    exp_root = _build_experiment(tmp_path)
+    # The process-pool backend collects results strictly in input order (see
+    # ingest._tick), so the first "reading" tick always fires once todo[0]
+    # returns -- at that point todo[1] is the file actually still in flight.
+    todo = source_files(exp_root)
+    assert len(todo) == 2
+    events = []
+
+    scan_experiment(exp_root, on_progress=events.append)
+
+    first_tick = next(e for e in events if e.phase == "reading" and e.current == 1)
+    assert first_tick.detail == todo[1].path.name
 
 
 def test_unsupported_format_is_skipped_not_failed(tmp_path):

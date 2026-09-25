@@ -214,7 +214,21 @@ def scan_experiment(
     def _tick(output_file: OutputFile) -> None:
         nonlocal read_count
         read_count += 1
-        _emit("reading", read_count, len(todo), output_file.path.name)
+        # The process-pool backend collects strictly in submission order
+        # (chunksize=1, so each file is its own future): by the time this
+        # fires, `output_file` already finished -- if progress then stalls,
+        # showing its name is misleading (confirmed live: a scan frozen at
+        # "reading <name>" actually meant that file had already read fine,
+        # and the next uncollected item was the one a worker was still stuck
+        # on). Look ahead to the item that's actually in flight instead. The
+        # Dask backend instead calls on_item via as_completed (real
+        # completion order, not input order), so its output_file is already
+        # the right one to show.
+        if not distributed and read_count < len(todo):
+            detail = todo[read_count].path.name
+        else:
+            detail = output_file.path.name
+        _emit("reading", read_count, len(todo), detail)
 
     results = parallel_map(
         todo,

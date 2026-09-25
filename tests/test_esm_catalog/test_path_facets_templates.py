@@ -76,6 +76,42 @@ def test_matches_real_fesom_restart_filenames():
     )
 
 
+def test_matches_real_echam_restart_filename():
+    # Stream-then-date order -- the opposite of ECHAM's outdata naming above.
+    assert _extract("/x/restart_historical_c14_init_accw_18501231.nc", "echam") == (
+        "accw",
+        datetime(1850, 12, 31),
+    )
+
+
+def test_matches_real_jsbach_outdata_filename():
+    # jsbach couples through ECHAM's own GRIB convention.
+    assert _extract("/x/historical_c14_init_185001.01_yasso", "jsbach") == (
+        "yasso",
+        datetime(1850, 1, 1),
+    )
+
+
+def test_matches_real_jsbach_restart_filename():
+    # Date-then-stream order -- the opposite of ECHAM's restart naming.
+    result = _extract("/x/restart_historical_c14_init_18501231_yasso.nc", "jsbach")
+    assert result == ("yasso", datetime(1850, 12, 31))
+
+
+def test_matches_real_hdmodel_restart_filename():
+    # Same date-then-stream order as jsbach's restart, not ECHAM's.
+    result = _extract("/x/restart_historical_c14_init_18501231_hdrestart.nc", "hdmodel")
+    assert result == ("hdrestart", datetime(1850, 12, 31))
+
+
+def test_oasis3mct_date_range_stamps_are_deliberately_uncovered():
+    # A run-segment date *range* (not a single timestamp) and an undated
+    # bare filename -- neither fits this template model; both must decline
+    # cleanly rather than guess.
+    assert _extract("/x/a2o_flux_18500101-18501231", "oasis3mct") is None
+    assert _extract("/x/a2o_flux", "oasis3mct") is None
+
+
 def test_confirms_an_already_known_stream():
     assert _extract("/x/historical_c14_init_185001.01_echam", "echam", "echam") == (
         "echam",

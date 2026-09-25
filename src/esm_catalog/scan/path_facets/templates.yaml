@@ -5,15 +5,19 @@
 # precisely describe their structure; ECHAM's default template swallows the
 # month behind a literal "*", for instance).
 #
-# Placeholders: {{ expid }} (any text), {{ stream }} (no '.', '_', or '/'),
-# {{ date }} (parsed via the paired date_format, a plain strptime string).
-# One component may list several templates (e.g. FESOM's outdata vs restart
-# naming); each is tried in order, first match wins.
+# Placeholders: {{ expid }} (any text), {{ stream }} (no '.' or '/' --
+# underscores are fine, e.g. FESOM's "a_ice"), {{ date }} (parsed via the
+# paired date_format, a plain strptime string). One component may list
+# several templates (e.g. outdata vs restart naming); each is tried in
+# order, first match wins.
 
 echam:
   - pattern: "{{ expid }}_{{ date }}_{{ stream }}"
     date_format: "%Y%m.%d"
-    # historical_c14_init_185001.01_echam
+    # historical_c14_init_185001.01_echam (outdata: echam/co2/accw/ism/...)
+  - pattern: "restart_{{ expid }}_{{ stream }}_{{ date }}.nc"
+    date_format: "%Y%m%d"
+    # restart_historical_c14_init_accw_18501231.nc
 
 fesom:
   - pattern: "{{ stream }}.fesom.{{ date }}.nc"
@@ -22,3 +26,26 @@ fesom:
   - pattern: "fesom.{{ date }}.{{ stream }}.restart"
     date_format: "%Y"
     # fesom.1850.oce.restart
+
+jsbach:
+  - pattern: "{{ expid }}_{{ date }}_{{ stream }}"
+    date_format: "%Y%m.%d"
+    # historical_c14_init_185001.01_yasso (also jsbach/land/surf/veg) --
+    # same convention as ECHAM outdata (jsbach couples through it).
+  - pattern: "restart_{{ expid }}_{{ date }}_{{ stream }}.nc"
+    date_format: "%Y%m%d"
+    # restart_historical_c14_init_18501231_yasso.nc -- note the date/stream
+    # order is swapped from ECHAM's own restart naming above.
+
+hdmodel:
+  - pattern: "restart_{{ expid }}_{{ date }}_{{ stream }}.nc"
+    date_format: "%Y%m%d"
+    # restart_historical_c14_init_18501231_hdrestart.nc -- same order as
+    # jsbach's restart naming, not ECHAM's.
+
+# oasis3mct's restart files are stamped with a run-segment date *range*
+# (e.g. a2o_flux_18500101-18501231), not a single timestamp this template
+# model can express, and some carry no date at all (a bare "a2o_flux",
+# presumably a symlink/reference to the latest). Deliberately left
+# uncovered -- falls back to a real read, the same safe default as any
+# other unmatched file.

@@ -77,7 +77,9 @@ def test_timeout_replaces_overrun_input_and_keeps_going():
     )
     elapsed = time.monotonic() - start
 
-    assert elapsed < 30  # nowhere near the 60s hang -- proves it was killed, not awaited
+    assert (
+        elapsed < 30
+    )  # nowhere near the 60s hang -- proves it was killed, not awaited
     assert result == [1, 4, -3, 16, 25]
 
 

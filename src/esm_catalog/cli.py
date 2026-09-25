@@ -125,9 +125,15 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
         return
 
     from rich.console import Console
-    from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
-                               SpinnerColumn, TaskID, TextColumn,
-                               TimeElapsedColumn)
+    from rich.progress import (
+        BarColumn,
+        MofNCompleteColumn,
+        Progress,
+        SpinnerColumn,
+        TaskID,
+        TextColumn,
+        TimeElapsedColumn,
+    )
 
     progress = Progress(
         SpinnerColumn(),
@@ -363,6 +369,15 @@ def auth_logout(server_url: Optional[str]) -> None:
 )
 @click.option("--strict", is_flag=True, help="Exit non-zero if any file fails to scan.")
 @click.option(
+    "--revalidate-every",
+    type=click.IntRange(min=0),
+    default=None,
+    help="Once a stream's schema is frozen (from its first file), re-read every "
+    "this-many-th later file for real instead of trusting a path-derived "
+    "datetime -- catches schema drift. 0 disables it. Defaults to "
+    "ESM_CATALOG_REVALIDATE_EVERY, or 20.",
+)
+@click.option(
     "-v",
     "--verbose",
     is_flag=True,
@@ -375,6 +390,7 @@ def scan(
     scheduler: Optional[str],
     jobs: Optional[int],
     strict: bool,
+    revalidate_every: Optional[int],
     verbose: bool,
 ) -> None:
     """Scan the experiment's output into the catalog (stac-geoparquet shards)."""
@@ -395,6 +411,9 @@ def scan(
 
     def _run_scan():
         with _scan_progress(show_progress) as on_progress:
+            kwargs = {}
+            if revalidate_every is not None:
+                kwargs["revalidate_every"] = revalidate_every
             return scan_experiment(
                 UPath(exp_root),
                 catalog=UPath(catalog_dir) if catalog_dir else None,
@@ -405,6 +424,7 @@ def scan(
                 on_progress=on_progress,
                 worker_initializer=_quiet_worker_logging,
                 worker_initargs=(level,),
+                **kwargs,
             )
 
     show_progress = sys.stderr.isatty() and not verbose
@@ -625,8 +645,14 @@ def _push_progress(enabled: bool, total: int) -> Generator[object, None, None]:
         return
 
     from rich.console import Console
-    from rich.progress import (BarColumn, MofNCompleteColumn, Progress,
-                               SpinnerColumn, TextColumn, TimeElapsedColumn)
+    from rich.progress import (
+        BarColumn,
+        MofNCompleteColumn,
+        Progress,
+        SpinnerColumn,
+        TextColumn,
+        TimeElapsedColumn,
+    )
 
     progress = Progress(
         SpinnerColumn(),
@@ -695,9 +721,7 @@ def status(exp_root: str) -> None:
 
         queryables_path = catalog / QUERYABLES_FILENAME
         if queryables_path.exists():
-            count = len(
-                json.loads(queryables_path.read_text()).get("properties", {})
-            )
+            count = len(json.loads(queryables_path.read_text()).get("properties", {}))
             click.echo(f"queryables: {count}")
 
     try:
@@ -709,8 +733,7 @@ def status(exp_root: str) -> None:
         from esm_catalog.auth import load_token
 
         click.echo(
-            "logged in: "
-            + ("yes" if load_token(server_url) is not None else "no")
+            "logged in: " + ("yes" if load_token(server_url) is not None else "no")
         )
     else:
         click.secho(
@@ -769,9 +792,7 @@ def validate_cmip6(exp_root: str) -> None:
         raise click.ClickException(f"esgvoc CV lookup failed: {exc}") from exc
 
     if not issues:
-        click.secho(
-            f"All {len(facets)} declared cmip6 facet(s) are valid.", fg="green"
-        )
+        click.secho(f"All {len(facets)} declared cmip6 facet(s) are valid.", fg="green")
         return
 
     for issue in issues:
@@ -845,7 +866,9 @@ def distributed() -> None:
     required=False,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
 )
-@click.option("--job-prefix", help="SLURM job name prefix (<prefix>-sched, -worker, ...).")
+@click.option(
+    "--job-prefix", help="SLURM job name prefix (<prefix>-sched, -worker, ...)."
+)
 @click.option("--scratch-dir", help="Coordination + container-cache directory.")
 @click.option("--image-tag", help="Container tag, e.g. v6.68.0-rc.1-test-0.1.11.")
 @click.option("--exp-root", help="Experiment directory the driver will scan.")
@@ -857,13 +880,19 @@ def distributed() -> None:
     "running-job cap). 'multinode': one job, srun fans workers out inside "
     "it (for a site with a tight per-user running-job cap, e.g. Levante).",
 )
-@click.option("--n-workers", type=int, help="Size of the worker job array (worker_mode=array).")
+@click.option(
+    "--n-workers", type=int, help="Size of the worker job array (worker_mode=array)."
+)
 @click.option(
     "--throttle",
     type=int,
     help="Cap concurrent array elements (worker_mode=array; default: n_workers, i.e. no throttle).",
 )
-@click.option("--n-nodes", type=int, help="Node count for the one worker job (worker_mode=multinode).")
+@click.option(
+    "--n-nodes",
+    type=int,
+    help="Node count for the one worker job (worker_mode=multinode).",
+)
 @click.option(
     "--cores-per-node",
     type=int,
@@ -882,8 +911,13 @@ def distributed() -> None:
     multiple=True,
     help="A -B mount; repeat for multiple (default: /albedo).",
 )
-@click.option("--container-bin", help="Container binary, e.g. singularity or apptainer (default: singularity).")
-@click.option("--container-module", help="Module to load (default: same as --container-bin).")
+@click.option(
+    "--container-bin",
+    help="Container binary, e.g. singularity or apptainer (default: singularity).",
+)
+@click.option(
+    "--container-module", help="Module to load (default: same as --container-bin)."
+)
 @click.option(
     "--push-after-scan/--no-push-after-scan",
     default=None,
@@ -1008,8 +1042,10 @@ def distributed_render_scripts(
 
     sched_path, worker_path, driver_path, cleanup_path = written
     click.echo()
-    click.echo("Submit in this order (scheduler, then driver and workers "
-                "together, then cleanup dependent on the driver):")
+    click.echo(
+        "Submit in this order (scheduler, then driver and workers "
+        "together, then cleanup dependent on the driver):"
+    )
     click.echo(f"  SCHED_JOBID=$(sbatch --parsable {sched_path})")
     click.echo(
         f"  DRIVER_JOBID=$(sbatch --parsable --dependency=after:$SCHED_JOBID {driver_path})"

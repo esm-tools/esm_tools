@@ -134,8 +134,23 @@ def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
 
         def on_progress(event) -> None:
             now = time.monotonic()
-            in_progress = event.phase == "reading" and event.current < event.total
-            if event.phase == last["phase"] and in_progress and now - last["at"] < 30:
+            phase_changed = event.phase != last["phase"]
+            # "sourcing" ticks once per file found (no known total -- could
+            # be tens of thousands); "reading" ticks once per file too.
+            # Confirmed live: throttling only applied to "reading", so
+            # sourcing alone flooded the log with one line per file. Both
+            # need it; only a phase change or the last reading tick (current
+            # reaching total) always logs regardless of the 30s window.
+            is_final_reading_tick = (
+                event.phase == "reading"
+                and event.total
+                and event.current >= event.total
+            )
+            if (
+                not phase_changed
+                and not is_final_reading_tick
+                and now - last["at"] < 30
+            ):
                 return
             last["at"], last["phase"] = now, event.phase
             if event.phase == "sourcing":

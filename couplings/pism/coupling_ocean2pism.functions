@@ -314,8 +314,72 @@ EOF
     $cdo setpartabn,${cdo_table_file},convert \
 	${COUPLE_DIR}/ocean_file_for_ice.nc \
 	ocean_file_for_ice.pism_names.nc
-    
+
+    iterative_coupling_ocean_pism_cavity_mask ocean_file_for_ice.pism_names.nc
+
     echo "     ...done."
+}
+
+#
+# Restrict the melt flux to the cavity that FESOM actually resolves.
+#
+# fw, which becomes shelfbmassflux, is the freshwater flux at EVERY ocean node:
+# basal melt under a shelf, precipitation minus evaporation in the open ocean,
+# and along the coast mostly sea-ice formation, which removes freshwater from
+# the surface and so carries the opposite sign.  Remapped whole, that coastal
+# ring lands on the shelf cells beside the calving front and cancels part of the
+# melt.  Measured on one chunk of ism41_v5g over mask 3 -- the only cells PISM
+# applies the flux to -- FESOM melts the cavity at 774 Gt/yr, 673 of that
+# arrives, open-ocean nodes take 95 back out, and PISM is left with 577.
+#
+# The nodes are set to MISSING, not to zero.  Zeroed nodes still take part in
+# the distance-weighted average and merely dilute the melt: on the same chunk
+# zeroing gives 673 Gt/yr where marking them missing gives 741, because cdo then
+# drops them and renormalises the weights over the cavity nodes alone.
+#
+# coupling_fesom2ice.functions already extracts cavity_flag_extended and carries
+# a branch meant to do exactly this, but its test reads x[q,w]net while the loop
+# variables are Tsurf Ssurf fh fw, and the masked file it writes is never passed
+# to the extraction script, which reads the raw FESOM directory by variable and
+# year.  The same intent is applied here, where the submesh is at hand.
+#
+# Set iterative_coupling_ocean_pism_cavity_mask=0 to get the previous behaviour.
+#
+function iterative_coupling_ocean_pism_cavity_mask {
+    _file=$1
+    _do_mask=${iterative_coupling_ocean_pism_cavity_mask:-1}
+    CAVITY_TOTAL_FILE=${CAVITY_TOTAL_FILE:-$(pwd)/cavity_melt_total.txt}
+    rm -f ${CAVITY_TOTAL_FILE}
+
+    if [ ${_do_mask} -eq 0 ] ; then
+	echo " *   Cavity mask DISABLED : shelfbmassflux keeps the open-ocean flux"
+	unset _do_mask
+	return 0
+    fi
+
+    # The cavity is recarved every chunk and the node count moves with it, so
+    # the submesh is chosen by MATCHING that count against the field being
+    # masked, not by name: latest_submesh is the mesh carved for the next leg
+    # and previous_submesh the one before it, so neither is reliably the mesh
+    # this field was written on.  A field with no matching submesh stops the
+    # helper rather than being masked with the wrong nodes.
+    if ! ls -d ${COUPLE_DIR}/submesh_* >/dev/null 2>&1 ; then
+	echo " *   WARNING: no submesh under ${COUPLE_DIR}"
+	echo "              shelfbmassflux left unmasked, as before this change"
+	unset _do_mask
+	return 0
+    fi
+
+    echo " *   Masking shelfbmassflux to the cavity ..."
+    ${PYTHON_BINARY:-python} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
+	mask \
+	--node-file    ${_file} \
+	--submesh-root ${COUPLE_DIR} \
+	--total-file   ${CAVITY_TOTAL_FILE} \
+	|| { echo " *   WARNING: cavity mask FAILED, continuing unmasked" ; \
+	     rm -f ${CAVITY_TOTAL_FILE} ; }
+
+    unset _do_mask
 }
 
 function iterative_coupling_ocean_pism_prepare_ocean_mixed_forcing {
@@ -746,7 +810,67 @@ function iterative_coupling_ocean_pism_compute_ocean_direct_forcing {
 	ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc \
 	${COUPLE_DIR}/$(basename ${_file})
     rm -f ocean_file_at_ice.${INTERPOL_TYPE_OCE}.nc
+
+    iterative_coupling_ocean_pism_cavity_conserve ${COUPLE_DIR}/$(basename ${_file})
+
     echo "     ...done."
+}
+
+#
+# Two corrections that need PISM's own geometry, so they come after the remap.
+#
+# CONSERVATION.  A distance-weighted average of a RATE does not conserve a FLUX
+# when the source and target domains differ in area, and they do here: FESOM's
+# cavity is about 1326 x10^3 km2 against 1255 for the cells PISM melts.  On one
+# chunk of ism41_v5g the masked field integrates to 741 Gt/yr where FESOM
+# removed 774, so it is scaled up by 1.044.  The factor is small but it is what
+# makes the two models agree on how much freshwater changed hands; without it
+# the coupled system creates or destroys water at the ice base.
+#
+# The factor is computed against the floating mask of the restart PISM is about
+# to start from.  That mask moves while the chunk runs -- 0.68 % of shelf area
+# per ten-year chunk, about 5 Gt/yr on 774 -- so it is recomputed every step and
+# never carried over.
+#
+# BASAL TEMPERATURE.  shelfbtemp is the temperature OF THE ICE BASE, and at a
+# melting interface that is the freezing point.  It currently comes from Tsurf,
+# the temperature of level 1, which under a cavity is inside the ice: Tsurf is
+# missing at all 7288 cavity nodes, so PISM is handed extrapolated open-ocean
+# surface water, -1.07 degC, where the freezing point at the ice draft is -2.16.
+# The replacement is FESOM's own expression from cavity_param.F90,
+# tf = -0.0575*S + 0.0901 + 7.61e-4*z, evaluated on PISM's draft.  The water at
+# the cavity top, -1.79 degC, is not the right answer either: it sits 0.36 degC
+# above the freezing point, which is correct for water that is melting ice and
+# wrong for the temperature of the ice it is melting.
+#
+# Both steps are skipped if the mask stage did not run, so the two are never
+# half-applied.
+#
+function iterative_coupling_ocean_pism_cavity_conserve {
+    _file=$1
+    CAVITY_TOTAL_FILE=${CAVITY_TOTAL_FILE:-$(pwd)/cavity_melt_total.txt}
+    _cavity_salinity=${iterative_coupling_ocean_pism_cavity_salinity:-34.4}
+
+    if [ ! -f "${CAVITY_TOTAL_FILE}" ] ; then
+	echo " *   No cavity total recorded : melt left unscaled and shelfbtemp untouched"
+	return 0
+    fi
+    if [ ! -f "${INPUT_FILE_pism}" ] ; then
+	echo " *   WARNING: INPUT_FILE_pism >>${INPUT_FILE_pism}<< not found"
+	echo "              melt left unscaled and shelfbtemp untouched"
+	return 0
+    fi
+
+    echo " *   Conserving cavity melt and setting shelfbtemp to the freezing point ..."
+    ${PYTHON_BINARY:-python} ${FUNCTION_PATH:-${FPATH}}/../utils/cavity_consistency.py \
+	fix \
+	--ice-file   ${_file} \
+	--pism-file  ${INPUT_FILE_pism} \
+	--total-file ${CAVITY_TOTAL_FILE} \
+	--salinity   ${_cavity_salinity} \
+	|| echo " *   WARNING: cavity conservation FAILED, forcing file left as remapped"
+
+    unset _cavity_salinity
 }
 
 function iterative_coupling_ocean_pism_compute_ocean_mixed_forcing {

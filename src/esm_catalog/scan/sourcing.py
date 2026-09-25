@@ -579,7 +579,7 @@ def _load_run_cfgs(
             "scan requires a completed ESM-Tools run; "
             f"no file matching '{_FINISHED_CONFIG_GLOB}' under {config_dir} "
             "(e.g. '<expid>_finished_config.yaml', written by ESM-Tools at the "
-            "end of a run — a plain file named 'finished_config' will not match)"
+            "end of a run)"
         )
     if distributed:
         docs = parallel_map(

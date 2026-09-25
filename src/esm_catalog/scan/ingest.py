@@ -19,6 +19,9 @@ current run span (which grows when a run is extended).
 from __future__ import annotations
 
 import json
+import os
+import signal
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Callable, Optional
 
@@ -52,9 +55,46 @@ from esm_catalog.types import FileMetadata
 FAILURES_FILENAME = "scan-failures.json"
 """Sidecar listing files that failed to read (path + error), for follow-up."""
 
+_READ_TIMEOUT_SECONDS = int(os.environ.get("ESM_CATALOG_READ_TIMEOUT", "300"))
+"""Per-file read budget (seconds) -- e.g. cfgrib reindexing a huge, unusually
+message-dense GRIB file (confirmed live: an untidied ECHAM tracer-forcing file
+sitting in a run's ephemeral work dir with no '.codes' sidecar, forcing the
+slow generic path) can otherwise stall an entire multi-hour scan on one file,
+which breaks the "one bad file must not sink the scan" contract. Override via
+``ESM_CATALOG_READ_TIMEOUT`` for unusually large legitimate files."""
+
 
 class ScanError(Exception):
     """Raised in ``--strict`` mode when any file failed to scan."""
+
+
+class _ReadTimeoutError(Exception):
+    """A single file's read exceeded :data:`_READ_TIMEOUT_SECONDS`."""
+
+
+@contextmanager
+def _read_timeout(seconds: int):
+    """Abort the enclosed block with :class:`_ReadTimeoutError` after *seconds*.
+
+    Uses ``SIGALRM``, so it only works on Unix and only in the main thread of
+    whatever process runs it -- true here, since each worker process runs
+    exactly one file at a time on its own main thread. A non-positive timeout
+    or a platform without ``SIGALRM`` disables the guard.
+    """
+    if seconds <= 0 or not hasattr(signal, "SIGALRM"):
+        yield
+        return
+
+    def _on_alarm(signum, frame):
+        raise _ReadTimeoutError(f"read timed out after {seconds}s")
+
+    previous = signal.signal(signal.SIGALRM, _on_alarm)
+    signal.alarm(seconds)
+    try:
+        yield
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, previous)
 
 
 @dataclass(frozen=True)
@@ -77,24 +117,27 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
 
     A file the scan simply cannot handle — an unrecognised format, or a format
     with no registered reader — is flagged ``unsupported`` (a clean skip, not a
-    failure). Any other reader error is caught and returned as a
-    :class:`ScanFailure`: a single bad file must not abort a multi-hour scan.
+    failure). Any other reader error, including exceeding
+    :data:`_READ_TIMEOUT_SECONDS`, is caught and returned as a
+    :class:`ScanFailure`: a single bad or pathologically slow file must not
+    stall a multi-hour scan.
     """
     try:
-        file_format = detect(output_file.path)
-        reader = reader_for(file_format)
-    except (UnknownFormatError, LookupError):
-        return _ReadResult(output_file, None, None, unsupported=True)
-    try:
-        file_metadata = FileMetadata.model_validate(reader.read(output_file.path))
-        file_metadata.component = output_file.component
-        file_metadata.role = output_file.role
-        file_metadata.category = output_file.category
-        # A walked outdata file (no outdata_targets entry) carries no declared
-        # stream -- fall back to its own primary variable, the closest thing
-        # to a stream identity a raw filesystem walk can offer.
-        file_metadata.stream = output_file.stream or file_metadata.variable
-        return _ReadResult(output_file, file_metadata, None)
+        with _read_timeout(_READ_TIMEOUT_SECONDS):
+            try:
+                file_format = detect(output_file.path)
+                reader = reader_for(file_format)
+            except (UnknownFormatError, LookupError):
+                return _ReadResult(output_file, None, None, unsupported=True)
+            file_metadata = FileMetadata.model_validate(reader.read(output_file.path))
+            file_metadata.component = output_file.component
+            file_metadata.role = output_file.role
+            file_metadata.category = output_file.category
+            # A walked outdata file (no outdata_targets entry) carries no declared
+            # stream -- fall back to its own primary variable, the closest thing
+            # to a stream identity a raw filesystem walk can offer.
+            file_metadata.stream = output_file.stream or file_metadata.variable
+            return _ReadResult(output_file, file_metadata, None)
     except UnsupportedContentError:
         return _ReadResult(output_file, None, None, unsupported=True)
     except (

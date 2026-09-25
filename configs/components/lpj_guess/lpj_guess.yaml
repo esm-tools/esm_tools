@@ -67,11 +67,22 @@ lpj_guess:
             branch: main
         4.1.2:
             runscript_name: run_coupled_4_1_2.ins
-            # 2026-09-08: awiesm3 develop* build the land-grid branch (LPJ-GUESS land
-            # mask derived from the coastline), which is what the current develop
-            # bin/guess was built from.
+            # 2026-09-25: awiesm3 develop* build lpj_guess_awiesm3, the branch the
+            # AWI and SMHI lines converge on. It carries the land-grid work (LPJ-GUESS
+            # land mask from the coastline, Raupach roughness to OpenIFS as GUE_Z0HV,
+            # LUH3 crop fractions) merged with Laszlo Hajdu's canopy work (stem area
+            # index via ltos, shrubs routed to low IFS vegetation, iftreefracca 1) and
+            # his nitrogen roundoff and land-use transfer fix.
+            #
+            # The grid is now chosen by configuration rather than hard-coded: the
+            # branch reads grid_product and grid_name from lpjg_steps.yaml, which
+            # lpjg_steps.yaml.j2 already writes as coupled_land and <mygrid>-land.
+            #
+            # ltos has to be set in the instruction file the run actually reads, which
+            # for this setup is namelists/lpj_guess/global.ins, NOT ecearth.ins.j2.
+            # Without it the canopy code is compiled and never exercised.
             git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
-            branch: feat/lpjg-land-grid-from-coastline-4.1.11
+            branch: lpj_guess_awiesm3
             install_bins: build/guess
             executable: guess
         4.1.3:

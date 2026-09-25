@@ -1,0 +1,79 @@
+#########################################################################################
+###################### FESOM2 + XIOS (detached) CONFIGURATION FILE ######################
+#########################################################################################
+#
+# Standalone FESOM with XIOS running as its own executable on dedicated ranks,
+# rather than attached inside the FESOM ranks.
+#
+# Why it is worth the second executable: in attached mode every FESOM rank is
+# also its own XIOS server, so each output file is created and written
+# collectively by all of them. That collective write does not scale. Measured
+# on albedo, CORE2, one file per variable:
+#
+#     288 FESOM ranks, attached :   ~2.4 s to create a file
+#     768 FESOM ranks, attached :   ~60  s to create a file
+#
+# At 768 ranks a year of daily output never got past creating its files. With
+# detached servers the writing is done by the server ranks only, and the ocean
+# ranks hand their data over and go on integrating.
+#
+# FESOM needs no coupler here: xios_initialize splits MPI_COMM_WORLD by code
+# id and hands back the client communicator (io_xios_client_init, called from
+# fesom_init before par_init).
+#
+general:
+    model: fesom2-xios
+    version: "2.8.0"
+    coupled_setup: True
+
+    include_models:
+    - fesom
+    - xios
+
+    choose_version:
+        "2.8.0":
+            couplings:
+            - fesom-2.8+xios-2.5-ece_ogcm
+
+    # No coupler: drop the OASIS namcouple step from the default recipe.
+    prepcompute_recipe:
+        - "compile_model"
+        - "_show_simulation_info"
+        - "create_new_files"
+        - "create_empty_folders"
+        - "assemble"
+        - "log_used_files"
+        - "wait_for_iterative_coupling"
+        - "copy_files_to_thisrun"
+        - "modify_namelists"
+        - "modify_files"
+        - "copy_files_to_work"
+        - "report_missing_files"
+        - "compute_and_log_file_checksums"
+        - "_write_finalized_config"
+        - "database_entry"
+
+fesom:
+    version: "2.8.0-xios"
+    with_xios: true
+    # iodef.xml, file_def_fesom.xml and context_fesom.xml come from the fesom
+    # component config; the setup only switches the server on, see below.
+    xios_using_server: true
+
+xios:
+    version: "2.5-ece_ogcm"
+    executable: xios.x
+    # 16 servers is what CORE2 daily output needs; see the runscript for how
+    # they are spread over nodes.
+    nproc: 16
+
+    # XIOS reads iodef.xml from the work directory, and fesom already stages
+    # it there (it is the one file the two share). The xios component would
+    # otherwise stage its own from ${xml_dir}, which is empty here and
+    # resolves to /iodef.xml.
+    remove_config_files:
+    - io_def
+    remove_config_sources:
+    - io_def
+    remove_config_in_work:
+    - io_def

@@ -1,0 +1,65 @@
+<!-- Standalone FESOM context.
+
+     Same as the model's docs/xios_xml/context_fesom.xml, except that
+     ldiag_destine is true. io_xios_init reads these flags with
+     xios_getvar() after the namelist read, and under XIOS namelist.io is not
+     read at all, so the XML is the only way to switch a gated stream on:
+
+       ldiag_destine -> CASE ('hc300m') / ('hc700m') / ('hc') in
+                        io_meandata.F90: vertically integrated heat content
+
+     A stream that is defined but not asked for in file_def_fesom.xml is
+     never sent: io_xios_send_* gates on xios_is_valid_field().
+
+     ldiag_forc stays false, and must: with XIOS on, io_meandata registers
+     every stream id it knows, which includes both 'FORC' and the individual
+     ids that CASE ('FORC') also defines. 'FORC' sorts ahead of them, so it
+     defines lwr, and CASE ('lwr') then defines it a second time:
+
+       variable 'lwr' already exists, check if you define it multiple times
+       error in line 4395 io_meandata.F90
+
+     Nothing is lost. Every field CASE ('FORC') defines has its own ungated
+     case as well (uwind, vwind, tair, shum, swr, lwr, prec, snow, evap,
+     runoff, virtsalt, realsalt, relaxsalt, tx_sur, ty_sur); each sets its
+     sel_forcvar slot, which is what keeps them unique when namelist.io asks
+     for FORC in a non-XIOS run. Only cd, ch and ce are FORC-only, and
+     io_meandata does not register those ids for XIOS at all. -->
+<context id="fesom">
+  <calendar type="Gregorian"/>
+
+  <field_definition  src="./field_def_fesom.xml"/>
+  <file_definition   src="./file_def_fesom.xml"/>
+  <axis_definition   src="./axis_def_fesom.xml"/>
+  <domain_definition src="./domain_def_fesom.xml"/>
+  <grid_definition   src="./grid_def_fesom.xml"/>
+
+  <variable_definition>
+    <variable_group id="fesom_runtime">
+      <variable id="using_server" type="bool">true</variable>
+    </variable_group>
+
+    <!-- FESOM diagnostic flags. Override &diag_list namelist values from XML
+         via xios_getvar() in io_xios_init (called after setup_model/namelist
+         read, before any diag-gated allocation). If a variable is omitted
+         here the namelist value stands. -->
+    <variable_group id="fesom_diag_flags">
+      <variable id="ldiag_solver"      type="bool">false</variable>
+      <variable id="lcurt_stress_surf" type="bool">false</variable>
+      <variable id="ldiag_curl_vel3"   type="bool">false</variable>
+      <variable id="ldiag_Ri"          type="bool">false</variable>
+      <variable id="ldiag_TurbFlux"    type="bool">false</variable>
+      <variable id="ldiag_salt3D"      type="bool">false</variable>
+      <variable id="ldiag_dMOC"        type="bool">false</variable>
+      <variable id="ldiag_DVD"         type="bool">false</variable>
+      <variable id="ldiag_forc"        type="bool">false</variable>
+      <variable id="ldiag_extflds"     type="bool">false</variable>
+      <variable id="ldiag_destine"     type="bool">true </variable>
+      <variable id="ldiag_ice"         type="bool">false</variable>
+      <variable id="ldiag_trflx"       type="bool">true </variable>
+      <variable id="ldiag_uvw_sqr"     type="bool">false</variable>
+      <variable id="ldiag_trgrd_xyz"   type="bool">false</variable>
+      <variable id="ldiag_cmor"        type="bool">true </variable>
+    </variable_group>
+  </variable_definition>
+</context>

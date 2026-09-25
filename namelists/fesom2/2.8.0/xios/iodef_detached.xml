@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<!-- Standalone FESOM iodef, detached (server) mode.
+
+     XIOS runs as its own executable on dedicated ranks. FESOM's ranks hand
+     their data over and carry on; the servers do the averaging and the
+     writing. The alternative, attached mode (iodef.xml), makes every FESOM
+     rank its own server, so each output file is created and written
+     collectively by all of them, which does not scale: on albedo, CORE2, one
+     file per variable took ~2.4 s to create with 288 ranks and ~60 s with
+     768.
+
+     Two server levels: ratio_server2=75 puts three quarters of the servers on
+     level 2, which do the netCDF writing, and leaves a quarter on level 1,
+     which gather from the clients. With 16 servers that is 4 gatherers and 12
+     writers, into a single pool.
+
+     using_oasis is false: FESOM does the MPI_COMM_WORLD split itself through
+     xios_initialize (io_xios_client_init), there is no coupler here. -->
+<simulation>
+
+  <context id="fesom" src="./context_fesom.xml" />
+
+  <context id="xios">
+    <variable_definition>
+      <variable_group id="server">
+        <variable id="using_server2"                  type="bool"  >true </variable>
+        <variable id="ratio_server2"                  type="int"   >75   </variable>
+        <variable id="number_pools_server2"           type="int"   >1    </variable>
+        <variable id="server2_dist_file_memory"       type="bool"  >false</variable>
+        <variable id="server2_dist_file_memory_ratio" type="double">0.5  </variable>
+      </variable_group>
+
+      <variable_group id="buffer">
+        <variable id="optimal_buffer_size" type="string">performance</variable>
+        <variable id="buffer_size_factor"  type="double">2.0        </variable>
+      </variable_group>
+
+      <variable_group id="parameters">
+        <variable id="using_server" type="bool">true </variable>
+        <variable id="using_oasis"  type="bool">false</variable>
+        <variable id="info_level"   type="int" >0    </variable>
+        <variable id="print_file"   type="bool">true </variable>
+      </variable_group>
+    </variable_definition>
+  </context>
+
+</simulation>

@@ -1,0 +1,5 @@
+components:
+- fesom-2.8.0-xios
+- xios-2.5-ece_ogcm
+
+coupling_changes: []

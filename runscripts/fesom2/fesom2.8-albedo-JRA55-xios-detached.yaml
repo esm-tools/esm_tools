@@ -1,0 +1,49 @@
+# FESOM 2.8.0 standalone, one JRA55-do v1.4.0 cycle (1958-2020) on CORE2,
+# output through XIOS running detached on its own ranks.
+#
+# 768 FESOM ranks (6 nodes) + 16 XIOS servers spread over 2 nodes, 8 per node,
+# each with a 16-core slot to itself. Of the 16 servers, ratio_server2=75
+# makes 4 level-1 gatherers and 12 level-2 writers (iodef_detached.xml).
+general:
+        user: !ENV ${USER}
+        account: "paleodyn.paleodyn"
+        setup_name: fesom2-xios
+        version: "2.8.0"
+        compute_time: "12:00:00"
+        initial_date: '1958-01-01'
+        final_date: '2021-01-01'
+        base_dir: "/albedo/work/projects/p_awiesm3_cmip7/runtime/fesom-2.8/"
+        nyear: 10
+        use_venv: False
+
+computer:
+        # The multi-prog hostfile, one srun, one MPI_COMM_WORLD. The packjob
+        # path would let each component ask for its own --nodes and
+        # --ntasks-per-node, which is the only way to spread the servers over
+        # two nodes, but on albedo its two het groups cannot bootstrap PMIx:
+        #
+        #   mpi/pmix_v3: _tcp_connect: pmixp_dconn_tcp.c:141:
+        #     Cannot establish the connection
+        #   mpi/pmix_v3: pmixp_coll_ring_check: unexpected contrib from
+        #     prod-200:7, expected is 5
+        #
+        # which is why every other albedo runscript here sets taskset too.
+        # The servers therefore sit together on the last node.
+        taskset: true
+
+fesom:
+        version: "2.8.0-xios"
+        model_dir: "/albedo/scratch/user/jstreffi/model_codes/fesom-2.8/"
+        xios_using_server: true
+        resolution: "CORE2"
+        time_step: 1800
+        nproc: 768
+        lresume: false
+        restart_rate: 10
+        restart_first: 10
+        restart_unit: 'y'
+
+xios:
+        version: "2.5-ece_ogcm"
+        model_dir: "/albedo/scratch/user/jstreffi/model_codes/xios/"
+        nproc: 16

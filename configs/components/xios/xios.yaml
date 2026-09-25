@@ -33,6 +33,7 @@ xios:
     - 2.5_r2777
     - 2.5_r1910_oifs
     - 2.5_r1910_ogcm
+    - 2.5-ece_ogcm
     - 2.5_smhi
     - 2.5_ece
     - 3.0_trunk
@@ -230,6 +231,52 @@ xios:
         archfile: ESMTOOLS_generic_intel
         use_oasis: ''
         branch: 2.5_r1910
+      # Same as 2.5-ece below, but built without oasis, for ocean-only setups
+      # (standalone FESOM with -DFESOM_WITH_XIOS=ON). An oasis-enabled
+      # libxios.a carries unresolved mod_oasis_* references that a standalone
+      # ocean cannot satisfy at link time.
+      #
+      # The arch files are the oasis ones on purpose: make_xios only reads
+      # their OASIS_* entries when --use_oasis is passed, and use_oasis is
+      # empty here. They are the variants that carry the right hdf5 library
+      # names (libhdf5_hl_fortran, not libhdf5hl_fortran) for levante and
+      # albedo, which ESMTOOLS_generic_intel does not.
+      #
+      # The sed patches a null dereference in attached mode. CContext::finalize
+      # merges the context registry into CXios::globalRegistry, which
+      # initClientSide only allocates on client rank 0, and passes *registryOut
+      # unchecked. With split_freq set there is registry state to merge, and
+      # the run segfaults after all files are closed:
+      #
+      #   Caught signal 11 ... address not mapped to object at address 0x38
+      #   xios::CRegistry::mergeRegistry()
+      #   xios::CContext::finalize()
+      #   cxios_context_finalize() <- io_xios_close <- fesom_finalize
+      #
+      # Guarding both call sites costs only the registry entry that records
+      # where a split left off, which matters when a file is appended across
+      # restarts. esm_tools writes each chunk into its own work directory, so
+      # nothing here relies on it.
+      2.5-ece_ogcm:
+        git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece.git
+        branch: main
+        use_oasis: ''
+        archfile: ESMTOOLS_levante_oasis_intel
+        choose_computer.compiler_suite:
+            gcc:
+                archfile: ESMTOOLS_generic_oasis_gcc
+            intel-oneapi:
+                archfile: ESMTOOLS_levante_oasis_intel
+            "*":
+                foo: bar
+        choose_computer.name:
+            levante:
+                choose_computer.compiler_mpi:
+                    gnu11_ompi4:
+                        archfile: ESMTOOLS_generic_oasis_gcc
+                    "*":
+                        archfile: ESMTOOLS_levante_oasis_intel
+        comp_command: sed -i 's/if (server->intraCommRank==0) CXios::globalRegistry->mergeRegistry(\*registryOut)/if (server->intraCommRank==0 \&\& CXios::globalRegistry != 0 \&\& registryOut != 0) CXios::globalRegistry->mergeRegistry(*registryOut)/' src/node/context.cpp; export XIOS_TOPLEVEL=${model_dir}; ./make_xios --arch ${archfile} --netcdf_lib netcdf4_par ${use_oasis} --job 24 --prod; cp bin/xios_server.exe bin/xios.x
       2.5_smhi:
         git-repository: https://gitlab.dkrz.de/ec-earth/xios-2.5-ece
         branch: main

@@ -165,7 +165,7 @@ setup(
         "esm_tools.namelists": ["../namelists/*"],
         "esm_tools.runscripts": ["../runscripts/*"],
         "esm_tools.couplings": ["../couplings/*"],
-        "esm_catalog": ["distributed/templates/*.j2"],
+        "esm_catalog": ["distributed/templates/*.j2", "scan/path_facets/*.yaml"],
     },
     setup_requires=setup_requirements,
     test_suite="tests",

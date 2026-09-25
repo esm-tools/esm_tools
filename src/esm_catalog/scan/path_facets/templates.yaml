@@ -1,0 +1,24 @@
+# Declarative path-facet templates: a component's real on-disk filename
+# shape (confirmed live against production files), not the fuzzy,
+# wildcard-bearing outdata_sources/restart_out_sources glob pattern in
+# configs/components/*.yaml (which only locates files -- it does not
+# precisely describe their structure; ECHAM's default template swallows the
+# month behind a literal "*", for instance).
+#
+# Placeholders: {{ expid }} (any text), {{ stream }} (no '.', '_', or '/'),
+# {{ date }} (parsed via the paired date_format, a plain strptime string).
+# One component may list several templates (e.g. FESOM's outdata vs restart
+# naming); each is tried in order, first match wins.
+
+echam:
+  - pattern: "{{ expid }}_{{ date }}_{{ stream }}"
+    date_format: "%Y%m.%d"
+    # historical_c14_init_185001.01_echam
+
+fesom:
+  - pattern: "{{ stream }}.fesom.{{ date }}.nc"
+    date_format: "%Y"
+    # a_ice.fesom.1850.nc
+  - pattern: "fesom.{{ date }}.{{ stream }}.restart"
+    date_format: "%Y"
+    # fesom.1850.oce.restart

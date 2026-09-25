@@ -71,9 +71,9 @@ class PathFacetSpec:
 def _build_plugin_manager() -> pluggy.PluginManager:
     pm = pluggy.PluginManager("esm_catalog.path_facets")
     pm.add_hookspecs(PathFacetSpec)
-    from esm_catalog.scan.path_facets import echam
+    from esm_catalog.scan.path_facets import templates
 
-    pm.register(echam)
+    pm.register(templates)
     pm.load_setuptools_entrypoints("esm_catalog.path_facets")
     return pm
 

@@ -78,9 +78,15 @@ lpj_guess:
             # branch reads grid_product and grid_name from lpjg_steps.yaml, which
             # lpjg_steps.yaml.j2 already writes as coupled_land and <mygrid>-land.
             #
-            # ltos has to be set in the instruction file the run actually reads, which
-            # for this setup is namelists/lpj_guess/global.ins, NOT ecearth.ins.j2.
-            # Without it the canopy code is compiled and never exercised.
+            # ltos has to be set in the instruction file the run actually reads.
+            # framework.cpp:1063 hard-wires the name to guess.ins, and awiesm3.yaml
+            # renders one per LPJ-GUESS rank into runPROC_NUM/. That guess.ins imports
+            # ecearth.ins, which awiesm3.yaml renders from namelists/lpj_guess/
+            # ecearth.ins.j2. So ecearth.ins.j2 is the live file. The top-level
+            # global.ins and run_coupled_4_1_2.ins are staged but never reached, which
+            # is why they can disagree with it: global.ins carried iftreefracca 1 while
+            # the file being read carried 0. Without ltos there the canopy code is
+            # compiled and never exercised, silently.
             git-repository: https://git.smhi.se/jan.streffing/lpjg-4.1.git
             branch: lpj_guess_awiesm3
             install_bins: build/guess

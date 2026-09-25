@@ -115,13 +115,38 @@ def _quiet_worker_logging(level: int) -> None:
 def _scan_progress(enabled: bool) -> Generator[Optional[object], None, None]:
     """A transient rich spinner+bar over a scan; yields an ``on_progress`` callback.
 
-    Yields ``None`` (a no-op) when *enabled* is false — not a TTY, or the caller
-    asked for verbose logs instead. The whole display is transient: it vanishes
-    on exit, leaving only the final summary line (which goes to stdout, while the
-    progress renders on stderr so a piped stdout stays clean).
+    Falls back to a throttled loguru INFO line every 30s when *enabled* is
+    false — not a TTY, or the caller asked for verbose logs instead. Without
+    this, ``-v``/a piped stdout went completely silent for the whole reading
+    phase (confirmed live: many real minutes with zero feedback, reading a
+    scan as hung when it was not) -- the rich bar's own progress had nowhere
+    to go once disabled. The rich display, when enabled, is transient: it
+    vanishes on exit, leaving only the final summary line (which goes to
+    stdout, while the progress renders on stderr so a piped stdout stays
+    clean).
     """
     if not enabled:
-        yield None
+        import time
+
+        from loguru import logger
+
+        last = {"at": 0.0, "phase": None}
+
+        def on_progress(event) -> None:
+            now = time.monotonic()
+            in_progress = event.phase == "reading" and event.current < event.total
+            if event.phase == last["phase"] and in_progress and now - last["at"] < 30:
+                return
+            last["at"], last["phase"] = now, event.phase
+            if event.phase == "sourcing":
+                logger.info("sourcing: {}", event.detail or "loading exp configs…")
+            elif event.phase == "reading":
+                detail = f" -- {event.detail}" if event.detail else ""
+                logger.info("reading {}/{}{}", event.current, event.total, detail)
+            elif event.phase == "writing":
+                logger.info("writing catalog…")
+
+        yield on_progress
         return
 
     from rich.console import Console

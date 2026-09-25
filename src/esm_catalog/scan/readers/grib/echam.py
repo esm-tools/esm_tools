@@ -216,15 +216,24 @@ def _read_from_headers(path: UPath, codes_path: Path) -> Optional[FileMetadata]:
                     )
                 )
                 if geometry_keys is None:
-                    geometry_keys = {
-                        key: eccodes.codes_get(gid, key)
-                        for key in (
-                            "latitudeOfFirstGridPointInDegrees",
-                            "longitudeOfFirstGridPointInDegrees",
-                            "latitudeOfLastGridPointInDegrees",
-                            "longitudeOfLastGridPointInDegrees",
-                        )
-                    }
+                    try:
+                        geometry_keys = {
+                            key: eccodes.codes_get(gid, key)
+                            for key in (
+                                "latitudeOfFirstGridPointInDegrees",
+                                "longitudeOfFirstGridPointInDegrees",
+                                "latitudeOfLastGridPointInDegrees",
+                                "longitudeOfLastGridPointInDegrees",
+                            )
+                        }
+                    except Exception:  # noqa: BLE001 -- confirmed live: ECHAM
+                        # mixes spectral ('sh') messages with gridpoint ones in
+                        # the same file; spectral messages carry no lat/lon
+                        # geometry at all. One such message must not abort the
+                        # whole fast path (it did: fell back to cfgrib's slow
+                        # generic path for a 543 MB file) -- just try the next
+                        # message, which may be a gridpoint one.
+                        pass
             finally:
                 eccodes.codes_release(gid)
 

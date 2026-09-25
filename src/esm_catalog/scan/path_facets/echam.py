@@ -9,6 +9,14 @@ the fuzzy, wildcard-bearing ``outdata_sources`` glob pattern declared in
 can only ever recover the year, not the month a monthly-frequency stream
 actually needs). Hardcoding the real convention here, gated to ``component ==
 "echam"``, recovers full precision instead.
+
+Also confirmed live: a real experiment's declared ``outdata_targets`` can be
+entirely stale (every path pointing at a file that was never produced -- some
+namelist option evidently disabled), meaning the real files (``echam``,
+``co2``, ``accw``, ``ism``, ...) are found only through the undeclared
+filesystem walk, which carries no stream identity until after a read. The
+trailing ``_<stream>`` segment of the filename recovers it directly, so this
+extractor works with or without an already-known stream.
 """
 
 from __future__ import annotations
@@ -21,26 +29,31 @@ from upath import UPath
 
 from esm_catalog.scan.path_facets import hookimpl
 
-_DATE_RE_TEMPLATE = r"_(?P<year>\d{4})(?P<month>\d{2})\.(?P<day>\d{2})_%STREAM%$"
-"""The date immediately preceding the (already-known) stream suffix -- using
-*stream* as a literal anchor sidesteps ever having to guess where the expid
-ends, since expid itself routinely contains underscores (e.g.
-``historical_c14_init``). ``%STREAM%`` is a plain substring placeholder, not
-a ``str.format`` field -- the regex's own ``{4}``/``{2}`` would collide with
-``.format()``'s brace syntax."""
+_NAME_RE = re.compile(
+    r"_(?P<year>\d{4})(?P<month>\d{2})\.(?P<day>\d{2})_(?P<stream>[^_.]+)$"
+)
+"""The date and stream name, both at the end of the filename -- the expid
+prefix is never anchored to (it routinely contains underscores itself, e.g.
+``historical_c14_init``), only the trailing ``_YYYYMM.DD_<stream>`` is."""
 
 
 @hookimpl
-def extract_start_datetime(
+def extract_path_facets(
     path: UPath, component: str, stream: Optional[str]
-) -> Optional[datetime]:
-    if component != "echam" or not stream:
+) -> Optional[tuple[str, datetime]]:
+    if component != "echam":
         return None
-    pattern = _DATE_RE_TEMPLATE.replace("%STREAM%", re.escape(stream))
-    match = re.search(pattern, path.name)
+    match = _NAME_RE.search(path.name)
     if match is None:
         return None
+    resolved_stream = match["stream"]
+    if stream is not None and stream != resolved_stream:
+        # A caller-supplied stream identity this filename does not confirm --
+        # not confident enough to claim it (could be a different naming
+        # convention that happens to also end in "_<word>").
+        return None
     try:
-        return datetime(int(match["year"]), int(match["month"]), int(match["day"]))
+        start = datetime(int(match["year"]), int(match["month"]), int(match["day"]))
     except ValueError:  # noqa: BLE001 -- an out-of-range date is not a match
         return None
+    return resolved_stream, start

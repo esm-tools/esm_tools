@@ -1,4 +1,4 @@
-"""Path-facet extraction: a file's start datetime from its path alone.
+"""Path-facet extraction: a file's stream + start datetime from its path alone.
 
 Confirmed live: once schema (variables/dims/geometry/format) is frozen per
 ``(component, stream)`` after the first file (see
@@ -9,10 +9,18 @@ declared in ``configs/components/*.yaml``, which locates files but does not
 precisely describe their structure) usually already encodes it. Extracting it
 from the path avoids opening the file at all.
 
+*stream* is also recovered here, not just datetime -- confirmed live: a real
+experiment's declared ``outdata_targets`` paths can all be stale (pointing at
+files never produced), meaning the actual files are found only through the
+undeclared filesystem walk, which carries no stream identity at all until
+after a real read. Without the path supplying it, every walked file would
+need a full read just to learn which stream it belongs to, defeating the
+schema-freeze this module exists to enable.
+
 Mirrors :mod:`esm_catalog.scan.readers.grib.plugins` -- the same pluggy
 shape, a fourth independent hook. A module opts in by implementing
-``extract_start_datetime``; the scan core never imports a concrete provider.
-A separately-installed package contributes one by shipping a module that
+``extract_path_facets``; the scan core never imports a concrete provider. A
+separately-installed package contributes one by shipping a module that
 implements it and declaring it under the ``esm_catalog.path_facets``
 entry-point group, e.g. in ``pyproject.toml``::
 
@@ -41,15 +49,22 @@ class PathFacetSpec:
     """One hook call, first non-``None`` result wins."""
 
     @hookspec(firstresult=True)
-    def extract_start_datetime(
+    def extract_path_facets(
         path: "UPath", component: str, stream: Optional[str]
-    ) -> "Optional[datetime]":
-        """Return *path*'s reporting-period start, read from the path alone.
+    ) -> "Optional[tuple[str, datetime]]":
+        """Return ``(stream, start)`` recovered from *path* alone, or ``None``.
 
-        ``None`` means "not my naming convention" -- the caller falls back
-        to actually opening the file. An implementation should never raise;
-        catch its own parsing errors and return ``None`` instead, the same
-        contract as the GRIB fast path's ``try_model_specific_read``.
+        *stream* is the caller's own best guess, already known for a
+        declared/tidy-log file -- ``None`` for a walked, undeclared one. A
+        provider must recover the stream itself from the path when it is
+        ``None`` (returning it as part of the result); when it is already
+        given, a provider whose own naming convention disagrees with it
+        should return ``None`` rather than override a stream identity it did
+        not establish. ``None`` overall means "not my naming convention" --
+        the caller falls back to actually opening the file. An
+        implementation should never raise; catch its own parsing errors and
+        return ``None`` instead, the same contract as the GRIB fast path's
+        ``try_model_specific_read``.
         """
 
 

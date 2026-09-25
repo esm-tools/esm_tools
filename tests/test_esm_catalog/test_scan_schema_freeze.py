@@ -40,8 +40,9 @@ def test_triage_first_file_always_must_read_rest_shortcut_via_path_facets():
     triage = _triage(files, revalidate_every=0)
 
     assert triage.must_read == [files[0]]
-    assert [f for f, _ in triage.facet_candidates] == files[1:]
-    assert [dt for _, dt in triage.facet_candidates] == [
+    assert [f for f, _, _ in triage.facet_candidates] == files[1:]
+    assert [s for _, s, _ in triage.facet_candidates] == ["echam", "echam"]
+    assert [dt for _, _, dt in triage.facet_candidates] == [
         datetime(2000, 2, 1),
         datetime(2000, 3, 1),
     ]
@@ -54,7 +55,7 @@ def test_triage_revalidate_every_forces_periodic_real_reads():
 
     # occurrence 1 (first, always) + occurrences 2, 4, 6 (checkpoints)
     assert triage.must_read == [files[0], files[1], files[3], files[5]]
-    assert [f for f, _ in triage.facet_candidates] == [files[2], files[4]]
+    assert [f for f, _, _ in triage.facet_candidates] == [files[2], files[4]]
     assert triage.revalidation_paths == {
         str(files[1].path),
         str(files[3].path),
@@ -83,6 +84,30 @@ def test_triage_falls_back_to_must_read_when_no_extractor_claims_the_path():
 
     assert triage.must_read == files
     assert triage.facet_candidates == []
+
+
+def test_triage_recovers_stream_for_walked_undeclared_files():
+    """The real motivating case: a real experiment's declared outdata_targets
+    can be entirely stale, so files are discovered only via the filesystem
+    walk -- OutputFile.stream is None, not just "not yet known". Triage must
+    still group and shortcut them correctly, using the stream ECHAM's own
+    filename recovers."""
+    files = [
+        OutputFile(
+            path=UPath(f"/x/historical_c14_init_{yyyymm}.01_echam"),
+            component="echam",
+            stream=None,
+        )
+        for yyyymm in ("200001", "200002", "200003")
+    ]
+
+    triage = _triage(files, revalidate_every=0)
+
+    assert triage.must_read == [files[0]]
+    assert [f for f, _, _ in triage.facet_candidates] == files[1:]
+    assert [s for _, s, _ in triage.facet_candidates] == ["echam", "echam"]
+    # The grouping key uses the resolved stream, not the (missing) declared one.
+    assert list(triage.stream_first_seen.keys()) == [("echam", "echam")]
 
 
 def test_warn_on_schema_drift_logs_when_variables_differ(monkeypatch):
@@ -184,5 +209,48 @@ def test_scan_uses_path_facet_datetime_not_always_january_content(tmp_path):
     start, end = collection_doc["extent"]["temporal"]["interval"][0]
     # Real content is always January; the extent reaching June proves the
     # later files' dates came from their path, not a re-read of content.
+    assert start.startswith("2000-01")
+    assert end.startswith("2000-06")
+
+
+def test_scan_shortcuts_walked_undeclared_files_too(tmp_path):
+    """The real motivating case (confirmed live): a real experiment's
+    declared outdata_targets can be entirely stale (every path pointing at a
+    file never produced), so the real files are discovered only by walking
+    the filesystem -- with no stream identity at all until the path-facet
+    extractor supplies one. No outdata_targets are declared here at all."""
+    exp_root = UPath(tmp_path)
+    for yyyymm in _MONTHS:
+        year, month = int(yyyymm[:4]), int(yyyymm[4:])
+        end_day = 28 if month == 2 else 30
+
+        echam_file = exp_root / "outdata" / "echam" / f"{_EXPID}_{yyyymm}.01_echam"
+        echam_file.parent.mkdir(parents=True, exist_ok=True)
+        xr.Dataset(
+            {"temp": (("time", "lat", "lon"), np.zeros((1, 3, 4)))},
+            coords={"time": [np.datetime64("2000-01-15")], **_COORDS},
+        ).to_netcdf(str(echam_file))
+
+        config_dir = exp_root / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        doc = {
+            "general": {
+                "expid": _EXPID,
+                "start_date": f"{year}-{month:02d}-01",
+                "end_date": f"{year}-{month:02d}-{end_day}",
+            },
+            "echam": {},  # no outdata_targets -- forces the filesystem walk
+        }
+        stamp = f"{year}{month:02d}01-{year}{month:02d}{end_day}"
+        with (config_dir / f"{_EXPID}_finished_config.yaml_{stamp}").open("w") as f:
+            YAML(typ="safe").dump(doc, f)
+
+    report = scan_experiment(exp_root, revalidate_every=0)
+
+    assert report.items == len(_MONTHS)
+    assert report.failures == ()
+
+    collection_doc = json.loads((exp_root / "catalog" / "collection.json").read_text())
+    start, end = collection_doc["extent"]["temporal"]["interval"][0]
     assert start.startswith("2000-01")
     assert end.startswith("2000-06")

@@ -138,9 +138,18 @@ def _read_output_file(output_file: OutputFile) -> _ReadResult:
         file_metadata.role = output_file.role
         file_metadata.category = output_file.category
         # A walked outdata file (no outdata_targets entry) carries no declared
-        # stream -- fall back to its own primary variable, the closest thing
-        # to a stream identity a raw filesystem walk can offer.
-        file_metadata.stream = output_file.stream or file_metadata.variable
+        # stream. Try path-facet extraction first, same resolution _triage
+        # uses -- so a later file of this stream, shortcut via the facet
+        # extractor, agrees with this (the frozen, actually-read) file on the
+        # stream identity, rather than each independently guessing. Only
+        # when no extractor claims it does this fall back to the reader's
+        # own primary variable, the closest thing to a stream identity a raw
+        # filesystem walk can otherwise offer.
+        if output_file.stream:
+            file_metadata.stream = output_file.stream
+        else:
+            facets = _try_path_facets(output_file)
+            file_metadata.stream = facets[0] if facets else file_metadata.variable
         return _ReadResult(output_file, file_metadata, None)
     except UnsupportedContentError:
         return _ReadResult(output_file, None, None, unsupported=True)
@@ -176,14 +185,15 @@ def _on_read_timeout(output_file: OutputFile) -> _ReadResult:
     )
 
 
-def _try_path_facets(output_file: OutputFile) -> Optional[datetime]:
-    """*output_file*'s start datetime from its path alone, or ``None``.
+def _try_path_facets(output_file: OutputFile) -> Optional[tuple[str, datetime]]:
+    """``(stream, start)`` recovered from *output_file*'s path alone, or ``None``.
 
     Thin wrapper around the path-facet plugin manager -- see
     :mod:`esm_catalog.scan.path_facets`. Pure and cheap (no I/O): safe to call
-    for every candidate during triage, not just ones that end up shortcut.
+    for every candidate during triage, not just ones that end up shortcut, and
+    from a worker process (see :func:`_read_output_file`).
     """
-    return get_path_facet_plugin_manager().hook.extract_start_datetime(
+    return get_path_facet_plugin_manager().hook.extract_path_facets(
         path=output_file.path,
         component=output_file.component,
         stream=output_file.stream,
@@ -205,7 +215,7 @@ def _period_end(start: datetime, frequency: Optional[str]) -> datetime:
 
 
 def _synthesize_from_template(
-    output_file: OutputFile, template: FileMetadata, start: datetime
+    output_file: OutputFile, template: FileMetadata, stream: str, start: datetime
 ) -> FileMetadata:
     """*output_file*'s metadata, reusing a frozen stream's schema.
 
@@ -215,12 +225,15 @@ def _synthesize_from_template(
     cost this whole mechanism (see :func:`_triage`) exists to cut. Only the
     per-file datetime, taken from the path (:func:`_try_path_facets`), is
     genuinely new; the period's end is derived from the frozen frequency.
+    *stream* is the path-resolved one (not ``output_file.stream``, which is
+    ``None`` for a walked/undeclared file), matching what the frozen file's
+    own real read was made to agree with -- see :func:`_read_output_file`.
     """
     synthesized = template.model_copy(deep=True)
     synthesized.component = output_file.component
     synthesized.role = output_file.role
     synthesized.category = output_file.category
-    synthesized.stream = output_file.stream or synthesized.variable
+    synthesized.stream = stream
     synthesized.datetime_start = start
     synthesized.datetime_end = _period_end(start, template.frequency)
     synthesized.datetime_str = start.strftime("%Y%m")
@@ -236,13 +249,17 @@ class _Triage:
     must_read: list[OutputFile]
     """In original order: first-of-stream files, revalidation checkpoints,
     and any file path-facet extraction could not claim."""
-    facet_candidates: list[tuple[OutputFile, datetime]]
-    """Files a path-facet extractor claimed, paired with the extracted start
-    datetime -- finalized only after their stream's first file has actually
-    been read (see ``scan_experiment``)."""
+    facet_candidates: list[tuple[OutputFile, str, datetime]]
+    """Files a path-facet extractor claimed, paired with the resolved stream
+    and extracted start datetime -- finalized only after their stream's
+    first file has actually been read (see ``scan_experiment``)."""
     stream_first_seen: dict[tuple[Optional[str], Optional[str]], OutputFile]
     """``(component, stream)`` -> the file whose real read result becomes
-    that stream's frozen schema."""
+    that stream's frozen schema. *stream* here is the resolved one from
+    path-facet extraction when available (see :func:`_triage`), not
+    necessarily ``output_file.stream`` -- a walked/undeclared file has no
+    stream of its own until either a read or a path-facet match supplies
+    one."""
     revalidation_paths: set[str]
     """Paths of ``must_read`` entries that are periodic trust-but-verify
     checks (not a stream's first file, not a facet-extraction fallback) --
@@ -253,20 +270,28 @@ def _triage(todo: list[OutputFile], revalidate_every: int) -> _Triage:
     """Split *todo* into what genuinely needs reading and what a path-facet
     extractor can shortcut, without touching the filesystem.
 
-    A stream's first file always needs a real read (nothing to freeze from
-    yet). After that, every ``revalidate_every``-th file of the same stream
-    is still read for real -- a trust-but-verify check against schema drift
-    (a resolution change, a variable added mid-run) -- everything else tries
-    the path-facet shortcut, falling back to a real read when no extractor
-    claims it.
+    Path-facet extraction is tried for every file up front, not just repeats
+    -- confirmed live: a real experiment's declared ``outdata_targets`` can
+    be entirely stale, meaning every file is discovered through the
+    undeclared filesystem walk and carries no stream identity of its own
+    until a facet extractor (or a real read) supplies one. A stream's first
+    file always needs a real read (nothing to freeze from yet). After that,
+    every ``revalidate_every``-th file of the same stream is still read for
+    real -- a trust-but-verify check against schema drift (a resolution
+    change, a variable added mid-run) -- everything else tries the
+    path-facet shortcut, falling back to a real read when no extractor
+    claims it (or claims it without full enough confidence to name a
+    stream).
     """
     stream_first_seen: dict[tuple[Optional[str], Optional[str]], OutputFile] = {}
     occurrences: dict[tuple[Optional[str], Optional[str]], int] = defaultdict(int)
     must_read: list[OutputFile] = []
-    facet_candidates: list[tuple[OutputFile, datetime]] = []
+    facet_candidates: list[tuple[OutputFile, str, datetime]] = []
     revalidation_paths: set[str] = set()
     for output_file in todo:
-        key = (output_file.component, output_file.stream)
+        facets = _try_path_facets(output_file)
+        stream, start = facets if facets is not None else (output_file.stream, None)
+        key = (output_file.component, stream)
         occurrences[key] += 1
         if key not in stream_first_seen:
             stream_first_seen[key] = output_file
@@ -276,11 +301,10 @@ def _triage(todo: list[OutputFile], revalidate_every: int) -> _Triage:
             must_read.append(output_file)
             revalidation_paths.add(str(output_file.path))
             continue
-        start = _try_path_facets(output_file)
         if start is None:
             must_read.append(output_file)
             continue
-        facet_candidates.append((output_file, start))
+        facet_candidates.append((output_file, stream, start))
     return _Triage(must_read, facet_candidates, stream_first_seen, revalidation_paths)
 
 
@@ -295,7 +319,7 @@ def _warn_on_schema_drift(result: _ReadResult, frozen_schema: dict) -> None:
     stream may now be getting a stale schema via the path-facet shortcut."""
     if result.file_metadata is None:
         return
-    key = (result.output_file.component, result.output_file.stream)
+    key = (result.output_file.component, result.file_metadata.stream)
     frozen = frozen_schema.get(key)
     if frozen is None:
         return
@@ -436,8 +460,8 @@ def scan_experiment(
             _warn_on_schema_drift(result, frozen_schema)
 
     synthesized_results = []
-    for output_file, start in triage.facet_candidates:
-        key = (output_file.component, output_file.stream)
+    for output_file, stream, start in triage.facet_candidates:
+        key = (output_file.component, stream)
         template = frozen_schema.get(key)
         if template is None:
             # The stream's first file failed or was unsupported -- nothing
@@ -446,7 +470,7 @@ def scan_experiment(
         else:
             result = _ReadResult(
                 output_file,
-                _synthesize_from_template(output_file, template, start),
+                _synthesize_from_template(output_file, template, stream, start),
                 None,
             )
         synthesized_results.append(result)

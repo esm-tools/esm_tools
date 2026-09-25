@@ -15,33 +15,28 @@ echam:
   - pattern: "{{ expid }}_{{ date }}_{{ stream }}"
     date_format: "%Y%m.%d"
     # historical_c14_init_185001.01_echam (outdata: echam/co2/accw/ism/...)
-  - pattern: "restart_{{ expid }}_{{ stream }}_{{ date }}.nc"
-    date_format: "%Y%m%d"
-    # restart_historical_c14_init_accw_18501231.nc
 
 fesom:
   - pattern: "{{ stream }}.fesom.{{ date }}.nc"
     date_format: "%Y"
     # a_ice.fesom.1850.nc
-  - pattern: "fesom.{{ date }}.{{ stream }}.restart"
-    date_format: "%Y"
-    # fesom.1850.oce.restart
 
 jsbach:
   - pattern: "{{ expid }}_{{ date }}_{{ stream }}"
     date_format: "%Y%m.%d"
     # historical_c14_init_185001.01_yasso (also jsbach/land/surf/veg) --
     # same convention as ECHAM outdata (jsbach couples through it).
-  - pattern: "restart_{{ expid }}_{{ date }}_{{ stream }}.nc"
-    date_format: "%Y%m%d"
-    # restart_historical_c14_init_18501231_yasso.nc -- note the date/stream
-    # order is swapped from ECHAM's own restart naming above.
 
-hdmodel:
-  - pattern: "restart_{{ expid }}_{{ date }}_{{ stream }}.nc"
-    date_format: "%Y%m%d"
-    # restart_historical_c14_init_18501231_hdrestart.nc -- same order as
-    # jsbach's restart naming, not ECHAM's.
+# Deliberately no restart entries (echam/fesom/jsbach/hdmodel/...): every
+# restart OutputFile -- declared or walked -- carries a fixed, component-wide
+# stream="restart" (see sourcing.py's restart_files(); category, not stream,
+# differentiates oce/ice/accw/etc within it). A template resolving a
+# per-category name from the filename can therefore never match the stream
+# it is compared against, and would be pointless even if it somehow did:
+# confirmed live, FESOM's restart "files" are actually directories of
+# one-variable-per-file NetCDF fragments (area.nc, hice.nc, cfc11.nc, ...),
+# so there is no single stable schema to freeze across them in the first
+# place. restart files always get a real read; that is correct, not a gap.
 
 # oasis3mct's restart files are stamped with a run-segment date *range*
 # (e.g. a2o_flux_18500101-18501231), not a single timestamp this template

@@ -312,14 +312,27 @@ def _variable_names(metadata: FileMetadata) -> set:
     return {v.name for v in metadata.variables}
 
 
-def _warn_on_schema_drift(result: _ReadResult, frozen_schema: dict) -> None:
+def _warn_on_schema_drift(
+    result: _ReadResult, frozen_schema: dict, shortcut_keys: set
+) -> None:
     """Compare a revalidation checkpoint's real read against its stream's
     frozen schema; log, never raise -- the fresh read is used for this item
     regardless, this is purely an operator signal that later files of the
-    stream may now be getting a stale schema via the path-facet shortcut."""
+    stream may now be getting a stale schema via the path-facet shortcut.
+
+    *shortcut_keys* -- ``(component, stream)`` pairs with at least one real
+    path-facet-shortcut candidate this scan -- gates the check: a stream no
+    file ever actually shortcuts (confirmed live: every restart stream,
+    since sourcing gives every restart file the same fixed stream="restart"
+    regardless of category, which no path-facet template can ever resolve
+    to) has nothing to go stale, so comparing its real reads against each
+    other is just noise, not a genuine drift signal.
+    """
     if result.file_metadata is None:
         return
     key = (result.output_file.component, result.file_metadata.stream)
+    if key not in shortcut_keys:
+        return
     frozen = frozen_schema.get(key)
     if frozen is None:
         return
@@ -455,9 +468,12 @@ def scan_experiment(
         first_result = result_by_path[str(first_file.path)]
         if first_result.file_metadata is not None:
             frozen_schema[key] = first_result.file_metadata
+    shortcut_keys = {
+        (of.component, stream) for of, stream, _ in triage.facet_candidates
+    }
     for result in must_results:
         if str(result.output_file.path) in triage.revalidation_paths:
-            _warn_on_schema_drift(result, frozen_schema)
+            _warn_on_schema_drift(result, frozen_schema, shortcut_keys)
 
     synthesized_results = []
     for output_file, stream, start in triage.facet_candidates:

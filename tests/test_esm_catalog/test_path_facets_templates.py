@@ -2,9 +2,9 @@
 (esm_catalog.scan.path_facets.templates), driven by templates.yaml.
 
 Confirmed live against real production filenames -- ECHAM's
-``<expid>_YYYYMM.DD_<stream>`` and FESOM's ``<stream>.fesom.<year>.nc`` /
-``fesom.<year>.<stream>.restart``. One engine, no per-component Python code;
-only the shipped YAML table differs per component.
+``<expid>_YYYYMM.DD_<stream>``, JSBACH's identical convention, and FESOM's
+``<stream>.fesom.<year>.nc``. One engine, no per-component Python code; only
+the shipped YAML table differs per component.
 """
 
 from __future__ import annotations
@@ -65,25 +65,6 @@ def test_fesom_stream_containing_an_underscore_is_not_split():
     )
 
 
-def test_matches_real_fesom_restart_filenames():
-    assert _extract("/x/fesom.1850.oce.restart", "fesom") == (
-        "oce",
-        datetime(1850, 1, 1),
-    )
-    assert _extract("/x/fesom.1850.ice.restart", "fesom") == (
-        "ice",
-        datetime(1850, 1, 1),
-    )
-
-
-def test_matches_real_echam_restart_filename():
-    # Stream-then-date order -- the opposite of ECHAM's outdata naming above.
-    assert _extract("/x/restart_historical_c14_init_accw_18501231.nc", "echam") == (
-        "accw",
-        datetime(1850, 12, 31),
-    )
-
-
 def test_matches_real_jsbach_outdata_filename():
     # jsbach couples through ECHAM's own GRIB convention.
     assert _extract("/x/historical_c14_init_185001.01_yasso", "jsbach") == (
@@ -92,16 +73,34 @@ def test_matches_real_jsbach_outdata_filename():
     )
 
 
-def test_matches_real_jsbach_restart_filename():
-    # Date-then-stream order -- the opposite of ECHAM's restart naming.
-    result = _extract("/x/restart_historical_c14_init_18501231_yasso.nc", "jsbach")
-    assert result == ("yasso", datetime(1850, 12, 31))
-
-
-def test_matches_real_hdmodel_restart_filename():
-    # Same date-then-stream order as jsbach's restart, not ECHAM's.
-    result = _extract("/x/restart_historical_c14_init_18501231_hdrestart.nc", "hdmodel")
-    assert result == ("hdrestart", datetime(1850, 12, 31))
+def test_restart_filenames_are_deliberately_uncovered():
+    """Every restart OutputFile -- declared or walked -- carries a fixed,
+    component-wide stream="restart" (sourcing.py's restart_files()); no
+    path-facet template can ever resolve to that literal string, so restart
+    files always fall back to a real read, on purpose. Confirmed live:
+    FESOM's restart "files" are actually directories of one-variable-per-file
+    fragments (area.nc, hice.nc, cfc11.nc, ...) -- there is no single stable
+    schema to freeze across them even if a template did somehow match."""
+    assert _extract("/x/fesom.1850.oce.restart", "fesom", "restart") is None
+    assert _extract("/x/fesom.1850.ice.restart", "fesom", "restart") is None
+    assert (
+        _extract("/x/restart_historical_c14_init_accw_18501231.nc", "echam", "restart")
+        is None
+    )
+    assert (
+        _extract(
+            "/x/restart_historical_c14_init_18501231_yasso.nc", "jsbach", "restart"
+        )
+        is None
+    )
+    assert (
+        _extract(
+            "/x/restart_historical_c14_init_18501231_hdrestart.nc",
+            "hdmodel",
+            "restart",
+        )
+        is None
+    )
 
 
 def test_oasis3mct_date_range_stamps_are_deliberately_uncovered():

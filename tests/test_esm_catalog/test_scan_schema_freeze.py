@@ -128,9 +128,39 @@ def test_warn_on_schema_drift_logs_when_variables_differ(monkeypatch):
     )
     result = _ReadResult(_echam_file("200002"), fresh, None)
 
-    _warn_on_schema_drift(result, frozen)
+    _warn_on_schema_drift(result, frozen, shortcut_keys={("echam", "echam")})
 
     assert len(warnings) == 1
+
+
+def test_warn_on_schema_drift_silent_when_stream_never_shortcuts(monkeypatch):
+    """Confirmed live: every restart stream shares one fixed stream="restart"
+    label no path-facet template can ever resolve to, so it never has a
+    shortcut candidate -- comparing its real reads against each other is
+    noise, not a genuine "stale via the shortcut" signal."""
+    warnings = []
+    monkeypatch.setattr(
+        ingest.logger, "warning", lambda *a, **k: warnings.append((a, k))
+    )
+    frozen = {
+        ("fesom", "restart"): FileMetadata(
+            variable="cfc11",
+            variables=[{"name": "cfc11"}, {"name": "iter"}],
+            component="fesom",
+            stream="restart",
+        )
+    }
+    fresh = FileMetadata(
+        variable="hice",
+        variables=[{"name": "hice"}, {"name": "iter"}],
+        component="fesom",
+        stream="restart",
+    )
+    result = _ReadResult(_echam_file("200002"), fresh, None)
+
+    _warn_on_schema_drift(result, frozen, shortcut_keys=set())
+
+    assert warnings == []
 
 
 def test_warn_on_schema_drift_silent_when_variables_match(monkeypatch):
@@ -151,7 +181,7 @@ def test_warn_on_schema_drift_silent_when_variables_match(monkeypatch):
     )
     result = _ReadResult(_echam_file("200002"), fresh, None)
 
-    _warn_on_schema_drift(result, frozen)
+    _warn_on_schema_drift(result, frozen, shortcut_keys={("echam", "echam")})
 
     assert warnings == []
 
